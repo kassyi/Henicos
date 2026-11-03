@@ -1,8 +1,6 @@
 using System.Globalization;
-using System.Linq;
 using System.Text;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Kassyi.GSharp.Tools.FuzzDiff;
@@ -44,7 +42,7 @@ public static class FuzzDeduplicator
         ArgumentException.ThrowIfNullOrWhiteSpace(kernelSource);
 
         string canonicalPaths = NormalizeFailingPathsMask(failingPaths);
-        string canonicalFailureKind = string.IsNullOrWhiteSpace(failureKind) ? "CellMismatch" : failureKind.Trim();
+        string canonicalFailureKind = string.IsNullOrWhiteSpace(failureKind) ? "CellMismatch" : failureKind.AsSpan().Trim().ToString();
         string skeleton = BuildNormalizedAstSkeleton(kernelSource);
 
         string payload = $"{skeleton}|{canonicalPaths}|{canonicalFailureKind}";
@@ -82,14 +80,25 @@ public static class FuzzDeduplicator
             return "Unknown";
         }
 
-        var parts = failingPaths
-            .Split([',', '|', ';', ' '], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .OrderBy(static p => GetPathOrder(p))
-            .ThenBy(static p => p, StringComparer.OrdinalIgnoreCase)
-            .Select(static p => NormalizePathName(p));
+        var rawParts = FuzzSyntaxHelpers.SplitNonEmpty(failingPaths, ",|; \t");
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var unique = new List<string>(rawParts.Count);
+        foreach (string raw in rawParts)
+        {
+            string normalized = NormalizePathName(raw);
+            if (seen.Add(normalized))
+            {
+                unique.Add(normalized);
+            }
+        }
 
-        string joined = string.Join(",", parts);
+        unique.Sort(static (a, b) =>
+        {
+            int cmp = GetPathOrder(a).CompareTo(GetPathOrder(b));
+            return cmp != 0 ? cmp : StringComparer.OrdinalIgnoreCase.Compare(a, b);
+        });
+
+        string joined = string.Join(",", unique);
         return string.IsNullOrEmpty(joined) ? "Unknown" : joined;
     }
 
@@ -105,26 +114,27 @@ public static class FuzzDeduplicator
         var activeMethods = CollectActiveMethods(root);
         var methodMap = BuildMethodNormalizationMap(activeMethods);
 
-        var sb = new StringBuilder();
+        using var writer = new SourceWriter();
         for (int i = 0; i < activeMethods.Count; i++)
         {
             if (i > 0)
             {
-                sb.Append(';');
+                writer.Append(';');
             }
 
-            AppendNormalizedMethod(sb, activeMethods[i], methodMap, typeMap);
+            AppendNormalizedMethod(writer, activeMethods[i], methodMap, typeMap);
         }
 
-        return sb.ToString();
+        return writer.ToString();
     }
 
     private static Dictionary<string, string> BuildCustomTypeNormalizationMap(CompilationUnitSyntax root)
     {
         var typeMap = new Dictionary<string, string>(StringComparer.Ordinal);
-        foreach (var typeDecl in root.DescendantNodes().OfType<BaseTypeDeclarationSyntax>())
+        foreach (var node in root.DescendantNodes())
         {
-            if (typeDecl is StructDeclarationSyntax or EnumDeclarationSyntax)
+            if (node is BaseTypeDeclarationSyntax typeDecl &&
+                typeDecl is StructDeclarationSyntax or EnumDeclarationSyntax)
             {
                 string origName = typeDecl.Identifier.ValueText;
                 if (!typeMap.ContainsKey(origName))
@@ -134,12 +144,15 @@ public static class FuzzDeduplicator
             }
         }
 
-        foreach (var id in root.DescendantNodes().OfType<IdentifierNameSyntax>())
+        foreach (var node in root.DescendantNodes())
         {
-            string name = id.Identifier.ValueText;
-            if (name.StartsWith("FuzzEnum", StringComparison.Ordinal) && !typeMap.ContainsKey(name))
+            if (node is IdentifierNameSyntax id)
             {
-                typeMap[name] = $"T{typeMap.Count}";
+                string name = id.Identifier.ValueText;
+                if (name.StartsWith("FuzzEnum", StringComparison.Ordinal) && !typeMap.ContainsKey(name))
+                {
+                    typeMap[name] = $"T{typeMap.Count}";
+                }
             }
         }
 
@@ -148,8 +161,20 @@ public static class FuzzDeduplicator
 
     private static List<MethodDeclarationSyntax> CollectActiveMethods(CompilationUnitSyntax root)
     {
-        var allMethods = root.DescendantNodes().OfType<MethodDeclarationSyntax>().ToList();
-        var kernelMethods = allMethods.Where(static m => FuzzSyntaxHelpers.HasAttribute(m, "GpuKernel")).ToList();
+        var allMethods = new List<MethodDeclarationSyntax>();
+        var kernelMethods = new List<MethodDeclarationSyntax>();
+        foreach (var node in root.DescendantNodes())
+        {
+            if (node is MethodDeclarationSyntax method)
+            {
+                allMethods.Add(method);
+                if (FuzzSyntaxHelpers.HasAttribute(method, "GpuKernel"))
+                {
+                    kernelMethods.Add(method);
+                }
+            }
+        }
+
         if (kernelMethods.Count == 0)
         {
             kernelMethods = allMethods;
@@ -158,18 +183,25 @@ public static class FuzzDeduplicator
         var referencedHelperNames = new HashSet<string>(StringComparer.Ordinal);
         foreach (var km in kernelMethods)
         {
-            foreach (var inv in km.DescendantNodes().OfType<InvocationExpressionSyntax>())
+            foreach (var node in km.DescendantNodes())
             {
-                if (inv.Expression is IdentifierNameSyntax id)
+                if (node is InvocationExpressionSyntax { Expression: IdentifierNameSyntax id })
                 {
                     referencedHelperNames.Add(id.Identifier.ValueText);
                 }
             }
         }
 
-        return allMethods
-            .Where(m => kernelMethods.Contains(m) || referencedHelperNames.Contains(m.Identifier.ValueText))
-            .ToList();
+        var active = new List<MethodDeclarationSyntax>(allMethods.Count);
+        foreach (var m in allMethods)
+        {
+            if (kernelMethods.Contains(m) || referencedHelperNames.Contains(m.Identifier.ValueText))
+            {
+                active.Add(m);
+            }
+        }
+
+        return active;
     }
 
     private static Dictionary<string, string> BuildMethodNormalizationMap(IReadOnlyList<MethodDeclarationSyntax> activeMethods)
@@ -188,7 +220,7 @@ public static class FuzzDeduplicator
     }
 
     private static void AppendNormalizedMethod(
-        StringBuilder sb,
+        SourceWriter writer,
         MethodDeclarationSyntax method,
         IReadOnlyDictionary<string, string> methodMap,
         IReadOnlyDictionary<string, string> typeMap)
@@ -200,22 +232,27 @@ public static class FuzzDeduplicator
             ? mappedMethod
             : "M0";
         string returnType = FuzzAstNormalizer.NormalizeTypeSyntax(cleanedMethod.ReturnType, typeMap);
-        sb.Append(returnType).Append(' ').Append(methodToken).Append('(');
+        writer.Append(returnType);
+        writer.Append(' ');
+        writer.Append(methodToken);
+        writer.Append('(');
 
         for (int i = 0; i < cleanedMethod.ParameterList.Parameters.Count; i++)
         {
             if (i > 0)
             {
-                sb.Append(',');
+                writer.Append(',');
             }
 
             var p = cleanedMethod.ParameterList.Parameters[i];
             string pType = p.Type is not null ? FuzzAstNormalizer.NormalizeTypeSyntax(p.Type, typeMap) : "var";
             string pName = varMap[p.Identifier.ValueText];
-            sb.Append(pType).Append(' ').Append(pName);
+            writer.Append(pType);
+            writer.Append(' ');
+            writer.Append(pName);
         }
 
-        sb.Append("){");
+        writer.Append("){");
 
         if (cleanedMethod.Body is not null)
         {
@@ -228,32 +265,60 @@ public static class FuzzDeduplicator
                     continue;
                 }
 
-                FuzzAstNormalizer.AppendNormalizedStatement(sb, stmt, varMap, methodMap, typeMap, localTypes);
+                FuzzAstNormalizer.AppendNormalizedStatement(writer, stmt, varMap, methodMap, typeMap, localTypes);
             }
         }
         else if (cleanedMethod.ExpressionBody is not null)
         {
-            sb.Append("return ");
-            FuzzAstNormalizer.AppendNormalizedExpression(sb, cleanedMethod.ExpressionBody.Expression, varMap, methodMap, typeMap);
-            sb.Append(';');
+            writer.Append("return ");
+            FuzzAstNormalizer.AppendNormalizedExpression(writer, cleanedMethod.ExpressionBody.Expression, varMap, methodMap, typeMap);
+            writer.Append(';');
         }
 
-        sb.Append('}');
+        writer.Append('}');
     }
 
-    private static int GetPathOrder(string path) => path.ToUpperInvariant() switch
+    private static int GetPathOrder(string path)
     {
-        "MANAGED" => 0,
-        "NATIVE" or "CPU" => 1,
-        "CUDA" or "GPU" => 2,
-        _ => 3,
-    };
+        if (string.Equals(path, "Managed", StringComparison.OrdinalIgnoreCase))
+        {
+            return 0;
+        }
 
-    private static string NormalizePathName(string path) => path.ToUpperInvariant() switch
+        if (string.Equals(path, "Native", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(path, "Cpu", StringComparison.OrdinalIgnoreCase))
+        {
+            return 1;
+        }
+
+        if (string.Equals(path, "Cuda", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(path, "Gpu", StringComparison.OrdinalIgnoreCase))
+        {
+            return 2;
+        }
+
+        return 3;
+    }
+
+    private static string NormalizePathName(string path)
     {
-        "MANAGED" => "Managed",
-        "NATIVE" or "CPU" => "Native",
-        "CUDA" or "GPU" => "Cuda",
-        _ => path,
-    };
+        if (string.Equals(path, "Managed", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Managed";
+        }
+
+        if (string.Equals(path, "Native", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(path, "Cpu", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Native";
+        }
+
+        if (string.Equals(path, "Cuda", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(path, "Gpu", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Cuda";
+        }
+
+        return path;
+    }
 }

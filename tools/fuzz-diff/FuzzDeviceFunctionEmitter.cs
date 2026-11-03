@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Text;
 
 namespace Kassyi.GSharp.Tools.FuzzDiff;
 
@@ -153,16 +152,6 @@ public static class FuzzDeviceFunctionEmitter
         }
     }
 
-    /// <summary>Appends all <c>[GpuDeviceFunction]</c> helper method declarations to <paramref name="sb"/>.</summary>
-    public static void AppendDeviceFunctionDeclarations(StringBuilder sb, IReadOnlyList<DeviceFunctionSpec> deviceFunctions)
-    {
-        ArgumentNullException.ThrowIfNull(sb);
-        ArgumentNullException.ThrowIfNull(deviceFunctions);
-        using var writer = new SourceWriter();
-        AppendDeviceFunctionDeclarations(writer, deviceFunctions);
-        sb.Append(writer.ToString());
-    }
-
     /// <summary>Appends all <c>[GpuDeviceFunction]</c> helper method declarations to <paramref name="writer"/>.</summary>
     public static void AppendDeviceFunctionDeclarations(SourceWriter writer, IReadOnlyList<DeviceFunctionSpec> deviceFunctions)
     {
@@ -179,64 +168,52 @@ public static class FuzzDeviceFunctionEmitter
         }
     }
 
-    private static string RenderDevFunc0(int c0)
-    {
-        using var writer = new SourceWriter();
-        writer.AppendLine("[GpuDeviceFunction]");
-        using (writer.Scope("public static int DevFunc_0(in int snapVal, ref FuzzStructL1 target, int delta)"))
+    private static string RenderDevFunc0(int c0) =>
+        $$"""
+        [GpuDeviceFunction]
+        public static int DevFunc_0(in int snapVal, ref FuzzStructL1 target, int delta)
         {
-            writer.AppendLine("int before = snapVal;");
-            writer.AppendLine(string.Create(CultureInfo.InvariantCulture, $"target.A = (target.A + delta + {c0});"));
-            writer.AppendLine("return (before ^ snapVal) + target.A;");
+        int before = snapVal;
+        target.A = (target.A + delta + {{c0.ToString(CultureInfo.InvariantCulture)}});
+        return (before ^ snapVal) + target.A;
         }
+        """;
 
-        return writer.ToString().TrimEnd();
-    }
-
-    private static string RenderDevFunc1(int c1)
-    {
-        using var writer = new SourceWriter();
-        writer.AppendLine("[GpuDeviceFunction]");
-        using (writer.Scope("public static int DevFunc_1(int x, in long y, ref int acc, out int sideOut)"))
+    private static string RenderDevFunc1(int c1) =>
+        $$"""
+        [GpuDeviceFunction]
+        public static int DevFunc_1(int x, in long y, ref int acc, out int sideOut)
         {
-            writer.AppendLine("FuzzStructL1 temp = new FuzzStructL1 { A = x, B = (short)(y & 0x7FFF), Tag = 3 };");
-            writer.AppendLine(string.Create(CultureInfo.InvariantCulture, $"int step = DevFunc_0(temp.CompA, ref temp, (x ^ {c1}));"));
-            writer.AppendLine("sideOut = (step ^ (int)y);");
-            writer.AppendLine("acc = (acc + sideOut);");
-            writer.AppendLine("return (acc ^ temp.A);");
+        FuzzStructL1 temp = new FuzzStructL1 { A = x, B = (short)(y & 0x7FFF), Tag = 3 };
+        int step = DevFunc_0(temp.CompA, ref temp, (x ^ {{c1.ToString(CultureInfo.InvariantCulture)}}));
+        sideOut = (step ^ (int)y);
+        acc = (acc + sideOut);
+        return (acc ^ temp.A);
         }
+        """;
 
-        return writer.ToString().TrimEnd();
-    }
-
-    private static string RenderDevFunc2(int c2)
-    {
-        using var writer = new SourceWriter();
-        writer.AppendLine("[GpuDeviceFunction]");
-        using (writer.Scope("public static long DevFunc_2<T0>(int a, int b, ref int stateVal) where T0 : unmanaged"))
+    private static string RenderDevFunc2(int c2) =>
+        $$"""
+        [GpuDeviceFunction]
+        public static long DevFunc_2<T0>(int a, int b, ref int stateVal) where T0 : unmanaged
         {
-            writer.AppendLine(string.Create(CultureInfo.InvariantCulture, $"long wide = ((long)a << 16) ^ b ^ {c2}L;"));
-            writer.AppendLine("int localOut = 0;");
-            writer.AppendLine("int mid = DevFunc_1(a, in wide, ref stateVal, out localOut);");
-            writer.AppendLine("return (wide + mid + localOut);");
+        long wide = ((long)a << 16) ^ b ^ {{c2.ToString(CultureInfo.InvariantCulture)}}L;
+        int localOut = 0;
+        int mid = DevFunc_1(a, in wide, ref stateVal, out localOut);
+        return (wide + mid + localOut);
         }
+        """;
 
-        return writer.ToString().TrimEnd();
-    }
-
-    private static string RenderDevFunc3(string kernelClassName, int c3)
-    {
-        using var writer = new SourceWriter();
-        writer.AppendLine("[GpuDeviceFunction]");
-        using (writer.Scope("public static int DevFunc_3<T0, T1>(int left, int right, out int mirrorOut) where T0 : unmanaged where T1 : unmanaged"))
+    private static string RenderDevFunc3(string kernelClassName, int c3) =>
+        $$"""
+        [GpuDeviceFunction]
+        public static int DevFunc_3<T0, T1>(int left, int right, out int mirrorOut) where T0 : unmanaged where T1 : unmanaged
         {
-            writer.AppendLine(string.Create(CultureInfo.InvariantCulture, $"int scratch = (left ^ {c3});"));
-            writer.AppendLine($"long combined = {kernelClassName}.DevFunc_2<T0>(left, right, ref scratch);");
-            writer.AppendLine("FuzzStructL1 box = new FuzzStructL1 { A = scratch, B = (short)right, Tag = 1 };");
-            writer.AppendLine("mirrorOut = DevFunc_0(box.CompA, ref box, right);");
-            writer.AppendLine("return ((int)combined ^ mirrorOut ^ box.A);");
+        int scratch = (left ^ {{c3.ToString(CultureInfo.InvariantCulture)}});
+        long combined = {{kernelClassName}}.DevFunc_2<T0>(left, right, ref scratch);
+        FuzzStructL1 box = new FuzzStructL1 { A = scratch, B = (short)right, Tag = 1 };
+        mirrorOut = DevFunc_0(box.CompA, ref box, right);
+        return ((int)combined ^ mirrorOut ^ box.A);
         }
-
-        return writer.ToString().TrimEnd();
-    }
+        """;
 }

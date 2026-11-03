@@ -5,20 +5,68 @@ using System.Text.Json;
 namespace Kassyi.GSharp.Tools.FuzzDiff;
 
 /// <summary>
+/// Parsed command-line options for <c>fuzz-diff promote</c>.
+/// </summary>
+public sealed record PromoteCommandOptions(
+    string SourcePath,
+    ulong FuzzSeed,
+    int InputSeed,
+    string FailingPaths,
+    string FailureKind,
+    string Column,
+    string FindingsDir,
+    string? KernelName);
+
+/// <summary>
 /// Implements the <c>fuzz-diff promote</c> subcommand.
 /// </summary>
-public static class PromoteCommand
+public sealed class PromoteCommand : IFuzzCommand
 {
     private static readonly UTF8Encoding s_utf8NoBom = new(encoderShouldEmitUTF8Identifier: false);
 
+    /// <summary>Gets the singleton command instance.</summary>
+    public static PromoteCommand Instance { get; } = new();
+
+    /// <inheritdoc/>
+    public string Name => "promote";
+
     /// <summary>Runs the <c>promote</c> subcommand.</summary>
-    public static int Run(ReadOnlySpan<string> args)
+    public static int Run(ReadOnlySpan<string> args) => ((IFuzzCommand)Instance).Run(args);
+
+    /// <inheritdoc/>
+    int IFuzzCommand.Run(ReadOnlySpan<string> args)
     {
+        if (!TryParseOptions(args, out var options, out bool showHelp, out string? error))
+        {
+            return Program.FailUsage(error ?? "Invalid options for 'promote'.");
+        }
+
+        if (showHelp)
+        {
+            Console.Out.WriteLine(Program.HelpText);
+            return 0;
+        }
+
+        return Execute(options!);
+    }
+
+    /// <summary>Parses command-line arguments into a <see cref="PromoteCommandOptions"/> record.</summary>
+    public static bool TryParseOptions(
+        ReadOnlySpan<string> args,
+        out PromoteCommandOptions? options,
+        out bool showHelp,
+        out string? error)
+    {
+        options = null;
+        showHelp = false;
+        error = null;
+
         string? sourcePath = null;
         ulong fuzzSeed = 1UL;
         int inputSeed = 0;
         string failingPaths = "Native,Cuda";
         string failureKind = "CellMismatch";
+        string column = "hash";
         string findingsDir = Path.Combine("tmp", "differential-fuzz", "findings");
         string? kernelName = null;
 
@@ -28,13 +76,14 @@ public static class PromoteCommand
             switch (arg)
             {
                 case "--help" or "-h":
-                    Console.Out.WriteLine(Program.HelpText);
-                    return 0;
+                    showHelp = true;
+                    return true;
 
                 case "--source":
                     if (i + 1 >= args.Length)
                     {
-                        return Program.FailUsage("--source requires a file path.");
+                        error = "--source requires a file path.";
+                        return false;
                     }
 
                     sourcePath = args[++i];
@@ -43,7 +92,8 @@ public static class PromoteCommand
                 case "--fuzz-seed":
                     if (i + 1 >= args.Length || !FuzzRandom.TryParseSeed(args[++i], out fuzzSeed))
                     {
-                        return Program.FailUsage("--fuzz-seed requires a 64-bit integer.");
+                        error = "--fuzz-seed requires a 64-bit integer.";
+                        return false;
                     }
 
                     break;
@@ -51,7 +101,8 @@ public static class PromoteCommand
                 case "--input-seed":
                     if (i + 1 >= args.Length || !int.TryParse(args[++i], NumberStyles.Integer, CultureInfo.InvariantCulture, out inputSeed))
                     {
-                        return Program.FailUsage("--input-seed requires an integer.");
+                        error = "--input-seed requires an integer.";
+                        return false;
                     }
 
                     break;
@@ -59,7 +110,8 @@ public static class PromoteCommand
                 case "--failing-paths":
                     if (i + 1 >= args.Length)
                     {
-                        return Program.FailUsage("--failing-paths requires a value.");
+                        error = "--failing-paths requires a value.";
+                        return false;
                     }
 
                     failingPaths = args[++i];
@@ -68,16 +120,28 @@ public static class PromoteCommand
                 case "--failure-kind":
                     if (i + 1 >= args.Length)
                     {
-                        return Program.FailUsage("--failure-kind requires a value.");
+                        error = "--failure-kind requires a value.";
+                        return false;
                     }
 
                     failureKind = args[++i];
                     break;
 
+                case "--column":
+                    if (i + 1 >= args.Length)
+                    {
+                        error = "--column requires a column name.";
+                        return false;
+                    }
+
+                    column = args[++i];
+                    break;
+
                 case "--findings-dir":
                     if (i + 1 >= args.Length)
                     {
-                        return Program.FailUsage("--findings-dir requires a directory path.");
+                        error = "--findings-dir requires a directory path.";
+                        return false;
                     }
 
                     findingsDir = args[++i];
@@ -86,31 +150,50 @@ public static class PromoteCommand
                 case "--kernel":
                     if (i + 1 >= args.Length)
                     {
-                        return Program.FailUsage("--kernel requires a kernel method name.");
+                        error = "--kernel requires a kernel method name.";
+                        return false;
                     }
 
                     kernelName = args[++i];
                     break;
 
                 default:
-                    return Program.FailUsage($"Unknown option '{arg}'.");
+                    error = $"Unknown option '{arg}'.";
+                    return false;
             }
         }
 
         if (string.IsNullOrWhiteSpace(sourcePath) || !File.Exists(sourcePath))
         {
-            return Program.FailUsage("--source requires an existing .cu.cs file.");
+            error = "--source requires an existing .cu.cs file.";
+            return false;
         }
 
-        string source = File.ReadAllText(sourcePath, s_utf8NoBom);
-        var artifacts = FuzzPromoter.BuildPromotionArtifacts(
-            source,
+        options = new PromoteCommandOptions(
+            sourcePath,
             fuzzSeed,
             inputSeed,
             failingPaths,
             failureKind,
-            targetKernelName: kernelName);
-        string writtenPath = FuzzPromoter.WritePromotedFinding(findingsDir, artifacts, fuzzSeed);
+            column,
+            findingsDir,
+            kernelName);
+        return true;
+    }
+
+    /// <summary>Executes the <c>promote</c> subcommand using the parsed <paramref name="options"/>.</summary>
+    public static int Execute(PromoteCommandOptions options)
+    {
+        string source = File.ReadAllText(options.SourcePath, s_utf8NoBom);
+        var artifacts = FuzzPromoter.BuildPromotionArtifacts(
+            source,
+            options.FuzzSeed,
+            options.InputSeed,
+            options.FailingPaths,
+            options.FailureKind,
+            targetKernelName: options.KernelName,
+            column: options.Column);
+        string writtenPath = FuzzPromoter.WritePromotedFinding(options.FindingsDir, artifacts, options.FuzzSeed);
 
         Console.Out.WriteLine(JsonSerializer.Serialize(new
         {
@@ -119,8 +202,8 @@ public static class PromoteCommand
             reproKernelPath = writtenPath,
             reproClassName = artifacts.ReproKernelClassName,
             reproMethodName = artifacts.ReproKernelMethodName,
+            knownDivergenceEntry = artifacts.KnownDivergenceEntry,
         }));
         return 0;
     }
 }
-

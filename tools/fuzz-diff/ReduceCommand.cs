@@ -1,24 +1,73 @@
-using System.Diagnostics;
 using System.Globalization;
-using System.Linq;
 using System.Text;
 using System.Text.Json;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Kassyi.GSharp.Tools.FuzzDiff;
 
 /// <summary>
+/// Parsed command-line options for <c>fuzz-diff reduce</c>.
+/// </summary>
+public sealed record ReduceCommandOptions(
+    string? SourcePath,
+    ulong FuzzSeed,
+    string? KernelName,
+    int InputSeed,
+    string Profile,
+    string WorkDir,
+    string? RepoRoot,
+    string? TestCmd,
+    string? OutPath,
+    string FailingPaths,
+    string FailureKind,
+    string Column,
+    bool NoGpuLock);
+
+/// <summary>
 /// Implements the <c>fuzz-diff reduce</c> subcommand.
 /// </summary>
-public static class ReduceCommand
+public sealed class ReduceCommand : IFuzzCommand
 {
     private static readonly UTF8Encoding s_utf8NoBom = new(encoderShouldEmitUTF8Identifier: false);
 
+    /// <summary>Gets the singleton command instance.</summary>
+    public static ReduceCommand Instance { get; } = new();
+
+    /// <inheritdoc/>
+    public string Name => "reduce";
+
     /// <summary>Runs the <c>reduce</c> subcommand.</summary>
-    public static int Run(ReadOnlySpan<string> args)
+    public static int Run(ReadOnlySpan<string> args) => ((IFuzzCommand)Instance).Run(args);
+
+    /// <inheritdoc/>
+    int IFuzzCommand.Run(ReadOnlySpan<string> args)
     {
+        if (!TryParseOptions(args, out var options, out bool showHelp, out string? error))
+        {
+            return Program.FailUsage(error ?? "Invalid options for 'reduce'.");
+        }
+
+        if (showHelp)
+        {
+            Console.Out.WriteLine(Program.HelpText);
+            return 0;
+        }
+
+        return Execute(options!);
+    }
+
+    /// <summary>Parses command-line arguments into a <see cref="ReduceCommandOptions"/> record.</summary>
+    public static bool TryParseOptions(
+        ReadOnlySpan<string> args,
+        out ReduceCommandOptions? options,
+        out bool showHelp,
+        out string? error)
+    {
+        options = null;
+        showHelp = false;
+        error = null;
+
         string? sourcePath = null;
         ulong fuzzSeed = 1UL;
         string? kernelName = null;
@@ -30,6 +79,7 @@ public static class ReduceCommand
         string? outPath = null;
         string failingPaths = "Native,Cuda";
         string failureKind = "CellMismatch";
+        string column = "hash";
         bool noGpuLock = false;
 
         for (int i = 0; i < args.Length; i++)
@@ -38,13 +88,14 @@ public static class ReduceCommand
             switch (arg)
             {
                 case "--help" or "-h":
-                    Console.Out.WriteLine(Program.HelpText);
-                    return 0;
+                    showHelp = true;
+                    return true;
 
                 case "--source":
                     if (i + 1 >= args.Length)
                     {
-                        return Program.FailUsage("--source requires a file path.");
+                        error = "--source requires a file path.";
+                        return false;
                     }
 
                     sourcePath = args[++i];
@@ -53,7 +104,8 @@ public static class ReduceCommand
                 case "--fuzz-seed":
                     if (i + 1 >= args.Length || !FuzzRandom.TryParseSeed(args[++i], out fuzzSeed))
                     {
-                        return Program.FailUsage("--fuzz-seed requires a 64-bit integer.");
+                        error = "--fuzz-seed requires a 64-bit integer.";
+                        return false;
                     }
 
                     break;
@@ -61,7 +113,8 @@ public static class ReduceCommand
                 case "--kernel":
                     if (i + 1 >= args.Length)
                     {
-                        return Program.FailUsage("--kernel requires a method name.");
+                        error = "--kernel requires a method name.";
+                        return false;
                     }
 
                     kernelName = args[++i];
@@ -70,7 +123,8 @@ public static class ReduceCommand
                 case "--input-seed":
                     if (i + 1 >= args.Length || !int.TryParse(args[++i], NumberStyles.Integer, CultureInfo.InvariantCulture, out inputSeed))
                     {
-                        return Program.FailUsage("--input-seed requires an integer.");
+                        error = "--input-seed requires an integer.";
+                        return false;
                     }
 
                     break;
@@ -78,7 +132,8 @@ public static class ReduceCommand
                 case "--profile":
                     if (i + 1 >= args.Length)
                     {
-                        return Program.FailUsage("--profile requires M|C|G.");
+                        error = "--profile requires M|C|G.";
+                        return false;
                     }
 
                     profile = KnownIssueFilter.NormalizeProfile(args[++i]);
@@ -87,7 +142,8 @@ public static class ReduceCommand
                 case "--work-dir":
                     if (i + 1 >= args.Length)
                     {
-                        return Program.FailUsage("--work-dir requires a directory path.");
+                        error = "--work-dir requires a directory path.";
+                        return false;
                     }
 
                     workDir = args[++i];
@@ -96,7 +152,8 @@ public static class ReduceCommand
                 case "--repo-root":
                     if (i + 1 >= args.Length)
                     {
-                        return Program.FailUsage("--repo-root requires a directory path.");
+                        error = "--repo-root requires a directory path.";
+                        return false;
                     }
 
                     repoRoot = args[++i];
@@ -105,7 +162,8 @@ public static class ReduceCommand
                 case "--test-cmd":
                     if (i + 1 >= args.Length)
                     {
-                        return Program.FailUsage("--test-cmd requires a command string.");
+                        error = "--test-cmd requires a command string.";
+                        return false;
                     }
 
                     testCmd = args[++i];
@@ -114,7 +172,8 @@ public static class ReduceCommand
                 case "--out":
                     if (i + 1 >= args.Length)
                     {
-                        return Program.FailUsage("--out requires a file path.");
+                        error = "--out requires a file path.";
+                        return false;
                     }
 
                     outPath = args[++i];
@@ -123,7 +182,8 @@ public static class ReduceCommand
                 case "--failing-paths":
                     if (i + 1 >= args.Length)
                     {
-                        return Program.FailUsage("--failing-paths requires a value.");
+                        error = "--failing-paths requires a value.";
+                        return false;
                     }
 
                     failingPaths = args[++i];
@@ -132,10 +192,21 @@ public static class ReduceCommand
                 case "--failure-kind":
                     if (i + 1 >= args.Length)
                     {
-                        return Program.FailUsage("--failure-kind requires a value.");
+                        error = "--failure-kind requires a value.";
+                        return false;
                     }
 
                     failureKind = args[++i];
+                    break;
+
+                case "--column":
+                    if (i + 1 >= args.Length)
+                    {
+                        error = "--column requires a column name.";
+                        return false;
+                    }
+
+                    column = args[++i];
                     break;
 
                 case "--no-gpu-lock":
@@ -143,37 +214,66 @@ public static class ReduceCommand
                     break;
 
                 default:
-                    return Program.FailUsage($"Unknown option '{arg}'.");
+                    error = $"Unknown option '{arg}'.";
+                    return false;
             }
         }
 
-        string initialSource;
-        if (!string.IsNullOrWhiteSpace(sourcePath))
+        if (!string.IsNullOrWhiteSpace(sourcePath) && !File.Exists(sourcePath))
         {
-            if (!File.Exists(sourcePath))
-            {
-                return Program.FailUsage($"Source file not found: {sourcePath}");
-            }
+            error = $"Source file not found: {sourcePath}";
+            return false;
+        }
 
-            initialSource = File.ReadAllText(sourcePath, s_utf8NoBom);
-            if (!string.IsNullOrWhiteSpace(kernelName))
+        options = new ReduceCommandOptions(
+            sourcePath,
+            fuzzSeed,
+            kernelName,
+            inputSeed,
+            profile,
+            workDir,
+            repoRoot,
+            testCmd,
+            outPath,
+            failingPaths,
+            failureKind,
+            column,
+            noGpuLock);
+        return true;
+    }
+
+    /// <summary>Executes the <c>reduce</c> subcommand using the parsed <paramref name="options"/>.</summary>
+    public static int Execute(ReduceCommandOptions options)
+    {
+        string initialSource;
+        if (!string.IsNullOrWhiteSpace(options.SourcePath))
+        {
+            initialSource = File.ReadAllText(options.SourcePath, s_utf8NoBom);
+            if (!string.IsNullOrWhiteSpace(options.KernelName))
             {
-                initialSource = IsolateSingleKernelCompilationUnit(initialSource, kernelName);
+                initialSource = IsolateSingleKernelCompilationUnit(initialSource, options.KernelName);
             }
         }
         else
         {
-            var gen = new ScalarFuzzGenerator(new FuzzOptions { FuzzSeed = fuzzSeed, InputSeed = inputSeed, BatchSize = 64, Profile = profile });
+            var gen = new ScalarFuzzGenerator(new FuzzOptions
+            {
+                FuzzSeed = options.FuzzSeed,
+                InputSeed = options.InputSeed,
+                BatchSize = 64,
+                Profile = options.Profile,
+            });
             var batch = gen.GenerateBatch();
-            string target = kernelName ?? batch.Kernels[0].KernelName;
+            string target = options.KernelName ?? batch.Kernels[0].KernelName;
             initialSource = IsolateSingleKernelCompilationUnit(batch.KernelsSource, target);
         }
 
+        var expectedSignature = FuzzFailureSignature.Create(options.FailingPaths, options.FailureKind, options.Column);
         string reducedSource;
         int origStmts = FuzzReducer.CountKernelExecutableStatements(initialSource);
-        int iterations = 0;
+        int iterations;
 
-        if (!string.IsNullOrWhiteSpace(testCmd))
+        if (!string.IsNullOrWhiteSpace(options.TestCmd))
         {
             string tempFile = Path.Combine(Path.GetTempPath(), $"fuzz_reduce_{Guid.NewGuid():N}.cu.cs");
             try
@@ -181,8 +281,8 @@ public static class ReduceCommand
                 var res = FuzzReducer.Reduce(initialSource, candidate =>
                 {
                     File.WriteAllText(tempFile, candidate, s_utf8NoBom);
-                    string cmd = testCmd.Replace("{source}", tempFile, StringComparison.Ordinal);
-                    return RunExternalShellPredicate(cmd);
+                    string cmd = SubstitutePlaceholder(options.TestCmd, "{source}", tempFile);
+                    return FuzzWorkspaceReducer.RunExternalShellPredicate(cmd);
                 });
                 reducedSource = res.ReducedSource;
                 iterations = res.Iterations;
@@ -195,36 +295,31 @@ public static class ReduceCommand
                 }
             }
         }
-        else if (profile == "G")
-        {
-            (reducedSource, iterations) = ReduceCudaWithSpeculativeBatches(
-                initialSource,
-                fuzzSeed,
-                inputSeed,
-                workDir,
-                repoRoot,
-                noGpuLock);
-        }
         else
         {
-            var res = FuzzReducer.Reduce(initialSource, candidate =>
-                EvaluateSingleCandidateInWorkspace(candidate, fuzzSeed, inputSeed, profile, workDir, repoRoot));
-            reducedSource = res.ReducedSource;
-            iterations = res.Iterations;
+            (reducedSource, iterations) = FuzzWorkspaceReducer.ReduceWorkspaceWithSpeculativeBatches(
+                initialSource,
+                options.FuzzSeed,
+                options.InputSeed,
+                options.Profile,
+                options.WorkDir,
+                options.RepoRoot,
+                expectedSignature,
+                options.NoGpuLock);
         }
 
-        if (!string.IsNullOrWhiteSpace(outPath))
+        if (!string.IsNullOrWhiteSpace(options.OutPath))
         {
-            string? dir = Path.GetDirectoryName(Path.GetFullPath(outPath));
+            string? dir = Path.GetDirectoryName(Path.GetFullPath(options.OutPath));
             if (!string.IsNullOrWhiteSpace(dir))
             {
                 Directory.CreateDirectory(dir);
             }
 
-            File.WriteAllText(outPath, reducedSource, s_utf8NoBom);
+            File.WriteAllText(options.OutPath, reducedSource, s_utf8NoBom);
         }
 
-        var fp = FuzzDeduplicator.ComputeFingerprint(reducedSource, failingPaths, failureKind);
+        var fp = FuzzDeduplicator.ComputeFingerprint(reducedSource, options.FailingPaths, options.FailureKind);
         int finalStmts = FuzzReducer.CountKernelExecutableStatements(reducedSource);
 
         Console.Out.WriteLine(JsonSerializer.Serialize(new
@@ -236,295 +331,59 @@ public static class ReduceCommand
             iterations,
             failingPaths = fp.FailingPathsMask,
             failureKind = fp.FailureKindTag,
-            outPath = outPath is not null ? Path.GetFullPath(outPath) : null,
+            column = expectedSignature.Column,
+            outPath = options.OutPath is not null ? Path.GetFullPath(options.OutPath) : null,
         }));
         return 0;
     }
 
-    private static string IsolateSingleKernelCompilationUnit(string source, string targetKernelName)
+    internal static string IsolateSingleKernelCompilationUnit(string source, string targetKernelName)
     {
         var root = FuzzReducer.ParseRoot(source);
         var kernels = FuzzReducer.GetKernelMethods(root);
-        var selected = kernels.FirstOrDefault(m => string.Equals(m.Identifier.ValueText, targetKernelName, StringComparison.Ordinal));
+        MethodDeclarationSyntax? selected = null;
+        foreach (var method in kernels)
+        {
+            if (string.Equals(method.Identifier.ValueText, targetKernelName, StringComparison.Ordinal))
+            {
+                selected = method;
+                break;
+            }
+        }
+
         if (selected is null)
         {
             return source;
         }
 
-        var others = kernels.Where(m => m != selected).ToList();
+        var others = new List<MethodDeclarationSyntax>();
+        foreach (var method in kernels)
+        {
+            if (method != selected)
+            {
+                others.Add(method);
+            }
+        }
+
         if (others.Count == 0)
         {
             return source;
         }
 
         var updated = root.RemoveNodes(others, SyntaxRemoveOptions.KeepNoTrivia);
-        return updated?.ToFullString() ?? source;
+        return updated is not null ? FuzzSyntaxHelpers.RenderFullNode(updated) : source;
     }
 
-    private static (string ReducedSource, int Iterations) ReduceCudaWithSpeculativeBatches(
-        string initialSource,
-        ulong fuzzSeed,
-        int inputSeed,
-        string workDir,
-        string? repoRoot,
-        bool noGpuLock)
+    private static string SubstitutePlaceholder(string template, string placeholder, string replacement)
     {
-        string current = FuzzReducer.HoistLocalsToDefault(initialSource);
-        int iterations = 0;
-        IReadOnlyList<IReadOnlyList<int>>? priorSuccessRemovals = null;
-
-        for (int round = 0; round < 7; round++)
+        int index = template.IndexOf(placeholder, StringComparison.Ordinal);
+        if (index < 0)
         {
-            var specBatch = FuzzReducer.GenerateSpeculativeBatchCandidates(
-                current,
-                fuzzSeed,
-                inputSeed,
-                maxCandidates: 16,
-                priorSuccessfulRemovals: priorSuccessRemovals);
-
-            iterations++;
-            var failingCandidateNames = EvaluateSpeculativeBatchInWorkspace(
-                specBatch,
-                workDir,
-                repoRoot,
-                useCuda: true,
-                noGpuLock);
-
-            var winningRemovals = new List<IReadOnlyList<int>>();
-            foreach (var cand in specBatch.Candidates)
-            {
-                if (failingCandidateNames.Contains(cand.CandidateKernelName) && cand.RemovedStatementIndices.Count > 0)
-                {
-                    winningRemovals.Add(cand.RemovedStatementIndices);
-                }
-            }
-
-            var best = FuzzReducer.SelectBestSpeculativeCandidate(
-                specBatch,
-                cand => failingCandidateNames.Contains(cand.CandidateKernelName));
-
-            if (best is null)
-            {
-                break;
-            }
-
-            string updatedSource = ReplaceKernelMethodInUnit(current, best.CandidateKernelMethodSource);
-            if (string.Equals(updatedSource, current, StringComparison.Ordinal))
-            {
-                break;
-            }
-
-            current = updatedSource;
-            priorSuccessRemovals = winningRemovals.Count >= 2 ? winningRemovals : null;
+            return template;
         }
 
-        current = FuzzReducer.PruneUnusedHoistedLocals(current, static _ => true);
-        return (current, iterations);
-    }
-
-    private static string ReplaceKernelMethodInUnit(string unitSource, string newMethodSource)
-    {
-        var root = FuzzReducer.ParseRoot(unitSource);
-        var oldKernel = FuzzReducer.GetKernelMethods(root).FirstOrDefault();
-        if (oldKernel is null)
-        {
-            return unitSource;
-        }
-
-        var parsedNewMethod = CSharpSyntaxTree.ParseText($"class __C {{ {newMethodSource} }}")
-            .GetRoot()
-            .DescendantNodes()
-            .OfType<MethodDeclarationSyntax>()
-            .First()
-            .WithIdentifier(oldKernel.Identifier);
-
-        return root.ReplaceNode(oldKernel, parsedNewMethod).ToFullString();
-    }
-
-    private static bool EvaluateSingleCandidateInWorkspace(
-        string candidateSource,
-        ulong fuzzSeed,
-        int inputSeed,
-        string profile,
-        string workDir,
-        string? repoRoot)
-    {
-        var root = FuzzReducer.ParseRoot(candidateSource);
-        var kernel = FuzzReducer.GetKernelMethods(root).FirstOrDefault();
-        if (kernel is null)
-        {
-            return false;
-        }
-
-        var specBatch = FuzzReducer.GenerateSpeculativeBatchCandidates(
-            candidateSource,
-            fuzzSeed,
-            inputSeed,
-            maxCandidates: 1);
-
-        var exactMethod = kernel.WithIdentifier(SyntaxFactory.Identifier("Candidate_00"));
-        var exactCand = specBatch.Candidates[0] with
-        {
-            CandidateKernelName = "Candidate_00",
-            CandidateKernelMethodSource = exactMethod.ToFullString(),
-        };
-        var singleBatch = specBatch with
-        {
-            KernelsSource = candidateSource.Replace($"void {kernel.Identifier.ValueText}(", "void Candidate_00(", StringComparison.Ordinal),
-            Candidates = [exactCand],
-        };
-
-        var failing = EvaluateSpeculativeBatchInWorkspace(
-            singleBatch,
-            workDir,
-            repoRoot,
-            useCuda: profile == "G",
-            noGpuLock: true,
-            managedOnly: profile == "M");
-
-        return failing.Contains("Candidate_00");
-    }
-
-    private static HashSet<string> EvaluateSpeculativeBatchInWorkspace(
-        SpeculativeCandidateBatch batch,
-        string workDir,
-        string? repoRoot,
-        bool useCuda,
-        bool noGpuLock,
-        bool managedOnly = false)
-    {
-        var failing = new HashSet<string>(StringComparer.Ordinal);
-        string fullWorkDir = Path.GetFullPath(workDir);
-        string genDir = Path.Combine(fullWorkDir, "Generated");
-        Directory.CreateDirectory(genDir);
-
-        File.WriteAllText(Path.Combine(genDir, "FuzzBatchKernels.cu.cs"), batch.KernelsSource, s_utf8NoBom);
-        File.WriteAllText(Path.Combine(genDir, "FuzzBatchCases.cs"), batch.CasesSource, s_utf8NoBom);
-
-        if (!string.IsNullOrWhiteSpace(repoRoot))
-        {
-            string? cudaArch = useCuda ? DetectHostCudaArchForReducer() : null;
-            FuzzBatchWorkspaceWriter.WriteProjectScaffolds(fullWorkDir, genDir, Path.GetFullPath(repoRoot), cudaArch);
-        }
-
-        string hostOs = OperatingSystem.IsWindows() ? "win" : OperatingSystem.IsLinux() ? "linux" : OperatingSystem.IsMacOS() ? "osx" : "unix";
-        string projName = useCuda ? "FuzzBatch.Cuda" : "FuzzBatch.Cpu";
-        string csproj = Path.Combine(fullWorkDir, $"{projName}.csproj");
-        string dll = Path.Combine(fullWorkDir, "bin", hostOs, projName, "Debug", "net10.0", $"{projName}.dll");
-
-        string skipCpu = (!useCuda && managedOnly) ? "-p:GSharpSkipCpuCompilation=true" : "-p:GSharpSkipCpuCompilation=false";
-        string assetsPath = Path.Combine(fullWorkDir, "obj", hostOs, projName, "project.assets.json");
-        string noRestore = File.Exists(assetsPath) ? "--no-restore" : string.Empty;
-        int buildCode = RunDotnetProcess($"build \"{csproj}\" -c Debug -m:1 -nodeReuse:false --no-dependencies {noRestore} {skipCpu}", out _, out _);
-        if (buildCode != 0)
-        {
-            return failing;
-        }
-
-        string runArgs = $"exec \"{dll}\"";
-        if (managedOnly)
-        {
-            runArgs += " --managed-only";
-        }
-
-        if (batch.InputSeed is { } s)
-        {
-            runArgs += string.Create(CultureInfo.InvariantCulture, $" --input-seed {s}");
-        }
-
-        string stdout;
-        if (useCuda && !noGpuLock && !string.IsNullOrWhiteSpace(repoRoot))
-        {
-            string lockScript = Path.Combine(Path.GetFullPath(repoRoot), "scripts", "agent", "gpu-lock.js");
-            RunProcess("node", $"\"{lockScript}\" -- \"dotnet {runArgs}\"", out stdout, out _);
-        }
-        else
-        {
-            RunDotnetProcess(runArgs, out stdout, out _);
-        }
-
-        foreach (string line in stdout.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries))
-        {
-            string trimmed = line.Trim();
-            if (!trimmed.StartsWith('{') || !trimmed.EndsWith('}'))
-            {
-                continue;
-            }
-
-            try
-            {
-                using var doc = JsonDocument.Parse(trimmed);
-                if (doc.RootElement.TryGetProperty("status", out var statusProp) &&
-                    statusProp.GetString() == "failed" &&
-                    doc.RootElement.TryGetProperty("kernel", out var kernelProp) &&
-                    kernelProp.GetString() is { } kName)
-                {
-                    failing.Add(kName);
-                }
-            }
-            catch (JsonException)
-            {
-                // Ignore non-event JSON lines.
-            }
-        }
-
-        return failing;
-    }
-
-    private static bool RunExternalShellPredicate(string command)
-    {
-        string shell = OperatingSystem.IsWindows() ? "cmd.exe" : "/bin/sh";
-        string shellArgs = OperatingSystem.IsWindows() ? $"/d /s /c \"{command}\"" : $"-c \"{command.Replace("\"", "\\\"", StringComparison.Ordinal)}\"";
-        int code = RunProcess(shell, shellArgs, out _, out _);
-        return code == 0;
-    }
-
-    private static int RunDotnetProcess(string arguments, out string stdout, out string stderr) =>
-        RunProcess("dotnet", arguments, out stdout, out stderr);
-
-    private static int RunProcess(string fileName, string arguments, out string stdout, out string stderr)
-    {
-        var psi = new ProcessStartInfo(fileName, arguments)
-        {
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            UseShellExecute = false,
-            CreateNoWindow = true,
-        };
-        psi.Environment["DiffEngine_Disabled"] = "true";
-        psi.Environment["CI"] = "true";
-        psi.Environment["DOTNET_NOLOGO"] = "1";
-
-        using var proc = Process.Start(psi) ?? throw new InvalidOperationException($"Failed to start {fileName}.");
-        stdout = proc.StandardOutput.ReadToEnd();
-        stderr = proc.StandardError.ReadToEnd();
-        proc.WaitForExit();
-        return proc.ExitCode;
-    }
-
-    private static string? DetectHostCudaArchForReducer()
-    {
-        try
-        {
-            int code = RunProcess("nvidia-smi", "--query-gpu=compute_cap --format=csv,noheader", out string stdout, out _);
-            if (code != 0)
-            {
-                return null;
-            }
-
-            string? firstLine = stdout.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries).FirstOrDefault()?.Trim();
-            if (string.IsNullOrEmpty(firstLine) || !System.Text.RegularExpressions.Regex.IsMatch(firstLine, @"^\d+\.\d+$"))
-            {
-                return null;
-            }
-
-            string digits = firstLine.Replace(".", string.Empty, StringComparison.Ordinal);
-            return $"compute_{digits},sm_{digits}";
-        }
-        catch (Exception)
-        {
-            return null;
-        }
+        ReadOnlySpan<char> before = template.AsSpan(0, index);
+        ReadOnlySpan<char> after = template.AsSpan(index + placeholder.Length);
+        return string.Concat(before, replacement, after);
     }
 }
-

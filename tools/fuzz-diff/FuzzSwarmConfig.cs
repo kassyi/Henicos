@@ -86,21 +86,30 @@ public sealed record FuzzSwarmConfig(
             return true;
         }
 
-        switch (raw.Trim().ToLowerInvariant())
+        ReadOnlySpan<char> trimmed = raw.AsSpan().Trim();
+        if (trimmed.Equals("default", StringComparison.OrdinalIgnoreCase) ||
+            trimmed.Equals("none", StringComparison.OrdinalIgnoreCase))
         {
-            case "default" or "none":
-                focus = FuzzSwarmFocus.Default;
-                return true;
-            case "coalesce-assign-value" or "coalesceassignvalue":
-                focus = FuzzSwarmFocus.CoalesceAssignValue;
-                return true;
-            case "tuple-deconstruct-complex" or "tupledeconstructcomplex":
-                focus = FuzzSwarmFocus.TupleDeconstructComplex;
-                return true;
-            default:
-                focus = FuzzSwarmFocus.Default;
-                return false;
+            focus = FuzzSwarmFocus.Default;
+            return true;
         }
+
+        if (trimmed.Equals("coalesce-assign-value", StringComparison.OrdinalIgnoreCase) ||
+            trimmed.Equals("coalesceassignvalue", StringComparison.OrdinalIgnoreCase))
+        {
+            focus = FuzzSwarmFocus.CoalesceAssignValue;
+            return true;
+        }
+
+        if (trimmed.Equals("tuple-deconstruct-complex", StringComparison.OrdinalIgnoreCase) ||
+            trimmed.Equals("tupledeconstructcomplex", StringComparison.OrdinalIgnoreCase))
+        {
+            focus = FuzzSwarmFocus.TupleDeconstructComplex;
+            return true;
+        }
+
+        focus = FuzzSwarmFocus.Default;
+        return false;
     }
 }
 

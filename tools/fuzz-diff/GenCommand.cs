@@ -3,13 +3,56 @@ using System.Globalization;
 namespace Kassyi.GSharp.Tools.FuzzDiff;
 
 /// <summary>
+/// Parsed command-line options for <c>fuzz-diff gen</c>.
+/// </summary>
+public sealed record GenCommandOptions(
+    FuzzOptions FuzzOptions,
+    string OutDir,
+    string? RepoRoot,
+    string? CudaArch);
+
+/// <summary>
 /// Implements the <c>fuzz-diff gen</c> subcommand.
 /// </summary>
-public static class GenCommand
+public sealed class GenCommand : IFuzzCommand
 {
+    /// <summary>Gets the singleton command instance.</summary>
+    public static GenCommand Instance { get; } = new();
+
+    /// <inheritdoc/>
+    public string Name => "gen";
+
     /// <summary>Runs the <c>gen</c> subcommand.</summary>
-    public static int Run(ReadOnlySpan<string> args)
+    public static int Run(ReadOnlySpan<string> args) => ((IFuzzCommand)Instance).Run(args);
+
+    /// <inheritdoc/>
+    int IFuzzCommand.Run(ReadOnlySpan<string> args)
     {
+        if (!TryParseOptions(args, out var options, out bool showHelp, out string? error))
+        {
+            return Program.FailUsage(error ?? "Invalid options for 'gen'.");
+        }
+
+        if (showHelp)
+        {
+            Console.Out.WriteLine(Program.HelpText);
+            return 0;
+        }
+
+        return Execute(options!);
+    }
+
+    /// <summary>Parses command-line arguments into a <see cref="GenCommandOptions"/> record.</summary>
+    public static bool TryParseOptions(
+        ReadOnlySpan<string> args,
+        out GenCommandOptions? options,
+        out bool showHelp,
+        out string? error)
+    {
+        options = null;
+        showHelp = false;
+        error = null;
+
         ulong fuzzSeed = 1UL;
         int? inputSeed = null;
         int batchSize = 64;
@@ -27,13 +70,14 @@ public static class GenCommand
             switch (arg)
             {
                 case "--help" or "-h":
-                    Console.Out.WriteLine(Program.HelpText);
-                    return 0;
+                    showHelp = true;
+                    return true;
 
                 case "--fuzz-seed":
                     if (i + 1 >= args.Length || !FuzzRandom.TryParseSeed(args[++i], out fuzzSeed))
                     {
-                        return Program.FailUsage("--fuzz-seed requires a valid 64-bit integer (decimal or 0x hex).");
+                        error = "--fuzz-seed requires a valid 64-bit integer (decimal or 0x hex).";
+                        return false;
                     }
 
                     break;
@@ -41,7 +85,8 @@ public static class GenCommand
                 case "--input-seed":
                     if (i + 1 >= args.Length || !int.TryParse(args[++i], NumberStyles.Integer, CultureInfo.InvariantCulture, out int parsedInputSeed))
                     {
-                        return Program.FailUsage("--input-seed requires a 32-bit integer.");
+                        error = "--input-seed requires a 32-bit integer.";
+                        return false;
                     }
 
                     inputSeed = parsedInputSeed;
@@ -50,7 +95,8 @@ public static class GenCommand
                 case "--batch-size":
                     if (i + 1 >= args.Length || !int.TryParse(args[++i], NumberStyles.Integer, CultureInfo.InvariantCulture, out batchSize) || batchSize is < 1 or > 256)
                     {
-                        return Program.FailUsage("--batch-size requires an integer in [1, 256].");
+                        error = "--batch-size requires an integer in [1, 256].";
+                        return false;
                     }
 
                     break;
@@ -58,7 +104,8 @@ public static class GenCommand
                 case "--size":
                     if (i + 1 >= args.Length || !int.TryParse(args[++i], NumberStyles.Integer, CultureInfo.InvariantCulture, out size) || size is < 1 or > 8)
                     {
-                        return Program.FailUsage("--size requires an integer in [1, 8].");
+                        error = "--size requires an integer in [1, 8].";
+                        return false;
                     }
 
                     break;
@@ -66,16 +113,20 @@ public static class GenCommand
                 case "--profile":
                     if (i + 1 >= args.Length)
                     {
-                        return Program.FailUsage("--profile requires M|C|G.");
+                        error = "--profile requires M|C|G.";
+                        return false;
                     }
 
                     profile = KnownIssueFilter.NormalizeProfile(args[++i]);
                     break;
 
                 case "--allow-issue":
-                    if (i + 1 >= args.Length || !int.TryParse(args[++i].TrimStart('#'), NumberStyles.Integer, CultureInfo.InvariantCulture, out int issueNum) || issueNum <= 0)
+                    if (i + 1 >= args.Length ||
+                        !int.TryParse(args[++i].AsSpan().TrimStart('#'), NumberStyles.Integer, CultureInfo.InvariantCulture, out int issueNum) ||
+                        issueNum <= 0)
                     {
-                        return Program.FailUsage("--allow-issue requires a positive integer issue number.");
+                        error = "--allow-issue requires a positive integer issue number.";
+                        return false;
                     }
 
                     allowedIssues.Add(issueNum);
@@ -84,7 +135,8 @@ public static class GenCommand
                 case "--swarm-focus":
                     if (i + 1 >= args.Length || !FuzzSwarmConfig.TryParseFocus(args[++i], out swarmFocus))
                     {
-                        return Program.FailUsage("--swarm-focus requires 'default', 'coalesce-assign-value', or 'tuple-deconstruct-complex'.");
+                        error = "--swarm-focus requires 'default', 'coalesce-assign-value', or 'tuple-deconstruct-complex'.";
+                        return false;
                     }
 
                     break;
@@ -92,7 +144,8 @@ public static class GenCommand
                 case "--out-dir":
                     if (i + 1 >= args.Length)
                     {
-                        return Program.FailUsage("--out-dir requires a directory path.");
+                        error = "--out-dir requires a directory path.";
+                        return false;
                     }
 
                     outDir = args[++i];
@@ -101,7 +154,8 @@ public static class GenCommand
                 case "--repo-root":
                     if (i + 1 >= args.Length)
                     {
-                        return Program.FailUsage("--repo-root requires a directory path.");
+                        error = "--repo-root requires a directory path.";
+                        return false;
                     }
 
                     repoRoot = args[++i];
@@ -110,18 +164,20 @@ public static class GenCommand
                 case "--cuda-arch":
                     if (i + 1 >= args.Length)
                     {
-                        return Program.FailUsage("--cuda-arch requires a value.");
+                        error = "--cuda-arch requires a value.";
+                        return false;
                     }
 
                     cudaArch = args[++i];
                     break;
 
                 default:
-                    return Program.FailUsage($"Unknown option '{arg}'.");
+                    error = $"Unknown option '{arg}'.";
+                    return false;
             }
         }
 
-        var options = new FuzzOptions
+        var fuzzOptions = new FuzzOptions
         {
             FuzzSeed = fuzzSeed,
             InputSeed = inputSeed,
@@ -132,15 +188,21 @@ public static class GenCommand
             SwarmFocus = swarmFocus,
         };
 
-        var generator = new ScalarFuzzGenerator(options);
+        options = new GenCommandOptions(fuzzOptions, outDir, repoRoot, cudaArch);
+        return true;
+    }
+
+    /// <summary>Executes the <c>gen</c> subcommand using the parsed <paramref name="options"/>.</summary>
+    public static int Execute(GenCommandOptions options)
+    {
+        var generator = new ScalarFuzzGenerator(options.FuzzOptions);
         var batch = generator.GenerateBatch();
-        FuzzBatchWorkspaceWriter.WriteBatch(batch, outDir, repoRoot, cudaArch);
+        FuzzBatchWorkspaceWriter.WriteBatch(batch, options.OutDir, options.RepoRoot, options.CudaArch);
 
         Console.Out.WriteLine(
             string.Create(
                 CultureInfo.InvariantCulture,
-                $"fuzz-diff gen: wrote {batch.Kernels.Count} kernels (fuzz-seed={FuzzRandom.FormatSeed(fuzzSeed)}, profile={profile}) to {Path.GetFullPath(outDir)}"));
+                $"fuzz-diff gen: wrote {batch.Kernels.Count} kernels (fuzz-seed={FuzzRandom.FormatSeed(options.FuzzOptions.FuzzSeed)}, profile={options.FuzzOptions.Profile}) to {Path.GetFullPath(options.OutDir)}"));
         return 0;
     }
 }
-

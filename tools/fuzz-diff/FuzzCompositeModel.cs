@@ -1,5 +1,3 @@
-using System.Text;
-
 namespace Kassyi.GSharp.Tools.FuzzDiff;
 
 /// <summary>
@@ -97,8 +95,26 @@ public sealed class KernelGenerationState
     /// <summary>Gets the in-scope <see cref="Span{T}"/> / <see cref="ReadOnlySpan{T}"/> local variables.</summary>
     public List<SpanLocalVariable> SpanLocals { get; } = [];
 
-    /// <summary>Gets the top-level statements emitted into the kernel method body.</summary>
-    public List<string> Statements { get; } = [];
+    /// <summary>Gets the top-level statements emitted into the current statement sink.</summary>
+    public List<string> Statements { get; private set; } = [];
+
+    /// <summary>Gets or sets the current control-flow nesting depth (<c>0</c> at top level, up to <c>2</c> inside nested control flow).</summary>
+    public int ControlFlowDepth { get; set; }
+
+    /// <summary>Gets or sets whether statements are currently being emitted directly inside a <c>switch</c> section.</summary>
+    public bool InSwitchSection { get; set; }
+
+    /// <summary>Gets the active loop induction variable names that body statements are forbidden from mutating.</summary>
+    public HashSet<string> ProtectedLoopVariables { get; } = new(StringComparer.Ordinal);
+
+    /// <summary>Swaps the active statement buffer, returning the previous buffer so nested control-flow emitters can capture body statements.</summary>
+    public List<string> SwapStatementsBuffer(List<string> nextBuffer)
+    {
+        ArgumentNullException.ThrowIfNull(nextBuffer);
+        var previous = Statements;
+        Statements = nextBuffer;
+        return previous;
+    }
 
     /// <summary>Gets or sets the monotonic FNV-1a checksum site counter.</summary>
     public ulong ChecksumSiteId { get; set; }
@@ -124,7 +140,7 @@ public sealed class KernelGenerationState
         return null;
     }
 
-    /// <summary>Picks two distinct scalar locals of <paramref name=" preferredFirst"/> / <paramref name="preferredSecond"/>.</summary>
+    /// <summary>Picks two distinct scalar locals of <paramref name="preferredFirst"/> / <paramref name="preferredSecond"/>.</summary>
     public (ScalarLocalVariable First, ScalarLocalVariable Second) PickDistinctPair(
         FuzzScalarKind preferredFirst,
         FuzzScalarKind preferredSecond)
@@ -167,90 +183,76 @@ public sealed class KernelGenerationState
 /// </summary>
 public static class FuzzCompositeModel
 {
-    /// <summary>
-    /// Appends all composite struct declarations used by generated fuzz kernels to <paramref name="sb"/>.
-    /// </summary>
-    public static void AppendCompositeStructDeclarations(StringBuilder sb)
-    {
-        ArgumentNullException.ThrowIfNull(sb);
-        using var writer = new SourceWriter();
-        AppendCompositeStructDeclarations(writer);
-        sb.Append(writer.ToString());
-    }
+    private const string CompositeStructDeclarationsBlock =
+        """
+        public struct FuzzWrapInt
+        {
+        public int Value;
+        public readonly int Shifted => Value ^ 0x5A5A;
+        public readonly int MixWith(int mask) => (Value + mask) ^ (Value >> 3);
+        public static implicit operator FuzzWrapInt(int v) => new FuzzWrapInt { Value = v };
+        public static implicit operator int(FuzzWrapInt w) => w.Value;
+        public static explicit operator long(FuzzWrapInt w) => w.Value;
+        }
+
+        public struct FuzzStructL1
+        {
+        public int A;
+        public short B;
+        public byte Tag;
+        public readonly int CompA => A ^ ((int)B << 4) ^ Tag;
+        public readonly int Combine(int delta) => (A + delta) ^ B;
+        }
+
+        public struct FuzzStructL2
+        {
+        public FuzzStructL1 Inner;
+        public long C;
+        public uint D;
+        public readonly long Summary => C + Inner.CompA + D;
+        public readonly int Project(int scale) => Inner.Combine(scale) ^ (int)D;
+        }
+
+        public struct FuzzStructL3
+        {
+        public FuzzStructL2 Mid;
+        public FuzzWrapInt Wrap;
+        public ushort Flags;
+        public readonly long Total => Mid.Summary + Wrap.Shifted + Flags;
+        }
+
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential, Pack = 1)]
+        public struct FuzzPackedStruct1
+        {
+        public byte Head;
+        public int MisalignedInt;
+        public short Tail;
+        public readonly int PackedSum => Head + MisalignedInt + Tail;
+        public readonly int ReadSum() => Head + MisalignedInt + Tail;
+        }
+
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential, Pack = 4)]
+        public struct FuzzPackedStruct4
+        {
+        public short Low;
+        public int AlignedInt;
+        public long Wide;
+        public readonly long PackedWide => Wide ^ AlignedInt ^ Low;
+        public readonly long ReadWide() => Wide ^ AlignedInt ^ Low;
+        }
+
+        public struct FuzzNullableBag
+        {
+        public int? OptInt0;
+        public int? OptInt1;
+        public long? OptLong0;
+        public short? OptShort0;
+        }
+        """;
 
     /// <summary>
     /// Appends all composite struct declarations used by generated fuzz kernels to <paramref name="writer"/>.
     /// </summary>
-    public static void AppendCompositeStructDeclarations(SourceWriter writer)
-    {
-        using (writer.Scope("public struct FuzzWrapInt"))
-        {
-            writer.AppendLine("public int Value;");
-            writer.AppendLine("public readonly int Shifted => Value ^ 0x5A5A;");
-            writer.AppendLine("public readonly int MixWith(int mask) => (Value + mask) ^ (Value >> 3);");
-            writer.AppendLine("public static implicit operator FuzzWrapInt(int v) => new FuzzWrapInt { Value = v };");
-            writer.AppendLine("public static implicit operator int(FuzzWrapInt w) => w.Value;");
-            writer.AppendLine("public static explicit operator long(FuzzWrapInt w) => w.Value;");
-        }
-
-        writer.AppendLine();
-        using (writer.Scope("public struct FuzzStructL1"))
-        {
-            writer.AppendLine("public int A;");
-            writer.AppendLine("public short B;");
-            writer.AppendLine("public byte Tag;");
-            writer.AppendLine("public readonly int CompA => A ^ ((int)B << 4) ^ Tag;");
-            writer.AppendLine("public readonly int Combine(int delta) => (A + delta) ^ B;");
-        }
-
-        writer.AppendLine();
-        using (writer.Scope("public struct FuzzStructL2"))
-        {
-            writer.AppendLine("public FuzzStructL1 Inner;");
-            writer.AppendLine("public long C;");
-            writer.AppendLine("public uint D;");
-            writer.AppendLine("public readonly long Summary => C + Inner.CompA + D;");
-            writer.AppendLine("public readonly int Project(int scale) => Inner.Combine(scale) ^ (int)D;");
-        }
-
-        writer.AppendLine();
-        using (writer.Scope("public struct FuzzStructL3"))
-        {
-            writer.AppendLine("public FuzzStructL2 Mid;");
-            writer.AppendLine("public FuzzWrapInt Wrap;");
-            writer.AppendLine("public ushort Flags;");
-            writer.AppendLine("public readonly long Total => Mid.Summary + Wrap.Shifted + Flags;");
-        }
-
-        writer.AppendLine();
-        writer.AppendLine("[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential, Pack = 1)]");
-        using (writer.Scope("public struct FuzzPackedStruct1"))
-        {
-            writer.AppendLine("public byte Head;");
-            writer.AppendLine("public int MisalignedInt;");
-            writer.AppendLine("public short Tail;");
-            writer.AppendLine("public readonly int PackedSum => Head + MisalignedInt + Tail;");
-            writer.AppendLine("public readonly int ReadSum() => Head + MisalignedInt + Tail;");
-        }
-
-        writer.AppendLine();
-        writer.AppendLine("[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential, Pack = 4)]");
-        using (writer.Scope("public struct FuzzPackedStruct4"))
-        {
-            writer.AppendLine("public short Low;");
-            writer.AppendLine("public int AlignedInt;");
-            writer.AppendLine("public long Wide;");
-            writer.AppendLine("public readonly long PackedWide => Wide ^ AlignedInt ^ Low;");
-            writer.AppendLine("public readonly long ReadWide() => Wide ^ AlignedInt ^ Low;");
-        }
-
-        writer.AppendLine();
-        using (writer.Scope("public struct FuzzNullableBag"))
-        {
-            writer.AppendLine("public int? OptInt0;");
-            writer.AppendLine("public int? OptInt1;");
-            writer.AppendLine("public long? OptLong0;");
-            writer.AppendLine("public short? OptShort0;");
-        }
-    }
+    public static void AppendCompositeStructDeclarations(SourceWriter writer) =>
+        writer.AppendLine(CompositeStructDeclarationsBlock);
 }

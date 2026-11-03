@@ -2,7 +2,7 @@ namespace Kassyi.GSharp.Tools.FuzzDiff;
 
 /// <summary>
 /// Command-line entry point for <c>tools/fuzz-diff</c>.
-/// Supports the <c>gen</c>, <c>reduce</c>, <c>dedup</c>, and <c>promote</c> subcommands.
+/// Dispatches the <c>gen</c>, <c>reduce</c>, <c>dedup</c>, and <c>promote</c> subcommands via an <see cref="IFuzzCommand"/> table.
 /// </summary>
 public static class Program
 {
@@ -41,6 +41,7 @@ public static class Program
           --out <file>             Output file path for the reduced .cu.cs source.
           --failing-paths <paths>  Failing paths mask (e.g. "Native,Cuda", default: "Native,Cuda").
           --failure-kind <kind>    Failure kind tag (e.g. "CellMismatch", default: "CellMismatch").
+          --column <name>          Failing output column name (default: "hash").
 
         Options for 'dedup':
           --source <file>          Path to a kernel .cu.cs file.
@@ -54,9 +55,21 @@ public static class Program
           --input-seed <int>       Runtime data input seed (default: 0).
           --failing-paths <paths>  Failing paths mask (default: "Native,Cuda").
           --failure-kind <kind>    Failure kind tag (default: "CellMismatch").
+          --column <name>          Failing output column name (default: "hash").
           --findings-dir <dir>     Findings root directory (default: tmp/differential-fuzz/findings).
           --kernel <name>          Optional target kernel name inside --source.
         """;
+
+    private static readonly IReadOnlyList<IFuzzCommand> s_commands =
+    [
+        GenCommand.Instance,
+        ReduceCommand.Instance,
+        DedupCommand.Instance,
+        PromoteCommand.Instance,
+    ];
+
+    /// <summary>Gets the registered command table.</summary>
+    public static IReadOnlyList<IFuzzCommand> Commands => s_commands;
 
     /// <summary>Runs the CLI with the specified arguments.</summary>
     public static int Main(string[] args)
@@ -68,14 +81,15 @@ public static class Program
         }
 
         string subcommand = args[0];
-        return subcommand switch
+        foreach (var command in s_commands)
         {
-            "gen" => GenCommand.Run(args.AsSpan(1)),
-            "reduce" => ReduceCommand.Run(args.AsSpan(1)),
-            "dedup" => DedupCommand.Run(args.AsSpan(1)),
-            "promote" => PromoteCommand.Run(args.AsSpan(1)),
-            _ => FailUsage($"Unknown command '{subcommand}'."),
-        };
+            if (string.Equals(command.Name, subcommand, StringComparison.Ordinal))
+            {
+                return command.Run(args.AsSpan(1));
+            }
+        }
+
+        return FailUsage($"Unknown command '{subcommand}'.");
     }
 
     internal static int FailUsage(string message)

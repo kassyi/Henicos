@@ -203,7 +203,9 @@ public static class FuzzScalarExpressionEmitter
         else if ((roll -= sw.BitwiseWeight) < sw.DivisionWeight)
         {
             bool isModulo = rng.NextBool();
-            string left = GenerateExpression(state, promotedType, depth + 1, maxDepth);
+            string left = state.IssueFilter.AvoidMsvcNegatedConstantDivision
+                ? GenerateLeafExpression(state, promotedType)
+                : GenerateExpression(state, promotedType, depth + 1, maxDepth);
             string right = GenerateLeafExpression(state, promotedType);
             resultExpr = BuildGuardedDivisionOrModulo(promotedKind, left, right, isModulo, leftIsSimpleLocal: IsSimpleIdentifier(left));
         }
@@ -383,14 +385,14 @@ public static class FuzzScalarExpressionEmitter
                 $"(({typedDivisor}) == 0U ? 1U : ({typedDivisor}))",
             FuzzScalarKind.UInt64 =>
                 $"(({typedDivisor}) == 0UL ? 1UL : ({typedDivisor}))",
-            FuzzScalarKind.Byte or FuzzScalarKind.UInt16 or FuzzScalarKind.Char =>
+            FuzzScalarKind.SByte or FuzzScalarKind.Byte or FuzzScalarKind.Int16 or FuzzScalarKind.UInt16 or FuzzScalarKind.Char =>
                 $"(({typedDivisor}) == ({targetType.Keyword})0 ? ({targetType.Keyword})1 : ({typedDivisor}))",
             FuzzScalarKind.Int64 =>
                 $"((({typedDivisor}) == 0L || ({targetName} == long.MinValue && ({typedDivisor}) == -1L)) ? 1L : ({typedDivisor}))",
             FuzzScalarKind.Int32 =>
                 $"((({typedDivisor}) == 0 || ({targetName} == int.MinValue && ({typedDivisor}) == -1)) ? 1 : ({typedDivisor}))",
             _ =>
-                $"((({typedDivisor}) == ({targetType.Keyword})0 || ({typedDivisor}) == ({targetType.Keyword})(-1)) ? ({targetType.Keyword})1 : ({typedDivisor}))",
+                $"(({typedDivisor}) == ({targetType.Keyword})0 ? ({targetType.Keyword})1 : ({typedDivisor}))",
         };
     }
 

@@ -1,5 +1,5 @@
 <Project>
-  <!-- Stops repository-root props so tools/fuzz-diff builds without restoring analyzer packages or linking compiler pre-build targets. -->
+  <!-- Stops repository-root props so tools/fuzz-diff builds without linking compiler pre-build targets, while still enforcing root BannedSymbols.txt. -->
   <PropertyGroup>
     <GSharpHostOs Condition="$([MSBuild]::IsOSPlatform('Windows'))">win</GSharpHostOs>
     <GSharpHostOs Condition="'$(GSharpHostOs)' == '' and $([MSBuild]::IsOSPlatform('Linux'))">linux</GSharpHostOs>
@@ -11,4 +11,12 @@
     <DefaultItemExcludes>$(DefaultItemExcludes);bin\**;obj\**</DefaultItemExcludes>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" Version="3.3.4">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <AdditionalFiles Include="$(MSBuildThisFileDirectory)..\..\BannedSymbols.txt" Condition="Exists('$(MSBuildThisFileDirectory)..\..\BannedSymbols.txt')" />
+  </ItemGroup>
 </Project>

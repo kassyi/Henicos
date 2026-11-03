@@ -1,4 +1,3 @@
-using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -17,6 +16,69 @@ public sealed record FuzzReductionResult(
     int Iterations);
 
 /// <summary>
+/// Captures the original failure signature that every reduction step must preserve:
+/// the normalized set of failing execution paths, the failure kind tag, and (for cell mismatches) the mismatching column name.
+/// </summary>
+public readonly record struct FuzzFailureSignature(
+    string FailingPathsMask,
+    string FailureKind,
+    string Column = "hash")
+{
+    /// <summary>Creates a canonical <see cref="FuzzFailureSignature"/>.</summary>
+    public static FuzzFailureSignature Create(
+        string? failingPaths,
+        string? failureKind,
+        string? column = "hash")
+    {
+        string normPaths = FuzzDeduplicator.NormalizeFailingPathsMask(failingPaths);
+        string normKind = string.IsNullOrWhiteSpace(failureKind) ? "CellMismatch" : failureKind.AsSpan().Trim().ToString();
+        string normCol = string.IsNullOrWhiteSpace(column) ? "hash" : column.AsSpan().Trim().ToString();
+        return new FuzzFailureSignature(normPaths, normKind, normCol);
+    }
+
+    /// <summary>
+    /// Returns <see langword="true"/> only when <paramref name="candidate"/> has the exact same failing-path set,
+    /// failure kind, and (when <see cref="FailureKind"/> is <c>"CellMismatch"</c>) column name.
+    /// </summary>
+    public bool Matches(FuzzFailureSignature candidate) =>
+        Matches(candidate.FailingPathsMask, candidate.FailureKind, candidate.Column);
+
+    /// <summary>
+    /// Returns <see langword="true"/> only when the candidate failure has the exact same failing-path set,
+    /// failure kind, and (when <see cref="FailureKind"/> is <c>"CellMismatch"</c>) column name.
+    /// </summary>
+    public bool Matches(string? candidateFailingPaths, string? candidateFailureKind, string? candidateColumn = "hash")
+    {
+        string candPaths = FuzzDeduplicator.NormalizeFailingPathsMask(candidateFailingPaths);
+        if (!string.Equals(candPaths, FailingPathsMask, StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        string candKind = string.IsNullOrWhiteSpace(candidateFailureKind)
+            ? "CellMismatch"
+            : candidateFailureKind.AsSpan().Trim().ToString();
+        if (!string.Equals(candKind, FailureKind, StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        if (string.Equals(FailureKind, "CellMismatch", StringComparison.Ordinal))
+        {
+            string candCol = string.IsNullOrWhiteSpace(candidateColumn)
+                ? "hash"
+                : candidateColumn.AsSpan().Trim().ToString();
+            if (!string.Equals(candCol, Column, StringComparison.Ordinal))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+}
+
+/// <summary>
 /// Roslyn syntax-tree-based reducer for failing differential fuzz kernels:
 /// <list type="number">
 /// <item><description><b>In-memory / single-candidate reduction</b>: Hoist all non-<see langword="ref"/> local variable declarations to <c>T v = default(T);</c> at the top of the method body, inline/prune helper <c>[GpuDeviceFunction]</c> methods, run binary-search coarse statement removal (<c>ddmin</c>), simplify expressions to a fixed point, and prune unused local declarations.</description></item>
@@ -26,9 +88,31 @@ public sealed record FuzzReductionResult(
 public static class FuzzReducer
 {
     /// <summary>
+    /// Reduces <paramref name="source"/> while preserving the exact <paramref name="expectedFailure"/> signature
+    /// (failing-path set, failure kind, and mismatch column).
+    /// </summary>
+    public static FuzzReductionResult Reduce(
+        string source,
+        FuzzFailureSignature expectedFailure,
+        Func<string, FuzzFailureSignature?> evaluateCandidate,
+        bool avoidStructConversionDefault = true)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(source);
+        ArgumentNullException.ThrowIfNull(evaluateCandidate);
+
+        return Reduce(
+            source,
+            candidate => evaluateCandidate(candidate) is { } actual && expectedFailure.Matches(actual),
+            avoidStructConversionDefault);
+    }
+
+    /// <summary>
     /// Reduces <paramref name="source"/> while <paramref name="isInteresting"/> returns <see langword="true"/>.
     /// </summary>
-    public static FuzzReductionResult Reduce(string source, Func<string, bool> isInteresting)
+    public static FuzzReductionResult Reduce(
+        string source,
+        Func<string, bool> isInteresting,
+        bool avoidStructConversionDefault = true)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(source);
         ArgumentNullException.ThrowIfNull(isInteresting);
@@ -51,7 +135,7 @@ public static class FuzzReducer
         string current = source;
 
         // Step 1: Hoist all non-ref local variable declarations to `T v = default(T);` at the top of each method body.
-        string hoisted = HoistLocalsToDefault(current);
+        string hoisted = HoistLocalsToDefault(current, avoidStructConversionDefault);
         if (!string.Equals(hoisted, current, StringComparison.Ordinal) && TestCandidate(hoisted))
         {
             current = hoisted;
@@ -61,7 +145,7 @@ public static class FuzzReducer
         current = FuzzInlinerAndSimplifier.InlineAndPruneDeviceFunctions(current, TestCandidate);
 
         // Re-hoist locals in case inlining introduced new local declarations.
-        string rehoisted = HoistLocalsToDefault(current);
+        string rehoisted = HoistLocalsToDefault(current, avoidStructConversionDefault);
         if (!string.Equals(rehoisted, current, StringComparison.Ordinal) && TestCandidate(rehoisted))
         {
             current = rehoisted;
@@ -100,7 +184,7 @@ public static class FuzzReducer
         var kernelMethods = FuzzSyntaxHelpers.GetKernelMethods(root);
         if (kernelMethods.Count == 0)
         {
-            kernelMethods = root.DescendantNodes().OfType<MethodDeclarationSyntax>().ToList();
+            kernelMethods = CollectAllMethods(root);
         }
 
         int count = 0;
@@ -123,18 +207,20 @@ public static class FuzzReducer
     /// Hoists all non-<see langword="ref"/> local variable declarations inside methods to <c>T v = default(T);</c>
     /// right after the <c>gid</c> bounds guard (or at the top of the method body), converting original declaration sites
     /// <c>T v = expr;</c> into simple assignment statements <c>v = expr;</c> (Fuzzlyn <c>Reducer.CoarseSimplify</c>).
+    /// While <c>#1103</c> is open (<paramref name="avoidStructConversionDefault"/> is <see langword="true"/>), structs
+    /// that declare a conversion operator (or contain such a struct as a field) are not hoisted to <c>default(T)</c>.
     /// </summary>
-    public static string HoistLocalsToDefault(string source)
+    public static string HoistLocalsToDefault(string source, bool avoidStructConversionDefault = true)
     {
         var root = FuzzSyntaxHelpers.ParseRoot(source);
-        var methods = root.DescendantNodes().OfType<MethodDeclarationSyntax>().ToList();
+        var methods = CollectAllMethods(root);
         if (methods.Count == 0)
         {
             return source;
         }
 
-        var updatedRoot = root.ReplaceNodes(methods, static (_, currentMethod) => HoistMethodLocals(currentMethod));
-        return updatedRoot.ToFullString();
+        var updatedRoot = root.ReplaceNodes(methods, (_, currentMethod) => HoistMethodLocals(root, currentMethod, avoidStructConversionDefault));
+        return FuzzSyntaxHelpers.RenderFullNode(updatedRoot);
     }
 
     /// <summary>
@@ -149,7 +235,7 @@ public static class FuzzReducer
         var kernelMethods = FuzzSyntaxHelpers.GetKernelMethods(root);
         if (kernelMethods.Count == 0)
         {
-            kernelMethods = root.DescendantNodes().OfType<MethodDeclarationSyntax>().ToList();
+            kernelMethods = CollectAllMethods(root);
         }
 
         for (int mIndex = 0; mIndex < kernelMethods.Count; mIndex++)
@@ -210,7 +296,37 @@ public static class FuzzReducer
     internal static bool IsHoistedDefaultDeclaration(StatementSyntax stmt) =>
         FuzzSyntaxHelpers.IsHoistedDefaultDeclaration(stmt);
 
-    private static MethodDeclarationSyntax HoistMethodLocals(MethodDeclarationSyntax method)
+    internal static List<MethodDeclarationSyntax> CollectAllMethods(CompilationUnitSyntax root)
+    {
+        var list = new List<MethodDeclarationSyntax>();
+        foreach (var node in root.DescendantNodes())
+        {
+            if (node is MethodDeclarationSyntax m)
+            {
+                list.Add(m);
+            }
+        }
+
+        return list;
+    }
+
+    internal static MethodDeclarationSyntax? FindMethodByName(CompilationUnitSyntax root, string methodName)
+    {
+        foreach (var node in root.DescendantNodes())
+        {
+            if (node is MethodDeclarationSyntax m && string.Equals(m.Identifier.ValueText, methodName, StringComparison.Ordinal))
+            {
+                return m;
+            }
+        }
+
+        return null;
+    }
+
+    private static MethodDeclarationSyntax HoistMethodLocals(
+        CompilationUnitSyntax root,
+        MethodDeclarationSyntax method,
+        bool avoidStructConversionDefault)
     {
         if (method.Body is null)
         {
@@ -232,7 +348,7 @@ public static class FuzzReducer
         for (int i = prologueCount; i < statements.Count; i++)
         {
             var stmt = statements[i];
-            if (CanHoistLocalDeclaration(stmt, out var localDecl))
+            if (CanHoistLocalDeclaration(root, stmt, avoidStructConversionDefault, out var localDecl))
             {
                 HoistSingleLocalDeclaration(localDecl, seenNames, hoistedDeclarations, bodyStatements);
             }
@@ -258,7 +374,9 @@ public static class FuzzReducer
     }
 
     private static bool CanHoistLocalDeclaration(
+        CompilationUnitSyntax root,
         StatementSyntax stmt,
+        bool avoidStructConversionDefault,
         [NotNullWhen(true)] out LocalDeclarationStatementSyntax? localDecl)
     {
         if (stmt is LocalDeclarationStatementSyntax ld &&
@@ -266,13 +384,27 @@ public static class FuzzReducer
             ld.Declaration.Type is not RefTypeSyntax &&
             !ld.Declaration.Type.IsVar &&
             !FuzzSyntaxHelpers.IsStackAllocSpanDeclaration(ld) &&
-            FuzzSyntaxHelpers.IsHoistableScalarOrEnumType(ld.Declaration.Type))
+            !DeclaresLoopIndexVariable(ld) &&
+            FuzzSyntaxHelpers.IsHoistableLocalType(root, ld.Declaration.Type, avoidStructConversionDefault))
         {
             localDecl = ld;
             return true;
         }
 
         localDecl = null;
+        return false;
+    }
+
+    private static bool DeclaresLoopIndexVariable(LocalDeclarationStatementSyntax localDecl)
+    {
+        foreach (var v in localDecl.Declaration.Variables)
+        {
+            if (v.Identifier.ValueText.StartsWith("loopIdx", StringComparison.Ordinal))
+            {
+                return true;
+            }
+        }
+
         return false;
     }
 
@@ -293,19 +425,20 @@ public static class FuzzReducer
             return;
         }
 
-        var typeSyntax = localDecl.Declaration.Type.WithoutTrivia();
+        string typeText = FuzzSyntaxHelpers.RenderNodeText(localDecl.Declaration.Type);
         foreach (var variable in localDecl.Declaration.Variables)
         {
             string name = variable.Identifier.ValueText;
             if (seenNames.Add(name))
             {
-                var hoistedStmt = SyntaxFactory.ParseStatement($"{typeSyntax} {name} = default({typeSyntax});{Environment.NewLine}");
+                var hoistedStmt = SyntaxFactory.ParseStatement($"{typeText} {name} = default({typeText});{Environment.NewLine}");
                 hoistedDeclarations.Add(hoistedStmt);
             }
 
             if (variable.Initializer is not null)
             {
-                var assignStmt = SyntaxFactory.ParseStatement($"{name} = {variable.Initializer.Value};{Environment.NewLine}");
+                string initValueText = FuzzSyntaxHelpers.RenderNodeText(variable.Initializer.Value);
+                var assignStmt = SyntaxFactory.ParseStatement($"{name} = {initValueText};{Environment.NewLine}");
                 bodyStatements.Add(assignStmt);
             }
         }
@@ -319,9 +452,7 @@ public static class FuzzReducer
         while (true)
         {
             var root = FuzzSyntaxHelpers.ParseRoot(current);
-            var method = root.DescendantNodes()
-                .OfType<MethodDeclarationSyntax>()
-                .FirstOrDefault(m => string.Equals(m.Identifier.ValueText, methodName, StringComparison.Ordinal));
+            var method = FindMethodByName(root, methodName);
             if (method?.Body is null)
             {
                 break;

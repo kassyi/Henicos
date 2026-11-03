@@ -1,5 +1,3 @@
-using System.Linq;
-using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -38,13 +36,16 @@ internal static class FuzzAstNormalizer
             return (varMap, localTypes);
         }
 
-        foreach (var decl in cleanedMethod.Body.DescendantNodes().OfType<VariableDeclarationSyntax>())
+        foreach (var node in cleanedMethod.Body.DescendantNodes())
         {
-            string normType = NormalizeTypeSyntax(decl.Type, typeMap);
-            foreach (var v in decl.Variables)
+            if (node is VariableDeclarationSyntax decl)
             {
-                declaredLocals.Add(v.Identifier.ValueText);
-                localTypes[v.Identifier.ValueText] = normType;
+                string normType = NormalizeTypeSyntax(decl.Type, typeMap);
+                foreach (var v in decl.Variables)
+                {
+                    declaredLocals.Add(v.Identifier.ValueText);
+                    localTypes[v.Identifier.ValueText] = normType;
+                }
             }
         }
 
@@ -80,20 +81,29 @@ internal static class FuzzAstNormalizer
             return method;
         }
 
-        string wrapped = $"class __Wrapper {{ {method.ToFullString()} }}";
+        string wrapped = $"class __Wrapper {{ {FuzzSyntaxHelpers.RenderFullNode(method)} }}";
         string hoistedWrapped = FuzzReducer.HoistLocalsToDefault(wrapped);
-        var parsedMethod = CSharpSyntaxTree.ParseText(hoistedWrapped, FuzzSyntaxHelpers.ParseOptions)
-            .GetRoot()
-            .DescendantNodes()
-            .OfType<MethodDeclarationSyntax>()
-            .First();
+        MethodDeclarationSyntax? parsedMethod = null;
+        foreach (var node in CSharpSyntaxTree.ParseText(hoistedWrapped, FuzzSyntaxHelpers.ParseOptions).GetRoot().DescendantNodes())
+        {
+            if (node is MethodDeclarationSyntax m)
+            {
+                parsedMethod = m;
+                break;
+            }
+        }
 
-        if (parsedMethod.Body is null)
+        if (parsedMethod?.Body is null)
         {
             return method;
         }
 
-        var statements = parsedMethod.Body.Statements.ToList();
+        var statements = new List<StatementSyntax>(parsedMethod.Body.Statements.Count);
+        foreach (var stmt in parsedMethod.Body.Statements)
+        {
+            statements.Add(stmt);
+        }
+
         StripUnreadLocalAssignments(statements);
         RemoveUnreferencedHoistedDeclarations(statements);
 
@@ -101,202 +111,38 @@ internal static class FuzzAstNormalizer
     }
 
     internal static void AppendNormalizedStatement(
-        StringBuilder sb,
+        SourceWriter writer,
         StatementSyntax stmt,
         IReadOnlyDictionary<string, string> varMap,
         IReadOnlyDictionary<string, string> methodMap,
         IReadOnlyDictionary<string, string> typeMap,
         IReadOnlyDictionary<string, string> localTypes)
     {
-        switch (stmt)
-        {
-            case BlockSyntax block:
-                sb.Append('{');
-                foreach (var inner in block.Statements)
-                {
-                    AppendNormalizedStatement(sb, inner, varMap, methodMap, typeMap, localTypes);
-                }
-
-                sb.Append('}');
-                break;
-
-            case LocalDeclarationStatementSyntax localDecl:
-                string typeText = NormalizeTypeSyntax(localDecl.Declaration.Type, typeMap);
-                foreach (var v in localDecl.Declaration.Variables)
-                {
-                    string vName = varMap.TryGetValue(v.Identifier.ValueText, out string? mapped) ? mapped : v.Identifier.ValueText;
-                    sb.Append(typeText).Append(' ').Append(vName);
-                    if (v.Initializer is not null)
-                    {
-                        sb.Append('=');
-                        AppendNormalizedExpression(sb, v.Initializer.Value, varMap, methodMap, typeMap);
-                    }
-
-                    sb.Append(';');
-                }
-
-                break;
-
-            case ExpressionStatementSyntax exprStmt:
-                if (exprStmt.Expression is AssignmentExpressionSyntax { Left: IdentifierNameSyntax { Identifier.ValueText: "hash" } } hashAssign &&
-                    TryNormalizeChecksumFold(hashAssign, varMap, methodMap, typeMap, out string? normalizedFold))
-                {
-                    sb.Append(normalizedFold).Append(';');
-                }
-                else
-                {
-                    AppendNormalizedExpression(sb, exprStmt.Expression, varMap, methodMap, typeMap);
-                    sb.Append(';');
-                }
-
-                break;
-
-            case IfStatementSyntax ifStmt:
-                sb.Append("if(");
-                AppendNormalizedExpression(sb, ifStmt.Condition, varMap, methodMap, typeMap);
-                sb.Append(')');
-                AppendNormalizedStatement(sb, ifStmt.Statement, varMap, methodMap, typeMap, localTypes);
-                if (ifStmt.Else is not null)
-                {
-                    sb.Append("else ");
-                    AppendNormalizedStatement(sb, ifStmt.Else.Statement, varMap, methodMap, typeMap, localTypes);
-                }
-
-                break;
-
-            case ReturnStatementSyntax retStmt:
-                sb.Append("return");
-                if (retStmt.Expression is not null)
-                {
-                    sb.Append(' ');
-                    AppendNormalizedExpression(sb, retStmt.Expression, varMap, methodMap, typeMap);
-                }
-
-                sb.Append(';');
-                break;
-
-            default:
-                sb.Append(stmt.WithoutTrivia().ToFullString());
-                break;
-        }
+        _ = localTypes;
+        var walker = new AstNormalizationWalker(writer, varMap, methodMap, typeMap);
+        walker.Visit(stmt);
     }
 
     internal static void AppendNormalizedExpression(
-        StringBuilder sb,
+        SourceWriter writer,
         ExpressionSyntax expr,
         IReadOnlyDictionary<string, string> varMap,
         IReadOnlyDictionary<string, string> methodMap,
         IReadOnlyDictionary<string, string> typeMap)
     {
-        expr = UnwrapParentheses(expr);
-
-        switch (expr)
-        {
-            case LiteralExpressionSyntax lit:
-                sb.Append(NormalizeLiteralToken(lit));
-                break;
-
-            case DefaultExpressionSyntax defExpr:
-                sb.Append("default(").Append(NormalizeTypeSyntax(defExpr.Type, typeMap)).Append(')');
-                break;
-
-            case IdentifierNameSyntax id:
-                AppendNormalizedIdentifier(sb, id.Identifier.ValueText, varMap, methodMap, typeMap);
-                break;
-
-            case PredefinedTypeSyntax predType:
-                sb.Append(predType.Keyword.ValueText);
-                break;
-
-            case MemberAccessExpressionSyntax member:
-                AppendNormalizedMemberAccess(sb, member, varMap, methodMap, typeMap);
-                break;
-
-            case ElementAccessExpressionSyntax elem:
-                AppendNormalizedElementAccess(sb, elem, varMap, methodMap, typeMap);
-                break;
-
-            case InvocationExpressionSyntax inv:
-                AppendNormalizedInvocation(sb, inv, varMap, methodMap, typeMap);
-                break;
-
-            case CastExpressionSyntax cast:
-                if (TryCollapseTypedNumericLiteralCast(cast, out string? castLitToken))
-                {
-                    sb.Append(castLitToken);
-                }
-                else
-                {
-                    sb.Append("((").Append(NormalizeTypeSyntax(cast.Type, typeMap)).Append(')');
-                    AppendNormalizedExpression(sb, cast.Expression, varMap, methodMap, typeMap);
-                    sb.Append(')');
-                }
-
-                break;
-
-            case PrefixUnaryExpressionSyntax prefix:
-                if (prefix.IsKind(SyntaxKind.UnaryMinusExpression) &&
-                    UnwrapParentheses(prefix.Operand) is LiteralExpressionSyntax negLit &&
-                    negLit.IsKind(SyntaxKind.NumericLiteralExpression))
-                {
-                    sb.Append(NormalizeNumericLiteralValue(negLit.Token));
-                }
-                else
-                {
-                    sb.Append('(').Append(prefix.OperatorToken.ValueText);
-                    AppendNormalizedExpression(sb, prefix.Operand, varMap, methodMap, typeMap);
-                    sb.Append(')');
-                }
-
-                break;
-
-            case PostfixUnaryExpressionSyntax postfix:
-                sb.Append('(');
-                AppendNormalizedExpression(sb, postfix.Operand, varMap, methodMap, typeMap);
-                sb.Append(postfix.OperatorToken.ValueText).Append(')');
-                break;
-
-            case BinaryExpressionSyntax binary:
-                sb.Append('(');
-                AppendNormalizedExpression(sb, binary.Left, varMap, methodMap, typeMap);
-                sb.Append(binary.OperatorToken.ValueText);
-                AppendNormalizedExpression(sb, binary.Right, varMap, methodMap, typeMap);
-                sb.Append(')');
-                break;
-
-            case AssignmentExpressionSyntax assign:
-                AppendNormalizedExpression(sb, assign.Left, varMap, methodMap, typeMap);
-                sb.Append(assign.OperatorToken.ValueText);
-                AppendNormalizedExpression(sb, assign.Right, varMap, methodMap, typeMap);
-                break;
-
-            case ConditionalExpressionSyntax cond:
-                sb.Append('(');
-                AppendNormalizedExpression(sb, cond.Condition, varMap, methodMap, typeMap);
-                sb.Append('?');
-                AppendNormalizedExpression(sb, cond.WhenTrue, varMap, methodMap, typeMap);
-                sb.Append(':');
-                AppendNormalizedExpression(sb, cond.WhenFalse, varMap, methodMap, typeMap);
-                sb.Append(')');
-                break;
-
-            default:
-                sb.Append(expr.WithoutTrivia().ToFullString());
-                break;
-        }
+        var walker = new AstNormalizationWalker(writer, varMap, methodMap, typeMap);
+        walker.Visit(expr);
     }
 
-    internal static string NormalizeTypeSyntax(TypeSyntax typeSyntax, IReadOnlyDictionary<string, string> typeMap)
-    {
-        return typeSyntax switch
+    internal static string NormalizeTypeSyntax(TypeSyntax typeSyntax, IReadOnlyDictionary<string, string> typeMap) =>
+        typeSyntax switch
         {
             ArrayTypeSyntax arr => $"{NormalizeTypeSyntax(arr.ElementType, typeMap)}[]",
             NullableTypeSyntax nul => $"{NormalizeTypeSyntax(nul.ElementType, typeMap)}?",
             RefTypeSyntax refType => $"ref {NormalizeTypeSyntax(refType.Type, typeMap)}",
             IdentifierNameSyntax id when typeMap.TryGetValue(id.Identifier.ValueText, out string? mapped) => mapped,
-            _ => typeSyntax.WithoutTrivia().ToFullString(),
+            _ => FuzzSyntaxHelpers.RenderNodeText(typeSyntax),
         };
-    }
 
     private static void StripUnreadLocalAssignments(List<StatementSyntax> statements)
     {
@@ -350,11 +196,20 @@ internal static class FuzzAstNormalizer
         }
     }
 
-    private static bool HasSideEffectInRhs(ExpressionSyntax rhs) =>
-        rhs.DescendantNodesAndSelf().Any(static node =>
-            node is AssignmentExpressionSyntax ||
-            (node is PrefixUnaryExpressionSyntax pre && (pre.IsKind(SyntaxKind.PreIncrementExpression) || pre.IsKind(SyntaxKind.PreDecrementExpression))) ||
-            (node is PostfixUnaryExpressionSyntax post && (post.IsKind(SyntaxKind.PostIncrementExpression) || post.IsKind(SyntaxKind.PostDecrementExpression))));
+    private static bool HasSideEffectInRhs(ExpressionSyntax rhs)
+    {
+        foreach (var node in rhs.DescendantNodesAndSelf())
+        {
+            if (node is AssignmentExpressionSyntax ||
+                (node is PrefixUnaryExpressionSyntax pre && (pre.IsKind(SyntaxKind.PreIncrementExpression) || pre.IsKind(SyntaxKind.PreDecrementExpression))) ||
+                (node is PostfixUnaryExpressionSyntax post && (post.IsKind(SyntaxKind.PostIncrementExpression) || post.IsKind(SyntaxKind.PostDecrementExpression))))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     private static void RemoveUnreferencedHoistedDeclarations(List<StatementSyntax> statements)
     {
@@ -368,9 +223,12 @@ internal static class FuzzAstNormalizer
                 continue;
             }
 
-            foreach (var id in stmt.DescendantNodes().OfType<IdentifierNameSyntax>())
+            foreach (var node in stmt.DescendantNodes())
             {
-                referencedVars.Add(id.Identifier.ValueText);
+                if (node is IdentifierNameSyntax id)
+                {
+                    referencedVars.Add(id.Identifier.ValueText);
+                }
             }
         }
 
@@ -385,9 +243,9 @@ internal static class FuzzAstNormalizer
 
     private static bool DoesStatementReadVariable(StatementSyntax stmt, string varName)
     {
-        foreach (var id in stmt.DescendantNodes().OfType<IdentifierNameSyntax>())
+        foreach (var node in stmt.DescendantNodes())
         {
-            if (id.Identifier.ValueText != varName)
+            if (node is not IdentifierNameSyntax id || id.Identifier.ValueText != varName)
             {
                 continue;
             }
@@ -402,130 +260,6 @@ internal static class FuzzAstNormalizer
         }
 
         return false;
-    }
-
-    private static bool TryNormalizeChecksumFold(
-        AssignmentExpressionSyntax hashAssign,
-        IReadOnlyDictionary<string, string> varMap,
-        IReadOnlyDictionary<string, string> methodMap,
-        IReadOnlyDictionary<string, string> typeMap,
-        out string? normalizedFold)
-    {
-        string hashVar = varMap.TryGetValue("hash", out string? h) ? h : "hash";
-        var castNodes = hashAssign.Right.DescendantNodes()
-            .OfType<CastExpressionSyntax>()
-            .Where(static c => c.Type.ToString() == "ulong")
-            .ToList();
-
-        if (castNodes.Count == 1)
-        {
-            var innerBuilder = new StringBuilder();
-            AppendNormalizedExpression(innerBuilder, castNodes[0].Expression, varMap, methodMap, typeMap);
-            normalizedFold = $"{hashVar}=FOLD({innerBuilder})";
-            return true;
-        }
-
-        normalizedFold = null;
-        return false;
-    }
-
-    private static void AppendNormalizedIdentifier(
-        StringBuilder sb,
-        string idText,
-        IReadOnlyDictionary<string, string> varMap,
-        IReadOnlyDictionary<string, string> methodMap,
-        IReadOnlyDictionary<string, string> typeMap)
-    {
-        if (varMap.TryGetValue(idText, out string? mappedVar))
-        {
-            sb.Append(mappedVar);
-        }
-        else if (methodMap.TryGetValue(idText, out string? mappedMethod))
-        {
-            sb.Append(mappedMethod);
-        }
-        else if (typeMap.TryGetValue(idText, out string? mappedType))
-        {
-            sb.Append(mappedType);
-        }
-        else
-        {
-            sb.Append(idText);
-        }
-    }
-
-    private static void AppendNormalizedMemberAccess(
-        StringBuilder sb,
-        MemberAccessExpressionSyntax member,
-        IReadOnlyDictionary<string, string> varMap,
-        IReadOnlyDictionary<string, string> methodMap,
-        IReadOnlyDictionary<string, string> typeMap)
-    {
-        if (IsConstantBoundaryMemberAccess(member, out string? boundaryToken))
-        {
-            sb.Append(boundaryToken);
-            return;
-        }
-
-        AppendNormalizedExpression(sb, member.Expression, varMap, methodMap, typeMap);
-        sb.Append('.');
-        string memberName = member.Name.Identifier.ValueText;
-        sb.Append(s_enumMemberNamesSet.Contains(memberName) ? "LIT_ENUM" : memberName);
-    }
-
-    private static void AppendNormalizedElementAccess(
-        StringBuilder sb,
-        ElementAccessExpressionSyntax elem,
-        IReadOnlyDictionary<string, string> varMap,
-        IReadOnlyDictionary<string, string> methodMap,
-        IReadOnlyDictionary<string, string> typeMap)
-    {
-        AppendNormalizedExpression(sb, elem.Expression, varMap, methodMap, typeMap);
-        sb.Append('[');
-        for (int i = 0; i < elem.ArgumentList.Arguments.Count; i++)
-        {
-            if (i > 0)
-            {
-                sb.Append(',');
-            }
-
-            AppendNormalizedExpression(sb, elem.ArgumentList.Arguments[i].Expression, varMap, methodMap, typeMap);
-        }
-
-        sb.Append(']');
-    }
-
-    private static void AppendNormalizedInvocation(
-        StringBuilder sb,
-        InvocationExpressionSyntax inv,
-        IReadOnlyDictionary<string, string> varMap,
-        IReadOnlyDictionary<string, string> methodMap,
-        IReadOnlyDictionary<string, string> typeMap)
-    {
-        AppendNormalizedExpression(sb, inv.Expression, varMap, methodMap, typeMap);
-        sb.Append('(');
-        for (int i = 0; i < inv.ArgumentList.Arguments.Count; i++)
-        {
-            if (i > 0)
-            {
-                sb.Append(',');
-            }
-
-            var arg = inv.ArgumentList.Arguments[i];
-            if (arg.NameColon is not null)
-            {
-                sb.Append(arg.NameColon.Name.Identifier.ValueText).Append(':');
-            }
-
-            if (!arg.RefKindKeyword.IsKind(SyntaxKind.None))
-            {
-                sb.Append(arg.RefKindKeyword.ValueText).Append(' ');
-            }
-
-            AppendNormalizedExpression(sb, arg.Expression, varMap, methodMap, typeMap);
-        }
-
-        sb.Append(')');
     }
 
     private static ExpressionSyntax UnwrapParentheses(ExpressionSyntax expr)
@@ -548,7 +282,7 @@ internal static class FuzzAstNormalizer
 
         if (inner is LiteralExpressionSyntax { RawKind: (int)SyntaxKind.NumericLiteralExpression })
         {
-            token = MapScalarTypeToLiteralToken(cast.Type.WithoutTrivia().ToString());
+            token = FuzzTypeInfo.TryGetLiteralTokenByKeyword(FuzzSyntaxHelpers.RenderNodeText(cast.Type));
             return token is not null;
         }
 
@@ -561,7 +295,7 @@ internal static class FuzzAstNormalizer
         string memberName = member.Name.Identifier.ValueText;
         if (memberName is "MinValue" or "MaxValue")
         {
-            token = MapScalarTypeToLiteralToken(member.Expression.WithoutTrivia().ToString());
+            token = FuzzTypeInfo.TryGetLiteralTokenByKeyword(FuzzSyntaxHelpers.RenderNodeText(member.Expression));
             if (token is not null)
             {
                 return true;
@@ -572,44 +306,294 @@ internal static class FuzzAstNormalizer
         return false;
     }
 
-    private static string? MapScalarTypeToLiteralToken(string typeName) => typeName switch
-    {
-        "sbyte" => "LIT_SBYTE",
-        "byte" => "LIT_BYTE",
-        "short" => "LIT_SHORT",
-        "ushort" => "LIT_USHORT",
-        "int" => "LIT_INT",
-        "uint" => "LIT_UINT",
-        "long" => "LIT_LONG",
-        "ulong" => "LIT_ULONG",
-        "char" => "LIT_CHAR",
-        _ => null,
-    };
-
     private static string NormalizeLiteralToken(LiteralExpressionSyntax lit) => lit.Kind() switch
     {
-        SyntaxKind.TrueLiteralExpression or SyntaxKind.FalseLiteralExpression => "LIT_BOOL",
-        SyntaxKind.CharacterLiteralExpression => "LIT_CHAR",
+        SyntaxKind.TrueLiteralExpression or SyntaxKind.FalseLiteralExpression => FuzzTypeInfo.Get(FuzzScalarKind.Boolean).LiteralToken,
+        SyntaxKind.CharacterLiteralExpression => FuzzTypeInfo.Get(FuzzScalarKind.Char).LiteralToken,
         SyntaxKind.DefaultLiteralExpression => "default",
         SyntaxKind.NullLiteralExpression => "null",
-        SyntaxKind.NumericLiteralExpression => NormalizeNumericLiteralValue(lit.Token),
+        SyntaxKind.NumericLiteralExpression => FuzzTypeInfo.GetLiteralTokenForValue(lit.Token.Value),
         _ => "LIT",
     };
 
-    private static string NormalizeNumericLiteralValue(SyntaxToken token) => token.Value switch
+    private sealed class AstNormalizationWalker(
+        SourceWriter writer,
+        IReadOnlyDictionary<string, string> varMap,
+        IReadOnlyDictionary<string, string> methodMap,
+        IReadOnlyDictionary<string, string> typeMap) : CSharpSyntaxWalker
     {
-        sbyte => "LIT_SBYTE",
-        byte => "LIT_BYTE",
-        short => "LIT_SHORT",
-        ushort => "LIT_USHORT",
-        int => "LIT_INT",
-        uint => "LIT_UINT",
-        long => "LIT_LONG",
-        ulong => "LIT_ULONG",
-        char => "LIT_CHAR",
-        float => "LIT_FLOAT",
-        double => "LIT_DOUBLE",
-        _ => "LIT_INT",
-    };
-}
+        public override void DefaultVisit(SyntaxNode node)
+        {
+            writer.Append(FuzzSyntaxHelpers.RenderNodeText(node));
+        }
 
+        public override void VisitBlock(BlockSyntax node)
+        {
+            writer.Append('{');
+            foreach (var inner in node.Statements)
+            {
+                Visit(inner);
+            }
+
+            writer.Append('}');
+        }
+
+        public override void VisitLocalDeclarationStatement(LocalDeclarationStatementSyntax node)
+        {
+            string typeText = NormalizeTypeSyntax(node.Declaration.Type, typeMap);
+            foreach (var v in node.Declaration.Variables)
+            {
+                string vName = varMap.TryGetValue(v.Identifier.ValueText, out string? mapped) ? mapped : v.Identifier.ValueText;
+                writer.Append(typeText);
+                writer.Append(' ');
+                writer.Append(vName);
+                if (v.Initializer is not null)
+                {
+                    writer.Append('=');
+                    Visit(v.Initializer.Value);
+                }
+
+                writer.Append(';');
+            }
+        }
+
+        public override void VisitExpressionStatement(ExpressionStatementSyntax node)
+        {
+            if (node.Expression is AssignmentExpressionSyntax { Left: IdentifierNameSyntax { Identifier.ValueText: "hash" } } hashAssign &&
+                TryNormalizeChecksumFold(hashAssign, out string? normalizedFold))
+            {
+                writer.Append(normalizedFold);
+                writer.Append(';');
+                return;
+            }
+
+            Visit(node.Expression);
+            writer.Append(';');
+        }
+
+        public override void VisitIfStatement(IfStatementSyntax node)
+        {
+            writer.Append("if(");
+            Visit(node.Condition);
+            writer.Append(')');
+            Visit(node.Statement);
+            if (node.Else is not null)
+            {
+                writer.Append("else ");
+                Visit(node.Else.Statement);
+            }
+        }
+
+        public override void VisitReturnStatement(ReturnStatementSyntax node)
+        {
+            writer.Append("return");
+            if (node.Expression is not null)
+            {
+                writer.Append(' ');
+                Visit(node.Expression);
+            }
+
+            writer.Append(';');
+        }
+
+        public override void VisitParenthesizedExpression(ParenthesizedExpressionSyntax node)
+        {
+            Visit(UnwrapParentheses(node));
+        }
+
+        public override void VisitLiteralExpression(LiteralExpressionSyntax node)
+        {
+            writer.Append(NormalizeLiteralToken(node));
+        }
+
+        public override void VisitDefaultExpression(DefaultExpressionSyntax node)
+        {
+            writer.Append("default(");
+            writer.Append(NormalizeTypeSyntax(node.Type, typeMap));
+            writer.Append(')');
+        }
+
+        public override void VisitIdentifierName(IdentifierNameSyntax node)
+        {
+            string idText = node.Identifier.ValueText;
+            if (varMap.TryGetValue(idText, out string? mappedVar))
+            {
+                writer.Append(mappedVar);
+            }
+            else if (methodMap.TryGetValue(idText, out string? mappedMethod))
+            {
+                writer.Append(mappedMethod);
+            }
+            else if (typeMap.TryGetValue(idText, out string? mappedType))
+            {
+                writer.Append(mappedType);
+            }
+            else
+            {
+                writer.Append(idText);
+            }
+        }
+
+        public override void VisitPredefinedType(PredefinedTypeSyntax node)
+        {
+            writer.Append(node.Keyword.ValueText);
+        }
+
+        public override void VisitMemberAccessExpression(MemberAccessExpressionSyntax node)
+        {
+            if (IsConstantBoundaryMemberAccess(node, out string? boundaryToken))
+            {
+                writer.Append(boundaryToken);
+                return;
+            }
+
+            Visit(node.Expression);
+            writer.Append('.');
+            string memberName = node.Name.Identifier.ValueText;
+            writer.Append(s_enumMemberNamesSet.Contains(memberName) ? "LIT_ENUM" : memberName);
+        }
+
+        public override void VisitElementAccessExpression(ElementAccessExpressionSyntax node)
+        {
+            Visit(node.Expression);
+            writer.Append('[');
+            for (int i = 0; i < node.ArgumentList.Arguments.Count; i++)
+            {
+                if (i > 0)
+                {
+                    writer.Append(',');
+                }
+
+                Visit(node.ArgumentList.Arguments[i].Expression);
+            }
+
+            writer.Append(']');
+        }
+
+        public override void VisitInvocationExpression(InvocationExpressionSyntax node)
+        {
+            Visit(node.Expression);
+            writer.Append('(');
+            for (int i = 0; i < node.ArgumentList.Arguments.Count; i++)
+            {
+                if (i > 0)
+                {
+                    writer.Append(',');
+                }
+
+                var arg = node.ArgumentList.Arguments[i];
+                if (arg.NameColon is not null)
+                {
+                    writer.Append(arg.NameColon.Name.Identifier.ValueText);
+                    writer.Append(':');
+                }
+
+                if (!arg.RefKindKeyword.IsKind(SyntaxKind.None))
+                {
+                    writer.Append(arg.RefKindKeyword.ValueText);
+                    writer.Append(' ');
+                }
+
+                Visit(arg.Expression);
+            }
+
+            writer.Append(')');
+        }
+
+        public override void VisitCastExpression(CastExpressionSyntax node)
+        {
+            if (TryCollapseTypedNumericLiteralCast(node, out string? castLitToken))
+            {
+                writer.Append(castLitToken);
+                return;
+            }
+
+            writer.Append("((");
+            writer.Append(NormalizeTypeSyntax(node.Type, typeMap));
+            writer.Append(')');
+            Visit(node.Expression);
+            writer.Append(')');
+        }
+
+        public override void VisitPrefixUnaryExpression(PrefixUnaryExpressionSyntax node)
+        {
+            if (node.IsKind(SyntaxKind.UnaryMinusExpression) &&
+                UnwrapParentheses(node.Operand) is LiteralExpressionSyntax negLit &&
+                negLit.IsKind(SyntaxKind.NumericLiteralExpression))
+            {
+                writer.Append(FuzzTypeInfo.GetLiteralTokenForValue(negLit.Token.Value));
+                return;
+            }
+
+            writer.Append('(');
+            writer.Append(node.OperatorToken.ValueText);
+            Visit(node.Operand);
+            writer.Append(')');
+        }
+
+        public override void VisitPostfixUnaryExpression(PostfixUnaryExpressionSyntax node)
+        {
+            writer.Append('(');
+            Visit(node.Operand);
+            writer.Append(node.OperatorToken.ValueText);
+            writer.Append(')');
+        }
+
+        public override void VisitBinaryExpression(BinaryExpressionSyntax node)
+        {
+            writer.Append('(');
+            Visit(node.Left);
+            writer.Append(node.OperatorToken.ValueText);
+            Visit(node.Right);
+            writer.Append(')');
+        }
+
+        public override void VisitAssignmentExpression(AssignmentExpressionSyntax node)
+        {
+            Visit(node.Left);
+            writer.Append(node.OperatorToken.ValueText);
+            Visit(node.Right);
+        }
+
+        public override void VisitConditionalExpression(ConditionalExpressionSyntax node)
+        {
+            writer.Append('(');
+            Visit(node.Condition);
+            writer.Append('?');
+            Visit(node.WhenTrue);
+            writer.Append(':');
+            Visit(node.WhenFalse);
+            writer.Append(')');
+        }
+
+        private bool TryNormalizeChecksumFold(
+            AssignmentExpressionSyntax hashAssign,
+            [NotNullWhen(true)] out string? normalizedFold)
+        {
+            string hashVar = varMap.TryGetValue("hash", out string? h) ? h : "hash";
+            CastExpressionSyntax? ulongCast = null;
+            int count = 0;
+            foreach (var node in hashAssign.Right.DescendantNodes())
+            {
+                if (node is CastExpressionSyntax cast &&
+                    string.Equals(FuzzSyntaxHelpers.RenderNodeText(cast.Type), "ulong", StringComparison.Ordinal))
+                {
+                    ulongCast = cast;
+                    count++;
+                }
+            }
+
+            if (count == 1 && ulongCast is not null)
+            {
+                using var innerWriter = new SourceWriter();
+                var innerWalker = new AstNormalizationWalker(innerWriter, varMap, methodMap, typeMap);
+                innerWalker.Visit(ulongCast.Expression);
+                normalizedFold = $"{hashVar}=FOLD({innerWriter})";
+                return true;
+            }
+
+            normalizedFold = null;
+            return false;
+        }
+    }
+}

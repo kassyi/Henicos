@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Text;
 
 namespace Kassyi.GSharp.Tools.FuzzDiff;
 
@@ -14,6 +13,102 @@ public static class FuzzChecksumEmitter
 
     /// <summary>The 64-bit FNV-1a prime multiplier.</summary>
     public const ulong FnvPrime = 1099511628211UL;
+
+    private const string BatchRunnerMainBlock =
+        """
+        public static int Main(string[] args)
+        {
+        bool managedOnly = args.Any(static a => string.Equals(a, "--managed-only", StringComparison.OrdinalIgnoreCase));
+        int? explicitSeed = null;
+        for (int i = 0; i < args.Length - 1; i++)
+        {
+        if (string.Equals(args[i], "--input-seed", StringComparison.OrdinalIgnoreCase) && int.TryParse(args[i + 1], NumberStyles.Integer, CultureInfo.InvariantCulture, out int parsed))
+        {
+        explicitSeed = parsed;
+        }
+        }
+
+        IReadOnlyList<DiffPathRunner> activePaths = DiffPaths.Available;
+        if (managedOnly)
+        {
+        activePaths = activePaths.Where(static p => p.Path == DiffPath.Managed).ToArray();
+        }
+
+        IReadOnlyList<int>? seeds = explicitSeed is { } s ? [s] : null;
+        var cases = All.Select(static entry => entry.Case).ToArray();
+        IReadOnlyList<DifferentialReport> reports;
+        try
+        {
+        reports = DifferentialRunner.EvaluateBatch(cases, seeds, activePaths, KnownDivergences.All, checkStale: false);
+        }
+        catch (Exception ex)
+        {
+        Console.WriteLine(JsonSerializer.Serialize(new
+        {
+        status = "harness_error",
+        batchFuzzSeed = string.Create(CultureInfo.InvariantCulture, $"0x{BatchFuzzSeed:X16}"),
+        exceptionType = ex.GetType().FullName,
+        message = ex.Message,
+        }));
+        return 2;
+        }
+
+        int failureCount = 0;
+        for (int i = 0; i < reports.Count; i++)
+        {
+        var (kernelName, kernelSeed, _) = All[i];
+        var report = reports[i];
+        if (!report.HasFailures)
+        {
+        continue;
+        }
+
+        failureCount++;
+        var firstMismatch = report.UnexpectedMismatches.FirstOrDefault();
+        var firstPathFailure = report.Failures.FirstOrDefault();
+        var firstPropFailure = report.PropertyFailures.FirstOrDefault();
+        int failInputSeed = firstMismatch?.Seed ?? firstPathFailure?.Seed ?? firstPropFailure?.Seed ?? 0;
+        string failureKind = firstMismatch is not null
+        ? "CellMismatch"
+        : firstPathFailure is not null
+        ? $"RuntimeException:{firstPathFailure.Exception.GetType().Name}"
+        : "PropertyFailure";
+        string[] failingPaths = firstMismatch is not null
+        ? firstMismatch.Paths.Where(static p => p.Differs).Select(static p => DiffPaths.Format(p.Path)).ToArray()
+        : firstPathFailure is not null
+        ? [DiffPaths.Format(firstPathFailure.Path)]
+        : firstPropFailure is not null
+        ? [DiffPaths.Format(firstPropFailure.Path)]
+        : [];
+
+        Console.WriteLine(JsonSerializer.Serialize(new
+        {
+        status = "failed",
+        kernel = kernelName,
+        batchFuzzSeed = string.Create(CultureInfo.InvariantCulture, $"0x{BatchFuzzSeed:X16}"),
+        kernelSeed = string.Create(CultureInfo.InvariantCulture, $"0x{kernelSeed:X16}"),
+        inputSeed = failInputSeed,
+        column = firstMismatch?.ColumnName ?? (firstPathFailure is not null ? KnownDivergence.ExceptionColumn : "hash"),
+        failureKind,
+        failingPaths,
+        expected = firstMismatch?.Expected,
+        actual = firstMismatch?.Paths.FirstOrDefault(static p => p.Differs)?.Value ?? firstPathFailure?.Exception.Message ?? firstPropFailure?.Message,
+        reproCommand = string.Create(CultureInfo.InvariantCulture, $"--fuzz-seed 0x{BatchFuzzSeed:X16} --input-seed {failInputSeed}"),
+        report = report.ToString(),
+        }));
+        }
+
+        Console.WriteLine(JsonSerializer.Serialize(new
+        {
+        status = failureCount == 0 ? "ok" : "batch_failed",
+        batchFuzzSeed = string.Create(CultureInfo.InvariantCulture, $"0x{BatchFuzzSeed:X16}"),
+        kernelsEvaluated = reports.Count,
+        kernelsFailed = failureCount,
+        paths = activePaths.Select(static p => p.Name).ToArray(),
+        }));
+        return failureCount == 0 ? 0 : 1;
+        }
+        """;
 
     /// <summary>Emits a subset of checksum folds at intermediate points in the kernel body.</summary>
     public static void EmitChecksumFoldSubset(KernelGenerationState state)
@@ -90,117 +185,7 @@ public static class FuzzChecksumEmitter
                 $"hash = (hash ^ ({ulongExpr} + {siteId}UL)) * {FnvPrime}UL;"));
     }
 
-    /// <summary>Appends the standalone JSON-emitting batch runner <c>Main</c> method to <paramref name="sb"/>.</summary>
-    public static void AppendBatchRunnerMain(StringBuilder sb)
-    {
-        ArgumentNullException.ThrowIfNull(sb);
-        using var writer = new SourceWriter();
-        AppendBatchRunnerMain(writer);
-        sb.Append(writer.ToString());
-    }
-
     /// <summary>Appends the standalone JSON-emitting batch runner <c>Main</c> method to <paramref name="writer"/>.</summary>
-    public static void AppendBatchRunnerMain(SourceWriter writer)
-    {
-        using (writer.Scope("public static int Main(string[] args)"))
-        {
-            writer.AppendLine("bool managedOnly = args.Any(static a => string.Equals(a, \"--managed-only\", StringComparison.OrdinalIgnoreCase));");
-            writer.AppendLine("int? explicitSeed = null;");
-            using (writer.Scope("for (int i = 0; i < args.Length - 1; i++)"))
-            {
-                writer.AppendLine("if (string.Equals(args[i], \"--input-seed\", StringComparison.OrdinalIgnoreCase) &&");
-                using (writer.Scope("int.TryParse(args[i + 1], NumberStyles.Integer, CultureInfo.InvariantCulture, out int parsed))"))
-                {
-                    writer.AppendLine("explicitSeed = parsed;");
-                }
-            }
-
-            writer.AppendLine();
-            writer.AppendLine("IReadOnlyList<DiffPathRunner> activePaths = DiffPaths.Available;");
-            using (writer.Scope("if (managedOnly)"))
-            {
-                writer.AppendLine("activePaths = activePaths.Where(static p => p.Path == DiffPath.Managed).ToArray();");
-            }
-
-            writer.AppendLine();
-            writer.AppendLine("IReadOnlyList<int>? seeds = explicitSeed is { } s ? [s] : null;");
-            writer.AppendLine("var cases = All.Select(static entry => entry.Case).ToArray();");
-            writer.AppendLine("IReadOnlyList<DifferentialReport> reports;");
-            using (writer.Scope("try"))
-            {
-                writer.AppendLine("reports = DifferentialRunner.EvaluateBatch(cases, seeds, activePaths, KnownDivergences.All, checkStale: false);");
-            }
-
-            using (writer.Scope("catch (Exception ex)"))
-            {
-                using (writer.Scope("Console.WriteLine(JsonSerializer.Serialize(new", "}));"))
-                {
-                    writer.AppendLine("status = \"harness_error\",");
-                    writer.AppendLine("batchFuzzSeed = string.Create(CultureInfo.InvariantCulture, $\"0x{BatchFuzzSeed:X16}\"),");
-                    writer.AppendLine("exceptionType = ex.GetType().FullName,");
-                    writer.AppendLine("message = ex.Message,");
-                }
-
-                writer.AppendLine("return 2;");
-            }
-
-            writer.AppendLine();
-            writer.AppendLine("int failureCount = 0;");
-            using (writer.Scope("for (int i = 0; i < reports.Count; i++)"))
-            {
-                writer.AppendLine("var (kernelName, kernelSeed, _) = All[i];");
-                writer.AppendLine("var report = reports[i];");
-                using (writer.Scope("if (!report.HasFailures)"))
-                {
-                    writer.AppendLine("continue;");
-                }
-
-                writer.AppendLine();
-                writer.AppendLine("failureCount++;");
-                writer.AppendLine("var firstMismatch = report.UnexpectedMismatches.FirstOrDefault();");
-                writer.AppendLine("var firstPathFailure = report.Failures.FirstOrDefault();");
-                writer.AppendLine("var firstPropFailure = report.PropertyFailures.FirstOrDefault();");
-                writer.AppendLine("int failInputSeed = firstMismatch?.Seed ?? firstPathFailure?.Seed ?? firstPropFailure?.Seed ?? 0;");
-                writer.AppendLine("string failureKind = firstMismatch is not null");
-                writer.AppendLine("? \"CellMismatch\"");
-                writer.AppendLine(": firstPathFailure is not null");
-                writer.AppendLine("? $\"RuntimeException:{firstPathFailure.Exception.GetType().Name}\"");
-                writer.AppendLine(": \"PropertyFailure\";");
-                writer.AppendLine("string[] failingPaths = firstMismatch is not null");
-                writer.AppendLine("? firstMismatch.Paths.Where(static p => p.Differs).Select(static p => DiffPaths.Format(p.Path)).ToArray()");
-                writer.AppendLine(": firstPathFailure is not null");
-                writer.AppendLine("? [DiffPaths.Format(firstPathFailure.Path)]");
-                writer.AppendLine(": firstPropFailure is not null");
-                writer.AppendLine("? [DiffPaths.Format(firstPropFailure.Path)]");
-                writer.AppendLine(": [];");
-                writer.AppendLine();
-                using (writer.Scope("Console.WriteLine(JsonSerializer.Serialize(new", "}));"))
-                {
-                    writer.AppendLine("status = \"failed\",");
-                    writer.AppendLine("kernel = kernelName,");
-                    writer.AppendLine("batchFuzzSeed = string.Create(CultureInfo.InvariantCulture, $\"0x{BatchFuzzSeed:X16}\"),");
-                    writer.AppendLine("kernelSeed = string.Create(CultureInfo.InvariantCulture, $\"0x{kernelSeed:X16}\"),");
-                    writer.AppendLine("inputSeed = failInputSeed,");
-                    writer.AppendLine("failureKind,");
-                    writer.AppendLine("failingPaths,");
-                    writer.AppendLine("expected = firstMismatch?.Expected,");
-                    writer.AppendLine("actual = firstMismatch?.Paths.FirstOrDefault(static p => p.Differs)?.Value ?? firstPathFailure?.Exception.Message ?? firstPropFailure?.Message,");
-                    writer.AppendLine("reproCommand = string.Create(CultureInfo.InvariantCulture, $\"--fuzz-seed 0x{BatchFuzzSeed:X16} --input-seed {failInputSeed}\"),");
-                    writer.AppendLine("report = report.ToString(),");
-                }
-            }
-
-            writer.AppendLine();
-            using (writer.Scope("Console.WriteLine(JsonSerializer.Serialize(new", "}));"))
-            {
-                writer.AppendLine("status = failureCount == 0 ? \"ok\" : \"batch_failed\",");
-                writer.AppendLine("batchFuzzSeed = string.Create(CultureInfo.InvariantCulture, $\"0x{BatchFuzzSeed:X16}\"),");
-                writer.AppendLine("kernelsEvaluated = reports.Count,");
-                writer.AppendLine("kernelsFailed = failureCount,");
-                writer.AppendLine("paths = activePaths.Select(static p => p.Name).ToArray(),");
-            }
-
-            writer.AppendLine("return failureCount == 0 ? 0 : 1;");
-        }
-    }
+    public static void AppendBatchRunnerMain(SourceWriter writer) =>
+        writer.AppendLine(BatchRunnerMainBlock);
 }

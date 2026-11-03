@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 
@@ -20,6 +19,14 @@ public sealed class ScalarFuzzGenerator
 
     /// <summary>The 64-bit FNV-1a prime multiplier.</summary>
     public const ulong FnvPrime = FuzzChecksumEmitter.FnvPrime;
+
+    private const string EnumDeclarationsBlock =
+        """
+        public enum FuzzEnumByte : byte { Zero = 0, One = 1, Two = 2, Bit = 0x10, High = 0x80, Mask = 0x55, Alt = 0xAA, Edge = byte.MaxValue }
+        public enum FuzzEnumShort : short { Zero = 0, One = 1, Two = 2, Bit = 0x0100, High = -256, Mask = 0x1234, Alt = -1, Edge = short.MinValue }
+        public enum FuzzEnumInt : int { Zero = 0, One = 1, Two = 2, Bit = 0x00010000, High = -65536, Mask = 0x13579BDF, Alt = -1, Edge = int.MinValue }
+        public enum FuzzEnumULong : ulong { Zero = 0UL, One = 1UL, Two = 2UL, Bit = 0x0000000100000000UL, High = 0x8000000000000000UL, Mask = 0x5555555555555555UL, Alt = 0xAAAAAAAAAAAAAAAAUL, Edge = ulong.MaxValue }
+        """;
 
     private readonly FuzzOptions _options;
     private readonly KnownIssueFilter _issueFilter;
@@ -109,7 +116,12 @@ public sealed class ScalarFuzzGenerator
         FuzzChecksumEmitter.EmitChecksumFoldAll(state);
 
         string kernelMethod = RenderKernelMethod(kernelName, kernelSeed, size, state);
-        string caseProperty = RenderCaseProperty(kernelName, kernelSeed);
+        string caseHeader = string.Create(CultureInfo.InvariantCulture, $"// fuzz-seed: {FuzzRandom.FormatSeed(kernelSeed)}");
+        string caseProperty = FuzzCaseEmitter.RenderDifferentialCaseProperty(
+            _options.KernelClassName,
+            kernelName,
+            _options.InputSeed,
+            caseHeader);
 
         var localNames = new List<string>(state.Locals.Count);
         foreach (var local in state.Locals)
@@ -136,22 +148,48 @@ public sealed class ScalarFuzzGenerator
         bool leftIsSimpleLocal) =>
         FuzzScalarExpressionEmitter.BuildGuardedDivisionOrModulo(promotedKind, leftExpr, rightExpr, isModulo, leftIsSimpleLocal);
 
-    /// <summary>Appends the device enum declarations used by generated kernels to <paramref name="sb"/>.</summary>
-    public static void AppendEnumDeclarations(StringBuilder sb)
-    {
-        ArgumentNullException.ThrowIfNull(sb);
-        using var writer = new SourceWriter();
-        AppendEnumDeclarations(writer);
-        sb.Append(writer.ToString());
-    }
-
     /// <summary>Appends the device enum declarations used by generated kernels to <paramref name="writer"/>.</summary>
-    public static void AppendEnumDeclarations(SourceWriter writer)
+    public static void AppendEnumDeclarations(SourceWriter writer) =>
+        writer.AppendLine(EnumDeclarationsBlock);
+
+    /// <summary>
+    /// Emits <paramref name="count"/> generated statements into <paramref name="writer"/> at the next control-flow depth
+    /// (up to depth <c>2</c>), preserving loop-variable immutability and scoping invariants.
+    /// </summary>
+    internal static void EmitNestedStatements(
+        KernelGenerationState state,
+        SourceWriter writer,
+        int count,
+        bool inSwitchSection = false)
     {
-        writer.AppendLine("public enum FuzzEnumByte : byte { Zero = 0, One = 1, Two = 2, Bit = 0x10, High = 0x80, Mask = 0x55, Alt = 0xAA, Edge = byte.MaxValue }");
-        writer.AppendLine("public enum FuzzEnumShort : short { Zero = 0, One = 1, Two = 2, Bit = 0x0100, High = -256, Mask = 0x1234, Alt = -1, Edge = short.MinValue }");
-        writer.AppendLine("public enum FuzzEnumInt : int { Zero = 0, One = 1, Two = 2, Bit = 0x00010000, High = -65536, Mask = 0x13579BDF, Alt = -1, Edge = int.MinValue }");
-        writer.AppendLine("public enum FuzzEnumULong : ulong { Zero = 0UL, One = 1UL, Two = 2UL, Bit = 0x0000000100000000UL, High = 0x8000000000000000UL, Mask = 0x5555555555555555UL, Alt = 0xAAAAAAAAAAAAAAAAUL, Edge = ulong.MaxValue }");
+        if (state.ControlFlowDepth >= 2 || count <= 0)
+        {
+            return;
+        }
+
+        var nestedBuffer = new List<string>(count * 2);
+        var savedBuffer = state.SwapStatementsBuffer(nestedBuffer);
+        bool savedInSwitch = state.InSwitchSection;
+        state.ControlFlowDepth++;
+        state.InSwitchSection = savedInSwitch || inSwitchSection;
+        try
+        {
+            for (int i = 0; i < count; i++)
+            {
+                EmitRandomStatement(state);
+            }
+        }
+        finally
+        {
+            state.InSwitchSection = savedInSwitch;
+            state.ControlFlowDepth--;
+            state.SwapStatementsBuffer(savedBuffer);
+        }
+
+        foreach (string stmt in nestedBuffer)
+        {
+            writer.AppendLine(stmt);
+        }
     }
 
     private static void InitializeScalarLocals(KernelGenerationState state)
@@ -271,6 +309,11 @@ public sealed class ScalarFuzzGenerator
             FuzzScalarKind.UInt32, uint32Local.Name, "(uint)inB[gid]", isModulo: rng.NextBool(), leftIsSimpleLocal: true);
         state.Statements.Add($"{uint32Local.Name} = ({uint32Local.Name} ^ {unsignedDivExpr});");
 
+        if (!state.IssueFilter.AvoidMsvcNegatedConstantDivision)
+        {
+            state.Statements.Add($"{int32Local.Name} = ({int32Local.Name} ^ ((-{int32Local.Name}) / 3));");
+        }
+
         var enumByteLocal = state.FindLocal(FuzzScalarKind.EnumByte);
         var enumShortLocal = state.FindLocal(FuzzScalarKind.EnumShort);
         var enumIntLocal = state.FindLocal(FuzzScalarKind.EnumInt);
@@ -284,6 +327,11 @@ public sealed class ScalarFuzzGenerator
         var rng = state.Rng;
         var sw = state.Swarm;
         var target = rng.Choose(state.Locals);
+        if (state.ProtectedLoopVariables.Contains(target.Name))
+        {
+            target = state.FindLocal(FuzzScalarKind.Int32);
+        }
+
         int choice = rng.NextBelow(100);
 
         if (choice < 25)
@@ -316,11 +364,27 @@ public sealed class ScalarFuzzGenerator
         {
             FuzzCompositeExpressionEmitter.EmitRefTernaryStatement(state);
         }
-        else if (choice < 86 && sw.DeviceCallWeight > 1)
+        else if (choice < 86 && sw.DeviceCallWeight > 1 && !state.InSwitchSection)
         {
             FuzzDeviceFunctionEmitter.EmitRandomDeviceFunctionCall(state);
         }
-        else if (choice < 93 && !target.Type.IsEnum && target.Type.Kind != FuzzScalarKind.Boolean)
+        else if (choice < 92 && state.ControlFlowDepth < 2 && (sw.ControlFlowWeight > 1 || sw.LoopWeight > 1))
+        {
+            int cfKind = state.InSwitchSection ? rng.NextBelow(2) : rng.NextBelow(3);
+            if (cfKind == 0)
+            {
+                FuzzControlFlowEmitter.EmitIfElseStatement(state);
+            }
+            else if (cfKind == 1)
+            {
+                FuzzControlFlowEmitter.EmitBoundedLoopStatement(state);
+            }
+            else
+            {
+                FuzzControlFlowEmitter.EmitSwitchStatementWithAcyclicGoto(state);
+            }
+        }
+        else if (choice < 96 && !target.Type.IsEnum && target.Type.Kind != FuzzScalarKind.Boolean)
         {
             bool canUseIncDecValue = !target.Type.IsNarrowIntegral || !state.IssueFilter.AvoidNarrowIncDecValue;
             if (canUseIncDecValue)
@@ -335,13 +399,18 @@ public sealed class ScalarFuzzGenerator
                 state.Statements.Add($"{target.Name}++;");
             }
         }
-        else
+        else if (state.ControlFlowDepth == 0)
         {
             var newType = rng.Choose(FuzzTypeInfo.All);
             string newName = $"v{state.Locals.Count}";
             string init = FuzzScalarExpressionEmitter.GenerateExpression(state, newType, depth: 0, maxDepth: 2);
             state.Statements.Add($"{newType.Keyword} {newName} = {init};");
             state.Locals.Add(new ScalarLocalVariable(newName, newType));
+        }
+        else
+        {
+            string fallbackRhs = FuzzScalarExpressionEmitter.GenerateLeafExpression(state, target.Type);
+            state.Statements.Add($"{target.Name} = {fallbackRhs};");
         }
     }
 
@@ -394,60 +463,13 @@ public sealed class ScalarFuzzGenerator
             writer.AppendLine("checksum[gid] = hash;");
         }
 
-        return writer.ToString().TrimEnd();
-    }
-
-    private string RenderCaseProperty(string kernelName, ulong kernelSeed)
-    {
-        using var writer = new SourceWriter();
-        writer.AppendLine(string.Create(CultureInfo.InvariantCulture, $"// fuzz-seed: {FuzzRandom.FormatSeed(kernelSeed)}"));
-        using (writer.Scope($"public static DifferentialCase {kernelName}_Case {{ get; }} = new(\"{_options.KernelClassName}.{kernelName}\")", "};"))
-        {
-            writer.AppendLine("Shape = LaunchShapes.PartialWarp(),");
-            if (_options.InputSeed is { } explicitInputSeed)
-            {
-                writer.AppendLine(string.Create(CultureInfo.InvariantCulture, $"Seeds = [{explicitInputSeed}],"));
-            }
-
-            using (writer.Scope("Inputs = static (rng, shape) =>", "},"))
-            {
-                writer.AppendLine("int rows = shape.Rows;");
-                writer.AppendLine("var (inA, inB) = DiffValues.Int32Pairs(rng, rows);");
-                writer.AppendLine("var inC = DiffValues.Values(rng, rows, DiffValues.ShiftCounts, DiffValues.NextInt32);");
-                writer.AppendLine("return new DiffBuffers()");
-                writer.AppendLine(".In(\"inA\", inA)");
-                writer.AppendLine(".In(\"inB\", inB)");
-                writer.AppendLine(".In(\"inC\", inC)");
-                writer.AppendLine(".Out<ulong>(\"checksum\", rows, [\"hash\"], OutputPolicy.Exact);");
-            }
-
-            writer.AppendLine($"Launch = static (b, s) => {_options.KernelClassName}.Launch{kernelName}(");
-            writer.AppendLine("b.Get<int>(\"inA\"),");
-            writer.AppendLine("b.Get<int>(\"inB\"),");
-            writer.AppendLine("b.Get<int>(\"inC\"),");
-            writer.AppendLine("b.Get<ulong>(\"checksum\"),");
-            writer.AppendLine("gridDimX: s.GridX,");
-            writer.AppendLine("blockDimX: s.BlockX),");
-            writer.AppendLine($"Oracle = static (b, _) => {_options.KernelClassName}.{kernelName}(");
-            writer.AppendLine("b.Get<int>(\"inA\"),");
-            writer.AppendLine("b.Get<int>(\"inB\"),");
-            writer.AppendLine("b.Get<int>(\"inC\"),");
-            writer.AppendLine("b.Get<ulong>(\"checksum\")),");
-        }
-
-        return writer.ToString().TrimEnd();
+        return writer.ToString().AsSpan().TrimEnd().ToString();
     }
 
     private string BuildKernelsCompilationUnit(IReadOnlyList<GeneratedKernelSpec> kernels)
     {
         using var writer = new SourceWriter();
-        writer.AppendLine("#nullable enable");
-        writer.AppendLine("#pragma warning disable CS0162, CS0219, CS1717, CS1718");
-        writer.AppendLine("using System;");
-        writer.AppendLine("using Kassyi.GSharp.Core;");
-        writer.AppendLine();
-        writer.AppendLine($"namespace {_options.Namespace};");
-        writer.AppendLine();
+        FuzzCaseEmitter.AppendKernelsFileHeader(writer, _options.Namespace);
         AppendEnumDeclarations(writer);
         writer.AppendLine();
         FuzzCompositeModel.AppendCompositeStructDeclarations(writer);
@@ -473,48 +495,18 @@ public sealed class ScalarFuzzGenerator
 
     private string BuildCasesCompilationUnit(IReadOnlyList<GeneratedKernelSpec> kernels)
     {
-        using var writer = new SourceWriter();
-        writer.AppendLine("// <auto-generated />");
-        writer.AppendLine("// ReSharper disable All");
-        writer.AppendLine("#nullable enable");
-        writer.AppendLine("using System;");
-        writer.AppendLine("using System.Collections.Generic;");
-        writer.AppendLine("using System.Globalization;");
-        writer.AppendLine("using System.Linq;");
-        writer.AppendLine("using System.Text.Json;");
-        writer.AppendLine("using Kassyi.GSharp.Core;");
-        writer.AppendLine();
-        writer.AppendLine($"namespace {_options.Namespace};");
-        writer.AppendLine();
-
-        using (writer.Scope($"public static class {_options.CasesClassName}"))
+        var entries = new List<(string KernelName, ulong KernelSeed, string CasePropertySource)>(kernels.Count);
+        foreach (var k in kernels)
         {
-            writer.AppendLine(string.Create(CultureInfo.InvariantCulture, $"public const ulong BatchFuzzSeed = {_options.FuzzSeed}UL;"));
-            writer.AppendLine();
-
-            for (int i = 0; i < kernels.Count; i++)
-            {
-                writer.AppendLine(kernels[i].CasePropertySource);
-                writer.AppendLine();
-            }
-
-            writer.AppendLine("public static IReadOnlyList<(string KernelName, ulong KernelSeed, DifferentialCase Case)> All { get; } =");
-            writer.AppendLine("[");
-            foreach (var k in kernels)
-            {
-                writer.AppendLine(string.Create(CultureInfo.InvariantCulture, $"(\"{k.KernelName}\", {k.KernelSeed}UL, {k.KernelName}_Case),"));
-            }
-
-            writer.AppendLine("];");
-
-            if (_options.EmitProgramMain)
-            {
-                writer.AppendLine();
-                FuzzChecksumEmitter.AppendBatchRunnerMain(writer);
-            }
+            entries.Add((k.KernelName, k.KernelSeed, k.CasePropertySource));
         }
 
-        return writer.ToString();
+        return FuzzCaseEmitter.BuildCasesCompilationUnit(
+            _options.Namespace,
+            _options.CasesClassName,
+            _options.FuzzSeed,
+            entries,
+            _options.EmitProgramMain);
     }
 
     private static void ValidateSyntaxTree(string source, string fileName)

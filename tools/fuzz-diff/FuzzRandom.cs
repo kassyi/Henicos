@@ -31,10 +31,10 @@ public sealed class FuzzRandom
             return false;
         }
 
-        string trimmed = text.Trim();
+        ReadOnlySpan<char> trimmed = text.AsSpan().Trim();
         if (trimmed.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
         {
-            return ulong.TryParse(trimmed.AsSpan(2), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out seed);
+            return ulong.TryParse(trimmed[2..], NumberStyles.HexNumber, CultureInfo.InvariantCulture, out seed);
         }
 
         if (ulong.TryParse(trimmed, NumberStyles.Integer, CultureInfo.InvariantCulture, out seed))

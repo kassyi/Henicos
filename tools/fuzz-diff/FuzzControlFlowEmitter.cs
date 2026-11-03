@@ -31,14 +31,22 @@ public static class FuzzControlFlowEmitter
         using (writer.Scope($"if ({cond})"))
         {
             writer.AppendLine($"{i32.Name} = ({i32.Name} ^ {FuzzScalarExpressionEmitter.EnsureType(thenExpr, i32.Type)});");
+            if (state.ControlFlowDepth < 2)
+            {
+                ScalarFuzzGenerator.EmitNestedStatements(state, writer, count: 1);
+            }
         }
 
         using (writer.Scope("else"))
         {
             writer.AppendLine($"{u32.Name} = ({u32.Name} + {FuzzScalarExpressionEmitter.EnsureType(elseExpr, u32.Type)});");
+            if (state.ControlFlowDepth < 2)
+            {
+                ScalarFuzzGenerator.EmitNestedStatements(state, writer, count: 1);
+            }
         }
 
-        state.Statements.Add(writer.ToString().TrimEnd());
+        state.Statements.Add(writer.ToString().AsSpan().TrimEnd().ToString());
     }
 
     /// <summary>
@@ -59,19 +67,39 @@ public static class FuzzControlFlowEmitter
         {
             writer.AppendLine("case 0:");
             writer.AppendLine(string.Create(CultureInfo.InvariantCulture, $"{i32.Name} += {c0};"));
+            if (state.ControlFlowDepth < 2)
+            {
+                ScalarFuzzGenerator.EmitNestedStatements(state, writer, count: 1, inSwitchSection: true);
+            }
+
             writer.AppendLine("goto case 1;");
             writer.AppendLine("case 1:");
             writer.AppendLine(string.Create(CultureInfo.InvariantCulture, $"{i32.Name} ^= {c1};"));
+            if (state.ControlFlowDepth < 2)
+            {
+                ScalarFuzzGenerator.EmitNestedStatements(state, writer, count: 1, inSwitchSection: true);
+            }
+
             writer.AppendLine("break;");
             writer.AppendLine("case 2:");
             writer.AppendLine(string.Create(CultureInfo.InvariantCulture, $"{i64.Name} += {c2}L;"));
+            if (state.ControlFlowDepth < 2)
+            {
+                ScalarFuzzGenerator.EmitNestedStatements(state, writer, count: 1, inSwitchSection: true);
+            }
+
             writer.AppendLine("goto default;");
             writer.AppendLine("default:");
             writer.AppendLine($"{i64.Name} ^= {i32.Name};");
+            if (state.ControlFlowDepth < 2)
+            {
+                ScalarFuzzGenerator.EmitNestedStatements(state, writer, count: 1, inSwitchSection: true);
+            }
+
             writer.AppendLine("break;");
         }
 
-        state.Statements.Add(writer.ToString().TrimEnd());
+        state.Statements.Add(writer.ToString().AsSpan().TrimEnd().ToString());
     }
 
     /// <summary>
@@ -86,45 +114,66 @@ public static class FuzzControlFlowEmitter
         int bound = rng.NextRange(2, 5);
         int loopId = ++state.TempCounter;
         string loopVar = string.Create(CultureInfo.InvariantCulture, $"loopIdx{loopId}");
-        int kind = rng.NextBelow(3);
+        int kind = state.InSwitchSection ? 0 : rng.NextBelow(3);
 
-        using var writer = new SourceWriter();
-        if (kind == 0)
+        state.ProtectedLoopVariables.Add(loopVar);
+        try
         {
-            using (writer.Scope(string.Create(CultureInfo.InvariantCulture, $"for (int {loopVar} = 0; {loopVar} < {bound}; {loopVar}++)")))
+            using var writer = new SourceWriter();
+            if (kind == 0)
             {
-                using (writer.Scope($"if ((({i32.Name} + {loopVar}) & 7) == 5)"))
+                using (writer.Scope(string.Create(CultureInfo.InvariantCulture, $"for (int {loopVar} = 0; {loopVar} < {bound}; {loopVar}++)")))
                 {
-                    writer.AppendLine("continue;");
-                }
+                    using (writer.Scope($"if ((({i32.Name} + {loopVar}) & 7) == 5)"))
+                    {
+                        writer.AppendLine("continue;");
+                    }
 
-                writer.AppendLine($"{i32.Name} = (({i32.Name} << 1) ^ ({loopVar} + inB[gid]));");
-                using (writer.Scope($"if (({u32.Name} & 15U) == 14U)"))
+                    writer.AppendLine($"{i32.Name} = (({i32.Name} << 1) ^ ({loopVar} + inB[gid]));");
+                    if (state.ControlFlowDepth < 2)
+                    {
+                        ScalarFuzzGenerator.EmitNestedStatements(state, writer, count: 1);
+                    }
+
+                    using (writer.Scope($"if (({u32.Name} & 15U) == 14U)"))
+                    {
+                        writer.AppendLine("break;");
+                    }
+                }
+            }
+            else if (kind == 1)
+            {
+                writer.AppendLine($"int {loopVar} = 0;");
+                using (writer.Scope(string.Create(CultureInfo.InvariantCulture, $"while ({loopVar} < {bound})")))
                 {
-                    writer.AppendLine("break;");
+                    writer.AppendLine($"{loopVar}++;");
+                    writer.AppendLine($"{i32.Name} = ({i32.Name} + ({loopVar} ^ inC[gid]));");
+                    if (state.ControlFlowDepth < 2)
+                    {
+                        ScalarFuzzGenerator.EmitNestedStatements(state, writer, count: 1);
+                    }
                 }
             }
-        }
-        else if (kind == 1)
-        {
-            writer.AppendLine($"int {loopVar} = 0;");
-            using (writer.Scope(string.Create(CultureInfo.InvariantCulture, $"while ({loopVar} < {bound})")))
+            else
             {
-                writer.AppendLine($"{loopVar}++;");
-                writer.AppendLine($"{i32.Name} = ({i32.Name} + ({loopVar} ^ inC[gid]));");
+                writer.AppendLine($"int {loopVar} = 0;");
+                using (writer.Scope("do", string.Create(CultureInfo.InvariantCulture, $"}} while ({loopVar} < {bound});")))
+                {
+                    writer.AppendLine($"{loopVar}++;");
+                    writer.AppendLine($"{u32.Name} = ({u32.Name} ^ (uint)({i32.Name} + {loopVar}));");
+                    if (state.ControlFlowDepth < 2)
+                    {
+                        ScalarFuzzGenerator.EmitNestedStatements(state, writer, count: 1);
+                    }
+                }
             }
-        }
-        else
-        {
-            writer.AppendLine($"int {loopVar} = 0;");
-            using (writer.Scope("do", string.Create(CultureInfo.InvariantCulture, $"}} while ({loopVar} < {bound});")))
-            {
-                writer.AppendLine($"{loopVar}++;");
-                writer.AppendLine($"{u32.Name} = ({u32.Name} ^ (uint)({i32.Name} + {loopVar}));");
-            }
-        }
 
-        state.Statements.Add(writer.ToString().TrimEnd());
+            state.Statements.Add(writer.ToString().AsSpan().TrimEnd().ToString());
+        }
+        finally
+        {
+            state.ProtectedLoopVariables.Remove(loopVar);
+        }
     }
 
     /// <summary>
@@ -146,6 +195,6 @@ public static class FuzzControlFlowEmitter
             writer.AppendLine($"{i64.Name} = ({i64.Name} ^ ((long){idxVar} + sL2.C));");
         }
 
-        state.Statements.Add(writer.ToString().TrimEnd());
+        state.Statements.Add(writer.ToString().AsSpan().TrimEnd().ToString());
     }
 }

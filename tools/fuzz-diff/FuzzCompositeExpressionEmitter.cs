@@ -99,7 +99,13 @@ public static class FuzzCompositeExpressionEmitter
 
         state.Statements.Add($"{i64.Name} = ({i64.Name} ^ (long)sWrap ^ sL3.Total);");
 
-        // 2. Pack = 1 and Pack = 4 value assignment (and when #877 is allowed, ref / compound binding on Pack = 1 field).
+        if (!state.IssueFilter.AvoidStructConversionDefault)
+        {
+            state.Statements.Add("FuzzWrapInt sWrapDef = default(FuzzWrapInt);");
+            state.Statements.Add($"{i32.Name} = ({i32.Name} ^ (int)sWrapDef);");
+        }
+
+        // 2. Pack = 1 and Pack = 4 value and compound assignment.
         if (!state.IssueFilter.AvoidPlainStructInstanceMethods)
         {
             state.Statements.Add($"sPack1.MisalignedInt = (sPack1.ReadSum() ^ {i32.Name});");
@@ -108,10 +114,8 @@ public static class FuzzCompositeExpressionEmitter
         {
             state.Statements.Add($"sPack1.MisalignedInt = (sPack1.PackedSum ^ {i32.Name});");
         }
-        if (!state.IssueFilter.AvoidPackedStructFieldRefBinding)
-        {
-            state.Statements.Add($"sPack1.MisalignedInt += {i32.Name};");
-        }
+
+        state.Statements.Add($"sPack1.MisalignedInt += {i32.Name};");
 
         // 3. Nullable<T>: `??`, `??=` statement form, `??=` value-consuming form, and `.HasValue`.
         EmitNullableStatement(state);
@@ -127,6 +131,10 @@ public static class FuzzCompositeExpressionEmitter
                 string.Create(
                     CultureInfo.InvariantCulture,
                     $"({tupleA.Name}, {tupleB.Name}) = (({tupleB.Name} += {delta}), ({tupleA.Name} ^ {tupleB.Name}));"));
+            if (!state.IssueFilter.AvoidComplexTupleDeconstruction)
+            {
+                EmitTupleDeconstructionStatement(state);
+            }
         }
 
         // 6. Ref ternary statement (`(cond ? ref a : ref b) += expr;`).
@@ -148,15 +156,16 @@ public static class FuzzCompositeExpressionEmitter
         // Statement-form `??=`
         state.Statements.Add($"sNullBag.OptInt0 ??= ({i32.Name} ^ 0x1357);");
 
-        if (state.Swarm.Focus == FuzzSwarmFocus.CoalesceAssignValue)
+        if (!state.IssueFilter.AvoidCoalesceAssignValue || state.Swarm.Focus == FuzzSwarmFocus.CoalesceAssignValue)
         {
-            // Targeted Swarm focus: value-consuming `??=` where the RHS is a non-nullable scalar `T`
+            // Value-consuming `??=` where the RHS is a non-nullable scalar `T`
             state.Statements.Add($"{i32.Name} = ((sNullBag.OptInt1 ??= ({i32.Name} + 11)) ^ {i32.Name});");
         }
         else
         {
-            // Default mode: value-consuming `??=` where the RHS is `T?` (so both C# and C++ type the IIFE as `T?`), followed by `??`
-            state.Statements.Add($"{i32.Name} = (((sNullBag.OptInt1 ??= sNullBag.OptInt0) ?? {i32.Name}) + (sNullBag.OptInt0.HasValue ? 3 : 1));");
+            // Default mode when #1101 is avoided: statement-level `??=` followed by value-consuming `??`
+            state.Statements.Add($"sNullBag.OptInt1 ??= sNullBag.OptInt0;");
+            state.Statements.Add($"{i32.Name} = ((sNullBag.OptInt1 ?? {i32.Name}) + (sNullBag.OptInt0.HasValue ? 3 : 1));");
         }
 
         // Same-width `??` on long?
@@ -218,14 +227,12 @@ public static class FuzzCompositeExpressionEmitter
             _ => "^=",
         };
 
-        if (!state.IssueFilter.AvoidPackedStructFieldRefBinding && rng.Chance(0.5))
+        if (rng.Chance(0.5))
         {
-            // When #877 is allowed (Profile M / Profile C / --allow-issue 877), bind ref to Pack = 1 field
             state.Statements.Add($"({cond} ? ref sPack1.MisalignedInt : ref {first.Name}) {op} {rhs};");
         }
         else if (rng.NextBool())
         {
-            // Bind ref to aligned struct field or scalar local
             state.Statements.Add($"({cond} ? ref sPack4.AlignedInt : ref {first.Name}) {op} {rhs};");
         }
         else
@@ -240,7 +247,7 @@ public static class FuzzCompositeExpressionEmitter
         var rng = state.Rng;
         var (first, second) = state.PickDistinctPair(FuzzScalarKind.Int32, FuzzScalarKind.Int32);
 
-        if (state.Swarm.Focus == FuzzSwarmFocus.TupleDeconstructComplex)
+        if (!state.IssueFilter.AvoidComplexTupleDeconstruction || state.Swarm.Focus == FuzzSwarmFocus.TupleDeconstructComplex)
         {
             var third = state.FindLocal(FuzzScalarKind.Int64);
             if (rng.NextBool())

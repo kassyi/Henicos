@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -53,8 +52,7 @@ public static class FuzzSpeculativeBatchBuilder
 
         string hoistedSource = FuzzReducer.HoistLocalsToDefault(kernelSource);
         var root = FuzzSyntaxHelpers.ParseRoot(hoistedSource);
-        var kernelMethod = FuzzSyntaxHelpers.GetKernelMethods(root).FirstOrDefault()
-            ?? root.DescendantNodes().OfType<MethodDeclarationSyntax>().FirstOrDefault()
+        var kernelMethod = FindFirstMethod(root)
             ?? throw new InvalidOperationException("No kernel method found in source.");
 
         if (kernelMethod.Body is null)
@@ -73,6 +71,7 @@ public static class FuzzSpeculativeBatchBuilder
         AddIntersectionMergeCandidate(kernelMethod, removableIndices, priorSuccessfulRemovals, TryAddCandidate);
         if (removableIndices.Count > 0)
         {
+            AddDeadStoreStripCandidate(kernelMethod, removableIndices, TryAddCandidate);
             AddQuarterChunkCandidates(kernelMethod, removableIndices, TryAddCandidate);
             AddHalfChunkCandidates(kernelMethod, removableIndices, TryAddCandidate);
             AddSingleStatementCandidates(kernelMethod, removableIndices, candidates, maxCandidates, TryAddCandidate);
@@ -85,7 +84,7 @@ public static class FuzzSpeculativeBatchBuilder
         }
 
         string kernelsUnit = BuildSpeculativeKernelsCompilationUnit(root, candidates);
-        string casesUnit = BuildSpeculativeCasesCompilationUnit(candidates, fuzzSeed, inputSeed);
+        string casesUnit = BuildSpeculativeCasesCompilationUnit(candidates, fuzzSeed);
 
         return new SpeculativeCandidateBatch(
             baseKernelName,
@@ -127,6 +126,25 @@ public static class FuzzSpeculativeBatchBuilder
         return best;
     }
 
+    private static MethodDeclarationSyntax? FindFirstMethod(CompilationUnitSyntax root)
+    {
+        var kernels = FuzzSyntaxHelpers.GetKernelMethods(root);
+        if (kernels.Count > 0)
+        {
+            return kernels[0];
+        }
+
+        foreach (var node in root.DescendantNodes())
+        {
+            if (node is MethodDeclarationSyntax method)
+            {
+                return method;
+            }
+        }
+
+        return null;
+    }
+
     private static void TryAddSpeculativeCandidate(
         List<SpeculativeBatchCandidate> candidates,
         HashSet<string> seenSources,
@@ -145,15 +163,20 @@ public static class FuzzSpeculativeBatchBuilder
         int idx = candidates.Count;
         string candName = string.Create(CultureInfo.InvariantCulture, $"Candidate_{idx:D2}");
         var renamedMethod = mutatedMethod.WithIdentifier(SyntaxFactory.Identifier(candName));
-        string methodSource = renamedMethod.ToFullString();
+        string methodSource = FuzzSyntaxHelpers.RenderFullNode(renamedMethod);
 
-        string bodyKey = renamedMethod.Body?.ToFullString() ?? methodSource;
+        string bodyKey = renamedMethod.Body is not null ? FuzzSyntaxHelpers.RenderFullNode(renamedMethod.Body) : methodSource;
         if (!seenSources.Add(bodyKey))
         {
             return;
         }
 
-        string caseSource = RenderCandidateCaseProperty(candName, fuzzSeed, inputSeed);
+        string caseHeader = string.Create(CultureInfo.InvariantCulture, $"// fuzz-seed: {FuzzRandom.FormatSeed(fuzzSeed)}");
+        string caseSource = FuzzCaseEmitter.RenderDifferentialCaseProperty(
+            "FuzzBatchKernels",
+            candName,
+            inputSeed,
+            caseHeader);
         int stmtCount = FuzzSyntaxHelpers.CountMethodExecutableStatements(renamedMethod);
         candidates.Add(new SpeculativeBatchCandidate(
             idx,
@@ -187,9 +210,103 @@ public static class FuzzSpeculativeBatchBuilder
 
         if (combinedRemove.Count > 0 && combinedRemove.Count < removableIndices.Count)
         {
+            var mergedIndices = new int[combinedRemove.Count];
+            combinedRemove.CopyTo(mergedIndices);
             var mergedMethod = FuzzSyntaxHelpers.RemoveStatementsFromMethodNode(kernelMethod, combinedRemove);
-            tryAdd("IntersectionMerge", combinedRemove.ToArray(), mergedMethod);
+            tryAdd("IntersectionMerge", mergedIndices, mergedMethod);
         }
+    }
+
+    private static void AddDeadStoreStripCandidate(
+        MethodDeclarationSyntax kernelMethod,
+        IReadOnlyList<int> removableIndices,
+        Action<string, IReadOnlyList<int>, MethodDeclarationSyntax> tryAdd)
+    {
+        if (kernelMethod.Body is null)
+        {
+            return;
+        }
+
+        var statements = kernelMethod.Body.Statements;
+        var removableSet = new HashSet<int>(removableIndices);
+        var liveVars = new HashSet<string>(StringComparer.Ordinal) { "checksum", "hash", "gid", "inA", "inB", "inC" };
+        var deadIndices = new List<int>();
+
+        for (int i = statements.Count - 1; i >= 0; i--)
+        {
+            var stmt = statements[i];
+            if (removableSet.Contains(i))
+            {
+                if (stmt is LocalDeclarationStatementSyntax { Declaration.Variables.Count: 1 } localDecl)
+                {
+                    var v = localDecl.Declaration.Variables[0];
+                    if (!liveVars.Contains(v.Identifier.ValueText) &&
+                        (v.Initializer is null || !HasSideEffect(v.Initializer.Value)))
+                    {
+                        deadIndices.Add(i);
+                        continue;
+                    }
+                }
+                else if (stmt is ExpressionStatementSyntax
+                {
+                    Expression: AssignmentExpressionSyntax
+                    {
+                        RawKind: (int)SyntaxKind.SimpleAssignmentExpression,
+                        Left: IdentifierNameSyntax leftId,
+                    } simpleAssign,
+                })
+                {
+                    if (!liveVars.Contains(leftId.Identifier.ValueText) && !HasSideEffect(simpleAssign.Right))
+                    {
+                        deadIndices.Add(i);
+                        continue;
+                    }
+
+                    liveVars.Remove(leftId.Identifier.ValueText);
+                    foreach (var node in simpleAssign.Right.DescendantNodesAndSelf())
+                    {
+                        if (node is IdentifierNameSyntax id)
+                        {
+                            liveVars.Add(id.Identifier.ValueText);
+                        }
+                    }
+
+                    continue;
+                }
+            }
+
+            foreach (var node in stmt.DescendantNodes())
+            {
+                if (node is IdentifierNameSyntax id)
+                {
+                    liveVars.Add(id.Identifier.ValueText);
+                }
+            }
+        }
+
+        if (deadIndices.Count > 0 && deadIndices.Count < removableIndices.Count)
+        {
+            deadIndices.Sort();
+            var mutated = FuzzSyntaxHelpers.RemoveStatementsFromMethodNode(kernelMethod, new HashSet<int>(deadIndices));
+            tryAdd("StripDeadStores", deadIndices, mutated);
+        }
+    }
+
+    private static bool HasSideEffect(ExpressionSyntax expr)
+    {
+        foreach (var node in expr.DescendantNodesAndSelf())
+        {
+            if (node is AssignmentExpressionSyntax or InvocationExpressionSyntax ||
+                (node is PrefixUnaryExpressionSyntax pre &&
+                 (pre.IsKind(SyntaxKind.PreIncrementExpression) || pre.IsKind(SyntaxKind.PreDecrementExpression))) ||
+                (node is PostfixUnaryExpressionSyntax post &&
+                 (post.IsKind(SyntaxKind.PostIncrementExpression) || post.IsKind(SyntaxKind.PostDecrementExpression))))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static void AddQuarterChunkCandidates(
@@ -232,8 +349,18 @@ public static class FuzzSpeculativeBatchBuilder
         }
 
         int mid = n / 2;
-        var backHalf = removableIndices.Skip(mid).ToArray();
-        var frontHalf = removableIndices.Take(mid).ToArray();
+        var backHalf = new int[n - mid];
+        for (int i = mid; i < n; i++)
+        {
+            backHalf[i - mid] = removableIndices[i];
+        }
+
+        var frontHalf = new int[mid];
+        for (int i = 0; i < mid; i++)
+        {
+            frontHalf[i] = removableIndices[i];
+        }
+
         tryAdd("Half_Back", backHalf, FuzzSyntaxHelpers.RemoveStatementsFromMethodNode(kernelMethod, new HashSet<int>(backHalf)));
         tryAdd("Half_Front", frontHalf, FuzzSyntaxHelpers.RemoveStatementsFromMethodNode(kernelMethod, new HashSet<int>(frontHalf)));
     }
@@ -270,9 +397,15 @@ public static class FuzzSpeculativeBatchBuilder
                 continue;
             }
 
-            var binOrCond = stmt.DescendantNodes()
-                .OfType<ExpressionSyntax>()
-                .FirstOrDefault(static e => e is ConditionalExpressionSyntax or BinaryExpressionSyntax);
+            ExpressionSyntax? binOrCond = null;
+            foreach (var node in stmt.DescendantNodes())
+            {
+                if (node is ConditionalExpressionSyntax or BinaryExpressionSyntax)
+                {
+                    binOrCond = (ExpressionSyntax)node;
+                    break;
+                }
+            }
 
             if (binOrCond is ConditionalExpressionSyntax cond)
             {
@@ -294,20 +427,27 @@ public static class FuzzSpeculativeBatchBuilder
         IReadOnlyList<SpeculativeBatchCandidate> candidates)
     {
         using var writer = new SourceWriter();
-        writer.AppendLine("#nullable enable");
-        writer.AppendLine("#pragma warning disable CS0162, CS0219, CS1717, CS1718");
-        writer.AppendLine("using System;");
-        writer.AppendLine("using Kassyi.GSharp.Core;");
-        writer.AppendLine();
-        writer.AppendLine("namespace Kassyi.GSharp.Tests.Shared.Differential;");
-        writer.AppendLine();
+        FuzzCaseEmitter.AppendKernelsFileHeader(writer, "Kassyi.GSharp.Tests.Shared.Differential");
 
-        var existingEnums = originalRoot.DescendantNodes().OfType<EnumDeclarationSyntax>().ToList();
+        var existingEnums = new List<EnumDeclarationSyntax>();
+        var existingStructs = new List<StructDeclarationSyntax>();
+        foreach (var node in originalRoot.DescendantNodes())
+        {
+            if (node is EnumDeclarationSyntax enumDecl)
+            {
+                existingEnums.Add(enumDecl);
+            }
+            else if (node is StructDeclarationSyntax structDecl)
+            {
+                existingStructs.Add(structDecl);
+            }
+        }
+
         if (existingEnums.Count > 0)
         {
             foreach (var enumDecl in existingEnums)
             {
-                writer.AppendLine(enumDecl.ToFullString().Trim());
+                writer.AppendLine(FuzzSyntaxHelpers.RenderFullNode(enumDecl).AsSpan().Trim().ToString());
                 writer.AppendLine();
             }
         }
@@ -317,12 +457,11 @@ public static class FuzzSpeculativeBatchBuilder
             writer.AppendLine();
         }
 
-        var existingStructs = originalRoot.DescendantNodes().OfType<StructDeclarationSyntax>().ToList();
         if (existingStructs.Count > 0)
         {
             foreach (var structDecl in existingStructs)
             {
-                writer.AppendLine(structDecl.ToFullString().Trim());
+                writer.AppendLine(FuzzSyntaxHelpers.RenderFullNode(structDecl).AsSpan().Trim().ToString());
                 writer.AppendLine();
             }
         }
@@ -336,7 +475,7 @@ public static class FuzzSpeculativeBatchBuilder
         {
             foreach (var helper in FuzzSyntaxHelpers.GetDeviceFunctionMethods(originalRoot))
             {
-                writer.AppendLine(helper.ToFullString().TrimEnd());
+                writer.AppendLine(FuzzSyntaxHelpers.RenderFullNode(helper).AsSpan().TrimEnd().ToString());
                 writer.AppendLine();
             }
 
@@ -348,7 +487,7 @@ public static class FuzzSpeculativeBatchBuilder
                 }
 
                 writer.AppendLine(string.Create(CultureInfo.InvariantCulture, $"// Speculative candidate #{candidates[i].Index:D2}: {candidates[i].CandidateDescription}"));
-                writer.AppendLine(candidates[i].CandidateKernelMethodSource.TrimEnd());
+                writer.AppendLine(candidates[i].CandidateKernelMethodSource.AsSpan().TrimEnd().ToString());
             }
         }
 
@@ -357,88 +496,19 @@ public static class FuzzSpeculativeBatchBuilder
 
     private static string BuildSpeculativeCasesCompilationUnit(
         IReadOnlyList<SpeculativeBatchCandidate> candidates,
-        ulong fuzzSeed,
-        int? inputSeed)
+        ulong fuzzSeed)
     {
-        using var writer = new SourceWriter();
-        writer.AppendLine("// <auto-generated />");
-        writer.AppendLine("#nullable enable");
-        writer.AppendLine("using System;");
-        writer.AppendLine("using System.Collections.Generic;");
-        writer.AppendLine("using System.Globalization;");
-        writer.AppendLine("using System.Linq;");
-        writer.AppendLine("using System.Text.Json;");
-        writer.AppendLine("using Kassyi.GSharp.Core;");
-        writer.AppendLine();
-        writer.AppendLine("namespace Kassyi.GSharp.Tests.Shared.Differential;");
-        writer.AppendLine();
-
-        using (writer.Scope("public static class FuzzBatchCases"))
+        var entries = new List<(string KernelName, ulong KernelSeed, string CasePropertySource)>(candidates.Count);
+        foreach (var c in candidates)
         {
-            writer.AppendLine(string.Create(CultureInfo.InvariantCulture, $"public const ulong BatchFuzzSeed = {fuzzSeed}UL;"));
-            writer.AppendLine();
-
-            foreach (var c in candidates)
-            {
-                writer.AppendLine(c.CandidateCasePropertySource);
-                writer.AppendLine();
-            }
-
-            writer.AppendLine("public static IReadOnlyList<(string KernelName, ulong KernelSeed, DifferentialCase Case)> All { get; } =");
-            writer.AppendLine("[");
-            foreach (var c in candidates)
-            {
-                writer.AppendLine(string.Create(CultureInfo.InvariantCulture, $"(\"{c.CandidateKernelName}\", {fuzzSeed}UL, {c.CandidateKernelName}_Case),"));
-            }
-
-            writer.AppendLine("];");
-
-            writer.AppendLine();
-            FuzzChecksumEmitter.AppendBatchRunnerMain(writer);
+            entries.Add((c.CandidateKernelName, fuzzSeed, c.CandidateCasePropertySource));
         }
 
-        return writer.ToString();
-    }
-
-    private static string RenderCandidateCaseProperty(string candidateKernelName, ulong fuzzSeed, int? inputSeed)
-    {
-        using var writer = new SourceWriter();
-        writer.AppendLine(string.Create(CultureInfo.InvariantCulture, $"// fuzz-seed: {FuzzRandom.FormatSeed(fuzzSeed)}"));
-        using (writer.Scope($"public static DifferentialCase {candidateKernelName}_Case {{ get; }} = new(\"FuzzBatchKernels.{candidateKernelName}\")", "};"))
-        {
-            writer.AppendLine("Shape = LaunchShapes.PartialWarp(),");
-            if (inputSeed is { } explicitInputSeed)
-            {
-                writer.AppendLine(string.Create(CultureInfo.InvariantCulture, $"Seeds = [{explicitInputSeed}],"));
-            }
-
-            using (writer.Scope("Inputs = static (rng, shape) =>", "},"))
-            {
-                writer.AppendLine("int rows = shape.Rows;");
-                writer.AppendLine("var (inA, inB) = DiffValues.Int32Pairs(rng, rows);");
-                writer.AppendLine("var inC = DiffValues.Values(rng, rows, DiffValues.ShiftCounts, DiffValues.NextInt32);");
-                writer.AppendLine("return new DiffBuffers()");
-                writer.AppendLine(".In(\"inA\", inA)");
-                writer.AppendLine(".In(\"inB\", inB)");
-                writer.AppendLine(".In(\"inC\", inC)");
-                writer.AppendLine(".Out<ulong>(\"checksum\", rows, [\"hash\"], OutputPolicy.Exact);");
-            }
-
-            writer.AppendLine($"Launch = static (b, s) => FuzzBatchKernels.Launch{candidateKernelName}(");
-            writer.AppendLine("b.Get<int>(\"inA\"),");
-            writer.AppendLine("b.Get<int>(\"inB\"),");
-            writer.AppendLine("b.Get<int>(\"inC\"),");
-            writer.AppendLine("b.Get<ulong>(\"checksum\"),");
-            writer.AppendLine("gridDimX: s.GridX,");
-            writer.AppendLine("blockDimX: s.BlockX),");
-            writer.AppendLine($"Oracle = static (b, _) => FuzzBatchKernels.{candidateKernelName}(");
-            writer.AppendLine("b.Get<int>(\"inA\"),");
-            writer.AppendLine("b.Get<int>(\"inB\"),");
-            writer.AppendLine("b.Get<int>(\"inC\"),");
-            writer.AppendLine("b.Get<ulong>(\"checksum\")),");
-        }
-
-        return writer.ToString().TrimEnd();
+        return FuzzCaseEmitter.BuildCasesCompilationUnit(
+            "Kassyi.GSharp.Tests.Shared.Differential",
+            "FuzzBatchCases",
+            fuzzSeed,
+            entries,
+            emitProgramMain: true);
     }
 }
-

@@ -1,4 +1,3 @@
-using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -53,13 +52,13 @@ public static class FuzzInlinerAndSimplifier
         {
             string beforePass = current;
             var root = FuzzSyntaxHelpers.ParseRoot(current);
-            var method = FuzzSyntaxHelpers.GetKernelMethods(root).FirstOrDefault();
-            if (method?.Body is null)
+            var kernels = FuzzSyntaxHelpers.GetKernelMethods(root);
+            if (kernels.Count == 0 || kernels[0].Body is null)
             {
                 break;
             }
 
-            var removableIndices = FuzzSyntaxHelpers.GetRemovableStatementIndices(method.Body.Statements);
+            var removableIndices = FuzzSyntaxHelpers.GetRemovableStatementIndices(kernels[0].Body!.Statements);
             foreach (int stmtIdx in removableIndices)
             {
                 current = TrySimplifyStatementAt(current, stmtIdx, isInteresting);
@@ -80,7 +79,7 @@ public static class FuzzInlinerAndSimplifier
     public static string PruneUnusedHoistedLocals(string source, Func<string, bool> isInteresting)
     {
         var root = FuzzSyntaxHelpers.ParseRoot(source);
-        var methods = root.DescendantNodes().OfType<MethodDeclarationSyntax>().ToList();
+        var methods = FuzzReducer.CollectAllMethods(root);
         if (methods.Count == 0)
         {
             return source;
@@ -91,9 +90,7 @@ public static class FuzzInlinerAndSimplifier
         {
             string methodName = m.Identifier.ValueText;
             var latestRoot = FuzzSyntaxHelpers.ParseRoot(current);
-            var method = latestRoot.DescendantNodes()
-                .OfType<MethodDeclarationSyntax>()
-                .FirstOrDefault(x => string.Equals(x.Identifier.ValueText, methodName, StringComparison.Ordinal));
+            var method = FuzzReducer.FindMethodByName(latestRoot, methodName);
             if (method?.Body is null)
             {
                 continue;
@@ -123,13 +120,13 @@ public static class FuzzInlinerAndSimplifier
         for (int round = 0; round < 8; round++)
         {
             var root = FuzzSyntaxHelpers.ParseRoot(current);
-            var method = FuzzSyntaxHelpers.GetKernelMethods(root).FirstOrDefault();
-            if (method?.Body is null)
+            var kernels = FuzzSyntaxHelpers.GetKernelMethods(root);
+            if (kernels.Count == 0 || kernels[0].Body is null)
             {
                 break;
             }
 
-            if (!TryCollapseOneSingleAssignmentLocal(root, method, isInteresting, out string? updated))
+            if (!TryCollapseOneSingleAssignmentLocal(root, kernels[0], isInteresting, out string? updated))
             {
                 break;
             }
@@ -159,7 +156,7 @@ public static class FuzzInlinerAndSimplifier
                 continue;
             }
 
-            string candidate = withoutHelper.ToFullString();
+            string candidate = FuzzSyntaxHelpers.RenderFullNode(withoutHelper);
             if (isInteresting(candidate))
             {
                 current = candidate;
@@ -191,8 +188,7 @@ public static class FuzzInlinerAndSimplifier
     private static string? TryInlineHelperMethod(string source, string helperName)
     {
         var root = FuzzSyntaxHelpers.ParseRoot(source);
-        var helper = FuzzSyntaxHelpers.GetDeviceFunctionMethods(root)
-            .FirstOrDefault(m => string.Equals(m.Identifier.ValueText, helperName, StringComparison.Ordinal));
+        var helper = FindDeviceFunctionByName(root, helperName);
         if (helper is null || helper.TypeParameterList is not null || HasByRefParameters(helper))
         {
             return null;
@@ -204,53 +200,91 @@ public static class FuzzInlinerAndSimplifier
             return null;
         }
 
-        var paramNames = helper.ParameterList.Parameters.Select(static p => p.Identifier.ValueText).ToArray();
-        var paramTypes = helper.ParameterList.Parameters.Select(static p => p.Type?.ToString() ?? "int").ToArray();
+        int paramCount = helper.ParameterList.Parameters.Count;
+        var paramNames = new string[paramCount];
+        var paramTypes = new string[paramCount];
+        for (int i = 0; i < paramCount; i++)
+        {
+            var p = helper.ParameterList.Parameters[i];
+            paramNames[i] = p.Identifier.ValueText;
+            paramTypes[i] = p.Type is not null ? FuzzSyntaxHelpers.RenderNodeText(p.Type) : "int";
+        }
 
-        var invocations = root.DescendantNodes()
-            .OfType<InvocationExpressionSyntax>()
-            .Where(inv => !helper.Span.Contains(inv.Span) &&
-                          FuzzSyntaxHelpers.GetInvokedMethodName(inv) == helperName &&
-                          inv.ArgumentList.Arguments.Count == paramNames.Length)
-            .ToList();
+        var invocations = new List<InvocationExpressionSyntax>();
+        foreach (var node in root.DescendantNodes())
+        {
+            if (node is InvocationExpressionSyntax inv &&
+                !helper.Span.Contains(inv.Span) &&
+                string.Equals(FuzzSyntaxHelpers.GetInvokedMethodName(inv), helperName, StringComparison.Ordinal) &&
+                inv.ArgumentList.Arguments.Count == paramCount)
+            {
+                invocations.Add(inv);
+            }
+        }
 
         if (invocations.Count == 0)
         {
-            return root.RemoveNode(helper, SyntaxRemoveOptions.KeepNoTrivia)?.ToFullString();
+            var removed = root.RemoveNode(helper, SyntaxRemoveOptions.KeepNoTrivia);
+            return removed is not null ? FuzzSyntaxHelpers.RenderFullNode(removed) : null;
         }
 
         var replacedRoot = root.ReplaceNodes(invocations, (origInv, _) =>
         {
-            string substituted = SubstituteParameters(
-                returnExprTemplate,
-                paramNames,
-                paramTypes,
-                origInv.ArgumentList.Arguments.Select(static a => a.Expression.ToString()).ToArray());
+            var argExprs = new string[origInv.ArgumentList.Arguments.Count];
+            for (int i = 0; i < argExprs.Length; i++)
+            {
+                argExprs[i] = FuzzSyntaxHelpers.RenderNodeText(origInv.ArgumentList.Arguments[i].Expression);
+            }
+
+            string substituted = SubstituteParameters(returnExprTemplate, paramNames, paramTypes, argExprs);
             return SyntaxFactory.ParseExpression($"({substituted})").WithTriviaFrom(origInv);
         });
 
-        var helperInReplaced = FuzzSyntaxHelpers.GetDeviceFunctionMethods(replacedRoot)
-            .FirstOrDefault(m => string.Equals(m.Identifier.ValueText, helperName, StringComparison.Ordinal));
+        var helperInReplaced = FindDeviceFunctionByName(replacedRoot, helperName);
         if (helperInReplaced is not null && !FuzzSyntaxHelpers.IsHelperReferencedOutsideItself(replacedRoot, helperInReplaced))
         {
             replacedRoot = replacedRoot.RemoveNode(helperInReplaced, SyntaxRemoveOptions.KeepNoTrivia) ?? replacedRoot;
         }
 
-        return replacedRoot.ToFullString();
+        return FuzzSyntaxHelpers.RenderFullNode(replacedRoot);
     }
 
-    private static bool HasByRefParameters(MethodDeclarationSyntax helper) =>
-        helper.ParameterList.Parameters.Any(static p =>
-            p.Modifiers.Any(static m =>
-                m.IsKind(SyntaxKind.RefKeyword) ||
-                m.IsKind(SyntaxKind.OutKeyword) ||
-                m.IsKind(SyntaxKind.InKeyword)));
+    private static MethodDeclarationSyntax? FindDeviceFunctionByName(CompilationUnitSyntax root, string helperName)
+    {
+        foreach (var m in FuzzSyntaxHelpers.GetDeviceFunctionMethods(root))
+        {
+            if (string.Equals(m.Identifier.ValueText, helperName, StringComparison.Ordinal))
+            {
+                return m;
+            }
+        }
+
+        return null;
+    }
+
+    private static bool HasByRefParameters(MethodDeclarationSyntax helper)
+    {
+        foreach (var p in helper.ParameterList.Parameters)
+        {
+            foreach (var m in p.Modifiers)
+            {
+                if (m.IsKind(SyntaxKind.RefKeyword) ||
+                    m.IsKind(SyntaxKind.OutKeyword) ||
+                    m.IsKind(SyntaxKind.InKeyword))
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
 
     private static string? ExtractSingleReturnExpression(MethodDeclarationSyntax helper)
     {
         if (helper.ExpressionBody is not null)
         {
-            return helper.ExpressionBody.Expression.ToString();
+            return FuzzSyntaxHelpers.RenderNodeText(helper.ExpressionBody.Expression);
         }
 
         if (helper.Body is null)
@@ -272,7 +306,7 @@ public static class FuzzInlinerAndSimplifier
             }
             else if (stmt is ReturnStatementSyntax { Expression: { } retExpr })
             {
-                return SubstituteUsingMap(retExpr.ToString(), env);
+                return SubstituteUsingMap(FuzzSyntaxHelpers.RenderNodeText(retExpr), env);
             }
             else
             {
@@ -287,12 +321,12 @@ public static class FuzzInlinerAndSimplifier
         LocalDeclarationStatementSyntax localDecl,
         Dictionary<string, string> env)
     {
-        string typeText = localDecl.Declaration.Type.ToString();
+        string typeText = FuzzSyntaxHelpers.RenderNodeText(localDecl.Declaration.Type);
         foreach (var v in localDecl.Declaration.Variables)
         {
             string vName = v.Identifier.ValueText;
             string initText = v.Initializer is not null
-                ? SubstituteUsingMap(v.Initializer.Value.ToString(), env)
+                ? SubstituteUsingMap(FuzzSyntaxHelpers.RenderNodeText(v.Initializer.Value), env)
                 : $"default({typeText})";
             env[vName] = $"(({typeText})({initText}))";
         }
@@ -303,7 +337,7 @@ public static class FuzzInlinerAndSimplifier
         string targetName,
         Dictionary<string, string> env)
     {
-        string rhsText = SubstituteUsingMap(assign.Right.ToString(), env);
+        string rhsText = SubstituteUsingMap(FuzzSyntaxHelpers.RenderNodeText(assign.Right), env);
         if (assign.IsKind(SyntaxKind.SimpleAssignmentExpression))
         {
             env[targetName] = $"({rhsText})";
@@ -339,10 +373,16 @@ public static class FuzzInlinerAndSimplifier
         }
 
         var expr = SyntaxFactory.ParseExpression(exprText);
-        var ids = expr.DescendantNodesAndSelf()
-            .OfType<IdentifierNameSyntax>()
-            .Where(id => !FuzzSyntaxHelpers.IsMemberAccessRight(id) && map.ContainsKey(id.Identifier.ValueText))
-            .ToList();
+        var ids = new List<IdentifierNameSyntax>();
+        foreach (var node in expr.DescendantNodesAndSelf())
+        {
+            if (node is IdentifierNameSyntax id &&
+                !FuzzSyntaxHelpers.IsMemberAccessRight(id) &&
+                map.ContainsKey(id.Identifier.ValueText))
+            {
+                ids.Add(id);
+            }
+        }
 
         if (ids.Count == 0)
         {
@@ -351,28 +391,32 @@ public static class FuzzInlinerAndSimplifier
 
         var replaced = expr.ReplaceNodes(ids, (orig, _) =>
             SyntaxFactory.ParseExpression(map[orig.Identifier.ValueText]).WithTriviaFrom(orig));
-        return replaced.ToFullString();
+        return FuzzSyntaxHelpers.RenderFullNode(replaced);
     }
 
     private static string TrySimplifyStatementAt(string current, int stmtIdx, Func<string, bool> isInteresting)
     {
         var root = FuzzSyntaxHelpers.ParseRoot(current);
-        var method = FuzzSyntaxHelpers.GetKernelMethods(root).FirstOrDefault();
-        if (method?.Body is null || stmtIdx >= method.Body.Statements.Count)
+        var kernels = FuzzSyntaxHelpers.GetKernelMethods(root);
+        if (kernels.Count == 0 || kernels[0].Body is null || stmtIdx >= kernels[0].Body!.Statements.Count)
         {
             return current;
         }
 
-        var stmt = method.Body.Statements[stmtIdx];
+        var stmt = kernels[0].Body!.Statements[stmtIdx];
         if (FuzzSyntaxHelpers.IsChecksumFoldStatement(stmt))
         {
             return current;
         }
 
-        var candidateExprs = stmt.DescendantNodes()
-            .OfType<ExpressionSyntax>()
-            .Where(static e => e is BinaryExpressionSyntax or ConditionalExpressionSyntax)
-            .ToList();
+        var candidateExprs = new List<ExpressionSyntax>();
+        foreach (var node in stmt.DescendantNodes())
+        {
+            if (node is BinaryExpressionSyntax or ConditionalExpressionSyntax)
+            {
+                candidateExprs.Add((ExpressionSyntax)node);
+            }
+        }
 
         foreach (var expr in candidateExprs)
         {
@@ -386,7 +430,7 @@ public static class FuzzInlinerAndSimplifier
             foreach (var rep in replacements)
             {
                 var newStmt = stmt.ReplaceNode(expr, SyntaxFactory.ParenthesizedExpression(rep.WithoutTrivia()));
-                string candidate = root.ReplaceNode(stmt, newStmt).ToFullString();
+                string candidate = FuzzSyntaxHelpers.RenderFullNode(root.ReplaceNode(stmt, newStmt));
                 if (isInteresting(candidate))
                 {
                     return candidate;
@@ -413,8 +457,7 @@ public static class FuzzInlinerAndSimplifier
             bool usedElsewhere = false;
             for (int j = 0; j < statements.Count; j++)
             {
-                if (j != i &&
-                    statements[j].DescendantNodes().OfType<IdentifierNameSyntax>().Any(id => id.Identifier.ValueText == varName))
+                if (j != i && StatementReferencesVariable(statements[j], varName))
                 {
                     usedElsewhere = true;
                     break;
@@ -452,8 +495,7 @@ public static class FuzzInlinerAndSimplifier
             }
 
             string varName = leftId.Identifier.ValueText;
-            if (varName is "gid" or "hash" ||
-                assign.Right.DescendantNodesAndSelf().OfType<IdentifierNameSyntax>().Any(id => id.Identifier.ValueText == varName))
+            if (varName is "gid" or "hash" || NodeReferencesVariable(assign.Right, varName))
             {
                 continue;
             }
@@ -465,10 +507,16 @@ public static class FuzzInlinerAndSimplifier
             }
 
             var readerStmt = statements[readerIdx];
-            var readerRefs = readerStmt.DescendantNodes()
-                .OfType<IdentifierNameSyntax>()
-                .Where(id => id.Identifier.ValueText == varName && !FuzzSyntaxHelpers.IsAssignedOrMutatedTarget(id))
-                .ToList();
+            var readerRefs = new List<IdentifierNameSyntax>();
+            foreach (var node in readerStmt.DescendantNodes())
+            {
+                if (node is IdentifierNameSyntax id &&
+                    string.Equals(id.Identifier.ValueText, varName, StringComparison.Ordinal) &&
+                    !FuzzSyntaxHelpers.IsAssignedOrMutatedTarget(id))
+                {
+                    readerRefs.Add(id);
+                }
+            }
 
             if (readerRefs.Count != 1)
             {
@@ -476,9 +524,10 @@ public static class FuzzInlinerAndSimplifier
             }
 
             string? declaredType = FuzzSyntaxHelpers.FindHoistedLocalType(statements, varName);
+            string rhsText = FuzzSyntaxHelpers.RenderNodeText(assign.Right);
             string replacementExprText = declaredType is not null
-                ? $"(({declaredType})({assign.Right}))"
-                : $"({assign.Right})";
+                ? $"(({declaredType})({rhsText}))"
+                : $"({rhsText})";
             var newReaderStmt = readerStmt.ReplaceNode(
                 readerRefs[0],
                 SyntaxFactory.ParseExpression(replacementExprText).WithTriviaFrom(readerRefs[0]));
@@ -493,7 +542,7 @@ public static class FuzzInlinerAndSimplifier
             }
 
             var newMethod = method.WithBody(method.Body.WithStatements(SyntaxFactory.List(newStmts)));
-            string candidate = root.ReplaceNode(method, newMethod).ToFullString();
+            string candidate = FuzzSyntaxHelpers.RenderFullNode(root.ReplaceNode(method, newMethod));
             if (isInteresting(candidate))
             {
                 updatedSource = candidate;
@@ -518,7 +567,7 @@ public static class FuzzInlinerAndSimplifier
                 continue;
             }
 
-            if (statements[j].DescendantNodes().OfType<IdentifierNameSyntax>().Any(id => id.Identifier.ValueText == varName))
+            if (StatementReferencesVariable(statements[j], varName))
             {
                 if (foundIdx != -1)
                 {
@@ -531,5 +580,20 @@ public static class FuzzInlinerAndSimplifier
 
         return foundIdx;
     }
-}
 
+    private static bool StatementReferencesVariable(StatementSyntax stmt, string varName) =>
+        NodeReferencesVariable(stmt, varName);
+
+    private static bool NodeReferencesVariable(SyntaxNode rootNode, string varName)
+    {
+        foreach (var node in rootNode.DescendantNodesAndSelf())
+        {
+            if (node is IdentifierNameSyntax id && string.Equals(id.Identifier.ValueText, varName, StringComparison.Ordinal))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+}

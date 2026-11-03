@@ -3,6 +3,7 @@
   "issues": [
     {
       "issue": 1079,
+      "kind": "avoid",
       "summary": "8/16-bit integer and char increment/decrement expression value returns widened int or post-increment value",
       "profiles": ["M", "C", "G"],
       "paths": ["Native", "Cuda"],
@@ -10,6 +11,7 @@
     },
     {
       "issue": 998,
+      "kind": "avoid",
       "summary": "Null-coalescing operator (??) between Nullable<T> of different widths or narrow Nullable<T> implicit promotion",
       "profiles": ["M", "C", "G"],
       "paths": ["Native", "Cuda"],
@@ -17,25 +19,58 @@
     },
     {
       "issue": 984,
+      "kind": "avoid",
       "summary": "Nullable<T> local variable declarations fail C++ / CUDA transpilation or runtime lowering",
       "profiles": ["C", "G"],
       "paths": ["Native", "Cuda"],
       "avoidedShape": "Local variable declarations of type Nullable<T> (T?); Nullable<T> is instead exercised via struct fields on profiles C and G."
     },
     {
-      "issue": 877,
-      "summary": "Binding a C++ reference to a misaligned field of a Pack = 1 struct triggers CUDA misaligned address fault",
-      "profiles": ["G"],
-      "paths": ["Cuda"],
-      "avoidedShape": "Passing a misaligned field of a [StructLayout(LayoutKind.Sequential, Pack = 1)] struct to ref/out/in parameters, ref ternary, tuple deconstruction target, compound assignment, or ??= target."
-    },
-    {
       "issue": 645,
+      "kind": "avoid",
       "summary": "Instance methods of plain structs called from device code are not emitted or diagnosed",
       "profiles": ["C", "G"],
       "paths": ["Native", "Cuda"],
       "avoidedShape": "Calling plain struct instance methods directly from kernels; computed readonly properties and [GpuDeviceFunction] helpers are used when avoided."
+    },
+    {
+      "issue": 1101,
+      "kind": "avoid",
+      "summary": "Null-coalescing assignment (??=) used as a value has type Nullable<T> in generated C++ and does not compile",
+      "profiles": ["C", "G"],
+      "paths": ["Native", "Cuda"],
+      "avoidedShape": "Null-coalescing assignment (a ??= b) used inside a value-consuming expression; only statement-level (a ??= b;) is emitted when avoided."
+    },
+    {
+      "issue": 1102,
+      "kind": "avoid",
+      "summary": "Nested tuple deconstruction and a conditional expression on the right of a deconstruction fail with GSH0003",
+      "profiles": ["M", "C", "G"],
+      "paths": ["Managed", "Native", "Cuda"],
+      "avoidedShape": "Nested tuple deconstruction targets or values ((a, (b, c)) = (x, (y, z))) and conditional expressions on the right-hand side of a deconstruction ((a, b) = cond ? (x, y) : (y, z))."
+    },
+    {
+      "issue": 1103,
+      "kind": "avoid",
+      "summary": "default(T) leaves the fields of a struct with a conversion operator uninitialized on native and CUDA",
+      "profiles": ["C", "G"],
+      "paths": ["Native", "Cuda"],
+      "avoidedShape": "default(T) or default literal for a struct that declares a user-defined conversion operator or contains such a struct as a field, including reducer local-declaration hoisting to default(T)."
+    },
+    {
+      "issue": 1078,
+      "kind": "classify",
+      "classifyOnlyPaths": ["Native"],
+      "summary": "MSVC /Og optimizer miscompiles in generated native C++ kernels",
+      "profiles": ["C", "G"],
+      "paths": ["Native"],
+      "shapes": [
+        "Negation followed by division by a constant (-x / C or (0 - x) / C; Microsoft 11177375)",
+        "Zero-extension and sign-extension mix-up on a single short value (Microsoft 11127140)",
+        "Truncation to short dropped before choosing a pointer assignment target (fixed in MSVC 19.52+)"
+      ],
+      "removalCondition": "Remove this entry once the #1078 compiler workaround is merged.",
+      "avoidedShape": "Negation (-x or 0 - x) used directly as the dividend of a division or remainder operation on Profile C until the #1078 workaround is merged."
     }
   ]
 }
-
