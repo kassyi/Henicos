@@ -80,7 +80,7 @@ public class StackLinqDifferentialTests
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
-        Oracle = static b => StackLinqDifferentialKernels.Int32StackLinqMatrixKernel(b.Get<int>("xs"), b.Get<long>("r")),
+        Oracle = static (b, _) => StackLinqDifferentialKernels.Int32StackLinqMatrixKernel(b.Get<int>("xs"), b.Get<long>("r")),
     };
 
     private static readonly DifferentialCase s_int32Average = new($"{nameof(StackLinqDifferentialKernels)}.{nameof(StackLinqDifferentialKernels.Int32AverageKernel)}")
@@ -95,7 +95,7 @@ public class StackLinqDifferentialTests
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
-        Oracle = static b => StackLinqDifferentialKernels.Int32AverageKernel(b.Get<int>("xs"), b.Get<double>("r")),
+        Oracle = static (b, _) => StackLinqDifferentialKernels.Int32AverageKernel(b.Get<int>("xs"), b.Get<double>("r")),
     };
 
     private static readonly DifferentialCase s_singleFusedAverage = new($"{nameof(StackLinqDifferentialKernels)}.{nameof(StackLinqDifferentialKernels.SingleFusedAverageKernel)}")
@@ -110,7 +110,7 @@ public class StackLinqDifferentialTests
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
-        Oracle = static b => StackLinqDifferentialKernels.SingleFusedAverageKernel(b.Get<float>("xs"), b.Get<double>("r")),
+        Oracle = static (b, _) => StackLinqDifferentialKernels.SingleFusedAverageKernel(b.Get<float>("xs"), b.Get<double>("r")),
     };
 
     private static readonly DifferentialCase s_singleUnfusedAverage = new($"{nameof(StackLinqDifferentialKernels)}.{nameof(StackLinqDifferentialKernels.SingleUnfusedAverageKernel)}")
@@ -125,7 +125,7 @@ public class StackLinqDifferentialTests
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
-        Oracle = static b => StackLinqDifferentialKernels.SingleUnfusedAverageKernel(b.Get<float>("xs"), b.Get<double>("r")),
+        Oracle = static (b, _) => StackLinqDifferentialKernels.SingleUnfusedAverageKernel(b.Get<float>("xs"), b.Get<double>("r")),
     };
 
     private static readonly DifferentialCase s_floatingExtremaAndZeroContains = new($"{nameof(StackLinqDifferentialKernels)}.{nameof(StackLinqDifferentialKernels.FloatingExtremaAndZeroContainsKernel)}")
@@ -142,7 +142,7 @@ public class StackLinqDifferentialTests
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
-        Oracle = static b => StackLinqDifferentialKernels.FloatingExtremaAndZeroContainsKernel(
+        Oracle = static (b, _) => StackLinqDifferentialKernels.FloatingExtremaAndZeroContainsKernel(
             b.Get<float>("fs"),
             b.Get<double>("ds"),
             b.Get<double>("r")
@@ -163,7 +163,7 @@ public class StackLinqDifferentialTests
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
-        Oracle = static b => StackLinqDifferentialKernels.ContainsNaNKernel(
+        Oracle = static (b, _) => StackLinqDifferentialKernels.ContainsNaNKernel(
             b.Get<float>("fs"),
             b.Get<double>("ds"),
             b.Get<long>("r")
@@ -182,7 +182,7 @@ public class StackLinqDifferentialTests
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
-        Oracle = static b => StackLinqDifferentialKernels.ContainsEvaluationOrderKernel(b.Get<int>("xs"), b.Get<long>("r")),
+        Oracle = static (b, _) => StackLinqDifferentialKernels.ContainsEvaluationOrderKernel(b.Get<int>("xs"), b.Get<long>("r")),
     };
 
     private static readonly DifferentialCase s_unfusedSelectEvaluation = new($"{nameof(StackLinqDifferentialKernels)}.{nameof(StackLinqDifferentialKernels.UnfusedSelectEvaluationKernel)}")
@@ -197,7 +197,7 @@ public class StackLinqDifferentialTests
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
-        Oracle = static b => StackLinqDifferentialKernels.UnfusedSelectEvaluationKernel(b.Get<int>("xs"), b.Get<long>("r")),
+        Oracle = static (b, _) => StackLinqDifferentialKernels.UnfusedSelectEvaluationKernel(b.Get<int>("xs"), b.Get<long>("r")),
     };
 
     private static readonly DifferentialCase s_narrowAndInt64 = new($"{nameof(StackLinqDifferentialKernels)}.{nameof(StackLinqDifferentialKernels.NarrowAndInt64StackLinqKernel)}")
@@ -220,7 +220,7 @@ public class StackLinqDifferentialTests
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
-        Oracle = static b => StackLinqDifferentialKernels.NarrowAndInt64StackLinqKernel(
+        Oracle = static (b, _) => StackLinqDifferentialKernels.NarrowAndInt64StackLinqKernel(
             b.Get<byte>("bs"),
             b.Get<short>("ss"),
             b.Get<long>("ls"),
@@ -240,7 +240,7 @@ public class StackLinqDifferentialTests
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
-        Reference = static b =>
+        Reference = static (b, _) =>
         {
             var xs = b.Get<float>("xs");
             var r = b.Get<float>("r");

@@ -471,14 +471,10 @@ internal static class BigFloatTranscendentalMath
     /// (named Pow; an underflow below 1).</exception>
     /// <remarks>
     /// <para>
-    /// Source: <c>mpfr_pow_is_exact</c> in <c>src/pow.c</c> of MPFR 4.2.2 (Copyright 2001-2025 Free Software Foundation,
-    /// Inc.; file retrieved on 2026-10-27 from https://www.mpfr.org/mpfr-current/mpfr-4.2.2.tar.gz). It writes
-    /// <c>x = a·2^b</c> and <c>y = c·2^d</c> with <c>a</c> and <c>c</c> odd and takes <c>−d</c> square roots of
-    /// <c>a·2^b</c>, each with a perfect-square test. MPFR calls it for a non-integer <c>y</c> after the first failed
-    /// rounding test, and handles an integer <c>y</c> by multiplication (<c>mpfr_pow_z</c>) and <c>x = 2^b</c> through
-    /// <c>exp2</c>. Here one check covers the three cases before the first approximation (design #628 §4.8), so the
-    /// rounding check never sees a <c>p</c>-bit value, which it could not accept (its guard bits are all zeros or all
-    /// ones up to the error).
+    /// It writes <c>x = a·2^b</c> and <c>y = ±c·2^d</c> with <c>a</c> and <c>c</c> odd, and for <c>d &lt; 0</c> takes
+    /// <c>−d</c> square roots of <c>a·2^b</c>, each with a perfect-square test. One check covers the three cases before
+    /// the first approximation (design #628 §4.8), so the rounding check never sees a <c>p</c>-bit value, which it could
+    /// not accept (its guard bits are all zeros or all ones up to the error).
     /// </para>
     /// <para>
     /// With <c>x = a·2^b</c> and <c>y = ±c·2^d</c>, <c>a</c> and <c>c</c> odd:

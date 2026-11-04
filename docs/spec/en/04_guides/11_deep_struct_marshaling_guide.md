@@ -318,7 +318,7 @@ When designing AOT Context structures, follow this type support specification:
 | :--- | :--- | :--- | :--- | :--- |
 | **Primitive Scalars** | `int`, `uint`, `long`, `ulong`, `float`, `double`, `bool` | **Supported** | Blittable value type | Direct value copy |
 | **G# Vector Types** | `Float2`, `Float4`, `Int4`, `Double2` | **Supported** | CUDA vector type (`float4`) | Direct value copy (16-byte aligned) |
-| **1D Managed Arrays** | `uint[]`, `float[]`, `byte[]` | **Supported** | Raw device pointer (`T*`) | `cuMemAlloc` + `HtoD` + `DtoH` + `cuMemFree` |
+| **1D Managed Arrays** | `uint[]`, `float[]`, `byte[]` | **Supported** | Raw device pointer (`T*`) | `cuMemAllocAsync` + `cuMemcpyHtoDAsync_v2` + `cuMemcpyDtoHAsync_v2` + `DeviceArrayRegions.Free` (`cuMemFreeAsync`) |
 | **Raw Pointers** | `uint*`, `void*`, `IntPtr` | **Supported** | Device pointer (`T*`) | Raw pointer pass (for pre-allocated buffers) |
 | **Nested Structs** | Custom user structs | **Supported** | Nested C++ `struct` | Recursive marshaling & unmarshaling |
 | **Enums** | `enum MyEnum : int` | **Supported** | Integral scalar type | Cast to underlying integer type |
@@ -354,8 +354,8 @@ public static void Compute(AotContexts.MyContext ctx) { ... }
 [GpuKernel]
 public static void Compute(ref AotContexts.MyContext ctx) { ... }
 ```
-- **Device Mechanics**: G# allocates a dedicated GPU memory buffer for the structure itself (`cuMemAlloc_v2(sizeof(Aot_MyContext))`), copies the struct to device memory, and passes the device pointer (`Aot_MyContext*`) to the kernel.
-- **Post-Kernel Sync**: After kernel execution, the updated struct is copied back from GPU device memory to the host struct via `cuMemcpyDtoH_v2`.
+- **Device Mechanics**: G# allocates a dedicated GPU memory buffer for the structure itself on the launch stream (`cuMemAllocAsync(out d_ctx, (IntPtr)sizeof(Aot_MyContext), hStream)`), copies the native shadow struct to device memory (`cuMemcpyHtoDAsync_v2`), passes the device pointer (`Aot_MyContext*`) to the kernel, and frees the buffer in `finally` via `cuMemFreeAsync(d_ctx, hStream)` (while any array fields are freed through `DeviceArrayRegions.Free`).
+- **Post-Kernel Sync**: After kernel execution, the updated shadow struct is copied back from GPU device memory via `cuMemcpyDtoHAsync_v2` (and unmarshaled into the `ref` host struct).
 - **Use Case**: Used when GPU kernel threads need to update scalar metadata (e.g., dynamic error codes, counter offsets, converged iteration counts) that must be read back on the host.
 
 ---
@@ -396,7 +396,7 @@ public struct SolverContext
 ```
 
 G# natively handles `null` array members:
-- On the host, if `ctx.DebugTelemetry == null`, the generator **skips** `cuMemAlloc_v2`.
+- On the host, if `ctx.DebugTelemetry == null`, the generator **skips** `cuMemAllocAsync` and `cuMemcpyHtoDAsync_v2`.
 - In the native shadow struct, `native.DebugTelemetry` is set to `IntPtr.Zero` (`nullptr`).
 - An empty array (`new float[0]`, `[]`) is not `null`: it has no allocation either, but its device pointer is
   `GSharpArrayProxy.EmptyArrayData`, a non-null address that is never dereferenced (the native CPU build passes the

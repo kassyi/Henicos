@@ -140,6 +140,7 @@ internal static class BoolVectorQuantifier
 {
     public static bool Evaluate(GpuWorkspace workspace, IGpuBoolVectorExpression source, bool all)
     {
+        DeviceCounted.ThrowIfCpuFallback(workspace);
         // A vector with no capacity has no element: nothing is evaluated or launched
         if (source.Capacity == 0)
         {

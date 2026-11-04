@@ -63,4 +63,19 @@ public partial class IteratorShapeSadPathKernels
     {
         yield return x;
     }
+
+    [GpuDeviceFunction]
+    public static IEnumerable<int> Recursive(int n)
+    {
+        if (n > 0)
+        {
+            foreach (var x in Recursive(n - 1))
+            {
+                yield return x;
+            }
+        }
+
+        var s = "bad";
+        yield return n;
+    }
 }
