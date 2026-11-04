@@ -1,5 +1,6 @@
 using System.Globalization;
 using BenchmarkDotNet.Running;
+using Henicos.Benchmarks.Comparison;
 using Henicos.Benchmarks.ComputeBenchmarks;
 using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms;
 
@@ -49,6 +50,9 @@ internal class Program
             "stacklinq" => RunStackLinqBench(args[1..]),
             "stacklinq-gpu" => RunStackLinqGpuBench(args[1..]),
             "gbi-linq" => RunGpuBigIntLinqBench(args[1..]),
+            "generator-bench" => RunGeneratorBench(args[1..]),
+            "bench-compare" => BenchCompareCommand.Run(args[1..], Console.Out, Console.Error),
+            _ when args[0].StartsWith('-') => RunBenchmarkSwitcher(args),
             _ when LooksLikeDigits(args[0]) => RunCpuPi(args),
             _ => HandleUnknownCommand(command)
         };
@@ -82,6 +86,11 @@ internal class Program
               gbi-linq [elements] [words] Run GpuBigInt + StackLinq + CUDA Graph benchmark
                                          Options:
                                            --benchmark         Run via BenchmarkDotNet instead of instant runner
+              generator-bench [bdn-args] Run in-process Roslyn Source Generator & Analyzer benchmark (no GPU)
+                                         (also accepts BenchmarkDotNet flags directly, e.g. --filter *GeneratorBenchmark*)
+              bench-compare <base> <head> [options]
+                                         Compare the *-report-full.json reports of two runs per benchmark with a
+                                         Mann-Whitney U test; exit 1 on a significant slowdown (bench-compare --help)
               help, -h, --help           Display this help message
 
             Digits supports SI prefixes like 100k, 1M, 100M (e.g. `gpu-pi 100M`).
@@ -171,32 +180,33 @@ internal class Program
             return 1;
         }
 
-        BenchmarkRunner.Run(adapter);
+        BenchmarkRunner.Run(adapter, args: args[1..]);
         return 0;
     }
 
     private static int RunArithmeticBench(string[] args)
     {
 #pragma warning disable RS0030 // CLI argument normalization
-        var target = args.Length > 0 ? args[0].ToLowerInvariant() : "all";
+        var target = args.Length > 0 && !args[0].StartsWith('-') ? args[0].ToLowerInvariant() : "all";
 #pragma warning restore RS0030
+        var bdnArgs = args.Length > 0 && !args[0].StartsWith('-') ? args[1..] : args;
 
         if (target is "all" or "gbf")
         {
             Logger<Program>.Info("Running GpuBigFloatBenchmark...");
-            BenchmarkRunner.Run<GpuBigFloatBenchmark>();
+            BenchmarkRunner.Run<GpuBigFloatBenchmark>(args: bdnArgs);
         }
 
         if (target is "all" or "gbi")
         {
             Logger<Program>.Info("Running GpuBigIntBenchmark...");
-            BenchmarkRunner.Run<GpuBigIntBenchmark>();
+            BenchmarkRunner.Run<GpuBigIntBenchmark>(args: bdnArgs);
         }
 
         if (target is "all" or "wide")
         {
             Logger<Program>.Info("Running GpuBigFloatWideOperandBenchmark...");
-            BenchmarkRunner.Run<GpuBigFloatWideOperandBenchmark>();
+            BenchmarkRunner.Run<GpuBigFloatWideOperandBenchmark>(args: bdnArgs);
         }
 
         return 0;
@@ -205,14 +215,27 @@ internal class Program
     private static int RunStackLinqBench(string[] args)
     {
         Logger<Program>.Info("Running StackLinq vs System.Linq Benchmark...");
-        BenchmarkRunner.Run<StackLinqBenchmark>();
+        BenchmarkRunner.Run<StackLinqBenchmark>(args: args);
         return 0;
     }
 
     private static int RunStackLinqGpuBench(string[] args)
     {
         Logger<Program>.Info("Running StackLinq GPU Benchmark...");
-        BenchmarkRunner.Run<StackLinqGpuBenchmark>();
+        BenchmarkRunner.Run<StackLinqGpuBenchmark>(args: args);
+        return 0;
+    }
+
+    private static int RunGeneratorBench(string[] args)
+    {
+        Logger<Program>.Info("Running GeneratorBenchmark (Roslyn Source Generator & Analyzers in-process)...");
+        BenchmarkRunner.Run<GeneratorBenchmark>(args: args);
+        return 0;
+    }
+
+    private static int RunBenchmarkSwitcher(string[] args)
+    {
+        BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args);
         return 0;
     }
 
@@ -462,4 +485,3 @@ internal class Program
         return false;
     }
 }
-

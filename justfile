@@ -414,3 +414,9 @@ trusted-key-line key:
         h=$(( (h ^ c) * 1099511628211 ))
     done
     printf '%s,fnv1a64:%s\n' "$k" "$(printf '%016x' "$h" | cut -c1-10)"
+
+
+# Compare the BenchmarkDotNet *-report-full.json reports of a base and a head run with a Mann-Whitney U test;
+# exits 1 on a significant slowdown (options: --threshold <percent>, --pvalue <p>, --json-out <file>)
+bench-compare base head *args="":
+    dotnet run --project src/Apps/Henicos.Benchmarks -c Release -- bench-compare {{base}} {{head}} {{args}}
