@@ -414,3 +414,8 @@ trusted-key-line key:
         h=$(( (h ^ c) * 1099511628211 ))
     done
     printf '%s,fnv1a64:%s\n' "$k" "$(printf '%016x' "$h" | cut -c1-10)"
+
+
+# Compare BenchmarkDotNet JSON results between base and head directories using Mann-Whitney U test
+bench-compare base head *args="":
+    node scripts/human/bench-compare.js --base {{base}} --head {{head}} {{args}}
