@@ -190,6 +190,83 @@ public sealed class ExpressionDisposalTests : IDisposable
     }
 
     [SkippableFact]
+    [Scenario(TestScenario.SadPath)]
+    public void DisposingSubexpressionOwnedByLiveGraph_ThrowsAndLeavesGraphRunnable()
+    {
+        // mutant: GraphOwnership does not track child expressions of a compiled graph
+        var initialLive = _workspace.GetMemoryStatistics().LiveBuffers;
+
+        var vec = _array1.AsVectorizedEnumerable().SelectAdd(_scalar);
+        var sub = vec.Where(vec.IsGreaterThan(_zero)).Count();
+        var expr = -sub;
+
+        var graph = expr.CompileToGraph(_workspace);
+        try
+        {
+            Assert.Throws<InvalidOperationException>(() => sub.Dispose());
+            Assert.Throws<InvalidOperationException>(() => (~sub).Dispose());
+
+            graph.Execute();
+            Assert.Equal(new BigInteger(-6), graph.Result.Value.ToBigInteger(graph.Result.IsNegative));
+        }
+        finally
+        {
+            graph.Dispose();
+        }
+
+        // After the graph is disposed, ownership is released and repeated Dispose calls are safe no-ops.
+        sub.Dispose();
+        Assert.Equal(initialLive, _workspace.GetMemoryStatistics().LiveBuffers);
+    }
+
+    [SkippableFact]
+    [Scenario(TestScenario.SadPath)]
+    public void CompilingSecondGraphSharingSubexpression_ThrowsWhileFirstGraphAlive_SucceedsAfterDisposal()
+    {
+        // mutant: GraphOwnership allows compiling a second graph that shares a subexpression with an active graph
+        var initialLive = _workspace.GetMemoryStatistics().LiveBuffers;
+
+        var vec = _array1.AsVectorizedEnumerable().SelectAdd(_scalar);
+        var sub = vec.Where(vec.IsGreaterThan(_zero)).Count();
+        using var aMag = GpuBigUInt.FromBigInteger(_workspace, 10, 1);
+        using var bMag = GpuBigUInt.FromBigInteger(_workspace, 20, 1);
+        var a = new GpuBigInt(aMag, false);
+        var b = new GpuBigInt(bMag, false);
+        var e1 = a + sub;
+        var e2 = b + sub;
+
+        var graph1 = e1.CompileToGraph(_workspace);
+        try
+        {
+            Assert.Throws<InvalidOperationException>(() => e2.CompileToGraph(_workspace));
+
+            graph1.Execute();
+            Assert.Equal(new BigInteger(16), graph1.Result.Value.ToBigInteger(graph1.Result.IsNegative));
+        }
+        finally
+        {
+            graph1.Dispose();
+        }
+
+        // After graph1 is disposed, sub is no longer owned; e2 can now be compiled and executed.
+        var graph2 = e2.CompileToGraph(_workspace);
+        try
+        {
+            graph2.Execute();
+            Assert.Equal(new BigInteger(26), graph2.Result.Value.ToBigInteger(graph2.Result.IsNegative));
+        }
+        finally
+        {
+            graph2.Dispose();
+        }
+
+        sub.Dispose();
+        aMag.Dispose();
+        bMag.Dispose();
+        Assert.Equal(initialLive, _workspace.GetMemoryStatistics().LiveBuffers);
+    }
+
+    [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
     public void FloatVectorExpression_RepeatedLoopAndRepeatedDispose_LeavesLiveBuffersUnchanged()
     {
