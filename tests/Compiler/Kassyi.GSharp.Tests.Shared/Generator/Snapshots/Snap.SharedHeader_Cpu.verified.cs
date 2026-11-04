@@ -10,6 +10,7 @@ public const string Source = @"#include <cmath>
 #include <cstdint>
 #if defined(_MSC_VER)
 #include <intrin.h>
+#pragma warning(disable : 4068 4144)
 #endif
 #include <vector>
 #include <functional>

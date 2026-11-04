@@ -11,7 +11,7 @@ public class DiscoverersTests
     {
         public IEnumerable<object?> GetConstructorArguments() => args;
         public IEnumerable<IAttributeInfo> GetCustomAttributes(string assemblyQualifiedAttributeTypeName) => [];
-        public TValue GetNamedArgument<TValue>(string argumentName) => default!;
+        public TValue GetNamedArgument<TValue>(string argumentName) => throw new NotSupportedException();
     }
 
     [Fact]

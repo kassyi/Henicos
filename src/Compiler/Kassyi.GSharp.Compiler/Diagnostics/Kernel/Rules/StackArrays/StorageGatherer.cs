@@ -23,23 +23,23 @@ internal enum Carry
 /// as a value is followed only when its type can hold a reference (<see cref="IsCarrier"/>), so an index, a length or an
 /// argument of another type carries none.
 /// </remarks>
-internal sealed class StorageGatherer(SemanticModel model, Dictionary<ISymbol, List<Storage>> held)
+internal sealed class StorageGatherer(SemanticModel model, Dictionary<ISymbol, ImmutableArray<Storage>.Builder> held)
 {
     private readonly Dictionary<ITypeSymbol, bool> _carriers = new(SymbolEqualityComparer.Default);
-    private readonly Stack<List<(ExpressionSyntax Child, Carry Carry)>> _childLists = new();
+    private readonly Stack<ImmutableArray<(ExpressionSyntax Child, Carry Carry)>.Builder> _childLists = new();
 
-    public List<Storage> StorageOf(ExpressionSyntax value)
+    public ImmutableArray<Storage> StorageOf(ExpressionSyntax value)
     {
-        var storages = new List<Storage>();
+        var storages = ImmutableArray.CreateBuilder<Storage>();
         Gather(value, storages, Carry.Value);
-        return storages;
+        return storages.ToImmutable();
     }
 
     /// <summary>
     /// Adds the storages that <paramref name="value"/> refers to; with <see cref="Carry.Address"/>, value is a variable
     /// whose address is taken, which refers to where the variable or element lives.
     /// </summary>
-    public void Gather(ExpressionSyntax value, List<Storage> storages, Carry carry)
+    public void Gather(ExpressionSyntax value, ImmutableArray<Storage>.Builder storages, Carry carry)
     {
         var address = carry == Carry.Address;
 
@@ -54,7 +54,7 @@ internal sealed class StorageGatherer(SemanticModel model, Dictionary<ISymbol, L
             return;
         }
 
-        var children = _childLists.Count > 0 ? _childLists.Pop() : [];
+        var children = _childLists.Count > 0 ? _childLists.Pop() : ImmutableArray.CreateBuilder<(ExpressionSyntax Child, Carry Carry)>();
         try
         {
             AddChildren(value, children);
@@ -71,7 +71,7 @@ internal sealed class StorageGatherer(SemanticModel model, Dictionary<ISymbol, L
     }
 
     // The sources: a node that is or holds a storage itself
-    private bool TryAddSource(ExpressionSyntax value, List<Storage> storages, bool address)
+    private bool TryAddSource(ExpressionSyntax value, ImmutableArray<Storage>.Builder storages, bool address)
     {
         switch (value)
         {
@@ -91,7 +91,7 @@ internal sealed class StorageGatherer(SemanticModel model, Dictionary<ISymbol, L
     }
 
     // One row per syntax kind: the children that may carry the reference of the node's value, and how
-    private static void AddChildren(ExpressionSyntax node, List<(ExpressionSyntax Child, Carry Carry)> children)
+    private static void AddChildren(ExpressionSyntax node, ImmutableArray<(ExpressionSyntax Child, Carry Carry)>.Builder children)
     {
         switch (node)
         {
@@ -172,7 +172,7 @@ internal sealed class StorageGatherer(SemanticModel model, Dictionary<ISymbol, L
 
     // The arguments of a call or a constructor: what the callee may return. A ref or in argument passes the variable
     // itself, whose address the callee may return (fixed (int* p = &x) return p;)
-    private static void AddArguments(ArgumentListSyntax arguments, List<(ExpressionSyntax Child, Carry Carry)> children)
+    private static void AddArguments(ArgumentListSyntax arguments, ImmutableArray<(ExpressionSyntax Child, Carry Carry)>.Builder children)
     {
         foreach (var argument in arguments.Arguments)
         {
@@ -183,7 +183,7 @@ internal sealed class StorageGatherer(SemanticModel model, Dictionary<ISymbol, L
 
     // The members of an object initializer (X = a) or a collection initializer element
     private static void AddInitializer(InitializerExpressionSyntax? initializer,
-        List<(ExpressionSyntax Child, Carry Carry)> children)
+        ImmutableArray<(ExpressionSyntax Child, Carry Carry)>.Builder children)
     {
         if (initializer == null)
         {
@@ -196,7 +196,7 @@ internal sealed class StorageGatherer(SemanticModel model, Dictionary<ISymbol, L
         }
     }
 
-    private void GatherLocal(IdentifierNameSyntax identifier, List<Storage> storages, bool address)
+    private void GatherLocal(IdentifierNameSyntax identifier, ImmutableArray<Storage>.Builder storages, bool address)
     {
         var symbol = model.GetSymbol(identifier);
         if (symbol is ILocalSymbol local && StackArrayLocals.IsStackArray(local, out var declarator))
@@ -279,9 +279,9 @@ internal sealed class StorageGatherer(SemanticModel model, Dictionary<ISymbol, L
         return carries;
     }
 
-    public static bool TryFirst(List<Storage> storages, out Storage storage)
+    public static bool TryFirst(ImmutableArray<Storage> storages, out Storage storage)
     {
-        storage = storages.Count > 0 ? storages[0] : default;
-        return storages.Count > 0;
+        storage = storages.Length > 0 ? storages[0] : default;
+        return storages.Length > 0;
     }
 }
