@@ -12,7 +12,10 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Helpers;
 /// <remarks>
 /// <para>
 /// int and long <c>+ - *</c>, unary <c>-</c>, <c>++</c>, <c>--</c> and their compound assignments wrap (C# spec §12.10,
-/// unchecked context; <c>checked</c> is GSH0003 in kernels); C++ leaves signed overflow undefined. A shift uses the low 5
+/// unchecked context; <c>checked</c> is GSH0003 in kernels), and <c>++</c> and <c>--</c> on a narrower integer type
+/// (<c>sbyte</c>, <c>byte</c>, <c>short</c>, <c>ushort</c>, <c>char</c>) compute in <c>int</c> and narrow back to the
+/// operand type (§12.8.16, §12.9.6, #1079); C++ leaves signed overflow undefined and nvcc can keep the unnarrowed value
+/// of a raw narrow <c>++</c> / <c>--</c>. A shift uses the low 5
 /// or 6 bits of its count (§12.11), as Roslyn's lowering writes it (<c>RewriteBuiltInShiftOperation</c>: a constant count
 /// is masked in place, any other one gets <c>&amp; 0x1F</c> / <c>&amp; 0x3F</c>); C++ leaves a count of the width or more,
 /// and a left shift of a negative value, undefined. A float converted to an integer saturates and NaN gives 0, as .NET 9
@@ -116,9 +119,11 @@ internal static class IntegerSemantics
     }
 
     /// <summary>
-    /// The Prelude function of the step of the increment or decrement <paramref name="operation"/> of an int or long
-    /// (<paramref name="node"/>): <c>__gsharp_add_i32</c> for <c>++</c>, <c>__gsharp_sub_i32</c> for <c>--</c>; null when
-    /// the C++ operator cannot overflow there (<see cref="IntegerSemanticsEmitter.AppendStep"/> writes the step).
+    /// The Prelude function of the step of the increment or decrement <paramref name="operation"/> of an integer type
+    /// that promotes to <see langword="int"/> or is <see langword="int"/> or <see langword="long"/>
+    /// (<paramref name="node"/>): <c>__gsharp_add_i32</c> for <c>++</c>, <c>__gsharp_sub_i32</c> for <c>--</c> (#722,
+    /// #1079); null when the C++ operator cannot overflow there (<see cref="IntegerSemanticsEmitter.AppendStep"/> writes
+    /// the step).
     /// </summary>
     /// <remarks>
     /// The analysis of a for loop step runs once per step: its result is kept in
@@ -149,17 +154,27 @@ internal static class IntegerSemantics
     public static string? GetStepUndoHelper(IIncrementOrDecrementOperation operation) =>
         GetStepHelper(operation, undo: true);
 
-    // __gsharp_add_i32 / __gsharp_sub_i32 for a predefined int or long ++ / -- (the other one for <undo>), before the
-    // loop counter analysis
+    /// <summary>
+    /// The type that the result of the increment or decrement <paramref name="operation"/> is cast back to, when the
+    /// target is narrower than <see langword="int"/> (<c>short++</c> computes in int, #1079); null when it is not.
+    /// </summary>
+    public static ITypeSymbol? GetStepNarrowing(IIncrementOrDecrementOperation operation) =>
+        UnderlyingOrSelf(operation.Target.Type) is { } target && Promote(target) == SpecialType.System_Int32 &&
+        target.SpecialType != SpecialType.System_Int32
+            ? target
+            : null;
+
+    // __gsharp_add_i32 / __gsharp_sub_i32 for a predefined integer ++ / -- that promotes to int or is int or long (the
+    // other one for <undo>), before the loop counter analysis
     private static string? GetStepHelper(IIncrementOrDecrementOperation operation, bool undo)
     {
-        if (operation.OperatorMethod != null || operation.IsLifted || UnderlyingOrSelf(operation.Type) is not { } type)
+        if (operation.OperatorMethod != null || operation.IsLifted)
         {
             return null;
         }
 
         var add = (operation.Kind == OperationKind.Increment) != undo;
-        return Lookup(add ? BinaryOperatorKind.Add : BinaryOperatorKind.Subtract, type.SpecialType).Helper;
+        return Lookup(add ? BinaryOperatorKind.Add : BinaryOperatorKind.Subtract, Promote(operation.Type)).Helper;
     }
 
     /// <summary>
