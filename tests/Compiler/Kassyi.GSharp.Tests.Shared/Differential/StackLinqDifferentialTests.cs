@@ -70,7 +70,7 @@ public class StackLinqDifferentialTests
 
     private static readonly DifferentialCase s_int32Matrix = new($"{nameof(StackLinqDifferentialKernels)}.{nameof(StackLinqDifferentialKernels.Int32StackLinqMatrixKernel)}")
     {
-        Shape = LaunchShape.ForRows(64, blockX: 32),
+        Shapes = LaunchShapes.OneDimensionalMatrix(64),
         Inputs = static (rng, rows) => new DiffBuffers()
             .In("xs", BuildInt32Slices(rng, rows), OutputPolicy.Exact)
             .Out<long>("r", rows, StackLinqDifferentialKernels.Int32StackLinqColumns, OutputPolicy.Exact),
@@ -85,7 +85,7 @@ public class StackLinqDifferentialTests
 
     private static readonly DifferentialCase s_int32Average = new($"{nameof(StackLinqDifferentialKernels)}.{nameof(StackLinqDifferentialKernels.Int32AverageKernel)}")
     {
-        Shape = LaunchShape.ForRows(64, blockX: 32),
+        Shapes = LaunchShapes.OneDimensionalMatrix(64),
         Inputs = static (rng, rows) => new DiffBuffers()
             .In("xs", BuildInt32Slices(rng, rows), OutputPolicy.Exact)
             .Out<double>("r", rows, StackLinqDifferentialKernels.Int32AverageColumns, OutputPolicy.Bitwise),
@@ -100,7 +100,7 @@ public class StackLinqDifferentialTests
 
     private static readonly DifferentialCase s_singleFusedAverage = new($"{nameof(StackLinqDifferentialKernels)}.{nameof(StackLinqDifferentialKernels.SingleFusedAverageKernel)}")
     {
-        Shape = LaunchShape.ForRows(64, blockX: 32),
+        Shapes = LaunchShapes.OneDimensionalMatrix(64),
         Inputs = static (rng, rows) => new DiffBuffers()
             .In("xs", BuildSingleSlices(rng, rows), OutputPolicy.Bitwise)
             .Out<double>("r", rows, StackLinqDifferentialKernels.SingleFusedAverageColumns, OutputPolicy.Bitwise),
@@ -115,7 +115,7 @@ public class StackLinqDifferentialTests
 
     private static readonly DifferentialCase s_singleUnfusedAverage = new($"{nameof(StackLinqDifferentialKernels)}.{nameof(StackLinqDifferentialKernels.SingleUnfusedAverageKernel)}")
     {
-        Shape = LaunchShape.ForRows(64, blockX: 32),
+        Shapes = LaunchShapes.OneDimensionalMatrix(64),
         Inputs = static (rng, rows) => new DiffBuffers()
             .In("xs", BuildSingleSlices(rng, rows), OutputPolicy.Bitwise)
             .Out<double>("r", rows, StackLinqDifferentialKernels.SingleUnfusedAverageColumns, OutputPolicy.Bitwise),
@@ -130,7 +130,7 @@ public class StackLinqDifferentialTests
 
     private static readonly DifferentialCase s_floatingExtremaAndZeroContains = new($"{nameof(StackLinqDifferentialKernels)}.{nameof(StackLinqDifferentialKernels.FloatingExtremaAndZeroContainsKernel)}")
     {
-        Shape = LaunchShape.ForRows(64, blockX: 32),
+        Shapes = LaunchShapes.OneDimensionalMatrix(64),
         Inputs = static (rng, rows) => new DiffBuffers()
             .In("fs", BuildSingleSlices(rng, rows), OutputPolicy.Bitwise)
             .In("ds", BuildDoubleSlices(rng, rows), OutputPolicy.Bitwise)
@@ -151,7 +151,7 @@ public class StackLinqDifferentialTests
 
     private static readonly DifferentialCase s_containsNaN = new($"{nameof(StackLinqDifferentialKernels)}.{nameof(StackLinqDifferentialKernels.ContainsNaNKernel)}")
     {
-        Shape = LaunchShape.ForRows(64, blockX: 32),
+        Shapes = LaunchShapes.OneDimensionalMatrix(64),
         Inputs = static (rng, rows) => new DiffBuffers()
             .In("fs", BuildSingleSlices(rng, rows), OutputPolicy.Bitwise)
             .In("ds", BuildDoubleSlices(rng, rows), OutputPolicy.Bitwise)
@@ -172,7 +172,7 @@ public class StackLinqDifferentialTests
 
     private static readonly DifferentialCase s_containsEvaluationOrder = new($"{nameof(StackLinqDifferentialKernels)}.{nameof(StackLinqDifferentialKernels.ContainsEvaluationOrderKernel)}")
     {
-        Shape = LaunchShape.ForRows(64, blockX: 32),
+        Shapes = LaunchShapes.OneDimensionalMatrix(64),
         Inputs = static (rng, rows) => new DiffBuffers()
             .In("xs", BuildInt32Slices(rng, rows), OutputPolicy.Exact)
             .Out<long>("r", rows, StackLinqDifferentialKernels.ContainsEvaluationOrderColumns, OutputPolicy.Exact),
@@ -187,7 +187,7 @@ public class StackLinqDifferentialTests
 
     private static readonly DifferentialCase s_unfusedSelectEvaluation = new($"{nameof(StackLinqDifferentialKernels)}.{nameof(StackLinqDifferentialKernels.UnfusedSelectEvaluationKernel)}")
     {
-        Shape = LaunchShape.ForRows(64, blockX: 32),
+        Shapes = LaunchShapes.OneDimensionalMatrix(64),
         Inputs = static (rng, rows) => new DiffBuffers()
             .In("xs", BuildInt32Slices(rng, rows), OutputPolicy.Exact)
             .Out<long>("r", rows, StackLinqDifferentialKernels.UnfusedSelectEvaluationColumns, OutputPolicy.Exact),
@@ -202,7 +202,7 @@ public class StackLinqDifferentialTests
 
     private static readonly DifferentialCase s_narrowAndInt64 = new($"{nameof(StackLinqDifferentialKernels)}.{nameof(StackLinqDifferentialKernels.NarrowAndInt64StackLinqKernel)}")
     {
-        Shape = LaunchShape.ForRows(64, blockX: 32),
+        Shapes = LaunchShapes.OneDimensionalMatrix(64),
         Inputs = static (rng, rows) =>
         {
             var (bs, ss, ls) = BuildNarrowAndInt64Slices(rng, rows);
@@ -230,7 +230,7 @@ public class StackLinqDifferentialTests
 
     private static readonly DifferentialCase s_floatSequentialSum = new($"{nameof(StackLinqDifferentialKernels)}.{nameof(StackLinqDifferentialKernels.FloatSequentialSumKernel)}")
     {
-        Shape = LaunchShape.ForRows(64, blockX: 32),
+        Shapes = LaunchShapes.OneDimensionalMatrix(64),
         Inputs = static (rng, rows) => new DiffBuffers()
             .In("xs", BuildSingleSlices(rng, rows), OutputPolicy.Bitwise)
             .Out<float>("r", rows, StackLinqDifferentialKernels.FloatSequentialSumColumns, OutputPolicy.Bitwise),
