@@ -101,7 +101,8 @@ function resolveAsanPreload(env) {
         encoding: 'utf8'
     });
     if (res.status !== 0 || !res.stdout) {
-        console.error(`Error: Failed to locate libasan.so via '${cxx} -print-file-name=libasan.so'.`);
+        // The compiler comes from the environment (CXX); keep its value out of the log (CodeQL js/clear-text-logging).
+        console.error('Error: Failed to locate libasan.so with "-print-file-name=libasan.so" (the C++ compiler is CXX, default g++).');
         process.exit(1);
     }
     return res.stdout.trim();
