@@ -1,4 +1,9 @@
-namespace Kassyi.GSharp.Compiler;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Kassyi.GSharp.Compiler.Diagnostics;
+using Kassyi.GSharp.Compiler.Transpiler;
+
+namespace Kassyi.GSharp.Compiler.Analysis;
 
 /// <summary>
 /// The kind of <c>Span&lt;T&gt;</c>, <c>ReadOnlySpan&lt;T&gt;</c>, <c>MemoryExtensions</c>, or <c>System.Array</c>
@@ -424,4 +429,25 @@ internal static class SpanWriteClassifier
     /// </summary>
     public static string FormatUnsupportedProperty(IPropertySymbol symbol) =>
         $"Property '{symbol.ContainingType.Name}.{symbol.Name}'";
+
+    /// <summary>
+    /// Reports GSH0003 and emits an unsupported placeholder if <paramref name="node"/> refers to a span or array method
+    /// without invoking it (#731, #1118).
+    /// </summary>
+    public static bool TryFailUninvoked(SyntaxNode node, ref TranspileContext context)
+    {
+        if ((node.Parent is not InvocationExpressionSyntax parentInvocation || parentInvocation.Expression != node) &&
+            TryGetMethodSymbol(node, context.Query.SemanticModel) is { } uninvokedMethod &&
+            ClassifyMethod(uninvokedMethod) != SpanMemberKind.None)
+        {
+            context.Reporter.Fail(
+                GSharpDiagnostics.UnsupportedSyntax,
+                node,
+                FormatUnsupportedMethod(uninvokedMethod));
+            context.Visitor.AppendUnsupportedPlaceholder(node);
+            return true;
+        }
+
+        return false;
+    }
 }

@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Compiler.Analysis;
+
 namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel.Rules;
 
 /// <summary>
@@ -21,6 +23,9 @@ internal sealed class ProhibitedApiRule :
 
     public void Analyze(MemberAccessExpressionSyntax node, ref ValidationContext context)
     {
+        // [WHY] Span and array members classified by SpanWriteClassifier (including Unsupported) are skipped here
+        // because the transpiler rules (SpanMemberTranspilerRule, MemberAccessExpressionTranspilerRule) report GSH0003
+        // via TranspilerFailureCheck with exact member details (#731).
         var symbol = context.SemanticModel.GetSymbol(node);
         if (symbol is IMethodSymbol spanMethod && SpanWriteClassifier.ClassifyMethod(spanMethod) != SpanMemberKind.None)
         {
@@ -42,6 +47,9 @@ internal sealed class ProhibitedApiRule :
             return;
         }
 
+        // [WHY] Span and array members classified by SpanWriteClassifier (including Unsupported) are skipped here
+        // because the transpiler rules (SpanMemberTranspilerRule, MemberAccessExpressionTranspilerRule) report GSH0003
+        // via TranspilerFailureCheck with exact member details (#731).
         var symbol = context.SemanticModel.GetSymbol(node);
         if (symbol is IMethodSymbol spanMethod && SpanWriteClassifier.ClassifyMethod(spanMethod) != SpanMemberKind.None)
         {

@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Compiler.Analysis;
+
 namespace Kassyi.GSharp.Compiler;
 
 /// <summary>

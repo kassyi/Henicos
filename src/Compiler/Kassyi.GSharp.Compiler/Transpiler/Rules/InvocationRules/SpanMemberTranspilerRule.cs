@@ -1,3 +1,4 @@
+using Kassyi.GSharp.Compiler.Analysis;
 using System.Buffers;
 
 namespace Kassyi.GSharp.Compiler.Transpiler.Rules.InvocationRules;

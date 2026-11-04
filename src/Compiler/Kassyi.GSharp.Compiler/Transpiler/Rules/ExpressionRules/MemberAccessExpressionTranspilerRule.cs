@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Compiler.Analysis;
+
 namespace Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules;
 
 public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerRuleBase<MemberAccessExpressionSyntax>
@@ -11,15 +13,8 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
             symbol = context.Query.SemanticModel.GetSymbol(invocation);
         }
 
-        if ((node.Parent is not InvocationExpressionSyntax parentInvocation || parentInvocation.Expression != node) &&
-            SpanWriteClassifier.TryGetMethodSymbol(node, context.Query.SemanticModel) is { } uninvokedMethod &&
-            SpanWriteClassifier.ClassifyMethod(uninvokedMethod) != SpanMemberKind.None)
+        if (SpanWriteClassifier.TryFailUninvoked(node, ref context))
         {
-            context.Reporter.Fail(
-                GSharpDiagnostics.UnsupportedSyntax,
-                node,
-                SpanWriteClassifier.FormatUnsupportedMethod(uninvokedMethod));
-            context.Visitor.AppendUnsupportedPlaceholder(node);
             return;
         }
 

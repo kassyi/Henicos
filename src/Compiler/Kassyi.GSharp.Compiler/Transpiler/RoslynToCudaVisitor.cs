@@ -1,3 +1,4 @@
+using Kassyi.GSharp.Compiler.Analysis;
 using Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules;
 using Kassyi.GSharp.Compiler.Transpiler.Rules.MacroRules;
 
@@ -430,15 +431,8 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
                     DynamicSharedMemoryEmitter.FailIfReferencedWithoutCall(node, method, ref Context);
                 }
 
-                if ((node.Parent is not InvocationExpressionSyntax parentInvocation || parentInvocation.Expression != node) &&
-                    SpanWriteClassifier.TryGetMethodSymbol(node, Context.Query.SemanticModel) is { } uninvokedSpanMethod &&
-                    SpanWriteClassifier.ClassifyMethod(uninvokedSpanMethod) != SpanMemberKind.None)
+                if (SpanWriteClassifier.TryFailUninvoked(node, ref Context))
                 {
-                    Context.Reporter.Fail(
-                        GSharpDiagnostics.UnsupportedSyntax,
-                        node,
-                        SpanWriteClassifier.FormatUnsupportedMethod(uninvokedSpanMethod));
-                    AppendUnsupportedPlaceholder(node);
                     return;
                 }
 

@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Compiler.Analysis;
+
 namespace Kassyi.GSharp.Compiler.Transpiler.Rules.InvocationRules;
 
 /// <summary>
@@ -53,8 +55,6 @@ public sealed class MemoryExtensionsTranspilerRule : IInvocationTranspilerRule
     {
         var method = symbol.GetConstructedReducedFrom() ?? symbol;
         if (SpanWriteClassifier.ClassifyMethod(symbol) != SpanMemberKind.Sort)
-
-
         {
             return false;
         }
