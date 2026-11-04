@@ -124,7 +124,7 @@ return;
 }
 auto __gsharp_id_4_slice = __gsharp_id_0_xs.AsSpan().Slice(__gsharp_id_3_baseIdx,4);
 int __gsharp_id_5_x0 = __gsharp_id_4_slice[0];
-int __gsharp_id_6_o = __gsharp_mul_i32(__gsharp_id_2_t,50);
+int __gsharp_id_6_o = __gsharp_mul_i32(__gsharp_id_2_t,51);
 __gsharp_id_1_r[__gsharp_id_6_o]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_4_slice;
 int __gsharp_fusion_res = 0;
@@ -821,6 +821,9 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_fusion_res;
 }());
+auto __gsharp_id_32_unfusedContains = Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_id_4_slice);
+short __gsharp_id_33_s = 2;
+__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_6_o,50)]=(Kassyi::ZeroAlloc::Linq::StackLinq::Contains(__gsharp_id_32_unfusedContains,__gsharp_id_33_s)?1ll:0ll);
 }
 ";
 public static readonly string Int32StackLinqMatrixKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +Int32StackLinqMatrixKernel_Source;
@@ -2774,7 +2777,31 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string NarrowAndInt64StackLinqKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__StackLinqDifferentialKernels__NarrowAndInt64StackLinqKernel(GSharpArray<unsigned char> __gsharp_id_0_bs, GSharpArray<short> __gsharp_id_1_ss, GSharpArray<long long> __gsharp_id_2_ls, GSharpArray<long long> __gsharp_id_3_r){
+public const string NarrowAndInt64StackLinqKernel_Source = @"#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__ZeroAlloc__Linq__SpanEnumerator_g1_bSystem__Int64_e__
+#define __GSHARP_STRUCT___gsharp_ty_Kassyi__ZeroAlloc__Linq__SpanEnumerator_g1_bSystem__Int64_e__
+struct __gsharp_ty_Kassyi__ZeroAlloc__Linq__SpanEnumerator_g1_bSystem__Int64_e
+{
+GSharpArray<long long> __gsharp_mb__source;
+int __gsharp_mb__index;
+}
+;
+static_assert(sizeof(__gsharp_ty_Kassyi__ZeroAlloc__Linq__SpanEnumerator_g1_bSystem__Int64_e)==24,""Kassyi.ZeroAlloc.Linq.SpanEnumerator<System.Int64>: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__ZeroAlloc__Linq__SpanEnumerator_g1_bSystem__Int64_e)==8,""Kassyi.ZeroAlloc.Linq.SpanEnumerator<System.Int64>: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__ZeroAlloc__Linq__SpanEnumerator_g1_bSystem__Int64_e,__gsharp_mb__source)==0,""Kassyi.ZeroAlloc.Linq.SpanEnumerator<System.Int64>._source: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__ZeroAlloc__Linq__SpanEnumerator_g1_bSystem__Int64_e,__gsharp_mb__index)==16,""Kassyi.ZeroAlloc.Linq.SpanEnumerator<System.Int64>._index: offset"");
+#endif
+#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__ZeroAlloc__Linq__StackEnumerable_g2_bKassyi__ZeroAlloc__Linq__SpanEnumerator_g1_bSystem__Int64_e_bSystem__Int64_e__
+#define __GSHARP_STRUCT___gsharp_ty_Kassyi__ZeroAlloc__Linq__StackEnumerable_g2_bKassyi__ZeroAlloc__Linq__SpanEnumerator_g1_bSystem__Int64_e_bSystem__Int64_e__
+struct __gsharp_ty_Kassyi__ZeroAlloc__Linq__StackEnumerable_g2_bKassyi__ZeroAlloc__Linq__SpanEnumerator_g1_bSystem__Int64_e_bSystem__Int64_e
+{
+__gsharp_ty_Kassyi__ZeroAlloc__Linq__SpanEnumerator_g1_bSystem__Int64_e __gsharp_mb_Enumerator;
+}
+;
+static_assert(sizeof(__gsharp_ty_Kassyi__ZeroAlloc__Linq__StackEnumerable_g2_bKassyi__ZeroAlloc__Linq__SpanEnumerator_g1_bSystem__Int64_e_bSystem__Int64_e)==24,""Kassyi.ZeroAlloc.Linq.StackEnumerable<Kassyi.ZeroAlloc.Linq.SpanEnumerator<System.Int64>, System.Int64>: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__ZeroAlloc__Linq__StackEnumerable_g2_bKassyi__ZeroAlloc__Linq__SpanEnumerator_g1_bSystem__Int64_e_bSystem__Int64_e)==8,""Kassyi.ZeroAlloc.Linq.StackEnumerable<Kassyi.ZeroAlloc.Linq.SpanEnumerator<System.Int64>, System.Int64>: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__ZeroAlloc__Linq__StackEnumerable_g2_bKassyi__ZeroAlloc__Linq__SpanEnumerator_g1_bSystem__Int64_e_bSystem__Int64_e,__gsharp_mb_Enumerator)==0,""Kassyi.ZeroAlloc.Linq.StackEnumerable<Kassyi.ZeroAlloc.Linq.SpanEnumerator<System.Int64>, System.Int64>.Enumerator: offset"");
+#endif
+extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__StackLinqDifferentialKernels__NarrowAndInt64StackLinqKernel(GSharpArray<unsigned char> __gsharp_id_0_bs, GSharpArray<short> __gsharp_id_1_ss, GSharpArray<long long> __gsharp_id_2_ls, GSharpArray<long long> __gsharp_id_3_r){
 int __gsharp_id_4_t = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 int __gsharp_id_5_baseIdx = __gsharp_mul_i32(__gsharp_id_4_t,4);
 if(__gsharp_add_i32(__gsharp_id_5_baseIdx,4)>__gsharp_id_2_ls.length)
@@ -2784,7 +2811,7 @@ return;
 auto __gsharp_id_6_bSlice = __gsharp_id_0_bs.AsSpan().Slice(__gsharp_id_5_baseIdx,4);
 auto __gsharp_id_7_sSlice = __gsharp_id_1_ss.AsSpan().Slice(__gsharp_id_5_baseIdx,4);
 auto __gsharp_id_8_lSlice = __gsharp_id_2_ls.AsSpan().Slice(__gsharp_id_5_baseIdx,4);
-int __gsharp_id_9_o = __gsharp_mul_i32(__gsharp_id_4_t,9);
+int __gsharp_id_9_o = __gsharp_mul_i32(__gsharp_id_4_t,10);
 __gsharp_id_3_r[__gsharp_id_9_o]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_6_bSlice;
 int __gsharp_fusion_res = 0;
@@ -2907,6 +2934,9 @@ return __gsharp_id_19_x>0;
 return __gsharp_fusion_res;
 }());
 __gsharp_id_3_r[__gsharp_add_i32(__gsharp_id_9_o,8)]=Kassyi::ZeroAlloc::Linq::StackLinq::ElementAtOrDefault(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_id_8_lSlice),2);
+auto __gsharp_id_20_lUnfused = Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_id_8_lSlice);
+int __gsharp_id_21_k = 2;
+__gsharp_id_3_r[__gsharp_add_i32(__gsharp_id_9_o,9)]=(Kassyi::ZeroAlloc::Linq::StackLinq::Contains(__gsharp_id_20_lUnfused,__gsharp_id_21_k)?1ll:0ll);
 }
 ";
 public static readonly string NarrowAndInt64StackLinqKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +NarrowAndInt64StackLinqKernel_Source;
