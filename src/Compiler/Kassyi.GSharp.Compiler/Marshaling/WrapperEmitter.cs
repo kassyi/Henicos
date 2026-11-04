@@ -78,9 +78,8 @@ internal static class WrapperEmitter
     // CS0219 = Lowered state machines declare locals (e.g. int unused = 0) that are assigned but never read
     // CS0649 = Internal frame fields (e.g. __gsharp_warp_exchange) are populated by the runtime rather than C# assignment
     // CS1718 = Lowered switch/pattern dispatch performs __gsharp_switch_temp_<n> != __gsharp_switch_temp_<n> self-comparisons for NaN detection
-    // CS8321 = Local functions preserved in lowered methods when their calls are removed during lowering (candidate for removal: not observed in current generated code)
     private const string GeneratedCSharpWarningSuppressions =
-        "#pragma warning disable CS0162, CS0164, CS0219, CS0649, CS1718, CS8321";
+        "#pragma warning disable CS0162, CS0164, CS0219, CS0649, CS1718";
 
     // namespace <namespace> { <outer partial declarations> <accessibility> partial class <name>, without the namespace
     // for the global namespace. The generated part must declare the accessibility of the user's part, or the compiler
