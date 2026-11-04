@@ -198,19 +198,43 @@ public class LoggerAndEnvironmentTests
     public void Test_Logger_ConcurrentWrites_ThreadSafeAndNoDeadlock()
     {
         // Stress & Concurrency: Multi-threaded burst logging into the background queue
+        var prevLevel = Logger.ActiveLogLevel;
         var prevConsole = Logger.WriteToConsole;
+        var prevOut = Console.Out;
+        using var sw = new StringWriter();
         try
         {
-            Logger.WriteToConsole = false;
-            Parallel.For(0, 500, i =>
+            Logger.ActiveLogLevel = GSharpLogLevel.Info;
+            Logger.WriteToConsole = true;
+            Console.SetOut(TextWriter.Synchronized(sw));
+            TestLoggerConsumer.ClearAccumulated();
+
+            const int IterationCount = 500;
+            var threadProcessed = new int[IterationCount];
+
+            Parallel.For(0, IterationCount, i =>
             {
                 Logger.Info("CONCURRENCY", $"Log entry {i} from thread {Environment.CurrentManagedThreadId}");
                 TestLoggerConsumer.InvokeAddInterval($"Task_{i % 10}", i);
+                Interlocked.Exchange(ref threadProcessed[i], 1);
             });
+
+            TestLoggerConsumer.InvokePrintAccumulated("PERF", "Summary", GSharpLogLevel.Info);
+
+            Assert.All(threadProcessed, static done => Assert.Equal(1, done));
+
+            var output = sw.ToString();
+            var lines = output.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.RemoveEmptyEntries);
+            Assert.Equal(IterationCount + 1, lines.Length);
+            Assert.Contains("Summary [", output);
+            Assert.Contains("Task_0: 12250 ms", output);
         }
         finally
         {
+            Console.SetOut(prevOut);
+            Logger.ActiveLogLevel = prevLevel;
             Logger.WriteToConsole = prevConsole;
+            TestLoggerConsumer.ClearAccumulated();
         }
     }
 

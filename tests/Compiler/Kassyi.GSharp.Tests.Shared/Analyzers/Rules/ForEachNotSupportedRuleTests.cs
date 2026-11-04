@@ -24,8 +24,9 @@ public class ForEachNotSupportedRuleTests : TranspilerTestBase
         var model = compilation.GetSemanticModel(tree);
         var forEachNode = tree.GetRoot().DescendantNodes().OfType<ForEachStatementSyntax>().First();
 
-        var dummyMethod = compilation.GetTypeByMetadataName("TestContainer")!
-            .GetMembers("TestMethod").OfType<IMethodSymbol>().First();
+        var containerType = compilation.GetTypeByMetadataName("TestContainer");
+        Assert.NotNull(containerType);
+        var dummyMethod = containerType.GetMembers("TestMethod").OfType<IMethodSymbol>().First();
 
         var reportedDiagnostics = new List<Diagnostic>();
         var context = new ValidationContext(model, dummyMethod, reportedDiagnostics.Add);
@@ -48,8 +49,9 @@ public class ForEachNotSupportedRuleTests : TranspilerTestBase
         var model = compilation.GetSemanticModel(tree);
         var forEachNode = tree.GetRoot().DescendantNodes().OfType<ForEachStatementSyntax>().First();
 
-        var dummyMethod = compilation.GetTypeByMetadataName("TestContainer")!
-            .GetMembers("TestMethod").OfType<IMethodSymbol>().First();
+        var containerType = compilation.GetTypeByMetadataName("TestContainer");
+        Assert.NotNull(containerType);
+        var dummyMethod = containerType.GetMembers("TestMethod").OfType<IMethodSymbol>().First();
 
         var reportedDiagnostics = new List<Diagnostic>();
         var context = new ValidationContext(model, dummyMethod, reportedDiagnostics.Add);
@@ -71,8 +73,9 @@ public class ForEachNotSupportedRuleTests : TranspilerTestBase
         var model = compilation.GetSemanticModel(tree);
         var forEachNode = tree.GetRoot().DescendantNodes().OfType<ForEachStatementSyntax>().First();
 
-        var dummyMethod = compilation.GetTypeByMetadataName("TestContainer")!
-            .GetMembers("TestMethod").OfType<IMethodSymbol>().First();
+        var containerType = compilation.GetTypeByMetadataName("TestContainer");
+        Assert.NotNull(containerType);
+        var dummyMethod = containerType.GetMembers("TestMethod").OfType<IMethodSymbol>().First();
 
         var reportedDiagnostics = new List<Diagnostic>();
         var context = new ValidationContext(model, dummyMethod, reportedDiagnostics.Add);
@@ -94,8 +97,9 @@ public class ForEachNotSupportedRuleTests : TranspilerTestBase
         var model = compilation.GetSemanticModel(tree);
         var forEachNodes = tree.GetRoot().DescendantNodes().OfType<ForEachStatementSyntax>().ToList();
 
-        var dummyMethod = compilation.GetTypeByMetadataName("TestContainer")!
-            .GetMembers("TestMethod").OfType<IMethodSymbol>().First();
+        var containerType = compilation.GetTypeByMetadataName("TestContainer");
+        Assert.NotNull(containerType);
+        var dummyMethod = containerType.GetMembers("TestMethod").OfType<IMethodSymbol>().First();
 
         var reportedDiagnostics = new List<Diagnostic>();
         var context = new ValidationContext(model, dummyMethod, reportedDiagnostics.Add);

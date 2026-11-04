@@ -21,5 +21,5 @@ public interface IStackEnumerator<T>
     /// <see langword="true"/> if the enumerator was successfully advanced to the next element;
     /// <see langword="false"/> if the enumerator has passed the end of the sequence.
     /// </returns>
-    bool TryGetNext(out T current);
+    bool TryGetNext([MaybeNullWhen(false)] out T current);
 }
