@@ -97,10 +97,12 @@ internal static class ManagedStateMachineEmitter
         IReadOnlyList<InvocationExpressionSyntax> callSites,
         SemanticModel semanticModel,
         string accessibility = "public",
-        string memberAccessibility = "public")
+        string memberAccessibility = "public",
+        bool isUnsafe = false)
     {
         writer.AppendLine(EditorBrowsableNever);
-        using (writer.Scope($"{accessibility} class {contextName} {{"))
+        var typeKeyword = isUnsafe ? "unsafe struct" : "class";
+        using (writer.Scope($"{accessibility} {typeKeyword} {contextName} {{"))
         {
             writer.AppendLine($"{memberAccessibility} int {GSharpInternalNames.StateMachine.State};");
             writer.AppendLine($"{memberAccessibility} uint {GSharpInternalNames.StateMachine.WarpExchange};");
@@ -127,7 +129,9 @@ internal static class ManagedStateMachineEmitter
                                  "A call that may suspend does not resolve to a device function.");
                 writer.Append("internal ");
                 AppendDeviceFunctionMember(writer, callee, GSharpInternalNames.SuspendingCall.FrameTypePrefix);
-                writer.AppendLine($" {GSharpInternalNames.SuspendingCall.CallFramePrefix}{i} = new();");
+                writer.AppendLine(isUnsafe
+                    ? $" {GSharpInternalNames.SuspendingCall.CallFramePrefix}{i};"
+                    : $" {GSharpInternalNames.SuspendingCall.CallFramePrefix}{i} = new();");
             }
         }
 
@@ -170,7 +174,7 @@ internal static class ManagedStateMachineEmitter
                 AppendResumeLocal(writer, localInit);
             }
 
-            AppendCopiedParameterInitialization(writer, copiedParameters);
+            AppendCopiedParameterInitialization(writer, copiedParameters, isUnsafe);
             writer.AppendLine(bodySource);
             writer.AppendLine(
                 "throw new global::System.InvalidOperationException(\"The device function state machine reached an unknown state.\");");
@@ -190,7 +194,9 @@ internal static class ManagedStateMachineEmitter
         using (writer.Parentheses())
         {
             AppendParameterList(writer, methodSymbol, copiedParameters);
-            writer.Append($"{frameName} {GSharpInternalNames.StateMachine.Context}");
+            writer.Append(isUnsafe
+                ? $"{frameName}* {GSharpInternalNames.StateMachine.Context}"
+                : $"{frameName} {GSharpInternalNames.StateMachine.Context}");
             if (!methodSymbol.ReturnsVoid)
             {
                 writer.Append(", ref ");
@@ -223,19 +229,20 @@ internal static class ManagedStateMachineEmitter
 
     // On the first entry, the parameters the body assigns are copied into the frame; later resumes keep the frame's copy
     private static void AppendCopiedParameterInitialization(SourceWriter writer,
-        ImmutableArray<IParameterSymbol> copiedParameters)
+        ImmutableArray<IParameterSymbol> copiedParameters, bool isUnsafe)
     {
         if (copiedParameters.Length == 0)
         {
             return;
         }
 
-        using (writer.Scope($"if ({GSharpInternalNames.StateMachine.Context}.{GSharpInternalNames.StateMachine.State} == 0) {{"))
+        var op = isUnsafe ? "->" : ".";
+        using (writer.Scope($"if ({GSharpInternalNames.StateMachine.Context}{op}{GSharpInternalNames.StateMachine.State} == 0) {{"))
         {
             foreach (var parameter in copiedParameters)
             {
                 writer.AppendLine(
-                    $"{GSharpInternalNames.StateMachine.Context}.{parameter.Name.ToCSharpIdentifier()} = {GSharpInternalNames.StateMachine.CopiedParameterPrefix}{parameter.Name};");
+                    $"{GSharpInternalNames.StateMachine.Context}{op}{parameter.Name.ToCSharpIdentifier()} = {GSharpInternalNames.StateMachine.CopiedParameterPrefix}{parameter.Name};");
             }
         }
     }
@@ -245,7 +252,20 @@ internal static class ManagedStateMachineEmitter
             .AsStackEnumerable()
             .Any(parameter, static (copied, target) => copied.IsEqualTo(target));
 
-    public static void EmitStateMachineMethod(
+    internal static bool HasPointerField(
+        ImmutableArray<ManagedContextField> regularFields,
+        ImmutableArray<IParameterSymbol> copiedParameters) =>
+        copiedParameters
+            .AsStackEnumerable()
+            .Any(static p => p.Type is IPointerTypeSymbol or IFunctionPointerTypeSymbol) ||
+        regularFields
+            .AsStackEnumerable()
+            .Any(static f => f.ResolvedType is IPointerTypeSymbol or IFunctionPointerTypeSymbol ||
+                             f.DeclaredType.DescendantNodesAndSelf()
+                                 .AsStackEnumerable()
+                                 .Any(static n => n is PointerTypeSyntax or FunctionPointerTypeSyntax));
+
+            public static void EmitStateMachineMethod(
         SourceWriter writer,
         string contextName,
         string stateMachineName,
@@ -253,10 +273,11 @@ internal static class ManagedStateMachineEmitter
         bool hasAutoResult,
         ImmutableArray<IParameterSymbol> copiedParameters,
         ImmutableArray<ManagedContextField> localInits,
-        string bodySource)
+        string bodySource,
+        bool isUnsafe = false)
     {
         writer.AppendLine(EditorBrowsableNever);
-        EmitStateMachineSignature(writer, contextName, stateMachineName, methodSymbol, hasAutoResult, copiedParameters);
+        EmitStateMachineSignature(writer, contextName, stateMachineName, methodSymbol, hasAutoResult, copiedParameters, isUnsafe);
         using (writer.Scope(" {"))
         {
             foreach (var localInit in localInits)
@@ -264,7 +285,7 @@ internal static class ManagedStateMachineEmitter
                 AppendResumeLocal(writer, localInit);
             }
 
-            AppendCopiedParameterInitialization(writer, copiedParameters);
+            AppendCopiedParameterInitialization(writer, copiedParameters, isUnsafe);
             writer.AppendLine(bodySource);
         }
     }
@@ -276,13 +297,18 @@ internal static class ManagedStateMachineEmitter
         string stateMachineName,
         IMethodSymbol methodSymbol,
         bool hasAutoResult,
-        ImmutableArray<IParameterSymbol> copiedParameters)
+        ImmutableArray<IParameterSymbol> copiedParameters,
+        bool isUnsafe)
     {
-        writer.Append($"public static unsafe void {stateMachineName}");
+        writer.Append("public static ");
+        writer.AppendIf(isUnsafe, "unsafe ");
+        writer.Append($"void {stateMachineName}");
         using (writer.Parentheses())
         {
             AppendParameterList(writer, methodSymbol, copiedParameters);
-            writer.Append($"{contextName} {GSharpInternalNames.StateMachine.Context}");
+            writer.Append(isUnsafe
+                ? $"{contextName}* {GSharpInternalNames.StateMachine.Context}"
+                : $"{contextName} {GSharpInternalNames.StateMachine.Context}");
             if (hasAutoResult)
             {
                 writer.Append(", ref ");

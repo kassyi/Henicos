@@ -143,11 +143,12 @@ internal readonly struct ExpressionEffects(VariableSet reads, VariableSet writes
         var walker = new Walker(model);
         var root = walker.AddLocation(expression);
         var reads = default(VariableSet);
-        if (root.Variable is { } variable)
+        foreach (var variable in root.Variables)
         {
             reads.Add(variable);
         }
-        else
+
+        if (root.IsMemory)
         {
             reads.Memory = true;
         }
@@ -176,12 +177,40 @@ internal readonly struct ExpressionEffects(VariableSet reads, VariableSet writes
     public bool InterferesWith(in ExpressionEffects later) =>
         Writes.Overlaps(later.Reads) || Writes.Overlaps(later.Writes) || Reads.Overlaps(later.Writes);
 
-    // The variable that a location belongs to: a symbol or name, or memory
-    private readonly struct Root(object? variable)
+    // The variables (for a ref conditional) that a location belongs to: symbols or names, and whether it touches memory
+    private readonly struct Root
     {
-        public object? Variable { get; } = variable;
+        public ImmutableArray<object> Variables { get; }
 
-        public bool IsMemory => Variable == null;
+        public bool IsMemory { get; }
+
+        public Root(object? variable, bool isMemory = false)
+        {
+            Variables = variable != null ? ImmutableArray.Create(variable) : ImmutableArray<object>.Empty;
+            IsMemory = isMemory || variable == null;
+        }
+
+        public Root(ImmutableArray<object> variables, bool isMemory)
+        {
+            Variables = variables;
+            IsMemory = isMemory || variables.IsEmpty;
+        }
+
+        public static Root Combine(Root whenTrue, Root whenFalse)
+        {
+            var isMemory = whenTrue.IsMemory || whenFalse.IsMemory;
+            var builder = ImmutableArray.CreateBuilder<object>(whenTrue.Variables.Length + whenFalse.Variables.Length);
+            builder.AddRange(whenTrue.Variables);
+            foreach (var v in whenFalse.Variables)
+            {
+                if (!builder.Contains(v))
+                {
+                    builder.Add(v);
+                }
+            }
+
+            return new Root(builder.ToImmutable(), isMemory);
+        }
     }
 
     private struct Walker(SemanticModel model)
@@ -191,11 +220,12 @@ internal readonly struct ExpressionEffects(VariableSet reads, VariableSet writes
 
         public void AddRead(Root root)
         {
-            if (root.Variable is { } variable)
+            foreach (var variable in root.Variables)
             {
                 Reads.Add(variable);
             }
-            else
+
+            if (root.IsMemory)
             {
                 Reads.Memory = true;
             }
@@ -203,11 +233,12 @@ internal readonly struct ExpressionEffects(VariableSet reads, VariableSet writes
 
         private void AddWrite(Root root)
         {
-            if (root.Variable is { } variable)
+            foreach (var variable in root.Variables)
             {
                 Writes.Add(variable);
             }
-            else
+
+            if (root.IsMemory)
             {
                 Writes.Memory = true;
             }
@@ -274,9 +305,7 @@ internal readonly struct ExpressionEffects(VariableSet reads, VariableSet writes
                     AddMemberAccess(access);
                     return;
                 case ElementAccessExpressionSyntax element:
-                    AddValue(element.Expression);
-                    AddArgumentValues(element.ArgumentList.Arguments);
-                    Reads.Memory = true;
+                    AddElementAccessValue(element);
                     return;
                 case AssignmentExpressionSyntax assignment:
                     AddAssignment(assignment);
@@ -296,7 +325,7 @@ internal readonly struct ExpressionEffects(VariableSet reads, VariableSet writes
                     Reads.Memory = true;
                     return;
                 case RefExpressionSyntax reference:
-                    AddLocation(reference.Expression);
+                    AddRead(AddLocation(reference.Expression));
                     return;
                 default:
                     AddChildren(expression);
@@ -354,11 +383,17 @@ internal readonly struct ExpressionEffects(VariableSet reads, VariableSet writes
             var root = AddLocation(operand);
             AddRead(root);
             AddWrite(root);
-            if (model.GetSymbol(operand) is IPropertySymbol property && StructAbiMembers.IsComputedProperty(property))
+            if (model.GetSymbol(operand) is IPropertySymbol property &&
+                property.ContainingType is { } containingType &&
+                GlobalCppNames.IsEmittedUserType(containingType) &&
+                StructAbiMembers.IsComputedProperty(property))
             {
-                // The getter and the setter may read and write anything
                 Reads.Memory = true;
-                Writes.Memory = true;
+                if ((property.GetMethod != null && DeviceFunctionEffects.Classify(property.GetMethod, model.Compilation) == DeviceFunctionEffect.Memory) ||
+                    (property.SetMethod != null && DeviceFunctionEffects.Classify(property.SetMethod, model.Compilation) == DeviceFunctionEffect.Memory))
+                {
+                    Writes.Memory = true;
+                }
             }
         }
 
@@ -424,11 +459,27 @@ internal readonly struct ExpressionEffects(VariableSet reads, VariableSet writes
 
                     return;
                 case IPropertySymbol property:
-                    AddValue(access.Expression);
-                    if (StructAbiMembers.IsComputedProperty(property))
+                    if (MayMutateValueTypeReceiver(property, model.Compilation))
                     {
-                        // The getter may read anything
+                        var receiver = AddLocation(access.Expression);
+                        AddRead(receiver);
+                        AddWrite(receiver);
+                    }
+                    else
+                    {
+                        AddValue(access.Expression);
+                    }
+
+                    if (property.ContainingType is { } containingType &&
+                        GlobalCppNames.IsEmittedUserType(containingType) &&
+                        StructAbiMembers.IsComputedProperty(property))
+                    {
+                        // The getter of a struct may read anything, and writes what DeviceFunctionEffects says
                         Reads.Memory = true;
+                        if (property.GetMethod is { } getter && DeviceFunctionEffects.Classify(getter, model.Compilation) == DeviceFunctionEffect.Memory)
+                        {
+                            Writes.Memory = true;
+                        }
                     }
 
                     return;
@@ -454,6 +505,45 @@ internal readonly struct ExpressionEffects(VariableSet reads, VariableSet writes
             property.HasAttribute(KnownAttributes.CudaIntrinsic) ||
             property.ContainingType?.HasAttribute(KnownAttributes.CudaIntrinsicPattern) == true;
 
+        // A non-readonly getter of a non-readonly struct receives its receiver by reference and may mutate it (#992)
+        private static bool MayMutateValueTypeReceiver(IPropertySymbol property, Compilation compilation) =>
+            !property.IsStatic &&
+            property.ContainingType is { } type &&
+            GlobalCppNames.IsEmittedUserType(type) &&
+            !type.IsReadOnly &&
+            (StructAbiMembers.IsComputedProperty(property) || property.IsIndexer) &&
+            property.GetMethod is { IsReadOnly: false } getter &&
+            DeviceFunctionEffects.Classify(getter, compilation) != DeviceFunctionEffect.None;
+
+        private void AddElementAccessValue(ElementAccessExpressionSyntax element)
+        {
+            if (model.GetSymbol(element) is IPropertySymbol indexer && MayMutateValueTypeReceiver(indexer, model.Compilation))
+            {
+                var receiver = AddLocation(element.Expression);
+                AddRead(receiver);
+                AddWrite(receiver);
+                if (indexer.GetMethod is { } getter && DeviceFunctionEffects.Classify(getter, model.Compilation) == DeviceFunctionEffect.Memory)
+                {
+                    Writes.Memory = true;
+                }
+            }
+            else
+            {
+                AddValue(element.Expression);
+            }
+
+            AddArgumentValues(element.ArgumentList.Arguments);
+            Reads.Memory = true;
+        }
+
+        private Root AddConditionalLocation(ConditionalExpressionSyntax conditional)
+        {
+            AddValue(conditional.Condition);
+            var whenTrue = AddLocation(conditional.WhenTrue);
+            var whenFalse = AddLocation(conditional.WhenFalse);
+            return Root.Combine(whenTrue, whenFalse);
+        }
+
         private void AddAssignment(AssignmentExpressionSyntax assignment)
         {
             if (assignment.Left is TupleExpressionSyntax tuple)
@@ -476,10 +566,14 @@ internal readonly struct ExpressionEffects(VariableSet reads, VariableSet writes
             AddValue(assignment.Right);
             AddWrite(root);
             if (model.GetSymbol(assignment.Left) is IPropertySymbol property &&
+                property.ContainingType is { } containingType &&
+                GlobalCppNames.IsEmittedUserType(containingType) &&
                 StructAbiMembers.IsComputedProperty(property))
             {
-                // The setter may write anything
-                Writes.Memory = true;
+                if (property.SetMethod is { } setter && DeviceFunctionEffects.Classify(setter, model.Compilation) == DeviceFunctionEffect.Memory)
+                {
+                    Writes.Memory = true;
+                }
             }
         }
 
@@ -493,6 +587,10 @@ internal readonly struct ExpressionEffects(VariableSet reads, VariableSet writes
             {
                 case ParenthesizedExpressionSyntax parenthesized:
                     return AddLocation(parenthesized.Expression);
+                case RefExpressionSyntax refExpression:
+                    return AddLocation(refExpression.Expression);
+                case ConditionalExpressionSyntax conditional:
+                    return AddConditionalLocation(conditional);
                 case MemberAccessExpressionSyntax frame when IsFrameAccess(frame):
                     // A local of the state machine that lives in its frame: the local itself
                     return AddLocation(frame.Name);
@@ -523,6 +621,14 @@ internal readonly struct ExpressionEffects(VariableSet reads, VariableSet writes
                     return new Root(null);
                 }
                 case ElementAccessExpressionSyntax element:
+                    if (model.GetTypeSymbol(element.Expression) is { IsValueType: true, IsRefLikeType: false } and not IPointerTypeSymbol &&
+                        element.Expression is not ThisExpressionSyntax)
+                    {
+                        var receiver = AddLocation(element.Expression);
+                        AddArgumentValues(element.ArgumentList.Arguments);
+                        return receiver;
+                    }
+
                     AddValue(element.Expression);
                     AddArgumentValues(element.ArgumentList.Arguments);
                     return new Root(null);

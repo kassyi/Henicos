@@ -44,6 +44,7 @@
   </Folder>
   <Folder Name="/tests/Tools/">
     <Project Path="tests/Tools/Kassyi.GSharp.Tools.CollectEnv.Tests/Kassyi.GSharp.Tools.CollectEnv.Tests.csproj" />
+    <Project Path="tests/Tools/Kassyi.GSharp.Tools.FuzzDiff.Tests/Kassyi.GSharp.Tools.FuzzDiff.Tests.csproj" />
   </Folder>
   <Folder Name="/tests/ZeroAlloc/">
     <Project Path="tests/ZeroAlloc/Kassyi.ZeroAlloc.Linq.Tests/Kassyi.ZeroAlloc.Linq.Tests.csproj" />
