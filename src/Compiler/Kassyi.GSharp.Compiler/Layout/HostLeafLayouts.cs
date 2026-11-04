@@ -6,7 +6,7 @@ namespace Kassyi.GSharp.Compiler.Layout;
 /// </summary>
 /// <remarks>
 /// Independent of every dialect's type map, so a change to a device table never moves the host prediction. Structs
-/// and enums are not leaves: <see cref="TypeLayoutCalculator.TryGetHostLayout"/> lays them out from their fields and
+/// and enums are not leaves: <see cref="HostLayoutCalculator.TryGetHostLayout"/> lays them out from their fields and
 /// underlying type.
 /// </remarks>
 internal static class HostLeafLayouts

@@ -51,6 +51,25 @@ internal sealed class MethodFlowGraph(SemanticModel semanticModel, MethodDeclara
         return uniformity != null;
     }
 
+    /// <summary>The uniformity analysis of the body, with the parameters varying as <paramref name="masks"/> says.</summary>
+    public bool TryGetUniformity(ArgumentMasks masks, [NotNullWhen(true)] out UniformityAnalysis? uniformity)
+    {
+        if (masks == default)
+        {
+            return TryGetUniformity(out uniformity);
+        }
+
+        uniformity = null;
+        if (!TryCreate(semanticModel, method, out var graph) ||
+            semanticModel.GetDeclaredSymbol<IMethodSymbol>(method) is not { } symbol)
+        {
+            return false;
+        }
+
+        uniformity = UniformityAnalysis.AnalyzeBody(graph, semanticModel, symbol, masks, CalleeCall.CreateSet());
+        return true;
+    }
+
     /// <summary>
     /// The Roslyn graph of the body of <paramref name="method"/>; none when the method has no body or the body does not
     /// bind (an invalid operation).

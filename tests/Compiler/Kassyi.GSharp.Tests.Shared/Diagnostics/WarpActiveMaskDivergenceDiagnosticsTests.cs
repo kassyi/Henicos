@@ -31,7 +31,11 @@ public class WarpActiveMaskDivergenceDiagnosticsTests
                 (Analyzer, 43, 20, 43, 37),
                 (Analyzer, 61, 16, 61, 33),
                 (Analyzer, 75, 20, 75, 37),
-                (Analyzer, 113, 20, 113, 37)
+                (Analyzer, 113, 20, 113, 37),
+                (Analyzer, 139, 20, 139, 37),
+                (Analyzer, 150, 20, 150, 37),
+                (Analyzer, 179, 20, 179, 37),
+                (Analyzer, 190, 20, 190, 37)
             ],
             diagnostics.Ranges(GSharpDiagnostics.WarpActiveMaskInDivergentCode.Id));
     }

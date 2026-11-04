@@ -1,7 +1,7 @@
 namespace Kassyi.GSharp.Compiler.Lowering;
 
 /// <summary>Lowers loop constructs (for, while, do-while) into flat goto sequences for linear state machine generation.</summary>
-public class LoopRewriter : CSharpSyntaxRewriter
+public class LoopRewriter : CSharpSyntaxRewriter, IBlockLoweringPass
 {
     private int _labelCounter;
     private readonly Stack<(string? Break, string? Continue)> _loopStack = new();

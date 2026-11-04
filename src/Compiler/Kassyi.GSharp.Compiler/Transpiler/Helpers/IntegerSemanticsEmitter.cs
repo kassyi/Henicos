@@ -53,10 +53,11 @@ internal static class IntegerSemanticsEmitter
     /// <summary>
     /// Writes the increment or decrement <paramref name="operation"/> (<paramref name="node"/>, of
     /// <paramref name="operand"/>), for which <see cref="IntegerSemantics.GetIncrementHelper"/> gave
-    /// <paramref name="step"/>: <c>x=__gsharp_add_i32(x,1)</c> for a statement or a prefix step (parenthesized where its
-    /// value is used), and <c>__gsharp_sub_i32((x=__gsharp_add_i32(x,1)),1)</c> for a postfix step whose value is used
-    /// (the old value, as the step wraps). The target is written twice; the parts of it whose evaluation writes something
-    /// are evaluated into temporaries first (<see cref="AppendWithSpilledTarget"/>).
+    /// <paramref name="step"/>: <c>x=(T)__gsharp_add_i32(x,1)</c> for a statement or a prefix step (parenthesized where
+    /// its value is used; the cast narrows to a target narrower than int, #1079), and
+    /// <c>(T)__gsharp_sub_i32((x=(T)__gsharp_add_i32(x,1)),1)</c> for a postfix step whose value is used (the old value,
+    /// as the step wraps). The target is written twice; the parts of it whose evaluation writes something are evaluated
+    /// into temporaries first (<see cref="AppendWithSpilledTarget"/>).
     /// </summary>
     /// <remarks>
     /// [WHY] The target stays an expression: a <c>T&amp;</c> bound to a member of a packed struct
@@ -65,13 +66,14 @@ internal static class IntegerSemanticsEmitter
     public static void AppendStep(IIncrementOrDecrementOperation operation, ExpressionSyntax node,
         ExpressionSyntax operand, string step, ref TranspileContext context)
     {
+        var cast = IntegerSemantics.GetStepNarrowing(operation);
         var form = !IsValueUsed(node, context.Query.SemanticModel)
             ? StepForm.Statement
             : operation.IsPostfix
                 ? StepForm.OldValue
                 : StepForm.NewValue;
         var undo = IntegerSemantics.GetStepUndoHelper(operation);
-        AppendWithSpilledTarget(operand, step, value: null, cast: null, form, undo, ref context);
+        AppendWithSpilledTarget(operand, step, value: null, cast, form, undo, ref context);
     }
 
     /// <summary>
@@ -278,6 +280,14 @@ internal static class IntegerSemanticsEmitter
         }
 
         // The value before the step: the new value stepped back, which wraps back as well
+        if (cast != null)
+        {
+            using (writer.Parentheses())
+            {
+                context.Emitter.Dialect.AppendType(ref context, cast);
+            }
+        }
+
         writer.Append(undo ?? helper);
         using (writer.Parentheses())
         {
