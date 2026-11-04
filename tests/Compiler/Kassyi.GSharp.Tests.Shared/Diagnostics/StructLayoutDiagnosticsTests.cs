@@ -29,7 +29,8 @@ public class StructLayoutDiagnosticsTests
                 (Analyzer, 41, 47, 41, 56),
                 (Analyzer, 44, 49, 44, 59),
                 (Analyzer, 47, 40, 47, 45),
-                (Analyzer, 52, 13, 52, 20)
+                (Analyzer, 52, 13, 52, 20),
+                (Analyzer, 123, 45, 123, 55)
             ],
             diagnostics.Ranges(GSharpDiagnostics.StructLayoutNotRepresentable.Id));
     }
@@ -47,6 +48,8 @@ public class StructLayoutDiagnosticsTests
         "field 'B' at offset 1 is not a multiple of its 4-byte device alignment")]
     [InlineData("Cpu", "'StructLayoutDiagnosticsTest.Named'", "field 'Name' has the reference type 'string'")]
     [InlineData("Cuda", "'StructLayoutDiagnosticsTest.Named'", "field 'Name' has the reference type 'string'")]
+    [InlineData("Cpu", "'StructLayoutDiagnosticsTest.NamedUnion'", "field 'Name' has the reference type 'string'")]
+    [InlineData("Cuda", "'StructLayoutDiagnosticsTest.NamedUnion'", "field 'Name' has the reference type 'string'")]
     [Scenario(TestScenario.SadPath)]
     public async Task Test_StructWithoutDeviceLayout_StatesTheReason(string dialect, string structName, string reason)
     {
@@ -94,8 +97,11 @@ public class StructLayoutDiagnosticsTests
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/StructLayoutReturnDiagnostics.cs",
             dialect);
 
-        Assert.Equal([(Analyzer, 23, 23, 23, 30)],
+        Assert.Equal([(Analyzer, 23, 23, 23, 30), (Analyzer, 38, 23, 38, 40)],
             diagnostics.Ranges(GSharpDiagnostics.StructLayoutNotRepresentable.Id));
+        Assert.Equal([(Analyzer, 38, 23, 38, 40)],
+            diagnostics.Ranges(GSharpDiagnostics.StructLayoutNotRepresentable.Id,
+                "field 'Shifted' at offset 0 overlaps field 'RawBits', and 'Shifted' has different host and device layouts"));
         Assert.Equal([(Analyzer, 26, 23, 26, 29)],
             diagnostics.Ranges(GSharpDiagnostics.FieldTypeHasNoDeviceRepresentation.Id, "'decimal' of field 'Price'"));
         IEnumerable<(DiagnosticOrigin, int, int, int, int)> converted = isCuda
@@ -105,6 +111,23 @@ public class StructLayoutDiagnosticsTests
         // The user wrote no array: the message names the values of the struct, as for an array parameter (#889 review)
         Assert.Equal(converted, diagnostics.Ranges(GSharpDiagnostics.StructArrayConvertedPerElement.Id, "The values of '"));
         Assert.Empty(diagnostics.Ranges(GSharpDiagnostics.StructArrayConvertedPerElement.Id, "The array of"));
+    }
+
+    // An unmapped BCL struct returned directly from a kernel or device function reports GSH0004 instead of emitting
+    // an undefined C++ type (#1007)
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.SadPath)]
+    public async Task Test_ReturnedUnmappedBclStruct_ReportsGsh0004AndEmitsError(string dialect)
+    {
+        var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/StructLayoutReturnDiagnostics.cs", dialect);
+
+        Assert.Equal(
+            [(Analyzer, 41, 39, 41, 53), (Analyzer, 44, 42, 44, 65)],
+            diagnostics.Ranges(GSharpDiagnostics.KernelReturnMustBeVoidOrBlittable.Id));
+        Assert.Single(diagnostics.Ranges(GSharpDiagnostics.KernelReturnMustBeVoidOrBlittable.Id, "System.DateTime"));
+        Assert.Single(diagnostics.Ranges(GSharpDiagnostics.KernelReturnMustBeVoidOrBlittable.Id, "(int, System.Guid)"));
     }
 
     // VecHolder[] (line 60) and the inline array of Elem in InlineOuter (line 63), where Vector2 and Float2 move to

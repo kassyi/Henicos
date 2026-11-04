@@ -29,7 +29,7 @@ public class StructDifferentialTests
             b.Get<int>("r"),
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static b => StructDifferentialKernels.StructMutationAndCopySemantics(
+        Oracle = static (b, _) => StructDifferentialKernels.StructMutationAndCopySemantics(
             b.Get<int>("inputs"),
             b.Get<int>("deltas"),
             b.Get<int>("r")),
@@ -53,7 +53,7 @@ public class StructDifferentialTests
             b.Get<int>("r"),
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static b => StructDifferentialKernels.StructDefaultVsNewAndFieldInitializers(
+        Oracle = static (b, _) => StructDifferentialKernels.StructDefaultVsNewAndFieldInitializers(
             b.Get<int>("inputs"),
             b.Get<int>("flags"),
             b.Get<int>("r")),
@@ -80,7 +80,7 @@ public class StructDifferentialTests
             b.Get<int>("r"),
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static b => StructDifferentialKernels.RecordStructWithExpressions(
+        Oracle = static (b, _) => StructDifferentialKernels.RecordStructWithExpressions(
             b.Get<int>("xs"),
             b.Get<int>("ys"),
             b.Get<int>("zs"),
@@ -113,7 +113,7 @@ public class StructDifferentialTests
             b.Get<int>("r"),
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static b => StructDifferentialKernels.AutoPropertyPassedToInParameterDefensiveCopy(
+        Oracle = static (b, _) => StructDifferentialKernels.AutoPropertyPassedToInParameterDefensiveCopy(
             b.Get<int>("initialValues"),
             b.Get<int>("mutatedValues"),
             b.Get<int>("r")),
@@ -135,7 +135,7 @@ public class StructDifferentialTests
             b.Get<int>("r"),
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static b => StructDifferentialKernels.StructUserDefinedImplicitConversion(
+        Oracle = static (b, _) => StructDifferentialKernels.StructUserDefinedImplicitConversion(
             b.Get<int>("inputs"),
             b.Get<int>("r")),
     };

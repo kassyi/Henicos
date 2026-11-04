@@ -56,7 +56,7 @@ public class FloatAtomicAddDifferentialTests
             blockDimX: s.BlockX,
             sharedMemBytes: s.BlockX * sizeof(float) * 2u
         ),
-        Reference = static b =>
+        Reference = static (b, _) =>
         {
             var left = b.Get<float>("left");
             var right = b.Get<float>("right");
