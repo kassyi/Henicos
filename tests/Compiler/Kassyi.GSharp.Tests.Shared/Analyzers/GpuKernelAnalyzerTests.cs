@@ -98,7 +98,7 @@ public class GpuKernelAnalyzerTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_TranspilerFailureCheck_ForwardsGSH0070WithoutThrowingAD0001()
+    public async Task Test_TranspilerFailureCheck_NoDepthLimit_ReportsOnlyTheOtherDiagnosticWithoutThrowingAD0001()
     {
         var diagnostics = await RoslynTestUtility.TestAnalyzer("Analyzers/IteratorInlineDepth_SadPath.cs", s_analyzer)
                                                  .GetDiagnosticsAsync();
@@ -123,8 +123,6 @@ public class GpuKernelAnalyzerTests
 
         Assert.Equal(
             [
-                (GSharpDiagnostics.IteratorShapeNotSupported.Id, 155, 9, 158, 10),
-                // Another diagnostic of the method whose transpiler failure is forwarded: still reported next to it
                 (GSharpDiagnostics.StringNotSupported.Id, 159, 9, 159, 12)
             ],
             actual);

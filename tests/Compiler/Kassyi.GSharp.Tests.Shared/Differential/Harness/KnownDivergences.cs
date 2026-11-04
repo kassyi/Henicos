@@ -32,6 +32,21 @@ public static class KnownDivergences
         $"{nameof(PendingBugsDifferentialKernels)}.{nameof(PendingBugsDifferentialKernels.HelperDynamicSharedMemoryNegativeCountKernel)}";
     private const string GridStrideLoopUniformWarpShuffle =
         $"{nameof(PendingBugsDifferentialKernels)}.{nameof(PendingBugsDifferentialKernels.GridStrideLoopUniformWarpShuffleKernel)}";
+
+    private const string NullableBlitScalarArg =
+        $"{nameof(MarshalingBoundaryDifferentialKernels)}.{nameof(MarshalingBoundaryDifferentialKernels.NullableBlitScalarArgKernel)}";
+    private const string NullableConvertPositions =
+        $"{nameof(MarshalingBoundaryDifferentialKernels)}.{nameof(MarshalingBoundaryDifferentialKernels.NullableConvertPositionsKernel)}";
+    private const string InlineArrayNullableVec2 =
+        $"{nameof(MarshalingBoundaryDifferentialKernels)}.{nameof(MarshalingBoundaryDifferentialKernels.InlineArrayNullableVec2Kernel)}";
+    private const string OverlappingSpanSlice =
+        $"{nameof(MarshalingAliasingDifferentialKernels)}.{nameof(MarshalingAliasingDifferentialKernels.OverlappingSpanSliceKernel)}";
+    private const string AliasedRefScalars =
+        $"{nameof(MarshalingAliasingDifferentialKernels)}.{nameof(MarshalingAliasingDifferentialKernels.AliasedRefScalarsKernel)}";
+    private const string CrossAliasInDeepArrayAndRwArray =
+        $"{nameof(MarshalingAliasingDifferentialKernels)}.{nameof(MarshalingAliasingDifferentialKernels.CrossAliasInDeepArrayAndRwArrayKernel)}";
+    private const string PtrLengthGuardedScale =
+        $"{nameof(MarshalingAliasingDifferentialKernels)}.{nameof(MarshalingAliasingDifferentialKernels.PtrLengthGuardedScaleKernel)}";
     private const string InterlockedReturnExpression =
         $"{nameof(AtomicsDifferentialKernels)}.{nameof(AtomicsDifferentialKernels.InterlockedReturnExpressionKernel)}";
 
@@ -175,6 +190,44 @@ public static class KnownDivergences
         // Warp.ShuffleDownSync directly inside Gpu.GridStrideLoop lambda is not split by StateMachineLowerer (#1091)
         new(GridStrideLoopUniformWarpShuffle, "iter0_down1", DiffPath.Native, Issue: 1091),
         new(GridStrideLoopUniformWarpShuffle, "iter1_down1", DiffPath.Native, Issue: 1091),
+
+        // Nullable<T> scalar / byref kernel arguments throw MarshalDirectiveException in CPU Native Launch (#961)
+        new(NullableBlitScalarArg, "v_has", DiffPath.Native, Issue: 961),
+        new(NullableBlitScalarArg, "v_val", DiffPath.Native, Issue: 961),
+        new(NullableBlitScalarArg, "rb_has", DiffPath.Native, Issue: 961),
+        new(NullableBlitScalarArg, "rb_val", DiffPath.Native, Issue: 961),
+        new(NullableBlitScalarArg, "rb", DiffPath.Native, Issue: 961),
+        new(NullableBlitScalarArg, "oc", DiffPath.Native, Issue: 961),
+
+        // Nullable<Vector2> host 12B vs CUDA 16B layout mismatch (#961)
+        new(NullableConvertPositions, "v_x", DiffPath.Cuda, Issue: 961),
+        new(NullableConvertPositions, "v_y", DiffPath.Cuda, Issue: 961),
+        new(NullableConvertPositions, "rv_x", DiffPath.Cuda, Issue: 961),
+        new(NullableConvertPositions, "rv_y", DiffPath.Cuda, Issue: 961),
+        new(NullableConvertPositions, "h", DiffPath.Cuda, Issue: 961),
+
+        // [InlineArray(2)] of Nullable<Vector2> block-copied without per-element conversion on CUDA (#961)
+        new(InlineArrayNullableVec2, "item0_x", DiffPath.Cuda, Issue: 961),
+        new(InlineArrayNullableVec2, "item0_y", DiffPath.Cuda, Issue: 961),
+        new(InlineArrayNullableVec2, "item1_has", DiffPath.Cuda, Issue: 961),
+        new(InlineArrayNullableVec2, "item1_x", DiffPath.Cuda, Issue: 961),
+        new(InlineArrayNullableVec2, "item1_y", DiffPath.Cuda, Issue: 961),
+        new(InlineArrayNullableVec2, "h", DiffPath.Cuda, Issue: 961),
+
+        // Partially overlapping Span<T> slices from same array do not share device memory on CUDA (#857)
+        new(OverlappingSpanSlice, "backing", DiffPath.Cuda, Issue: 857),
+        new(OverlappingSpanSlice, "observed", DiffPath.Cuda, Issue: 857),
+
+        // Aliased ref scalar parameters allocate separate device buffers and overwrite on DtoH copyback on CUDA
+        new(AliasedRefScalars, "sharedRef", DiffPath.Cuda, Issue: 1061),
+        new(AliasedRefScalars, "observed", DiffPath.Cuda, Issue: 1061),
+
+        // [In] DeepStruct[] element array field cloned unconditionally on CPU even when aliasing writable int[] (#985)
+        new(CrossAliasInDeepArrayAndRwArray, "observed", DiffPath.Managed | DiffPath.Native, Issue: 985),
+
+        // Launch{Kernel}Ptr with raw IntPtr passes Length = 0 in GSharpArrayProxy (#720)
+        new(PtrLengthGuardedScale, "data", DiffPath.Cuda, Issue: 720),
+        new(PtrLengthGuardedScale, "outLen", DiffPath.Cuda, Issue: 720),
 
         // Span/Slice/ArraySegment/Memory/InlineArray bounds and BCE guards on native (#718)
         new(SpanCanaryIndexBounds, KnownDivergence.ExceptionColumn, DiffPath.Native, Issue: 718),
