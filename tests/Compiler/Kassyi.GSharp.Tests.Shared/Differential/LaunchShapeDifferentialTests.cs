@@ -287,6 +287,7 @@ public sealed class LaunchShapeDifferentialTests : TranspilerTestBase
     private static readonly DifferentialCase s_multiDimSharedMemoryAndBarrier =
         new($"{nameof(LaunchShapeDifferentialKernels)}.{nameof(LaunchShapeDifferentialKernels.MultiDimSharedMemoryAndBarrierKernel)}")
         {
+            // Shapes are capped at 128 threads per block to fit staticBuf (size 128).
             Shapes =
             [
                 ..LaunchShapes.StandardMatrix(128),

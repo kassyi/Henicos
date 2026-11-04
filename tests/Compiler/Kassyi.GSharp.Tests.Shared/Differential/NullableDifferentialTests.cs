@@ -170,9 +170,8 @@ public class NullableDifferentialTests
             b.Get<int>("r")),
     };
 
-    // The reproductions of #998 run 64 rows in blocks of 32
+    // The reproductions of #998 run 64 rows across one-dimensional launch shapes
     private const int ReproRows = 64;
-
 
     private static readonly DifferentialCase s_emptyStackSpanNullComparison = new(
         $"{nameof(NullableDifferentialKernels)}.{nameof(NullableDifferentialKernels.EmptyStackSpanNullComparisonReproKernel)}")
