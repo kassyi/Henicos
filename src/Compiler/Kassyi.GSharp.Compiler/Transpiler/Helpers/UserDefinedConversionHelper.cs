@@ -100,6 +100,67 @@ internal static class UserDefinedConversionHelper
             context.Emitter.CurrentStructType,
             compilation);
 
+        var operandType = context.Query.SemanticModel.GetTypeSymbol(operand);
+        var isLifted = operandType is INamedTypeSymbol
+                       {
+                           OriginalDefinition.SpecialType: SpecialType.System_Nullable_T, TypeArguments.Length: 1
+                       } nullableOperand &&
+                       paramType != null &&
+                       !nullableOperand.IsEqualTo(paramType) &&
+                       nullableOperand.TypeArguments[0].IsEqualTo(paramType);
+
+        if (isLifted)
+        {
+            const string temp = GSharpInternalNames.Lowering.CoalesceTemp;
+            using (context.Emitter.Writer.ImmediatelyInvokedLambda())
+            {
+                context.Emitter.Writer.Append($"auto {temp} = ");
+                context.Visitor.Visit(operand);
+                context.Emitter.Writer.AppendLine(";");
+
+                context.Emitter.Writer.Append($"return {temp}.HasValue ? ");
+                if (targetType != null)
+                {
+                    context.Emitter.Dialect.AppendType(ref context, targetType);
+                }
+
+                using (context.Emitter.Writer.Parentheses())
+                {
+                    context.Emitter.Writer.Append(GlobalCppNames.GetFunctionName(conversion));
+                    using (context.Emitter.Writer.Parentheses())
+                    {
+                        if (isByRefParam && paramType != null)
+                        {
+                            context.Emitter.Writer.Append(GSharpInternalNames.Prelude.TempAddress);
+                            using (context.Emitter.Writer.InlineScope("<", ">"))
+                            {
+                                context.Emitter.Dialect.AppendType(ref context, paramType);
+                            }
+
+                            using (context.Emitter.Writer.Parentheses())
+                            {
+                                context.Emitter.Writer.Append($"{temp}.Value");
+                            }
+                        }
+                        else
+                        {
+                            context.Emitter.Writer.Append($"{temp}.Value");
+                        }
+                    }
+                }
+
+                context.Emitter.Writer.Append(" : ");
+                if (targetType != null)
+                {
+                    context.Emitter.Dialect.AppendType(ref context, targetType);
+                }
+
+                context.Emitter.Writer.AppendLine("();");
+            }
+
+            return;
+        }
+
         var needsOuterCast = targetType is not null and not IErrorTypeSymbol &&
                              returnType != null &&
                              !targetType.IsEqualTo(returnType);
