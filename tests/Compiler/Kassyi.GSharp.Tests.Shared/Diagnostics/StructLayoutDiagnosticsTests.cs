@@ -29,7 +29,8 @@ public class StructLayoutDiagnosticsTests
                 (Analyzer, 41, 47, 41, 56),
                 (Analyzer, 44, 49, 44, 59),
                 (Analyzer, 47, 40, 47, 45),
-                (Analyzer, 52, 13, 52, 20)
+                (Analyzer, 52, 13, 52, 20),
+                (Analyzer, 123, 45, 123, 55)
             ],
             diagnostics.Ranges(GSharpDiagnostics.StructLayoutNotRepresentable.Id));
     }
@@ -47,6 +48,8 @@ public class StructLayoutDiagnosticsTests
         "field 'B' at offset 1 is not a multiple of its 4-byte device alignment")]
     [InlineData("Cpu", "'StructLayoutDiagnosticsTest.Named'", "field 'Name' has the reference type 'string'")]
     [InlineData("Cuda", "'StructLayoutDiagnosticsTest.Named'", "field 'Name' has the reference type 'string'")]
+    [InlineData("Cpu", "'StructLayoutDiagnosticsTest.NamedUnion'", "field 'Name' has the reference type 'string'")]
+    [InlineData("Cuda", "'StructLayoutDiagnosticsTest.NamedUnion'", "field 'Name' has the reference type 'string'")]
     [Scenario(TestScenario.SadPath)]
     public async Task Test_StructWithoutDeviceLayout_StatesTheReason(string dialect, string structName, string reason)
     {

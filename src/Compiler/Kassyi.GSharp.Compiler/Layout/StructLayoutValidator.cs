@@ -54,9 +54,9 @@ public static class StructLayoutValidator
                 null);
         }
 
-        if (kind == TypeLayoutKind.Explicit && FindUnsupportedExplicitLayout(deviceFields, dialect) is { } explicitProblem)
+        if (kind == TypeLayoutKind.Explicit && FindUnsupportedExplicitPlacement(deviceFields) is { } placementProblem)
         {
-            return explicitProblem;
+            return placementProblem;
         }
 
         foreach (var member in StructAbiMembers.Get(structType))
@@ -105,10 +105,15 @@ public static class StructLayoutValidator
             }
         }
 
-        return null;
+        // [WHY] After the member checks: a union arm with a reference type, a type without a device representation or
+        // an unsupported nested struct is reported for that member (GSH0078 / GSH0079 with the field), not as an arm
+        // whose host and device layouts differ
+        return kind == TypeLayoutKind.Explicit ? FindUnsupportedUnionArm(deviceFields, dialect) : null;
     }
 
-    private static UnsupportedLayout? FindUnsupportedExplicitLayout(ImmutableArray<FieldLayout> deviceFields, ITranspilerDialect dialect)
+    // A field at an offset its device alignment does not allow, or two fields that overlap without starting at the
+    // same offset
+    private static UnsupportedLayout? FindUnsupportedExplicitPlacement(ImmutableArray<FieldLayout> deviceFields)
     {
         for (var i = 0; i < deviceFields.Length; i++)
         {
@@ -138,6 +143,12 @@ public static class StructLayoutValidator
             }
         }
 
+        return null;
+    }
+
+    // Two fields at the same offset (a union group) where one of them has different host and device layouts
+    private static UnsupportedLayout? FindUnsupportedUnionArm(ImmutableArray<FieldLayout> deviceFields, ITranspilerDialect dialect)
+    {
         for (var i = 0; i < deviceFields.Length; i++)
         {
             var field = deviceFields[i];
@@ -159,7 +170,6 @@ public static class StructLayoutValidator
 
         return null;
     }
-
 
     private static bool IsUnionArmBlittable(FieldLayout field, ITranspilerDialect dialect) =>
         !field.Member.Type.IsArrayLikeType() &&
