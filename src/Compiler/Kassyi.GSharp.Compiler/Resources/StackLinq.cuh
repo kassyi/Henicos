@@ -321,8 +321,10 @@ namespace Kassyi { namespace ZeroAlloc { namespace Linq {
 
         template <typename TSource, typename TValue>
         __device__ static inline bool Contains(TSource source, TValue value) {
+            using TElement = decltype(source.Current());
+            TElement target = value;
             while (source.MoveNext()) {
-                if (__gsharp_linq_equals(source.Current(), value)) return true;
+                if (__gsharp_linq_equals(source.Current(), target)) return true;
             }
             return false;
         }
