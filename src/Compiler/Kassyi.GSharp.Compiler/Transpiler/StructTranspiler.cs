@@ -110,6 +110,22 @@ internal static class StructTranspiler
         {
             RegisterUsedStructIfApplicable(member.Type, ref context);
         }
+
+        if (!namedStruct.IsRefLikeType)
+        {
+            var compilation = context.Query.SemanticModel.Compilation;
+            foreach (var member in namedStruct.GetMembers())
+            {
+                if (member is IMethodSymbol conversion && IsEmittedStructConversion(conversion, compilation))
+                {
+                    RegisterUsedStructIfApplicable(conversion.ReturnType, ref context);
+                    foreach (var parameter in conversion.Parameters)
+                    {
+                        RegisterUsedStructIfApplicable(parameter.Type, ref context);
+                    }
+                }
+            }
+        }
     }
 
     /// <summary>
@@ -163,6 +179,30 @@ internal static class StructTranspiler
                 if (TryGetUserStruct(member.Type, out var dep) && structSet.Contains(dep))
                 {
                     visit(dep);
+                }
+            }
+
+            if (!s.IsRefLikeType)
+            {
+                foreach (var member in s.GetMembers())
+                {
+                    if (member is IMethodSymbol { MethodKind: MethodKind.Conversion, IsImplicitlyDeclared: false } conversion)
+                    {
+                        if (TryGetUserStruct(conversion.ReturnType, out var retDep) &&
+                            !retDep.IsEqualTo(s) && structSet.Contains(retDep))
+                        {
+                            visit(retDep);
+                        }
+
+                        foreach (var parameter in conversion.Parameters)
+                        {
+                            if (TryGetUserStruct(parameter.Type, out var paramDep) &&
+                                !paramDep.IsEqualTo(s) && structSet.Contains(paramDep))
+                            {
+                                visit(paramDep);
+                            }
+                        }
+                    }
                 }
             }
 
@@ -334,7 +374,8 @@ internal static class StructTranspiler
 
             foreach (var member in structSym.GetMembers())
             {
-                if (member is IMethodSymbol { MethodKind: MethodKind.Conversion, Name: "op_Implicit" } conv)
+                if (structSym.IsRefLikeType &&
+                    member is IMethodSymbol { MethodKind: MethodKind.Conversion, Name: "op_Implicit" } conv)
                 {
                     WriteImplicitConversionOperator(structSym, ref context, conv);
                 }
@@ -359,10 +400,15 @@ internal static class StructTranspiler
         context.Emitter.Writer.AppendLine(";");
         WriteStructStaticAsserts(structSym, isInlineArray: false, ref context);
         WriteStructConstructors(structSym, ref context);
+        StructConversionEmitter.WriteStructConversionOperators(structSym, ref context);
         context.Emitter.Writer
             .AppendLine("#endif")
             .AppendLine();
     }
+
+    /// <inheritdoc cref="StructConversionEmitter.IsEmittedStructConversion"/>
+    public static bool IsEmittedStructConversion(IMethodSymbol? conversion, Compilation compilation) =>
+        StructConversionEmitter.IsEmittedStructConversion(conversion, compilation);
 
     /// <summary>
     /// Whether <paramref name="constructor"/> is a user-defined struct constructor emitted as a value-returning device
@@ -1082,8 +1128,9 @@ internal static class StructTranspiler
                    .Any(compilation, static (constructor, c) => IsEmittedStructConstructor(constructor, c)) ||
                type.GetMembers()
                    .AsStackEnumerable()
-                   .OfType<IPropertySymbol>()
-                   .Any(StructAbiMembers.IsComputedProperty) ||
+                   .Any(compilation, static (member, c) =>
+                       (member is IPropertySymbol property && StructAbiMembers.IsComputedProperty(property)) ||
+                       (member is IMethodSymbol conversion && IsEmittedStructConversion(conversion, c))) ||
                UsingTranspiler.FindDisposeMethod(type, compilation) != null;
     }
 

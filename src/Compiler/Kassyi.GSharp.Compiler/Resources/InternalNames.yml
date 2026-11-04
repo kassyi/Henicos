@@ -12,6 +12,7 @@ Kernel:
     LaunchExportPrefix: __gsharp_launch_
     ContextPrefix: __gsharp_context_
     StateMachinePrefix: __gsharp_statemachine_
+    RawArgumentPrefix: __gsharp_raw_arg_
 
 StateMachine:
   Summary: Per-thread state machine context (CPU dialects).
@@ -177,6 +178,10 @@ Launcher:
     GridSyncReached: __gsharp_grid_sync_reached
     StructArgumentPrefix: __gsharp_arg_
     LayoutProbe: __gsharp_layout_probe
+    # The minimum runnable state of a warp in a round of a kernel that reaches a warp shuffle (#1001)
+    WarpMinState: __gsharp_warp_min_state
+    WarpEnd: __gsharp_warp_end
+    WarpThreadIndex: __gsharp_w
     # Managed host launch wrappers (#406): fixed locals, per-kernel member prefixes, and per-parameter local prefixes
     KernelParams: __gsharp_kernel_params
     FunctionHandle: __gsharp_hfunc
@@ -227,6 +232,7 @@ ReturnValue:
 Prelude:
   Summary: Functions and globals that the Prelude declares, used by the emitters or by the runtime loader.
   Names:
+    ArrayNullReadsEmpty: { Value: __gsharp_array_null_reads_empty, Prelude: ErrorChannel.hpp }
     HostLastError: { Value: __gsharp_host_last_error, Prelude: ErrorChannel.hpp }
     ActiveErrorSlot: { Value: __gsharp_active_error_slot, Prelude: ErrorChannel.hpp }
     Unsupported: { Value: __gsharp_unsupported, Prelude: ErrorChannel.hpp }
@@ -241,6 +247,11 @@ Prelude:
     # An element of such an array, checked after the array and the index are evaluated (C# order)
     ArrayAt: { Value: __gsharp_array_at, Prelude: ErrorChannel.hpp }
     ConsumeLastError: { Value: __gsharp_consume_last_error, Prelude: ErrorChannel.hpp }
+    ConsumeLastErrorDetails: { Value: __gsharp_consume_last_error_details, Prelude: ErrorChannel.hpp }
+    TrapSite: { Value: __gsharp_trap_site, Prelude: ErrorChannel.hpp }
+    ErrorSlot: { Value: __gsharp_error_slot, Prelude: ../Prelude.cu }
+    ErrorModuleId: { Value: __gsharp_error_module_id, Prelude: ../Prelude.cu }
+    BuiltinMessageId: { Value: __gsharp_builtin_message_id, Prelude: ../Prelude.cu }
     SetThreadIndex: { Value: __gsharp_set_thread_idx, Prelude: ThreadAndMemory.hpp }
     # Gpu.GridStrideLoop: declared by ThreadAndMemory.hpp for the CPU dialects and by the CUDA prelude
     GridStrideStart: { Value: __gsharp_grid_stride_start, Prelude: ThreadAndMemory.hpp }
@@ -271,6 +282,8 @@ Prelude:
     WarpShuffleReadDownSync: { Value: __gsharp_warp_shuffle_read_down_sync, Prelude: WarpAndHints.hpp, Managed: ManagedGpuContext.cs }
     WarpShuffleReadUpSync: { Value: __gsharp_warp_shuffle_read_up_sync, Prelude: WarpAndHints.hpp, Managed: ManagedGpuContext.cs }
     WarpShuffleReadXorSync: { Value: __gsharp_warp_shuffle_read_xor_sync, Prelude: WarpAndHints.hpp, Managed: ManagedGpuContext.cs }
+    WarpMatchAnyRead: { Value: __gsharp_warp_match_any_read_sync, Prelude: WarpAndHints.hpp, Managed: ManagedGpuContext.cs }
+    WarpMatchAllRead: { Value: __gsharp_warp_match_all_read_sync, Prelude: WarpAndHints.hpp, Managed: ManagedGpuContext.cs }
     Log2For32: { Value: __gsharp_log2_32, Prelude: MathAndBitOps.hpp }
     Log2For64: { Value: __gsharp_log2_64, Prelude: MathAndBitOps.hpp }
     RotateLeftFor32: { Value: __gsharp_rotl32, Prelude: MathAndBitOps.hpp }

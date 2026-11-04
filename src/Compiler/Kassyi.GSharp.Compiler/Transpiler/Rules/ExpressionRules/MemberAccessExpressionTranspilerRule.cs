@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Compiler.Analysis;
+
 namespace Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules;
 
 public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerRuleBase<MemberAccessExpressionSyntax>
@@ -9,6 +11,33 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
         if (symbol == null && node.Parent is InvocationExpressionSyntax invocation && invocation.Expression == node)
         {
             symbol = context.Query.SemanticModel.GetSymbol(invocation);
+        }
+
+        if (SpanWriteClassifier.TryFailUninvoked(node, ref context))
+        {
+            return;
+        }
+
+        if (symbol is IPropertySymbol spanProperty)
+        {
+            switch (SpanWriteClassifier.ClassifyProperty(spanProperty))
+            {
+                case SpanPropertyKind.Empty:
+                    context.Emitter.Dialect.AppendType(ref context, spanProperty.Type);
+                    context.Emitter.Writer.Append("{}");
+                    return;
+                case SpanPropertyKind.IsEmpty:
+                    StackArrayLocals.AppendView(node.Expression, ref context);
+                    context.Emitter.Writer.Append(".IsEmpty()");
+                    return;
+                case SpanPropertyKind.Unsupported:
+                    context.Reporter.Fail(
+                        GSharpDiagnostics.UnsupportedSyntax,
+                        node,
+                        SpanWriteClassifier.FormatUnsupportedProperty(spanProperty));
+                    context.Visitor.AppendUnsupportedPlaceholder(node);
+                    return;
+            }
         }
 
         if (symbol != null && TryTranspileIntrinsic(symbol, ref context))
@@ -121,7 +150,7 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
             {
                 context.Emitter.Writer.AppendIf(i > 0, ", ");
                 var parameter = method.Parameters[i];
-                var parameterType = parameter.Type.UnwrapNullableArrayLike();
+                var parameterType = parameter.Type;
                 StructTranspiler.RegisterUsedStructIfApplicable(parameterType, ref context);
                 context.Emitter.Dialect.AppendType(ref context, parameterType);
                 context.Emitter.Writer.AppendIf(parameter.RefKind != RefKind.None, "*");
@@ -165,21 +194,6 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
         {
             context.Visitor.Visit(node.Expression);
             return true;
-        }
-
-        if (operandType.IsNullableArrayLike())
-        {
-            if (memberName == "Value")
-            {
-                context.Visitor.Visit(node.Expression);
-                return true;
-            }
-
-            if (memberName == "HasValue")
-            {
-                NullRepresentation.AppendArrayNullTest(node.Expression, isNull: false, ref context);
-                return true;
-            }
         }
 
         return false;
