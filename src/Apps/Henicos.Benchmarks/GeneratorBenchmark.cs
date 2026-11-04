@@ -1,9 +1,11 @@
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using Kassyi.GSharp.Compiler;
 using Kassyi.GSharp.Compiler.Diagnostics.Kernel;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 
 namespace Henicos.Benchmarks;
@@ -19,18 +21,26 @@ namespace Henicos.Benchmarks;
 /// <c>IntermediateOutputPath</c>). Each generator iteration creates a fresh <see cref="CSharpGeneratorDriver"/> so that
 /// Roslyn's incremental caching does not turn subsequent iterations into no-ops.
 /// </para>
+/// <para>
+/// <see cref="Setup"/> runs the generator once per dialect and fails when it reports an error or leaves out a source it
+/// should produce, so that a generator that stops early on the input is never measured as a speed-up.
+/// </para>
 /// </remarks>
 [Config(typeof(CpuBenchmarkConfig))]
 [MemoryDiagnoser]
 public class GeneratorBenchmark
 {
+    // The wrapper hint name of an input class is its namespace and name joined by "__" (GlobalCppNames.GetHintName)
+    private const string InputHintNamePrefix = "Kassyi__GSharp__Tests__Shared__Differential__";
+
     private static readonly CSharpParseOptions s_parseOptions = new(LanguageVersion.Preview);
 
-    private static readonly string[] s_benchmarkKernelFiles =
+    // The kernel classes of the inputs; each file holds the class of the same name
+    private static readonly string[] s_benchmarkKernelClasses =
     [
-        "BarrierAndWarpDifferentialKernels.cu.cs.txt",
-        "MathDifferentialKernels.cu.cs.txt",
-        "StructDifferentialKernels.cu.cs.txt"
+        "BarrierAndWarpDifferentialKernels",
+        "MathDifferentialKernels",
+        "StructDifferentialKernels"
     ];
 
     private static readonly ImmutableArray<DiagnosticAnalyzer> s_kernelAnalyzers =
@@ -41,10 +51,9 @@ public class GeneratorBenchmark
         new ParallelDependentCallAnalyzer()
     ];
 
-    private CSharpCompilation? _compilation;
-    private AnalyzerConfigOptionsProvider? _cudaOptionsProvider;
-    private AnalyzerConfigOptionsProvider? _cpuOptionsProvider;
-    private CompilationWithAnalyzersOptions? _analyzerOptions;
+    private Prepared? _prepared;
+
+    private Prepared State => _prepared ?? throw new InvalidOperationException("Benchmark is not initialized.");
 
     [GlobalSetup]
     public void Setup()
@@ -56,7 +65,7 @@ public class GeneratorBenchmark
             throw new DirectoryNotFoundException($"Benchmark kernel input directory not found: {inputsDir}");
         }
 
-        var trees = new List<SyntaxTree>(s_benchmarkKernelFiles.Length + 1)
+        var trees = new List<SyntaxTree>(s_benchmarkKernelClasses.Length + 1)
         {
             CSharpSyntaxTree.ParseText(
                 """
@@ -70,17 +79,17 @@ public class GeneratorBenchmark
                 path: "__GlobalUsings.g.cs")
         };
 
-        foreach (var fileName in s_benchmarkKernelFiles)
+        foreach (var className in s_benchmarkKernelClasses)
         {
-            var file = Path.Combine(inputsDir, fileName);
+            // The inputs end in .txt so that no project compiles them; the tree gets the .cu.cs name of a kernel file
+            var treePath = Path.Combine(inputsDir, className + ".cu.cs");
+            var file = treePath + ".txt";
             if (!File.Exists(file))
             {
                 throw new FileNotFoundException($"Benchmark kernel file not found: {file}");
             }
 
-            var source = File.ReadAllText(file);
-            var treePath = file.EndsWith(".txt", StringComparison.OrdinalIgnoreCase) ? file[..^4] : file;
-            trees.Add(CSharpSyntaxTree.ParseText(source, s_parseOptions, path: treePath));
+            trees.Add(CSharpSyntaxTree.ParseText(File.ReadAllText(file), s_parseOptions, path: treePath));
         }
 
         var references = CollectMetadataReferences();
@@ -99,16 +108,19 @@ public class GeneratorBenchmark
             }
         }
 
-        _compilation = compilation;
-        _cudaOptionsProvider = new BenchmarkAnalyzerConfigOptionsProvider("Cuda");
-        _cpuOptionsProvider = new BenchmarkAnalyzerConfigOptionsProvider("Cpu");
-        var rawAnalyzerOptions = new AnalyzerOptions(ImmutableArray<AdditionalText>.Empty, _cudaOptionsProvider);
-        _analyzerOptions = new CompilationWithAnalyzersOptions(
-            options: rawAnalyzerOptions,
+        var cuda = new BenchmarkAnalyzerConfigOptionsProvider("Cuda");
+        var cpu = new BenchmarkAnalyzerConfigOptionsProvider("Cpu");
+        var analyzerOptions = new CompilationWithAnalyzersOptions(
+            options: new AnalyzerOptions(ImmutableArray<AdditionalText>.Empty, cuda),
             onAnalyzerException: null,
             concurrentAnalysis: false,
             logAnalyzerExecutionTime: false,
             reportSuppressedDiagnostics: false);
+
+        VerifyGeneratorRun(compilation, cuda, "Cuda");
+        VerifyGeneratorRun(compilation, cpu, "Cpu");
+
+        _prepared = new Prepared(compilation, cuda, cpu, analyzerOptions);
 
         // Pre-warm Roslyn symbol tables and Tier-1 JIT compilation so in-process benchmarks measure steady-state execution.
         for (var i = 0; i < 6; i++)
@@ -120,74 +132,152 @@ public class GeneratorBenchmark
     }
 
     [Benchmark]
-    public int RunGenerator_Cuda()
-    {
-        var compilation = _compilation ?? throw new InvalidOperationException("Benchmark is not initialized.");
-        var options = _cudaOptionsProvider ?? throw new InvalidOperationException("Benchmark is not initialized.");
-
-        var generator = new GpuKernelGenerator();
-        GeneratorDriver driver = CSharpGeneratorDriver.Create(
-            generators: [generator.AsSourceGenerator()],
-            additionalTexts: null,
-            parseOptions: s_parseOptions,
-            optionsProvider: options);
-
-        driver = driver.RunGenerators(compilation);
-        var result = driver.GetRunResult();
-        return result.GeneratedTrees.Length + result.Diagnostics.Length;
-    }
+    public int RunGenerator_Cuda() => RunGenerator(State.Cuda);
 
     [Benchmark]
-    public int RunGenerator_Cpu()
-    {
-        var compilation = _compilation ?? throw new InvalidOperationException("Benchmark is not initialized.");
-        var options = _cpuOptionsProvider ?? throw new InvalidOperationException("Benchmark is not initialized.");
-
-        var generator = new GpuKernelGenerator();
-        GeneratorDriver driver = CSharpGeneratorDriver.Create(
-            generators: [generator.AsSourceGenerator()],
-            additionalTexts: null,
-            parseOptions: s_parseOptions,
-            optionsProvider: options);
-
-        driver = driver.RunGenerators(compilation);
-        var result = driver.GetRunResult();
-        return result.GeneratedTrees.Length + result.Diagnostics.Length;
-    }
+    public int RunGenerator_Cpu() => RunGenerator(State.Cpu);
 
     [Benchmark]
     public int RunAnalyzers()
     {
-        var compilation = _compilation ?? throw new InvalidOperationException("Benchmark is not initialized.");
-        var analyzerOptions = _analyzerOptions ?? throw new InvalidOperationException("Benchmark is not initialized.");
-
-        var compilationWithAnalyzers = new CompilationWithAnalyzers(compilation, s_kernelAnalyzers, analyzerOptions);
+        var state = State;
+        var compilationWithAnalyzers = new CompilationWithAnalyzers(state.Compilation, s_kernelAnalyzers,
+            state.AnalyzerOptions);
         var diagnostics = compilationWithAnalyzers.GetAnalyzerDiagnosticsAsync().GetAwaiter().GetResult();
         return diagnostics.Length;
     }
 
-    private static string FindRepositoryRoot()
+    private int RunGenerator(AnalyzerConfigOptionsProvider options)
     {
-        var dir = new DirectoryInfo(AppContext.BaseDirectory);
-        while (dir is not null)
-        {
-            if (File.Exists(Path.Combine(dir.FullName, "Henicos.slnx")))
-            {
-                return dir.FullName;
-            }
+        var result = Generate(State.Compilation, options);
+        return result.GeneratedTrees.Length + result.Diagnostics.Length;
+    }
 
-            dir = dir.Parent;
+    private static GeneratorDriverRunResult Generate(CSharpCompilation compilation,
+        AnalyzerConfigOptionsProvider options)
+    {
+        var generator = new GpuKernelGenerator();
+        GeneratorDriver driver = CSharpGeneratorDriver.Create(
+            generators: [generator.AsSourceGenerator()],
+            additionalTexts: null,
+            parseOptions: s_parseOptions,
+            optionsProvider: options);
+
+        return driver.RunGenerators(compilation).GetRunResult();
+    }
+
+    // Fails when the generator reports an error or leaves out the wrapper or the AOT source of an input class
+    private static void VerifyGeneratorRun(CSharpCompilation compilation, AnalyzerConfigOptionsProvider options,
+        string dialect)
+    {
+        var result = Generate(compilation, options);
+        var run = result.Results[0];
+        if (run.Exception is not null)
+        {
+            throw new InvalidOperationException($"The {dialect} generator run threw.", run.Exception);
         }
 
-        dir = new DirectoryInfo(Directory.GetCurrentDirectory());
-        while (dir is not null)
+        foreach (var diagnostic in result.Diagnostics)
         {
-            if (File.Exists(Path.Combine(dir.FullName, "Henicos.slnx")))
+            if (diagnostic.Severity == DiagnosticSeverity.Error)
             {
-                return dir.FullName;
+                throw new InvalidOperationException($"The {dialect} generator run reported an error: {diagnostic}");
             }
+        }
 
-            dir = dir.Parent;
+        var sources = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var source in run.GeneratedSources)
+        {
+            sources[source.HintName] = source.SourceText.ToString();
+        }
+
+        // The prelude and the device code that every kernel shares; on CUDA also the module context that loads them
+        RequireSource(sources, $"GSharpShared{dialect}Prelude.g.cs", dialect);
+        RequireSource(sources, $"GSharpShared{dialect}DeviceCode.g.cs", dialect);
+        if (dialect == "Cuda")
+        {
+            RequireSource(sources, $"GSharpModuleContext_{compilation.AssemblyName}.g.cs", dialect);
+        }
+
+        RequireKernelSources(compilation, sources, dialect);
+    }
+
+    // The wrapper of each input class holds the C++ source of each of its kernels (the text of the AOT artifact)
+    private static void RequireKernelSources(CSharpCompilation compilation, Dictionary<string, string> sources,
+        string dialect)
+    {
+        var classesWithKernels = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var tree in compilation.SyntaxTrees)
+        {
+            foreach (var node in tree.GetRoot().DescendantNodes())
+            {
+                if (node is not MethodDeclarationSyntax { Parent: ClassDeclarationSyntax kernelClass } method ||
+                    !IsKernel(method))
+                {
+                    continue;
+                }
+
+                var className = kernelClass.Identifier.ValueText;
+                var kernelName = method.Identifier.ValueText;
+                var wrapper = RequireSource(sources, InputHintNamePrefix + className + ".g.cs", dialect);
+                var sourceConstant = $"public const string {kernelName}_Source = @\"";
+                var at = wrapper.IndexOf(sourceConstant, StringComparison.Ordinal);
+                if (at < 0 || wrapper.AsSpan(at + sourceConstant.Length).StartsWith("\";", StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException(
+                        $"The {dialect} generator run produced no C++ source for {className}.{kernelName}.");
+                }
+
+                classesWithKernels.Add(className);
+            }
+        }
+
+        foreach (var className in s_benchmarkKernelClasses)
+        {
+            if (!classesWithKernels.Contains(className))
+            {
+                throw new InvalidOperationException(
+                    $"The benchmark input class {className} has no [GpuKernel] method.");
+            }
+        }
+    }
+
+    private static string RequireSource(Dictionary<string, string> sources, string hintName, string dialect) =>
+        sources.TryGetValue(hintName, out var text)
+            ? text
+            : throw new InvalidOperationException(
+                $"The {dialect} generator run did not produce {hintName}. Produced: {string.Join(", ", sources.Keys)}");
+
+    private static bool IsKernel(MethodDeclarationSyntax method)
+    {
+        foreach (var list in method.AttributeLists)
+        {
+            foreach (var attribute in list.Attributes)
+            {
+                if (attribute.Name is IdentifierNameSyntax
+                    {
+                        Identifier.ValueText: "GpuKernel" or "GpuKernelAttribute"
+                    })
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private static string FindRepositoryRoot()
+    {
+        foreach (var start in (ReadOnlySpan<string>)[AppContext.BaseDirectory, Directory.GetCurrentDirectory()])
+        {
+            for (var dir = new DirectoryInfo(start); dir is not null; dir = dir.Parent)
+            {
+                if (File.Exists(Path.Combine(dir.FullName, "Henicos.slnx")))
+                {
+                    return dir.FullName;
+                }
+            }
         }
 
         throw new DirectoryNotFoundException("Could not locate repository root (Henicos.slnx).");
@@ -229,6 +319,12 @@ public class GeneratorBenchmark
         }
     }
 
+    private sealed record Prepared(
+        CSharpCompilation Compilation,
+        AnalyzerConfigOptionsProvider Cuda,
+        AnalyzerConfigOptionsProvider Cpu,
+        CompilationWithAnalyzersOptions AnalyzerOptions);
+
     private sealed class BenchmarkAnalyzerConfigOptionsProvider(string targetDialect) : AnalyzerConfigOptionsProvider
     {
         private readonly BenchmarkAnalyzerConfigOptions _options = new(targetDialect);
@@ -242,9 +338,7 @@ public class GeneratorBenchmark
 
     private sealed class BenchmarkAnalyzerConfigOptions(string targetDialect) : AnalyzerConfigOptions
     {
-#pragma warning disable CS8765
-        public override bool TryGetValue(string key, out string? value)
-#pragma warning restore CS8765
+        public override bool TryGetValue(string key, [MaybeNullWhen(false)] out string value)
         {
             switch (key)
             {

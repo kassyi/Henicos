@@ -416,6 +416,7 @@ trusted-key-line key:
     printf '%s,fnv1a64:%s\n' "$k" "$(printf '%016x' "$h" | cut -c1-10)"
 
 
-# Compare BenchmarkDotNet JSON results between base and head directories using Mann-Whitney U test
+# Compare the BenchmarkDotNet *-report-full.json reports of a base and a head run with a Mann-Whitney U test;
+# exits 1 on a significant slowdown (options: --threshold <percent>, --pvalue <p>, --json-out <file>)
 bench-compare base head *args="":
-    node scripts/human/bench-compare.js --base {{base}} --head {{head}} {{args}}
+    dotnet run --project src/Apps/Henicos.Benchmarks -c Release -- bench-compare {{base}} {{head}} {{args}}
