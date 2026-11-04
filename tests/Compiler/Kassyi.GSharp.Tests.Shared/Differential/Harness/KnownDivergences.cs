@@ -10,10 +10,6 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 public static class KnownDivergences
 {
     // The cases of the entries below, named through nameof so that a renamed kernel cannot leave an entry behind
-    private const string SubWarpConditionalShuffle =
-        $"{nameof(BarrierAndWarpDifferentialKernels)}.{nameof(BarrierAndWarpDifferentialKernels.SubWarpConditionalShuffleKernel)}";
-    private const string GenericStructStaticSharedMemory =
-        $"{nameof(BarrierAndWarpDifferentialKernels)}.{nameof(BarrierAndWarpDifferentialKernels.GenericStructStaticSharedMemoryKernel)}";
     private const string HelperDynamicSharedMemoryZeroBytes =
         $"{nameof(PendingBugsDifferentialKernels)}.{nameof(PendingBugsDifferentialKernels.HelperDynamicSharedMemoryZeroBytesKernel)}";
     private const string HelperDynamicSharedMemoryGrowthAfterLaterDecl =
@@ -142,12 +138,6 @@ public static class KnownDivergences
     public static IReadOnlyList<KnownDivergence> All { get; } =
     [
         // new("IntegerMatrixKernels.Int32ArithmeticMatrixKernel", "a>>>b", DiffPath.Native | DiffPath.Cuda, Issue: 722),
-
-        // Warp.ShuffleXor after sub-warp conditional ShuffleDown on CPU emulator (#1001)
-        new(SubWarpConditionalShuffle, "reconvergedFullWarpXor16", DiffPath.Managed | DiffPath.Native, Issue: 1001),
-
-        // generic struct static method SharedMemory.Allocate<T> collides across type arguments (#543)
-        new(GenericStructStaticSharedMemory, "SharedSlot<int>", DiffPath.Managed | DiffPath.Native, Issue: 543),
 
         // dynamic SharedMemory<T>(count) inside non-suspending [GpuDeviceFunction] is not rewritten on Managed (#904)
         new(HelperDynamicSharedMemoryZeroBytes, KnownDivergence.ExceptionColumn, DiffPath.Managed, Issue: 904),
