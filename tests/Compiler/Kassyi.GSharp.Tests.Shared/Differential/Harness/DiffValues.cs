@@ -77,7 +77,96 @@ public static class DiffValues
         return BitConverter.UInt32BitsToSingle(sign | (exponent << 23) | mantissa);
     }
 
-    private static T[] Values<T>(DiffRandom rng, int count, T[] boundaries, Func<DiffRandom, T> next)
+    /// <summary>The <see cref="short"/> boundaries of <see cref="Int16"/>.</summary>
+    public static readonly short[] Int16Boundaries = [0, 1, -1, short.MinValue, short.MaxValue, -128, 127, 255, 256];
+
+    /// <summary>The <see cref="ushort"/> boundaries of <see cref="UInt16"/>.</summary>
+    public static readonly ushort[] UInt16Boundaries = [0, 1, 127, 128, 255, 256, 32767, 32768, ushort.MaxValue];
+
+    /// <summary>The <see cref="byte"/> boundaries of <see cref="Byte"/>.</summary>
+    public static readonly byte[] ByteBoundaries = [0, 1, 2, 127, 128, 250, 254, byte.MaxValue];
+
+    /// <summary>The <see cref="sbyte"/> boundaries of <see cref="SByte"/>.</summary>
+    public static readonly sbyte[] SByteBoundaries = [0, 1, -1, sbyte.MinValue, sbyte.MaxValue, -127, 126];
+
+    /// <summary>
+    /// Returns <paramref name="count"/> inputs: seed 0 repeats <paramref name="boundaries"/> in order; any other seed draws
+    /// a boundary with probability 1/2 and <paramref name="random"/> otherwise.
+    /// </summary>
+    /// <param name="rng">The generator.</param>
+    /// <param name="count">The number of values.</param>
+    /// <param name="boundaries">The boundary table of the test.</param>
+    /// <param name="random">Draws a value that is not taken from the table.</param>
+    public static T[] Mixed<T>(DiffRandom rng, int count, T[] boundaries, Func<DiffRandom, T> random) =>
+        Values(rng, count, boundaries, r => r.NextBool() ? boundaries[r.NextBelow(boundaries.Length)] : random(r));
+
+    /// <summary>
+    /// Returns <paramref name="count"/> inputs: the boundary at the same position (<c>i % n</c>) on seed 0, and with
+    /// probability 1/2 on any other seed; <paramref name="random"/> otherwise.
+    /// </summary>
+    /// <param name="rng">The generator.</param>
+    /// <param name="count">The number of values.</param>
+    /// <param name="boundaries">The boundary table.</param>
+    /// <param name="random">Draws a value that is not taken from the table.</param>
+    public static T[] Cycled<T>(DiffRandom rng, int count, T[] boundaries, Func<DiffRandom, T> random)
+    {
+        var values = new T[count];
+        for (int i = 0; i < count; i++)
+        {
+            values[i] = rng.IsBoundarySeed || rng.NextBool() ? boundaries[i % boundaries.Length] : random(rng);
+        }
+
+        return values;
+    }
+
+    /// <summary>Returns <paramref name="count"/> values of <paramref name="random"/> on every seed, without boundaries.</summary>
+    /// <param name="rng">The generator.</param>
+    /// <param name="count">The number of values.</param>
+    /// <param name="random">Draws one value.</param>
+    public static T[] Random<T>(DiffRandom rng, int count, Func<DiffRandom, T> random)
+    {
+        var values = new T[count];
+        for (int i = 0; i < count; i++)
+        {
+            values[i] = random(rng);
+        }
+
+        return values;
+    }
+
+    /// <summary><see cref="Cycled{T}"/> over <see cref="Int16Boundaries"/> with 16 random bits.</summary>
+    /// <param name="rng">The generator.</param>
+    /// <param name="count">The number of values.</param>
+    public static short[] Int16(DiffRandom rng, int count) =>
+        Cycled(rng, count, Int16Boundaries, static r => unchecked((short)r.NextInt32()));
+
+    /// <summary><see cref="Cycled{T}"/> over <see cref="UInt16Boundaries"/> with 16 random bits.</summary>
+    /// <param name="rng">The generator.</param>
+    /// <param name="count">The number of values.</param>
+    public static ushort[] UInt16(DiffRandom rng, int count) =>
+        Cycled(rng, count, UInt16Boundaries, static r => unchecked((ushort)r.NextUInt32()));
+
+    /// <summary><see cref="Cycled{T}"/> over <see cref="ByteBoundaries"/> with 8 random bits.</summary>
+    /// <param name="rng">The generator.</param>
+    /// <param name="count">The number of values.</param>
+    public static byte[] Byte(DiffRandom rng, int count) =>
+        Cycled(rng, count, ByteBoundaries, static r => unchecked((byte)r.NextUInt32()));
+
+    /// <summary><see cref="Cycled{T}"/> over <see cref="SByteBoundaries"/> with 8 random bits.</summary>
+    /// <param name="rng">The generator.</param>
+    /// <param name="count">The number of values.</param>
+    public static sbyte[] SByte(DiffRandom rng, int count) =>
+        Cycled(rng, count, SByteBoundaries, static r => unchecked((sbyte)r.NextInt32()));
+
+    /// <summary>
+    /// Returns <paramref name="count"/> inputs: seed 0 repeats <paramref name="boundaries"/> in order; any other seed calls
+    /// <paramref name="next"/>, which decides itself whether to draw a boundary.
+    /// </summary>
+    /// <param name="rng">The generator.</param>
+    /// <param name="count">The number of values.</param>
+    /// <param name="boundaries">The boundary table.</param>
+    /// <param name="next">Draws one value on a seed other than 0.</param>
+    public static T[] Values<T>(DiffRandom rng, int count, T[] boundaries, Func<DiffRandom, T> next)
     {
         var values = new T[count];
         for (int i = 0; i < count; i++)
@@ -88,7 +177,15 @@ public static class DiffValues
         return values;
     }
 
-    private static (T[] Left, T[] Right) Pairs<T>(DiffRandom rng, int rows, T[] boundaries, Func<DiffRandom, T> next)
+    /// <summary>
+    /// Returns <paramref name="rows"/> pairs: seed 0 gives the cross product of <paramref name="boundaries"/> row by row
+    /// (row <c>r</c> is <c>(B[r / n % n], B[r % n])</c>); any other seed calls <paramref name="next"/> for each side.
+    /// </summary>
+    /// <param name="rng">The generator.</param>
+    /// <param name="rows">The number of pairs.</param>
+    /// <param name="boundaries">The boundary table.</param>
+    /// <param name="next">Draws one value on a seed other than 0.</param>
+    public static (T[] Left, T[] Right) Pairs<T>(DiffRandom rng, int rows, T[] boundaries, Func<DiffRandom, T> next)
     {
         var left = new T[rows];
         var right = new T[rows];

@@ -33,15 +33,20 @@ public sealed class CastExpressionTranspilerRule : SyntaxNodeTranspilerRuleBase<
 
         // A float or double converted to an integer saturates and NaN gives 0, as .NET converts it; C++ leaves an
         // out-of-range conversion undefined (#724). A type narrower than int is the int result truncated:
-        // (unsigned char)__gsharp_to_i32(x)
-        if (operation is IConversionOperation conversion &&
-            IntegerSemantics.GetConversionHelper(conversion, out var needsCast) is { } helper)
+        // (unsigned char)__gsharp_to_i32(x). A cast synthesized by foreach lowering (#995) has no bound conversion
+        // operation and resolves its source and target types from the expressions.
+        var model = context.Query.SemanticModel;
+        var targetType = model.GetTypeSymbol(node.Type);
+        var helper = operation is IConversionOperation conversion
+            ? IntegerSemantics.GetConversionHelper(conversion, out var needsCast)
+            : IntegerSemantics.GetConversionHelper(GetSynthesizedSourceType(node, model), targetType, out needsCast);
+        if (helper != null)
         {
             if (needsCast)
             {
                 using (context.Emitter.Writer.Parentheses())
                 {
-                    context.Emitter.Dialect.AppendType(ref context, context.Query.SemanticModel.GetTypeSymbol(node.Type));
+                    context.Emitter.Dialect.AppendType(ref context, targetType);
                 }
             }
 
@@ -51,9 +56,24 @@ public sealed class CastExpressionTranspilerRule : SyntaxNodeTranspilerRuleBase<
 
         using (context.Emitter.Writer.Parentheses())
         {
-            context.Emitter.Dialect.AppendType(ref context, context.Query.SemanticModel.GetTypeSymbol(node.Type));
+            context.Emitter.Dialect.AppendType(ref context, targetType);
         }
 
         context.Visitor.Visit(node.Expression);
+    }
+
+    private static ITypeSymbol? GetSynthesizedSourceType(CastExpressionSyntax node, SemanticModel model)
+    {
+        var expr = node.Expression;
+        while (expr is ParenthesizedExpressionSyntax parenthesized)
+        {
+            expr = parenthesized.Expression;
+        }
+
+        return model.GetTypeSymbol(expr) ??
+               (model.GetSafeOperation(node) is IForEachLoopOperation { Collection.Type: { } collectionType } &&
+                collectionType.TryGetArrayLikeElementType(out var elementType)
+                   ? elementType
+                   : null);
     }
 }

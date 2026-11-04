@@ -78,3 +78,666 @@ Step 3 までの極限まで無駄を削ぎ落としたモジュラ演算によ�
 至上命題である「計算量 $O$ の極限削減」を満たしつつ素数性を評価する唯一の現実的アプローチは、高速フーリエ変換（Schönhage-Strassen法など）を用いた多倍長乗算による「フェルマーの確率的素数判定（PRPテスト）」です。
 さらに $N = 2X^2 - X + 11$ という疎（Sparse）な代数構造を活かし、剰余演算において「$2 \cdot 2^{2E}$ が現れるたびに $2^E - 11$ に置き換える」という本数式専用のモジュラリダクション回路を構築します。
 これにより、モジュラ演算のボトルネックが劇的に解消され、全体の時間計算量を $\tilde{O}(L^2)$ （演算回数 $2 \times 10^{16}$ オーダー）まで極限まで削減できます。この要件を満たせば、GPUクラスタ等の現代の分散コンピューティング（GIMPSと同様の規模）を用いることで、数週間〜数ヶ月で「圧倒的な確率で素数（または合成数）」という評価を確定させることが可能となります。
+
+
+---
+計算量の見積もりを実際の数値で詰めるため、まず小さな素因数の有無を機械的に確認し、合わせて現在の GPU 実装の実測値と最大素数の記録を確認します。
+
+残差は Python と一致。では $2^{35}\approx 3.4\times10^{10}$ まで試し割りを走らせつつ、並行して実測ベンチマーク等を調べます。
+
+実測・検証を済ませたうえでの回答です。結論から言うと、**可能です。しかも 2〜3 か月どころか、正しく実装すれば 3070 Ti 1 枚で 1〜2 週間程度**に収まります。ただし「計算量理論で削る余地」はもうほとんど無く、残っているのは「1 回の平方のコストを定数倍削る工学」と「ソフトウェアが存在しない」という問題です。以下、何が削れて何が削れないかを分けて示します。
+
+## 0. 先に事実確認（この環境で実行した結果）
+
+- **試し割り**：$p \le 2^{35} \approx 3.4\times10^{10}$ の全素数（14.8 億個）について $N \bmod p$ を計算しましたが、**素因数は見つかりません**（所要 162 秒、2 コア）。前回の「17 まで」の手計算は $2^{35}$ まで機械的に確認済みに更新されます。
+- **疎な剰余還元の正しさ**と、後述の「平方鎖 1 本への帰着」を小さい $E$（$E=2\ldots119$）で検証し、一致を確認しました。
+- **GMP（Schönhage–Strassen）でのフルサイズ 1 平方**：$0.89$ 秒/回 → 全体で **約 4.0 年**（1 コア）。これが「何も工夫しない」基準点です。
+- ついでに：$N_E = 2^{2E+1}-2^E+11$ は $E$ が偶数なら必ず $3 \mid N_E$ です（$2^E\equiv1 \pmod 3$ より $N_E\equiv 12$）。$E<400$ で素数になるのは $E=1,3,5,11,31,51,61,87,157,205,293$ で、$E=71428571$ は奇数なので家族としては整合しています。
+
+サイズは
+$$L=\lfloor\log_2 N\rfloor+1 = 2E+1 = 142{,}857{,}143 \text{ bit},\qquad \lfloor L\log_{10}2\rfloor+1 = 43{,}004{,}286 \text{ 桁}$$
+で、現在の最大既知素数 $2^{136279841}-1$（41,024,320 桁、2024 年 10 月、GPU で発見）よりわずかに大きい規模です。
+
+## 1. 削れないもの：逐次平方の回数
+
+PRP 判定 $3^{N-1}\equiv 1 \pmod N$ の指数は
+$$N-1 = 2^{2E+1}-2^{E}+10$$
+であり、$\lfloor \log_2(N-1)\rfloor = 2E$ 回の逐次モジュラ平方は、どんな冪乗法でも下回れません。ただし「乗算をゼロにする」ことはできます。$y = 3^{2^E}$ と置くと
+$$3^{N-1} = 3^{2^{2E+1}}\cdot 3^{-2^{E}}\cdot 3^{10}
+\quad\Longleftrightarrow\quad
+\underbrace{y^{\,2^{E+1}}}_{=:\,z}\cdot 3^{10}\;\equiv\; y \pmod N$$
+なので、**3 から始めて $2E+1=L$ 回ひたすら平方するだけの鎖 1 本**（途中 $E$ 回目の値 $y$ を保存）で済み、一般乗算は不要です。この「純粋な平方鎖」であることが後述の Gerbicz 検査と証明生成を可能にします。したがって最大計算量は
+$$W_{\max} = L \times C_{\mathrm{sq}}$$
+で固定され、削れるのは $C_{\mathrm{sq}}$（1 平方のコスト）だけです。
+
+## 2. 削れるもの：1 回の平方のコスト $C_{\mathrm{sq}}$
+
+**(a) 剰余還元を $O(L)$ にする（約 3 倍の削減）**
+一般の法では Montgomery/Barrett で乗算が 2 回余計に要りますが、$2^{2E+1}\equiv 2^{E}-11 \pmod N$ を使えば、積 $P = A\cdot 2^{2E+1}+B$ に対し
+$$P \equiv A\cdot 2^{E} - 11A + B \pmod N$$
+をシフトと小定数倍だけで 2 回適用し、最後に高々 2 回 $N$ を引くだけです。乗算は本体の 1 平方のみ。
+
+**(b) 変換を整数 NTT にする（GeForce では決定的）**
+Mersenne 数は IBDWT で $L$ bit 長の巡回畳み込み 1 本で済みますが、$N$ ではこの折り返しが使えないため、$2L$ bit の完全な積を零詰めの線形畳み込みで求める必要があります（Mersenne 同サイズの約 2 倍、これ以上は構造的に削れません）。語長 $b$ bit、変換長 $n$ 点、NTT の法 $M$ なら、必要条件は
+$$n \ge \frac{2L}{b},\qquad \frac{n}{2}\,\bigl(2^{\,b-1}\bigr)^2 < \frac{M}{2}\ \ (\text{平衡表現で厳密})$$
+です。PRPLL の整数 NTT と同じ $M=(2^{31}-1)(2^{61}-1)\approx 2^{92}$ なら $b=35$、$n=2^{23}$（8M 点）で $2L/b = 8.16\times10^{6} \le 8.39\times10^{6}$ を満たします。
+3070 Ti は FP64 が FP32 の 1/64（約 0.34 TFLOPS）しかないため FP64 FFT は不利で、NTT 一択です（FP64:INT32 が 1:16 以下なら NTT が勝つ、というのが実装者側の経験則）。
+
+**(c) 帯域律速の下限と実時間**
+NTT 要素 12 byte × 8.4M 点、往復各 3 パス読み書きで 1 反復あたり約 1.4 GB のメモリ流量。3070 Ti（608 GB/s）での下限は
+$$t_{\mathrm{sq}} \gtrsim \frac{1.4\ \mathrm{GB}}{608\ \mathrm{GB/s}} \approx 2.3\ \mathrm{ms},\qquad
+T = L\, t_{\mathrm{sq}} \gtrsim 3.3\times10^{5}\ \mathrm{s} \approx 3.8\ \text{日}$$
+公表されている PRPLL 整数 NTT の実測（140M 指数 = 4M 点）は RTX 2070 で 1.52 ms、RTX 4070 Super で 0.92 ms、RTX 4090 で 0.42 ms、16M 点では 2070 が 6.43 ms、A100 が 2.2 ms で、2070 の値は帯域下限の約 90% で動いており上の見積りと整合します。3070 Ti の 8M 点なら **3〜5 ms/反復 → 5〜8 日**が現実的な見積りです。
+
+予算条件は
+$$t_{\mathrm{sq}} \le \frac{60\ \text{日}}{L} = 36\ \mathrm{ms}\ (2\text{か月}),\qquad \le 54\ \mathrm{ms}\ (3\text{か月})$$
+なので、**約 10 倍の余裕**があります。
+
+| 方式（3070 Ti 搭載 PC 1 台） | $t_{\mathrm{sq}}$ | 全体 | 備考 |
+|---|---|---|---|
+| GMP 1 コア（**実測**） | 890 ms | 4.0 年 | 基準点 |
+| PFGW/gwnum 汎用還元（CPU、推定） | 25〜60 ms | 1.5〜3.5 か月 | 工学不要だが CPU 次第で予算ぎりぎり |
+| cuFFT FP64、約 19M 点（推定） | 10〜20 ms | 2.5〜5 週 | FP64 が 1/64 で損 |
+| **整数 NTT 8M 点 + 疎還元**（推定） | **3〜5 ms** | **5〜8 日** | 下限 3.8 日 |
+
+前回の「$2\times10^{16}$ 演算、GPU クラスタで数週〜数か月」は過大評価です。実際の演算数は $L\times 2\times\frac{n}{2}\log_2 n\times 10 \approx 2.8\times10^{17}$ 整数命令程度で、3070 Ti の整数スループット（$\sim5\times10^{12}$/s）なら計算は半日分、律速はメモリ帯域の 4 日です。
+
+## 3. 「期待」計算量の削減：GPU 試し割り
+
+$2^k < p \le 2^{k+1}$ に素因数がある確率は Mertens より約 $1/(k+1)$ です。試し割りは $p\mid N \Rightarrow \left(\frac{-87}{p}\right)=1$ で候補が半分になり、1 素数あたり 27 回の平方乗算（$2^E \bmod p$）で済むので、GPU なら $2^{50}$ まで数時間で到達できます：
+$$P\bigl(\text{因数} \in (2^{35},2^{50}]\bigr) \approx 1-\frac{35}{50} = 30\%$$
+期待節約 $0.3\times$（PRP 5〜8 日）≫ 数時間なので実施価値があり、$2^{51}$ あたりで損益分岐です。一方 P−1 法は $1.44B_1$ 平方（$B_1=10^7$ で PRP の約 10%）に対し成功率 3% 程度で、PRP が速すぎるため割に合いません（GIMPS と逆の結論になるのは PRP 本体が安いからです）。
+
+## 4. 信頼性と第三者検証（2 回走らせない）
+
+GDDR6X は非 ECC なので誤り検出は必須ですが、ブロック長 $B$ の **Gerbicz 検査**
+$$x_0\cdot\Bigl(\prod_{k=0}^{j} x_{kB}\Bigr)^{2^{B}} \equiv \prod_{k=0}^{j} x_{(k+1)B} \pmod N$$
+は $B=1000$ で約 $2/B = 0.2\%$ のオーバーヘッドで計算誤りをほぼ確実に捕捉し、**二重チェック分（×2）を丸ごと削れます**。さらに Pietrzak 型の **PRP 証明**（証明べき $k$、中間残差 $2^k$ 個保存）を出力すれば、第三者の検証コストは
+$$T_{\mathrm{verify}} \approx L\cdot 2^{-k}\ \text{回の平方}\quad(k=8:\ 5.6\times10^{5}\ \text{回} \approx 30\ \text{分})$$
+証明ファイルは $(k+1)\times 17.9$ MB ≈ 160 MB です。いずれも法が Mersenne 数である必要はなく、$N$ でそのまま使えます。
+
+## 5. 実行計画（3070 Ti 1 台）
+
+1. GPU 試し割りを $2^{50}$ まで（数時間、30% でここで終了）。
+2. 整数 NTT（8M 点）+ 疎還元 + Gerbicz + 証明出力で平方鎖 $L$ 回（5〜8 日、保守的に 2 週間）。
+3. 判定：$z\cdot 3^{10}\equiv y$ なら PRP、違えば合成数（残差を記録）。
+
+障壁は「既製ソフトが無い」ことです。PRPLL（GPL、OpenCL）は Mersenne 専用ですが、M31·M61 NTT・キャリー・Gerbicz・証明のコードは流用でき、改造点は (i) IBDWT の重みを外して零詰め線形畳み込みにする、(ii) 疎還元カーネル、(iii) 終了判定の 3 点に限られます。改造を避けたい場合は PFGW をそのまま走らせる手もありますが、上表のとおり CPU 次第で 2〜3 か月の予算を超える可能性があります。
+
+## 6. 削れない限界（期待値の管理）
+
+- $N\pm1$ はともに代数的に分解しません（$N-1 = 2(4Y^2-Y+5)$、$Y=2^{E-1}$、判別式 $-79$；$N+1 = 4(8Z^2-Z+3)$、$Z=2^{E-2}$、判別式 $-95$）。ECPP は 10 万桁級が記録なので、到達できるのは「**確率的素数（PRP）**」止まりで、素数の証明にはなりません。
+- 素数である事前確率は
+$$P \approx \frac{e^{\gamma}\ln B}{\ln N}\Big|_{B=2^{35}} \approx 4.4\times10^{-7}\ \ (\text{約 230 万分の 1})$$
+で、ほぼ確実に「合成数」という結果が 1〜2 週間後に得られる計算です。それでも、この規模の非 Mersenne 数をコンシューマ GPU 1 枚で判定し切れること自体が、前回の見積りを大きく覆す点です。
+
+作成した検証コード（試し割り `tf.c`、GMP 計測 `sqtime.c`）は `/tmp/claude-0/-home-claude/d8d284ec-d3ce-526f-a49c-2929ddf44b98/scratchpad/` にあります。必要なら、PRPLL 改造の具体的な差分設計（零詰め NTT の語割り当てと疎還元カーネルの擬似コード）まで書き下ろせます。
+
+Sources:
+- [Largest known prime number – Wikipedia](https://en.wikipedia.org/wiki/Largest_known_prime_number)
+- [Integer NTT on RTX 20xx, A100 vs RTX 30xx, 40xx, 50xx – NVIDIA Developer Forums](https://forums.developer.nvidia.com/t/integer-ntt-on-rtx-20xx-a100-vs-rtx-30xx-40xx-50xx/350124)
+- [Tell HN: GpuOwl/PRPLL, GPU software used to find the largest prime number](https://news.ycombinator.com/item?id=41953063)
+- [GIMPS mersenne.ca GPU gpuowl performance](https://www.mersenne.ca/gpuowl.php)
+---
+geminiはこういってたよ。あなたはこれを取り入れるべきだと思う？それとも異なった観点があると思う？
+---
+漸近的な時間計算量 $\tilde{O}(L^2) = O(L^2 \log L \log \log L)$ の理論的下界自体をこれ以上引き下げることは計算複雑性理論上不可能ですが、アルゴリズムの定数係数およびGPUアーキテクチャ上の実効計算量は劇的に削減可能であり、GeForce RTX 3070 Ti（1台）のみで分散クラスタを用いずとも **約2.1日〜6.4日（2〜3ヶ月という制限期間の10分の1以下）** で素数性判定（フェルマーPRPテスト）を完走できます。
+
+前段の解析において「GPUクラスタで数週間〜数ヶ月」と見積もられていた理由は、ビット長 $L = 142,857,143$ の単純二乗 $L^2 \approx 2.04 \times 10^{16}$ をそのままステップ数と見なし、高速フーリエ変換（FFT）や数論変換（NTT）におけるワード単位の並列処理とメモリ帯域のスループットを定量化していなかったためです。対象の数 $N$ のビット長 $L \approx 1.43 \times 10^8$ は、2024年にGIMPSで発見された最大素数 $M_{136279841} = 2^{136279841}-1$（ビット長約 $1.36 \times 10^8$）とわずか $4.8\%$ しか違わず、単一GPUで十分に処理可能な規模に収まっています。
+
+---
+
+## 1. 漸近的計算量 $\tilde{O}(L^2)$ を超えられない理論的理由（Why）
+
+フェルマーテスト $a^{N-1} \equiv 1 \pmod N$ の最大計算量オーダーが $\tilde{O}(L^2)$ から削減できない理由は、以下の2つの数学的障壁が独立に存在するためです。
+
+1. **べき乗剰余の逐次性（Sequential Squaring Barrier）**:
+指数 $N - 1 \approx 2^{142857143}$ に到達するためには、加法連鎖（Addition Chain）をいかに最適化しても最小で $\log_2(N-1) = L = 142,857,143$ 回のモジュラ二乗算 $A_{k+1} \equiv A_k^2 \pmod N$ が必要です。各ステップの入力 $A_k$ は直前の出力に完全依存するため、並列計算機を何万台並べてもステップ数 $O(L)$ を時間方向に圧縮することはできません（Verifiable Delay Function の安全性根拠と同一の原理）。
+2. **多倍長乗算の下界**:
+$L$ ビットの整数同士の乗算は、Schönhage-Strassen法で $O(L \log L \log \log L)$、理論上最速のHarvey-Hoeven法でも $O(L \log L)$ の演算を要します。
+
+したがって、$L$ 回の逐次ステップと1ステップあたり $\tilde{O}(L)$ の乗算の積である $\tilde{O}(L^2)$ は漸近的な下界であり、計算量削減の本質は **「1ステップあたりのFFT/NTT往復回数の最小化」** と **「RTX 3070 Ti のハードウェア特性に適合した演算器選択」** という定数倍の極限削減に帰着します。
+
+---
+
+## 2. RTX 3070 Ti 1台で実効計算量を極限削減する4つの手法
+
+### ① 指数 $N-1$ の同値変形による「100%純粋二乗ループ」への還元と Gerbicz 検証の導入
+
+* **設計思想と判断基準（Why）**:
+通常のバイナリ法（繰り返し二乗法）では、指数 $N-1$ の二進展開に $1$ が現れるたびに二乗算に加えて乗算が発生します。さらに、GPUを数日〜数週間連続稼働させる場合、熱ノイズや宇宙線によるVRAMの1ビット反転（ハードウェアエラー）が一度でも起きれば計算全体が無効化されます。これを防ぐ **Gerbicz-Li Error Checking**（オーバーヘッド約 $0.5\%$ で途中の計算誤りを完全検出・ロールバックする手法）は、「ループ内が純粋な二乗算 $x_{i+1} \equiv x_i^2 \pmod N$ のみで構成されていること」を数学的前提とします。
+* **数学的導出と実装（How）**:
+$E = 71428571$ と置くと、指数 $N-1$ は以下の通り分解されます。
+
+$$N - 1 = 2^{2E+1} - 2^E + 10$$
+
+
+
+これをそのまま二進展開すると上位に $E+1$ 個の $1$ が連続しますが、法 $N$ において底 $a$（例：$a = 3$）と $N$ が互いに素であるとき、フェルマーの判定式 $a^{N-1} \equiv 1 \pmod N$ の両辺に $a^{2^E}$ を掛けることで、負の指数（逆元）すら計算することなく以下の同値な判定式へと変形できます。
+
+$$a^{2^{2E+1} - 2^E + 10} \equiv 1 \pmod N \iff a^{2^{2E+1}} \cdot a^{10} \equiv a^{2^E} \pmod N$$
+
+
+
+この変形により、アルゴリズムは以下の通り極限まで単純化されます。
+1. 初期値 $x_0 = a$ から開始し、**純粋なモジュラ二乗算 $x_{k+1} = x_k^2 \pmod N$ のみ** を実行する。
+2. 折り返し地点である $k = E = 71,428,571$ 回目の結果 $Y = x_E = a^{2^E} \pmod N$ をストレージに保存する。
+3. そのまま $k = 2E + 1 = 142,857,143$ 回目まで純粋二乗算を継続し、$Z = x_{2E+1} = a^{2^{2E+1}} \pmod N$ を得る。
+4. ループ終了後、ただ1回だけ以下の合同式を検査する。
+
+$$Z \cdot a^{10} \equiv Y \pmod N$$
+
+
+
+これにより、ループ内の余分な乗算が完全にゼロになるだけでなく、全 $142,857,143$ ステップに Gerbicz Error Checking を直接適用でき、単一PCでの長期計算の信頼性が保証されます。
+
+
+
+---
+
+### ② 三項式構造を活かした「インライン・モジュラリダクション」によるFFT回数の $1/3$ 削減
+
+* **設計思想と判断基準（Why）**:
+一般の法 $N$ に対する剰余演算（Barrett Reduction や Montgomery Multiplication）は、事前計算した逆元や商の推定のために追加で2回の多倍長乗算を要求するため、1ステップあたり **合計3往復のFFT/NTT** が必要となります。今回の $N$ は疎な三項式であるため、除算を一切使わず加減算とビットシフトのみでリダクションを完結させ、FFTの往復を **1往復のみ（理論最小値）** に削減すべきです。
+* **数学的導出と実装（How）**:
+$k$ ステップ目の二乗結果 $W = x_k^2$ は最大で $2L = 4E + 2$ ビットの整数となります。これを基数 $2^E$（$E = 71,428,571$ ビット）の4つのブロック $W_0, W_1, W_2, W_3 \in [0, 2^E)$ と最上位の端数 $W_4 \in [0, 4)$ に分割します。
+
+$$W = W_4 2^{4E} + W_3 2^{3E} + W_2 2^{2E} + W_1 2^E + W_0$$
+
+
+
+ここで、$N = 2^{2E+1} - 2^E + 11 \equiv 0 \pmod N$ より成り立つ基本リダクション恒等式：
+
+$$2^{2E+1} \equiv 2^E - 11 \pmod N$$
+
+
+
+を適用するため、上位項を $2^{2E+1}$ のべき乗で括り直します。$W_2, W_3$ の最下位ビット（パリティ）をそれぞれ $b_2, b_3 \in \{0, 1\}$ とし、$W_2 = 2 \tilde{W}_2 + b_2$、$W_3 = 2 \tilde{W}_3 + b_3$ と置くと、以下の1次リダクション式が得られます。
+
+$$W \equiv \left(2 W_4 + \tilde{W}_3\right) 2^{E-1}(2^E - 11) + \left(b_3 2^{E-1} + \tilde{W}_2\right)(2^E - 11) + b_2 2^{2E} + W_1 2^E + W_0 \pmod N$$
+
+
+
+展開して再び $2^{2E+1}$ 以上の項に同じ置換 $2^{2E+1} \to 2^E - 11$ を1回適用するだけで、値は $2N$ 未満に完全に収束します。この演算はワード間のシフトと定数 $11$ の乗算しか含まないため、**逆変換（IFFT/INTT）の最終ステージとキャリー伝播（Carry Propagation）を行うCUDAカーネルの内部にインライン融合（Kernel Fusion）** できます。結果として、グローバルメモリ（VRAM）への余分な読み書きが完全に消滅し、実効計算量が $1/3$ に削減されます。
+
+---
+
+### ③ RTX 3070 Ti の FP64 制限を回避する 64ビット数論変換（NTT over Goldilocks Prime）
+
+* **設計思想と判断基準（Why）**:
+GIMPSの標準GPU実装（GpuOwl等）は、重み付き変換（IBDWT）のために **FP64（倍精度浮動小数点）** のFFTを使用します。しかし、コンシューマ向け Ampere アーキテクチャ（GA104）である **RTX 3070 Ti は、FP64 演算性能が FP32 の $1/64$ にハードウェア制限されている** という重大な特性があります。
+* FP32（単精度浮動小数点）性能：$21.75\text{ TFLOPS}$
+* INT32（32ビット整数）性能：$10.88\text{ TIOPS}$
+* **FP64（倍精度浮動小数点）性能：$0.34\text{ TFLOPS}$（$340\text{ GFLOPS}$）**
+そのままFP64のFFTを実行すると、VRAM帯域（$608\text{ GB/s}$）が全く使い切れないまま $0.34\text{ TFLOPS}$ のFP64演算器が深刻なボトルネックとなります。したがって、FP64を放棄し、INT32演算器（`IMAD` 命令）をフル稼働できる **有限体上の数論変換（NTT: Number Theoretic Transform）** へ移行する必要があります。
+
+
+* **数学的導出と実装（How）**:
+ビット長 $L = 142,857,143$ を変換長 $K = 2^{23} = 8,388,608$（8Mポイント）の配列に分割すると、1要素あたりの平均ビット数は $\frac{142857143}{8388608} \approx 17.03$ ビット（最大 $18$ ビット）となります。
+二乗時の畳み込み要素の最大値は $K \cdot (2^{18}-1)^2 = 2^{23} \cdot 2^{36} = 2^{59}$ 未満となるため、**Goldilocks 素数** と呼ばれる64ビットSolinas素数：
+
+$$p_G = 2^{64} - 2^{32} + 1$$
+
+
+
+を法とする有限体 $\mathbb{F}_{p_G}$ 上で、1つの素数のみで丸め誤差ゼロの厳密な畳み込みが成立します（$\because 2^{59} \lt p_G$ かつ $2^{32} \mid (p_G - 1)$ より長さ $2^{23}$ の原始根 $\omega_{2^{23}}$ が存在）。
+さらに法 $p_G$ は、
+
+$$2^{64} \equiv 2^{32} - 1 \pmod{p_G}, \quad 2^{96} \equiv -1 \pmod{p_G}$$
+
+
+
+という代数的性質を持つため、64ビット乗算の結果（128ビット）のモジュラリダクションが **32ビットワードのシフトと加減算のみ（除算命令ゼロ）** で実行できます。これにより、RTX 3070 Ti の弱点である FP64 演算器を完全にバイパスし、GPUの理論限界である **VRAMメモリ帯域律速（Memory-bound）** まで速度を引き上げることができます。
+
+---
+
+### ④ 二次剰余の相互法則を用いた事前GPU篩い分け（期待計算量の削減）
+
+* **設計思想と判断基準（Why）**:
+数日間のPRPテストを実行する前に、中規模の素因数 $p$（例：$p \lt 10^{13}$）を持たないかを高速に篩い分けることは、期待計算時間（Expected Time Complexity）を最小化する上で不可欠です。
+* **数学的導出と実装（How）**:
+Step 3で導出された合同式 $(4X - 1)^2 \equiv -87 \pmod p$ より、素因数候補 $p$（$p \neq 3, 29$）はルジャンドル記号 $\left(\frac{-87}{p}\right) = 1$ を満たすものに限定されます。平方剰余の相互法則を適用すると：
+
+$$\left(\frac{-87}{p}\right) = \left(\frac{-3}{p}\right)\left(\frac{29}{p}\right) = \left(\frac{p}{3}\right)\left(\frac{p}{29}\right) = 1$$
+
+
+
+すなわち、以下のいずれかの条件を満たす素数 $p$ のみが $N$ を割り切る可能性を持ちます。
+* $p \equiv 1 \pmod 3$ かつ $p \equiv 1, 4, 5, 6, 7, 9, 13, 16, 20, 22, 23, 24, 25, 28 \pmod{29}$
+* $p \equiv 2 \pmod 3$ かつ $p \equiv 2, 3, 8, 10, 11, 12, 14, 15, 17, 18, 19, 21, 26, 27 \pmod{29}$
+これにより探索すべき素数空間が厳密に $1/2$ に削減されます。各素数 $p$ に対して、指数を $E_p = 71428571 \bmod (p-1)$ に縮小した $X \equiv 2^{E_p} \pmod p$ はわずか高々 $27$ 回の64ビット乗算で求まるため、RTX 3070 Ti を用いれば **約3〜4時間で $p \lt 10^{13}$ までの全素因数候補を完全に検査・排除** できます。
+
+
+
+---
+
+## 3. RTX 3070 Ti における物理リソース解析と所要時間比較
+
+変換長 $K = 2^{23} = 8,388,608$（8M要素、64ビット表現で $64\text{ MB}$）のデータは、RTX 3070 Ti の L2キャッシュ（$4\text{ MB}$）に収まらないため、Baileyの4ステップ法（$2^{23} = 2048 \times 4096$ の2次元行列分解）を用いて VRAM（GDDR6X、実効帯域約 $480\text{ GB/s}$）と Shared Memory 間で3パスの転送を行います（1往復あたり Read/Write 合計 $384\text{ MB}$）。
+
+実装手法ごとのボトルネックと、全 $142,857,143$ ステップ完走までの所要時間は以下の通りです。
+
+| 実装アーキテクチャ | 1ステップの変換往復数 | 1ステップのVRAM転送量 | 支配的ボトルネック | 1ステップ所要時間 | 総所要時間（RTX 3070 Ti 1台） |
+| --- | --- | --- | --- | --- | --- |
+| **ナイーブ実装**<br>
+
+<br>（FP64 FFT + Barrett法） | 3往復 | $1,152\text{ MB}$ | **FP64演算器律速**<br>
+
+<br>（$0.34\text{ TFLOPS}$ 上限） | 約 $11.6\text{ ms}$ | **約 19.2 日** |
+| **リダクション最適化のみ**<br>
+
+<br>（FP64 FFT + 三項式融合） | 1往復 | $384\text{ MB}$ | **FP64演算器律速**<br>
+
+<br>（$0.34\text{ TFLOPS}$ 上限） | 約 $3.86\text{ ms}$ | **約 6.4 日** |
+| **完全最適化（推奨）**<br>
+
+<br>（$\mathbb{F}_{p_G}$ NTT + 三項式融合 + 純粋二乗） | 1往復 | $384\text{ MB}$ | **VRAMメモリ帯域律速**<br>
+
+<br>（実効 $480\text{ GB/s}$） | 約 $1.25\text{ ms}$ | **約 2.1 日（約 50 時間）** |
+| **安全マージン込み完全最適化**<br>
+
+<br>（64bit NTT + キャリー同期 + Gerbicz検証） | 1往復 + 検証 | 約 $512\text{ MB}$ | **VRAMメモリ帯域律速**<br>
+
+<br>（実効 $480\text{ GB/s}$） | 約 $1.80\text{ ms}$ | **約 3.0 日（約 72 時間）** |
+
+---
+
+以下のシミュレータでは、変換アルゴリズムの選択やGPUの実効VRAM帯域・FP64演算効率を調整し、対象数 $N$（$L = 142,857,143$ ビット）のPRPテスト完走に必要な日数および演算・メモリ転送の内訳を定量的に比較できます。
+
+---
+
+この結果が示す通り、RTX 3070 Ti において「2〜3ヶ月」という時間枠は余裕をもって達成できるだけでなく、$\mathbb{F}_{p_G}$ 上のNTTとインライン三項式リダクションを実装すれば **約2〜3日で判定が完結** します。
+---
+ジェミニの案を精査しました。**設計方針は私と同じで、取り入れるべきです。ただし数値は 2〜3 倍楽観的で、その原因は 1 つの構造的な誤りにあります。** まず、その誤りを含むジェミニの剰余還元式を実際に動かして確かめます。
+
+**結論：方針は採用、数値と式は差し替え、観点をいくつか追加**、が私の答えです。
+
+## 1. そのまま取り入れるべき点（私の前回答と同じ結論）
+
+①純粋二乗鎖 $x_{k+1}=x_k^2$ への帰着と $Z\cdot a^{10}\equiv Y$ での判定（Gerbicz 検査の前提を満たす）、②疎な三項式還元で FFT/NTT 往復を 3 → 1、③FP64 が 1/64 の GA104 では NTT 一択、④$\left(\frac{-87}{p}\right)=1$ による篩。④の剰余類の列挙（mod 29 の平方剰余 14 個とその補集合）も検算して正しいことを確認しました。ここまでは私も同じ設計を推しており、異論はありません。
+
+## 2. 取り入れるべきでない点（検証して誤りと判明）
+
+**(a) 変換長 $K=2^{23}$・17 bit/word は Mersenne 数の構成で、この $N$ には使えません。** これがジェミニの数値が楽観的な主因です。長さ $K$ の巡回畳み込みが返すのは
+$$W \bmod \bigl(2^{Kb}-1\bigr),\qquad Kb \approx 2^{23}\times 17.03 \approx 1.43\times10^{8}\ \text{bit}$$
+であって、$2L = 2.86\times10^{8}$ bit ある $W=x^2$ そのものではありません。Mersenne 数なら IBDWT の折り返しが $\bmod\,(2^p-1)$ と一致するので $K=L/b$ で済みますが、$2^{2E+1}\equiv 2^E-11$ という関係は $X^K\equiv c$ の形ではないので折り返しは効かず、零詰めの**線形**畳み込みで完全な積が必要です（ジェミニ自身の②が $W_4 2^{4E}$ までの展開を前提にしているので、②と③が内部で矛盾しています）。厳密性の条件は
+$$K \ge \frac{2L}{b},\qquad \frac{K}{2}\cdot 2^{2(b-1)} < \frac{M}{2}$$
+で、Goldilocks（$M=2^{64}-2^{32}+1$）なら $b\le 20$ ゆえ $K=2^{24}$、PRPLL と同じ $M=(2^{31}-1)(2^{61}-1)$ なら $b\le 35$ で $K=2^{23}$ です（上の実行結果の通り）。ジェミニの「$2^{59}<p_G$」は巡回構成での評価であり、ここでは成立しません。
+
+**(b) VRAM 転送量 384 MB は片道分です。** $K=2^{24}\times 8$ B $=134$ MB の配列を 2〜3 パスで読み書き、往路＋復路で $1.1$〜$1.6$ GB、折り返しとキャリーで $+0.2$〜$0.3$ GB。M31·M61 なら $2^{23}\times12$ B $=100$ MB で約 $1.0$ GB/step。
+
+**(c) 1 次還元式の係数が誤っています。** ジェミニの式をそのまま実装すると $E\ge 40$ で 2000 回中 0 回しか $W \bmod N$ に一致しません。正しくは、$2^{2E+1}$ 以上の項をまとめて
+$$W \equiv \Bigl(W_4\,2^{2E-1}+\tilde W_3\,2^{E}+b_3\,2^{E-1}+\tilde W_2\Bigr)\bigl(2^{E}-11\bigr)+b_2\,2^{2E}+W_1\,2^{E}+W_0 \pmod N$$
+ですが、4 ブロック分割自体が不要で、
+$$W = A\cdot 2^{2E+1}+B\ \Longrightarrow\ W \equiv A\,2^{E}-11A+B \pmod N$$
+を 2 回適用して最後に高々 1 回 $N$ を引く形（前回答で実装・検証済み）の方が単純で、カーネル融合にも向きます。
+
+**(d) 「余分な読み書きが完全に消滅」は言い過ぎ**で、上位半分を中位・下位に折り込むパスが 1 回必要です（コストの 5〜10%、無視できる程度ですが零ではありません）。
+
+**(e) 「$\tilde O(L^2)$ は理論的下界」は未証明の予想**です。逐次平方の障壁も乗算の $\Omega(L\log L)$ も、既知の最良アルゴリズムの話であって定理ではありません。実用上の結論は変わりませんが、「不可能」と断言する根拠は今のところありません。
+
+## 3. 修正後の数値
+
+実測で校正します。PRPLL の整数 NTT は RTX 2070（448 GB/s）で 4M 点 1.52 ms、16M 点 6.43 ms なので 8M 点は約 3.1 ms。帯域比 $448/608$ で 3070 Ti に換算すると約 2.3 ms、折り返し分を足して
+$$t_{\mathrm{sq}} \approx 2.5\ \mathrm{ms}\ \Rightarrow\ T = L\,t_{\mathrm{sq}} \approx 3.6\times10^{5}\ \mathrm{s} \approx 4.1\ \text{日}$$
+が下限寄りの見積り、実装効率を見て **4〜7 日**が現実的です。ジェミニの 2.1〜3.0 日は 1.5〜2.5 倍楽観的で、その差はほぼ (a)(b) で説明できます。
+
+| 方式 | ジェミニ | 修正後 |
+|---|---|---|
+| FP64 FFT + Barrett（無工夫） | 19 日 | 50〜75 日（予算ぎりぎり） |
+| FP64 FFT + 疎還元 | 6.4 日 | 17〜25 日 |
+| 整数 NTT + 疎還元 + 純粋二乗 | 2.1〜3.0 日 | **4〜7 日** |
+
+「無工夫だと 2〜3 か月の境界、工夫すれば 1 週間」というのが、両者を突き合わせた上での正確な像です。
+
+## 4. ジェミニにない観点（私が加えたいもの）
+
+- **既存コードの流用。** ジェミニは Goldilocks NTT を自作する前提ですが、PRPLL（GPL）には M31·M61 の整数 NTT・キャリー・Gerbicz・証明出力が既にあり、改造点は零詰め化・折り返しカーネル・終了判定の 3 点です。しかも 12 B/要素 × $2^{23}$ は Goldilocks の 8 B × $2^{24}$ より転送量が約 25% 少ない。
+- **PRP 証明（Pietrzak 型）。** 第三者検証を $L\cdot 2^{-k}$ 回（$k=8$ で約 30 分）にでき、「結果を信じてもらう」コストを削れます。ジェミニはエラー検出までで止まっています。
+- **到達できるのは PRP まで。** $N\pm1$ は代数的に分解せず、素数であることの証明は不可能です。事前確率は
+$$P \approx \frac{e^{\gamma}\ln 2^{35}}{\ln N}\approx 4.4\times10^{-7}$$
+で、1 週間後に得られる結果はほぼ確実に「合成数（残差付き）」です。計画はその前提で立てるべきです。
+- **篩の深さの経済性。** $2^k\to2^{k+1}$ で因数が見つかる確率は約 $1/(k+1)$ なので、篩の追加コストが $T_{\mathrm{PRP}}/(k+1)$ を超える $2^{50}$ 前後が損益分岐です。P−1 法は PRP 本体が速すぎて割に合いません。
+- 細部：$E_p = E \bmod (p-1)$ の縮約は $p>7.1\times10^{7}$ では無意味（$E<p-1$）で、既に $2^{35}$ まで篩ってあるので効果はありません。
+
+検証スクリプトは `/tmp/claude-0/-home-claude/d8d284ec-d3ce-526f-a49c-2929ddf44b98/scratchpad/` に置いてあります（前回の `tf.c`, `sqtime.c` と同じ場所）。
+
+```verify.py
+#!/usr/bin/env python3
+"""
+N_E = 2^(2E+1) - 2^E + 11  (target: E = 71428571) に関する検証スクリプト。
+小さい E で以下を確認する（Python 標準の多倍長整数のみ使用）。
+
+  1. 疎な剰余還元  2^(2E+1) ≡ 2^E - 11 (mod N)  の正しさ
+  2. 平方鎖 1 本への帰着:  3^(N-1) ≡ 1  <=>  z * 3^10 ≡ y,
+       y = 3^(2^E),  z = y^(2^(E+1))
+  3. Gemini 提示の 1 次還元式（原文どおり）と修正式の比較
+  4. N_E が素数になる小さい E の列挙（E 偶数なら 3 | N_E）
+  5. 変換長・語長の厳密性条件（零詰め線形畳み込み）
+  6. 対象数のサイズ、篩後の素数確率、時間予算
+"""
+import math
+import random
+
+random.seed(1)
+
+
+def N_of(E):
+    return (1 << (2 * E + 1)) - (1 << E) + 11
+
+
+def is_prp(n, bases=(2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37)):
+    """Miller-Rabin（小さい n 用）"""
+    if n < 2:
+        return False
+    for p in bases:
+        if n % p == 0:
+            return n == p
+    d, s = n - 1, 0
+    while d % 2 == 0:
+        d //= 2
+        s += 1
+    for a in bases:
+        x = pow(a, d, n)
+        if x in (1, n - 1):
+            continue
+        for _ in range(s - 1):
+            x = x * x % n
+            if x == n - 1:
+                break
+        else:
+            return False
+    return True
+
+
+# ---------------------------------------------------------------- 1
+def reduce_sparse(W, E, N):
+    """W mod N を除算なしで: W = A*2^(2E+1) + B  ->  A*2^E - 11A + B を 2 回"""
+    for _ in range(2):
+        A, B = W >> (2 * E + 1), W & ((1 << (2 * E + 1)) - 1)
+        W = (A << E) + B - 11 * A
+        assert W >= 0
+    while W >= N:
+        W -= N
+    return W
+
+
+def check_sparse_reduction():
+    for E in [5, 6, 7, 10, 33, 64, 100, 257, 1000]:
+        N = N_of(E)
+        x = 3
+        for _ in range(300):
+            x = reduce_sparse(x * x, E, N)
+        assert x == pow(3, 1 << 300, N), E
+    print("[1] 疎還元: 3^(2^300) mod N と一致 (E = 5..1000)            OK")
+
+
+# ---------------------------------------------------------------- 2
+def check_chain_identity():
+    for E in range(2, 120):
+        N = N_of(E)
+        y = pow(3, 1 << E, N)
+        z = pow(y, 1 << (E + 1), N)
+        lhs = pow(3, N - 1, N) == 1
+        rhs = z * pow(3, 10, N) % N == y
+        assert lhs == rhs, E
+    print("[2] 3^(N-1)≡1 <=> z·3^10≡y  (E = 2..119)                    OK")
+
+
+# ---------------------------------------------------------------- 3
+def blocks(W, E):
+    m = (1 << E) - 1
+    W0, W1, W2, W3, W4 = (W & m, (W >> E) & m, (W >> 2 * E) & m,
+                          (W >> 3 * E) & m, W >> 4 * E)
+    return W0, W1, W2, W3, W4, W2 & 1, W3 & 1, W2 >> 1, W3 >> 1
+
+
+def gemini_formula(W, E, N):
+    """Gemini の式を原文どおりに転記"""
+    X = 1 << E
+    W0, W1, W2, W3, W4, b2, b3, W2t, W3t = blocks(W, E)
+    return ((2 * W4 + W3t) * (1 << (E - 1)) * (X - 11)
+            + (b3 * (1 << (E - 1)) + W2t) * (X - 11)
+            + b2 * (1 << (2 * E)) + W1 * X + W0) % N
+
+
+def corrected_formula(W, E, N):
+    """2^(2E+1) 以上の項をまとめて (2^E - 11) を掛ける修正版"""
+    X = 1 << E
+    W0, W1, W2, W3, W4, b2, b3, W2t, W3t = blocks(W, E)
+    return ((W4 * (1 << (2 * E - 1)) + W3t * X + b3 * (1 << (E - 1)) + W2t)
+            * (X - 11) + b2 * (1 << (2 * E)) + W1 * X + W0) % N
+
+
+def check_gemini_formula(trials=2000):
+    for E in (8, 13, 40, 101):
+        N = N_of(E)
+        g = c = t = 0
+        for _ in range(trials):
+            W = random.randrange(N) ** 2
+            r = W % N
+            g += gemini_formula(W, E, N) == r
+            c += corrected_formula(W, E, N) == r
+            t += reduce_sparse(W, E, N) == r
+        print(f"[3] E={E:4d}: Gemini式 {g:4d}/{trials}  修正式 {c}/{trials}  2回折返し {t}/{trials}")
+
+
+# ---------------------------------------------------------------- 4
+def list_prime_E(limit=400):
+    for E in range(2, 60, 2):
+        assert N_of(E) % 3 == 0
+    es = [E for E in range(1, limit) if is_prp(N_of(E))]
+    print(f"[4] N_E が素数となる E < {limit}: {es}   (E 偶数なら 3 | N_E を確認)")
+
+
+# ---------------------------------------------------------------- 5
+def transform_bounds():
+    E = 71428571
+    L = 2 * E + 1
+    print(f"[5] x^2 のビット長 2L = {2 * L:,}")
+    print(f"    巡回 2^23 点 x 17.03 bit が覆うのは {2**23 * 17.03:,.0f} bit のみ（Mersenne 専用の構成）")
+    gold = 2**64 - 2**32 + 1
+    m3161 = (2**31 - 1) * (2**61 - 1)
+    for name, M in (("Goldilocks 2^64-2^32+1", gold), ("M31*M61 (~2^92)", m3161)):
+        for logK in range(20, 27):
+            K = 1 << logK
+            # 平衡表現: 係数 |c| < (K/2)*2^(2(b-1)) < M/2
+            b = max((b for b in range(1, 60) if (K // 2) * 2 ** (2 * (b - 1)) < M // 2), default=0)
+            if K * b >= 2 * L:
+                print(f"    {name:24s}: K = 2^{logK}, 最大 {b} bit/語, K·b = {K * b:,} ≥ 2L")
+                break
+
+
+# ---------------------------------------------------------------- 6
+def size_and_budget():
+    E = 71428571
+    L = 2 * E + 1
+    digits = math.floor(L * math.log10(2)) + 1
+    B = 2**35
+    p = math.exp(0.5772156649) * math.log(B) / (L * math.log(2))
+    print(f"[6] L = {L:,} bit, {digits:,} 桁")
+    print(f"    2^35 まで素因数なしのときの素数確率 ≈ {p:.2e} (約 {1 / p:,.0f} 分の 1)")
+    for days in (60, 90):
+        print(f"    {days} 日予算 -> 1 平方あたり最大 {days * 86400 / L * 1e3:.1f} ms")
+    for ms in (2.5, 4.0):
+        print(f"    {ms} ms/平方 -> {L * ms / 1e3 / 86400:.1f} 日")
+
+
+if __name__ == "__main__":
+    check_sparse_reduction()
+    check_chain_identity()
+    check_gemini_formula()
+    list_prime_E()
+    transform_bounds()
+    size_and_budget()
+```
+
+
+```tf.c $N \bmod p$ を計算して素因数を探す試し割りです。$p\le2^{35}$ まで調べて素因数は見つかりませんでした。gcc -O3 -march=native -fopenmp tf.c -o tf && ./tf 34359738368 で再現できます。
+// Trial division of N = 2^(2E+1) - 2^E + 11, E = 71428571, by all primes p <= LIMIT.
+// For each prime p:  x = 2^E mod p,  N mod p = 2x^2 - x + 11 mod p.
+// Montgomery arithmetic (64-bit), segmented sieve, OpenMP.
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <string.h>
+#include <omp.h>
+
+typedef unsigned __int128 u128;
+typedef uint64_t u64;
+
+static const u64 E = 71428571ULL;
+
+static inline u64 mont_inv64(u64 p) {        // -p^{-1} mod 2^64
+    u64 inv = p;                             // Newton: inv*p = 1 mod 2^3 for odd p
+    for (int i = 0; i < 6; i++) inv *= 2 - p * inv;
+    return (u64)0 - inv;
+}
+static inline u64 mont_mul(u64 a, u64 b, u64 p, u64 pinv) {
+    u128 t = (u128)a * b;
+    u64 m = (u64)t * pinv;
+    u128 u = t + (u128)m * p;
+    u64 r = (u64)(u >> 64);
+    if ((u >> 64) < (t >> 64) /* overflow */ || r >= p) r -= p;   // handles p < 2^63 safely
+    return r;
+}
+// N mod p (ordinary integer in [0,p)), p odd prime < 2^63
+static inline u64 N_mod_p(u64 p) {
+    u64 pinv = mont_inv64(p);
+    u64 R = ((u128)1 << 64) % p;            // 1 in Montgomery form
+    u64 R2 = (u64)(((u128)R * R) % p);
+    u64 two = (u64)(((u128)(2 % p) * R2) % p); // 2 in Montgomery form = 2*R mod p
+    two = mont_mul(two, 1, p, pinv) ; // (2*R2)*1 -> 2*R2/R = 2R : fix below
+    // simpler: compute two_m = 2*R mod p directly
+    two = (u64)(((u128)2 * R) % p);
+    u64 x = R;                                 // 1
+    for (int bit = 26; bit >= 0; bit--) {
+        x = mont_mul(x, x, p, pinv);
+        if ((E >> bit) & 1) x = mont_mul(x, two, p, pinv);
+    }
+    // x = 2^E in Montgomery form; compute N = 2x^2 - x + 11
+    u64 x2 = mont_mul(x, x, p, pinv);          // x^2 (mont)
+    u64 t = (x2 << 1) % p; if (x2 >= p - x2) t = x2 + x2 - p; else t = x2 + x2;  // 2x^2
+    u64 r = (t >= x) ? t - x : t + p - x;      // 2x^2 - x
+    u64 eleven = (u64)(((u128)11 * R) % p);
+    r = (r + eleven) % p;
+    // convert out of Montgomery form
+    r = mont_mul(r, 1, p, pinv);
+    return r;
+}
+
+int main(int argc, char **argv) {
+    u64 LIMIT = argc > 1 ? strtoull(argv[1], 0, 10) : 10000000000ULL;
+    // base primes up to sqrt(LIMIT)
+    u64 sq = 1; while (sq * sq <= LIMIT) sq++;
+    u64 *base = malloc(sizeof(u64) * (sq / 2 + 10)); size_t nb = 0;
+    {
+        char *s = calloc(sq + 1, 1);
+        for (u64 i = 2; i <= sq; i++) if (!s[i]) { base[nb++] = i; for (u64 j = i * i; j <= sq; j += i) s[j] = 1; }
+        free(s);
+    }
+    // small primes handled directly
+    u64 count = 0, found = 0;
+    for (size_t i = 0; i < nb; i++) {
+        u64 p = base[i];
+        u64 r = (p == 2) ? 1 : N_mod_p(p);   // N is odd
+        count++;
+        if (r == 0) { printf("FACTOR FOUND: %llu\n", (unsigned long long)p); found++; }
+    }
+    // segmented sieve over (sq, LIMIT], odd numbers only
+    const u64 SEG = 1ULL << 21;              // numbers per segment
+    u64 lo0 = sq + 1;
+    u64 nseg = (LIMIT - lo0) / SEG + 1;
+    u64 total = count, totfound = found;
+    double t0 = omp_get_wtime();
+    #pragma omp parallel reduction(+:total,totfound)
+    {
+        unsigned char *seg = malloc(SEG / 2 + 1);
+        #pragma omp for schedule(dynamic, 16)
+        for (u64 si = 0; si < nseg; si++) {
+            u64 lo = lo0 + si * SEG, hi = lo + SEG - 1; if (hi > LIMIT) hi = LIMIT;
+            if ((lo & 1) == 0) lo++;
+            u64 n = (hi >= lo) ? (hi - lo) / 2 + 1 : 0;
+            memset(seg, 0, n);
+            for (size_t i = 1; i < nb; i++) {        // skip 2
+                u64 p = base[i]; if (p * p > hi) break;
+                u64 start = ((lo + p - 1) / p) * p; if (start < p * p) start = p * p;
+                if ((start & 1) == 0) start += p;
+                for (u64 j = start; j <= hi; j += 2 * p) seg[(j - lo) / 2] = 1;
+            }
+            for (u64 k = 0; k < n; k++) if (!seg[k]) {
+                u64 p = lo + 2 * k;
+                total++;
+                if (N_mod_p(p) == 0) { printf("FACTOR FOUND: %llu\n", (unsigned long long)p); fflush(stdout); totfound++; }
+            }
+        }
+        free(seg);
+    }
+    double t1 = omp_get_wtime();
+    printf("limit=%llu primes_tested=%llu factors_found=%llu time=%.1fs\n",
+           (unsigned long long)LIMIT, (unsigned long long)total, (unsigned long long)totfound, t1 - t0);
+    // self-check residues for a few primes (compare with python)
+    u64 chk[] = {3,5,7,11,13,17,19,23,29,31,1000003,999999937,4294967311ULL};
+    for (int i = 0; i < 13; i++) printf("N mod %llu = %llu\n", (unsigned long long)chk[i], (unsigned long long)N_mod_p(chk[i]));
+    return 0;
+}
+```
+
+
+```GMP でフルサイズの平方を 1 回行う時間を測ります（実測 0.89 秒、全体に換算すると 4.0 年）。この環境には GMP のヘッダが無かったので、必要な関数をファイル内で直接宣言しています。普通の環境なら #include <gmp.h> に置き換えて -lgmp を付けてコンパイルしてください。
+// Time one modular squaring step  x -> x^2 mod N  with GMP (Schoenhage-Strassen) at full size,
+// using the sparse reduction  2^(2E+1) = 2^E - 11 (mod N)  instead of a division.
+// Headers are not installed, so declare the few GMP symbols we need by hand.
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+typedef unsigned long mp_limb_t;
+typedef struct { int _mp_alloc; int _mp_size; mp_limb_t *_mp_d; } __mpz_struct;
+typedef __mpz_struct mpz_t[1];
+void __gmpz_init(mpz_t); void __gmpz_set_ui(mpz_t, unsigned long);
+void __gmpz_ui_pow_ui(mpz_t, unsigned long, unsigned long);
+void __gmpz_mul(mpz_t, const mpz_t, const mpz_t); void __gmpz_mul_ui(mpz_t, const mpz_t, unsigned long);
+void __gmpz_add(mpz_t, const mpz_t, const mpz_t); void __gmpz_add_ui(mpz_t, const mpz_t, unsigned long);
+void __gmpz_sub(mpz_t, const mpz_t, const mpz_t);
+void __gmpz_mul_2exp(mpz_t, const mpz_t, unsigned long);
+void __gmpz_tdiv_q_2exp(mpz_t, const mpz_t, unsigned long); void __gmpz_tdiv_r_2exp(mpz_t, const mpz_t, unsigned long);
+int  __gmpz_cmp(const mpz_t, const mpz_t); size_t __gmpz_sizeinbase(const mpz_t, int);
+void __gmpz_powm(mpz_t, const mpz_t, const mpz_t, const mpz_t);
+void __gmpz_urandomb(mpz_t, void *, unsigned long);
+void __gmp_randinit_default(void *);
+
+static double now(void){ struct timespec t; clock_gettime(CLOCK_MONOTONIC,&t); return t.tv_sec+t.tv_nsec*1e-9; }
+
+// r = P mod N  using  2^(2E+1) ≡ 2^E - 11
+static void reduce(mpz_t P, unsigned long E, const mpz_t N, mpz_t A, mpz_t B) {
+    for (int pass = 0; pass < 2; pass++) {
+        __gmpz_tdiv_q_2exp(A, P, 2*E+1);       // A = P >> (2E+1)
+        __gmpz_tdiv_r_2exp(B, P, 2*E+1);       // B = P mod 2^(2E+1)
+        __gmpz_mul_2exp(P, A, E);              // A*2^E
+        __gmpz_add(P, P, B);                   // + B
+        __gmpz_mul_ui(A, A, 11);               // 11*A
+        __gmpz_sub(P, P, A);                   // - 11A   (>= 0 since 2^E > 11)
+    }
+    while (__gmpz_cmp(P, N) >= 0) __gmpz_sub(P, P, N);
+}
+
+int main(int argc, char **argv) {
+    unsigned long E = argc > 1 ? strtoul(argv[1], 0, 10) : 71428571UL;
+    mpz_t N, X, x, P, A, B, t;
+    __gmpz_init(N); __gmpz_init(X); __gmpz_init(x); __gmpz_init(P); __gmpz_init(A); __gmpz_init(B); __gmpz_init(t);
+    __gmpz_ui_pow_ui(X, 2, E);                 // X = 2^E
+    __gmpz_mul(N, X, X); __gmpz_mul_2exp(N, N, 1); __gmpz_sub(N, N, X); __gmpz_add_ui(N, N, 11); // N = 2X^2 - X + 11
+    printf("E=%lu  bits(N)=%zu  digits(N)=%zu\n", E, __gmpz_sizeinbase(N,2), __gmpz_sizeinbase(N,10));
+    // start from a pseudo-random full-size residue (3^(2^k) after a few squarings is enough)
+    __gmpz_sub(x, N, X); __gmpz_add_ui(x, x, 7);   // full-size start value N - 2^E + 7
+    for (int i = 0; i < 1; i++) { __gmpz_mul(P, x, x); reduce(P, E, N, A, B); { __mpz_struct tmp = *x; *x = *P; *P = tmp; } }
+    // time K squarings
+    int K = argc > 2 ? atoi(argv[2]) : 3;
+    double t0 = now();
+    for (int i = 0; i < K; i++) { __gmpz_mul(P, x, x); reduce(P, E, N, A, B); { __mpz_struct tmp = *x; *x = *P; *P = tmp; } }
+    double dt = (now() - t0) / K;
+    printf("GMP: %.3f s per (square + sparse reduce) at full size -> %.2f years for %lu squarings\n",
+           dt, dt * (2*E+1) / 86400.0 / 365.25, 2*E+1);
+    return 0;
+}
+```

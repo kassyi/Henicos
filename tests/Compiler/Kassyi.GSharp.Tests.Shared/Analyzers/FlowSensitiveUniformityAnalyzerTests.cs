@@ -20,7 +20,8 @@ public class FlowSensitiveUniformityAnalyzerTests : TranspilerTestBase
 
         // GSH0083 for every divergent branch. 80: loop-carried value. 100: deconstructed element. 114: while with a thread-variant count. 128: switch
         // section. 143 / 144: right operand of && and branch of ?:. 161: continue. 177: break. 197: grid barrier on the
-        // block index. 202: grid barrier on the thread index. 245: a local assigned on one branch, read after the join
+        // block index. 202: grid barrier on the thread index. 245: a local assigned on one branch, read after the join.
+        // 273 / 287: Interlocked.Add return value and ref local (#1072)
         Assert.Equal(
             [
                 (GSharpDiagnostics.LaunchDependentDivergentBarrier.Id, 80, 17, 80, 34),
@@ -35,7 +36,9 @@ public class FlowSensitiveUniformityAnalyzerTests : TranspilerTestBase
                 (GSharpDiagnostics.LaunchDependentDivergentBarrier.Id, 202, 13, 202, 27),
                 (GSharpDiagnostics.BarrierAfterDivergentExit.Id, 214, 13, 214, 30),
                 (GSharpDiagnostics.BarrierAfterDivergentExit.Id, 226, 13, 226, 31),
-                (GSharpDiagnostics.LaunchDependentDivergentBarrier.Id, 245, 13, 245, 30)
+                (GSharpDiagnostics.LaunchDependentDivergentBarrier.Id, 245, 13, 245, 30),
+                (GSharpDiagnostics.LaunchDependentDivergentBarrier.Id, 273, 13, 273, 30),
+                (GSharpDiagnostics.LaunchDependentDivergentBarrier.Id, 287, 13, 287, 30)
             ],
             actual);
     }

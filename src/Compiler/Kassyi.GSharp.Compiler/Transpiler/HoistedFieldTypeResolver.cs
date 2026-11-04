@@ -28,6 +28,10 @@ internal static class HoistedFieldTypeResolver
         var type2 = field.Initializer?.Value is { } initializer
             ? GetInitializerType(field, initializer, semanticModel)
             : null;
+        if (!IsAcceptable(type2) && field.HasAnnotations(LoweringAnnotations.SpilledTypeSpanAnnotationKind))
+        {
+            type2 = semanticModel.GetTypeSymbol(field) ?? semanticModel.GetConvertedTypeSymbol(field) ?? type2;
+        }
 
         if (IsAcceptable(type1))
         {
@@ -55,13 +59,32 @@ internal static class HoistedFieldTypeResolver
 
     // [WHY] An argument temporary holds the value the callee receives, converted to the parameter type: a target-typed
     // 'flag != 0 ? i : u' (int and uint) has no type of its own and is a long for a long parameter, and an int
-    // expression passed to a long parameter is a long there (#788)
+    // expression passed to a long parameter is a long there (#788). For other initializers, the expression's own type is
+    // preferred, falling back to its converted type when the expression is target-typed (F3).
     private static ITypeSymbol? GetInitializerType(VariableDeclaratorSyntax field, ExpressionSyntax initializer,
-        SemanticModel semanticModel) =>
-        field.HasAnnotations(LoweringAnnotations.ArgumentTempAnnotationKind) &&
-        semanticModel.GetConvertedTypeSymbol(initializer) is { } convertedType
-            ? convertedType
-            : semanticModel.GetTypeSymbol(initializer);
+        SemanticModel semanticModel)
+    {
+        if (field.HasAnnotations(LoweringAnnotations.ArgumentTempAnnotationKind) &&
+            semanticModel.GetConvertedTypeSymbol(initializer) is { } argumentConvertedType &&
+            IsAcceptable(argumentConvertedType))
+        {
+            return argumentConvertedType;
+        }
+
+        var naturalType = semanticModel.GetTypeSymbol(initializer);
+        if (IsAcceptable(naturalType))
+        {
+            return naturalType;
+        }
+
+        var convertedType = semanticModel.GetConvertedTypeSymbol(initializer);
+        if (IsAcceptable(convertedType))
+        {
+            return convertedType;
+        }
+
+        return naturalType ?? convertedType;
+    }
 
     private static SpecialType? TryGetSpecialType(SyntaxKind kind) => kind switch
     {

@@ -47,7 +47,8 @@ public sealed class PrefixUnaryExpressionTranspilerRule : SyntaxNodeTranspilerRu
             return;
         }
 
-        // int and long negation and ++ / -- wrap in C#; C++ leaves the overflow undefined (#722)
+        // int and long negation and narrow, int and long ++ / -- wrap in C#; C++ leaves signed overflow undefined and
+        // nvcc can keep the unnarrowed value of a raw narrow step (#722, #1079)
         var operation = context.Query.SemanticModel.GetSafeOperation(node);
         if (operation?.Syntax.RawKind == node.RawKind)
         {
@@ -67,6 +68,18 @@ public sealed class PrefixUnaryExpressionTranspilerRule : SyntaxNodeTranspilerRu
                 IntegerSemantics.GetIncrementHelper(step, node, ref context) is { } stepHelper)
             {
                 IntegerSemanticsEmitter.AppendStep(step, node, node.Operand, stepHelper, ref context);
+                return;
+            }
+
+            if (IntegerSemantics.TryGetNarrowEnumResultType(operation, out var narrowType))
+            {
+                ArithmeticConversions.AppendConversion(narrowType, ref context);
+                using (context.Emitter.Writer.Parentheses())
+                {
+                    OperatorSpacing.AppendOperator(node.OperatorToken.Text, node.Operand, ref context);
+                    context.Visitor.Visit(node.Operand);
+                }
+
                 return;
             }
         }

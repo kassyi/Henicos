@@ -328,8 +328,8 @@
   {
     "name": "KernelClassMustBePartial",
     "id": "GSH0036",
-    "title": "Kernel class must be partial",
-    "messageFormat": "The class '{0}' containing [GpuKernel] methods must be declared as partial to support source generation of contexts and launch methods.",
+    "title": "GPU code type must be partial",
+    "messageFormat": "The type '{0}' that contains or encloses GPU code must be declared partial to support source generation of contexts and launch methods.",
     "category": "GSharpTranspiler",
     "defaultSeverity": "Error",
     "isEnabledByDefault": true
@@ -819,6 +819,15 @@
     "messageFormat": "Warp.ActiveMask() in '{0}' is reached only by the threads for which a condition that depends on the thread holds. The CPU dialects return every lane of the warp that exists in the block, while the GPU returns only the lanes that reach the call together, so the CPU result may differ from the GPU result.",
     "category": "GSharpTranspiler",
     "defaultSeverity": "Warning",
+    "isEnabledByDefault": true
+  },
+  {
+    "name": "KernelParameterConflictsWithLaunchParameter",
+    "id": "GSH0106",
+    "title": "Kernel parameter name conflicts with a launch parameter",
+    "messageFormat": "Parameter '{0}' of kernel '{1}' has the same name as a launch wrapper parameter ({2}). Rename the parameter.",
+    "category": "GSharpTranspiler",
+    "defaultSeverity": "Error",
     "isEnabledByDefault": true
   },
   {

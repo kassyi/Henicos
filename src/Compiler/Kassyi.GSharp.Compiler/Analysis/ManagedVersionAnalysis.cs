@@ -8,7 +8,8 @@ namespace Kassyi.GSharp.Compiler.Analysis;
 /// <para>
 /// The managed path runs a device function that does not suspend as the user's own C# method, which no generated code
 /// is part of. A body with a managed-only semantic rewrite (<see cref="ManagedRewriteClassifier"/>: an operator macro,
-/// whose operator throws <c>GpuOnlyException</c>) would run wrongly there, and so would a body that calls such a
+/// whose operator throws <c>GpuOnlyException</c>, or a <c>float</c>/<c>double</c> <c>StackLinq</c> <c>Sum</c> call that
+/// must sum sequentially) would run wrongly there, and so would a body that calls such a
 /// function. Those functions get a managed version; every other one keeps running as the user wrote it. A function
 /// that suspends has a state machine, whose body the rewriter already rewrites, so it never needs one.
 /// </para>
@@ -86,8 +87,7 @@ internal static class ManagedVersionAnalysis
         var model = compilation.GetCachedSemanticModel(declaration.SyntaxTree);
         var found = declaration.DescendantNodes()
             .AsStackEnumerable()
-            .Any(model, static (node, m) => node is AssignmentExpressionSyntax &&
-                                            ManagedRewriteClassifier.IsSemanticRewrite(node, m));
+            .Any(model, static (node, m) => ManagedRewriteClassifier.IsSemanticRewrite(node, m));
         return cache.GetOrAdd(definition, found);
     }
 

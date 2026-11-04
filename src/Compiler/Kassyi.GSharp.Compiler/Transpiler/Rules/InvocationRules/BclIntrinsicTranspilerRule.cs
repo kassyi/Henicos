@@ -30,7 +30,7 @@ internal sealed class BclIntrinsicTranspilerRule : IInvocationTranspilerRule
                            : default)
                 {
                     sequence.AppendArgument(arguments[i], symbol.FindParameter(arguments, i),
-                        ref context);
+                        ref context, convertToParameter: i != 0 || mappingInfo.CastFirstArgumentTo == null);
                 }
 
                 if (i < arguments.Count - 1)

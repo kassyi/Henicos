@@ -1,20 +1,18 @@
 ﻿## Generator/SadPathDiagnostics.cu.cs
-(5,25)-(5,40) GSH0036 analyzer: The class 'ErrorSpecKernel' containing [GpuKernel] methods must be declared as partial to support source generation of contexts and launch methods.
+(5,25)-(5,40) GSH0036 analyzer: The type 'ErrorSpecKernel' that contains or encloses GPU code must be declared partial to support source generation of contexts and launch methods.
 (11,13)-(11,19) GSH0002 analyzer: The string type is not supported in GPU kernels
 (12,26)-(12,38) GSH0001 analyzer: Object creation ('new') is not supported in GPU kernels. Only struct instantiation, SharedMemory<T> and an array of a constant size that initializes a local variable are allowed; use stackalloc for a temporary array.
 
 ## Analyzers/InvalidMappingSadPath.cs
-(12,21)-(12,52) GSH0036 analyzer: The class 'GEN_39_52_InvalidMappingSadPath' containing [GpuKernel] methods must be declared as partial to support source generation of contexts and launch methods.
-(12,21)-(12,52) GSH0036 analyzer: The class 'GEN_39_52_InvalidMappingSadPath' containing [GpuKernel] methods must be declared as partial to support source generation of contexts and launch methods.
+(12,21)-(12,52) GSH0036 analyzer: The type 'GEN_39_52_InvalidMappingSadPath' that contains or encloses GPU code must be declared partial to support source generation of contexts and launch methods.
 (28,19)-(28,31) GSH0001 analyzer: Object creation ('new') is not supported in GPU kernels. Only struct instantiation, SharedMemory<T> and an array of a constant size that initializes a local variable are allowed; use stackalloc for a temporary array.
 
 ## Analyzers/GpuKernel/StringTernary_InGpuKernel.cu.cs
-(5,21)-(5,53) GSH0036 analyzer: The class 'GSH_01_StringTernary_InGpuKernel' containing [GpuKernel] methods must be declared as partial to support source generation of contexts and launch methods.
+(5,21)-(5,53) GSH0036 analyzer: The type 'GSH_01_StringTernary_InGpuKernel' that contains or encloses GPU code must be declared partial to support source generation of contexts and launch methods.
 (12,9)-(12,15) GSH0002 analyzer: The string type is not supported in GPU kernels
 
 ## Analyzers/DelegateEscapeSadPath.cs
-(11,21)-(11,52) GSH0036 analyzer: The class 'SYN08_DelegateEscapeSadPathCase' containing [GpuKernel] methods must be declared as partial to support source generation of contexts and launch methods.
-(11,21)-(11,52) GSH0036 analyzer: The class 'SYN08_DelegateEscapeSadPathCase' containing [GpuKernel] methods must be declared as partial to support source generation of contexts and launch methods.
+(11,21)-(11,52) GSH0036 analyzer: The type 'SYN08_DelegateEscapeSadPathCase' that contains or encloses GPU code must be declared partial to support source generation of contexts and launch methods.
 (21,9)-(21,24) GSH0065 analyzer: The static member 'SYN08_DelegateEscapeSadPathCase.EscapedDelegate' cannot be accessed in GPU code because static fields and properties reside in host memory. Use a 'const' field or pass the value as a kernel parameter.
 (29,30)-(29,63) GSH0001 analyzer: Object creation ('new') is not supported in GPU kernels. Only struct instantiation, SharedMemory<T> and an array of a constant size that initializes a local variable are allowed; use stackalloc for a temporary array.
 
@@ -50,11 +48,11 @@
 (37,34)-(37,41) GSH0003 analyzer: The syntax 'device function passed as a delegate (it reaches dynamic SharedMemory<T>, and a delegate call cannot pass it the table of dynamic shared memory regions)' is not supported in GSharp GPU kernels
 
 ## Analyzers/DynamicStackAllocSadPath.cs
-(6,21)-(6,55) GSH0036 analyzer: The class 'SYN13_DynamicStackAllocSadPathCase' containing [GpuKernel] methods must be declared as partial to support source generation of contexts and launch methods.
+(6,21)-(6,55) GSH0036 analyzer: The type 'SYN13_DynamicStackAllocSadPathCase' that contains or encloses GPU code must be declared partial to support source generation of contexts and launch methods.
 (13,43)-(13,54) GSH0003 analyzer: The syntax 'dynamic array size' is not supported in GSharp GPU kernels
 
 ## Analyzers/GpuKernel/UnsupportedSwitch_InGpuKernel.cu.cs
-(5,21)-(5,57) GSH0036 analyzer: The class 'SYN_01_UnsupportedSwitch_InGpuKernel' containing [GpuKernel] methods must be declared as partial to support source generation of contexts and launch methods.
+(5,21)-(5,57) GSH0036 analyzer: The type 'SYN_01_UnsupportedSwitch_InGpuKernel' that contains or encloses GPU code must be declared partial to support source generation of contexts and launch methods.
 (16,15)-(16,28) GSH0003 analyzer: The syntax 'Switch expression arms with 'when' clauses are not supported' is not supported in GSharp GPU kernels
 (23,13)-(23,16) GSH0003 analyzer: The syntax 'Switch expression patterns other than constant and discard are not supported' is not supported in GSharp GPU kernels
 
@@ -140,7 +138,7 @@
 (53,9)-(53,24) GSH0003 analyzer: The syntax 'Operator macro target 'Hidden.Add' is not accessible here and is declared in struct 'Hidden', which is not accessible either: the managed CPU path calls such a target through [UnsafeAccessor], which can name an inaccessible class but not an inaccessible struct; make 'Hidden' or the target accessible here' is not supported in GSharp GPU kernels
 
 ## Analyzers/MacroArgumentSadPath.cs
-(5,14)-(5,41) GSH0036 analyzer: The class 'GEN_36_MacroArgumentSadPath' containing [GpuKernel] methods must be declared as partial to support source generation of contexts and launch methods.
+(5,14)-(5,41) GSH0036 analyzer: The type 'GEN_36_MacroArgumentSadPath' that contains or encloses GPU code must be declared partial to support source generation of contexts and launch methods.
 (14,26)-(14,31) GSH0012 analyzer: The argument 'count' of macro 'ForUnroll' must be a compile-time constant
 (19,9)-(19,15) GSH0002 analyzer: The string type is not supported in GPU kernels
 (21,9)-(21,30) GSH0054 analyzer: Gpu.InlinePtx is not supported by the 'StandardCppDialect' dialect; the call is replaced with a runtime failure
@@ -168,16 +166,12 @@
 (119,31)-(119,35) GSH0003 analyzer: The syntax 'reference to the Gpu.GridStrideLoop loop variable 'i'' is not supported in GSharp GPU kernels
 
 ## Analyzers/UnrollHintSadPath.cs
-(5,14)-(5,31) GSH0036 analyzer: The class 'UnrollHintSadPath' containing [GpuKernel] methods must be declared as partial to support source generation of contexts and launch methods.
+(5,14)-(5,31) GSH0036 analyzer: The type 'UnrollHintSadPath' that contains or encloses GPU code must be declared partial to support source generation of contexts and launch methods.
 (11,9)-(11,26) GSH0017 analyzer: Gpu.Hint.Unroll must immediately precede a for, while, or do-while loop
 (15,25)-(15,27) GSH0016 analyzer: The argument 'factor' of Gpu.Hint.Unroll must be a compile-time non-negative integer
 
 ## Generator/KernelReturnTypes_SadPath.cs
-(6,14)-(6,42) GSH0036 analyzer: The class 'TestKernelReturnTypesSadPath' containing [GpuKernel] methods must be declared as partial to support source generation of contexts and launch methods.
-(6,14)-(6,42) GSH0036 analyzer: The class 'TestKernelReturnTypesSadPath' containing [GpuKernel] methods must be declared as partial to support source generation of contexts and launch methods.
-(6,14)-(6,42) GSH0036 analyzer: The class 'TestKernelReturnTypesSadPath' containing [GpuKernel] methods must be declared as partial to support source generation of contexts and launch methods.
-(6,14)-(6,42) GSH0036 analyzer: The class 'TestKernelReturnTypesSadPath' containing [GpuKernel] methods must be declared as partial to support source generation of contexts and launch methods.
-(6,14)-(6,42) GSH0036 analyzer: The class 'TestKernelReturnTypesSadPath' containing [GpuKernel] methods must be declared as partial to support source generation of contexts and launch methods.
+(6,14)-(6,42) GSH0036 analyzer: The type 'TestKernelReturnTypesSadPath' that contains or encloses GPU code must be declared partial to support source generation of contexts and launch methods.
 (10,27)-(10,38) GSH0004 analyzer: Method 'ArrayKernel' is marked with [GpuKernel] but returns unsupported type 'float[]'. GpuKernel methods must return void or an unmanaged blittable type.
 (14,26)-(14,38) GSH0004 analyzer: Method 'StringKernel' is marked with [GpuKernel] but returns unsupported type 'string'. GpuKernel methods must return void or an unmanaged blittable type.
 (30,33)-(30,52) GSH0004 analyzer: Method 'ManagedStructKernel' is marked with [GpuKernel] but returns unsupported type 'Kassyi.GSharp.Tests.Shared.TestCases.Generator.TestKernelReturnTypesSadPath.ManagedStruct'. GpuKernel methods must return void or an unmanaged blittable type.

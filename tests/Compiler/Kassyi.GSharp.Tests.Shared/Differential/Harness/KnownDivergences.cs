@@ -1,29 +1,7 @@
 #nullable enable
+using System.Collections.Generic;
+
 namespace Kassyi.GSharp.Tests.Shared.Differential;
-
-/// <summary>
-/// A divergence that is filed as an issue and not fixed yet: the cells of <paramref name="Column"/> in
-/// <paramref name="Case"/> differ from the oracle on <paramref name="Paths"/>. A listed column may differ there without
-/// failing the test, and it must still differ on every listed path that the process runs: once it matches for every seed,
-/// the test fails and asks for the entry to be removed (XFAIL in LLVM lit). It is not a skip: the rest of the case is
-/// still compared, and a fix cannot go unnoticed.
-/// </summary>
-/// <param name="Case">The <see cref="DifferentialCase.Name"/>, e.g. <c>IntegerMatrixKernels.Int32ArithmeticMatrixKernel</c>.</param>
-/// <param name="Column">The column name (<see cref="DiffBuffer.ColumnNameOf"/>), e.g. <c>a&gt;&gt;&gt;b</c>.</param>
-/// <param name="Paths">The paths on which the column differs; one or more flags.</param>
-/// <param name="Issue">The issue that tracks the divergence.</param>
-public sealed record KnownDivergence(string Case, string Column, DiffPath Paths, int Issue)
-{
-    /// <summary>Returns whether the entry covers a cell of <paramref name="column"/> in <paramref name="caseName"/> on <paramref name="path"/>.</summary>
-    /// <param name="caseName">The case.</param>
-    /// <param name="column">The column name.</param>
-    /// <param name="path">The path.</param>
-    public bool Covers(string caseName, string column, DiffPath path) =>
-        Case == caseName && Column == column && (Paths & path) != 0;
-
-    /// <inheritdoc/>
-    public override string ToString() => $"\"{Column}\" on {Paths.ToString().ToLowerInvariant()} (#{Issue})";
-}
 
 /// <summary>
 /// The registry of <see cref="KnownDivergence"/> entries that <see cref="DifferentialRunner.Run"/> applies to every case
@@ -32,9 +10,63 @@ public sealed record KnownDivergence(string Case, string Column, DiffPath Paths,
 /// </summary>
 public static class KnownDivergences
 {
+    // The cases of the entries below, named through nameof so that a renamed kernel cannot leave an entry behind
+    private const string EmptyStackSpanNullComparison =
+        $"{nameof(NullableDifferentialKernels)}.{nameof(NullableDifferentialKernels.EmptyStackSpanNullComparisonReproKernel)}";
+    private const string NullableArrayLikeDefaultValueNullCheck =
+        $"{nameof(NullableDifferentialKernels)}.{nameof(NullableDifferentialKernels.NullableArrayLikeDefaultValueNullCheckReproKernel)}";
+    private const string CoalesceWiderNullableWithNarrowerNullable =
+        $"{nameof(NullableDifferentialKernels)}.{nameof(NullableDifferentialKernels.CoalesceWiderNullableWithNarrowerNullable)}";
+    private const string AutoPropertyPassedToInParameterDefensiveCopy =
+        $"{nameof(StructDifferentialKernels)}.{nameof(StructDifferentialKernels.AutoPropertyPassedToInParameterDefensiveCopy)}";
+    private const string StructUserDefinedImplicitConversion =
+        $"{nameof(StructDifferentialKernels)}.{nameof(StructDifferentialKernels.StructUserDefinedImplicitConversion)}";
+    private const string SubWarpConditionalShuffle =
+        $"{nameof(BarrierAndWarpDifferentialKernels)}.{nameof(BarrierAndWarpDifferentialKernels.SubWarpConditionalShuffleKernel)}";
+    private const string GenericStructStaticSharedMemory =
+        $"{nameof(BarrierAndWarpDifferentialKernels)}.{nameof(BarrierAndWarpDifferentialKernels.GenericStructStaticSharedMemoryKernel)}";
+    private const string InterlockedReturnExpression =
+        $"{nameof(AtomicsDifferentialKernels)}.{nameof(AtomicsDifferentialKernels.InterlockedReturnExpressionKernel)}";
+
     /// <summary>Gets every registered entry.</summary>
     public static IReadOnlyList<KnownDivergence> All { get; } =
     [
         // new("IntegerMatrixKernels.Int32ArithmeticMatrixKernel", "a>>>b", DiffPath.Native | DiffPath.Cuda, Issue: 722),
+
+        // empty stackalloc Span<T> / collection expression == null (#998)
+        new(EmptyStackSpanNullComparison, "stackalloc_zero_eq_null", DiffPath.Native | DiffPath.Cuda, Issue: 998),
+        new(EmptyStackSpanNullComparison, "stackalloc_zero_ne_null", DiffPath.Native | DiffPath.Cuda, Issue: 998),
+        new(EmptyStackSpanNullComparison, "collection_empty_eq_null", DiffPath.Native | DiffPath.Cuda, Issue: 998),
+        new(EmptyStackSpanNullComparison, "combined_null_flags", DiffPath.Native | DiffPath.Cuda, Issue: 998),
+
+        // Nullable<Memory<T>> / Nullable<ArraySegment<T>> null pattern (#998)
+        new(NullableArrayLikeDefaultValueNullCheck, "mem_is_null", DiffPath.Native | DiffPath.Cuda, Issue: 998),
+        new(NullableArrayLikeDefaultValueNullCheck, "mem_is_not_null", DiffPath.Native | DiffPath.Cuda, Issue: 998),
+        new(NullableArrayLikeDefaultValueNullCheck, "mem_eq_ne_hasvalue", DiffPath.Native | DiffPath.Cuda, Issue: 998),
+        new(NullableArrayLikeDefaultValueNullCheck, "seg_is_null_hasvalue", DiffPath.Native | DiffPath.Cuda, Issue: 998),
+
+        // Nullable<T> ?? conversion & narrow Nullable<T> ?? side effect (#998)
+        new(CoalesceWiderNullableWithNarrowerNullable, "int_coalesce_short_val", DiffPath.Native | DiffPath.Cuda, Issue: 998),
+        new(CoalesceWiderNullableWithNarrowerNullable, "int_coalesce_ushort_val", DiffPath.Native | DiffPath.Cuda, Issue: 998),
+
+        // struct auto-property passed to in parameter without defensive copy (#999)
+        new(AutoPropertyPassedToInParameterDefensiveCopy, "in_snapshot_after_holder_mutated", DiffPath.Native | DiffPath.Cuda, Issue: 999),
+
+        // struct user-defined implicit operator ignored (#963)
+        new(StructUserDefinedImplicitConversion, "scaled_field_val", DiffPath.Native | DiffPath.Cuda, Issue: 963),
+        new(StructUserDefinedImplicitConversion, "converted_back_int", DiffPath.Native | DiffPath.Cuda, Issue: 963),
+
+        // Warp.ShuffleXor after sub-warp conditional ShuffleDown on CPU emulator (#1001)
+        new(SubWarpConditionalShuffle, "reconvergedFullWarpXor16", DiffPath.Managed | DiffPath.Native, Issue: 1001),
+
+        // generic struct static method SharedMemory.Allocate<T> collides across type arguments (#543)
+        new(GenericStructStaticSharedMemory, "SharedSlot<int>", DiffPath.Managed | DiffPath.Native, Issue: 543),
+
+        // Interlocked long overloads return unsigned long long in C++, signed 32-bit add overflow UB in CUDA prelude, and named arguments are not reordered (#1057, #1058, #1059)
+        new(InterlockedReturnExpression, "add64_lt_zero", DiffPath.Native | DiffPath.Cuda, Issue: 1057), // Interlocked.Add(ref long) returns unsigned long long in C++ (#1057)
+        new(InterlockedReturnExpression, "exch64_sar_sign", DiffPath.Native | DiffPath.Cuda, Issue: 1057), // Interlocked.Exchange(ref long) returns unsigned long long in C++ (#1057)
+        new(InterlockedReturnExpression, "cas64_lt_zero", DiffPath.Native | DiffPath.Cuda, Issue: 1057), // Interlocked.CompareExchange(ref long) returns unsigned long long in C++ (#1057)
+        new(InterlockedReturnExpression, "add32_wrap_min", DiffPath.Cuda, Issue: 1058), // __gsharp_atomicAdd(int*, int) performs signed int addition without unsigned cast, triggering C++ signed overflow UB under nvcc (#1058)
+        new(InterlockedReturnExpression, "cas32_named_args_reversed", DiffPath.Native | DiffPath.Cuda, Issue: 1059), // BclIntrinsicTranspilerRule does not reorder named arguments (#1059)
     ];
 }
