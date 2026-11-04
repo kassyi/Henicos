@@ -1,5 +1,6 @@
 using Kassyi.GSharp.Compiler.Aot;
 using Kassyi.GSharp.Compiler.Models;
+using Kassyi.GSharp.Compiler.Transpiler.Managed;
 
 namespace Kassyi.GSharp.Compiler;
 
@@ -36,6 +37,12 @@ public class GpuKernelGenerator : IIncrementalGenerator
 
     /// <summary>The tracking name of the input of the output that writes the device code export records.</summary>
     public const string DeviceExportsTrackingName = "GpuDeviceExportsInput";
+
+    /// <summary>The tracking name of the step that collects site keys of type-keyed shared memory creations (#543).</summary>
+    public const string TypeKeyedSitesTrackingName = "GpuTypeKeyedSites";
+
+    /// <summary>The tracking name of the input of the output that registers type-keyed shared memory sites (#543).</summary>
+    public const string TypeKeyedSitesRegistrationTrackingName = "GpuTypeKeyedSitesRegistrationInput";
 
     /// <summary>
     /// The tracking name of the step that reads the device code export records of the referenced assemblies, which the
@@ -248,6 +255,48 @@ public class GpuKernelGenerator : IIncrementalGenerator
         context.RegisterSourceOutput(
             deviceExports.Combine(configProvider).WithTrackingName(DeviceExportsTrackingName),
             static (spc, input) => EmitDeviceExports(spc, input.Left, input.Right));
+
+        var typeKeyedSites = context.SyntaxProvider
+            .CreateSyntaxProvider(
+                predicate: static (node, _) => TypeKeyedSharedMemoryCollector.IsCandidate(node),
+                transform: static (ctx, _) => TypeKeyedSharedMemoryCollector.Collect(ctx))
+            .WithTrackingName(TypeKeyedSitesTrackingName)
+            .Where(static sites => !sites.IsDefaultOrEmpty)
+            .Collect();
+
+        var allTypeKeyedSites = typeKeyedSites.Select(static (arrays, _) =>
+        {
+            if (arrays.IsDefaultOrEmpty)
+            {
+                return default;
+            }
+
+            var set = new HashSet<ulong>();
+            foreach (var array in arrays)
+            {
+                foreach (var site in array)
+                {
+                    set.Add(site);
+                }
+            }
+
+            if (set.Count == 0)
+            {
+                return default;
+            }
+
+            var builder = ImmutableArray.CreateBuilder<ulong>(set.Count);
+            foreach (var site in set)
+            {
+                builder.Add(site);
+            }
+            builder.Sort();
+            return builder.MoveToImmutable().AsEquatableArray();
+        });
+
+        context.RegisterSourceOutput(
+            allTypeKeyedSites.WithTrackingName(TypeKeyedSitesRegistrationTrackingName),
+            static (spc, sites) => EmitTypeKeyedSitesRegistration(spc, sites));
     }
 
     private static TranspiledKernelResult? TranspileKernel(GeneratorAttributeSyntaxContext context)
@@ -893,5 +942,39 @@ public class GpuKernelGenerator : IIncrementalGenerator
             .AsStackEnumerable()
             .AddTo(builder);
         return builder.MoveToImmutable().AsEquatableArray();
+    }
+
+    private static void EmitTypeKeyedSitesRegistration(SourceProductionContext context, EquatableArray<ulong> sites)
+    {
+        if (sites.IsDefaultOrEmpty)
+        {
+            return;
+        }
+
+        using var writer = new SourceWriter();
+        writer.AppendGeneratedFileHeader(enableNullable: true);
+        writer.AppendLine("namespace Kassyi.GSharp.Generated");
+        using (writer.Scope())
+        {
+            writer.AppendLine("internal static class GSharpTypeKeyedSharedMemorySitesRegistration");
+            using (writer.Scope())
+            {
+                writer.AppendLine("#pragma warning disable CA2255");
+                writer.AppendLine("[global::System.Runtime.CompilerServices.ModuleInitializer]");
+                writer.AppendLine("internal static void RegisterTypeKeyedSharedMemorySites()");
+                using (writer.Scope())
+                {
+                    writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.RegisterTypeKeyedSites([");
+                    foreach (var site in sites)
+                    {
+                        writer.AppendLine($"0x{site:x16}UL,");
+                    }
+                    writer.AppendLine("]);");
+                }
+            }
+        }
+
+        context.AddSource("GSharpSharedTypeKeyedSites.g.cs",
+            SourceText.From(writer.ToString(), Encoding.UTF8));
     }
 }

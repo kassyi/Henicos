@@ -7,6 +7,7 @@ SourceOutput(GpuDeviceExportsInput): New x1
 SourceOutput(GpuKernelWrapperInput): New x1
 SourceOutput(GpuModuleContextInput): New x1
 SourceOutput(GpuSharedSourcesInput): New x1
+SourceOutput(GpuTypeKeyedSitesRegistrationInput): New x1
 
 ## After adding an unrelated file
 GpuDeviceFunction: Unchanged x1
@@ -17,6 +18,7 @@ SourceOutput(GpuDeviceExportsInput): Cached x1
 SourceOutput(GpuKernelWrapperInput): Cached x1
 SourceOutput(GpuModuleContextInput): Cached x1
 SourceOutput(GpuSharedSourcesInput): Cached x1
+SourceOutput(GpuTypeKeyedSitesRegistrationInput): Cached x1
 
 ## After editing one kernel body
 GpuDeviceFunction: Unchanged x1
@@ -27,4 +29,5 @@ SourceOutput(GpuDeviceExportsInput): Cached x1
 SourceOutput(GpuKernelWrapperInput): Modified x1
 SourceOutput(GpuModuleContextInput): Cached x1
 SourceOutput(GpuSharedSourcesInput): Cached x1
+SourceOutput(GpuTypeKeyedSitesRegistrationInput): Cached x1
 
