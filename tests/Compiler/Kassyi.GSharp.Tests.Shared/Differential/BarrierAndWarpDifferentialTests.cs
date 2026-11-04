@@ -606,6 +606,56 @@ public class BarrierAndWarpDifferentialTests
             },
         };
 
+    private static readonly DifferentialCase s_genericStructNestedCalleeSharedMemory =
+        new("M1DiffWarpExtraKernels.GenericStructNestedCalleeSharedMemoryKernel")
+        {
+            Shape = LaunchShape.ForRows(32, blockX: 32),
+            Inputs = static (rng, rows) => new DiffBuffers()
+                .In("input", DiffValues.Int32(rng, rows))
+                .Out<int>("output", rows, M1DiffWarpExtraKernels.GenericStructNestedCalleeColumns, OutputPolicy.Exact),
+            Launch = static (b, s) => M1DiffWarpExtraKernels.LaunchGenericStructNestedCalleeSharedMemoryKernel(
+                b.Get<int>("input"),
+                b.Get<int>("output"),
+                gridDimX: s.GridX,
+                blockDimX: s.BlockX
+            ),
+            Reference = static b =>
+            {
+                var input = b.Get<int>("input");
+                var output = b.Get<int>("output");
+                int length = input.Length;
+                for (int tid = 0; tid < length; tid++)
+                {
+                    output[tid] = tid + 100;
+                }
+            },
+        };
+
+    private static readonly DifferentialCase s_genericStructNestedInnerSharedMemory =
+        new("M1DiffWarpExtraKernels.GenericStructNestedInnerSharedMemoryKernel")
+        {
+            Shape = LaunchShape.ForRows(32, blockX: 32),
+            Inputs = static (rng, rows) => new DiffBuffers()
+                .In("input", DiffValues.Int32(rng, rows))
+                .Out<int>("output", rows, M1DiffWarpExtraKernels.GenericStructNestedInnerColumns, OutputPolicy.Exact),
+            Launch = static (b, s) => M1DiffWarpExtraKernels.LaunchGenericStructNestedInnerSharedMemoryKernel(
+                b.Get<int>("input"),
+                b.Get<int>("output"),
+                gridDimX: s.GridX,
+                blockDimX: s.BlockX
+            ),
+            Reference = static b =>
+            {
+                var input = b.Get<int>("input");
+                var output = b.Get<int>("output");
+                int length = input.Length;
+                for (int tid = 0; tid < length; tid++)
+                {
+                    output[tid] = tid + 100;
+                }
+            },
+        };
+
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
@@ -633,4 +683,18 @@ public class BarrierAndWarpDifferentialTests
     [Scenario(TestScenario.Boundary)]
     public void Test_RefTernaryParameterWriteAcrossBarrier_MatchesTheReferenceOnEveryPath() =>
         DifferentialRunner.Run(s_refTernaryParameterWriteAcrossBarrier);
+
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Differential)]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_GenericStructNestedCalleeSharedMemory_MatchesTheReferenceOnEveryPath() =>
+        DifferentialRunner.Run(s_genericStructNestedCalleeSharedMemory);
+
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Differential)]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_GenericStructNestedInnerSharedMemory_MatchesTheReferenceOnEveryPath() =>
+        DifferentialRunner.Run(s_genericStructNestedInnerSharedMemory);
 }

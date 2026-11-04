@@ -1,3 +1,6 @@
+using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.IO;
 using Kassyi.GSharp.Tests.Shared.Helpers;
 
 namespace Kassyi.GSharp.Tests.Shared.Generator;
@@ -158,6 +161,70 @@ public class GeneratorOutputTests
         Assert.True(errors.Count == 0, string.Join(Environment.NewLine, errors));
         var wrapper = GetSource(result, "ManagedOperatorMacroFormKernels.g.cs");
         Assert.Contains("UnsafeAccessorKind.Field, Name = \"<P>k__BackingField\"", wrapper, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_TypeKeyedSharedMemorySites_RespectsPathMap()
+    {
+        var baseDirectory = Path.GetFullPath(@"C:\test_project");
+        var filePath = Path.Combine(baseDirectory, "Source.cs");
+        const string mappedPrefix = "/_";
+        const string mappedPath = "/_/Source.cs";
+
+        var pathMap = ImmutableArray.Create(new KeyValuePair<string, string>(baseDirectory, mappedPrefix));
+        var resolver = new SourceFileResolver(ImmutableArray<string>.Empty, baseDirectory, pathMap);
+
+        var syntaxTree = Parse(
+            RoslynTestUtility.ReadTestCase("Generators/TypeKeyedSharedMemory_PathMap.cs"),
+            filePath);
+
+        var compilation = CSharpCompilation.Create("PathMapTest")
+            .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, allowUnsafe: true)
+                .WithSourceReferenceResolver(resolver))
+            .AddReferences(RoslynTestUtility.BaseReferences)
+            .AddSyntaxTrees(syntaxTree);
+
+        var result = CreateDriver("Cpu").RunGenerators(compilation).GetRunResult().Results.Single();
+        Assert.Null(result.Exception);
+
+        var registration = GetSource(result, "GSharpSharedTypeKeyedSites.g.cs");
+
+        // The site is at line 9 of TypeKeyedSharedMemory_PathMap.cs
+        var hash = new Kassyi.GSharp.Hashing.Fnv1A64();
+        hash.Append(mappedPath);
+        hash.Append(9u);
+        hash.Append(".ctor");
+        var expectedKey = hash.Value;
+
+        Assert.Contains($"0x{expectedKey:x16}UL", registration, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_TypeKeyedSharedMemorySites_RespectsLineDirective()
+    {
+        const string filePath = "source.cs";
+        const string mappedFile = "mapped_file.cs";
+        const uint mappedLine = 500u;
+
+        var syntaxTree = Parse(
+            RoslynTestUtility.ReadTestCase("Generators/TypeKeyedSharedMemory_LineDirective.cs"),
+            filePath);
+
+        var compilation = CreateCompilation(syntaxTree);
+        var result = CreateDriver("Cpu").RunGenerators(compilation).GetRunResult().Results.Single();
+        Assert.Null(result.Exception);
+
+        var registration = GetSource(result, "GSharpSharedTypeKeyedSites.g.cs");
+
+        var hash = new Kassyi.GSharp.Hashing.Fnv1A64();
+        hash.Append(mappedFile);
+        hash.Append(mappedLine);
+        hash.Append(".ctor");
+        var expectedKey = hash.Value;
+
+        Assert.Contains($"0x{expectedKey:x16}UL", registration, StringComparison.Ordinal);
     }
 
     private static string GetSource(GeneratorRunResult result, string hintNameSuffix) =>

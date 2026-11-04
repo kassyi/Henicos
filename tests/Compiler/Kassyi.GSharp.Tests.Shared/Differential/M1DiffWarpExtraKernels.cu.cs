@@ -28,6 +28,78 @@ public struct SharedPairSlot<TFirst, TSecond>
         }
     }
 }
+/// <summary>
+/// A non-generic device function allocating static shared memory (#543).
+/// </summary>
+public static class SharedCalleeHelper
+{
+    [GpuDeviceFunction]
+    public static int NonGenericCalleeBuffer(bool write, int lane, int inputValue)
+    {
+        var smem = new SharedMemory<int>(32);
+        if (write)
+        {
+            smem[lane] = inputValue;
+            return 0;
+        }
+
+        return smem[lane];
+    }
+}
+
+/// <summary>
+/// Generic struct whose constructor calls a non-generic device function allocating static shared memory (#543).
+/// </summary>
+public struct Holder2<T> where T : unmanaged
+{
+    public int Value;
+
+    public Holder2(bool write, int lane, int inputValue)
+    {
+        var localSmem = new SharedMemory<int>(32);
+        localSmem[lane] = inputValue;
+        Value = SharedCalleeHelper.NonGenericCalleeBuffer(write, lane, inputValue);
+    }
+}
+
+/// <summary>
+/// A non-generic struct allocating static shared memory in its constructor (#543).
+/// </summary>
+public struct InnerSharedMemory
+{
+    public int Value;
+
+    public InnerSharedMemory(bool write, int lane, int inputValue)
+    {
+        var smem = new SharedMemory<int>(32);
+        if (write)
+        {
+            smem[lane] = inputValue;
+            Value = 0;
+        }
+        else
+        {
+            Value = smem[lane];
+        }
+    }
+}
+
+/// <summary>
+/// Generic struct whose constructor instantiates a non-generic struct allocating static shared memory (#543).
+/// </summary>
+public struct Holder3<T> where T : unmanaged
+{
+    public int Value;
+
+    public Holder3(bool write, int lane, int inputValue)
+    {
+        var localSmem = new SharedMemory<int>(32);
+        localSmem[lane] = inputValue;
+        var inner = new InnerSharedMemory(write, lane, inputValue);
+        Value = inner.Value;
+    }
+}
+
 
 /// <summary>
 /// Additional differential kernels for sub-warp upper-half conditional shuffle (#1001), multi-type-parameter generic
@@ -74,6 +146,18 @@ public static partial class M1DiffWarpExtraKernels
         "MatchAllSync(float,nan).pred",
         "MatchAllSync(float,zeroSign).mask",
         "MatchAllSync(float,zeroSign).pred",
+    ];
+
+    /// <summary>The columns of <see cref="GenericStructNestedCalleeSharedMemoryKernel"/>.</summary>
+    public static readonly string[] GenericStructNestedCalleeColumns =
+    [
+        "holderValue",
+    ];
+
+    /// <summary>The columns of <see cref="GenericStructNestedInnerSharedMemoryKernel"/>.</summary>
+    public static readonly string[] GenericStructNestedInnerColumns =
+    [
+        "holderValue",
     ];
 
     // 1. Sub-warp conditional shuffle in the upper half (if (lane >= 16)) followed by reconverged full-warp shuffles
@@ -237,6 +321,49 @@ public static partial class M1DiffWarpExtraKernels
             output[o + 15] = (uint)predAllNan;
             output[o + 16] = allZeroSignMask;
             output[o + 17] = (uint)predAllZeroSign;
+        }
+    }
+
+    // 4. Generic struct constructor calling a non-generic device function with static SharedMemory (#543).
+    [GpuKernel]
+    public static void GenericStructNestedCalleeSharedMemoryKernel(int[] input, int[] output)
+    {
+        int tid = ThreadIndex.X + BlockIndex.X * BlockDimension.X;
+        int lane = ThreadIndex.X & 31;
+        int n = input.Length;
+
+        int writeVal = tid + 100;
+        var hWrite = new Holder2<int>(true, lane, writeVal);
+
+        Gpu.SyncThreads();
+
+        var hRead = new Holder2<uint>(false, lane, 0);
+
+        if (tid < n)
+        {
+            output[tid] = hRead.Value;
+        }
+    }
+
+    // 5. Generic struct constructor calling a non-generic struct constructor with static SharedMemory (#543).
+    [GpuKernel]
+    public static void GenericStructNestedInnerSharedMemoryKernel(int[] input, int[] output)
+    {
+        InnerSharedMemory dummy = default;
+        int tid = ThreadIndex.X + BlockIndex.X * BlockDimension.X;
+        int lane = ThreadIndex.X & 31;
+        int n = input.Length;
+
+        int writeVal = tid + 100;
+        var hWrite = new Holder3<int>(true, lane, writeVal);
+
+        Gpu.SyncThreads();
+
+        var hRead = new Holder3<uint>(false, lane, 0);
+
+        if (tid < n)
+        {
+            output[tid] = hRead.Value;
         }
     }
 }
