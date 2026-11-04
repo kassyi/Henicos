@@ -13,9 +13,11 @@ using static GSharpInternalNames.Launcher;
 /// </remarks>
 internal static class ManagedFallbackEmitter
 {
+    private const string PinnedContexts = "__gsharp_pinned_contexts";
+
     // The managed launcher's context slot for the thread currently being stepped.
     private const string LinearContext =
-        $"{GSharpInternalNames.Launcher.Contexts}[{GSharpInternalNames.Launcher.LinearThreadIndex}]";
+        $"{PinnedContexts}[{GSharpInternalNames.Launcher.LinearThreadIndex}]";
 
     /// <summary>
     /// Emits <c>if (CpuKernelLoader.ShouldUseManagedExecution(dllPath)) { &lt;run the grid&gt;; return; }</c>, after the
@@ -43,10 +45,13 @@ internal static class ManagedFallbackEmitter
         writer.AppendLine($"int {TotalBlocks} = (int)(gridDimX * gridDimY * gridDimZ);");
         writer.AppendLine($"int {ThreadsPerBlock} = (int)(blockDimX * blockDimY * blockDimZ);");
         writer.AppendLine($"var {Contexts} = new {kernel.ContextName}[{TotalBlocks} * {ThreadsPerBlock}];");
-        writer.AppendLine($"for (int i = 0; i < {Contexts}.Length; i++)");
-        using (writer.Scope())
+        if (!kernel.IsUnsafeContext)
         {
-            writer.AppendLine($"{Contexts}[i] = new {kernel.ContextName}();");
+            writer.AppendLine($"for (int i = 0; i < {Contexts}.Length; i++)");
+            using (writer.Scope())
+            {
+                writer.AppendLine($"{Contexts}[i] = new {kernel.ContextName}();");
+            }
         }
 
         // A cooperative kernel's blocks run in grid phases and keep their dynamic shared memory for the grid; the
@@ -63,8 +68,24 @@ internal static class ManagedFallbackEmitter
         }
     }
 
-    // bool anyGridActive = true; try { while (anyGridActive) { <grid phase> } } finally { EndGrid(); }
+    // fixed (...) { bool anyGridActive = true; try { while (anyGridActive) { <grid phase> } } finally { EndGrid(); } }
     private static void WriteManagedGridLoop(SourceWriter writer, in KernelHostModel kernel)
+    {
+        if (kernel.IsUnsafeContext)
+        {
+            writer.AppendLine($"fixed ({kernel.ContextName}* {PinnedContexts} = {Contexts})");
+            using (writer.Scope())
+            {
+                WriteManagedGridLoopBody(writer, kernel);
+            }
+        }
+        else
+        {
+            WriteManagedGridLoopBody(writer, kernel);
+        }
+    }
+
+    private static void WriteManagedGridLoopBody(SourceWriter writer, in KernelHostModel kernel)
     {
         writer.AppendLine("bool anyGridActive = true;");
         // The dynamic shared memory of the blocks lives for one grid (#544), also when a step throws
@@ -211,8 +232,9 @@ internal static class ManagedFallbackEmitter
         using (writer.Scope())
         {
             // The grid sync of the GPU waits for thread 0 of every block
+            var contextSlot = kernel.IsUnsafeContext ? PinnedContexts : Contexts;
             writer.AppendLine(
-                $"if ({Contexts}[{BlockLoopIndex} * {ThreadsPerBlock}].{GSharpInternalNames.StateMachine.State} == -1)");
+                $"if ({contextSlot}[{BlockLoopIndex} * {ThreadsPerBlock}].{GSharpInternalNames.StateMachine.State} == -1)");
             using (writer.Scope())
             {
                 writer.AppendLine(
@@ -241,7 +263,7 @@ internal static class ManagedFallbackEmitter
 
         writer.AppendLine($"int {LinearThreadIndex} = {BlockLoopIndex} * {ThreadsPerBlock} + {ThreadLoopIndex};");
         // A thread that waits at a block barrier or at the grid sync does not run
-        var runnable = kernel.IsCooperative ? CooperativeRunnableCondition : RunnableCondition;
+        var runnable = kernel.IsCooperative ? GetCooperativeRunnableCondition(kernel) : GetRunnableCondition(kernel);
         writer.AppendLine($"if ({runnable})");
         using (writer.Scope())
         {
@@ -263,12 +285,14 @@ internal static class ManagedFallbackEmitter
         }
     }
 
-    // <context>.__gsharp_state != -1 && !threadAtBlockBarrier[<thread>]
-    private const string RunnableCondition =
-        $"{LinearContext}.{GSharpInternalNames.StateMachine.State} != -1 && !threadAtBlockBarrier[{LinearThreadIndex}]";
+    private static string GetRunnableCondition(in KernelHostModel kernel)
+    {
+        var target = kernel.IsUnsafeContext ? LinearContext : $"{Contexts}[{LinearThreadIndex}]";
+        return $"{target}.{GSharpInternalNames.StateMachine.State} != -1 && !threadAtBlockBarrier[{LinearThreadIndex}]";
+    }
 
-    // ... && !threadAtGridSync[<thread>]
-    private const string CooperativeRunnableCondition = $"{RunnableCondition} && !threadAtGridSync[{LinearThreadIndex}]";
+    private static string GetCooperativeRunnableCondition(in KernelHostModel kernel) =>
+        $"{GetRunnableCondition(kernel)} && !threadAtGridSync[{LinearThreadIndex}]";
 
     // <state machine>(<arguments>, __gsharp_contexts[<thread>][, ref __gsharp_auto_result[<thread>]]);
     private static void WriteStateMachineCall(SourceWriter writer, in KernelHostModel kernel)
@@ -286,7 +310,14 @@ internal static class ManagedFallbackEmitter
             writer.Append(", ");
         }
 
-        writer.Append(LinearContext);
+        if (kernel.IsUnsafeContext)
+        {
+            writer.Append($"&{PinnedContexts}[{LinearThreadIndex}]");
+        }
+        else
+        {
+            writer.Append($"{Contexts}[{LinearThreadIndex}]");
+        }
         if (kernel.ReturnsValue)
         {
             writer.Append($", ref {GSharpInternalNames.ReturnValue.Buffer}[{LinearThreadIndex}]");

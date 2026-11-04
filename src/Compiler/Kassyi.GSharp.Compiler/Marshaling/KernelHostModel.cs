@@ -76,6 +76,8 @@ internal readonly record struct KernelHostModel
     /// </summary>
     public EquatableArray<StructLayoutGuard> CpuLayoutGuards { get; init; }
 
+    public bool IsUnsafeContext { get; init; }
+
     public bool ReturnsValue => ReturnTypeName is not null;
 
     /// <summary>Whether the CUDA launcher converts the returned elements (<see cref="CudaReturn"/>).</summary>
@@ -110,6 +112,9 @@ internal readonly record struct KernelHostModel
                 : kernel.ReturnType.GetFullyQualifiedCsharpName(),
             CudaReturn = ParameterTransfer.CreateForReturn(kernel.ReturnType, HostDialects.Cuda),
             CpuReturn = ParameterTransfer.CreateForReturn(kernel.ReturnType, HostDialects.Cpu),
+            IsUnsafeContext = (kernel.TryGetDeclaringSyntax<MethodDeclarationSyntax>(out var decl) &&
+                               ManagedStateMachineAvailability.NeedsUnsafe(kernel, decl)) ||
+                              kernel.Parameters.AsStackEnumerable().Any(static p => p.Type is IPointerTypeSymbol or IFunctionPointerTypeSymbol),
             IsCooperative = kernel.IsCooperativeKernel(),
             MessageName = KernelHostNames.GetMessageName(kernel),
             GridScratchSlotBytes = model != null && kernel.IsCooperativeKernel() &&
