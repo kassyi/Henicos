@@ -13,9 +13,6 @@ internal static class NullRepresentation
     public static bool IsNullComparable([NotNullWhen(true)] ITypeSymbol? type) =>
         type != null && (type.IsArrayLikeType() || type.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T);
 
-    /// <inheritdoc cref="IsNullComparable"/>
-    public static bool IsArrayNullComparable([NotNullWhen(true)] ITypeSymbol? type) => IsNullComparable(type);
-
     /// <summary>
     /// Emits <c>(&lt;operand&gt;.data == nullptr)</c> (or <c>(!&lt;operand&gt;.HasValue)</c> for a
     /// <c>System_Nullable&lt;T&gt;</c>), or the negated test when <paramref name="isNull"/> is false.
@@ -68,10 +65,6 @@ internal static class NullRepresentation
                 : isNull ? ".data == nullptr" : ".data != nullptr");
         }
     }
-
-    /// <inheritdoc cref="AppendNullTest"/>
-    public static void AppendArrayNullTest(ExpressionSyntax operand, bool isNull, ref TranspileContext context) =>
-        AppendNullTest(operand, isNull, ref context);
 
     // Parentheses, and casts from one array-like type to another ((int[])a), do not change whether a value is null
     private static ExpressionSyntax SkipNullPreservingConversions(ExpressionSyntax operand, SemanticModel model)

@@ -305,7 +305,7 @@ public static partial class NullableDifferentialKernels
     // -------------------------------------------------------------------------
     // #998: Empty stack-allocated span local (stackalloc int[0] and []) compared to null
     // In C#, stackalloc int[0] and [] produce an empty Span<int> where (s == null) is true and (s != null) is false.
-    // G#'s NullRepresentation.AppendArrayNullTest checks StackArrayLocals.IsStackArrayReference without checking
+    // G#'s NullRepresentation.AppendNullTest checks StackArrayLocals.IsStackArrayReference without checking
     // length == 0, emitting the constant 'false' for (s == null) and 'true' for (s != null).
     // -------------------------------------------------------------------------
     [GpuKernel]
