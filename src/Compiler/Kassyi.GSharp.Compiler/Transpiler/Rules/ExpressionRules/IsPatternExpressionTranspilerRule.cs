@@ -7,12 +7,12 @@ public sealed class IsPatternExpressionTranspilerRule : SyntaxNodeTranspilerRule
 {
     public override void Transpile(IsPatternExpressionSyntax node, ref TranspileContext context)
     {
-        if (NullRepresentation.IsArrayNullComparable(context.Query.SemanticModel.GetTypeSymbol(node.Expression)))
+        if (NullRepresentation.IsNullComparable(context.Query.SemanticModel.GetTypeSymbol(node.Expression)))
         {
             if (node.Pattern is ConstantPatternSyntax { Expression: LiteralExpressionSyntax literal } &&
                 literal.IsKind(SyntaxKind.NullLiteralExpression))
             {
-                NullRepresentation.AppendArrayNullTest(node.Expression, isNull: true, ref context);
+                NullRepresentation.AppendNullTest(node.Expression, isNull: true, ref context);
                 return;
             }
 
@@ -20,7 +20,7 @@ public sealed class IsPatternExpressionTranspilerRule : SyntaxNodeTranspilerRule
                 notPattern.Pattern is ConstantPatternSyntax { Expression: LiteralExpressionSyntax notLiteral } &&
                 notLiteral.IsKind(SyntaxKind.NullLiteralExpression))
             {
-                NullRepresentation.AppendArrayNullTest(node.Expression, isNull: false, ref context);
+                NullRepresentation.AppendNullTest(node.Expression, isNull: false, ref context);
                 return;
             }
         }

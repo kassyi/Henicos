@@ -100,14 +100,17 @@ public struct Emitter(
     /// </summary>
     public SyntaxNode? CurrentNode;
 
+    /// <summary>
+    /// The expression syntax node whose outer implicit user-defined conversion is currently being emitted, so that
+    /// visiting the operand does not apply the conversion a second time (<c>UserDefinedConversionHelper</c>).
+    /// </summary>
+    public SyntaxNode? SuppressImplicitConversionNode;
+
     public int SwitchIdCounter;
     public Stack<int> ActiveSwitchIds = activeSwitchIds;
 
     /// <summary>Monotonically increasing region counter for inlined <c>foreach</c> iterator expansions in the current method.</summary>
     public int IteratorExpansionCounter;
-
-    /// <summary>Current nesting depth of inlined <c>foreach</c> iterator expansions.</summary>
-    public int IteratorInlineDepth;
 
     /// <summary>Monotonically increasing ordinal for <c>__gsharp_arg_temp_&lt;n&gt;</c> temporaries synthesized for out-of-order named arguments.</summary>
     public int ArgumentTempCounter;

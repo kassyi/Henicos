@@ -432,6 +432,17 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 export,
                 structExports);
         }
+        catch (InsufficientExecutionStackException)
+        {
+            var location = methodDeclaration.Identifier.GetLocation();
+            var failure = new TranspileFailure(GSharpDiagnostics.MethodTooComplexToCompile, location, [methodSymbol.Name]);
+            var errorSource = NativeModuleAssembler.FormatTranspileFailures([failure.Format()]);
+            return new TranspiledDeviceMethodResult(
+                HostClassHeader.Create(methodSymbol.ContainingType),
+                methodSymbol.Name,
+                "", errorSource, "", errorSource,
+                new EquatableArray<string>(), new EquatableArray<string>(), "");
+        }
         catch (Exception ex)
         {
             var errorSource = $"/*\n{ex}\n*/\n#error \"Internal Compiler Error: Check comments for details\"\n";

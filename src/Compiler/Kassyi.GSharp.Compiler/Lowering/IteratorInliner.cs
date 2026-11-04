@@ -7,9 +7,6 @@ namespace Kassyi.GSharp.Compiler.Lowering;
 /// </summary>
 internal static class IteratorInliner
 {
-    /// <summary>Maximum allowed nesting depth of inlined iterator expansions before failing transpilation.</summary>
-    public const int MaxInlineDepth = 16;
-
     /// <summary>Maximum number of consumer <c>foreach</c> body copies before reporting GSH0073.</summary>
     public const int MaxBodyCopies = 32;
 
