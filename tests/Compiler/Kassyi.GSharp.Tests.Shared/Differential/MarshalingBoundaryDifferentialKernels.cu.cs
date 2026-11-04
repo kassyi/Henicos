@@ -121,7 +121,7 @@ public struct DiffInlineOuterPacket
     public DiffInlineVec2Padded3 Vecs;
 }
 
-public unsafe struct D3FixedBufferPacket
+public unsafe struct FixedBufferPacket
 {
     public int Header;
     public fixed int Items[4];
@@ -140,18 +140,18 @@ public struct DiffInlineNullableVec2Holder
     public DiffInlineNullableVec2 Items;
 }
 
-public struct D3InnerPair
+public struct InnerPair
 {
     public int Left;
     public float Right;
 }
 
-public struct D3OuterPacket
+public struct OuterPacket
 {
     public byte Tag;
-    public D3InnerPair First;
+    public InnerPair First;
     public Vector2 Vec2;
-    public D3InnerPair Second;
+    public InnerPair Second;
 }
 
 public struct DiffVecAlignTorture
@@ -174,7 +174,7 @@ public struct DiffExternalNestedHolder
 }
 
 /// <summary>
-/// Differential kernels for Lane D3 (Stage 1 and Stage 2): unmanaged boundary marshaling across
+/// Differential kernels for unmanaged boundary marshaling across
 /// value / <c>in</c> / <c>ref</c> / <c>out</c> parameters, non-<c>void</c> kernel return values,
 /// arrays, nested structs, <c>LayoutKind.Explicit</c>, <c>LayoutKind.Auto</c>, <c>[InlineArray]</c>,
 /// <c>fixed</c> buffers, <c>Nullable&lt;T&gt;</c>, raw pointers, and external assembly structs.
@@ -280,7 +280,7 @@ public static partial class MarshalingBoundaryDifferentialKernels
         "constexpr_scaled",
     ];
 
-    // D3-M1: bool across value, in, ref, out, bool[], return bool, and struct fields
+    // bool across value, in, ref, out, bool[], return bool, and struct fields
     [GpuKernel]
     public static bool BoolAllPositionsKernel(
         bool v,
@@ -323,7 +323,7 @@ public static partial class MarshalingBoundaryDifferentialKernels
         return (elem ^ iv) != v;
     }
 
-    // D3-M2: char across value, in, ref, out, char[], return char, and struct fields
+    // char across value, in, ref, out, char[], return char, and struct fields
     [GpuKernel]
     public static char CharAllPositionsKernel(
         char v,
@@ -365,7 +365,7 @@ public static partial class MarshalingBoundaryDifferentialKernels
         return (char)(elem ^ v);
     }
 
-    // D3-M3a (Positions 2, 3, 4): Nullable<T> (H == D) in array, return value, and struct fields
+    // Nullable<T> (H == D) in array, return value, and struct fields
     [GpuKernel]
     public static int? NullableBlitPositionsKernel(
         int?[] arr,
@@ -441,7 +441,7 @@ public static partial class MarshalingBoundaryDifferentialKernels
         return ret;
     }
 
-    // D3-M3a (Position 1): Nullable<T> direct scalar/byref parameters (#972 S19-3a on Native CPU)
+    // Nullable<T> direct scalar/byref parameters (#961 on Native CPU)
     [GpuKernel]
     public static void NullableBlitScalarArgKernel(
         int? v,
@@ -478,7 +478,7 @@ public static partial class MarshalingBoundaryDifferentialKernels
         }
     }
 
-    // D3-M3b: Nullable<Vector2> (H != D, #961 S19-3b on CUDA)
+    // Nullable<Vector2> (H != D, #961 on CUDA)
     [GpuKernel]
     public static void NullableConvertPositionsKernel(
         ref DiffNullableVec2Holder h,
@@ -520,7 +520,7 @@ public static partial class MarshalingBoundaryDifferentialKernels
         }
     }
 
-    // D3-M4a: LayoutKind.Explicit (non-overlapping with gaps & Size=24, plus identical bit union)
+    // LayoutKind.Explicit (non-overlapping with gaps & Size=24, plus identical bit union)
     [GpuKernel]
     public static DiffFloatUintUnion ExplicitLayoutAndUnionPositionsKernel(
         DiffExplicitGapped gVal,
@@ -569,7 +569,7 @@ public static partial class MarshalingBoundaryDifferentialKernels
         return updatedUnion;
     }
 
-    // D3-M4b: LayoutKind.Explicit union containing a Convert arm (#1006 on CUDA)
+    // LayoutKind.Explicit union containing a Convert arm (#1006 on CUDA)
     [GpuKernel]
     public static void ExplicitUnionWithConvertArmKernel(
         ref DiffConvertExplicitUnion u,
@@ -599,7 +599,7 @@ public static partial class MarshalingBoundaryDifferentialKernels
         }
     }
 
-    // D3-M5: LayoutKind.Auto across value, in, ref, out, array, return value, and nested struct
+    // LayoutKind.Auto across value, in, ref, out, array, return value, and nested struct
     [GpuDeviceFunction]
     public static long WeightAutoMixed(DiffAutoMixed m) =>
         (m.B1 * 3L) + (m.L * 5L) + (m.Flag ? 11L : 0L) + (m.S * 17L) + ((long)m.C * 23L);
@@ -664,14 +664,14 @@ public static partial class MarshalingBoundaryDifferentialKernels
         return updated;
     }
 
-    // D3-M6a: [InlineArray(3)] (bool, char, DiffVec2Padded) + fixed buffer D3FixedBufferPacket across 4 positions
+    // [InlineArray(3)] (bool, char, DiffVec2Padded) + fixed buffer FixedBufferPacket across 4 positions
     [GpuKernel]
     public static unsafe DiffInlineVec2Padded3 InlineArrayAndFixedBufferPositionsKernel(
         DiffInlineVec2Padded3 valVecs,
         ref DiffInlineOuterPacket outer,
         DiffInlineVec2Padded3[] vecArr,
-        ref D3FixedBufferPacket fixedPkt,
-        D3FixedBufferPacket[] fixedArr,
+        ref FixedBufferPacket fixedPkt,
+        FixedBufferPacket[] fixedArr,
         int[] probe)
     {
         int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
@@ -684,7 +684,7 @@ public static partial class MarshalingBoundaryDifferentialKernels
         float vSum = elemVecs[0].A + elemVecs[0].V.X + elemVecs[1].A + elemVecs[1].V.Y + elemVecs[2].A + elemVecs[2].V.X
                      + valVecs[0].A + valVecs[2].V.Y;
 
-        D3FixedBufferPacket fElem = fixedArr[tid];
+        FixedBufferPacket fElem = fixedArr[tid];
         int fixedArrSum = fElem.Header
                           + fElem.Items[0] + fElem.Items[1] + fElem.Items[2] + fElem.Items[3]
                           + fElem.Bytes[0] + fElem.Bytes[3];
@@ -734,7 +734,7 @@ public static partial class MarshalingBoundaryDifferentialKernels
         return elemVecs;
     }
 
-    // D3-M6b: [InlineArray(2)] of Vector2? (#961 S19-3c block-copy corruption on CUDA)
+    // [InlineArray(2)] of Vector2? (#961 block-copy on CUDA)
     [GpuKernel]
     public static void InlineArrayNullableVec2Kernel(
         ref DiffInlineNullableVec2Holder h,
@@ -771,15 +771,15 @@ public static partial class MarshalingBoundaryDifferentialKernels
         }
     }
 
-    // D3-M8_9: Vector2/3/4 alignment torture + D3InnerPair/D3OuterPacket + External assembly structs (DeviceLibrary)
+    // Vector2/3/4 alignment torture + InnerPair/OuterPacket + External assembly structs (DeviceLibrary)
     [GpuDeviceFunction]
     public static float SumTorture(DiffVecAlignTorture t) =>
         t.B0 + t.V3.X + t.V3.Y + t.V3.Z + t.B1 + t.V2.X + t.V2.Y + t.B2 + t.V4.X + t.V4.Y + t.V4.Z + t.V4.W;
 
     [GpuKernel]
-    public static D3OuterPacket VectorAlignmentAndExternalStructsKernel(
+    public static OuterPacket VectorAlignmentAndExternalStructsKernel(
         DiffVecAlignTorture tortVal,
-        ref D3OuterPacket outerRef,
+        ref OuterPacket outerRef,
         DiffVecAlignTorture[] tortArr,
         PackedPair[] extPackedArr,
         SwapPair[] extSwapArr,
@@ -826,7 +826,7 @@ public static partial class MarshalingBoundaryDifferentialKernels
                            + extHolder.UnionItem.Tag;
 
             outerRef.Tag = (byte)(outerRef.Tag + 1);
-            outerRef.First = new D3InnerPair
+            outerRef.First = new InnerPair
             {
                 Left = outerRef.First.Left + 5,
                 Right = outerRef.First.Right + 1.5f,
@@ -844,16 +844,16 @@ public static partial class MarshalingBoundaryDifferentialKernels
             extHolder.UnionItem.Tag += 7;
         }
 
-        return new D3OuterPacket
+        return new OuterPacket
         {
             Tag = (byte)(pElem.Tag ^ tElem.B0),
-            First = new D3InnerPair { Left = pElem.Value, Right = tElem.V2.X },
+            First = new InnerPair { Left = pElem.Value, Right = tElem.V2.X },
             Vec2 = tElem.V2,
-            Second = new D3InnerPair { Left = sElem.A, Right = tElem.V3.Z },
+            Second = new InnerPair { Left = sElem.A, Right = tElem.V3.Z },
         };
     }
 
-    // Stage 1: Multiple ref/in/out scalars + raw pointer (valid & null) + empty Span slice + [GpuConstexpr] + [GpuReadOnly]
+    // Multiple ref/in/out scalars + raw pointer (valid & null) + empty Span slice + [GpuConstexpr] + [GpuReadOnly]
     [GpuKernel]
     public static unsafe void MultiRefScalarAndRawPointerKernel(
         in int inScalar,

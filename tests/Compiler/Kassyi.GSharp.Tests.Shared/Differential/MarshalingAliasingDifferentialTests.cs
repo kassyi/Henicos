@@ -73,7 +73,7 @@ public sealed class MarshalingAliasingDifferentialTests
         }
     }
 
-    // --- D3-M7a: Deep Struct with nested Deep Struct across value, in, ref ---
+    // --- Deep Struct with nested Deep Struct across value, in, ref ---
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
@@ -131,7 +131,7 @@ public sealed class MarshalingAliasingDifferentialTests
         });
     }
 
-    // --- D3-M7b: Deep Struct across all 6 array-like container shapes ---
+    // --- Deep Struct across all 6 array-like container shapes ---
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
@@ -196,7 +196,7 @@ public sealed class MarshalingAliasingDifferentialTests
         });
     }
 
-    // --- D3-M7c: C# 12 Primary Constructor Deep Struct (#513) ---
+    // --- C# 12 Primary Constructor Deep Struct (#513) ---
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
@@ -249,203 +249,233 @@ public sealed class MarshalingAliasingDifferentialTests
         });
     }
 
-    // --- D3-A1: Top-level array aliasing across 4 attribute combinations (#721) + overlapping Span (#857) + aliased ref scalar ---
+    // --- Top-level array aliasing across 4 attribute combinations (#721) + overlapping Span (#857) + aliased ref scalar (#1061) ---
+    private static readonly DifferentialCase s_aliasTwoRwArrays = new(
+        $"{nameof(MarshalingAliasingDifferentialKernels)}.{nameof(MarshalingAliasingDifferentialKernels.AliasTwoRwArraysKernel)}")
+    {
+        Shape = LaunchShapes.Linear(16, blockX: 16),
+        Seeds = [0],
+        Inputs = static (_, _) =>
+        {
+            const int n = 16;
+            int[] shared = new int[n];
+            for (int i = 0; i < n; i++)
+            {
+                shared[i] = i + 1;
+            }
+
+            return new DiffBuffers()
+                .In("shared", shared, OutputPolicy.Exact)
+                .Out<int>("observed", n, OutputPolicy.Exact);
+        },
+        Oracle = static (b, _) =>
+        {
+            int[] shared = b.Get<int>("shared");
+            int[] observed = b.Get<int>("observed");
+            MarshalingAliasingDifferentialKernels.AliasTwoRwArraysKernel(shared, shared, observed);
+        },
+        Launch = static (b, s) =>
+        {
+            int[] shared = b.Get<int>("shared");
+            int[] observed = b.Get<int>("observed");
+            MarshalingAliasingDifferentialKernels.LaunchAliasTwoRwArraysKernel(
+                shared, shared, observed, gridDimX: s.GridX, blockDimX: s.BlockX);
+        },
+    };
+
+    private static readonly DifferentialCase s_aliasInAndRwArray = new(
+        $"{nameof(MarshalingAliasingDifferentialKernels)}.{nameof(MarshalingAliasingDifferentialKernels.AliasInAndRwArrayKernel)}")
+    {
+        Shape = LaunchShapes.Linear(16, blockX: 16),
+        Seeds = [0],
+        Inputs = static (_, _) =>
+        {
+            const int n = 16;
+            int[] shared = new int[n];
+            for (int i = 0; i < n; i++)
+            {
+                shared[i] = (i * 2) + 3;
+            }
+
+            return new DiffBuffers()
+                .In("shared", shared, OutputPolicy.Exact)
+                .Out<int>("observed", n, OutputPolicy.Exact);
+        },
+        Oracle = static (b, _) =>
+        {
+            int[] shared = b.Get<int>("shared");
+            int[] observed = b.Get<int>("observed");
+            MarshalingAliasingDifferentialKernels.AliasInAndRwArrayKernel(shared, shared, observed);
+        },
+        Launch = static (b, s) =>
+        {
+            int[] shared = b.Get<int>("shared");
+            int[] observed = b.Get<int>("observed");
+            MarshalingAliasingDifferentialKernels.LaunchAliasInAndRwArrayKernel(
+                shared, shared, observed, gridDimX: s.GridX, blockDimX: s.BlockX);
+        },
+    };
+
+    private static readonly DifferentialCase s_aliasOutAndInArray = new(
+        $"{nameof(MarshalingAliasingDifferentialKernels)}.{nameof(MarshalingAliasingDifferentialKernels.AliasOutAndInArrayKernel)}")
+    {
+        Shape = LaunchShapes.Linear(16, blockX: 16),
+        Seeds = [0],
+        Inputs = static (_, _) =>
+        {
+            const int n = 16;
+            int[] shared = new int[n];
+            for (int i = 0; i < n; i++)
+            {
+                shared[i] = (i * 5) + 10;
+            }
+
+            return new DiffBuffers()
+                .In("shared", shared, OutputPolicy.Exact)
+                .Out<int>("observed", n, OutputPolicy.Exact);
+        },
+        Oracle = static (b, _) =>
+        {
+            int[] shared = b.Get<int>("shared");
+            int[] observed = b.Get<int>("observed");
+            MarshalingAliasingDifferentialKernels.AliasOutAndInArrayKernel(shared, shared, observed);
+        },
+        Launch = static (b, s) =>
+        {
+            int[] shared = b.Get<int>("shared");
+            int[] observed = b.Get<int>("observed");
+            MarshalingAliasingDifferentialKernels.LaunchAliasOutAndInArrayKernel(
+                shared, shared, observed, gridDimX: s.GridX, blockDimX: s.BlockX);
+        },
+    };
+
+    private static readonly DifferentialCase s_aliasTwoInArrays = new(
+        $"{nameof(MarshalingAliasingDifferentialKernels)}.{nameof(MarshalingAliasingDifferentialKernels.AliasTwoInArraysKernel)}")
+    {
+        Shape = LaunchShapes.Linear(16, blockX: 16),
+        Seeds = [0],
+        Inputs = static (_, _) =>
+        {
+            const int n = 16;
+            int[] shared = new int[n];
+            for (int i = 0; i < n; i++)
+            {
+                shared[i] = i + 100;
+            }
+
+            return new DiffBuffers()
+                .In("shared", shared, OutputPolicy.Exact, readOnly: true)
+                .Out<int>("observed", n, OutputPolicy.Exact);
+        },
+        Reference = static (b, s) =>
+        {
+            int[] sharedShadow = (int[])b.Get<int>("shared").Clone();
+            int[] observed = b.Get<int>("observed");
+            SequentialOracle.Run(s, ThreadOrder.Forward, () =>
+                MarshalingAliasingDifferentialKernels.AliasTwoInArraysKernel(sharedShadow, sharedShadow, observed));
+        },
+        Launch = static (b, s) =>
+        {
+            int[] shared = b.Get<int>("shared");
+            int[] observed = b.Get<int>("observed");
+            MarshalingAliasingDifferentialKernels.LaunchAliasTwoInArraysKernel(
+                shared, shared, observed, gridDimX: s.GridX, blockDimX: s.BlockX);
+        },
+    };
+
+    private static readonly DifferentialCase s_overlappingSpanSlice = new(
+        $"{nameof(MarshalingAliasingDifferentialKernels)}.{nameof(MarshalingAliasingDifferentialKernels.OverlappingSpanSliceKernel)}")
+    {
+        Shape = LaunchShapes.SingleThread(),
+        Seeds = [0],
+        Inputs = static (_, _) => new DiffBuffers()
+            .In("backing", [1, 2, 3, 4, 5, 6, 7, 8], OutputPolicy.Exact)
+            .Out<int>("observed", 4, OutputPolicy.Exact),
+        Oracle = static (b, _) =>
+        {
+            int[] backing = b.Get<int>("backing");
+            Span<int> sliceA = backing.AsSpan(0, 4);
+            Span<int> sliceB = backing.AsSpan(2, 4);
+            int[] observed = b.Get<int>("observed");
+            MarshalingAliasingDifferentialKernels.OverlappingSpanSliceKernel(sliceA, sliceB, observed);
+        },
+        Launch = static (b, s) =>
+        {
+            int[] backing = b.Get<int>("backing");
+            Span<int> sliceA = backing.AsSpan(0, 4);
+            Span<int> sliceB = backing.AsSpan(2, 4);
+            int[] observed = b.Get<int>("observed");
+            MarshalingAliasingDifferentialKernels.LaunchOverlappingSpanSliceKernel(
+                sliceA, sliceB, observed, gridDimX: s.GridX, blockDimX: s.BlockX);
+        },
+    };
+
+    private static readonly DifferentialCase s_aliasedRefScalars = new(
+        $"{nameof(MarshalingAliasingDifferentialKernels)}.{nameof(MarshalingAliasingDifferentialKernels.AliasedRefScalarsKernel)}")
+    {
+        Shape = LaunchShapes.SingleThread(),
+        Seeds = [0],
+        Inputs = static (_, _) => new DiffBuffers()
+            .RefScalar("sharedRef", 100)
+            .Out<int>("observed", 2, OutputPolicy.Exact),
+        Oracle = static (b, _) =>
+        {
+            ref int sharedRef = ref b.GetScalarRef<int>("sharedRef");
+            int[] observed = b.Get<int>("observed");
+            MarshalingAliasingDifferentialKernels.AliasedRefScalarsKernel(ref sharedRef, ref sharedRef, observed);
+        },
+        Launch = static (b, s) =>
+        {
+            ref int sharedRef = ref b.GetScalarRef<int>("sharedRef");
+            int[] observed = b.Get<int>("observed");
+            MarshalingAliasingDifferentialKernels.LaunchAliasedRefScalarsKernel(
+                ref sharedRef, ref sharedRef, observed, gridDimX: s.GridX, blockDimX: s.BlockX);
+        },
+    };
+
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Aliasing_TopLevelArrayCombinations_MatchesSequentialOracle()
-    {
-        const int n = 16;
+    public void Test_AliasTwoRwArrays_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_aliasTwoRwArrays);
 
-        // 1. (int[] a, int[] b) passed the exact same int[] instance
-        DifferentialRunner.Run(new DifferentialCase(
-            $"{nameof(MarshalingAliasingDifferentialKernels)}.{nameof(MarshalingAliasingDifferentialKernels.AliasTwoRwArraysKernel)}")
-        {
-            Shape = LaunchShapes.Linear(n, blockX: 16),
-            Seeds = [0],
-            Inputs = static (_, _) =>
-            {
-                int[] shared = new int[n];
-                for (int i = 0; i < n; i++)
-                {
-                    shared[i] = i + 1;
-                }
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Differential)]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_AliasInAndRwArray_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_aliasInAndRwArray);
 
-                return new DiffBuffers()
-                    .In("shared", shared, OutputPolicy.Exact)
-                    .Out<int>("observed", n, OutputPolicy.Exact);
-            },
-            Oracle = static (b, _) =>
-            {
-                int[] shared = b.Get<int>("shared");
-                int[] observed = b.Get<int>("observed");
-                MarshalingAliasingDifferentialKernels.AliasTwoRwArraysKernel(shared, shared, observed);
-            },
-            Launch = static (b, s) =>
-            {
-                int[] shared = b.Get<int>("shared");
-                int[] observed = b.Get<int>("observed");
-                MarshalingAliasingDifferentialKernels.LaunchAliasTwoRwArraysKernel(
-                    shared, shared, observed, gridDimX: s.GridX, blockDimX: s.BlockX);
-            },
-        });
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Differential)]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_AliasOutAndInArray_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_aliasOutAndInArray);
 
-        // 2. ([In] int[] aIn, int[] bRw) passed the exact same int[] instance
-        DifferentialRunner.Run(new DifferentialCase(
-            $"{nameof(MarshalingAliasingDifferentialKernels)}.{nameof(MarshalingAliasingDifferentialKernels.AliasInAndRwArrayKernel)}")
-        {
-            Shape = LaunchShapes.Linear(n, blockX: 16),
-            Seeds = [0],
-            Inputs = static (_, _) =>
-            {
-                int[] shared = new int[n];
-                for (int i = 0; i < n; i++)
-                {
-                    shared[i] = (i * 2) + 3;
-                }
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Differential)]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_AliasTwoInArrays_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_aliasTwoInArrays);
 
-                return new DiffBuffers()
-                    .In("shared", shared, OutputPolicy.Exact)
-                    .Out<int>("observed", n, OutputPolicy.Exact);
-            },
-            Oracle = static (b, _) =>
-            {
-                int[] shared = b.Get<int>("shared");
-                int[] observed = b.Get<int>("observed");
-                MarshalingAliasingDifferentialKernels.AliasInAndRwArrayKernel(shared, shared, observed);
-            },
-            Launch = static (b, s) =>
-            {
-                int[] shared = b.Get<int>("shared");
-                int[] observed = b.Get<int>("observed");
-                MarshalingAliasingDifferentialKernels.LaunchAliasInAndRwArrayKernel(
-                    shared, shared, observed, gridDimX: s.GridX, blockDimX: s.BlockX);
-            },
-        });
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Differential)]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_OverlappingSpanSlice_MatchesOracleExceptKnownCudaIssue() =>
+        DifferentialRunner.Run(s_overlappingSpanSlice);
 
-        // 3. ([Out] int[] aOut, [In] int[] bIn) passed the exact same int[] instance
-        DifferentialRunner.Run(new DifferentialCase(
-            $"{nameof(MarshalingAliasingDifferentialKernels)}.{nameof(MarshalingAliasingDifferentialKernels.AliasOutAndInArrayKernel)}")
-        {
-            Shape = LaunchShapes.Linear(n, blockX: 16),
-            Seeds = [0],
-            Inputs = static (_, _) =>
-            {
-                int[] shared = new int[n];
-                for (int i = 0; i < n; i++)
-                {
-                    shared[i] = (i * 5) + 10;
-                }
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Differential)]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_AliasedRefScalars_MatchesOracleExceptKnownCudaIssue() =>
+        DifferentialRunner.Run(s_aliasedRefScalars);
 
-                return new DiffBuffers()
-                    .In("shared", shared, OutputPolicy.Exact)
-                    .Out<int>("observed", n, OutputPolicy.Exact);
-            },
-            Oracle = static (b, _) =>
-            {
-                int[] shared = b.Get<int>("shared");
-                int[] observed = b.Get<int>("observed");
-                MarshalingAliasingDifferentialKernels.AliasOutAndInArrayKernel(shared, shared, observed);
-            },
-            Launch = static (b, s) =>
-            {
-                int[] shared = b.Get<int>("shared");
-                int[] observed = b.Get<int>("observed");
-                MarshalingAliasingDifferentialKernels.LaunchAliasOutAndInArrayKernel(
-                    shared, shared, observed, gridDimX: s.GridX, blockDimX: s.BlockX);
-            },
-        });
-
-        // 4. ([In] int[] aIn, [In] int[] bIn) passed the exact same int[] instance (caller array must remain untouched)
-        DifferentialRunner.Run(new DifferentialCase(
-            $"{nameof(MarshalingAliasingDifferentialKernels)}.{nameof(MarshalingAliasingDifferentialKernels.AliasTwoInArraysKernel)}")
-        {
-            Shape = LaunchShapes.Linear(n, blockX: 16),
-            Seeds = [0],
-            Inputs = static (_, _) =>
-            {
-                int[] shared = new int[n];
-                for (int i = 0; i < n; i++)
-                {
-                    shared[i] = i + 100;
-                }
-
-                return new DiffBuffers()
-                    .In("shared", shared, OutputPolicy.Exact, readOnly: true)
-                    .Out<int>("observed", n, OutputPolicy.Exact);
-            },
-            Reference = static (b, s) =>
-            {
-                // Reference model clones the [In] buffer once so both aIn and bIn alias the same shadow copy without mutating caller 'shared'
-                int[] sharedShadow = (int[])b.Get<int>("shared").Clone();
-                int[] observed = b.Get<int>("observed");
-                SequentialOracle.Run(s, ThreadOrder.Forward, () =>
-                    MarshalingAliasingDifferentialKernels.AliasTwoInArraysKernel(sharedShadow, sharedShadow, observed));
-            },
-            Launch = static (b, s) =>
-            {
-                int[] shared = b.Get<int>("shared");
-                int[] observed = b.Get<int>("observed");
-                MarshalingAliasingDifferentialKernels.LaunchAliasTwoInArraysKernel(
-                    shared, shared, observed, gridDimX: s.GridX, blockDimX: s.BlockX);
-            },
-        });
-
-        // 5. Partially overlapping Span<int> and ReadOnlySpan<int> slices from the same backing array (#857 on CUDA)
-        DifferentialRunner.Run(new DifferentialCase(
-            $"{nameof(MarshalingAliasingDifferentialKernels)}.{nameof(MarshalingAliasingDifferentialKernels.OverlappingSpanSliceKernel)}")
-        {
-            Shape = LaunchShapes.SingleThread(),
-            Seeds = [0],
-            Inputs = static (_, _) => new DiffBuffers()
-                .In("backing", [1, 2, 3, 4, 5, 6, 7, 8], OutputPolicy.Exact)
-                .Out<int>("observed", 4, OutputPolicy.Exact),
-            Oracle = static (b, _) =>
-            {
-                int[] backing = b.Get<int>("backing");
-                Span<int> sliceA = backing.AsSpan(0, 4);
-                Span<int> sliceB = backing.AsSpan(2, 4);
-                int[] observed = b.Get<int>("observed");
-                MarshalingAliasingDifferentialKernels.OverlappingSpanSliceKernel(sliceA, sliceB, observed);
-            },
-            Launch = static (b, s) =>
-            {
-                int[] backing = b.Get<int>("backing");
-                Span<int> sliceA = backing.AsSpan(0, 4);
-                Span<int> sliceB = backing.AsSpan(2, 4);
-                int[] observed = b.Get<int>("observed");
-                MarshalingAliasingDifferentialKernels.LaunchOverlappingSpanSliceKernel(
-                    sliceA, sliceB, observed, gridDimX: s.GridX, blockDimX: s.BlockX);
-            },
-        });
-
-        // 6. Aliased ref int scalar parameters passed the same variable (Issue: 0 // ND3-1 on CUDA)
-        DifferentialRunner.Run(new DifferentialCase(
-            $"{nameof(MarshalingAliasingDifferentialKernels)}.{nameof(MarshalingAliasingDifferentialKernels.AliasedRefScalarsKernel)}")
-        {
-            Shape = LaunchShapes.SingleThread(),
-            Seeds = [0],
-            Inputs = static (_, _) => new DiffBuffers()
-                .RefScalar("sharedRef", 100)
-                .Out<int>("observed", 2, OutputPolicy.Exact),
-            Oracle = static (b, _) =>
-            {
-                ref int sharedRef = ref b.GetScalarRef<int>("sharedRef");
-                int[] observed = b.Get<int>("observed");
-                MarshalingAliasingDifferentialKernels.AliasedRefScalarsKernel(ref sharedRef, ref sharedRef, observed);
-            },
-            Launch = static (b, s) =>
-            {
-                ref int sharedRef = ref b.GetScalarRef<int>("sharedRef");
-                int[] observed = b.Get<int>("observed");
-                MarshalingAliasingDifferentialKernels.LaunchAliasedRefScalarsKernel(
-                    ref sharedRef, ref sharedRef, observed, gridDimX: s.GridX, blockDimX: s.BlockX);
-            },
-        });
-    }
-
-    // --- D3-A2: Deep Struct internal array aliasing (#707) ---
+    // --- Deep Struct internal array aliasing (#707) ---
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
@@ -513,7 +543,7 @@ public sealed class MarshalingAliasingDifferentialTests
         });
     }
 
-    // --- D3-A3: Cross-level aliasing between top-level array and Deep Struct field ---
+    // --- Cross-level aliasing between top-level array and Deep Struct field ---
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
@@ -561,7 +591,7 @@ public sealed class MarshalingAliasingDifferentialTests
         });
     }
 
-    // --- D3-A4: Cross-aliasing between [In] DeepStruct[] element field and writable int[] (#985 / S18) ---
+    // --- Cross-aliasing between [In] DeepStruct[] element field and writable int[] (#985) ---
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
@@ -599,7 +629,7 @@ public sealed class MarshalingAliasingDifferentialTests
         });
     }
 
-    // --- D3-D1: [In] array mutation isolation ---
+    // --- [In] array mutation isolation ---
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
@@ -662,90 +692,94 @@ public sealed class MarshalingAliasingDifferentialTests
         });
     }
 
-    // --- D3-D2: [Out] array full write vs partial write (Q10 = a) ---
+    // --- [Out] array full write vs partial write ---
+    private static readonly DifferentialCase s_outArrayFullWrite = new(
+        $"{nameof(MarshalingAliasingDifferentialKernels)}.{nameof(MarshalingAliasingDifferentialKernels.OutArrayStridedWriteKernel)}.Full")
+    {
+        Shape = LaunchShapes.Linear(64, blockX: 32),
+        Seeds = [0],
+        Inputs = static (_, _) =>
+        {
+            const int n = 64;
+            int[] src = new int[n];
+            for (int i = 0; i < n; i++)
+            {
+                src[i] = i + 1;
+            }
+
+            return new DiffBuffers()
+                .In("src", src, OutputPolicy.Exact, readOnly: true)
+                .Out<int>("dstPrim", n, OutputPolicy.Exact)
+                .Out<DiffVec2Padded>("dstConvert", n, OutputPolicy.ForStruct(Vec2PaddedComparer), Vec2PaddedComparer);
+        },
+        Oracle = static (b, _) =>
+        {
+            int[] src = b.Get<int>("src");
+            int[] dstPrim = b.Get<int>("dstPrim");
+            DiffVec2Padded[] dstConvert = b.Get<DiffVec2Padded>("dstConvert");
+            MarshalingAliasingDifferentialKernels.OutArrayStridedWriteKernel(src, dstPrim, dstConvert, 1);
+        },
+        Launch = static (b, s) =>
+        {
+            int[] src = b.Get<int>("src");
+            int[] dstPrim = b.Get<int>("dstPrim");
+            DiffVec2Padded[] dstConvert = b.Get<DiffVec2Padded>("dstConvert");
+            MarshalingAliasingDifferentialKernels.LaunchOutArrayStridedWriteKernel(
+                src, dstPrim, dstConvert, 1, gridDimX: s.GridX, blockDimX: s.BlockX);
+        },
+    };
+
+    private static readonly DifferentialCase s_outArrayPartialWrite = new(
+        $"{nameof(MarshalingAliasingDifferentialKernels)}.{nameof(MarshalingAliasingDifferentialKernels.OutArrayStridedWriteKernel)}.Partial")
+    {
+        Shape = LaunchShapes.Linear(64, blockX: 32),
+        Seeds = [0],
+        Inputs = static (_, _) =>
+        {
+            const int n = 64;
+            int[] src = new int[n];
+            for (int i = 0; i < n; i++)
+            {
+                src[i] = i + 1;
+            }
+
+            return new DiffBuffers()
+                .In("src", src, OutputPolicy.Exact, readOnly: true)
+                .Out<int>("dstPrim", rows: n / 2, columns: [("even_written", OutputPolicy.Exact), ("odd_unwritten", OutputPolicy.Ignore)])
+                .Out<DiffVec2Padded>("dstConvert", rows: n / 2, columns: [("even_written", OutputPolicy.ForStruct(Vec2PaddedComparer)), ("odd_unwritten", OutputPolicy.Ignore)], Vec2PaddedComparer);
+        },
+        Oracle = static (b, _) =>
+        {
+            int[] src = b.Get<int>("src");
+            int[] dstPrim = b.Get<int>("dstPrim");
+            DiffVec2Padded[] dstConvert = b.Get<DiffVec2Padded>("dstConvert");
+            MarshalingAliasingDifferentialKernels.OutArrayStridedWriteKernel(src, dstPrim, dstConvert, 2);
+        },
+        Launch = static (b, s) =>
+        {
+            int[] src = b.Get<int>("src");
+            int[] dstPrim = b.Get<int>("dstPrim");
+            DiffVec2Padded[] dstConvert = b.Get<DiffVec2Padded>("dstConvert");
+            MarshalingAliasingDifferentialKernels.LaunchOutArrayStridedWriteKernel(
+                src, dstPrim, dstConvert, 2, gridDimX: s.GridX, blockDimX: s.BlockX);
+        },
+    };
+
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_DirectionAttributes_OutArrayFullAndPartialWrite_MatchesSequentialOracle()
-    {
-        const int n = 64;
-        OutputPolicy convertPolicy = OutputPolicy.ForStruct(Vec2PaddedComparer);
+    public void Test_DirectionAttributes_OutArrayFullWrite_MatchesSequentialOracle() =>
+        DifferentialRunner.Run(s_outArrayFullWrite);
 
-        // (a) Full write (writeStride = 1)
-        DifferentialRunner.Run(new DifferentialCase(
-            $"{nameof(MarshalingAliasingDifferentialKernels)}.{nameof(MarshalingAliasingDifferentialKernels.OutArrayStridedWriteKernel)}.Full")
-        {
-            Shape = LaunchShapes.Linear(n, blockX: 32),
-            Seeds = [0],
-            Inputs = (_, _) =>
-            {
-                int[] src = new int[n];
-                for (int i = 0; i < n; i++)
-                {
-                    src[i] = i + 1;
-                }
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Differential)]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_DirectionAttributes_OutArrayPartialWrite_MatchesSequentialOracle() =>
+        DifferentialRunner.Run(s_outArrayPartialWrite);
 
-                return new DiffBuffers()
-                    .In("src", src, OutputPolicy.Exact, readOnly: true)
-                    .Out<int>("dstPrim", n, OutputPolicy.Exact)
-                    .Out<DiffVec2Padded>("dstConvert", n, convertPolicy, Vec2PaddedComparer);
-            },
-            Oracle = static (b, _) =>
-            {
-                int[] src = b.Get<int>("src");
-                int[] dstPrim = b.Get<int>("dstPrim");
-                DiffVec2Padded[] dstConvert = b.Get<DiffVec2Padded>("dstConvert");
-                MarshalingAliasingDifferentialKernels.OutArrayStridedWriteKernel(src, dstPrim, dstConvert, 1);
-            },
-            Launch = static (b, s) =>
-            {
-                int[] src = b.Get<int>("src");
-                int[] dstPrim = b.Get<int>("dstPrim");
-                DiffVec2Padded[] dstConvert = b.Get<DiffVec2Padded>("dstConvert");
-                MarshalingAliasingDifferentialKernels.LaunchOutArrayStridedWriteKernel(
-                    src, dstPrim, dstConvert, 1, gridDimX: s.GridX, blockDimX: s.BlockX);
-            },
-        });
-
-        // (b) Partial write (writeStride = 2): per Q10 = a, compare only written even indices and ignore unwritten odd indices!
-        DifferentialRunner.Run(new DifferentialCase(
-            $"{nameof(MarshalingAliasingDifferentialKernels)}.{nameof(MarshalingAliasingDifferentialKernels.OutArrayStridedWriteKernel)}.Partial")
-        {
-            Shape = LaunchShapes.Linear(n, blockX: 32),
-            Seeds = [0],
-            Inputs = (_, _) =>
-            {
-                int[] src = new int[n];
-                for (int i = 0; i < n; i++)
-                {
-                    src[i] = i + 1;
-                }
-
-                return new DiffBuffers()
-                    .In("src", src, OutputPolicy.Exact, readOnly: true)
-                    .Out<int>("dstPrim", rows: n / 2, columns: [("even_written", OutputPolicy.Exact), ("odd_unwritten", OutputPolicy.Ignore)])
-                    .Out<DiffVec2Padded>("dstConvert", rows: n / 2, columns: [("even_written", convertPolicy), ("odd_unwritten", OutputPolicy.Ignore)], Vec2PaddedComparer);
-            },
-            Oracle = static (b, _) =>
-            {
-                int[] src = b.Get<int>("src");
-                int[] dstPrim = b.Get<int>("dstPrim");
-                DiffVec2Padded[] dstConvert = b.Get<DiffVec2Padded>("dstConvert");
-                MarshalingAliasingDifferentialKernels.OutArrayStridedWriteKernel(src, dstPrim, dstConvert, 2);
-            },
-            Launch = static (b, s) =>
-            {
-                int[] src = b.Get<int>("src");
-                int[] dstPrim = b.Get<int>("dstPrim");
-                DiffVec2Padded[] dstConvert = b.Get<DiffVec2Padded>("dstConvert");
-                MarshalingAliasingDifferentialKernels.LaunchOutArrayStridedWriteKernel(
-                    src, dstPrim, dstConvert, 2, gridDimX: s.GridX, blockDimX: s.BlockX);
-            },
-        });
-    }
-
-    // --- D3-P1: Launch{Kernel}Ptr non-overloaded IntPtr with Length guard (#720) ---
+    // --- Launch{Kernel}Ptr non-overloaded IntPtr with Length guard (#720) ---
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
@@ -794,7 +828,7 @@ public sealed class MarshalingAliasingDifferentialTests
         });
     }
 
-    // --- D3-P2: Launch{Kernel}Ptr with overloaded GpuBuffer<T> signature ---
+    // --- Launch{Kernel}Ptr with overloaded GpuBuffer<T> signature ---
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
@@ -870,7 +904,7 @@ public sealed class MarshalingAliasingDifferentialTests
         });
     }
 
-    // --- D3-P3: Launch{Kernel}Ptr with ref Convert struct & Deep Struct NotSupportedException ---
+    // --- Launch{Kernel}Ptr with ref Convert struct & Deep Struct NotSupportedException ---
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
@@ -946,58 +980,70 @@ public sealed class MarshalingAliasingDifferentialTests
 #endif
     }
 
-    // --- D3-N1: Non-nullable array passed null (ArgumentNullException) or empty (ArgumentException) ---
+    // --- Non-nullable array passed null (ArgumentNullException) or empty (ArgumentException) ---
+    private static readonly DifferentialCase s_nonNullableArrayNull = new(
+        $"{nameof(MarshalingAliasingDifferentialKernels)}.{nameof(MarshalingAliasingDifferentialKernels.NonNullableArrayKernel)}.Null")
+    {
+        Shape = LaunchShapes.SingleThread(),
+        Seeds = [0],
+        ExceptionPolicy = ExceptionPolicy.For<ArgumentNullException>(
+            DiffPath.Managed | DiffPath.Native,
+            paramName: "input"),
+        Inputs = static (_, _) => new DiffBuffers()
+            .InNullable<int>("input", null)
+            .Out<int>("output", 1, OutputPolicy.Ignore),
+        Launch = static (b, s) =>
+        {
+            int[]? input = b.GetNullable<int>("input");
+            int[] output = b.Get<int>("output");
+#pragma warning disable CS8604
+            MarshalingAliasingDifferentialKernels.LaunchNonNullableArrayKernel(
+                input, output, gridDimX: s.GridX, blockDimX: s.BlockX);
+#pragma warning restore CS8604
+        },
+    };
+
+    private static readonly DifferentialCase s_nonNullableArrayEmpty = new(
+        $"{nameof(MarshalingAliasingDifferentialKernels)}.{nameof(MarshalingAliasingDifferentialKernels.NonNullableArrayKernel)}.Empty")
+    {
+        Shape = LaunchShapes.SingleThread(),
+        Seeds = [0],
+        ExceptionPolicy = ExceptionPolicy.For<ArgumentException>(
+            DiffPath.Managed | DiffPath.Native,
+            paramName: "input"),
+        Inputs = static (_, _) => new DiffBuffers()
+            .In("input", Array.Empty<int>(), OutputPolicy.Ignore)
+            .Out<int>("output", 1, OutputPolicy.Ignore),
+        Launch = static (b, s) =>
+        {
+            int[] input = b.Get<int>("input");
+            int[] output = b.Get<int>("output");
+            MarshalingAliasingDifferentialKernels.LaunchNonNullableArrayKernel(
+                input, output, gridDimX: s.GridX, blockDimX: s.BlockX);
+        },
+    };
+
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_NullAndEmptyArrays_NonNullableContract_ThrowsExpectedArgumentExceptions()
-    {
-        // (a) Passing null to non-nullable int[] throws ArgumentNullException on Managed/Native/Cuda
-        DifferentialRunner.Run(new DifferentialCase(
-            $"{nameof(MarshalingAliasingDifferentialKernels)}.{nameof(MarshalingAliasingDifferentialKernels.NonNullableArrayKernel)}.Null")
-        {
-            Shape = LaunchShapes.SingleThread(),
-            Seeds = [0],
-            ExceptionPolicy = ExceptionPolicy.For<ArgumentNullException>(
-                DiffPath.Managed | DiffPath.Native,
-                paramName: "input"),
-            Inputs = static (_, _) => new DiffBuffers()
-                .InNullable<int>("input", null)
-                .Out<int>("output", 1, OutputPolicy.Ignore),
-            Launch = static (b, s) =>
-            {
-                int[]? input = b.GetNullable<int>("input");
-                int[] output = b.Get<int>("output");
-#pragma warning disable CS8604
-                MarshalingAliasingDifferentialKernels.LaunchNonNullableArrayKernel(
-                    input, output, gridDimX: s.GridX, blockDimX: s.BlockX);
-#pragma warning restore CS8604
-            },
-        });
+    public void Test_NullAndEmptyArrays_NonNullableNull_ThrowsArgumentNullException() =>
+        DifferentialRunner.Run(s_nonNullableArrayNull);
 
-        // (b) Passing empty [] to non-nullable int[] throws ArgumentException on Managed/Native/Cuda
-        DifferentialRunner.Run(new DifferentialCase(
-            $"{nameof(MarshalingAliasingDifferentialKernels)}.{nameof(MarshalingAliasingDifferentialKernels.NonNullableArrayKernel)}.Empty")
-        {
-            Shape = LaunchShapes.SingleThread(),
-            Seeds = [0],
-            ExceptionPolicy = ExceptionPolicy.For<ArgumentException>(
-                DiffPath.Managed | DiffPath.Native,
-                paramName: "input"),
-            Inputs = static (_, _) => new DiffBuffers()
-                .In("input", Array.Empty<int>(), OutputPolicy.Ignore)
-                .Out<int>("output", 1, OutputPolicy.Ignore),
-            Launch = static (b, s) =>
-            {
-                int[] input = b.Get<int>("input");
-                int[] output = b.Get<int>("output");
-                MarshalingAliasingDifferentialKernels.LaunchNonNullableArrayKernel(
-                    input, output, gridDimX: s.GridX, blockDimX: s.BlockX);
-            },
-        });
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Differential)]
+    [Scenario(TestScenario.SadPath)]
+    public void Test_NullAndEmptyArrays_NonNullableEmpty_ThrowsArgumentException() =>
+        DifferentialRunner.Run(s_nonNullableArrayEmpty);
 
 #if GSHARP_CUDA
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Differential)]
+    [Scenario(TestScenario.SadPath)]
+    public void Test_NullAndEmptyArrays_NonNullableDirectLaunchThrowsOnCuda()
+    {
         CudaCapability.EnsureGpuAvailable();
         int[] dummyOut = new int[1];
 #pragma warning disable CS8625
@@ -1009,75 +1055,84 @@ public sealed class MarshalingAliasingDifferentialTests
         var emptyEx = Assert.Throws<ArgumentException>(() =>
             MarshalingAliasingDifferentialKernels.LaunchNonNullableArrayKernel(Array.Empty<int>(), dummyOut));
         Assert.Equal("input", emptyEx.ParamName);
+    }
 #endif
-    }
 
-    // --- D3-N2: Nullable top-level array null vs empty (NullReadsAsEmpty #806, #838) ---
-    [SkippableFact]
-    [TestTarget(ExecutionTarget.GpuExecution)]
-    [Category(TestCategory.Differential)]
-    [Scenario(TestScenario.Boundary)]
-    public void Test_NullAndEmptyArrays_NullableTopLevelNullReadsAsEmpty_MatchesAcrossBackends()
+    // --- Nullable top-level array null vs empty (NullReadsAsEmpty #806, #838) ---
+    private static DifferentialCase CreateNullableTopLevelCase(string label, int[]? optPrimInit, DiffDeepBag[]? optDeepInit)
     {
-        (string Label, int[]? OptPrim, DiffDeepBag[]? OptDeep)[] table =
-        [
-            ("both_null", null, null),
-            ("both_empty", Array.Empty<int>(), Array.Empty<DiffDeepBag>()),
-            ("populated", [10, 20], [new DiffDeepBag { Data = [30, 40], Tag = 5 }]),
-        ];
-
         var bagComparer = new StructElementComparer<DiffDeepBag>(CompareDeepBag);
-
-        foreach ((string label, int[]? optPrimInit, DiffDeepBag[]? optDeepInit) in table)
+        return new DifferentialCase(
+            $"{nameof(MarshalingAliasingDifferentialKernels)}.{nameof(MarshalingAliasingDifferentialKernels.NullableTopLevelArrayKernel)}.{label}")
         {
-            DifferentialRunner.Run(new DifferentialCase(
-                $"{nameof(MarshalingAliasingDifferentialKernels)}.{nameof(MarshalingAliasingDifferentialKernels.NullableTopLevelArrayKernel)}.{label}")
+            Shape = LaunchShapes.SingleThread(),
+            Seeds = [0],
+            Inputs = (_, _) => new DiffBuffers()
+                .InNullable("optPrim", optPrimInit, OutputPolicy.Exact, readOnly: true)
+                .InNullable("optDeep", optDeepInit, OutputPolicy.ForStruct(bagComparer), bagComparer, readOnly: true)
+                .Out<int>("output", 6, OutputPolicy.Exact),
+            Oracle = static (b, _) =>
             {
-                Shape = LaunchShapes.SingleThread(),
-                Seeds = [0],
-                Inputs = (_, _) => new DiffBuffers()
-                    .InNullable("optPrim", optPrimInit, OutputPolicy.Exact, readOnly: true)
-                    .InNullable("optDeep", optDeepInit, OutputPolicy.ForStruct(bagComparer), bagComparer, readOnly: true)
-                    .Out<int>("output", 6, OutputPolicy.Exact),
-                Oracle = static (b, _) =>
+                int[]? optPrim = b.GetNullable<int>("optPrim");
+                DiffDeepBag[]? optDeep = b.GetNullable<DiffDeepBag>("optDeep");
+                int[] output = b.Get<int>("output");
+                int tid = (BlockIndex.X * BlockDimension.X) + ThreadIndex.X;
+                if (tid == 0)
                 {
-                    int[]? optPrim = b.GetNullable<int>("optPrim");
-                    DiffDeepBag[]? optDeep = b.GetNullable<DiffDeepBag>("optDeep");
-                    int[] output = b.Get<int>("output");
-                    int tid = (BlockIndex.X * BlockDimension.X) + ThreadIndex.X;
-                    if (tid == 0)
-                    {
-                        // Per G# top-level nullable array contract (#806, #838), both null and Length == 0 normalize to the null/empty slice (data == null, length == 0)
-                        bool primNullOrEmpty = optPrim is null || optPrim.Length == 0;
-                        bool deepNullOrEmpty = optDeep is null || optDeep.Length == 0;
-                        output[0] = primNullOrEmpty ? -1 : 1;
-                        output[1] = primNullOrEmpty ? -1 : 1;
-                        output[2] = optPrim?.Length ?? 0;
-                        output[3] = deepNullOrEmpty ? -1 : 1;
-                        output[4] = optDeep?.Length ?? 0;
-                        output[5] = (optDeep is not null && optDeep.Length > 0 && optDeep[0].Data is not null && optDeep[0].Data.Length > 0)
-                            ? optDeep[0].Data[0] + optDeep[0].Tag
-                            : -99;
-                    }
-                },
-                Launch = static (b, s) =>
-                {
-                    int[]? optPrim = b.GetNullable<int>("optPrim");
-                    DiffDeepBag[]? optDeep = b.GetNullable<DiffDeepBag>("optDeep");
-                    int[] output = b.Get<int>("output");
-                    MarshalingAliasingDifferentialKernels.LaunchNullableTopLevelArrayKernel(
-                        optPrim, optDeep, output, gridDimX: s.GridX, blockDimX: s.BlockX);
-                },
-            });
-        }
+                    // Per G# top-level nullable array contract (#806, #838), both null and Length == 0 normalize to the null/empty slice (data == null, length == 0)
+                    bool primNullOrEmpty = optPrim is null || optPrim.Length == 0;
+                    bool deepNullOrEmpty = optDeep is null || optDeep.Length == 0;
+                    output[0] = primNullOrEmpty ? -1 : 1;
+                    output[1] = primNullOrEmpty ? -1 : 1;
+                    output[2] = optPrim?.Length ?? 0;
+                    output[3] = deepNullOrEmpty ? -1 : 1;
+                    output[4] = optDeep?.Length ?? 0;
+                    output[5] = (optDeep is not null && optDeep.Length > 0 && optDeep[0].Data is not null && optDeep[0].Data.Length > 0)
+                        ? optDeep[0].Data[0] + optDeep[0].Tag
+                        : -99;
+                }
+            },
+            Launch = static (b, s) =>
+            {
+                int[]? optPrim = b.GetNullable<int>("optPrim");
+                DiffDeepBag[]? optDeep = b.GetNullable<DiffDeepBag>("optDeep");
+                int[] output = b.Get<int>("output");
+                MarshalingAliasingDifferentialKernels.LaunchNullableTopLevelArrayKernel(
+                    optPrim, optDeep, output, gridDimX: s.GridX, blockDimX: s.BlockX);
+            },
+        };
     }
 
-    // --- D3-N3: Struct field null array vs empty array (#706 EmptyArrayData + ArrayPool reuse) ---
+    private static readonly DifferentialCase s_nullableTopLevelBothNull =
+        CreateNullableTopLevelCase("both_null", null, null);
+    private static readonly DifferentialCase s_nullableTopLevelBothEmpty =
+        CreateNullableTopLevelCase("both_empty", Array.Empty<int>(), Array.Empty<DiffDeepBag>());
+    private static readonly DifferentialCase s_nullableTopLevelPopulated =
+        CreateNullableTopLevelCase("populated", [10, 20], [new DiffDeepBag { Data = [30, 40], Tag = 5 }]);
+
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_NullAndEmptyArrays_StructFieldNullVsEmpty_DistinguishesNullFromEmpty()
+    public void Test_NullAndEmptyArrays_NullableTopLevelBothNull_MatchesSequentialOracle() =>
+        DifferentialRunner.Run(s_nullableTopLevelBothNull);
+
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Differential)]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_NullAndEmptyArrays_NullableTopLevelBothEmpty_MatchesSequentialOracle() =>
+        DifferentialRunner.Run(s_nullableTopLevelBothEmpty);
+
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Differential)]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_NullAndEmptyArrays_NullableTopLevelPopulated_MatchesSequentialOracle() =>
+        DifferentialRunner.Run(s_nullableTopLevelPopulated);
+
+    // --- Struct field null array vs empty array (#706 EmptyArrayData + ArrayPool reuse) ---
+    private static DifferentialCase CreateStructFieldNullOrEmptySafeCase(string label, int[]? valData, int[]? refData)
     {
         static DiffNullableDeepBag CloneNullableBag(DiffNullableDeepBag src, DiffArrayCloneScope scope)
             => new()
@@ -1101,45 +1156,63 @@ public sealed class MarshalingAliasingDifferentialTests
             }
         }
 
-        (string Label, int[]? ValData, int[]? RefData)[] cases =
-        [
-            ("warmup_populated", [10, 20, 30], [40, 50]),
-            ("null_vs_empty", null, Array.Empty<int>()),
-            ("empty_vs_null", Array.Empty<int>(), null),
-        ];
-
-        foreach ((string label, int[]? valData, int[]? refData) in cases)
+        return new DifferentialCase(
+            $"{nameof(MarshalingAliasingDifferentialKernels)}.{nameof(MarshalingAliasingDifferentialKernels.StructFieldNullOrEmptySafeKernel)}.{label}")
         {
-            DifferentialRunner.Run(new DifferentialCase(
-                $"{nameof(MarshalingAliasingDifferentialKernels)}.{nameof(MarshalingAliasingDifferentialKernels.StructFieldNullOrEmptySafeKernel)}.{label}")
+            Shape = LaunchShapes.SingleThread(),
+            Seeds = [0],
+            Inputs = (_, _) => new DiffBuffers()
+                .InDeepScalar("bagByVal", new DiffNullableDeepBag { Data = valData, Fallback = 7 }, CloneNullableBag, CompareNullableBag)
+                .RefDeepScalar("bagByRef", new DiffNullableDeepBag { Data = refData, Fallback = 11 }, CloneNullableBag, CompareNullableBag)
+                .Out<int>("output", 5, OutputPolicy.Exact),
+            Oracle = static (b, _) =>
             {
-                Shape = LaunchShapes.SingleThread(),
-                Seeds = [0],
-                Inputs = (_, _) => new DiffBuffers()
-                    .InDeepScalar("bagByVal", new DiffNullableDeepBag { Data = valData, Fallback = 7 }, CloneNullableBag, CompareNullableBag)
-                    .RefDeepScalar("bagByRef", new DiffNullableDeepBag { Data = refData, Fallback = 11 }, CloneNullableBag, CompareNullableBag)
-                    .Out<int>("output", 5, OutputPolicy.Exact),
-                Oracle = static (b, _) =>
-                {
-                    DiffNullableDeepBag bagByVal = b.GetScalar<DiffNullableDeepBag>("bagByVal");
-                    ref DiffNullableDeepBag bagByRef = ref b.GetScalarRef<DiffNullableDeepBag>("bagByRef");
-                    int[] output = b.Get<int>("output");
-                    MarshalingAliasingDifferentialKernels.StructFieldNullOrEmptySafeKernel(
-                        bagByVal, ref bagByRef, output);
-                },
-                Launch = static (b, s) =>
-                {
-                    DiffNullableDeepBag bagByVal = b.GetScalar<DiffNullableDeepBag>("bagByVal");
-                    ref DiffNullableDeepBag bagByRef = ref b.GetScalarRef<DiffNullableDeepBag>("bagByRef");
-                    int[] output = b.Get<int>("output");
-                    MarshalingAliasingDifferentialKernels.LaunchStructFieldNullOrEmptySafeKernel(
-                        bagByVal, ref bagByRef, output, gridDimX: s.GridX, blockDimX: s.BlockX);
-                },
-            });
-        }
+                DiffNullableDeepBag bagByVal = b.GetScalar<DiffNullableDeepBag>("bagByVal");
+                ref DiffNullableDeepBag bagByRef = ref b.GetScalarRef<DiffNullableDeepBag>("bagByRef");
+                int[] output = b.Get<int>("output");
+                MarshalingAliasingDifferentialKernels.StructFieldNullOrEmptySafeKernel(
+                    bagByVal, ref bagByRef, output);
+            },
+            Launch = static (b, s) =>
+            {
+                DiffNullableDeepBag bagByVal = b.GetScalar<DiffNullableDeepBag>("bagByVal");
+                ref DiffNullableDeepBag bagByRef = ref b.GetScalarRef<DiffNullableDeepBag>("bagByRef");
+                int[] output = b.Get<int>("output");
+                MarshalingAliasingDifferentialKernels.LaunchStructFieldNullOrEmptySafeKernel(
+                    bagByVal, ref bagByRef, output, gridDimX: s.GridX, blockDimX: s.BlockX);
+            },
+        };
     }
 
-    // --- D3-N4: Struct field null array dereference throws NullReferenceException (#706) ---
+    private static readonly DifferentialCase s_structFieldWarmupPopulated =
+        CreateStructFieldNullOrEmptySafeCase("warmup_populated", [10, 20, 30], [40, 50]);
+    private static readonly DifferentialCase s_structFieldNullVsEmpty =
+        CreateStructFieldNullOrEmptySafeCase("null_vs_empty", null, Array.Empty<int>());
+    private static readonly DifferentialCase s_structFieldEmptyVsNull =
+        CreateStructFieldNullOrEmptySafeCase("empty_vs_null", Array.Empty<int>(), null);
+
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Differential)]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_NullAndEmptyArrays_StructFieldWarmupPopulated_MatchesSequentialOracle() =>
+        DifferentialRunner.Run(s_structFieldWarmupPopulated);
+
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Differential)]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_NullAndEmptyArrays_StructFieldNullVsEmpty_MatchesSequentialOracle() =>
+        DifferentialRunner.Run(s_structFieldNullVsEmpty);
+
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Differential)]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_NullAndEmptyArrays_StructFieldEmptyVsNull_MatchesSequentialOracle() =>
+        DifferentialRunner.Run(s_structFieldEmptyVsNull);
+
+    // --- Struct field null array dereference throws NullReferenceException (#706) ---
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]

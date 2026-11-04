@@ -7,7 +7,7 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Shared.Differential;
 
-// --- D3-M7 / D3-A2 / D3-A3 / D3-A4 / D3-D1 / D3-N2 / D3-N3 / D3-N4: Deep Structs ---
+// --- Deep Structs ---
 
 public struct DiffDeepBag
 {
@@ -63,7 +63,7 @@ public struct DiffNullableDeepBag
 
 public static partial class MarshalingAliasingDifferentialKernels
 {
-    // --- D3-M7a: Deep Struct (with nested Deep Struct and multiple array fields) across value, in, ref ---
+    // --- Deep Struct (with nested Deep Struct and multiple array fields) across value, in, ref ---
     [GpuKernel]
     public static void DeepStructAllArgModesKernel(
         DiffNestedDeep byVal,
@@ -89,7 +89,7 @@ public static partial class MarshalingAliasingDifferentialKernels
         }
     }
 
-    // --- D3-M7b: Deep Struct across all 6 array-like container shapes ---
+    // --- Deep Struct across all 6 array-like container shapes ---
     [GpuKernel]
     public static void DeepStructSixContainersKernel(
         DiffDeepBag[] arrBags,
@@ -130,7 +130,7 @@ public static partial class MarshalingAliasingDifferentialKernels
         }
     }
 
-    // --- D3-M7c: C# 12 Primary Constructor Deep Struct (#513) ---
+    // --- C# 12 Primary Constructor Deep Struct (#513) ---
     [GpuKernel]
     public static void PrimaryCtorDeepStructKernel(
         DiffPrimaryCtorBag byVal,
@@ -150,7 +150,7 @@ public static partial class MarshalingAliasingDifferentialKernels
         }
     }
 
-    // --- D3-A1: Top-level array aliasing across 4 attribute combinations ---
+    // --- Top-level array aliasing across 4 attribute combinations ---
     [GpuKernel]
     public static void AliasTwoRwArraysKernel(int[] a, int[] b, [Out] int[] observed)
     {
@@ -202,7 +202,7 @@ public static partial class MarshalingAliasingDifferentialKernels
         }
     }
 
-    // --- D3-A1 (Span overlap #857 & ref scalar alias): Overlapping Span slices and aliased ref scalars ---
+    // --- Overlapping Span slices and aliased ref scalars (#857, #1061) ---
     [GpuKernel]
     public static void OverlappingSpanSliceKernel(
         Span<int> sliceA,
@@ -238,7 +238,7 @@ public static partial class MarshalingAliasingDifferentialKernels
         }
     }
 
-    // --- D3-A2: Deep Struct internal array aliasing (#707) ---
+    // --- Deep Struct internal array aliasing (#707) ---
     [GpuKernel]
     public static void DeepStructInternalAliasKernel(
         ref DiffArrayPair pair,
@@ -267,7 +267,7 @@ public static partial class MarshalingAliasingDifferentialKernels
         }
     }
 
-    // --- D3-A3: Cross-level aliasing between top-level array and Deep Struct field ---
+    // --- Cross-level aliasing between top-level array and Deep Struct field ---
     [GpuKernel]
     public static void CrossLevelTopAndDeepStructKernel(
         [In] int[] topReadOnly,
@@ -296,7 +296,7 @@ public static partial class MarshalingAliasingDifferentialKernels
         }
     }
 
-    // --- D3-A4: Cross-aliasing between [In] DeepStruct[] element field and writable int[] (#985 / S18) ---
+    // --- Cross-aliasing between [In] DeepStruct[] element field and writable int[] (#985) ---
     [GpuKernel]
     public static void CrossAliasInDeepArrayAndRwArrayKernel(
         [In] DiffDeepBag[] inBags,
@@ -314,7 +314,7 @@ public static partial class MarshalingAliasingDifferentialKernels
         }
     }
 
-    // --- D3-D1: [In] array mutation isolation ---
+    // --- [In] array mutation isolation ---
     [GpuKernel]
     public static void InArrayMutationIsolationKernel(
         [In] int[] inPrimitives,
@@ -339,7 +339,7 @@ public static partial class MarshalingAliasingDifferentialKernels
         }
     }
 
-    // --- D3-D2: [Out] array full write vs partial write (Q10 = a) ---
+    // --- [Out] array full write vs partial write ---
     [GpuKernel]
     public static void OutArrayStridedWriteKernel(
         [In] int[] src,
@@ -359,7 +359,7 @@ public static partial class MarshalingAliasingDifferentialKernels
         }
     }
 
-    // --- D3-P1 / D3-P2 / D3-P3: Launch{Kernel}Ptr with Length guard (#720), GpuBuffer overload, & Convert/Deep Struct ---
+    // --- Launch{Kernel}Ptr with Length guard (#720), GpuBuffer overload, & Convert/Deep Struct ---
     [GpuKernel]
     public static void PtrLengthGuardedScaleKernel(int[] data, int factor, [Out] int[] outLen)
     {
@@ -424,7 +424,7 @@ public static partial class MarshalingAliasingDifferentialKernels
         }
     }
 
-    // --- D3-N1 / D3-N2: Non-nullable vs Nullable top-level array null / empty (#806, #838) ---
+    // --- Non-nullable vs Nullable top-level array null / empty (#806, #838) ---
     [GpuKernel]
     public static void NonNullableArrayKernel(int[] input, [Out] int[] output)
     {
@@ -464,7 +464,7 @@ public static partial class MarshalingAliasingDifferentialKernels
         }
     }
 
-    // --- D3-N3 / D3-N4: Struct field null array vs empty array (#706) & null dereference ---
+    // --- Struct field null array vs empty array (#706) & null dereference ---
     [GpuKernel]
     public static void StructFieldNullOrEmptySafeKernel(
         DiffNullableDeepBag bagByVal,
