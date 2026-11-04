@@ -21,5 +21,6 @@
     <Using Include="System.Runtime.CompilerServices" />
     <Using Include="System.Text" />
     <Using Include="Kassyi.GSharp.Compiler" />
+    <InternalsVisibleTo Include="Kassyi.GSharp.Tools.FuzzDiff.Tests" />
   </ItemGroup>
 </Project>

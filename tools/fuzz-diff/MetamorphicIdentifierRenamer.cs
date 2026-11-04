@@ -5,7 +5,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace Kassyi.GSharp.Tools.FuzzDiff;
 
 /// <summary>
-/// Transformation 1: Consistently alpha-renames non-reserved parameters and local variables
+/// Consistently alpha-renames non-reserved parameters and local variables
 /// in a target <c>[GpuKernel]</c> method to C++ keywords and CUDA/Prelude identifiers using
 /// <see cref="SemanticModel"/> symbol resolution.
 /// </summary>
@@ -65,14 +65,14 @@ internal static class MetamorphicIdentifierRenamer
         ulong seed,
         string? targetMethodName)
     {
-        var method = MetamorphicEffectAnalyzer.FindTargetKernelMethod(root, targetMethodName);
+        var method = MetamorphicTarget.FindKernel(root, targetMethodName);
         if (method?.Body is null || MetamorphicTypeResolver.HasSemanticErrorsInMethod(method, semanticModel))
         {
             return root;
         }
 
         var rng = new FuzzRandom(seed ^ 0xA11CE001UL);
-        var usedNames = MetamorphicEffectAnalyzer.CollectAllIdentifiersInCompilationUnit(root);
+        var usedNames = MetamorphicTarget.CollectIdentifiers(root);
 
         var targetSymbols = new List<ISymbol>();
         var seenSymbols = new HashSet<ISymbol>(SymbolEqualityComparer.Default);
@@ -153,7 +153,7 @@ internal static class MetamorphicIdentifierRenamer
                 }
             }
 
-            chosenName ??= MetamorphicEffectAnalyzer.AllocateFreshIdentifier("metaVar", usedNames);
+            chosenName ??= MetamorphicTarget.AllocateFreshIdentifier("metaVar", usedNames);
             symbolRenameMap[sym] = chosenName;
         }
 

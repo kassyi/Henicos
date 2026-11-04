@@ -6,7 +6,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace Kassyi.GSharp.Tools.FuzzDiff;
 
 /// <summary>
-/// Transformation 7: Inserts dead code (an unused local variable initialized with a pure integer expression
+/// Inserts dead code (an unused local variable initialized with a pure integer expression
 /// and an unreachable <c>if (false)</c> branch free of barriers or warp calls) into a target <c>[GpuKernel]</c> body.
 /// </summary>
 internal static class MetamorphicDeadCodeInserter
@@ -17,7 +17,7 @@ internal static class MetamorphicDeadCodeInserter
         ulong seed,
         string? targetMethodName)
     {
-        var method = MetamorphicEffectAnalyzer.FindTargetKernelMethod(root, targetMethodName);
+        var method = MetamorphicTarget.FindKernel(root, targetMethodName);
         if (method?.Body is null || MetamorphicTypeResolver.HasSemanticErrorsInMethod(method, semanticModel))
         {
             return root;
@@ -43,9 +43,9 @@ internal static class MetamorphicDeadCodeInserter
         }
 
         var rng = new FuzzRandom(seed ^ 0xA11CE008UL);
-        var usedNames = MetamorphicEffectAnalyzer.CollectAllIdentifiersInCompilationUnit(root);
+        var usedNames = MetamorphicTarget.CollectIdentifiers(root);
 
-        bool hasIntGid = MetamorphicEffectAnalyzer.ResolveGuardedGidSymbol(method, semanticModel) is ILocalSymbol
+        bool hasIntGid = EffectScope.ResolveGuardedGid(method, semanticModel) is ILocalSymbol
         {
             Type.SpecialType: SpecialType.System_Int32,
         };
@@ -55,7 +55,7 @@ internal static class MetamorphicDeadCodeInserter
             ? minInsertIdx + rng.NextBelow(maxInsertIdx - minInsertIdx + 1)
             : minInsertIdx;
 
-        string deadLocalName = MetamorphicEffectAnalyzer.AllocateFreshIdentifier("metaDeadLocal", usedNames);
+        string deadLocalName = MetamorphicTarget.AllocateFreshIdentifier("metaDeadLocal", usedNames);
         string seedConstHex = string.Create(CultureInfo.InvariantCulture, $"0x{((rng.NextUInt32() & 0x7FFFFFFFU) | 1U):X8}");
         string baseIntExpr = hasIntGid ? "gid" : "17";
 

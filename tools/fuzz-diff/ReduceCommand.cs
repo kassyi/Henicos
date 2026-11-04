@@ -25,6 +25,16 @@ public sealed record ReduceCommandOptions(
     bool NoGpuLock);
 
 /// <summary>
+/// Result of <see cref="ReduceCommand.ReduceInProcess"/>.
+/// </summary>
+public sealed record InProcessReduction(
+    string ReducedSource,
+    string Fingerprint,
+    int OriginalStatements,
+    int ReducedStatements,
+    int Iterations);
+
+/// <summary>
 /// Implements the <c>fuzz-diff reduce</c> subcommand.
 /// </summary>
 public sealed class ReduceCommand : IFuzzCommand
@@ -335,6 +345,26 @@ public sealed class ReduceCommand : IFuzzCommand
             outPath = options.OutPath is not null ? Path.GetFullPath(options.OutPath) : null,
         }));
         return 0;
+    }
+
+    /// <summary>
+    /// Reduces <paramref name="source"/> in this process while <paramref name="isInteresting"/> holds, for a caller
+    /// that can test a candidate itself instead of through <c>--test-cmd</c>, and fingerprints the result.
+    /// </summary>
+    public static InProcessReduction ReduceInProcess(
+        string source,
+        Func<string, bool> isInteresting,
+        string failingPaths,
+        string failureKind)
+    {
+        var result = FuzzReducer.Reduce(source, isInteresting);
+        var fingerprint = FuzzDeduplicator.ComputeFingerprint(result.ReducedSource, failingPaths, failureKind);
+        return new InProcessReduction(
+            result.ReducedSource,
+            fingerprint.Fingerprint,
+            result.OriginalStatementCount,
+            result.ReducedStatementCount,
+            result.Iterations);
     }
 
     internal static string IsolateSingleKernelCompilationUnit(string source, string targetKernelName)

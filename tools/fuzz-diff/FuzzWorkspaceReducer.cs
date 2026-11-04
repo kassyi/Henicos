@@ -450,7 +450,7 @@ internal static class FuzzWorkspaceReducer
         int timeoutMs = 120_000) =>
         RunProcessWithStartInfo(new ProcessStartInfo(fileName, arguments), out stdout, out stderr, out timedOut, timeoutMs);
 
-    private static int RunProcessWithStartInfo(
+    internal static int RunProcessWithStartInfo(
         ProcessStartInfo psi,
         out string stdout,
         out string stderr,

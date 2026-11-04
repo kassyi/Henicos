@@ -5,7 +5,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace Kassyi.GSharp.Tools.FuzzDiff;
 
 /// <summary>
-/// Transformation 5: Swaps the left and right operands of a commutative binary operator
+/// Swaps the left and right operands of a commutative binary operator
 /// (<c>+</c>, <c>*</c>, <c>&amp;</c>, <c>|</c>, <c>^</c>, <c>==</c>, <c>!=</c>) when both operands are pure,
 /// share the same non-floating-point value type, and resolve to a built-in operator via <see cref="SemanticModel"/>.
 /// </summary>
@@ -17,25 +17,19 @@ internal static class MetamorphicCommutativeSwapper
         ulong seed,
         string? targetMethodName)
     {
-        var method = MetamorphicEffectAnalyzer.FindTargetKernelMethod(root, targetMethodName);
+        var method = MetamorphicTarget.FindKernel(root, targetMethodName);
         if (method?.Body is null || MetamorphicTypeResolver.HasSemanticErrorsInMethod(method, semanticModel))
         {
             return root;
         }
 
         var rng = new FuzzRandom(seed ^ 0xA11CE006UL);
-        var gidSymbol = MetamorphicEffectAnalyzer.ResolveGuardedGidSymbol(method, semanticModel);
-        var safeReadOnlyArrays = MetamorphicEffectAnalyzer.CollectSafeReadOnlyInputArrays(method, semanticModel);
+        var scope = EffectScope.ForKernel(method, semanticModel);
         var candidates = new List<BinaryExpressionSyntax>();
 
         foreach (var stmt in method.Body.Statements)
         {
-            if (!MetamorphicEffectAnalyzer.TryGetTopLevelPureRhsExpression(
-                    stmt,
-                    semanticModel,
-                    safeReadOnlyArrays,
-                    gidSymbol,
-                    out var rhsRoot))
+            if (!MetamorphicPurity.TryGetTopLevelPureRhsExpression(stmt, scope, out var rhsRoot))
             {
                 continue;
             }
@@ -75,8 +69,7 @@ internal static class MetamorphicCommutativeSwapper
                     continue;
                 }
 
-                if (!MetamorphicEffectAnalyzer.IsPureExpression(bin.Left, semanticModel, safeReadOnlyArrays, gidSymbol) ||
-                    !MetamorphicEffectAnalyzer.IsPureExpression(bin.Right, semanticModel, safeReadOnlyArrays, gidSymbol))
+                if (!MetamorphicPurity.IsPure(bin.Left, scope) || !MetamorphicPurity.IsPure(bin.Right, scope))
                 {
                     continue;
                 }

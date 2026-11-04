@@ -69,41 +69,7 @@ public sealed class ScalarFuzzGenerator
             var baseSpec = GenerateSingleKernel(kernelName, kernelSeed, size);
             kernels.Add(baseSpec);
 
-            for (int m = 0; m < metaVariants; m++)
-            {
-                string metaKernelName = string.Create(CultureInfo.InvariantCulture, $"{kernelName}_Meta{m}");
-                ulong metaSeed = kernelSeed ^ ((ulong)(m + 1) * 0x9E3779B97F4A7C15UL);
-                var (variantMethodSource, extraHelpers) = FuzzMetamorphicRewriter.BuildMetamorphicVariant(
-                    _options.KernelClassName,
-                    _deviceFunctions,
-                    kernelName,
-                    baseSpec.KernelMethodSource,
-                    metaKernelName,
-                    m,
-                    metaSeed);
-                foreach (string h in extraHelpers)
-                {
-                    extraDeviceFunctions.Add(h);
-                }
-
-                string metaCaseHeader = string.Create(
-                    CultureInfo.InvariantCulture,
-                    $"// fuzz-seed: {FuzzRandom.FormatSeed(kernelSeed)}, metamorphic-variant: {m}");
-                string metaCaseProperty = FuzzCaseEmitter.RenderDifferentialCaseProperty(
-                    _options.KernelClassName,
-                    metaKernelName,
-                    _options.InputSeed,
-                    metaCaseHeader,
-                    oracleMethodName: kernelName);
-                kernels.Add(new GeneratedKernelSpec(
-                    metaKernelName,
-                    kernelSeed,
-                    size,
-                    variantMethodSource,
-                    metaCaseProperty,
-                    baseSpec.LocalVariableNames,
-                    baseSpec.StatementTexts));
-            }
+            AddMetamorphicVariants(baseSpec, metaVariants, kernels, extraDeviceFunctions);
         }
 
         string kernelsSource = BuildKernelsCompilationUnit(kernels, extraDeviceFunctions);
@@ -113,6 +79,48 @@ public sealed class ScalarFuzzGenerator
         ValidateSyntaxTree(casesSource, "FuzzBatchCases.cs");
 
         return new GeneratedBatch(_options.FuzzSeed, _options.InputSeed, kernelsSource, casesSource, kernels);
+    }
+
+    /// <summary>
+    /// Adds <paramref name="variantCount"/> metamorphic variants of <paramref name="baseSpec"/> (<c>{name}_Meta{m}</c>),
+    /// each checked against the base kernel as its oracle, and collects the device functions the variants add.
+    /// </summary>
+    private void AddMetamorphicVariants(
+        GeneratedKernelSpec baseSpec,
+        int variantCount,
+        List<GeneratedKernelSpec> kernels,
+        List<string> extraDeviceFunctions)
+    {
+        for (int m = 0; m < variantCount; m++)
+        {
+            string metaKernelName = string.Create(CultureInfo.InvariantCulture, $"{baseSpec.KernelName}_Meta{m}");
+            ulong metaSeed = baseSpec.KernelSeed ^ ((ulong)(m + 1) * 0x9E3779B97F4A7C15UL);
+            var (variantMethodSource, extraHelpers) = FuzzMetamorphicRewriter.BuildMetamorphicVariant(
+                _options.KernelClassName,
+                _deviceFunctions,
+                baseSpec.KernelName,
+                baseSpec.KernelMethodSource,
+                metaKernelName,
+                m,
+                metaSeed);
+            extraDeviceFunctions.AddRange(extraHelpers);
+
+            string metaCaseHeader = string.Create(
+                CultureInfo.InvariantCulture,
+                $"// fuzz-seed: {FuzzRandom.FormatSeed(baseSpec.KernelSeed)}, metamorphic-variant: {m}");
+            string metaCaseProperty = FuzzCaseEmitter.RenderDifferentialCaseProperty(
+                _options.KernelClassName,
+                metaKernelName,
+                _options.InputSeed,
+                metaCaseHeader,
+                oracleMethodName: baseSpec.KernelName);
+            kernels.Add(baseSpec with
+            {
+                KernelName = metaKernelName,
+                KernelMethodSource = variantMethodSource,
+                CasePropertySource = metaCaseProperty,
+            });
+        }
     }
 
     /// <summary>

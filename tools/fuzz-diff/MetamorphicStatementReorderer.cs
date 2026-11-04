@@ -5,7 +5,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace Kassyi.GSharp.Tools.FuzzDiff;
 
 /// <summary>
-/// Transformation 4: Reorders two adjacent independent statements whose read and write symbol sets
+/// Reorders two adjacent independent statements whose read and write symbol sets
 /// are disjoint and which contain no array writes, barriers, warp calls, or side-effecting invocations.
 /// </summary>
 internal static class MetamorphicStatementReorderer
@@ -16,27 +16,20 @@ internal static class MetamorphicStatementReorderer
         ulong seed,
         string? targetMethodName)
     {
-        var method = MetamorphicEffectAnalyzer.FindTargetKernelMethod(root, targetMethodName);
+        var method = MetamorphicTarget.FindKernel(root, targetMethodName);
         if (method?.Body is null || MetamorphicTypeResolver.HasSemanticErrorsInMethod(method, semanticModel))
         {
             return root;
         }
 
         var rng = new FuzzRandom(seed ^ 0xA11CE005UL);
-        var gidSymbol = MetamorphicEffectAnalyzer.ResolveGuardedGidSymbol(method, semanticModel);
-        var safeReadOnlyArrays = MetamorphicEffectAnalyzer.CollectSafeReadOnlyInputArrays(method, semanticModel);
+        var scope = EffectScope.ForKernel(method, semanticModel);
         var statements = method.Body.Statements;
 
         var swappableIndices = new List<int>();
         for (int i = 0; i + 1 < statements.Count; i++)
         {
-            if (MetamorphicEffectAnalyzer.AreStatementsIndependent(
-                    statements[i],
-                    statements[i + 1],
-                    semanticModel,
-                    root,
-                    safeReadOnlyArrays,
-                    gidSymbol))
+            if (MetamorphicStatementEffects.AreIndependent(statements[i], statements[i + 1], scope, root))
             {
                 swappableIndices.Add(i);
             }

@@ -5,7 +5,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace Kassyi.GSharp.Tools.FuzzDiff;
 
 /// <summary>
-/// Transformation 6: Wraps an executable non-declaring statement that contains no barrier, warp,
+/// Wraps an executable non-declaring statement that contains no barrier, warp,
 /// or jump constructs in a lexical block <c>{ S }</c>, <c>if (true) { S }</c>, or a single-iteration loop.
 /// </summary>
 internal static class MetamorphicControlFlowWrapper
@@ -17,14 +17,14 @@ internal static class MetamorphicControlFlowWrapper
         string? targetMethodName,
         MetamorphicWrapKind? wrapKind)
     {
-        var method = MetamorphicEffectAnalyzer.FindTargetKernelMethod(root, targetMethodName);
+        var method = MetamorphicTarget.FindKernel(root, targetMethodName);
         if (method?.Body is null || MetamorphicTypeResolver.HasSemanticErrorsInMethod(method, semanticModel))
         {
             return root;
         }
 
         var rng = new FuzzRandom(seed ^ 0xA11CE007UL);
-        var usedNames = MetamorphicEffectAnalyzer.CollectAllIdentifiersInCompilationUnit(root);
+        var usedNames = MetamorphicTarget.CollectIdentifiers(root);
         var statements = method.Body.Statements;
 
         var candidateIndices = new List<int>();
@@ -68,7 +68,7 @@ internal static class MetamorphicControlFlowWrapper
                 break;
 
             default:
-                string loopVar = MetamorphicEffectAnalyzer.AllocateFreshIdentifier("metaOnce", usedNames);
+                string loopVar = MetamorphicTarget.AllocateFreshIdentifier("metaOnce", usedNames);
                 wrappedText =
                     $$"""
                     for (int {{loopVar}} = 0; {{loopVar}} < 1; {{loopVar}}++)
@@ -100,7 +100,7 @@ internal static class MetamorphicControlFlowWrapper
 
         // Never wrap a statement that directly, within nested blocks, or transitively through a helper
         // invokes a barrier, warp intrinsic, or GPU synchronization primitive.
-        if (MetamorphicEffectAnalyzer.ContainsBarrierOrWarpCall(stmt, semanticModel, root))
+        if (MetamorphicBarrierDetector.ContainsBarrierOrWarpCall(stmt, semanticModel, root))
         {
             return false;
         }

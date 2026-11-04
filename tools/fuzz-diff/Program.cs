@@ -2,7 +2,7 @@ namespace Kassyi.GSharp.Tools.FuzzDiff;
 
 /// <summary>
 /// Command-line entry point for <c>tools/fuzz-diff</c>.
-/// Dispatches the <c>gen</c>, <c>reduce</c>, <c>dedup</c>, and <c>promote</c> subcommands via an <see cref="IFuzzCommand"/> table.
+/// Dispatches the <c>gen</c>, <c>reduce</c>, <c>dedup</c>, <c>promote</c>, and <c>compare</c> subcommands via an <see cref="IFuzzCommand"/> table.
 /// </summary>
 public static class Program
 {
@@ -16,6 +16,7 @@ public static class Program
           reduce                   Reduce a failing kernel (2-stage fast reduction + 16-candidate CUDA batch reduction).
           dedup                    Compute the normalized AST fingerprint of a kernel source file.
           promote                  Emit clean Differential/ repro .cu.cs and DifferentialCase snippet into findings/<fingerprint>/.
+          compare                  Compare the generated native and C# code of a base git ref and the working tree on generated kernels (no GPU).
 
         Options for 'gen':
           --fuzz-seed <seed>       64-bit integer seed (decimal or 0x hex) for AST generation (default: 1).
@@ -59,6 +60,20 @@ public static class Program
           --column <name>          Failing output column name (default: "hash").
           --findings-dir <dir>     Findings root directory (default: tmp/differential-fuzz/findings).
           --kernel <name>          Optional target kernel name inside --source.
+
+        Options for 'compare':
+          --base <ref>             Git ref to compare the working tree with (required).
+          --batches <n>            Number of generated batches (default: 20); batch n uses fuzz seed + n.
+          --batch-size <n>         Kernels per batch (1..256, default: 64).
+          --fuzz-seed, --input-seed, --profile, --allow-issue, --swarm-focus, --metamorphic
+                                   Generation options, as for 'gen'.
+          --dialects <list>        Cpu, Cuda or Cpu,Cuda (default: Cpu,Cuda).
+          --expect-change          Exit 0 when differences are found (default: exit 1).
+          --no-reduce              Record differences without reducing the kernels.
+          --reduce-minutes <n>     Time limit of one reduction (default: 30).
+          --work-dir <dir>         Directory for the base worktree, compare projects and findings (default: tmp/differential-fuzz).
+          --repo-root <dir>        Root of the working tree (default: current directory).
+          Exit codes: 0 no difference (or --expect-change), 1 differences, 2 usage error, 3 build or git failure.
         """;
 
     private static readonly IReadOnlyList<IFuzzCommand> s_commands =
@@ -67,6 +82,7 @@ public static class Program
         ReduceCommand.Instance,
         DedupCommand.Instance,
         PromoteCommand.Instance,
+        CompareCommand.Instance,
     ];
 
     /// <summary>Gets the registered command table.</summary>

@@ -5,7 +5,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace Kassyi.GSharp.Tools.FuzzDiff;
 
 /// <summary>
-/// Transformation 2 (a &amp; b): Extracts a pure, unconditionally-evaluated subexpression
+/// Extracts a pure, unconditionally-evaluated subexpression
 /// to either a fresh local variable or a new <c>[GpuDeviceFunction]</c> helper method,
 /// resolving types and purity via <see cref="SemanticModel"/>.
 /// </summary>
@@ -17,28 +17,22 @@ internal static class MetamorphicSubexpressionExtractor
         ulong seed,
         string? targetMethodName)
     {
-        var method = MetamorphicEffectAnalyzer.FindTargetKernelMethod(root, targetMethodName);
+        var method = MetamorphicTarget.FindKernel(root, targetMethodName);
         if (method?.Body is null || MetamorphicTypeResolver.HasSemanticErrorsInMethod(method, semanticModel))
         {
             return root;
         }
 
         var rng = new FuzzRandom(seed ^ 0xA11CE002UL);
-        var usedNames = MetamorphicEffectAnalyzer.CollectAllIdentifiersInCompilationUnit(root);
-        var gidSymbol = MetamorphicEffectAnalyzer.ResolveGuardedGidSymbol(method, semanticModel);
-        var safeReadOnlyArrays = MetamorphicEffectAnalyzer.CollectSafeReadOnlyInputArrays(method, semanticModel);
+        var usedNames = MetamorphicTarget.CollectIdentifiers(root);
+        var scope = EffectScope.ForKernel(method, semanticModel);
         var statements = method.Body.Statements;
 
         var candidates = new List<(int StmtIndex, ExpressionSyntax SubExpr, string TypeName)>();
         for (int i = 0; i < statements.Count; i++)
         {
             var stmt = statements[i];
-            if (!MetamorphicEffectAnalyzer.TryGetTopLevelPureRhsExpression(
-                    stmt,
-                    semanticModel,
-                    safeReadOnlyArrays,
-                    gidSymbol,
-                    out var rhsRoot))
+            if (!MetamorphicPurity.TryGetTopLevelPureRhsExpression(stmt, scope, out var rhsRoot))
             {
                 continue;
             }
@@ -46,14 +40,7 @@ internal static class MetamorphicSubexpressionExtractor
             foreach (var node in rhsRoot.DescendantNodes())
             {
                 if (node is not ExpressionSyntax subExpr ||
-                    subExpr is ParenthesizedExpressionSyntax ||
-                    !IsNonTrivialExtractableExpression(subExpr))
-                {
-                    continue;
-                }
-
-                if (!MetamorphicEffectAnalyzer.IsOnUnconditionalEvaluationPath(subExpr, rhsRoot) ||
-                    !MetamorphicEffectAnalyzer.IsPureExpression(subExpr, semanticModel, safeReadOnlyArrays, gidSymbol) ||
+                    !IsExtractableCandidate(subExpr, rhsRoot, scope) ||
                     !MetamorphicTypeResolver.TryResolveSupportedValueType(subExpr, semanticModel, out _, out string? exprType))
                 {
                     continue;
@@ -69,7 +56,7 @@ internal static class MetamorphicSubexpressionExtractor
         }
 
         var chosen = candidates[rng.NextBelow(candidates.Count)];
-        string newLocalName = MetamorphicEffectAnalyzer.AllocateFreshIdentifier("metaExtracted", usedNames);
+        string newLocalName = MetamorphicTarget.AllocateFreshIdentifier("metaExtracted", usedNames);
         string subExprText = FuzzSyntaxHelpers.RenderNodeText(chosen.SubExpr);
 
         var tempDeclStmt = SyntaxFactory.ParseStatement($"{chosen.TypeName} {newLocalName} = ({subExprText});\n");
@@ -101,7 +88,7 @@ internal static class MetamorphicSubexpressionExtractor
         string? targetMethodName,
         string? helperMethodName)
     {
-        var method = MetamorphicEffectAnalyzer.FindTargetKernelMethod(root, targetMethodName);
+        var method = MetamorphicTarget.FindKernel(root, targetMethodName);
         if (method?.Body is null ||
             method.Parent is not ClassDeclarationSyntax parentClass ||
             MetamorphicTypeResolver.HasSemanticErrorsInMethod(method, semanticModel))
@@ -110,21 +97,15 @@ internal static class MetamorphicSubexpressionExtractor
         }
 
         var rng = new FuzzRandom(seed ^ 0xA11CE003UL);
-        var usedNames = MetamorphicEffectAnalyzer.CollectAllIdentifiersInCompilationUnit(root);
-        var gidSymbol = MetamorphicEffectAnalyzer.ResolveGuardedGidSymbol(method, semanticModel);
-        var safeReadOnlyArrays = MetamorphicEffectAnalyzer.CollectSafeReadOnlyInputArrays(method, semanticModel);
+        var usedNames = MetamorphicTarget.CollectIdentifiers(root);
+        var scope = EffectScope.ForKernel(method, semanticModel);
         var statements = method.Body.Statements;
 
         var candidates = new List<(int StmtIndex, ExpressionSyntax SubExpr, string ReturnType, List<(string Name, string Type)> FreeVars)>();
         for (int i = 0; i < statements.Count; i++)
         {
             var stmt = statements[i];
-            if (!MetamorphicEffectAnalyzer.TryGetTopLevelPureRhsExpression(
-                    stmt,
-                    semanticModel,
-                    safeReadOnlyArrays,
-                    gidSymbol,
-                    out var rhsRoot))
+            if (!MetamorphicPurity.TryGetTopLevelPureRhsExpression(stmt, scope, out var rhsRoot))
             {
                 continue;
             }
@@ -132,15 +113,8 @@ internal static class MetamorphicSubexpressionExtractor
             foreach (var node in rhsRoot.DescendantNodes())
             {
                 if (node is not ExpressionSyntax subExpr ||
-                    subExpr is ParenthesizedExpressionSyntax ||
-                    !IsNonTrivialExtractableExpression(subExpr) ||
-                    ContainsElementAccess(subExpr))
-                {
-                    continue;
-                }
-
-                if (!MetamorphicEffectAnalyzer.IsOnUnconditionalEvaluationPath(subExpr, rhsRoot) ||
-                    !MetamorphicEffectAnalyzer.IsPureExpression(subExpr, semanticModel, safeReadOnlyArrays, gidSymbol) ||
+                    ContainsElementAccess(subExpr) ||
+                    !IsExtractableCandidate(subExpr, rhsRoot, scope) ||
                     !MetamorphicTypeResolver.TryResolveSupportedValueType(subExpr, semanticModel, out _, out string? returnType) ||
                     !TryCollectValueTypeFreeVariables(subExpr, semanticModel, out var freeVars) ||
                     freeVars.Count is < 1 or > 4)
@@ -160,7 +134,7 @@ internal static class MetamorphicSubexpressionExtractor
         var chosen = candidates[rng.NextBelow(candidates.Count)];
         string effectiveHelperName = !string.IsNullOrWhiteSpace(helperMethodName) && usedNames.Add(helperMethodName)
             ? helperMethodName
-            : MetamorphicEffectAnalyzer.AllocateFreshIdentifier("MetaExtractedFunc_", usedNames);
+            : MetamorphicTarget.AllocateFreshIdentifier("MetaExtractedFunc_", usedNames);
 
         var paramDecls = new string[chosen.FreeVars.Count];
         var callArgs = new string[chosen.FreeVars.Count];
@@ -204,6 +178,16 @@ internal static class MetamorphicSubexpressionExtractor
         var updatedClass = parentClass.WithMembers(newMembers);
         return root.ReplaceNode(parentClass, updatedClass);
     }
+
+    // A pure, unconditionally evaluated operator expression. A constant is left in place: extracting it into a
+    // local of its own type makes the enclosing expression non-constant, which breaks an implicit constant
+    // conversion such as `byte b = (1 + 2) * 3;` (CS0266).
+    private static bool IsExtractableCandidate(ExpressionSyntax subExpr, ExpressionSyntax rhsRoot, EffectScope scope) =>
+        subExpr is not ParenthesizedExpressionSyntax &&
+        IsNonTrivialExtractableExpression(subExpr) &&
+        !scope.Model.GetConstantValue(subExpr).HasValue &&
+        MetamorphicPurity.IsOnUnconditionalEvaluationPath(subExpr, rhsRoot) &&
+        MetamorphicPurity.IsPure(subExpr, scope);
 
     private static bool IsNonTrivialExtractableExpression(ExpressionSyntax expr) =>
         expr switch
