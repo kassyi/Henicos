@@ -100,7 +100,7 @@ public class GpuKernelAnalyzerTests
     [Scenario(TestScenario.SadPath)]
     public async Task Test_TranspilerFailureCheck_ForwardsGSH0070WithoutThrowingAD0001()
     {
-        var diagnostics = await RoslynTestUtility.TestAnalyzer("Analyzers/IteratorShape_SadPath.cs", s_analyzer)
+        var diagnostics = await RoslynTestUtility.TestAnalyzer("Analyzers/IteratorInlineDepth_SadPath.cs", s_analyzer)
                                                  .GetDiagnosticsAsync();
 
         Assert.DoesNotContain(diagnostics, static d => d.Id == "AD0001");
@@ -123,53 +123,24 @@ public class GpuKernelAnalyzerTests
 
         Assert.Equal(
             [
-                (GSharpDiagnostics.IteratorShapeNotSupported.Id, 72, 13, 75, 14),
-                (GSharpDiagnostics.StringNotSupported.Id, 78, 9, 78, 12)
+                (GSharpDiagnostics.IteratorShapeNotSupported.Id, 155, 9, 158, 10),
+                // Another diagnostic of the method whose transpiler failure is forwarded: still reported next to it
+                (GSharpDiagnostics.StringNotSupported.Id, 159, 9, 159, 12)
             ],
             actual);
     }
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_SupportedDiagnostics_CoversAllTranspilerFailureDescriptors()
+    public void Test_SupportedDiagnostics_CoversAllDefinedDiagnostics()
     {
         var supportedIds = s_analyzer.SupportedDiagnostics
             .Select(static d => d.Id)
             .ToHashSet(StringComparer.Ordinal);
 
-        var compilerDir = RepositoryPaths.Combine("src", "Compiler", "Kassyi.GSharp.Compiler");
-        var transpilerDirs = new[]
+        Assert.NotEmpty(GSharpDiagnostics.All);
+        foreach (var descriptor in GSharpDiagnostics.All)
         {
-            Path.Combine(compilerDir, "Transpiler"),
-            Path.Combine(compilerDir, "Dialects"),
-            Path.Combine(compilerDir, "Lowering")
-        };
-
-        var descriptorByName = typeof(GSharpDiagnostics)
-            .GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static)
-            .Where(static f => f.FieldType == typeof(DiagnosticDescriptor))
-            .ToDictionary(static f => f.Name, static f => (DiagnosticDescriptor)f.GetValue(null)!, StringComparer.Ordinal);
-
-        var referencedNames = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var dir in transpilerDirs)
-        {
-            foreach (var file in Directory.EnumerateFiles(dir, "*.cs", SearchOption.AllDirectories))
-            {
-                var tree = CSharpSyntaxTree.ParseText(File.ReadAllText(file));
-                foreach (var memberAccess in tree.GetRoot().DescendantNodes().OfType<MemberAccessExpressionSyntax>())
-                {
-                    if (memberAccess.Expression is IdentifierNameSyntax { Identifier.ValueText: nameof(GSharpDiagnostics) })
-                    {
-                        referencedNames.Add(memberAccess.Name.Identifier.ValueText);
-                    }
-                }
-            }
-        }
-
-        Assert.NotEmpty(referencedNames);
-        foreach (var name in referencedNames.Order(StringComparer.Ordinal))
-        {
-            Assert.True(descriptorByName.TryGetValue(name, out var descriptor), $"Unknown descriptor '{name}'.");
             Assert.Contains(descriptor.Id, supportedIds);
         }
     }
