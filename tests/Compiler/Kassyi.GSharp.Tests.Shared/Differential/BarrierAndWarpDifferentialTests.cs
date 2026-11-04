@@ -24,7 +24,7 @@ public class BarrierAndWarpDifferentialTests
                 gridDimX: s.GridX,
                 blockDimX: s.BlockX
             ),
-            Reference = static b =>
+            Reference = static (b, _) =>
             {
                 var input = b.Get<int>("input");
                 var output = b.Get<int>("output");
@@ -89,7 +89,7 @@ public class BarrierAndWarpDifferentialTests
                 gridDimX: s.GridX,
                 blockDimX: s.BlockX
             ),
-            Reference = static b =>
+            Reference = static (b, _) =>
             {
                 var input = b.Get<int>("input");
                 var output = b.Get<int>("output");
@@ -148,7 +148,7 @@ public class BarrierAndWarpDifferentialTests
                 gridDimX: s.GridX,
                 blockDimX: s.BlockX
             ),
-            Reference = static b =>
+            Reference = static (b, _) =>
             {
                 var input = b.Get<int>("input");
                 var output = b.Get<int>("output");
@@ -214,7 +214,7 @@ public class BarrierAndWarpDifferentialTests
                 gridDimX: s.GridX,
                 blockDimX: s.BlockX
             ),
-            Reference = static b =>
+            Reference = static (b, _) =>
             {
                 var input = b.Get<int>("input");
                 var output = b.Get<int>("output");
@@ -282,7 +282,7 @@ public class BarrierAndWarpDifferentialTests
                 gridDimX: s.GridX,
                 blockDimX: s.BlockX
             ),
-            Reference = static b =>
+            Reference = static (b, _) =>
             {
                 var input = b.Get<int>("input");
                 var output = b.Get<int>("output");
@@ -324,7 +324,7 @@ public class BarrierAndWarpDifferentialTests
                 gridDimX: s.GridX,
                 blockDimX: s.BlockX
             ),
-            Reference = static b =>
+            Reference = static (b, _) =>
             {
                 var input = b.Get<int>("input");
                 var output = b.Get<int>("output");
@@ -363,7 +363,7 @@ public class BarrierAndWarpDifferentialTests
         Launch = static (b, s) => BarrierAndWarpDifferentialKernels.LaunchRefTernaryParameterWriteAcrossBarrierReproKernel(
             b.Get<int>("conds"), b.Get<int>("dst"), 50, 60, 70, s.Rows,
             gridDimX: s.GridX, blockDimX: s.BlockX),
-        Reference = static b =>
+        Reference = static (b, _) =>
         {
             var conds = b.Get<int>("conds");
             var dst = b.Get<int>("dst");

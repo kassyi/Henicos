@@ -239,8 +239,9 @@ internal static class GpuCodeConstraints
 
     /// <summary>
     /// Whether <paramref name="dialect"/> emits <c>Gpu.InlinePtx</c>; the others replace the call with a runtime failure
-    /// (GSH0054).
+    /// (GSH0054). Kept temporarily until #1052 and #1054 merge; use <see cref="Dialects.DialectCallSupport.SupportsInlinePtx"/> instead.
     /// </summary>
+    // TODO(#581): Remove once #1052 and #1054 merge.
     public static bool SupportsInlinePtx(ITranspilerDialect dialect) =>
         dialect.Capabilities.HasFlag(DialectCapabilities.InlineAssembly);
 

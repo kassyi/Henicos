@@ -32,6 +32,7 @@ internal static class FloatVectorReductionOrchestrator
         FloatReductionKind kind,
         out int count)
     {
+        DeviceCounted.ThrowIfCpuFallback(workspace);
         if (source.Capacity == 0)
         {
             count = 0;
@@ -61,6 +62,7 @@ internal static class FloatVectorReductionOrchestrator
         GpuBigFloatArrayView evaluated,
         FloatReductionKind kind)
     {
+        DeviceCounted.ThrowIfCpuFallback(workspace);
         var numWords = evaluated.WordsPerElement;
         if (evaluated.Length == 0)
         {

@@ -1,4 +1,5 @@
 #nullable enable
+using System;
 using System.Runtime.ExceptionServices;
 using System.Threading;
 using Kassyi.GSharp.Core;
@@ -50,5 +51,29 @@ public static class SequentialOracle
         {
             ExceptionDispatchInfo.Capture(failure).Throw();
         }
+    }
+
+    /// <summary>Runs <paramref name="kernel"/> for every thread of <paramref name="shape"/> in <paramref name="order"/>.</summary>
+    public static void Run(
+        LaunchShape shape,
+        DiffBuffers buffers,
+        Action<DiffBuffers> kernel,
+        ThreadOrder? order = null
+    )
+    {
+        buffers.Shape = shape;
+        Run(shape, order ?? ThreadOrder.Forward, () => kernel(buffers));
+    }
+
+    /// <summary>Runs <paramref name="kernel"/> for every thread of <paramref name="shape"/> in <paramref name="order"/>.</summary>
+    public static void Run(
+        LaunchShape shape,
+        DiffBuffers buffers,
+        Action<DiffBuffers, LaunchShape> kernel,
+        ThreadOrder? order = null
+    )
+    {
+        buffers.Shape = shape;
+        Run(shape, order ?? ThreadOrder.Forward, () => kernel(buffers, shape));
     }
 }

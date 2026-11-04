@@ -690,7 +690,7 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 auto __gsharp_id_3_x = __gsharp_id_2_Max;
-__gsharp_id_3_x++;
+__gsharp_id_3_x=(unsigned char)__gsharp_add_i32(__gsharp_id_3_x,1);
 __gsharp_id_0_output[0]=__gsharp_id_3_x;
 break;
 }
@@ -698,7 +698,7 @@ default:
 __gsharp_switch_1_state_default:
 {
 auto __gsharp_id_4_y = __gsharp_id_2_Max;
-__gsharp_id_4_y++;
+__gsharp_id_4_y=(unsigned char)__gsharp_add_i32(__gsharp_id_4_y,1);
 __gsharp_id_0_output[0]=__gsharp_id_4_y+__gsharp_id_2_Max;
 break;
 }

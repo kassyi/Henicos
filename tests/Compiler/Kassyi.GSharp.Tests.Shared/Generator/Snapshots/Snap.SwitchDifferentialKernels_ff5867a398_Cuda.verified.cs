@@ -2605,10 +2605,10 @@ int __gsharp_id_23_ir2 = __gsharp_add_i32(((__gsharp_id_11_c&1)!=0?__gsharp_id_1
 __gsharp_id_7_ldst[__gsharp_add_i32(__gsharp_id_18_lcol,2)]=__gsharp_id_23_ir2;
 unsigned char __gsharp_id_24_bMax = 255;
 auto __gsharp_id_25_narrowByte = ((__gsharp_id_11_c&1)!=0?__gsharp_id_24_bMax:__gsharp_id_16_bv);
-__gsharp_id_25_narrowByte++;
+__gsharp_id_25_narrowByte=(unsigned char)__gsharp_add_i32(__gsharp_id_25_narrowByte,1);
 unsigned short __gsharp_id_26_usMax = 65535;
 auto __gsharp_id_27_narrowUShort = ((__gsharp_id_11_c&2)!=0?__gsharp_id_26_usMax:__gsharp_id_15_usv);
-__gsharp_id_27_narrowUShort++;
+__gsharp_id_27_narrowUShort=(unsigned short)__gsharp_add_i32(__gsharp_id_27_narrowUShort,1);
 __gsharp_id_7_ldst[__gsharp_add_i32(__gsharp_id_18_lcol,3)]=__gsharp_add_i64(__gsharp_id_25_narrowByte,__gsharp_shl_i64((long long)__gsharp_id_27_narrowUShort,16));
 double __gsharp_id_28_dr0 = __gsharp_add_i64(((__gsharp_id_11_c&1)!=0?(long long)__gsharp_id_12_uv:(long long)__gsharp_id_13_iv),((__gsharp_id_11_c&2)!=0?(long long)__gsharp_id_12_uv:(-8LL)));
 __gsharp_id_8_ddst[__gsharp_id_19_dcol+0]=__gsharp_id_28_dr0;
