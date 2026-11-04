@@ -69,7 +69,9 @@ internal static class SharedMemorySiteKeyAnnotator
         if (findOnly && semanticModel.GetTypeSymbol(original) is { } type)
         {
             // global::Kassyi.GSharp.Core.SharedMemory<T>.FindDynamic(<key>)
-            var sharedMemoryType = SyntaxFactory.ParseTypeName(type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
+            using var typeNameWriter = new SourceWriter();
+            typeNameWriter.AppendCsharpTypeName(type);
+            var sharedMemoryType = SyntaxFactory.ParseTypeName(typeNameWriter.ToString());
             return SyntaxFactory.InvocationExpression(
                 SyntaxFactory.MemberAccessExpression(
                     SyntaxKind.SimpleMemberAccessExpression,

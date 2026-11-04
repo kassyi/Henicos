@@ -165,6 +165,7 @@ public class CudaStreamCompletionTests
             // A gate is intentionally not used here: the driver runs host functions of a context on a single thread,
             // so a blocking gate on one stream would also delay completion signals of every other stream.
             await Task.WhenAll(waits).WaitAsync(CompletionTimeout);
+            Assert.All(waits, static w => Assert.True(w.IsCompletedSuccessfully));
         }
         finally
         {
@@ -415,10 +416,9 @@ public class CudaStreamCompletionTests
 
             // Hold times spread over the watchdog period, so completion lands at different phases of the timer.
             var holdTime = TimeSpan.FromMilliseconds(20 + (i * 37 % 120));
-            using (CudaTestEnvironment.InContext(() => StreamGate.Enqueue(context.stream, holdTime)))
-            {
-                await CudaStreamCompletion.WaitAsync(context.stream).AsTask().WaitAsync(CompletionTimeout);
-            }
+            using var gate = CudaTestEnvironment.InContext(() => StreamGate.Enqueue(context.stream, holdTime));
+            await CudaStreamCompletion.WaitAsync(context.stream).AsTask().WaitAsync(CompletionTimeout);
+            Assert.True(gate.IsReleased);
 
             // Raw destroy on purpose: once the awaiter has resumed, no watchdog tick may still be using the context,
             // even without GpuKernelLoader.DestroyContext.
