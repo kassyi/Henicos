@@ -162,8 +162,6 @@ public static class KnownDivergences
 
         // Span/Slice/ArraySegment/Memory/InlineArray bounds and BCE guards on native (#718)
         new(SpanCanaryIndexBounds, KnownDivergence.ExceptionColumn, DiffPath.Native, Issue: 718),
-        new(SpanSliceStart, KnownDivergence.ExceptionColumn, DiffPath.Native, Issue: 718),
-        new(SpanSliceStartCount, KnownDivergence.ExceptionColumn, DiffPath.Native, Issue: 718),
         new(ArraySegmentBounds, KnownDivergence.ExceptionColumn, DiffPath.Native, Issue: 718),
         new(MemoryBounds, KnownDivergence.ExceptionColumn, DiffPath.Native, Issue: 718),
         new(InlineArrayBounds, KnownDivergence.ExceptionColumn, DiffPath.Native, Issue: 718),
