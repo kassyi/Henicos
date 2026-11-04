@@ -42,6 +42,7 @@
   </Target>
   <ItemGroup>
     <PackageReference Include="BenchmarkDotNet" Version="0.15.8" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" />
     <PackageReference Include="ZLinq" Version="1.5.6" />
   </ItemGroup>
 
