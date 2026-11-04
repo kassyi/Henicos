@@ -105,10 +105,8 @@ public struct TwiddleFactorContext
 {
     [GpuReadOnly] public uint[] Forward1;
     [GpuReadOnly] public uint[] Forward2;
-    [GpuReadOnly] public uint[] Forward3;
     [GpuReadOnly] public uint[] Inverse1;
     [GpuReadOnly] public uint[] Inverse2;
-    [GpuReadOnly] public uint[] Inverse3;
 }
 ```
 

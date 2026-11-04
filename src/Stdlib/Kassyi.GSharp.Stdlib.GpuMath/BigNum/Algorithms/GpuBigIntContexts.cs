@@ -34,14 +34,10 @@ public struct TwiddleFactorContext
     [GpuReadOnly] public uint[] Forward1;
     /// <summary>Forward NTT twiddle factors for prime 2.</summary>
     [GpuReadOnly] public uint[] Forward2;
-    /// <summary>Forward NTT twiddle factors for prime 3.</summary>
-    [GpuReadOnly] public uint[] Forward3;
     /// <summary>Inverse NTT twiddle factors for prime 1.</summary>
     [GpuReadOnly] public uint[] Inverse1;
     /// <summary>Inverse NTT twiddle factors for prime 2.</summary>
     [GpuReadOnly] public uint[] Inverse2;
-    /// <summary>Inverse NTT twiddle factors for prime 3.</summary>
-    [GpuReadOnly] public uint[] Inverse3;
 }
 
 /// <summary>
