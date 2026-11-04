@@ -549,6 +549,83 @@ public class SpanWriteTests : TranspilerTestBase
         }
     }
 
+    [SkippableTheory]
+    [MemberData(nameof(Paths))]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Syntax)]
+    [Scenario(TestScenario.SadPath)]
+    public void Test_OutOfRange_ArrayFill_ThrowsArgumentOutOfRangeException(bool managed)
+    {
+        Skip.If(IsCudaDialect, "A CUDA trap loses its code and spoils the context; the exception is checked on the CPU paths.");
+        var a = new int[] { 7, 7, 7, 7 };
+        var exception = Assert.Throws<ArgumentOutOfRangeException>(() => Run(managed,
+            () => SpanWriteKernels.LaunchOutOfRangeArrayFillKernel(a, gridDimX: GridDimX, blockDimX: BlockDimX)));
+        Assert.Equal([7, 7, 7, 7], a);
+        if (!managed)
+        {
+            Assert.Contains("SpanWriteKernels.cu.cs", exception.Message);
+            Assert.Contains("377", exception.Message);
+        }
+    }
+
+    [SkippableTheory]
+    [MemberData(nameof(Paths))]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Syntax)]
+    [Scenario(TestScenario.SadPath)]
+    public void Test_OutOfRange_ArrayCopy_ThrowsArgumentException(bool managed)
+    {
+        Skip.If(IsCudaDialect, "A CUDA trap loses its code and spoils the context; the exception is checked on the CPU paths.");
+        var src = new int[] { 1, 2, 3, 4 };
+        var dst = new int[] { 7, 7, 7, 7 };
+        var exception = Assert.Throws<ArgumentException>(() => Run(managed,
+            () => SpanWriteKernels.LaunchOutOfRangeArrayCopyKernel(src, dst, gridDimX: GridDimX, blockDimX: BlockDimX)));
+        Assert.Equal([7, 7, 7, 7], dst);
+        if (!managed)
+        {
+            Assert.Contains("SpanWriteKernels.cu.cs", exception.Message);
+            Assert.Contains("388", exception.Message);
+        }
+    }
+
+    [SkippableTheory]
+    [MemberData(nameof(Paths))]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Syntax)]
+    [Scenario(TestScenario.SadPath)]
+    public void Test_OutOfRange_AsSpanFill_ThrowsArgumentOutOfRangeException(bool managed)
+    {
+        Skip.If(IsCudaDialect, "A CUDA trap loses its code and spoils the context; the exception is checked on the CPU paths.");
+        var a = new int[] { 7, 7, 7, 7 };
+        var exception = Assert.Throws<ArgumentOutOfRangeException>(() => Run(managed,
+            () => SpanWriteKernels.LaunchOutOfRangeAsSpanFillKernel(a, gridDimX: GridDimX, blockDimX: BlockDimX)));
+        Assert.Equal([7, 7, 7, 7], a);
+        if (!managed)
+        {
+            Assert.Contains("SpanWriteKernels.cu.cs", exception.Message);
+            Assert.Contains("399", exception.Message);
+        }
+    }
+
+    [SkippableTheory]
+    [MemberData(nameof(Paths))]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Syntax)]
+    [Scenario(TestScenario.SadPath)]
+    public void Test_OutOfRange_SliceFill_ThrowsArgumentOutOfRangeException(bool managed)
+    {
+        Skip.If(IsCudaDialect, "A CUDA trap loses its code and spoils the context; the exception is checked on the CPU paths.");
+        var a = new int[] { 7, 7, 7, 7 };
+        var exception = Assert.Throws<ArgumentOutOfRangeException>(() => Run(managed,
+            () => SpanWriteKernels.LaunchOutOfRangeSliceFillKernel(a, gridDimX: GridDimX, blockDimX: BlockDimX)));
+        Assert.Equal([7, 7, 7, 7], a);
+        if (!managed)
+        {
+            Assert.Contains("SpanWriteKernels.cu.cs", exception.Message);
+            Assert.Contains("410", exception.Message);
+        }
+    }
+
 #if GSHARP_CUDA
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
