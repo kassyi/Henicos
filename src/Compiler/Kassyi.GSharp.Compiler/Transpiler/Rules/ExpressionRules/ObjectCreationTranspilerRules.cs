@@ -322,23 +322,9 @@ internal static class ObjectCreationHelper
             }
             else
             {
-                EmitDefaultArgument(parameter, ref context);
+                ArgumentMatchingHelper.AppendDefaultArgument(parameter, ref context);
             }
         }
-    }
-
-    // The value itself: an expression built for it (ArgumentMatchingHelper.CreateDefaultArgument) is outside the
-    // compilation, so a member access such as float.NaN would bind to nothing. default is {}; an enum is its base type in
-    // C++, whose literal ConstexprLiteral writes.
-    private static void EmitDefaultArgument(IParameterSymbol parameter, ref TranspileContext context)
-    {
-        if (parameter.ExplicitDefaultValue is not { } value)
-        {
-            context.Emitter.Writer.Append("{}");
-            return;
-        }
-
-        context.Emitter.Writer.Append(ConstexprLiteral.FormatCppConstant(parameter.Type, value));
     }
 
     // T{args}; arguments in another order than the parameters (named arguments) or omitted ones are evaluated into
