@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Compiler.Analysis;
+
 namespace Kassyi.GSharp.Compiler;
 
 /// <summary>
@@ -255,7 +257,7 @@ internal static class GpuCodeConstraints
         var isStaticData = symbol switch
         {
             IFieldSymbol field => field is { IsStatic: true, IsConst: false } && field.ContainingType?.TypeKind != TypeKind.Enum,
-            IPropertySymbol property => property.IsStatic,
+            IPropertySymbol property => property.IsStatic && SpanWriteClassifier.ClassifyProperty(property) != SpanPropertyKind.Empty,
             _ => false
         };
 

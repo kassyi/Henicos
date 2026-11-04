@@ -47,6 +47,7 @@ G# treats a form that neither C# nor the GPU defines like `1 / 0` in C#:
 
 - A compile error is reported only when the analysis is certain. A form that the analysis can only suspect compiles and is left to the run-time checks, so correct code is never rejected.
 - A result that a CPU path happens to produce for such a form is never treated as correct. A CPU result that differs from the GPU result points to undefined behavior on the GPU first.
+- When a GPU thread traps through the runtime error channel (`__gsharp_trap` / `__gsharp_trap_site`), the first trapping thread records the `GSharpErrorCode`, the compile-time error site ID, and its 3D thread and block coordinates in a pinned host-mapped error slot (`__gsharp_error_slot`) before executing `trap;`. On the host, the next synchronization point (or the post-launch stream synchronization emitted when `<GSharpCheckedBuild>true</GSharpCheckedBuild>` is enabled; Release builds never add implicit synchronization) translates the slot into the matching standard .NET exception (`IndexOutOfRangeException`, `DivideByZeroException`, `OverflowException`, `ArgumentOutOfRangeException`, `ArgumentException`, `InvalidOperationException`, `NullReferenceException`, or `NotSupportedException`) with `InnerException` set to `CudaException` and `Exception.Data` populated with `GSharp.ErrorCode`, `GSharp.ThreadIndex`, `GSharp.BlockIndex`, `GSharp.MemberName`, and `GSharp.SourceLocation`.
 
 ## 6.4 The cost of following C#
 

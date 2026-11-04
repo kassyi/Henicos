@@ -26,7 +26,8 @@ public sealed class BinaryExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
     {
         if (node.IsKind(SyntaxKind.CoalesceExpression))
         {
-            NullRepresentation.AppendCoalesce(node.Left, node.Right, ref context);
+            NullRepresentation.AppendCoalesce(node.Left, node.Right, ref context,
+                context.Query.SemanticModel.GetTypeSymbol(node));
             return;
         }
 
@@ -34,16 +35,16 @@ public sealed class BinaryExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
         {
             var isNull = node.IsKind(SyntaxKind.EqualsExpression);
             if (node.Left.IsKind(SyntaxKind.NullLiteralExpression) &&
-                NullRepresentation.IsArrayNullComparable(context.Query.SemanticModel.GetTypeSymbol(node.Right)))
+                NullRepresentation.IsNullComparable(context.Query.SemanticModel.GetTypeSymbol(node.Right)))
             {
-                NullRepresentation.AppendArrayNullTest(node.Right, isNull, ref context);
+                NullRepresentation.AppendNullTest(node.Right, isNull, ref context);
                 return;
             }
 
             if (node.Right.IsKind(SyntaxKind.NullLiteralExpression) &&
-                NullRepresentation.IsArrayNullComparable(context.Query.SemanticModel.GetTypeSymbol(node.Left)))
+                NullRepresentation.IsNullComparable(context.Query.SemanticModel.GetTypeSymbol(node.Left)))
             {
-                NullRepresentation.AppendArrayNullTest(node.Left, isNull, ref context);
+                NullRepresentation.AppendNullTest(node.Left, isNull, ref context);
                 return;
             }
         }

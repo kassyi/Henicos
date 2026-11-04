@@ -29,6 +29,12 @@ namespace Kassyi.GSharp.Tests.Shared.Differential
 {
 public partial class BclExceptionDifferentialKernels
 {
+private static readonly global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[] s_errorSites = new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[]
+{
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(292809535u, "BclExceptionDifferentialKernels.cs", 247, 18, "StackLinqSingleKernel", "Sequence contains no elements"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(498808600u, "BclExceptionDifferentialKernels.cs", 247, 18, "StackLinqSingleKernel", "Sequence contains more than one element"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(940680236u, "BclExceptionDifferentialKernels.cs", 313, 18, "StackLinqElementAtKernel", "Index was out of range."),
+};
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static partial class AotContexts
@@ -1499,7 +1505,7 @@ if(__gsharp_id_4_t>=__gsharp_id_3_rows)
 __gsharp_state = -1;return;
 }
 __gsharp_id_2_dst[__gsharp_id_4_t]=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_id_0_backing.AsSpan().Slice(__gsharp_mul_i32(__gsharp_id_4_t,4),__gsharp_id_1_lengths[__gsharp_id_4_t]);
+auto&& __gsharp_fusion_src = __gsharp_id_0_backing.AsSpan().Slice(__gsharp_mul_i32(__gsharp_id_4_t,4),__gsharp_id_1_lengths[__gsharp_id_4_t], ""G#: index was out of range at BclExceptionDifferentialKernels.cs(221,18)"");
 int __gsharp_fusion_res = {};
 bool __gsharp_fusion_res_found = false;
 int __gsharp_fusion_lo = 0;
@@ -1778,7 +1784,7 @@ if(__gsharp_id_4_t>=__gsharp_id_3_rows)
 __gsharp_state = -1;return;
 }
 __gsharp_id_2_dst[__gsharp_id_4_t]=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_id_0_backing.AsSpan().Slice(__gsharp_mul_i32(__gsharp_id_4_t,4),__gsharp_id_1_lengths[__gsharp_id_4_t]);
+auto&& __gsharp_fusion_src = __gsharp_id_0_backing.AsSpan().Slice(__gsharp_mul_i32(__gsharp_id_4_t,4),__gsharp_id_1_lengths[__gsharp_id_4_t], ""G#: index was out of range at BclExceptionDifferentialKernels.cs(234,18)"");
 int __gsharp_fusion_res = {};
 bool __gsharp_fusion_res_found = false;
 int __gsharp_fusion_lo = 0;
@@ -2056,7 +2062,7 @@ if(__gsharp_id_4_t>=__gsharp_id_3_rows)
 {
 __gsharp_state = -1;return;
 }
-__gsharp_id_2_dst[__gsharp_id_4_t]=Kassyi::ZeroAlloc::Linq::StackLinq::Single(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_id_0_backing.AsSpan().Slice(__gsharp_mul_i32(__gsharp_id_4_t,4),__gsharp_id_1_lengths[__gsharp_id_4_t])));
+__gsharp_id_2_dst[__gsharp_id_4_t]=Kassyi::ZeroAlloc::Linq::StackLinq::Single(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_id_0_backing.AsSpan().Slice(__gsharp_mul_i32(__gsharp_id_4_t,4),__gsharp_id_1_lengths[__gsharp_id_4_t], ""G#: index was out of range at BclExceptionDifferentialKernels.cs(247,18)"")),292809535u,498808600u);
 __gsharp_state=-1;
 return;
 }
@@ -2289,6 +2295,10 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.EndGrid();
 return;
 }
 var __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_StackLinqSingleKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Differential__BclExceptionDifferentialKernels__StackLinqSingleKernel", __gsharp_dll_path);
+if (s_errorSites.Length > 0)
+{
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
+}
 fixed (global::System.Int32* __gsharp_p_0 = backing)
 fixed (global::System.Int32* __gsharp_p_1 = lengths)
 fixed (global::System.Int32* __gsharp_p_2 = dst)
@@ -2322,7 +2332,7 @@ if(__gsharp_id_4_t>=__gsharp_id_3_rows)
 __gsharp_state = -1;return;
 }
 __gsharp_id_2_dst[__gsharp_id_4_t]=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_id_0_backing.AsSpan().Slice(__gsharp_mul_i32(__gsharp_id_4_t,4),__gsharp_id_1_lengths[__gsharp_id_4_t]);
+auto&& __gsharp_fusion_src = __gsharp_id_0_backing.AsSpan().Slice(__gsharp_mul_i32(__gsharp_id_4_t,4),__gsharp_id_1_lengths[__gsharp_id_4_t], ""G#: index was out of range at BclExceptionDifferentialKernels.cs(260,18)"");
 int __gsharp_fusion_res = {};
 bool __gsharp_fusion_res_init = false;
 int __gsharp_fusion_lo = 0;
@@ -2606,7 +2616,7 @@ if(__gsharp_id_4_t>=__gsharp_id_3_rows)
 __gsharp_state = -1;return;
 }
 __gsharp_id_2_dst[__gsharp_id_4_t]=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_id_0_backing.AsSpan().Slice(__gsharp_mul_i32(__gsharp_id_4_t,4),__gsharp_id_1_lengths[__gsharp_id_4_t]);
+auto&& __gsharp_fusion_src = __gsharp_id_0_backing.AsSpan().Slice(__gsharp_mul_i32(__gsharp_id_4_t,4),__gsharp_id_1_lengths[__gsharp_id_4_t], ""G#: index was out of range at BclExceptionDifferentialKernels.cs(273,18)"");
 int __gsharp_fusion_res = {};
 bool __gsharp_fusion_res_init = false;
 int __gsharp_fusion_lo = 0;
@@ -2890,7 +2900,7 @@ if(__gsharp_id_4_t>=__gsharp_id_3_rows)
 __gsharp_state = -1;return;
 }
 __gsharp_id_2_dst[__gsharp_id_4_t]=__gsharp_to_i32(([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_id_0_backing.AsSpan().Slice(__gsharp_mul_i32(__gsharp_id_4_t,4),__gsharp_id_1_lengths[__gsharp_id_4_t]);
+auto&& __gsharp_fusion_src = __gsharp_id_0_backing.AsSpan().Slice(__gsharp_mul_i32(__gsharp_id_4_t,4),__gsharp_id_1_lengths[__gsharp_id_4_t], ""G#: index was out of range at BclExceptionDifferentialKernels.cs(286,23)"");
 double __gsharp_fusion_res = 0;
 int __gsharp_fusion_res_count = 0;
 int __gsharp_fusion_lo = 0;
@@ -3172,7 +3182,7 @@ if(__gsharp_id_4_t>=__gsharp_id_3_rows)
 __gsharp_state = -1;return;
 }
 __gsharp_id_2_dst[__gsharp_id_4_t]=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_id_0_backing.AsSpan().Slice(__gsharp_mul_i32(__gsharp_id_4_t,4),__gsharp_id_1_lengths[__gsharp_id_4_t]);
+auto&& __gsharp_fusion_src = __gsharp_id_0_backing.AsSpan().Slice(__gsharp_mul_i32(__gsharp_id_4_t,4),__gsharp_id_1_lengths[__gsharp_id_4_t], ""G#: index was out of range at BclExceptionDifferentialKernels.cs(299,18)"");
 int __gsharp_fusion_res = {};
 bool __gsharp_fusion_res_init = false;
 int __gsharp_fusion_lo = 0;
@@ -3457,11 +3467,11 @@ if(__gsharp_id_4_t>=__gsharp_id_3_rows)
 {
 __gsharp_state = -1;return;
 }
-GSharpArray<int> __gsharp_id_5_slice = __gsharp_id_0_backing.AsSpan().Slice(__gsharp_mul_i32(__gsharp_id_4_t,4),4);
+GSharpArray<int> __gsharp_id_5_slice = __gsharp_id_0_backing.AsSpan().Slice(__gsharp_mul_i32(__gsharp_id_4_t,4),4, ""G#: index was out of range at BclExceptionDifferentialKernels.cs(312,27)"");
 __gsharp_id_2_dst[__gsharp_id_4_t]=([&]() {
 auto __gsharp_seq_0 = Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_id_5_slice);
 int __gsharp_seq_1 = __gsharp_id_1_indices[__gsharp_id_4_t];
-return Kassyi::ZeroAlloc::Linq::StackLinq::ElementAt(__gsharp_seq_0,__gsharp_seq_1);
+return Kassyi::ZeroAlloc::Linq::StackLinq::ElementAt(__gsharp_seq_0,__gsharp_seq_1,940680236u);
 }());
 __gsharp_state=-1;
 return;
@@ -3696,6 +3706,10 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.EndGrid();
 return;
 }
 var __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_StackLinqElementAtKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Differential__BclExceptionDifferentialKernels__StackLinqElementAtKernel", __gsharp_dll_path);
+if (s_errorSites.Length > 0)
+{
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
+}
 fixed (global::System.Int32* __gsharp_p_0 = backing)
 fixed (global::System.Int32* __gsharp_p_1 = indices)
 fixed (global::System.Int32* __gsharp_p_2 = dst)
@@ -3728,7 +3742,7 @@ if(__gsharp_id_3_t>=__gsharp_id_2_rows)
 {
 __gsharp_state = -1;return;
 }
-GSharpArray<int> __gsharp_id_4_slice = __gsharp_id_0_backing.AsSpan().Slice(__gsharp_mul_i32(__gsharp_id_3_t,4),4);
+GSharpArray<int> __gsharp_id_4_slice = __gsharp_id_0_backing.AsSpan().Slice(__gsharp_mul_i32(__gsharp_id_3_t,4),4, ""G#: index was out of range at BclExceptionDifferentialKernels.cs(331,27)"");
 int __gsharp_id_5_selectEvaluations = 0;
 int __gsharp_id_6_selectVal = Kassyi::ZeroAlloc::Linq::StackLinq::ElementAtOrDefault(Kassyi::ZeroAlloc::Linq::StackLinq::Select(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_id_4_slice),[&](auto __gsharp_id_7_x) {
 return __gsharp_add_i32(__gsharp_id_7_x,(__gsharp_id_5_selectEvaluations=__gsharp_add_i32(__gsharp_id_5_selectEvaluations,1)));
@@ -4009,8 +4023,8 @@ if(__gsharp_id_5_t>=__gsharp_id_4_rows)
 __gsharp_state = -1;return;
 }
 int __gsharp_id_6_sliceOffset = __gsharp_mul_i32(__gsharp_id_5_t,4);
-GSharpArray<int> __gsharp_id_7_keys = __gsharp_id_0_keysBacking.AsSpan().Slice(__gsharp_id_6_sliceOffset,4);
-GSharpArray<int> __gsharp_id_8_items = __gsharp_id_1_itemsBacking.AsSpan().Slice(__gsharp_id_6_sliceOffset,__gsharp_id_2_itemLens[__gsharp_id_5_t]);
+GSharpArray<int> __gsharp_id_7_keys = __gsharp_id_0_keysBacking.AsSpan().Slice(__gsharp_id_6_sliceOffset,4, ""G#: index was out of range at BclExceptionDifferentialKernels.cs(366,26)"");
+GSharpArray<int> __gsharp_id_8_items = __gsharp_id_1_itemsBacking.AsSpan().Slice(__gsharp_id_6_sliceOffset,__gsharp_id_2_itemLens[__gsharp_id_5_t], ""G#: index was out of range at BclExceptionDifferentialKernels.cs(367,27)"");
 __gsharp_sort_pairs(__gsharp_id_7_keys,__gsharp_id_8_items);
 int __gsharp_id_9_baseIdx = __gsharp_mul_i32(__gsharp_id_5_t,4);
 if(__gsharp_id_7_keys.length>=4&&__gsharp_id_8_items.length>=4)
@@ -4304,7 +4318,7 @@ if(__gsharp_id_4_t>=__gsharp_id_3_rows)
 __gsharp_state = -1;return;
 }
 int __gsharp_id_5_sliceOffset = __gsharp_mul_i32(__gsharp_id_4_t,4);
-GSharpArray<int> __gsharp_id_6_keys = __gsharp_id_0_keysBacking.AsSpan().Slice(__gsharp_id_5_sliceOffset,4);
+GSharpArray<int> __gsharp_id_6_keys = __gsharp_id_0_keysBacking.AsSpan().Slice(__gsharp_id_5_sliceOffset,4, ""G#: index was out of range at BclExceptionDifferentialKernels.cs(398,26)"");
 int __gsharp_id_7_trigger = __gsharp_id_1_trapTriggers[__gsharp_id_4_t];
 __gsharp_sort(__gsharp_id_6_keys,[&](auto __gsharp_id_8_a, auto __gsharp_id_9_b) {
 if(__gsharp_id_7_trigger!=0)
@@ -4626,7 +4640,7 @@ if(__gsharp_id_4_t>=__gsharp_id_3_rows)
 {
 __gsharp_state = -1;return;
 }
-GSharpArray<int> __gsharp_id_5_slice = __gsharp_id_0_backing.AsSpan().Slice(__gsharp_mul_i32(__gsharp_id_4_t,4),4);
+GSharpArray<int> __gsharp_id_5_slice = __gsharp_id_0_backing.AsSpan().Slice(__gsharp_mul_i32(__gsharp_id_4_t,4),4, ""G#: index was out of range at BclExceptionDifferentialKernels.cs(441,27)"");
 int __gsharp_id_6_threshold = __gsharp_id_1_thresholds[__gsharp_id_4_t];
 int __gsharp_id_7_denom = ([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_5_slice;

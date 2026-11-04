@@ -319,7 +319,7 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
             context.Emitter.Writer.AppendLine(";");
         }
 
-        var paramType = paramSymbol.Type.UnwrapNullableArrayLike();
+        var paramType = paramSymbol.Type;
         StructTranspiler.RegisterUsedStructIfApplicable(paramType, ref context);
 
         if (paramIdx < annotatedParamList.Parameters.Count)

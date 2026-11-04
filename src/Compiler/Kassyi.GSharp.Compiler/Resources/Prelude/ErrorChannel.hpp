@@ -1,16 +1,16 @@
 // --- Runtime Error Channel (CPU Dialect) ---
-enum class GSharpErrorCode : int32_t {
-    None = 0,
-    NotSupported = 1,
-    InvalidOperation = 2,
-    IndexOutOfRange = 3,
-    ArgumentOutOfRange = 4,
-    Argument = 5,
-    NullReference = 6
-};
+extern thread_local uint3 threadIdx;
+extern thread_local uint3 blockIdx;
+extern thread_local dim3 gridDim;
+
+// GSharpErrorCode and __gsharp_trap are declared in Types.hpp so GSharpArray<T>::CopyTo can report Argument errors.
 
 struct GSharpErrorSlot {
     std::atomic<int32_t> code{0};
+    uint32_t site_id{0};
+    uint32_t thread_linear{0};
+    uint32_t block_x{0};
+    uint32_t block_yz{0};
     const char* message{nullptr};
     // The first report's message, copied: a message formatted at run time (with the place and the values) does not
     // outlive the function that formats it. Reset keeps the text, so a message just consumed stays readable. The text is
@@ -18,8 +18,25 @@ struct GSharpErrorSlot {
     // 512 bytes hold the longest message of the prelude (a missing shuffle lane, with its place and hint)
     char text[512]{};
 
+    static inline thread_local const GSharpErrorSlot* current_launch_slot = nullptr;
+
+    inline GSharpErrorSlot() noexcept {
+        current_launch_slot = this;
+    }
+
+    inline ~GSharpErrorSlot() noexcept {
+        if (current_launch_slot == this) {
+            current_launch_slot = nullptr;
+        }
+    }
+
     inline void Reset() noexcept {
+        site_id = 0;
+        thread_linear = 0;
+        block_x = 0;
+        block_yz = 0;
         message = nullptr;
+        current_launch_slot = nullptr;
         code.store(0, std::memory_order_release);
     }
 
@@ -27,11 +44,26 @@ struct GSharpErrorSlot {
         return code.load(std::memory_order_acquire) != 0;
     }
 
-    inline void Report(GSharpErrorCode errCode, const char* msg) noexcept {
+    inline void CaptureCoordinates() noexcept {
+        thread_linear = (threadIdx.x & 0x3FFu) | ((threadIdx.y & 0x3FFu) << 10) | ((threadIdx.z & 0x3FFu) << 20);
+        block_x = blockIdx.x;
+        block_yz = (blockIdx.y & 0xFFFFu) | ((blockIdx.z & 0xFFFFu) << 16);
+    }
+
+    inline void Report(GSharpErrorCode errCode, const char* msg, uint32_t siteId = 0) noexcept {
         int32_t expected = 0;
         if (code.compare_exchange_strong(expected, static_cast<int32_t>(errCode),
                                          std::memory_order_acq_rel,
                                          std::memory_order_relaxed)) {
+            if (current_launch_slot != nullptr && current_launch_slot != this && current_launch_slot->HasError()) {
+                site_id = current_launch_slot->site_id;
+                thread_linear = current_launch_slot->thread_linear;
+                block_x = current_launch_slot->block_x;
+                block_yz = current_launch_slot->block_yz;
+            } else {
+                site_id = siteId;
+                CaptureCoordinates();
+            }
             if (msg == nullptr) {
                 message = nullptr;
                 return;
@@ -59,6 +91,34 @@ extern "C" __declspec(dllexport) int32_t __gsharp_consume_last_error(const char*
     if (c != 0) {
         if (outMessage != nullptr) {
             *outMessage = __gsharp_host_last_error.message;
+        }
+        __gsharp_host_last_error.Reset();
+    }
+    return c;
+}
+
+extern "C" __declspec(dllexport) int32_t __gsharp_consume_last_error_details(
+    const char** outMessage,
+    uint32_t* outSiteId,
+    uint32_t* outThreadLinear,
+    uint32_t* outBlockX,
+    uint32_t* outBlockYZ) {
+    int32_t c = __gsharp_host_last_error.code.load(std::memory_order_acquire);
+    if (c != 0) {
+        if (outMessage != nullptr) {
+            *outMessage = __gsharp_host_last_error.message;
+        }
+        if (outSiteId != nullptr) {
+            *outSiteId = __gsharp_host_last_error.site_id;
+        }
+        if (outThreadLinear != nullptr) {
+            *outThreadLinear = __gsharp_host_last_error.thread_linear;
+        }
+        if (outBlockX != nullptr) {
+            *outBlockX = __gsharp_host_last_error.block_x;
+        }
+        if (outBlockYZ != nullptr) {
+            *outBlockYZ = __gsharp_host_last_error.block_yz;
         }
         __gsharp_host_last_error.Reset();
     }
@@ -106,6 +166,35 @@ inline void __gsharp_trap(GSharpErrorCode code, const char* message)
     }
 }
 
+inline void __gsharp_trap_site(GSharpErrorCode code, uint32_t site_id)
+{
+    const char* message = nullptr;
+    if (__gsharp_sort_compare_depth > 0)
+    {
+        if (code == GSharpErrorCode::IndexOutOfRange)
+        {
+            code = GSharpErrorCode::Argument;
+            message = "Unable to sort because the IComparer.Compare() method returns inconsistent results.";
+        }
+        else
+        {
+            code = GSharpErrorCode::InvalidOperation;
+            message = "Failed to compare two elements in the array.";
+        }
+    }
+
+    if (__gsharp_active_error_slot != nullptr) {
+        __gsharp_active_error_slot->Report(code, message, site_id);
+    } else {
+        __gsharp_host_last_error.Report(code, message, site_id);
+    }
+}
+
+inline void __gsharp_trap(GSharpErrorCode code, uint32_t site_id)
+{
+    __gsharp_trap_site(code, site_id);
+}
+
 // Thrown by __gsharp_trap_abort to end the kernel step of the current thread; the launcher catches it around the kernel
 // call, inside its OpenMP loop, and stops the launch through the error slot.
 struct __gsharp_step_abort {};
@@ -115,6 +204,12 @@ struct __gsharp_step_abort {};
 [[noreturn]] inline void __gsharp_trap_abort(GSharpErrorCode code, const char* message)
 {
     __gsharp_trap(code, message);
+    throw __gsharp_step_abort{};
+}
+
+[[noreturn]] inline void __gsharp_trap_abort(GSharpErrorCode code, uint32_t site_id)
+{
+    __gsharp_trap_site(code, site_id);
     throw __gsharp_step_abort{};
 }
 

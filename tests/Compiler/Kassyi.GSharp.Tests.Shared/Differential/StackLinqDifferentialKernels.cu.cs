@@ -458,4 +458,239 @@ public static partial class StackLinqDifferentialKernels
         var unfused = slice.AsStackEnumerable();
         r[o + 2] = unfused.Sum();
     }
+
+    /// <summary>The columns of <see cref="DoubleSequentialSumKernel"/>.</summary>
+    public static readonly string[] DoubleSequentialSumColumns =
+    [
+        "FusedSum",
+        "WhereSelectSum",
+        "UnfusedSum",
+        "SelectorSum",
+    ];
+
+    // Uses Reference model because host StackLinq.Sum(double) uses Vector<double> SIMD for SpanEnumerator (#730).
+    [GpuKernel]
+    public static void DoubleSequentialSumKernel(double[] xs, double[] r)
+    {
+        int t = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        int baseIdx = t * SliceLength;
+        if (baseIdx + SliceLength > xs.Length)
+        {
+            return;
+        }
+
+        var slice = xs.AsSpan().Slice(baseIdx, SliceLength);
+        int o = t * 4;
+
+        r[o] = slice.AsStackEnumerable().Sum();
+        r[o + 1] = slice.AsStackEnumerable().Where(x => true).Select(x => x).Sum();
+        var unfused = slice.AsStackEnumerable();
+        r[o + 2] = unfused.Sum();
+        r[o + 3] = slice.AsStackEnumerable().Sum(x => x * 2.0);
+    }
+
+    [GpuKernel]
+    public static void StackLinqFusedFirstKernel(int[] xs, long[] r)
+    {
+        int t = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        int baseIdx = t * SliceLength;
+        if (baseIdx + SliceLength > xs.Length)
+        {
+            return;
+        }
+
+        var slice = xs.AsSpan().Slice(baseIdx, SliceLength);
+        r[t] = slice.AsStackEnumerable().First();
+    }
+
+    [GpuKernel]
+    public static void StackLinqFusedFirstPredicateKernel(int[] xs, long[] r)
+    {
+        int t = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        int baseIdx = t * SliceLength;
+        if (baseIdx + SliceLength > xs.Length)
+        {
+            return;
+        }
+
+        var slice = xs.AsSpan().Slice(baseIdx, SliceLength);
+        int s2 = slice[2];
+        r[t] = slice.AsStackEnumerable().First(x => x == s2);
+    }
+
+    [GpuKernel]
+    public static void StackLinqFusedLastKernel(int[] xs, long[] r)
+    {
+        int t = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        int baseIdx = t * SliceLength;
+        if (baseIdx + SliceLength > xs.Length)
+        {
+            return;
+        }
+
+        var slice = xs.AsSpan().Slice(baseIdx, SliceLength);
+        r[t] = slice.AsStackEnumerable().Last();
+    }
+
+    [GpuKernel]
+    public static void StackLinqFusedLastPredicateKernel(int[] xs, long[] r)
+    {
+        int t = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        int baseIdx = t * SliceLength;
+        if (baseIdx + SliceLength > xs.Length)
+        {
+            return;
+        }
+
+        var slice = xs.AsSpan().Slice(baseIdx, SliceLength);
+        int s1 = slice[1];
+        r[t] = slice.AsStackEnumerable().Last(x => x == s1);
+    }
+
+    [GpuKernel]
+    public static void StackLinqSingleOneElementKernel(int[] xs, long[] r)
+    {
+        int t = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        int baseIdx = t * SliceLength;
+        if (baseIdx + SliceLength > xs.Length)
+        {
+            return;
+        }
+
+        var slice = xs.AsSpan().Slice(baseIdx, SliceLength);
+        var oneElemSlice = slice.Slice(1, 1);
+        r[t] = oneElemSlice.AsStackEnumerable().Single();
+    }
+
+    [GpuKernel]
+    public static void StackLinqSinglePredicateUniqueKernel(int[] xs, long[] r)
+    {
+        int t = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        int baseIdx = t * SliceLength;
+        if (baseIdx + SliceLength > xs.Length)
+        {
+            return;
+        }
+
+        var slice = xs.AsSpan().Slice(baseIdx, SliceLength);
+        var oneElemSlice = slice.Slice(1, 1);
+        r[t] = oneElemSlice.AsStackEnumerable().Single(x => true);
+    }
+
+    [GpuKernel]
+    public static void StackLinqSingleOrDefaultEmptyKernel(int[] xs, long[] r)
+    {
+        int t = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        int baseIdx = t * SliceLength;
+        if (baseIdx + SliceLength > xs.Length)
+        {
+            return;
+        }
+
+        var slice = xs.AsSpan().Slice(baseIdx, SliceLength);
+        var emptySlice = slice.Slice(0, 0);
+        r[t] = emptySlice.AsStackEnumerable().SingleOrDefault();
+    }
+
+    [GpuKernel]
+    public static void StackLinqSingleOrDefaultOneElementKernel(int[] xs, long[] r)
+    {
+        int t = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        int baseIdx = t * SliceLength;
+        if (baseIdx + SliceLength > xs.Length)
+        {
+            return;
+        }
+
+        var slice = xs.AsSpan().Slice(baseIdx, SliceLength);
+        var oneElemSlice = slice.Slice(1, 1);
+        r[t] = oneElemSlice.AsStackEnumerable().SingleOrDefault();
+    }
+
+    [GpuKernel]
+    public static void StackLinqSingleOrDefaultPredicateNoneKernel(int[] xs, long[] r)
+    {
+        int t = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        int baseIdx = t * SliceLength;
+        if (baseIdx + SliceLength > xs.Length)
+        {
+            return;
+        }
+
+        var slice = xs.AsSpan().Slice(baseIdx, SliceLength);
+        r[t] = slice.AsStackEnumerable().SingleOrDefault(x => x > 0 && x < 0);
+    }
+
+    [GpuKernel]
+    public static void StackLinqElementAtZeroKernel(int[] xs, long[] r)
+    {
+        int t = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        int baseIdx = t * SliceLength;
+        if (baseIdx + SliceLength > xs.Length)
+        {
+            return;
+        }
+
+        var slice = xs.AsSpan().Slice(baseIdx, SliceLength);
+        r[t] = slice.AsStackEnumerable().ElementAt(0);
+    }
+
+    [GpuKernel]
+    public static void StackLinqElementAtTwoKernel(int[] xs, long[] r)
+    {
+        int t = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        int baseIdx = t * SliceLength;
+        if (baseIdx + SliceLength > xs.Length)
+        {
+            return;
+        }
+
+        var slice = xs.AsSpan().Slice(baseIdx, SliceLength);
+        r[t] = slice.AsStackEnumerable().ElementAt(2);
+    }
+
+    [GpuKernel]
+    public static void StackLinqTakeWhileSideEffectCountKernel(int[] xs, long[] r)
+    {
+        int t = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        int baseIdx = t * SliceLength;
+        if (baseIdx + SliceLength > xs.Length)
+        {
+            return;
+        }
+
+        var slice = xs.AsSpan().Slice(baseIdx, SliceLength);
+        int twCalls = 0;
+        int twSum = slice.AsStackEnumerable().TakeWhile(x => ++twCalls <= 2).Sum();
+        r[t] = twCalls + (twSum & 0);
+    }
+
+    [GpuKernel]
+    public static void StackLinqSkipWhileSideEffectCountKernel(int[] xs, long[] r)
+    {
+        int t = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        int baseIdx = t * SliceLength;
+        if (baseIdx + SliceLength > xs.Length)
+        {
+            return;
+        }
+
+        var slice = xs.AsSpan().Slice(baseIdx, SliceLength);
+        int swCalls = 0;
+        int swSum = slice.AsStackEnumerable().SkipWhile(x => ++swCalls <= 2).Sum();
+        r[t] = swCalls + (swSum & 0);
+    }
+
+    [GpuKernel]
+    public static void ParallelSumStackLinqKernel(int[] xs, int[] r)
+    {
+        int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        int blockSum = xs.AsStackEnumerable().AsParallel().Sum();
+        int filteredSum = xs.AsStackEnumerable().Where(x => (x & 1) == 0).Select(x => x * 2).AsParallel().Sum();
+        if (tid < r.Length / 2)
+        {
+            r[tid * 2] = blockSum;
+            r[tid * 2 + 1] = filteredSum;
+        }
+    }
 }

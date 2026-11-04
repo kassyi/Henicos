@@ -6,7 +6,7 @@ namespace Kassyi.GSharp.Runtime.Aot;
 /// Manages CUDA thread contexts, module loading, and function pointer caches for compiled GPU kernels.
 /// </summary>
 // ReSharper disable once UnusedMember.Global -- Public API exposed for runtime consumers
-public static class GpuKernelLoader
+public static unsafe class GpuKernelLoader
 {
     private static volatile bool s_isGlobalInit;
     private static IntPtr s_globalContext;
@@ -175,6 +175,7 @@ public static class GpuKernelLoader
                 CudaException.ThrowIfError(CudaDriverApi.cuDeviceGet(out var device, 0));
 
                 CudaException.ThrowIfError(CudaDriverApi.cuCtxCreate_v2(out s_globalContext, 0, device));
+                DeviceErrorSlot.AllocateInCurrentContext();
                 CudaException.ThrowIfError(CudaDriverApi.cuCtxPopCurrent_v2(out _)); // Immediately pop to avoid poisoning the ThreadPool thread
 
                 CudaException.ThrowIfError(CudaDriverApi.cuDeviceGetAttribute(out s_deviceMajor,
@@ -202,6 +203,37 @@ public static class GpuKernelLoader
 
     // Function cache indexed by (Hash256, KernelName)
     private static readonly ConcurrentDictionary<(AotSignatureValidator.Hash256 Hash, string KernelName), IntPtr> s_functionCache = new();
+
+    /// <summary>
+    /// Registers an error site table for the specified AOT fatbin binary.
+    /// </summary>
+    /// <param name="aotFatbin">The raw byte span of the AOT Fatbin binary.</param>
+    /// <param name="sites">The 1-based error site table.</param>
+    public static void RegisterErrorSites(ReadOnlySpan<byte> aotFatbin, ReadOnlySpan<GSharpErrorSite> sites) =>
+        DeviceErrorSlot.RegisterErrorSites(aotFatbin, sites);
+
+    /// <summary>
+    /// Inspects the pinned device error slot and throws the corresponding standard .NET exception if a device error was recorded.
+    /// </summary>
+    /// <param name="innerException">Optional inner <see cref="CudaException"/> from the CUDA driver.</param>
+    /// <remarks>
+    /// <b>[NOTE]:</b> The error slot is shared process-wide across all streams and modules. When multiple kernels
+    /// are in flight and a trap occurs, whichever thread/call executes this method first consumes and clears the slot.
+    /// </remarks>
+    public static void ThrowIfDeviceError(Exception? innerException = null) =>
+        DeviceErrorSlot.ThrowIfDeviceError(innerException);
+
+    /// <summary>
+    /// Creates a managed exception for a non-success <see cref="CUresult"/>, translating any recorded device trap slot into the matching standard .NET exception.
+    /// </summary>
+    /// <param name="result">The non-success <see cref="CUresult"/> returned by the CUDA driver.</param>
+    /// <param name="fallbackMessage">An optional fallback message for the <see cref="CudaException"/>.</param>
+    /// <returns>The standard .NET exception if the device error slot contains a record; otherwise, a <see cref="CudaException"/>.</returns>
+    public static Exception CreateExceptionForDriverError(CUresult result, string? fallbackMessage = null) =>
+        DeviceErrorSlot.CreateExceptionForDriverError(result, fallbackMessage);
+
+    internal static bool TryConsumeDeviceErrorSlot(out GSharpDeviceErrorSlot slot) =>
+        DeviceErrorSlot.TryConsumeSlot(out slot);
 
 #pragma warning disable IDE0051 // Justification: Public API for library
     /// <summary>
@@ -239,6 +271,8 @@ public static class GpuKernelLoader
                     Logger.Warning(nameof(GpuKernelLoader), $"Failed to unload CUDA module during shutdown: {ex.Message}");
                 }
             }
+
+            DeviceErrorSlot.FreeInCurrentContext();
         }
         catch (Exception ex)
         {
@@ -258,6 +292,7 @@ public static class GpuKernelLoader
     {
         using var scope = new CudaContextScope();
         CudaException.ThrowIfError(CudaDriverApi.cuCtxSynchronize());
+        ThrowIfDeviceError();
     }
 
     /// <summary>
@@ -352,9 +387,10 @@ public static class GpuKernelLoader
             throw new InvalidOperationException(DescribeIncompatibleFatbin(fatbin, s_deviceMajor, s_deviceMinor));
         }
 
+        var moduleId = DeviceErrorSlot.GetOrAssignModuleId(embeddedHash);
         var lazyModule = s_moduleCache.GetOrAdd(
             embeddedHash,
-            _ => new Lazy<IntPtr>(() => LoadModuleCore(processed, fatbin), LazyThreadSafetyMode.ExecutionAndPublication));
+            _ => new Lazy<IntPtr>(() => LoadModuleCore(processed, fatbin, moduleId), LazyThreadSafetyMode.ExecutionAndPublication));
 
         try
         {
@@ -367,9 +403,10 @@ public static class GpuKernelLoader
         }
     }
 
-    private static unsafe IntPtr LoadModuleCore(byte[] binaryData, FatbinImage? fatbin)
+    private static IntPtr LoadModuleCore(byte[] binaryData, FatbinImage? fatbin, uint moduleId)
     {
         using var scope = new CudaContextScope();
+        DeviceErrorSlot.AllocateInCurrentContext();
 
         // Fatbins MUST be 8-byte aligned for cuModuleLoadDataEx
         var pAlignedBinary = NativeMemory.AlignedAlloc((nuint)binaryData.Length, 8);
@@ -380,9 +417,13 @@ public static class GpuKernelLoader
             // Do NOT pass JIT options (like ERROR_LOG_BUFFER) when loading an AOT Fatbin,
             // as it causes CUDA_ERROR_INVALID_VALUE when the driver simply loads a matching CUBIN without JITing.
             var loadResult = CudaDriverApi.cuModuleLoadDataEx(out var module, (IntPtr)pAlignedBinary, 0, null, null);
-            return loadResult != CUresult.CudaSuccess
-                ? throw CreateModuleLoadException(loadResult, fatbin, s_deviceMajor, s_deviceMinor)
-                : module;
+            if (loadResult != CUresult.CudaSuccess)
+            {
+                throw CreateModuleLoadException(loadResult, fatbin, s_deviceMajor, s_deviceMinor);
+            }
+
+            DeviceErrorSlot.ConfigureModule(module, moduleId);
+            return module;
         }
         finally
         {

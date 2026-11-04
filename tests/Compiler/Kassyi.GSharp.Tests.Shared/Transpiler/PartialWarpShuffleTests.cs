@@ -268,6 +268,40 @@ public class PartialWarpShuffleTests : TranspilerTestBase
         Assert.Equal([.. Enumerable.Repeat(0xFFFFFFFFu, 32), .. Enumerable.Repeat(7u, 3)], result);
     }
 
+    [SkippableTheory]
+    [Scenario(TestScenario.SadPath)]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Test_MatchAny_CallerOutsideMask_ThrowsWithPlace(bool forceManaged)
+    {
+        SkipUndefinedOnCuda();
+        var result = new uint[32];
+
+        var exception = Assert.Throws<InvalidOperationException>(() =>
+            Run(forceManaged, () => PartialWarpShuffleKernels.LaunchMatchAnyCallerOutsideMaskKernel(result, 0x00000001u, blockDimX: 32)));
+
+        Assert.Contains("Gpu.MatchAnySync at " + KernelFile, exception.Message);
+        Assert.Contains("without caller lane", exception.Message);
+        Assert.Contains("(CUDA leaves the result undefined)", exception.Message);
+    }
+
+    [SkippableTheory]
+    [Scenario(TestScenario.SadPath)]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Test_MatchAll_CallerOutsideMask_ThrowsWithPlace(bool forceManaged)
+    {
+        SkipUndefinedOnCuda();
+        var result = new uint[32];
+
+        var exception = Assert.Throws<InvalidOperationException>(() =>
+            Run(forceManaged, () => PartialWarpShuffleKernels.LaunchMatchAllCallerOutsideMaskKernel(result, 0x00000001u, blockDimX: 32)));
+
+        Assert.Contains("Gpu.MatchAllSync at " + KernelFile, exception.Message);
+        Assert.Contains("without caller lane", exception.Message);
+        Assert.Contains("(CUDA leaves the result undefined)", exception.Message);
+    }
+
     private void SkipUndefinedOnCuda() =>
         Skip.If(IsCudaDialect, "CUDA leaves the result undefined; only the CPU paths check it.");
 
