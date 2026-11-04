@@ -96,4 +96,19 @@ public static partial class PartialWarpShuffleKernels
     {
         result[ThreadIndex.Y * BlockDimension.X + ThreadIndex.X] = Warp.ActiveMask();
     }
+
+    [GpuKernel]
+    public static void MatchAnyCallerOutsideMaskKernel(uint[] result, uint mask)
+    {
+        int v = ThreadIndex.X + 1;
+        result[ThreadIndex.X] = Gpu.MatchAnySync(mask, v);
+    }
+
+    [GpuKernel]
+    public static void MatchAllCallerOutsideMaskKernel(uint[] result, uint mask)
+    {
+        int v = ThreadIndex.X + 1;
+        int pred = 0;
+        result[ThreadIndex.X] = Gpu.MatchAllSync(mask, v, ref pred);
+    }
 }

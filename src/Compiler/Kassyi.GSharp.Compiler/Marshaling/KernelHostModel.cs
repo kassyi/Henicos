@@ -44,6 +44,9 @@ internal readonly record struct KernelHostModel
     /// <summary>A <c>[GpuKernel(Cooperative = true)]</c> kernel.</summary>
     public bool IsCooperative { get; init; }
 
+    /// <summary>Whether the kernel or any device function it calls reaches a warp shuffle or warp match (#1001).</summary>
+    public bool ReachesWarpShuffle { get; init; }
+
     /// <summary>The <c>global::</c>-qualified name of the class that declares the kernel, for qualifying sibling members.</summary>
     public string ClassQualifiedName { get; init; }
 
@@ -121,6 +124,7 @@ internal readonly record struct KernelHostModel
             CudaReturn = ParameterTransfer.CreateForReturn(kernel.ReturnType, HostDialects.Cuda, kernel.ContainingType),
             CpuReturn = ParameterTransfer.CreateForReturn(kernel.ReturnType, HostDialects.Cpu, kernel.ContainingType),
             IsCooperative = kernel.IsCooperativeKernel(),
+            ReachesWarpShuffle = model != null && SuspensionAnalysis.ReachesWarpShuffle(kernel, model.Compilation),
             ClassQualifiedName = AotHostNames.GetHostClassQualifiedName(kernel.ContainingType),
             HasReservedLaunchParameterName = kernel.Parameters
                 .AsStackEnumerable()

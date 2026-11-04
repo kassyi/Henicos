@@ -5,6 +5,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.ExceptionServices;
 using System.Runtime.InteropServices;
 using System.Threading;
+using Kassyi.GSharp.Compiler.Transpiler.Managed;
 using Kassyi.GSharp.Core;
 using Kassyi.GSharp.Runtime.Aot;
 using Kassyi.GSharp.Tests.Shared.Helpers;
@@ -179,6 +180,63 @@ public class SharedMemoryRegionManagedTests : TranspilerTestBase
 
             Assert.Equal(9, new SharedMemory<int>(4, siteKey)[0]);
             Assert.Equal(0, new SharedMemory<int>(4, path, unchecked(line + 1), member)[0]);
+        });
+    }
+
+    [Theory]
+    [Scenario(TestScenario.HappyPath)]
+    [InlineData("SomeFile.cs", 1)]
+    [InlineData("P:/path/to/MyKernel.cu.cs", 100)]
+    [InlineData("\u65e5\u672c.cs", 999)]
+    [InlineData("", 0)]
+    public void Test_TypeKeyedSiteKey_MatchesCompilerComputation(string path, int line)
+    {
+        var compilerKey = TypeKeyedSharedMemoryCollector.ComputeSiteKey(path, line);
+        WithBlock(() =>
+        {
+            var smemByCaller = new SharedMemory<int>(4, path, line, ".ctor");
+            smemByCaller[0] = 777;
+
+            var smemByKey = new SharedMemory<int>(4, compilerKey);
+            Assert.Equal(777, smemByKey[0]);
+        });
+    }
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_RegisterTypeKeyedSites_EnablesTypeKeySaltOnlyForRegisteredSites()
+    {
+        const string filePath = "TestTypeKeyedRegistration.cs";
+        const int registeredLine = 42;
+        const int unregisteredLine = 43;
+
+        var registeredKey = TypeKeyedSharedMemoryCollector.ComputeSiteKey(filePath, registeredLine);
+        ManagedGpuContext.RegisterTypeKeyedSites([registeredKey]);
+
+        WithBlock(() =>
+        {
+            // Outside scope: both use raw keys
+            var smemReg0 = new SharedMemory<int>(4, filePath, registeredLine, ".ctor");
+            smemReg0[0] = 111;
+            var smemUnreg0 = new SharedMemory<int>(4, filePath, unregisteredLine, ".ctor");
+            smemUnreg0[0] = 222;
+
+            // Inside scope: registered site gets salted, unregistered site does not
+            var salt = ManagedGpuContext.BeginTypeKeyScope<int>();
+            try
+            {
+                var smemRegScoped = new SharedMemory<int>(4, filePath, registeredLine, ".ctor");
+                // Salted: gets a fresh slot, initial value 0
+                Assert.Equal(0, smemRegScoped[0]);
+
+                var smemUnregScoped = new SharedMemory<int>(4, filePath, unregisteredLine, ".ctor");
+                // Unsalted: sees the same shared slot (222)
+                Assert.Equal(222, smemUnregScoped[0]);
+            }
+            finally
+            {
+                ManagedGpuContext.EndTypeKeyScope(salt, 0);
+            }
         });
     }
 
