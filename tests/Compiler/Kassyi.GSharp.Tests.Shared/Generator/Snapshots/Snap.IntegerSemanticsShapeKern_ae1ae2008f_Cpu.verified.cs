@@ -398,7 +398,7 @@ __gsharp_id_2_a[4]=__gsharp_id_2_a[__gsharp_id_5_t]/3%2;
 __gsharp_id_2_a[5]=16;
 __gsharp_id_4_u[1]=__gsharp_id_4_u[__gsharp_id_5_t]<<4;
 short __gsharp_id_6_s = __gsharp_id_0_h[__gsharp_id_5_t];
-__gsharp_id_6_s++;
+__gsharp_id_6_s=(short)__gsharp_add_i32(__gsharp_id_6_s,1);
 __gsharp_id_2_a[6]=__gsharp_id_6_s;
 for(int __gsharp_id_7_i = 0;__gsharp_id_7_i<__gsharp_id_2_a.length;__gsharp_id_7_i=__gsharp_add_i32(__gsharp_id_7_i,1))
 {

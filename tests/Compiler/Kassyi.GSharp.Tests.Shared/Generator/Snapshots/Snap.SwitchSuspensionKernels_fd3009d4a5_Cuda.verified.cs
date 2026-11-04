@@ -1018,7 +1018,7 @@ __gsharp_switch_1_state_0:
 {
 __syncthreads();
 auto __gsharp_id_4_x = __gsharp_id_3_Max;
-__gsharp_id_4_x++;
+__gsharp_id_4_x=(unsigned char)__gsharp_add_i32(__gsharp_id_4_x,1);
 __gsharp_id_0_output[__gsharp_id_2_tid]=__gsharp_id_4_x;
 break;
 }
@@ -1026,7 +1026,7 @@ default:
 __gsharp_switch_1_state_default:
 {
 auto __gsharp_id_5_y = __gsharp_id_3_Max;
-__gsharp_id_5_y++;
+__gsharp_id_5_y=(unsigned char)__gsharp_add_i32(__gsharp_id_5_y,1);
 __gsharp_id_0_output[__gsharp_id_2_tid]=__gsharp_id_5_y+__gsharp_id_3_Max;
 break;
 }
