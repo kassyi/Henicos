@@ -17,7 +17,7 @@ internal static class StackLinqOrderTestExtensions
 [SkipSnapshotConsistency]
 public static partial class StackLinqStaticFormKernels
 {
-    // 2a: Type-qualified static calls (fused)
+    // Type-qualified static calls (fused)
     [GpuKernel]
     public static void StaticFusedChainKernel(int[] data, int limit, int[] results)
     {
@@ -40,7 +40,7 @@ public static partial class StackLinqStaticFormKernels
             x => x % 2 == 0);
     }
 
-    // 2b: Static calls of Contains and Aggregate (with and without seed, fused)
+    // Static calls of Contains and Aggregate (with and without seed, fused)
     [GpuKernel]
     public static void StaticContainsAndAggregateKernel(int[] data, int target, int[] results)
     {
@@ -54,7 +54,7 @@ public static partial class StackLinqStaticFormKernels
         results[2] = StackLinqExtensions.Aggregate(StackLinqExtensions.AsStackEnumerable(data), 100, (int acc, int x) => acc + x);
     }
 
-    // 2c: Unfused static chains (local sequence variable and ElementAtOrDefault terminal)
+    // Unfused static chains (local sequence variable and ElementAtOrDefault terminal)
     [GpuKernel]
     public static void StaticUnfusedChainKernel(int[] data, int takeCount, int[] results)
     {
@@ -79,7 +79,7 @@ public static partial class StackLinqStaticFormKernels
             index: 1);
     }
 
-    // 2d: Mixed extension + static chain, and non-interfering reordered named arguments
+    // Mixed extension + static chain, and non-interfering reordered named arguments
     [GpuKernel]
     public static void MixedAndNamedArgsKernel(int[] data, int[] results)
     {
@@ -125,7 +125,7 @@ public static partial class StackLinqStaticFormKernels
                      StackLinqExtensions.Sum(StackLinqExtensions.AsStackEnumerable(values.Slice(0, 0)));
     }
 
-    // D1: Reduced extension calls whose receiver and arguments interfere are sequenced in C# order (receiver first)
+    // Reduced extension calls whose receiver and arguments interfere are sequenced in C# order (receiver first)
     [GpuKernel]
     public static void InterferingExtensionReceiverKernel(int initial, int[] results)
     {
@@ -143,8 +143,8 @@ public static partial class StackLinqStaticFormKernels
         slots[1] = 20;
         slots[2] = 30;
         int idx = 0;
-        // Receiver 'ref slots[idx]' is bound to slots[0] before 'idx++' and 'idx * 10'
-        slots[idx].AddWeighted(idx++, idx * 10);
+        // Receiver 'ref slots[idx]' is bound to slots[0] before '++idx' and 'idx * 10'
+        slots[idx].AddWeighted(++idx, idx * 10);
         results[1] = slots[0] * 100 + slots[1] * 10 + idx;
 
         Span<int> sortBuf = stackalloc int[6];

@@ -117,7 +117,7 @@ public class StackLinqStaticFormTests
         StackLinqStaticFormKernels.LaunchInterferingExtensionReceiverKernel(initial, results, blockDimX: 1);
 
         Assert.Equal(initial * 100 + (initial + 5), results[0]);
-        Assert.Equal(10 * 100 + 20 * 10 + 1, results[1]);
+        Assert.Equal(20 * 100 + 20 * 10 + 1, results[1]);
         Assert.Equal(10 * 1000 + 100, results[2]);
     }
 
@@ -140,7 +140,7 @@ public class StackLinqStaticFormTests
 
         Assert.Equal([15, 120, 2], fusedResults);
         Assert.Equal([42, 12, 19], mixedResults);
-        Assert.Equal([409, 1201, 10100], orderResults);
+        Assert.Equal([409, 2201, 10100], orderResults);
     }
 #endif
 }
