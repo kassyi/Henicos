@@ -528,8 +528,10 @@ DataRace = 9
 struct GSharpDeviceErrorSlot {
 unsigned int code;
 unsigned int site_id;
+unsigned int module_id;
 unsigned int thread_linear;
-unsigned int block_linear;
+unsigned int block_x;
+unsigned int block_yz;
 };
 
 __device__ GSharpDeviceErrorSlot* __gsharp_error_slot = nullptr;
@@ -556,19 +558,15 @@ unsigned int leader = __ffs(active) - 1u;
 if (lane == leader) {
 unsigned int c = static_cast<unsigned int>(code) & 0xFFFFu;
 if (atomicCAS(&slot->code, 0u, c) == 0u) {
-unsigned int full_site = (site_id & 0x80000000u) != 0u
-? site_id
-: ((__gsharp_error_module_id << 20) | (site_id & 0xFFFFFu));
-slot->site_id = full_site;
+slot->site_id = site_id;
+slot->module_id = __gsharp_error_module_id;
 slot->thread_linear = (threadIdx.x & 0x3FFu)
 | ((threadIdx.y & 0x3FFu) << 10)
 | ((threadIdx.z & 0x3FFu) << 20);
-slot->block_linear = (blockIdx.z * gridDim.y + blockIdx.y) * gridDim.x + blockIdx.x;
-unsigned int gpack = (gridDim.x < 64u && gridDim.y < 64u)
-? (((gridDim.x & 0x3Fu) << 20) | ((gridDim.y & 0x3Fu) << 26))
-: 0u;
+slot->block_x = blockIdx.x;
+slot->block_yz = (blockIdx.y & 0xFFFFu) | ((blockIdx.z & 0xFFFFu) << 16);
 __threadfence_system();
-atomicExch(&slot->code, c | 0x10000u | gpack);
+atomicExch(&slot->code, c | 0x10000u);
 __threadfence_system();
 } else {
 for (int spin = 0; spin < 100000; ++spin) {
@@ -1481,7 +1479,7 @@ return false;
 }
 
 template <typename TSource>
-__device__ static inline auto ElementAt(TSource source, int index) {
+__device__ static inline auto ElementAt(TSource source, int index, uint32_t site_id = 0) {
 if (index >= 0) {
 int count = 0;
 while (source.MoveNext()) {
@@ -1489,7 +1487,8 @@ if (count == index) return source.Current();
 count++;
 }
 }
-__gsharp_trap(GSharpErrorCode::ArgumentOutOfRange, ""Index was out of range."");
+if (site_id != 0) __gsharp_trap(GSharpErrorCode::ArgumentOutOfRange, site_id);
+else __gsharp_trap(GSharpErrorCode::ArgumentOutOfRange, ""Index was out of range."");
 return decltype(source.Current())();
 }
 
@@ -1504,18 +1503,20 @@ return decltype(source.Current())();
 }
 
 template <typename TSource>
-__device__ static inline auto First(TSource source) {
+__device__ static inline auto First(TSource source, uint32_t site_id = 0) {
 if (source.MoveNext()) return source.Current();
-__gsharp_trap(GSharpErrorCode::InvalidOperation, ""Sequence contains no elements"");
+if (site_id != 0) __gsharp_trap(GSharpErrorCode::InvalidOperation, site_id);
+else __gsharp_trap(GSharpErrorCode::InvalidOperation, ""Sequence contains no elements"");
 return decltype(source.Current())();
 }
 
 template <typename TSource, typename TPredicate>
-__device__ static inline auto First(TSource source, TPredicate predicate) {
+__device__ static inline auto First(TSource source, TPredicate predicate, uint32_t site_id = 0) {
 while (source.MoveNext()) {
 if (predicate(source.Current())) return source.Current();
 }
-__gsharp_trap(GSharpErrorCode::InvalidOperation, ""Sequence contains no matching element"");
+if (site_id != 0) __gsharp_trap(GSharpErrorCode::InvalidOperation, site_id);
+else __gsharp_trap(GSharpErrorCode::InvalidOperation, ""Sequence contains no matching element"");
 return decltype(source.Current())();
 }
 
@@ -1534,26 +1535,29 @@ return decltype(source.Current())();
 }
 
 template <typename TSource>
-__device__ static inline auto Single(TSource source) {
+__device__ static inline auto Single(TSource source, uint32_t site_empty = 0, uint32_t site_more = 0) {
 if (!source.MoveNext()) {
-__gsharp_trap(GSharpErrorCode::InvalidOperation, ""Sequence contains no elements"");
+if (site_empty != 0) __gsharp_trap(GSharpErrorCode::InvalidOperation, site_empty);
+else __gsharp_trap(GSharpErrorCode::InvalidOperation, ""Sequence contains no elements"");
 return decltype(source.Current())();
 }
 auto result = source.Current();
 if (source.MoveNext()) {
-__gsharp_trap(GSharpErrorCode::InvalidOperation, ""Sequence contains more than one element"");
+if (site_more != 0) __gsharp_trap(GSharpErrorCode::InvalidOperation, site_more);
+else __gsharp_trap(GSharpErrorCode::InvalidOperation, ""Sequence contains more than one element"");
 }
 return result;
 }
 
 template <typename TSource, typename TPredicate>
-__device__ static inline auto Single(TSource source, TPredicate predicate) {
+__device__ static inline auto Single(TSource source, TPredicate predicate, uint32_t site_more = 0, uint32_t site_no_match = 0) {
 auto result = decltype(source.Current())();
 bool found = false;
 while (source.MoveNext()) {
 if (predicate(source.Current())) {
 if (found) {
-__gsharp_trap(GSharpErrorCode::InvalidOperation, ""Sequence contains more than one matching element"");
+if (site_more != 0) __gsharp_trap(GSharpErrorCode::InvalidOperation, site_more);
+else __gsharp_trap(GSharpErrorCode::InvalidOperation, ""Sequence contains more than one matching element"");
 return result;
 }
 result = source.Current();
@@ -1561,29 +1565,32 @@ found = true;
 }
 }
 if (!found) {
-__gsharp_trap(GSharpErrorCode::InvalidOperation, ""Sequence contains no matching element"");
+if (site_no_match != 0) __gsharp_trap(GSharpErrorCode::InvalidOperation, site_no_match);
+else __gsharp_trap(GSharpErrorCode::InvalidOperation, ""Sequence contains no matching element"");
 }
 return result;
 }
 
 template <typename TSource>
-__device__ static inline auto SingleOrDefault(TSource source) {
+__device__ static inline auto SingleOrDefault(TSource source, uint32_t site_more = 0) {
 if (!source.MoveNext()) return decltype(source.Current())();
 auto result = source.Current();
 if (source.MoveNext()) {
-__gsharp_trap(GSharpErrorCode::InvalidOperation, ""Sequence contains more than one element"");
+if (site_more != 0) __gsharp_trap(GSharpErrorCode::InvalidOperation, site_more);
+else __gsharp_trap(GSharpErrorCode::InvalidOperation, ""Sequence contains more than one element"");
 }
 return result;
 }
 
 template <typename TSource, typename TPredicate>
-__device__ static inline auto SingleOrDefault(TSource source, TPredicate predicate) {
+__device__ static inline auto SingleOrDefault(TSource source, TPredicate predicate, uint32_t site_more = 0) {
 auto result = decltype(source.Current())();
 bool found = false;
 while (source.MoveNext()) {
 if (predicate(source.Current())) {
 if (found) {
-__gsharp_trap(GSharpErrorCode::InvalidOperation, ""Sequence contains more than one matching element"");
+if (site_more != 0) __gsharp_trap(GSharpErrorCode::InvalidOperation, site_more);
+else __gsharp_trap(GSharpErrorCode::InvalidOperation, ""Sequence contains more than one matching element"");
 return result;
 }
 result = source.Current();
@@ -1594,7 +1601,7 @@ return result;
 }
 
 template <typename TSource>
-__device__ static inline auto Last(TSource source) {
+__device__ static inline auto Last(TSource source, uint32_t site_id = 0) {
 auto result = decltype(source.Current())();
 bool found = false;
 while (source.MoveNext()) {
@@ -1602,7 +1609,8 @@ result = source.Current();
 found = true;
 }
 if (!found) {
-__gsharp_trap(GSharpErrorCode::InvalidOperation, ""Sequence contains no elements"");
+if (site_id != 0) __gsharp_trap(GSharpErrorCode::InvalidOperation, site_id);
+else __gsharp_trap(GSharpErrorCode::InvalidOperation, ""Sequence contains no elements"");
 }
 return result;
 }
@@ -1626,9 +1634,10 @@ return sum;
 }
 
 template <typename TSource, typename TFunc>
-__device__ static inline auto Aggregate(TSource source, TFunc func) {
+__device__ static inline auto Aggregate(TSource source, TFunc func, uint32_t site_id = 0) {
 if (!source.MoveNext()) {
-__gsharp_trap(GSharpErrorCode::InvalidOperation, ""Sequence contains no elements"");
+if (site_id != 0) __gsharp_trap(GSharpErrorCode::InvalidOperation, site_id);
+else __gsharp_trap(GSharpErrorCode::InvalidOperation, ""Sequence contains no elements"");
 return decltype(source.Current())();
 }
 auto result = source.Current();
@@ -1648,9 +1657,10 @@ return result;
 }
 
 template <typename TSource>
-__device__ static inline auto Max(TSource source) {
+__device__ static inline auto Max(TSource source, uint32_t site_id = 0) {
 if (!source.MoveNext()) {
-__gsharp_trap(GSharpErrorCode::InvalidOperation, ""Sequence contains no elements"");
+if (site_id != 0) __gsharp_trap(GSharpErrorCode::InvalidOperation, site_id);
+else __gsharp_trap(GSharpErrorCode::InvalidOperation, ""Sequence contains no elements"");
 return decltype(source.Current())();
 }
 auto max_val = source.Current();
@@ -1661,9 +1671,10 @@ return max_val;
 }
 
 template <typename TSource>
-__device__ static inline auto Min(TSource source) {
+__device__ static inline auto Min(TSource source, uint32_t site_id = 0) {
 if (!source.MoveNext()) {
-__gsharp_trap(GSharpErrorCode::InvalidOperation, ""Sequence contains no elements"");
+if (site_id != 0) __gsharp_trap(GSharpErrorCode::InvalidOperation, site_id);
+else __gsharp_trap(GSharpErrorCode::InvalidOperation, ""Sequence contains no elements"");
 return decltype(source.Current())();
 }
 auto min_val = source.Current();
@@ -1674,7 +1685,7 @@ return min_val;
 }
 
 template <typename TSource>
-__device__ static inline auto Average(TSource source) {
+__device__ static inline auto Average(TSource source, uint32_t site_id = 0) {
 double sum = 0;
 int count = 0;
 while (source.MoveNext()) {
@@ -1682,7 +1693,8 @@ sum += (double)source.Current();
 count++;
 }
 if (count == 0) {
-__gsharp_trap(GSharpErrorCode::InvalidOperation, ""Sequence contains no elements"");
+if (site_id != 0) __gsharp_trap(GSharpErrorCode::InvalidOperation, site_id);
+else __gsharp_trap(GSharpErrorCode::InvalidOperation, ""Sequence contains no elements"");
 return 0.0;
 }
 return sum / count;
