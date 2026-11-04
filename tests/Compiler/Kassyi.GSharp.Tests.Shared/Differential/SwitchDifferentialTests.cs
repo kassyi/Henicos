@@ -207,7 +207,7 @@ public sealed class SwitchDifferentialTests
 
     // The kernel calls Gpu.SyncThreads() inside a switch section, which the sequential oracle cannot run; the reference
     // is the same computation without the barriers
-    // Q05 = a: Fixed to an exact multiple of Rows because early `if (t >= n) return;` precedes `Gpu.SyncThreads()`.
+    // Fixed to an exact multiple of Rows because early `if (t >= n) return;` precedes `Gpu.SyncThreads()`.
     private static readonly DifferentialCase s_switchFlattenedFloatAndGoto = new(
         $"{nameof(SwitchDifferentialKernels)}.{nameof(SwitchDifferentialKernels.SwitchFlattenedFloatAndGotoKernel)}")
     {

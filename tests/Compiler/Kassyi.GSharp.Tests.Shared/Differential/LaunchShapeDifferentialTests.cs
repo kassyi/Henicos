@@ -9,7 +9,7 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 /// <summary>
 /// Differential tests for 1D/2D/3D launch shapes, multi-dimensional index linearization, grid-stride loops,
 /// <c>Gpu.SingleThread</c>, cross-axis warp shuffles, multi-dimensional shared memory, and value-returning kernels
-/// (Lane D1: <c>D1-1</c> through <c>D1-6</c>).
+/// across varied multi-dimensional block and grid configurations.
 /// </summary>
 [Category(TestCategory.Compiler)]
 [TestTarget(ExecutionTarget.GpuExecution)]
@@ -20,7 +20,7 @@ public sealed class LaunchShapeDifferentialTests : TranspilerTestBase
     private const int GridStrideShortN = 19;
 
     // -------------------------------------------------------------------------
-    // D1-1: 3D Index Linearization, Bijection & Signed Arithmetic
+    // 3D Index Linearization, Bijection & Signed Arithmetic
     // -------------------------------------------------------------------------
     private static readonly DifferentialCase s_threeDimensionalIndexAndSignedness =
         new($"{nameof(LaunchShapeDifferentialKernels)}.{nameof(LaunchShapeDifferentialKernels.ThreeDimensionalIndexAndSignednessKernel)}")
@@ -80,7 +80,7 @@ public sealed class LaunchShapeDifferentialTests : TranspilerTestBase
         };
 
     // -------------------------------------------------------------------------
-    // D1-2: Gpu.GridStrideLoop 3D & Metamorphic Shape Invariance
+    // Gpu.GridStrideLoop 3D & Metamorphic Shape Invariance
     // -------------------------------------------------------------------------
     private static readonly DifferentialCase s_gridStrideLoopMetamorphic =
         new($"{nameof(LaunchShapeDifferentialKernels)}.{nameof(LaunchShapeDifferentialKernels.GridStrideLoopMetamorphicKernel)}")
@@ -132,7 +132,7 @@ public sealed class LaunchShapeDifferentialTests : TranspilerTestBase
         };
 
     // -------------------------------------------------------------------------
-    // D1-3: Gpu.SingleThread 3D Origin & Early-Return Semantics (#693)
+    // Gpu.SingleThread 3D Origin & Early-Return Semantics (#693)
     // -------------------------------------------------------------------------
     private static readonly DifferentialCase s_singleThreadMultiDimAndEarlyReturn =
         new($"{nameof(LaunchShapeDifferentialKernels)}.{nameof(LaunchShapeDifferentialKernels.SingleThreadMultiDimAndEarlyReturnKernel)}")
@@ -177,7 +177,7 @@ public sealed class LaunchShapeDifferentialTests : TranspilerTestBase
         };
 
     // -------------------------------------------------------------------------
-    // D1-4: Cross-Axis 2D/3D Warp Shuffle & Partial-Warp ActiveMask
+    // Cross-Axis 2D/3D Warp Shuffle & Partial-Warp ActiveMask
     // -------------------------------------------------------------------------
     private static readonly DifferentialCase s_crossAxisWarpShuffleAndActiveMask =
         new($"{nameof(LaunchShapeDifferentialKernels)}.{nameof(LaunchShapeDifferentialKernels.CrossAxisWarpShuffleAndActiveMaskKernel)}")
@@ -282,7 +282,7 @@ public sealed class LaunchShapeDifferentialTests : TranspilerTestBase
         };
 
     // -------------------------------------------------------------------------
-    // D1-5: 2D/3D SharedMemory & Gpu.SyncThreads State-Machine Lowering
+    // 2D/3D SharedMemory & Gpu.SyncThreads State-Machine Lowering
     // -------------------------------------------------------------------------
     private static readonly DifferentialCase s_multiDimSharedMemoryAndBarrier =
         new($"{nameof(LaunchShapeDifferentialKernels)}.{nameof(LaunchShapeDifferentialKernels.MultiDimSharedMemoryAndBarrierKernel)}")
@@ -355,7 +355,7 @@ public sealed class LaunchShapeDifferentialTests : TranspilerTestBase
         };
 
     // -------------------------------------------------------------------------
-    // D1-6: Value-Returning Kernel (AutoResult) across 2D/3D Shapes
+    // Value-Returning Kernel (AutoResult) across 2D/3D Shapes
     // -------------------------------------------------------------------------
     private static readonly DifferentialCase s_autoResultThreeDimensional =
         new($"{nameof(LaunchShapeDifferentialKernels)}.{nameof(LaunchShapeDifferentialKernels.AutoResultThreeDimensionalKernel)}")

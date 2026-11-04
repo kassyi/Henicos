@@ -5,7 +5,7 @@ using Kassyi.GSharp.Core;
 namespace Kassyi.GSharp.Tests.Shared.Differential;
 
 /// <summary>
-/// Differential kernels for Launch Shape &amp; 3D Index Mapping (Lane D1: <c>D1-1</c> through <c>D1-6</c>).
+/// Differential kernels for launch shape and 3D index mapping.
 /// </summary>
 public static partial class LaunchShapeDifferentialKernels
 {
@@ -36,7 +36,7 @@ public static partial class LaunchShapeDifferentialKernels
     ];
 
     // -------------------------------------------------------------------------
-    // D1-1: 3D Index Linearization, Bijection & Signed Arithmetic
+    // 3D Index Linearization, Bijection & Signed Arithmetic
     // -------------------------------------------------------------------------
     [GpuKernel]
     public static void ThreeDimensionalIndexAndSignednessKernel(
@@ -86,7 +86,7 @@ public static partial class LaunchShapeDifferentialKernels
     }
 
     // -------------------------------------------------------------------------
-    // D1-2: Gpu.GridStrideLoop 3D & Metamorphic Shape Invariance
+    // Gpu.GridStrideLoop 3D & Metamorphic Shape Invariance
     // -------------------------------------------------------------------------
     [GpuKernel]
     public static void GridStrideLoopMetamorphicKernel(
@@ -124,7 +124,7 @@ public static partial class LaunchShapeDifferentialKernels
     }
 
     // -------------------------------------------------------------------------
-    // D1-3: Gpu.SingleThread 3D Origin & Early-Return Semantics (#693)
+    // Gpu.SingleThread 3D Origin & Early-Return Semantics (#693)
     // -------------------------------------------------------------------------
     [GpuKernel]
     public static void SingleThreadMultiDimAndEarlyReturnKernel(
@@ -168,7 +168,7 @@ public static partial class LaunchShapeDifferentialKernels
     }
 
     // -------------------------------------------------------------------------
-    // D1-4: Cross-Axis 2D/3D Warp Shuffle & Partial-Warp ActiveMask
+    // Cross-Axis 2D/3D Warp Shuffle & Partial-Warp ActiveMask
     // -------------------------------------------------------------------------
     [GpuKernel]
     public static void CrossAxisWarpShuffleAndActiveMaskKernel(
@@ -231,7 +231,7 @@ public static partial class LaunchShapeDifferentialKernels
     }
 
     // -------------------------------------------------------------------------
-    // D1-5: 2D/3D SharedMemory & Gpu.SyncThreads State-Machine Lowering
+    // 2D/3D SharedMemory & Gpu.SyncThreads State-Machine Lowering
     // -------------------------------------------------------------------------
     [GpuKernel]
     public static void MultiDimSharedMemoryAndBarrierKernel(
@@ -289,7 +289,7 @@ public static partial class LaunchShapeDifferentialKernels
     }
 
     // -------------------------------------------------------------------------
-    // D1-6: Value-Returning Kernel (AutoResult) across 2D/3D Shapes
+    // Value-Returning Kernel (AutoResult) across 2D/3D Shapes
     // -------------------------------------------------------------------------
     [GpuKernel]
     public static int AutoResultThreeDimensionalKernel(int[] src, int salt)
