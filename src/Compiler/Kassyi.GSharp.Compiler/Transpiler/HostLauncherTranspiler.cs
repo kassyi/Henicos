@@ -388,21 +388,7 @@ internal static class HostLauncherTranspiler
 
             using (step.HasContext ? context.Emitter.Writer.Scope() : default)
             {
-                if (step.ReachesWarpShuffle)
-                {
-                    context.Emitter.Writer.AppendLine($"if ({Contexts}[{ContextThreadIndex}].{State} == {WarpMinState})");
-                }
-
-                using (step.ReachesWarpShuffle ? context.Emitter.Writer.Scope() : default)
-                {
-                    context.Emitter.Writer.AppendLine(
-                        $"{SetThreadIndex}({ThreadX}, {ThreadY}, {ThreadZ}, {BlockX}, {BlockY}, {BlockZ}, {BlockDimX}, {BlockDimY}, {BlockDimZ}, {GridDimX}, {GridDimY}, {GridDimZ});");
-                    WriteKernelCall(step, ref context);
-                    if (step.HasContext)
-                    {
-                        WriteGridSyncCheck(step, ref context);
-                    }
-                }
+                WriteSteppedThread(step, ref context);
 
                 if (step.HasContext)
                 {
@@ -430,8 +416,30 @@ internal static class HostLauncherTranspiler
     private const string WarpRunnableCondition =
         $"{Contexts}[{WarpThreadIndex}].{State} != -1 && !{Contexts}[{WarpThreadIndex}].{YieldedForBlockBarrier} && !{Contexts}[{WarpThreadIndex}].{YieldedForGridSync}";
 
+    private static void WriteSteppedThread(in KernelStep step, ref TranspileContext context)
+    {
+        if (step.ReachesWarpShuffle)
+        {
+            context.Emitter.Writer.AppendLine($"if ({Contexts}[{ContextThreadIndex}].{State} == {WarpMinState})");
+        }
+
+        using (step.ReachesWarpShuffle ? context.Emitter.Writer.Scope() : default)
+        {
+            context.Emitter.Writer.AppendLine(
+                $"{SetThreadIndex}({ThreadX}, {ThreadY}, {ThreadZ}, {BlockX}, {BlockY}, {BlockZ}, {BlockDimX}, {BlockDimY}, {BlockDimZ}, {GridDimX}, {GridDimY}, {GridDimZ});");
+            WriteKernelCall(step, ref context);
+            if (step.HasContext)
+            {
+                WriteGridSyncCheck(step, ref context);
+            }
+        }
+    }
+
     // In a kernel that reaches a warp shuffle, only the runnable lanes at the warp's lowest state step in each round,
-    // so lanes that skip a sub-warp shuffle reconverge with the lanes that took it before the next full-warp shuffle (#1001)
+    // so lanes that skip a sub-warp shuffle reconverge with the lanes that took it before the next full-warp shuffle (#1001).
+    // Assumes a lower state number means a lane is behind. A loop back-edge returns to a lower state, which would invert
+    // the order across iterations; that only arises when a full-mask shuffle sits inside a loop with divergent trip count,
+    // which is undefined behavior on CUDA as well.
     private static void WriteWarpMinState(ref TranspileContext context)
     {
         context.Emitter.Writer.AppendLine($"if (({ThreadLoopIndex} & 31) == 0)");
