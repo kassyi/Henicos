@@ -15,7 +15,7 @@ internal static class TransferPlanner
     /// <remarks>
     /// <paramref name="type"/> is a constructed type, as a kernel parameter or return type is. An unbound type
     /// parameter has no layout and is planned as <see cref="TransferPlan.Unsupported"/>, although
-    /// <see cref="TypeLayoutCalculator.HasDeviceRepresentation"/> accepts it as a struct member.
+    /// <see cref="StructLayoutValidator.HasDeviceRepresentation"/> accepts it as a struct member.
     /// </remarks>
     public static TransferPlan Plan(ITypeSymbol type, ITranspilerDialect dialect) =>
         PlanType(type, dialect, new HashSet<ITypeSymbol>(SymbolEqualityComparer.Default));
@@ -59,7 +59,7 @@ internal static class TransferPlanner
                 return new TransferPlan.StructRef(
                     structType.GetFullyQualifiedCsharpName(),
                     AotHostNames.GetAotStructPath(structType),
-                    TypeLayoutCalculator.TryGetHostLayout(structType, out var host) ? host.Size : null,
+                    HostLayoutCalculator.TryGetHostLayout(structType, out var host) ? host.Size : null,
                     TypeLayoutCalculator.GetDeviceLayout(structType, dialect).Size
                 );
             }
@@ -76,7 +76,7 @@ internal static class TransferPlanner
     private static TransferPlan PlanLeaf(ITypeSymbol type, ITranspilerDialect dialect)
     {
         var device = TypeLayoutCalculator.GetDeviceLayout(type, dialect);
-        if (!TypeLayoutCalculator.TryGetHostLayout(type, out var host))
+        if (!HostLayoutCalculator.TryGetHostLayout(type, out var host))
         {
             return Unsupported($"the host layout of '{TypeLayoutCalculator.FormatTypeName(type)}' is not known");
         }
@@ -120,7 +120,7 @@ internal static class TransferPlanner
         return new TransferPlan.Nullable(
             value,
             valueOffset,
-            TypeLayoutCalculator.TryGetHostLayout(nullableType, out var host) ? host.Size : null,
+            HostLayoutCalculator.TryGetHostLayout(nullableType, out var host) ? host.Size : null,
             device.Size
         );
     }
@@ -129,7 +129,7 @@ internal static class TransferPlanner
         HashSet<ITypeSymbol> inProgress)
     {
         var isUserStruct = TypeLayoutCalculator.IsUserStruct(structType);
-        if (!isUserStruct && !TypeLayoutCalculator.HasDeviceRepresentation(structType, dialect))
+        if (!isUserStruct && !StructLayoutValidator.HasDeviceRepresentation(structType, dialect))
         {
             var typeName = TypeLayoutCalculator.FormatTypeName(structType);
             return new TransferPlan.Unsupported(
@@ -170,7 +170,7 @@ internal static class TransferPlanner
         // [WHY] Only a user struct has a native shadow struct to convert through
         if (!isUserStruct)
         {
-            return Unsupported(TypeLayoutCalculator.DescribeLayoutDifference(structType, dialect));
+            return Unsupported(TransferClassifier.DescribeLayoutDifference(structType, dialect));
         }
 
         return new TransferPlan.Convert(

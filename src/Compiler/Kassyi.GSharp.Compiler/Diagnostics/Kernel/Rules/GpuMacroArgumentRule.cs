@@ -183,7 +183,7 @@ internal sealed class GpuMacroArgumentRule : ISyntaxValidationRule<InvocationExp
 
     private void CheckInlinePtx(InvocationExpressionSyntax invocation, ref ValidationContext context)
     {
-        if (!GpuCodeConstraints.SupportsInlinePtx(context.Dialect))
+        if (!DialectCallSupport.SupportsInlinePtx(context.Dialect))
         {
             context.ReportDiagnostic(GSharpDiagnostics.InlinePtxNotSupportedByDialect, invocation, context.Dialect.Name);
         }

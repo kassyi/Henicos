@@ -95,4 +95,53 @@ public class GpuKernelAnalyzerTests
             (35, 13, 35, 30, string.Format(ExpectedMessageFormat, "OuterOfTwoClasses")),
         ], actual);
     }
+
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public async Task Test_TranspilerFailureCheck_ForwardsGSH0070WithoutThrowingAD0001()
+    {
+        var diagnostics = await RoslynTestUtility.TestAnalyzer("Analyzers/IteratorInlineDepth_SadPath.cs", s_analyzer)
+                                                 .GetDiagnosticsAsync();
+
+        Assert.DoesNotContain(diagnostics, static d => d.Id == "AD0001");
+
+        var actual = diagnostics
+            .Select(static d =>
+            {
+                var span = d.Location.GetLineSpan().Span;
+                return (
+                    d.Id,
+                    span.Start.Line + 1,
+                    span.Start.Character + 1,
+                    span.End.Line + 1,
+                    span.End.Character + 1);
+            })
+            .OrderBy(static d => d.Item2)
+            .ThenBy(static d => d.Item3)
+            .ThenBy(static d => d.Id, StringComparer.Ordinal)
+            .ToArray();
+
+        Assert.Equal(
+            [
+                (GSharpDiagnostics.IteratorShapeNotSupported.Id, 155, 9, 158, 10),
+                // Another diagnostic of the method whose transpiler failure is forwarded: still reported next to it
+                (GSharpDiagnostics.StringNotSupported.Id, 159, 9, 159, 12)
+            ],
+            actual);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_SupportedDiagnostics_CoversAllDefinedDiagnostics()
+    {
+        var supportedIds = s_analyzer.SupportedDiagnostics
+            .Select(static d => d.Id)
+            .ToHashSet(StringComparer.Ordinal);
+
+        Assert.NotEmpty(GSharpDiagnostics.All);
+        foreach (var descriptor in GSharpDiagnostics.All)
+        {
+            Assert.Contains(descriptor.Id, supportedIds);
+        }
+    }
 }

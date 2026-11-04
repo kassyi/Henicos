@@ -65,10 +65,10 @@ public partial class EmissionShapeTests
         Assert.True(start >= 0, "The array launcher of ElidedKernel is not generated.");
         var launcher = generated[start..generated.IndexOf("#pragma warning restore CS8500", start, StringComparison.Ordinal)];
 
-        Assert.Contains("((int*)(proxy_values + 1))[1] = 0;", launcher, StringComparison.Ordinal);
-        Assert.Contains("((int*)(proxy_o + 1))[1] = 0;", launcher, StringComparison.Ordinal);
+        Assert.Contains("((int*)(__gsharp_proxy_0 + 1))[1] = 0;", launcher, StringComparison.Ordinal);
+        Assert.Contains("((int*)(__gsharp_proxy_2 + 1))[1] = 0;", launcher, StringComparison.Ordinal);
         Assert.Contains(
-            "((int*)(proxy_bias + 1))[1] = bias is null ? global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.NullReadsAsEmpty : 0;",
+            "((int*)(__gsharp_proxy_1 + 1))[1] = bias is null ? global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.NullReadsAsEmpty : 0;",
             launcher,
             StringComparison.Ordinal
         );

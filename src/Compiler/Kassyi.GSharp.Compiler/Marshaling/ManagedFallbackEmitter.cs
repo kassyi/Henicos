@@ -24,7 +24,7 @@ internal static class ManagedFallbackEmitter
     public static void WriteManagedExecutionFallback(SourceWriter writer, in KernelHostModel kernel)
     {
         writer.AppendLine(
-            "if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(dllPath))");
+            $"if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution({DllPath}))");
         using (writer.Scope())
         {
             WriteManagedContextAllocation(writer, kernel);
@@ -43,10 +43,10 @@ internal static class ManagedFallbackEmitter
         writer.AppendLine($"int {TotalBlocks} = (int)(gridDimX * gridDimY * gridDimZ);");
         writer.AppendLine($"int {ThreadsPerBlock} = (int)(blockDimX * blockDimY * blockDimZ);");
         writer.AppendLine($"var {Contexts} = new {kernel.ContextName}[{TotalBlocks} * {ThreadsPerBlock}];");
-        writer.AppendLine($"for (int i = 0; i < {Contexts}.Length; i++)");
+        writer.AppendLine($"for (int {ContextIndex} = 0; {ContextIndex} < {Contexts}.Length; {ContextIndex}++)");
         using (writer.Scope())
         {
-            writer.AppendLine($"{Contexts}[i] = new {kernel.ContextName}();");
+            writer.AppendLine($"{Contexts}[{ContextIndex}] = new {kernel.ContextName}();");
         }
 
         // A cooperative kernel's blocks run in grid phases and keep their dynamic shared memory for the grid; the
@@ -56,23 +56,23 @@ internal static class ManagedFallbackEmitter
 
         // A thread that stopped at a block barrier waits there until every thread of its block that has not finished
         // waits too; in a cooperative kernel, a thread that reached the grid sync waits until the next grid phase (#664)
-        writer.AppendLine($"var threadAtBlockBarrier = new bool[{Contexts}.Length];");
+        writer.AppendLine($"var {ThreadAtBlockBarrier} = new bool[{Contexts}.Length];");
         if (kernel.IsCooperative)
         {
-            writer.AppendLine($"var threadAtGridSync = new bool[{Contexts}.Length];");
+            writer.AppendLine($"var {ThreadAtGridSync} = new bool[{Contexts}.Length];");
         }
     }
 
-    // bool anyGridActive = true; try { while (anyGridActive) { <grid phase> } } finally { EndGrid(); }
+    // bool __gsharp_any_grid_active = true; try { while (__gsharp_any_grid_active) { <grid phase> } } finally { EndGrid(); }
     private static void WriteManagedGridLoop(SourceWriter writer, in KernelHostModel kernel)
     {
-        writer.AppendLine("bool anyGridActive = true;");
+        writer.AppendLine($"bool {AnyGridActive} = true;");
         // The dynamic shared memory of the blocks lives for one grid (#544), also when a step throws
         writer.AppendLine("try");
         using (writer.Scope())
         {
             // Each pass runs every block until its threads reach Gpu.SyncGrid or finish: one grid phase (#664)
-            writer.AppendLine("while (anyGridActive)");
+            writer.AppendLine($"while ({AnyGridActive})");
             using (writer.Scope())
             {
                 WriteManagedGridPhase(writer, kernel);
@@ -89,11 +89,11 @@ internal static class ManagedFallbackEmitter
     // One grid phase: every block in turn, then (cooperative) the check that no block finished while others wait
     private static void WriteManagedGridPhase(SourceWriter writer, in KernelHostModel kernel)
     {
-        writer.AppendLine("anyGridActive = false;");
+        writer.AppendLine($"{AnyGridActive} = false;");
         if (kernel.IsCooperative)
         {
-            writer.AppendLine("int firstFinishedBlock = -1;");
-            writer.AppendLine("bool anyBlockAtGridSync = false;");
+            writer.AppendLine($"int {FirstFinishedBlock} = -1;");
+            writer.AppendLine($"bool {AnyBlockAtGridSync} = false;");
         }
 
         writer.AppendLine($"for (int {BlockLoopIndex} = 0; {BlockLoopIndex} < {TotalBlocks}; {BlockLoopIndex}++)");
@@ -105,11 +105,11 @@ internal static class ManagedFallbackEmitter
         if (kernel.IsCooperative)
         {
             // A block that finished while others wait never arrives at the grid sync of the GPU
-            writer.AppendLine("if (anyBlockAtGridSync && firstFinishedBlock >= 0)");
+            writer.AppendLine($"if ({AnyBlockAtGridSync} && {FirstFinishedBlock} >= 0)");
             using (writer.Scope())
             {
                 writer.AppendLine(
-                    $"throw global::Kassyi.GSharp.Core.ManagedGpuContext.BlockFinishedAtGridSync({SymbolDisplay.FormatLiteral(kernel.MessageName, quote: true)}, firstFinishedBlock, gridDimX, gridDimY);");
+                    $"throw global::Kassyi.GSharp.Core.ManagedGpuContext.BlockFinishedAtGridSync({SymbolDisplay.FormatLiteral(kernel.MessageName, quote: true)}, {FirstFinishedBlock}, gridDimX, gridDimY);");
             }
         }
     }
@@ -130,8 +130,8 @@ internal static class ManagedFallbackEmitter
             {
                 // The threads that wait at the grid sync go on in this phase
                 writer.AppendLine(
-                    $"global::System.Array.Clear(threadAtGridSync, {BlockLoopIndex} * {ThreadsPerBlock}, {ThreadsPerBlock});");
-                writer.AppendLine("bool blockAtGridSync = false;");
+                    $"global::System.Array.Clear({ThreadAtGridSync}, {BlockLoopIndex} * {ThreadsPerBlock}, {ThreadsPerBlock});");
+                writer.AppendLine($"bool {BlockAtGridSyncFlag} = false;");
             }
 
             WriteManagedBarrierRounds(writer, kernel);
@@ -169,11 +169,11 @@ internal static class ManagedFallbackEmitter
     // bool anyBlockActive = true; while (anyBlockActive) { anyBlockActive = false; <threads> <block barrier release> }
     private static void WriteManagedBarrierRounds(SourceWriter writer, in KernelHostModel kernel)
     {
-        writer.AppendLine("bool anyBlockActive = true;");
-        writer.AppendLine("while (anyBlockActive)");
+        writer.AppendLine($"bool {AnyBlockActive} = true;");
+        writer.AppendLine($"while ({AnyBlockActive})");
         using (writer.Scope())
         {
-            writer.AppendLine("anyBlockActive = false;");
+            writer.AppendLine($"{AnyBlockActive} = false;");
             writer.AppendLine($"for (int {ThreadLoopIndex} = 0; {ThreadLoopIndex} < {ThreadsPerBlock}; {ThreadLoopIndex}++)");
             using (writer.Scope())
             {
@@ -184,21 +184,21 @@ internal static class ManagedFallbackEmitter
         }
     }
 
-    // if (!anyBlockActive) { for (<threads of the block>) { if (<waits at the block barrier>) { <release it>; anyBlockActive = true; } } }
+    // if (!__gsharp_any_block_active) { for (<threads of the block>) { if (<waits at the block barrier>) { <release it>; __gsharp_any_block_active = true; } } }
     private static void WriteManagedBlockBarrierRelease(SourceWriter writer)
     {
-        writer.AppendLine("if (!anyBlockActive)");
+        writer.AppendLine($"if (!{AnyBlockActive})");
         using (writer.Scope())
         {
             writer.AppendLine(
                 $"for (int {LinearThreadIndex} = {BlockLoopIndex} * {ThreadsPerBlock}; {LinearThreadIndex} < ({BlockLoopIndex} + 1) * {ThreadsPerBlock}; {LinearThreadIndex}++)");
             using (writer.Scope())
             {
-                writer.AppendLine($"if (threadAtBlockBarrier[{LinearThreadIndex}])");
+                writer.AppendLine($"if ({ThreadAtBlockBarrier}[{LinearThreadIndex}])");
                 using (writer.Scope())
                 {
-                    writer.AppendLine($"threadAtBlockBarrier[{LinearThreadIndex}] = false;");
-                    writer.AppendLine("anyBlockActive = true;");
+                    writer.AppendLine($"{ThreadAtBlockBarrier}[{LinearThreadIndex}] = false;");
+                    writer.AppendLine($"{AnyBlockActive} = true;");
                 }
             }
         }
@@ -207,7 +207,7 @@ internal static class ManagedFallbackEmitter
     // Cooperative: whether the block waits at the grid sync, with the check of its thread 0, or finished
     private static void WriteManagedBlockGridSyncStatus(SourceWriter writer, in KernelHostModel kernel)
     {
-        writer.AppendLine("if (blockAtGridSync)");
+        writer.AppendLine($"if ({BlockAtGridSyncFlag})");
         using (writer.Scope())
         {
             // The grid sync of the GPU waits for thread 0 of every block
@@ -219,13 +219,13 @@ internal static class ManagedFallbackEmitter
                     $"throw global::Kassyi.GSharp.Core.ManagedGpuContext.RepresentativeFinishedAtGridSync({SymbolDisplay.FormatLiteral(kernel.MessageName, quote: true)}, {BlockX}, {BlockY}, {BlockZ});");
             }
 
-            writer.AppendLine("anyBlockAtGridSync = true;");
+            writer.AppendLine($"{AnyBlockAtGridSync} = true;");
         }
 
-        writer.AppendLine("else if (firstFinishedBlock < 0)");
+        writer.AppendLine($"else if ({FirstFinishedBlock} < 0)");
         using (writer.Scope())
         {
-            writer.AppendLine($"firstFinishedBlock = {BlockLoopIndex};");
+            writer.AppendLine($"{FirstFinishedBlock} = {BlockLoopIndex};");
         }
     }
 
@@ -245,7 +245,7 @@ internal static class ManagedFallbackEmitter
         writer.AppendLine($"if ({runnable})");
         using (writer.Scope())
         {
-            writer.AppendLine("anyGridActive = true;");
+            writer.AppendLine($"{AnyGridActive} = true;");
             // The state machines of the kernel and of the device functions it calls request a grid sync (#665) and report
             // a block barrier through thread-static flags; the launcher steps one GPU thread at a time on this host thread
             writer.AppendLine($"{ManagedExecutionRewriter.ManagedGridSyncRequested} = false;");
@@ -258,17 +258,17 @@ internal static class ManagedFallbackEmitter
             writer.AppendLine($"if ({runnable})");
             using (writer.Scope())
             {
-                writer.AppendLine("anyBlockActive = true;");
+                writer.AppendLine($"{AnyBlockActive} = true;");
             }
         }
     }
 
-    // <context>.__gsharp_state != -1 && !threadAtBlockBarrier[<thread>]
+    // <context>.__gsharp_state != -1 && !__gsharp_thread_at_block_barrier[<thread>]
     private const string RunnableCondition =
-        $"{LinearContext}.{GSharpInternalNames.StateMachine.State} != -1 && !threadAtBlockBarrier[{LinearThreadIndex}]";
+        $"{LinearContext}.{GSharpInternalNames.StateMachine.State} != -1 && !{ThreadAtBlockBarrier}[{LinearThreadIndex}]";
 
-    // ... && !threadAtGridSync[<thread>]
-    private const string CooperativeRunnableCondition = $"{RunnableCondition} && !threadAtGridSync[{LinearThreadIndex}]";
+    // ... && !__gsharp_thread_at_grid_sync[<thread>]
+    private const string CooperativeRunnableCondition = $"{RunnableCondition} && !{ThreadAtGridSync}[{LinearThreadIndex}]";
 
     // <state machine>(<arguments>, __gsharp_contexts[<thread>][, ref __gsharp_auto_result[<thread>]]);
     private static void WriteStateMachineCall(SourceWriter writer, in KernelHostModel kernel)
@@ -303,8 +303,8 @@ internal static class ManagedFallbackEmitter
         {
             if (kernel.IsCooperative)
             {
-                writer.AppendLine($"threadAtGridSync[{LinearThreadIndex}] = true;");
-                writer.AppendLine("blockAtGridSync = true;");
+                writer.AppendLine($"{ThreadAtGridSync}[{LinearThreadIndex}] = true;");
+                writer.AppendLine($"{BlockAtGridSyncFlag} = true;");
             }
             else
             {
@@ -317,7 +317,7 @@ internal static class ManagedFallbackEmitter
         writer.AppendLine($"if ({ManagedExecutionRewriter.ManagedBlockBarrierRequested})");
         using (writer.Scope())
         {
-            writer.AppendLine($"threadAtBlockBarrier[{LinearThreadIndex}] = true;");
+            writer.AppendLine($"{ThreadAtBlockBarrier}[{LinearThreadIndex}] = true;");
         }
     }
 }
