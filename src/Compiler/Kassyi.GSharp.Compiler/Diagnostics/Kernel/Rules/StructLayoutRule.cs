@@ -59,7 +59,7 @@ internal sealed class StructLayoutRule :
                 }
 
                 // [WHY] The CUDA launcher allocates and copies the array fields of each element; the CPU one pins them
-                if (context.Dialect.IsCuda && TypeLayoutCalculator.TryFindArrayField(structType, out var arrayField))
+                if (context.Dialect.IsCuda && TransferClassifier.TryFindArrayField(structType, out var arrayField))
                 {
                     context.ReportDiagnostic(
                         GSharpDiagnostics.StructArrayFieldAllocatedPerElement,
@@ -148,7 +148,7 @@ internal sealed class StructLayoutRule :
             GSharpDiagnostics.StructArrayConvertedPerElement,
             typeSyntax,
             TypeLayoutCalculator.FormatTypeName(structType),
-            TypeLayoutCalculator.DescribeLayoutDifference(structType, context.Dialect));
+            TransferClassifier.DescribeLayoutDifference(structType, context.Dialect));
 
     // The element of the first [InlineArray] in the struct, its nested structs included, that is converted element by
     // element
