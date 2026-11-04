@@ -8,7 +8,7 @@
 
   <!-- Register the tasks out-of-process to avoid MSBuild node locking (MSB3026/MSB3027) -->
   <UsingTask TaskName="Kassyi.GSharp.Compiler.Tasks.CompileCudaToFatbinTask" AssemblyFile="$(GSharpCompilerTaskAssembly)" TaskFactory="TaskHostFactory" />
-  <UsingTask TaskName="Kassyi.GSharp.Compiler.Tasks.CompileCppToNativeTask" AssemblyFile="$(GSharpCompilerTaskAssembly)" />
+  <UsingTask TaskName="Kassyi.GSharp.Compiler.Tasks.CompileCppToNativeTask" AssemblyFile="$(GSharpCompilerTaskAssembly)" TaskFactory="TaskHostFactory" />
 
   <ItemGroup>
     <CompilerVisibleProperty Include="GSharpTargetDialect" />
