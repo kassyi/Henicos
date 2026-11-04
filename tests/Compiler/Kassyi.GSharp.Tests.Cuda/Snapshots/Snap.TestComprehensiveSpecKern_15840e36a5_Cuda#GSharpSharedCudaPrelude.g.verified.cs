@@ -118,6 +118,94 @@ __forceinline__ unsigned long long __gsharp_to_u64(float x) { return __gsharp_to
 #endif
 
 
+// --- Runtime Error / Trap ---
+enum class GSharpErrorCode : int {
+None = 0,
+NotSupported = 1,
+InvalidOperation = 2,
+IndexOutOfRange = 3,
+ArgumentOutOfRange = 4,
+Argument = 5,
+NullReference = 6,
+DivideByZero = 7,
+Overflow = 8,
+DataRace = 9
+};
+
+struct GSharpDeviceErrorSlot {
+unsigned int code;
+unsigned int site_id;
+unsigned int module_id;
+unsigned int thread_linear;
+unsigned int block_x;
+unsigned int block_yz;
+};
+
+__device__ GSharpDeviceErrorSlot* __gsharp_error_slot = nullptr;
+__device__ unsigned int __gsharp_error_module_id = 0u;
+
+__device__ __host__ constexpr unsigned int __gsharp_builtin_message_id(const char* message) {
+if (message == nullptr) { return 0x80000000u; }
+unsigned int hash = 2166136261u;
+for (const char* p = message; *p != 0; ++p) {
+hash ^= static_cast<unsigned char>(*p);
+hash *= 16777619u;
+}
+unsigned int low = hash & 0x7FFFFFFFu;
+return 0x80000000u | (low == 0u ? 1u : low);
+}
+
+__device__ __noinline__ void __gsharp_trap_site(GSharpErrorCode code, unsigned int site_id) {
+GSharpDeviceErrorSlot* slot = __gsharp_error_slot;
+if (slot != nullptr) {
+unsigned int active = __activemask();
+unsigned int lane;
+asm volatile(""mov.u32 %0, %%laneid;"" : ""=r""(lane));
+unsigned int leader = __ffs(active) - 1u;
+if (lane == leader) {
+unsigned int c = static_cast<unsigned int>(code) & 0xFFFFu;
+if (atomicCAS(&slot->code, 0u, c) == 0u) {
+slot->site_id = site_id;
+slot->module_id = __gsharp_error_module_id;
+slot->thread_linear = (threadIdx.x & 0x3FFu)
+| ((threadIdx.y & 0x3FFu) << 10)
+| ((threadIdx.z & 0x3FFu) << 20);
+slot->block_x = blockIdx.x;
+slot->block_yz = (blockIdx.y & 0xFFFFu) | ((blockIdx.z & 0xFFFFu) << 16);
+__threadfence_system();
+atomicExch(&slot->code, c | 0x10000u);
+__threadfence_system();
+} else {
+for (int spin = 0; spin < 100000; ++spin) {
+if ((*(volatile unsigned int*)&slot->code & 0x10000u) != 0u) { break; }
+__nanosleep(64);
+}
+}
+}
+__syncwarp(active);
+}
+asm volatile(""trap;"");
+}
+
+__device__ __forceinline__ void __gsharp_trap(GSharpErrorCode code, const char* message) {
+__gsharp_trap_site(code, __gsharp_builtin_message_id(message));
+}
+
+__device__ __forceinline__ void __gsharp_trap(GSharpErrorCode code, unsigned int site_id) {
+__gsharp_trap_site(code, site_id);
+}
+
+template <GSharpErrorCode ErrorCode>
+__device__ inline const char* __gsharp_range_message() {
+if (ErrorCode == GSharpErrorCode::IndexOutOfRange) {
+return ""Index was outside the bounds of the array."";
+}
+if (ErrorCode == GSharpErrorCode::Argument) {
+return ""Offset and length were out of bounds for the array or count is greater than the number of elements from index to the end of the source collection."";
+}
+return ""Index was out of range."";
+}
+
 // A C# array or span: data is nullptr for a null array (and the default span), and never nullptr for an array that
 // exists, also an empty one (#706). flags uses the padding after length (16 bytes as before): bit 0
 // (__gsharp_array_null_reads_empty) marks a null optional kernel argument, which reads as an empty array
@@ -137,10 +225,77 @@ template <int N>
 __device__ inline GSharpArray(T (&storage)[N]) : data(storage), length(N), flags(0) {}
 
 // The span members that C# calls on a span or an array (Span<T>.Slice, Span<T>.Fill, MemoryExtensions.AsSpan)
-__device__ inline GSharpArray<T> Slice(int start) const { return GSharpArray<T>(data + start, length - start); }
-__device__ inline GSharpArray<T> Slice(int start, int count) const { return GSharpArray<T>(data + start, count); }
-__device__ inline void Fill(const T& value) { for (int i = 0; i < length; i++) { data[i] = value; } }
+template <GSharpErrorCode ErrorCode = GSharpErrorCode::ArgumentOutOfRange>
+__device__ inline GSharpArray<T> Slice(int start, const char* message = nullptr) const {
+#ifdef GSHARP_CHECKED
+if (static_cast<unsigned int>(start) > static_cast<unsigned int>(length)) {
+__gsharp_trap(ErrorCode, message != nullptr ? message : __gsharp_range_message<ErrorCode>());
+return GSharpArray<T>();
+}
+#endif
+return GSharpArray<T>(data + start, length - start);
+}
+template <GSharpErrorCode ErrorCode = GSharpErrorCode::ArgumentOutOfRange>
+__device__ inline GSharpArray<T> Slice(int start, int count, const char* message = nullptr) const {
+#ifdef GSHARP_CHECKED
+if (static_cast<unsigned int>(start) > static_cast<unsigned int>(length) ||
+static_cast<unsigned int>(count) > static_cast<unsigned int>(length - start)) {
+__gsharp_trap(ErrorCode, message != nullptr ? message : __gsharp_range_message<ErrorCode>());
+return GSharpArray<T>();
+}
+#endif
+return GSharpArray<T>(data + start, count);
+}
+__device__ inline void Fill(const T& value) const { for (int i = 0; i < length; i++) { data[i] = value; } }
+__device__ inline void Clear() const { for (int i = 0; i < length; i++) { data[i] = T{}; } }
+// Ported from dotnet/runtime src/libraries/System.Private.CoreLib/src/System/MemoryExtensions.cs
+// (MIT License, commit e750854de9ad6a2ced72feb9b8008e506f04608f): in-place two-pointer swap for Span<T>.Reverse.
+__device__ inline void Reverse() const {
+for (int i = 0, j = length - 1; i < j; i++, j--) {
+T tmp = data[i];
+data[i] = data[j];
+data[j] = tmp;
+}
+}
+// Ported from dotnet/runtime src/libraries/System.Private.CoreLib/src/System/Span.Fast.cs and Buffer.cs
+// (MIT License, commit e750854de9ad6a2ced72feb9b8008e506f04608f):
+// CopyTo / TryCopyTo check (uint)length <= (uint)destination.length and copy with memmove overlap semantics.
+template <typename U>
+__device__ inline bool TryCopyTo(GSharpArray<U> destination) const {
+if (static_cast<unsigned int>(length) > static_cast<unsigned int>(destination.length)) {
+return false;
+}
+const U* src = data;
+U* dst = destination.data;
+if (dst == src || length <= 0) {
+return true;
+}
+unsigned long long srcAddr = reinterpret_cast<unsigned long long>(src);
+unsigned long long dstAddr = reinterpret_cast<unsigned long long>(dst);
+unsigned long long byteCount = static_cast<unsigned long long>(length) * sizeof(U);
+if (dstAddr - srcAddr < byteCount) {
+for (int i = length - 1; i >= 0; i--) {
+dst[i] = src[i];
+}
+} else {
+for (int i = 0; i < length; i++) {
+dst[i] = src[i];
+}
+}
+return true;
+}
+template <typename U>
+__device__ inline void CopyTo(GSharpArray<U> destination) const {
+if (!TryCopyTo(destination)) {
+__gsharp_trap(GSharpErrorCode::Argument, ""Destination is too short."");
+}
+}
 __device__ inline GSharpArray<T> AsSpan() const { return *this; }
+template <GSharpErrorCode ErrorCode = GSharpErrorCode::ArgumentOutOfRange>
+__device__ inline GSharpArray<T> AsSpan(int start, const char* message = nullptr) const { return Slice<ErrorCode>(start, message); }
+template <GSharpErrorCode ErrorCode = GSharpErrorCode::ArgumentOutOfRange>
+__device__ inline GSharpArray<T> AsSpan(int start, int count, const char* message = nullptr) const { return Slice<ErrorCode>(start, count, message); }
+__device__ inline bool IsEmpty() const { return length <= 0; }
 
 // Allows implicit conversion from GSharpArray<U> to GSharpArray<T> if U* is convertible to T* (e.g. T to const T)
 template <typename U>
@@ -517,81 +672,7 @@ __forceinline__ __device__ unsigned int __gsharp_atomicAdd(unsigned int* address
 __forceinline__ __device__ unsigned long long __gsharp_atomicAdd(unsigned long long* address, unsigned long long val) { return atomicAdd(address, val) + val; }
 
 // --- Runtime Error / Trap ---
-enum class GSharpErrorCode : int {
-None = 0,
-NotSupported = 1,
-InvalidOperation = 2,
-IndexOutOfRange = 3,
-ArgumentOutOfRange = 4,
-Argument = 5,
-NullReference = 6,
-DivideByZero = 7,
-Overflow = 8,
-DataRace = 9
-};
-
-struct GSharpDeviceErrorSlot {
-unsigned int code;
-unsigned int site_id;
-unsigned int module_id;
-unsigned int thread_linear;
-unsigned int block_x;
-unsigned int block_yz;
-};
-
-__device__ GSharpDeviceErrorSlot* __gsharp_error_slot = nullptr;
-__device__ unsigned int __gsharp_error_module_id = 0u;
-
-__device__ __host__ constexpr unsigned int __gsharp_builtin_message_id(const char* message) {
-if (message == nullptr) { return 0x80000000u; }
-unsigned int hash = 2166136261u;
-for (const char* p = message; *p != 0; ++p) {
-hash ^= static_cast<unsigned char>(*p);
-hash *= 16777619u;
-}
-unsigned int low = hash & 0x7FFFFFFFu;
-return 0x80000000u | (low == 0u ? 1u : low);
-}
-
-__device__ __noinline__ void __gsharp_trap_site(GSharpErrorCode code, unsigned int site_id) {
-GSharpDeviceErrorSlot* slot = __gsharp_error_slot;
-if (slot != nullptr) {
-unsigned int active = __activemask();
-unsigned int lane;
-asm volatile(""mov.u32 %0, %%laneid;"" : ""=r""(lane));
-unsigned int leader = __ffs(active) - 1u;
-if (lane == leader) {
-unsigned int c = static_cast<unsigned int>(code) & 0xFFFFu;
-if (atomicCAS(&slot->code, 0u, c) == 0u) {
-slot->site_id = site_id;
-slot->module_id = __gsharp_error_module_id;
-slot->thread_linear = (threadIdx.x & 0x3FFu)
-| ((threadIdx.y & 0x3FFu) << 10)
-| ((threadIdx.z & 0x3FFu) << 20);
-slot->block_x = blockIdx.x;
-slot->block_yz = (blockIdx.y & 0xFFFFu) | ((blockIdx.z & 0xFFFFu) << 16);
-__threadfence_system();
-atomicExch(&slot->code, c | 0x10000u);
-__threadfence_system();
-} else {
-for (int spin = 0; spin < 100000; ++spin) {
-if ((*(volatile unsigned int*)&slot->code & 0x10000u) != 0u) { break; }
-__nanosleep(64);
-}
-}
-}
-__syncwarp(active);
-}
-asm volatile(""trap;"");
-}
-
-__device__ __forceinline__ void __gsharp_trap(GSharpErrorCode code, const char* message) {
-__gsharp_trap_site(code, __gsharp_builtin_message_id(message));
-}
-
-__device__ __forceinline__ void __gsharp_trap(GSharpErrorCode code, unsigned int site_id) {
-__gsharp_trap_site(code, site_id);
-}
+// GSharpErrorCode and __gsharp_trap are defined above GSharpArray<T>.
 
 // GSharpArray::flags bit 0: a null optional kernel argument, which reads as an empty array (#838)
 #define __gsharp_array_null_reads_empty 1
