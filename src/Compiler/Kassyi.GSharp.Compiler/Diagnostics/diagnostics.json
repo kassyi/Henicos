@@ -832,6 +832,15 @@
     "description": "An expression or control flow structure within the method exceeds compiler evaluation depth limits or exhausts the execution stack."
   },
   {
+    "name": "ErrorSiteIdCollision",
+    "id": "GSH0103",
+    "title": "Error site ID collision in device error channel",
+    "messageFormat": "Error site ID collision (0x{0:X8}): '{1}' at {2}({3},{4}) and '{5}' at {6}({7},{8}) produced the same site ID.",
+    "category": "GSharpTranspiler",
+    "defaultSeverity": "Error",
+    "isEnabledByDefault": true
+  },
+  {
     "name": "KernelParameterConflictsWithLaunchParameter",
     "id": "GSH0106",
     "title": "Kernel parameter name conflicts with a launch parameter",

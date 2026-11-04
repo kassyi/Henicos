@@ -33,7 +33,10 @@ enum class GSharpErrorCode : int32_t {
     IndexOutOfRange = 3,
     ArgumentOutOfRange = 4,
     Argument = 5,
-    NullReference = 6
+    NullReference = 6,
+    DivideByZero = 7,
+    Overflow = 8,
+    DataRace = 9
 };
 inline void __gsharp_trap(GSharpErrorCode code, const char* message);
 
