@@ -366,7 +366,7 @@ using global::Kassyi.GSharp.Core;
 using global::Kassyi.GSharp.Runtime.Interop;
 using static global::Kassyi.GSharp.Core.ManagedGpuContext;
 using global::Kassyi.ZeroAlloc.Linq;
-#pragma warning disable CS0162, CS0164, CS0219, CS0649, CS1718, CS8321
+#pragma warning disable CS0162, CS0164, CS0219, CS0649, CS1718
 namespace Kassyi.GSharp.Tests.Shared.Syntax
 {
 public partial class OperatorMacroNestingKernels
@@ -777,7 +777,7 @@ using System;
 using global::Kassyi.GSharp.Core;
 using static global::Kassyi.GSharp.Core.ManagedGpuContext;
 using global::Kassyi.ZeroAlloc.Linq;
-#pragma warning disable CS0162, CS0164, CS0219, CS0649, CS1718, CS8321
+#pragma warning disable CS0162, CS0164, CS0219, CS0649, CS1718
 namespace Kassyi.GSharp.Tests.Shared.Syntax
 {
 public partial class OperatorMacroNestingOrderKernels
@@ -813,7 +813,7 @@ using global::Kassyi.GSharp.Core;
 using global::Kassyi.GSharp.Runtime.Interop;
 using static global::Kassyi.GSharp.Core.ManagedGpuContext;
 using global::Kassyi.ZeroAlloc.Linq;
-#pragma warning disable CS0162, CS0164, CS0219, CS0649, CS1718, CS8321
+#pragma warning disable CS0162, CS0164, CS0219, CS0649, CS1718
 namespace Kassyi.GSharp.Tests.Shared.Syntax
 {
 public partial class OperatorMacroNestingOrderKernels
@@ -1327,7 +1327,7 @@ using global::Kassyi.GSharp.Core;
 using global::Kassyi.GSharp.Runtime.Interop;
 using static global::Kassyi.GSharp.Core.ManagedGpuContext;
 using global::Kassyi.ZeroAlloc.Linq;
-#pragma warning disable CS0162, CS0164, CS0219, CS0649, CS1718, CS8321
+#pragma warning disable CS0162, CS0164, CS0219, CS0649, CS1718
 namespace Kassyi.GSharp.Tests.Shared.Syntax
 {
 public partial class OperatorMacroShapeKernels
