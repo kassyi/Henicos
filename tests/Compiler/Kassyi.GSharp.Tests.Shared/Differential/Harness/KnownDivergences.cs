@@ -10,20 +10,6 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 public static class KnownDivergences
 {
     // The cases of the entries below, named through nameof so that a renamed kernel cannot leave an entry behind
-    private const string EmptyStackSpanNullComparison =
-        $"{nameof(NullableDifferentialKernels)}.{nameof(NullableDifferentialKernels.EmptyStackSpanNullComparisonReproKernel)}";
-    private const string NullableArrayLikeDefaultValueNullCheck =
-        $"{nameof(NullableDifferentialKernels)}.{nameof(NullableDifferentialKernels.NullableArrayLikeDefaultValueNullCheckReproKernel)}";
-    private const string CoalesceWiderNullableWithNarrowerNullable =
-        $"{nameof(NullableDifferentialKernels)}.{nameof(NullableDifferentialKernels.CoalesceWiderNullableWithNarrowerNullable)}";
-    private const string AutoPropertyPassedToInParameterDefensiveCopy =
-        $"{nameof(StructDifferentialKernels)}.{nameof(StructDifferentialKernels.AutoPropertyPassedToInParameterDefensiveCopy)}";
-    private const string StructUserDefinedImplicitConversion =
-        $"{nameof(StructDifferentialKernels)}.{nameof(StructDifferentialKernels.StructUserDefinedImplicitConversion)}";
-    private const string SubWarpConditionalShuffle =
-        $"{nameof(BarrierAndWarpDifferentialKernels)}.{nameof(BarrierAndWarpDifferentialKernels.SubWarpConditionalShuffleKernel)}";
-    private const string GenericStructStaticSharedMemory =
-        $"{nameof(BarrierAndWarpDifferentialKernels)}.{nameof(BarrierAndWarpDifferentialKernels.GenericStructStaticSharedMemoryKernel)}";
     private const string HelperDynamicSharedMemoryZeroBytes =
         $"{nameof(PendingBugsDifferentialKernels)}.{nameof(PendingBugsDifferentialKernels.HelperDynamicSharedMemoryZeroBytesKernel)}";
     private const string HelperDynamicSharedMemoryGrowthAfterLaterDecl =
@@ -74,8 +60,6 @@ public static class KnownDivergences
         $"{nameof(BoundsAndMemoryDifferentialKernels)}.{nameof(BoundsAndMemoryDifferentialKernels.BoundsCheckEliminationUpperOnlyKernel)}";
     private const string AllThreadsNullDereferenceTrap =
         $"{nameof(BoundsAndMemoryDifferentialKernels)}.{nameof(BoundsAndMemoryDifferentialKernels.AllThreadsNullDereferenceTrapKernel)}";
-    private const string AllThreadsEmptyFirstTrap =
-        $"{nameof(BoundsAndMemoryDifferentialKernels)}.{nameof(BoundsAndMemoryDifferentialKernels.AllThreadsEmptyFirstTrapKernel)}";
 
     private const string Int32Divide =
         $"{nameof(IntegerTrapAndCheckedDifferentialKernels)}.{nameof(IntegerTrapAndCheckedDifferentialKernels.Int32DivideKernel)}";
@@ -119,68 +103,10 @@ public static class KnownDivergences
     private const string ElementAtOrDefaultNegativeIndexSideEffect =
         $"{nameof(BclExceptionDifferentialKernels)}.{nameof(BclExceptionDifferentialKernels.ElementAtOrDefaultNegativeIndexSideEffectKernel)}";
 
-    private const string StackLinqFirst =
-        $"{nameof(BclExceptionDifferentialKernels)}.{nameof(BclExceptionDifferentialKernels.StackLinqFirstKernel)}";
-    private const string StackLinqSingle =
-        $"{nameof(BclExceptionDifferentialKernels)}.{nameof(BclExceptionDifferentialKernels.StackLinqSingleKernel)}";
-    private const string StackLinqSingleTwoElements =
-        $"{nameof(BclExceptionDifferentialKernels)}.{nameof(BclExceptionDifferentialKernels.StackLinqSingleKernel)}_TwoElements";
-    private const string StackLinqLast =
-        $"{nameof(BclExceptionDifferentialKernels)}.{nameof(BclExceptionDifferentialKernels.StackLinqLastKernel)}";
-    private const string StackLinqMin =
-        $"{nameof(BclExceptionDifferentialKernels)}.{nameof(BclExceptionDifferentialKernels.StackLinqMinKernel)}";
-    private const string StackLinqMax =
-        $"{nameof(BclExceptionDifferentialKernels)}.{nameof(BclExceptionDifferentialKernels.StackLinqMaxKernel)}";
-    private const string StackLinqAverage =
-        $"{nameof(BclExceptionDifferentialKernels)}.{nameof(BclExceptionDifferentialKernels.StackLinqAverageKernel)}";
-    private const string StackLinqAggregate =
-        $"{nameof(BclExceptionDifferentialKernels)}.{nameof(BclExceptionDifferentialKernels.StackLinqAggregateKernel)}";
-    private const string StackLinqElementAtNegative =
-        $"{nameof(BclExceptionDifferentialKernels)}.{nameof(BclExceptionDifferentialKernels.StackLinqElementAtKernel)}_NegativeIndex";
-    private const string StackLinqElementAtPastEnd =
-        $"{nameof(BclExceptionDifferentialKernels)}.{nameof(BclExceptionDifferentialKernels.StackLinqElementAtKernel)}_PastEnd";
-
-    private const string MemoryExtensionsSortLengthMismatch =
-        $"{nameof(BclExceptionDifferentialKernels)}.{nameof(BclExceptionDifferentialKernels.MemoryExtensionsSortLengthMismatchKernel)}";
-    private const string MemoryExtensionsSortComparerTrap =
-        $"{nameof(BclExceptionDifferentialKernels)}.{nameof(BclExceptionDifferentialKernels.MemoryExtensionsSortComparerTrapKernel)}";
-
-    private const string TrapNonContinuationGuard =
-        $"{nameof(BclExceptionDifferentialKernels)}.{nameof(BclExceptionDifferentialKernels.TrapNonContinuationGuardKernel)}";
-
     /// <summary>Gets every registered entry.</summary>
     public static IReadOnlyList<KnownDivergence> All { get; } =
     [
         // new("IntegerMatrixKernels.Int32ArithmeticMatrixKernel", "a>>>b", DiffPath.Native | DiffPath.Cuda, Issue: 722),
-
-        // empty stackalloc Span<T> / collection expression == null (#998)
-        new(EmptyStackSpanNullComparison, "stackalloc_zero_eq_null", DiffPath.Native | DiffPath.Cuda, Issue: 998),
-        new(EmptyStackSpanNullComparison, "stackalloc_zero_ne_null", DiffPath.Native | DiffPath.Cuda, Issue: 998),
-        new(EmptyStackSpanNullComparison, "collection_empty_eq_null", DiffPath.Native | DiffPath.Cuda, Issue: 998),
-        new(EmptyStackSpanNullComparison, "combined_null_flags", DiffPath.Native | DiffPath.Cuda, Issue: 998),
-
-        // Nullable<Memory<T>> / Nullable<ArraySegment<T>> null pattern (#998)
-        new(NullableArrayLikeDefaultValueNullCheck, "mem_is_null", DiffPath.Native | DiffPath.Cuda, Issue: 998),
-        new(NullableArrayLikeDefaultValueNullCheck, "mem_is_not_null", DiffPath.Native | DiffPath.Cuda, Issue: 998),
-        new(NullableArrayLikeDefaultValueNullCheck, "mem_eq_ne_hasvalue", DiffPath.Native | DiffPath.Cuda, Issue: 998),
-        new(NullableArrayLikeDefaultValueNullCheck, "seg_is_null_hasvalue", DiffPath.Native | DiffPath.Cuda, Issue: 998),
-
-        // Nullable<T> ?? conversion & narrow Nullable<T> ?? side effect (#998)
-        new(CoalesceWiderNullableWithNarrowerNullable, "int_coalesce_short_val", DiffPath.Native | DiffPath.Cuda, Issue: 998),
-        new(CoalesceWiderNullableWithNarrowerNullable, "int_coalesce_ushort_val", DiffPath.Native | DiffPath.Cuda, Issue: 998),
-
-        // struct auto-property passed to in parameter without defensive copy (#999)
-        new(AutoPropertyPassedToInParameterDefensiveCopy, "in_snapshot_after_holder_mutated", DiffPath.Native | DiffPath.Cuda, Issue: 999),
-
-        // struct user-defined implicit operator ignored (#963)
-        new(StructUserDefinedImplicitConversion, "scaled_field_val", DiffPath.Native | DiffPath.Cuda, Issue: 963),
-        new(StructUserDefinedImplicitConversion, "converted_back_int", DiffPath.Native | DiffPath.Cuda, Issue: 963),
-
-        // Warp.ShuffleXor after sub-warp conditional ShuffleDown on CPU emulator (#1001)
-        new(SubWarpConditionalShuffle, "reconvergedFullWarpXor16", DiffPath.Managed | DiffPath.Native, Issue: 1001),
-
-        // generic struct static method SharedMemory.Allocate<T> collides across type arguments (#543)
-        new(GenericStructStaticSharedMemory, "SharedSlot<int>", DiffPath.Managed | DiffPath.Native, Issue: 543),
 
         // dynamic SharedMemory<T>(count) inside non-suspending [GpuDeviceFunction] is not rewritten on Managed (#904)
         new(HelperDynamicSharedMemoryZeroBytes, KnownDivergence.ExceptionColumn, DiffPath.Managed, Issue: 904),
@@ -231,8 +157,6 @@ public static class KnownDivergences
 
         // Span/Slice/ArraySegment/Memory/InlineArray bounds and BCE guards on native (#718)
         new(SpanCanaryIndexBounds, KnownDivergence.ExceptionColumn, DiffPath.Native, Issue: 718),
-        new(SpanSliceStart, KnownDivergence.ExceptionColumn, DiffPath.Native, Issue: 718),
-        new(SpanSliceStartCount, KnownDivergence.ExceptionColumn, DiffPath.Native, Issue: 718),
         new(ArraySegmentBounds, KnownDivergence.ExceptionColumn, DiffPath.Native, Issue: 718),
         new(MemoryBounds, KnownDivergence.ExceptionColumn, DiffPath.Native, Issue: 718),
         new(InlineArrayBounds, KnownDivergence.ExceptionColumn, DiffPath.Native, Issue: 718),
@@ -254,7 +178,6 @@ public static class KnownDivergences
         new(BoundsCheckEliminationPostIncrement, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
         new(BoundsCheckEliminationUpperOnly, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
         new(AllThreadsNullDereferenceTrap, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
-        new(AllThreadsEmptyFirstTrap, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
         new(Int32Divide, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
         new(Int32Remainder, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
         new(UInt32Divide, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
@@ -271,21 +194,6 @@ public static class KnownDivergences
         new(MathClampInt32, KnownDivergence.ExceptionColumn, DiffPath.Native | DiffPath.Cuda, Issue: 718),
         new(MathClampSingle, KnownDivergence.ExceptionColumn, DiffPath.Native | DiffPath.Cuda, Issue: 718),
         new(MathClampDouble, KnownDivergence.ExceptionColumn, DiffPath.Native | DiffPath.Cuda, Issue: 718),
-
-        // StackLinq empty sequence, bounds traps, Sort faults, and trap guard on CUDA (#729)
-        new(StackLinqFirst, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
-        new(StackLinqSingle, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
-        new(StackLinqSingleTwoElements, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
-        new(StackLinqLast, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
-        new(StackLinqMin, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
-        new(StackLinqMax, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
-        new(StackLinqAverage, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
-        new(StackLinqAggregate, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
-        new(StackLinqElementAtNegative, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
-        new(StackLinqElementAtPastEnd, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
-        new(MemoryExtensionsSortLengthMismatch, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
-        new(MemoryExtensionsSortComparerTrap, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
-        new(TrapNonContinuationGuard, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
 
         // Unchecked MinValue / -1 and MinValue % -1 Managed path throws OverflowException (#718)
         new(Int32MinValueDivide, KnownDivergence.ExceptionColumn, DiffPath.Managed, Issue: 718),

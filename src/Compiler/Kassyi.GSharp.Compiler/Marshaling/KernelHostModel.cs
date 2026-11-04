@@ -44,6 +44,9 @@ internal readonly record struct KernelHostModel
     /// <summary>A <c>[GpuKernel(Cooperative = true)]</c> kernel.</summary>
     public bool IsCooperative { get; init; }
 
+    /// <summary>Whether the kernel or any device function it calls reaches a warp shuffle or warp match (#1001).</summary>
+    public bool ReachesWarpShuffle { get; init; }
+
     /// <summary>The <c>global::</c>-qualified name of the class that declares the kernel, for qualifying sibling members.</summary>
     public string ClassQualifiedName { get; init; }
 
@@ -121,6 +124,7 @@ internal readonly record struct KernelHostModel
             CudaReturn = ParameterTransfer.CreateForReturn(kernel.ReturnType, HostDialects.Cuda, kernel.ContainingType),
             CpuReturn = ParameterTransfer.CreateForReturn(kernel.ReturnType, HostDialects.Cpu, kernel.ContainingType),
             IsCooperative = kernel.IsCooperativeKernel(),
+            ReachesWarpShuffle = model != null && SuspensionAnalysis.ReachesWarpShuffle(kernel, model.Compilation),
             ClassQualifiedName = AotHostNames.GetHostClassQualifiedName(kernel.ContainingType),
             HasReservedLaunchParameterName = kernel.Parameters
                 .AsStackEnumerable()
@@ -343,7 +347,8 @@ internal readonly record struct KernelEmission(
     string CudaSource,
     string CppSource,
     string ManagedCSharpSource,
-    string InternalError)
+    string InternalError,
+    EquatableArray<ErrorSiteEntry> ErrorSites = default)
 {
     public string GetSource(bool isCuda) => isCuda ? CudaSource : CppSource;
 }
@@ -352,7 +357,8 @@ internal readonly record struct KernelEmission(
 internal readonly record struct KernelClassModel(
     HostClassHeader Class,
     EquatableArray<KernelEmission> Kernels,
-    EquatableArray<StructHostSource> Structs)
+    EquatableArray<StructHostSource> Structs,
+    EquatableArray<ErrorSiteEntry> ErrorSites = default)
 {
     /// <summary>
     /// Builds the class model from the kernels of one class, in the order given; the overloads, member keys and the
@@ -369,9 +375,18 @@ internal readonly record struct KernelClassModel(
         var emissions = ImmutableArray.CreateBuilder<KernelEmission>(kernels.Count);
         var structs = ImmutableArray.CreateBuilder<StructHostSource>();
         var structIndices = new Dictionary<string, int>(StringComparer.Ordinal);
+        var rawClassSites = new List<ErrorSiteEntry>();
         for (var i = 0; i < kernels.Count; i++)
         {
             var kernel = kernels[i];
+            if (!kernel.ErrorSites.IsDefaultOrEmpty)
+            {
+                foreach (var site in kernel.ErrorSites)
+                {
+                    rawClassSites.Add(site);
+                }
+            }
+
             var isOverloaded = IsOverloaded(hosts, i);
             var memberKey = isOverloaded
                 ? $"{kernel.Host.Name}__o{kernel.Host.OverloadOrdinal.ToString(CultureInfo.InvariantCulture)}"
@@ -384,7 +399,8 @@ internal readonly record struct KernelClassModel(
                 kernel.CudaSource,
                 kernel.CppSource,
                 kernel.ManagedCSharpSource,
-                kernel.InternalError));
+                kernel.InternalError,
+                kernel.ErrorSites));
 
             foreach (var s in kernel.Host.Structs)
             {
@@ -401,10 +417,12 @@ internal readonly record struct KernelClassModel(
             }
         }
 
+        ErrorSiteTable.TryBuildModuleSites(rawClassSites, out var classErrorSites, out _, out _);
         return new KernelClassModel(
             header,
             emissions.MoveToImmutable().AsEquatableArray(),
-            structs.ToImmutable().AsEquatableArray());
+            structs.ToImmutable().AsEquatableArray(),
+            classErrorSites.AsEquatableArray());
     }
 
     /// <summary>Whether another kernel of <paramref name="kernels"/> has the name of <c>kernels[index]</c>.</summary>

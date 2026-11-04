@@ -85,6 +85,8 @@ internal sealed partial class ManagedExecutionRewriter(
         return next;
     }
 
+    private const string ManagedGpuContextTypeName = "global::Kassyi.GSharp.Core.ManagedGpuContext";
+
     public override SyntaxNode? VisitObjectCreationExpression(ObjectCreationExpressionSyntax node) =>
         VisitCreation(node, base.VisitObjectCreationExpression(node));
 
@@ -92,11 +94,93 @@ internal sealed partial class ManagedExecutionRewriter(
         VisitImplicitObjectCreationExpression(ImplicitObjectCreationExpressionSyntax node) =>
         VisitCreation(node, base.VisitImplicitObjectCreationExpression(node));
 
-    private SyntaxNode? VisitCreation(BaseObjectCreationExpressionSyntax node, SyntaxNode? visited) =>
-        visited is BaseObjectCreationExpressionSyntax rewritten &&
-        semanticModel.GetTypeSymbol(node).IsSharedMemoryType()
-            ? SharedMemorySiteKeyAnnotator.AddSharedMemorySiteKey(node, rewritten, semanticModel)
-            : visited;
+    private SyntaxNode? VisitCreation(BaseObjectCreationExpressionSyntax node, SyntaxNode? visited)
+    {
+        if (TryRewriteSharedMemory(node, visited) is { } shared)
+        {
+            return shared;
+        }
+
+        if (TryWrapGenericStructConstructor(node, visited) is { } wrapped)
+        {
+            return wrapped;
+        }
+
+        return visited;
+    }
+
+    private SyntaxNode? TryRewriteSharedMemory(BaseObjectCreationExpressionSyntax node, SyntaxNode? visited)
+    {
+        if (visited is BaseObjectCreationExpressionSyntax rewritten &&
+            semanticModel.GetTypeSymbol(node).IsSharedMemoryType())
+        {
+            return SharedMemorySiteKeyAnnotator.AddSharedMemorySiteKey(node, rewritten, semanticModel);
+        }
+
+        return null;
+    }
+
+    private SyntaxNode? TryWrapGenericStructConstructor(BaseObjectCreationExpressionSyntax node, SyntaxNode? visited)
+    {
+        // A generic struct constructor is monomorphized per closed struct type on CUDA and on the native CPU path (#543),
+        // so the managed path wraps the creation in a type-key scope that salts any SharedMemory<T> declared inside it.
+        if (visited is ExpressionSyntax rewrittenExpr &&
+            semanticModel.GetTypeSymbol(node) is INamedTypeSymbol { TypeKind: TypeKind.Struct, IsGenericType: true } structType &&
+            semanticModel.GetSymbol(node) is IMethodSymbol ctor &&
+            StructTranspiler.IsEmittedStructConstructor(ctor, semanticModel.Compilation) &&
+            DeclaresSharedMemoryInStruct(structType, semanticModel.Compilation))
+        {
+            var typeSyntax = SyntaxFactory.ParseTypeName(structType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
+            var contextType = SyntaxFactory.ParseTypeName(ManagedGpuContextTypeName);
+            var beginCall = SyntaxFactory.InvocationExpression(
+                SyntaxFactory.MemberAccessExpression(
+                    SyntaxKind.SimpleMemberAccessExpression,
+                    contextType,
+                    SyntaxFactory.GenericName(
+                        SyntaxFactory.Identifier("BeginTypeKeyScope"),
+                        SyntaxFactory.TypeArgumentList(SyntaxFactory.SingletonSeparatedList(typeSyntax))
+                    )
+                )
+            );
+            return SyntaxFactory.InvocationExpression(
+                SyntaxFactory.MemberAccessExpression(
+                    SyntaxKind.SimpleMemberAccessExpression,
+                    contextType,
+                    SyntaxFactory.IdentifierName("EndTypeKeyScope")
+                ),
+                SyntaxFactory.ArgumentList(
+                    SyntaxFactory.SeparatedList<ArgumentSyntax>(
+                    [
+                        SyntaxFactory.Argument(beginCall),
+                        SyntaxFactory.Argument(rewrittenExpr.WithoutTrivia())
+                    ])
+                )
+            ).WithTriviaFrom(rewrittenExpr);
+        }
+
+        return null;
+    }
+
+    private static bool DeclaresSharedMemoryInStruct(INamedTypeSymbol structType, Compilation compilation)
+    {
+        foreach (var syntaxRef in structType.OriginalDefinition.DeclaringSyntaxReferences)
+        {
+            if (syntaxRef.GetSyntax() is TypeDeclarationSyntax typeDecl)
+            {
+                var model = compilation.GetCachedSemanticModel(syntaxRef.SyntaxTree);
+                foreach (var node in typeDecl.DescendantNodes())
+                {
+                    if (node is BaseObjectCreationExpressionSyntax creation &&
+                        model.GetTypeSymbol(creation).IsSharedMemoryType())
+                    {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
 
     public override SyntaxNode? VisitMemberAccessExpression(MemberAccessExpressionSyntax node)
     {

@@ -41,8 +41,8 @@ public class CollectionsAndMemoryTests : TranspilerTestBase
             nameof(CollectionsAndMemoryTarget.SpanUsage), dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);
-        Assert.Contains("GSharpArray<int> span = data.AsSpan(2,4);", cudaSource.WithCSharpNames());
-        Assert.Contains("GSharpArray<int> roSpan = data.AsSpan(0,2);", cudaSource.WithCSharpNames());
+        Assert.Matches(@"GSharpArray<int> span = data\.AsSpan\(2,4, ""[^""]*""\);", cudaSource.WithCSharpNames());
+        Assert.Matches(@"GSharpArray<int> roSpan = data\.AsSpan\(0,2, ""[^""]*""\);", cudaSource.WithCSharpNames());
         Assert.Contains("span.length", cudaSource.WithCSharpNames());
     }
 

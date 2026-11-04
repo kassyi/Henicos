@@ -71,3 +71,28 @@ private static ExpressionStatementSyntax Assign(IdentifierNameSyntax target, Exp
         SyntaxFactory.AssignmentExpression(SyntaxKind.SimpleAssignmentExpression, target, value)
     );
 ```
+
+## 5. Decide, Then Write (Plan / Emit)
+
+A rule or emitter that both decides what to emit and writes the text mixes two jobs: a wrong decision then shows only as wrong
+text, the decision cannot be tested without reading C++, and a branch that has no answer tends to write a placeholder
+(`auto`, `void`, a dangling `,`) instead of failing. Roslyn separates them the same way: the binder produces a bound tree,
+lowering rewrites it, and only `CodeGenerator` writes IL, deciding nothing.
+
+1. **Plan first**: compute everything the output depends on into a value (a record or `readonly struct`: the arguments in
+   parameter order, the helper to call, the type to cast to, the temporaries to spill, or the reason it cannot be emitted)
+   before writing anything. The plan is plain data, with no `SourceWriter` and no `TranspileContext` writes.
+2. **Emit from the plan only**: the writer turns the plan into text and makes no decision of its own; every `if` in it
+   selects between shapes the plan already chose.
+3. **No answer is a failure, not a placeholder**: when the plan cannot be made (a type that does not resolve, an argument
+   that matches no parameter), report a diagnostic or throw an internal error; never write a stand-in token.
+4. **Test the plan**: a unit test asserts the plan (which helper, which order, which cast) without a snapshot; the snapshot
+   then changes only when a decision changes.
+
+Existing pairs to follow: `MethodEmissionPlan` / `MethodTranspiler`, `TransferPlanner` / the marshaling emitters,
+`IntegerSemantics` / `IntegerSemanticsEmitter`, `ParallelAggregatePlanner`.
+
+Scope: every rule and emitter follows this. New code follows it now. The existing mixed rules are all rewritten in the M5
+cleanup, together with the size splits (`RoslynToCudaVisitor`, `StructTranspiler`), and not left as they are: the code
+of this repository is written by agents, and agents copy the code around them, so every mixed rule that stays is the
+pattern the next change repeats. The rewrite of an existing rule changes no snapshot; an unchanged snapshot is its test.

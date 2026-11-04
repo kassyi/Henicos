@@ -136,9 +136,9 @@ int __gsharp_id_5_arrFirst = __gsharp_id_0_src[0];
 int __gsharp_id_6_arrLast = __gsharp_id_0_src[__gsharp_sub_i32(__gsharp_id_4_len,1)];
 int __gsharp_id_7_arrRow = __gsharp_id_0_src[__gsharp_id_3_t];
 GSharpArray<int> __gsharp_id_8_span = __gsharp_id_0_src.AsSpan();
-GSharpArray<int> __gsharp_id_9_roSpan = __gsharp_id_0_src.AsSpan().Slice(0,__gsharp_id_4_len);
+GSharpArray<int> __gsharp_id_9_roSpan = __gsharp_id_0_src.AsSpan().Slice(0,__gsharp_id_4_len, ""G#: index was out of range at BoundsAndMemoryDifferentialKernels.cs(81,36)"");
 int __gsharp_id_10_spanFirstLast = __gsharp_id_8_span[0]^__gsharp_id_9_roSpan[__gsharp_sub_i32(__gsharp_id_4_len,1)];
-GSharpArray<int> __gsharp_id_11_emptyAtEnd = __gsharp_id_8_span.Slice(__gsharp_id_4_len,0);
+GSharpArray<int> __gsharp_id_11_emptyAtEnd = __gsharp_id_8_span.Slice(__gsharp_id_4_len,0, ""G#: index was out of range at BoundsAndMemoryDifferentialKernels.cs(84,32)"");
 int __gsharp_id_12_emptySliceLen = __gsharp_id_11_emptyAtEnd.length;
 int __gsharp_id_13_localStack[4]{};
 __gsharp_id_13_localStack[0]=__gsharp_add_i32(__gsharp_id_5_arrFirst,1);
@@ -602,8 +602,8 @@ if(__gsharp_id_6_t>=__gsharp_id_5_rows)
 {
 return;
 }
-GSharpArray<int> __gsharp_id_7_span = __gsharp_id_0_backing.AsSpan().Slice(__gsharp_id_3_sliceStart,__gsharp_id_4_sliceLen);
-GSharpArray<int> __gsharp_id_8_roSpan = __gsharp_id_0_backing.AsSpan().Slice(__gsharp_id_3_sliceStart,__gsharp_id_4_sliceLen);
+GSharpArray<int> __gsharp_id_7_span = __gsharp_id_0_backing.AsSpan().Slice(__gsharp_id_3_sliceStart,__gsharp_id_4_sliceLen, ""G#: index was out of range at BoundsAndMemoryDifferentialKernels.cs(150,26)"");
+GSharpArray<int> __gsharp_id_8_roSpan = __gsharp_id_0_backing.AsSpan().Slice(__gsharp_id_3_sliceStart,__gsharp_id_4_sliceLen, ""G#: index was out of range at BoundsAndMemoryDifferentialKernels.cs(151,36)"");
 int __gsharp_id_9_idx = __gsharp_id_1_indices[__gsharp_id_6_t];
 int __gsharp_id_10_v1 = __gsharp_id_7_span[__gsharp_id_9_idx];
 int __gsharp_id_11_v2 = __gsharp_id_8_roSpan[__gsharp_id_9_idx];
@@ -833,8 +833,8 @@ if(__gsharp_id_6_t>=__gsharp_id_5_rows)
 {
 return;
 }
-GSharpArray<int> __gsharp_id_7_span = __gsharp_id_0_backing.AsSpan().Slice(__gsharp_id_3_sliceStart,__gsharp_id_4_sliceLen);
-GSharpArray<int> __gsharp_id_8_sub = __gsharp_id_7_span.Slice(__gsharp_id_1_starts[__gsharp_id_6_t]);
+GSharpArray<int> __gsharp_id_7_span = __gsharp_id_0_backing.AsSpan().Slice(__gsharp_id_3_sliceStart,__gsharp_id_4_sliceLen, ""G#: index was out of range at BoundsAndMemoryDifferentialKernels.cs(176,26)"");
+GSharpArray<int> __gsharp_id_8_sub = __gsharp_id_7_span.Slice(__gsharp_id_1_starts[__gsharp_id_6_t], ""G#: index was out of range at BoundsAndMemoryDifferentialKernels.cs(177,25)"");
 __gsharp_id_2_dst[__gsharp_id_6_t]=__gsharp_id_8_sub.length;
 }
 ";
@@ -1061,8 +1061,8 @@ if(__gsharp_id_7_t>=__gsharp_id_6_rows)
 {
 return;
 }
-GSharpArray<int> __gsharp_id_8_span = __gsharp_id_0_backing.AsSpan().Slice(__gsharp_id_4_sliceStart,__gsharp_id_5_sliceLen);
-GSharpArray<int> __gsharp_id_9_sub = __gsharp_id_8_span.Slice(__gsharp_id_1_starts[__gsharp_id_7_t],__gsharp_id_2_counts[__gsharp_id_7_t]);
+GSharpArray<int> __gsharp_id_8_span = __gsharp_id_0_backing.AsSpan().Slice(__gsharp_id_4_sliceStart,__gsharp_id_5_sliceLen, ""G#: index was out of range at BoundsAndMemoryDifferentialKernels.cs(200,26)"");
+GSharpArray<int> __gsharp_id_9_sub = __gsharp_id_8_span.Slice(__gsharp_id_1_starts[__gsharp_id_7_t],__gsharp_id_2_counts[__gsharp_id_7_t], ""G#: index was out of range at BoundsAndMemoryDifferentialKernels.cs(201,25)"");
 __gsharp_id_3_dst[__gsharp_id_7_t]=__gsharp_id_9_sub.length;
 }
 ";
@@ -2981,7 +2981,7 @@ if(__gsharp_id_6_t>=__gsharp_id_5_rows)
 {
 return;
 }
-GSharpArray<int> __gsharp_id_7_s = __gsharp_id_0_backing.AsSpan().Slice(__gsharp_id_3_sliceStart,__gsharp_id_4_sliceLen);
+GSharpArray<int> __gsharp_id_7_s = __gsharp_id_0_backing.AsSpan().Slice(__gsharp_id_3_sliceStart,__gsharp_id_4_sliceLen, ""G#: index was out of range at BoundsAndMemoryDifferentialKernels.cs(427,23)"");
 int __gsharp_id_8_i = __gsharp_id_1_indices[__gsharp_id_6_t];
 if((unsigned int)__gsharp_id_8_i<(unsigned int)__gsharp_id_7_s.length)
 {
@@ -3212,7 +3212,7 @@ if(__gsharp_id_6_t>=__gsharp_id_5_rows)
 {
 return;
 }
-GSharpArray<int> __gsharp_id_7_s = __gsharp_id_0_backing.AsSpan().Slice(__gsharp_id_3_sliceStart,__gsharp_id_4_sliceLen);
+GSharpArray<int> __gsharp_id_7_s = __gsharp_id_0_backing.AsSpan().Slice(__gsharp_id_3_sliceStart,__gsharp_id_4_sliceLen, ""G#: index was out of range at BoundsAndMemoryDifferentialKernels.cs(453,23)"");
 int __gsharp_id_8_i = __gsharp_id_1_indices[__gsharp_id_6_t];
 if(__gsharp_id_8_i>=0&&__gsharp_id_8_i<=__gsharp_id_7_s.length)
 {
@@ -3443,8 +3443,8 @@ if(__gsharp_id_8_t>=__gsharp_id_7_rows)
 {
 return;
 }
-GSharpArray<int> __gsharp_id_9_s = __gsharp_id_0_backing.AsSpan().Slice(__gsharp_id_4_sliceStart,__gsharp_id_5_sliceLen);
-GSharpArray<int> __gsharp_id_10_other = __gsharp_id_1_otherBacking.AsSpan().Slice(__gsharp_id_4_sliceStart,__gsharp_id_6_otherLen);
+GSharpArray<int> __gsharp_id_9_s = __gsharp_id_0_backing.AsSpan().Slice(__gsharp_id_4_sliceStart,__gsharp_id_5_sliceLen, ""G#: index was out of range at BoundsAndMemoryDifferentialKernels.cs(481,23)"");
+GSharpArray<int> __gsharp_id_10_other = __gsharp_id_1_otherBacking.AsSpan().Slice(__gsharp_id_4_sliceStart,__gsharp_id_6_otherLen, ""G#: index was out of range at BoundsAndMemoryDifferentialKernels.cs(482,27)"");
 int __gsharp_id_11_i = __gsharp_id_2_indices[__gsharp_id_8_t];
 if((unsigned int)__gsharp_id_11_i<(unsigned int)__gsharp_id_10_other.length)
 {
@@ -3734,7 +3734,7 @@ if(__gsharp_id_6_t>=__gsharp_id_5_rows)
 {
 return;
 }
-GSharpArray<int> __gsharp_id_7_s = __gsharp_id_0_backing.AsSpan().Slice(__gsharp_id_3_sliceStart,__gsharp_id_4_sliceLen);
+GSharpArray<int> __gsharp_id_7_s = __gsharp_id_0_backing.AsSpan().Slice(__gsharp_id_3_sliceStart,__gsharp_id_4_sliceLen, ""G#: index was out of range at BoundsAndMemoryDifferentialKernels.cs(508,23)"");
 int __gsharp_id_8_i = __gsharp_id_1_indices[__gsharp_id_6_t];
 if((unsigned int)__gsharp_id_8_i<(unsigned int)__gsharp_id_7_s.length)
 {
@@ -3966,7 +3966,7 @@ if(__gsharp_id_6_t>=__gsharp_id_5_rows)
 {
 return;
 }
-GSharpArray<int> __gsharp_id_7_s = __gsharp_id_0_backing.AsSpan().Slice(__gsharp_id_3_sliceStart,__gsharp_id_4_sliceLen);
+GSharpArray<int> __gsharp_id_7_s = __gsharp_id_0_backing.AsSpan().Slice(__gsharp_id_3_sliceStart,__gsharp_id_4_sliceLen, ""G#: index was out of range at BoundsAndMemoryDifferentialKernels.cs(535,23)"");
 int __gsharp_id_8_i = __gsharp_id_1_indices[__gsharp_id_6_t];
 if(__gsharp_id_8_i<__gsharp_id_7_s.length)
 {
@@ -4396,7 +4396,7 @@ __gsharp_id_2_dst[__gsharp_id_7_t]=__gsharp_add_i32(__gsharp_add_i32(__gsharp_mu
 }
 else
 {
-GSharpArray<int> __gsharp_id_8_emptySlice = __gsharp_id_0_emptyArr.AsSpan().Slice(0,0);
+GSharpArray<int> __gsharp_id_8_emptySlice = __gsharp_id_0_emptyArr.AsSpan().Slice(0,0, ""G#: index was out of range at BoundsAndMemoryDifferentialKernels.cs(595,36)"");
 __gsharp_id_2_dst[__gsharp_id_7_t]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_8_emptySlice;
 int __gsharp_fusion_res = {};
