@@ -488,7 +488,7 @@ public static unsafe void Unmarshal_DiffInlineChar3(ref global::Kassyi.GSharp.Te
 host = System.Runtime.CompilerServices.Unsafe.As<AotContexts.DiffInlineChar3, global::Kassyi.GSharp.Tests.Shared.Differential.DiffInlineChar3>(ref native);
 }
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 24)]
-public unsafe partial struct D3FixedBufferPacket
+public unsafe partial struct FixedBufferPacket
 {
 public const string DebugName_Header = "global::System.Int32";
 [System.Runtime.InteropServices.FieldOffset(0)]
@@ -500,13 +500,13 @@ public const string DebugName_Bytes = "global::System.Byte";
 [System.Runtime.InteropServices.FieldOffset(20)]
 public fixed byte Bytes[4];
 }
-public static unsafe void Marshal_D3FixedBufferPacket(ref global::Kassyi.GSharp.Tests.Shared.Differential.D3FixedBufferPacket host, ref AotContexts.D3FixedBufferPacket native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, IntPtr hStream = default)
+public static unsafe void Marshal_FixedBufferPacket(ref global::Kassyi.GSharp.Tests.Shared.Differential.FixedBufferPacket host, ref AotContexts.FixedBufferPacket native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, IntPtr hStream = default)
 {
-native = System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Differential.D3FixedBufferPacket, AotContexts.D3FixedBufferPacket>(ref host);
+native = System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Differential.FixedBufferPacket, AotContexts.FixedBufferPacket>(ref host);
 }
-public static unsafe void Unmarshal_D3FixedBufferPacket(ref global::Kassyi.GSharp.Tests.Shared.Differential.D3FixedBufferPacket host, ref AotContexts.D3FixedBufferPacket native, bool isDevicePtr, IntPtr hStream = default)
+public static unsafe void Unmarshal_FixedBufferPacket(ref global::Kassyi.GSharp.Tests.Shared.Differential.FixedBufferPacket host, ref AotContexts.FixedBufferPacket native, bool isDevicePtr, IntPtr hStream = default)
 {
-host = System.Runtime.CompilerServices.Unsafe.As<AotContexts.D3FixedBufferPacket, global::Kassyi.GSharp.Tests.Shared.Differential.D3FixedBufferPacket>(ref native);
+host = System.Runtime.CompilerServices.Unsafe.As<AotContexts.FixedBufferPacket, global::Kassyi.GSharp.Tests.Shared.Differential.FixedBufferPacket>(ref native);
 }
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 40)]
 public unsafe partial struct DiffInlineNullableVec2Holder
@@ -611,44 +611,44 @@ host.V4 = *((global::System.Numerics.Vector4*)pField);
 }
 }
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 32)]
-public unsafe partial struct D3OuterPacket
+public unsafe partial struct OuterPacket
 {
 public const string DebugName_Tag = "global::System.Byte";
 [System.Runtime.InteropServices.FieldOffset(0)]
 public global::System.Byte Tag;
-public const string DebugName_First = "global::Kassyi.GSharp.Tests.Shared.Differential.D3InnerPair";
+public const string DebugName_First = "global::Kassyi.GSharp.Tests.Shared.Differential.InnerPair";
 [System.Runtime.InteropServices.FieldOffset(4)]
-public AotContexts.D3InnerPair First;
+public AotContexts.InnerPair First;
 public const string DebugName_Vec2 = "global::System.Numerics.Vector2";
 [System.Runtime.InteropServices.FieldOffset(16)]
 public fixed byte Vec2[8];
-public const string DebugName_Second = "global::Kassyi.GSharp.Tests.Shared.Differential.D3InnerPair";
+public const string DebugName_Second = "global::Kassyi.GSharp.Tests.Shared.Differential.InnerPair";
 [System.Runtime.InteropServices.FieldOffset(24)]
-public AotContexts.D3InnerPair Second;
+public AotContexts.InnerPair Second;
 }
-public static unsafe void Marshal_D3OuterPacket(ref global::Kassyi.GSharp.Tests.Shared.Differential.D3OuterPacket host, ref AotContexts.D3OuterPacket native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, IntPtr hStream = default)
+public static unsafe void Marshal_OuterPacket(ref global::Kassyi.GSharp.Tests.Shared.Differential.OuterPacket host, ref AotContexts.OuterPacket native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, IntPtr hStream = default)
 {
 native = default;
 native.Tag = host.Tag;
-Marshal_D3InnerPair(ref host.First, ref native.First, isDevicePtr, deviceArrays, hStream);
+Marshal_InnerPair(ref host.First, ref native.First, isDevicePtr, deviceArrays, hStream);
 fixed (byte* pField = native.Vec2)
 {
 *((global::System.Numerics.Vector2*)pField) = host.Vec2;
 }
-Marshal_D3InnerPair(ref host.Second, ref native.Second, isDevicePtr, deviceArrays, hStream);
+Marshal_InnerPair(ref host.Second, ref native.Second, isDevicePtr, deviceArrays, hStream);
 }
-public static unsafe void Unmarshal_D3OuterPacket(ref global::Kassyi.GSharp.Tests.Shared.Differential.D3OuterPacket host, ref AotContexts.D3OuterPacket native, bool isDevicePtr, IntPtr hStream = default)
+public static unsafe void Unmarshal_OuterPacket(ref global::Kassyi.GSharp.Tests.Shared.Differential.OuterPacket host, ref AotContexts.OuterPacket native, bool isDevicePtr, IntPtr hStream = default)
 {
 host.Tag = native.Tag;
-Unmarshal_D3InnerPair(ref host.First, ref native.First, isDevicePtr, hStream);
+Unmarshal_InnerPair(ref host.First, ref native.First, isDevicePtr, hStream);
 fixed (byte* pField = native.Vec2)
 {
 host.Vec2 = *((global::System.Numerics.Vector2*)pField);
 }
-Unmarshal_D3InnerPair(ref host.Second, ref native.Second, isDevicePtr, hStream);
+Unmarshal_InnerPair(ref host.Second, ref native.Second, isDevicePtr, hStream);
 }
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 8)]
-public unsafe partial struct D3InnerPair
+public unsafe partial struct InnerPair
 {
 public const string DebugName_Left = "global::System.Int32";
 [System.Runtime.InteropServices.FieldOffset(0)]
@@ -657,13 +657,13 @@ public const string DebugName_Right = "global::System.Single";
 [System.Runtime.InteropServices.FieldOffset(4)]
 public global::System.Single Right;
 }
-public static unsafe void Marshal_D3InnerPair(ref global::Kassyi.GSharp.Tests.Shared.Differential.D3InnerPair host, ref AotContexts.D3InnerPair native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, IntPtr hStream = default)
+public static unsafe void Marshal_InnerPair(ref global::Kassyi.GSharp.Tests.Shared.Differential.InnerPair host, ref AotContexts.InnerPair native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, IntPtr hStream = default)
 {
-native = System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Differential.D3InnerPair, AotContexts.D3InnerPair>(ref host);
+native = System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Differential.InnerPair, AotContexts.InnerPair>(ref host);
 }
-public static unsafe void Unmarshal_D3InnerPair(ref global::Kassyi.GSharp.Tests.Shared.Differential.D3InnerPair host, ref AotContexts.D3InnerPair native, bool isDevicePtr, IntPtr hStream = default)
+public static unsafe void Unmarshal_InnerPair(ref global::Kassyi.GSharp.Tests.Shared.Differential.InnerPair host, ref AotContexts.InnerPair native, bool isDevicePtr, IntPtr hStream = default)
 {
-host = System.Runtime.CompilerServices.Unsafe.As<AotContexts.D3InnerPair, global::Kassyi.GSharp.Tests.Shared.Differential.D3InnerPair>(ref native);
+host = System.Runtime.CompilerServices.Unsafe.As<AotContexts.InnerPair, global::Kassyi.GSharp.Tests.Shared.Differential.InnerPair>(ref native);
 }
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 40)]
 public unsafe partial struct DiffExternalNestedHolder
@@ -3128,22 +3128,22 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffInlineOuterPacket,__gsharp_mb_Chars)==8,""Kassyi.GSharp.Tests.Shared.Differential.DiffInlineOuterPacket.Chars: offset"");
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffInlineOuterPacket,__gsharp_mb_Vecs)==16,""Kassyi.GSharp.Tests.Shared.Differential.DiffInlineOuterPacket.Vecs: offset"");
 #endif
-#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__D3FixedBufferPacket__
-#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__D3FixedBufferPacket__
-struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__D3FixedBufferPacket
+#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__FixedBufferPacket__
+#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__FixedBufferPacket__
+struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__FixedBufferPacket
 {
 int __gsharp_mb_Header;
 int __gsharp_mb_Items[4];
 unsigned char __gsharp_mb_Bytes[4];
 }
 ;
-static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__D3FixedBufferPacket)==24,""Kassyi.GSharp.Tests.Shared.Differential.D3FixedBufferPacket: size"");
-static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__D3FixedBufferPacket)==4,""Kassyi.GSharp.Tests.Shared.Differential.D3FixedBufferPacket: alignment"");
-static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__D3FixedBufferPacket,__gsharp_mb_Header)==0,""Kassyi.GSharp.Tests.Shared.Differential.D3FixedBufferPacket.Header: offset"");
-static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__D3FixedBufferPacket,__gsharp_mb_Items)==4,""Kassyi.GSharp.Tests.Shared.Differential.D3FixedBufferPacket.Items: offset"");
-static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__D3FixedBufferPacket,__gsharp_mb_Bytes)==20,""Kassyi.GSharp.Tests.Shared.Differential.D3FixedBufferPacket.Bytes: offset"");
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__FixedBufferPacket)==24,""Kassyi.GSharp.Tests.Shared.Differential.FixedBufferPacket: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__FixedBufferPacket)==4,""Kassyi.GSharp.Tests.Shared.Differential.FixedBufferPacket: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__FixedBufferPacket,__gsharp_mb_Header)==0,""Kassyi.GSharp.Tests.Shared.Differential.FixedBufferPacket.Header: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__FixedBufferPacket,__gsharp_mb_Items)==4,""Kassyi.GSharp.Tests.Shared.Differential.FixedBufferPacket.Items: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__FixedBufferPacket,__gsharp_mb_Bytes)==20,""Kassyi.GSharp.Tests.Shared.Differential.FixedBufferPacket.Bytes: offset"");
 #endif
-extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__InlineArrayAndFixedBufferPositionsKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffInlineVec2Padded3 __gsharp_id_0_valVecs, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffInlineOuterPacket* __gsharp_id_1_outer, GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffInlineVec2Padded3> __gsharp_id_2_vecArr, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__D3FixedBufferPacket* __gsharp_id_3_fixedPkt, GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__D3FixedBufferPacket> __gsharp_id_4_fixedArr, GSharpArray<int> __gsharp_id_5_probe, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffInlineVec2Padded3* __restrict__ __gsharp_auto_result){
+extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__InlineArrayAndFixedBufferPositionsKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffInlineVec2Padded3 __gsharp_id_0_valVecs, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffInlineOuterPacket* __gsharp_id_1_outer, GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffInlineVec2Padded3> __gsharp_id_2_vecArr, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__FixedBufferPacket* __gsharp_id_3_fixedPkt, GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__FixedBufferPacket> __gsharp_id_4_fixedArr, GSharpArray<int> __gsharp_id_5_probe, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffInlineVec2Padded3* __restrict__ __gsharp_auto_result){
 unsigned int __gsharp_global_tid = (blockIdx.z * gridDim.y * gridDim.x + blockIdx.y * gridDim.x + blockIdx.x) * (blockDim.x * blockDim.y * blockDim.z) + threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;
 int __gsharp_id_6_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 if(__gsharp_id_6_tid>=__gsharp_id_2_vecArr.length)
@@ -3153,7 +3153,7 @@ return;
 }
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffInlineVec2Padded3 __gsharp_id_7_elemVecs = __gsharp_id_2_vecArr[__gsharp_id_6_tid];
 float __gsharp_id_8_vSum = __gsharp_id_7_elemVecs[0].__gsharp_mb_A+__gsharp_id_7_elemVecs[0].__gsharp_mb_V.x+__gsharp_id_7_elemVecs[1].__gsharp_mb_A+__gsharp_id_7_elemVecs[1].__gsharp_mb_V.y+__gsharp_id_7_elemVecs[2].__gsharp_mb_A+__gsharp_id_7_elemVecs[2].__gsharp_mb_V.x+__gsharp_id_0_valVecs[0].__gsharp_mb_A+__gsharp_id_0_valVecs[2].__gsharp_mb_V.y;
-__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__D3FixedBufferPacket __gsharp_id_9_fElem = __gsharp_id_4_fixedArr[__gsharp_id_6_tid];
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__FixedBufferPacket __gsharp_id_9_fElem = __gsharp_id_4_fixedArr[__gsharp_id_6_tid];
 int __gsharp_id_10_fixedArrSum = __gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_id_9_fElem.__gsharp_mb_Header,__gsharp_id_9_fElem.__gsharp_mb_Items[0]),__gsharp_id_9_fElem.__gsharp_mb_Items[1]),__gsharp_id_9_fElem.__gsharp_mb_Items[2]),__gsharp_id_9_fElem.__gsharp_mb_Items[3]),__gsharp_id_9_fElem.__gsharp_mb_Bytes[0]),__gsharp_id_9_fElem.__gsharp_mb_Bytes[3]);
 int __gsharp_id_11_o = __gsharp_mul_i32(__gsharp_id_6_tid,4);
 __gsharp_id_5_probe[__gsharp_id_11_o+0]=__gsharp_to_i32(__gsharp_id_8_vSum);
@@ -3204,16 +3204,16 @@ s_hfunc_InlineArrayAndFixedBufferPositionsKernel = global::Kassyi.GSharp.Runtime
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-public static unsafe global::Kassyi.GSharp.Tests.Shared.Differential.DiffInlineVec2Padded3[] LaunchInlineArrayAndFixedBufferPositionsKernel(global::Kassyi.GSharp.Tests.Shared.Differential.DiffInlineVec2Padded3 valVecs, ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffInlineOuterPacket outer, global::Kassyi.GSharp.Tests.Shared.Differential.DiffInlineVec2Padded3[] vecArr, ref global::Kassyi.GSharp.Tests.Shared.Differential.D3FixedBufferPacket fixedPkt, global::Kassyi.GSharp.Tests.Shared.Differential.D3FixedBufferPacket[] fixedArr, global::System.Int32[] probe, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe global::Kassyi.GSharp.Tests.Shared.Differential.DiffInlineVec2Padded3[] LaunchInlineArrayAndFixedBufferPositionsKernel(global::Kassyi.GSharp.Tests.Shared.Differential.DiffInlineVec2Padded3 valVecs, ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffInlineOuterPacket outer, global::Kassyi.GSharp.Tests.Shared.Differential.DiffInlineVec2Padded3[] vecArr, ref global::Kassyi.GSharp.Tests.Shared.Differential.FixedBufferPacket fixedPkt, global::Kassyi.GSharp.Tests.Shared.Differential.FixedBufferPacket[] fixedArr, global::System.Int32[] probe, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (!s_layoutChecked_InlineArrayAndFixedBufferPositionsKernel)
 {
 if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Differential.DiffInlineBool3>() != 3) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Differential.DiffInlineBool3", 3, global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Differential.DiffInlineBool3>());
 if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Differential.DiffInlineChar3>() != 6) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Differential.DiffInlineChar3", 6, global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Differential.DiffInlineChar3>());
-if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Differential.D3FixedBufferPacket>() != 24) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Differential.D3FixedBufferPacket", 24, global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Differential.D3FixedBufferPacket>());
+if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Differential.FixedBufferPacket>() != 24) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Differential.FixedBufferPacket", 24, global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Differential.FixedBufferPacket>());
 {
-global::Kassyi.GSharp.Tests.Shared.Differential.D3FixedBufferPacket __gsharp_layout_probe = default;
-if (global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Differential.D3FixedBufferPacket, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.Header))) != 0) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Kassyi.GSharp.Tests.Shared.Differential.D3FixedBufferPacket", "Header", 0, (long)global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Differential.D3FixedBufferPacket, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.Header))));
+global::Kassyi.GSharp.Tests.Shared.Differential.FixedBufferPacket __gsharp_layout_probe = default;
+if (global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Differential.FixedBufferPacket, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.Header))) != 0) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Kassyi.GSharp.Tests.Shared.Differential.FixedBufferPacket", "Header", 0, (long)global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Differential.FixedBufferPacket, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.Header))));
 }
 s_layoutChecked_InlineArrayAndFixedBufferPositionsKernel = true;
 }
@@ -3290,17 +3290,17 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 proxy_vecArr[0] = d_vecArr;
 }
 kernelParams[2] = proxy_vecArr;
-AotContexts.D3FixedBufferPacket native_fixedPkt = default;
-AotContexts.Marshal_D3FixedBufferPacket(ref fixedPkt, ref native_fixedPkt, false, null, hStream);
+AotContexts.FixedBufferPacket native_fixedPkt = default;
+AotContexts.Marshal_FixedBufferPacket(ref fixedPkt, ref native_fixedPkt, false, null, hStream);
 // Marshal ref/out struct: fixedPkt
-int fixedPkt_size = sizeof(AotContexts.D3FixedBufferPacket);
+int fixedPkt_size = sizeof(AotContexts.FixedBufferPacket);
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_fixedPkt, (IntPtr)fixedPkt_size, hStream));
 // Fast zero-allocation copy to device
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_fixedPkt, (IntPtr)(&native_fixedPkt), (IntPtr)fixedPkt_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 kernelParams[3] = &d_fixedPkt;
 // Marshal array: fixedArr
-int fixedArr_size = fixedArr.Length * sizeof(global::Kassyi.GSharp.Tests.Shared.Differential.D3FixedBufferPacket);
+int fixedArr_size = fixedArr.Length * sizeof(global::Kassyi.GSharp.Tests.Shared.Differential.FixedBufferPacket);
 IntPtr* proxy_fixedArr = stackalloc IntPtr[2];
 proxy_fixedArr[0] = IntPtr.Zero;
 ((int*)(proxy_fixedArr + 1))[0] = fixedArr.Length;
@@ -3314,7 +3314,7 @@ d_fixedArr = d_vecArr;
 else
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_fixedArr, (IntPtr)fixedArr_size, hStream));
-fixed (global::Kassyi.GSharp.Tests.Shared.Differential.D3FixedBufferPacket* p_fixedArr = fixedArr)
+fixed (global::Kassyi.GSharp.Tests.Shared.Differential.FixedBufferPacket* p_fixedArr = fixedArr)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_fixedArr, (IntPtr)p_fixedArr, (IntPtr)fixedArr_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
@@ -3390,11 +3390,11 @@ AotContexts.Unmarshal_DiffInlineVec2Padded3(ref vecArr_host[vecArr_index], ref v
 // Fast zero-allocation copy from device
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2((IntPtr)(&native_fixedPkt), d_fixedPkt, (IntPtr)fixedPkt_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
-AotContexts.Unmarshal_D3FixedBufferPacket(ref fixedPkt, ref native_fixedPkt, false, hStream);
+AotContexts.Unmarshal_FixedBufferPacket(ref fixedPkt, ref native_fixedPkt, false, hStream);
 // Copy back array: fixedArr
 if (fixedArr_size > 0 && d_fixedArr != IntPtr.Zero && !global::System.Object.ReferenceEquals(fixedArr, vecArr))
 {
-fixed (global::Kassyi.GSharp.Tests.Shared.Differential.D3FixedBufferPacket* p_fixedArr = fixedArr)
+fixed (global::Kassyi.GSharp.Tests.Shared.Differential.FixedBufferPacket* p_fixedArr = fixedArr)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2((IntPtr)p_fixedArr, d_fixedArr, (IntPtr)fixedArr_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
@@ -3749,35 +3749,35 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffVecAlignTorture,__gsharp_mb_B2)==32,""Kassyi.GSharp.Tests.Shared.Differential.DiffVecAlignTorture.B2: offset"");
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffVecAlignTorture,__gsharp_mb_V4)==48,""Kassyi.GSharp.Tests.Shared.Differential.DiffVecAlignTorture.V4: offset"");
 #endif
-#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__D3InnerPair__
-#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__D3InnerPair__
-struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__D3InnerPair
+#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__InnerPair__
+#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__InnerPair__
+struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__InnerPair
 {
 int __gsharp_mb_Left;
 float __gsharp_mb_Right;
 }
 ;
-static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__D3InnerPair)==8,""Kassyi.GSharp.Tests.Shared.Differential.D3InnerPair: size"");
-static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__D3InnerPair)==4,""Kassyi.GSharp.Tests.Shared.Differential.D3InnerPair: alignment"");
-static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__D3InnerPair,__gsharp_mb_Left)==0,""Kassyi.GSharp.Tests.Shared.Differential.D3InnerPair.Left: offset"");
-static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__D3InnerPair,__gsharp_mb_Right)==4,""Kassyi.GSharp.Tests.Shared.Differential.D3InnerPair.Right: offset"");
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__InnerPair)==8,""Kassyi.GSharp.Tests.Shared.Differential.InnerPair: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__InnerPair)==4,""Kassyi.GSharp.Tests.Shared.Differential.InnerPair: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__InnerPair,__gsharp_mb_Left)==0,""Kassyi.GSharp.Tests.Shared.Differential.InnerPair.Left: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__InnerPair,__gsharp_mb_Right)==4,""Kassyi.GSharp.Tests.Shared.Differential.InnerPair.Right: offset"");
 #endif
-#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__D3OuterPacket__
-#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__D3OuterPacket__
-struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__D3OuterPacket
+#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__OuterPacket__
+#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__OuterPacket__
+struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__OuterPacket
 {
 unsigned char __gsharp_mb_Tag;
-__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__D3InnerPair __gsharp_mb_First;
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__InnerPair __gsharp_mb_First;
 float2 __gsharp_mb_Vec2;
-__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__D3InnerPair __gsharp_mb_Second;
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__InnerPair __gsharp_mb_Second;
 }
 ;
-static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__D3OuterPacket)==32,""Kassyi.GSharp.Tests.Shared.Differential.D3OuterPacket: size"");
-static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__D3OuterPacket)==8,""Kassyi.GSharp.Tests.Shared.Differential.D3OuterPacket: alignment"");
-static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__D3OuterPacket,__gsharp_mb_Tag)==0,""Kassyi.GSharp.Tests.Shared.Differential.D3OuterPacket.Tag: offset"");
-static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__D3OuterPacket,__gsharp_mb_First)==4,""Kassyi.GSharp.Tests.Shared.Differential.D3OuterPacket.First: offset"");
-static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__D3OuterPacket,__gsharp_mb_Vec2)==16,""Kassyi.GSharp.Tests.Shared.Differential.D3OuterPacket.Vec2: offset"");
-static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__D3OuterPacket,__gsharp_mb_Second)==24,""Kassyi.GSharp.Tests.Shared.Differential.D3OuterPacket.Second: offset"");
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__OuterPacket)==32,""Kassyi.GSharp.Tests.Shared.Differential.OuterPacket: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__OuterPacket)==8,""Kassyi.GSharp.Tests.Shared.Differential.OuterPacket: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__OuterPacket,__gsharp_mb_Tag)==0,""Kassyi.GSharp.Tests.Shared.Differential.OuterPacket.Tag: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__OuterPacket,__gsharp_mb_First)==4,""Kassyi.GSharp.Tests.Shared.Differential.OuterPacket.First: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__OuterPacket,__gsharp_mb_Vec2)==16,""Kassyi.GSharp.Tests.Shared.Differential.OuterPacket.Vec2: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__OuterPacket,__gsharp_mb_Second)==24,""Kassyi.GSharp.Tests.Shared.Differential.OuterPacket.Second: offset"");
 #endif
 #pragma pack(push, 1)
 #ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__DeviceLibrary__PackedPair__
@@ -3856,7 +3856,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffExternalNestedHolder,__gsharp_mb_Swapped)==24,""Kassyi.GSharp.Tests.Shared.Differential.DiffExternalNestedHolder.Swapped: offset"");
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffExternalNestedHolder,__gsharp_mb_UnionItem)==32,""Kassyi.GSharp.Tests.Shared.Differential.DiffExternalNestedHolder.UnionItem: offset"");
 #endif
-extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__VectorAlignmentAndExternalStructsKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffVecAlignTorture __gsharp_id_0_tortVal, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__D3OuterPacket* __gsharp_id_1_outerRef, GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffVecAlignTorture> __gsharp_id_2_tortArr, GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__DeviceLibrary__PackedPair> __gsharp_id_3_extPackedArr, GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__DeviceLibrary__SwapPair> __gsharp_id_4_extSwapArr, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffExternalNestedHolder* __gsharp_id_5_extHolder, GSharpArray<float> __gsharp_id_6_probe, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__D3OuterPacket* __restrict__ __gsharp_auto_result){
+extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__VectorAlignmentAndExternalStructsKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffVecAlignTorture __gsharp_id_0_tortVal, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__OuterPacket* __gsharp_id_1_outerRef, GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffVecAlignTorture> __gsharp_id_2_tortArr, GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__DeviceLibrary__PackedPair> __gsharp_id_3_extPackedArr, GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__DeviceLibrary__SwapPair> __gsharp_id_4_extSwapArr, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffExternalNestedHolder* __gsharp_id_5_extHolder, GSharpArray<float> __gsharp_id_6_probe, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__OuterPacket* __restrict__ __gsharp_auto_result){
 unsigned int __gsharp_global_tid = (blockIdx.z * gridDim.y * gridDim.x + blockIdx.y * gridDim.x + blockIdx.x) * (blockDim.x * blockDim.y * blockDim.z) + threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;
 int __gsharp_id_7_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 if(__gsharp_id_7_tid>=__gsharp_id_2_tortArr.length)
@@ -3888,7 +3888,7 @@ if(__gsharp_id_7_tid==0)
 __gsharp_id_6_probe[__gsharp_add_i32(__gsharp_id_11_o,4)]=__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32((*__gsharp_id_5_extHolder).__gsharp_mb_Prefix+(*__gsharp_id_5_extHolder).__gsharp_mb_Packed.__gsharp_mb_Tag,(*__gsharp_id_5_extHolder).__gsharp_mb_Packed.__gsharp_mb_Value),(*__gsharp_id_5_extHolder).__gsharp_mb_SizedItem.__gsharp_mb_A),__gsharp_sub_i32((*__gsharp_id_5_extHolder).__gsharp_mb_Swapped.__gsharp_mb_A,(*__gsharp_id_5_extHolder).__gsharp_mb_Swapped.__gsharp_mb_B)),(*__gsharp_id_5_extHolder).__gsharp_mb_UnionItem.__gsharp_mb_Tag);
 (*__gsharp_id_1_outerRef).__gsharp_mb_Tag=(unsigned char)((*__gsharp_id_1_outerRef).__gsharp_mb_Tag+1);
 (*__gsharp_id_1_outerRef).__gsharp_mb_First=([&]() {
-__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__D3InnerPair __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Left = __gsharp_add_i32((*__gsharp_id_1_outerRef).__gsharp_mb_First.__gsharp_mb_Left,5); __gsharp_tmp.__gsharp_mb_Right = (*__gsharp_id_1_outerRef).__gsharp_mb_First.__gsharp_mb_Right+1.5f; return __gsharp_tmp; }
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__InnerPair __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Left = __gsharp_add_i32((*__gsharp_id_1_outerRef).__gsharp_mb_First.__gsharp_mb_Left,5); __gsharp_tmp.__gsharp_mb_Right = (*__gsharp_id_1_outerRef).__gsharp_mb_First.__gsharp_mb_Right+1.5f; return __gsharp_tmp; }
 ());
 (*__gsharp_id_1_outerRef).__gsharp_mb_Vec2=float2{(*__gsharp_id_1_outerRef).__gsharp_mb_Vec2.x+2.0f, (*__gsharp_id_1_outerRef).__gsharp_mb_Vec2.y-2.0f};
 (*__gsharp_id_5_extHolder).__gsharp_mb_Prefix=(unsigned char)((*__gsharp_id_5_extHolder).__gsharp_mb_Prefix+3);
@@ -3900,10 +3900,10 @@ __gsharp_ty_Kassyi__GSharp__Tests__DeviceLibrary__SwapPair __gsharp_tmp{}; __gsh
 (*__gsharp_id_5_extHolder).__gsharp_mb_UnionItem.__gsharp_mb_Tag=__gsharp_add_i32((*__gsharp_id_5_extHolder).__gsharp_mb_UnionItem.__gsharp_mb_Tag,7);
 }
 __gsharp_auto_result[__gsharp_global_tid] = ([&]() {
-__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__D3OuterPacket __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Tag = (unsigned char)(__gsharp_id_9_pElem.__gsharp_mb_Tag^__gsharp_id_8_tElem.__gsharp_mb_B0); __gsharp_tmp.__gsharp_mb_First = ([&]() {
-__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__D3InnerPair __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Left = __gsharp_id_9_pElem.__gsharp_mb_Value; __gsharp_tmp.__gsharp_mb_Right = __gsharp_id_8_tElem.__gsharp_mb_V2.x; return __gsharp_tmp; }
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__OuterPacket __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Tag = (unsigned char)(__gsharp_id_9_pElem.__gsharp_mb_Tag^__gsharp_id_8_tElem.__gsharp_mb_B0); __gsharp_tmp.__gsharp_mb_First = ([&]() {
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__InnerPair __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Left = __gsharp_id_9_pElem.__gsharp_mb_Value; __gsharp_tmp.__gsharp_mb_Right = __gsharp_id_8_tElem.__gsharp_mb_V2.x; return __gsharp_tmp; }
 ()); __gsharp_tmp.__gsharp_mb_Vec2 = __gsharp_id_8_tElem.__gsharp_mb_V2; __gsharp_tmp.__gsharp_mb_Second = ([&]() {
-__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__D3InnerPair __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Left = __gsharp_id_10_sElem.__gsharp_mb_A; __gsharp_tmp.__gsharp_mb_Right = __gsharp_id_8_tElem.__gsharp_mb_V3.z; return __gsharp_tmp; }
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__InnerPair __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Left = __gsharp_id_10_sElem.__gsharp_mb_A; __gsharp_tmp.__gsharp_mb_Right = __gsharp_id_8_tElem.__gsharp_mb_V3.z; return __gsharp_tmp; }
 ()); return __gsharp_tmp; }
 ());
 return;
@@ -3922,15 +3922,15 @@ s_hfunc_VectorAlignmentAndExternalStructsKernel = global::Kassyi.GSharp.Runtime.
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-public static unsafe global::Kassyi.GSharp.Tests.Shared.Differential.D3OuterPacket[] LaunchVectorAlignmentAndExternalStructsKernel(global::Kassyi.GSharp.Tests.Shared.Differential.DiffVecAlignTorture tortVal, ref global::Kassyi.GSharp.Tests.Shared.Differential.D3OuterPacket outerRef, global::Kassyi.GSharp.Tests.Shared.Differential.DiffVecAlignTorture[] tortArr, global::Kassyi.GSharp.Tests.DeviceLibrary.PackedPair[] extPackedArr, global::Kassyi.GSharp.Tests.DeviceLibrary.SwapPair[] extSwapArr, ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffExternalNestedHolder extHolder, global::System.Single[] probe, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe global::Kassyi.GSharp.Tests.Shared.Differential.OuterPacket[] LaunchVectorAlignmentAndExternalStructsKernel(global::Kassyi.GSharp.Tests.Shared.Differential.DiffVecAlignTorture tortVal, ref global::Kassyi.GSharp.Tests.Shared.Differential.OuterPacket outerRef, global::Kassyi.GSharp.Tests.Shared.Differential.DiffVecAlignTorture[] tortArr, global::Kassyi.GSharp.Tests.DeviceLibrary.PackedPair[] extPackedArr, global::Kassyi.GSharp.Tests.DeviceLibrary.SwapPair[] extSwapArr, ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffExternalNestedHolder extHolder, global::System.Single[] probe, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (!s_layoutChecked_VectorAlignmentAndExternalStructsKernel)
 {
-if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Differential.D3InnerPair>() != 8) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Differential.D3InnerPair", 8, global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Differential.D3InnerPair>());
+if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Differential.InnerPair>() != 8) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Differential.InnerPair", 8, global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Differential.InnerPair>());
 {
-global::Kassyi.GSharp.Tests.Shared.Differential.D3InnerPair __gsharp_layout_probe = default;
-if (global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Differential.D3InnerPair, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.Left))) != 0) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Kassyi.GSharp.Tests.Shared.Differential.D3InnerPair", "Left", 0, (long)global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Differential.D3InnerPair, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.Left))));
-if (global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Differential.D3InnerPair, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Single, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.Right))) != 4) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Kassyi.GSharp.Tests.Shared.Differential.D3InnerPair", "Right", 4, (long)global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Differential.D3InnerPair, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Single, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.Right))));
+global::Kassyi.GSharp.Tests.Shared.Differential.InnerPair __gsharp_layout_probe = default;
+if (global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Differential.InnerPair, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.Left))) != 0) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Kassyi.GSharp.Tests.Shared.Differential.InnerPair", "Left", 0, (long)global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Differential.InnerPair, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.Left))));
+if (global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Differential.InnerPair, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Single, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.Right))) != 4) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Kassyi.GSharp.Tests.Shared.Differential.InnerPair", "Right", 4, (long)global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Differential.InnerPair, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Single, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.Right))));
 }
 if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.DeviceLibrary.PackedPair>() != 5) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.DeviceLibrary.PackedPair", 5, global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.DeviceLibrary.PackedPair>());
 {
@@ -3993,7 +3993,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 }
 if (gridDimX == 0 || gridDimY == 0 || gridDimZ == 0 || blockDimX == 0 || blockDimY == 0 || blockDimZ == 0) throw new global::System.ArgumentOutOfRangeException("Dimensions", "Launch dimensions must be greater than 0.");
 uint __gsharp_total_threads; checked { __gsharp_total_threads = (gridDimX * gridDimY * gridDimZ) * (blockDimX * blockDimY * blockDimZ); }
-var __gsharp_auto_result = new global::Kassyi.GSharp.Tests.Shared.Differential.D3OuterPacket[__gsharp_total_threads];
+var __gsharp_auto_result = new global::Kassyi.GSharp.Tests.Shared.Differential.OuterPacket[__gsharp_total_threads];
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 WarmupFunctionPointerVectorAlignmentAndExternalStructsKernel();
@@ -4014,10 +4014,10 @@ AotContexts.DiffVecAlignTorture native_tortVal = default;
 AotContexts.Marshal_DiffVecAlignTorture(ref tortVal, ref native_tortVal, false, null, hStream);
 // Marshal scalar struct: tortVal
 kernelParams[0] = &native_tortVal;
-AotContexts.D3OuterPacket native_outerRef = default;
-AotContexts.Marshal_D3OuterPacket(ref outerRef, ref native_outerRef, false, null, hStream);
+AotContexts.OuterPacket native_outerRef = default;
+AotContexts.Marshal_OuterPacket(ref outerRef, ref native_outerRef, false, null, hStream);
 // Marshal ref/out struct: outerRef
-int outerRef_size = sizeof(AotContexts.D3OuterPacket);
+int outerRef_size = sizeof(AotContexts.OuterPacket);
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_outerRef, (IntPtr)outerRef_size, hStream));
 // Fast zero-allocation copy to device
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_outerRef, (IntPtr)(&native_outerRef), (IntPtr)outerRef_size, hStream));
@@ -4141,7 +4141,7 @@ proxy_probe[0] = d_probe;
 }
 kernelParams[6] = proxy_probe;
 // Marshal auto result array
-int __gsharp_auto_result_size = checked(__gsharp_auto_result.Length * sizeof(AotContexts.D3OuterPacket));
+int __gsharp_auto_result_size = checked(__gsharp_auto_result.Length * sizeof(AotContexts.OuterPacket));
 if (__gsharp_auto_result_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d___gsharp_auto_result, (IntPtr)__gsharp_auto_result_size, hStream));
@@ -4160,7 +4160,7 @@ AotContexts.Unmarshal_DiffVecAlignTorture(ref tortVal, ref native_tortVal, false
 // Fast zero-allocation copy from device
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2((IntPtr)(&native_outerRef), d_outerRef, (IntPtr)outerRef_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
-AotContexts.Unmarshal_D3OuterPacket(ref outerRef, ref native_outerRef, false, hStream);
+AotContexts.Unmarshal_OuterPacket(ref outerRef, ref native_outerRef, false, hStream);
 // Copy back array element by element: tortArr
 if (tortArr_size > 0 && d_tortArr != IntPtr.Zero && tortArr_shadow != null)
 {
@@ -4218,10 +4218,10 @@ fixed (byte* p___gsharp_auto_result_shadow = __gsharp_auto_result_shadow)
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2((IntPtr)p___gsharp_auto_result_shadow, d___gsharp_auto_result, (IntPtr)__gsharp_auto_result_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
-var __gsharp_auto_result_native = System.Runtime.InteropServices.MemoryMarshal.Cast<byte, AotContexts.D3OuterPacket>(__gsharp_auto_result_shadow.AsSpan(0, __gsharp_auto_result_size));
+var __gsharp_auto_result_native = System.Runtime.InteropServices.MemoryMarshal.Cast<byte, AotContexts.OuterPacket>(__gsharp_auto_result_shadow.AsSpan(0, __gsharp_auto_result_size));
 for (int __gsharp_auto_result_index = 0; __gsharp_auto_result_index < __gsharp_auto_result_native.Length; __gsharp_auto_result_index++)
 {
-AotContexts.Unmarshal_D3OuterPacket(ref __gsharp_auto_result[__gsharp_auto_result_index], ref __gsharp_auto_result_native[__gsharp_auto_result_index], false, hStream);
+AotContexts.Unmarshal_OuterPacket(ref __gsharp_auto_result[__gsharp_auto_result_index], ref __gsharp_auto_result_native[__gsharp_auto_result_index], false, hStream);
 }
 }
 finally
@@ -4251,11 +4251,11 @@ return __gsharp_auto_result;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-public static unsafe global::Kassyi.GSharp.Tests.Shared.Differential.D3OuterPacket[] LaunchVectorAlignmentAndExternalStructsKernelPtr(AotContexts.DiffVecAlignTorture tortVal, IntPtr outerRef, IntPtr tortArr, IntPtr extPackedArr, IntPtr extSwapArr, IntPtr extHolder, IntPtr probe, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe global::Kassyi.GSharp.Tests.Shared.Differential.OuterPacket[] LaunchVectorAlignmentAndExternalStructsKernelPtr(AotContexts.DiffVecAlignTorture tortVal, IntPtr outerRef, IntPtr tortArr, IntPtr extPackedArr, IntPtr extSwapArr, IntPtr extHolder, IntPtr probe, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (gridDimX == 0 || gridDimY == 0 || gridDimZ == 0 || blockDimX == 0 || blockDimY == 0 || blockDimZ == 0) throw new global::System.ArgumentOutOfRangeException("Dimensions", "Launch dimensions must be greater than 0.");
 uint __gsharp_total_threads; checked { __gsharp_total_threads = (gridDimX * gridDimY * gridDimZ) * (blockDimX * blockDimY * blockDimZ); }
-var __gsharp_auto_result = new global::Kassyi.GSharp.Tests.Shared.Differential.D3OuterPacket[__gsharp_total_threads];
+var __gsharp_auto_result = new global::Kassyi.GSharp.Tests.Shared.Differential.OuterPacket[__gsharp_total_threads];
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 WarmupFunctionPointerVectorAlignmentAndExternalStructsKernel();
@@ -4296,7 +4296,7 @@ proxy_probe[0] = probe;
 ((int*)(proxy_probe + 1))[1] = 0;
 kernelParams[6] = proxy_probe;
 // Marshal auto result array
-int __gsharp_auto_result_size = checked(__gsharp_auto_result.Length * sizeof(AotContexts.D3OuterPacket));
+int __gsharp_auto_result_size = checked(__gsharp_auto_result.Length * sizeof(AotContexts.OuterPacket));
 if (__gsharp_auto_result_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d___gsharp_auto_result, (IntPtr)__gsharp_auto_result_size, hStream));
@@ -4322,10 +4322,10 @@ fixed (byte* p___gsharp_auto_result_shadow = __gsharp_auto_result_shadow)
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2((IntPtr)p___gsharp_auto_result_shadow, d___gsharp_auto_result, (IntPtr)__gsharp_auto_result_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
-var __gsharp_auto_result_native = System.Runtime.InteropServices.MemoryMarshal.Cast<byte, AotContexts.D3OuterPacket>(__gsharp_auto_result_shadow.AsSpan(0, __gsharp_auto_result_size));
+var __gsharp_auto_result_native = System.Runtime.InteropServices.MemoryMarshal.Cast<byte, AotContexts.OuterPacket>(__gsharp_auto_result_shadow.AsSpan(0, __gsharp_auto_result_size));
 for (int __gsharp_auto_result_index = 0; __gsharp_auto_result_index < __gsharp_auto_result_native.Length; __gsharp_auto_result_index++)
 {
-AotContexts.Unmarshal_D3OuterPacket(ref __gsharp_auto_result[__gsharp_auto_result_index], ref __gsharp_auto_result_native[__gsharp_auto_result_index], false, hStream);
+AotContexts.Unmarshal_OuterPacket(ref __gsharp_auto_result[__gsharp_auto_result_index], ref __gsharp_auto_result_native[__gsharp_auto_result_index], false, hStream);
 }
 }
 finally
