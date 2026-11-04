@@ -228,7 +228,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__ConversionDifferentialKernels__ForeachFloatToIntMatrixKernel(float[] f, double[] d, long[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__ConversionDifferentialKernels__ForeachFloatToIntMatrixKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__ConversionDifferentialKernels__ForeachFloatToIntMatrixKernel(float[] f, double[] d, long[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__ConversionDifferentialKernels__ForeachFloatToIntMatrixKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -585,7 +585,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__ConversionDifferentialKernels__EnumCastMatrixKernel(float[] f, double[] d, int[] i32, long[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__ConversionDifferentialKernels__EnumCastMatrixKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__ConversionDifferentialKernels__EnumCastMatrixKernel(float[] f, double[] d, int[] i32, long[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__ConversionDifferentialKernels__EnumCastMatrixKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -893,7 +893,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__ConversionDifferentialKernels__IntToFloatConversionMatrixKernel(int[] i32, uint[] u, long[] l, ulong[] ul, float[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__ConversionDifferentialKernels__IntToFloatConversionMatrixKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__ConversionDifferentialKernels__IntToFloatConversionMatrixKernel(int[] i32, uint[] u, long[] l, ulong[] ul, float[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__ConversionDifferentialKernels__IntToFloatConversionMatrixKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -1200,7 +1200,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__ConversionDifferentialKernels__IntToDoubleConversionMatrixKernel(int[] i32, uint[] u, long[] l, ulong[] ul, double[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__ConversionDifferentialKernels__IntToDoubleConversionMatrixKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__ConversionDifferentialKernels__IntToDoubleConversionMatrixKernel(int[] i32, uint[] u, long[] l, ulong[] ul, double[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__ConversionDifferentialKernels__IntToDoubleConversionMatrixKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -1494,7 +1494,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__ConversionDifferentialKernels__CharScalarArgKernel(char cArg, char[] cArr, int[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__ConversionDifferentialKernels__CharScalarArgKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__ConversionDifferentialKernels__CharScalarArgKernel(char cArg, char[] cArr, int[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__ConversionDifferentialKernels__CharScalarArgKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {

@@ -209,9 +209,13 @@ public partial class RefArgumentOrderKernels
 internal class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__WaitAndReturnInt {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
+internal int value;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-internal static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__WaitAndReturnInt(int value, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__WaitAndReturnInt __gsharp_ctx, ref int __gsharp_result) {
+internal static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__WaitAndReturnInt(int __gsharp_in_value, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__WaitAndReturnInt __gsharp_ctx, ref int __gsharp_result) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.value = __gsharp_in_value;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -225,7 +229,7 @@ return false;
 case 1:
 {
 {
-__gsharp_result = value;
+__gsharp_result = __gsharp_ctx.value;
 __gsharp_ctx.__gsharp_state = 0;
 return true;
 }
@@ -270,9 +274,17 @@ throw new global::System.InvalidOperationException("The device function state ma
 internal class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__SumAfterBarrier {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
+internal int a;
+internal int b;
+internal int[] result;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-internal static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__SumAfterBarrier(int a, int b, int[] result, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__SumAfterBarrier __gsharp_ctx) {
+internal static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__SumAfterBarrier(int __gsharp_in_a, int __gsharp_in_b, int[] __gsharp_in_result, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__SumAfterBarrier __gsharp_ctx) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.a = __gsharp_in_a;
+__gsharp_ctx.b = __gsharp_in_b;
+__gsharp_ctx.result = __gsharp_in_result;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -285,7 +297,7 @@ return false;
 
 case 1:
 {
-result[global::Kassyi.GSharp.Core.ThreadIndex.X] = a + b;
+__gsharp_ctx.result[global::Kassyi.GSharp.Core.ThreadIndex.X] = __gsharp_ctx.a + __gsharp_ctx.b;
 {
 __gsharp_ctx.__gsharp_state = 0;
 return true;
@@ -300,9 +312,13 @@ throw new global::System.InvalidOperationException("The device function state ma
 internal class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__AddAfterBarrier {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
+internal int value;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-internal static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__AddAfterBarrier(ref int target, int value, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__AddAfterBarrier __gsharp_ctx) {
+internal static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__AddAfterBarrier(ref int target, int __gsharp_in_value, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__AddAfterBarrier __gsharp_ctx) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.value = __gsharp_in_value;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -315,7 +331,7 @@ return false;
 
 case 1:
 {
-target += value + 1000;
+target += __gsharp_ctx.value + 1000;
 {
 __gsharp_ctx.__gsharp_state = 0;
 return true;
@@ -330,15 +346,19 @@ throw new global::System.InvalidOperationException("The device function state ma
 internal class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__AddAfterChangingIndex {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
+internal int[] idx;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-internal static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__AddAfterChangingIndex(ref int target, int[] idx, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__AddAfterChangingIndex __gsharp_ctx) {
+internal static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__AddAfterChangingIndex(ref int target, int[] __gsharp_in_idx, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__AddAfterChangingIndex __gsharp_ctx) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.idx = __gsharp_in_idx;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-idx[global::Kassyi.GSharp.Core.ThreadIndex.X] = 63 - global::Kassyi.GSharp.Core.ThreadIndex.X;
+__gsharp_ctx.idx[global::Kassyi.GSharp.Core.ThreadIndex.X] = 63 - global::Kassyi.GSharp.Core.ThreadIndex.X;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
 return false;
@@ -423,9 +443,15 @@ throw new global::System.InvalidOperationException("The device function state ma
 internal class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__WriteThenRead {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
+internal int v;
+internal int[] result;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-internal static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__WriteThenRead(ref int x, int v, int[] result, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__WriteThenRead __gsharp_ctx) {
+internal static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__WriteThenRead(ref int x, int __gsharp_in_v, int[] __gsharp_in_result, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__WriteThenRead __gsharp_ctx) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.v = __gsharp_in_v;
+__gsharp_ctx.result = __gsharp_in_result;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -439,7 +465,7 @@ return false;
 
 case 1:
 {
-result[global::Kassyi.GSharp.Core.ThreadIndex.X] = v;
+__gsharp_ctx.result[global::Kassyi.GSharp.Core.ThreadIndex.X] = __gsharp_ctx.v;
 {
 __gsharp_ctx.__gsharp_state = 0;
 return true;
@@ -454,11 +480,17 @@ throw new global::System.InvalidOperationException("The device function state ma
 internal class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__PassOn {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
+internal int[] data;
+internal int[] result;
 internal int __gsharp_arg_temp_0;
 internal global::Kassyi.GSharp.Tests.Shared.Core.RefArgumentOrderKernels.__gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__WriteElementThenRead __gsharp_call_frame_0 = new();
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-internal static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__PassOn(ref int p, int[] data, int[] result, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__PassOn __gsharp_ctx) {
+internal static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__PassOn(ref int p, int[] __gsharp_in_data, int[] __gsharp_in_result, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__PassOn __gsharp_ctx) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.data = __gsharp_in_data;
+__gsharp_ctx.result = __gsharp_in_result;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -470,7 +502,7 @@ goto case 1;
 
 case 1:
 {
-if (!global::Kassyi.GSharp.Tests.Shared.Core.RefArgumentOrderKernels.__gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__WriteElementThenRead(__gsharp_ctx.__gsharp_arg_temp_0, data, result, __gsharp_ctx.__gsharp_call_frame_0))
+if (!global::Kassyi.GSharp.Tests.Shared.Core.RefArgumentOrderKernels.__gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__WriteElementThenRead(__gsharp_ctx.__gsharp_arg_temp_0, __gsharp_ctx.data, __gsharp_ctx.result, __gsharp_ctx.__gsharp_call_frame_0))
 {
 __gsharp_ctx.__gsharp_state = 1;
 return false;
@@ -490,15 +522,23 @@ throw new global::System.InvalidOperationException("The device function state ma
 internal class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__WriteElementThenRead {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
+internal int v;
+internal int[] data;
+internal int[] result;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-internal static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__WriteElementThenRead(int v, int[] data, int[] result, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__WriteElementThenRead __gsharp_ctx) {
+internal static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__WriteElementThenRead(int __gsharp_in_v, int[] __gsharp_in_data, int[] __gsharp_in_result, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__WriteElementThenRead __gsharp_ctx) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.v = __gsharp_in_v;
+__gsharp_ctx.data = __gsharp_in_data;
+__gsharp_ctx.result = __gsharp_in_result;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-data[global::Kassyi.GSharp.Core.ThreadIndex.X] = 99;
+__gsharp_ctx.data[global::Kassyi.GSharp.Core.ThreadIndex.X] = 99;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
 return false;
@@ -506,7 +546,7 @@ return false;
 
 case 1:
 {
-result[global::Kassyi.GSharp.Core.ThreadIndex.X] = v;
+__gsharp_ctx.result[global::Kassyi.GSharp.Core.ThreadIndex.X] = __gsharp_ctx.v;
 {
 __gsharp_ctx.__gsharp_state = 0;
 return true;
@@ -521,9 +561,15 @@ throw new global::System.InvalidOperationException("The device function state ma
 internal class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__ReadInAfterBarrier {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
+internal int q;
+internal int[] result;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-internal static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__ReadInAfterBarrier(in int p, int q, int[] result, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__ReadInAfterBarrier __gsharp_ctx) {
+internal static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__ReadInAfterBarrier(in int p, int __gsharp_in_q, int[] __gsharp_in_result, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__ReadInAfterBarrier __gsharp_ctx) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.q = __gsharp_in_q;
+__gsharp_ctx.result = __gsharp_in_result;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -536,7 +582,7 @@ return false;
 
 case 1:
 {
-result[global::Kassyi.GSharp.Core.ThreadIndex.X] = p * 10 + q;
+__gsharp_ctx.result[global::Kassyi.GSharp.Core.ThreadIndex.X] = p * 10 + __gsharp_ctx.q;
 {
 __gsharp_ctx.__gsharp_state = 0;
 return true;
@@ -551,15 +597,21 @@ throw new global::System.InvalidOperationException("The device function state ma
 internal class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__WriteElementThenReadIn {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
+internal int[] data;
+internal int[] result;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-internal static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__WriteElementThenReadIn(in int p, int[] data, int[] result, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__WriteElementThenReadIn __gsharp_ctx) {
+internal static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__WriteElementThenReadIn(in int p, int[] __gsharp_in_data, int[] __gsharp_in_result, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__WriteElementThenReadIn __gsharp_ctx) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.data = __gsharp_in_data;
+__gsharp_ctx.result = __gsharp_in_result;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-data[global::Kassyi.GSharp.Core.ThreadIndex.X] = 5;
+__gsharp_ctx.data[global::Kassyi.GSharp.Core.ThreadIndex.X] = 5;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
 return false;
@@ -567,7 +619,7 @@ return false;
 
 case 1:
 {
-result[global::Kassyi.GSharp.Core.ThreadIndex.X] = p;
+__gsharp_ctx.result[global::Kassyi.GSharp.Core.ThreadIndex.X] = p;
 {
 __gsharp_ctx.__gsharp_state = 0;
 return true;
@@ -582,9 +634,13 @@ throw new global::System.InvalidOperationException("The device function state ma
 internal class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__WaitAndReturn {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
+internal long x;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-internal static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__WaitAndReturn(long x, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__WaitAndReturn __gsharp_ctx, ref long __gsharp_result) {
+internal static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__WaitAndReturn(long __gsharp_in_x, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__WaitAndReturn __gsharp_ctx, ref long __gsharp_result) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.x = __gsharp_in_x;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -598,7 +654,7 @@ return false;
 case 1:
 {
 {
-__gsharp_result = x;
+__gsharp_result = __gsharp_ctx.x;
 __gsharp_ctx.__gsharp_state = 0;
 return true;
 }
