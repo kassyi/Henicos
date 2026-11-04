@@ -52,4 +52,40 @@ public static partial class DeviceErrorChannelKernels
             result[0] = data.AsStackEnumerable().ElementAt(999);
         }
     }
+
+    [GpuKernel]
+    public static void BlockIndex100TrapKernel(int[] data, int targetBlock, int[] result)
+    {
+        if (ThreadIndex.X == 0 && BlockIndex.X == targetBlock)
+        {
+            result[0] = data.AsStackEnumerable().ElementAt(999);
+        }
+    }
+
+    [GpuKernel]
+    public static void StackLinqFirstEmptyKernel(int[] data, int[] result)
+    {
+        if (ThreadIndex.X == 0 && BlockIndex.X == 0)
+        {
+            result[0] = (data.AsStackEnumerable().Take(0)).First();
+        }
+    }
+
+    [GpuKernel]
+    public static void StackLinqSingleMultipleKernel(int[] data, int[] result)
+    {
+        if (ThreadIndex.X == 0 && BlockIndex.X == 0)
+        {
+            result[0] = (data.AsStackEnumerable().Take(2)).Single();
+        }
+    }
+
+    [GpuKernel]
+    public static void StackLinqMaxEmptyKernel(int[] data, int[] result)
+    {
+        if (ThreadIndex.X == 0 && BlockIndex.X == 0)
+        {
+            result[0] = (data.AsStackEnumerable().Take(0)).Max();
+        }
+    }
 }
