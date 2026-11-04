@@ -3612,7 +3612,12 @@ int __gsharp_id_4_add64LtZero = (__gsharp_atomicAdd((unsigned long long*)(&__gsh
 int __gsharp_id_5_exch64SarSign = (int)(atomicExch((unsigned long long*)(&__gsharp_id_0_state64[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_3_tid,3),1)]),42ll)>>62);
 int __gsharp_id_6_cas64LtZero = (__gsharp_atomicCAS((unsigned long long*)(&__gsharp_id_0_state64[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_3_tid,3),2)]),99ll,(-10LL))<0ll?1:0);
 int __gsharp_id_7_add32WrapMin = (__gsharp_atomicAdd(&__gsharp_id_1_state32[__gsharp_mul_i32(__gsharp_id_3_tid,2)+0],1)==(-2147483647-1)?1:0);
-__gsharp_atomicCAS(&__gsharp_id_1_state32[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_3_tid,2),1)],100,555);
+([&]() {
+auto&& __gsharp_seq_0 = __gsharp_id_1_state32[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_3_tid,2),1)];
+int __gsharp_seq_1 = 100;
+int __gsharp_seq_2 = 555;
+return __gsharp_atomicCAS(&__gsharp_seq_0,__gsharp_seq_2,__gsharp_seq_1);
+}());
 int __gsharp_id_8_casNamedUpdated = __gsharp_id_1_state32[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_3_tid,2),1)];
 int __gsharp_id_9_o = __gsharp_mul_i32(__gsharp_id_3_tid,5);
 __gsharp_id_2_output[__gsharp_id_9_o+0]=__gsharp_id_4_add64LtZero;
