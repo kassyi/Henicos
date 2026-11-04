@@ -7,7 +7,7 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 /// <summary>
 /// Differential tests for conversions (<see cref="ConversionDifferentialKernels"/>): <c>foreach</c> element conversions,
 /// enum casts, 32-bit/64-bit integer-to-float/double rounding boundaries, scalar <c>char</c> kernel arguments,
-/// direct float/double casts to all 9 integer types (Case N04), and integer widening/narrowing casts and shift masks.
+/// direct float/double casts to all 9 integer types, and integer widening/narrowing casts and shift masks.
 /// </summary>
 public class ConversionDifferentialTests
 {
@@ -156,7 +156,7 @@ public class ConversionDifferentialTests
         ),
     };
 
-    // Case N04: Direct casts between float/double and all 9 integer types (#724, #890)
+    // Direct casts between float/double and all 9 integer types (#724, #890)
     private static readonly DifferentialCase s_directFloatDoubleCast = new($"{nameof(ConversionDifferentialKernels)}.{nameof(ConversionDifferentialKernels.DirectFloatDoubleCastMatrixKernel)}")
     {
         Shape = LaunchShape.ForRows(72, blockX: 32),

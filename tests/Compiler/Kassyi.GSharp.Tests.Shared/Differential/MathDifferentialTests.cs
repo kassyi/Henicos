@@ -405,7 +405,7 @@ public class MathDifferentialTests
         ),
     };
 
-    // Case N01: Subnormal IEEE 754 0-ulp arithmetic and Sqrt without FTZ
+    // Subnormal IEEE 754 0-ulp arithmetic and Sqrt without FTZ
     private static readonly DifferentialCase s_subnormalIeeeExact = new($"{nameof(MathDifferentialKernels)}.{nameof(MathDifferentialKernels.SubnormalIeeeExactMatrixKernel)}")
     {
         Shape = LaunchShape.ForRows(DiffValues.SubnormalSingleBoundaries.Length * DiffValues.SubnormalSingleBoundaries.Length, blockX: 64),
@@ -441,7 +441,7 @@ public class MathDifferentialTests
         ),
     };
 
-    // Case N02: Transcendental and Pow special values / fixed points (Bitwise)
+    // Transcendental and Pow special values / fixed points (Bitwise)
     private static readonly DifferentialCase s_transcendentalSpecialValues = new($"{nameof(MathDifferentialKernels)}.{nameof(MathDifferentialKernels.TranscendentalSpecialValuesKernel)}")
     {
         Shape = LaunchShape.ForRows(64, blockX: 32),
@@ -511,7 +511,7 @@ public class MathDifferentialTests
         ),
     };
 
-    // Case N03: System.Numerics.BitOperations all 18 mapped overloads + shift count masking + named arguments
+    // System.Numerics.BitOperations all 18 mapped overloads + shift count masking + named arguments
     private static readonly DifferentialCase s_bitOperations = new($"{nameof(MathDifferentialKernels)}.{nameof(MathDifferentialKernels.BitOperationsMatrixKernel)}")
     {
         Shape = LaunchShape.ForRows(DiffValues.BitOperationUInt32Boundaries.Length * DiffValues.ShiftCounts.Length, blockX: 64),
@@ -575,7 +575,7 @@ public class MathDifferentialTests
         ),
     };
 
-    // Case N05: IEEE 754 unordered comparisons and large-exponent Round ties
+    // IEEE 754 unordered comparisons and large-exponent Round ties
     private static readonly DifferentialCase s_floatComparisonAndLargeTie = new($"{nameof(MathDifferentialKernels)}.{nameof(MathDifferentialKernels.FloatComparisonAndLargeTieMatrixKernel)}")
     {
         Shape = LaunchShape.ForRows(s_singleRoundBoundaries.Length * 8, blockX: 64),
@@ -633,7 +633,7 @@ public class MathDifferentialTests
         ),
     };
 
-    // Case N06: Mul-Add exact inputs (Bitwise) and FMA contraction witness (Verify)
+    // Mul-Add exact inputs (Bitwise) and FMA contraction witness (Verify)
     private static readonly DifferentialCase s_mulAddExactAndContraction = new($"{nameof(MathDifferentialKernels)}.{nameof(MathDifferentialKernels.MulAddExactAndContractionKernel)}")
     {
         Shape = LaunchShape.ForRows(128, blockX: 64),
@@ -722,7 +722,7 @@ public class MathDifferentialTests
         },
     };
 
-    // Case N07: MathF single-precision transcendentals (ULP + Verify)
+    // MathF single-precision transcendentals (ULP + Verify)
     private static readonly DifferentialCase s_singleTranscendental = new($"{nameof(MathDifferentialKernels)}.{nameof(MathDifferentialKernels.SingleTranscendentalMatrixKernel)}")
     {
         Shape = LaunchShape.ForRows(256, blockX: 64),
@@ -804,7 +804,7 @@ public class MathDifferentialTests
         },
     };
 
-    // Case N08: System.Math double-precision transcendentals + float argument widening (#876)
+    // System.Math double-precision transcendentals + float argument widening (#876)
     private static readonly DifferentialCase s_doubleAndPromotedSingleTranscendental = new($"{nameof(MathDifferentialKernels)}.{nameof(MathDifferentialKernels.DoubleAndPromotedSingleTranscendentalMatrixKernel)}")
     {
         Shape = LaunchShape.ForRows(256, blockX: 64),
@@ -867,7 +867,7 @@ public class MathDifferentialTests
         ),
     };
 
-    // Case N09: FastMath (Sqrt, Abs, Exp, Log)
+    // FastMath (Sqrt, Abs, Exp, Log)
     private static readonly DifferentialCase s_fastMath = new($"{nameof(MathDifferentialKernels)}.{nameof(MathDifferentialKernels.FastMathMatrixKernel)}")
     {
         Shape = LaunchShape.ForRows(128, blockX: 64),

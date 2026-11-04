@@ -118,7 +118,7 @@ public static partial class MathDifferentialKernels
         "MathF.Min(v,max)",
     ];
 
-    /// <summary>The <see cref="float"/> columns of <see cref="SubnormalIeeeExactMatrixKernel"/> (Case N01).</summary>
+    /// <summary>The <see cref="float"/> columns of <see cref="SubnormalIeeeExactMatrixKernel"/>.</summary>
     public static readonly string[] SubnormalIeeeSingleColumns =
     [
         "x+y",
@@ -129,7 +129,7 @@ public static partial class MathDifferentialKernels
         "FastMath.Sqrt(|x|)",
     ];
 
-    /// <summary>The <see cref="double"/> columns of <see cref="SubnormalIeeeExactMatrixKernel"/> (Case N01).</summary>
+    /// <summary>The <see cref="double"/> columns of <see cref="SubnormalIeeeExactMatrixKernel"/>.</summary>
     public static readonly string[] SubnormalIeeeDoubleColumns =
     [
         "u+v",
@@ -139,7 +139,7 @@ public static partial class MathDifferentialKernels
         "Math.Sqrt(|u|)",
     ];
 
-    /// <summary>The <see cref="float"/> columns of <see cref="TranscendentalSpecialValuesKernel"/> (Case N02).</summary>
+    /// <summary>The <see cref="float"/> columns of <see cref="TranscendentalSpecialValuesKernel"/>.</summary>
     public static readonly string[] TranscendentalSpecialSingleColumns =
     [
         "MathF.Sin(fx)",
@@ -151,7 +151,7 @@ public static partial class MathDifferentialKernels
         "Math.Clamp(fx,-1,1)",
     ];
 
-    /// <summary>The <see cref="double"/> columns of <see cref="TranscendentalSpecialValuesKernel"/> (Case N02).</summary>
+    /// <summary>The <see cref="double"/> columns of <see cref="TranscendentalSpecialValuesKernel"/>.</summary>
     public static readonly string[] TranscendentalSpecialDoubleColumns =
     [
         "Math.Sin(dx)",
@@ -162,7 +162,7 @@ public static partial class MathDifferentialKernels
         "Math.Pow(powBaseD,powExpD)",
     ];
 
-    /// <summary>The columns of <see cref="BitOperationsMatrixKernel"/> (Case N03).</summary>
+    /// <summary>The columns of <see cref="BitOperationsMatrixKernel"/>.</summary>
     public static readonly string[] BitOperationsColumns =
     [
         "BitOperations.LeadingZeroCount(u32)",
@@ -180,7 +180,7 @@ public static partial class MathDifferentialKernels
         "BitOperations.RotateLeft(offset:s,value:u32)",
     ];
 
-    /// <summary>The comparison columns of <see cref="FloatComparisonAndLargeTieMatrixKernel"/> (Case N05).</summary>
+    /// <summary>The comparison columns of <see cref="FloatComparisonAndLargeTieMatrixKernel"/>.</summary>
     public static readonly string[] FloatComparisonColumns =
     [
         "x==y",
@@ -201,14 +201,14 @@ public static partial class MathDifferentialKernels
         "u==iv",
     ];
 
-    /// <summary>The rounding columns of <see cref="FloatComparisonAndLargeTieMatrixKernel"/> (Case N05).</summary>
+    /// <summary>The rounding columns of <see cref="FloatComparisonAndLargeTieMatrixKernel"/>.</summary>
     public static readonly string[] LargeTieRoundColumns =
     [
         "MathF.Round(x)",
         "Math.Round(u)",
     ];
 
-    /// <summary>The columns of <see cref="SingleTranscendentalMatrixKernel"/> (Case N07).</summary>
+    /// <summary>The columns of <see cref="SingleTranscendentalMatrixKernel"/>.</summary>
     public static readonly string[] SingleTranscendentalColumns =
     [
         "MathF.Sin(x)",
@@ -219,7 +219,7 @@ public static partial class MathDifferentialKernels
         "MathF.Pow(x,y)",
     ];
 
-    /// <summary>The columns of <see cref="DoubleAndPromotedSingleTranscendentalMatrixKernel"/> (Case N08).</summary>
+    /// <summary>The columns of <see cref="DoubleAndPromotedSingleTranscendentalMatrixKernel"/>.</summary>
     public static readonly string[] DoubleAndPromotedSingleTranscendentalColumns =
     [
         "Math.Sin(d)",
@@ -236,7 +236,7 @@ public static partial class MathDifferentialKernels
         "Math.Pow(|f|+0.25f,fExp)",
     ];
 
-    /// <summary>The columns of <see cref="FastMathMatrixKernel"/> (Case N09).</summary>
+    /// <summary>The columns of <see cref="FastMathMatrixKernel"/>.</summary>
     public static readonly string[] FastMathColumns =
     [
         "FastMath.Sqrt(|x|)",
@@ -408,7 +408,7 @@ public static partial class MathDifferentialKernels
         rf[o + 3] = MathF.Min(v[t], max[t]);
     }
 
-    // Case N01: Subnormal IEEE 754 0-ulp arithmetic and Sqrt without FTZ
+    // Subnormal IEEE 754 0-ulp arithmetic and Sqrt without FTZ
     [GpuKernel]
     public static void SubnormalIeeeExactMatrixKernel(
         float[] fa, float[] fb, double[] da, double[] db, float[] rf, double[] rd)
@@ -439,7 +439,7 @@ public static partial class MathDifferentialKernels
         rd[od + 4] = Math.Sqrt(Math.Abs(u));
     }
 
-    // Case N02: Transcendental and Pow special values / fixed points (Bitwise)
+    // Transcendental and Pow special values / fixed points (Bitwise)
     [GpuKernel]
     public static void TranscendentalSpecialValuesKernel(
         float[] fx,
@@ -478,8 +478,8 @@ public static partial class MathDifferentialKernels
         rd[od + 5] = Math.Pow(powBaseD[t], powExpD[t]);
     }
 
-    // Case N03: System.Numerics.BitOperations uint/ulong mapped overloads + shift count masking + named arguments
-    // (nuint overloads emit undeclared System_UIntPtr in C++ [ND7-01] and are verified via in-memory generator test)
+    // System.Numerics.BitOperations uint/ulong mapped overloads + shift count masking + named arguments
+    // (nuint overloads emit undeclared System_UIntPtr in C++ [#983] and are verified via generator test)
     [GpuKernel]
     public static void BitOperationsMatrixKernel(uint[] u32, ulong[] u64, int[] offsets, ulong[] r)
     {
@@ -509,7 +509,7 @@ public static partial class MathDifferentialKernels
         r[o + 12] = BitOperations.RotateLeft(offset: s, value: v32);
     }
 
-    // Case N05: IEEE 754 unordered comparisons (NaN, signed zeros, subnormals, int promotion) and large-exponent Round ties
+    // IEEE 754 unordered comparisons (NaN, signed zeros, subnormals, int promotion) and large-exponent Round ties
     [GpuKernel]
     public static void FloatComparisonAndLargeTieMatrixKernel(
         float[] fa, float[] fb, double[] da, double[] db, int[] ia, byte[] rCmp, double[] rRound)
@@ -549,7 +549,7 @@ public static partial class MathDifferentialKernels
         rRound[or + 1] = Math.Round(u);
     }
 
-    // Case N06: Mul-Add exact inputs (Bitwise) and FMA contraction witness (Verify)
+    // Mul-Add exact inputs (Bitwise) and FMA contraction witness (Verify)
     [GpuKernel]
     public static void MulAddExactAndContractionKernel(
         float[] fa, float[] fb, float[] fc, float[] rExact, float[] rContract)
@@ -565,7 +565,7 @@ public static partial class MathDifferentialKernels
         rContract[t] = k * k - (1.0f + 2.0f * 0.000244140625f);
     }
 
-    // Case N07: MathF single-precision transcendentals (per-column CUDA ULP + Verify mathematical identities)
+    // MathF single-precision transcendentals (per-column CUDA ULP + Verify mathematical identities)
     [GpuKernel]
     public static void SingleTranscendentalMatrixKernel(
         float[] trigX, float[] expX, float[] logX, float[] powBase, float[] powExp, float[] r)
@@ -585,7 +585,7 @@ public static partial class MathDifferentialKernels
         r[o + 5] = MathF.Pow(powBase[t], powExp[t]);
     }
 
-    // Case N08: System.Math double-precision transcendentals + float argument widening (#876)
+    // System.Math double-precision transcendentals + float argument widening (#876)
     [GpuKernel]
     public static void DoubleAndPromotedSingleTranscendentalMatrixKernel(
         double[] trigD, double[] expD, double[] logD, double[] powBaseD, double[] powExpD,
@@ -612,7 +612,7 @@ public static partial class MathDifferentialKernels
         r[o + 11] = Math.Pow(MathF.Abs(fArg[t]) + 0.25f, fExp[t]);
     }
 
-    // Case N09: FastMath (Sqrt, Abs, Exp, Log)
+    // FastMath (Sqrt, Abs, Exp, Log)
     [GpuKernel]
     public static void FastMathMatrixKernel(
         float[] x, float[] expX, float[] logUnitX, float[] logWideX, float[] r)

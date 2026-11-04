@@ -119,7 +119,7 @@ public static class KnownDivergences
         // generic struct static method SharedMemory.Allocate<T> collides across type arguments (#543)
         new(GenericStructStaticSharedMemory, "SharedSlot<int>", DiffPath.Managed | DiffPath.Native, Issue: 543),
 
-        // BclIntrinsicTranspilerRule emits named arguments in source syntax order instead of parameter order (S46)
-        new(BitOperationsMatrix, "BitOperations.RotateLeft(offset:s,value:u32)", DiffPath.Native | DiffPath.Cuda, Issue: 1059), // S46: BclIntrinsicTranspilerRule ignores named argument order
+        // BclIntrinsicTranspilerRule emits named arguments in source syntax order instead of parameter order (#1059)
+        new(BitOperationsMatrix, "BitOperations.RotateLeft(offset:s,value:u32)", DiffPath.Native | DiffPath.Cuda, Issue: 1059), // #1059: BclIntrinsicTranspilerRule ignores named argument order
     ];
 }

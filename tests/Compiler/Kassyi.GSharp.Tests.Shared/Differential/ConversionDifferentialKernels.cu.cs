@@ -147,7 +147,7 @@ public static partial class ConversionDifferentialKernels
         "cArg==0x1234",
     ];
 
-    /// <summary>The signed integer columns of <see cref="DirectFloatDoubleCastMatrixKernel"/> (Case N04).</summary>
+    /// <summary>The signed integer columns of <see cref="DirectFloatDoubleCastMatrixKernel"/>.</summary>
     public static readonly string[] DirectSignedCastColumns =
     [
         "(sbyte)f",
@@ -162,7 +162,7 @@ public static partial class ConversionDifferentialKernels
         "(long)(double)i64",
     ];
 
-    /// <summary>The unsigned integer columns of <see cref="DirectFloatDoubleCastMatrixKernel"/> (Case N04).</summary>
+    /// <summary>The unsigned integer columns of <see cref="DirectFloatDoubleCastMatrixKernel"/>.</summary>
     public static readonly string[] DirectUnsignedCastColumns =
     [
         "(byte)f",
@@ -177,7 +177,7 @@ public static partial class ConversionDifferentialKernels
         "(ulong)d",
     ];
 
-    /// <summary>The <see cref="float"/> columns of <see cref="DirectFloatDoubleCastMatrixKernel"/> (Case N04).</summary>
+    /// <summary>The <see cref="float"/> columns of <see cref="DirectFloatDoubleCastMatrixKernel"/>.</summary>
     public static readonly string[] DirectFloatCastColumns =
     [
         "(float)d",
@@ -185,7 +185,7 @@ public static partial class ConversionDifferentialKernels
         "(float)u64",
     ];
 
-    /// <summary>The <see cref="double"/> columns of <see cref="DirectFloatDoubleCastMatrixKernel"/> (Case N04).</summary>
+    /// <summary>The <see cref="double"/> columns of <see cref="DirectFloatDoubleCastMatrixKernel"/>.</summary>
     public static readonly string[] DirectDoubleCastColumns =
     [
         "(double)f",
@@ -426,7 +426,7 @@ public static partial class ConversionDifferentialKernels
         r[o + 2] = cArg == '\u1234' ? 1 : 0;
     }
 
-    // Case N04: Direct casts between float/double and all 9 integer types (#724, #890), 64-bit integer rounding ties, and double <-> float
+    // Direct casts between float/double and all 9 integer types (#724, #890), 64-bit integer rounding ties, and double <-> float
     [GpuKernel]
     public static void DirectFloatDoubleCastMatrixKernel(
         float[] f, double[] d, long[] i64, ulong[] u64,
