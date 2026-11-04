@@ -281,7 +281,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__TestCases__Emission__BigIntRefShiftKernels__ShiftKernel(uint[] input, uint[] shiftedLeft, uint[] shiftedRight, __gsharp_context_Kassyi__GSharp__Tests__TestCases__Emission__BigIntRefShiftKernels__ShiftKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__TestCases__Emission__BigIntRefShiftKernels__ShiftKernel(uint[] input, uint[] shiftedLeft, uint[] shiftedRight, __gsharp_context_Kassyi__GSharp__Tests__TestCases__Emission__BigIntRefShiftKernels__ShiftKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {

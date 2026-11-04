@@ -439,18 +439,20 @@ public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingVal
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
 internal global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendWithBuffer v;
+internal int index;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__MutateInlineArrayElementThenSync(global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendWithBuffer __gsharp_in_v, int index, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__MutateInlineArrayElementThenSync __gsharp_ctx, ref int __gsharp_result) {
+public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__MutateInlineArrayElementThenSync(global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendWithBuffer __gsharp_in_v, int __gsharp_in_index, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__MutateInlineArrayElementThenSync __gsharp_ctx, ref int __gsharp_result) {
 if (__gsharp_ctx.__gsharp_state == 0) {
 __gsharp_ctx.v = __gsharp_in_v;
+__gsharp_ctx.index = __gsharp_in_index;
 }
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_ctx.v.Buffer[index] += 100;
+__gsharp_ctx.v.Buffer[__gsharp_ctx.index] += 100;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
 return false;
@@ -459,7 +461,7 @@ return false;
 case 1:
 {
 {
-__gsharp_result = __gsharp_ctx.v.Buffer[index] + __gsharp_ctx.v.Tag;
+__gsharp_result = __gsharp_ctx.v.Buffer[__gsharp_ctx.index] + __gsharp_ctx.v.Tag;
 __gsharp_ctx.__gsharp_state = 0;
 return true;
 }
@@ -578,15 +580,21 @@ throw new global::System.InvalidOperationException("The device function state ma
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__MutateArrayElementThenSync {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
+internal int[] values;
+internal int index;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__MutateArrayElementThenSync(int[] values, int index, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__MutateArrayElementThenSync __gsharp_ctx, ref int __gsharp_result) {
+public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__MutateArrayElementThenSync(int[] __gsharp_in_values, int __gsharp_in_index, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingValueParameterKernels__MutateArrayElementThenSync __gsharp_ctx, ref int __gsharp_result) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.values = __gsharp_in_values;
+__gsharp_ctx.index = __gsharp_in_index;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-values[index] = values[index] + 1000;
+__gsharp_ctx.values[__gsharp_ctx.index] = __gsharp_ctx.values[__gsharp_ctx.index] + 1000;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
 return false;
@@ -595,7 +603,7 @@ return false;
 case 1:
 {
 {
-__gsharp_result = values[index];
+__gsharp_result = __gsharp_ctx.values[__gsharp_ctx.index];
 __gsharp_ctx.__gsharp_state = 0;
 return true;
 }

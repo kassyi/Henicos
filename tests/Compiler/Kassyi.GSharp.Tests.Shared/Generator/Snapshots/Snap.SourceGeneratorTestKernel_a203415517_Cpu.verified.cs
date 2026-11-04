@@ -138,7 +138,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Generator__SourceGeneratorTestKernels__MyTestKernel(int[] a, int[] b, int[] c, __gsharp_context_Kassyi__GSharp__Tests__Shared__Generator__SourceGeneratorTestKernels__MyTestKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Generator__SourceGeneratorTestKernels__MyTestKernel(int[] a, int[] b, int[] c, __gsharp_context_Kassyi__GSharp__Tests__Shared__Generator__SourceGeneratorTestKernels__MyTestKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {

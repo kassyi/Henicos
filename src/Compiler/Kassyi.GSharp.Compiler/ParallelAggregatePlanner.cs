@@ -43,8 +43,8 @@ internal readonly record struct ParallelAggregatePlan(
 /// </summary>
 /// <remarks>
 /// [WHY] The decision is made on the tree of the compilation, so that the analyzer and both dialects agree. The variance
-/// analysis is <see cref="ThreadVarianceAnalysis"/> (block scope, and grid scope for <see cref="ParallelAggregatePlan.IsGridUniform"/>);
-/// it says "variant" when unsure, which only makes the plan fall back.
+/// analysis is <see cref="UniformityAnalysis"/> (<see cref="ThreadVariance.Block"/>, and <see cref="ThreadVariance.Grid"/>
+/// for <see cref="ParallelAggregatePlan.IsGridUniform"/>); when the body does not bind, the plan falls back.
 /// </remarks>
 internal static class ParallelAggregatePlanner
 {
@@ -71,18 +71,28 @@ internal static class ParallelAggregatePlanner
             return PerThread(ParallelAggregateFallback.OutsideKernelBody);
         }
 
-        // The first reason that applies, in the order of the arms; the variance analysis runs only when an arm asks
-        var block = new ThreadVarianceAnalysis(originalModel, method);
+        if (IsInsideLambda(original, method, originalModel))
+        {
+            return PerThread(ParallelAggregateFallback.InsideLambda);
+        }
+
+        if (!new MethodFlowGraph(originalModel, method).TryGetUniformity(out var uniformity))
+        {
+            return PerThread(ParallelAggregateFallback.Unresolved);
+        }
+
+        // The first reason that applies, in the order of the arms
         var fallback = true switch
         {
-            _ when IsInsideLambda(original, method, originalModel) => ParallelAggregateFallback.InsideLambda,
-            _ when IsDivergent(original, method, block) => ParallelAggregateFallback.DivergentCall,
-            _ when HasEarlyExit(original, method, block) => ParallelAggregateFallback.EarlyExit,
+            _ when uniformity.GetPartialReach(original) is var reach && reach != PartialReach.None =>
+                reach == PartialReach.Branch
+                    ? ParallelAggregateFallback.DivergentCall
+                    : ParallelAggregateFallback.EarlyExit,
             _ when !IsSharedSource(chain.SourceArrayExpression, originalModel, kernel)
                 => ParallelAggregateFallback.ThreadPrivateSource,
             _ when HasOrderDependentStage(in chain, originalModel) => ParallelAggregateFallback.OrderDependentStage,
             _ when HasSideEffect(in chain, originalModel) => ParallelAggregateFallback.SideEffect,
-            _ when ReadsVariantInput(in chain, originalModel, kernel, block)
+            _ when ReadsVariantInput(in chain, originalModel, kernel, uniformity, ThreadVariance.Block)
                 => ParallelAggregateFallback.ThreadVariantInput,
             _ when symbol.ReturnType.SpecialType is not (SpecialType.System_Int32 or SpecialType.System_UInt32 or
                 SpecialType.System_Int64 or SpecialType.System_UInt64)
@@ -94,9 +104,8 @@ internal static class ParallelAggregatePlanner
             return PerThread(fallback);
         }
 
-        var grid = new ThreadVarianceAnalysis(originalModel, method, gridScope: true);
-        var isGridUniform = !IsDivergent(original, method, grid) && !HasEarlyExit(original, method, grid) &&
-                            !ReadsVariantInput(in chain, originalModel, kernel, grid);
+        var isGridUniform = !uniformity.IsReachedByPartOfGrid(original) &&
+                            !ReadsVariantInput(in chain, originalModel, kernel, uniformity, ThreadVariance.Grid);
         var strategy = isGridUniform && kernel.IsCooperativeKernel()
             ? ParallelAggregateStrategy.Grid
             : ParallelAggregateStrategy.Block;
@@ -173,86 +182,6 @@ internal static class ParallelAggregatePlanner
         return false;
     }
 
-    // A branch, loop, switch section or arm, for incrementor or operand around the node whose condition may differ
-    // between threads: the same list as the variance analysis uses for its locals (ThreadVarianceAnalysis.IsInVariantRegion)
-    private static bool IsDivergent(SyntaxNode node, MethodDeclarationSyntax method, ThreadVarianceAnalysis variance) =>
-        variance.IsReachedUnderVariantCondition(node);
-
-    // A thread may leave before the call: a return under a variant condition before the call or in a loop around it, a
-    // break / continue under a variant condition whose loop holds the call, or a goto under a variant condition
-    private static bool HasEarlyExit(SyntaxNode call, MethodDeclarationSyntax method, ThreadVarianceAnalysis variance)
-    {
-        foreach (var node in method.DescendantNodes(static n => n is not LocalFunctionStatementSyntax))
-        {
-            if (node is not (ReturnStatementSyntax or BreakStatementSyntax or ContinueStatementSyntax or GotoStatementSyntax) ||
-                IsInOtherLambda(node, method) || !IsDivergent(node, method, variance))
-            {
-                continue;
-            }
-
-            var exits = node switch
-            {
-                ReturnStatementSyntax => node.SpanStart < call.SpanStart || IsInLoopAround(node, call, method),
-                GotoStatementSyntax => true,
-                _ => GetTargetLoop(node) is { } loop && loop.Span.Contains(call.Span)
-            };
-            if (exits)
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    // A jump inside a lambda that is not a macro body leaves the lambda, not the kernel
-    private static bool IsInOtherLambda(SyntaxNode node, MethodDeclarationSyntax method)
-    {
-        for (var ancestor = node.Parent; ancestor != null && ancestor != method; ancestor = ancestor.Parent)
-        {
-            if (ancestor is AnonymousFunctionExpressionSyntax lambda &&
-                lambda.Parent is not ArgumentSyntax { Parent.Parent: InvocationExpressionSyntax })
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private static bool IsInLoopAround(SyntaxNode node, SyntaxNode call, MethodDeclarationSyntax method)
-    {
-        for (var ancestor = node.Parent; ancestor != null && ancestor != method; ancestor = ancestor.Parent)
-        {
-            if (ancestor is WhileStatementSyntax or DoStatementSyntax or ForStatementSyntax or ForEachStatementSyntax &&
-                ancestor.Span.Contains(call.Span))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    // The loop a break or continue leaves (a break in a switch leaves the switch)
-    private static SyntaxNode? GetTargetLoop(SyntaxNode jump)
-    {
-        for (var ancestor = jump.Parent; ancestor != null; ancestor = ancestor.Parent)
-        {
-            switch (ancestor)
-            {
-                case SwitchStatementSyntax when jump is BreakStatementSyntax:
-                    return ancestor;
-                case WhileStatementSyntax or DoStatementSyntax or ForStatementSyntax or ForEachStatementSyntax:
-                    return ancestor;
-                case AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax or MethodDeclarationSyntax:
-                    return null;
-            }
-        }
-
-        return null;
-    }
-
     // An array or span parameter of the kernel, or a local that is only ever that parameter (Span<int> s = data;)
     private static bool IsSharedSource(ExpressionSyntax source, SemanticModel model, IMethodSymbol kernel)
     {
@@ -325,9 +254,9 @@ internal static class ParallelAggregatePlanner
     // The source, the stage arguments and the outer values the lambdas read: each must be the same in every thread (in
     // the scope of the analysis), and a lambda may read only scalars or the array and span parameters of the kernel
     private static bool ReadsVariantInput(in StackLinqChain chain, SemanticModel model, IMethodSymbol kernel,
-        ThreadVarianceAnalysis variance)
+        UniformityAnalysis uniformity, ThreadVariance minVariance)
     {
-        if (variance.IsThreadVariant(chain.SourceArrayExpression))
+        if (uniformity.GetVariance(chain.SourceArrayExpression) >= minVariance)
         {
             return true;
         }
@@ -342,7 +271,7 @@ internal static class ParallelAggregatePlanner
             var argument = StackLinqHelper.GetLambdaArgument(stage.Invocation, stage.Symbol).Expression;
             if (argument is not LambdaExpressionSyntax lambda)
             {
-                if (variance.IsThreadVariant(argument))
+                if (uniformity.GetVariance(argument) >= minVariance)
                 {
                     return true;
                 }
@@ -353,9 +282,9 @@ internal static class ParallelAggregatePlanner
             // The body with the lambda's own parameters fixed: ThreadIndex, BlockIndex (grid scope), variant locals and
             // device functions that return a variant value all count
             var parameters = model.GetSymbol(lambda) is IMethodSymbol lambdaSymbol
-                ? ImmutableArray<ISymbol>.CastUp(lambdaSymbol.Parameters)
-                : ImmutableArray<ISymbol>.Empty;
-            if (variance.IsThreadVariant(lambda.Body, parameters))
+                ? lambdaSymbol.Parameters
+                : ImmutableArray<IParameterSymbol>.Empty;
+            if (uniformity.GetVariance(lambda.Body, parameters) >= minVariance)
             {
                 return true;
             }

@@ -14,6 +14,14 @@ public struct OrderBox
     }
 }
 
+public struct StructWithPureGetter { public int A; public int B; public int Sum => A + B; }
+
+public struct OrderStructWithGetters
+{
+    public int Value;
+    public int ComputedDoubled => Value * 2;
+    public int MutatingNext => ++Value;
+}
 public struct OrderPair
 {
     public int X;
@@ -316,7 +324,11 @@ public static class Order
         return 0;
     }
 
-    public static void LocalFunctionCall()
+    public static void ArrayLengthAndElement(int[] values, int tid) { var result = values.Length * 1000 + values[tid]; }
+    public static void StructPureGetterAndConstant(StructWithPureGetter s) { var result = 100 - s.Sum; }
+    public static void PureStructGetterRead(OrderStructWithGetters s) { var result = s.Value + s.ComputedDoubled; }
+    public static void MutatingStructGetterRead(OrderStructWithGetters s) { var result = s.Value + s.MutatingNext; }
+public static void LocalFunctionCall()
     {
         int i = 0;
         int Bump() => i++;
