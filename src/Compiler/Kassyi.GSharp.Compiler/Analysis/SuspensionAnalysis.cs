@@ -271,8 +271,8 @@ internal static class SuspensionAnalysis
     }
 
     /// <summary>
-    /// Whether <paramref name="method"/> is a <c>[GpuDeviceFunction]</c> declared with a body in
-    /// <paramref name="compilation"/>. A function of another assembly has no body here, also when an IDE gives its
+    /// Whether <paramref name="method"/> is a <c>[GpuDeviceFunction]</c> or <c>[GpuKernel]</c> declared with a body in
+    /// <paramref name="compilation"/>. A method of another assembly has no body here, also when an IDE gives its
     /// declaration through a referenced compilation.
     /// </summary>
     private static bool TryGetMethodBody(IMethodSymbol method, Compilation compilation,
@@ -290,6 +290,11 @@ internal static class SuspensionAnalysis
         return false;
     }
 
+    /// <summary>
+    /// Whether <paramref name="method"/> is a <c>[GpuDeviceFunction]</c> declared with a body in
+    /// <paramref name="compilation"/>. A function of another assembly has no body here, also when an IDE gives its
+    /// declaration through a referenced compilation.
+    /// </summary>
     internal static bool TryGetDeviceFunctionBody(IMethodSymbol method, Compilation compilation,
         [NotNullWhen(true)] out MethodDeclarationSyntax? declaration)
     {
