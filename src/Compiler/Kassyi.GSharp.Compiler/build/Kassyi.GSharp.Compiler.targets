@@ -129,13 +129,16 @@
         MockCompilation="$(GSharpMockCompilation)"
         CppSources="@(_GSharpCppSources)" 
         OutputDirectory="$(IntermediateOutputPath)GSharpNativeDlls" 
-        GSharpMultiTarget="$(GSharpMultiTarget)" >
+        GSharpMultiTarget="$(GSharpMultiTarget)"
+        GSharpNativeSanitizers="$(GSharpNativeSanitizers)" >
       <Output TaskParameter="OutputDlls" ItemName="_GSharpCompiledDlls" />
     </CompileCppToNativeTask>
 
     <!-- Register all native inputs and outputs to FileWrites for MSBuild clean -->
     <ItemGroup>
       <FileWrites Include="@(_GSharpCppSources);@(_GSharpCompiledDlls)" />
+      <FileWrites Include="@(_GSharpCompiledDlls->'%(RootDir)%(Directory)%(Filename).pdb')"
+                  Condition="Exists('%(RootDir)%(Directory)%(Filename).pdb')" />
     </ItemGroup>
   </Target>
 </Project>

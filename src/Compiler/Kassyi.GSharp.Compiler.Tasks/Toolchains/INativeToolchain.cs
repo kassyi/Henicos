@@ -54,11 +54,13 @@ public interface INativeToolchain
     /// <param name="architecture">The target CPU architecture (e.g., <c>x64</c>, <c>arm64</c>).</param>
     /// <param name="log">The MSBuild task logging helper.</param>
     /// <param name="cancellationToken">A token to observe for cancellation requests.</param>
+    /// <param name="sanitizers">The native sanitizers (<see cref="NativeSanitizers"/>) to enable for compilation.</param>
     /// <returns><see langword="true"/> if compilation succeeded and produced the output file; otherwise, <see langword="false"/>.</returns>
     bool CompileCppToSharedLibrary(
         string sourcePath,
         string outputPath,
         string architecture,
         TaskLoggingHelper log,
-        CancellationToken cancellationToken = default);
+        CancellationToken cancellationToken = default,
+        NativeSanitizers sanitizers = NativeSanitizers.None);
 }

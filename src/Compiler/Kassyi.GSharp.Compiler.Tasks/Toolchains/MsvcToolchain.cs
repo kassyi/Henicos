@@ -98,28 +98,16 @@ public sealed class MsvcToolchain : INativeToolchain
         string outputPath,
         string architecture,
         TaskLoggingHelper log,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        NativeSanitizers sanitizers = NativeSanitizers.None)
     {
         var vcvarsArch = ToVcvarsArchitecture(architecture);
 
         var baseDir = Path.GetDirectoryName(outputPath) ?? "";
         var baseName = Path.GetFileNameWithoutExtension(outputPath);
         var objPath = Path.Combine(baseDir, baseName + ".obj");
-
-        // /O2 = Optimize for speed
-        // /LD = Create DLL
-        // /Fo = Object file name
-        // /Fe = Output file name
-        // /nologo = Suppress copyright message
-        // /Zc:preprocessor = Fix CUDA 13.3+ fatal error C1189 with MSVC
-        // /std:c++17 = Fix CUDA 13.3+ libcu++ requirement
-        // /openmp = Enable OpenMP for BSP CPU scheduler parallelism
-        // /EHs = C++ exceptions, also through extern "C" functions: a kernel step that cannot go on (a shared memory
-        //        placement that fails) throws to the launcher, which catches it inside the OpenMP loop. /EHsc would let the
-        //        compiler assume that the extern "C" kernels never throw
-        // /bigobj = Allow more than 65,279 sections: one translation unit holds every kernel of the assembly, and a
-        //           large one (the test assemblies) fails with C1128 without it
-        var clArgs = $"/O2 /LD /nologo /std:c++17 /openmp /EHs /Zc:preprocessor /bigobj \"{sourcePath}\" /Fo:\"{objPath}\" /Fe:\"{outputPath}\"";
+        var vcPdbPath = Path.Combine(baseDir, baseName + ".vc.pdb");
+        var clArgs = BuildClArguments(sourcePath, objPath, outputPath, vcPdbPath, sanitizers);
 
         log.LogMessage(MessageImportance.Normal, $"Compiling C++ source for {vcvarsArch}: {sourcePath}");
 
@@ -182,7 +170,8 @@ public sealed class MsvcToolchain : INativeToolchain
                 var cwdObjPath = Path.Combine(Environment.CurrentDirectory,
                     Path.GetFileNameWithoutExtension(sourcePath) + ".obj");
 
-                CompileKernelTaskBase.CleanupFiles(log, objPath, libPath, expPath, srcObjPath, cwdObjPath);
+                var ilkPath = Path.Combine(baseDir, baseName + ".ilk");
+                CompileKernelTaskBase.CleanupFiles(log, objPath, libPath, expPath, ilkPath, vcPdbPath, srcObjPath, cwdObjPath);
 
                 return true;
             }
@@ -210,6 +199,39 @@ public sealed class MsvcToolchain : INativeToolchain
             log.LogError($"Failed to start cl.exe. Ensure MSVC is installed. Details: {ex.Message}");
             return false;
         }
+    }
+
+    // Logged once per task run by CompileCppToNativeTask when 'undefined' is requested with this toolchain.
+    internal const string UndefinedSanitizerUnsupportedWarning =
+        "GSharpNativeSanitizers specifies 'undefined', which is not supported by MSVC (no UndefinedBehaviorSanitizer). Continuing with AddressSanitizer only when 'address' is specified, ignoring 'undefined'.";
+
+    // /O2 = Optimize for speed
+    // /LD = Create DLL
+    // /Fo = Object file name
+    // /Fe = Output file name
+    // /nologo = Suppress copyright message
+    // /Zc:preprocessor = Fix CUDA 13.3+ fatal error C1189 with MSVC
+    // /std:c++17 = Fix CUDA 13.3+ libcu++ requirement
+    // /openmp = Enable OpenMP for BSP CPU scheduler parallelism
+    // /EHs = C++ exceptions, also through extern "C" functions: a kernel step that cannot go on (a shared memory
+    //        placement that fails) throws to the launcher, which catches it inside the OpenMP loop. /EHsc would let the
+    //        compiler assume that the extern "C" kernels never throw
+    // /bigobj = Allow more than 65,279 sections: one translation unit holds every kernel of the assembly, and a
+    //           large one (the test assemblies) fails with C1128 without it
+    // /fsanitize=address /Zi /Fd = AddressSanitizer with debug information for symbolized reports ('undefined' has no
+    //                              MSVC counterpart and is ignored)
+    private static string BuildClArguments(
+        string sourcePath,
+        string objPath,
+        string outputPath,
+        string vcPdbPath,
+        NativeSanitizers sanitizers)
+    {
+        var sanitizerFlags = (sanitizers & NativeSanitizers.Address) != 0
+            ? $" /fsanitize=address /Zi /Fd:\"{vcPdbPath}\""
+            : "";
+
+        return $"/O2 /LD /nologo /std:c++17 /openmp /EHs /Zc:preprocessor /bigobj{sanitizerFlags} \"{sourcePath}\" /Fo:\"{objPath}\" /Fe:\"{outputPath}\"";
     }
 
     private static string ToVcvarsArchitecture(string arch) => arch switch
