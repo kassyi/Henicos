@@ -19,9 +19,9 @@ internal sealed class BclIntrinsicTranspilerRule : IInvocationTranspilerRule
         {
             for (var i = 0; i < matched.Length; i++)
             {
-                if (matched[i] is not { } argument)
+                if (i > 0)
                 {
-                    continue;
+                    context.Emitter.Writer.Append(',');
                 }
 
                 if (i == 0 && mappingInfo.CastFirstArgumentTo != null)
@@ -36,13 +36,15 @@ internal sealed class BclIntrinsicTranspilerRule : IInvocationTranspilerRule
                            ? context.Emitter.Writer.Parentheses()
                            : default)
                 {
-                    sequence.AppendArgument(argument, symbol.Parameters[i],
-                        ref context, convertToParameter: i != 0 || mappingInfo.CastFirstArgumentTo == null);
-                }
-
-                if (i < matched.Length - 1)
-                {
-                    context.Emitter.Writer.Append(',');
+                    if (matched[i] is { } argument)
+                    {
+                        sequence.AppendArgument(argument, symbol.Parameters[i],
+                            ref context, convertToParameter: i != 0 || mappingInfo.CastFirstArgumentTo == null);
+                    }
+                    else
+                    {
+                        ArgumentMatchingHelper.AppendDefaultArgument(symbol.Parameters[i], ref context);
+                    }
                 }
             }
         }
