@@ -121,6 +121,32 @@ public class StackLinqStaticFormTests
         Assert.Equal(10 * 1000 + 100, results[2]);
     }
 
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_ReorderedStackLinq_SequencesInterferingArgumentsInWrittenOrder()
+    {
+        int[] data = [10, 20, 30, 40, 50];
+        var results = new int[2];
+
+        StackLinqStaticFormKernels.LaunchReorderedStackLinqKernel(data, 1, results, blockDimX: 1);
+
+        Assert.Equal(30, results[0]);
+        Assert.Equal(2, results[1]);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_InterferingChainedUnfused_SequencesArgumentsInWrittenOrder()
+    {
+        int[] data = [10, 20, 30, 40, 50];
+        var results = new int[2];
+
+        StackLinqStaticFormKernels.LaunchInterferingChainedUnfusedKernel(data, 1, results, blockDimX: 1);
+
+        Assert.Equal(50, results[0]);
+        Assert.Equal(2, results[1]);
+    }
+
 #if GSHARP_CPU
     [Fact]
     [Scenario(TestScenario.HappyPath)]
@@ -130,17 +156,23 @@ public class StackLinqStaticFormTests
         var fusedResults = new int[3];
         var mixedResults = new int[3];
         var orderResults = new int[3];
+        var reorderedResults = new int[2];
+        var chainedResults = new int[2];
 
         ManagedKernelRun.Run(() =>
         {
             StackLinqStaticFormKernels.LaunchStaticFusedChainKernel(data, 4, fusedResults, blockDimX: 1);
             StackLinqStaticFormKernels.LaunchMixedAndNamedArgsKernel(data, mixedResults, blockDimX: 1);
             StackLinqStaticFormKernels.LaunchInterferingExtensionReceiverKernel(4, orderResults, blockDimX: 1);
+            StackLinqStaticFormKernels.LaunchReorderedStackLinqKernel(data, 1, reorderedResults, blockDimX: 1);
+            StackLinqStaticFormKernels.LaunchInterferingChainedUnfusedKernel(data, 1, chainedResults, blockDimX: 1);
         });
 
         Assert.Equal([15, 120, 2], fusedResults);
         Assert.Equal([42, 12, 19], mixedResults);
         Assert.Equal([409, 2201, 10100], orderResults);
+        Assert.Equal([3, 2], reorderedResults);
+        Assert.Equal([5, 2], chainedResults);
     }
 #endif
 }

@@ -16,22 +16,13 @@ namespace Kassyi.GSharp.Tests.TestCases.Diagnostics.ExtensionCalls
         }
     }
 
-    // GSH0003 for an extension call of a device function that suspends, and for a StackLinq call with reordered interfering arguments
+    // GSH0003 for an extension call of a device function that suspends
     public static partial class ExtensionCallKernels
     {
         [GpuKernel]
         public static void SuspendingExtensionKernel(int[] data)
         {
             data[ThreadIndex.X] = data[ThreadIndex.X].AfterBarrier();
-        }
-
-        [GpuKernel]
-        public static void ReorderedStackLinqKernel(int[] data, int step)
-        {
-            data[ThreadIndex.X] = StackLinqExtensions.Take(
-                    count: step++,
-                    source: StackLinqExtensions.Skip(data.AsStackEnumerable(), step))
-                .Sum();
         }
 
         [GpuKernel]

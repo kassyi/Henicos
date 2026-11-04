@@ -70,8 +70,7 @@ internal static class EvaluationOrder
     public static int DeclareTemp(ref TranspileContext context, ExpressionSyntax expression, bool reference,
         ITypeSymbol? type = null)
     {
-        if (!reference && type is not (null or ITypeParameterSymbol or { TypeKind: TypeKind.Enum or TypeKind.Error }) &&
-            !IsOrContainsTypeParameter(type))
+        if (!reference && type is not { TypeKind: TypeKind.Enum } && TypeMapping.HasDirectCppType(type))
         {
             context.Emitter.Dialect.AppendType(ref context, type);
         }
@@ -123,53 +122,8 @@ internal static class EvaluationOrder
     /// into a temporary interferes with the receiver.
     /// </remarks>
     public static CallSequence BeginCall(ref TranspileContext context, SeparatedSyntaxList<ArgumentSyntax> arguments,
-        IMethodSymbol? callee, ExpressionSyntax? receiver, bool spillAll, bool isCall = true)
-    {
-        var count = arguments.Count;
-        if (count < 2 && !spillAll)
-        {
-            return default;
-        }
-
-        var model = context.Query.SemanticModel;
-        var effects = ArrayPool<ExpressionEffects>.Shared.Rent(count);
-        try
-        {
-            for (var i = 0; i < count; i++)
-            {
-                // A converted rvalue passed to an in parameter is a value, copied when it is evaluated
-                effects[i] = IsByReference(arguments[i], callee?.FindParameter(arguments, i)) &&
-                             !NeedsConversion(arguments[i].Expression, model)
-                    ? ExpressionEffects.OfLocation(arguments[i].Expression, model)
-                    : ExpressionEffects.Of(arguments[i].Expression, model);
-            }
-
-            var last = spillAll ? count - 1 : LastSpilledOperand(effects.AsSpan(0, count));
-            if ((last < 0 && !spillAll) || (receiver != null && !spillAll && InterferesWithReceiver(receiver, effects, last, model)))
-            {
-                return default;
-            }
-
-            // CallSequence.Dispose closes the lambda and returns the temporaries to the pool
-            var temps = ArrayPool<int>.Shared.Rent(count + 1);
-            temps.AsSpan(0, count + 1).Fill(-1);
-            var sequence = new CallSequence(context.Emitter.Writer, arguments, temps, isCall, GetReturnType(callee));
-            for (var i = 0; i <= last; i++)
-            {
-                if (spillAll || !effects[i].IsEmpty)
-                {
-                    temps[i] = DeclareArgument(ref context, arguments[i], callee?.FindParameter(arguments, i), isCall);
-                }
-            }
-
-            context.Emitter.Writer.Append("return ");
-            return sequence;
-        }
-        finally
-        {
-            ArrayPool<ExpressionEffects>.Shared.Return(effects, clearArray: true);
-        }
-    }
+        IMethodSymbol? callee, ExpressionSyntax? receiver, bool spillAll, bool isCall = true) =>
+        BeginCallCore(ref context, extensionReceiver: null, receiverParameter: null, arguments, callee, spillAll, isCall, instanceReceiver: receiver);
 
     /// <summary>
     /// Starts a call in reduced extension form (<c>receiver.M(arguments)</c>) that C++ emits as a static call
@@ -183,66 +137,136 @@ internal static class EvaluationOrder
         ExpressionSyntax? receiver,
         IParameterSymbol? receiverParameter,
         SeparatedSyntaxList<ArgumentSyntax> arguments,
-        IMethodSymbol? callee)
-    {
-        if (receiver == null)
-        {
-            return BeginCall(ref context, arguments, callee, receiver: null, spillAll: false);
-        }
+        IMethodSymbol? callee) =>
+        receiver == null
+            ? BeginCall(ref context, arguments, callee, receiver: null, spillAll: false)
+            : BeginCallCore(ref context, extensionReceiver: receiver, receiverParameter, arguments, callee, spillAll: false, isCall: true, instanceReceiver: null);
 
+    private static CallSequence BeginCallCore(
+        ref TranspileContext context,
+        ExpressionSyntax? extensionReceiver,
+        IParameterSymbol? receiverParameter,
+        SeparatedSyntaxList<ArgumentSyntax> arguments,
+        IMethodSymbol? callee,
+        bool spillAll,
+        bool isCall,
+        ExpressionSyntax? instanceReceiver)
+    {
         var count = arguments.Count;
-        if (count == 0)
+        var total = extensionReceiver != null ? count + 1 : count;
+        if (total < 2 && !spillAll)
         {
             return default;
         }
 
         var model = context.Query.SemanticModel;
-        var total = count + 1;
         var effects = ArrayPool<ExpressionEffects>.Shared.Rent(total);
         try
         {
-            var byReference = receiverParameter is { RefKind: not RefKind.None };
-            effects[0] = byReference && !NeedsConversion(receiver, model)
-                ? ExpressionEffects.OfLocation(receiver, model)
-                : ExpressionEffects.Of(receiver, model);
-
-            for (var i = 0; i < count; i++)
-            {
-                effects[i + 1] = IsByReference(arguments[i], callee?.FindParameter(arguments, i)) &&
-                                 !NeedsConversion(arguments[i].Expression, model)
-                    ? ExpressionEffects.OfLocation(arguments[i].Expression, model)
-                    : ExpressionEffects.Of(arguments[i].Expression, model);
-            }
-
-            var last = LastSpilledOperand(effects.AsSpan(0, total));
-            if (last < 0)
+            var effectsSpan = effects.AsSpan(0, total);
+            CollectCallEffects(extensionReceiver, receiverParameter, arguments, callee, model, effectsSpan, out var byReference);
+            if (!TryDetermineLastSpill(effectsSpan, instanceReceiver, spillAll, model, out var last))
             {
                 return default;
             }
 
-            var temps = ArrayPool<int>.Shared.Rent(total);
-            temps.AsSpan(0, total).Fill(-1);
-            var sequence = new CallSequence(context.Emitter.Writer, arguments, temps, isCall: true, GetReturnType(callee));
-            if (!effects[0].IsEmpty)
-            {
-                temps[count] = DeclareReceiver(ref context, receiver, receiverParameter, byReference);
-            }
-
-            for (var i = 0; i < last; i++)
-            {
-                if (!effects[i + 1].IsEmpty)
-                {
-                    temps[i] = DeclareArgument(ref context, arguments[i], callee?.FindParameter(arguments, i), isCall: true);
-                }
-            }
+            var temps = RentTemps(count);
+            var lambda = context.Emitter.Writer.ImmediatelyInvokedLambda(GetReturnType(callee));
+            var receiverTemp = DeclareSequencedOperands(ref context, extensionReceiver, receiverParameter, byReference,
+                arguments, callee, effectsSpan, last, spillAll, isCall, temps.AsSpan(0, count));
 
             context.Emitter.Writer.Append("return ");
-            return sequence;
+            return new CallSequence(context.Emitter.Writer, lambda, arguments, temps, receiverTemp, isCall);
         }
         finally
         {
             ArrayPool<ExpressionEffects>.Shared.Return(effects, clearArray: true);
         }
+    }
+
+    private static void CollectCallEffects(
+        ExpressionSyntax? extensionReceiver,
+        IParameterSymbol? receiverParameter,
+        SeparatedSyntaxList<ArgumentSyntax> arguments,
+        IMethodSymbol? callee,
+        SemanticModel model,
+        Span<ExpressionEffects> effects,
+        out bool receiverByReference)
+    {
+        var offset = 0;
+        receiverByReference = false;
+        if (extensionReceiver != null)
+        {
+            receiverByReference = receiverParameter is { RefKind: not RefKind.None };
+            effects[0] = receiverByReference && !NeedsConversion(extensionReceiver, model)
+                ? ExpressionEffects.OfLocation(extensionReceiver, model)
+                : ExpressionEffects.Of(extensionReceiver, model);
+            offset = 1;
+        }
+
+        for (var i = 0; i < arguments.Count; i++)
+        {
+            effects[i + offset] = IsByReference(arguments[i], callee?.FindParameter(arguments, i)) &&
+                                  !NeedsConversion(arguments[i].Expression, model)
+                ? ExpressionEffects.OfLocation(arguments[i].Expression, model)
+                : ExpressionEffects.Of(arguments[i].Expression, model);
+        }
+    }
+
+    private static bool TryDetermineLastSpill(
+        ReadOnlySpan<ExpressionEffects> effects,
+        ExpressionSyntax? instanceReceiver,
+        bool spillAll,
+        SemanticModel model,
+        out int last)
+    {
+        last = spillAll ? effects.Length - 1 : LastSpilledOperand(effects);
+        if (last < 0 && !spillAll)
+        {
+            return false;
+        }
+
+        return instanceReceiver == null || spillAll || !InterferesWithReceiver(instanceReceiver, effects, last, model);
+    }
+
+    private static int[] RentTemps(int count)
+    {
+        var temps = ArrayPool<int>.Shared.Rent(Math.Max(1, count));
+        temps.AsSpan(0, count).Fill(-1);
+        return temps;
+    }
+
+    private static int DeclareSequencedOperands(
+        ref TranspileContext context,
+        ExpressionSyntax? extensionReceiver,
+        IParameterSymbol? receiverParameter,
+        bool receiverByReference,
+        SeparatedSyntaxList<ArgumentSyntax> arguments,
+        IMethodSymbol? callee,
+        ReadOnlySpan<ExpressionEffects> effects,
+        int last,
+        bool spillAll,
+        bool isCall,
+        Span<int> temps)
+    {
+        var receiverTemp = -1;
+        var hasExtensionReceiver = extensionReceiver != null;
+        if (hasExtensionReceiver && !effects[0].IsEmpty)
+        {
+            receiverTemp = DeclareReceiver(ref context, extensionReceiver, receiverParameter, receiverByReference);
+        }
+
+        var offset = hasExtensionReceiver ? 1 : 0;
+        var maxArgIndex = hasExtensionReceiver ? last - 1 : last;
+        for (var i = 0; i <= maxArgIndex && i < arguments.Count; i++)
+        {
+            if (spillAll || !effects[i + offset].IsEmpty)
+            {
+                temps[i] = DeclareArgument(ref context, arguments[i], callee?.FindParameter(arguments, i), isCall);
+            }
+        }
+
+        return receiverTemp;
     }
 
     private static int DeclareReceiver(
@@ -258,7 +282,7 @@ internal static class EvaluationOrder
             writer.Append("auto&&");
         }
         else if (receiverParameter == null || receiverParameter.Type is IPointerTypeSymbol ||
-                 IsOrContainsTypeParameter(receiverParameter.Type))
+                 !TypeMapping.HasDirectCppType(receiverParameter.Type))
         {
             writer.Append("auto");
         }
@@ -274,11 +298,11 @@ internal static class EvaluationOrder
     }
 
     // Whether an argument up to last interferes with the receiver, which the lambda would evaluate after it
-    private static bool InterferesWithReceiver(ExpressionSyntax receiver, ExpressionEffects[] effects, int last,
+    private static bool InterferesWithReceiver(ExpressionSyntax receiver, ReadOnlySpan<ExpressionEffects> effects, int last,
         SemanticModel model)
     {
         var receiverEffects = ExpressionEffects.OfLocation(receiver, model);
-        for (var i = 0; i <= last; i++)
+        for (var i = 0; i <= last && i < effects.Length; i++)
         {
             if (!effects[i].IsEmpty && receiverEffects.InterferesWith(effects[i]))
             {
@@ -301,7 +325,8 @@ internal static class EvaluationOrder
         {
             writer.Append("auto&&");
         }
-        else if (parameter == null || parameter.Type is IPointerTypeSymbol || IsOrContainsTypeParameter(parameter.Type))
+        else if (parameter == null || parameter.Type is IPointerTypeSymbol ||
+                 !TypeMapping.HasDirectCppType(parameter.Type))
         {
             writer.Append("auto");
         }
@@ -340,17 +365,6 @@ internal static class EvaluationOrder
         var typeInfo = model.GetTypeInfo(original);
         return typeInfo.Type != null && typeInfo.ConvertedType != null && !typeInfo.Type.IsEqualTo(typeInfo.ConvertedType);
     }
-
-    private static bool IsOrContainsTypeParameter(ITypeSymbol type) => type switch
-    {
-        ITypeParameterSymbol => true,
-        IArrayTypeSymbol array => IsOrContainsTypeParameter(array.ElementType),
-        IPointerTypeSymbol pointer => IsOrContainsTypeParameter(pointer.PointedAtType),
-        INamedTypeSymbol named => named.TypeArguments
-            .AsStackEnumerable()
-            .Any(static argument => IsOrContainsTypeParameter(argument)),
-        _ => false
-    };
 
     /// <summary>The lambda of a sequence: <c>([&amp;]() {</c> ... <c>return &lt;value&gt;; }())</c>.</summary>
     /// <remarks>The default value writes nothing, for a form that may or may not need the sequence.</remarks>
@@ -398,21 +412,37 @@ internal static class EvaluationOrder
         private readonly SourceWriterImmediatelyInvokedLambdaScope _lambda;
         private readonly SeparatedSyntaxList<ArgumentSyntax> _arguments;
 
-        // The temporary of each written argument (-1: in place), rented from ArrayPool and longer than the arguments
+        // The temporary of each written argument (-1: in place), rented from ArrayPool
         private readonly int[]? _temps;
+
+        // The temporary of the extension receiver (-1: in place or no receiver)
+        private readonly int _receiverTemp;
 
         // A brace initialization T{...} rather than a call: no argument is passed by address. False in the default
         // value, which emits the arguments of a call as written.
         private readonly bool _isBraces;
 
-        public CallSequence(SourceWriter writer, SeparatedSyntaxList<ArgumentSyntax> arguments, int[] temps, bool isCall,
-            string? returnType)
+        public CallSequence(SourceWriter writer, SourceWriterImmediatelyInvokedLambdaScope lambda,
+            SeparatedSyntaxList<ArgumentSyntax> arguments, int[] temps, int receiverTemp, bool isCall)
         {
             _writer = writer;
+            _lambda = lambda;
             _arguments = arguments;
             _temps = temps;
+            _receiverTemp = receiverTemp;
             _isBraces = !isCall;
-            _lambda = writer.ImmediatelyInvokedLambda(returnType);
+        }
+
+        public CallSequence(SourceWriter writer, SeparatedSyntaxList<ArgumentSyntax> arguments, int[] temps,
+            int receiverTemp, bool isCall, string? returnType)
+            : this(writer, writer.ImmediatelyInvokedLambda(returnType), arguments, temps, receiverTemp, isCall)
+        {
+        }
+
+        public CallSequence(SourceWriter writer, SeparatedSyntaxList<ArgumentSyntax> arguments, int[] temps, bool isCall,
+            string? returnType)
+            : this(writer, arguments, temps, receiverTemp: -1, isCall, returnType)
+        {
         }
 
         /// <summary>Whether the call is emitted inside a lambda with temporaries.</summary>
@@ -425,12 +455,12 @@ internal static class EvaluationOrder
         /// </summary>
         public void AppendReceiver(ExpressionSyntax receiver, bool byReference, ref TranspileContext context)
         {
-            if (_temps != null && _temps[_arguments.Count] is var temp and >= 0)
+            if (_temps != null && _receiverTemp >= 0)
             {
                 context.Emitter.Writer.AppendIf(
                     byReference && RefSyntaxHelper.NeedsAddressOf(receiver, context.Query.SemanticModel),
                     "&");
-                AppendTempName(context.Emitter.Writer, temp);
+                AppendTempName(context.Emitter.Writer, _receiverTemp);
                 return;
             }
 

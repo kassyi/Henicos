@@ -178,14 +178,16 @@ internal sealed class ContainsStrategy : IStackLinqTerminalStrategy
     public void EmitInitialValue(ref TranspileContext context, string resultVar, in LinqStage stage)
     {
         context.Emitter.Writer.AppendLine($"bool {resultVar} = false;");
-        if (StackLinqHelper.TryGetStageArgument(stage.Invocation, stage.Symbol, 0, out var targetArg))
+        if (!StackLinqHelper.TryGetStageArgument(stage.Invocation, stage.Symbol, 0, out var targetArg))
         {
-            var targetType = stage.Symbol.Parameters[^1].Type;
-            context.Emitter.Dialect.AppendType(ref context, targetType);
-            context.Emitter.Writer.Append($" {resultVar}_target = ");
-            context.Visitor.Visit(targetArg.Expression);
-            context.Emitter.Writer.AppendLine(";");
+            throw new InvalidOperationException("Target value argument was not found.");
         }
+
+        var targetType = stage.Symbol.Parameters[^1].Type;
+        context.Emitter.Dialect.AppendType(ref context, targetType);
+        context.Emitter.Writer.Append($" {resultVar}_target = ");
+        context.Visitor.Visit(targetArg.Expression);
+        context.Emitter.Writer.AppendLine(";");
     }
 
     public void Emit(ref TranspileContext context, in LinqStage stage, string resultVar, int valIndex)
@@ -255,7 +257,7 @@ internal sealed class AggregateStrategy : IStackLinqTerminalStrategy
         var funcOrdinal = hasSeed ? 1 : 0;
         if (!StackLinqHelper.TryGetStageArgument(stage.Invocation, stage.Symbol, funcOrdinal, out var funcArgSyntax))
         {
-            return;
+            throw new InvalidOperationException("Function argument was not found.");
         }
 
         var funcArg = funcArgSyntax.Expression;

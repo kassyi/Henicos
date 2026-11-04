@@ -159,4 +159,33 @@ public static partial class StackLinqStaticFormKernels
         sortBuf.Slice(offset, 3).Sort(sortBuf.Slice(offset += 3, 3));
         results[2] = sortBuf[0] * 1000 + sortBuf[3];
     }
+
+    [GpuKernel]
+    public static void ReorderedStackLinqKernel(int[] data, int initialStep, int[] results)
+    {
+        if (ThreadIndex.X != 0)
+        {
+            return;
+        }
+
+        int step = initialStep;
+        results[0] = StackLinqExtensions.Take(
+                count: step++,
+                source: StackLinqExtensions.Skip(data.AsStackEnumerable(), step))
+            .Sum();
+        results[1] = step;
+    }
+
+    [GpuKernel]
+    public static void InterferingChainedUnfusedKernel(int[] data, int initialK, int[] results)
+    {
+        if (ThreadIndex.X != 0)
+        {
+            return;
+        }
+
+        int k = initialK;
+        results[0] = data.AsStackEnumerable().Skip(k++).Take(k).Sum();
+        results[1] = k;
+    }
 }

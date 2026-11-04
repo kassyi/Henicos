@@ -5,20 +5,11 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Rules.InvocationRules;
 /// </summary>
 public sealed class StackLinqTranspilerRule : IInvocationTranspilerRule
 {
-    public const string ReorderedArguments =
-        "StackLinq call with reordered named arguments whose evaluations interfere";
-
     public bool TryTranspile(InvocationExpressionSyntax node, ref TranspileContext context, IMethodSymbol symbol)
     {
         if (!StackLinqHelper.IsStackLinqMethod(symbol))
         {
             return false;
-        }
-
-        if (StackLinqHelper.HasInterferingReorderedArguments(node, symbol, context.Query.SemanticModel))
-        {
-            context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, node, ReorderedArguments);
-            return true;
         }
 
         var methodName = symbol.Name;
@@ -33,38 +24,134 @@ public sealed class StackLinqTranspilerRule : IInvocationTranspilerRule
             }
         }
 
-        // Output the C++ namespace for our StackLinq implementation
-        context.Emitter.Writer.Append("Kassyi::ZeroAlloc::Linq::StackLinq::");
-        context.Emitter.Writer.Append(methodName);
+        if (symbol.ReducedFrom != null && node.Expression is MemberAccessExpressionSyntax memberAccess)
+        {
+            TranspileReducedCall(node, memberAccess.Expression, symbol, symbol.ReducedFrom, methodName, ref context);
+        }
+        else
+        {
+            TranspileStaticCall(node, symbol, methodName, ref context);
+        }
 
+        return true;
+    }
+
+    private static void TranspileReducedCall(
+        InvocationExpressionSyntax node,
+        ExpressionSyntax receiver,
+        IMethodSymbol symbol,
+        IMethodSymbol extension,
+        string methodName,
+        ref TranspileContext context)
+    {
+        using var sequence = EvaluationOrder.BeginExtensionCall(
+            ref context,
+            receiver,
+            extension.Parameters[0],
+            node.ArgumentList.Arguments,
+            symbol);
+
+        AppendMethodName(methodName, ref context);
         using (context.Emitter.Writer.Parentheses())
         {
-            if (StackLinqHelper.TryGetSourceExpression(node, symbol, out var sourceExpr))
-            {
-                // The source template deduces GSharpArray<T>, which a stack array does not convert to
-                StackArrayLocals.AppendView(sourceExpr, ref context);
-            }
+            AppendSource(receiver, in sequence, ref context);
 
             var stageArgCount = StackLinqHelper.GetStageArgumentCount(symbol);
             for (var i = 0; i < stageArgCount; i++)
             {
                 if (!StackLinqHelper.TryGetStageArgument(node, symbol, i, out var stageArg))
                 {
-                    continue;
+                    throw new InvalidOperationException($"Stage argument {i} was not found.");
                 }
 
                 context.Emitter.Writer.Append(',');
-                if (StackArrayLocals.IsStackArrayReference(stageArg.Expression, context.Query.SemanticModel))
-                {
-                    StackArrayLocals.AppendView(stageArg.Expression, ref context);
-                }
-                else
-                {
-                    context.Visitor.Visit(stageArg);
-                }
+                AppendStageArgument(stageArg, symbol.Parameters[i], in sequence, ref context);
             }
         }
+    }
 
-        return true;
+    private static void TranspileStaticCall(
+        InvocationExpressionSyntax node,
+        IMethodSymbol symbol,
+        string methodName,
+        ref TranspileContext context)
+    {
+        using var sequence = EvaluationOrder.BeginCall(
+            ref context,
+            node.ArgumentList.Arguments,
+            symbol,
+            receiver: null,
+            spillAll: false);
+
+        if (!StackLinqHelper.TryFindArgument(node, symbol, 0, out var sourceArg))
+        {
+            throw new InvalidOperationException("Source argument was not found.");
+        }
+
+        AppendMethodName(methodName, ref context);
+        using (context.Emitter.Writer.Parentheses())
+        {
+            AppendArgumentWithStackArray(sourceArg, symbol.Parameters[0], in sequence, ref context);
+
+            var stageArgCount = StackLinqHelper.GetStageArgumentCount(symbol);
+            for (var i = 0; i < stageArgCount; i++)
+            {
+                if (!StackLinqHelper.TryGetStageArgument(node, symbol, i, out var stageArg))
+                {
+                    throw new InvalidOperationException($"Stage argument {i} was not found.");
+                }
+
+                context.Emitter.Writer.Append(',');
+                AppendStageArgument(stageArg, symbol.Parameters[i + 1], in sequence, ref context);
+            }
+        }
+    }
+
+    private static void AppendMethodName(string methodName, ref TranspileContext context)
+    {
+        context.Emitter.Writer.Append("Kassyi::ZeroAlloc::Linq::StackLinq::");
+        context.Emitter.Writer.Append(methodName);
+    }
+
+    private static void AppendSource(
+        ExpressionSyntax receiver,
+        in EvaluationOrder.CallSequence sequence,
+        ref TranspileContext context)
+    {
+        if (StackArrayLocals.IsStackArrayReference(receiver, context.Query.SemanticModel))
+        {
+            context.Emitter.Writer.Append("__gsharp_stackalloc_span(");
+            sequence.AppendReceiver(receiver, byReference: false, ref context);
+            context.Emitter.Writer.Append(')');
+        }
+        else
+        {
+            sequence.AppendReceiver(receiver, byReference: false, ref context);
+        }
+    }
+
+    private static void AppendStageArgument(
+        ArgumentSyntax stageArg,
+        IParameterSymbol parameter,
+        in EvaluationOrder.CallSequence sequence,
+        ref TranspileContext context) =>
+        AppendArgumentWithStackArray(stageArg, parameter, in sequence, ref context);
+
+    private static void AppendArgumentWithStackArray(
+        ArgumentSyntax argument,
+        IParameterSymbol parameter,
+        in EvaluationOrder.CallSequence sequence,
+        ref TranspileContext context)
+    {
+        if (StackArrayLocals.IsStackArrayReference(argument.Expression, context.Query.SemanticModel))
+        {
+            context.Emitter.Writer.Append("__gsharp_stackalloc_span(");
+            sequence.AppendArgument(argument, parameter, ref context);
+            context.Emitter.Writer.Append(')');
+        }
+        else
+        {
+            sequence.AppendArgument(argument, parameter, ref context);
+        }
     }
 }

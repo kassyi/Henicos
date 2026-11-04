@@ -30,6 +30,13 @@ internal static class StackLinqHelper
             ContainingNamespace: { Name: "ZeroAlloc", ContainingNamespace.Name: "Kassyi" }
         };
 
+    public static bool IsStackLinqType(ITypeSymbol? type) =>
+        type?.ContainingNamespace is
+        {
+            Name: "Linq",
+            ContainingNamespace: { Name: "ZeroAlloc", ContainingNamespace.Name: "Kassyi" }
+        };
+
     /// <summary>
     /// Is it a StackLinq operator that runs on the host only? That is every overload passing a state value to its lambda
     /// (<c>Any(state, static (x, s) => ...)</c>; a kernel lambda reads outer values directly), and every
@@ -42,6 +49,27 @@ internal static class StackLinqHelper
          symbol.Parameters
              .AsStackEnumerable()
              .Any(static p => p.Name == "state"));
+
+    public static bool TryFindArgument(
+        InvocationExpressionSyntax invocation,
+        IMethodSymbol symbol,
+        int targetOrdinal,
+        [NotNullWhen(true)] out ArgumentSyntax? argument)
+    {
+        var args = invocation.ArgumentList.Arguments;
+        for (var i = 0; i < args.Count; i++)
+        {
+            var param = symbol.FindParameter(args, i);
+            if (param is not null && param.Ordinal == targetOrdinal)
+            {
+                argument = args[i];
+                return true;
+            }
+        }
+
+        argument = null;
+        return false;
+    }
 
     public static bool TryGetSourceExpression(
         InvocationExpressionSyntax invocation,
@@ -60,15 +88,10 @@ internal static class StackLinqHelper
             return false;
         }
 
-        var args = invocation.ArgumentList.Arguments;
-        for (var i = 0; i < args.Count; i++)
+        if (TryFindArgument(invocation, symbol, 0, out var sourceArg))
         {
-            var param = symbol.FindParameter(args, i);
-            if (param is { Ordinal: 0 })
-            {
-                sourceExpression = args[i].Expression;
-                return true;
-            }
+            sourceExpression = sourceArg.Expression;
+            return true;
         }
 
         sourceExpression = null;
@@ -91,19 +114,7 @@ internal static class StackLinqHelper
             return false;
         }
 
-        var args = invocation.ArgumentList.Arguments;
-        for (var i = 0; i < args.Count; i++)
-        {
-            var param = symbol.FindParameter(args, i);
-            if (param is not null && param.Ordinal == targetOrdinal)
-            {
-                argument = args[i];
-                return true;
-            }
-        }
-
-        argument = null;
-        return false;
+        return TryFindArgument(invocation, symbol, targetOrdinal, out argument);
     }
 
     public static bool HasInterferingReorderedArguments(
@@ -139,7 +150,7 @@ internal static class StackLinqHelper
     public static ArgumentSyntax GetLambdaArgument(InvocationExpressionSyntax invocation, IMethodSymbol symbol) =>
         TryGetStageArgument(invocation, symbol, 0, out var arg)
             ? arg
-            : invocation.ArgumentList.Arguments[0];
+            : throw new InvalidOperationException("Lambda argument was not found.");
 
     public static bool HasPredicateOrSelector(InvocationExpressionSyntax invocation, IMethodSymbol symbol) =>
         GetStageArgumentCount(symbol) > 0;
