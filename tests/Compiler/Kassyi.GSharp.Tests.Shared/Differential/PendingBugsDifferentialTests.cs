@@ -166,11 +166,11 @@ public class PendingBugsDifferentialTests
         DifferentialRunner.Run(s_gridStrideLoopUniformWarpShuffle);
     }
 
-    // #1091: Partial last wave in Gpu.GridStrideLoop with Warp.ShuffleDownSync(0xFFFFFFFFu, ...) is undefined on CUDA;
-    // verifies what each path does without comparing undefined values.
-    [SkippableFact]
-    [Scenario(TestScenario.Boundary)]
-    public void Test_WarpShuffleDownInGridStrideLoop_PartialLastWave_ObservesPathsWithoutComparingUndefinedValues()
+    // #1146: A full-mask Warp.ShuffleDownSync in the last, partial wave of a Gpu.GridStrideLoop is undefined on CUDA.
+    // Under semantics charter section 3, undefined behavior must be rejected with a diagnostic or run-time exception.
+    [SkippableFact(Skip = "Pending #1146: full-mask Warp.Shuffle*Sync in a partial wave of GridStrideLoop is undefined on CUDA and must be rejected.")]
+    [Scenario(TestScenario.SadPath)]
+    public void Test_WarpShuffleDownInGridStrideLoop_PartialLastWave_RejectsFullMaskShuffle()
     {
 #if GSHARP_CUDA
         CudaCapability.EnsureGpuAvailable();
@@ -186,41 +186,13 @@ public class PendingBugsDifferentialTests
         {
             pathRunner.Preflight?.Invoke();
             var output = new int[activeCount];
-            if (pathRunner.Path == DiffPath.Managed)
-            {
-                Assert.Throws<GpuOnlyException>(() =>
-                    pathRunner.Run(
-                        () => PendingBugsDifferentialKernels.LaunchGridStrideLoopPartialWaveWarpShuffleKernel(
-                            input, output, activeCount, gridDimX: 1, blockDimX: 64)));
-            }
-            else if (pathRunner.Path == DiffPath.Native)
-            {
+            var ex = Assert.Throws<InvalidOperationException>(() =>
                 pathRunner.Run(
                     () => PendingBugsDifferentialKernels.LaunchGridStrideLoopPartialWaveWarpShuffleKernel(
-                        input, output, activeCount, gridDimX: 1, blockDimX: 64));
-                // Native CPU fallback __shfl_down_sync returns the thread's own value for every iteration
-                Assert.Equal(input, output);
-            }
-            else if (pathRunner.Path == DiffPath.Cuda)
-            {
-                pathRunner.Run(
-                    () => PendingBugsDifferentialKernels.LaunchGridStrideLoopPartialWaveWarpShuffleKernel(
-                        input, output, activeCount, gridDimX: 1, blockDimX: 64));
-                // Iteration 0 (indices 0..63) has all 32 threads of both warps active
-                for (int i = 0; i < 64; i++)
-                {
-                    int laneId = i & 31;
-                    int expected = laneId + 1 < 32 ? input[i + 1] : input[i];
-                    Assert.Equal(expected, output[i]);
-                }
-
-                // Iteration 1 (indices 64..79) has only threads 0..15 of warp 0 active;
-                // threads 0..14 read from active thread + 1, while thread 15 reads inactive thread 16 (undefined on GPU).
-                for (int i = 64; i < 79; i++)
-                {
-                    Assert.Equal(input[i + 1], output[i]);
-                }
-            }
+                        input, output, activeCount, gridDimX: 1, blockDimX: 64)));
+            Assert.Contains("Warp.ShuffleDownSync", ex.Message);
+            Assert.Contains("PendingBugsDifferentialKernels.cu.cs", ex.Message);
+            Assert.Contains("154", ex.Message);
         }
     }
 
