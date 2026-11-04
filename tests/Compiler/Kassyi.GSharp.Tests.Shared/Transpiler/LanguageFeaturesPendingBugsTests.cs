@@ -75,14 +75,14 @@ public class LanguageFeaturesPendingBugsTests
         Assert.DoesNotContain("StackLinq::TakeLast(", code, StringComparison.Ordinal);
     }
 
-    [Fact(Skip = "Pending #1096: User-defined method named InlinePtx is rewritten to throw NotSupportedException on managed path")]
+    [Fact]
     public void Test_UserDefinedInlinePtxMethod_IsNotRewrittenToThrow()
     {
         string source = RoslynTestUtility.ReadTestCase("Transpiler/LanguageFeaturesPending/UserInlinePtxCase.cs");
         var (driver, _, _) = RoslynTestUtility.RunGenerator(source, "Cpu");
         string code = GetGeneratedDeviceCode(driver, "UserInlinePtxCase");
 
-        Assert.DoesNotContain("throw new global::System.NotSupportedException(\"Gpu.InlinePtx is not supported by the StandardCppDialect dialect\")", code, StringComparison.Ordinal);
+        Assert.DoesNotContain("Gpu.InlinePtx is not supported", code, StringComparison.Ordinal);
         Assert.Contains("InlinePtx", code, StringComparison.Ordinal);
     }
 
