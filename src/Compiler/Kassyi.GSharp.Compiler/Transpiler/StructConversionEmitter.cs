@@ -6,6 +6,25 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 /// </summary>
 internal static class StructConversionEmitter
 {
+    private static readonly ConditionalWeakTable<Compilation, StrongBox<bool>> s_hasConversionsCache = new();
+
+    /// <summary>
+    /// Whether <paramref name="compilation"/> declares or imports any emitted struct conversion operators.
+    /// Used by <see cref="Helpers.UserDefinedConversionHelper.TryAppendImplicitConversion"/> to bypass per-expression
+    /// semantic model queries in compilations without conversions.
+    /// </summary>
+    public static bool HasEmittedStructConversions(Compilation compilation) =>
+        s_hasConversionsCache.GetValue(compilation, static comp =>
+        {
+            if (comp.ContainsSymbolsWithName(WellKnownMemberNames.ImplicitConversionName, SymbolFilter.Member) ||
+                comp.ContainsSymbolsWithName(WellKnownMemberNames.ExplicitConversionName, SymbolFilter.Member))
+            {
+                return new StrongBox<bool>(true);
+            }
+
+            return new StrongBox<bool>(DeviceExportTable.HasAnyConversion(comp));
+        }).Value;
+
     /// <summary>
     /// Whether <paramref name="conversion"/> is a user-defined struct conversion operator (<c>implicit operator</c> or
     /// <c>explicit operator</c>) emitted as a value-returning device function (<c>__gsharp_fn_...__op_Implicit</c> /

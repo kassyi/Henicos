@@ -95,6 +95,37 @@ internal sealed class DeviceExportTable
     }
 
     /// <summary>
+    /// Whether any referenced assembly exports a user-defined struct conversion operator.
+    /// </summary>
+    public static bool HasAnyConversion(Compilation compilation)
+    {
+        foreach (var reference in compilation.References)
+        {
+            if (compilation.GetAssemblyOrModuleSymbol(reference) is IAssemblySymbol assembly)
+            {
+                var table = ForAssembly(assembly);
+                foreach (var imported in table.Records)
+                {
+                    if (imported.Record.Kind == DeviceExportRecord.StructKind)
+                    {
+                        var structType = DocumentationCommentId.GetFirstSymbolForDeclarationId(imported.Record.Id, compilation) as INamedTypeSymbol;
+                        if (structType != null)
+                        {
+                            if (structType.GetMembers(WellKnownMemberNames.ImplicitConversionName).Length > 0 ||
+                                structType.GetMembers(WellKnownMemberNames.ExplicitConversionName).Length > 0)
+                            {
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
     /// The record of a <c>[GpuDeviceFunction]</c> of another assembly than <paramref name="compilation"/>; false for one
     /// of the compilation, or one whose assembly recorded nothing for it.
     /// </summary>

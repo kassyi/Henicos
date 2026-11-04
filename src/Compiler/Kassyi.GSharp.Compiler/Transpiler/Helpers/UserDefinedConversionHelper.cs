@@ -14,7 +14,8 @@ internal static class UserDefinedConversionHelper
     public static bool TryAppendImplicitConversion(ExpressionSyntax expression, ref TranspileContext context)
     {
         if (expression is ParenthesizedExpressionSyntax ||
-            context.Emitter.SuppressImplicitConversionNode == expression)
+            context.Emitter.SuppressImplicitConversionNode == expression ||
+            !StructConversionEmitter.HasEmittedStructConversions(context.Query.SemanticModel.Compilation))
         {
             return false;
         }
