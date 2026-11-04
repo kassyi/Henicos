@@ -57,8 +57,10 @@ public static class MethodTranspiler
     /// When given, receives each struct definition and <c>Dispose</c> definition written in front of the method, one by
     /// one (a device code export records them apart from the function). The returned text is the same either way.
     /// </param>
+    /// <param name="errorSites">The error site table to register runtime trap sites, or null.</param>
     internal static string GenerateCudaSource(in MethodEmissionPlan plan, Action<TranspileFailure>? reportFailure,
-        ITranspilerDialect dialect, out HashSet<string> requiredIncludes, StructSourceCollector? structSources = null)
+        ITranspilerDialect dialect, out HashSet<string> requiredIncludes, StructSourceCollector? structSources = null,
+        ErrorSiteTable? errorSites = null)
     {
         if (plan.Kind == MethodEmissionKind.Iterator)
         {
@@ -75,6 +77,8 @@ public static class MethodTranspiler
         }
 
         ref var context = ref session.Context;
+        context.Emitter.ErrorSites = errorSites;
+        context.Emitter.CurrentMemberName = plan.Symbol?.Name;
         requiredIncludes = context.Emitter.RequiredIncludes;
         context.Emitter.IsSuspendingDeviceFunction = plan.IsSuspendingOn(dialect);
 

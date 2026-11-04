@@ -96,6 +96,14 @@ internal static class CpuHostLaunchEmitter
 
         writer.AppendLine(
             $"var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<{kernel.MemberKey}_Delegate>(\"{exportName}\", dllPath);");
+        if (!kernel.ErrorSites.IsDefaultOrEmpty)
+        {
+            writer.AppendLine("if (s_errorSites.Length > 0)");
+            using (writer.Scope())
+            {
+                writer.AppendLine("global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(dllPath, s_errorSites);");
+            }
+        }
     }
 
     // <declarations>; try { <marshaling>; <fixed blocks and call>; <unmarshaling> } finally { <release> }

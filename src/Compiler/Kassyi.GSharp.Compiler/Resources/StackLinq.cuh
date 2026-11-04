@@ -314,7 +314,7 @@ namespace Kassyi { namespace ZeroAlloc { namespace Linq {
         }
 
         template <typename TSource>
-        __device__ static inline auto ElementAt(TSource source, int index) {
+        __device__ static inline auto ElementAt(TSource source, int index, uint32_t site_id = 0) {
             if (index >= 0) {
                 int count = 0;
                 while (source.MoveNext()) {
@@ -322,7 +322,8 @@ namespace Kassyi { namespace ZeroAlloc { namespace Linq {
                     count++;
                 }
             }
-            __gsharp_trap(GSharpErrorCode::ArgumentOutOfRange, "Index was out of range.");
+            if (site_id != 0) __gsharp_trap(GSharpErrorCode::ArgumentOutOfRange, site_id);
+            else __gsharp_trap(GSharpErrorCode::ArgumentOutOfRange, "Index was out of range.");
             return decltype(source.Current())();
         }
 
@@ -337,18 +338,20 @@ namespace Kassyi { namespace ZeroAlloc { namespace Linq {
         }
 
         template <typename TSource>
-        __device__ static inline auto First(TSource source) {
+        __device__ static inline auto First(TSource source, uint32_t site_id = 0) {
             if (source.MoveNext()) return source.Current();
-            __gsharp_trap(GSharpErrorCode::InvalidOperation, "Sequence contains no elements");
+            if (site_id != 0) __gsharp_trap(GSharpErrorCode::InvalidOperation, site_id);
+            else __gsharp_trap(GSharpErrorCode::InvalidOperation, "Sequence contains no elements");
             return decltype(source.Current())();
         }
 
         template <typename TSource, typename TPredicate>
-        __device__ static inline auto First(TSource source, TPredicate predicate) {
+        __device__ static inline auto First(TSource source, TPredicate predicate, uint32_t site_id = 0) {
             while (source.MoveNext()) {
                 if (predicate(source.Current())) return source.Current();
             }
-            __gsharp_trap(GSharpErrorCode::InvalidOperation, "Sequence contains no matching element");
+            if (site_id != 0) __gsharp_trap(GSharpErrorCode::InvalidOperation, site_id);
+            else __gsharp_trap(GSharpErrorCode::InvalidOperation, "Sequence contains no matching element");
             return decltype(source.Current())();
         }
 
@@ -367,26 +370,29 @@ namespace Kassyi { namespace ZeroAlloc { namespace Linq {
         }
 
         template <typename TSource>
-        __device__ static inline auto Single(TSource source) {
+        __device__ static inline auto Single(TSource source, uint32_t site_empty = 0, uint32_t site_more = 0) {
             if (!source.MoveNext()) {
-                __gsharp_trap(GSharpErrorCode::InvalidOperation, "Sequence contains no elements");
+                if (site_empty != 0) __gsharp_trap(GSharpErrorCode::InvalidOperation, site_empty);
+                else __gsharp_trap(GSharpErrorCode::InvalidOperation, "Sequence contains no elements");
                 return decltype(source.Current())();
             }
             auto result = source.Current();
             if (source.MoveNext()) {
-                __gsharp_trap(GSharpErrorCode::InvalidOperation, "Sequence contains more than one element");
+                if (site_more != 0) __gsharp_trap(GSharpErrorCode::InvalidOperation, site_more);
+                else __gsharp_trap(GSharpErrorCode::InvalidOperation, "Sequence contains more than one element");
             }
             return result;
         }
 
         template <typename TSource, typename TPredicate>
-        __device__ static inline auto Single(TSource source, TPredicate predicate) {
+        __device__ static inline auto Single(TSource source, TPredicate predicate, uint32_t site_more = 0, uint32_t site_no_match = 0) {
             auto result = decltype(source.Current())();
             bool found = false;
             while (source.MoveNext()) {
                 if (predicate(source.Current())) {
                     if (found) {
-                        __gsharp_trap(GSharpErrorCode::InvalidOperation, "Sequence contains more than one matching element");
+                        if (site_more != 0) __gsharp_trap(GSharpErrorCode::InvalidOperation, site_more);
+                        else __gsharp_trap(GSharpErrorCode::InvalidOperation, "Sequence contains more than one matching element");
                         return result;
                     }
                     result = source.Current();
@@ -394,29 +400,32 @@ namespace Kassyi { namespace ZeroAlloc { namespace Linq {
                 }
             }
             if (!found) {
-                __gsharp_trap(GSharpErrorCode::InvalidOperation, "Sequence contains no matching element");
+                if (site_no_match != 0) __gsharp_trap(GSharpErrorCode::InvalidOperation, site_no_match);
+                else __gsharp_trap(GSharpErrorCode::InvalidOperation, "Sequence contains no matching element");
             }
             return result;
         }
 
         template <typename TSource>
-        __device__ static inline auto SingleOrDefault(TSource source) {
+        __device__ static inline auto SingleOrDefault(TSource source, uint32_t site_more = 0) {
             if (!source.MoveNext()) return decltype(source.Current())();
             auto result = source.Current();
             if (source.MoveNext()) {
-                __gsharp_trap(GSharpErrorCode::InvalidOperation, "Sequence contains more than one element");
+                if (site_more != 0) __gsharp_trap(GSharpErrorCode::InvalidOperation, site_more);
+                else __gsharp_trap(GSharpErrorCode::InvalidOperation, "Sequence contains more than one element");
             }
             return result;
         }
 
         template <typename TSource, typename TPredicate>
-        __device__ static inline auto SingleOrDefault(TSource source, TPredicate predicate) {
+        __device__ static inline auto SingleOrDefault(TSource source, TPredicate predicate, uint32_t site_more = 0) {
             auto result = decltype(source.Current())();
             bool found = false;
             while (source.MoveNext()) {
                 if (predicate(source.Current())) {
                     if (found) {
-                        __gsharp_trap(GSharpErrorCode::InvalidOperation, "Sequence contains more than one matching element");
+                        if (site_more != 0) __gsharp_trap(GSharpErrorCode::InvalidOperation, site_more);
+                        else __gsharp_trap(GSharpErrorCode::InvalidOperation, "Sequence contains more than one matching element");
                         return result;
                     }
                     result = source.Current();
@@ -427,7 +436,7 @@ namespace Kassyi { namespace ZeroAlloc { namespace Linq {
         }
 
         template <typename TSource>
-        __device__ static inline auto Last(TSource source) {
+        __device__ static inline auto Last(TSource source, uint32_t site_id = 0) {
             auto result = decltype(source.Current())();
             bool found = false;
             while (source.MoveNext()) {
@@ -435,7 +444,8 @@ namespace Kassyi { namespace ZeroAlloc { namespace Linq {
                 found = true;
             }
             if (!found) {
-                __gsharp_trap(GSharpErrorCode::InvalidOperation, "Sequence contains no elements");
+                if (site_id != 0) __gsharp_trap(GSharpErrorCode::InvalidOperation, site_id);
+                else __gsharp_trap(GSharpErrorCode::InvalidOperation, "Sequence contains no elements");
             }
             return result;
         }
@@ -459,9 +469,10 @@ namespace Kassyi { namespace ZeroAlloc { namespace Linq {
         }
 
         template <typename TSource, typename TFunc>
-        __device__ static inline auto Aggregate(TSource source, TFunc func) {
+        __device__ static inline auto Aggregate(TSource source, TFunc func, uint32_t site_id = 0) {
             if (!source.MoveNext()) {
-                __gsharp_trap(GSharpErrorCode::InvalidOperation, "Sequence contains no elements");
+                if (site_id != 0) __gsharp_trap(GSharpErrorCode::InvalidOperation, site_id);
+                else __gsharp_trap(GSharpErrorCode::InvalidOperation, "Sequence contains no elements");
                 return decltype(source.Current())();
             }
             auto result = source.Current();
@@ -481,9 +492,10 @@ namespace Kassyi { namespace ZeroAlloc { namespace Linq {
         }
 
         template <typename TSource>
-        __device__ static inline auto Max(TSource source) {
+        __device__ static inline auto Max(TSource source, uint32_t site_id = 0) {
             if (!source.MoveNext()) {
-                __gsharp_trap(GSharpErrorCode::InvalidOperation, "Sequence contains no elements");
+                if (site_id != 0) __gsharp_trap(GSharpErrorCode::InvalidOperation, site_id);
+                else __gsharp_trap(GSharpErrorCode::InvalidOperation, "Sequence contains no elements");
                 return decltype(source.Current())();
             }
             auto max_val = source.Current();
@@ -494,9 +506,10 @@ namespace Kassyi { namespace ZeroAlloc { namespace Linq {
         }
 
         template <typename TSource>
-        __device__ static inline auto Min(TSource source) {
+        __device__ static inline auto Min(TSource source, uint32_t site_id = 0) {
             if (!source.MoveNext()) {
-                __gsharp_trap(GSharpErrorCode::InvalidOperation, "Sequence contains no elements");
+                if (site_id != 0) __gsharp_trap(GSharpErrorCode::InvalidOperation, site_id);
+                else __gsharp_trap(GSharpErrorCode::InvalidOperation, "Sequence contains no elements");
                 return decltype(source.Current())();
             }
             auto min_val = source.Current();
@@ -507,7 +520,7 @@ namespace Kassyi { namespace ZeroAlloc { namespace Linq {
         }
 
         template <typename TSource>
-        __device__ static inline auto Average(TSource source) {
+        __device__ static inline auto Average(TSource source, uint32_t site_id = 0) {
             double sum = 0;
             int count = 0;
             while (source.MoveNext()) {
@@ -515,7 +528,8 @@ namespace Kassyi { namespace ZeroAlloc { namespace Linq {
                 count++;
             }
             if (count == 0) {
-                __gsharp_trap(GSharpErrorCode::InvalidOperation, "Sequence contains no elements");
+                if (site_id != 0) __gsharp_trap(GSharpErrorCode::InvalidOperation, site_id);
+                else __gsharp_trap(GSharpErrorCode::InvalidOperation, "Sequence contains no elements");
                 return 0.0;
             }
             return sum / count;

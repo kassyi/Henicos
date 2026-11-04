@@ -44,6 +44,16 @@ public struct Emitter(
     public int CallableDepth;
 
     /// <summary>
+    /// The compile-time error site table used to record source locations for device runtime traps (#729, #1056).
+    /// </summary>
+    internal ErrorSiteTable? ErrorSites;
+
+    /// <summary>
+    /// The current member or kernel method name being transpiled.
+    /// </summary>
+    internal string? CurrentMemberName;
+
+    /// <summary>
     /// Numbers each <c>Gpu.SyncGrid(body)</c> body as it is emitted, for its done flag and labels
     /// (<c>__gsharp_sg_done_&lt;n&gt;</c>, <c>__gsharp_sg_next_&lt;n&gt;_&lt;statement&gt;</c>); a body emitted again (an
     /// unrolled loop) gets a new number, so the names stay unique in the C++ function.

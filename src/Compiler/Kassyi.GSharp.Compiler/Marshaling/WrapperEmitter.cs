@@ -182,6 +182,7 @@ internal static class WrapperEmitter
         WriteClassDeclaration(writer, model.Class);
         using (writer.Scope())
         {
+            WriteErrorSiteTableField(writer, model.ErrorSites);
             writer.AppendGeneratedCodeAttributes();
             writer.AppendLine($"public static partial class {AotHostNames.AotContextsClassName}");
             using (writer.Scope())
@@ -423,5 +424,25 @@ internal static class WrapperEmitter
         {
             writer.AppendLine($"throw new global::System.ArgumentException(\"{EmptyArrayMessage}\", nameof({name}));");
         }
+    }
+    private static void WriteErrorSiteTableField(SourceWriter writer, EquatableArray<ErrorSiteEntry> errorSites)
+    {
+        if (errorSites.IsDefaultOrEmpty)
+        {
+            
+            return;
+        }
+
+        writer.AppendLine("private static readonly global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[] s_errorSites = new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[]");
+        writer.AppendLine("{");
+        foreach (var site in errorSites)
+        {
+            var fileLit = Microsoft.CodeAnalysis.CSharp.SymbolDisplay.FormatLiteral(site.File, quote: true);
+            var memberLit = Microsoft.CodeAnalysis.CSharp.SymbolDisplay.FormatLiteral(site.MemberName, quote: true);
+            var msgLit = Microsoft.CodeAnalysis.CSharp.SymbolDisplay.FormatLiteral(site.DefaultMessage, quote: true);
+            writer.AppendLine($"new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite({site.SiteId}u, {fileLit}, {site.Line}, {site.Column}, {memberLit}, {msgLit}),");
+        }
+        writer.AppendLine("};");
+        writer.AppendLine();
     }
 }

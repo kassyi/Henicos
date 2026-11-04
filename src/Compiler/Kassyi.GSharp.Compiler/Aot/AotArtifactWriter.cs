@@ -24,8 +24,10 @@ internal static class AotArtifactWriter
     /// <param name="bodySource">The module.</param>
     /// <param name="context">The output context.</param>
     /// <param name="findImportedFullName">The full name of a shortened name that another assembly recorded, or null.</param>
+    /// <param name="errorSites">The error sites recorded in the module, or null.</param>
     public static void Write(in AotTarget target, GeneratorConfig config, string bodySource,
-        SourceProductionContext context, Func<string, string?>? findImportedFullName = null)
+        SourceProductionContext context, Func<string, string?>? findImportedFullName = null,
+        IReadOnlyList<GSharpNameEncoding.SymbolErrorSiteRecord>? errorSites = null)
     {
         if (target.IsDesignTimeCompilation)
         {
@@ -37,7 +39,8 @@ internal static class AotArtifactWriter
         var fullSource = GSharpNameEncoding.FormatSymbolHeaderLine(sourceHash) + "\n" + bodySource;
         var dialectName = config.IsCuda ? "Cuda" : "Cpu";
         var gsymContent = GSharpNameEncoding.BuildSymbolFileContent(bodySource, dialectName,
-            id => GlobalCppNames.TryGetFullName(id, out var full) ? full : findImportedFullName?.Invoke(id));
+            id => GlobalCppNames.TryGetFullName(id, out var full) ? full : findImportedFullName?.Invoke(id),
+            errorSites);
 
         var ext = config.IsCuda ? ".g.cu" : ".g.cpp";
         var fileName = $"Kassyi.GSharp.Kernels_{safeAssemblyName}{ext}";

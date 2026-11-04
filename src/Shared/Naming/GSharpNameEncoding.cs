@@ -197,30 +197,39 @@ internal static class GSharpNameEncoding
 
         if (errorSites is not null)
         {
-            for (var i = 0; i < errorSites.Count; i++)
-            {
-                var site = errorSites[i];
-                builder.Append("{\"error_site\":\"")
-                    .Append(site.SiteId.ToString(CultureInfo.InvariantCulture))
-                    .Append("\",\"file\":\"")
-                    .Append(EscapeJsonString(site.File))
-                    .Append("\",\"line\":\"")
-                    .Append(site.Line.ToString(CultureInfo.InvariantCulture))
-                    .Append("\",\"column\":\"")
-                    .Append(site.Column.ToString(CultureInfo.InvariantCulture))
-                    .Append("\",\"member\":\"")
-                    .Append(EscapeJsonString(site.Member))
-                    .Append("\",\"message\":\"")
-                    .Append(EscapeJsonString(site.Message))
-                    .Append("\",\"symbols\":\"")
-                    .Append(hash)
-                    .Append("\",\"dialect\":\"")
-                    .Append(dialect)
-                    .Append("\"}\n");
-            }
+            WriteErrorSites(builder, errorSites, hash, dialect);
         }
 
         return builder.ToString();
+    }
+
+    private static void WriteErrorSites(
+        StringBuilder builder,
+        IReadOnlyList<SymbolErrorSiteRecord> errorSites,
+        string hash,
+        string dialect)
+    {
+        for (var i = 0; i < errorSites.Count; i++)
+        {
+            var site = errorSites[i];
+            builder.Append("{\"error_site\":\"")
+                .Append(site.SiteId.ToString(CultureInfo.InvariantCulture))
+                .Append("\",\"file\":\"")
+                .Append(EscapeJsonString(site.File))
+                .Append("\",\"line\":\"")
+                .Append(site.Line.ToString(CultureInfo.InvariantCulture))
+                .Append("\",\"column\":\"")
+                .Append(site.Column.ToString(CultureInfo.InvariantCulture))
+                .Append("\",\"member\":\"")
+                .Append(EscapeJsonString(site.Member))
+                .Append("\",\"message\":\"")
+                .Append(EscapeJsonString(site.Message))
+                .Append("\",\"symbols\":\"")
+                .Append(hash)
+                .Append("\",\"dialect\":\"")
+                .Append(dialect)
+                .Append("\"}\n");
+        }
     }
 
     /// <summary>

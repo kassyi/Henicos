@@ -24,6 +24,58 @@ public sealed class StackLinqTranspilerRule : IInvocationTranspilerRule
             }
         }
 
+        uint siteId1 = 0;
+        uint siteId2 = 0;
+        if (context.Emitter.ErrorSites != null)
+        {
+            var model = context.Query.SemanticModel;
+            var memberName = context.Emitter.CurrentMemberName ?? symbol.Name;
+            switch (methodName)
+            {
+                case "ElementAt":
+                    siteId1 = context.Emitter.ErrorSites.Register(node, model, memberName, "Index was out of range.", "ElementAt");
+                    break;
+                case "First":
+                    var isPredicate = symbol.Parameters.Length > (symbol.IsExtensionMethod ? 1 : 0);
+                    var firstMsg = isPredicate ? "Sequence contains no matching element" : "Sequence contains no elements";
+                    siteId1 = context.Emitter.ErrorSites.Register(node, model, memberName, firstMsg, isPredicate ? "First.Predicate" : "First");
+                    break;
+                case "Last":
+                    siteId1 = context.Emitter.ErrorSites.Register(node, model, memberName, "Sequence contains no elements", "Last");
+                    break;
+                case "Aggregate" when !HasSeedParameter(symbol):
+                    siteId1 = context.Emitter.ErrorSites.Register(node, model, memberName, "Sequence contains no elements", "Aggregate");
+                    break;
+                case "Max":
+                    siteId1 = context.Emitter.ErrorSites.Register(node, model, memberName, "Sequence contains no elements", "Max");
+                    break;
+                case "Min":
+                    siteId1 = context.Emitter.ErrorSites.Register(node, model, memberName, "Sequence contains no elements", "Min");
+                    break;
+                case "Average":
+                    siteId1 = context.Emitter.ErrorSites.Register(node, model, memberName, "Sequence contains no elements", "Average");
+                    break;
+                case "Single":
+                    var isSinglePred = symbol.Parameters.Length > (symbol.IsExtensionMethod ? 1 : 0);
+                    if (isSinglePred)
+                    {
+                        siteId1 = context.Emitter.ErrorSites.Register(node, model, memberName, "Sequence contains more than one matching element", "Single.MoreThanOneMatching");
+                        siteId2 = context.Emitter.ErrorSites.Register(node, model, memberName, "Sequence contains no matching element", "Single.NoMatching");
+                    }
+                    else
+                    {
+                        siteId1 = context.Emitter.ErrorSites.Register(node, model, memberName, "Sequence contains no elements", "Single.Empty");
+                        siteId2 = context.Emitter.ErrorSites.Register(node, model, memberName, "Sequence contains more than one element", "Single.MoreThanOne");
+                    }
+                    break;
+                case "SingleOrDefault":
+                    var isSingleOrDefaultPred = symbol.Parameters.Length > (symbol.IsExtensionMethod ? 1 : 0);
+                    var singleOrDefaultMsg = isSingleOrDefaultPred ? "Sequence contains more than one matching element" : "Sequence contains more than one element";
+                    siteId1 = context.Emitter.ErrorSites.Register(node, model, memberName, singleOrDefaultMsg, isSingleOrDefaultPred ? "SingleOrDefault.MoreThanOneMatching" : "SingleOrDefault.MoreThanOne");
+                    break;
+            }
+        }
+
         // Output the C++ namespace for our StackLinq implementation
         context.Emitter.Writer.Append("Kassyi::ZeroAlloc::Linq::StackLinq::");
         context.Emitter.Writer.Append(methodName);
@@ -67,8 +119,33 @@ public sealed class StackLinqTranspilerRule : IInvocationTranspilerRule
                     context.Emitter.Writer.Append(',');
                 }
             }
+
+            if (siteId1 != 0)
+            {
+                if (arguments.Count > 0 || (symbol.IsExtensionMethod && node.Expression is MemberAccessExpressionSyntax))
+                {
+                    context.Emitter.Writer.Append(',');
+                }
+                context.Emitter.Writer.Append($"{siteId1}u");
+                if (siteId2 != 0)
+                {
+                    context.Emitter.Writer.Append($",{siteId2}u");
+                }
+            }
         }
 
         return true;
+    }
+
+    private static bool HasSeedParameter(IMethodSymbol symbol)
+    {
+        for (var i = 0; i < symbol.Parameters.Length; i++)
+        {
+            if (symbol.Parameters[i].Name == "seed")
+            {
+                return true;
+            }
+        }
+        return false;
     }
 }

@@ -123,6 +123,9 @@ internal static class CudaHostLaunchEmitter
         string assemblyName)
     {
         var key = kernel.MemberKey;
+        var safeAssemblyName = AotHostNames.ToSafeIdentifier(assemblyName);
+        var moduleContextName = AotHostNames.GetModuleContextName(assemblyName);
+
         writer.AppendLine(
             "/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>");
         writer.AppendLine($"public static void WarmupFunctionPointer{key}()");
@@ -130,10 +133,24 @@ internal static class CudaHostLaunchEmitter
         {
             writer.AppendLine($"if (s_hfunc_{key}.HasValue) return;");
             writer.Append("IntPtr hModule = global::Kassyi.GSharp.Generated.");
-            writer.Append(AotHostNames.GetModuleContextName(assemblyName));
+            writer.Append(moduleContextName);
             writer.AppendLine(".GetOrLoadModule();");
             writer.AppendLine(
                 $"s_hfunc_{key} = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, \"{kernel.Host.KernelName}\");");
+            if (!kernel.ErrorSites.IsDefaultOrEmpty)
+            {
+                writer.AppendLine("if (s_errorSites.Length > 0)");
+                using (writer.Scope())
+                {
+                    writer.AppendLine($"var baseDir = System.IO.Path.GetDirectoryName(typeof(global::Kassyi.GSharp.Generated.{moduleContextName}).Assembly.Location) ?? System.AppContext.BaseDirectory;");
+                    writer.AppendLine($"var fatbinPath = System.IO.Path.Combine(baseDir, \"Kassyi.GSharp.Kernels_{safeAssemblyName}.gfatbin\");");
+                    writer.AppendLine("if (System.IO.File.Exists(fatbinPath))");
+                    using (writer.Scope())
+                    {
+                        writer.AppendLine("global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.RegisterErrorSites(System.IO.File.ReadAllBytes(fatbinPath), s_errorSites);");
+                    }
+                }
+            }
         }
 
         writer.AppendLine();
