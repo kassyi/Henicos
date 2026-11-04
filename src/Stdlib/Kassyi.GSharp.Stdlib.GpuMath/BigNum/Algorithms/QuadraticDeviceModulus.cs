@@ -2,13 +2,12 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms;
 
 /// <summary>
 /// The device stage of <see cref="FermatAlgorithm"/>, <c>E &gt;= 32</c>: residues of <c>L</c> words in buffers this
-/// instance owns. On the GPU, a square goes through <see cref="KernelAdvancedMathHandler.Square"/> with an owned
-/// <see cref="KernelAdvancedMathHandler.NttSquareScratch"/>, a product of two registers through
-/// <see cref="KernelAdvancedMathHandler.Multiply"/> with an owned
-/// <see cref="KernelAdvancedMathHandler.NttMultiplyScratch"/>, and both are reduced by
-/// <c>GpuBigIntFermatKernels.QuadraticFoldReduceKernel</c>, written back into the target register. In CPU fallback mode,
-/// products come from <see cref="System.Numerics.BigInteger"/> and are reduced by
-/// <see cref="QuadraticFoldModulus.FoldReference"/>.
+/// instance owns. On the GPU, both squaring and multiplication run through
+/// <see cref="Ntt35ConvolutionLauncher.Square"/> / <see cref="Ntt35ConvolutionLauncher.Multiply"/> with an owned
+/// <see cref="Ntt35ConvolutionLauncher.NttMultiplyScratch"/>, and the product is reduced by the multi-block parallel fold
+/// (<c>GpuBigIntFermatKernels.QuadraticFoldPassBlockedKernel</c> + <c>QuadraticFoldPassApplyKernel</c>), written back
+/// into the target register. In CPU fallback mode, products come from <see cref="System.Numerics.BigInteger"/> and are
+/// reduced by <see cref="QuadraticFoldModulus.FoldReference"/>.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -24,7 +23,7 @@ internal sealed class QuadraticDeviceModulus : ISquaringModulus
     // Longest chain captured into one graph; longer requests replay it, the remainder has its own graph.
     private const int MaxGraphLength = 256;
 
-    // QuadraticFoldReduceKernel runs as one block; the passes scan carries per warp, so a full block of 32 warps.
+    // Each fold pass scans carries in chunks of one launch block of 32 warps across all SMs.
     private const uint FoldBlockSize = 1024;
 
     private static readonly int s_registerCount = Enum.GetValues<SquaringRegister>().Length;
@@ -36,8 +35,8 @@ internal sealed class QuadraticDeviceModulus : ISquaringModulus
     private readonly GpuBigUInt _product;
     private readonly GpuBigUInt _firstFold;
     private readonly GpuBigUInt _secondFold;
-    private readonly KernelAdvancedMathHandler.NttSquareScratch? _squareScratch;
-    private readonly KernelAdvancedMathHandler.NttMultiplyScratch? _multiplyScratch;
+    private readonly GpuBigUInt _foldBlockCarries;
+    private readonly Ntt35ConvolutionLauncher.NttMultiplyScratch? _multiplyScratch;
     private readonly Dictionary<int, (IntPtr Graph, IntPtr GraphExec)> _graphs = [];
     private readonly IGpuGraphProvider _graphProvider;
     private bool _warmedUp;
@@ -72,10 +71,11 @@ internal sealed class QuadraticDeviceModulus : ISquaringModulus
                 // The fold temporaries are only used by the kernel; FoldReference rents its own on the host.
                 _firstFold = new GpuBigUInt(_workspace, modulus.FirstFoldWords);
                 _secondFold = new GpuBigUInt(_workspace, modulus.SecondFoldWords);
-                var handler = GSharpKernelProvider.Instance.KernelAdvancedMath;
-                _squareScratch = KernelAdvancedMathHandler.NttSquareScratch.Allocate(_workspace, handler, modulus.Words);
+                var maxFoldWords = Math.Max(modulus.FirstFoldWords, Math.Max(modulus.SecondFoldWords, modulus.Words));
+                var foldBlockCarryWords = Math.Max(1, (maxFoldWords + (int)FoldBlockSize - 1) / (int)FoldBlockSize);
+                _foldBlockCarries = new GpuBigUInt(_workspace, foldBlockCarryWords);
                 _multiplyScratch =
-                    KernelAdvancedMathHandler.NttMultiplyScratch.Allocate(_workspace, handler, modulus.ProductWords);
+                    Ntt35ConvolutionLauncher.NttMultiplyScratch.Allocate(_workspace, modulus.ProductWords);
             }
         }
         catch
@@ -96,7 +96,7 @@ internal sealed class QuadraticDeviceModulus : ISquaringModulus
     internal Action<int>? CaptureFault { get; set; }
 
     public BigInteger GetModulus() =>
-        new(System.Runtime.InteropServices.MemoryMarshal.AsBytes(_modulus.Modulus), isUnsigned: true, isBigEndian: false);
+        new(MemoryMarshal.AsBytes(_modulus.Modulus), isUnsigned: true, isBigEndian: false);
 
     public bool IsBelowModulus(ReadOnlySpan<uint> words)
     {
@@ -199,7 +199,7 @@ internal sealed class QuadraticDeviceModulus : ISquaringModulus
         else
         {
             // Not GpuBigIntMath.Mul: its scratch comes from the workspace pool on every call.
-            GSharpKernelProvider.Instance.KernelAdvancedMath.Multiply(_workspace, leftBuffer, rightBuffer, _product,
+            Ntt35ConvolutionLauncher.Multiply(_workspace, leftBuffer, rightBuffer, _product,
                 Required(_multiplyScratch));
         }
 
@@ -232,16 +232,12 @@ internal sealed class QuadraticDeviceModulus : ISquaringModulus
         try
         {
             // Written out (not '?.') so that the ownership analyzer (GSH0022) sees the calls.
-            if (_squareScratch != null)
-            {
-                _squareScratch.Dispose();
-            }
-
             if (_multiplyScratch != null)
             {
                 _multiplyScratch.Dispose();
             }
 
+            _foldBlockCarries.Dispose();
             _firstFold.Dispose();
             _secondFold.Dispose();
             _product.Dispose();
@@ -261,10 +257,91 @@ internal sealed class QuadraticDeviceModulus : ISquaringModulus
         }
     }
 
+    /// <summary>The device buffers of the three-pass parallel trinomial fold.</summary>
+    internal readonly record struct FoldBuffers(
+        GpuBigUInt Product,
+        GpuBigUInt FirstFold,
+        GpuBigUInt SecondFold,
+        GpuBigUInt Residue,
+        GpuBigUInt BlockCarries);
+
+    /// <summary>
+    /// Throws when a block-carry buffer holds fewer words than a multi-block fold pass writes.
+    /// </summary>
+    internal static void ThrowIfFoldBlockCarriesTooSmall(int blockCarryWords, int resultWords, int chunkSize)
+    {
+        var carryCount = (resultWords + chunkSize - 1) / chunkSize;
+        if (blockCarryWords < carryCount)
+        {
+            throw new InvalidOperationException(
+                $"The fold block-carry buffer holds {blockCarryWords} words, but a {resultWords}-word fold pass resolved in {chunkSize}-word chunks writes {carryCount} carries.");
+        }
+    }
+
+    /// <summary>
+    /// Launches the three trinomial fold passes across all SMs, resolving cross-block carries whenever a pass spans
+    /// more than one chunk.
+    /// </summary>
+    internal static void LaunchFoldParallel(
+        in FoldBuffers buffers,
+        QuadraticFoldModulus modulus,
+        uint blockDim,
+        IntPtr stream)
+    {
+        LaunchFoldPass(buffers.Product, buffers.FirstFold, buffers.BlockCarries, modulus, blockDim, stream);
+        LaunchFoldPass(buffers.FirstFold, buffers.SecondFold, buffers.BlockCarries, modulus, blockDim, stream);
+        LaunchFoldPass(buffers.SecondFold, buffers.Residue, buffers.BlockCarries, modulus, blockDim, stream);
+    }
+
+    private static void LaunchFoldPass(
+        GpuBigUInt source,
+        GpuBigUInt result,
+        GpuBigUInt blockCarries,
+        QuadraticFoldModulus modulus,
+        uint blockDim,
+        IntPtr stream)
+    {
+        var chunkSize = (int)blockDim;
+        var resultWords = result.NumWords;
+        ThrowIfFoldBlockCarriesTooSmall(blockCarries.NumWords, resultWords, chunkSize);
+        var numBlocks = (resultWords + chunkSize - 1) / chunkSize;
+        var gridDim = (uint)Math.Min(65535, Math.Max(1, numBlocks));
+
+        GpuBigIntFermatKernels.LaunchQuadraticFoldPassBlockedKernelPtr(
+            new GpuBigIntFermatKernels.AotContexts.QuadraticFoldBlockedPass
+            {
+                Source = source.DevicePointer,
+                Result = result.DevicePointer,
+                BlockCarries = blockCarries.DevicePointer,
+                SourceWords = source.NumWords,
+                ResultWords = resultWords,
+                ModulusBits = modulus.ModulusBits,
+                Exponent = modulus.E,
+                ConstantTerm = QuadraticFoldModulus.ConstantTerm
+            },
+            gridDimX: gridDim, blockDimX: blockDim, hStream: stream);
+
+        if (numBlocks > 1)
+        {
+            var applyBlockDim = (uint)Math.Min(1024, Math.Max(32, ((numBlocks + 31) / 32) * 32));
+            var applyGridDim = (uint)((numBlocks + applyBlockDim - 1) / applyBlockDim);
+            GpuBigIntFermatKernels.LaunchQuadraticFoldPassApplyKernelPtr(
+                new GpuBigIntFermatKernels.AotContexts.QuadraticFoldBlockedApply
+                {
+                    Result = result.DevicePointer,
+                    BlockCarries = blockCarries.DevicePointer,
+                    ResultWords = resultWords,
+                    ChunkSize = chunkSize,
+                    NumBlocks = numBlocks
+                },
+                gridDimX: applyGridDim, blockDimX: applyBlockDim, hStream: stream);
+        }
+    }
+
     private void SquareOnce(SquaringRegister register) => Multiply(register, register, register);
 
     private void SquareOnDevice(GpuBigUInt source) =>
-        GSharpKernelProvider.Instance.KernelAdvancedMath.Square(_workspace, source, _product, Required(_squareScratch));
+        Ntt35ConvolutionLauncher.Square(_workspace, source, _product, Required(_multiplyScratch));
 
     private static T Required<T>(T? scratch) where T : class =>
         scratch ?? throw new InvalidOperationException("The GPU scratch is not allocated in CPU fallback mode.");
@@ -278,22 +355,11 @@ internal sealed class QuadraticDeviceModulus : ISquaringModulus
             return;
         }
 
-        GpuBigIntFermatKernels.LaunchQuadraticFoldReduceKernelPtr(
-            new GpuBigIntFermatKernels.AotContexts.QuadraticFold
-            {
-                Product = _product.DevicePointer,
-                FirstFold = _firstFold.DevicePointer,
-                SecondFold = _secondFold.DevicePointer,
-                Residue = residue.DevicePointer,
-                ProductWords = _modulus.ProductWords,
-                FirstFoldWords = _modulus.FirstFoldWords,
-                SecondFoldWords = _modulus.SecondFoldWords,
-                ResidueWords = _modulus.Words,
-                ModulusBits = _modulus.ModulusBits,
-                Exponent = _modulus.E,
-                ConstantTerm = QuadraticFoldModulus.ConstantTerm
-            },
-            gridDimX: 1, blockDimX: FoldBlockSize, hStream: _workspace.Stream);
+        LaunchFoldParallel(
+            new FoldBuffers(_product, _firstFold, _secondFold, residue, _foldBlockCarries),
+            _modulus,
+            FoldBlockSize,
+            _workspace.Stream);
     }
 
     // CPU fallback memory is host memory (Marshal.AllocHGlobal), so the reference fold reads and writes it directly.

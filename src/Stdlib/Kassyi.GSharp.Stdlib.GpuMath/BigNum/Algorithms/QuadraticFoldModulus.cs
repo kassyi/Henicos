@@ -109,9 +109,9 @@ internal sealed class QuadraticFoldModulus
     /// <param name="result">Receives a value congruent to <c>x</c> modulo <c>N</c> and below <c>2^m + 2^(E+1)</c> (not
     /// canonical), <see cref="Words"/> words.</param>
     /// <remarks>
-    /// The host reference of the GPU kernel <c>GpuBigIntFermatKernels.QuadraticFoldReduceKernel</c>, written as the formula
-    /// <c>r + q * 2^E - 11 * q</c> with a signed carry rather than as a copy of the kernel. It is also the fold of the CPU
-    /// fallback.
+    /// The host reference of the GPU kernels <c>GpuBigIntFermatKernels.QuadraticFoldPassBlockedKernel</c> and
+    /// <c>QuadraticFoldPassApplyKernel</c>, written as the formula <c>r + q * 2^E - 11 * q</c> with a signed carry
+    /// rather than as a copy of the kernels. It is also the fold of the CPU fallback.
     /// </remarks>
     /// <exception cref="InvalidOperationException"><c>E &lt; 4</c>, where <c>c &lt;= 0</c>.</exception>
     /// <exception cref="ArgumentException">A span has the wrong length.</exception>

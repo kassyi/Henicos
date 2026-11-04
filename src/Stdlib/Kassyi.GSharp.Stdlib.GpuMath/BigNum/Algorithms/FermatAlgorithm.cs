@@ -1,4 +1,3 @@
-
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms;
 
 /// <summary>
@@ -26,7 +25,8 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms;
 /// </para>
 /// <para>
 /// <b>Stages.</b> <c>E &lt;= 31</c> (<c>N &lt; 2^64</c>) runs on the host with <see cref="UInt128"/>. Larger exponents keep
-/// the residues on the GPU: NTT squaring and a dedicated fold (<c>GpuBigIntFermatKernels.QuadraticFoldReduceKernel</c>,
+/// the residues on the GPU: NTT squaring and a dedicated parallel fold
+/// (<c>GpuBigIntFermatKernels.QuadraticFoldPassBlockedKernel</c> + <c>QuadraticFoldPassApplyKernel</c>,
 /// three passes of <c>r + q * (2^E - 11)</c>), replayed as CUDA Graphs. An instance created in CPU fallback mode
 /// multiplies with <see cref="BigInteger"/> and folds on the host, with the same results. The largest exponent is
 /// <see cref="MaxExponent"/>, set by the NTT length limit.
@@ -50,6 +50,7 @@ public sealed class FermatAlgorithm : IDisposable
     private readonly long _endIteration;
     private ISquaringModulus? _modulus;
     private SquaringChainDriver? _driver;
+    private PietrzakProverSession? _proofSession;
     private readonly FermatPrpOptions _options;
     private readonly uint? _smallDivisor;
     private readonly uint[] _startWords = [];
@@ -80,7 +81,7 @@ public sealed class FermatAlgorithm : IDisposable
         }
 
         _options = options ?? new FermatPrpOptions();
-        ThrowIfInvalid(_options, 2L * e + 1);
+        ThrowIfInvalid(_options, e, 2L * e + 1);
 
         E = e;
         Base = @base;
@@ -91,7 +92,7 @@ public sealed class FermatAlgorithm : IDisposable
             ThrowIfTrivialBase(e, @base);
         }
 
-        _smallDivisor = SmallDivisor(e, @base);
+        _smallDivisor = FermatModulusHelper.SmallDivisor(e, @base);
         _pinsFallbackMode = e > QuadraticHostModulus.MaxExponent;
         _cpuFallbackAtCreation = _pinsFallbackMode && GpuKernelLoader.IsCpuFallbackMode;
         ResidueWords = QuadraticFoldModulus.WordsOf(e);
@@ -100,7 +101,7 @@ public sealed class FermatAlgorithm : IDisposable
             : (int)Math.Clamp((long)Math.Sqrt(ChainLength), 2, 1000);
         _checkIntervalBlocks = _options.CheckIntervalBlocks != 0 ? _options.CheckIntervalBlocks : _blockSize;
         _endIteration = SquaringChainDriver.EndIterationOf(ChainLength, _blockSize);
-        _startWords = StartWords(e, @base, ResidueWords);
+        _startWords = FermatModulusHelper.StartWords(e, @base, ResidueWords);
         _lastVerified = SquaringChainDriver.StartPoint(_startWords);
 
         // A small divisor decides the test without any squaring: the registers, the NTT scratch and the fold buffers
@@ -128,6 +129,23 @@ public sealed class FermatAlgorithm : IDisposable
 
     /// <summary>Gets the Gerbicz-Li block size in use (the option, or the automatic choice).</summary>
     public int BlockSize => _blockSize;
+
+    /// <summary>
+    /// Gets the dual-segment batched Pietrzak proof finalized by the last completed <see cref="Run"/> or
+    /// <see cref="RunAsync"/> when <see cref="FermatPrpOptions.ProofPower"/> is positive and <c>gcd(a, N) == 1</c>;
+    /// otherwise <see langword="null"/>.
+    /// </summary>
+    public FermatPrpProof? LastProof { get; private set; }
+
+    /// <summary>
+    /// Verifies a dual-segment batched Pietrzak proof modulo <c>N(E) = 2^(2E+1) - 2^E + 11</c> in
+    /// <c>2 * (E mod 2^k) + 1 + floor(E / 2^k) + 254 * (k + 1)</c> modular squarings.
+    /// </summary>
+    /// <param name="proof">The Pietrzak proof to verify.</param>
+    /// <returns>The proof validity, probable-prime verdict, 64-bit residues and modular squaring count.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="proof"/> is <see langword="null"/>.</exception>
+    public static FermatPrpVerificationResult VerifyProof(FermatPrpProof proof) =>
+        PietrzakProofVerifier.Verify(proof);
 
     /// <summary>
     /// Gets the squarings done on the state: the position of the last <see cref="Run"/> (or of a
@@ -347,6 +365,11 @@ public sealed class FermatAlgorithm : IDisposable
         try
         {
             // Written out (not '?.') so that the ownership analyzer (GSH0022) sees the call.
+            if (_proofSession != null)
+            {
+                _proofSession.Dispose();
+            }
+
             if (_modulus != null)
             {
                 _modulus.Dispose();
@@ -365,6 +388,7 @@ public sealed class FermatAlgorithm : IDisposable
     {
         cancellationToken.ThrowIfCancellationRequested();
         var stopwatch = Stopwatch.StartNew();
+        LastProof = null;
         if (_smallDivisor is { } divisor)
         {
             return new FermatPrpResult(false, divisor, 0, 0, 0, 0, 0, stopwatch.Elapsed);
@@ -372,6 +396,8 @@ public sealed class FermatAlgorithm : IDisposable
 
         EnsureChain();
         var start = _pendingRestore ?? SquaringChainDriver.StartPoint(_startWords);
+        _proofSession?.PrepareRun(start.Iteration);
+
         if (_pendingRestore is null)
         {
             // A run that does not resume starts again from u_0: until its first check passes, u_0 is its last verified
@@ -402,13 +428,19 @@ public sealed class FermatAlgorithm : IDisposable
         _modulus.Multiply(SquaringRegister.Verdict, SquaringRegister.Final, SquaringRegister.Constant);
         var residue = _modulus.ReadCanonical(SquaringRegister.Verdict);
         var check = _modulus.ReadCanonical(SquaringRegister.Snapshot);
+        if (_proofSession != null)
+        {
+            var finalResidue = _modulus.ReadCanonical(SquaringRegister.Final);
+            LastProof = _proofSession.FinalizeProof(_modulus, new PietrzakClaim(check, finalResidue));
+        }
+
         _iteration = _endIteration;
 
         return new FermatPrpResult(
             residue.AsSpan().SequenceEqual(check),
             null,
-            Low64(residue),
-            Low64(check),
+            FermatModulusHelper.Low64(residue),
+            FermatModulusHelper.Low64(check),
             outcome.Iterations,
             outcome.EndPoint.ChecksPassed,
             outcome.EndPoint.Rollbacks,
@@ -418,6 +450,7 @@ public sealed class FermatAlgorithm : IDisposable
     private void OnVerified(ChainPoint point)
     {
         _lastVerified = point;
+        _proofSession?.Flush();
         _options.OnVerifiedCheckpoint?.Invoke(ToCheckpoint(point));
     }
 
@@ -452,52 +485,40 @@ public sealed class FermatAlgorithm : IDisposable
             return;
         }
 
-        var modulus = CreateModulus(E, _cpuFallbackAtCreation);
+        var modulus = FermatModulusHelper.CreateModulus(E, _cpuFallbackAtCreation);
+        PietrzakProverSession? proofSession = null;
         try
         {
+            if (_options.ProofPower > 0)
+            {
+                var header = new FermatPrpProofHeader(E, Base, _options.ProofPower, ResidueWords);
+                proofSession = new PietrzakProverSession(header, _options.ProofLeafFile);
+            }
+
             modulus.Write(SquaringRegister.Start, _startWords);
             modulus.Write(SquaringRegister.State, _startWords);
-            modulus.Write(SquaringRegister.Constant,
-                ToWords(BigInteger.ModPow(Base, 10, modulus.GetModulus()), ResidueWords));
+            modulus.Write(SquaringRegister.Constant, FermatModulusHelper.ConstantWords(E, Base, modulus, ResidueWords));
             _driver = new SquaringChainDriver(modulus, ChainLength, E, _blockSize, _checkIntervalBlocks,
-                _options.MaxConsecutiveRollbacks);
+                _options.MaxConsecutiveRollbacks)
+            {
+                ProofSession = proofSession,
+            };
+            _proofSession = proofSession;
             _modulus = modulus;
         }
         catch
         {
+            if (proofSession != null)
+            {
+                proofSession.Dispose();
+            }
+
             modulus.Dispose();
             throw;
         }
     }
 
-    /// <summary>
-    /// Returns <c>u_0 = a mod N</c> in <paramref name="words"/> words without building <c>N</c>: for <c>E &gt;= 32</c>,
-    /// <c>N &gt; 2^64 &gt; a</c>.
-    /// </summary>
-    private static uint[] StartWords(int e, uint @base, int words)
-    {
-        var start = new uint[words];
-        ulong value = @base;
-        if (e <= QuadraticHostModulus.MaxExponent)
-        {
-            value %= (1UL << (2 * e + 1)) - (1UL << e) + QuadraticFoldModulus.ConstantTerm;
-        }
-
-        start[0] = (uint)value;
-        if (words > 1)
-        {
-            start[1] = (uint)(value >> 32);
-        }
-
-        return start;
-    }
-
-    private static ISquaringModulus CreateModulus(int e, bool isCpuFallback) =>
-        e <= QuadraticHostModulus.MaxExponent
-            ? new QuadraticHostModulus(e)
-            : new QuadraticDeviceModulus(new QuadraticFoldModulus(e), isCpuFallback);
-
-    private static void ThrowIfInvalid(FermatPrpOptions options, long chainLength)
+    private static void ThrowIfInvalid(FermatPrpOptions options, int e, long chainLength)
     {
         if (options.BlockSize < 0 || options.BlockSize > chainLength)
         {
@@ -516,51 +537,35 @@ public sealed class FermatAlgorithm : IDisposable
             throw new ArgumentOutOfRangeException(nameof(options), options.MaxConsecutiveRollbacks,
                 "MaxConsecutiveRollbacks must be at least 1.");
         }
+
+        if (options.ProofPower < 0 || options.ProofPower > FermatPrpProof.MaxProofPower)
+        {
+            throw new ArgumentOutOfRangeException(nameof(options), options.ProofPower,
+                $"ProofPower must be from 0 (disabled) to {FermatPrpProof.MaxProofPower}.");
+        }
+
+        if (options.ProofPower > 0 && (1L << options.ProofPower) > e)
+        {
+            throw new ArgumentOutOfRangeException(nameof(options), options.ProofPower,
+                $"2^ProofPower ({1L << options.ProofPower}) must not exceed E = {e}.");
+        }
+
+        if (options.ProofPower > 0 && options.ProofLeafFile != null && string.IsNullOrWhiteSpace(options.ProofLeafFile))
+        {
+            throw new ArgumentException("ProofLeafFile must not be empty or whitespace when specified.",
+                nameof(options));
+        }
     }
 
     /// <summary>Rejects a base that is 0, 1 or <c>N - 1</c> modulo <c>N</c>, which only a small <c>N</c> allows.</summary>
     private static void ThrowIfTrivialBase(int e, uint @base)
     {
-        var n = (1UL << (2 * e + 1)) - (1UL << e) + QuadraticFoldModulus.ConstantTerm;
-        var reduced = @base % n;
-        if (reduced == 0 || reduced == 1 || reduced == n - 1)
+        if (FermatModulusHelper.IsTrivialBase(e, @base, out var n, out var reduced))
         {
             throw new ArgumentOutOfRangeException(nameof(@base), @base,
                 $"The base is {reduced} modulo N = {n}; a base of 0, 1 or N - 1 says nothing about N.");
         }
     }
-
-    /// <summary>Returns <c>gcd(a, N)</c> when it is not 1, from <c>N mod a = 2x^2 - x + 11 mod a</c> with <c>x = 2^E mod a</c>.</summary>
-    private static uint? SmallDivisor(int e, uint @base)
-    {
-        ulong x = 1;
-        ulong power = 2 % @base;
-        for (var bits = e; bits > 0; bits >>= 1)
-        {
-            if ((bits & 1) != 0)
-            {
-                x = x * power % @base;
-            }
-
-            power = power * power % @base;
-        }
-
-        // 2x^2 + 11 + (a - x) is non-negative because x < a.
-        var nModBase = (ulong)(((UInt128)2 * x * x + QuadraticFoldModulus.ConstantTerm + (@base - x)) % @base);
-        var gcd = (ulong)BigInteger.GreatestCommonDivisor(@base, nModBase);
-        return gcd == 1 ? null : (uint)gcd;
-    }
-
-    private static uint[] ToWords(BigInteger value, int words)
-    {
-        var result = new uint[words];
-        value.TryWriteBytes(System.Runtime.InteropServices.MemoryMarshal.AsBytes(result.AsSpan()), out _,
-            isUnsigned: true);
-        return result;
-    }
-
-    private static ulong Low64(ReadOnlySpan<uint> words) =>
-        words.Length > 1 ? words[0] | ((ulong)words[1] << 32) : words[0];
 
     private void ThrowIfUnusable()
     {

@@ -1,5 +1,7 @@
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels;
 
+using static NttPrimeArithmetic;
+
 /// <summary>
 /// Defines CUDA GPU device kernels for large-integer multiplication using NTT, Comba, and Karatsuba algorithms.
 /// </summary>
@@ -17,7 +19,6 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels;
 [ExcludeFromCodeCoverage]
 public static partial class GpuBigIntMulKernels
 {
-    // Global Non-Cooperative NTT approach for Multi-Million digit multiplications
     public struct NttUnpackOperandContext
     {
         [GpuReadOnly]
@@ -44,20 +45,14 @@ public static partial class GpuBigIntMulKernels
     [GpuKernel]
     public static void MultiplyNttUnpackKernel(NttUnpackContext ctx)
     {
-        GpuBigIntFermatKernels.DeviceUnpack16Transposed(
-            ctx.OperandA.Source, ctx.OperandA.NttBuf1, ctx.OperandA.NttBuf2,
-            ctx.Grid.M, ctx.OperandA.NumWords, ctx.Grid.N1, ctx.Grid.N2, true);
-        GpuBigIntFermatKernels.DeviceUnpack16Transposed(
-            ctx.OperandB.Source, ctx.OperandB.NttBuf1, ctx.OperandB.NttBuf2,
-            ctx.Grid.M, ctx.OperandB.NumWords, ctx.Grid.N1, ctx.Grid.N2, true);
+        GpuBigIntFermatKernels.DeviceUnpack16Transposed(ctx.OperandA, ctx.Grid, true);
+        GpuBigIntFermatKernels.DeviceUnpack16Transposed(ctx.OperandB, ctx.Grid, true);
     }
 
     [GpuKernel]
     public static void MultiplyNttUnpackSingleKernel(NttUnpackSingleContext ctx)
     {
-        GpuBigIntFermatKernels.DeviceUnpack16Transposed(
-            ctx.Operand.Source, ctx.Operand.NttBuf1, ctx.Operand.NttBuf2,
-            ctx.Grid.M, ctx.Operand.NumWords, ctx.Grid.N1, ctx.Grid.N2, true);
+        GpuBigIntFermatKernels.DeviceUnpack16Transposed(ctx.Operand, ctx.Grid, true);
     }
 
     [GpuKernel]
@@ -167,14 +162,12 @@ public static partial class GpuBigIntMulKernels
         Gpu.SyncThreads();
 
         // Step 2: Forward NTT for Prime1 on sNtt1A and sNttB
-        ExecuteSharedButterflies(sNtt1A, m, GpuBigIntNttKernels.Prime1, GpuBigIntNttKernels.NttG1,
-            GpuBigIntNttKernels.BarrettMagic1, false, tid, bDim);
-        ExecuteSharedButterflies(sNttB, m, GpuBigIntNttKernels.Prime1, GpuBigIntNttKernels.NttG1,
-            GpuBigIntNttKernels.BarrettMagic1, false, tid, bDim);
+        ExecuteSharedButterflies(sNtt1A, m, Prime1, NttG1, BarrettMagic1, false, tid, bDim);
+        ExecuteSharedButterflies(sNttB, m, Prime1, NttG1, BarrettMagic1, false, tid, bDim);
 
         for (int k = tid; k < m; k += bDim)
         {
-            sNtt1A[k] = GpuBigIntNttKernels.ModMul1(sNtt1A[k], sNttB[k]);
+            sNtt1A[k] = ModMul1(sNtt1A[k], sNttB[k]);
         }
 
         Gpu.SyncThreads();
@@ -191,14 +184,12 @@ public static partial class GpuBigIntMulKernels
 
         Gpu.SyncThreads();
 
-        ExecuteSharedButterflies(sNtt2A, m, GpuBigIntNttKernels.Prime2, GpuBigIntNttKernels.NttG2,
-            GpuBigIntNttKernels.BarrettMagic2, false, tid, bDim);
-        ExecuteSharedButterflies(sNttB, m, GpuBigIntNttKernels.Prime2, GpuBigIntNttKernels.NttG2,
-            GpuBigIntNttKernels.BarrettMagic2, false, tid, bDim);
+        ExecuteSharedButterflies(sNtt2A, m, Prime2, NttG2, BarrettMagic2, false, tid, bDim);
+        ExecuteSharedButterflies(sNttB, m, Prime2, NttG2, BarrettMagic2, false, tid, bDim);
 
         for (int k = tid; k < m; k += bDim)
         {
-            sNtt2A[k] = GpuBigIntNttKernels.ModMul2(sNtt2A[k], sNttB[k]);
+            sNtt2A[k] = ModMul2(sNtt2A[k], sNttB[k]);
         }
 
         Gpu.SyncThreads();
@@ -206,25 +197,21 @@ public static partial class GpuBigIntMulKernels
         // Step 4: Bit-reverse in-place and run Inverse NTT on sNtt1A (Prime1) and sNtt2A (Prime2)
         BitReverseSharedInPlace(sNtt1A, sNtt2A, m, log2M, tid, bDim);
 
-        ExecuteSharedButterflies(sNtt1A, m, GpuBigIntNttKernels.Prime1, GpuBigIntNttKernels.NttG1,
-            GpuBigIntNttKernels.BarrettMagic1, true, tid, bDim);
-        ExecuteSharedButterflies(sNtt2A, m, GpuBigIntNttKernels.Prime2, GpuBigIntNttKernels.NttG2,
-            GpuBigIntNttKernels.BarrettMagic2, true, tid, bDim);
+        ExecuteSharedButterflies(sNtt1A, m, Prime1, NttG1, BarrettMagic1, true, tid, bDim);
+        ExecuteSharedButterflies(sNtt2A, m, Prime2, NttG2, BarrettMagic2, true, tid, bDim);
 
         // Step 5: Chinese Remainder Theorem (CRT) recombination into 64-bit convolution coefficients (low in sNtt1A, high in sNtt2A)
-        uint invN1 = GpuBigIntNttKernels.ModPow((uint)m, GpuBigIntNttKernels.Prime1 - 2u, GpuBigIntNttKernels.Prime1,
-            GpuBigIntNttKernels.BarrettMagic1);
-        uint invN2 = GpuBigIntNttKernels.ModPow((uint)m, GpuBigIntNttKernels.Prime2 - 2u, GpuBigIntNttKernels.Prime2,
-            GpuBigIntNttKernels.BarrettMagic2);
+        uint invN1 = ModPow((uint)m, Prime1 - 2u, Prime1, BarrettMagic1);
+        uint invN2 = ModPow((uint)m, Prime2 - 2u, Prime2, BarrettMagic2);
 
         for (int k = tid; k < m; k += bDim)
         {
-            const ulong Modulus1 = GpuBigIntNttKernels.Prime1;
-            const ulong Modulus2 = GpuBigIntNttKernels.Prime2;
-            const ulong Prime1InverseModPrime2 = 1050101200UL;
+            const ulong Modulus1 = Prime1;
+            const ulong Modulus2 = Prime2;
+            const ulong Prime1InverseModPrime2 = Prime1InvModPrime2;
 
-            ulong v1 = GpuBigIntNttKernels.ModMul1(sNtt1A[k], invN1);
-            ulong v2 = GpuBigIntNttKernels.ModMul2(sNtt2A[k], invN2);
+            ulong v1 = ModMul1(sNtt1A[k], invN1);
+            ulong v2 = ModMul2(sNtt2A[k], invN2);
             ulong v1Mod2 = v1 % Modulus2;
             ulong diff = v2 >= v1Mod2 ? v2 - v1Mod2 : v2 + Modulus2 - v1Mod2;
             ulong crtCoeff = (diff * Prime1InverseModPrime2) % Modulus2;
@@ -270,10 +257,10 @@ public static partial class GpuBigIntMulKernels
         for (int length = 2; length <= m; length <<= 1)
         {
             int halfLen = length >> 1;
-            uint wLen = GpuBigIntNttKernels.ModPow(primitiveRoot, (prime - 1u) / (uint)length, prime, barrettMagic);
+            uint wLen = ModPow(primitiveRoot, (prime - 1u) / (uint)length, prime, barrettMagic);
             if (isInverse)
             {
-                wLen = GpuBigIntNttKernels.ModPow(wLen, prime - 2u, prime, barrettMagic);
+                wLen = ModPow(wLen, prime - 2u, prime, barrettMagic);
             }
 
             for (int pairIdx = tid; pairIdx < halfM; pairIdx += bDim)
@@ -283,12 +270,12 @@ public static partial class GpuBigIntMulKernels
                 int idx1 = groupIdx * length + elemIdx;
                 int idx2 = idx1 + halfLen;
 
-                uint w = GpuBigIntNttKernels.ModPow(wLen, (uint)elemIdx, prime, barrettMagic);
+                uint w = ModPow(wLen, (uint)elemIdx, prime, barrettMagic);
                 uint u = buffer[idx1];
-                uint v = GpuBigIntNttKernels.ModMulBarrett(buffer[idx2], w, prime, barrettMagic);
+                uint v = ModMulBarrett(buffer[idx2], w, prime, barrettMagic);
 
-                buffer[idx1] = GpuBigIntNttKernels.ModAdd(u, v, prime);
-                buffer[idx2] = GpuBigIntNttKernels.ModSub(u, v, prime);
+                buffer[idx1] = ModAdd(u, v, prime);
+                buffer[idx2] = ModSub(u, v, prime);
             }
 
             Gpu.SyncThreads();
@@ -368,18 +355,7 @@ public static partial class GpuBigIntMulKernels
             uint lowWord = (uint)(localSum & 0xFFFFFFFFUL);
             uint highWord = (uint)(localSum >> 32);
 
-            uint prevH = Warp.ShuffleUpSync(0xFFFFFFFFu, highWord, 1u);
-            if (laneId == 31)
-            {
-                sOverlapH[warpId] = highWord;
-            }
-
-            Gpu.SyncThreads();
-
-            if (laneId == 0)
-            {
-                prevH = warpId == 0 ? runningH : sOverlapH[warpId - 1];
-            }
+            uint prevH = GpuBigIntNttKernels.ResolveOverlapH(highWord, sOverlapH, laneId, warpId, runningH);
 
             ulong sum = (ulong)lowWord + prevH;
             uint g = i < numWordsResult ? (uint)(sum >> 32) : 0u;

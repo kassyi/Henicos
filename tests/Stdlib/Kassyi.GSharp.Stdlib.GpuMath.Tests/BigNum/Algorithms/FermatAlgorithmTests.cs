@@ -52,7 +52,7 @@ public class FermatAlgorithmTests
 
         // P-verdict, P-ref and P-identity, for N prime.
         // mutant: FermatAlgorithm.cs RunCoreAsync `_modulus.Multiply(Final, Final, Constant)` removed (no a^10)
-        // mutant: GpuBigIntFermatKernels.cu.cs QuadraticFoldPass `runningH = 2u` -> `3u`
+        // mutant: GpuBigIntFermatKernels.cu.cs ExecuteQuadraticFoldPassBlocked ResolveOverlapH 'bIdx == 0 ? 2u : 0u' -> '3u'
         Assert.True(expected.IsProbablePrime);
         Assert.True(result.IsProbablePrime);
         Assert.Equal(expected.Residue64, result.Residue64);

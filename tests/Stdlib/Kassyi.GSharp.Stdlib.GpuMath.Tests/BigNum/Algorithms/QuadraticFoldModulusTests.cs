@@ -188,4 +188,34 @@ public class QuadraticFoldModulusTests
         Assert.Throws<ArgumentException>(() => modulus.FoldReference(new uint[modulus.ProductWords], new uint[modulus.Words + 1]));
         Assert.Throws<ArgumentException>(() => modulus.Canonicalize(new uint[modulus.Words - 1]));
     }
+
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(1, 1024, 1024)]
+    [InlineData(2, 1025, 1024)]
+    [InlineData(4, 3751, 1024)]
+    [InlineData(5, 157, 32)]
+    public void ThrowIfFoldBlockCarriesTooSmall_AcceptsOneWordPerChunk(int blockCarryWords, int resultWords, int chunkSize)
+    {
+        // One carry word per chunk of resultWords is exact; no exception is thrown.
+        // mutant: QuadraticDeviceModulus.cs ThrowIfFoldBlockCarriesTooSmall `blockCarryWords < carryCount` -> `<=`
+        var exception = Record.Exception(() =>
+            QuadraticDeviceModulus.ThrowIfFoldBlockCarriesTooSmall(blockCarryWords, resultWords, chunkSize));
+
+        Assert.Null(exception);
+    }
+
+    [Theory]
+    [Scenario(TestScenario.SadPath)]
+    [InlineData(0, 1, 1024)]
+    [InlineData(1, 1025, 1024)]
+    [InlineData(3, 3751, 1024)]
+    [InlineData(4, 157, 32)]
+    public void ThrowIfFoldBlockCarriesTooSmall_RejectsFewerWordsThanChunks(int blockCarryWords, int resultWords, int chunkSize)
+    {
+        // One word short of ceil(resultWords / chunkSize) would let the kernel write out of bounds.
+        // mutant: QuadraticDeviceModulus.cs ThrowIfFoldBlockCarriesTooSmall `(resultWords + chunkSize - 1) / chunkSize` -> `resultWords / chunkSize`
+        Assert.Throws<InvalidOperationException>(() =>
+            QuadraticDeviceModulus.ThrowIfFoldBlockCarriesTooSmall(blockCarryWords, resultWords, chunkSize));
+    }
 }

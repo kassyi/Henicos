@@ -14,9 +14,8 @@ public static partial class GpuBigIntSqrtKernels
     ///Newton-Raphson Mega Kernel (Inverse Sqrt)
     /// </summary>
     [GpuKernel(Cooperative = true)]
-    public static void InverseSqrtNewtonRaphsonMegaKernel(SqrtNewtonRaphson ctx)
+    public static void InverseSqrtNewtonRaphsonMegaKernel(NewtonRaphsonContext core)
     {
-        var core = ctx.Core;
         var dims = core.Dimensions;
         var ops = core.Operands;
         var iterScratch = core.Workspace.Iteration;
