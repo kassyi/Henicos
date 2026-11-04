@@ -99,7 +99,7 @@ using System;
 using global::Kassyi.GSharp.Core;
 using static global::Kassyi.GSharp.Core.ManagedGpuContext;
 using global::Kassyi.ZeroAlloc.Linq;
-#pragma warning disable CS0649
+#pragma warning disable CS0162, CS0164, CS0219, CS0649, CS1718
 namespace Kassyi.GSharp.Tests.Shared.Differential
 {
 public partial class GridSyncAndSingleThreadDifferentialKernels
@@ -108,17 +108,27 @@ public partial class GridSyncAndSingleThreadDifferentialKernels
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Differential__GridSyncAndSingleThreadDifferentialKernels__InnerGridStep {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
+internal int[] phaseBuf;
+internal int[] scratch;
+internal int gid;
+internal int total;
 internal int partner;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__GridSyncAndSingleThreadDifferentialKernels__InnerGridStep(int[] phaseBuf, int[] scratch, int gid, int total, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Differential__GridSyncAndSingleThreadDifferentialKernels__InnerGridStep __gsharp_ctx) {
+public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__GridSyncAndSingleThreadDifferentialKernels__InnerGridStep(int[] __gsharp_in_phaseBuf, int[] __gsharp_in_scratch, int __gsharp_in_gid, int __gsharp_in_total, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Differential__GridSyncAndSingleThreadDifferentialKernels__InnerGridStep __gsharp_ctx) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.phaseBuf = __gsharp_in_phaseBuf;
+__gsharp_ctx.scratch = __gsharp_in_scratch;
+__gsharp_ctx.gid = __gsharp_in_gid;
+__gsharp_ctx.total = __gsharp_in_total;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_ctx.partner = (gid + 3) % total;
-scratch[gid] = phaseBuf[gid] ^ (phaseBuf[__gsharp_ctx.partner] + 19);
+__gsharp_ctx.partner = (__gsharp_ctx.gid + 3) % __gsharp_ctx.total;
+__gsharp_ctx.scratch[__gsharp_ctx.gid] = __gsharp_ctx.phaseBuf[__gsharp_ctx.gid] ^ (__gsharp_ctx.phaseBuf[__gsharp_ctx.partner] + 19);
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
 return false;
@@ -140,10 +150,22 @@ throw new global::System.InvalidOperationException("The device function state ma
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Differential__GridSyncAndSingleThreadDifferentialKernels__OuterGridStep {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
+internal int[] phaseBuf;
+internal int[] scratch;
+internal int[] output;
+internal int gid;
+internal int total;
 internal global::Kassyi.GSharp.Tests.Shared.Differential.GridSyncAndSingleThreadDifferentialKernels.__gsharp_frame_Kassyi__GSharp__Tests__Shared__Differential__GridSyncAndSingleThreadDifferentialKernels__InnerGridStep __gsharp_call_frame_0 = new();
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__GridSyncAndSingleThreadDifferentialKernels__OuterGridStep(int[] phaseBuf, int[] scratch, int[] output, int gid, int total, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Differential__GridSyncAndSingleThreadDifferentialKernels__OuterGridStep __gsharp_ctx) {
+public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__GridSyncAndSingleThreadDifferentialKernels__OuterGridStep(int[] __gsharp_in_phaseBuf, int[] __gsharp_in_scratch, int[] __gsharp_in_output, int __gsharp_in_gid, int __gsharp_in_total, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Differential__GridSyncAndSingleThreadDifferentialKernels__OuterGridStep __gsharp_ctx) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.phaseBuf = __gsharp_in_phaseBuf;
+__gsharp_ctx.scratch = __gsharp_in_scratch;
+__gsharp_ctx.output = __gsharp_in_output;
+__gsharp_ctx.gid = __gsharp_in_gid;
+__gsharp_ctx.total = __gsharp_in_total;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -154,14 +176,14 @@ goto case 1;
 
 case 1:
 {
-if (!global::Kassyi.GSharp.Tests.Shared.Differential.GridSyncAndSingleThreadDifferentialKernels.__gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__GridSyncAndSingleThreadDifferentialKernels__InnerGridStep(phaseBuf, scratch, gid, total, __gsharp_ctx.__gsharp_call_frame_0))
+if (!global::Kassyi.GSharp.Tests.Shared.Differential.GridSyncAndSingleThreadDifferentialKernels.__gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__GridSyncAndSingleThreadDifferentialKernels__InnerGridStep(__gsharp_ctx.phaseBuf, __gsharp_ctx.scratch, __gsharp_ctx.gid, __gsharp_ctx.total, __gsharp_ctx.__gsharp_call_frame_0))
 {
 __gsharp_ctx.__gsharp_state = 1;
 return false;
 }
 
-int prev = (gid + total - 1) % total;
-output[gid] = scratch[gid] + scratch[prev];
+int prev = (__gsharp_ctx.gid + __gsharp_ctx.total - 1) % __gsharp_ctx.total;
+__gsharp_ctx.output[__gsharp_ctx.gid] = __gsharp_ctx.scratch[__gsharp_ctx.gid] + __gsharp_ctx.scratch[prev];
 {
 __gsharp_ctx.__gsharp_state = 0;
 return true;
@@ -178,7 +200,7 @@ throw new global::System.InvalidOperationException("The device function state ma
 
 // File: Kassyi__GSharp__Tests__Shared__Differential__GridSyncAndSingleThreadDifferentialKernels.g.cs
 // <auto-generated/>
-#nullable enable
+#nullable enable annotations
 using System;
 #pragma warning disable RS1035 // Do not use APIs banned for analyzers
 #pragma warning disable RS1016
@@ -189,6 +211,7 @@ using global::Kassyi.GSharp.Core;
 using global::Kassyi.GSharp.Runtime.Interop;
 using static global::Kassyi.GSharp.Core.ManagedGpuContext;
 using global::Kassyi.ZeroAlloc.Linq;
+#pragma warning disable CS0162, CS0164, CS0219, CS0649, CS1718
 namespace Kassyi.GSharp.Tests.Shared.Differential
 {
 public partial class GridSyncAndSingleThreadDifferentialKernels

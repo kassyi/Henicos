@@ -5,7 +5,7 @@ namespace Kassyi.GSharp.Tests.Shared.Stdlib;
 /// <summary>
 /// The kernels of <see cref="CrossAssemblyStdlibKernels"/> on the native target (CPU or CUDA): they call the device
 /// functions of Kassyi.GSharp.Stdlib.GpuMath, whose recorded text the native module imports (#433, #538). The managed
-/// fallback runs the same kernels in <see cref="CrossAssemblyStdlibManagedTests"/>.
+/// fallback runs the same kernels in <c>CrossAssemblyStdlibManagedTests</c>.
 /// </summary>
 [TestTarget(ExecutionTarget.GpuExecution)]
 [Category(TestCategory.Stdlib)]

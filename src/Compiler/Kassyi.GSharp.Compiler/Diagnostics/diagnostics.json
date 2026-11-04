@@ -822,6 +822,16 @@
     "isEnabledByDefault": true
   },
   {
+    "name": "MethodTooComplexToCompile",
+    "id": "GSH0102",
+    "title": "Method is too deeply nested or too complex to compile",
+    "messageFormat": "The method '{0}' is too deeply nested or too complex to compile; split it into smaller methods.",
+    "category": "GSharpTranspiler",
+    "defaultSeverity": "Error",
+    "isEnabledByDefault": true,
+    "description": "An expression or control flow structure within the method exceeds compiler evaluation depth limits or exhausts the execution stack."
+  },
+  {
     "name": "KernelParameterConflictsWithLaunchParameter",
     "id": "GSH0106",
     "title": "Kernel parameter name conflicts with a launch parameter",

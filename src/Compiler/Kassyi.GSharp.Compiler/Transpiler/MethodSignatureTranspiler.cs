@@ -177,7 +177,6 @@ internal static class MethodSignatureTranspiler
     internal static (bool IsRefPointer, bool IsPointerType, bool HasRestrict) WriteParameterDeclaration(
         ParameterSyntax p, ITypeSymbol? typeSymbol, IParameterSymbol? parameterSymbol, ref TranspileContext context)
     {
-        typeSymbol = typeSymbol.UnwrapNullableArrayLike();
         var isReadOnly = parameterSymbol != null && parameterSymbol.HasAttribute(KnownAttributes.GpuReadOnly);
         var isKernel = parameterSymbol?.ContainingSymbol is IMethodSymbol method &&
                        method.HasAttribute(KnownAttributes.GpuKernel);
@@ -190,6 +189,12 @@ internal static class MethodSignatureTranspiler
         if ((isReadOnly && !isArray) || isReadOnlyRef)
         {
             context.Emitter.Writer.Append("const ");
+        }
+
+        if (isKernel && typeSymbol.IsNullableArrayLike())
+        {
+            var unwrapped = typeSymbol.UnwrapNullableArrayLike() ?? typeSymbol;
+            return context.Emitter.Dialect.AppendParameter(ref context, p, unwrapped, parameterSymbol);
         }
 
         return context.Emitter.Dialect.AppendParameter(ref context, p, typeSymbol, parameterSymbol);
@@ -234,7 +239,7 @@ internal static class MethodSignatureTranspiler
         }
 
         var paramSemanticModel = context.Query.SemanticModel.Compilation.GetSemanticModel(p.SyntaxTree);
-        var typeSymbol = paramSemanticModel.GetTypeSymbol(p.Type).UnwrapNullableArrayLike();
+        var typeSymbol = paramSemanticModel.GetTypeSymbol(p.Type);
 
         StructTranspiler.RegisterUsedStructIfApplicable(typeSymbol, ref context);
 
@@ -249,13 +254,24 @@ internal static class MethodSignatureTranspiler
         }
 
         context.Emitter.Writer.Append(' ');
-        if (copiedParameters != null && Contains(copiedParameters, p.Identifier.ValueText))
+        var isKernel = !isDevice && paramSymbol?.ContainingSymbol is IMethodSymbol method &&
+                       method.HasAttribute(KnownAttributes.GpuKernel);
+        if (isKernel && typeSymbol.IsNullableArrayLike())
         {
-            context.Emitter.Writer.Append(GSharpInternalNames.StateMachine.CopiedParameterPrefix);
+            context.Emitter.Writer.Append(GSharpInternalNames.Kernel.RawArgumentPrefix);
+            context.Emitter.Writer.AppendCppName(
+                CppNameResolver.Resolve(paramSymbol, p.Identifier.ValueText, context.Emitter.Dialect));
         }
+        else
+        {
+            if (copiedParameters != null && Contains(copiedParameters, p.Identifier.ValueText))
+            {
+                context.Emitter.Writer.Append(GSharpInternalNames.StateMachine.CopiedParameterPrefix);
+            }
 
-        context.Emitter.Writer.AppendCppName(
-            CppNameResolver.Resolve(paramSymbol, p.Identifier.ValueText, context.Emitter.Dialect));
+            context.Emitter.Writer.AppendCppName(
+                CppNameResolver.Resolve(paramSymbol, p.Identifier.ValueText, context.Emitter.Dialect));
+        }
     }
 
     private static bool Contains(IReadOnlyCollection<string> names, string name)
@@ -335,19 +351,10 @@ internal static class MethodSignatureTranspiler
         return "inline";
     }
 
-    private static MethodImplOptions ExtractMethodImplOptions(AttributeData attr)
-    {
-        if (attr.ConstructorArguments.Length > 0 && attr.ConstructorArguments[0].Value is int or short)
-        {
-            return (MethodImplOptions)Convert.ToInt32(attr.ConstructorArguments[0].Value);
-        }
-
-        var hasValue = attr.NamedArguments
-            .AsStackEnumerable()
-            .TryFirst(static namedArg => namedArg is { Key: "Value", Value.Value: int or short }, out var valueArg);
-
-        return hasValue ? (MethodImplOptions)Convert.ToInt32(valueArg.Value.Value) : default;
-    }
+    private static MethodImplOptions ExtractMethodImplOptions(AttributeData attr) =>
+        attr.ConstructorArguments.Length > 0 && attr.ConstructorArguments[0].Value is int or short
+            ? (MethodImplOptions)Convert.ToInt32(attr.ConstructorArguments[0].Value)
+            : default;
 
     private static void WriteKernelMethodPrefix(ref TranspileContext context)
     {

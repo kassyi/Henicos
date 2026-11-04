@@ -76,8 +76,7 @@ public sealed class DeviceElementCountTests : IDisposable
         var values = Values(count, positive);
         var leaf = Leaf(capacity, values);
 
-        // GpuBigIntExpr is not disposable yet (D2 stage 6); the workspace frees what the nodes hold
-        var expression = reduction switch
+        using var expression = reduction switch
         {
             Reduction.Sum => leaf.Sum(),
             Reduction.Max => leaf.Max(),
@@ -111,7 +110,7 @@ public sealed class DeviceElementCountTests : IDisposable
         // the destination and wraps it.
         var leaf = Leaf(1000, []);
         using var destination = GpuBigUInt.FromBigInteger(_workspace, (BigInteger.One << (Words * 32)) - 1, Words);
-        GpuBigIntExpr expression = reduction switch
+        using GpuBigIntExpr expression = reduction switch
         {
             Reduction.Sum => leaf.Sum(),
             Reduction.Max => leaf.Max(),
@@ -137,7 +136,7 @@ public sealed class DeviceElementCountTests : IDisposable
     public void Count_IsTheDeviceCount(int capacity, int count)
     {
         // mutant: Count writes the capacity
-        var expression = Leaf(capacity, Values(count, false)).Count();
+        using var expression = Leaf(capacity, Values(count, false)).Count();
         using var result = expression.Evaluate(_workspace);
         Assert.Equal(new BigInteger(count), result.Value.ToBigInteger(result.IsNegative));
     }
@@ -159,8 +158,10 @@ public sealed class DeviceElementCountTests : IDisposable
             using var target = new GpuBigUInt(workspace, 2);
             workspace.Provider.CopyHostToDevice(target.DevicePointer, [0xFFFF_FFFFu, 0xFFFF_FFFFu], 2, workspace.Stream);
 
-            using var count = array.AsVectorizedEnumerable().Count().Evaluate(workspace);
-            var taken = array.AsVectorizedEnumerable().Take(3).Count().Evaluate(target);
+            using var countExpr = array.AsVectorizedEnumerable().Count();
+            using var count = countExpr.Evaluate(workspace);
+            using var takenExpr = array.AsVectorizedEnumerable().Take(3).Count();
+            var taken = takenExpr.Evaluate(target);
 
             Assert.Equal(new BigInteger(4), count.Value.ToBigInteger());
             Assert.Equal(new BigInteger(3), taken.Value.ToBigInteger());
@@ -196,8 +197,8 @@ public sealed class DeviceElementCountTests : IDisposable
         var values = Values(7, false);
         var expected = values.Skip(skip).Take(take).Skip(1).Take(take).ToArray();
 
-        var count = Leaf(20, values).Skip(skip).Take(take).Skip(1).Take(take).Count();
-        var sum = Leaf(20, values).Skip(skip).Take(take).Skip(1).Take(take).Sum();
+        using var count = Leaf(20, values).Skip(skip).Take(take).Skip(1).Take(take).Count();
+        using var sum = Leaf(20, values).Skip(skip).Take(take).Skip(1).Take(take).Sum();
         using var countResult = count.Evaluate(_workspace);
         using var sumResult = sum.Evaluate(_workspace);
 
@@ -238,7 +239,7 @@ public sealed class DeviceElementCountTests : IDisposable
         var values = Values(10, false);
         using var ten = GpuBigUInt.FromBigInteger(_workspace, 10, Words);
 
-        var sum = Leaf(1000, values).SelectAdd(new GpuBigInt(ten, false)).Sum();
+        using var sum = Leaf(1000, values).SelectAdd(new GpuBigInt(ten, false)).Sum();
         using var result = sum.Evaluate(_workspace);
 
         Assert.Equal(values.Aggregate(BigInteger.Zero, (s, v) => s + v + 10), result.Value.ToBigInteger(result.IsNegative));
@@ -253,7 +254,7 @@ public sealed class DeviceElementCountTests : IDisposable
         // mutant: the host loop over the capacity (InvalidOperationException from the tail)
         var values = Enumerable.Range(1, 10).Select(i => new BigInteger(i * i)).ToArray();
 
-        var sum = Leaf(1000, values, -s_loud).SelectSqrt().Sum();
+        using var sum = Leaf(1000, values, -s_loud).SelectSqrt().Sum();
         using var result = sum.Evaluate(_workspace);
 
         Assert.Equal(new BigInteger(55), result.Value.ToBigInteger(result.IsNegative));
@@ -268,7 +269,7 @@ public sealed class DeviceElementCountTests : IDisposable
         var other = Enumerable.Range(0, 1000).Select(i => new BigInteger(i)).ToArray();
         using var staticArray = CreateArray(other);
 
-        var sum = staticArray.AsVectorizedEnumerable().ZipAdd(Leaf(1000, values)).Sum();
+        using var sum = staticArray.AsVectorizedEnumerable().ZipAdd(Leaf(1000, values)).Sum();
         using var result = sum.Evaluate(_workspace);
 
         Assert.Equal(values.Select((v, i) => v + other[i]).Aggregate(BigInteger.Zero, (s, v) => s + v),
@@ -280,7 +281,7 @@ public sealed class DeviceElementCountTests : IDisposable
     public void Binary_BothSidesDynamic_IsNotSupported()
     {
         // Two counts that only the device can compare (design J4): NotSupportedException, not a silent choice
-        var sum = Leaf(20, Values(7, false)).ZipAdd(Leaf(20, Values(5, false))).Sum();
+        using var sum = Leaf(20, Values(7, false)).ZipAdd(Leaf(20, Values(5, false))).Sum();
         Assert.Throws<NotSupportedException>(() => sum.Evaluate(_workspace));
     }
 
