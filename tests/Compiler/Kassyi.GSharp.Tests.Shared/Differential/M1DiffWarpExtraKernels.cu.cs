@@ -68,6 +68,12 @@ public static partial class M1DiffWarpExtraKernels
         "MatchAllSync(long,halfUniform).pred",
         "MatchAllSync(ulong,halfDivergent).mask",
         "MatchAllSync(ulong,halfDivergent).pred",
+        "MatchAnySync(float,nan)",
+        "MatchAnySync(float,zeroSign)",
+        "MatchAllSync(float,nan).mask",
+        "MatchAllSync(float,nan).pred",
+        "MatchAllSync(float,zeroSign).mask",
+        "MatchAllSync(float,zeroSign).pred",
     ];
 
     // 1. Sub-warp conditional shuffle in the upper half (if (lane >= 16)) followed by reconverged full-warp shuffles
@@ -198,9 +204,21 @@ public static partial class M1DiffWarpExtraKernels
             allHalfDivergentMask = Gpu.MatchAllSync(0xFFFF0000u, halfDivergentUlong, ref predHalfDivergent);
         }
 
+        float nanVal = float.NaN;
+        uint anyNan = Gpu.MatchAnySync(fullMask, nanVal);
+
+        float zeroSignVal = (lane & 1) == 0 ? 0.0f : -0.0f;
+        uint anyZeroSign = Gpu.MatchAnySync(fullMask, zeroSignVal);
+
+        int predAllNan = -1;
+        uint allNanMask = Gpu.MatchAllSync(fullMask, nanVal, ref predAllNan);
+
+        int predAllZeroSign = -1;
+        uint allZeroSignMask = Gpu.MatchAllSync(fullMask, zeroSignVal, ref predAllZeroSign);
+
         if (tid < n)
         {
-            int o = tid * 12;
+            int o = tid * 18;
             output[o + 0] = anyGroup4;
             output[o + 1] = anyBucket8;
             output[o + 2] = anyParity;
@@ -213,6 +231,12 @@ public static partial class M1DiffWarpExtraKernels
             output[o + 9] = (uint)predHalfUniform;
             output[o + 10] = allHalfDivergentMask;
             output[o + 11] = (uint)predHalfDivergent;
+            output[o + 12] = anyNan;
+            output[o + 13] = anyZeroSign;
+            output[o + 14] = allNanMask;
+            output[o + 15] = (uint)predAllNan;
+            output[o + 16] = allZeroSignMask;
+            output[o + 17] = (uint)predAllZeroSign;
         }
     }
 }

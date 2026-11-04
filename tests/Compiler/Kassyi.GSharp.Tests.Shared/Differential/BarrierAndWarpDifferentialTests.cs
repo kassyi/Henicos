@@ -596,6 +596,12 @@ public class BarrierAndWarpDifferentialTests
                     output[o + 9] = 1u;
                     output[o + 10] = lane < 16 ? 0x0000FFFFu : 0u;
                     output[o + 11] = lane < 16 ? 1u : 0u;
+                    output[o + 12] = 0xFFFFFFFFu;
+                    output[o + 13] = (lane & 1) == 0 ? 0x55555555u : 0xAAAAAAAAu;
+                    output[o + 14] = 0xFFFFFFFFu;
+                    output[o + 15] = 1u;
+                    output[o + 16] = 0u;
+                    output[o + 17] = 0u;
                 }
             },
         };
