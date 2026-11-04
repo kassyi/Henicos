@@ -16,13 +16,13 @@ internal sealed class StackArrayEscapeAnalysis
     private readonly SemanticModel _model;
 
     // The storages that a local or a value parameter may point into
-    private readonly Dictionary<ISymbol, List<Storage>> _held = new(SymbolEqualityComparer.Default);
+    private readonly Dictionary<ISymbol, ImmutableArray<Storage>.Builder> _held = new(SymbolEqualityComparer.Default);
     private readonly StorageGatherer _gatherer;
-    private readonly List<VariableDeclaratorSyntax> _declarations = [];
-    private readonly List<AssignmentExpressionSyntax> _assignments = [];
-    private readonly List<ArgumentListSyntax> _callsWithReferences = [];
-    private readonly List<InvocationExpressionSyntax> _calls = [];
-    private readonly List<ExpressionSyntax> _returns = [];
+    private readonly ImmutableArray<VariableDeclaratorSyntax>.Builder _declarations = ImmutableArray.CreateBuilder<VariableDeclaratorSyntax>();
+    private readonly ImmutableArray<AssignmentExpressionSyntax>.Builder _assignments = ImmutableArray.CreateBuilder<AssignmentExpressionSyntax>();
+    private readonly ImmutableArray<ArgumentListSyntax>.Builder _callsWithReferences = ImmutableArray.CreateBuilder<ArgumentListSyntax>();
+    private readonly ImmutableArray<InvocationExpressionSyntax>.Builder _calls = ImmutableArray.CreateBuilder<InvocationExpressionSyntax>();
+    private readonly ImmutableArray<ExpressionSyntax>.Builder _returns = ImmutableArray.CreateBuilder<ExpressionSyntax>();
 
     public StackArrayEscapeAnalysis(SemanticModel model)
     {
@@ -30,12 +30,12 @@ internal sealed class StackArrayEscapeAnalysis
         _gatherer = new StorageGatherer(model, _held);
     }
 
-    public List<Finding> Run(SyntaxNode body)
+    public ImmutableArray<Finding> Run(SyntaxNode body)
     {
         Collect(body);
         Propagate();
 
-        var findings = new List<Finding>();
+        var findings = ImmutableArray.CreateBuilder<Finding>();
         foreach (var assignment in _assignments)
         {
             CheckAssignment(assignment, findings);
@@ -55,7 +55,7 @@ internal sealed class StackArrayEscapeAnalysis
         }
 
         findings.Sort(static (x, y) => x.Node.SpanStart.CompareTo(y.Node.SpanStart));
-        return findings;
+        return findings.ToImmutable();
     }
 
     private void Collect(SyntaxNode body)
@@ -158,16 +158,16 @@ internal sealed class StackArrayEscapeAnalysis
         while (changed);
     }
 
-    private bool Hold(ISymbol local, List<Storage> storages)
+    private bool Hold(ISymbol local, ImmutableArray<Storage> storages)
     {
-        if (storages.Count == 0)
+        if (storages.Length == 0)
         {
             return false;
         }
 
         if (!_held.TryGetValue(local, out var held))
         {
-            held = [];
+            held = ImmutableArray.CreateBuilder<Storage>();
             _held.Add(local, held);
         }
 
@@ -186,7 +186,7 @@ internal sealed class StackArrayEscapeAnalysis
         return added;
     }
 
-    private void CheckAssignment(AssignmentExpressionSyntax assignment, List<Finding> findings)
+    private void CheckAssignment(AssignmentExpressionSyntax assignment, ImmutableArray<Finding>.Builder findings)
     {
         foreach (var (target, value) in AssignmentPairs.Pairs(assignment))
         {
@@ -207,7 +207,7 @@ internal sealed class StackArrayEscapeAnalysis
         }
     }
 
-    private void CheckCall(ArgumentListSyntax arguments, List<Finding> findings)
+    private void CheckCall(ArgumentListSyntax arguments, ImmutableArray<Finding>.Builder findings)
     {
         foreach (var argument in arguments.Arguments)
         {
@@ -232,9 +232,9 @@ internal sealed class StackArrayEscapeAnalysis
     }
 
     // What a callee may store into a ref / out argument: any argument that carries a reference
-    private List<Storage> StoragesOfArguments(ArgumentListSyntax arguments, ArgumentSyntax? except)
+    private ImmutableArray<Storage> StoragesOfArguments(ArgumentListSyntax arguments, ArgumentSyntax? except)
     {
-        var storages = new List<Storage>();
+        var storages = ImmutableArray.CreateBuilder<Storage>();
         foreach (var argument in arguments.Arguments)
         {
             if (argument != except && !argument.RefKindKeyword.IsKind(SyntaxKind.OutKeyword))
@@ -243,11 +243,11 @@ internal sealed class StackArrayEscapeAnalysis
             }
         }
 
-        return storages;
+        return storages.ToImmutable();
     }
 
     // The first storage that a target of the given scope outlives; a null scope is outside the method
-    private static bool FindOutlived(List<Storage> storages, SyntaxNode? targetScope, out Storage storage)
+    private static bool FindOutlived(ImmutableArray<Storage> storages, SyntaxNode? targetScope, out Storage storage)
     {
         foreach (var candidate in storages)
         {

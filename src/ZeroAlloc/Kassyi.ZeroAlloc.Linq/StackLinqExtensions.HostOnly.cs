@@ -267,7 +267,7 @@ public static partial class StackLinqExtensions
     public static bool TryFirst<TEnumerator, TSource>(
         this StackEnumerable<TEnumerator, TSource> source,
         Func<TSource, bool> predicate,
-        out TSource value)
+        [MaybeNullWhen(false)] out TSource value)
         where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct
     {
         ArgumentNullException.ThrowIfNull(predicate);
@@ -281,7 +281,7 @@ public static partial class StackLinqExtensions
             }
         }
 
-        value = default!;
+        value = default;
         return false;
     }
 
@@ -305,7 +305,7 @@ public static partial class StackLinqExtensions
         this StackEnumerable<TEnumerator, TSource> source,
         TState state,
         Func<TSource, TState, bool> predicate,
-        out TSource value)
+        [MaybeNullWhen(false)] out TSource value)
         where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct
     {
         ArgumentNullException.ThrowIfNull(predicate);
@@ -319,7 +319,7 @@ public static partial class StackLinqExtensions
             }
         }
 
-        value = default!;
+        value = default;
         return false;
     }
 

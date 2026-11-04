@@ -17,7 +17,7 @@ public class StructLayoutPackTests
             .OfType<StructDeclarationSyntax>()
             .First(s => s.Identifier.Text == structName);
 
-        return semanticModel.GetDeclaredSymbol(structDecl)!;
+        return Assert.IsAssignableFrom<INamedTypeSymbol>(semanticModel.GetDeclaredSymbol(structDecl));
     }
 
     [Fact]
