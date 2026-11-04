@@ -1273,11 +1273,12 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string OptionalMemoryKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OptionalArrayKernels__OptionalMemoryKernel(GSharpArray<float> __gsharp_id_0_x, GSharpArray<float> __gsharp_id_1_bias){
+public const string OptionalMemoryKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OptionalArrayKernels__OptionalMemoryKernel(GSharpArray<float> __gsharp_id_0_x, GSharpArray<float> __gsharp_raw_arg___gsharp_id_1_bias){
+System_Nullable<GSharpArray<float>> __gsharp_id_1_bias = __gsharp_raw_arg___gsharp_id_1_bias.data != nullptr && (__gsharp_raw_arg___gsharp_id_1_bias.flags & __gsharp_array_null_reads_empty) == 0 ? System_Nullable<GSharpArray<float>>(__gsharp_raw_arg___gsharp_id_1_bias) : System_Nullable<GSharpArray<float>>();
 int __gsharp_id_2_i = (int)threadIdx.x;
-if((__gsharp_id_1_bias.data != nullptr))
+if(__gsharp_id_1_bias.HasValue)
 {
-__gsharp_id_0_x[__gsharp_id_2_i]=__gsharp_id_0_x[__gsharp_id_2_i]+__gsharp_id_1_bias[__gsharp_id_2_i];
+__gsharp_id_0_x[__gsharp_id_2_i]=__gsharp_id_0_x[__gsharp_id_2_i]+__gsharp_id_1_bias.Value[__gsharp_id_2_i];
 }
 }
 ";
@@ -1425,11 +1426,12 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string OptionalSegmentKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OptionalArrayKernels__OptionalSegmentKernel(GSharpArray<float> __gsharp_id_0_x, GSharpArray<float> __gsharp_id_1_bias){
+public const string OptionalSegmentKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OptionalArrayKernels__OptionalSegmentKernel(GSharpArray<float> __gsharp_id_0_x, GSharpArray<float> __gsharp_raw_arg___gsharp_id_1_bias){
+System_Nullable<GSharpArray<float>> __gsharp_id_1_bias = __gsharp_raw_arg___gsharp_id_1_bias.data != nullptr && (__gsharp_raw_arg___gsharp_id_1_bias.flags & __gsharp_array_null_reads_empty) == 0 ? System_Nullable<GSharpArray<float>>(__gsharp_raw_arg___gsharp_id_1_bias) : System_Nullable<GSharpArray<float>>();
 int __gsharp_id_2_i = (int)threadIdx.x;
-if((__gsharp_id_1_bias.data != nullptr))
+if((__gsharp_id_1_bias.HasValue))
 {
-__gsharp_id_0_x[__gsharp_id_2_i]=__gsharp_id_0_x[__gsharp_id_2_i]+__gsharp_id_1_bias[__gsharp_id_2_i];
+__gsharp_id_0_x[__gsharp_id_2_i]=__gsharp_id_0_x[__gsharp_id_2_i]+__gsharp_id_1_bias.Value[__gsharp_id_2_i];
 }
 }
 ";
