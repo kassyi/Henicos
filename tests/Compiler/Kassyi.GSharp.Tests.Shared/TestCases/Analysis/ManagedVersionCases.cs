@@ -1,5 +1,6 @@
 using Kassyi.GSharp.Core;
 using Kassyi.ZeroAlloc.Linq;
+using static Kassyi.GSharp.Core.Gpu;
 
 namespace ManagedVersionCases;
 
@@ -133,6 +134,38 @@ public static partial class Functions
     public static void PassesGenericExtensionMethodGroup(int[] x)
     {
         Gpu.ForUnroll(0, 2, x.AddGeneric);
+    }
+
+    // A user-defined InlinePtx method is not Gpu.InlinePtx: needs no managed version and is not rewritten (#581)
+    [GpuDeviceFunction]
+    public static void UserInlinePtx()
+    {
+        Lookalike.InlinePtx("nop;");
+    }
+
+    // An unqualified InlinePtx call through using static is still Gpu.InlinePtx (#581)
+    [GpuDeviceFunction]
+    public static void InlinePtxUnqualified()
+    {
+        InlinePtx("nop;");
+    }
+
+    // Gpu.InlinePtx requires a managed version that throws NotSupportedException instead of GpuOnlyException (#581)
+    [GpuDeviceFunction]
+    public static void InlinePtxDirect()
+    {
+        Gpu.InlinePtx("nop;");
+    }
+
+    [GpuDeviceFunction]
+    public static void CallsInlinePtx() => InlinePtxDirect();
+}
+
+public static partial class Lookalike
+{
+    [GpuDeviceFunction]
+    public static void InlinePtx(string ptx)
+    {
     }
 }
 

@@ -137,12 +137,12 @@ __gsharp_array_at(__gsharp_id_1_output, 7, ""G#: a null array is read at SmallCo
 __gsharp_array_at(__gsharp_id_1_output, 8, ""G#: a null array is read at SmallConstantVarKernels.cs(155,9)"")=min((-32768),__gsharp_array_at(__gsharp_id_0_input, 4, ""G#: a null array is read at SmallConstantVarKernels.cs(155,40)""));
 __gsharp_array_at(__gsharp_id_1_output, 9, ""G#: a null array is read at SmallConstantVarKernels.cs(156,9)"")=__gsharp_clamp(__gsharp_array_at(__gsharp_id_0_input, 5, ""G#: a null array is read at SmallConstantVarKernels.cs(156,32)""),0,255);
 short __gsharp_id_2_shortValue = (short)__gsharp_array_at(__gsharp_id_0_input, 6, ""G#: a null array is read at SmallConstantVarKernels.cs(159,35)"");
-__gsharp_id_2_shortValue++;
+__gsharp_id_2_shortValue=(short)__gsharp_add_i32(__gsharp_id_2_shortValue,1);
 auto __gsharp_id_3_mixedTrue = (__gsharp_array_at(__gsharp_id_0_input, 7, ""G#: a null array is read at SmallConstantVarKernels.cs(161,25)"")>0?(short)255:__gsharp_id_2_shortValue);
-__gsharp_id_3_mixedTrue++;
+__gsharp_id_3_mixedTrue=(short)__gsharp_add_i32(__gsharp_id_3_mixedTrue,1);
 __gsharp_array_at(__gsharp_id_1_output, 10, ""G#: a null array is read at SmallConstantVarKernels.cs(163,9)"")=__gsharp_id_3_mixedTrue;
 auto __gsharp_id_4_mixedFalse = (__gsharp_array_at(__gsharp_id_0_input, 7, ""G#: a null array is read at SmallConstantVarKernels.cs(164,26)"")<0?(short)255:__gsharp_id_2_shortValue);
-__gsharp_id_4_mixedFalse++;
+__gsharp_id_4_mixedFalse=(short)__gsharp_add_i32(__gsharp_id_4_mixedFalse,1);
 __gsharp_array_at(__gsharp_id_1_output, 11, ""G#: a null array is read at SmallConstantVarKernels.cs(166,9)"")=__gsharp_id_4_mixedFalse;
 __gsharp_array_at(__gsharp_id_1_output, 12, ""G#: a null array is read at SmallConstantVarKernels.cs(169,9)"")=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__SmallConstantVarKernels__TakeByte((unsigned char)255);
 __gsharp_array_at(__gsharp_id_1_output, 13, ""G#: a null array is read at SmallConstantVarKernels.cs(170,9)"")=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__SmallConstantVarKernels__TakeInt(255);
@@ -180,7 +180,7 @@ break;
 }
 
 inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__SmallConstantVarKernels__TakeByte(unsigned char __gsharp_id_0_value){
-__gsharp_id_0_value++;
+__gsharp_id_0_value=(unsigned char)__gsharp_add_i32(__gsharp_id_0_value,1);
 return __gsharp_id_0_value;
 }
 
@@ -190,7 +190,7 @@ return __gsharp_add_i32(__gsharp_id_0_value,1);
 
 inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__SmallConstantVarKernels__TakeShort(short __gsharp_id_0_value){
 __gsharp_id_0_value=(short)__gsharp_add_i32(__gsharp_id_0_value,32512);
-__gsharp_id_0_value++;
+__gsharp_id_0_value=(short)__gsharp_add_i32(__gsharp_id_0_value,1);
 return __gsharp_id_0_value;
 }
 
@@ -223,25 +223,25 @@ public static partial class AotContexts
 }
 public const string IncrementKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__SmallConstantVarKernels__IncrementKernel(GSharpArray<int> __gsharp_id_0_output){
 auto __gsharp_id_1_b = (unsigned char)255;
-__gsharp_id_1_b++;
+__gsharp_id_1_b=(unsigned char)__gsharp_add_i32(__gsharp_id_1_b,1);
 __gsharp_id_0_output[0]=__gsharp_id_1_b;
 auto __gsharp_id_2_sbMax = (signed char)127;
-__gsharp_id_2_sbMax++;
+__gsharp_id_2_sbMax=(signed char)__gsharp_add_i32(__gsharp_id_2_sbMax,1);
 __gsharp_id_0_output[1]=__gsharp_id_2_sbMax;
 auto __gsharp_id_3_sbMin = (signed char)-128;
-__gsharp_id_3_sbMin--;
+__gsharp_id_3_sbMin=(signed char)__gsharp_sub_i32(__gsharp_id_3_sbMin,1);
 __gsharp_id_0_output[2]=__gsharp_id_3_sbMin;
 auto __gsharp_id_4_sMax = (short)32767;
-__gsharp_id_4_sMax++;
+__gsharp_id_4_sMax=(short)__gsharp_add_i32(__gsharp_id_4_sMax,1);
 __gsharp_id_0_output[3]=__gsharp_id_4_sMax;
 auto __gsharp_id_5_sMin = (short)-32768;
---__gsharp_id_5_sMin;
+__gsharp_id_5_sMin=(short)__gsharp_sub_i32(__gsharp_id_5_sMin,1);
 __gsharp_id_0_output[4]=__gsharp_id_5_sMin;
 auto __gsharp_id_6_usMax = (unsigned short)65535;
-++__gsharp_id_6_usMax;
+__gsharp_id_6_usMax=(unsigned short)__gsharp_add_i32(__gsharp_id_6_usMax,1);
 __gsharp_id_0_output[5]=__gsharp_id_6_usMax;
 auto __gsharp_id_7_usZero = (unsigned short)0;
-__gsharp_id_7_usZero--;
+__gsharp_id_7_usZero=(unsigned short)__gsharp_sub_i32(__gsharp_id_7_usZero,1);
 __gsharp_id_0_output[6]=__gsharp_id_7_usZero;
 auto __gsharp_id_8_compound = (unsigned char)255;
 __gsharp_id_8_compound=(unsigned char)__gsharp_add_i32(__gsharp_id_8_compound,2);
@@ -357,13 +357,13 @@ finally
 #pragma warning restore CS8500
 public const string EnumIncrementKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__SmallConstantVarKernels__EnumIncrementKernel(GSharpArray<int> __gsharp_id_0_output){
 auto __gsharp_id_1_last = (unsigned char)255;
-__gsharp_id_1_last++;
+__gsharp_id_1_last=(unsigned char)__gsharp_add_i32(__gsharp_id_1_last,1);
 __gsharp_id_0_output[0]=(int)__gsharp_id_1_last;
 auto __gsharp_id_2_highest = (short)32767;
-__gsharp_id_2_highest++;
+__gsharp_id_2_highest=(short)__gsharp_add_i32(__gsharp_id_2_highest,1);
 __gsharp_id_0_output[1]=(int)__gsharp_id_2_highest;
 auto __gsharp_id_3_lowest = (short)-32768;
-__gsharp_id_3_lowest--;
+__gsharp_id_3_lowest=(short)__gsharp_sub_i32(__gsharp_id_3_lowest,1);
 __gsharp_id_0_output[2]=(int)__gsharp_id_3_lowest;
 }
 ";
@@ -635,7 +635,7 @@ finally
 public const string LocalConstKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__SmallConstantVarKernels__LocalConstKernel(GSharpArray<int> __gsharp_id_0_output){
 unsigned char __gsharp_id_1_localMax = 255;
 auto __gsharp_id_2_x = __gsharp_id_1_localMax;
-__gsharp_id_2_x++;
+__gsharp_id_2_x=(unsigned char)__gsharp_add_i32(__gsharp_id_2_x,1);
 __gsharp_id_0_output[0]=__gsharp_id_2_x;
 }
 ";

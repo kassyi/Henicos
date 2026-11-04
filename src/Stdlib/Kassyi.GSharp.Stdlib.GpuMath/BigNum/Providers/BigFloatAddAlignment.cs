@@ -16,8 +16,7 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers;
 /// When <c>e_L + 32·w_L &lt;= e_H - p</c> (<c>w_L</c> the words of L), L is below <c>2^c</c> for <c>c = e_H - p</c>,
 /// and <c>c &lt;= min(e_H, top(H) - p - 1)</c> for a nonzero H. H is a multiple of <c>2^c</c>, so the sums
 /// <c>H ± x</c> for every <c>0 &lt; x &lt; 2^c</c> have the same top bit and the same bits from <c>2^c</c> up, and so
-/// the same <c>RZ_p</c>: a nonzero L can be replaced by the sticky bit <c>2^(c - 1)</c>, the way MPFR's
-/// <c>mpfr_add1sp</c> and <c>mpfr_sub1sp</c> treat an operand more than <c>p</c> bits below the other. The work then
+/// the same <c>RZ_p</c>: a nonzero L can be replaced by the sticky bit <c>2^(c - 1)</c>. The work then
 /// depends on the widths only, not on the exponent difference.
 /// </para>
 /// </remarks>
