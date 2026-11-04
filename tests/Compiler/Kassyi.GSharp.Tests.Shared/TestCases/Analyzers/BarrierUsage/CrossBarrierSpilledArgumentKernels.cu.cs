@@ -27,7 +27,7 @@ public static partial class CrossBarrierSpilledArgumentKernels
     public static int AdvancedByEarlierArgument(Span<int> s) => HeadAfterBarrier(Advance(ref s), s);
 
     // GSH0039: the srcLane argument of a warp shuffle is spilled before the shuffle splits, so Advance(ref s) changes
-    // the parameter before the split and s[0] reads the reset parameter after it (#1004 F3)
+    // the parameter before the split and s[0] reads the reset parameter after it (#1004)
     [GpuDeviceFunction]
     public static int AdvancedInShuffleLaneArgument(Span<int> s)
     {
@@ -36,7 +36,7 @@ public static partial class CrossBarrierSpilledArgumentKernels
     }
 
     // GSH0039: s[0] in the srcLane argument of the shuffle is evaluated before the shuffle, which is after the earlier
-    // barrier (#1004 F3)
+    // barrier (#1004)
     [GpuDeviceFunction]
     public static int SpanReadInShuffleLaneAfterBarrier(Span<int> s, int v)
     {
@@ -45,7 +45,7 @@ public static partial class CrossBarrierSpilledArgumentKernels
         return Warp.ShuffleSync(0xFFFFFFFFu, v, s[0]);
     }
 
-    // No diagnostic: both s[0] (var) and s[1] (srcLane) are spilled into temporaries before the shuffle splits (#1004 F3)
+    // No diagnostic: both s[0] (var) and s[1] (srcLane) are spilled into temporaries before the shuffle splits (#1004)
     [GpuDeviceFunction]
     public static int ShuffleValueAndLaneFromSlicedSpan(Span<int> s)
     {
@@ -53,7 +53,7 @@ public static partial class CrossBarrierSpilledArgumentKernels
         return Warp.ShuffleSync(0xFFFFFFFFu, s[0], s[1]);
     }
 
-    // No diagnostic: a local span read in both var and srcLane of a single shuffle is evaluated before the split (#1004 F3)
+    // No diagnostic: a local span read in both var and srcLane of a single shuffle is evaluated before the split (#1004)
     [GpuKernel]
     public static void LocalSpanInShuffleValueAndLaneKernel(int[] buffer, int[] output)
     {

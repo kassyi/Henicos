@@ -51,7 +51,7 @@ internal static class ParameterChanges
 
     /// <summary>
     /// Whether the use of the flow capture of a <c>ref</c> field of a parameter (<c>p.Ref</c>) may change the parameter:
-    /// only when the field itself is rebound (<c>p.Ref = ref v</c>), not when a value is written through it (#1004 F9).
+    /// only when the field itself is rebound (<c>p.Ref = ref v</c>), not when a value is written through it (#1004).
     /// </summary>
     public static bool MayChangeCapturedRefField(IFlowCaptureReferenceOperation reference) =>
         reference.Parent is ISimpleAssignmentOperation { IsRef: true } assignment && assignment.Target == reference;

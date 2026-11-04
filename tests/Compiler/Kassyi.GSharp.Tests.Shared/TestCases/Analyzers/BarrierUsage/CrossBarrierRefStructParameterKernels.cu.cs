@@ -313,7 +313,7 @@ public static partial class CrossBarrierRefStructParameterKernels
 
     // --- Reported: conditional flow captures, suspending ref/receiver mutations, conditional ref field rebinding (#1004) ---
 
-    // GSH0039: the receiver s is captured before the conditional split and read by the indexer after it (#1004 F5)
+    // GSH0039: the receiver s is captured before the conditional split and read by the indexer after it (#1004)
     [GpuDeviceFunction]
     public static int IndexByConditionalSuspendingCall(Span<int> s, bool c)
     {
@@ -321,7 +321,7 @@ public static partial class CrossBarrierRefStructParameterKernels
         return s[c ? 0 : Broadcast(0)];
     }
 
-    // GSH0039: the receiver s of Slice is captured before the conditional split and read after it, before s is written (#1004 F5)
+    // GSH0039: the receiver s of Slice is captured before the conditional split and read after it, before s is written (#1004)
     [GpuDeviceFunction]
     public static int SliceByConditionalSuspendingCall(Span<int> s, bool c)
     {
@@ -330,7 +330,7 @@ public static partial class CrossBarrierRefStructParameterKernels
         return s[0];
     }
 
-    // GSH0039: the element location s[0] is evaluated after the conditional split (#1004 F5)
+    // GSH0039: the element location s[0] is evaluated after the conditional split (#1004)
     [GpuDeviceFunction]
     public static void WriteElementByConditionalSuspendingCall(Span<int> s, bool c)
     {
@@ -338,7 +338,7 @@ public static partial class CrossBarrierRefStructParameterKernels
         s[0] = c ? 1 : Broadcast(99);
     }
 
-    // GSH0039: a local span captured before a conditional split is read after it (#1004 F5)
+    // GSH0039: a local span captured before a conditional split is read after it (#1004)
     [GpuDeviceFunction]
     public static int IndexLocalByConditionalSuspendingCall(Span<int> s, bool c)
     {
@@ -353,7 +353,7 @@ public static partial class CrossBarrierRefStructParameterKernels
         Gpu.SyncThreads();
     }
 
-    // GSH0039: a suspending callee that takes ref s may change s before its barrier and receives the reset parameter on resume (#1004 F6)
+    // GSH0039: a suspending callee that takes ref s may change s before its barrier and receives the reset parameter on resume (#1004)
     [GpuDeviceFunction]
     public static int PassRefToSuspendingCallee(Span<int> s)
     {
@@ -361,7 +361,7 @@ public static partial class CrossBarrierRefStructParameterKernels
         return s[0];
     }
 
-    // GSH0039: a mutating suspending instance method changes the struct before its barrier and is called again on resume (#1004 F6)
+    // GSH0039: a mutating suspending instance method changes the struct before its barrier and is called again on resume (#1004)
     [GpuDeviceFunction]
     public static int CallMutatingSuspendingMethod(SuspendingCursor cursor)
     {
@@ -369,7 +369,7 @@ public static partial class CrossBarrierRefStructParameterKernels
         return cursor.Position;
     }
 
-    // GSH0039: conditional rebinding of a ref field changes the parameter (#1004 F9)
+    // GSH0039: conditional rebinding of a ref field changes the parameter (#1004)
     [GpuDeviceFunction]
     public static int RebindRefFieldIf(RefFieldHolder holder, bool skip)
     {
@@ -378,7 +378,7 @@ public static partial class CrossBarrierRefStructParameterKernels
         return holder.Target;
     }
 
-    // GSH0039: ternary expression whose branch reads the sliced span before Broadcast (#1040 1a)
+    // GSH0039: ternary expression whose branch reads the sliced span before Broadcast (#1004)
     [GpuDeviceFunction]
     public static int ConditionalReadSpanBeforeBroadcast(Span<int> s, bool c)
     {
@@ -386,7 +386,7 @@ public static partial class CrossBarrierRefStructParameterKernels
         return (c ? s[0] : 0) + Broadcast(0);
     }
 
-    // GSH0039: ternary expression whose branch reads the sliced local span before Broadcast (#1040 1b)
+    // GSH0039: ternary expression whose branch reads the sliced local span before Broadcast (#1004)
     [GpuDeviceFunction]
     public static int ConditionalReadLocalSpanBeforeBroadcast(Span<int> s, bool c)
     {
@@ -394,7 +394,7 @@ public static partial class CrossBarrierRefStructParameterKernels
         return (c ? tail[0] : 0) + Broadcast(0);
     }
 
-    // GSH0039: ternary element ref assignment where one branch mutates sliced span across Broadcast (#1040 1d)
+    // GSH0039: ternary element ref assignment where one branch mutates sliced span across Broadcast (#1004)
     [GpuDeviceFunction]
     public static void ConditionalRefAssignSpanAcrossBroadcast(Span<int> s, Span<int> other, bool c)
     {
@@ -402,7 +402,7 @@ public static partial class CrossBarrierRefStructParameterKernels
         (c ? ref s[0] : ref other[0]) = Broadcast(99);
     }
 
-    // GSH0039: multi-branch ref ternary mutation marks all captured parameter targets as changed (#1040 2a)
+    // GSH0039: multi-branch ref ternary mutation marks all captured parameter targets as changed (#1004)
     [GpuDeviceFunction]
     public static int MultiBranchRefCapturePropertyMutation(PropertyCursor a, PropertyCursor b, bool c)
     {

@@ -6,7 +6,7 @@ namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel;
 
 /// <summary>
 /// Resolves the provenance of pointer locals to detect those pointing to stack memory (<c>stackalloc</c>, address-of,
-/// or derived pointer arithmetic) for cross-barrier validation (GSH0041, #1004 F11).
+/// or derived pointer arithmetic) for cross-barrier validation (GSH0041, #1004).
 /// </summary>
 internal static class StackPointerProvenance
 {
