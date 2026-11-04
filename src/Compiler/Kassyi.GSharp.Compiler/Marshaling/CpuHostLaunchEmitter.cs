@@ -100,6 +100,14 @@ internal static class CpuHostLaunchEmitter
 
         writer.AppendLine(
             $"var {FunctionHandle} = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<{KernelHostNames.GetDelegateTypeName(kernel)}>(\"{exportName}\", {DllPath});");
+        if (!kernel.ErrorSites.IsDefaultOrEmpty)
+        {
+            writer.AppendLine("if (s_errorSites.Length > 0)");
+            using (writer.Scope())
+            {
+                writer.AppendLine($"global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites({DllPath}, s_errorSites);");
+            }
+        }
     }
 
     // <declarations>; try { <marshaling>; <fixed blocks and call>; <unmarshaling> } finally { <release> }

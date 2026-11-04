@@ -6,20 +6,20 @@ namespace Kassyi.GSharp.Compiler.Marshaling;
 internal static class CudaHostLaunchEmitter
 {
     /// <summary>Emits the function pointer field, warmup method and launch wrappers of one kernel.</summary>
-    public static void WriteKernelMembers(SourceWriter writer, in KernelEmission kernel, string assemblyName)
+    public static void WriteKernelMembers(SourceWriter writer, in KernelEmission kernel, string assemblyName, bool isCheckedBuild = false)
     {
         writer.AppendLine($"private static global::System.IntPtr? {KernelHostNames.GetFunctionPointerFieldName(kernel.MemberKey)};");
         WrapperEmitter.WriteLayoutCheckedField(writer, kernel.Host.CudaLayoutGuards, kernel.MemberKey);
         WriteWarmupFunctionPointerMethod(writer, kernel, assemblyName);
-        WriteLaunchMethod(writer, kernel, false);
-        WriteLaunchMethod(writer, kernel, true);
+        WriteLaunchMethod(writer, kernel, false, isCheckedBuild);
+        WriteLaunchMethod(writer, kernel, true, isCheckedBuild);
         if (kernel.IsOverloaded)
         {
             WriteTypedPointerLaunchMethod(writer, kernel);
         }
     }
 
-    private static void WriteLaunchMethod(SourceWriter writer, in KernelEmission kernel, bool isDevicePtr)
+    private static void WriteLaunchMethod(SourceWriter writer, in KernelEmission kernel, bool isDevicePtr, bool isCheckedBuild)
     {
         writer.AppendLine(
             "#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type");
@@ -46,7 +46,7 @@ internal static class CudaHostLaunchEmitter
                 writer.AppendLine("try");
                 using (writer.Scope())
                 {
-                    KernelLaunchEmitter.WriteMarshalAndLaunchKernel(writer, kernel.Host, sharing, isDevicePtr);
+                    KernelLaunchEmitter.WriteMarshalAndLaunchKernel(writer, kernel.Host, sharing, isDevicePtr, isCheckedBuild);
                 }
 
                 writer.AppendLine("finally");
@@ -122,6 +122,7 @@ internal static class CudaHostLaunchEmitter
         var key = kernel.MemberKey;
         var field = KernelHostNames.GetFunctionPointerFieldName(key);
         const string Module = GSharpInternalNames.Launcher.ModuleHandle;
+        var moduleContextName = AotHostNames.GetModuleContextName(assemblyName);
         writer.AppendLine(
             "/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>");
         writer.AppendLine($"public static void {KernelHostNames.GetWarmupMethodName(key)}()");
@@ -129,10 +130,25 @@ internal static class CudaHostLaunchEmitter
         {
             writer.AppendLine($"if ({field}.HasValue) return;");
             writer.Append($"global::System.IntPtr {Module} = global::Kassyi.GSharp.Generated.");
-            writer.Append(AotHostNames.GetModuleContextName(assemblyName));
+            writer.Append(moduleContextName);
             writer.AppendLine(".GetOrLoadModule();");
             writer.AppendLine(
                 $"{field} = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction({Module}, \"{kernel.Host.KernelName}\");");
+            if (!kernel.ErrorSites.IsDefaultOrEmpty)
+            {
+                writer.AppendLine("if (s_errorSites.Length > 0)");
+                using (writer.Scope())
+                {
+                    var safeAssemblyName = AotHostNames.ToSafeIdentifier(assemblyName);
+                    writer.AppendLine($"var baseDir = global::System.IO.Path.GetDirectoryName(typeof(global::Kassyi.GSharp.Generated.{moduleContextName}).Assembly.Location) ?? global::System.AppContext.BaseDirectory;");
+                    writer.AppendLine($"var fatbinPath = global::System.IO.Path.Combine(baseDir, \"Kassyi.GSharp.Kernels_{safeAssemblyName}.gfatbin\");");
+                    writer.AppendLine("if (global::System.IO.File.Exists(fatbinPath))");
+                    using (writer.Scope())
+                    {
+                        writer.AppendLine("global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.RegisterErrorSites(global::System.IO.File.ReadAllBytes(fatbinPath), s_errorSites);");
+                    }
+                }
+            }
         }
 
         writer.AppendLine();

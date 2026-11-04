@@ -143,7 +143,10 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 options.GlobalOptions.TryGetValue("build_property.GSharpExportDeviceCode", out var exportStr);
                 var exportDeviceCode = !string.Equals(exportStr, "false", StringComparison.OrdinalIgnoreCase);
 
-                return new GeneratorConfig(dialect, emitSource, intermediatePath, exportDeviceCode);
+                options.GlobalOptions.TryGetValue("build_property.GSharpCheckedBuild", out var checkedStr);
+                var isCheckedBuild = string.Equals(checkedStr, "true", StringComparison.OrdinalIgnoreCase);
+
+                return new GeneratorConfig(dialect, emitSource, intermediatePath, exportDeviceCode, isCheckedBuild);
             });
 
         // The wrappers take only the assembly names from the compilation, so this value compares equal across edits and
@@ -324,13 +327,15 @@ public class GpuKernelGenerator : IIncrementalGenerator
 
             var cudaStructs = new StructSourceCollector();
             var cppStructs = new StructSourceCollector();
+            var errorSites = new ErrorSiteTable();
             var cudaSource = cudaFailures.Apply(MethodTranspiler.GenerateCudaSource(in plan, cudaFailures.Fail, cudaDialect,
-                out var requiredIncludesCuda, cudaStructs));
+                out var requiredIncludesCuda, cudaStructs, errorSites));
             var cppSource = cppFailures.Apply(MethodTranspiler.GenerateCudaSource(in plan, cppFailures.Fail, cppDialect,
-                out var requiredIncludesCpp, cppStructs));
+                out var requiredIncludesCpp, cppStructs, errorSites));
             var managedCSharpSource = MethodTranspiler.GenerateManagedCSharpSource(in plan);
             var structExports = DeviceExportEmitter.CreateStructRecords(context.SemanticModel.Compilation, cudaStructs,
                 cppStructs);
+            var kernelErrorSites = errorSites.Entries.AsEquatableArray();
 
             if (!CheckSuppressGs0001(methodDeclaration))
             {
@@ -343,7 +348,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
                     ToIncludes(requiredIncludesCuda),
                     ToIncludes(requiredIncludesCpp),
                     "",
-                    structExports
+                    structExports,
+                    kernelErrorSites
                 );
             }
 
@@ -359,7 +365,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 ToIncludes(requiredIncludesCuda),
                 ToIncludes(requiredIncludesCpp),
                 "",
-                structExports
+                structExports,
+                kernelErrorSites
             );
         }
         catch (Exception ex)
@@ -861,6 +868,46 @@ public class GpuKernelGenerator : IIncrementalGenerator
         var distinctDeviceMethods = GetDistinctDeviceMethods(deviceMethods);
         var commonDeviceSource = imports.Source + NativeModuleAssembler.AssembleDeviceSource(distinctDeviceMethods, isCuda);
         var preludeSource = NativeModuleAssembler.GetPreludeSource(config.CreateDialect());
+        if (isCuda && config.IsCheckedBuild)
+        {
+            preludeSource = "#define GSHARP_CHECKED 1\n" + preludeSource;
+        }
+
+        var symbolSites = ImmutableArray.CreateBuilder<GSharpNameEncoding.SymbolErrorSiteRecord>();
+        var rawSites = new List<ErrorSiteEntry>();
+        foreach (var method in kernelMethods)
+        {
+            if (!method.ErrorSites.IsDefaultOrEmpty)
+            {
+                foreach (var site in method.ErrorSites)
+                {
+                    rawSites.Add(site);
+                }
+            }
+        }
+
+        if (!ErrorSiteTable.TryBuildModuleSites(rawSites, out var moduleSites, out var c1, out var c2))
+        {
+            context.ReportDiagnostic(Diagnostic.Create(
+                GSharpDiagnostics.ErrorSiteIdCollision,
+                Location.None,
+                c1.SiteId,
+                c1.MemberName, c1.File, c1.Line, c1.Column,
+                c2.MemberName, c2.File, c2.Line, c2.Column));
+        }
+        else
+        {
+            foreach (var site in moduleSites)
+            {
+                symbolSites.Add(new GSharpNameEncoding.SymbolErrorSiteRecord(
+                    site.SiteId,
+                    site.File,
+                    site.Line,
+                    site.Column,
+                    site.MemberName,
+                    site.DefaultMessage));
+            }
+        }
 
         var allKernelsSource = new StringBuilder();
         foreach (var method in kernelMethods)
@@ -874,7 +921,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
             .AddTo(requiredIncludes);
         var bodySource = NativeModuleAssembler.AssembleBody(requiredIncludes, preludeSource, commonDeviceSource,
             allKernelsSource.ToString());
-        AotArtifactWriter.Write(target, config, bodySource, context, imports.FindFullName);
+        AotArtifactWriter.Write(target, config, bodySource, context, imports.FindFullName, symbolSites.ToImmutable());
     }
 
     // The device code of other assemblies that the kernels and device functions of the module reach

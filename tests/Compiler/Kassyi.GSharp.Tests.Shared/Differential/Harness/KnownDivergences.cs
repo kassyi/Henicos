@@ -60,8 +60,6 @@ public static class KnownDivergences
         $"{nameof(BoundsAndMemoryDifferentialKernels)}.{nameof(BoundsAndMemoryDifferentialKernels.BoundsCheckEliminationUpperOnlyKernel)}";
     private const string AllThreadsNullDereferenceTrap =
         $"{nameof(BoundsAndMemoryDifferentialKernels)}.{nameof(BoundsAndMemoryDifferentialKernels.AllThreadsNullDereferenceTrapKernel)}";
-    private const string AllThreadsEmptyFirstTrap =
-        $"{nameof(BoundsAndMemoryDifferentialKernels)}.{nameof(BoundsAndMemoryDifferentialKernels.AllThreadsEmptyFirstTrapKernel)}";
 
     private const string Int32Divide =
         $"{nameof(IntegerTrapAndCheckedDifferentialKernels)}.{nameof(IntegerTrapAndCheckedDifferentialKernels.Int32DivideKernel)}";
@@ -104,35 +102,6 @@ public static class KnownDivergences
         $"{nameof(BclExceptionDifferentialKernels)}.{nameof(BclExceptionDifferentialKernels.MathClampDoubleKernel)}";
     private const string ElementAtOrDefaultNegativeIndexSideEffect =
         $"{nameof(BclExceptionDifferentialKernels)}.{nameof(BclExceptionDifferentialKernels.ElementAtOrDefaultNegativeIndexSideEffectKernel)}";
-
-    private const string StackLinqFirst =
-        $"{nameof(BclExceptionDifferentialKernels)}.{nameof(BclExceptionDifferentialKernels.StackLinqFirstKernel)}";
-    private const string StackLinqSingle =
-        $"{nameof(BclExceptionDifferentialKernels)}.{nameof(BclExceptionDifferentialKernels.StackLinqSingleKernel)}";
-    private const string StackLinqSingleTwoElements =
-        $"{nameof(BclExceptionDifferentialKernels)}.{nameof(BclExceptionDifferentialKernels.StackLinqSingleKernel)}_TwoElements";
-    private const string StackLinqLast =
-        $"{nameof(BclExceptionDifferentialKernels)}.{nameof(BclExceptionDifferentialKernels.StackLinqLastKernel)}";
-    private const string StackLinqMin =
-        $"{nameof(BclExceptionDifferentialKernels)}.{nameof(BclExceptionDifferentialKernels.StackLinqMinKernel)}";
-    private const string StackLinqMax =
-        $"{nameof(BclExceptionDifferentialKernels)}.{nameof(BclExceptionDifferentialKernels.StackLinqMaxKernel)}";
-    private const string StackLinqAverage =
-        $"{nameof(BclExceptionDifferentialKernels)}.{nameof(BclExceptionDifferentialKernels.StackLinqAverageKernel)}";
-    private const string StackLinqAggregate =
-        $"{nameof(BclExceptionDifferentialKernels)}.{nameof(BclExceptionDifferentialKernels.StackLinqAggregateKernel)}";
-    private const string StackLinqElementAtNegative =
-        $"{nameof(BclExceptionDifferentialKernels)}.{nameof(BclExceptionDifferentialKernels.StackLinqElementAtKernel)}_NegativeIndex";
-    private const string StackLinqElementAtPastEnd =
-        $"{nameof(BclExceptionDifferentialKernels)}.{nameof(BclExceptionDifferentialKernels.StackLinqElementAtKernel)}_PastEnd";
-
-    private const string MemoryExtensionsSortLengthMismatch =
-        $"{nameof(BclExceptionDifferentialKernels)}.{nameof(BclExceptionDifferentialKernels.MemoryExtensionsSortLengthMismatchKernel)}";
-    private const string MemoryExtensionsSortComparerTrap =
-        $"{nameof(BclExceptionDifferentialKernels)}.{nameof(BclExceptionDifferentialKernels.MemoryExtensionsSortComparerTrapKernel)}";
-
-    private const string TrapNonContinuationGuard =
-        $"{nameof(BclExceptionDifferentialKernels)}.{nameof(BclExceptionDifferentialKernels.TrapNonContinuationGuardKernel)}";
 
     /// <summary>Gets every registered entry.</summary>
     public static IReadOnlyList<KnownDivergence> All { get; } =
@@ -211,7 +180,6 @@ public static class KnownDivergences
         new(BoundsCheckEliminationPostIncrement, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
         new(BoundsCheckEliminationUpperOnly, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
         new(AllThreadsNullDereferenceTrap, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
-        new(AllThreadsEmptyFirstTrap, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
         new(Int32Divide, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
         new(Int32Remainder, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
         new(UInt32Divide, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
@@ -228,21 +196,6 @@ public static class KnownDivergences
         new(MathClampInt32, KnownDivergence.ExceptionColumn, DiffPath.Native | DiffPath.Cuda, Issue: 718),
         new(MathClampSingle, KnownDivergence.ExceptionColumn, DiffPath.Native | DiffPath.Cuda, Issue: 718),
         new(MathClampDouble, KnownDivergence.ExceptionColumn, DiffPath.Native | DiffPath.Cuda, Issue: 718),
-
-        // StackLinq empty sequence, bounds traps, Sort faults, and trap guard on CUDA (#729)
-        new(StackLinqFirst, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
-        new(StackLinqSingle, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
-        new(StackLinqSingleTwoElements, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
-        new(StackLinqLast, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
-        new(StackLinqMin, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
-        new(StackLinqMax, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
-        new(StackLinqAverage, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
-        new(StackLinqAggregate, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
-        new(StackLinqElementAtNegative, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
-        new(StackLinqElementAtPastEnd, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
-        new(MemoryExtensionsSortLengthMismatch, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
-        new(MemoryExtensionsSortComparerTrap, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
-        new(TrapNonContinuationGuard, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
 
         // Unchecked MinValue / -1 and MinValue % -1 Managed path throws OverflowException (#718)
         new(Int32MinValueDivide, KnownDivergence.ExceptionColumn, DiffPath.Managed, Issue: 718),
