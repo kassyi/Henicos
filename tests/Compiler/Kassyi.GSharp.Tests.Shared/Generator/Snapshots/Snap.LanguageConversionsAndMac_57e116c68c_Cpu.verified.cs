@@ -139,18 +139,19 @@ inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__LocalGpuSha
 struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffIdentityWrap
 {
 int __gsharp_mb_Value;
-__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffIdentityWrap() {}
-__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffIdentityWrap(int v) {
-this->__gsharp_mb_Value = v;
-}
-__device__ inline operator int() const {
-return this->__gsharp_mb_Value;
-}
 }
 ;
 static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffIdentityWrap)==4,""Kassyi.GSharp.Tests.Shared.Differential.DiffIdentityWrap: size"");
 static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffIdentityWrap)==4,""Kassyi.GSharp.Tests.Shared.Differential.DiffIdentityWrap: alignment"");
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffIdentityWrap,__gsharp_mb_Value)==0,""Kassyi.GSharp.Tests.Shared.Differential.DiffIdentityWrap.Value: offset"");
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffIdentityWrap __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__DiffIdentityWrap__op_uImplicit_o0(int __gsharp_id_0_v) {
+return ([&]() {
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffIdentityWrap __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Value = __gsharp_id_0_v; return __gsharp_tmp; }
+());
+}
+__device__ inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__DiffIdentityWrap__op_uImplicit_o1(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffIdentityWrap __gsharp_id_0_w) {
+return __gsharp_id_0_w.__gsharp_mb_Value;
+}
 #endif
 inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__LanguageConversionsAndMacrosDifferentialKernels__AcceptIdentityWrap(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffIdentityWrap __gsharp_id_0_w){
 return __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_0_w.__gsharp_mb_Value,2),1);
@@ -161,18 +162,19 @@ return __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_0_w.__gsharp_mb_Value,2),1)
 struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffLinearMeter
 {
 int __gsharp_mb_Units;
-__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffLinearMeter() {}
-__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffLinearMeter(int v) {
-this->__gsharp_mb_Units = v;
-}
-__device__ inline operator int() const {
-return this->__gsharp_mb_Units;
-}
 }
 ;
 static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffLinearMeter)==4,""Kassyi.GSharp.Tests.Shared.Differential.DiffLinearMeter: size"");
 static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffLinearMeter)==4,""Kassyi.GSharp.Tests.Shared.Differential.DiffLinearMeter: alignment"");
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffLinearMeter,__gsharp_mb_Units)==0,""Kassyi.GSharp.Tests.Shared.Differential.DiffLinearMeter.Units: offset"");
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffLinearMeter __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__DiffLinearMeter__op_uImplicit_o0(int __gsharp_id_0_v) {
+return ([&]() {
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffLinearMeter __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Units = __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_0_v,3),5); return __gsharp_tmp; }
+());
+}
+__device__ inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__DiffLinearMeter__op_uImplicit_o1(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffLinearMeter __gsharp_id_0_m) {
+return __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_0_m.__gsharp_mb_Units,2),7);
+}
 #endif
 inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__LanguageConversionsAndMacrosDifferentialKernels__AcceptLinearMeter(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffLinearMeter __gsharp_id_0_m){
 return __gsharp_add_i32(__gsharp_id_0_m.__gsharp_mb_Units,10);
@@ -269,16 +271,26 @@ return __gsharp_self;
 #endif
 struct __gsharp_frame_Kassyi__GSharp__Tests__Shared__Differential__LanguageConversionsAndMacrosDifferentialKernels__SuspendAndCombineMacro {
 int __gsharp_state = 0;
+GSharpArray<int> __gsharp_id_0_scratch;
+int __gsharp_id_1_localTid;
+int __gsharp_id_2_x;
+int __gsharp_id_3_y;
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffMacroContext __gsharp_id_5_ctx;
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffMacroNum __gsharp_id_6_a;
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffMacroNum __gsharp_id_7_b;
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffMacroNum __gsharp_id_8_pre;
 int __gsharp_id_9_neighbor;
 };
-template <typename TRoot> inline bool __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__LanguageConversionsAndMacrosDifferentialKernels__SuspendAndCombineMacro(GSharpArray<int> __gsharp_id_0_scratch, int __gsharp_id_1_localTid, int __gsharp_id_2_x, int __gsharp_id_3_y, int* __gsharp_id_4_totalCalls, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Differential__LanguageConversionsAndMacrosDifferentialKernels__SuspendAndCombineMacro* __gsharp_ctx, TRoot* __gsharp_root, int* __gsharp_result){
+template <typename TRoot> inline bool __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__LanguageConversionsAndMacrosDifferentialKernels__SuspendAndCombineMacro(GSharpArray<int> __gsharp_in___gsharp_id_0_scratch, int __gsharp_in___gsharp_id_1_localTid, int __gsharp_in___gsharp_id_2_x, int __gsharp_in___gsharp_id_3_y, int* __gsharp_id_4_totalCalls, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Differential__LanguageConversionsAndMacrosDifferentialKernels__SuspendAndCombineMacro* __gsharp_ctx, TRoot* __gsharp_root, int* __gsharp_result){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_root->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_root->__gsharp_yielded_for_block_barrier
+if(__gsharp_state==0){
+__gsharp_ctx->__gsharp_id_0_scratch=__gsharp_in___gsharp_id_0_scratch;
+__gsharp_ctx->__gsharp_id_1_localTid=__gsharp_in___gsharp_id_1_localTid;
+__gsharp_ctx->__gsharp_id_2_x=__gsharp_in___gsharp_id_2_x;
+__gsharp_ctx->__gsharp_id_3_y=__gsharp_in___gsharp_id_3_y;
+}
 switch(__gsharp_state)
 {
 case 0:
@@ -287,11 +299,11 @@ __gsharp_switch_1_state_0:
 __gsharp_ctx->__gsharp_id_5_ctx=([&]() {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffMacroContext __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Bias = 7; __gsharp_tmp.__gsharp_mb_Calls = 0; return __gsharp_tmp; }
 ());
-__gsharp_ctx->__gsharp_id_6_a=__gsharp_ctor_Kassyi__GSharp__Tests__Shared__Differential__DiffMacroNum(__gsharp_id_2_x);
-__gsharp_ctx->__gsharp_id_7_b=__gsharp_ctor_Kassyi__GSharp__Tests__Shared__Differential__DiffMacroNum(__gsharp_id_3_y);
+__gsharp_ctx->__gsharp_id_6_a=__gsharp_ctor_Kassyi__GSharp__Tests__Shared__Differential__DiffMacroNum(__gsharp_ctx->__gsharp_id_2_x);
+__gsharp_ctx->__gsharp_id_7_b=__gsharp_ctor_Kassyi__GSharp__Tests__Shared__Differential__DiffMacroNum(__gsharp_ctx->__gsharp_id_3_y);
 __gsharp_ctx->__gsharp_id_8_pre={};
 __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__DiffMacroNumOps__AddWithContext(&__gsharp_ctx->__gsharp_id_5_ctx,&__gsharp_ctx->__gsharp_id_8_pre,__gsharp_ctx->__gsharp_id_6_a,__gsharp_ctx->__gsharp_id_7_b);
-__gsharp_array_at(__gsharp_id_0_scratch, __gsharp_id_1_localTid, ""G#: a null array is read at LanguageConversionsAndMacrosDifferentialKernels.cs(174,9)"")=__gsharp_ctx->__gsharp_id_8_pre.__gsharp_mb_Value;
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_scratch, __gsharp_ctx->__gsharp_id_1_localTid, ""G#: a null array is read at LanguageConversionsAndMacrosDifferentialKernels.cs(174,9)"")=__gsharp_ctx->__gsharp_id_8_pre.__gsharp_mb_Value;
 __gsharp_yielded_for_block_barrier=true;
 __gsharp_state=1;
 return false;
@@ -299,7 +311,7 @@ return false;
 case 1:
 __gsharp_switch_1_state_1:
 {
-__gsharp_ctx->__gsharp_id_9_neighbor=__gsharp_array_at(__gsharp_id_0_scratch, (__gsharp_add_i32(__gsharp_id_1_localTid,1))%(int)(int)blockDim.x, ""G#: a null array is read at LanguageConversionsAndMacrosDifferentialKernels.cs(177,24)"");
+__gsharp_ctx->__gsharp_id_9_neighbor=__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_scratch, (__gsharp_add_i32(__gsharp_ctx->__gsharp_id_1_localTid,1))%(int)(int)blockDim.x, ""G#: a null array is read at LanguageConversionsAndMacrosDifferentialKernels.cs(177,24)"");
 __gsharp_yielded_for_block_barrier=true;
 __gsharp_state=2;
 return false;
@@ -334,7 +346,7 @@ using System;
 using global::Kassyi.GSharp.Core;
 using static global::Kassyi.GSharp.Core.ManagedGpuContext;
 using global::Kassyi.ZeroAlloc.Linq;
-#pragma warning disable CS0649
+#pragma warning disable CS0162, CS0164, CS0219, CS0649, CS1718
 namespace Kassyi.GSharp.Tests.Shared.Differential
 {
 public partial class LanguageConversionsAndMacrosDifferentialKernels
@@ -362,6 +374,10 @@ internal static void Invoke(ref global::Kassyi.GSharp.Tests.Shared.Differential.
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Differential__LanguageConversionsAndMacrosDifferentialKernels__SuspendAndCombineMacro {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
+internal int[] scratch;
+internal int localTid;
+internal int x;
+internal int y;
 internal global::Kassyi.GSharp.Tests.Shared.Differential.DiffMacroContext ctx;
 internal global::Kassyi.GSharp.Tests.Shared.Differential.DiffMacroNum a;
 internal global::Kassyi.GSharp.Tests.Shared.Differential.DiffMacroNum b;
@@ -369,7 +385,13 @@ internal global::Kassyi.GSharp.Tests.Shared.Differential.DiffMacroNum pre;
 internal int neighbor;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__LanguageConversionsAndMacrosDifferentialKernels__SuspendAndCombineMacro(int[] scratch, int localTid, int x, int y, ref int totalCalls, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Differential__LanguageConversionsAndMacrosDifferentialKernels__SuspendAndCombineMacro __gsharp_ctx, ref int __gsharp_result) {
+public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__LanguageConversionsAndMacrosDifferentialKernels__SuspendAndCombineMacro(int[] __gsharp_in_scratch, int __gsharp_in_localTid, int __gsharp_in_x, int __gsharp_in_y, ref int totalCalls, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Differential__LanguageConversionsAndMacrosDifferentialKernels__SuspendAndCombineMacro __gsharp_ctx, ref int __gsharp_result) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.scratch = __gsharp_in_scratch;
+__gsharp_ctx.localTid = __gsharp_in_localTid;
+__gsharp_ctx.x = __gsharp_in_x;
+__gsharp_ctx.y = __gsharp_in_y;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -380,11 +402,11 @@ __gsharp_ctx.ctx = new global::Kassyi.GSharp.Tests.Shared.Differential.DiffMacro
 Bias = 7,
 Calls = 0
 };
-__gsharp_ctx.a = new global::Kassyi.GSharp.Tests.Shared.Differential.DiffMacroNum(x);
-__gsharp_ctx.b = new global::Kassyi.GSharp.Tests.Shared.Differential.DiffMacroNum(y);
+__gsharp_ctx.a = new global::Kassyi.GSharp.Tests.Shared.Differential.DiffMacroNum(__gsharp_ctx.x);
+__gsharp_ctx.b = new global::Kassyi.GSharp.Tests.Shared.Differential.DiffMacroNum(__gsharp_ctx.y);
 __gsharp_ctx.pre = default;
 global::Kassyi.GSharp.Tests.Shared.Differential.DiffMacroNumOps.AddWithContext(ref __gsharp_ctx.ctx, out __gsharp_ctx.pre, __gsharp_ctx.a, __gsharp_ctx.b);
-scratch[localTid] = __gsharp_ctx.pre.Value;
+__gsharp_ctx.scratch[__gsharp_ctx.localTid] = __gsharp_ctx.pre.Value;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
 return false;
@@ -392,7 +414,7 @@ return false;
 
 case 1:
 {
-__gsharp_ctx.neighbor = scratch[(localTid + 1) % (int)global::Kassyi.GSharp.Core.BlockDimension.X];
+__gsharp_ctx.neighbor = __gsharp_ctx.scratch[(__gsharp_ctx.localTid + 1) % (int)global::Kassyi.GSharp.Core.BlockDimension.X];
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 2;
 return false;
@@ -428,7 +450,7 @@ internal static void Invoke(ref global::Kassyi.GSharp.Tests.Shared.Differential.
 
 // File: Kassyi__GSharp__Tests__Shared__Differential__LanguageConversionsAndMacrosDifferentialKernels.g.cs
 // <auto-generated/>
-#nullable enable
+#nullable enable annotations
 using System;
 #pragma warning disable RS1035 // Do not use APIs banned for analyzers
 #pragma warning disable RS1016
@@ -439,6 +461,7 @@ using global::Kassyi.GSharp.Core;
 using global::Kassyi.GSharp.Runtime.Interop;
 using static global::Kassyi.GSharp.Core.ManagedGpuContext;
 using global::Kassyi.ZeroAlloc.Linq;
+#pragma warning disable CS0162, CS0164, CS0219, CS0649, CS1718
 namespace Kassyi.GSharp.Tests.Shared.Differential
 {
 public partial class LanguageConversionsAndMacrosDifferentialKernels
@@ -453,36 +476,38 @@ public const string UserDefinedImplicitConversionsKernel_Source = @"#ifndef __GS
 struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffIdentityWrap
 {
 int __gsharp_mb_Value;
-__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffIdentityWrap() {}
-__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffIdentityWrap(int v) {
-this->__gsharp_mb_Value = v;
-}
-__device__ inline operator int() const {
-return this->__gsharp_mb_Value;
-}
 }
 ;
 static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffIdentityWrap)==4,""Kassyi.GSharp.Tests.Shared.Differential.DiffIdentityWrap: size"");
 static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffIdentityWrap)==4,""Kassyi.GSharp.Tests.Shared.Differential.DiffIdentityWrap: alignment"");
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffIdentityWrap,__gsharp_mb_Value)==0,""Kassyi.GSharp.Tests.Shared.Differential.DiffIdentityWrap.Value: offset"");
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffIdentityWrap __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__DiffIdentityWrap__op_uImplicit_o0(int __gsharp_id_0_v) {
+return ([&]() {
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffIdentityWrap __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Value = __gsharp_id_0_v; return __gsharp_tmp; }
+());
+}
+__device__ inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__DiffIdentityWrap__op_uImplicit_o1(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffIdentityWrap __gsharp_id_0_w) {
+return __gsharp_id_0_w.__gsharp_mb_Value;
+}
 #endif
 #ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffLinearMeter__
 #define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffLinearMeter__
 struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffLinearMeter
 {
 int __gsharp_mb_Units;
-__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffLinearMeter() {}
-__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffLinearMeter(int v) {
-this->__gsharp_mb_Units = v;
-}
-__device__ inline operator int() const {
-return this->__gsharp_mb_Units;
-}
 }
 ;
 static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffLinearMeter)==4,""Kassyi.GSharp.Tests.Shared.Differential.DiffLinearMeter: size"");
 static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffLinearMeter)==4,""Kassyi.GSharp.Tests.Shared.Differential.DiffLinearMeter: alignment"");
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffLinearMeter,__gsharp_mb_Units)==0,""Kassyi.GSharp.Tests.Shared.Differential.DiffLinearMeter.Units: offset"");
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffLinearMeter __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__DiffLinearMeter__op_uImplicit_o0(int __gsharp_id_0_v) {
+return ([&]() {
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffLinearMeter __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Units = __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_0_v,3),5); return __gsharp_tmp; }
+());
+}
+__device__ inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__DiffLinearMeter__op_uImplicit_o1(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffLinearMeter __gsharp_id_0_m) {
+return __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_0_m.__gsharp_mb_Units,2),7);
+}
 #endif
 struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageConversionsAndMacrosDifferentialKernels__UserDefinedImplicitConversionsKernel {
 int __gsharp_state = 0;
@@ -510,16 +535,16 @@ __gsharp_state = -1;return;
 int __gsharp_id_4_x = __gsharp_id_0_xs[__gsharp_id_3_tid];
 int __gsharp_id_5_y = __gsharp_id_1_ys[__gsharp_id_3_tid];
 int __gsharp_id_6_o = __gsharp_mul_i32(__gsharp_id_3_tid,8);
-__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffIdentityWrap __gsharp_id_7_idWrap = __gsharp_id_4_x;
-int __gsharp_id_8_idRoundtrip = __gsharp_id_7_idWrap;
-int __gsharp_id_9_idFnArg = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__LanguageConversionsAndMacrosDifferentialKernels__AcceptIdentityWrap(__gsharp_id_5_y);
-__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffIdentityWrap __gsharp_id_10_idTernary = ((__gsharp_id_4_x&1)==0?__gsharp_id_4_x:__gsharp_id_5_y);
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffIdentityWrap __gsharp_id_7_idWrap = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__DiffIdentityWrap__op_uImplicit_o0(__gsharp_id_4_x);
+int __gsharp_id_8_idRoundtrip = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__DiffIdentityWrap__op_uImplicit_o1(__gsharp_id_7_idWrap);
+int __gsharp_id_9_idFnArg = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__LanguageConversionsAndMacrosDifferentialKernels__AcceptIdentityWrap(__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__DiffIdentityWrap__op_uImplicit_o0(__gsharp_id_5_y));
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffIdentityWrap __gsharp_id_10_idTernary = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__DiffIdentityWrap__op_uImplicit_o0(((__gsharp_id_4_x&1)==0?__gsharp_id_4_x:__gsharp_id_5_y));
 auto __gsharp_id_11_explicitMeter = ([&]() {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffLinearMeter __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Units = __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_4_x,3),5); return __gsharp_tmp; }
 ());
-__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffLinearMeter __gsharp_id_12_implicitMeter = __gsharp_id_4_x;
-int __gsharp_id_13_implicitBack = __gsharp_id_11_explicitMeter;
-int __gsharp_id_14_implicitFnArg = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__LanguageConversionsAndMacrosDifferentialKernels__AcceptLinearMeter(__gsharp_id_5_y);
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffLinearMeter __gsharp_id_12_implicitMeter = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__DiffLinearMeter__op_uImplicit_o0(__gsharp_id_4_x);
+int __gsharp_id_13_implicitBack = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__DiffLinearMeter__op_uImplicit_o1(__gsharp_id_11_explicitMeter);
+int __gsharp_id_14_implicitFnArg = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__LanguageConversionsAndMacrosDifferentialKernels__AcceptLinearMeter(__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__DiffLinearMeter__op_uImplicit_o0(__gsharp_id_5_y));
 __gsharp_id_2_r[__gsharp_id_6_o+0]=__gsharp_id_7_idWrap.__gsharp_mb_Value;
 __gsharp_id_2_r[__gsharp_add_i32(__gsharp_id_6_o,1)]=__gsharp_id_8_idRoundtrip;
 __gsharp_id_2_r[__gsharp_add_i32(__gsharp_id_6_o,2)]=__gsharp_id_9_idFnArg;
@@ -614,7 +639,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__LanguageConversionsAndMacrosDifferentialKernels__UserDefinedImplicitConversionsKernel(int[] xs, int[] ys, int[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageConversionsAndMacrosDifferentialKernels__UserDefinedImplicitConversionsKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__LanguageConversionsAndMacrosDifferentialKernels__UserDefinedImplicitConversionsKernel(int[] xs, int[] ys, int[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageConversionsAndMacrosDifferentialKernels__UserDefinedImplicitConversionsKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -960,7 +985,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__LanguageConversionsAndMacrosDifferentialKernels__OperatorMacroArithmeticKernel(int[] xs, int[] ys, int[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageConversionsAndMacrosDifferentialKernels__OperatorMacroArithmeticKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__LanguageConversionsAndMacrosDifferentialKernels__OperatorMacroArithmeticKernel(int[] xs, int[] ys, int[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageConversionsAndMacrosDifferentialKernels__OperatorMacroArithmeticKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -1312,7 +1337,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__LanguageConversionsAndMacrosDifferentialKernels__OperatorMacroEvaluationOrderKernel(int[] xs, int[] ys, int[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageConversionsAndMacrosDifferentialKernels__OperatorMacroEvaluationOrderKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__LanguageConversionsAndMacrosDifferentialKernels__OperatorMacroEvaluationOrderKernel(int[] xs, int[] ys, int[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageConversionsAndMacrosDifferentialKernels__OperatorMacroEvaluationOrderKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -1645,7 +1670,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__LanguageConversionsAndMacrosDifferentialKernels__OperatorMacroCastAndShiftKernel(int[] xs, int[] ys, int[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageConversionsAndMacrosDifferentialKernels__OperatorMacroCastAndShiftKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__LanguageConversionsAndMacrosDifferentialKernels__OperatorMacroCastAndShiftKernel(int[] xs, int[] ys, int[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageConversionsAndMacrosDifferentialKernels__OperatorMacroCastAndShiftKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -1944,7 +1969,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__LanguageConversionsAndMacrosDifferentialKernels__OperatorMacroInDeviceFunctionKernel(int[] xs, int[] ys, int[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageConversionsAndMacrosDifferentialKernels__OperatorMacroInDeviceFunctionKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__LanguageConversionsAndMacrosDifferentialKernels__OperatorMacroInDeviceFunctionKernel(int[] xs, int[] ys, int[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageConversionsAndMacrosDifferentialKernels__OperatorMacroInDeviceFunctionKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -2114,6 +2139,9 @@ uint64_t __gsharp_warp_exchange[2] = {};
 uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
+GSharpArray<int> __gsharp_id_0_xs;
+GSharpArray<int> __gsharp_id_1_scratch;
+GSharpArray<int> __gsharp_id_2_r;
 int __gsharp_id_3_localTid;
 int __gsharp_id_4_globalTid;
 int __gsharp_id_5_x;
@@ -2124,11 +2152,16 @@ int __gsharp_id_7_suspendedVal;
 int __gsharp_id_9_neighbor;
 __gsharp_frame_Kassyi__GSharp__Tests__Shared__Differential__LanguageConversionsAndMacrosDifferentialKernels__SuspendAndCombineMacro __gsharp_call_frame_0;
 };
-extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__LanguageConversionsAndMacrosDifferentialKernels__OperatorMacroAcrossBarrierAndUsingStaticKernel(GSharpArray<int> __gsharp_id_0_xs, GSharpArray<int> __gsharp_id_1_scratch, GSharpArray<int> __gsharp_id_2_r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageConversionsAndMacrosDifferentialKernels__OperatorMacroAcrossBarrierAndUsingStaticKernel* __gsharp_ctx){
+extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__LanguageConversionsAndMacrosDifferentialKernels__OperatorMacroAcrossBarrierAndUsingStaticKernel(GSharpArray<int> __gsharp_in___gsharp_id_0_xs, GSharpArray<int> __gsharp_in___gsharp_id_1_scratch, GSharpArray<int> __gsharp_in___gsharp_id_2_r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageConversionsAndMacrosDifferentialKernels__OperatorMacroAcrossBarrierAndUsingStaticKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
 auto* __gsharp_root = __gsharp_ctx;
+if(__gsharp_state==0){
+__gsharp_ctx->__gsharp_id_0_xs=__gsharp_in___gsharp_id_0_xs;
+__gsharp_ctx->__gsharp_id_1_scratch=__gsharp_in___gsharp_id_1_scratch;
+__gsharp_ctx->__gsharp_id_2_r=__gsharp_in___gsharp_id_2_r;
+}
 switch(__gsharp_state)
 {
 case 0:
@@ -2136,24 +2169,24 @@ __gsharp_switch_1_state_0:
 {
 __gsharp_ctx->__gsharp_id_3_localTid=(int)threadIdx.x;
 __gsharp_ctx->__gsharp_id_4_globalTid=__gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),__gsharp_ctx->__gsharp_id_3_localTid);
-if(__gsharp_ctx->__gsharp_id_4_globalTid>=__gsharp_id_0_xs.length)
+if(__gsharp_ctx->__gsharp_id_4_globalTid>=__gsharp_ctx->__gsharp_id_0_xs.length)
 {
 __gsharp_state = -1;return;
 }
-__gsharp_ctx->__gsharp_id_5_x=__gsharp_id_0_xs[__gsharp_ctx->__gsharp_id_4_globalTid]&0xFFF;
+__gsharp_ctx->__gsharp_id_5_x=__gsharp_ctx->__gsharp_id_0_xs[__gsharp_ctx->__gsharp_id_4_globalTid]&0xFFF;
 __gsharp_ctx->__gsharp_id_6_y=(__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_5_x,3))&0x7FF;
 goto __gsharp_switch_1_state_1;
 }
 case 1:
 __gsharp_switch_1_state_1:
 {
-if(!__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__LanguageConversionsAndMacrosDifferentialKernels__SuspendAndCombineMacro(__gsharp_id_1_scratch,__gsharp_ctx->__gsharp_id_3_localTid,__gsharp_ctx->__gsharp_id_5_x,__gsharp_ctx->__gsharp_id_6_y,&__gsharp_ctx->__gsharp_id_8_macroCalls,&__gsharp_ctx->__gsharp_call_frame_0,__gsharp_root,&(__gsharp_ctx->__gsharp_call_temp_0)))
+if(!__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__LanguageConversionsAndMacrosDifferentialKernels__SuspendAndCombineMacro(__gsharp_ctx->__gsharp_id_1_scratch,__gsharp_ctx->__gsharp_id_3_localTid,__gsharp_ctx->__gsharp_id_5_x,__gsharp_ctx->__gsharp_id_6_y,&__gsharp_ctx->__gsharp_id_8_macroCalls,&__gsharp_ctx->__gsharp_call_frame_0,__gsharp_root,&(__gsharp_ctx->__gsharp_call_temp_0)))
 {
 __gsharp_state=1;
 return;
 }
 __gsharp_ctx->__gsharp_id_7_suspendedVal=__gsharp_ctx->__gsharp_call_temp_0;
-__gsharp_id_1_scratch[__gsharp_ctx->__gsharp_id_3_localTid]=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_5_x,__gsharp_ctx->__gsharp_id_3_localTid);
+__gsharp_ctx->__gsharp_id_1_scratch[__gsharp_ctx->__gsharp_id_3_localTid]=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_5_x,__gsharp_ctx->__gsharp_id_3_localTid);
 __gsharp_yielded_for_block_barrier=true;
 __gsharp_state=2;
 return;
@@ -2161,7 +2194,7 @@ return;
 case 2:
 __gsharp_switch_1_state_2:
 {
-__gsharp_ctx->__gsharp_id_9_neighbor=__gsharp_id_1_scratch[(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_3_localTid,3))%(int)(int)blockDim.x];
+__gsharp_ctx->__gsharp_id_9_neighbor=__gsharp_ctx->__gsharp_id_1_scratch[(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_3_localTid,3))%(int)(int)blockDim.x];
 __gsharp_yielded_for_block_barrier=true;
 __gsharp_state=3;
 return;
@@ -2183,11 +2216,11 @@ int __gsharp_id_12_clamped = __gsharp_clamp(abs(__gsharp_sub_i32(__gsharp_ctx->_
 int __gsharp_id_13_shadowAcc = 10;
 __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__LocalGpuShadow__SyncThreads(&__gsharp_id_13_shadowAcc);
 int __gsharp_id_14_o = __gsharp_mul_i32(__gsharp_ctx->__gsharp_id_4_globalTid,5);
-__gsharp_id_2_r[__gsharp_id_14_o+0]=__gsharp_ctx->__gsharp_id_7_suspendedVal;
-__gsharp_id_2_r[__gsharp_add_i32(__gsharp_id_14_o,1)]=__gsharp_ctx->__gsharp_id_8_macroCalls;
-__gsharp_id_2_r[__gsharp_add_i32(__gsharp_id_14_o,2)]=__gsharp_ctx->__gsharp_id_9_neighbor;
-__gsharp_id_2_r[__gsharp_add_i32(__gsharp_id_14_o,3)]=__gsharp_add_i32(__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_11_lzc,1000),__gsharp_id_12_clamped),__gsharp_id_10_laneZeroX);
-__gsharp_id_2_r[__gsharp_add_i32(__gsharp_id_14_o,4)]=__gsharp_id_13_shadowAcc;
+__gsharp_ctx->__gsharp_id_2_r[__gsharp_id_14_o+0]=__gsharp_ctx->__gsharp_id_7_suspendedVal;
+__gsharp_ctx->__gsharp_id_2_r[__gsharp_add_i32(__gsharp_id_14_o,1)]=__gsharp_ctx->__gsharp_id_8_macroCalls;
+__gsharp_ctx->__gsharp_id_2_r[__gsharp_add_i32(__gsharp_id_14_o,2)]=__gsharp_ctx->__gsharp_id_9_neighbor;
+__gsharp_ctx->__gsharp_id_2_r[__gsharp_add_i32(__gsharp_id_14_o,3)]=__gsharp_add_i32(__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_11_lzc,1000),__gsharp_id_12_clamped),__gsharp_id_10_laneZeroX);
+__gsharp_ctx->__gsharp_id_2_r[__gsharp_add_i32(__gsharp_id_14_o,4)]=__gsharp_id_13_shadowAcc;
 __gsharp_state=-1;
 return;
 }
@@ -2272,6 +2305,9 @@ public static readonly string OperatorMacroAcrossBarrierAndUsingStaticKernel_Ful
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageConversionsAndMacrosDifferentialKernels__OperatorMacroAcrossBarrierAndUsingStaticKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
+public int[] xs;
+public int[] scratch;
+public int[] r;
 public int localTid;
 public int globalTid;
 public int x;
@@ -2283,7 +2319,12 @@ public int neighbor;
 internal global::Kassyi.GSharp.Tests.Shared.Differential.LanguageConversionsAndMacrosDifferentialKernels.__gsharp_frame_Kassyi__GSharp__Tests__Shared__Differential__LanguageConversionsAndMacrosDifferentialKernels__SuspendAndCombineMacro __gsharp_call_frame_0 = new();
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__LanguageConversionsAndMacrosDifferentialKernels__OperatorMacroAcrossBarrierAndUsingStaticKernel(int[] xs, int[] scratch, int[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageConversionsAndMacrosDifferentialKernels__OperatorMacroAcrossBarrierAndUsingStaticKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__LanguageConversionsAndMacrosDifferentialKernels__OperatorMacroAcrossBarrierAndUsingStaticKernel(int[] __gsharp_in_xs, int[] __gsharp_in_scratch, int[] __gsharp_in_r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageConversionsAndMacrosDifferentialKernels__OperatorMacroAcrossBarrierAndUsingStaticKernel __gsharp_ctx) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.xs = __gsharp_in_xs;
+__gsharp_ctx.scratch = __gsharp_in_scratch;
+__gsharp_ctx.r = __gsharp_in_r;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -2291,7 +2332,7 @@ case 0:
 {
 __gsharp_ctx.localTid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 __gsharp_ctx.globalTid = global::Kassyi.GSharp.Core.BlockIndex.X * global::Kassyi.GSharp.Core.BlockDimension.X + __gsharp_ctx.localTid;
-if (__gsharp_ctx.globalTid >= xs.Length)
+if (__gsharp_ctx.globalTid >= __gsharp_ctx.xs.Length)
 {
 {
 __gsharp_ctx.__gsharp_state = -1;
@@ -2299,14 +2340,14 @@ return;
 }
 }
 
-__gsharp_ctx.x = xs[__gsharp_ctx.globalTid] & 0xFFF;
+__gsharp_ctx.x = __gsharp_ctx.xs[__gsharp_ctx.globalTid] & 0xFFF;
 __gsharp_ctx.y = (__gsharp_ctx.x * 3) & 0x7FF;
 goto case 1;
 }
 
 case 1:
 {
-if (!global::Kassyi.GSharp.Tests.Shared.Differential.LanguageConversionsAndMacrosDifferentialKernels.__gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__LanguageConversionsAndMacrosDifferentialKernels__SuspendAndCombineMacro(scratch, __gsharp_ctx.localTid, __gsharp_ctx.x, __gsharp_ctx.y, ref __gsharp_ctx.macroCalls, __gsharp_ctx.__gsharp_call_frame_0, ref __gsharp_ctx.__gsharp_call_temp_0))
+if (!global::Kassyi.GSharp.Tests.Shared.Differential.LanguageConversionsAndMacrosDifferentialKernels.__gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__LanguageConversionsAndMacrosDifferentialKernels__SuspendAndCombineMacro(__gsharp_ctx.scratch, __gsharp_ctx.localTid, __gsharp_ctx.x, __gsharp_ctx.y, ref __gsharp_ctx.macroCalls, __gsharp_ctx.__gsharp_call_frame_0, ref __gsharp_ctx.__gsharp_call_temp_0))
 {
 __gsharp_ctx.__gsharp_state = 1;
 return;
@@ -2314,7 +2355,7 @@ return;
 
 __gsharp_ctx.suspendedVal = __gsharp_ctx.__gsharp_call_temp_0;
 // Unqualified SyncThreads() from `using static Kassyi.GSharp.Core.Gpu;`
-scratch[__gsharp_ctx.localTid] = __gsharp_ctx.x + __gsharp_ctx.localTid;
+__gsharp_ctx.scratch[__gsharp_ctx.localTid] = __gsharp_ctx.x + __gsharp_ctx.localTid;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 2;
 return;
@@ -2322,7 +2363,7 @@ return;
 
 case 2:
 {
-__gsharp_ctx.neighbor = scratch[(__gsharp_ctx.localTid + 3) % (int)global::Kassyi.GSharp.Core.BlockDimension.X];
+__gsharp_ctx.neighbor = __gsharp_ctx.scratch[(__gsharp_ctx.localTid + 3) % (int)global::Kassyi.GSharp.Core.BlockDimension.X];
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 3;
 return;
@@ -2337,7 +2378,7 @@ return;
 
 case 4:
 {
-var __gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_sync(__gsharp_ctx, 0xFFFF_FFFFu, __gsharp_ctx.x, 0, 32, "LanguageConversionsAndMacrosDifferentialKernels.cs(350,25)");
+var __gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_sync(0, 0xFFFF_FFFFu, __gsharp_ctx.x, 0, 32, "LanguageConversionsAndMacrosDifferentialKernels.cs(350,25)");
 // Unqualified ShuffleSync() from `using static Kassyi.GSharp.Core.Warp;`, LeadingZeroCount() from `using static System.Numerics.BitOperations;`, and Abs/Clamp from `using static System.Math;`
 int laneZeroX = __gsharp_warp_temp_1;
 int lzc = global::System.Numerics.BitOperations.LeadingZeroCount((uint)__gsharp_ctx.x | 1u);
@@ -2346,11 +2387,11 @@ int clamped = global::System.Math.Clamp(global::System.Math.Abs(__gsharp_ctx.x -
 int shadowAcc = 10;
 global::Kassyi.GSharp.Tests.Shared.Differential.LocalGpuShadow.SyncThreads(ref shadowAcc);
 int o = __gsharp_ctx.globalTid * 5;
-r[o + 0] = __gsharp_ctx.suspendedVal;
-r[o + 1] = __gsharp_ctx.macroCalls;
-r[o + 2] = __gsharp_ctx.neighbor;
-r[o + 3] = (lzc * 1000) + clamped + laneZeroX;
-r[o + 4] = shadowAcc;
+__gsharp_ctx.r[o + 0] = __gsharp_ctx.suspendedVal;
+__gsharp_ctx.r[o + 1] = __gsharp_ctx.macroCalls;
+__gsharp_ctx.r[o + 2] = __gsharp_ctx.neighbor;
+__gsharp_ctx.r[o + 3] = (lzc * 1000) + clamped + laneZeroX;
+__gsharp_ctx.r[o + 4] = shadowAcc;
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }

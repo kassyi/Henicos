@@ -4474,7 +4474,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__StackLinqDifferentialKernels__DoubleSequentialSumKernel(double[] xs, double[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__StackLinqDifferentialKernels__DoubleSequentialSumKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__StackLinqDifferentialKernels__DoubleSequentialSumKernel(double[] xs, double[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__StackLinqDifferentialKernels__DoubleSequentialSumKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -4755,7 +4755,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__StackLinqDifferentialKernels__StackLinqFusedFirstKernel(int[] xs, long[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__StackLinqDifferentialKernels__StackLinqFusedFirstKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__StackLinqDifferentialKernels__StackLinqFusedFirstKernel(int[] xs, long[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__StackLinqDifferentialKernels__StackLinqFusedFirstKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -5036,7 +5036,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__StackLinqDifferentialKernels__StackLinqFusedFirstPredicateKernel(int[] xs, long[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__StackLinqDifferentialKernels__StackLinqFusedFirstPredicateKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__StackLinqDifferentialKernels__StackLinqFusedFirstPredicateKernel(int[] xs, long[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__StackLinqDifferentialKernels__StackLinqFusedFirstPredicateKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -5313,7 +5313,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__StackLinqDifferentialKernels__StackLinqFusedLastKernel(int[] xs, long[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__StackLinqDifferentialKernels__StackLinqFusedLastKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__StackLinqDifferentialKernels__StackLinqFusedLastKernel(int[] xs, long[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__StackLinqDifferentialKernels__StackLinqFusedLastKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -5594,7 +5594,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__StackLinqDifferentialKernels__StackLinqFusedLastPredicateKernel(int[] xs, long[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__StackLinqDifferentialKernels__StackLinqFusedLastPredicateKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__StackLinqDifferentialKernels__StackLinqFusedLastPredicateKernel(int[] xs, long[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__StackLinqDifferentialKernels__StackLinqFusedLastPredicateKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -5858,7 +5858,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__StackLinqDifferentialKernels__StackLinqSingleOneElementKernel(int[] xs, long[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__StackLinqDifferentialKernels__StackLinqSingleOneElementKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__StackLinqDifferentialKernels__StackLinqSingleOneElementKernel(int[] xs, long[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__StackLinqDifferentialKernels__StackLinqSingleOneElementKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -6125,7 +6125,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__StackLinqDifferentialKernels__StackLinqSinglePredicateUniqueKernel(int[] xs, long[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__StackLinqDifferentialKernels__StackLinqSinglePredicateUniqueKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__StackLinqDifferentialKernels__StackLinqSinglePredicateUniqueKernel(int[] xs, long[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__StackLinqDifferentialKernels__StackLinqSinglePredicateUniqueKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -6389,7 +6389,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__StackLinqDifferentialKernels__StackLinqSingleOrDefaultEmptyKernel(int[] xs, long[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__StackLinqDifferentialKernels__StackLinqSingleOrDefaultEmptyKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__StackLinqDifferentialKernels__StackLinqSingleOrDefaultEmptyKernel(int[] xs, long[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__StackLinqDifferentialKernels__StackLinqSingleOrDefaultEmptyKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -6653,7 +6653,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__StackLinqDifferentialKernels__StackLinqSingleOrDefaultOneElementKernel(int[] xs, long[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__StackLinqDifferentialKernels__StackLinqSingleOrDefaultOneElementKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__StackLinqDifferentialKernels__StackLinqSingleOrDefaultOneElementKernel(int[] xs, long[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__StackLinqDifferentialKernels__StackLinqSingleOrDefaultOneElementKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -6919,7 +6919,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__StackLinqDifferentialKernels__StackLinqSingleOrDefaultPredicateNoneKernel(int[] xs, long[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__StackLinqDifferentialKernels__StackLinqSingleOrDefaultPredicateNoneKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__StackLinqDifferentialKernels__StackLinqSingleOrDefaultPredicateNoneKernel(int[] xs, long[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__StackLinqDifferentialKernels__StackLinqSingleOrDefaultPredicateNoneKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -7181,7 +7181,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__StackLinqDifferentialKernels__StackLinqElementAtZeroKernel(int[] xs, long[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__StackLinqDifferentialKernels__StackLinqElementAtZeroKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__StackLinqDifferentialKernels__StackLinqElementAtZeroKernel(int[] xs, long[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__StackLinqDifferentialKernels__StackLinqElementAtZeroKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -7443,7 +7443,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__StackLinqDifferentialKernels__StackLinqElementAtTwoKernel(int[] xs, long[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__StackLinqDifferentialKernels__StackLinqElementAtTwoKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__StackLinqDifferentialKernels__StackLinqElementAtTwoKernel(int[] xs, long[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__StackLinqDifferentialKernels__StackLinqElementAtTwoKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -7723,7 +7723,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__StackLinqDifferentialKernels__StackLinqTakeWhileSideEffectCountKernel(int[] xs, long[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__StackLinqDifferentialKernels__StackLinqTakeWhileSideEffectCountKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__StackLinqDifferentialKernels__StackLinqTakeWhileSideEffectCountKernel(int[] xs, long[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__StackLinqDifferentialKernels__StackLinqTakeWhileSideEffectCountKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -8008,7 +8008,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__StackLinqDifferentialKernels__StackLinqSkipWhileSideEffectCountKernel(int[] xs, long[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__StackLinqDifferentialKernels__StackLinqSkipWhileSideEffectCountKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__StackLinqDifferentialKernels__StackLinqSkipWhileSideEffectCountKernel(int[] xs, long[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__StackLinqDifferentialKernels__StackLinqSkipWhileSideEffectCountKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -8304,7 +8304,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__StackLinqDifferentialKernels__ParallelSumStackLinqKernel(int[] xs, int[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__StackLinqDifferentialKernels__ParallelSumStackLinqKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__StackLinqDifferentialKernels__ParallelSumStackLinqKernel(int[] xs, int[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__StackLinqDifferentialKernels__ParallelSumStackLinqKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
