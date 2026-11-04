@@ -36,7 +36,7 @@ public ref struct SkipEnumerator<TEnumerator, TSource> : IStackEnumerator<TSourc
     /// <see langword="true"/> if the enumerator was successfully advanced to the next element;
     /// <see langword="false"/> if the end of the sequence was reached.
     /// </returns>
-    public bool TryGetNext(out TSource value)
+    public bool TryGetNext([MaybeNullWhen(false)] out TSource value)
     {
         while (_remaining > 0)
         {
@@ -46,7 +46,7 @@ public ref struct SkipEnumerator<TEnumerator, TSource> : IStackEnumerator<TSourc
             }
             else
             {
-                value = default!;
+                value = default;
                 return false;
             }
         }

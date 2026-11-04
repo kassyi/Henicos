@@ -86,6 +86,7 @@ dist-ssr/
 /.agents/skills/kickoff/
 /.agents/skills/make-pr/
 /.agents/skills/phased-session-manager/
+/.agents/skills/pr-review-pairing/
 /.agents/skills/qodo.en/
 /.agents/skills/qodo.ja/
 /.agents/skills/qodo/

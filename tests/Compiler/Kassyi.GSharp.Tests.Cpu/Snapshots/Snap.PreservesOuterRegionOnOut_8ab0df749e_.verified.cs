@@ -23,7 +23,7 @@
 
         case 1:
         {
-            output[__gsharp_ctx->tid] = __gsharp_ctx->outerLocal + __gsharp_ctx->innerLocal;
+            __gsharp_ctx->output[__gsharp_ctx->tid] = __gsharp_ctx->outerLocal + __gsharp_ctx->innerLocal;
             __gsharp_ctx->innerLocal = __gsharp_ctx->outerLocal * 2;
             __gsharp_yielded_for_block_barrier = true;
             __gsharp_state = 2;
@@ -32,7 +32,7 @@
 
         case 2:
         {
-            output[__gsharp_ctx->tid] = __gsharp_ctx->outerLocal + __gsharp_ctx->innerLocal;
+            __gsharp_ctx->output[__gsharp_ctx->tid] = __gsharp_ctx->outerLocal + __gsharp_ctx->innerLocal;
             __gsharp_ctx->outerLocal = __gsharp_ctx->tid + 1;
             __gsharp_ctx->innerLocal = __gsharp_ctx->outerLocal * 2;
             __gsharp_yielded_for_block_barrier = true;
@@ -42,7 +42,7 @@
 
         case 3:
         {
-            output[__gsharp_ctx->tid] = __gsharp_ctx->outerLocal + __gsharp_ctx->innerLocal;
+            __gsharp_ctx->output[__gsharp_ctx->tid] = __gsharp_ctx->outerLocal + __gsharp_ctx->innerLocal;
             __gsharp_ctx->innerLocal = __gsharp_ctx->outerLocal * 2;
             __gsharp_yielded_for_block_barrier = true;
             __gsharp_state = 4;
@@ -51,7 +51,7 @@
 
         case 4:
         {
-            output[__gsharp_ctx->tid] = __gsharp_ctx->outerLocal + __gsharp_ctx->innerLocal;
+            __gsharp_ctx->output[__gsharp_ctx->tid] = __gsharp_ctx->outerLocal + __gsharp_ctx->innerLocal;
             __gsharp_state = -1;
             return;
         }

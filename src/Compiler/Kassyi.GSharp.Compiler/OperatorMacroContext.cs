@@ -1,3 +1,4 @@
+using Kassyi.GSharp.Compiler.Lowering;
 namespace Kassyi.GSharp.Compiler;
 
 /// <summary>
@@ -96,8 +97,22 @@ internal static class OperatorMacroContext
                 )
             );
 
-        return reference?.Parent is MemberAccessExpressionSyntax access && access.Name == reference
-            ? access
-            : reference;
+        if (reference != null)
+        {
+            return reference.Parent is MemberAccessExpressionSyntax access && access.Name == reference
+                ? access
+                : reference;
+        }
+
+        // A non-ref-struct by-value parameter of a split state machine lives in __gsharp_ctx even when the body only
+        // passes it implicitly to operator macros and never spells its name (#944).
+        if (variable is IParameterSymbol { RefKind: RefKind.None, Type.IsRefLikeType: false } parameter &&
+            parameter.TryGetDeclaringSyntax<ParameterSyntax>(out var paramSyntax) &&
+            assignment.SyntaxTree.GetRoot().HasAnnotations(LoweringAnnotations.SplitStateMachineAnnotationKind))
+        {
+            return ContextHoister.CreateContextAccess(paramSyntax.Identifier, paramSyntax);
+        }
+
+        return null;
     }
 }
