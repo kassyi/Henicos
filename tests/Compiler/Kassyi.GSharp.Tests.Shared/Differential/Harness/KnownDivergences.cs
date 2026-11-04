@@ -236,7 +236,7 @@ public static class KnownDivergences
         new(MathAbsInt32, KnownDivergence.ExceptionColumn, DiffPath.Native, Issue: 947),
 
         // StackLinq ElementAtOrDefault(-1) side effects (#1060)
-        new(ElementAtOrDefaultNegativeIndexSideEffect, "select_neg_eval_count", DiffPath.Managed, Issue: 1060),
+        new(ElementAtOrDefaultNegativeIndexSideEffect, "select_neg_eval_count", DiffPath.Managed | DiffPath.Native | DiffPath.Cuda, Issue: 1060),
         new(ElementAtOrDefaultNegativeIndexSideEffect, "where_neg_eval_count", DiffPath.Managed | DiffPath.Native | DiffPath.Cuda, Issue: 1060),
 
         // Interlocked long overloads return unsigned long long in C++, signed 32-bit add overflow UB in CUDA prelude, and named arguments are not reordered (#1057, #1058, #1059)
