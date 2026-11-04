@@ -4,7 +4,7 @@ namespace Kassyi.GSharp.Compiler.Lowering;
 /// Lowers <c>foreach</c> statements that contain a phase barrier into <c>for</c> loops (for arrays and spans) prior to
 /// <see cref="LoopRewriter"/>.
 /// </summary>
-public class ForEachRewriter(SemanticModel? semanticModel = null) : CSharpSyntaxRewriter
+public class ForEachRewriter(SemanticModel? semanticModel = null) : CSharpSyntaxRewriter, IBlockLoweringPass
 {
     private int _loopCounter;
 

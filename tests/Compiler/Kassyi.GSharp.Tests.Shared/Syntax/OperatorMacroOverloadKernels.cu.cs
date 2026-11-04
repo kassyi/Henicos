@@ -108,7 +108,7 @@ public readonly ref struct PickRef
 
 /// <summary>
 /// Operator macros whose target method is overloaded (#478). <see cref="OperatorMacroOverloadTests"/> checks the values
-/// on the GPU and the native CPU build, <see cref="OperatorMacroOverloadManagedTests"/> on the managed fallback.
+/// on the GPU and the native CPU build, <c>OperatorMacroOverloadManagedTests</c> on the managed fallback.
 /// </summary>
 public static partial class OperatorMacroOverloadKernels
 {

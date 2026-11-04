@@ -1,4 +1,3 @@
-using System.Security.Cryptography;
 using Xunit;
 using Kassyi.GSharp.Cryptography;
 
@@ -115,7 +114,7 @@ public class Ed25519Tests
 
         // Wrong key
         var wrongSeed = new byte[32];
-        RandomNumberGenerator.Fill(wrongSeed);
+        new Random(42).NextBytes(wrongSeed);
         var wrongPubKey = Ed25519.GetPublicKey(wrongSeed);
         Assert.False(Ed25519.Verify(message, validSignature, wrongPubKey));
 
@@ -129,7 +128,7 @@ public class Ed25519Tests
     {
         var message = "A normal test message"u8.ToArray();
         var validSeed = new byte[32];
-        RandomNumberGenerator.Fill(validSeed);
+        new Random(43).NextBytes(validSeed);
         var validPubKey = Ed25519.GetPublicKey(validSeed);
         var validSignature = Ed25519.Sign(message, validSeed);
 

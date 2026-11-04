@@ -19,16 +19,15 @@ internal static class StatementPrelude
         {
             if (desc is DeclarationExpressionSyntax { Designation: SingleVariableDesignationSyntax singleVar } declExpr)
             {
-                var typeSymbol = context.Query.SemanticModel.GetTypeSymbol(declExpr);
-                if (typeSymbol != null)
-                {
-                    context.Emitter.Dialect.AppendType(ref context, typeSymbol);
-                }
-                else
-                {
-                    context.Emitter.Writer.Append("auto");
-                }
+                // [WHY] The C++ dialect transpiles lowered syntax trees. When a lowered declaration expression (such as
+                // an inlined 'out var x') loses its original-node annotation, GetTypeSymbol cannot locate the node in
+                // the semantic model and returns null. Instead of silently emitting invalid C++ ("void x;" or the former
+                // fallback "auto x;"), throw an internal error so the generator reports GSH0048 for the containing method.
+                var typeSymbol = context.Query.SemanticModel.GetTypeSymbol(declExpr)
+                    ?? throw new InvalidOperationException(
+                        $"The type of declaration expression '{declExpr}' could not be resolved from the semantic model.");
 
+                context.Emitter.Dialect.AppendType(ref context, typeSymbol);
                 context.Emitter.Writer.Append(' ');
                 CppNameResolver.AppendDeclaredName(singleVar, singleVar.Identifier, ref context);
                 context.Emitter.Writer.AppendLine(";");

@@ -353,6 +353,7 @@ public class BarrierAndWarpDifferentialTests
     // computation without it
     private const int RefTernaryRows = 64;
 
+    // Fixed to an exact multiple of RefTernaryRows because early `if (t >= n) return;` precedes `Gpu.SyncThreads()`.
     private static readonly DifferentialCase s_refTernaryParameterWriteAcrossBarrier = new(
         $"{nameof(BarrierAndWarpDifferentialKernels)}.{nameof(BarrierAndWarpDifferentialKernels.RefTernaryParameterWriteAcrossBarrierReproKernel)}")
     {

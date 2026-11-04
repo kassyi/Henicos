@@ -40,6 +40,10 @@ internal sealed class KernelBarrierScan(
     public ImmutableArray<TrackedLocalInfo>.Builder TrackedLocals { get; } =
         ImmutableArray.CreateBuilder<TrackedLocalInfo>();
 
+    /// <summary>The pointer locals declared in the method, checked for stack provenance when a split point is present.</summary>
+    public ImmutableArray<(VariableDeclaratorSyntax Declarator, ILocalSymbol Symbol)>.Builder PointerLocals { get; } =
+        ImmutableArray.CreateBuilder<(VariableDeclaratorSyntax Declarator, ILocalSymbol Symbol)>();
+
     public ImmutableArray<LocalFunctionStatementSyntax>.Builder LocalFunctionsWithBarrier { get; } =
         ImmutableArray.CreateBuilder<LocalFunctionStatementSyntax>();
 

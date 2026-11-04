@@ -19,15 +19,15 @@ public sealed class GccClangToolchain : INativeToolchain
     public GccClangToolchain(IProcessRunner processRunner, string? compilerExecutable = null)
     {
         _processRunner = processRunner;
-        if (!string.IsNullOrWhiteSpace(compilerExecutable))
+        if (compilerExecutable is { Length: > 0 } && !string.IsNullOrWhiteSpace(compilerExecutable))
         {
-            _compilerCandidates = [compilerExecutable!];
+            _compilerCandidates = [compilerExecutable];
         }
         else
         {
             var cxxEnv = Environment.GetEnvironmentVariable("CXX");
-            _compilerCandidates = !string.IsNullOrWhiteSpace(cxxEnv)
-                ? [cxxEnv!, .. s_defaultCandidates]
+            _compilerCandidates = cxxEnv is { Length: > 0 } && !string.IsNullOrWhiteSpace(cxxEnv)
+                ? [cxxEnv, .. s_defaultCandidates]
                 : s_defaultCandidates;
         }
     }
@@ -77,6 +77,7 @@ public sealed class GccClangToolchain : INativeToolchain
         // -shared -fPIC = Build position-independent shared library
         // -std=c++17 = C++17 standard
         // -fopenmp = Enable OpenMP for BSP CPU scheduler parallelism
+        // -Wno-unused-label = C# already diagnoses unused user labels (CS0164); synthesized labels may be unreferenced
         var enableAddress = (sanitizers & NativeSanitizers.Address) != 0;
         var enableUndefined = (sanitizers & NativeSanitizers.Undefined) != 0;
         var sanitizerFlags = (enableAddress, enableUndefined) switch
@@ -87,7 +88,7 @@ public sealed class GccClangToolchain : INativeToolchain
             _ => ""
         };
 
-        var args = $"-O2 -shared -fPIC -std=c++17 -fopenmp{sanitizerFlags} \"{sourcePath}\" -o \"{outputPath}\"";
+        var args = $"-O2 -shared -fPIC -std=c++17 -fopenmp -Wno-unused-label{sanitizerFlags} \"{sourcePath}\" -o \"{outputPath}\"";
 
         log.LogMessage(MessageImportance.Normal, $"Compiling C++ source for {architecture} with {compiler}: {sourcePath}");
 
@@ -103,6 +104,7 @@ public sealed class GccClangToolchain : INativeToolchain
 
             if (result.ExitCode == 0 && File.Exists(outputPath))
             {
+                NvccOutputParser.LogCompilerWarnings(log, sourcePath, result.StandardOutput, result.StandardError);
                 return true;
             }
 

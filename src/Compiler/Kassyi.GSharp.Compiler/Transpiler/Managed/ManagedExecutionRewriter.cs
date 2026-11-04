@@ -22,10 +22,13 @@ internal enum ManagedBodyKind
 /// The stubs through which the body calls an operator macro target it cannot name, and reaches the backing field of an
 /// auto-property that an operator macro passes by reference.
 /// </param>
-internal sealed partial class ManagedExecutionRewriter(SemanticModel semanticModel, ManagedBodyKind bodyKind,
-    ManagedAccessorSet accessors)
-    : CSharpSyntaxRewriter
+internal sealed partial class ManagedExecutionRewriter(
+    SemanticModel semanticModel,
+    ManagedBodyKind bodyKind,
+    ManagedAccessorSet accessors,
+    bool isUnsafe = false) : CSharpSyntaxRewriter
 {
+    private readonly bool _isUnsafe = isUnsafe;
     /// <summary>
     /// The thread-static flag through which a managed state machine requests a grid sync from the managed launcher
     /// (<see cref="CpuHostLaunchEmitter"/>).
@@ -126,6 +129,11 @@ internal sealed partial class ManagedExecutionRewriter(SemanticModel semanticMod
             return visited;
         }
 
+        if (_isUnsafe)
+        {
+            return visited;
+        }
+
         return SyntaxFactory.MemberAccessExpression(
             SyntaxKind.SimpleMemberAccessExpression,
             memberAccess.Expression,
@@ -142,7 +150,7 @@ internal sealed partial class ManagedExecutionRewriter(SemanticModel semanticMod
     private bool IsLengthOfOptionalArray(MemberAccessExpressionSyntax node) =>
         node.IsKind(SyntaxKind.SimpleMemberAccessExpression) &&
         node.Name is IdentifierNameSyntax { Identifier.ValueText: "Length" } &&
-        node.Expression is IdentifierNameSyntax &&
+        (node.Expression is IdentifierNameSyntax || ContextLocalRewriter.IsContextPointerAccess(node.Expression)) &&
         semanticModel.GetSymbol(node.Expression) is IParameterSymbol
         {
             Type: IArrayTypeSymbol, NullableAnnotation: NullableAnnotation.Annotated
@@ -160,7 +168,7 @@ internal sealed partial class ManagedExecutionRewriter(SemanticModel semanticMod
         {
             // The managed shuffle helpers keep the warp exchange themselves; any context will do
             GSharpInternalNames.SuspendingCall.Root =>
-                SyntaxFactory.IdentifierName(GSharpInternalNames.StateMachine.Context).WithTriviaFrom(node),
+                SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression, SyntaxFactory.Literal(0)).WithTriviaFrom(node),
             // A grid sync request goes to the launcher whether a kernel or a device function makes it (#665):
             // global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested
             GSharpInternalNames.StateMachine.YieldedForGridSync =>
@@ -168,11 +176,11 @@ internal sealed partial class ManagedExecutionRewriter(SemanticModel semanticMod
             // A block barrier the same way: global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested
             GSharpInternalNames.StateMachine.YieldedForBlockBarrier =>
                 SyntaxFactory.ParseExpression(ManagedBlockBarrierRequested).WithTriviaFrom(node),
-            // __gsharp_ctx.<name>
+            // __gsharp_ctx.<name> or __gsharp_ctx-><name>
             GSharpInternalNames.StateMachine.State
                 or GSharpInternalNames.StateMachine.WarpExchange =>
                 SyntaxFactory.MemberAccessExpression(
-                    SyntaxKind.SimpleMemberAccessExpression,
+                    _isUnsafe ? SyntaxKind.PointerMemberAccessExpression : SyntaxKind.SimpleMemberAccessExpression,
                     SyntaxFactory.IdentifierName(GSharpInternalNames.StateMachine.Context),
                     node
                 ).WithTriviaFrom(node),

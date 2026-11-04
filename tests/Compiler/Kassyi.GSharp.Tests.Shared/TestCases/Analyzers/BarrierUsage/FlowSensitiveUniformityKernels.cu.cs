@@ -261,4 +261,32 @@ public static partial class FlowSensitiveUniformityKernels
 
         Gpu.SyncThreads();
     }
+
+    // #1072: Interlocked.* returns a thread-variant value and writes a thread-variant value to its ref target
+    [GpuKernel]
+    [SkipSnapshotConsistency("Analyzer case")]
+    public static unsafe void InterlockedReturnKernel(int* counter)
+    {
+        int order = System.Threading.Interlocked.Add(ref *counter, 1);
+        if (order == 0)
+        {
+            Gpu.SyncThreads(); // GSH0083
+        }
+
+        Gpu.SyncThreads();
+    }
+
+    [GpuKernel]
+    [SkipSnapshotConsistency("Analyzer case")]
+    public static void InterlockedRefLocalKernel()
+    {
+        int localCounter = 0;
+        _ = System.Threading.Interlocked.Add(ref localCounter, 1);
+        if (localCounter == 0)
+        {
+            Gpu.SyncThreads(); // GSH0083
+        }
+
+        Gpu.SyncThreads();
+    }
 }
