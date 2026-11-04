@@ -106,6 +106,40 @@ public struct DiffScaledInt
         s.Value + 100;
 }
 
+public struct M1ExplicitScaledInt
+{
+    public int Bias;
+    public int Value;
+
+    public static explicit operator M1ExplicitScaledInt(int v) =>
+        new M1ExplicitScaledInt { Bias = 5, Value = (v * 3) - 7 };
+
+    public static explicit operator int(M1ExplicitScaledInt s) =>
+        s.Value + s.Bias + 50;
+}
+
+public struct DiffLiftedWrap
+{
+    public int V;
+
+    public static implicit operator DiffLiftedWrap(int v) =>
+        new DiffLiftedWrap { V = v * 10 };
+}
+
+public struct Repro1103Wrap
+{
+    public int Value;
+
+    public static implicit operator Repro1103Wrap(int v) =>
+        new Repro1103Wrap { Value = v };
+}
+
+public struct Repro1103Holder
+{
+    public Repro1103Wrap W;
+    public int X;
+}
+
 /// <summary>
 /// Differential kernels (<c>struct</c> value semantics, constructors, <c>in</c> parameters,
 /// <c>readonly</c> fields, <c>with</c> expressions, and conversion operators).
@@ -166,6 +200,14 @@ public static partial class StructDifferentialKernels
     [
         "scaled_field_val",
         "converted_back_int",
+    ];
+
+    public static readonly string[] UserDefinedExplicitConvColumns =
+    [
+        "explicit_bias",
+        "explicit_value",
+        "explicit_back_int",
+        "explicit_from_narrow",
     ];
 
     [GpuDeviceFunction]
@@ -386,5 +428,75 @@ public static partial class StructDifferentialKernels
         int o = tid * 2;
         r[o + 0] = scaled.Value;
         r[o + 1] = back;
+    }
+
+    [GpuKernel]
+    public static void StructUserDefinedExplicitConversion(int[] inputs, int[] r)
+    {
+        int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        if (tid >= inputs.Length)
+        {
+            return;
+        }
+
+        int v = inputs[tid];
+        M1ExplicitScaledInt explicitScaled = (M1ExplicitScaledInt)v;
+        int back = (int)explicitScaled;
+        short narrow = (short)(v & 0x7FFF);
+        M1ExplicitScaledInt fromNarrow = (M1ExplicitScaledInt)narrow;
+
+        int o = tid * 4;
+        r[o + 0] = explicitScaled.Bias;
+        r[o + 1] = explicitScaled.Value;
+        r[o + 2] = back;
+        r[o + 3] = (int)fromNarrow;
+    }
+
+    public static readonly string[] LiftedImplicitConvColumns =
+    [
+        "is_null",
+        "value",
+    ];
+
+    [GpuKernel]
+    public static void StructLiftedUserDefinedConversion(int[] inputs, int[] flags, int[] r)
+    {
+        int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        if (tid >= inputs.Length)
+        {
+            return;
+        }
+
+        int? a = (flags[tid] & 1) == 0 ? (int?)null : new int?(inputs[tid]);
+        DiffLiftedWrap? wa = a;
+
+        int o = tid * 2;
+        r[o + 0] = wa == null ? 1 : 0;
+        r[o + 1] = wa.HasValue ? wa.Value.V : -1;
+    }
+
+    public static readonly string[] Repro1103Columns =
+    [
+        "holder_w_val",
+        "holder_x",
+        "wrap_val",
+    ];
+
+    [GpuKernel]
+    public static void DefaultOfConvertingStructReproKernel(int[] a, int[] dst)
+    {
+        int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        if (tid >= a.Length)
+        {
+            return;
+        }
+
+        Repro1103Holder h = default;
+        Repro1103Wrap w = default(Repro1103Wrap);
+
+        int col = tid * 3;
+        dst[col + 0] = h.W.Value;
+        dst[col + 1] = h.X;
+        dst[col + 2] = w.Value;
     }
 }

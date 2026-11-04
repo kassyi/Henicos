@@ -496,7 +496,13 @@ internal static class HostLauncherTranspiler
 
             foreach (var parameter in step.Method.ParameterList.Parameters)
             {
+                var typeSymbol = parameter.Type != null ? context.Query.SemanticModel.GetTypeSymbol(parameter.Type) : null;
                 AppendArgumentSeparator(ref isFirst, ref context);
+                if (typeSymbol != null && typeSymbol.IsNullableArrayLike())
+                {
+                    context.Emitter.Writer.Append(GSharpInternalNames.Kernel.RawArgumentPrefix);
+                }
+
                 CppNameResolver.AppendDeclaredName(parameter, parameter.Identifier, ref context);
             }
 

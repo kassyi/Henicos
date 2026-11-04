@@ -90,6 +90,12 @@ public struct Emitter(
     /// </summary>
     public SyntaxNode? CurrentNode;
 
+    /// <summary>
+    /// The expression syntax node whose outer implicit user-defined conversion is currently being emitted, so that
+    /// visiting the operand does not apply the conversion a second time (<c>UserDefinedConversionHelper</c>).
+    /// </summary>
+    public SyntaxNode? SuppressImplicitConversionNode;
+
     public int SwitchIdCounter;
     public Stack<int> ActiveSwitchIds = activeSwitchIds;
 

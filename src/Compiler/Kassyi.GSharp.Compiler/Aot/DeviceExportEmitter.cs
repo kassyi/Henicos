@@ -267,32 +267,44 @@ internal static class DeviceExportEmitter
         }
 
         var cppName = GlobalCppNames.GetTypeName(type);
-        var constructors = ImmutableArray.CreateBuilder<string>();
-        var constructorIds = ImmutableArray.CreateBuilder<string>();
-        var constructorFullNames = ImmutableArray.CreateBuilder<string>();
+        var definedFunctions = ImmutableArray.CreateBuilder<string>();
+        var definedFunctionIds = ImmutableArray.CreateBuilder<string>();
+        var definedFunctionFullNames = ImmutableArray.CreateBuilder<string>();
         foreach (var constructor in type.InstanceConstructors)
         {
             if (StructTranspiler.IsEmittedStructConstructor(constructor, compilation))
             {
                 var name = GlobalCppNames.GetConstructorName(constructor);
-                constructors.Add(name);
-                constructorIds.Add(constructor.OriginalDefinition.GetDocumentationCommentId() ?? "");
-                constructorFullNames.Add(GlobalCppNames.TryGetFullName(name, out var full) ? full : "");
+                definedFunctions.Add(name);
+                definedFunctionIds.Add(constructor.OriginalDefinition.GetDocumentationCommentId() ?? "");
+                definedFunctionFullNames.Add(GlobalCppNames.TryGetFullName(name, out var full) ? full : "");
             }
         }
 
-        var definedNames = constructors.ToImmutable().AsEquatableArray();
+        foreach (var member in type.GetMembers())
+        {
+            if (member is IMethodSymbol conversion &&
+                StructTranspiler.IsEmittedStructConversion(conversion, compilation))
+            {
+                var name = GlobalCppNames.GetFunctionName(conversion);
+                definedFunctions.Add(name);
+                definedFunctionIds.Add(conversion.OriginalDefinition.GetDocumentationCommentId() ?? "");
+                definedFunctionFullNames.Add(GlobalCppNames.TryGetFullName(name, out var full) ? full : "");
+            }
+        }
+
+        var definedNames = definedFunctions.ToImmutable().AsEquatableArray();
         return new DeviceExportRecord(
             DeviceExportRecord.StructKind,
             type.GetDocumentationCommentId() ?? cppName,
             cppName,
             GlobalCppNames.TryGetFullName(cppName, out var fullName) ? fullName : "",
             definedNames,
-            constructorIds.ToImmutable().AsEquatableArray(),
-            constructorFullNames
+            definedFunctionIds.ToImmutable().AsEquatableArray(),
+            definedFunctionFullNames
                 .AsStackEnumerable()
                 .Any(static n => n.Length > 0)
-                ? constructorFullNames.ToImmutable().AsEquatableArray()
+                ? definedFunctionFullNames.ToImmutable().AsEquatableArray()
                 : default,
             CollectReferences(OwnNames(cppName, definedNames, cuda.KeptNames), cuda.Definition, cuda.Dispose),
             CollectReferences(OwnNames(cppName, definedNames, cpp.KeptNames), cpp.Definition, cpp.Dispose),

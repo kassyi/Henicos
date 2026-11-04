@@ -12,7 +12,6 @@ public abstract class YamlDialectBase : ITranspilerDialect
     {
         typeSymbol = StructTranspiler.SubstituteTypeParameters(typeSymbol, context.Emitter.CurrentStructType,
             context.Query.SemanticModel.Compilation);
-        typeSymbol = typeSymbol.UnwrapNullableArrayLike();
 
         if (typeSymbol == null)
         {
