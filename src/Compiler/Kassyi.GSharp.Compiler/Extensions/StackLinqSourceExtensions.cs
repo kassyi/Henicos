@@ -56,7 +56,7 @@ internal struct ImmutableArrayEnumerator<T>(ImmutableArray<T> source) : IStackEn
 {
     private int _index;
 
-    public bool TryGetNext(out T current)
+    public bool TryGetNext([MaybeNullWhen(false)] out T current)
     {
         if (!source.IsDefault && _index < source.Length)
         {
@@ -64,7 +64,7 @@ internal struct ImmutableArrayEnumerator<T>(ImmutableArray<T> source) : IStackEn
             return true;
         }
 
-        current = default!; // Not read when TryGetNext returns false
+        current = default;
         return false;
     }
 }
@@ -73,7 +73,7 @@ internal struct ReadOnlyListEnumerator<T>(IReadOnlyList<T> source) : IStackEnume
 {
     private int _index;
 
-    public bool TryGetNext(out T current)
+    public bool TryGetNext([MaybeNullWhen(false)] out T current)
     {
         if (_index < source.Count)
         {
@@ -81,7 +81,7 @@ internal struct ReadOnlyListEnumerator<T>(IReadOnlyList<T> source) : IStackEnume
             return true;
         }
 
-        current = default!; // Not read when TryGetNext returns false
+        current = default;
         return false;
     }
 }
@@ -91,7 +91,7 @@ internal struct SyntaxListEnumerator<TNode>(SyntaxList<TNode> source) : IStackEn
 {
     private int _index;
 
-    public bool TryGetNext(out TNode current)
+    public bool TryGetNext([MaybeNullWhen(false)] out TNode current)
     {
         if (_index < source.Count)
         {
@@ -99,7 +99,7 @@ internal struct SyntaxListEnumerator<TNode>(SyntaxList<TNode> source) : IStackEn
             return true;
         }
 
-        current = default!; // Not read when TryGetNext returns false
+        current = default;
         return false;
     }
 }
@@ -109,7 +109,7 @@ internal struct SeparatedSyntaxListEnumerator<TNode>(SeparatedSyntaxList<TNode> 
 {
     private int _index;
 
-    public bool TryGetNext(out TNode current)
+    public bool TryGetNext([MaybeNullWhen(false)] out TNode current)
     {
         if (_index < source.Count)
         {
@@ -117,7 +117,7 @@ internal struct SeparatedSyntaxListEnumerator<TNode>(SeparatedSyntaxList<TNode> 
             return true;
         }
 
-        current = default!; // Not read when TryGetNext returns false
+        current = default;
         return false;
     }
 }
@@ -144,7 +144,7 @@ internal struct SyntaxNodeWalkEnumerator(IEnumerable<SyntaxNode> nodes) : IStack
     private IEnumerator<SyntaxNode>? _enumerator;
     private bool _finished;
 
-    public bool TryGetNext(out SyntaxNode current)
+    public bool TryGetNext([MaybeNullWhen(false)] out SyntaxNode current)
     {
         if (!_finished)
         {
@@ -159,7 +159,7 @@ internal struct SyntaxNodeWalkEnumerator(IEnumerable<SyntaxNode> nodes) : IStack
             _finished = true;
         }
 
-        current = default!; // Not read when TryGetNext returns false
+        current = default;
         return false;
     }
 }
@@ -170,7 +170,7 @@ internal struct HashSetEnumerator<T>(HashSet<T> source) : IStackEnumerator<T>
 {
     private HashSet<T>.Enumerator _enumerator = source.GetEnumerator();
 
-    public bool TryGetNext(out T current)
+    public bool TryGetNext([MaybeNullWhen(false)] out T current)
     {
         if (_enumerator.MoveNext())
         {
@@ -178,7 +178,7 @@ internal struct HashSetEnumerator<T>(HashSet<T> source) : IStackEnumerator<T>
             return true;
         }
 
-        current = default!; // Not read when TryGetNext returns false
+        current = default;
         return false;
     }
 }
