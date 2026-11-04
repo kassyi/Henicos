@@ -25,8 +25,6 @@ public static class KnownDivergences
         $"{nameof(BarrierAndWarpDifferentialKernels)}.{nameof(BarrierAndWarpDifferentialKernels.SubWarpConditionalShuffleKernel)}";
     private const string GenericStructStaticSharedMemory =
         $"{nameof(BarrierAndWarpDifferentialKernels)}.{nameof(BarrierAndWarpDifferentialKernels.GenericStructStaticSharedMemoryKernel)}";
-    private const string BitOperationsMatrix =
-        $"{nameof(MathDifferentialKernels)}.{nameof(MathDifferentialKernels.BitOperationsMatrixKernel)}";
     private const string InterlockedReturnExpression =
         $"{nameof(AtomicsDifferentialKernels)}.{nameof(AtomicsDifferentialKernels.InterlockedReturnExpressionKernel)}";
 
@@ -63,9 +61,6 @@ public static class KnownDivergences
 
         // generic struct static method SharedMemory.Allocate<T> collides across type arguments (#543)
         new(GenericStructStaticSharedMemory, "SharedSlot<int>", DiffPath.Managed | DiffPath.Native, Issue: 543),
-
-        // BclIntrinsicTranspilerRule emits named arguments in source syntax order instead of parameter order (#1059)
-        new(BitOperationsMatrix, "BitOperations.RotateLeft(offset:s,value:u32)", DiffPath.Native | DiffPath.Cuda, Issue: 1059), // #1059: BclIntrinsicTranspilerRule ignores named argument order
 
         // Interlocked long overloads return unsigned long long in C++, and signed 32-bit add overflow UB in CUDA prelude (#1057, #1058)
         new(InterlockedReturnExpression, "add64_lt_zero", DiffPath.Native | DiffPath.Cuda, Issue: 1057), // Interlocked.Add(ref long) returns unsigned long long in C++ (#1057)
