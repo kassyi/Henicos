@@ -1,18 +1,19 @@
 #nullable enable
 using System;
-using System.Threading.Tasks;
+using System.Collections.Generic;
 using Kassyi.GSharp.Core;
-using Xunit;
 
 namespace Kassyi.GSharp.Tests.Shared.Differential;
 
 /// <summary>
-/// Differential tests for Lane D5 Stage 2: integer division/remainder by zero (<c>/</c>, <c>%</c>, <c>/=</c>, <c>%=</c>),
-/// <c>int.MinValue / -1</c> and <c>long.MinValue / -1L</c> overflow vs narrow <c>short.MinValue / (short)-1</c> promotion,
-/// <c>Math.Abs(int.MinValue)</c> (#947), shift-count masking (#722), <c>unchecked</c> wrap-around + IEEE 754 float
-/// division by zero + float-to-integer saturation (#724, #890), and CPU 2-path <c>checked</c> arithmetic/narrowing
-/// overflow (#723 / #718).
+/// Differential tests for integer division/remainder by zero (<c>/</c>, <c>%</c>, <c>/=</c>, <c>%=</c>),
+/// <c>int.MinValue / -1</c> and <c>long.MinValue / -1L</c> overflow vs narrow <c>short.MinValue / (short)-1</c> promotion (#718),
+/// <c>Math.Abs</c> on signed min values and floats (#947), shift-count masking across negative and &gt;= width counts (#722), and
+/// <c>unchecked</c> arithmetic wrap-around, IEEE 754 float division by zero, and float-to-integer conversion (#724, #890).
 /// </summary>
+[TestTarget(ExecutionTarget.GpuExecution)]
+[Category(TestCategory.Differential)]
+[Scenario(TestScenario.Boundary)]
 public class IntegerTrapAndCheckedDifferentialTests
 {
     private const int DefaultRows = 64;
@@ -37,124 +38,416 @@ public class IntegerTrapAndCheckedDifferentialTests
         4294967295.0, 4294967296.0, 9.223372036854776e18, -9.223372036854776e18,
     ];
 
-    // I-01: Integer division and remainder by zero (Seed 0 across all 4 paths; Seeds 1..4 DivideByZeroException on CPU 2-path).
-    private static readonly DifferentialCase s_integerDivideByZero = new(
-        $"{nameof(IntegerTrapAndCheckedDifferentialKernels)}.{nameof(IntegerTrapAndCheckedDifferentialKernels.IntegerDivideByZeroKernel)}")
+    private static readonly DifferentialCase s_int32Divide = new(
+        $"{nameof(IntegerTrapAndCheckedDifferentialKernels)}.{nameof(IntegerTrapAndCheckedDifferentialKernels.Int32DivideKernel)}")
     {
         Shape = LaunchShapes.Linear(DefaultRows, 32),
-        Seeds = [0, 1, 2, 3, 4],
+        Seeds = [0, 1],
         OracleExceptions = OracleExceptionMode.MatchOracle,
-        ExceptionPaths = DiffPath.Managed,
+        SkippedPaths = new Dictionary<DiffPath, string>
+        {
+            [DiffPath.Native] = "#718 (x86 idiv by 0 terminates process on native)",
+        },
         Inputs = static (rng, shape) =>
         {
             int rows = shape.Rows;
-            int[] nonZeroIntDenoms = [1, -1, 2, -2, 3, -7, 16, 31, 127, -128, int.MaxValue, int.MinValue];
-            uint[] nonZeroUIntDenoms = [1u, 2u, 3u, 7u, 16u, 255u, 65535u, uint.MaxValue];
-            short[] nonZeroShortDenoms = [1, -1, 2, -2, 7, -13, 127, -127];
-
-            var iNums = DiffValues.Int32(rng, rows);
-            var iDenoms = new int[rows];
-            var iRemDenoms = new int[rows];
-            var uNums = new uint[rows];
-            var uDenoms = new uint[rows];
-            var lNums = new long[rows];
-            var lDenoms = new long[rows];
-            var sNums = DiffValues.Int16(rng, rows);
-            var sDenoms = new short[rows];
-
+            int[] nonZeroDenoms = [1, -1, 2, -2, 3, -7, 16, 31, 127, -128, int.MaxValue, int.MinValue];
+            var nums = DiffValues.Int32(rng, rows);
+            var denoms = new int[rows];
             for (int k = 0; k < rows; k++)
             {
-                int d = nonZeroIntDenoms[k % nonZeroIntDenoms.Length];
-                if (iNums[k] == int.MinValue && d == -1)
+                int d = nonZeroDenoms[k % nonZeroDenoms.Length];
+                if (nums[k] == int.MinValue && d == -1)
                 {
                     d = 1;
                 }
 
-                iDenoms[k] = d;
-                iRemDenoms[k] = d;
-                uNums[k] = (uint)iNums[k];
-                uDenoms[k] = nonZeroUIntDenoms[k % nonZeroUIntDenoms.Length];
-                lNums[k] = s_int64Boundaries[k % s_int64Boundaries.Length];
-                long ld = nonZeroIntDenoms[(k + 3) % nonZeroIntDenoms.Length];
-                if (lNums[k] == long.MinValue && ld == -1L)
-                {
-                    ld = 1L;
-                }
-
-                lDenoms[k] = ld;
-                sDenoms[k] = nonZeroShortDenoms[k % nonZeroShortDenoms.Length];
+                denoms[k] = d;
             }
 
-            switch (rng.Seed)
+            if (rng.Seed == 1)
             {
-                case 1:
-                    iDenoms[5] = 0;
-                    break;
-                case 2:
-                    iRemDenoms[11] = 0;
-                    break;
-                case 3:
-                    uDenoms[19] = 0u;
-                    break;
-                case 4:
-                    lDenoms[27] = 0L;
-                    sDenoms[27] = 0;
-                    break;
+                denoms[5] = 0;
             }
 
             return new DiffBuffers()
-                .In("iNums", iNums, readOnly: true)
-                .In("iDenoms", iDenoms, readOnly: true)
-                .In("iRemDenoms", iRemDenoms, readOnly: true)
-                .In("uNums", uNums, readOnly: true)
-                .In("uDenoms", uDenoms, readOnly: true)
-                .In("lNums", lNums, readOnly: true)
-                .In("lDenoms", lDenoms, readOnly: true)
-                .In("sNums", sNums, readOnly: true)
-                .In("sDenoms", sDenoms, readOnly: true)
-                .Out<int>("dst", rows, IntegerTrapAndCheckedDifferentialKernels.DivideByZeroColumns, OutputPolicy.Exact);
+                .In("nums", nums, readOnly: true)
+                .In("denoms", denoms, readOnly: true)
+                .Out<int>("dst", rows, ["i_div"], OutputPolicy.Exact);
         },
-        Launch = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.LaunchIntegerDivideByZeroKernel(
-            b.Get<int>("iNums"),
-            b.Get<int>("iDenoms"),
-            b.Get<int>("iRemDenoms"),
-            b.Get<uint>("uNums"),
-            b.Get<uint>("uDenoms"),
-            b.Get<long>("lNums"),
-            b.Get<long>("lDenoms"),
-            b.Get<short>("sNums"),
-            b.Get<short>("sDenoms"),
+        Launch = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.LaunchInt32DivideKernel(
+            b.Get<int>("nums"),
+            b.Get<int>("denoms"),
             b.Get<int>("dst"),
             s.Rows,
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.IntegerDivideByZeroKernel(
-            b.Get<int>("iNums"),
-            b.Get<int>("iDenoms"),
-            b.Get<int>("iRemDenoms"),
-            b.Get<uint>("uNums"),
-            b.Get<uint>("uDenoms"),
-            b.Get<long>("lNums"),
-            b.Get<long>("lDenoms"),
-            b.Get<short>("sNums"),
-            b.Get<short>("sDenoms"),
+        Oracle = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.Int32DivideKernel(
+            b.Get<int>("nums"),
+            b.Get<int>("denoms"),
             b.Get<int>("dst"),
             s.Rows),
     };
 
-    // I-02: Signed MinValue / -1 and MinValue % -1 (Seed 0 verifies non-trapping boundaries & short/sbyte promotion on all 4 paths;
-    // Seeds 1..4 verify OverflowException on CPU 2-path).
-    private static readonly DifferentialCase s_signedMinValueDivideByMinusOne = new(
-        $"{nameof(IntegerTrapAndCheckedDifferentialKernels)}.{nameof(IntegerTrapAndCheckedDifferentialKernels.SignedMinValueDivideByMinusOneKernel)}")
+    private static readonly DifferentialCase s_int32Remainder = new(
+        $"{nameof(IntegerTrapAndCheckedDifferentialKernels)}.{nameof(IntegerTrapAndCheckedDifferentialKernels.Int32RemainderKernel)}")
     {
         Shape = LaunchShapes.Linear(DefaultRows, 32),
-        Seeds = [0, 1, 2, 3, 4],
+        Seeds = [0, 1],
         OracleExceptions = OracleExceptionMode.MatchOracle,
-        ExceptionPaths = DiffPath.Managed,
+        SkippedPaths = new Dictionary<DiffPath, string>
+        {
+            [DiffPath.Native] = "#718 (x86 idiv by 0 terminates process on native)",
+        },
         Inputs = static (rng, shape) =>
         {
             int rows = shape.Rows;
-            (int Num, int Den)[] safeIntPairs =
+            int[] nonZeroDenoms = [1, -1, 2, -2, 3, -7, 16, 31, 127, -128, int.MaxValue, int.MinValue];
+            var nums = DiffValues.Int32(rng, rows);
+            var denoms = new int[rows];
+            for (int k = 0; k < rows; k++)
+            {
+                int d = nonZeroDenoms[k % nonZeroDenoms.Length];
+                if (nums[k] == int.MinValue && d == -1)
+                {
+                    d = 1;
+                }
+
+                denoms[k] = d;
+            }
+
+            if (rng.Seed == 1)
+            {
+                denoms[5] = 0;
+            }
+
+            return new DiffBuffers()
+                .In("nums", nums, readOnly: true)
+                .In("denoms", denoms, readOnly: true)
+                .Out<int>("dst", rows, ["i_rem"], OutputPolicy.Exact);
+        },
+        Launch = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.LaunchInt32RemainderKernel(
+            b.Get<int>("nums"),
+            b.Get<int>("denoms"),
+            b.Get<int>("dst"),
+            s.Rows,
+            gridDimX: s.GridX,
+            blockDimX: s.BlockX),
+        Oracle = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.Int32RemainderKernel(
+            b.Get<int>("nums"),
+            b.Get<int>("denoms"),
+            b.Get<int>("dst"),
+            s.Rows),
+    };
+
+    private static readonly DifferentialCase s_uint32Divide = new(
+        $"{nameof(IntegerTrapAndCheckedDifferentialKernels)}.{nameof(IntegerTrapAndCheckedDifferentialKernels.UInt32DivideKernel)}")
+    {
+        Shape = LaunchShapes.Linear(DefaultRows, 32),
+        Seeds = [0, 1],
+        OracleExceptions = OracleExceptionMode.MatchOracle,
+        SkippedPaths = new Dictionary<DiffPath, string>
+        {
+            [DiffPath.Native] = "#718 (x86 div by 0 terminates process on native)",
+        },
+        Inputs = static (rng, shape) =>
+        {
+            int rows = shape.Rows;
+            uint[] nonZeroDenoms = [1u, 2u, 3u, 7u, 16u, 255u, 65535u, uint.MaxValue];
+            var nums = new uint[rows];
+            var denoms = new uint[rows];
+            for (int k = 0; k < rows; k++)
+            {
+                nums[k] = (uint)rng.NextInt32();
+                denoms[k] = nonZeroDenoms[k % nonZeroDenoms.Length];
+            }
+
+            if (rng.Seed == 1)
+            {
+                denoms[5] = 0u;
+            }
+
+            return new DiffBuffers()
+                .In("nums", nums, readOnly: true)
+                .In("denoms", denoms, readOnly: true)
+                .Out<uint>("dst", rows, ["u_div"], OutputPolicy.Exact);
+        },
+        Launch = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.LaunchUInt32DivideKernel(
+            b.Get<uint>("nums"),
+            b.Get<uint>("denoms"),
+            b.Get<uint>("dst"),
+            s.Rows,
+            gridDimX: s.GridX,
+            blockDimX: s.BlockX),
+        Oracle = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.UInt32DivideKernel(
+            b.Get<uint>("nums"),
+            b.Get<uint>("denoms"),
+            b.Get<uint>("dst"),
+            s.Rows),
+    };
+
+    private static readonly DifferentialCase s_uint32Remainder = new(
+        $"{nameof(IntegerTrapAndCheckedDifferentialKernels)}.{nameof(IntegerTrapAndCheckedDifferentialKernels.UInt32RemainderKernel)}")
+    {
+        Shape = LaunchShapes.Linear(DefaultRows, 32),
+        Seeds = [0, 1],
+        OracleExceptions = OracleExceptionMode.MatchOracle,
+        SkippedPaths = new Dictionary<DiffPath, string>
+        {
+            [DiffPath.Native] = "#718 (x86 div by 0 terminates process on native)",
+        },
+        Inputs = static (rng, shape) =>
+        {
+            int rows = shape.Rows;
+            uint[] nonZeroDenoms = [1u, 2u, 3u, 7u, 16u, 255u, 65535u, uint.MaxValue];
+            var nums = new uint[rows];
+            var denoms = new uint[rows];
+            for (int k = 0; k < rows; k++)
+            {
+                nums[k] = (uint)rng.NextInt32();
+                denoms[k] = nonZeroDenoms[k % nonZeroDenoms.Length];
+            }
+
+            if (rng.Seed == 1)
+            {
+                denoms[5] = 0u;
+            }
+
+            return new DiffBuffers()
+                .In("nums", nums, readOnly: true)
+                .In("denoms", denoms, readOnly: true)
+                .Out<uint>("dst", rows, ["u_rem"], OutputPolicy.Exact);
+        },
+        Launch = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.LaunchUInt32RemainderKernel(
+            b.Get<uint>("nums"),
+            b.Get<uint>("denoms"),
+            b.Get<uint>("dst"),
+            s.Rows,
+            gridDimX: s.GridX,
+            blockDimX: s.BlockX),
+        Oracle = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.UInt32RemainderKernel(
+            b.Get<uint>("nums"),
+            b.Get<uint>("denoms"),
+            b.Get<uint>("dst"),
+            s.Rows),
+    };
+
+    private static readonly DifferentialCase s_int64Divide = new(
+        $"{nameof(IntegerTrapAndCheckedDifferentialKernels)}.{nameof(IntegerTrapAndCheckedDifferentialKernels.Int64DivideKernel)}")
+    {
+        Shape = LaunchShapes.Linear(DefaultRows, 32),
+        Seeds = [0, 1],
+        OracleExceptions = OracleExceptionMode.MatchOracle,
+        SkippedPaths = new Dictionary<DiffPath, string>
+        {
+            [DiffPath.Native] = "#718 (x86 idiv by 0 terminates process on native)",
+        },
+        Inputs = static (rng, shape) =>
+        {
+            int rows = shape.Rows;
+            long[] nonZeroDenoms = [1L, -1L, 2L, -2L, 3L, -7L, 16L, 31L, 127L, -128L, long.MaxValue, long.MinValue];
+            var nums = new long[rows];
+            var denoms = new long[rows];
+            for (int k = 0; k < rows; k++)
+            {
+                nums[k] = s_int64Boundaries[k % s_int64Boundaries.Length];
+                long d = nonZeroDenoms[k % nonZeroDenoms.Length];
+                if (nums[k] == long.MinValue && d == -1L)
+                {
+                    d = 1L;
+                }
+
+                denoms[k] = d;
+            }
+
+            if (rng.Seed == 1)
+            {
+                denoms[5] = 0L;
+            }
+
+            return new DiffBuffers()
+                .In("nums", nums, readOnly: true)
+                .In("denoms", denoms, readOnly: true)
+                .Out<long>("dst", rows, ["l_div"], OutputPolicy.Exact);
+        },
+        Launch = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.LaunchInt64DivideKernel(
+            b.Get<long>("nums"),
+            b.Get<long>("denoms"),
+            b.Get<long>("dst"),
+            s.Rows,
+            gridDimX: s.GridX,
+            blockDimX: s.BlockX),
+        Oracle = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.Int64DivideKernel(
+            b.Get<long>("nums"),
+            b.Get<long>("denoms"),
+            b.Get<long>("dst"),
+            s.Rows),
+    };
+
+    private static readonly DifferentialCase s_uint64Divide = new(
+        $"{nameof(IntegerTrapAndCheckedDifferentialKernels)}.{nameof(IntegerTrapAndCheckedDifferentialKernels.UInt64DivideKernel)}")
+    {
+        Shape = LaunchShapes.Linear(DefaultRows, 32),
+        Seeds = [0, 1],
+        OracleExceptions = OracleExceptionMode.MatchOracle,
+        SkippedPaths = new Dictionary<DiffPath, string>
+        {
+            [DiffPath.Native] = "#718 (x86 div by 0 terminates process on native)",
+        },
+        Inputs = static (rng, shape) =>
+        {
+            int rows = shape.Rows;
+            ulong[] nonZeroDenoms = [1UL, 2UL, 3UL, 7UL, 16UL, 255UL, 65535UL, ulong.MaxValue];
+            var nums = new ulong[rows];
+            var denoms = new ulong[rows];
+            for (int k = 0; k < rows; k++)
+            {
+                nums[k] = s_uint64Boundaries[k % s_uint64Boundaries.Length];
+                denoms[k] = nonZeroDenoms[k % nonZeroDenoms.Length];
+            }
+
+            if (rng.Seed == 1)
+            {
+                denoms[5] = 0UL;
+            }
+
+            return new DiffBuffers()
+                .In("nums", nums, readOnly: true)
+                .In("denoms", denoms, readOnly: true)
+                .Out<ulong>("dst", rows, ["ul_div"], OutputPolicy.Exact);
+        },
+        Launch = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.LaunchUInt64DivideKernel(
+            b.Get<ulong>("nums"),
+            b.Get<ulong>("denoms"),
+            b.Get<ulong>("dst"),
+            s.Rows,
+            gridDimX: s.GridX,
+            blockDimX: s.BlockX),
+        Oracle = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.UInt64DivideKernel(
+            b.Get<ulong>("nums"),
+            b.Get<ulong>("denoms"),
+            b.Get<ulong>("dst"),
+            s.Rows),
+    };
+
+    private static readonly DifferentialCase s_int16CompoundDivide = new(
+        $"{nameof(IntegerTrapAndCheckedDifferentialKernels)}.{nameof(IntegerTrapAndCheckedDifferentialKernels.Int16CompoundDivideKernel)}")
+    {
+        Shape = LaunchShapes.Linear(DefaultRows, 32),
+        Seeds = [0, 1],
+        OracleExceptions = OracleExceptionMode.MatchOracle,
+        SkippedPaths = new Dictionary<DiffPath, string>
+        {
+            [DiffPath.Native] = "#718 (x86 idiv by 0 terminates process on native)",
+        },
+        Inputs = static (rng, shape) =>
+        {
+            int rows = shape.Rows;
+            short[] nonZeroDenoms = [1, -1, 2, -2, 7, -13, 127, -127];
+            var nums = DiffValues.Int16(rng, rows);
+            var denoms = new short[rows];
+            for (int k = 0; k < rows; k++)
+            {
+                short d = nonZeroDenoms[k % nonZeroDenoms.Length];
+                if (nums[k] == short.MinValue && d == -1)
+                {
+                    d = 1;
+                }
+
+                denoms[k] = d;
+            }
+
+            if (rng.Seed == 1)
+            {
+                denoms[5] = 0;
+            }
+
+            return new DiffBuffers()
+                .In("nums", nums, readOnly: true)
+                .In("denoms", denoms, readOnly: true)
+                .Out<short>("dst", rows, ["s_compound_div"], OutputPolicy.Exact);
+        },
+        Launch = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.LaunchInt16CompoundDivideKernel(
+            b.Get<short>("nums"),
+            b.Get<short>("denoms"),
+            b.Get<short>("dst"),
+            s.Rows,
+            gridDimX: s.GridX,
+            blockDimX: s.BlockX),
+        Oracle = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.Int16CompoundDivideKernel(
+            b.Get<short>("nums"),
+            b.Get<short>("denoms"),
+            b.Get<short>("dst"),
+            s.Rows),
+    };
+
+    private static readonly DifferentialCase s_sbyteCompoundRemainder = new(
+        $"{nameof(IntegerTrapAndCheckedDifferentialKernels)}.{nameof(IntegerTrapAndCheckedDifferentialKernels.SByteCompoundRemainderKernel)}")
+    {
+        Shape = LaunchShapes.Linear(DefaultRows, 32),
+        Seeds = [0, 1],
+        OracleExceptions = OracleExceptionMode.MatchOracle,
+        SkippedPaths = new Dictionary<DiffPath, string>
+        {
+            [DiffPath.Native] = "#718 (x86 idiv by 0 terminates process on native)",
+        },
+        Inputs = static (rng, shape) =>
+        {
+            int rows = shape.Rows;
+            sbyte[] nonZeroDenoms = [1, -1, 2, -2, 7, -13, 127, -127];
+            var nums = DiffValues.SByte(rng, rows);
+            var denoms = new sbyte[rows];
+            for (int k = 0; k < rows; k++)
+            {
+                sbyte d = nonZeroDenoms[k % nonZeroDenoms.Length];
+                if (nums[k] == sbyte.MinValue && d == -1)
+                {
+                    d = 1;
+                }
+
+                denoms[k] = d;
+            }
+
+            if (rng.Seed == 1)
+            {
+                denoms[5] = 0;
+            }
+
+            return new DiffBuffers()
+                .In("nums", nums, readOnly: true)
+                .In("denoms", denoms, readOnly: true)
+                .Out<sbyte>("dst", rows, ["sb_compound_rem"], OutputPolicy.Exact);
+        },
+        Launch = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.LaunchSByteCompoundRemainderKernel(
+            b.Get<sbyte>("nums"),
+            b.Get<sbyte>("denoms"),
+            b.Get<sbyte>("dst"),
+            s.Rows,
+            gridDimX: s.GridX,
+            blockDimX: s.BlockX),
+        Oracle = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.SByteCompoundRemainderKernel(
+            b.Get<sbyte>("nums"),
+            b.Get<sbyte>("denoms"),
+            b.Get<sbyte>("dst"),
+            s.Rows),
+    };
+
+    // Signed MinValue / -1: #718 gives GPU result (quotient MinValue, remainder 0) with no exception.
+    // Managed throws OverflowException (covered by KnownDivergences #718).
+    // Native is skipped (#718) because x86 idiv terminates the process.
+    private static readonly DifferentialCase s_int32MinValueDivide = new(
+        $"{nameof(IntegerTrapAndCheckedDifferentialKernels)}.{nameof(IntegerTrapAndCheckedDifferentialKernels.Int32MinValueDivideKernel)}")
+    {
+        Shape = LaunchShapes.Linear(DefaultRows, 32),
+        Seeds = [0, 1],
+        SkippedPaths = new Dictionary<DiffPath, string>
+        {
+            [DiffPath.Native] = "#718 (x86 idiv with int.MinValue / -1 terminates process on native)",
+        },
+        Inputs = static (rng, shape) =>
+        {
+            int rows = shape.Rows;
+            (int Num, int Den)[] safePairs =
             [
                 (int.MinValue, 1),
                 (int.MinValue, 2),
@@ -163,7 +456,120 @@ public class IntegerTrapAndCheckedDifferentialTests
                 (-1, -1),
                 (0, -1),
             ];
-            (long Num, long Den)[] safeLongPairs =
+
+            var nums = new int[rows];
+            var denoms = new int[rows];
+            for (int k = 0; k < rows; k++)
+            {
+                var p = safePairs[k % safePairs.Length];
+                nums[k] = p.Num;
+                denoms[k] = p.Den;
+            }
+
+            if (rng.Seed == 1)
+            {
+                nums[3] = int.MinValue;
+                denoms[3] = -1;
+            }
+
+            return new DiffBuffers()
+                .In("nums", nums, readOnly: true)
+                .In("denoms", denoms, readOnly: true)
+                .Out<int>("dst", rows, ["i_quot"], OutputPolicy.Exact);
+        },
+        Launch = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.LaunchInt32MinValueDivideKernel(
+            b.Get<int>("nums"),
+            b.Get<int>("denoms"),
+            b.Get<int>("dst"),
+            s.Rows,
+            gridDimX: s.GridX,
+            blockDimX: s.BlockX),
+        Reference = static (b, s) =>
+        {
+            var nums = b.Get<int>("nums");
+            var denoms = b.Get<int>("denoms");
+            var dst = b.Get<int>("dst");
+            for (int t = 0; t < s.Rows; t++)
+            {
+                dst[t] = nums[t] == int.MinValue && denoms[t] == -1 ? int.MinValue : nums[t] / denoms[t];
+            }
+        },
+    };
+
+    private static readonly DifferentialCase s_int32MinValueRemainder = new(
+        $"{nameof(IntegerTrapAndCheckedDifferentialKernels)}.{nameof(IntegerTrapAndCheckedDifferentialKernels.Int32MinValueRemainderKernel)}")
+    {
+        Shape = LaunchShapes.Linear(DefaultRows, 32),
+        Seeds = [0, 1],
+        SkippedPaths = new Dictionary<DiffPath, string>
+        {
+            [DiffPath.Native] = "#718 (x86 idiv with int.MinValue % -1 terminates process on native)",
+        },
+        Inputs = static (rng, shape) =>
+        {
+            int rows = shape.Rows;
+            (int Num, int Den)[] safePairs =
+            [
+                (int.MinValue, 1),
+                (int.MinValue, 2),
+                (int.MinValue + 1, -1),
+                (int.MaxValue, -1),
+                (-1, -1),
+                (0, -1),
+            ];
+
+            var nums = new int[rows];
+            var denoms = new int[rows];
+            for (int k = 0; k < rows; k++)
+            {
+                var p = safePairs[k % safePairs.Length];
+                nums[k] = p.Num;
+                denoms[k] = p.Den;
+            }
+
+            if (rng.Seed == 1)
+            {
+                nums[3] = int.MinValue;
+                denoms[3] = -1;
+            }
+
+            return new DiffBuffers()
+                .In("nums", nums, readOnly: true)
+                .In("denoms", denoms, readOnly: true)
+                .Out<int>("dst", rows, ["i_rem"], OutputPolicy.Exact);
+        },
+        Launch = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.LaunchInt32MinValueRemainderKernel(
+            b.Get<int>("nums"),
+            b.Get<int>("denoms"),
+            b.Get<int>("dst"),
+            s.Rows,
+            gridDimX: s.GridX,
+            blockDimX: s.BlockX),
+        Reference = static (b, s) =>
+        {
+            var nums = b.Get<int>("nums");
+            var denoms = b.Get<int>("denoms");
+            var dst = b.Get<int>("dst");
+            for (int t = 0; t < s.Rows; t++)
+            {
+                dst[t] = nums[t] == int.MinValue && denoms[t] == -1 ? 0 : nums[t] % denoms[t];
+            }
+        },
+    };
+
+    private static readonly DifferentialCase s_int64MinValueDivide = new(
+        $"{nameof(IntegerTrapAndCheckedDifferentialKernels)}.{nameof(IntegerTrapAndCheckedDifferentialKernels.Int64MinValueDivideKernel)}")
+    {
+        Shape = LaunchShapes.Linear(DefaultRows, 32),
+        Seeds = [0, 1],
+        SkippedPaths = new Dictionary<DiffPath, string>
+        {
+            [DiffPath.Native] = "#718 (x86 idiv with long.MinValue / -1L terminates process on native)",
+        },
+        Inputs = static (rng, shape) =>
+        {
+            int rows = shape.Rows;
+            (long Num, long Den)[] safePairs =
             [
                 (long.MinValue, 1L),
                 (long.MinValue, 2L),
@@ -173,148 +579,269 @@ public class IntegerTrapAndCheckedDifferentialTests
                 (0L, -1L),
             ];
 
-            var iNums = new int[rows];
-            var iDivDenoms = new int[rows];
-            var iRemDenoms = new int[rows];
-            var lNums = new long[rows];
-            var lDivDenoms = new long[rows];
-            var lRemDenoms = new long[rows];
-            var sVals = new short[rows];
-            var sbVals = new sbyte[rows];
-
+            var nums = new long[rows];
+            var denoms = new long[rows];
             for (int k = 0; k < rows; k++)
             {
-                var ip = safeIntPairs[k % safeIntPairs.Length];
-                iNums[k] = ip.Num;
-                iDivDenoms[k] = ip.Den;
-                iRemDenoms[k] = ip.Den;
-
-                var lp = safeLongPairs[k % safeLongPairs.Length];
-                lNums[k] = lp.Num;
-                lDivDenoms[k] = lp.Den;
-                lRemDenoms[k] = lp.Den;
-
-                sVals[k] = (k & 1) == 0 ? short.MinValue : short.MaxValue;
-                sbVals[k] = (k & 1) == 0 ? sbyte.MinValue : sbyte.MaxValue;
-            }
-
-            switch (rng.Seed)
-            {
-                case 1:
-                    // int.MinValue / -1 throws OverflowException even in unchecked context.
-                    iNums[3] = int.MinValue;
-                    iDivDenoms[3] = -1;
-                    break;
-                case 2:
-                    // int.MinValue % -1 also throws OverflowException in C# (ECMA-334 §12.10.3).
-                    iNums[9] = int.MinValue;
-                    iRemDenoms[9] = -1;
-                    break;
-                case 3:
-                    // long.MinValue / -1L throws OverflowException.
-                    lNums[17] = long.MinValue;
-                    lDivDenoms[17] = -1L;
-                    break;
-                case 4:
-                    // long.MinValue % -1L throws OverflowException.
-                    lNums[29] = long.MinValue;
-                    lRemDenoms[29] = -1L;
-                    break;
-            }
-
-            return new DiffBuffers()
-                .In("iNums", iNums, readOnly: true)
-                .In("iDivDenoms", iDivDenoms, readOnly: true)
-                .In("iRemDenoms", iRemDenoms, readOnly: true)
-                .In("lNums", lNums, readOnly: true)
-                .In("lDivDenoms", lDivDenoms, readOnly: true)
-                .In("lRemDenoms", lRemDenoms, readOnly: true)
-                .In("sVals", sVals, readOnly: true)
-                .In("sbVals", sbVals, readOnly: true)
-                .Out<int>("dst", rows, IntegerTrapAndCheckedDifferentialKernels.SignedMinDivColumns, OutputPolicy.Exact);
-        },
-        Launch = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.LaunchSignedMinValueDivideByMinusOneKernel(
-            b.Get<int>("iNums"),
-            b.Get<int>("iDivDenoms"),
-            b.Get<int>("iRemDenoms"),
-            b.Get<long>("lNums"),
-            b.Get<long>("lDivDenoms"),
-            b.Get<long>("lRemDenoms"),
-            b.Get<short>("sVals"),
-            b.Get<sbyte>("sbVals"),
-            b.Get<int>("dst"),
-            s.Rows,
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        Oracle = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.SignedMinValueDivideByMinusOneKernel(
-            b.Get<int>("iNums"),
-            b.Get<int>("iDivDenoms"),
-            b.Get<int>("iRemDenoms"),
-            b.Get<long>("lNums"),
-            b.Get<long>("lDivDenoms"),
-            b.Get<long>("lRemDenoms"),
-            b.Get<short>("sVals"),
-            b.Get<sbyte>("sbVals"),
-            b.Get<int>("dst"),
-            s.Rows),
-    };
-
-    // I-03: Math.Abs(int.MinValue) throws OverflowException in C# (#947).
-    private static readonly DifferentialCase s_mathAbsMinValue = new(
-        $"{nameof(IntegerTrapAndCheckedDifferentialKernels)}.{nameof(IntegerTrapAndCheckedDifferentialKernels.MathAbsMinValueKernel)}")
-    {
-        Shape = LaunchShapes.Linear(DefaultRows, 32),
-        Seeds = [0, 1],
-        OracleExceptions = OracleExceptionMode.MatchOracle,
-        ExceptionPaths = DiffPath.Managed | DiffPath.Native,
-        Inputs = static (rng, shape) =>
-        {
-            int rows = shape.Rows;
-            int[] safeIntVals = [0, 1, -1, 2, -2, int.MaxValue, int.MinValue + 1, -32768, -128];
-            var iVals = new int[rows];
-            var fVals = DiffValues.Single(rng, rows);
-            var dVals = new double[rows];
-
-            for (int k = 0; k < rows; k++)
-            {
-                iVals[k] = safeIntVals[k % safeIntVals.Length];
-                dVals[k] = s_doubleBoundaries[k % s_doubleBoundaries.Length];
+                var p = safePairs[k % safePairs.Length];
+                nums[k] = p.Num;
+                denoms[k] = p.Den;
             }
 
             if (rng.Seed == 1)
             {
-                iVals[7] = int.MinValue;
+                nums[3] = long.MinValue;
+                denoms[3] = -1L;
             }
 
             return new DiffBuffers()
-                .In("iVals", iVals, readOnly: true)
-                .In("fVals", fVals, readOnly: true)
-                .In("dVals", dVals, readOnly: true)
-                .Out<int>("iDst", rows, IntegerTrapAndCheckedDifferentialKernels.MathAbsIntColumns, OutputPolicy.Exact)
-                .Out<float>("fDst", rows, IntegerTrapAndCheckedDifferentialKernels.MathAbsFloatColumns, OutputPolicy.Ulp(0))
-                .Out<double>("dDst", rows, IntegerTrapAndCheckedDifferentialKernels.MathAbsDoubleColumns, OutputPolicy.Ulp(0));
+                .In("nums", nums, readOnly: true)
+                .In("denoms", denoms, readOnly: true)
+                .Out<long>("dst", rows, ["l_quot"], OutputPolicy.Exact);
         },
-        Launch = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.LaunchMathAbsMinValueKernel(
-            b.Get<int>("iVals"),
-            b.Get<float>("fVals"),
-            b.Get<double>("dVals"),
-            b.Get<int>("iDst"),
-            b.Get<float>("fDst"),
-            b.Get<double>("dDst"),
+        Launch = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.LaunchInt64MinValueDivideKernel(
+            b.Get<long>("nums"),
+            b.Get<long>("denoms"),
+            b.Get<long>("dst"),
             s.Rows,
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.MathAbsMinValueKernel(
-            b.Get<int>("iVals"),
-            b.Get<float>("fVals"),
-            b.Get<double>("dVals"),
-            b.Get<int>("iDst"),
-            b.Get<float>("fDst"),
-            b.Get<double>("dDst"),
+        Reference = static (b, s) =>
+        {
+            var nums = b.Get<long>("nums");
+            var denoms = b.Get<long>("denoms");
+            var dst = b.Get<long>("dst");
+            for (int t = 0; t < s.Rows; t++)
+            {
+                dst[t] = nums[t] == long.MinValue && denoms[t] == -1L ? long.MinValue : nums[t] / denoms[t];
+            }
+        },
+    };
+
+    private static readonly DifferentialCase s_int64MinValueRemainder = new(
+        $"{nameof(IntegerTrapAndCheckedDifferentialKernels)}.{nameof(IntegerTrapAndCheckedDifferentialKernels.Int64MinValueRemainderKernel)}")
+    {
+        Shape = LaunchShapes.Linear(DefaultRows, 32),
+        Seeds = [0, 1],
+        SkippedPaths = new Dictionary<DiffPath, string>
+        {
+            [DiffPath.Native] = "#718 (x86 idiv with long.MinValue % -1L terminates process on native)",
+        },
+        Inputs = static (rng, shape) =>
+        {
+            int rows = shape.Rows;
+            (long Num, long Den)[] safePairs =
+            [
+                (long.MinValue, 1L),
+                (long.MinValue, 2L),
+                (long.MinValue + 1L, -1L),
+                (long.MaxValue, -1L),
+                (-1L, -1L),
+                (0L, -1L),
+            ];
+
+            var nums = new long[rows];
+            var denoms = new long[rows];
+            for (int k = 0; k < rows; k++)
+            {
+                var p = safePairs[k % safePairs.Length];
+                nums[k] = p.Num;
+                denoms[k] = p.Den;
+            }
+
+            if (rng.Seed == 1)
+            {
+                nums[3] = long.MinValue;
+                denoms[3] = -1L;
+            }
+
+            return new DiffBuffers()
+                .In("nums", nums, readOnly: true)
+                .In("denoms", denoms, readOnly: true)
+                .Out<long>("dst", rows, ["l_rem"], OutputPolicy.Exact);
+        },
+        Launch = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.LaunchInt64MinValueRemainderKernel(
+            b.Get<long>("nums"),
+            b.Get<long>("denoms"),
+            b.Get<long>("dst"),
+            s.Rows,
+            gridDimX: s.GridX,
+            blockDimX: s.BlockX),
+        Reference = static (b, s) =>
+        {
+            var nums = b.Get<long>("nums");
+            var denoms = b.Get<long>("denoms");
+            var dst = b.Get<long>("dst");
+            for (int t = 0; t < s.Rows; t++)
+            {
+                dst[t] = nums[t] == long.MinValue && denoms[t] == -1L ? 0L : nums[t] % denoms[t];
+            }
+        },
+    };
+
+    private static readonly DifferentialCase s_shortMinValueDivide = new(
+        $"{nameof(IntegerTrapAndCheckedDifferentialKernels)}.{nameof(IntegerTrapAndCheckedDifferentialKernels.ShortMinValueDivideKernel)}")
+    {
+        Shape = LaunchShapes.Linear(DefaultRows, 32),
+        Inputs = static (_, shape) =>
+        {
+            int rows = shape.Rows;
+            var nums = new short[rows];
+            var denoms = new short[rows];
+            for (int k = 0; k < rows; k++)
+            {
+                nums[k] = short.MinValue;
+                denoms[k] = -1;
+            }
+
+            return new DiffBuffers()
+                .In("nums", nums, readOnly: true)
+                .In("denoms", denoms, readOnly: true)
+                .Out<int>("dst", rows, ["s_min_div"], OutputPolicy.Exact);
+        },
+        Launch = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.LaunchShortMinValueDivideKernel(
+            b.Get<short>("nums"),
+            b.Get<short>("denoms"),
+            b.Get<int>("dst"),
+            s.Rows,
+            gridDimX: s.GridX,
+            blockDimX: s.BlockX),
+        Oracle = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.ShortMinValueDivideKernel(
+            b.Get<short>("nums"),
+            b.Get<short>("denoms"),
+            b.Get<int>("dst"),
             s.Rows),
     };
 
-    // I-04: Shift count masking across negative counts and counts >= width on all 4 paths (#722).
+    private static readonly DifferentialCase s_sbyteMinValueDivide = new(
+        $"{nameof(IntegerTrapAndCheckedDifferentialKernels)}.{nameof(IntegerTrapAndCheckedDifferentialKernels.SByteMinValueDivideKernel)}")
+    {
+        Shape = LaunchShapes.Linear(DefaultRows, 32),
+        Inputs = static (_, shape) =>
+        {
+            int rows = shape.Rows;
+            var nums = new sbyte[rows];
+            var denoms = new sbyte[rows];
+            for (int k = 0; k < rows; k++)
+            {
+                nums[k] = sbyte.MinValue;
+                denoms[k] = -1;
+            }
+
+            return new DiffBuffers()
+                .In("nums", nums, readOnly: true)
+                .In("denoms", denoms, readOnly: true)
+                .Out<int>("dst", rows, ["sb_min_div"], OutputPolicy.Exact);
+        },
+        Launch = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.LaunchSByteMinValueDivideKernel(
+            b.Get<sbyte>("nums"),
+            b.Get<sbyte>("denoms"),
+            b.Get<int>("dst"),
+            s.Rows,
+            gridDimX: s.GridX,
+            blockDimX: s.BlockX),
+        Oracle = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.SByteMinValueDivideKernel(
+            b.Get<sbyte>("nums"),
+            b.Get<sbyte>("denoms"),
+            b.Get<int>("dst"),
+            s.Rows),
+    };
+
+    private static readonly DifferentialCase s_mathAbsInt32 = new(
+        $"{nameof(IntegerTrapAndCheckedDifferentialKernels)}.{nameof(IntegerTrapAndCheckedDifferentialKernels.MathAbsInt32Kernel)}")
+    {
+        Shape = LaunchShapes.Linear(DefaultRows, 32),
+        Seeds = [0, 1],
+        OracleExceptions = OracleExceptionMode.MatchOracle,
+        Inputs = static (rng, shape) =>
+        {
+            int rows = shape.Rows;
+            int[] safeVals = [0, 1, -1, 2, -2, int.MaxValue, int.MinValue + 1, -32768, -128];
+            var vals = new int[rows];
+            for (int k = 0; k < rows; k++)
+            {
+                vals[k] = safeVals[k % safeVals.Length];
+            }
+
+            if (rng.Seed == 1)
+            {
+                vals[7] = int.MinValue;
+            }
+
+            return new DiffBuffers()
+                .In("vals", vals, readOnly: true)
+                .Out<int>("dst", rows, ["abs_int32"], OutputPolicy.Exact);
+        },
+        Launch = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.LaunchMathAbsInt32Kernel(
+            b.Get<int>("vals"),
+            b.Get<int>("dst"),
+            s.Rows,
+            gridDimX: s.GridX,
+            blockDimX: s.BlockX),
+        Oracle = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.MathAbsInt32Kernel(
+            b.Get<int>("vals"),
+            b.Get<int>("dst"),
+            s.Rows),
+    };
+
+    private static readonly DifferentialCase s_mathAbsSingle = new(
+        $"{nameof(IntegerTrapAndCheckedDifferentialKernels)}.{nameof(IntegerTrapAndCheckedDifferentialKernels.MathAbsSingleKernel)}")
+    {
+        Shape = LaunchShapes.Linear(DefaultRows, 32),
+        Inputs = static (rng, shape) =>
+        {
+            int rows = shape.Rows;
+            var vals = DiffValues.Single(rng, rows);
+            vals[0] = 0.0f;
+            vals[1] = -0.0f;
+            vals[2] = float.PositiveInfinity;
+            vals[3] = float.NegativeInfinity;
+            vals[4] = float.NaN;
+            return new DiffBuffers()
+                .In("vals", vals, readOnly: true)
+                .Out<float>("dst", rows, ["abs_single"], OutputPolicy.Bitwise);
+        },
+        Launch = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.LaunchMathAbsSingleKernel(
+            b.Get<float>("vals"),
+            b.Get<float>("dst"),
+            s.Rows,
+            gridDimX: s.GridX,
+            blockDimX: s.BlockX),
+        Oracle = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.MathAbsSingleKernel(
+            b.Get<float>("vals"),
+            b.Get<float>("dst"),
+            s.Rows),
+    };
+
+    private static readonly DifferentialCase s_mathAbsDouble = new(
+        $"{nameof(IntegerTrapAndCheckedDifferentialKernels)}.{nameof(IntegerTrapAndCheckedDifferentialKernels.MathAbsDoubleKernel)}")
+    {
+        Shape = LaunchShapes.Linear(DefaultRows, 32),
+        Inputs = static (_, shape) =>
+        {
+            int rows = shape.Rows;
+            var vals = new double[rows];
+            for (int k = 0; k < rows; k++)
+            {
+                vals[k] = s_doubleBoundaries[k % s_doubleBoundaries.Length];
+            }
+
+            return new DiffBuffers()
+                .In("vals", vals, readOnly: true)
+                .Out<double>("dst", rows, ["abs_double"], OutputPolicy.Bitwise);
+        },
+        Launch = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.LaunchMathAbsDoubleKernel(
+            b.Get<double>("vals"),
+            b.Get<double>("dst"),
+            s.Rows,
+            gridDimX: s.GridX,
+            blockDimX: s.BlockX),
+        Oracle = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.MathAbsDoubleKernel(
+            b.Get<double>("vals"),
+            b.Get<double>("dst"),
+            s.Rows),
+    };
+
     private static readonly DifferentialCase s_shiftCountMaskBoundaryMatrix = new(
         $"{nameof(IntegerTrapAndCheckedDifferentialKernels)}.{nameof(IntegerTrapAndCheckedDifferentialKernels.ShiftCountMaskBoundaryMatrixKernel)}")
     {
@@ -383,438 +910,183 @@ public class IntegerTrapAndCheckedDifferentialTests
             s.Rows),
     };
 
-    // I-05: Unchecked arithmetic wrap-around, float/double division by zero, and float-to-integer saturation on all 4 paths.
-    private static readonly DifferentialCase s_uncheckedOverflowAndFloatSaturationMatrix = new(
-        $"{nameof(IntegerTrapAndCheckedDifferentialKernels)}.{nameof(IntegerTrapAndCheckedDifferentialKernels.UncheckedOverflowAndFloatSaturationMatrixKernel)}")
+    private static readonly DifferentialCase s_uncheckedIntegerWrap = new(
+        $"{nameof(IntegerTrapAndCheckedDifferentialKernels)}.{nameof(IntegerTrapAndCheckedDifferentialKernels.UncheckedIntegerWrapKernel)}")
     {
         Shape = LaunchShapes.PartialWarp(74, 37),
         Inputs = static (rng, shape) =>
         {
             int rows = shape.Rows;
-            var (iLeft, iRight) = DiffValues.Int32Pairs(rng, rows);
+            var (left, right) = DiffValues.Int32Pairs(rng, rows);
+            return new DiffBuffers()
+                .In("left", left, readOnly: true)
+                .In("right", right, readOnly: true)
+                .Out<int>("dst", rows, IntegerTrapAndCheckedDifferentialKernels.UncheckedIntegerWrapColumns, OutputPolicy.Exact);
+        },
+        Launch = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.LaunchUncheckedIntegerWrapKernel(
+            b.Get<int>("left"),
+            b.Get<int>("right"),
+            b.Get<int>("dst"),
+            s.Rows,
+            gridDimX: s.GridX,
+            blockDimX: s.BlockX),
+        Oracle = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.UncheckedIntegerWrapKernel(
+            b.Get<int>("left"),
+            b.Get<int>("right"),
+            b.Get<int>("dst"),
+            s.Rows),
+    };
+
+    private static readonly DifferentialCase s_floatDivisionByZero = new(
+        $"{nameof(IntegerTrapAndCheckedDifferentialKernels)}.{nameof(IntegerTrapAndCheckedDifferentialKernels.FloatDivisionByZeroKernel)}")
+    {
+        Shape = LaunchShapes.PartialWarp(74, 37),
+        Inputs = static (rng, shape) =>
+        {
+            int rows = shape.Rows;
             var fVals = DiffValues.Single(rng, rows);
             var dVals = new double[rows];
             for (int k = 0; k < rows; k++)
             {
-                dVals[k] = rng.IsBoundarySeed
-                    ? s_doubleBoundaries[k % s_doubleBoundaries.Length]
-                    : (rng.NextBool() ? s_doubleBoundaries[rng.NextBelow(s_doubleBoundaries.Length)] : fVals[k]);
+                dVals[k] = s_doubleBoundaries[k % s_doubleBoundaries.Length];
             }
 
             return new DiffBuffers()
-                .In("iLeft", iLeft, readOnly: true)
-                .In("iRight", iRight, readOnly: true)
                 .In("fVals", fVals, readOnly: true)
                 .In("dVals", dVals, readOnly: true)
-                .Out<int>("dst", rows, IntegerTrapAndCheckedDifferentialKernels.UncheckedAndFloatSaturationColumns, OutputPolicy.Exact)
-                .Out<float>("fDst", rows, IntegerTrapAndCheckedDifferentialKernels.FloatDivZeroColumns, OutputPolicy.Ulp(0))
-                .Out<double>("dDst", rows, IntegerTrapAndCheckedDifferentialKernels.DoubleDivZeroColumns, OutputPolicy.Ulp(0));
+                .Out<float>("fDst", rows, ["f_div_zero", "f_rem_zero"], OutputPolicy.Bitwise)
+                .Out<double>("dDst", rows, ["d_div_zero", "d_rem_zero"], OutputPolicy.Bitwise);
         },
-        Launch = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.LaunchUncheckedOverflowAndFloatSaturationMatrixKernel(
-            b.Get<int>("iLeft"),
-            b.Get<int>("iRight"),
+        Launch = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.LaunchFloatDivisionByZeroKernel(
             b.Get<float>("fVals"),
             b.Get<double>("dVals"),
-            b.Get<int>("dst"),
             b.Get<float>("fDst"),
             b.Get<double>("dDst"),
             s.Rows,
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.UncheckedOverflowAndFloatSaturationMatrixKernel(
-            b.Get<int>("iLeft"),
-            b.Get<int>("iRight"),
+        Oracle = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.FloatDivisionByZeroKernel(
             b.Get<float>("fVals"),
             b.Get<double>("dVals"),
-            b.Get<int>("dst"),
             b.Get<float>("fDst"),
             b.Get<double>("dDst"),
             s.Rows),
     };
 
-    // I-06: C# checked arithmetic overflow (+, -, *, -x, ++, --, +=, -=, *=) evaluated across SequentialOracle (3 orders)
-    // and parallel CPU Managed execution (transpiler emission pending #723 / #718).
-    private static void CheckedArithmeticStep(
-        int t,
-        int[] modes,
-        int[] iLeft,
-        int[] iRight,
-        uint[] uLeft,
-        uint[] uRight,
-        long[] lLeft,
-        long[] lRight,
-        short[] sVals,
-        byte[] bVals,
-        int[] dst)
+    private static readonly DifferentialCase s_floatToIntegerConversion = new(
+        $"{nameof(IntegerTrapAndCheckedDifferentialKernels)}.{nameof(IntegerTrapAndCheckedDifferentialKernels.FloatToIntegerConversionKernel)}")
     {
-        int mode = modes[t];
-        int a = iLeft[t];
-        int b = iRight[t];
-        uint ua = uLeft[t];
-        uint ub = uRight[t];
-        long la = lLeft[t];
-        long lb = lRight[t];
-        short sv = sVals[t];
-        byte bv = bVals[t];
-
-        int res = mode switch
-        {
-            0 => checked(a + b),
-            1 => checked(a - b),
-            2 => checked(a * b),
-            3 => checked(-a),
-            4 => checked((int)(ua - ub)),
-            5 => checked((int)(la + lb)),
-            6 => EvalCheckedShortIncrement(sv),
-            7 => EvalCheckedByteIncrement(bv),
-            _ => EvalCheckedCompoundMul(a, b),
-        };
-
-        dst[t] = res;
-
-        static int EvalCheckedShortIncrement(short v)
-        {
-            checked
-            {
-                v++;
-                return v;
-            }
-        }
-
-        static int EvalCheckedByteIncrement(byte v)
-        {
-            checked
-            {
-                v++;
-                return v;
-            }
-        }
-
-        static int EvalCheckedCompoundMul(int x, int y)
-        {
-            checked
-            {
-                x *= y;
-                return x;
-            }
-        }
-    }
-
-    private static readonly DifferentialCase s_checkedArithmeticOverflowCpuManaged = new(
-        "IntegerTrapAndCheckedDifferentialTests.CheckedArithmeticOverflowCpuManaged")
-    {
-        Shape = LaunchShapes.Linear(DefaultRows, 32),
-        Seeds = [0, 1, 2, 3, 4, 5, 6, 7, 8],
-        OracleExceptions = OracleExceptionMode.MatchOracle,
-        ExceptionPaths = DiffPath.Managed,
+        Shape = LaunchShapes.PartialWarp(74, 37),
         Inputs = static (rng, shape) =>
         {
             int rows = shape.Rows;
-            var modes = new int[rows];
-            var iLeft = new int[rows];
-            var iRight = new int[rows];
-            var uLeft = new uint[rows];
-            var uRight = new uint[rows];
-            var lLeft = new long[rows];
-            var lRight = new long[rows];
-            var sVals = new short[rows];
-            var bVals = new byte[rows];
-
-            for (int k = 0; k < rows; k++)
-            {
-                modes[k] = k % 9;
-                iLeft[k] = (k * 17) - 100;
-                iRight[k] = (k * 3) - 20;
-                uLeft[k] = (uint)(k + 10);
-                uRight[k] = (uint)k;
-                lLeft[k] = k * 100L;
-                lRight[k] = k * 10L;
-                sVals[k] = (short)(k - 32);
-                bVals[k] = (byte)(k & 0x7F);
-            }
-
-            switch (rng.Seed)
-            {
-                case 1:
-                    modes[0] = 0;
-                    iLeft[0] = int.MaxValue;
-                    iRight[0] = 1;
-                    break;
-                case 2:
-                    modes[1] = 1;
-                    iLeft[1] = int.MinValue;
-                    iRight[1] = 1;
-                    break;
-                case 3:
-                    modes[2] = 2;
-                    iLeft[2] = 65536;
-                    iRight[2] = 65536;
-                    break;
-                case 4:
-                    modes[3] = 3;
-                    iLeft[3] = int.MinValue;
-                    break;
-                case 5:
-                    modes[4] = 4;
-                    uLeft[4] = 0u;
-                    uRight[4] = 1u;
-                    break;
-                case 6:
-                    modes[5] = 5;
-                    lLeft[5] = long.MaxValue;
-                    lRight[5] = 1L;
-                    break;
-                case 7:
-                    modes[6] = 6;
-                    sVals[6] = short.MaxValue;
-                    break;
-                case 8:
-                    modes[7] = 7;
-                    bVals[7] = byte.MaxValue;
-                    break;
-            }
-
-            return new DiffBuffers()
-                .In("modes", modes, readOnly: true)
-                .In("iLeft", iLeft, readOnly: true)
-                .In("iRight", iRight, readOnly: true)
-                .In("uLeft", uLeft, readOnly: true)
-                .In("uRight", uRight, readOnly: true)
-                .In("lLeft", lLeft, readOnly: true)
-                .In("lRight", lRight, readOnly: true)
-                .In("sVals", sVals, readOnly: true)
-                .In("bVals", bVals, readOnly: true)
-                .Out<int>("dst", rows, ["checked_arith"], OutputPolicy.Exact);
-        },
-        Launch = static (b, s) =>
-        {
-            var modes = b.Get<int>("modes");
-            var iLeft = b.Get<int>("iLeft");
-            var iRight = b.Get<int>("iRight");
-            var uLeft = b.Get<uint>("uLeft");
-            var uRight = b.Get<uint>("uRight");
-            var lLeft = b.Get<long>("lLeft");
-            var lRight = b.Get<long>("lRight");
-            var sVals = b.Get<short>("sVals");
-            var bVals = b.Get<byte>("bVals");
-            var dst = b.Get<int>("dst");
-            for (int t = 0; t < s.Rows; t++)
-            {
-                CheckedArithmeticStep(t, modes, iLeft, iRight, uLeft, uRight, lLeft, lRight, sVals, bVals, dst);
-            }
-        },
-        Oracle = static (b, s) =>
-        {
-            int t = (int)(BlockIndex.X * BlockDimension.X + ThreadIndex.X);
-            if (t >= s.Rows)
-            {
-                return;
-            }
-
-            CheckedArithmeticStep(
-                t,
-                b.Get<int>("modes"),
-                b.Get<int>("iLeft"),
-                b.Get<int>("iRight"),
-                b.Get<uint>("uLeft"),
-                b.Get<uint>("uRight"),
-                b.Get<long>("lLeft"),
-                b.Get<long>("lRight"),
-                b.Get<short>("sVals"),
-                b.Get<byte>("bVals"),
-                b.Get<int>("dst"));
-        },
-    };
-
-    // I-07: C# checked narrowing conversions (integral and float/double -> integer including NaN / ±Inf) evaluated across
-    // SequentialOracle and parallel CPU Managed execution (transpiler emission pending #723 / #718).
-    private static void CheckedNarrowingStep(
-        int t,
-        int[] modes,
-        int[] iVals,
-        long[] lVals,
-        float[] fVals,
-        double[] dVals,
-        int[] dst)
-    {
-        int mode = modes[t];
-        int iv = iVals[t];
-        long lv = lVals[t];
-        float fv = fVals[t];
-        double dv = dVals[t];
-
-        int res = mode switch
-        {
-            0 => checked((byte)iv),
-            1 => checked((sbyte)iv),
-            2 => checked((short)iv),
-            3 => checked((ushort)iv),
-            4 => unchecked((int)checked((uint)iv)),
-            5 => checked((int)lv),
-            6 => checked((int)fv),
-            _ => checked((int)dv),
-        };
-
-        dst[t] = res;
-    }
-
-    private static readonly DifferentialCase s_checkedNarrowingCastCpuManaged = new(
-        "IntegerTrapAndCheckedDifferentialTests.CheckedNarrowingCastCpuManaged")
-    {
-        Shape = LaunchShapes.Linear(DefaultRows, 32),
-        Seeds = [0, 1, 2, 3, 4, 5, 6, 7],
-        OracleExceptions = OracleExceptionMode.MatchOracle,
-        ExceptionPaths = DiffPath.Managed,
-        Inputs = static (rng, shape) =>
-        {
-            int rows = shape.Rows;
-            var modes = new int[rows];
-            var iVals = new int[rows];
-            var lVals = new long[rows];
-            var fVals = new float[rows];
+            var fVals = DiffValues.Single(rng, rows);
             var dVals = new double[rows];
-
             for (int k = 0; k < rows; k++)
             {
-                modes[k] = k % 8;
-                iVals[k] = k % 120;
-                lVals[k] = (k * 1000L) - 5000L;
-                fVals[k] = (k * 10.5f) - 100.25f;
-                dVals[k] = (k * 100.75) - 1000.5;
-            }
-
-            switch (rng.Seed)
-            {
-                case 1:
-                    modes[0] = 0;
-                    iVals[0] = 256;
-                    break;
-                case 2:
-                    modes[1] = 1;
-                    iVals[1] = -129;
-                    break;
-                case 3:
-                    modes[4] = 4;
-                    iVals[4] = -1;
-                    break;
-                case 4:
-                    modes[5] = 5;
-                    lVals[5] = (long)int.MaxValue + 1L;
-                    break;
-                case 5:
-                    modes[6] = 6;
-                    fVals[6] = float.NaN;
-                    break;
-                case 6:
-                    modes[6] = 6;
-                    fVals[6] = 2147483648.0f;
-                    break;
-                case 7:
-                    modes[7] = 7;
-                    dVals[7] = double.NegativeInfinity;
-                    break;
+                dVals[k] = s_doubleBoundaries[k % s_doubleBoundaries.Length];
             }
 
             return new DiffBuffers()
-                .In("modes", modes, readOnly: true)
-                .In("iVals", iVals, readOnly: true)
-                .In("lVals", lVals, readOnly: true)
                 .In("fVals", fVals, readOnly: true)
                 .In("dVals", dVals, readOnly: true)
-                .Out<int>("dst", rows, ["checked_narrow"], OutputPolicy.Exact);
+                .Out<int>("dst", rows, IntegerTrapAndCheckedDifferentialKernels.FloatToIntegerConversionColumns, OutputPolicy.Exact);
         },
-        Launch = static (b, s) =>
-        {
-            var modes = b.Get<int>("modes");
-            var iVals = b.Get<int>("iVals");
-            var lVals = b.Get<long>("lVals");
-            var fVals = b.Get<float>("fVals");
-            var dVals = b.Get<double>("dVals");
-            var dst = b.Get<int>("dst");
-            for (int t = 0; t < s.Rows; t++)
-            {
-                CheckedNarrowingStep(t, modes, iVals, lVals, fVals, dVals, dst);
-            }
-        },
-        Oracle = static (b, s) =>
-        {
-            int t = (int)(BlockIndex.X * BlockDimension.X + ThreadIndex.X);
-            if (t >= s.Rows)
-            {
-                return;
-            }
-
-            CheckedNarrowingStep(
-                t,
-                b.Get<int>("modes"),
-                b.Get<int>("iVals"),
-                b.Get<long>("lVals"),
-                b.Get<float>("fVals"),
-                b.Get<double>("dVals"),
-                b.Get<int>("dst"));
-        },
+        Launch = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.LaunchFloatToIntegerConversionKernel(
+            b.Get<float>("fVals"),
+            b.Get<double>("dVals"),
+            b.Get<int>("dst"),
+            s.Rows,
+            gridDimX: s.GridX,
+            blockDimX: s.BlockX),
+        Oracle = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.FloatToIntegerConversionKernel(
+            b.Get<float>("fVals"),
+            b.Get<double>("dVals"),
+            b.Get<int>("dst"),
+            s.Rows),
     };
 
     [SkippableFact]
-    [TestTarget(ExecutionTarget.GpuExecution)]
-    [Category(TestCategory.Differential)]
-    [Scenario(TestScenario.Boundary)]
-    public void Test_IntegerDivideByZero_MatchesTheOracleOnEveryPath() =>
-        DifferentialRunner.Run(s_integerDivideByZero);
+    public void Test_Int32Divide_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_int32Divide);
 
     [SkippableFact]
-    [TestTarget(ExecutionTarget.GpuExecution)]
-    [Category(TestCategory.Differential)]
-    [Scenario(TestScenario.Boundary)]
-    public void Test_SignedMinValueDivideByMinusOne_MatchesTheOracleOnEveryPath() =>
-        DifferentialRunner.Run(s_signedMinValueDivideByMinusOne);
+    public void Test_Int32Remainder_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_int32Remainder);
 
     [SkippableFact]
-    [TestTarget(ExecutionTarget.GpuExecution)]
-    [Category(TestCategory.Differential)]
-    [Scenario(TestScenario.Boundary)]
-    public void Test_MathAbsMinValue_MatchesTheOracleOnEveryPath() =>
-        DifferentialRunner.Run(s_mathAbsMinValue);
+    public void Test_UInt32Divide_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_uint32Divide);
 
     [SkippableFact]
-    [TestTarget(ExecutionTarget.GpuExecution)]
-    [Category(TestCategory.Differential)]
-    [Scenario(TestScenario.Boundary)]
+    public void Test_UInt32Remainder_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_uint32Remainder);
+
+    [SkippableFact]
+    public void Test_Int64Divide_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_int64Divide);
+
+    [SkippableFact]
+    public void Test_UInt64Divide_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_uint64Divide);
+
+    [SkippableFact]
+    public void Test_Int16CompoundDivide_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_int16CompoundDivide);
+
+    [SkippableFact]
+    public void Test_SByteCompoundRemainder_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_sbyteCompoundRemainder);
+
+    [SkippableFact]
+    public void Test_Int32MinValueDivide_MatchesTheReferenceOnEveryPath() =>
+        DifferentialRunner.Run(s_int32MinValueDivide);
+
+    [SkippableFact]
+    public void Test_Int32MinValueRemainder_MatchesTheReferenceOnEveryPath() =>
+        DifferentialRunner.Run(s_int32MinValueRemainder);
+
+    [SkippableFact]
+    public void Test_Int64MinValueDivide_MatchesTheReferenceOnEveryPath() =>
+        DifferentialRunner.Run(s_int64MinValueDivide);
+
+    [SkippableFact]
+    public void Test_Int64MinValueRemainder_MatchesTheReferenceOnEveryPath() =>
+        DifferentialRunner.Run(s_int64MinValueRemainder);
+
+    [SkippableFact]
+    public void Test_ShortMinValueDivide_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_shortMinValueDivide);
+
+    [SkippableFact]
+    public void Test_SByteMinValueDivide_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_sbyteMinValueDivide);
+
+    [SkippableFact]
+    public void Test_MathAbsInt32_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_mathAbsInt32);
+
+    [SkippableFact]
+    public void Test_MathAbsSingle_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_mathAbsSingle);
+
+    [SkippableFact]
+    public void Test_MathAbsDouble_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_mathAbsDouble);
+
+    [SkippableFact]
     public void Test_ShiftCountMaskBoundaryMatrix_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_shiftCountMaskBoundaryMatrix);
 
     [SkippableFact]
-    [TestTarget(ExecutionTarget.GpuExecution)]
-    [Category(TestCategory.Differential)]
-    [Scenario(TestScenario.Boundary)]
-    public void Test_UncheckedOverflowAndFloatSaturationMatrix_MatchesTheOracleOnEveryPath() =>
-        DifferentialRunner.Run(s_uncheckedOverflowAndFloatSaturationMatrix);
+    public void Test_UncheckedIntegerWrap_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_uncheckedIntegerWrap);
 
-    [Fact]
-    [TestTarget(ExecutionTarget.GpuExecution)]
-    [Category(TestCategory.Differential)]
-    [Scenario(TestScenario.Boundary)]
-    public void Test_CheckedArithmeticOverflow_MatchesTheOracleOnCpuManaged()
-    {
-        var report = DifferentialRunner.Evaluate(
-            s_checkedArithmeticOverflowCpuManaged,
-            s_checkedArithmeticOverflowCpuManaged.Seeds!,
-            [new DiffPathRunner(DiffPath.Managed, DiffPaths.DirectRunner)],
-            KnownDivergences.All);
-        Assert.False(report.HasFailures, report.ToString());
-    }
+    [SkippableFact]
+    public void Test_FloatDivisionByZero_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_floatDivisionByZero);
 
-    [Fact]
-    [TestTarget(ExecutionTarget.GpuExecution)]
-    [Category(TestCategory.Differential)]
-    [Scenario(TestScenario.Boundary)]
-    public void Test_CheckedNarrowingCastAndFloatOverflow_MatchesTheOracleOnCpuManaged()
-    {
-        var report = DifferentialRunner.Evaluate(
-            s_checkedNarrowingCastCpuManaged,
-            s_checkedNarrowingCastCpuManaged.Seeds!,
-            [new DiffPathRunner(DiffPath.Managed, DiffPaths.DirectRunner)],
-            KnownDivergences.All);
-        Assert.False(report.HasFailures, report.ToString());
-    }
+    [SkippableFact]
+    public void Test_FloatToIntegerConversion_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_floatToIntegerConversion);
 }

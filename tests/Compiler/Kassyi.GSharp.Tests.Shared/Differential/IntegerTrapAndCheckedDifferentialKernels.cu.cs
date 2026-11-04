@@ -5,55 +5,13 @@ using Kassyi.GSharp.Core;
 namespace Kassyi.GSharp.Tests.Shared.Differential;
 
 /// <summary>
-/// Differential kernels for Lane D5 Stage 2: integer division/remainder by zero (<c>/</c>, <c>%</c>, <c>/=</c>, <c>%=</c>),
-/// <c>int.MinValue / -1</c> and <c>long.MinValue / -1L</c> overflow vs narrow <c>short.MinValue / (short)-1</c> promotion,
-/// <c>Math.Abs(int.MinValue)</c> (#947), shift-count masking across negative and &gt;= width counts (#722), and
-/// <c>unchecked</c> arithmetic wrap-around + IEEE 754 float division by zero + float-to-integer saturation (#724, #890).
+/// Differential kernels for integer division/remainder by zero (<c>/</c>, <c>%</c>, <c>/=</c>, <c>%=</c>),
+/// <c>int.MinValue / -1</c> and <c>long.MinValue / -1L</c> overflow vs narrow <c>short.MinValue / (short)-1</c> promotion (#718),
+/// <c>Math.Abs</c> on signed min values and floats (#947), shift-count masking across negative and &gt;= width counts (#722), and
+/// <c>unchecked</c> arithmetic wrap-around, IEEE 754 float division by zero, and float-to-integer conversion (#724, #890).
 /// </summary>
 public static partial class IntegerTrapAndCheckedDifferentialKernels
 {
-    private const int ConstUncheckedIntMinDivMinusOne = unchecked(int.MinValue / -1);
-    private const long ConstUncheckedLongMinDivMinusOne = unchecked(long.MinValue / -1L);
-
-    public static readonly string[] DivideByZeroColumns =
-    [
-        "i_div",
-        "i_rem",
-        "u_div",
-        "u_rem",
-        "l_div_low",
-        "ul_div_low",
-        "s_compound_div",
-        "sb_compound_rem",
-    ];
-
-    public static readonly string[] SignedMinDivColumns =
-    [
-        "i_quot",
-        "i_rem",
-        "l_quot_low",
-        "l_rem_low",
-        "short_min_div_m1",
-        "sbyte_min_div_m1",
-        "const_unchecked_int_min_div_m1",
-        "const_unchecked_long_min_div_m1_low",
-    ];
-
-    public static readonly string[] MathAbsIntColumns =
-    [
-        "abs_int",
-    ];
-
-    public static readonly string[] MathAbsFloatColumns =
-    [
-        "abs_float",
-    ];
-
-    public static readonly string[] MathAbsDoubleColumns =
-    [
-        "abs_double",
-    ];
-
     public static readonly string[] ShiftMaskBoundaryColumns =
     [
         "i_shl",
@@ -74,7 +32,7 @@ public static partial class IntegerTrapAndCheckedDifferentialKernels
         "i_compound_ushr",
     ];
 
-    public static readonly string[] UncheckedAndFloatSaturationColumns =
+    public static readonly string[] UncheckedIntegerWrapColumns =
     [
         "i_add_wrap",
         "i_sub_wrap",
@@ -83,8 +41,10 @@ public static partial class IntegerTrapAndCheckedDifferentialKernels
         "u_dec_zero",
         "b_inc_max",
         "s_compound_add",
-        "f_div_inf_flags",
-        "d_div_inf_flags",
+    ];
+
+    public static readonly string[] FloatToIntegerConversionColumns =
+    [
         "f_to_int_sat",
         "f_to_uint_sat",
         "f_to_byte_sat",
@@ -93,36 +53,8 @@ public static partial class IntegerTrapAndCheckedDifferentialKernels
         "d_to_long_sat_low",
     ];
 
-    public static readonly string[] FloatDivZeroColumns =
-    [
-        "f_div_zero",
-        "f_rem_zero",
-    ];
-
-    public static readonly string[] DoubleDivZeroColumns =
-    [
-        "d_div_zero",
-        "d_rem_zero",
-    ];
-
-    /// <summary>
-    /// I-01: Integer division and remainder (<c>/</c>, <c>%</c>, <c>/=</c>, <c>%=</c>) across signed and unsigned
-    /// integer types. Seed 0 uses non-zero divisors across all 4 paths; fault seeds inject a zero divisor in one
-    /// category at a time.
-    /// </summary>
     [GpuKernel]
-    public static void IntegerDivideByZeroKernel(
-        int[] iNums,
-        int[] iDenoms,
-        int[] iRemDenoms,
-        uint[] uNums,
-        uint[] uDenoms,
-        long[] lNums,
-        long[] lDenoms,
-        short[] sNums,
-        short[] sDenoms,
-        int[] dst,
-        int rows)
+    public static void Int32DivideKernel(int[] nums, int[] denoms, int[] dst, int rows)
     {
         int t = (int)(BlockIndex.X * BlockDimension.X + ThreadIndex.X);
         if (t >= rows)
@@ -130,60 +62,11 @@ public static partial class IntegerTrapAndCheckedDifferentialKernels
             return;
         }
 
-        int iNum = iNums[t];
-        int iDen = iDenoms[t];
-        int iRemDen = iRemDenoms[t];
-        int iDiv = iNum / iDen;
-        int iRem = iNum % iRemDen;
-
-        uint uNum = uNums[t];
-        uint uDen = uDenoms[t];
-        uint uDiv = uNum / uDen;
-        uint uRem = uNum % uDen;
-
-        long lNum = lNums[t];
-        long lDen = lDenoms[t];
-        long lDiv = lNum / lDen;
-        ulong ulNum = (ulong)uNum + 100UL;
-        ulong ulDen = (ulong)uDen;
-        ulong ulDiv = ulNum / ulDen;
-
-        short sVal = sNums[t];
-        short sDen = sDenoms[t];
-        sVal /= sDen;
-
-        sbyte sbVal = (sbyte)(sNums[t] & 0x7F);
-        sbyte sbDen = (sbyte)sDen;
-        sbVal %= sbDen;
-
-        int baseIdx = t * 8;
-        dst[baseIdx + 0] = iDiv;
-        dst[baseIdx + 1] = iRem;
-        dst[baseIdx + 2] = (int)uDiv;
-        dst[baseIdx + 3] = (int)uRem;
-        dst[baseIdx + 4] = (int)lDiv;
-        dst[baseIdx + 5] = (int)ulDiv;
-        dst[baseIdx + 6] = sVal;
-        dst[baseIdx + 7] = sbVal;
+        dst[t] = nums[t] / denoms[t];
     }
 
-    /// <summary>
-    /// I-02: Signed two's-complement <c>MinValue / -1</c> and <c>MinValue % -1</c> for <c>int</c> and <c>long</c>,
-    /// alongside non-trapping narrow <c>short.MinValue / (short)-1 == 32768</c>, <c>sbyte.MinValue / (sbyte)-1 == 128</c>,
-    /// and compile-time <c>unchecked(int.MinValue / -1)</c>.
-    /// </summary>
     [GpuKernel]
-    public static void SignedMinValueDivideByMinusOneKernel(
-        int[] iNums,
-        int[] iDivDenoms,
-        int[] iRemDenoms,
-        long[] lNums,
-        long[] lDivDenoms,
-        long[] lRemDenoms,
-        short[] sVals,
-        sbyte[] sbVals,
-        int[] dst,
-        int rows)
+    public static void Int32RemainderKernel(int[] nums, int[] denoms, int[] dst, int rows)
     {
         int t = (int)(BlockIndex.X * BlockDimension.X + ThreadIndex.X);
         if (t >= rows)
@@ -191,47 +74,11 @@ public static partial class IntegerTrapAndCheckedDifferentialKernels
             return;
         }
 
-        int iQuot = iNums[t] / iDivDenoms[t];
-        int iRem = iNums[t] % iRemDenoms[t];
-        long lQuot = lNums[t] / lDivDenoms[t];
-        long lRem = lNums[t] % lRemDenoms[t];
-
-        // Narrow signed types promote to int before '/', so short.MinValue / (short)-1 == +32768 (no trap).
-        short sMin = sVals[t];
-        short sMinusOne = -1;
-        int shortPromotedQuot = sMin / sMinusOne;
-
-        sbyte sbMin = sbVals[t];
-        sbyte sbMinusOne = -1;
-        int sbytePromotedQuot = sbMin / sbMinusOne;
-
-        int constUncheckedInt = ConstUncheckedIntMinDivMinusOne;
-        long constUncheckedLong = ConstUncheckedLongMinDivMinusOne;
-
-        int baseIdx = t * 8;
-        dst[baseIdx + 0] = iQuot;
-        dst[baseIdx + 1] = iRem;
-        dst[baseIdx + 2] = (int)lQuot;
-        dst[baseIdx + 3] = (int)lRem;
-        dst[baseIdx + 4] = shortPromotedQuot;
-        dst[baseIdx + 5] = sbytePromotedQuot;
-        dst[baseIdx + 6] = constUncheckedInt;
-        dst[baseIdx + 7] = (int)(constUncheckedLong >> 32);
+        dst[t] = nums[t] % denoms[t];
     }
 
-    /// <summary>
-    /// I-03: <see cref="Math.Abs(int)"/> on <c>int.MinValue</c> (throws <see cref="OverflowException"/> in C#, #947)
-    /// and <c>Math.Abs(float)</c> / <c>Math.Abs(double)</c> across signed zeros, infinities, and NaN.
-    /// </summary>
     [GpuKernel]
-    public static void MathAbsMinValueKernel(
-        int[] iVals,
-        float[] fVals,
-        double[] dVals,
-        int[] iDst,
-        float[] fDst,
-        double[] dDst,
-        int rows)
+    public static void UInt32DivideKernel(uint[] nums, uint[] denoms, uint[] dst, int rows)
     {
         int t = (int)(BlockIndex.X * BlockDimension.X + ThreadIndex.X);
         if (t >= rows)
@@ -239,15 +86,185 @@ public static partial class IntegerTrapAndCheckedDifferentialKernels
             return;
         }
 
-        iDst[t] = Math.Abs(iVals[t]);
-        fDst[t] = Math.Abs(fVals[t]);
-        dDst[t] = Math.Abs(dVals[t]);
+        dst[t] = nums[t] / denoms[t];
     }
 
-    /// <summary>
-    /// I-04: Shift count masking (<c>&amp; 31</c> for 32-bit/narrow types, <c>&amp; 63</c> for 64-bit types) across
-    /// negative counts, counts &gt;= bit width, and unsigned right shift <c>&gt;&gt;&gt;</c> (#722).
-    /// </summary>
+    [GpuKernel]
+    public static void UInt32RemainderKernel(uint[] nums, uint[] denoms, uint[] dst, int rows)
+    {
+        int t = (int)(BlockIndex.X * BlockDimension.X + ThreadIndex.X);
+        if (t >= rows)
+        {
+            return;
+        }
+
+        dst[t] = nums[t] % denoms[t];
+    }
+
+    [GpuKernel]
+    public static void Int64DivideKernel(long[] nums, long[] denoms, long[] dst, int rows)
+    {
+        int t = (int)(BlockIndex.X * BlockDimension.X + ThreadIndex.X);
+        if (t >= rows)
+        {
+            return;
+        }
+
+        dst[t] = nums[t] / denoms[t];
+    }
+
+    [GpuKernel]
+    public static void UInt64DivideKernel(ulong[] nums, ulong[] denoms, ulong[] dst, int rows)
+    {
+        int t = (int)(BlockIndex.X * BlockDimension.X + ThreadIndex.X);
+        if (t >= rows)
+        {
+            return;
+        }
+
+        dst[t] = nums[t] / denoms[t];
+    }
+
+    [GpuKernel]
+    public static void Int16CompoundDivideKernel(short[] nums, short[] denoms, short[] dst, int rows)
+    {
+        int t = (int)(BlockIndex.X * BlockDimension.X + ThreadIndex.X);
+        if (t >= rows)
+        {
+            return;
+        }
+
+        short val = nums[t];
+        val /= denoms[t];
+        dst[t] = val;
+    }
+
+    [GpuKernel]
+    public static void SByteCompoundRemainderKernel(sbyte[] nums, sbyte[] denoms, sbyte[] dst, int rows)
+    {
+        int t = (int)(BlockIndex.X * BlockDimension.X + ThreadIndex.X);
+        if (t >= rows)
+        {
+            return;
+        }
+
+        sbyte val = nums[t];
+        val %= denoms[t];
+        dst[t] = val;
+    }
+
+    [GpuKernel]
+    public static void Int32MinValueDivideKernel(int[] nums, int[] denoms, int[] dst, int rows)
+    {
+        int t = (int)(BlockIndex.X * BlockDimension.X + ThreadIndex.X);
+        if (t >= rows)
+        {
+            return;
+        }
+
+        dst[t] = nums[t] / denoms[t];
+    }
+
+    [GpuKernel]
+    public static void Int32MinValueRemainderKernel(int[] nums, int[] denoms, int[] dst, int rows)
+    {
+        int t = (int)(BlockIndex.X * BlockDimension.X + ThreadIndex.X);
+        if (t >= rows)
+        {
+            return;
+        }
+
+        dst[t] = nums[t] % denoms[t];
+    }
+
+    [GpuKernel]
+    public static void Int64MinValueDivideKernel(long[] nums, long[] denoms, long[] dst, int rows)
+    {
+        int t = (int)(BlockIndex.X * BlockDimension.X + ThreadIndex.X);
+        if (t >= rows)
+        {
+            return;
+        }
+
+        dst[t] = nums[t] / denoms[t];
+    }
+
+    [GpuKernel]
+    public static void Int64MinValueRemainderKernel(long[] nums, long[] denoms, long[] dst, int rows)
+    {
+        int t = (int)(BlockIndex.X * BlockDimension.X + ThreadIndex.X);
+        if (t >= rows)
+        {
+            return;
+        }
+
+        dst[t] = nums[t] % denoms[t];
+    }
+
+    [GpuKernel]
+    public static void ShortMinValueDivideKernel(short[] nums, short[] denoms, int[] dst, int rows)
+    {
+        int t = (int)(BlockIndex.X * BlockDimension.X + ThreadIndex.X);
+        if (t >= rows)
+        {
+            return;
+        }
+
+        short sMin = nums[t];
+        short sMinusOne = denoms[t];
+        dst[t] = sMin / sMinusOne;
+    }
+
+    [GpuKernel]
+    public static void SByteMinValueDivideKernel(sbyte[] nums, sbyte[] denoms, int[] dst, int rows)
+    {
+        int t = (int)(BlockIndex.X * BlockDimension.X + ThreadIndex.X);
+        if (t >= rows)
+        {
+            return;
+        }
+
+        sbyte sbMin = nums[t];
+        sbyte sbMinusOne = denoms[t];
+        dst[t] = sbMin / sbMinusOne;
+    }
+
+    [GpuKernel]
+    public static void MathAbsInt32Kernel(int[] vals, int[] dst, int rows)
+    {
+        int t = (int)(BlockIndex.X * BlockDimension.X + ThreadIndex.X);
+        if (t >= rows)
+        {
+            return;
+        }
+
+        dst[t] = Math.Abs(vals[t]);
+    }
+
+    [GpuKernel]
+    public static void MathAbsSingleKernel(float[] vals, float[] dst, int rows)
+    {
+        int t = (int)(BlockIndex.X * BlockDimension.X + ThreadIndex.X);
+        if (t >= rows)
+        {
+            return;
+        }
+
+        dst[t] = Math.Abs(vals[t]);
+    }
+
+    [GpuKernel]
+    public static void MathAbsDoubleKernel(double[] vals, double[] dst, int rows)
+    {
+        int t = (int)(BlockIndex.X * BlockDimension.X + ThreadIndex.X);
+        if (t >= rows)
+        {
+            return;
+        }
+
+        dst[t] = Math.Abs(vals[t]);
+    }
+
     [GpuKernel]
     public static void ShiftCountMaskBoundaryMatrixKernel(
         int[] iVals,
@@ -317,21 +334,8 @@ public static partial class IntegerTrapAndCheckedDifferentialKernels
         dst[baseIdx + 15] = compUshr;
     }
 
-    /// <summary>
-    /// I-05: Default <c>unchecked</c> integer wrap-around (<c>+</c>, <c>-</c>, <c>*</c>, <c>-x</c>, <c>++</c>,
-    /// <c>--</c>, <c>+=</c>), IEEE 754 floating-point division/remainder by zero (<c>±Inf</c>, <c>NaN</c>), and
-    /// floating-point to integer saturating/truncating casts (#724, #890).
-    /// </summary>
     [GpuKernel]
-    public static void UncheckedOverflowAndFloatSaturationMatrixKernel(
-        int[] iLeft,
-        int[] iRight,
-        float[] fVals,
-        double[] dVals,
-        int[] dst,
-        float[] fDst,
-        double[] dDst,
-        int rows)
+    public static void UncheckedIntegerWrapKernel(int[] left, int[] right, int[] dst, int rows)
     {
         int t = (int)(BlockIndex.X * BlockDimension.X + ThreadIndex.X);
         if (t >= rows)
@@ -339,8 +343,8 @@ public static partial class IntegerTrapAndCheckedDifferentialKernels
             return;
         }
 
-        int a = iLeft[t];
-        int b = iRight[t];
+        int a = left[t];
+        int b = right[t];
 
         int addWrap = a + b;
         int subWrap = a - b;
@@ -356,21 +360,55 @@ public static partial class IntegerTrapAndCheckedDifferentialKernels
         short sAcc = (short)(a & 0x7FFF);
         sAcc += (short)(b & 0x7FFF);
 
+        int baseIdx = t * 7;
+        dst[baseIdx + 0] = addWrap;
+        dst[baseIdx + 1] = subWrap;
+        dst[baseIdx + 2] = mulWrap;
+        dst[baseIdx + 3] = negMin;
+        dst[baseIdx + 4] = (int)uZero;
+        dst[baseIdx + 5] = bMax;
+        dst[baseIdx + 6] = sAcc;
+    }
+
+    [GpuKernel]
+    public static void FloatDivisionByZeroKernel(float[] fVals, double[] dVals, float[] fDst, double[] dDst, int rows)
+    {
+        int t = (int)(BlockIndex.X * BlockDimension.X + ThreadIndex.X);
+        if (t >= rows)
+        {
+            return;
+        }
+
         float fv = fVals[t];
         float fZero = 0.0f;
         float fQuot = fv / fZero;
         float fZeroByZero = fZero / fZero;
-        int fDivFlags =
-            (fQuot == float.PositiveInfinity ? 1 : 0) |
-            (fQuot == float.NegativeInfinity ? 2 : 0);
 
         double dv = dVals[t];
         double dZero = 0.0;
         double dQuot = dv / dZero;
         double dZeroByZero = dZero / dZero;
-        int dDivFlags =
-            (dQuot == double.PositiveInfinity ? 1 : 0) |
-            (dQuot == double.NegativeInfinity ? 2 : 0);
+
+        int fBase = t * 2;
+        fDst[fBase + 0] = fQuot;
+        fDst[fBase + 1] = fZeroByZero;
+
+        int dBase = t * 2;
+        dDst[dBase + 0] = dQuot;
+        dDst[dBase + 1] = dZeroByZero;
+    }
+
+    [GpuKernel]
+    public static void FloatToIntegerConversionKernel(float[] fVals, double[] dVals, int[] dst, int rows)
+    {
+        int t = (int)(BlockIndex.X * BlockDimension.X + ThreadIndex.X);
+        if (t >= rows)
+        {
+            return;
+        }
+
+        float fv = fVals[t];
+        double dv = dVals[t];
 
         int fToInt = (int)fv;
         uint fToUInt = (uint)fv;
@@ -379,27 +417,12 @@ public static partial class IntegerTrapAndCheckedDifferentialKernels
         int dToInt = (int)dv;
         long dToLong = (long)dv;
 
-        int baseIdx = t * 15;
-        dst[baseIdx + 0] = addWrap;
-        dst[baseIdx + 1] = subWrap;
-        dst[baseIdx + 2] = mulWrap;
-        dst[baseIdx + 3] = negMin;
-        dst[baseIdx + 4] = (int)uZero;
-        dst[baseIdx + 5] = bMax;
-        dst[baseIdx + 6] = sAcc;
-        dst[baseIdx + 7] = fDivFlags;
-        dst[baseIdx + 8] = dDivFlags;
-        dst[baseIdx + 9] = fToInt;
-        dst[baseIdx + 10] = (int)fToUInt;
-        dst[baseIdx + 11] = fToByte;
-        dst[baseIdx + 12] = fToSByte;
-        dst[baseIdx + 13] = dToInt;
-        dst[baseIdx + 14] = (int)(dToLong ^ (dToLong >> 32));
-
-        int fBase = t * 2;
-        fDst[fBase + 0] = fQuot;
-        fDst[fBase + 1] = fZeroByZero;
-        dDst[fBase + 0] = dQuot;
-        dDst[fBase + 1] = dZeroByZero;
+        int baseIdx = t * 6;
+        dst[baseIdx + 0] = fToInt;
+        dst[baseIdx + 1] = (int)fToUInt;
+        dst[baseIdx + 2] = fToByte;
+        dst[baseIdx + 3] = fToSByte;
+        dst[baseIdx + 4] = dToInt;
+        dst[baseIdx + 5] = (int)(dToLong ^ (dToLong >> 32));
     }
 }

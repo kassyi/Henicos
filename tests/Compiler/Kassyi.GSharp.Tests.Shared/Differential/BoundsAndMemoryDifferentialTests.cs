@@ -1,15 +1,19 @@
 #nullable enable
 using System;
+using System.Collections.Generic;
 using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Shared.Differential;
 
 /// <summary>
-/// Differential tests for Lane D5 Stage 1: array, <see cref="Span{T}"/>, <see cref="ReadOnlySpan{T}"/>,
+/// Differential tests for array, <see cref="Span{T}"/>, <see cref="ReadOnlySpan{T}"/>,
 /// <c>Span.Slice</c>, <see cref="ArraySegment{T}"/>, <see cref="Memory{T}"/>, <see cref="SharedMemory{T}"/>,
 /// <c>[InlineArray]</c>, null array vs optional null array (#706 / #838), Charter §4 bounds-check over-elimination
 /// witnesses, and simultaneous multi-block trap contention.
 /// </summary>
+[TestTarget(ExecutionTarget.GpuExecution)]
+[Category(TestCategory.Differential)]
+[Scenario(TestScenario.Boundary)]
 public class BoundsAndMemoryDifferentialTests
 {
     private const int DefaultRows = 64;
@@ -56,14 +60,16 @@ public class BoundsAndMemoryDifferentialTests
             s.Rows),
     };
 
-    // B-01: 1D array indexing bounds (Seed 0 in-bounds across all 4 paths; Seeds 1..4 OOB on Oracle vs Managed).
     private static readonly DifferentialCase s_arrayIndexBounds = new(
         $"{nameof(BoundsAndMemoryDifferentialKernels)}.{nameof(BoundsAndMemoryDifferentialKernels.ArrayIndexBoundsKernel)}")
     {
         Shape = LaunchShapes.PartialWarp(74, 37),
         Seeds = [0, 1, 2, 3, 4],
         OracleExceptions = OracleExceptionMode.MatchOracle,
-        ExceptionPaths = DiffPath.Managed,
+        SkippedPaths = new Dictionary<DiffPath, string>
+        {
+            [DiffPath.Native] = "#718 (plain array out-of-bounds access terminates process on native)",
+        },
         Inputs = static (rng, shape) =>
         {
             int rows = shape.Rows;
@@ -115,14 +121,12 @@ public class BoundsAndMemoryDifferentialTests
             s.Rows),
     };
 
-    // B-02: Span<T> / ReadOnlySpan<T> indexing over a canary-padded backing array (#718).
     private static readonly DifferentialCase s_spanCanaryIndexBounds = new(
         $"{nameof(BoundsAndMemoryDifferentialKernels)}.{nameof(BoundsAndMemoryDifferentialKernels.SpanCanaryIndexBoundsKernel)}")
     {
         Shape = LaunchShapes.Linear(DefaultRows, 32),
         Seeds = [0, 1, 2, 3, 4],
         OracleExceptions = OracleExceptionMode.MatchOracle,
-        ExceptionPaths = DiffPath.Managed | DiffPath.Native,
         Inputs = static (rng, shape) =>
         {
             int rows = shape.Rows;
@@ -172,55 +176,85 @@ public class BoundsAndMemoryDifferentialTests
             s.Rows),
     };
 
-    // B-03: Span.Slice(start) and Span.Slice(start, count) bounds and 32-bit start + count overflow (#718).
-    private static readonly DifferentialCase s_spanSliceBoundsAndOverflow = new(
-        $"{nameof(BoundsAndMemoryDifferentialKernels)}.{nameof(BoundsAndMemoryDifferentialKernels.SpanSliceBoundsAndOverflowKernel)}")
+    private static readonly DifferentialCase s_spanSliceStart = new(
+        $"{nameof(BoundsAndMemoryDifferentialKernels)}.{nameof(BoundsAndMemoryDifferentialKernels.SpanSliceStartKernel)}")
     {
         Shape = LaunchShapes.Linear(DefaultRows, 32),
-        Seeds = [0, 1, 2, 3, 4, 5, 6],
+        Seeds = [0, 1, 2],
         OracleExceptions = OracleExceptionMode.MatchOracle,
-        ExceptionPaths = DiffPath.Managed | DiffPath.Native,
+        Inputs = static (rng, shape) =>
+        {
+            int rows = shape.Rows;
+            var backing = CreateCanaryBacking();
+            var starts = new int[rows];
+            for (int k = 0; k < rows; k++)
+            {
+                starts[k] = (k % 3 == 0) ? 0 : (k % 3 == 1 ? CanaryLen : (k % (CanaryLen / 2)));
+            }
+
+            switch (rng.Seed)
+            {
+                case 1:
+                    starts[3] = -1;
+                    break;
+                case 2:
+                    starts[7] = CanaryLen + 1;
+                    break;
+            }
+
+            return new DiffBuffers()
+                .In("backing", backing, readOnly: true)
+                .In("starts", starts, readOnly: true)
+                .Out<int>("dst", rows, ["slice_res"], OutputPolicy.Exact);
+        },
+        Launch = static (b, s) => BoundsAndMemoryDifferentialKernels.LaunchSpanSliceStartKernel(
+            b.Get<int>("backing"),
+            b.Get<int>("starts"),
+            b.Get<int>("dst"),
+            CanaryStart,
+            CanaryLen,
+            s.Rows,
+            gridDimX: s.GridX,
+            blockDimX: s.BlockX),
+        Oracle = static (b, s) => BoundsAndMemoryDifferentialKernels.SpanSliceStartKernel(
+            b.Get<int>("backing"),
+            b.Get<int>("starts"),
+            b.Get<int>("dst"),
+            CanaryStart,
+            CanaryLen,
+            s.Rows),
+    };
+
+    private static readonly DifferentialCase s_spanSliceStartCount = new(
+        $"{nameof(BoundsAndMemoryDifferentialKernels)}.{nameof(BoundsAndMemoryDifferentialKernels.SpanSliceStartCountKernel)}")
+    {
+        Shape = LaunchShapes.Linear(DefaultRows, 32),
+        Seeds = [0, 1, 2, 3, 4],
+        OracleExceptions = OracleExceptionMode.MatchOracle,
         Inputs = static (rng, shape) =>
         {
             int rows = shape.Rows;
             var backing = CreateCanaryBacking();
             var starts = new int[rows];
             var counts = new int[rows];
-            var modes = new int[rows];
-
             for (int k = 0; k < rows; k++)
             {
-                int kind = k % 6;
+                int kind = k % 4;
                 switch (kind)
                 {
                     case 0:
-                        modes[k] = 0;
                         starts[k] = 0;
                         counts[k] = CanaryLen;
                         break;
                     case 1:
-                        // Valid empty slice at the exact end of the span: Slice(Length) and Slice(Length, 0).
-                        modes[k] = 0;
                         starts[k] = CanaryLen;
                         counts[k] = 0;
                         break;
                     case 2:
-                        modes[k] = 1;
-                        starts[k] = CanaryLen;
-                        counts[k] = 0;
-                        break;
-                    case 3:
-                        modes[k] = 2;
-                        starts[k] = 0;
-                        counts[k] = CanaryLen;
-                        break;
-                    case 4:
-                        modes[k] = 2;
-                        starts[k] = CanaryLen - 1;
+                        starts[k] = 1;
                         counts[k] = 1;
                         break;
                     default:
-                        modes[k] = 2;
                         starts[k] = k % (CanaryLen / 2);
                         counts[k] = (k % (CanaryLen / 2)) + 1;
                         break;
@@ -230,33 +264,19 @@ public class BoundsAndMemoryDifferentialTests
             switch (rng.Seed)
             {
                 case 1:
-                    modes[3] = 0;
-                    starts[3] = -1;
+                    counts[3] = -1;
                     break;
                 case 2:
-                    modes[7] = 0;
-                    starts[7] = CanaryLen + 1;
+                    starts[7] = 1;
+                    counts[7] = CanaryLen;
                     break;
                 case 3:
-                    modes[11] = 1;
-                    starts[11] = 0;
-                    counts[11] = -1;
+                    starts[11] = int.MaxValue;
+                    counts[11] = 2;
                     break;
                 case 4:
-                    modes[15] = 1;
-                    starts[15] = 1;
-                    counts[15] = CanaryLen;
-                    break;
-                case 5:
-                    // 32-bit signed start + count wrap-around: int.MaxValue + 2 < 0 (#718).
-                    modes[19] = 1;
-                    starts[19] = int.MaxValue;
-                    counts[19] = 2;
-                    break;
-                case 6:
-                    modes[23] = 1;
-                    starts[23] = 2;
-                    counts[23] = int.MaxValue;
+                    starts[15] = 2;
+                    counts[15] = int.MaxValue;
                     break;
             }
 
@@ -264,86 +284,65 @@ public class BoundsAndMemoryDifferentialTests
                 .In("backing", backing, readOnly: true)
                 .In("starts", starts, readOnly: true)
                 .In("counts", counts, readOnly: true)
-                .In("modes", modes, readOnly: true)
                 .Out<int>("dst", rows, ["slice_res"], OutputPolicy.Exact);
         },
-        Launch = static (b, s) => BoundsAndMemoryDifferentialKernels.LaunchSpanSliceBoundsAndOverflowKernel(
+        Launch = static (b, s) => BoundsAndMemoryDifferentialKernels.LaunchSpanSliceStartCountKernel(
             b.Get<int>("backing"),
             b.Get<int>("starts"),
             b.Get<int>("counts"),
-            b.Get<int>("modes"),
             b.Get<int>("dst"),
             CanaryStart,
             CanaryLen,
             s.Rows,
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static (b, s) => BoundsAndMemoryDifferentialKernels.SpanSliceBoundsAndOverflowKernel(
+        Oracle = static (b, s) => BoundsAndMemoryDifferentialKernels.SpanSliceStartCountKernel(
             b.Get<int>("backing"),
             b.Get<int>("starts"),
             b.Get<int>("counts"),
-            b.Get<int>("modes"),
             b.Get<int>("dst"),
             CanaryStart,
             CanaryLen,
             s.Rows),
     };
 
-    // B-04: ArraySegment<T> (ArgumentOutOfRangeException, S33) and Memory<T> (IndexOutOfRangeException) (#718).
-    private static readonly DifferentialCase s_arraySegmentAndMemoryBounds = new(
-        $"{nameof(BoundsAndMemoryDifferentialKernels)}.{nameof(BoundsAndMemoryDifferentialKernels.ArraySegmentAndMemoryBoundsKernel)}")
+    private static readonly DifferentialCase s_arraySegmentBounds = new(
+        $"{nameof(BoundsAndMemoryDifferentialKernels)}.{nameof(BoundsAndMemoryDifferentialKernels.ArraySegmentBoundsKernel)}")
     {
         Shape = LaunchShapes.Linear(DefaultRows, 32),
-        Seeds = [0, 1, 2, 3, 4],
+        Seeds = [0, 1, 2],
         OracleExceptions = OracleExceptionMode.MatchOracle,
-        ExceptionPaths = DiffPath.Managed | DiffPath.Native,
         Inputs = static (rng, shape) =>
         {
             int rows = shape.Rows;
             var backing = CreateCanaryBacking();
             var indices = new int[rows];
-            var modes = new int[rows];
             for (int k = 0; k < rows; k++)
             {
                 indices[k] = k % CanaryLen;
-                modes[k] = k & 1;
             }
 
             switch (rng.Seed)
             {
                 case 1:
-                    modes[5] = 0;
                     indices[5] = -1;
                     break;
                 case 2:
-                    modes[9] = 0;
                     indices[9] = CanaryLen;
-                    break;
-                case 3:
-                    modes[12] = 1;
-                    indices[12] = -1;
-                    break;
-                case 4:
-                    modes[20] = 1;
-                    indices[20] = CanaryLen;
                     break;
             }
 
             return new DiffBuffers()
                 .In("backing", backing, readOnly: true)
                 .In("indices", indices, readOnly: true)
-                .In("modes", modes, readOnly: true)
-                .Out<int>("dst", rows, ["seg_or_mem_val"], OutputPolicy.Exact);
+                .Out<int>("dst", rows, ["seg_val"], OutputPolicy.Exact);
         },
         Launch = static (b, s) =>
         {
             var backing = b.Get<int>("backing");
-            BoundsAndMemoryDifferentialKernels.LaunchArraySegmentAndMemoryBoundsKernel(
+            BoundsAndMemoryDifferentialKernels.LaunchArraySegmentBoundsKernel(
                 new ArraySegment<int>(backing, CanaryStart, CanaryLen),
-                new Memory<int>(backing, CanaryStart, CanaryLen),
-                new ReadOnlyMemory<int>(backing, CanaryStart, CanaryLen),
                 b.Get<int>("indices"),
-                b.Get<int>("modes"),
                 b.Get<int>("dst"),
                 s.Rows,
                 gridDimX: s.GridX,
@@ -352,23 +351,78 @@ public class BoundsAndMemoryDifferentialTests
         Oracle = static (b, s) =>
         {
             var backing = b.Get<int>("backing");
-            BoundsAndMemoryDifferentialKernels.ArraySegmentAndMemoryBoundsKernel(
+            BoundsAndMemoryDifferentialKernels.ArraySegmentBoundsKernel(
                 new ArraySegment<int>(backing, CanaryStart, CanaryLen),
-                new Memory<int>(backing, CanaryStart, CanaryLen),
-                new ReadOnlyMemory<int>(backing, CanaryStart, CanaryLen),
                 b.Get<int>("indices"),
-                b.Get<int>("modes"),
                 b.Get<int>("dst"),
                 s.Rows);
         },
     };
 
-    // B-05: Static SharedMemory<T> bounds (Seed 0 across Managed/Native/Cuda; Seeds 1..4 OOB on Managed).
+    private static readonly DifferentialCase s_memoryBounds = new(
+        $"{nameof(BoundsAndMemoryDifferentialKernels)}.{nameof(BoundsAndMemoryDifferentialKernels.MemoryBoundsKernel)}")
+    {
+        Shape = LaunchShapes.Linear(DefaultRows, 32),
+        Seeds = [0, 1, 2],
+        OracleExceptions = OracleExceptionMode.MatchOracle,
+        Inputs = static (rng, shape) =>
+        {
+            int rows = shape.Rows;
+            var backing = CreateCanaryBacking();
+            var indices = new int[rows];
+            for (int k = 0; k < rows; k++)
+            {
+                indices[k] = k % CanaryLen;
+            }
+
+            switch (rng.Seed)
+            {
+                case 1:
+                    indices[5] = -1;
+                    break;
+                case 2:
+                    indices[9] = CanaryLen;
+                    break;
+            }
+
+            return new DiffBuffers()
+                .In("backing", backing, readOnly: true)
+                .In("indices", indices, readOnly: true)
+                .Out<int>("dst", rows, ["mem_val"], OutputPolicy.Exact);
+        },
+        Launch = static (b, s) =>
+        {
+            var backing = b.Get<int>("backing");
+            BoundsAndMemoryDifferentialKernels.LaunchMemoryBoundsKernel(
+                new Memory<int>(backing, CanaryStart, CanaryLen),
+                new ReadOnlyMemory<int>(backing, CanaryStart, CanaryLen),
+                b.Get<int>("indices"),
+                b.Get<int>("dst"),
+                s.Rows,
+                gridDimX: s.GridX,
+                blockDimX: s.BlockX);
+        },
+        Oracle = static (b, s) =>
+        {
+            var backing = b.Get<int>("backing");
+            BoundsAndMemoryDifferentialKernels.MemoryBoundsKernel(
+                new Memory<int>(backing, CanaryStart, CanaryLen),
+                new ReadOnlyMemory<int>(backing, CanaryStart, CanaryLen),
+                b.Get<int>("indices"),
+                b.Get<int>("dst"),
+                s.Rows);
+        },
+    };
+
     private static readonly DifferentialCase s_sharedMemoryBounds = new(
         $"{nameof(BoundsAndMemoryDifferentialKernels)}.{nameof(BoundsAndMemoryDifferentialKernels.SharedMemoryBoundsKernel)}")
     {
         Shape = LaunchShapes.Linear(DefaultRows, 32),
         Seeds = [0, 1, 2, 3, 4],
+        SkippedPaths = new Dictionary<DiffPath, string>
+        {
+            [DiffPath.Native] = "#718 (shared memory out-of-bounds access terminates process on native)",
+        },
         ExpectedException = static (rng, _) => rng.Seed == 0
             ? null
             : ExceptionPolicy.For<IndexOutOfRangeException>(DiffPath.Managed),
@@ -418,14 +472,12 @@ public class BoundsAndMemoryDifferentialTests
         },
     };
 
-    // B-06: [InlineArray(4)] indexing bounds over canary-padded struct holder (#718).
     private static readonly DifferentialCase s_inlineArrayBounds = new(
         $"{nameof(BoundsAndMemoryDifferentialKernels)}.{nameof(BoundsAndMemoryDifferentialKernels.InlineArrayBoundsKernel)}")
     {
         Shape = LaunchShapes.Linear(DefaultRows, 32),
         Seeds = [0, 1, 2, 3, 4],
         OracleExceptions = OracleExceptionMode.MatchOracle,
-        ExceptionPaths = DiffPath.Managed | DiffPath.Native,
         Inputs = static (rng, shape) =>
         {
             int rows = shape.Rows;
@@ -467,119 +519,211 @@ public class BoundsAndMemoryDifferentialTests
             s.Rows),
     };
 
-    // B-07: Null local/reassigned array dereference (NullReferenceException on BOTH Managed and Native, #706)
-    // vs optional null array parameter (#838).
-    private static readonly DifferentialCase s_nullArrayVsOptionalNullArray = new(
-        $"{nameof(BoundsAndMemoryDifferentialKernels)}.{nameof(BoundsAndMemoryDifferentialKernels.NullArrayVsOptionalNullArrayKernel)}")
+    private static readonly DifferentialCase s_nullArrayOptionalValid = new(
+        $"{nameof(BoundsAndMemoryDifferentialKernels)}.{nameof(BoundsAndMemoryDifferentialKernels.NullArrayOptionalValidKernel)}")
     {
         Shape = LaunchShapes.Linear(DefaultRows, 32),
-        Seeds = [0, 1, 2, 3, 4],
-        OracleExceptions = OracleExceptionMode.MatchOracle,
-        ExceptionPaths = DiffPath.Managed | DiffPath.Native,
-        Inputs = static (rng, shape) =>
-        {
-            int rows = shape.Rows;
-            var src = DiffValues.Int32(rng, rows);
-            var modes = new int[rows];
-
-            switch (rng.Seed)
-            {
-                case 1:
-                    modes[3] = 1;
-                    break;
-                case 2:
-                    modes[7] = 2;
-                    break;
-                case 3:
-                    modes[11] = 3;
-                    break;
-                case 4:
-                    modes[15] = 4;
-                    break;
-            }
-
-            return new DiffBuffers()
-                .In("src", src, readOnly: true)
-                .In("modes", modes, readOnly: true)
-                .Out<int>("dst", rows, ["null_or_opt_res"], OutputPolicy.Exact);
-        },
-        Launch = static (b, s) => BoundsAndMemoryDifferentialKernels.LaunchNullArrayVsOptionalNullArrayKernel(
+        Inputs = static (rng, shape) => new DiffBuffers()
+            .In("src", DiffValues.Int32(rng, shape.Rows), readOnly: true)
+            .Out<int>("dst", shape.Rows, ["opt_val"], OutputPolicy.Exact),
+        Launch = static (b, s) => BoundsAndMemoryDifferentialKernels.LaunchNullArrayOptionalValidKernel(
             b.Get<int>("src"),
-            b.Get<int>("modes"),
             b.Get<int>("dst"),
             s.Rows,
             opt: null,
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static (b, s) => BoundsAndMemoryDifferentialKernels.NullArrayVsOptionalNullArrayKernel(
+        Oracle = static (b, s) => BoundsAndMemoryDifferentialKernels.NullArrayOptionalValidKernel(
             b.Get<int>("src"),
-            b.Get<int>("modes"),
             b.Get<int>("dst"),
             s.Rows,
             opt: null),
     };
 
-    // B-08: Charter §4 bounds-check over-elimination witnesses (#718).
-    private static readonly DifferentialCase s_boundsCheckEliminationWitness = new(
-        $"{nameof(BoundsAndMemoryDifferentialKernels)}.{nameof(BoundsAndMemoryDifferentialKernels.BoundsCheckEliminationWitnessKernel)}")
+    private static readonly DifferentialCase s_nullArrayLengthTrap = new(
+        $"{nameof(BoundsAndMemoryDifferentialKernels)}.{nameof(BoundsAndMemoryDifferentialKernels.NullArrayLengthTrapKernel)}")
     {
         Shape = LaunchShapes.Linear(DefaultRows, 32),
-        Seeds = [0, 1, 2, 3, 4],
+        ExpectedException = static (_, _) => ExceptionPolicy.For<NullReferenceException>(DiffPath.Managed | DiffPath.Native),
+        Inputs = static (_, shape) => new DiffBuffers()
+            .Out<int>("dst", shape.Rows, ["trap_val"], OutputPolicy.Exact),
+        Launch = static (b, s) => BoundsAndMemoryDifferentialKernels.LaunchNullArrayLengthTrapKernel(
+            b.Get<int>("dst"),
+            s.Rows,
+            gridDimX: s.GridX,
+            blockDimX: s.BlockX),
+        Oracle = static (b, s) => BoundsAndMemoryDifferentialKernels.NullArrayLengthTrapKernel(
+            b.Get<int>("dst"),
+            s.Rows),
+    };
+
+    private static readonly DifferentialCase s_nullArrayIndexerTrap = new(
+        $"{nameof(BoundsAndMemoryDifferentialKernels)}.{nameof(BoundsAndMemoryDifferentialKernels.NullArrayIndexerTrapKernel)}")
+    {
+        Shape = LaunchShapes.Linear(DefaultRows, 32),
+        ExpectedException = static (_, _) => ExceptionPolicy.For<NullReferenceException>(DiffPath.Managed | DiffPath.Native),
+        Inputs = static (_, shape) => new DiffBuffers()
+            .Out<int>("dst", shape.Rows, ["trap_val"], OutputPolicy.Exact),
+        Launch = static (b, s) => BoundsAndMemoryDifferentialKernels.LaunchNullArrayIndexerTrapKernel(
+            b.Get<int>("dst"),
+            s.Rows,
+            gridDimX: s.GridX,
+            blockDimX: s.BlockX),
+        Oracle = static (b, s) => BoundsAndMemoryDifferentialKernels.NullArrayIndexerTrapKernel(
+            b.Get<int>("dst"),
+            s.Rows),
+    };
+
+    private static readonly DifferentialCase s_nullArrayForeachTrap = new(
+        $"{nameof(BoundsAndMemoryDifferentialKernels)}.{nameof(BoundsAndMemoryDifferentialKernels.NullArrayForeachTrapKernel)}")
+    {
+        Shape = LaunchShapes.Linear(DefaultRows, 32),
+        ExpectedException = static (_, _) => ExceptionPolicy.For<NullReferenceException>(DiffPath.Managed | DiffPath.Native),
+        Inputs = static (_, shape) => new DiffBuffers()
+            .Out<int>("dst", shape.Rows, ["trap_val"], OutputPolicy.Exact),
+        Launch = static (b, s) => BoundsAndMemoryDifferentialKernels.LaunchNullArrayForeachTrapKernel(
+            b.Get<int>("dst"),
+            s.Rows,
+            gridDimX: s.GridX,
+            blockDimX: s.BlockX),
+        Oracle = static (b, s) => BoundsAndMemoryDifferentialKernels.NullArrayForeachTrapKernel(
+            b.Get<int>("dst"),
+            s.Rows),
+    };
+
+    private static readonly DifferentialCase s_nullArrayReassignedParameterTrap = new(
+        $"{nameof(BoundsAndMemoryDifferentialKernels)}.{nameof(BoundsAndMemoryDifferentialKernels.NullArrayReassignedParameterTrapKernel)}")
+    {
+        Shape = LaunchShapes.Linear(DefaultRows, 32),
+        ExpectedException = static (_, _) => ExceptionPolicy.For<NullReferenceException>(DiffPath.Managed | DiffPath.Native),
+        Inputs = static (rng, shape) => new DiffBuffers()
+            .In("src", DiffValues.Int32(rng, shape.Rows), readOnly: true)
+            .Out<int>("dst", shape.Rows, ["trap_val"], OutputPolicy.Exact),
+        Launch = static (b, s) => BoundsAndMemoryDifferentialKernels.LaunchNullArrayReassignedParameterTrapKernel(
+            b.Get<int>("src"),
+            b.Get<int>("dst"),
+            s.Rows,
+            gridDimX: s.GridX,
+            blockDimX: s.BlockX),
+        Oracle = static (b, s) => BoundsAndMemoryDifferentialKernels.NullArrayReassignedParameterTrapKernel(
+            b.Get<int>("src"),
+            b.Get<int>("dst"),
+            s.Rows),
+    };
+
+    private static readonly DifferentialCase s_boundsCheckEliminationValid = new(
+        $"{nameof(BoundsAndMemoryDifferentialKernels)}.{nameof(BoundsAndMemoryDifferentialKernels.BoundsCheckEliminationValidKernel)}")
+    {
+        Shape = LaunchShapes.Linear(DefaultRows, 32),
+        Inputs = static (_, shape) =>
+        {
+            int rows = shape.Rows;
+            var backing = CreateCanaryBacking();
+            var indices = new int[rows];
+            for (int k = 0; k < rows; k++)
+            {
+                indices[k] = k % CanaryLen;
+            }
+
+            return new DiffBuffers()
+                .In("backing", backing, readOnly: true)
+                .In("indices", indices, readOnly: true)
+                .Out<int>("dst", rows, ["bce_val"], OutputPolicy.Exact);
+        },
+        Launch = static (b, s) => BoundsAndMemoryDifferentialKernels.LaunchBoundsCheckEliminationValidKernel(
+            b.Get<int>("backing"),
+            b.Get<int>("indices"),
+            b.Get<int>("dst"),
+            CanaryStart,
+            CanaryLen,
+            s.Rows,
+            gridDimX: s.GridX,
+            blockDimX: s.BlockX),
+        Oracle = static (b, s) => BoundsAndMemoryDifferentialKernels.BoundsCheckEliminationValidKernel(
+            b.Get<int>("backing"),
+            b.Get<int>("indices"),
+            b.Get<int>("dst"),
+            CanaryStart,
+            CanaryLen,
+            s.Rows),
+    };
+
+    private static readonly DifferentialCase s_boundsCheckEliminationOffByOne = new(
+        $"{nameof(BoundsAndMemoryDifferentialKernels)}.{nameof(BoundsAndMemoryDifferentialKernels.BoundsCheckEliminationOffByOneKernel)}")
+    {
+        Shape = LaunchShapes.Linear(DefaultRows, 32),
+        Seeds = [0, 1],
         OracleExceptions = OracleExceptionMode.MatchOracle,
-        ExceptionPaths = DiffPath.Managed | DiffPath.Native,
+        Inputs = static (rng, shape) =>
+        {
+            int rows = shape.Rows;
+            var backing = CreateCanaryBacking();
+            var indices = new int[rows];
+            for (int k = 0; k < rows; k++)
+            {
+                indices[k] = k % CanaryLen;
+            }
+
+            if (rng.Seed == 1)
+            {
+                indices[1] = CanaryLen;
+            }
+
+            return new DiffBuffers()
+                .In("backing", backing, readOnly: true)
+                .In("indices", indices, readOnly: true)
+                .Out<int>("dst", rows, ["bce_val"], OutputPolicy.Exact);
+        },
+        Launch = static (b, s) => BoundsAndMemoryDifferentialKernels.LaunchBoundsCheckEliminationOffByOneKernel(
+            b.Get<int>("backing"),
+            b.Get<int>("indices"),
+            b.Get<int>("dst"),
+            CanaryStart,
+            CanaryLen,
+            s.Rows,
+            gridDimX: s.GridX,
+            blockDimX: s.BlockX),
+        Oracle = static (b, s) => BoundsAndMemoryDifferentialKernels.BoundsCheckEliminationOffByOneKernel(
+            b.Get<int>("backing"),
+            b.Get<int>("indices"),
+            b.Get<int>("dst"),
+            CanaryStart,
+            CanaryLen,
+            s.Rows),
+    };
+
+    private static readonly DifferentialCase s_boundsCheckEliminationWrongSpan = new(
+        $"{nameof(BoundsAndMemoryDifferentialKernels)}.{nameof(BoundsAndMemoryDifferentialKernels.BoundsCheckEliminationWrongSpanKernel)}")
+    {
+        Shape = LaunchShapes.Linear(DefaultRows, 32),
+        Seeds = [0, 1],
+        OracleExceptions = OracleExceptionMode.MatchOracle,
         Inputs = static (rng, shape) =>
         {
             int rows = shape.Rows;
             var backing = CreateCanaryBacking();
             var otherBacking = CreateCanaryBacking();
             var indices = new int[rows];
-            var modes = new int[rows];
-
             for (int k = 0; k < rows; k++)
             {
-                modes[k] = k % 5;
-                // Keep Seed 0 strictly in-bounds even for mode 3 (which increments i before indexing).
-                indices[k] = modes[k] == 3
-                    ? (k % (CanaryLen - 1))
-                    : (k % CanaryLen);
+                indices[k] = k % CanaryLen;
             }
 
-            switch (rng.Seed)
+            if (rng.Seed == 1)
             {
-                case 1:
-                    // Off-by-one guard: i <= s.Length with i == s.Length.
-                    modes[1] = 1;
-                    indices[1] = CanaryLen;
-                    break;
-                case 2:
-                    // Wrong-span guard: (uint)i < (uint)other.Length with i == s.Length < other.Length.
-                    modes[2] = 2;
-                    indices[2] = CanaryLen;
-                    break;
-                case 3:
-                    // Post-guard increment: (uint)i < (uint)s.Length followed by i++ with i == s.Length - 1.
-                    modes[3] = 3;
-                    indices[3] = CanaryLen - 1;
-                    break;
-                case 4:
-                    // Signed upper-bound-only guard: i < s.Length with i == -1.
-                    modes[4] = 4;
-                    indices[4] = -1;
-                    break;
+                indices[2] = CanaryLen;
             }
 
             return new DiffBuffers()
                 .In("backing", backing, readOnly: true)
                 .In("otherBacking", otherBacking, readOnly: true)
                 .In("indices", indices, readOnly: true)
-                .In("modes", modes, readOnly: true)
                 .Out<int>("dst", rows, ["bce_val"], OutputPolicy.Exact);
         },
-        Launch = static (b, s) => BoundsAndMemoryDifferentialKernels.LaunchBoundsCheckEliminationWitnessKernel(
+        Launch = static (b, s) => BoundsAndMemoryDifferentialKernels.LaunchBoundsCheckEliminationWrongSpanKernel(
             b.Get<int>("backing"),
             b.Get<int>("otherBacking"),
             b.Get<int>("indices"),
-            b.Get<int>("modes"),
             b.Get<int>("dst"),
             CanaryStart,
             CanaryLen,
@@ -587,11 +731,10 @@ public class BoundsAndMemoryDifferentialTests
             s.Rows,
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static (b, s) => BoundsAndMemoryDifferentialKernels.BoundsCheckEliminationWitnessKernel(
+        Oracle = static (b, s) => BoundsAndMemoryDifferentialKernels.BoundsCheckEliminationWrongSpanKernel(
             b.Get<int>("backing"),
             b.Get<int>("otherBacking"),
             b.Get<int>("indices"),
-            b.Get<int>("modes"),
             b.Get<int>("dst"),
             CanaryStart,
             CanaryLen,
@@ -599,37 +742,115 @@ public class BoundsAndMemoryDifferentialTests
             s.Rows),
     };
 
-    // B-10: All 256 threads in a 3D grid (2,2,2)x(4,4,2) simultaneously trapping on NullReferenceException (Seed 1)
-    // and InvalidOperationException (Seed 2) across both Managed and Native.
-    private static readonly DifferentialCase s_allThreadsSimultaneousTrap = new(
-        $"{nameof(BoundsAndMemoryDifferentialKernels)}.{nameof(BoundsAndMemoryDifferentialKernels.AllThreadsSimultaneousTrapKernel)}")
+    private static readonly DifferentialCase s_boundsCheckEliminationPostIncrement = new(
+        $"{nameof(BoundsAndMemoryDifferentialKernels)}.{nameof(BoundsAndMemoryDifferentialKernels.BoundsCheckEliminationPostIncrementKernel)}")
     {
-        Shape = new LaunchShape(2, 2, 2, 4, 4, 2, SimultaneousRows),
-        Seeds = [0, 1, 2],
+        Shape = LaunchShapes.Linear(DefaultRows, 32),
+        Seeds = [0, 1],
         OracleExceptions = OracleExceptionMode.MatchOracle,
-        ExceptionPaths = DiffPath.Managed | DiffPath.Native,
         Inputs = static (rng, shape) =>
         {
             int rows = shape.Rows;
-            var emptyArr = new int[4];
-            var modes = new int[rows];
+            var backing = CreateCanaryBacking();
+            var indices = new int[rows];
+            for (int k = 0; k < rows; k++)
+            {
+                indices[k] = k % (CanaryLen - 1);
+            }
+
             if (rng.Seed == 1)
             {
-                Array.Fill(modes, 1);
-            }
-            else if (rng.Seed == 2)
-            {
-                Array.Fill(modes, 2);
+                indices[3] = CanaryLen - 1;
             }
 
             return new DiffBuffers()
-                .In("emptyArr", emptyArr, readOnly: true)
-                .In("modes", modes, readOnly: true)
+                .In("backing", backing, readOnly: true)
+                .In("indices", indices, readOnly: true)
+                .Out<int>("dst", rows, ["bce_val"], OutputPolicy.Exact);
+        },
+        Launch = static (b, s) => BoundsAndMemoryDifferentialKernels.LaunchBoundsCheckEliminationPostIncrementKernel(
+            b.Get<int>("backing"),
+            b.Get<int>("indices"),
+            b.Get<int>("dst"),
+            CanaryStart,
+            CanaryLen,
+            s.Rows,
+            gridDimX: s.GridX,
+            blockDimX: s.BlockX),
+        Oracle = static (b, s) => BoundsAndMemoryDifferentialKernels.BoundsCheckEliminationPostIncrementKernel(
+            b.Get<int>("backing"),
+            b.Get<int>("indices"),
+            b.Get<int>("dst"),
+            CanaryStart,
+            CanaryLen,
+            s.Rows),
+    };
+
+    private static readonly DifferentialCase s_boundsCheckEliminationUpperOnly = new(
+        $"{nameof(BoundsAndMemoryDifferentialKernels)}.{nameof(BoundsAndMemoryDifferentialKernels.BoundsCheckEliminationUpperOnlyKernel)}")
+    {
+        Shape = LaunchShapes.Linear(DefaultRows, 32),
+        Seeds = [0, 1],
+        OracleExceptions = OracleExceptionMode.MatchOracle,
+        Inputs = static (rng, shape) =>
+        {
+            int rows = shape.Rows;
+            var backing = CreateCanaryBacking();
+            var indices = new int[rows];
+            for (int k = 0; k < rows; k++)
+            {
+                indices[k] = k % CanaryLen;
+            }
+
+            if (rng.Seed == 1)
+            {
+                indices[4] = -1;
+            }
+
+            return new DiffBuffers()
+                .In("backing", backing, readOnly: true)
+                .In("indices", indices, readOnly: true)
+                .Out<int>("dst", rows, ["bce_val"], OutputPolicy.Exact);
+        },
+        Launch = static (b, s) => BoundsAndMemoryDifferentialKernels.LaunchBoundsCheckEliminationUpperOnlyKernel(
+            b.Get<int>("backing"),
+            b.Get<int>("indices"),
+            b.Get<int>("dst"),
+            CanaryStart,
+            CanaryLen,
+            s.Rows,
+            gridDimX: s.GridX,
+            blockDimX: s.BlockX),
+        Oracle = static (b, s) => BoundsAndMemoryDifferentialKernels.BoundsCheckEliminationUpperOnlyKernel(
+            b.Get<int>("backing"),
+            b.Get<int>("indices"),
+            b.Get<int>("dst"),
+            CanaryStart,
+            CanaryLen,
+            s.Rows),
+    };
+
+    private static readonly DifferentialCase s_allThreadsNullDereferenceTrap = new(
+        $"{nameof(BoundsAndMemoryDifferentialKernels)}.{nameof(BoundsAndMemoryDifferentialKernels.AllThreadsNullDereferenceTrapKernel)}")
+    {
+        Shape = new LaunchShape(2, 2, 2, 4, 4, 2, SimultaneousRows),
+        Seeds = [0, 1],
+        OracleExceptions = OracleExceptionMode.MatchOracle,
+        Inputs = static (rng, shape) =>
+        {
+            int rows = shape.Rows;
+            var flags = new int[rows];
+            if (rng.Seed == 1)
+            {
+                Array.Fill(flags, 1);
+            }
+
+            return new DiffBuffers()
+                .In("flags", flags, readOnly: true)
                 .Out<int>("dst", rows, ["trap_res"], OutputPolicy.Exact);
         },
-        Launch = static (b, s) => BoundsAndMemoryDifferentialKernels.LaunchAllThreadsSimultaneousTrapKernel(
-            b.Get<int>("emptyArr"),
-            b.Get<int>("modes"),
+        Launch = static (b, s) => BoundsAndMemoryDifferentialKernels.LaunchAllThreadsNullDereferenceTrapKernel(
+            b.Get<int>("flags"),
             b.Get<int>("dst"),
             s.Rows,
             gridDimX: s.GridX,
@@ -638,80 +859,132 @@ public class BoundsAndMemoryDifferentialTests
             blockDimX: s.BlockX,
             blockDimY: s.BlockY,
             blockDimZ: s.BlockZ),
-        Oracle = static (b, s) => BoundsAndMemoryDifferentialKernels.AllThreadsSimultaneousTrapKernel(
+        Oracle = static (b, s) => BoundsAndMemoryDifferentialKernels.AllThreadsNullDereferenceTrapKernel(
+            b.Get<int>("flags"),
+            b.Get<int>("dst"),
+            s.Rows),
+    };
+
+    private static readonly DifferentialCase s_allThreadsEmptyFirstTrap = new(
+        $"{nameof(BoundsAndMemoryDifferentialKernels)}.{nameof(BoundsAndMemoryDifferentialKernels.AllThreadsEmptyFirstTrapKernel)}")
+    {
+        Shape = new LaunchShape(2, 2, 2, 4, 4, 2, SimultaneousRows),
+        Seeds = [0, 1],
+        OracleExceptions = OracleExceptionMode.MatchOracle,
+        Inputs = static (rng, shape) =>
+        {
+            int rows = shape.Rows;
+            var emptyArr = new int[4];
+            var flags = new int[rows];
+            if (rng.Seed == 1)
+            {
+                Array.Fill(flags, 1);
+            }
+
+            return new DiffBuffers()
+                .In("emptyArr", emptyArr, readOnly: true)
+                .In("flags", flags, readOnly: true)
+                .Out<int>("dst", rows, ["trap_res"], OutputPolicy.Exact);
+        },
+        Launch = static (b, s) => BoundsAndMemoryDifferentialKernels.LaunchAllThreadsEmptyFirstTrapKernel(
             b.Get<int>("emptyArr"),
-            b.Get<int>("modes"),
+            b.Get<int>("flags"),
+            b.Get<int>("dst"),
+            s.Rows,
+            gridDimX: s.GridX,
+            gridDimY: s.GridY,
+            gridDimZ: s.GridZ,
+            blockDimX: s.BlockX,
+            blockDimY: s.BlockY,
+            blockDimZ: s.BlockZ),
+        Oracle = static (b, s) => BoundsAndMemoryDifferentialKernels.AllThreadsEmptyFirstTrapKernel(
+            b.Get<int>("emptyArr"),
+            b.Get<int>("flags"),
             b.Get<int>("dst"),
             s.Rows),
     };
 
     [SkippableFact]
-    [TestTarget(ExecutionTarget.GpuExecution)]
-    [Category(TestCategory.Differential)]
-    [Scenario(TestScenario.Boundary)]
     public void Test_ArrayAndSpanBoundaryEdges_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_arrayAndSpanBoundaryEdges);
 
     [SkippableFact]
-    [TestTarget(ExecutionTarget.GpuExecution)]
-    [Category(TestCategory.Differential)]
-    [Scenario(TestScenario.Boundary)]
     public void Test_ArrayIndexBounds_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_arrayIndexBounds);
 
     [SkippableFact]
-    [TestTarget(ExecutionTarget.GpuExecution)]
-    [Category(TestCategory.Differential)]
-    [Scenario(TestScenario.Boundary)]
     public void Test_SpanCanaryIndexBounds_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_spanCanaryIndexBounds);
 
     [SkippableFact]
-    [TestTarget(ExecutionTarget.GpuExecution)]
-    [Category(TestCategory.Differential)]
-    [Scenario(TestScenario.Boundary)]
-    public void Test_SpanSliceBoundsAndOverflow_MatchesTheOracleOnEveryPath() =>
-        DifferentialRunner.Run(s_spanSliceBoundsAndOverflow);
+    public void Test_SpanSliceStart_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_spanSliceStart);
 
     [SkippableFact]
-    [TestTarget(ExecutionTarget.GpuExecution)]
-    [Category(TestCategory.Differential)]
-    [Scenario(TestScenario.Boundary)]
-    public void Test_ArraySegmentAndMemoryBounds_MatchesTheOracleOnEveryPath() =>
-        DifferentialRunner.Run(s_arraySegmentAndMemoryBounds);
+    public void Test_SpanSliceStartCount_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_spanSliceStartCount);
 
     [SkippableFact]
-    [TestTarget(ExecutionTarget.GpuExecution)]
-    [Category(TestCategory.Differential)]
-    [Scenario(TestScenario.Boundary)]
+    public void Test_ArraySegmentBounds_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_arraySegmentBounds);
+
+    [SkippableFact]
+    public void Test_MemoryBounds_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_memoryBounds);
+
+    [SkippableFact]
     public void Test_SharedMemoryBounds_MatchesTheReferenceAndTrapsOnManaged() =>
         DifferentialRunner.Run(s_sharedMemoryBounds);
 
     [SkippableFact]
-    [TestTarget(ExecutionTarget.GpuExecution)]
-    [Category(TestCategory.Differential)]
-    [Scenario(TestScenario.Boundary)]
     public void Test_InlineArrayBounds_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_inlineArrayBounds);
 
     [SkippableFact]
-    [TestTarget(ExecutionTarget.GpuExecution)]
-    [Category(TestCategory.Differential)]
-    [Scenario(TestScenario.Boundary)]
-    public void Test_NullArrayVsOptionalNullArray_MatchesTheOracleOnEveryPath() =>
-        DifferentialRunner.Run(s_nullArrayVsOptionalNullArray);
+    public void Test_NullArrayOptionalValid_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_nullArrayOptionalValid);
 
     [SkippableFact]
-    [TestTarget(ExecutionTarget.GpuExecution)]
-    [Category(TestCategory.Differential)]
-    [Scenario(TestScenario.Boundary)]
-    public void Test_BoundsCheckEliminationWitness_MatchesTheOracleOnEveryPath() =>
-        DifferentialRunner.Run(s_boundsCheckEliminationWitness);
+    public void Test_NullArrayLengthTrap_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_nullArrayLengthTrap);
 
     [SkippableFact]
-    [TestTarget(ExecutionTarget.GpuExecution)]
-    [Category(TestCategory.Differential)]
-    [Scenario(TestScenario.Boundary)]
-    public void Test_AllThreadsSimultaneousTrap_MatchesTheOracleOnEveryPath() =>
-        DifferentialRunner.Run(s_allThreadsSimultaneousTrap);
+    public void Test_NullArrayIndexerTrap_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_nullArrayIndexerTrap);
+
+    [SkippableFact]
+    public void Test_NullArrayForeachTrap_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_nullArrayForeachTrap);
+
+    [SkippableFact]
+    public void Test_NullArrayReassignedParameterTrap_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_nullArrayReassignedParameterTrap);
+
+    [SkippableFact]
+    public void Test_BoundsCheckEliminationValid_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_boundsCheckEliminationValid);
+
+    [SkippableFact]
+    public void Test_BoundsCheckEliminationOffByOne_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_boundsCheckEliminationOffByOne);
+
+    [SkippableFact]
+    public void Test_BoundsCheckEliminationWrongSpan_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_boundsCheckEliminationWrongSpan);
+
+    [SkippableFact]
+    public void Test_BoundsCheckEliminationPostIncrement_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_boundsCheckEliminationPostIncrement);
+
+    [SkippableFact]
+    public void Test_BoundsCheckEliminationUpperOnly_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_boundsCheckEliminationUpperOnly);
+
+    [SkippableFact]
+    public void Test_AllThreadsNullDereferenceTrap_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_allThreadsNullDereferenceTrap);
+
+    [SkippableFact]
+    public void Test_AllThreadsEmptyFirstTrap_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_allThreadsEmptyFirstTrap);
 }

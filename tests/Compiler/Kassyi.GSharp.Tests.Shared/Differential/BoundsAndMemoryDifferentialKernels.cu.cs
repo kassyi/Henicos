@@ -36,7 +36,7 @@ public struct DiffNullArrayHolder
 }
 
 /// <summary>
-/// Differential kernels for Lane D5 Stage 1: array, <see cref="Span{T}"/>, <see cref="ReadOnlySpan{T}"/>,
+/// Differential kernels for array, <see cref="Span{T}"/>, <see cref="ReadOnlySpan{T}"/>,
 /// <c>Span.Slice</c>, <see cref="ArraySegment{T}"/>, <see cref="Memory{T}"/>, <see cref="SharedMemory{T}"/>,
 /// <see cref="InlineArrayAttribute"/>, null array vs optional null array (#706 / #838), Charter §4 bounds-check
 /// over-elimination witnesses, and simultaneous multi-block trap contention.
@@ -109,7 +109,7 @@ public static partial class BoundsAndMemoryDifferentialKernels
     }
 
     /// <summary>
-    /// B-01: 1D array indexing bounds (<c>0</c>, <c>Length - 1</c>, <c>-1</c>, <c>int.MinValue</c>, <c>Length</c>,
+    /// 1D array indexing bounds (<c>0</c>, <c>Length - 1</c>, <c>-1</c>, <c>int.MinValue</c>, <c>Length</c>,
     /// <c>int.MaxValue</c>) for both element reads and element writes.
     /// </summary>
     [GpuKernel]
@@ -128,7 +128,7 @@ public static partial class BoundsAndMemoryDifferentialKernels
     }
 
     /// <summary>
-    /// B-02: <see cref="Span{T}"/> and <see cref="ReadOnlySpan{T}"/> indexing over a canary-padded backing array so
+    /// <see cref="Span{T}"/> and <see cref="ReadOnlySpan{T}"/> indexing over a canary-padded backing array so
     /// out-of-bounds indices in <c>[-8, sliceLen + 7]</c> safely read canary cells on unchecked native builds while
     /// throwing <see cref="IndexOutOfRangeException"/> on managed paths (#718).
     /// </summary>
@@ -156,15 +156,12 @@ public static partial class BoundsAndMemoryDifferentialKernels
     }
 
     /// <summary>
-    /// B-03: <c>Span.Slice(start)</c> and <c>Span.Slice(start, length)</c> boundary and 32-bit <c>start + length</c>
-    /// wrap-around checks (#718).
+    /// <c>Span.Slice(start)</c> boundary checks (#718).
     /// </summary>
     [GpuKernel]
-    public static void SpanSliceBoundsAndOverflowKernel(
+    public static void SpanSliceStartKernel(
         int[] backing,
         int[] starts,
-        int[] counts,
-        int[] modes,
         int[] dst,
         int sliceStart,
         int sliceLen,
@@ -177,39 +174,41 @@ public static partial class BoundsAndMemoryDifferentialKernels
         }
 
         Span<int> span = backing.AsSpan().Slice(sliceStart, sliceLen);
-        int mode = modes[t];
-        int start = starts[t];
-        int count = counts[t];
-
-        if (mode == 0)
-        {
-            Span<int> sub = span.Slice(start);
-            dst[t] = sub.Length;
-        }
-        else if (mode == 1)
-        {
-            Span<int> sub = span.Slice(start, count);
-            dst[t] = sub.Length;
-        }
-        else
-        {
-            ReadOnlySpan<int> sub = span.Slice(start, count);
-            dst[t] = sub.Length > 0 ? sub[0] + sub[sub.Length - 1] : 777;
-        }
+        Span<int> sub = span.Slice(starts[t]);
+        dst[t] = sub.Length;
     }
 
     /// <summary>
-    /// B-04: <see cref="ArraySegment{T}"/> (throws <see cref="ArgumentOutOfRangeException"/> on OOB index, S33) and
-    /// <see cref="Memory{T}"/> / <see cref="ReadOnlyMemory{T}"/> (throws <see cref="IndexOutOfRangeException"/> on OOB
-    /// index) over a canary-padded backing array (#718).
+    /// <c>Span.Slice(start, length)</c> boundary and 32-bit <c>start + length</c> wrap-around checks (#718).
     /// </summary>
     [GpuKernel]
-    public static void ArraySegmentAndMemoryBoundsKernel(
+    public static void SpanSliceStartCountKernel(
+        int[] backing,
+        int[] starts,
+        int[] counts,
+        int[] dst,
+        int sliceStart,
+        int sliceLen,
+        int rows)
+    {
+        int t = (int)(BlockIndex.X * BlockDimension.X + ThreadIndex.X);
+        if (t >= rows)
+        {
+            return;
+        }
+
+        Span<int> span = backing.AsSpan().Slice(sliceStart, sliceLen);
+        Span<int> sub = span.Slice(starts[t], counts[t]);
+        dst[t] = sub.Length;
+    }
+
+    /// <summary>
+    /// <see cref="ArraySegment{T}"/> (throws <see cref="ArgumentOutOfRangeException"/> on OOB index, #718).
+    /// </summary>
+    [GpuKernel]
+    public static void ArraySegmentBoundsKernel(
         ArraySegment<int> seg,
-        Memory<int> mem,
-        ReadOnlyMemory<int> roMem,
         int[] indices,
-        int[] modes,
         int[] dst,
         int rows)
     {
@@ -220,19 +219,32 @@ public static partial class BoundsAndMemoryDifferentialKernels
         }
 
         int idx = indices[t];
-        int mode = modes[t];
-        if (mode == 0)
-        {
-            dst[t] = seg[idx] + seg.Count;
-        }
-        else
-        {
-            dst[t] = mem.Span[idx] + roMem.Span[idx];
-        }
+        dst[t] = seg[idx] + seg.Count;
     }
 
     /// <summary>
-    /// B-05: Static <see cref="SharedMemory{T}"/> indexing at <c>0</c>, <c>Length - 1</c>, and out-of-bounds indices.
+    /// <see cref="Memory{T}"/> and <see cref="ReadOnlyMemory{T}"/> (throws <see cref="IndexOutOfRangeException"/> on OOB index, #718).
+    /// </summary>
+    [GpuKernel]
+    public static void MemoryBoundsKernel(
+        Memory<int> mem,
+        ReadOnlyMemory<int> roMem,
+        int[] indices,
+        int[] dst,
+        int rows)
+    {
+        int t = (int)(BlockIndex.X * BlockDimension.X + ThreadIndex.X);
+        if (t >= rows)
+        {
+            return;
+        }
+
+        int idx = indices[t];
+        dst[t] = mem.Span[idx] + roMem.Span[idx];
+    }
+
+    /// <summary>
+    /// Static <see cref="SharedMemory{T}"/> indexing at <c>0</c>, <c>Length - 1</c>, and out-of-bounds indices.
     /// </summary>
     [GpuKernel]
     public static void SharedMemoryBoundsKernel(int[] indices, int[] dst, int rows)
@@ -255,7 +267,7 @@ public static partial class BoundsAndMemoryDifferentialKernels
     }
 
     /// <summary>
-    /// B-06: <see cref="InlineArrayAttribute"/> element indexing over a canary-padded struct holder (#718).
+    /// <see cref="InlineArrayAttribute"/> element indexing over a canary-padded struct holder (#718).
     /// </summary>
     [GpuKernel]
     public static void InlineArrayBoundsKernel(int[] indices, int[] dst, int rows)
@@ -279,13 +291,11 @@ public static partial class BoundsAndMemoryDifferentialKernels
     }
 
     /// <summary>
-    /// B-07: Null local/reassigned array dereference (<see cref="NullReferenceException"/> on both Managed and Native,
-    /// #706) vs optional <c>int[]? opt = null</c> parameter (#838).
+    /// Optional <c>int[]? opt = null</c> parameter with null or non-null argument (#838).
     /// </summary>
     [GpuKernel]
-    public static void NullArrayVsOptionalNullArrayKernel(
+    public static void NullArrayOptionalValidKernel(
         int[] src,
-        int[] modes,
         int[] dst,
         int rows,
         int[]? opt = null)
@@ -296,77 +306,166 @@ public static partial class BoundsAndMemoryDifferentialKernels
             return;
         }
 
-        int mode = modes[t];
-        if (mode == 0)
+        int optLen = opt == null ? 0 : opt.Length;
+        int optSum = 0;
+        if (opt != null)
         {
-            int optLen = opt == null ? 0 : opt.Length;
-            int optSum = 0;
-            if (opt != null)
+            foreach (int v in opt)
             {
-                foreach (int v in opt)
-                {
-                    optSum += v;
-                }
+                optSum += v;
             }
-
-            dst[t] = src[t] + optLen + optSum;
         }
-        else if (mode == 1)
+
+        dst[t] = src[t] + optLen + optSum;
+    }
+
+    /// <summary>
+    /// Null local array <c>.Length</c> dereference (<see cref="NullReferenceException"/>, #706).
+    /// </summary>
+    [GpuKernel]
+    public static void NullArrayLengthTrapKernel(int[] dst, int rows)
+    {
+        int t = (int)(BlockIndex.X * BlockDimension.X + ThreadIndex.X);
+        if (t >= rows)
         {
-            DiffNullArrayHolder nullHolder = default;
-            int[]? localNull = nullHolder.Data;
+            return;
+        }
+
+        DiffNullArrayHolder nullHolder = default;
+        int[]? localNull = nullHolder.Data;
 #pragma warning disable CS8602 // Deliberate null dereference to verify NullReferenceException trap (#706)
-            dst[t] = localNull.Length;
+        dst[t] = localNull.Length;
 #pragma warning restore CS8602
-        }
-        else if (mode == 2)
-        {
-            DiffNullArrayHolder nullHolder = default;
-            int[]? localNull = nullHolder.Data;
-#pragma warning disable CS8602 // Deliberate null element access to verify NullReferenceException trap (#706)
-            dst[t] = localNull[0];
-#pragma warning restore CS8602
-        }
-        else if (mode == 3)
-        {
-            DiffNullArrayHolder nullHolder = default;
-            int[]? localNull = nullHolder.Data;
-            int sum = 0;
-#pragma warning disable CS8602 // Deliberate null foreach to verify NullReferenceException trap (#706)
-            foreach (int x in localNull)
-#pragma warning restore CS8602
-            {
-                sum += x;
-            }
+    }
 
-            dst[t] = sum;
-        }
-        else
+    /// <summary>
+    /// Null local array indexer dereference (<see cref="NullReferenceException"/>, #706).
+    /// </summary>
+    [GpuKernel]
+    public static void NullArrayIndexerTrapKernel(int[] dst, int rows)
+    {
+        int t = (int)(BlockIndex.X * BlockDimension.X + ThreadIndex.X);
+        if (t >= rows)
         {
-            DiffNullArrayHolder nullHolder = default;
-            int[]? alias = src;
-            if (mode == 4)
-            {
-                alias = nullHolder.Data;
-            }
+            return;
+        }
+
+        DiffNullArrayHolder nullHolder = default;
+        int[]? localNull = nullHolder.Data;
+#pragma warning disable CS8602 // Deliberate null element access to verify NullReferenceException trap (#706)
+        dst[t] = localNull[0];
+#pragma warning restore CS8602
+    }
+
+    /// <summary>
+    /// Null local array foreach enumeration (<see cref="NullReferenceException"/>, #706).
+    /// </summary>
+    [GpuKernel]
+    public static void NullArrayForeachTrapKernel(int[] dst, int rows)
+    {
+        int t = (int)(BlockIndex.X * BlockDimension.X + ThreadIndex.X);
+        if (t >= rows)
+        {
+            return;
+        }
+
+        DiffNullArrayHolder nullHolder = default;
+        int[]? localNull = nullHolder.Data;
+        int sum = 0;
+#pragma warning disable CS8602 // Deliberate null foreach to verify NullReferenceException trap (#706)
+        foreach (int x in localNull)
+#pragma warning restore CS8602
+        {
+            sum += x;
+        }
+
+        dst[t] = sum;
+    }
+
+    /// <summary>
+    /// Reassigned parameter null array indexer dereference (<see cref="NullReferenceException"/>, #706).
+    /// </summary>
+    [GpuKernel]
+    public static void NullArrayReassignedParameterTrapKernel(int[] src, int[] dst, int rows)
+    {
+        int t = (int)(BlockIndex.X * BlockDimension.X + ThreadIndex.X);
+        if (t >= rows)
+        {
+            return;
+        }
+
+        DiffNullArrayHolder nullHolder = default;
+        int[]? alias = src;
+        if (t >= 0)
+        {
+            alias = nullHolder.Data;
+        }
 
 #pragma warning disable CS8602 // Deliberate reassigned-parameter null access (#706)
-            dst[t] = alias[0];
+        dst[t] = alias[0];
 #pragma warning restore CS8602
+    }
+
+    /// <summary>
+    /// Charter §4 bounds-check elimination witness: valid unsigned comparison.
+    /// </summary>
+    [GpuKernel]
+    public static void BoundsCheckEliminationValidKernel(
+        int[] backing,
+        int[] indices,
+        int[] dst,
+        int sliceStart,
+        int sliceLen,
+        int rows)
+    {
+        int t = (int)(BlockIndex.X * BlockDimension.X + ThreadIndex.X);
+        if (t >= rows)
+        {
+            return;
+        }
+
+        Span<int> s = backing.AsSpan().Slice(sliceStart, sliceLen);
+        int i = indices[t];
+        if ((uint)i < (uint)s.Length)
+        {
+            dst[t] = s[i];
         }
     }
 
     /// <summary>
-    /// B-08: Charter §4 bounds-check over-elimination witnesses (off-by-one <c>i &lt;= s.Length</c>, wrong-span guard
-    /// <c>i &lt; other.Length</c>, post-guard mutation <c>i++</c>, and signed upper-only guard <c>i &lt; s.Length</c> with
-    /// negative <c>i</c>).
+    /// Charter §4 bounds-check elimination witness: off-by-one guard (<c>i &lt;= s.Length</c>).
     /// </summary>
     [GpuKernel]
-    public static void BoundsCheckEliminationWitnessKernel(
+    public static void BoundsCheckEliminationOffByOneKernel(
+        int[] backing,
+        int[] indices,
+        int[] dst,
+        int sliceStart,
+        int sliceLen,
+        int rows)
+    {
+        int t = (int)(BlockIndex.X * BlockDimension.X + ThreadIndex.X);
+        if (t >= rows)
+        {
+            return;
+        }
+
+        Span<int> s = backing.AsSpan().Slice(sliceStart, sliceLen);
+        int i = indices[t];
+        if (i >= 0 && i <= s.Length)
+        {
+            dst[t] = s[i];
+        }
+    }
+
+    /// <summary>
+    /// Charter §4 bounds-check elimination witness: wrong-span guard (<c>i &lt; other.Length</c>).
+    /// </summary>
+    [GpuKernel]
+    public static void BoundsCheckEliminationWrongSpanKernel(
         int[] backing,
         int[] otherBacking,
         int[] indices,
-        int[] modes,
         int[] dst,
         int sliceStart,
         int sliceLen,
@@ -382,57 +481,71 @@ public static partial class BoundsAndMemoryDifferentialKernels
         Span<int> s = backing.AsSpan().Slice(sliceStart, sliceLen);
         Span<int> other = otherBacking.AsSpan().Slice(sliceStart, otherLen);
         int i = indices[t];
-        int mode = modes[t];
-
-        if (mode == 0)
+        if ((uint)i < (uint)other.Length)
         {
-            if ((uint)i < (uint)s.Length)
-            {
-                dst[t] = s[i];
-            }
-        }
-        else if (mode == 1)
-        {
-            // Off-by-one guard: permits i == s.Length.
-            if (i >= 0 && i <= s.Length)
-            {
-                dst[t] = s[i];
-            }
-        }
-        else if (mode == 2)
-        {
-            // Guard against a longer span (other.Length > s.Length).
-            if ((uint)i < (uint)other.Length)
-            {
-                dst[t] = s[i];
-            }
-        }
-        else if (mode == 3)
-        {
-            // Post-guard index increment: i == s.Length - 1 becomes s.Length.
-            if ((uint)i < (uint)s.Length)
-            {
-                i++;
-                dst[t] = s[i];
-            }
-        }
-        else
-        {
-            // Upper-bound-only signed guard: permits negative i.
-            if (i < s.Length)
-            {
-                dst[t] = s[i];
-            }
+            dst[t] = s[i];
         }
     }
 
     /// <summary>
-    /// B-10: Multi-dimensional 3D grid where all 256 threads simultaneously trap on either a null array dereference
-    /// (<see cref="NullReferenceException"/>) or an empty <c>StackLinq.First()</c> (<see cref="InvalidOperationException"/>),
-    /// verifying lock-free first-fault CAS on <c>GSharpErrorSlot</c>.
+    /// Charter §4 bounds-check elimination witness: post-guard index increment (<c>i++</c>).
     /// </summary>
     [GpuKernel]
-    public static void AllThreadsSimultaneousTrapKernel(int[] emptyArr, int[] modes, int[] dst, int rows)
+    public static void BoundsCheckEliminationPostIncrementKernel(
+        int[] backing,
+        int[] indices,
+        int[] dst,
+        int sliceStart,
+        int sliceLen,
+        int rows)
+    {
+        int t = (int)(BlockIndex.X * BlockDimension.X + ThreadIndex.X);
+        if (t >= rows)
+        {
+            return;
+        }
+
+        Span<int> s = backing.AsSpan().Slice(sliceStart, sliceLen);
+        int i = indices[t];
+        if ((uint)i < (uint)s.Length)
+        {
+            i++;
+            dst[t] = s[i];
+        }
+    }
+
+    /// <summary>
+    /// Charter §4 bounds-check elimination witness: upper-bound-only signed guard (<c>i &lt; s.Length</c>).
+    /// </summary>
+    [GpuKernel]
+    public static void BoundsCheckEliminationUpperOnlyKernel(
+        int[] backing,
+        int[] indices,
+        int[] dst,
+        int sliceStart,
+        int sliceLen,
+        int rows)
+    {
+        int t = (int)(BlockIndex.X * BlockDimension.X + ThreadIndex.X);
+        if (t >= rows)
+        {
+            return;
+        }
+
+        Span<int> s = backing.AsSpan().Slice(sliceStart, sliceLen);
+        int i = indices[t];
+        if (i < s.Length)
+        {
+            dst[t] = s[i];
+        }
+    }
+
+    /// <summary>
+    /// Multi-dimensional 3D grid where all 256 threads simultaneously trap on a null array dereference
+    /// (<see cref="NullReferenceException"/>), verifying lock-free first-fault CAS on <c>GSharpErrorSlot</c>.
+    /// </summary>
+    [GpuKernel]
+    public static void AllThreadsNullDereferenceTrapKernel(int[] flags, int[] dst, int rows)
     {
         int bx = (int)(BlockIndex.X + GridDimension.X * (BlockIndex.Y + GridDimension.Y * BlockIndex.Z));
         int tx = (int)(ThreadIndex.X + BlockDimension.X * (ThreadIndex.Y + BlockDimension.Y * ThreadIndex.Z));
@@ -443,18 +556,39 @@ public static partial class BoundsAndMemoryDifferentialKernels
             return;
         }
 
-        int mode = modes[t];
-        if (mode == 0)
+        if (flags[t] == 0)
         {
             dst[t] = (t * 31) + bx + tx;
         }
-        else if (mode == 1)
+        else
         {
             DiffNullArrayHolder nullHolder = default;
             int[]? nullLocal = nullHolder.Data;
 #pragma warning disable CS8602 // Deliberate simultaneous null dereference across all 256 threads
             dst[t] = nullLocal[t & 3];
 #pragma warning restore CS8602
+        }
+    }
+
+    /// <summary>
+    /// Multi-dimensional 3D grid where all 256 threads simultaneously trap on an empty <c>StackLinq.First()</c>
+    /// (<see cref="InvalidOperationException"/>), verifying lock-free first-fault CAS on <c>GSharpErrorSlot</c>.
+    /// </summary>
+    [GpuKernel]
+    public static void AllThreadsEmptyFirstTrapKernel(int[] emptyArr, int[] flags, int[] dst, int rows)
+    {
+        int bx = (int)(BlockIndex.X + GridDimension.X * (BlockIndex.Y + GridDimension.Y * BlockIndex.Z));
+        int tx = (int)(ThreadIndex.X + BlockDimension.X * (ThreadIndex.Y + BlockDimension.Y * ThreadIndex.Z));
+        int bsize = (int)(BlockDimension.X * BlockDimension.Y * BlockDimension.Z);
+        int t = (bx * bsize) + tx;
+        if (t >= rows)
+        {
+            return;
+        }
+
+        if (flags[t] == 0)
+        {
+            dst[t] = (t * 31) + bx + tx;
         }
         else
         {
