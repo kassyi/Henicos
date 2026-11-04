@@ -116,9 +116,7 @@ internal readonly record struct KernelHostModel
             ReturnTypeName = kernel.ReturnType.SpecialType == SpecialType.System_Void
                 ? null
                 : kernel.ReturnType.GetFullyQualifiedCsharpName(),
-            IsUnsafeContext = (kernel.TryGetDeclaringSyntax<MethodDeclarationSyntax>(out var decl) &&
-                               ManagedStateMachineAvailability.NeedsUnsafe(kernel, decl)) ||
-                              kernel.Parameters.AsStackEnumerable().Any(static p => p.Type is IPointerTypeSymbol or IFunctionPointerTypeSymbol),
+            IsUnsafeContext = NeedsUnsafeContext(kernel),
             CudaReturn = ParameterTransfer.CreateForReturn(kernel.ReturnType, HostDialects.Cuda, kernel.ContainingType),
             CpuReturn = ParameterTransfer.CreateForReturn(kernel.ReturnType, HostDialects.Cpu, kernel.ContainingType),
             IsCooperative = kernel.IsCooperativeKernel(),
@@ -140,6 +138,20 @@ internal readonly record struct KernelHostModel
             CudaLayoutGuards = CollectLayoutGuards(kernel, HostDialects.Cuda),
             CpuLayoutGuards = CollectLayoutGuards(kernel, HostDialects.Cpu)
         };
+    }
+
+    // The managed state machine keeps pointers in its context, so the context becomes an unsafe struct pinned by the launcher
+    private static bool NeedsUnsafeContext(IMethodSymbol kernel)
+    {
+        if (kernel.TryGetDeclaringSyntax<MethodDeclarationSyntax>(out var decl) &&
+            ManagedStateMachineAvailability.NeedsUnsafe(kernel, decl))
+        {
+            return true;
+        }
+
+        return kernel.Parameters
+            .AsStackEnumerable()
+            .Any(static p => p.Type is IPointerTypeSymbol or IFunctionPointerTypeSymbol);
     }
 
     private static EquatableArray<StructLayoutGuard> CollectLayoutGuards(IMethodSymbol kernel,
