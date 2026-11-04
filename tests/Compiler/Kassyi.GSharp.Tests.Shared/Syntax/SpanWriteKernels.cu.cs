@@ -354,4 +354,59 @@ public static partial class SpanWriteKernels
         counters[2] = k;
         counters[3] = len;
     }
+
+    [GpuKernel]
+    public static void OutOfRangeArrayClearKernel(int[] a)
+    {
+        if (ThreadIndex.X != 0 || BlockIndex.X != 0)
+        {
+            return;
+        }
+
+        Array.Clear(a, 2, 10);
+    }
+
+    [GpuKernel]
+    public static void OutOfRangeArrayFillKernel(int[] a)
+    {
+        if (ThreadIndex.X != 0 || BlockIndex.X != 0)
+        {
+            return;
+        }
+
+        Array.Fill(a, 5, 2, 10);
+    }
+
+    [GpuKernel]
+    public static void OutOfRangeArrayCopyKernel(int[] src, int[] dst)
+    {
+        if (ThreadIndex.X != 0 || BlockIndex.X != 0)
+        {
+            return;
+        }
+
+        Array.Copy(src, 0, dst, 2, 4);
+    }
+
+    [GpuKernel]
+    public static void OutOfRangeAsSpanFillKernel(int[] a)
+    {
+        if (ThreadIndex.X != 0 || BlockIndex.X != 0)
+        {
+            return;
+        }
+
+        a.AsSpan(2, 10).Fill(5);
+    }
+
+    [GpuKernel]
+    public static void OutOfRangeSliceFillKernel(int[] a)
+    {
+        if (ThreadIndex.X != 0 || BlockIndex.X != 0)
+        {
+            return;
+        }
+
+        a.AsSpan().Slice(2, 10).Fill(5);
+    }
 }

@@ -114,6 +114,18 @@ public static partial class SpanWriteUnsupportedKernels
     }
 
     [GpuKernel]
+    public static void ArrayCopyDifferentElementTypesKernel(int[] src, long[] dst)
+    {
+        Array.Copy(src, dst, 3);
+    }
+
+    [GpuKernel]
+    public static void ArrayCopyDifferentElementTypes5Kernel(int[] src, long[] dst)
+    {
+        Array.Copy(src, 0, dst, 0, 3);
+    }
+
+    [GpuKernel]
     public static void ArrayInstanceCopyToKernel(int[] src, int[] dst)
     {
         src.CopyTo(dst, 0);
