@@ -305,7 +305,7 @@ public static partial class NullableDifferentialKernels
     // -------------------------------------------------------------------------
     // #998: Empty stack-allocated span local (stackalloc int[0] and []) compared to null
     // In C#, stackalloc int[0] and [] produce an empty Span<int> where (s == null) is true and (s != null) is false.
-    // G#'s NullRepresentation.AppendArrayNullTest checks StackArrayLocals.IsStackArrayReference without checking
+    // G#'s NullRepresentation.AppendNullTest checks StackArrayLocals.IsStackArrayReference without checking
     // length == 0, emitting the constant 'false' for (s == null) and 'true' for (s != null).
     // -------------------------------------------------------------------------
     [GpuKernel]
@@ -393,5 +393,70 @@ public static partial class NullableDifferentialKernels
         dst[col + 0] = x;
         dst[col + 1] = y;
         dst[col + 2] = z;
+    }
+
+    // -------------------------------------------------------------------------
+    // #1045 Items 1 & 2: Memory<T>? device parameter and local representation
+    // -------------------------------------------------------------------------
+    [GpuDeviceFunction]
+    public static int HelperWithNullableMemory(Memory<int>? p)
+    {
+        Memory<int>? m = p;
+        return (m == null ? 1 : 0) + (m.HasValue ? 10 : 0);
+    }
+
+    [GpuKernel]
+    public static void NullableMemoryParamAndLocalReproKernel(int[] dst, int n)
+    {
+        int t = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        if (t >= n)
+        {
+            return;
+        }
+
+        Memory<int>? nullMem = null;
+        int rNull = HelperWithNullableMemory(nullMem);
+
+        Memory<int> empty = default;
+        Memory<int>? nonNullMem = empty;
+        int rNonNull = HelperWithNullableMemory(nonNullMem);
+
+        int col = t * 2;
+        dst[col + 0] = rNull;
+        dst[col + 1] = rNonNull;
+    }
+
+    [GpuKernel]
+    public static void NullableMemoryKernelParamToLocalReproKernel(Memory<int>? bias, int[] dst, int n)
+    {
+        int t = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        if (t >= n)
+        {
+            return;
+        }
+
+        Memory<int>? m = bias;
+        dst[t * 2 + 0] = m == null ? 1 : 0;
+        dst[t * 2 + 1] = m.HasValue ? 1 : 0;
+    }
+
+    // -------------------------------------------------------------------------
+    // #1045 Item 3: Lifted double? to int? cast
+    // -------------------------------------------------------------------------
+    [GpuKernel]
+    public static void LiftedDoubleToNullableIntCastReproKernel(double[] src, int[] conds, int[] dst, int n)
+    {
+        int t = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        if (t >= n)
+        {
+            return;
+        }
+
+        double? d = (conds[t] & 1) == 0 ? (double?)null : new double?(src[t]);
+        int? i = (int?)d;
+
+        int col = t * 2;
+        dst[col + 0] = i == null ? 1 : 0;
+        dst[col + 1] = i.HasValue ? i.Value : -999;
     }
 }

@@ -10,7 +10,10 @@ struct System_Nullable {
     bool HasValue;
     T Value;
     System_Nullable() : HasValue(false), Value() {}
+    System_Nullable(decltype(nullptr)) : HasValue(false), Value() {}
     System_Nullable(T val) : HasValue(true), Value(val) {}
+    template <typename U>
+    System_Nullable(const System_Nullable<U>& other) : HasValue(other.HasValue), Value(static_cast<T>(other.Value)) {}
 };
 
 // The scope of a C# using: disposes the resource when control leaves the enclosing block (end, return, break, continue,

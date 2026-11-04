@@ -121,7 +121,7 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
             {
                 context.Emitter.Writer.AppendIf(i > 0, ", ");
                 var parameter = method.Parameters[i];
-                var parameterType = parameter.Type.UnwrapNullableArrayLike();
+                var parameterType = parameter.Type;
                 StructTranspiler.RegisterUsedStructIfApplicable(parameterType, ref context);
                 context.Emitter.Dialect.AppendType(ref context, parameterType);
                 context.Emitter.Writer.AppendIf(parameter.RefKind != RefKind.None, "*");
@@ -165,21 +165,6 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
         {
             context.Visitor.Visit(node.Expression);
             return true;
-        }
-
-        if (operandType.IsNullableArrayLike())
-        {
-            if (memberName == "Value")
-            {
-                context.Visitor.Visit(node.Expression);
-                return true;
-            }
-
-            if (memberName == "HasValue")
-            {
-                NullRepresentation.AppendArrayNullTest(node.Expression, isNull: false, ref context);
-                return true;
-            }
         }
 
         return false;
