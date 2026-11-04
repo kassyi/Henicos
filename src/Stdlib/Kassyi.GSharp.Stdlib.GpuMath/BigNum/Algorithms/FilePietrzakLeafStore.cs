@@ -17,11 +17,13 @@ internal sealed class FilePietrzakLeafStore : IPietrzakLeafStore
     private readonly byte[] _bitmap;
     private readonly int _headerBytes;
     private readonly long _slotBytes;
+    private readonly int _totalStorageSlots;
 
     public FilePietrzakLeafStore(string path, PietrzakSchedule schedule)
     {
         TotalLeafSlots = schedule.TotalLeafSlots;
         ResidueWords = schedule.ResidueWords;
+        _totalStorageSlots = schedule.TotalStorageSlots;
         _bitmap = new byte[(TotalLeafSlots + 7) / 8];
         _headerBytes = FixedHeaderBytes + _bitmap.Length;
         _slotBytes = (long)ResidueWords * sizeof(uint);
@@ -60,7 +62,7 @@ internal sealed class FilePietrzakLeafStore : IPietrzakLeafStore
 
     public void WriteSlot(int slot, ReadOnlySpan<uint> words)
     {
-        if ((uint)slot >= (uint)TotalLeafSlots)
+        if ((uint)slot >= (uint)_totalStorageSlots)
         {
             throw new ArgumentOutOfRangeException(nameof(slot));
         }
@@ -73,19 +75,22 @@ internal sealed class FilePietrzakLeafStore : IPietrzakLeafStore
         _stream.Seek(_headerBytes + slot * _slotBytes, SeekOrigin.Begin);
         _stream.Write(MemoryMarshal.AsBytes(words));
 
-        var byteIndex = slot >> 3;
-        var mask = (byte)(1 << (slot & 7));
-        if ((_bitmap[byteIndex] & mask) == 0)
+        if (slot < TotalLeafSlots)
         {
-            _bitmap[byteIndex] |= mask;
-            _stream.Seek(FixedHeaderBytes + byteIndex, SeekOrigin.Begin);
-            _stream.WriteByte(_bitmap[byteIndex]);
+            var byteIndex = slot >> 3;
+            var mask = (byte)(1 << (slot & 7));
+            if ((_bitmap[byteIndex] & mask) == 0)
+            {
+                _bitmap[byteIndex] |= mask;
+                _stream.Seek(FixedHeaderBytes + byteIndex, SeekOrigin.Begin);
+                _stream.WriteByte(_bitmap[byteIndex]);
+            }
         }
     }
 
     public void ReadSlot(int slot, Span<uint> destination)
     {
-        if ((uint)slot >= (uint)TotalLeafSlots)
+        if ((uint)slot >= (uint)_totalStorageSlots)
         {
             throw new ArgumentOutOfRangeException(nameof(slot));
         }

@@ -36,6 +36,8 @@ internal readonly struct PietrzakSchedule
 
     public int TotalLeafSlots => SegmentLeafCount * 2;
 
+    public int TotalStorageSlots => SegmentLeafCount * 3;
+
     public int StepSize { get; }
 
     public int Remainder { get; }

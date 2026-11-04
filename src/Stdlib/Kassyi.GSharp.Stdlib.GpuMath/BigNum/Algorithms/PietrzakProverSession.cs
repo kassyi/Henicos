@@ -59,6 +59,7 @@ internal sealed class PietrzakProverSession : IChainLeafRecorder, IDisposable
         var words = _schedule.ResidueWords;
         var alpha = _schedule.DeriveMergeChallenge(endpoints.X, endpoints.Y);
         var leafCount = _schedule.SegmentLeafCount;
+        var workBase = _schedule.TotalLeafSlots;
 
         var leftBuffer = new uint[words];
         var rightBuffer = new uint[words];
@@ -69,7 +70,7 @@ internal sealed class PietrzakProverSession : IChainLeafRecorder, IDisposable
             _store.ReadSlot(j, leftBuffer);
             _store.ReadSlot(leafCount + j, rightBuffer);
             var merged = math.MulPow128(rightBuffer, alpha, leftBuffer);
-            _store.WriteSlot(j, merged);
+            _store.WriteSlot(workBase + j, merged);
             if (j == 0)
             {
                 currentX = merged;
@@ -83,7 +84,7 @@ internal sealed class PietrzakProverSession : IChainLeafRecorder, IDisposable
         {
             var half = 1 << (_schedule.ProofPower - 1 - round);
             var witnessMu = new uint[words];
-            _store.ReadSlot(half, witnessMu);
+            _store.ReadSlot(workBase + half, witnessMu);
             witnesses[round] = witnessMu;
 
             if (round == _schedule.ProofPower - 1)
@@ -96,10 +97,10 @@ internal sealed class PietrzakProverSession : IChainLeafRecorder, IDisposable
 
             for (var j = 0; j < half; j++)
             {
-                _store.ReadSlot(j, leftBuffer);
-                _store.ReadSlot(j + half, rightBuffer);
+                _store.ReadSlot(workBase + j, leftBuffer);
+                _store.ReadSlot(workBase + j + half, rightBuffer);
                 var folded = math.MulPow128(leftBuffer, challenge, rightBuffer);
-                _store.WriteSlot(j, folded);
+                _store.WriteSlot(workBase + j, folded);
                 if (j == 0)
                 {
                     currentX = folded;
