@@ -80,10 +80,11 @@ internal static class TranspilerFailureCheck
         public void Add(TranspileFailure failure)
         {
             // [WHY] DeviceIteratorChecks already reports GSH0070 on the declaration of a recursive device iterator.
-            // When transpiling that iterator body, inline expansion hits MaxInlineDepth and would report a second
-            // GSH0070 on the recursive foreach loop; drop this forwarded failure to avoid duplicate reports for the
-            // same recursive iterator.
-            if (isRecursiveIterator && failure.Descriptor.Id == GSharpDiagnostics.IteratorShapeNotSupported.Id)
+            // Transpiler failures for recursive iterators (whether expanding the recursive iterator body or a consumer
+            // loop that invokes it) report a duplicate GSH0070 on that declaration; drop these forwarded failures so
+            // the declaration diagnostic is reported exactly once.
+            if (failure.Descriptor.Id == GSharpDiagnostics.IteratorShapeNotSupported.Id &&
+                (isRecursiveIterator || failure.MessageArgs is [_, "recursive iterators are not supported"]))
             {
                 return;
             }
@@ -120,13 +121,6 @@ internal static class TranspilerFailureCheck
             if (isDeviceIteratorCandidate &&
                 (failure.Descriptor.Id == GSharpDiagnostics.KernelReturnMustBeVoidOrBlittable.Id ||
                  failure.Descriptor.Id == GSharpDiagnostics.InstanceDeviceFunctionNotSupported.Id))
-            {
-                return;
-            }
-
-            // IteratorShapeNotSupported (GSH0070) is validated and reported directly by DeviceIteratorChecks on the
-            // iterator declaration header; drop transpiler failures so they are not doubly reported through consumers.
-            if (failure.Descriptor.Id == GSharpDiagnostics.IteratorShapeNotSupported.Id)
             {
                 return;
             }
