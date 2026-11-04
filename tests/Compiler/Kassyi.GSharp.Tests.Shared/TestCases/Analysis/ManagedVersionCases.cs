@@ -1,4 +1,6 @@
 using Kassyi.GSharp.Core;
+using Kassyi.ZeroAlloc.Linq;
+using static Kassyi.GSharp.Core.Gpu;
 
 namespace ManagedVersionCases;
 
@@ -20,7 +22,7 @@ public struct Value
     public static Value operator -(Value left, Value right) => new Value(left.V - right.V);
 }
 
-// The inputs of ManagedVersionAnalysisTests (#711)
+// The inputs of ManagedVersionAnalysisTests (#711, #730)
 public static partial class Functions
 {
     [GpuDeviceFunction]
@@ -106,6 +108,20 @@ public static partial class Functions
     [GpuDeviceFunction]
     public static int CallsExtension(ref Ctx ctx, int a) => ctx.Doubled(a);
 
+    // StackLinq float and double Sum calls require a managed version that rewrites Sum to SumSequential (#730)
+    [GpuDeviceFunction]
+    public static float FloatSumDirect(float[] data) => data.AsStackEnumerable().Sum();
+
+    [GpuDeviceFunction]
+    public static double DoubleSumSelector(double[] data) => data.AsStackEnumerable().Sum(x => x * 2.0);
+
+    [GpuDeviceFunction]
+    public static float CallsFloatSum(float[] data) => FloatSumDirect(data) + 1f;
+
+    // Integer StackLinq Sum is associative in 32-bit two's-complement arithmetic, so it needs no managed version
+    [GpuDeviceFunction]
+    public static int IntSumPlain(int[] data) => data.AsStackEnumerable().Sum();
+
     // A reduced extension method group passed as a delegate (#940)
     [GpuDeviceFunction]
     public static void PassesExtensionMethodGroup(int[] x)
@@ -118,6 +134,38 @@ public static partial class Functions
     public static void PassesGenericExtensionMethodGroup(int[] x)
     {
         Gpu.ForUnroll(0, 2, x.AddGeneric);
+    }
+
+    // A user-defined InlinePtx method is not Gpu.InlinePtx: needs no managed version and is not rewritten (#581)
+    [GpuDeviceFunction]
+    public static void UserInlinePtx()
+    {
+        Lookalike.InlinePtx("nop;");
+    }
+
+    // An unqualified InlinePtx call through using static is still Gpu.InlinePtx (#581)
+    [GpuDeviceFunction]
+    public static void InlinePtxUnqualified()
+    {
+        InlinePtx("nop;");
+    }
+
+    // Gpu.InlinePtx requires a managed version that throws NotSupportedException instead of GpuOnlyException (#581)
+    [GpuDeviceFunction]
+    public static void InlinePtxDirect()
+    {
+        Gpu.InlinePtx("nop;");
+    }
+
+    [GpuDeviceFunction]
+    public static void CallsInlinePtx() => InlinePtxDirect();
+}
+
+public static partial class Lookalike
+{
+    [GpuDeviceFunction]
+    public static void InlinePtx(string ptx)
+    {
     }
 }
 

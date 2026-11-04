@@ -102,16 +102,17 @@ internal readonly struct SyncIntrinsicInfo(
 }
 
 /// <summary>
-/// Classifies the synchronization intrinsics of <c>Kassyi.GSharp.Core</c> (<c>Gpu</c>, <c>Warp</c>, <c>Wmma</c>) by
-/// symbol, so that the analyzers, the uniformity analysis and the lowering share one definition of which calls are
-/// barriers, which split the state machine and which return thread-variant values.
+/// Classifies the synchronization intrinsics of <c>Kassyi.GSharp.Core</c> (<c>Gpu</c>, <c>Warp</c>, <c>Wmma</c>) and
+/// <see cref="System.Threading.Interlocked"/> by symbol, so that the analyzers, the uniformity analysis and the
+/// lowering share one definition of which calls are barriers, which split the state machine and which return
+/// thread-variant values.
 /// </summary>
 /// <remarks>
 /// [WHY] A call is recognized by its symbol, never by how it is spelled: a <c>using</c> alias, <c>using static</c> or a
-/// fully qualified name reaches the same method, and a user's own type named <c>Gpu</c> does not (#503). Members are
-/// matched by their exact names; all overloads of a name share its classification (whether <c>Gpu.SyncGrid</c> has a
-/// body is <see cref="GpuMacroClassifier"/>'s question). <c>SyncIntrinsicClassifierTests</c> compares the table with every
-/// public static method of the three types, so a new intrinsic is classified when it is added.
+/// fully qualified name reaches the same method, and a user's own type named <c>Gpu</c> or <c>Interlocked</c> does not
+/// (#503, #1072). Members are matched by their exact names; all overloads of a name share its classification (whether
+/// <c>Gpu.SyncGrid</c> has a body is <see cref="GpuMacroClassifier"/>'s question). <c>SyncIntrinsicClassifierTests</c>
+/// compares the table with every public static method of the types, so a new intrinsic is classified when it is added.
 /// </remarks>
 internal static class SyncIntrinsicClassifier
 {
@@ -121,12 +122,25 @@ internal static class SyncIntrinsicClassifier
     private static readonly SyncIntrinsicInfo s_warpCollective =
         new(SyncIntrinsicKind.WarpCollective, SyncScope.Warp, splitsStateMachine: false, resultIsThreadVariant: true);
 
-    /// <summary>Classifies <paramref name="method"/>; any method that is not a member of the Core <c>Gpu</c>, <c>Warp</c> or <c>Wmma</c> type is <see langword="default"/>.</summary>
+    /// <summary>
+    /// Classifies <paramref name="method"/>; any method that is not a member of the Core <c>Gpu</c>, <c>Warp</c> or
+    /// <c>Wmma</c> type or <see cref="System.Threading.Interlocked"/> is <see langword="default"/>.
+    /// </summary>
     public static SyncIntrinsicInfo Classify(IMethodSymbol method)
     {
-        // Only the members of the top-level Core types are classified: not those of a nested type (Gpu.Hint), nor of a
-        // user's own type of the same name
-        if (method.ContainingType is not { ContainingType: null } type || !type.ContainingNamespace.IsCoreNamespace())
+        // Only the members of the top-level Core types and System.Threading.Interlocked are classified: not those of a
+        // nested type (Gpu.Hint), nor of a user's own type of the same name
+        if (method.ContainingType is not { ContainingType: null } type)
+        {
+            return default;
+        }
+
+        if (type.Name == TypeConstants.InterlockedType && type.ContainingNamespace.IsSystemThreading())
+        {
+            return ClassifyInterlockedMember(method.Name);
+        }
+
+        if (!type.ContainingNamespace.IsCoreNamespace())
         {
             return default;
         }
@@ -193,6 +207,16 @@ internal static class SyncIntrinsicClassifier
         "BallotSync" or "AllSync" or "AnySync" or "ReduceAddSync" or "ReduceMinSync" or "ReduceMaxSync"
             or "ReduceAndSync" or "ReduceOrSync" or "ReduceXorSync" => s_warpCollective,
         TypeConstants.ActiveMaskMethod => s_variantValue,
+        _ => default
+    };
+
+    private static SyncIntrinsicInfo ClassifyInterlockedMember(string name) => name switch
+    {
+        "Add" or "Exchange" or "CompareExchange" or "Increment" or "Decrement" or "And" or "Or" or "Read" =>
+            s_variantValue,
+        "MemoryBarrier" or "MemoryBarrierProcessWide" =>
+            new SyncIntrinsicInfo(SyncIntrinsicKind.MemoryFence, SyncScope.None, splitsStateMachine: false,
+                resultIsThreadVariant: false),
         _ => default
     };
 

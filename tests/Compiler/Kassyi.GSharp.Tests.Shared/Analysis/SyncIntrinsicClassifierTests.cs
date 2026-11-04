@@ -155,11 +155,36 @@ public class SyncIntrinsicClassifierTests
     [InlineData("SyncIntrinsicCases.Gpu", "SyncGrid")]
     [InlineData("SyncIntrinsicCases.Gpu", "LaneId")]
     [InlineData("SyncIntrinsicCases.Warp", "ShuffleDownSync")]
+    [InlineData("SyncIntrinsicCases.Interlocked", "Add")]
     public void Test_Classify_UserTypeOfTheSameName_IsNotAnIntrinsic(string typeName, string name)
     {
         var method = GetType(typeName).GetMembers(name).OfType<IMethodSymbol>().Single();
 
         Assert.True(Equal(default, SyncIntrinsicClassifier.Classify(method)));
+    }
+
+    [Theory]
+    [Scenario(TestScenario.HappyPath)]
+    [InlineData("Add", nameof(SyncIntrinsicKind.None), true)]
+    [InlineData("Exchange", nameof(SyncIntrinsicKind.None), true)]
+    [InlineData("CompareExchange", nameof(SyncIntrinsicKind.None), true)]
+    [InlineData("Increment", nameof(SyncIntrinsicKind.None), true)]
+    [InlineData("Decrement", nameof(SyncIntrinsicKind.None), true)]
+    [InlineData("And", nameof(SyncIntrinsicKind.None), true)]
+    [InlineData("Or", nameof(SyncIntrinsicKind.None), true)]
+    [InlineData("Read", nameof(SyncIntrinsicKind.None), true)]
+    [InlineData("MemoryBarrier", nameof(SyncIntrinsicKind.MemoryFence), false)]
+    public void Test_Classify_SystemThreadingInterlocked_MatchesExpected(string name, string kind, bool resultIsThreadVariant)
+    {
+        var overloads = GetType("System.Threading.Interlocked").GetMembers(name).OfType<IMethodSymbol>().ToList();
+
+        Assert.NotEmpty(overloads);
+        Assert.All(overloads, method =>
+        {
+            var actual = SyncIntrinsicClassifier.Classify(method);
+            Assert.Equal(kind, actual.Kind.ToString());
+            Assert.Equal(resultIsThreadVariant, actual.ResultIsThreadVariant);
+        });
     }
 
     [Fact]

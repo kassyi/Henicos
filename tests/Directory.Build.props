@@ -3,8 +3,6 @@
 
   <PropertyGroup>
     <RunSettingsFilePath>$(MSBuildThisFileDirectory)..\.runsettings</RunSettingsFilePath>
-    <!-- Suppress compiler warnings from generated test kernel wrappers -->
-    <NoWarn>$(NoWarn);0162;8321;8618</NoWarn>
     <!-- Generated wrappers embed each kernel's source as string literals; storing them in a data section
          keeps large suites under the 16 MB user-string heap limit (CS8103) -->
     <Features>$(Features);experimental-data-section-string-literals</Features>

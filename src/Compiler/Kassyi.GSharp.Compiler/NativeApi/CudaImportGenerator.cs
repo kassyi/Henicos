@@ -305,10 +305,9 @@ public class CudaImportGenerator : IIncrementalGenerator
                 return;
             }
 
-            var hasEntryPoint = attributeSyntax.ArgumentList.Arguments
-                .AsStackEnumerable()
-                .TryFirst(static arg => arg.NameEquals?.Name.Identifier.ValueText == "EntryPoint", out var arg);
-            if (hasEntryPoint)
+            if (attributeSyntax.ArgumentList.Arguments
+                    .AsStackEnumerable()
+                    .TryFirst(static arg => arg.NameEquals?.Name.Identifier.ValueText == "EntryPoint", out var arg))
             {
                 entryPoint = arg.Expression switch
                 {
