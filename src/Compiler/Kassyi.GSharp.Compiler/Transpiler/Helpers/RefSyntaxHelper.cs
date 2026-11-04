@@ -1,5 +1,12 @@
 namespace Kassyi.GSharp.Compiler.Transpiler.Helpers;
 
+internal enum CppLocation
+{
+    None,
+    Storage,
+    AutoPropertyStorage
+}
+
 /// <summary>
 /// Provides shared logic for handling 'ref', 'out', and pointer semantics in the AST.
 /// </summary>
@@ -21,8 +28,7 @@ internal static class RefSyntaxHelper
     /// Transpiles the given expression as a reference/pointer argument, automatically appending the address-of operator if needed,
     /// or wrapping a temporary rvalue in <c>__gsharp_temp_address</c>.
     /// </summary>
-    public static void TranspileAsByRefArgument(ref TranspileContext context, ExpressionSyntax expression,
-        bool allowAutoPropertyStorage = false)
+    public static void TranspileAsByRefArgument(ref TranspileContext context, ExpressionSyntax expression)
     {
         var semanticModel = context.Query.SemanticModel;
         if (!NeedsAddressOf(expression, semanticModel))
@@ -31,7 +37,7 @@ internal static class RefSyntaxHelper
             return;
         }
 
-        if (HasExplicitRefSyntax(expression) || IsCppLValue(expression, semanticModel, allowAutoPropertyStorage))
+        if (HasExplicitRefSyntax(expression) || IsCppLValue(expression, semanticModel))
         {
             context.Emitter.Writer.Append("&");
             context.Visitor.Visit(expression);
@@ -40,8 +46,7 @@ internal static class RefSyntaxHelper
 
         // An auto-property is emitted as its backing field (a C++ lvalue of the target type), so binding const T&
         // directly in __gsharp_temp_address<T> would alias the field instead of copying the getter's return value (#999).
-        var forceValueCopy = !allowAutoPropertyStorage &&
-                             IsAutoPropertyOrMemberOfAutoProperty(expression, semanticModel);
+        var forceValueCopy = IsAutoPropertyOrMemberOfAutoProperty(expression, semanticModel);
         context.Emitter.Writer.Append(GSharpInternalNames.Prelude.TempAddress);
         AppendTempAddressTypeArgument(ref context, expression, semanticModel);
         using (context.Emitter.Writer.Parentheses())
@@ -59,6 +64,35 @@ internal static class RefSyntaxHelper
             {
                 context.Visitor.Visit(expression);
             }
+        }
+    }
+
+    /// <summary>
+    /// Transpiles an operand of an operator macro passed by reference.
+    /// Uses the backing field storage address for auto-properties (<see cref="CppLocation.AutoPropertyStorage"/>)
+    /// to preserve aliasing without defensive copies.
+    /// </summary>
+    public static void TranspileAsOperatorOperand(ref TranspileContext context, ExpressionSyntax expression)
+    {
+        var semanticModel = context.Query.SemanticModel;
+        if (!NeedsAddressOf(expression, semanticModel))
+        {
+            context.Visitor.Visit(expression);
+            return;
+        }
+
+        if (HasExplicitRefSyntax(expression) || ClassifyLocation(expression, semanticModel) is not CppLocation.None)
+        {
+            context.Emitter.Writer.Append("&");
+            context.Visitor.Visit(expression);
+            return;
+        }
+
+        context.Emitter.Writer.Append(GSharpInternalNames.Prelude.TempAddress);
+        AppendTempAddressTypeArgument(ref context, expression, semanticModel);
+        using (context.Emitter.Writer.Parentheses())
+        {
+            context.Visitor.Visit(expression);
         }
     }
 
@@ -96,93 +130,125 @@ internal static class RefSyntaxHelper
         }
     }
 
-    // Whether the C++ expression that RoslynToCudaVisitor emits for an un-modified argument is an lvalue of the target
-    // parameter type whose address '&' can take directly
-    public static bool IsCppLValue(ExpressionSyntax expression, SemanticModel semanticModel,
-        bool allowAutoPropertyStorage = false)
+    /// <summary>
+    /// Classifies whether <paramref name="expression"/> is an actual storage location in C++ (<see cref="CppLocation.Storage"/>),
+    /// an auto-property backing field (<see cref="CppLocation.AutoPropertyStorage"/>), or an rvalue (<see cref="CppLocation.None"/>).
+    /// </summary>
+    public static CppLocation ClassifyLocation(ExpressionSyntax expression, SemanticModel model)
     {
-        var typeInfo = GetSafeTypeInfo(expression, semanticModel);
-        if (typeInfo.Type != null &&
-            typeInfo.ConvertedType != null &&
-            !typeInfo.Type.IsEqualTo(typeInfo.ConvertedType))
+        if (IsConverted(expression, model))
         {
-            return false;
+            return CppLocation.None;
         }
 
+        return Unparenthesize(expression) switch
+        {
+            DeclarationExpressionSyntax => CppLocation.Storage,
+            IdentifierNameSyntax identifier => ClassifySymbol(model.GetSymbol(identifier) ?? model.GetDeclaredSymbol<ISymbol>(identifier)),
+            MemberAccessExpressionSyntax access => ClassifyMemberAccess(access, model),
+            ElementAccessExpressionSyntax element => ClassifyElementAccess(element, model),
+            PrefixUnaryExpressionSyntax { RawKind: (int)SyntaxKind.PointerIndirectionExpression } => CppLocation.Storage,
+            ConditionalExpressionSyntax { WhenTrue: RefExpressionSyntax } or ConditionalExpressionSyntax { WhenFalse: RefExpressionSyntax } => CppLocation.Storage,
+            InvocationExpressionSyntax invocation => ClassifyInvocation(invocation, model),
+            _ => CppLocation.None
+        };
+    }
+
+    private static bool IsConverted(ExpressionSyntax expression, SemanticModel model)
+    {
+        var typeInfo = GetSafeTypeInfo(expression, model);
+        return typeInfo.Type != null &&
+               typeInfo.ConvertedType != null &&
+               !typeInfo.Type.IsEqualTo(typeInfo.ConvertedType);
+    }
+
+    private static ExpressionSyntax Unparenthesize(ExpressionSyntax expression)
+    {
         while (expression is ParenthesizedExpressionSyntax parenthesized)
         {
             expression = parenthesized.Expression;
         }
 
-        switch (expression)
-        {
-            case DeclarationExpressionSyntax:
-                return true;
-            case IdentifierNameSyntax:
-            {
-                var symbol = semanticModel.GetSymbol(expression) ??
-                             semanticModel.GetDeclaredSymbol<ISymbol>(expression);
-                return IsLValueSymbol(symbol, allowAutoPropertyStorage);
-            }
-            case MemberAccessExpressionSyntax memberAccess:
-            {
-                if (memberAccess.IsKind(SyntaxKind.PointerMemberAccessExpression))
-                {
-                    return true;
-                }
-
-                var symbol = semanticModel.GetSymbol(memberAccess) ??
-                             semanticModel.GetSymbol(memberAccess.Name) ??
-                             semanticModel.GetDeclaredSymbol<ISymbol>(memberAccess.Name);
-                if (!IsLValueSymbol(symbol, allowAutoPropertyStorage))
-                {
-                    return false;
-                }
-
-                return memberAccess.Expression is ThisExpressionSyntax ||
-                       semanticModel.GetTypeSymbol(memberAccess.Expression) is not { IsValueType: true } ||
-                       IsCppLValue(memberAccess.Expression, semanticModel, allowAutoPropertyStorage);
-            }
-            case ElementAccessExpressionSyntax:
-            {
-                if (semanticModel.GetSymbol(expression) is IPropertySymbol indexer)
-                {
-                    return indexer.RefKind is RefKind.Ref or RefKind.RefReadOnly;
-                }
-
-                return true;
-            }
-            case PrefixUnaryExpressionSyntax prefix when prefix.IsKind(SyntaxKind.PointerIndirectionExpression):
-            case ConditionalExpressionSyntax { WhenTrue: RefExpressionSyntax }
-                or ConditionalExpressionSyntax { WhenFalse: RefExpressionSyntax }:
-                return true;
-            case InvocationExpressionSyntax invocation:
-                return semanticModel.GetSymbol(invocation) is IMethodSymbol
-                {
-                    RefKind: RefKind.Ref or RefKind.RefReadOnly
-                };
-            default:
-                return false;
-        }
+        return expression;
     }
+
+    private static CppLocation ClassifyMemberAccess(MemberAccessExpressionSyntax access, SemanticModel model)
+    {
+        if (access.IsKind(SyntaxKind.PointerMemberAccessExpression))
+        {
+            return CppLocation.Storage;
+        }
+
+        var symbol = model.GetSymbol(access) ??
+                     model.GetSymbol(access.Name) ??
+                     model.GetDeclaredSymbol<ISymbol>(access.Name);
+        var memberLoc = ClassifySymbol(symbol);
+        if (memberLoc == CppLocation.None)
+        {
+            return CppLocation.None;
+        }
+
+        if (access.Expression is ThisExpressionSyntax ||
+            model.GetTypeSymbol(access.Expression) is not { IsValueType: true })
+        {
+            return memberLoc;
+        }
+
+        var receiverLoc = ClassifyLocation(access.Expression, model);
+        return WeakerOf(memberLoc, receiverLoc);
+    }
+
+    private static CppLocation WeakerOf(CppLocation a, CppLocation b)
+    {
+        if (a == CppLocation.None || b == CppLocation.None)
+        {
+            return CppLocation.None;
+        }
+
+        if (a == CppLocation.AutoPropertyStorage || b == CppLocation.AutoPropertyStorage)
+        {
+            return CppLocation.AutoPropertyStorage;
+        }
+
+        return CppLocation.Storage;
+    }
+
+    private static CppLocation ClassifySymbol(ISymbol? symbol) =>
+        symbol switch
+        {
+            ILocalSymbol or IParameterSymbol => CppLocation.Storage,
+            IFieldSymbol { IsConst: false, IsStatic: false } => CppLocation.Storage,
+            IPropertySymbol { RefKind: RefKind.Ref or RefKind.RefReadOnly } => CppLocation.Storage,
+            IPropertySymbol { ContainingType: INamedTypeSymbol containingType } property
+                when GlobalCppNames.IsEmittedUserType(containingType) && !StructAbiMembers.IsComputedProperty(property) =>
+                CppLocation.AutoPropertyStorage,
+            _ => CppLocation.None
+        };
+
+    private static CppLocation ClassifyElementAccess(ElementAccessExpressionSyntax element, SemanticModel model)
+    {
+        if (model.GetSymbol(element) is IPropertySymbol indexer)
+        {
+            return indexer.RefKind is RefKind.Ref or RefKind.RefReadOnly ? CppLocation.Storage : CppLocation.None;
+        }
+
+        return CppLocation.Storage;
+    }
+
+    private static CppLocation ClassifyInvocation(InvocationExpressionSyntax invocation, SemanticModel model) =>
+        model.GetSymbol(invocation) is IMethodSymbol { RefKind: RefKind.Ref or RefKind.RefReadOnly }
+            ? CppLocation.Storage
+            : CppLocation.None;
+
+    // Whether the C++ expression that RoslynToCudaVisitor emits for an un-modified argument is an lvalue of the target
+    // parameter type whose address '&' can take directly
+    public static bool IsCppLValue(ExpressionSyntax expression, SemanticModel semanticModel) =>
+        ClassifyLocation(expression, semanticModel) is CppLocation.Storage;
 
     /// <summary>
     /// Whether <paramref name="expression"/> is an auto-property (or a field/property chain on an auto-property) that G#
     /// emits as a C++ lvalue backing field, even though in C# it is a value returned by the property getter (#999).
     /// </summary>
     public static bool IsAutoPropertyOrMemberOfAutoProperty(ExpressionSyntax expression, SemanticModel semanticModel) =>
-        !IsCppLValue(expression, semanticModel, allowAutoPropertyStorage: false) &&
-        IsCppLValue(expression, semanticModel, allowAutoPropertyStorage: true);
-
-    private static bool IsLValueSymbol(ISymbol? symbol, bool allowAutoPropertyStorage) =>
-        symbol switch
-        {
-            ILocalSymbol or IParameterSymbol => true,
-            IFieldSymbol { IsConst: false, IsStatic: false } => true,
-            IPropertySymbol { RefKind: RefKind.Ref or RefKind.RefReadOnly } => true,
-            IPropertySymbol { ContainingType: INamedTypeSymbol containingType } property when allowAutoPropertyStorage =>
-                GlobalCppNames.IsEmittedUserType(containingType) &&
-                !StructAbiMembers.IsComputedProperty(property),
-            _ => false
-        };
+        ClassifyLocation(expression, semanticModel) is CppLocation.AutoPropertyStorage;
 }
