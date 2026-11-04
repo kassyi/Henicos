@@ -416,12 +416,9 @@ public class CudaStreamCompletionTests
 
             // Hold times spread over the watchdog period, so completion lands at different phases of the timer.
             var holdTime = TimeSpan.FromMilliseconds(20 + (i * 37 % 120));
-            using (CudaTestEnvironment.InContext(() => StreamGate.Enqueue(context.stream, holdTime)))
-            {
-                var waitTask = CudaStreamCompletion.WaitAsync(context.stream).AsTask().WaitAsync(CompletionTimeout);
-                await waitTask;
-                Assert.True(waitTask.IsCompletedSuccessfully);
-            }
+            using var gate = CudaTestEnvironment.InContext(() => StreamGate.Enqueue(context.stream, holdTime));
+            await CudaStreamCompletion.WaitAsync(context.stream).AsTask().WaitAsync(CompletionTimeout);
+            Assert.True(gate.IsReleased);
 
             // Raw destroy on purpose: once the awaiter has resumed, no watchdog tick may still be using the context,
             // even without GpuKernelLoader.DestroyContext.

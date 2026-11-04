@@ -86,14 +86,24 @@ public class GpuBigIntContextTests
     public void Test_ParallelContextDisposal_ShouldNotCorruptCaches()
     {
         CudaCapability.EnsureGpuAvailable();
-        var result = Parallel.For(0, 8, i =>
+        const int ParallelIterations = 8;
+        var threadAllocatedWords = new long[ParallelIterations];
+
+        Parallel.For(0, ParallelIterations, i =>
         {
             using var scope = new GpuKernelLoader.CudaContextScope();
             using var ctx = new GpuWorkspace(256, GpuExecutionEngine.GSharpAot);
             using var temp1 = ctx.RentTemp(16);
             using var temp2 = ctx.RentTemp(32);
+            threadAllocatedWords[i] = temp1.NumWords + temp2.NumWords;
         });
-        Assert.True(result.IsCompleted);
+
+        Assert.All(threadAllocatedWords, static words => Assert.Equal(48, words));
+
+        // Verify that workspace allocation and caches remain uncorrupted after concurrent disposals
+        using var verifyCtx = new GpuWorkspace(256, GpuExecutionEngine.GSharpAot);
+        using var verifyTemp = verifyCtx.RentTemp(64);
+        Assert.Equal(64, verifyTemp.NumWords);
     }
 
     [SkippableFact]
