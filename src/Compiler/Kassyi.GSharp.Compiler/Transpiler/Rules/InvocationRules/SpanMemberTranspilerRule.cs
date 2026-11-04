@@ -61,7 +61,18 @@ public sealed class SpanMemberTranspilerRule : IInvocationTranspilerRule
                 }
             }
 
-            EmitCall(kind, operands[..count], ref context);
+            if (kind is SpanMemberKind.ArrayCopy3 or SpanMemberKind.ArrayCopy5)
+            {
+                var srcType = model.GetTypeSymbol(operands[0].Expression);
+                var dstType = model.GetTypeSymbol(operands[kind == SpanMemberKind.ArrayCopy3 ? 1 : 2].Expression);
+                if (!SpanWriteClassifier.AreCompatibleArrayCopyOperands(srcType, dstType))
+                {
+                    FailUnsupported(node, symbol, ref context);
+                    return true;
+                }
+            }
+
+            EmitCall(node, kind, operands[..count], ref context);
             return true;
         }
         finally
@@ -76,6 +87,56 @@ public sealed class SpanMemberTranspilerRule : IInvocationTranspilerRule
         context.Visitor.AppendUnsupportedPlaceholder(node);
     }
 
+    private enum CallShape
+    {
+        None,
+        MethodCall,
+        SliceOrSpan,
+        ArrayFill4,
+        ArrayClear3,
+        ArrayReverse3,
+        ArrayCopy3,
+        ArrayCopy5,
+    }
+
+    private enum SliceErrorCode
+    {
+        ArgumentOutOfRange,
+        IndexOutOfRange,
+        Argument,
+    }
+
+    private readonly record struct SpanMemberDescriptor(
+        CallShape Shape,
+        byte OperandCount,
+        bool IsSystemArray,
+        byte SecondarySpanIndex = 0,
+        string? MemberName = null,
+        SliceErrorCode ErrorCode = SliceErrorCode.ArgumentOutOfRange);
+
+    private static SpanMemberDescriptor GetDescriptor(SpanMemberKind kind) => kind switch
+    {
+        SpanMemberKind.Clear => new(CallShape.MethodCall, 1, false, MemberName: "Clear"),
+        SpanMemberKind.Reverse => new(CallShape.MethodCall, 1, false, MemberName: "Reverse"),
+        SpanMemberKind.AsSpan0 => new(CallShape.MethodCall, 1, false, MemberName: "AsSpan"),
+        SpanMemberKind.Fill => new(CallShape.MethodCall, 2, false, MemberName: "Fill"),
+        SpanMemberKind.CopyTo => new(CallShape.MethodCall, 2, false, SecondarySpanIndex: 1, MemberName: "CopyTo"),
+        SpanMemberKind.TryCopyTo => new(CallShape.MethodCall, 2, false, SecondarySpanIndex: 1, MemberName: "TryCopyTo"),
+        SpanMemberKind.Slice1 => new(CallShape.SliceOrSpan, 2, false, MemberName: "Slice"),
+        SpanMemberKind.AsSpan1 => new(CallShape.SliceOrSpan, 2, false, MemberName: "AsSpan"),
+        SpanMemberKind.Slice2 => new(CallShape.SliceOrSpan, 3, false, MemberName: "Slice"),
+        SpanMemberKind.AsSpan2 => new(CallShape.SliceOrSpan, 3, false, MemberName: "AsSpan"),
+        SpanMemberKind.ArrayFill2 => new(CallShape.MethodCall, 2, true, MemberName: "Fill"),
+        SpanMemberKind.ArrayFill4 => new(CallShape.ArrayFill4, 4, true),
+        SpanMemberKind.ArrayClear1 => new(CallShape.MethodCall, 1, true, MemberName: "Clear"),
+        SpanMemberKind.ArrayClear3 => new(CallShape.ArrayClear3, 3, true, ErrorCode: SliceErrorCode.IndexOutOfRange),
+        SpanMemberKind.ArrayReverse1 => new(CallShape.MethodCall, 1, true, MemberName: "Reverse"),
+        SpanMemberKind.ArrayReverse3 => new(CallShape.ArrayReverse3, 3, true),
+        SpanMemberKind.ArrayCopy3 => new(CallShape.ArrayCopy3, 3, true, SecondarySpanIndex: 1, ErrorCode: SliceErrorCode.Argument),
+        SpanMemberKind.ArrayCopy5 => new(CallShape.ArrayCopy5, 5, true, SecondarySpanIndex: 2, ErrorCode: SliceErrorCode.Argument),
+        _ => default,
+    };
+
     private static bool TryBuildOperands(
         SpanMemberKind kind,
         InvocationExpressionSyntax node,
@@ -84,6 +145,12 @@ public sealed class SpanMemberTranspilerRule : IInvocationTranspilerRule
         out int count)
     {
         count = 0;
+        var descriptor = GetDescriptor(kind);
+        if (descriptor.OperandCount == 0)
+        {
+            return false;
+        }
+
         var arguments = node.ArgumentList.Arguments;
         var hasReceiver = (!symbol.IsStatic || symbol.ReducedFrom != null) &&
                           node.Expression is MemberAccessExpressionSyntax;
@@ -91,204 +158,62 @@ public sealed class SpanMemberTranspilerRule : IInvocationTranspilerRule
             ? access.Expression
             : null;
 
-        switch (kind)
+        if (descriptor.IsSystemArray)
         {
-            case SpanMemberKind.Clear:
-            case SpanMemberKind.Reverse:
-            case SpanMemberKind.AsSpan0:
-                if (receiver != null)
-                {
-                    if (arguments.Count != 0)
-                    {
-                        return false;
-                    }
-
-                    operands[0] = new Operand(receiver, IsSpanOrArray: true);
-                }
-                else
-                {
-                    if (arguments.Count != 1)
-                    {
-                        return false;
-                    }
-
-                    operands[0] = new Operand(arguments[0].Expression, IsSpanOrArray: true);
-                }
-
-                count = 1;
-                return true;
-
-            case SpanMemberKind.Fill:
-                if (receiver == null || arguments.Count != 1)
-                {
-                    return false;
-                }
-
-                operands[0] = new Operand(receiver, IsSpanOrArray: true);
-                operands[1] = new Operand(arguments[0].Expression, IsSpanOrArray: false, symbol.Parameters[0].Type);
-                count = 2;
-                return true;
-
-            case SpanMemberKind.CopyTo:
-            case SpanMemberKind.TryCopyTo:
-                if (receiver != null)
-                {
-                    if (arguments.Count != 1)
-                    {
-                        return false;
-                    }
-
-                    operands[0] = new Operand(receiver, IsSpanOrArray: true);
-                    operands[1] = new Operand(arguments[0].Expression, IsSpanOrArray: true);
-                }
-                else
-                {
-                    if (arguments.Count != 2)
-                    {
-                        return false;
-                    }
-
-                    operands[0] = new Operand(arguments[0].Expression, IsSpanOrArray: true);
-                    operands[1] = new Operand(arguments[1].Expression, IsSpanOrArray: true);
-                }
-
-                count = 2;
-                return true;
-
-            case SpanMemberKind.Slice1:
-            case SpanMemberKind.AsSpan1:
-                if (receiver != null)
-                {
-                    if (arguments.Count != 1)
-                    {
-                        return false;
-                    }
-
-                    operands[0] = new Operand(receiver, IsSpanOrArray: true);
-                    operands[1] = new Operand(arguments[0].Expression, IsSpanOrArray: false, symbol.Parameters[0].Type);
-                }
-                else
-                {
-                    if (arguments.Count != 2)
-                    {
-                        return false;
-                    }
-
-                    operands[0] = new Operand(arguments[0].Expression, IsSpanOrArray: true);
-                    operands[1] = new Operand(arguments[1].Expression, IsSpanOrArray: false, symbol.Parameters[1].Type);
-                }
-
-                count = 2;
-                return true;
-
-            case SpanMemberKind.Slice2:
-            case SpanMemberKind.AsSpan2:
-                if (receiver != null)
-                {
-                    if (arguments.Count != 2)
-                    {
-                        return false;
-                    }
-
-                    operands[0] = new Operand(receiver, IsSpanOrArray: true);
-                    operands[1] = new Operand(arguments[0].Expression, IsSpanOrArray: false, symbol.Parameters[0].Type);
-                    operands[2] = new Operand(arguments[1].Expression, IsSpanOrArray: false, symbol.Parameters[1].Type);
-                }
-                else
-                {
-                    if (arguments.Count != 3)
-                    {
-                        return false;
-                    }
-
-                    operands[0] = new Operand(arguments[0].Expression, IsSpanOrArray: true);
-                    operands[1] = new Operand(arguments[1].Expression, IsSpanOrArray: false, symbol.Parameters[1].Type);
-                    operands[2] = new Operand(arguments[2].Expression, IsSpanOrArray: false, symbol.Parameters[2].Type);
-                }
-
-                count = 3;
-                return true;
-
-            case SpanMemberKind.ArrayFill2:
-                if (arguments.Count != 2)
-                {
-                    return false;
-                }
-
-                operands[0] = new Operand(arguments[0].Expression, IsSpanOrArray: true, RequiresRank1Array: true);
-                operands[1] = new Operand(arguments[1].Expression, IsSpanOrArray: false, symbol.Parameters[1].Type);
-                count = 2;
-                return true;
-
-            case SpanMemberKind.ArrayFill4:
-                if (arguments.Count != 4)
-                {
-                    return false;
-                }
-
-                operands[0] = new Operand(arguments[0].Expression, IsSpanOrArray: true, RequiresRank1Array: true);
-                operands[1] = new Operand(arguments[1].Expression, IsSpanOrArray: false, symbol.Parameters[1].Type);
-                operands[2] = new Operand(arguments[2].Expression, IsSpanOrArray: false, symbol.Parameters[2].Type);
-                operands[3] = new Operand(arguments[3].Expression, IsSpanOrArray: false, symbol.Parameters[3].Type);
-                count = 4;
-                return true;
-
-            case SpanMemberKind.ArrayClear1:
-            case SpanMemberKind.ArrayReverse1:
-                if (arguments.Count != 1)
-                {
-                    return false;
-                }
-
-                operands[0] = new Operand(arguments[0].Expression, IsSpanOrArray: true, RequiresRank1Array: true);
-                count = 1;
-                return true;
-
-            case SpanMemberKind.ArrayClear3:
-            case SpanMemberKind.ArrayReverse3:
-                if (arguments.Count != 3)
-                {
-                    return false;
-                }
-
-                operands[0] = new Operand(arguments[0].Expression, IsSpanOrArray: true, RequiresRank1Array: true);
-                operands[1] = new Operand(arguments[1].Expression, IsSpanOrArray: false, symbol.Parameters[1].Type);
-                operands[2] = new Operand(arguments[2].Expression, IsSpanOrArray: false, symbol.Parameters[2].Type);
-                count = 3;
-                return true;
-
-            case SpanMemberKind.ArrayCopy3:
-                if (arguments.Count != 3)
-                {
-                    return false;
-                }
-
-                operands[0] = new Operand(arguments[0].Expression, IsSpanOrArray: true, RequiresRank1Array: true);
-                operands[1] = new Operand(arguments[1].Expression, IsSpanOrArray: true, RequiresRank1Array: true);
-                operands[2] = new Operand(arguments[2].Expression, IsSpanOrArray: false, symbol.Parameters[2].Type);
-                count = 3;
-                return true;
-
-            case SpanMemberKind.ArrayCopy5:
-                if (arguments.Count != 5)
-                {
-                    return false;
-                }
-
-                operands[0] = new Operand(arguments[0].Expression, IsSpanOrArray: true, RequiresRank1Array: true);
-                operands[1] = new Operand(arguments[1].Expression, IsSpanOrArray: false, symbol.Parameters[1].Type);
-                operands[2] = new Operand(arguments[2].Expression, IsSpanOrArray: true, RequiresRank1Array: true);
-                operands[3] = new Operand(arguments[3].Expression, IsSpanOrArray: false, symbol.Parameters[3].Type);
-                operands[4] = new Operand(arguments[4].Expression, IsSpanOrArray: false, symbol.Parameters[4].Type);
-                count = 5;
-                return true;
-
-            default:
+            if (arguments.Count != descriptor.OperandCount)
+            {
                 return false;
+            }
+
+            operands[0] = new Operand(arguments[0].Expression, IsSpanOrArray: true, RequiresRank1Array: true);
+            for (var i = 1; i < descriptor.OperandCount; i++)
+            {
+                var isSpan = i == descriptor.SecondarySpanIndex;
+                var valType = isSpan ? null : symbol.Parameters[i].Type;
+                operands[i] = new Operand(arguments[i].Expression, IsSpanOrArray: isSpan, ValueType: valType, RequiresRank1Array: isSpan);
+            }
+
+            count = descriptor.OperandCount;
+            return true;
         }
+
+        if (hasReceiver)
+        {
+            if (arguments.Count != descriptor.OperandCount - 1)
+            {
+                return false;
+            }
+
+            operands[0] = new Operand(receiver, IsSpanOrArray: true);
+            for (var i = 1; i < descriptor.OperandCount; i++)
+            {
+                var isSpan = i == descriptor.SecondarySpanIndex;
+                var valType = isSpan ? null : symbol.Parameters[i - 1].Type;
+                operands[i] = new Operand(arguments[i - 1].Expression, IsSpanOrArray: isSpan, ValueType: valType);
+            }
+
+            count = descriptor.OperandCount;
+            return true;
+        }
+
+        if (arguments.Count != descriptor.OperandCount)
+        {
+            return false;
+        }
+
+        operands[0] = new Operand(arguments[0].Expression, IsSpanOrArray: true);
+        for (var i = 1; i < descriptor.OperandCount; i++)
+        {
+            var isSpan = i == descriptor.SecondarySpanIndex;
+            var valType = isSpan ? null : symbol.Parameters[i].Type;
+            operands[i] = new Operand(arguments[i].Expression, IsSpanOrArray: isSpan, ValueType: valType);
+        }
+
+        count = descriptor.OperandCount;
+        return true;
     }
 
-    private static void EmitCall(SpanMemberKind kind, ReadOnlySpan<Operand> operands, ref TranspileContext context)
+    private static void EmitCall(InvocationExpressionSyntax node, SpanMemberKind kind, ReadOnlySpan<Operand> operands, ref TranspileContext context)
     {
         var count = operands.Length;
         var model = context.Query.SemanticModel;
@@ -349,7 +274,7 @@ public sealed class SpanMemberTranspilerRule : IInvocationTranspilerRule
                 sequence.Return();
             }
 
-            WriteCallShape(kind, operands, temps[..count], ref context);
+            WriteCallShape(node, kind, operands, temps[..count], ref context);
         }
         finally
         {
@@ -393,197 +318,229 @@ public sealed class SpanMemberTranspilerRule : IInvocationTranspilerRule
     }
 
     private static void WriteCallShape(
+        InvocationExpressionSyntax node,
         SpanMemberKind kind,
         ReadOnlySpan<Operand> operands,
         ReadOnlySpan<int> temps,
         ref TranspileContext context)
     {
-        var writer = context.Emitter.Writer;
-        switch (kind)
+        var descriptor = GetDescriptor(kind);
+        switch (descriptor.Shape)
         {
-            case SpanMemberKind.Fill:
-            case SpanMemberKind.ArrayFill2:
-                WriteOperand(operands, temps, 0, ref context);
-                writer.Append(".Fill");
-                using (writer.Parentheses())
-                {
-                    WriteOperand(operands, temps, 1, ref context);
-                }
-
+            case CallShape.MethodCall:
+                WriteMethodCall(descriptor.MemberName!, operands, temps, ref context);
                 break;
-
-            case SpanMemberKind.Clear:
-            case SpanMemberKind.ArrayClear1:
-                WriteOperand(operands, temps, 0, ref context);
-                writer.Append(".Clear()");
+            case CallShape.SliceOrSpan:
+                WriteSliceOrSpan(descriptor.MemberName!, descriptor.ErrorCode, node, operands, temps, ref context);
                 break;
-
-            case SpanMemberKind.Reverse:
-            case SpanMemberKind.ArrayReverse1:
-                WriteOperand(operands, temps, 0, ref context);
-                writer.Append(".Reverse()");
+            case CallShape.ArrayFill4:
+                WriteArrayFill4(node, operands, temps, ref context);
                 break;
-
-            case SpanMemberKind.CopyTo:
-                WriteOperand(operands, temps, 0, ref context);
-                writer.Append(".CopyTo");
-                using (writer.Parentheses())
-                {
-                    WriteOperand(operands, temps, 1, ref context);
-                }
-
+            case CallShape.ArrayClear3:
+                WriteArrayClear3(node, operands, temps, ref context);
                 break;
-
-            case SpanMemberKind.TryCopyTo:
-                WriteOperand(operands, temps, 0, ref context);
-                writer.Append(".TryCopyTo");
-                using (writer.Parentheses())
-                {
-                    WriteOperand(operands, temps, 1, ref context);
-                }
-
+            case CallShape.ArrayReverse3:
+                WriteArrayReverse3(node, operands, temps, ref context);
                 break;
-
-            case SpanMemberKind.Slice1:
-                WriteOperand(operands, temps, 0, ref context);
-                writer.Append(".Slice");
-                using (writer.Parentheses())
-                {
-                    WriteOperand(operands, temps, 1, ref context);
-                }
-
+            case CallShape.ArrayCopy3:
+                WriteArrayCopy3(node, operands, temps, ref context);
                 break;
-
-            case SpanMemberKind.Slice2:
-                WriteOperand(operands, temps, 0, ref context);
-                writer.Append(".Slice");
-                using (writer.Parentheses())
-                {
-                    WriteOperand(operands, temps, 1, ref context);
-                    writer.Append(',');
-                    WriteOperand(operands, temps, 2, ref context);
-                }
-
+            case CallShape.ArrayCopy5:
+                WriteArrayCopy5(node, operands, temps, ref context);
                 break;
+        }
+    }
 
-            case SpanMemberKind.AsSpan0:
-                WriteOperand(operands, temps, 0, ref context);
-                writer.Append(".AsSpan()");
-                break;
+    private static void WriteMethodCall(
+        string memberName,
+        ReadOnlySpan<Operand> operands,
+        ReadOnlySpan<int> temps,
+        ref TranspileContext context)
+    {
+        var writer = context.Emitter.Writer;
+        WriteOperand(operands, temps, 0, ref context);
+        writer.Append('.');
+        writer.Append(memberName);
+        if (operands.Length > 1)
+        {
+            using (writer.Parentheses())
+            {
+                WriteOperand(operands, temps, 1, ref context);
+            }
+        }
+        else
+        {
+            writer.Append("()");
+        }
+    }
 
-            case SpanMemberKind.AsSpan1:
-                WriteOperand(operands, temps, 0, ref context);
-                writer.Append(".AsSpan");
-                using (writer.Parentheses())
-                {
-                    WriteOperand(operands, temps, 1, ref context);
-                }
+    private static string FormatRangeMessage(SliceErrorCode errorCode, string place) => errorCode switch
+    {
+        SliceErrorCode.IndexOutOfRange => $"G#: index was outside the bounds of the array at {place}",
+        SliceErrorCode.Argument => $"G#: offset and length were out of bounds for the array at {place}",
+        _ => $"G#: index was out of range at {place}",
+    };
 
-                break;
+    private static void AppendRangeMessage(
+        SourceWriter writer,
+        SliceErrorCode errorCode,
+        InvocationExpressionSyntax node,
+        ref TranspileContext context)
+    {
+        var place = SourcePlace.Format(context.Query.SemanticModel, node);
+        var msg = FormatRangeMessage(errorCode, place);
+        writer.Append(", ");
+        CppStringLiteral.Append(writer, msg);
+    }
 
-            case SpanMemberKind.AsSpan2:
-                WriteOperand(operands, temps, 0, ref context);
-                writer.Append(".AsSpan");
-                using (writer.Parentheses())
-                {
-                    WriteOperand(operands, temps, 1, ref context);
-                    writer.Append(',');
-                    WriteOperand(operands, temps, 2, ref context);
-                }
+    private static void WriteSliceOrSpan(
+        string memberName,
+        SliceErrorCode errorCode,
+        InvocationExpressionSyntax node,
+        ReadOnlySpan<Operand> operands,
+        ReadOnlySpan<int> temps,
+        ref TranspileContext context)
+    {
+        var writer = context.Emitter.Writer;
+        WriteOperand(operands, temps, 0, ref context);
+        writer.Append('.');
+        writer.Append(memberName);
+        using (writer.Parentheses())
+        {
+            WriteOperand(operands, temps, 1, ref context);
+            if (operands.Length > 2)
+            {
+                writer.Append(',');
+                WriteOperand(operands, temps, 2, ref context);
+            }
 
-                break;
+            AppendRangeMessage(writer, errorCode, node, ref context);
+        }
+    }
 
-            case SpanMemberKind.ArrayFill4:
-                WriteOperand(operands, temps, 0, ref context);
-                writer.Append(".AsSpan");
-                using (writer.Parentheses())
-                {
-                    WriteOperand(operands, temps, 2, ref context);
-                    writer.Append(',');
-                    WriteOperand(operands, temps, 3, ref context);
-                }
+    private static void WriteArrayFill4(
+        InvocationExpressionSyntax node,
+        ReadOnlySpan<Operand> operands,
+        ReadOnlySpan<int> temps,
+        ref TranspileContext context)
+    {
+        var writer = context.Emitter.Writer;
+        WriteOperand(operands, temps, 0, ref context);
+        writer.Append(".AsSpan");
+        using (writer.Parentheses())
+        {
+            WriteOperand(operands, temps, 2, ref context);
+            writer.Append(',');
+            WriteOperand(operands, temps, 3, ref context);
+            AppendRangeMessage(writer, SliceErrorCode.ArgumentOutOfRange, node, ref context);
+        }
 
-                writer.Append(".Fill");
-                using (writer.Parentheses())
-                {
-                    WriteOperand(operands, temps, 1, ref context);
-                }
+        writer.Append(".Fill");
+        using (writer.Parentheses())
+        {
+            WriteOperand(operands, temps, 1, ref context);
+        }
+    }
 
-                break;
+    private static void WriteArrayClear3(
+        InvocationExpressionSyntax node,
+        ReadOnlySpan<Operand> operands,
+        ReadOnlySpan<int> temps,
+        ref TranspileContext context)
+    {
+        var writer = context.Emitter.Writer;
+        WriteOperand(operands, temps, 0, ref context);
+        writer.Append(".AsSpan<GSharpErrorCode::IndexOutOfRange>");
+        using (writer.Parentheses())
+        {
+            WriteOperand(operands, temps, 1, ref context);
+            writer.Append(',');
+            WriteOperand(operands, temps, 2, ref context);
+            AppendRangeMessage(writer, SliceErrorCode.IndexOutOfRange, node, ref context);
+        }
 
-            case SpanMemberKind.ArrayClear3:
-                WriteOperand(operands, temps, 0, ref context);
-                writer.Append(".AsSpan");
-                using (writer.Parentheses())
-                {
-                    WriteOperand(operands, temps, 1, ref context);
-                    writer.Append(',');
-                    WriteOperand(operands, temps, 2, ref context);
-                }
+        writer.Append(".Clear()");
+    }
 
-                writer.Append(".Clear()");
-                break;
+    private static void WriteArrayReverse3(
+        InvocationExpressionSyntax node,
+        ReadOnlySpan<Operand> operands,
+        ReadOnlySpan<int> temps,
+        ref TranspileContext context)
+    {
+        var writer = context.Emitter.Writer;
+        WriteOperand(operands, temps, 0, ref context);
+        writer.Append(".AsSpan");
+        using (writer.Parentheses())
+        {
+            WriteOperand(operands, temps, 1, ref context);
+            writer.Append(',');
+            WriteOperand(operands, temps, 2, ref context);
+            AppendRangeMessage(writer, SliceErrorCode.ArgumentOutOfRange, node, ref context);
+        }
 
-            case SpanMemberKind.ArrayReverse3:
-                WriteOperand(operands, temps, 0, ref context);
-                writer.Append(".AsSpan");
-                using (writer.Parentheses())
-                {
-                    WriteOperand(operands, temps, 1, ref context);
-                    writer.Append(',');
-                    WriteOperand(operands, temps, 2, ref context);
-                }
+        writer.Append(".Reverse()");
+    }
 
-                writer.Append(".Reverse()");
-                break;
+    private static void WriteArrayCopy3(
+        InvocationExpressionSyntax node,
+        ReadOnlySpan<Operand> operands,
+        ReadOnlySpan<int> temps,
+        ref TranspileContext context)
+    {
+        var writer = context.Emitter.Writer;
+        WriteOperand(operands, temps, 0, ref context);
+        writer.Append(".AsSpan<GSharpErrorCode::Argument>");
+        using (writer.Parentheses())
+        {
+            writer.Append("0,");
+            WriteOperand(operands, temps, 2, ref context);
+            AppendRangeMessage(writer, SliceErrorCode.Argument, node, ref context);
+        }
 
-            case SpanMemberKind.ArrayCopy3:
-                WriteOperand(operands, temps, 0, ref context);
-                writer.Append(".AsSpan");
-                using (writer.Parentheses())
-                {
-                    writer.Append("0,");
-                    WriteOperand(operands, temps, 2, ref context);
-                }
+        writer.Append(".CopyTo");
+        using (writer.Parentheses())
+        {
+            WriteOperand(operands, temps, 1, ref context);
+            writer.Append(".AsSpan<GSharpErrorCode::Argument>");
+            using (writer.Parentheses())
+            {
+                writer.Append("0,");
+                WriteOperand(operands, temps, 2, ref context);
+                AppendRangeMessage(writer, SliceErrorCode.Argument, node, ref context);
+            }
+        }
+    }
 
-                writer.Append(".CopyTo");
-                using (writer.Parentheses())
-                {
-                    WriteOperand(operands, temps, 1, ref context);
-                    writer.Append(".AsSpan");
-                    using (writer.Parentheses())
-                    {
-                        writer.Append("0,");
-                        WriteOperand(operands, temps, 2, ref context);
-                    }
-                }
+    private static void WriteArrayCopy5(
+        InvocationExpressionSyntax node,
+        ReadOnlySpan<Operand> operands,
+        ReadOnlySpan<int> temps,
+        ref TranspileContext context)
+    {
+        var writer = context.Emitter.Writer;
+        WriteOperand(operands, temps, 0, ref context);
+        writer.Append(".AsSpan<GSharpErrorCode::Argument>");
+        using (writer.Parentheses())
+        {
+            WriteOperand(operands, temps, 1, ref context);
+            writer.Append(',');
+            WriteOperand(operands, temps, 4, ref context);
+            AppendRangeMessage(writer, SliceErrorCode.Argument, node, ref context);
+        }
 
-                break;
-
-            case SpanMemberKind.ArrayCopy5:
-                WriteOperand(operands, temps, 0, ref context);
-                writer.Append(".AsSpan");
-                using (writer.Parentheses())
-                {
-                    WriteOperand(operands, temps, 1, ref context);
-                    writer.Append(',');
-                    WriteOperand(operands, temps, 4, ref context);
-                }
-
-                writer.Append(".CopyTo");
-                using (writer.Parentheses())
-                {
-                    WriteOperand(operands, temps, 2, ref context);
-                    writer.Append(".AsSpan");
-                    using (writer.Parentheses())
-                    {
-                        WriteOperand(operands, temps, 3, ref context);
-                        writer.Append(',');
-                        WriteOperand(operands, temps, 4, ref context);
-                    }
-                }
-
-                break;
+        writer.Append(".CopyTo");
+        using (writer.Parentheses())
+        {
+            WriteOperand(operands, temps, 2, ref context);
+            writer.Append(".AsSpan<GSharpErrorCode::Argument>");
+            using (writer.Parentheses())
+            {
+                WriteOperand(operands, temps, 3, ref context);
+                writer.Append(',');
+                WriteOperand(operands, temps, 4, ref context);
+                AppendRangeMessage(writer, SliceErrorCode.Argument, node, ref context);
+            }
         }
     }
 

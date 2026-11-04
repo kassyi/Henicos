@@ -42,6 +42,17 @@ enum class GSharpErrorCode : int {
 };
 __device__ __forceinline__ void __gsharp_trap(GSharpErrorCode, const char*) { asm("trap;"); }
 
+template <GSharpErrorCode ErrorCode>
+__device__ inline const char* __gsharp_range_message() {
+    if (ErrorCode == GSharpErrorCode::IndexOutOfRange) {
+        return "Index was outside the bounds of the array.";
+    }
+    if (ErrorCode == GSharpErrorCode::Argument) {
+        return "Offset and length were out of bounds for the array or count is greater than the number of elements from index to the end of the source collection.";
+    }
+    return "Index was out of range.";
+}
+
 // A C# array or span: data is nullptr for a null array (and the default span), and never nullptr for an array that
 // exists, also an empty one (#706). flags uses the padding after length (16 bytes as before): bit 0
 // (__gsharp_array_null_reads_empty) marks a null optional kernel argument, which reads as an empty array
@@ -61,8 +72,27 @@ struct GSharpArray {
     __device__ inline GSharpArray(T (&storage)[N]) : data(storage), length(N), flags(0) {}
 
     // The span members that C# calls on a span or an array (Span<T>.Slice, Span<T>.Fill, MemoryExtensions.AsSpan)
-    __device__ inline GSharpArray<T> Slice(int start) const { return GSharpArray<T>(data + start, length - start); }
-    __device__ inline GSharpArray<T> Slice(int start, int count) const { return GSharpArray<T>(data + start, count); }
+    template <GSharpErrorCode ErrorCode = GSharpErrorCode::ArgumentOutOfRange>
+    __device__ inline GSharpArray<T> Slice(int start, const char* message = nullptr) const {
+#ifdef GSHARP_CHECKED
+        if (static_cast<unsigned int>(start) > static_cast<unsigned int>(length)) {
+            __gsharp_trap(ErrorCode, message != nullptr ? message : __gsharp_range_message<ErrorCode>());
+            return GSharpArray<T>();
+        }
+#endif
+        return GSharpArray<T>(data + start, length - start);
+    }
+    template <GSharpErrorCode ErrorCode = GSharpErrorCode::ArgumentOutOfRange>
+    __device__ inline GSharpArray<T> Slice(int start, int count, const char* message = nullptr) const {
+#ifdef GSHARP_CHECKED
+        if (static_cast<unsigned int>(start) > static_cast<unsigned int>(length) ||
+            static_cast<unsigned int>(count) > static_cast<unsigned int>(length - start)) {
+            __gsharp_trap(ErrorCode, message != nullptr ? message : __gsharp_range_message<ErrorCode>());
+            return GSharpArray<T>();
+        }
+#endif
+        return GSharpArray<T>(data + start, count);
+    }
     __device__ inline void Fill(const T& value) const { for (int i = 0; i < length; i++) { data[i] = value; } }
     __device__ inline void Clear() const { for (int i = 0; i < length; i++) { data[i] = T{}; } }
     // Ported from dotnet/runtime src/libraries/System.Private.CoreLib/src/System/MemoryExtensions.cs
@@ -108,8 +138,10 @@ struct GSharpArray {
         }
     }
     __device__ inline GSharpArray<T> AsSpan() const { return *this; }
-    __device__ inline GSharpArray<T> AsSpan(int start) const { return Slice(start); }
-    __device__ inline GSharpArray<T> AsSpan(int start, int count) const { return Slice(start, count); }
+    template <GSharpErrorCode ErrorCode = GSharpErrorCode::ArgumentOutOfRange>
+    __device__ inline GSharpArray<T> AsSpan(int start, const char* message = nullptr) const { return Slice<ErrorCode>(start, message); }
+    template <GSharpErrorCode ErrorCode = GSharpErrorCode::ArgumentOutOfRange>
+    __device__ inline GSharpArray<T> AsSpan(int start, int count, const char* message = nullptr) const { return Slice<ErrorCode>(start, count, message); }
     __device__ inline bool IsEmpty() const { return length <= 0; }
     
     // Allows implicit conversion from GSharpArray<U> to GSharpArray<T> if U* is convertible to T* (e.g. T to const T)

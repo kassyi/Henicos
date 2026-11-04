@@ -105,6 +105,17 @@ internal enum SpanPropertyKind
 /// </summary>
 internal static class SpanWriteClassifier
 {
+    /// <summary>
+    /// Whether <paramref name="srcType"/> and <paramref name="dstType"/> are compatible 1-dimensional arrays for <c>Array.Copy</c>
+    /// with identical element types.
+    /// </summary>
+    public static bool AreCompatibleArrayCopyOperands(ITypeSymbol? srcType, ITypeSymbol? dstType)
+    {
+        return srcType is IArrayTypeSymbol { Rank: 1 } srcArray &&
+               dstType is IArrayTypeSymbol { Rank: 1 } dstArray &&
+               SymbolEqualityComparer.Default.Equals(srcArray.ElementType, dstArray.ElementType);
+    }
+
     /// <summary>Classifies an ordinary or reduced-extension method symbol.</summary>
     public static SpanMemberKind ClassifyMethod(IMethodSymbol? method)
     {
