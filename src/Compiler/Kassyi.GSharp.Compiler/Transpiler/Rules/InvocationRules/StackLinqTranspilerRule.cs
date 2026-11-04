@@ -24,128 +24,210 @@ public sealed class StackLinqTranspilerRule : IInvocationTranspilerRule
             }
         }
 
-        uint siteId1 = 0;
-        uint siteId2 = 0;
-        if (context.Emitter.ErrorSites != null)
+        var sites = RegisterErrorSites(node, symbol, methodName, ref context);
+        if (symbol.ReducedFrom != null && node.Expression is MemberAccessExpressionSyntax memberAccess)
         {
-            var model = context.Query.SemanticModel;
-            var memberName = context.Emitter.CurrentMemberName ?? symbol.Name;
-            switch (methodName)
-            {
-                case "ElementAt":
-                    siteId1 = context.Emitter.ErrorSites.Register(node, model, memberName, "Index was out of range.", "ElementAt");
-                    break;
-                case "First":
-                    var isPredicate = symbol.Parameters.Length > (symbol.IsExtensionMethod ? 1 : 0);
-                    var firstMsg = isPredicate ? "Sequence contains no matching element" : "Sequence contains no elements";
-                    siteId1 = context.Emitter.ErrorSites.Register(node, model, memberName, firstMsg, isPredicate ? "First.Predicate" : "First");
-                    break;
-                case "Last":
-                    siteId1 = context.Emitter.ErrorSites.Register(node, model, memberName, "Sequence contains no elements", "Last");
-                    break;
-                case "Aggregate" when !HasSeedParameter(symbol):
-                    siteId1 = context.Emitter.ErrorSites.Register(node, model, memberName, "Sequence contains no elements", "Aggregate");
-                    break;
-                case "Max":
-                    siteId1 = context.Emitter.ErrorSites.Register(node, model, memberName, "Sequence contains no elements", "Max");
-                    break;
-                case "Min":
-                    siteId1 = context.Emitter.ErrorSites.Register(node, model, memberName, "Sequence contains no elements", "Min");
-                    break;
-                case "Average":
-                    siteId1 = context.Emitter.ErrorSites.Register(node, model, memberName, "Sequence contains no elements", "Average");
-                    break;
-                case "Single":
-                    var isSinglePred = symbol.Parameters.Length > (symbol.IsExtensionMethod ? 1 : 0);
-                    if (isSinglePred)
-                    {
-                        siteId1 = context.Emitter.ErrorSites.Register(node, model, memberName, "Sequence contains more than one matching element", "Single.MoreThanOneMatching");
-                        siteId2 = context.Emitter.ErrorSites.Register(node, model, memberName, "Sequence contains no matching element", "Single.NoMatching");
-                    }
-                    else
-                    {
-                        siteId1 = context.Emitter.ErrorSites.Register(node, model, memberName, "Sequence contains no elements", "Single.Empty");
-                        siteId2 = context.Emitter.ErrorSites.Register(node, model, memberName, "Sequence contains more than one element", "Single.MoreThanOne");
-                    }
-                    break;
-                case "SingleOrDefault":
-                    var isSingleOrDefaultPred = symbol.Parameters.Length > (symbol.IsExtensionMethod ? 1 : 0);
-                    var singleOrDefaultMsg = isSingleOrDefaultPred ? "Sequence contains more than one matching element" : "Sequence contains more than one element";
-                    siteId1 = context.Emitter.ErrorSites.Register(node, model, memberName, singleOrDefaultMsg, isSingleOrDefaultPred ? "SingleOrDefault.MoreThanOneMatching" : "SingleOrDefault.MoreThanOne");
-                    break;
-            }
+            TranspileReducedCall(node, memberAccess.Expression, symbol, symbol.ReducedFrom, methodName, sites, ref context);
         }
-
-        // Output the C++ namespace for our StackLinq implementation
-        context.Emitter.Writer.Append("Kassyi::ZeroAlloc::Linq::StackLinq::");
-        context.Emitter.Writer.Append(methodName);
-
-        using (context.Emitter.Writer.Parentheses())
+        else
         {
-            var arguments = node.ArgumentList.Arguments;
-            switch (symbol.IsExtensionMethod)
-            {
-                // If this is an extension method call via instance.Method(), the instance is the first argument
-                case true when node.Expression is MemberAccessExpressionSyntax memberAccess:
-                {
-                    // The source template deduces GSharpArray<T>, which a stack array does not convert to
-                    StackArrayLocals.AppendView(memberAccess.Expression, ref context);
-
-                    if (arguments.Count > 0)
-                    {
-                        context.Emitter.Writer.Append(',');
-                    }
-
-                    break;
-                }
-                case true:
-                    // Called as a normal static method, first arg is the instance, which is handled normally below
-                    break;
-            }
-
-            for (var i = 0; i < arguments.Count; i++)
-            {
-                if (StackArrayLocals.IsStackArrayReference(arguments[i].Expression, context.Query.SemanticModel))
-                {
-                    StackArrayLocals.AppendView(arguments[i].Expression, ref context);
-                }
-                else
-                {
-                    context.Visitor.Visit(arguments[i]);
-                }
-
-                if (i < arguments.Count - 1)
-                {
-                    context.Emitter.Writer.Append(',');
-                }
-            }
-
-            if (siteId1 != 0)
-            {
-                if (arguments.Count > 0 || (symbol.IsExtensionMethod && node.Expression is MemberAccessExpressionSyntax))
-                {
-                    context.Emitter.Writer.Append(',');
-                }
-                context.Emitter.Writer.Append($"{siteId1}u");
-                if (siteId2 != 0)
-                {
-                    context.Emitter.Writer.Append($",{siteId2}u");
-                }
-            }
+            TranspileStaticCall(node, symbol, methodName, sites, ref context);
         }
 
         return true;
     }
 
-    private static bool HasSeedParameter(IMethodSymbol symbol)
+    // Registers the error sites of a trapping terminal; the ids are appended after its arguments (zero: no site)
+    private static (uint First, uint Second) RegisterErrorSites(
+        InvocationExpressionSyntax node,
+        IMethodSymbol symbol,
+        string methodName,
+        ref TranspileContext context)
     {
-        for (var i = 0; i < symbol.Parameters.Length; i++)
+        var table = context.Emitter.ErrorSites;
+        if (table == null)
         {
-            if (symbol.Parameters[i].Name == "seed")
-            {
-                return true;
-            }
+            return (0u, 0u);
         }
-        return false;
+
+        var model = context.Query.SemanticModel;
+        var memberName = context.Emitter.CurrentMemberName ?? symbol.Name;
+        var hasPredicate = StackLinqHelper.GetStageArgumentCount(symbol) > 0;
+        switch (methodName)
+        {
+            case "ElementAt":
+                return (table.Register(node, model, memberName, "Index was out of range.", "ElementAt"), 0u);
+            case "First" when hasPredicate:
+                return (table.Register(node, model, memberName, "Sequence contains no matching element", "First.Predicate"), 0u);
+            case "First":
+                return (table.Register(node, model, memberName, "Sequence contains no elements", "First"), 0u);
+            case "Last":
+            case "Aggregate" when !HasSeedParameter(symbol):
+            case "Max":
+            case "Min":
+            case "Average":
+                return (table.Register(node, model, memberName, "Sequence contains no elements", methodName), 0u);
+            case "Single" when hasPredicate:
+                return (
+                    table.Register(node, model, memberName, "Sequence contains more than one matching element", "Single.MoreThanOneMatching"),
+                    table.Register(node, model, memberName, "Sequence contains no matching element", "Single.NoMatching")
+                );
+            case "Single":
+                return (
+                    table.Register(node, model, memberName, "Sequence contains no elements", "Single.Empty"),
+                    table.Register(node, model, memberName, "Sequence contains more than one element", "Single.MoreThanOne")
+                );
+            case "SingleOrDefault" when hasPredicate:
+                return (table.Register(node, model, memberName, "Sequence contains more than one matching element", "SingleOrDefault.MoreThanOneMatching"), 0u);
+            case "SingleOrDefault":
+                return (table.Register(node, model, memberName, "Sequence contains more than one element", "SingleOrDefault.MoreThanOne"), 0u);
+            default:
+                return (0u, 0u);
+        }
+    }
+
+    private static bool HasSeedParameter(IMethodSymbol symbol) =>
+        symbol.Parameters
+            .AsStackEnumerable()
+            .Any(static p => p.Name == "seed");
+
+    // ,<site>u[,<site>u]
+    private static void AppendErrorSites((uint First, uint Second) sites, ref TranspileContext context)
+    {
+        if (sites.First == 0)
+        {
+            return;
+        }
+
+        context.Emitter.Writer.Append($",{sites.First}u");
+        if (sites.Second != 0)
+        {
+            context.Emitter.Writer.Append($",{sites.Second}u");
+        }
+    }
+
+    private static void TranspileReducedCall(
+        InvocationExpressionSyntax node,
+        ExpressionSyntax receiver,
+        IMethodSymbol symbol,
+        IMethodSymbol extension,
+        string methodName,
+        (uint First, uint Second) sites,
+        ref TranspileContext context)
+    {
+        using var sequence = EvaluationOrder.BeginExtensionCall(
+            ref context,
+            receiver,
+            extension.Parameters[0],
+            node.ArgumentList.Arguments,
+            symbol);
+
+        AppendMethodName(methodName, ref context);
+        using (context.Emitter.Writer.Parentheses())
+        {
+            AppendSource(receiver, in sequence, ref context);
+
+            var stageArgCount = StackLinqHelper.GetStageArgumentCount(symbol);
+            for (var i = 0; i < stageArgCount; i++)
+            {
+                if (!StackLinqHelper.TryGetStageArgument(node, symbol, i, out var stageArg))
+                {
+                    throw new InvalidOperationException($"Stage argument {i} was not found.");
+                }
+
+                context.Emitter.Writer.Append(',');
+                AppendStageArgument(stageArg, symbol.Parameters[i], in sequence, ref context);
+            }
+
+            AppendErrorSites(sites, ref context);
+        }
+    }
+
+    private static void TranspileStaticCall(
+        InvocationExpressionSyntax node,
+        IMethodSymbol symbol,
+        string methodName,
+        (uint First, uint Second) sites,
+        ref TranspileContext context)
+    {
+        using var sequence = EvaluationOrder.BeginCall(
+            ref context,
+            node.ArgumentList.Arguments,
+            symbol,
+            receiver: null,
+            spillAll: false);
+
+        if (!StackLinqHelper.TryFindArgument(node, symbol, 0, out var sourceArg))
+        {
+            throw new InvalidOperationException("Source argument was not found.");
+        }
+
+        AppendMethodName(methodName, ref context);
+        using (context.Emitter.Writer.Parentheses())
+        {
+            AppendArgumentWithStackArray(sourceArg, symbol.Parameters[0], in sequence, ref context);
+
+            var stageArgCount = StackLinqHelper.GetStageArgumentCount(symbol);
+            for (var i = 0; i < stageArgCount; i++)
+            {
+                if (!StackLinqHelper.TryGetStageArgument(node, symbol, i, out var stageArg))
+                {
+                    throw new InvalidOperationException($"Stage argument {i} was not found.");
+                }
+
+                context.Emitter.Writer.Append(',');
+                AppendStageArgument(stageArg, symbol.Parameters[i + 1], in sequence, ref context);
+            }
+
+            AppendErrorSites(sites, ref context);
+        }
+    }
+
+    private static void AppendMethodName(string methodName, ref TranspileContext context)
+    {
+        context.Emitter.Writer.Append("Kassyi::ZeroAlloc::Linq::StackLinq::");
+        context.Emitter.Writer.Append(methodName);
+    }
+
+    private static void AppendSource(
+        ExpressionSyntax receiver,
+        in EvaluationOrder.CallSequence sequence,
+        ref TranspileContext context)
+    {
+        if (StackArrayLocals.IsStackArrayReference(receiver, context.Query.SemanticModel))
+        {
+            context.Emitter.Writer.Append("__gsharp_stackalloc_span(");
+            sequence.AppendReceiver(receiver, byReference: false, ref context);
+            context.Emitter.Writer.Append(')');
+        }
+        else
+        {
+            sequence.AppendReceiver(receiver, byReference: false, ref context);
+        }
+    }
+
+    private static void AppendStageArgument(
+        ArgumentSyntax stageArg,
+        IParameterSymbol parameter,
+        in EvaluationOrder.CallSequence sequence,
+        ref TranspileContext context) =>
+        AppendArgumentWithStackArray(stageArg, parameter, in sequence, ref context);
+
+    private static void AppendArgumentWithStackArray(
+        ArgumentSyntax argument,
+        IParameterSymbol parameter,
+        in EvaluationOrder.CallSequence sequence,
+        ref TranspileContext context)
+    {
+        if (StackArrayLocals.IsStackArrayReference(argument.Expression, context.Query.SemanticModel))
+        {
+            context.Emitter.Writer.Append("__gsharp_stackalloc_span(");
+            sequence.AppendArgument(argument, parameter, ref context);
+            context.Emitter.Writer.Append(')');
+        }
+        else
+        {
+            sequence.AppendArgument(argument, parameter, ref context);
+        }
     }
 }

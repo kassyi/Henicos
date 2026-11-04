@@ -46,14 +46,17 @@ internal sealed partial class ManagedExecutionRewriter
                 : visited);
         }
 
-        // __gsharp_ctx.__gsharp_call_frame_<frame index>
+        // __gsharp_ctx.__gsharp_call_frame_<frame index> or &__gsharp_ctx->__gsharp_call_frame_<frame index>
         var frameName = GSharpInternalNames.SuspendingCall.CallFramePrefix + frameIndex.Token.ValueText;
-        var frame = SyntaxFactory.MemberAccessExpression(
-            SyntaxKind.SimpleMemberAccessExpression,
+        var frameAccess = SyntaxFactory.MemberAccessExpression(
+            _isUnsafe ? SyntaxKind.PointerMemberAccessExpression : SyntaxKind.SimpleMemberAccessExpression,
             SyntaxFactory.IdentifierName(GSharpInternalNames.StateMachine.Context),
             SyntaxFactory.IdentifierName(frameName)
         );
-        callArguments = callArguments.Add(SyntaxFactory.Argument(frame));
+        var frameArg = _isUnsafe
+            ? (ExpressionSyntax)SyntaxFactory.PrefixUnaryExpression(SyntaxKind.AddressOfExpression, frameAccess)
+            : frameAccess;
+        callArguments = callArguments.Add(SyntaxFactory.Argument(frameArg));
 
         if (arguments.Count <= 2)
         {
