@@ -10,9 +10,13 @@ internal sealed partial class ManagedExecutionRewriter
                 Identifier.ValueText: GSharpInternalNames.SuspendingCall.ResumeCall
             })
         {
-            return ManagedNameQualifier.TryRewriteInvocation(node, this, semanticModel) is { } rewritten
+            var result = ManagedNameQualifier.TryRewriteInvocation(node, this, semanticModel) is { } rewritten
                 ? RouteExtensionCall(node, rewritten)
                 : base.VisitInvocationExpression(node);
+            return ManagedRewriteClassifier.IsSequentialSum(node, semanticModel) &&
+                   result is InvocationExpressionSyntax sumCall
+                ? RewriteSequentialSum(sumCall)
+                : result;
         }
 
         var arguments = node.ArgumentList.Arguments;
@@ -67,5 +71,25 @@ internal sealed partial class ManagedExecutionRewriter
             SyntaxFactory.ParseExpression(ManagedStateMachineEmitter.GetDeviceFunctionMember(callee,
                 GSharpInternalNames.Kernel.StateMachinePrefix)),
             SyntaxFactory.ArgumentList(callArguments));
+    }
+
+    private static InvocationExpressionSyntax RewriteSequentialSum(InvocationExpressionSyntax call) =>
+        call.Expression switch
+        {
+            QualifiedNameSyntax qualified =>
+                call.WithExpression(qualified.WithRight(WithSequentialSumName(qualified.Right))),
+            MemberAccessExpressionSyntax access =>
+                call.WithExpression(access.WithName(WithSequentialSumName(access.Name))),
+            SimpleNameSyntax simple =>
+                call.WithExpression(WithSequentialSumName(simple)),
+            _ => call
+        };
+
+    private static SimpleNameSyntax WithSequentialSumName(SimpleNameSyntax name)
+    {
+        var identifier = SyntaxFactory.Identifier("SumSequential").WithTriviaFrom(name.Identifier);
+        return name is GenericNameSyntax generic
+            ? generic.WithIdentifier(identifier)
+            : SyntaxFactory.IdentifierName(identifier).WithTriviaFrom(name);
     }
 }
