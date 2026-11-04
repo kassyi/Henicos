@@ -12,6 +12,7 @@ Kernel:
     LaunchExportPrefix: __gsharp_launch_
     ContextPrefix: __gsharp_context_
     StateMachinePrefix: __gsharp_statemachine_
+    RawArgumentPrefix: __gsharp_raw_arg_
 
 StateMachine:
   Summary: Per-thread state machine context (CPU dialects).
@@ -191,6 +192,7 @@ ReturnValue:
 Prelude:
   Summary: Functions and globals that the Prelude declares, used by the emitters or by the runtime loader.
   Names:
+    ArrayNullReadsEmpty: { Value: __gsharp_array_null_reads_empty, Prelude: ErrorChannel.hpp }
     HostLastError: { Value: __gsharp_host_last_error, Prelude: ErrorChannel.hpp }
     ActiveErrorSlot: { Value: __gsharp_active_error_slot, Prelude: ErrorChannel.hpp }
     Unsupported: { Value: __gsharp_unsupported, Prelude: ErrorChannel.hpp }

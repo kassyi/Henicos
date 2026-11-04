@@ -39,7 +39,9 @@ internal static class TypeLayoutCalculator
 
         foreach (var member in StructAbiMembers.Get(named))
         {
-            var memberType = member.Type.UnwrapNullableArrayLike() ?? member.Type;
+            var memberType = member.Type is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T, TypeArguments: [var underlying] }
+                ? underlying
+                : member.Type;
             CollectStructs(memberType.TryGetArrayLikeElementType(out var element) ? element : memberType, structs);
         }
     }
@@ -141,7 +143,6 @@ internal static class TypeLayoutCalculator
     /// </remarks>
     public static bool HasDeviceRepresentation(ITypeSymbol type, ITranspilerDialect dialect)
     {
-        type = type.UnwrapNullableArrayLike() ?? type;
         if (type.IsArrayLikeType() ||
             type is IPointerTypeSymbol or IFunctionPointerTypeSymbol or ITypeParameterSymbol ||
             type.SpecialType is SpecialType.System_IntPtr or SpecialType.System_UIntPtr ||
@@ -348,8 +349,8 @@ internal static class TypeLayoutCalculator
                     null);
             }
 
-            var type = member.Type.UnwrapNullableArrayLike() ?? member.Type;
-            if (type.IsArrayLikeType())
+            var type = member.Type;
+            if (type.IsArrayLikeType() || type.IsNullableArrayLike())
             {
                 continue;
             }

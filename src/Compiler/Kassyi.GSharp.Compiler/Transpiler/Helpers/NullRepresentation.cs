@@ -10,19 +10,11 @@ internal static class NullRepresentation
     /// Whether a <c>null</c> test on <paramref name="type"/> becomes a <c>data</c> pointer or <c>HasValue</c> test: an
     /// array-like type or a <c>Nullable&lt;T&gt;</c>.
     /// </summary>
-    public static bool IsArrayNullComparable([NotNullWhen(true)] ITypeSymbol? type) =>
+    public static bool IsNullComparable([NotNullWhen(true)] ITypeSymbol? type) =>
         type != null && (type.IsArrayLikeType() || type.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T);
 
-    /// <summary>
-    /// Whether <paramref name="operand"/> is a parameter whose C# type is a nullable array-like value type
-    /// (<c>Memory&lt;T&gt;?</c>, <c>ArraySegment&lt;T&gt;?</c>, etc.) that parameter emission unwraps to
-    /// <c>GSharpArray&lt;T&gt;</c>.
-    /// </summary>
-    public static bool IsUnwrappedNullableArrayParameter(ExpressionSyntax operand, SemanticModel model)
-    {
-        operand = SkipNullPreservingConversions(operand, model);
-        return model.GetSymbol(operand) is IParameterSymbol param && param.Type.IsNullableArrayLike();
-    }
+    /// <inheritdoc cref="IsNullComparable"/>
+    public static bool IsArrayNullComparable([NotNullWhen(true)] ITypeSymbol? type) => IsNullComparable(type);
 
     /// <summary>
     /// Emits <c>(&lt;operand&gt;.data == nullptr)</c> (or <c>(!&lt;operand&gt;.HasValue)</c> for a
@@ -34,7 +26,7 @@ internal static class NullRepresentation
     /// span (<c>stackalloc T[0]</c>, <c>[]</c>) is emitted as <c>GSharpArray&lt;T&gt;{}</c> whose <c>data</c> is
     /// <c>nullptr</c>, matching C# where an empty span equals <c>null</c>.
     /// </remarks>
-    public static void AppendArrayNullTest(ExpressionSyntax operand, bool isNull, ref TranspileContext context)
+    public static void AppendNullTest(ExpressionSyntax operand, bool isNull, ref TranspileContext context)
     {
         var model = context.Query.SemanticModel;
         operand = SkipNullPreservingConversions(operand, model);
@@ -46,10 +38,9 @@ internal static class NullRepresentation
         }
 
         var isNullableStruct = model.GetTypeSymbol(operand) is INamedTypeSymbol
-                               {
-                                   OriginalDefinition.SpecialType: SpecialType.System_Nullable_T
-                               } &&
-                               !IsUnwrappedNullableArrayParameter(operand, model);
+        {
+            OriginalDefinition.SpecialType: SpecialType.System_Nullable_T
+        };
 
         using (context.Emitter.Writer.Parentheses())
         {
@@ -78,6 +69,10 @@ internal static class NullRepresentation
         }
     }
 
+    /// <inheritdoc cref="AppendNullTest"/>
+    public static void AppendArrayNullTest(ExpressionSyntax operand, bool isNull, ref TranspileContext context) =>
+        AppendNullTest(operand, isNull, ref context);
+
     // Parentheses, and casts from one array-like type to another ((int[])a), do not change whether a value is null
     private static ExpressionSyntax SkipNullPreservingConversions(ExpressionSyntax operand, SemanticModel model)
     {
@@ -88,8 +83,8 @@ internal static class NullRepresentation
                 case ParenthesizedExpressionSyntax parenthesized:
                     operand = parenthesized.Expression;
                     break;
-                case CastExpressionSyntax cast when IsArrayNullComparable(model.GetTypeSymbol(cast)) &&
-                                                    IsArrayNullComparable(model.GetTypeSymbol(cast.Expression)):
+                case CastExpressionSyntax cast when IsNullComparable(model.GetTypeSymbol(cast)) &&
+                                                    IsNullComparable(model.GetTypeSymbol(cast.Expression)):
                     operand = cast.Expression;
                     break;
                 default:
@@ -119,7 +114,6 @@ internal static class NullRepresentation
         var castResult = resultType != null &&
                          !(leftType.IsEqualTo(resultType) && rightType.IsEqualTo(resultType)) &&
                          !(unwrappedLeft.IsEqualTo(resultType) && rightType.IsEqualTo(resultType));
-        var isUnwrappedArrayParam = IsUnwrappedNullableArrayParameter(left, model);
 
         using (context.Emitter.Writer.ImmediatelyInvokedLambda())
         {
@@ -127,28 +121,30 @@ internal static class NullRepresentation
             context.Visitor.Visit(left);
             context.Emitter.Writer.AppendLine(";");
 
-            context.Emitter.Writer.Append(isUnwrappedArrayParam
-                ? $"return {temp}.data != nullptr ? "
-                : $"return {temp}.HasValue ? ");
+            context.Emitter.Writer.Append($"return {temp}.HasValue ? ");
             if (castResult && resultType != null)
             {
-                context.Emitter.Writer.Append("static_cast<");
-                context.Emitter.Dialect.AppendType(ref context, resultType);
-                context.Emitter.Writer.Append(">(");
-                context.Emitter.Writer.Append(isUnwrappedArrayParam ? temp : $"{temp}.Value");
-                context.Emitter.Writer.Append(") : static_cast<");
-                context.Emitter.Dialect.AppendType(ref context, resultType);
-                context.Emitter.Writer.Append(">(");
+                AppendStaticCast(ref context, resultType);
+                context.Emitter.Writer.Append($"{temp}.Value) : ");
+                AppendStaticCast(ref context, resultType);
                 context.Visitor.Visit(right);
-                context.Emitter.Writer.AppendLine(");");
+                context.Emitter.Writer.Append(')');
             }
             else
             {
-                context.Emitter.Writer.Append(isUnwrappedArrayParam ? $"{temp} : " : $"{temp}.Value : ");
+                context.Emitter.Writer.Append($"{temp}.Value : ");
                 context.Visitor.Visit(right);
-                context.Emitter.Writer.AppendLine(";");
             }
+
+            context.Emitter.Writer.AppendLine(";");
         }
+    }
+
+    private static void AppendStaticCast(ref TranspileContext context, ITypeSymbol type)
+    {
+        context.Emitter.Writer.Append("static_cast<");
+        context.Emitter.Dialect.AppendType(ref context, type);
+        context.Emitter.Writer.Append(">(");
     }
 
     /// <summary>
