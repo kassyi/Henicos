@@ -182,7 +182,7 @@ public sealed class MsvcToolchain : INativeToolchain
                 var cwdObjPath = Path.Combine(Environment.CurrentDirectory,
                     Path.GetFileNameWithoutExtension(sourcePath) + ".obj");
 
-                CompileKernelTaskBase.CleanupFiles(objPath, libPath, expPath, srcObjPath, cwdObjPath);
+                CompileKernelTaskBase.CleanupFiles(log, objPath, libPath, expPath, srcObjPath, cwdObjPath);
 
                 return true;
             }
