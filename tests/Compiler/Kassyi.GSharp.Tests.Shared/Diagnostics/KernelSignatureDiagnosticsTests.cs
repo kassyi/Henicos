@@ -108,9 +108,11 @@ public class KernelSignatureDiagnosticsTests
             .Select(static t => t.ToString())
             .ToList();
 
+        Assert.Contains(generatedSources, static generated => generated.Contains("LaunchPlainKernel("));
         foreach (var generated in generatedSources)
         {
             Assert.DoesNotContain("LaunchGridDimXKernel", generated);
+            Assert.DoesNotContain("LaunchStreamAndSharedMemBytesKernel", generated);
         }
 
         var outputDiagnostics = run.Output.GetDiagnostics();

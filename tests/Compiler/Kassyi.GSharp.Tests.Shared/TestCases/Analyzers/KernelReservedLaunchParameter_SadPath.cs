@@ -27,4 +27,11 @@ public static partial class KernelReservedLaunchParameter_SadPath
     // Device functions have no host launch wrappers, so reserved launch parameter names are allowed there.
     [GpuDeviceFunction]
     public static int DeviceHelper(int gridDimX, int hStream) => gridDimX + hStream;
+
+    // No reserved name: its wrapper is still generated next to the skipped ones
+    [GpuKernel]
+    public static void PlainKernel(int[] output)
+    {
+        output[ThreadIndex.X] = 1;
+    }
 }
