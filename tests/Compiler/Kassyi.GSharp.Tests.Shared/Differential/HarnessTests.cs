@@ -1053,6 +1053,89 @@ public class HarnessTests
     [Fact]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_DifferentialCase_SkippedPaths_RecordedInReport()
+    {
+        // When a path is in SkippedPaths, it is reported as skipped with the given reason string and not executed
+        bool nativeRan = false;
+        var skippedNativeCase = new DifferentialCase("HarnessTests.SkippedNativeKernel")
+        {
+            Shape = LaunchShapes.SingleThread(),
+            SkippedPaths = new Dictionary<DiffPath, string>
+            {
+                [DiffPath.Native] = "#718 (x86 idiv terminates process)",
+            },
+            ExpectedException = static (_, _) => ExceptionPolicy.For<DivideByZeroException>(DiffPath.Managed | DiffPath.Native),
+            Inputs = static (_, _) => new DiffBuffers().Out<int>("r", 1, OutputPolicy.Exact),
+            Launch = static (_, _) => { },
+        };
+
+        DiffPathRunner[] paths =
+        [
+            new(DiffPath.Managed, static _ => throw new DivideByZeroException("Attempted to divide by zero.")),
+            new(DiffPath.Native, run =>
+            {
+                nativeRan = true;
+                run();
+            }),
+        ];
+
+        var report = DifferentialRunner.Evaluate(skippedNativeCase, [1], paths, s_noEntries);
+        Assert.False(report.HasFailures, report.ToString());
+        Assert.False(nativeRan);
+        Assert.Empty(report.Mismatches);
+
+        // When a mismatch does occur on another path, the skipped path shows the reason
+        DiffPathRunner[] pathsWithMismatch =
+        [
+            new(DiffPath.Managed, static _ => { }),
+            new(DiffPath.Native, run => run()),
+        ];
+        var mismatchReport = DifferentialRunner.Evaluate(skippedNativeCase, [1], pathsWithMismatch, s_noEntries);
+        Assert.True(mismatchReport.HasFailures);
+        var mismatch = Assert.Single(mismatchReport.Mismatches);
+        var nativeCell = Assert.Single(mismatch.Paths.Where(static p => p.Path == DiffPath.Native));
+        Assert.Contains("skipped (#718 (x86 idiv terminates process))", nativeCell.Value);
+    }
+
+    [Fact]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_Runner_ThrowingPath_CoveredByKnownDivergence_Passes()
+    {
+        // When Managed throws unexpectedly on an unchecked path, a KnownDivergence on $exception waives it
+        var throwingCase = new DifferentialCase("HarnessTests.ThrowingManagedKernel")
+        {
+            Shape = LaunchShapes.SingleThread(),
+            Inputs = static (_, _) => new DiffBuffers().Out<int>("r", 1, OutputPolicy.Exact),
+            Launch = static (b, _) => b.Get<int>("r")[0] = 42,
+            Reference = static (b, _) => b.Get<int>("r")[0] = 42,
+        };
+
+        DiffPathRunner[] paths =
+        [
+            new(DiffPath.Managed, static _ => throw new OverflowException("Arithmetic operation resulted in an overflow.")),
+            new(DiffPath.Native, static run => run()),
+        ];
+
+        // Without KnownDivergence, the thrown exception causes failure
+        var unexcusedReport = DifferentialRunner.Evaluate(throwingCase, [0], paths, s_noEntries);
+        Assert.True(unexcusedReport.HasFailures);
+
+        // With KnownDivergence covering $exception, the failure is waived
+        KnownDivergence[] known =
+        [
+            new("HarnessTests.ThrowingManagedKernel", KnownDivergence.ExceptionColumn, DiffPath.Managed, Issue: 718),
+        ];
+        var excusedReport = DifferentialRunner.Evaluate(throwingCase, [0], paths, known);
+        Assert.False(excusedReport.HasFailures, excusedReport.ToString());
+        Assert.Empty(excusedReport.StaleDivergences);
+    }
+
+    [Fact]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Unit)]
     [Scenario(TestScenario.SadPath)]
     public void Test_ExceptionPolicy_Matches_RejectsMissingLocationOrMemberName()
     {

@@ -291,6 +291,11 @@ public static class DifferentialRunner
         var actuals = new List<(DiffPathRunner Path, DiffBuffers Buffers, DiffBuffers? PtrBuffers)>();
         foreach (var path in run.Paths)
         {
+            if (run.Case.SkippedPaths is not null && run.Case.SkippedPaths.TryGetValue(path.Path, out string? _))
+            {
+                continue;
+            }
+
             var buffers = at.Initial.Clone();
             buffers.Shape = shape;
             try
@@ -308,7 +313,8 @@ public static class DifferentialRunner
             }
             catch (Exception ex)
             {
-                run.Report.Add(new PathFailure(at.Seed, path.Path, ex, shape));
+                var entry = run.FindEntry(KnownDivergence.ExceptionColumn, path.Path, shape);
+                run.Report.Add(new PathFailure(at.Seed, path.Path, ex, shape, entry));
             }
         }
 
@@ -335,6 +341,12 @@ public static class DifferentialRunner
 
         foreach (var path in run.Paths)
         {
+            if (run.Case.SkippedPaths is not null && run.Case.SkippedPaths.TryGetValue(path.Path, out string? skipReason))
+            {
+                cells.Add(new PathCell(path.Path, $"skipped ({skipReason})", Differs: false, Known: null));
+                continue;
+            }
+
             if ((policy.Paths & path.Path) == 0)
             {
                 cells.Add(new PathCell(path.Path, "skipped (unchecked path)", Differs: false, Known: null));
@@ -582,21 +594,41 @@ public static class DifferentialRunner
                 actualBuffers.Add((path, primary, ptr));
             }
 
+            var skippedPaths = run.Case.SkippedPaths;
             for (int i = 0; i < oracle.Length; i++)
             {
-                if (actualBuffers.All(a => oracle.CellsMatch(a.Primary, i) && (a.Ptr is null || oracle.CellsMatch(a.Ptr, i))))
+                if (run.Paths.All(p =>
+                {
+                    if (skippedPaths is not null && skippedPaths.ContainsKey(p.Path))
+                    {
+                        return true;
+                    }
+                    var match = actualBuffers.FirstOrDefault(a => a.Path.Path == p.Path);
+                    return match.Primary is not null && oracle.CellsMatch(match.Primary, i) && (match.Ptr is null || oracle.CellsMatch(match.Ptr, i));
+                }))
                 {
                     continue;
                 }
 
-                var cells = new List<PathCell>(actualBuffers.Count);
+                var cells = new List<PathCell>(run.Paths.Count);
                 string column = oracle.ColumnNameOf(i);
-                foreach (var (path, primary, ptr) in actualBuffers)
+                foreach (var path in run.Paths)
                 {
-                    bool primaryDiffers = !oracle.CellsMatch(primary, i);
-                    bool ptrDiffers = ptr is not null && !oracle.CellsMatch(ptr, i);
+                    if (run.Case.SkippedPaths is not null && run.Case.SkippedPaths.TryGetValue(path.Path, out string? skipReason))
+                    {
+                        cells.Add(new PathCell(path.Path, $"skipped ({skipReason})", Differs: false, Known: null));
+                        continue;
+                    }
+
+                    var match = actualBuffers.FirstOrDefault(a => a.Path.Path == path.Path);
+                    if (match.Primary is null)
+                    {
+                        continue;
+                    }
+                    bool primaryDiffers = !oracle.CellsMatch(match.Primary, i);
+                    bool ptrDiffers = match.Ptr is not null && !oracle.CellsMatch(match.Ptr, i);
                     bool differs = primaryDiffers || ptrDiffers;
-                    var displayedBuffer = !primaryDiffers && ptrDiffers && ptr is not null ? ptr : primary;
+                    var displayedBuffer = !primaryDiffers && ptrDiffers && match.Ptr is not null ? match.Ptr : match.Primary;
                     var entry = differs ? run.FindEntry(column, path.Path, at.Shape) : null;
                     cells.Add(new PathCell(path.Path, displayedBuffer.FormatCell(i), differs, entry));
                 }
@@ -684,7 +716,17 @@ public static class DifferentialRunner
 
             foreach (var path in run.Paths)
             {
-                if ((entry.Paths & path.Path) == 0 ||
+                if (run.Case.SkippedPaths is not null && run.Case.SkippedPaths.ContainsKey(path.Path))
+                {
+                    continue;
+                }
+
+                if ((entry.Paths & path.Path) == 0)
+                {
+                    continue;
+                }
+
+                if (entry.Column != KnownDivergence.ExceptionColumn &&
                     report.Failures.Any(f => f.Path == path.Path && (f.Shape is null || entry.ShapePredicate is null || entry.ShapePredicate(f.Shape))))
                 {
                     continue;
@@ -693,7 +735,10 @@ public static class DifferentialRunner
                 bool seen = report.Mismatches.Any(m =>
                     m.ColumnName == entry.Column &&
                     (m.Shape is null || entry.ShapePredicate is null || entry.ShapePredicate(m.Shape)) &&
-                    m.Paths.Any(p => p.Path == path.Path && p.Known == entry));
+                    m.Paths.Any(p => p.Path == path.Path && p.Known == entry))
+                    || (entry.Column == KnownDivergence.ExceptionColumn &&
+                        report.Failures.Any(f => f.Path == path.Path && f.Known == entry &&
+                            (f.Shape is null || entry.ShapePredicate is null || entry.ShapePredicate(f.Shape))));
                 if (!seen)
                 {
                     report.Add(new StaleDivergence(entry, path.Path));
