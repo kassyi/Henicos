@@ -41,7 +41,7 @@ internal sealed class WarpActiveMaskDivergenceRule : ISyntaxValidationRule<Invoc
         var isKernel = context.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(declaration) is { } declared &&
                        declared.HasAttribute(KnownAttributes.GpuKernel);
         var masks = isKernel ? default : new ArgumentMasks(ulong.MaxValue, 0);
-        if (new MethodFlowGraph(context.SemanticModel, declaration).TryGetUniformity(masks, out var uniformity) &&
+        if (context.TryGetUniformity(declaration, masks, out var uniformity) &&
             uniformity.IsReachedByPartOfBlock(invocation))
         {
             context.ReportDiagnostic(GSharpDiagnostics.WarpActiveMaskInDivergentCode, invocation,
