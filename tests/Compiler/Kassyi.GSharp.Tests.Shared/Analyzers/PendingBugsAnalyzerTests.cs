@@ -38,9 +38,10 @@ public class PendingBugsAnalyzerTests : TranspilerTestBase
             .ToDictionary(m => m.Identifier.ValueText);
 
         var methods = methodSyntaxes
-            .ToDictionary(kvp => kvp.Key, kvp => model.GetDeclaredSymbol(kvp.Value))
-            .Where(kvp => kvp.Value != null)
-            .ToDictionary(kvp => kvp.Key, kvp => kvp.Value!);
+            .ToDictionary(
+                kvp => kvp.Key,
+                kvp => model.GetDeclaredSymbol(kvp.Value) ?? throw new InvalidOperationException($"No symbol for {kvp.Key}.")
+            );
 
         Assert.True(SuspensionAnalysis.IsRecursiveSuspendingFunction(methods["DirectRec"], compilation));
         Assert.True(SuspensionAnalysis.IsRecursiveSuspendingFunction(methods["MutualA"], compilation));
