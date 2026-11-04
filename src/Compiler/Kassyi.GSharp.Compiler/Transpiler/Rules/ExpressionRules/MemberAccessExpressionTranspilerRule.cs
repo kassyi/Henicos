@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Compiler.Analysis;
+
 namespace Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules;
 
 public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerRuleBase<MemberAccessExpressionSyntax>
@@ -9,6 +11,33 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
         if (symbol == null && node.Parent is InvocationExpressionSyntax invocation && invocation.Expression == node)
         {
             symbol = context.Query.SemanticModel.GetSymbol(invocation);
+        }
+
+        if (SpanWriteClassifier.TryFailUninvoked(node, ref context))
+        {
+            return;
+        }
+
+        if (symbol is IPropertySymbol spanProperty)
+        {
+            switch (SpanWriteClassifier.ClassifyProperty(spanProperty))
+            {
+                case SpanPropertyKind.Empty:
+                    context.Emitter.Dialect.AppendType(ref context, spanProperty.Type);
+                    context.Emitter.Writer.Append("{}");
+                    return;
+                case SpanPropertyKind.IsEmpty:
+                    StackArrayLocals.AppendView(node.Expression, ref context);
+                    context.Emitter.Writer.Append(".IsEmpty()");
+                    return;
+                case SpanPropertyKind.Unsupported:
+                    context.Reporter.Fail(
+                        GSharpDiagnostics.UnsupportedSyntax,
+                        node,
+                        SpanWriteClassifier.FormatUnsupportedProperty(spanProperty));
+                    context.Visitor.AppendUnsupportedPlaceholder(node);
+                    return;
+            }
         }
 
         if (symbol != null && TryTranspileIntrinsic(symbol, ref context))

@@ -1694,7 +1694,7 @@ public const string StackArrayMembersKernel_Source = @"extern ""C"" __global__ v
 int __gsharp_id_1_s[4]{};
 __gsharp_stackalloc_span(__gsharp_id_1_s).Fill(2);
 __gsharp_id_0_output[0]=__gsharp_id_1_s[3];
-GSharpArray<int> __gsharp_id_2_tail = __gsharp_stackalloc_span(__gsharp_id_1_s).Slice(1);
+GSharpArray<int> __gsharp_id_2_tail = __gsharp_stackalloc_span(__gsharp_id_1_s).Slice(1, ""G#: index was out of range at ZeroInitKernels.cs(322,26)"");
 __gsharp_id_0_output[1]=__gsharp_id_2_tail.length;
 int __gsharp_id_3_a[4]={ 1, 2, 3, 4 };
 GSharpArray<int> __gsharp_id_4_view = __gsharp_stackalloc_span(__gsharp_id_3_a).AsSpan();

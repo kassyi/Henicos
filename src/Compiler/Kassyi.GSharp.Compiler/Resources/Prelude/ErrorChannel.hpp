@@ -3,18 +3,7 @@ extern thread_local uint3 threadIdx;
 extern thread_local uint3 blockIdx;
 extern thread_local dim3 gridDim;
 
-enum class GSharpErrorCode : int32_t {
-    None = 0,
-    NotSupported = 1,
-    InvalidOperation = 2,
-    IndexOutOfRange = 3,
-    ArgumentOutOfRange = 4,
-    Argument = 5,
-    NullReference = 6,
-    DivideByZero = 7,
-    Overflow = 8,
-    DataRace = 9
-};
+// GSharpErrorCode and __gsharp_trap are declared in Types.hpp so GSharpArray<T>::CopyTo can report Argument errors.
 
 struct GSharpErrorSlot {
     std::atomic<int32_t> code{0};

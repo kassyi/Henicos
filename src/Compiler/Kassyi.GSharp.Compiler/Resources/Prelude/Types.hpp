@@ -26,6 +26,31 @@ struct __gsharp_using_scope {
 
 template <class T> inline const T* __gsharp_temp_address(const T& v) { return &v; }
 
+enum class GSharpErrorCode : int32_t {
+    None = 0,
+    NotSupported = 1,
+    InvalidOperation = 2,
+    IndexOutOfRange = 3,
+    ArgumentOutOfRange = 4,
+    Argument = 5,
+    NullReference = 6,
+    DivideByZero = 7,
+    Overflow = 8,
+    DataRace = 9
+};
+inline void __gsharp_trap(GSharpErrorCode code, const char* message);
+
+template <GSharpErrorCode ErrorCode>
+inline const char* __gsharp_range_message() {
+    if (ErrorCode == GSharpErrorCode::IndexOutOfRange) {
+        return "Index was outside the bounds of the array.";
+    }
+    if (ErrorCode == GSharpErrorCode::Argument) {
+        return "Offset and length were out of bounds for the array or count is greater than the number of elements from index to the end of the source collection.";
+    }
+    return "Index was out of range.";
+}
+
 // A C# array or span: data is nullptr for a null array (and the default span), and never nullptr for an array that
 // exists, also an empty one (#706). flags uses the padding after length (16 bytes as before): bit 0
 // (__gsharp_array_null_reads_empty) marks a null optional kernel argument, which reads as an empty array
@@ -43,10 +68,73 @@ struct GSharpArray {
     inline GSharpArray(T (&storage)[N]) : data(storage), length(N), flags(0) {}
 
     // The span members that C# calls on a span or an array (Span<T>.Slice, Span<T>.Fill, MemoryExtensions.AsSpan)
-    inline GSharpArray<T> Slice(int start) const { return GSharpArray<T>(data + start, length - start); }
-    inline GSharpArray<T> Slice(int start, int count) const { return GSharpArray<T>(data + start, count); }
-    inline void Fill(const T& value) { for (int i = 0; i < length; i++) { data[i] = value; } }
+    template <GSharpErrorCode ErrorCode = GSharpErrorCode::ArgumentOutOfRange>
+    inline GSharpArray<T> Slice(int start, const char* message = nullptr) const {
+        if (static_cast<unsigned int>(start) > static_cast<unsigned int>(length)) {
+            __gsharp_trap(ErrorCode, message != nullptr ? message : __gsharp_range_message<ErrorCode>());
+            return GSharpArray<T>();
+        }
+        return GSharpArray<T>(data + start, length - start);
+    }
+    template <GSharpErrorCode ErrorCode = GSharpErrorCode::ArgumentOutOfRange>
+    inline GSharpArray<T> Slice(int start, int count, const char* message = nullptr) const {
+        if (static_cast<unsigned int>(start) > static_cast<unsigned int>(length) ||
+            static_cast<unsigned int>(count) > static_cast<unsigned int>(length - start)) {
+            __gsharp_trap(ErrorCode, message != nullptr ? message : __gsharp_range_message<ErrorCode>());
+            return GSharpArray<T>();
+        }
+        return GSharpArray<T>(data + start, count);
+    }
+    inline void Fill(const T& value) const { for (int i = 0; i < length; i++) { data[i] = value; } }
+    inline void Clear() const { for (int i = 0; i < length; i++) { data[i] = T{}; } }
+    // Ported from dotnet/runtime src/libraries/System.Private.CoreLib/src/System/MemoryExtensions.cs
+    // (MIT License, commit e750854de9ad6a2ced72feb9b8008e506f04608f): in-place two-pointer swap for Span<T>.Reverse.
+    inline void Reverse() const {
+        for (int i = 0, j = length - 1; i < j; i++, j--) {
+            T tmp = data[i];
+            data[i] = data[j];
+            data[j] = tmp;
+        }
+    }
+    // Ported from dotnet/runtime src/libraries/System.Private.CoreLib/src/System/Span.Fast.cs and Buffer.cs
+    // (MIT License, commit e750854de9ad6a2ced72feb9b8008e506f04608f):
+    // CopyTo / TryCopyTo check (uint)length <= (uint)destination.length and copy with memmove overlap semantics.
+    template <typename U>
+    inline bool TryCopyTo(GSharpArray<U> destination) const {
+        if (static_cast<unsigned int>(length) > static_cast<unsigned int>(destination.length)) {
+            return false;
+        }
+        const U* src = data;
+        U* dst = destination.data;
+        if (dst == src || length <= 0) {
+            return true;
+        }
+        unsigned long long srcAddr = reinterpret_cast<unsigned long long>(src);
+        unsigned long long dstAddr = reinterpret_cast<unsigned long long>(dst);
+        unsigned long long byteCount = static_cast<unsigned long long>(length) * sizeof(U);
+        if (dstAddr - srcAddr < byteCount) {
+            for (int i = length - 1; i >= 0; i--) {
+                dst[i] = src[i];
+            }
+        } else {
+            for (int i = 0; i < length; i++) {
+                dst[i] = src[i];
+            }
+        }
+        return true;
+    }
+    template <typename U>
+    inline void CopyTo(GSharpArray<U> destination) const {
+        if (!TryCopyTo(destination)) {
+            __gsharp_trap(GSharpErrorCode::Argument, "Destination is too short.");
+        }
+    }
     inline GSharpArray<T> AsSpan() const { return *this; }
+    template <GSharpErrorCode ErrorCode = GSharpErrorCode::ArgumentOutOfRange>
+    inline GSharpArray<T> AsSpan(int start, const char* message = nullptr) const { return Slice<ErrorCode>(start, message); }
+    template <GSharpErrorCode ErrorCode = GSharpErrorCode::ArgumentOutOfRange>
+    inline GSharpArray<T> AsSpan(int start, int count, const char* message = nullptr) const { return Slice<ErrorCode>(start, count, message); }
+    inline bool IsEmpty() const { return length <= 0; }
     
     // Allows implicit conversion from GSharpArray<U> to GSharpArray<T> if U* is convertible to T* (e.g. T to const T)
     template <typename U>
@@ -87,5 +175,3 @@ struct Kassyi_GSharp_Core_SharedMemory {
     inline operator T*() { return data; }
     inline operator const T*() const { return data; }
 };
-
-
