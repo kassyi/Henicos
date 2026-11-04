@@ -161,6 +161,57 @@ public class StructDifferentialTests
             b.Get<int>("r")),
     };
 
+    private static readonly DifferentialCase s_liftedUserDefinedConv = new(
+        $"{nameof(StructDifferentialKernels)}.{nameof(StructDifferentialKernels.StructLiftedUserDefinedConversion)}")
+    {
+        Shape = LaunchShape.ForRows(Rows, blockX: 64),
+        Inputs = static (rng, rows) =>
+        {
+            var inputs = DiffValues.Int32(rng, rows);
+            var flags = new int[rows];
+            for (int k = 0; k < rows; k++)
+            {
+                flags[k] = rng.IsBoundarySeed ? (k & 1) : (rng.NextBool() ? 1 : 0);
+            }
+
+            return new DiffBuffers()
+                .In("inputs", inputs)
+                .In("flags", flags)
+                .Out<int>("r", rows, StructDifferentialKernels.LiftedImplicitConvColumns, OutputPolicy.Exact);
+        },
+        Launch = static (b, s) => StructDifferentialKernels.LaunchStructLiftedUserDefinedConversion(
+            b.Get<int>("inputs"),
+            b.Get<int>("flags"),
+            b.Get<int>("r"),
+            gridDimX: s.GridX,
+            blockDimX: s.BlockX),
+        Oracle = static b => StructDifferentialKernels.StructLiftedUserDefinedConversion(
+            b.Get<int>("inputs"),
+            b.Get<int>("flags"),
+            b.Get<int>("r")),
+    };
+
+    private static readonly DifferentialCase s_repro1103Default = new(
+        $"{nameof(StructDifferentialKernels)}.{nameof(StructDifferentialKernels.DefaultOfConvertingStructReproKernel)}")
+    {
+        Shape = LaunchShape.ForRows(Rows, blockX: 64),
+        Inputs = static (rng, rows) =>
+        {
+            var inputs = DiffValues.Int32(rng, rows);
+            return new DiffBuffers()
+                .In("a", inputs)
+                .Out<int>("dst", rows, StructDifferentialKernels.Repro1103Columns, OutputPolicy.Exact);
+        },
+        Launch = static (b, s) => StructDifferentialKernels.LaunchDefaultOfConvertingStructReproKernel(
+            b.Get<int>("a"),
+            b.Get<int>("dst"),
+            gridDimX: s.GridX,
+            blockDimX: s.BlockX),
+        Oracle = static b => StructDifferentialKernels.DefaultOfConvertingStructReproKernel(
+            b.Get<int>("a"),
+            b.Get<int>("dst")),
+    };
+
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
@@ -202,4 +253,18 @@ public class StructDifferentialTests
     [Scenario(TestScenario.Boundary)]
     public void Test_StructUserDefinedExplicitConversion_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_userDefinedExplicitConv);
+
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Differential)]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_StructLiftedUserDefinedConversion_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_liftedUserDefinedConv);
+
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Differential)]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_DefaultOfConvertingStruct_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_repro1103Default);
 }
