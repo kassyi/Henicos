@@ -94,7 +94,7 @@ internal static class GlobalCppNames
     /// </remarks>
     public static string GetFunctionName(IMethodSymbol method) =>
         s_functionNames.GetValue(
-            method.MethodKind == MethodKind.Conversion ? method : GetDefinition(method),
+            GetDefinition(method),
             static symbol =>
             {
                 var m = (IMethodSymbol)symbol;
@@ -130,7 +130,7 @@ internal static class GlobalCppNames
     // assembly recorded (the full one when it was shortened), so every name derived from it matches that assembly
     private static string GetFunctionPathBody(IMethodSymbol method) =>
         s_functionPathBodies.GetValue(
-            method.MethodKind == MethodKind.Conversion ? method : GetDefinition(method),
+            GetDefinition(method),
             static symbol =>
             {
                 var m = (IMethodSymbol)symbol;
@@ -152,10 +152,7 @@ internal static class GlobalCppNames
     public static GlobalNamePath GetFunctionPath(IMethodSymbol method)
     {
         var definition = GetDefinition(method);
-        var containingType = method.MethodKind == MethodKind.Conversion
-            ? method.ContainingType
-            : definition.ContainingType;
-        var typePath = GetTypePath(containingType);
+        var typePath = GetTypePath(definition.ContainingType);
         var segments = ImmutableArray.CreateBuilder<GlobalNameSegment>(typePath.Segments.Count + 1);
         foreach (var segment in typePath.Segments)
         {
@@ -169,6 +166,11 @@ internal static class GlobalCppNames
 
     private static IMethodSymbol GetDefinition(IMethodSymbol method)
     {
+        if (method.MethodKind == MethodKind.Conversion)
+        {
+            return method;
+        }
+
         var definition = (method.ReducedFrom ?? method).OriginalDefinition;
         return definition.PartialDefinitionPart ?? definition;
     }
