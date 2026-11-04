@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <DefineConstants>$(DefineConstants);GSHARP_CPU</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" Version="6.0.4" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+    <Using Include="Kassyi.GSharp.Tests.Shared.Helpers" />
+    <Compile Include="..\..\Compiler\Kassyi.GSharp.Tests.Shared\Differential\Harness\*.cs" Exclude="..\..\Compiler\Kassyi.GSharp.Tests.Shared\Differential\Harness\KnownDivergences.cs" />
+    <Compile Include="..\..\Compiler\Kassyi.GSharp.Tests.Shared\Helpers\ManagedKernelRun.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\tools\fuzz-diff\Kassyi.GSharp.Tools.FuzzDiff.csproj" />
+    <ProjectReference Include="..\..\..\src\Core\Kassyi.GSharp.Core\Kassyi.GSharp.Core.csproj" />
+    <ProjectReference Include="..\..\..\src\Runtime\Kassyi.GSharp.Runtime\Kassyi.GSharp.Runtime.csproj" />
+    <ProjectReference Include="..\..\..\src\Compiler\Kassyi.GSharp.Compiler\Kassyi.GSharp.Compiler.csproj" />
+  </ItemGroup>
+</Project>

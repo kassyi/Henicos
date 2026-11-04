@@ -76,7 +76,7 @@ The G# compiler and Roslyn analyzers enforce GPU safety and memory management ru
 | [GSH0067](GSH0067.md) | Error | Disposable resource is created and discarded |
 | [GSH0068](GSH0068.md) | Error | Disposable local is never disposed |
 | [GSH0069](GSH0069.md) | Error | SharedMemory element type must not be disposable |
-| [GSH0070](GSH0070.md) | Error | Device iterator signature or declaration shape is not supported |
+| [GSH0070](GSH0070.md) | Error | Iterator method must be a static [GpuDeviceFunction] returning IEnumerable<T> with a value-type element |
 | [GSH0071](GSH0071.md) | Error | Iterator value must be consumed directly by `foreach` or stored in a single-assignment local |
 | [GSH0072](GSH0072.md) | Error | Construct is not supported inside a GPU iterator or its consuming `foreach` |
 | [GSH0073](GSH0073.md) | Warning | Expanding an iterator at `foreach` copies the loop body more than 32 times |
@@ -98,6 +98,7 @@ The G# compiler and Roslyn analyzers enforce GPU safety and memory management ru
 | [GSH0099](GSH0099.md) | Warning | An AsParallel() aggregate runs sequentially in each thread |
 | [GSH0100](GSH0100.md) | Warning | Every block reduces the whole sequence of an AsParallel() aggregate |
 | [GSH0101](GSH0101.md) | Warning | Warp.ActiveMask() under a thread-dependent condition differs on the CPU |
+| [GSH0106](GSH0106.md) | Error | Kernel parameter name conflicts with a launch parameter |
 | [SLQ0001](SLQ0001.md) | Warning | Excessive StackLinq chain depth |
 | [RS0030](RS0030.md) | Error | GPU intrinsic invoked from host code or banned API used in kernel |
 
