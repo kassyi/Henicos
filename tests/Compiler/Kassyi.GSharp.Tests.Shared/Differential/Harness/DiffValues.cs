@@ -1,4 +1,6 @@
 #nullable enable
+using System;
+
 namespace Kassyi.GSharp.Tests.Shared.Differential;
 
 /// <summary>
@@ -16,7 +18,333 @@ public static class DiffValues
     ];
 
     /// <summary>Shift counts around the 32-bit and 64-bit masks, including negative counts.</summary>
-    public static readonly int[] ShiftCounts = [0, 1, 7, 31, 32, 33, 63, 64, 65, -1, -31, -32, int.MinValue, int.MaxValue];
+    public static readonly int[] ShiftCounts = [0, 1, 7, 31, 32, 33, 63, 64, 65, -1, -31, -32, -63, -64, int.MinValue, int.MaxValue];
+
+    /// <summary>
+    /// <see cref="float"/> subnormal and subnormal-to-normal boundary values (including signed zeros, minimum/maximum
+    /// subnormals, and minimum normal values) for verifying FTZ-free IEEE 754 arithmetic.
+    /// </summary>
+    public static readonly float[] SubnormalSingleBoundaries =
+    [
+        0.0f,
+        -0.0f,
+        float.Epsilon,
+        -float.Epsilon,
+        2.0f * float.Epsilon,
+        -2.0f * float.Epsilon,
+        BitConverter.Int32BitsToSingle(0x0040_0000),
+        -BitConverter.Int32BitsToSingle(0x0040_0000),
+        BitConverter.Int32BitsToSingle(0x007F_FFFE),
+        -BitConverter.Int32BitsToSingle(0x007F_FFFE),
+        BitConverter.Int32BitsToSingle(0x007F_FFFF) /* MaxSubnormal */,
+        -BitConverter.Int32BitsToSingle(0x007F_FFFF),
+        BitConverter.Int32BitsToSingle(0x0080_0000) /* MinNormal = 1.17549435e-38f */,
+        -BitConverter.Int32BitsToSingle(0x0080_0000),
+        BitConverter.Int32BitsToSingle(0x0080_0001),
+        -BitConverter.Int32BitsToSingle(0x0080_0001),
+        0.5f,
+        -0.5f,
+        1.0f,
+        -1.0f,
+        2.0f,
+        -2.0f,
+    ];
+
+    /// <summary>
+    /// <see cref="double"/> subnormal and subnormal-to-normal boundary values (including signed zeros, minimum/maximum
+    /// subnormals, and minimum normal values) for verifying FTZ-free IEEE 754 arithmetic.
+    /// </summary>
+    public static readonly double[] SubnormalDoubleBoundaries =
+    [
+        0.0,
+        -0.0,
+        double.Epsilon,
+        -double.Epsilon,
+        2.0 * double.Epsilon,
+        -2.0 * double.Epsilon,
+        BitConverter.Int64BitsToDouble(0x0008_0000_0000_0000L),
+        -BitConverter.Int64BitsToDouble(0x0008_0000_0000_0000L),
+        BitConverter.Int64BitsToDouble(0x000F_FFFF_FFFF_FFFEL),
+        -BitConverter.Int64BitsToDouble(0x000F_FFFF_FFFF_FFFEL),
+        BitConverter.Int64BitsToDouble(0x000F_FFFF_FFFF_FFFFL) /* MaxSubnormal */,
+        -BitConverter.Int64BitsToDouble(0x000F_FFFF_FFFF_FFFFL),
+        BitConverter.Int64BitsToDouble(0x0010_0000_0000_0000L) /* MinNormal = 2.2250738585072014e-308 */,
+        -BitConverter.Int64BitsToDouble(0x0010_0000_0000_0000L),
+        BitConverter.Int64BitsToDouble(0x0010_0000_0000_0001L),
+        -BitConverter.Int64BitsToDouble(0x0010_0000_0000_0001L),
+        0.5,
+        -0.5,
+        1.0,
+        -1.0,
+        2.0,
+        -2.0,
+    ];
+
+    /// <summary>
+    /// <see cref="float"/> conversion edge boundaries covering all 9 integer target types (<c>sbyte</c>, <c>byte</c>,
+    /// <c>short</c>, <c>ushort</c>, <c>char</c>, <c>int</c>, <c>uint</c>, <c>long</c>, <c>ulong</c>), <c>[int.MaxValue+1, uint.MaxValue]</c>
+    /// narrow saturation edges (<c>3e9f</c>), and special values.
+    /// </summary>
+    public static readonly float[] ConversionEdgeSingles =
+    [
+        0f,
+        -0f,
+        1f,
+        -1f,
+        0.5f,
+        -0.5f,
+        1.5f,
+        -1.5f,
+        2.5f,
+        -2.5f,
+        float.Epsilon,
+        -float.Epsilon,
+        1.17549435e-38f,
+        -1.17549435e-38f,
+        127f,
+        128f,
+        -128f,
+        -129f,
+        255f,
+        255.5f,
+        256f,
+        32767f,
+        32768f,
+        -32768f,
+        -32769f,
+        65535f,
+        65535.5f,
+        65536f,
+        2147483520f /* largest float < 2^31 */,
+        2147483648f,
+        -2147483648f,
+        -2147483904f,
+        3_000_000_000f /* in (int.MaxValue, uint.MaxValue) */,
+        -3_000_000_000f,
+        4294967040f,
+        4294967296f,
+        9.22337149e18f,
+        9.22337204e18f,
+        -9.22337204e18f,
+        1.8446743e19f,
+        1.8446744e19f,
+        3e10f,
+        -3e10f,
+        float.MaxValue,
+        float.MinValue,
+        float.PositiveInfinity,
+        float.NegativeInfinity,
+        float.NaN,
+        BitConverter.UInt32BitsToSingle(0xFFC0_0001u),
+    ];
+
+    /// <summary>
+    /// <see cref="double"/> conversion edge boundaries covering all 9 integer target types, <c>±1 ULP</c> around saturation
+    /// thresholds (<c>-2147483649.0</c>, <c>2147483648.0</c>, <c>-1.0</c>, <c>4294967296.0</c>, <c>±2^63</c>, <c>2^64</c>),
+    /// and <c>double -&gt; float</c> overflow/subnormal rounding boundaries.
+    /// </summary>
+    public static readonly double[] ConversionEdgeDoubles =
+    [
+        0.0,
+        -0.0,
+        1.0,
+        -1.0,
+        0.5,
+        -0.5,
+        1.5,
+        -1.5,
+        2.5,
+        -2.5,
+        double.Epsilon,
+        -double.Epsilon,
+        1.401298464324817e-45 * 0.5 /* float subnormal tie */,
+        -1.401298464324817e-45 * 0.5,
+        1.401298464324817e-45 /* float.Epsilon in double */,
+        -1.401298464324817e-45,
+        1.1754943508222875e-38 /* float MinNormal in double */,
+        -1.1754943508222875e-38,
+        2.2250738585072014e-308,
+        -2.2250738585072014e-308,
+        Math.BitIncrement(-1.0),
+        -128.0,
+        -128.9,
+        -129.0,
+        127.0,
+        128.0,
+        255.0,
+        255.9,
+        256.0,
+        -32768.0,
+        -32769.0,
+        32767.0,
+        32768.0,
+        65535.0,
+        65535.9,
+        65536.0,
+        -2147483649.0,
+        Math.BitIncrement(-2147483649.0),
+        -2147483648.0,
+        Math.BitDecrement(2147483648.0),
+        2147483647.0,
+        2147483648.0,
+        3_000_000_000.0,
+        -3_000_000_000.0,
+        4294967295.0,
+        Math.BitDecrement(4294967296.0),
+        4294967296.0,
+        Math.BitDecrement(9223372036854775808.0),
+        9223372036854775808.0,
+        -9223372036854775808.0,
+        Math.BitDecrement(-9223372036854775808.0),
+        Math.BitDecrement(18446744073709551616.0),
+        18446744073709551616.0,
+        3.4028234663852886e38 /* float.MaxValue in double */,
+        -3.4028234663852886e38,
+        Math.BitDecrement(3.4028235677973366e38) /* largest double rounding to float.MaxValue */,
+        3.4028235677973366e38 /* smallest double rounding to +Infinity in float: 2^128 * (1 - 2^-25) */,
+        -3.4028235677973366e38,
+        double.MaxValue,
+        double.MinValue,
+        double.PositiveInfinity,
+        double.NegativeInfinity,
+        double.NaN,
+        BitConverter.UInt64BitsToDouble(0xFFF8_0000_0000_0001UL),
+    ];
+
+    /// <summary>
+    /// 64-bit signed integer rounding tie and double-rounding witness values for <c>long -&gt; float</c> and <c>long -&gt; double</c>.
+    /// </summary>
+    public static readonly long[] Int64RoundingTieBoundaries =
+    [
+        0L,
+        1L,
+        -1L,
+        2L,
+        -2L,
+        (1L << 24) - 1,
+        1L << 24,
+        (1L << 24) + 1,
+        -((1L << 24) + 1),
+        (1L << 25) + 1,
+        -((1L << 25) + 1),
+        int.MaxValue,
+        int.MinValue,
+        (1L << 53) - 1,
+        1L << 53,
+        (1L << 53) + 1,
+        -((1L << 53) + 1),
+        (1L << 53) + 2,
+        -((1L << 53) + 2),
+        (1L << 53) + 3,
+        -((1L << 53) + 3),
+        (1L << 54) + 2,
+        -((1L << 54) + 2),
+        (1L << 54) + 4,
+        -((1L << 54) + 4),
+        (1L << 53) + (1L << 28) + 1 /* double-rounding witness */,
+        -((1L << 53) + (1L << 28) + 1),
+        0x4000_003F_FFFF_FE01L,
+        -0x4000_003F_FFFF_FE01L,
+        0x4000_0040_0000_0001L,
+        -0x4000_0040_0000_0001L,
+        0x4000_00BF_FFFF_FE01L,
+        -0x4000_00BF_FFFF_FE01L,
+        0x7FFF_FFBF_FFFF_FFFFL,
+        0x7FFF_FFC0_0000_0000L,
+        0x7FFF_FFC0_0000_0001L,
+        -0x7FFF_FFC0_0000_0001L,
+        long.MaxValue - 1L,
+        long.MaxValue,
+        long.MinValue + 1L,
+        long.MinValue,
+    ];
+
+    /// <summary>
+    /// 64-bit unsigned integer rounding tie and double-rounding witness values for <c>ulong -&gt; float</c> and <c>ulong -&gt; double</c>.
+    /// </summary>
+    public static readonly ulong[] UInt64RoundingTieBoundaries =
+    [
+        0UL,
+        1UL,
+        2UL,
+        255UL,
+        65535UL,
+        (1UL << 24) - 1,
+        1UL << 24,
+        (1UL << 24) + 1,
+        (1UL << 24) + 2,
+        (1UL << 24) + 3,
+        (1UL << 25) + 1,
+        (1UL << 25) + 3,
+        uint.MaxValue,
+        (1UL << 32) + 1,
+        (1UL << 53) - 1,
+        1UL << 53,
+        (1UL << 53) + 1,
+        (1UL << 53) + 2,
+        (1UL << 53) + 3,
+        (1UL << 54) + 1,
+        (1UL << 54) + 2,
+        (1UL << 54) + 3,
+        (1UL << 54) + 4,
+        (1UL << 53) + (1UL << 28) + 1 /* ulong -> double -> float double-rounding witness */,
+        0x8000_007F_FFFF_FC00UL,
+        0x8000_007F_FFFF_FC01UL,
+        0x8000_0080_0000_0000UL,
+        0x8000_0080_0000_0001UL,
+        0x8000_017F_FFFF_FC00UL,
+        0x8000_017F_FFFF_FC01UL,
+        0x8000_0180_0000_0000UL,
+        0x8000_0180_0000_0001UL,
+        0xFFFF_FF00_0000_0000UL,
+        0xFFFF_FF00_0000_0001UL,
+        0xFFFF_FF80_0000_0000UL /* float tie-to-even */,
+        0xFFFF_FF80_0000_0001UL /* float sticky-bit round-up */,
+        (ulong)long.MaxValue,
+        (ulong)long.MaxValue + 1UL,
+        ulong.MaxValue - 1UL,
+        ulong.MaxValue,
+    ];
+
+    /// <summary>32-bit unsigned corner cases for <see cref="System.Numerics.BitOperations"/>.</summary>
+    public static readonly uint[] BitOperationUInt32Boundaries =
+    [
+        0u,
+        1u,
+        2u,
+        3u,
+        0x0000_8000u,
+        0x0001_0000u,
+        0x5555_5555u,
+        0xAAAA_AAAAu,
+        0x7FFF_FFFFu,
+        0x8000_0000u,
+        0x8000_0001u,
+        0x1234_5678u,
+        0xF000_0000u,
+        uint.MaxValue - 1u,
+        uint.MaxValue,
+    ];
+
+    /// <summary>64-bit unsigned corner cases for <see cref="System.Numerics.BitOperations"/>.</summary>
+    public static readonly ulong[] BitOperationUInt64Boundaries =
+    [
+        0UL,
+        1UL,
+        2UL,
+        3UL,
+        0x0000_0000_8000_0000UL,
+        0x0000_0001_0000_0000UL,
+        0x5555_5555_5555_5555UL,
+        0xAAAA_AAAA_AAAA_AAAAUL,
+        0x7FFF_FFFF_FFFF_FFFFUL,
+        0x8000_0000_0000_0000UL,
+        0x8000_0000_0000_0001UL,
+        0x1234_5678_9ABC_DEF0UL,
+        0xF000_0000_0000_0000UL,
+        ulong.MaxValue - 1UL,
+        ulong.MaxValue,
+    ];
 
     /// <summary>
     /// The <see cref="float"/> boundaries: signed zeros, subnormals, the normal range, infinities, NaN, rounding ties and

@@ -35,17 +35,20 @@ internal static class ManagedCSharpTranspiler
             ManagedContextFields.ProcessContextFields(contextFields, semanticModel, kernelName);
         var copiedParameters = plan.GetCopiedParameters(lowered);
 
+        var isUnsafe = ManagedStateMachineAvailability.NeedsUnsafe(methodSymbol, methodDecl) ||
+                       ManagedStateMachineEmitter.HasPointerField(regularFields, copiedParameters);
         var unhoistedBody = RewriteResumeLocals(loweredBody, unhoistedLocals, renamedLocals, semanticModel, kernelName,
             methodSymbol.AreLocalsZeroed());
         var accessors = new ManagedAccessorSet(methodSymbol, semanticModel.Compilation);
-        var bodySource = RewriteAndNormalizeBody(unhoistedBody, semanticModel, isDeviceFunction: false, accessors);
+        var bodySource = RewriteAndNormalizeBody(unhoistedBody, semanticModel, isDeviceFunction: false, accessors, isUnsafe);
 
         using var writer = new SourceWriter();
         ManagedStateMachineEmitter.EmitContextClass(
-            writer, contextName, regularFields, copiedParameters, lowered.CallSites, semanticModel);
+            writer, contextName, regularFields, copiedParameters, lowered.CallSites, semanticModel,
+            isUnsafe: isUnsafe);
         ManagedStateMachineEmitter.EmitStateMachineMethod(
             writer, contextName, stateMachineName, methodSymbol, plan.HasAutoResult, copiedParameters, localInits,
-            bodySource);
+            bodySource, isUnsafe: isUnsafe);
         accessors.WriteTo(writer);
         return writer.ToString();
     }
@@ -91,10 +94,12 @@ internal static class ManagedCSharpTranspiler
             ManagedContextFields.ProcessContextFields(lowered.ContextFields, semanticModel, functionName);
         var copiedParameters = plan.GetCopiedParameters(lowered);
 
+        var isUnsafe = ManagedStateMachineAvailability.NeedsUnsafe(methodSymbol, methodDecl) ||
+                       ManagedStateMachineEmitter.HasPointerField(regularFields, copiedParameters);
         var unhoistedBody = RewriteResumeLocals(lowered.LoweredBody, unhoistedLocals, renamedLocals, semanticModel,
             functionName, methodSymbol.AreLocalsZeroed());
         var accessors = new ManagedAccessorSet(methodSymbol, semanticModel.Compilation);
-        var bodySource = RewriteAndNormalizeBody(unhoistedBody, semanticModel, isDeviceFunction: true, accessors);
+        var bodySource = RewriteAndNormalizeBody(unhoistedBody, semanticModel, isDeviceFunction: true, accessors, isUnsafe);
 
         // As visible as the function (a consumer of another assembly calls a public one); the frame's fields are the
         // assembly's own (#538 3rd review M1)
@@ -102,10 +107,10 @@ internal static class ManagedCSharpTranspiler
         using var writer = new SourceWriter();
         ManagedStateMachineEmitter.EmitContextClass(
             writer, frameName, regularFields, copiedParameters, lowered.CallSites, semanticModel, accessibility,
-            "internal");
+            "internal", isUnsafe: isUnsafe);
         ManagedStateMachineEmitter.EmitDeviceStateMachineMethod(
             writer, frameName, stateMachineName, methodSymbol, copiedParameters, localInits, bodySource, accessibility,
-            ManagedStateMachineAvailability.NeedsUnsafe(methodSymbol, methodDecl));
+            isUnsafe: isUnsafe);
         accessors.WriteTo(writer);
         return writer.ToString();
     }
@@ -235,10 +240,10 @@ internal static class ManagedCSharpTranspiler
     }
 
     private static string RewriteAndNormalizeBody(BlockSyntax loweredBody, SemanticModel semanticModel,
-        bool isDeviceFunction, ManagedAccessorSet accessors)
+        bool isDeviceFunction, ManagedAccessorSet accessors, bool isUnsafe = false)
     {
         var rewriter = new ManagedExecutionRewriter(semanticModel,
-            isDeviceFunction ? ManagedBodyKind.SuspendingDeviceFunction : ManagedBodyKind.Kernel, accessors);
+            isDeviceFunction ? ManagedBodyKind.SuspendingDeviceFunction : ManagedBodyKind.Kernel, accessors, isUnsafe);
         var rewritten = rewriter.Visit(loweredBody) as BlockSyntax
                         ?? throw new InvalidOperationException("Managed execution rewriting removed the kernel body.");
         // A device function's state machine is emitted by every assembly that exports its device code, so it is written

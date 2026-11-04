@@ -187,6 +187,7 @@ public static partial class ManagedGpuContext
     /// <param name="blockIndex">The linear index of the block.</param>
     /// <param name="gridDimX">The number of blocks in X.</param>
     /// <param name="gridDimY">The number of blocks in Y.</param>
+    /// <returns>The exception to throw.</returns>
     [EditorBrowsable(EditorBrowsableState.Never)]
     public static InvalidOperationException BlockFinishedAtGridSync(string kernel, int blockIndex, uint gridDimX, uint gridDimY)
     {
@@ -204,6 +205,7 @@ public static partial class ManagedGpuContext
     /// <param name="blockX">The block's index in X.</param>
     /// <param name="blockY">The block's index in Y.</param>
     /// <param name="blockZ">The block's index in Z.</param>
+    /// <returns>The exception to throw.</returns>
     [EditorBrowsable(EditorBrowsableState.Never)]
     public static InvalidOperationException RepresentativeFinishedAtGridSync(string kernel, int blockX, int blockY, int blockZ) =>
         new($"G#: thread (0,0,0) of block ({blockX},{blockY},{blockZ}) of {kernel} finished while other threads of its " +
@@ -214,6 +216,7 @@ public static partial class ManagedGpuContext
     /// <c>[GpuKernel(Cooperative = true)]</c>. For generated code only.
     /// </summary>
     /// <param name="kernel">The kernel, as <c>Type.Method</c>.</param>
+    /// <returns>The exception to throw.</returns>
     [EditorBrowsable(EditorBrowsableState.Never)]
     public static InvalidOperationException GridSyncInKernelThatIsNotCooperative(string kernel) =>
         new($"G#: Gpu.SyncGrid reached in {kernel}, which is not [GpuKernel(Cooperative = true)]");

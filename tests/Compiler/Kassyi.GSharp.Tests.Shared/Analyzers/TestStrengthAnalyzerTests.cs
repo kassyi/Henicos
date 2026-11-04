@@ -1,4 +1,5 @@
 using Kassyi.GSharp.Tests.Generators;
+using Microsoft.CodeAnalysis;
 
 namespace Kassyi.GSharp.Tests.Shared.Analyzers;
 
@@ -71,5 +72,15 @@ public class TestStrengthAnalyzerTests : AnalyzerTestBase
             new TestStrengthAnalyzer(),
             nameof(Test_BroadCatch_ReportsWarning)
         );
+    }
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_Rules_DefaultSeverityIsError()
+    {
+        Assert.Equal(DiagnosticSeverity.Error, TestStrengthAnalyzer.TestMethodWithoutAssertion.DefaultSeverity);
+        Assert.Equal(DiagnosticSeverity.Error, TestStrengthAnalyzer.DebugAssertInTest.DefaultSeverity);
+        Assert.Equal(DiagnosticSeverity.Error, TestStrengthAnalyzer.UnseededRandom.DefaultSeverity);
+        Assert.Equal(DiagnosticSeverity.Error, TestStrengthAnalyzer.BroadCatchInTest.DefaultSeverity);
     }
 }

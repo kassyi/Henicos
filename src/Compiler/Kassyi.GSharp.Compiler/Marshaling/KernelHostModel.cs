@@ -82,6 +82,8 @@ internal readonly record struct KernelHostModel
     /// </summary>
     public EquatableArray<StructLayoutGuard> CpuLayoutGuards { get; init; }
 
+    public bool IsUnsafeContext { get; init; }
+
     public bool ReturnsValue => ReturnTypeName is not null;
 
     /// <summary>Whether the CUDA launcher converts the returned elements (<see cref="CudaReturn"/>).</summary>
@@ -93,6 +95,7 @@ internal readonly record struct KernelHostModel
     /// <summary>Reads the host launch ABI of <paramref name="kernel"/>.</summary>
     /// <param name="kernel">The kernel.</param>
     /// <param name="structs">The rendered structs of the parameters and return type; the analyzer, which needs none, passes <see langword="default"/>.</param>
+    /// <param name="model">The semantic model of the kernel's syntax tree, or <see langword="null"/> when grid scratch analysis is not needed.</param>
     public static KernelHostModel Create(IMethodSymbol kernel, EquatableArray<StructHostSource> structs,
         SemanticModel? model = null)
     {
@@ -114,6 +117,7 @@ internal readonly record struct KernelHostModel
             ReturnTypeName = kernel.ReturnType.SpecialType == SpecialType.System_Void
                 ? null
                 : kernel.ReturnType.GetFullyQualifiedCsharpName(),
+            IsUnsafeContext = NeedsUnsafeContext(kernel),
             CudaReturn = ParameterTransfer.CreateForReturn(kernel.ReturnType, HostDialects.Cuda, kernel.ContainingType),
             CpuReturn = ParameterTransfer.CreateForReturn(kernel.ReturnType, HostDialects.Cpu, kernel.ContainingType),
             IsCooperative = kernel.IsCooperativeKernel(),
@@ -135,6 +139,20 @@ internal readonly record struct KernelHostModel
             CudaLayoutGuards = CollectLayoutGuards(kernel, HostDialects.Cuda),
             CpuLayoutGuards = CollectLayoutGuards(kernel, HostDialects.Cpu)
         };
+    }
+
+    // The managed state machine keeps pointers in its context, so the context becomes an unsafe struct pinned by the launcher
+    private static bool NeedsUnsafeContext(IMethodSymbol kernel)
+    {
+        if (kernel.TryGetDeclaringSyntax<MethodDeclarationSyntax>(out var decl) &&
+            ManagedStateMachineAvailability.NeedsUnsafe(kernel, decl))
+        {
+            return true;
+        }
+
+        return kernel.Parameters
+            .AsStackEnumerable()
+            .Any(static p => p.Type is IPointerTypeSymbol or IFunctionPointerTypeSymbol);
     }
 
     private static EquatableArray<StructLayoutGuard> CollectLayoutGuards(IMethodSymbol kernel,

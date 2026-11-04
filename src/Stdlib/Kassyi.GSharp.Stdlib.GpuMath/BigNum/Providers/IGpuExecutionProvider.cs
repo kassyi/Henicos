@@ -356,8 +356,8 @@ public interface IGpuAdvancedMathProvider
     /// <param name="rootSquared">The square <c>r^2</c> of the estimate, with as many words as <paramref name="operand"/>.</param>
     /// <param name="root">The estimate <c>r</c>; receives <c>floor(sqrt(a))</c>. <c>2r + 1</c> must fit in
     /// <c>operand.NumWords + 1</c> words.</param>
-    /// <param name="slack">Scratch of at least <c>operand.NumWords + 1</c> words.</param>
-    /// <param name="trial">Scratch of at least <c>operand.NumWords + 1</c> words.</param>
+    /// <param name="slack">Scratch buffer for the remainder slack, of at least <c>operand.NumWords + 1</c> words.</param>
+    /// <param name="trial">Scratch buffer for the trial step, of at least <c>operand.NumWords + 1</c> words.</param>
     /// <exception cref="ArgumentException">Thrown when <paramref name="rootSquared"/>, <paramref name="slack"/> or
     /// <paramref name="trial"/> is shorter than stated above.</exception>
     /// <remarks>

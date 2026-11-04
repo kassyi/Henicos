@@ -11,16 +11,6 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 public static class KnownDivergences
 {
     // The cases of the entries below, named through nameof so that a renamed kernel cannot leave an entry behind
-    private const string SingleFusedAverage =
-        $"{nameof(StackLinqDifferentialKernels)}.{nameof(StackLinqDifferentialKernels.SingleFusedAverageKernel)}";
-    private const string SingleUnfusedAverage =
-        $"{nameof(StackLinqDifferentialKernels)}.{nameof(StackLinqDifferentialKernels.SingleUnfusedAverageKernel)}";
-    private const string ContainsNaN =
-        $"{nameof(StackLinqDifferentialKernels)}.{nameof(StackLinqDifferentialKernels.ContainsNaNKernel)}";
-    private const string ContainsEvaluationOrder =
-        $"{nameof(StackLinqDifferentialKernels)}.{nameof(StackLinqDifferentialKernels.ContainsEvaluationOrderKernel)}";
-    private const string UnfusedSelectEvaluation =
-        $"{nameof(StackLinqDifferentialKernels)}.{nameof(StackLinqDifferentialKernels.UnfusedSelectEvaluationKernel)}";
     private const string EmptyStackSpanNullComparison =
         $"{nameof(NullableDifferentialKernels)}.{nameof(NullableDifferentialKernels.EmptyStackSpanNullComparisonReproKernel)}";
     private const string NullableArrayLikeDefaultValueNullCheck =
@@ -31,46 +21,129 @@ public static class KnownDivergences
         $"{nameof(StructDifferentialKernels)}.{nameof(StructDifferentialKernels.AutoPropertyPassedToInParameterDefensiveCopy)}";
     private const string StructUserDefinedImplicitConversion =
         $"{nameof(StructDifferentialKernels)}.{nameof(StructDifferentialKernels.StructUserDefinedImplicitConversion)}";
-    private const string RefTernaryParameterWriteAcrossBarrier =
-        $"{nameof(BarrierAndWarpDifferentialKernels)}.{nameof(BarrierAndWarpDifferentialKernels.RefTernaryParameterWriteAcrossBarrierReproKernel)}";
     private const string SubWarpConditionalShuffle =
         $"{nameof(BarrierAndWarpDifferentialKernels)}.{nameof(BarrierAndWarpDifferentialKernels.SubWarpConditionalShuffleKernel)}";
     private const string GenericStructStaticSharedMemory =
         $"{nameof(BarrierAndWarpDifferentialKernels)}.{nameof(BarrierAndWarpDifferentialKernels.GenericStructStaticSharedMemoryKernel)}";
+    private const string NullableBlitScalarArg =
+        $"{nameof(MarshalingBoundaryDifferentialKernels)}.{nameof(MarshalingBoundaryDifferentialKernels.NullableBlitScalarArgKernel)}";
+    private const string NullableConvertPositions =
+        $"{nameof(MarshalingBoundaryDifferentialKernels)}.{nameof(MarshalingBoundaryDifferentialKernels.NullableConvertPositionsKernel)}";
+    private const string InlineArrayNullableVec2 =
+        $"{nameof(MarshalingBoundaryDifferentialKernels)}.{nameof(MarshalingBoundaryDifferentialKernels.InlineArrayNullableVec2Kernel)}";
+    private const string OverlappingSpanSlice =
+        $"{nameof(MarshalingAliasingDifferentialKernels)}.{nameof(MarshalingAliasingDifferentialKernels.OverlappingSpanSliceKernel)}";
+    private const string AliasedRefScalars =
+        $"{nameof(MarshalingAliasingDifferentialKernels)}.{nameof(MarshalingAliasingDifferentialKernels.AliasedRefScalarsKernel)}";
+    private const string CrossAliasInDeepArrayAndRwArray =
+        $"{nameof(MarshalingAliasingDifferentialKernels)}.{nameof(MarshalingAliasingDifferentialKernels.CrossAliasInDeepArrayAndRwArrayKernel)}";
+    private const string PtrLengthGuardedScale =
+        $"{nameof(MarshalingAliasingDifferentialKernels)}.{nameof(MarshalingAliasingDifferentialKernels.PtrLengthGuardedScaleKernel)}";
+    private const string InterlockedReturnExpression =
+        $"{nameof(AtomicsDifferentialKernels)}.{nameof(AtomicsDifferentialKernels.InterlockedReturnExpressionKernel)}";
+
+    private const string ArrayIndexBounds =
+        $"{nameof(BoundsAndMemoryDifferentialKernels)}.{nameof(BoundsAndMemoryDifferentialKernels.ArrayIndexBoundsKernel)}";
+    private const string SpanCanaryIndexBounds =
+        $"{nameof(BoundsAndMemoryDifferentialKernels)}.{nameof(BoundsAndMemoryDifferentialKernels.SpanCanaryIndexBoundsKernel)}";
+    private const string SpanSliceStart =
+        $"{nameof(BoundsAndMemoryDifferentialKernels)}.{nameof(BoundsAndMemoryDifferentialKernels.SpanSliceStartKernel)}";
+    private const string SpanSliceStartCount =
+        $"{nameof(BoundsAndMemoryDifferentialKernels)}.{nameof(BoundsAndMemoryDifferentialKernels.SpanSliceStartCountKernel)}";
+    private const string ArraySegmentBounds =
+        $"{nameof(BoundsAndMemoryDifferentialKernels)}.{nameof(BoundsAndMemoryDifferentialKernels.ArraySegmentBoundsKernel)}";
+    private const string MemoryBounds =
+        $"{nameof(BoundsAndMemoryDifferentialKernels)}.{nameof(BoundsAndMemoryDifferentialKernels.MemoryBoundsKernel)}";
+    private const string InlineArrayBounds =
+        $"{nameof(BoundsAndMemoryDifferentialKernels)}.{nameof(BoundsAndMemoryDifferentialKernels.InlineArrayBoundsKernel)}";
+    private const string BoundsCheckEliminationOffByOne =
+        $"{nameof(BoundsAndMemoryDifferentialKernels)}.{nameof(BoundsAndMemoryDifferentialKernels.BoundsCheckEliminationOffByOneKernel)}";
+    private const string BoundsCheckEliminationWrongSpan =
+        $"{nameof(BoundsAndMemoryDifferentialKernels)}.{nameof(BoundsAndMemoryDifferentialKernels.BoundsCheckEliminationWrongSpanKernel)}";
+    private const string BoundsCheckEliminationPostIncrement =
+        $"{nameof(BoundsAndMemoryDifferentialKernels)}.{nameof(BoundsAndMemoryDifferentialKernels.BoundsCheckEliminationPostIncrementKernel)}";
+    private const string BoundsCheckEliminationUpperOnly =
+        $"{nameof(BoundsAndMemoryDifferentialKernels)}.{nameof(BoundsAndMemoryDifferentialKernels.BoundsCheckEliminationUpperOnlyKernel)}";
+    private const string AllThreadsNullDereferenceTrap =
+        $"{nameof(BoundsAndMemoryDifferentialKernels)}.{nameof(BoundsAndMemoryDifferentialKernels.AllThreadsNullDereferenceTrapKernel)}";
+    private const string AllThreadsEmptyFirstTrap =
+        $"{nameof(BoundsAndMemoryDifferentialKernels)}.{nameof(BoundsAndMemoryDifferentialKernels.AllThreadsEmptyFirstTrapKernel)}";
+
+    private const string Int32Divide =
+        $"{nameof(IntegerTrapAndCheckedDifferentialKernels)}.{nameof(IntegerTrapAndCheckedDifferentialKernels.Int32DivideKernel)}";
+    private const string Int32Remainder =
+        $"{nameof(IntegerTrapAndCheckedDifferentialKernels)}.{nameof(IntegerTrapAndCheckedDifferentialKernels.Int32RemainderKernel)}";
+    private const string UInt32Divide =
+        $"{nameof(IntegerTrapAndCheckedDifferentialKernels)}.{nameof(IntegerTrapAndCheckedDifferentialKernels.UInt32DivideKernel)}";
+    private const string UInt32Remainder =
+        $"{nameof(IntegerTrapAndCheckedDifferentialKernels)}.{nameof(IntegerTrapAndCheckedDifferentialKernels.UInt32RemainderKernel)}";
+    private const string Int64Divide =
+        $"{nameof(IntegerTrapAndCheckedDifferentialKernels)}.{nameof(IntegerTrapAndCheckedDifferentialKernels.Int64DivideKernel)}";
+    private const string UInt64Divide =
+        $"{nameof(IntegerTrapAndCheckedDifferentialKernels)}.{nameof(IntegerTrapAndCheckedDifferentialKernels.UInt64DivideKernel)}";
+    private const string Int16CompoundDivide =
+        $"{nameof(IntegerTrapAndCheckedDifferentialKernels)}.{nameof(IntegerTrapAndCheckedDifferentialKernels.Int16CompoundDivideKernel)}";
+    private const string SByteCompoundRemainder =
+        $"{nameof(IntegerTrapAndCheckedDifferentialKernels)}.{nameof(IntegerTrapAndCheckedDifferentialKernels.SByteCompoundRemainderKernel)}";
+
+    private const string Int32MinValueDivide =
+        $"{nameof(IntegerTrapAndCheckedDifferentialKernels)}.{nameof(IntegerTrapAndCheckedDifferentialKernels.Int32MinValueDivideKernel)}";
+    private const string Int32MinValueRemainder =
+        $"{nameof(IntegerTrapAndCheckedDifferentialKernels)}.{nameof(IntegerTrapAndCheckedDifferentialKernels.Int32MinValueRemainderKernel)}";
+    private const string Int64MinValueDivide =
+        $"{nameof(IntegerTrapAndCheckedDifferentialKernels)}.{nameof(IntegerTrapAndCheckedDifferentialKernels.Int64MinValueDivideKernel)}";
+    private const string Int64MinValueRemainder =
+        $"{nameof(IntegerTrapAndCheckedDifferentialKernels)}.{nameof(IntegerTrapAndCheckedDifferentialKernels.Int64MinValueRemainderKernel)}";
+
+    private const string MathAbsInt32 =
+        $"{nameof(IntegerTrapAndCheckedDifferentialKernels)}.{nameof(IntegerTrapAndCheckedDifferentialKernels.MathAbsInt32Kernel)}";
+
+    private const string NullableInt32ValueAccess =
+        $"{nameof(BclExceptionDifferentialKernels)}.{nameof(BclExceptionDifferentialKernels.NullableInt32ValueAccessKernel)}";
+    private const string NullableStructValueAccess =
+        $"{nameof(BclExceptionDifferentialKernels)}.{nameof(BclExceptionDifferentialKernels.NullableStructValueAccessKernel)}";
+    private const string MathClampInt32 =
+        $"{nameof(BclExceptionDifferentialKernels)}.{nameof(BclExceptionDifferentialKernels.MathClampInt32Kernel)}";
+    private const string MathClampSingle =
+        $"{nameof(BclExceptionDifferentialKernels)}.{nameof(BclExceptionDifferentialKernels.MathClampSingleKernel)}";
+    private const string MathClampDouble =
+        $"{nameof(BclExceptionDifferentialKernels)}.{nameof(BclExceptionDifferentialKernels.MathClampDoubleKernel)}";
+    private const string ElementAtOrDefaultNegativeIndexSideEffect =
+        $"{nameof(BclExceptionDifferentialKernels)}.{nameof(BclExceptionDifferentialKernels.ElementAtOrDefaultNegativeIndexSideEffectKernel)}";
+
+    private const string StackLinqFirst =
+        $"{nameof(BclExceptionDifferentialKernels)}.{nameof(BclExceptionDifferentialKernels.StackLinqFirstKernel)}";
+    private const string StackLinqSingle =
+        $"{nameof(BclExceptionDifferentialKernels)}.{nameof(BclExceptionDifferentialKernels.StackLinqSingleKernel)}";
+    private const string StackLinqSingleTwoElements =
+        $"{nameof(BclExceptionDifferentialKernels)}.{nameof(BclExceptionDifferentialKernels.StackLinqSingleKernel)}_TwoElements";
+    private const string StackLinqLast =
+        $"{nameof(BclExceptionDifferentialKernels)}.{nameof(BclExceptionDifferentialKernels.StackLinqLastKernel)}";
+    private const string StackLinqMin =
+        $"{nameof(BclExceptionDifferentialKernels)}.{nameof(BclExceptionDifferentialKernels.StackLinqMinKernel)}";
+    private const string StackLinqMax =
+        $"{nameof(BclExceptionDifferentialKernels)}.{nameof(BclExceptionDifferentialKernels.StackLinqMaxKernel)}";
+    private const string StackLinqAverage =
+        $"{nameof(BclExceptionDifferentialKernels)}.{nameof(BclExceptionDifferentialKernels.StackLinqAverageKernel)}";
+    private const string StackLinqAggregate =
+        $"{nameof(BclExceptionDifferentialKernels)}.{nameof(BclExceptionDifferentialKernels.StackLinqAggregateKernel)}";
+    private const string StackLinqElementAtNegative =
+        $"{nameof(BclExceptionDifferentialKernels)}.{nameof(BclExceptionDifferentialKernels.StackLinqElementAtKernel)}_NegativeIndex";
+    private const string StackLinqElementAtPastEnd =
+        $"{nameof(BclExceptionDifferentialKernels)}.{nameof(BclExceptionDifferentialKernels.StackLinqElementAtKernel)}_PastEnd";
+
+    private const string MemoryExtensionsSortLengthMismatch =
+        $"{nameof(BclExceptionDifferentialKernels)}.{nameof(BclExceptionDifferentialKernels.MemoryExtensionsSortLengthMismatchKernel)}";
+    private const string MemoryExtensionsSortComparerTrap =
+        $"{nameof(BclExceptionDifferentialKernels)}.{nameof(BclExceptionDifferentialKernels.MemoryExtensionsSortComparerTrapKernel)}";
+
+    private const string TrapNonContinuationGuard =
+        $"{nameof(BclExceptionDifferentialKernels)}.{nameof(BclExceptionDifferentialKernels.TrapNonContinuationGuardKernel)}";
 
     /// <summary>Gets every registered entry.</summary>
     public static IReadOnlyList<KnownDivergence> All { get; } =
     [
         // new("IntegerMatrixKernels.Int32ArithmeticMatrixKernel", "a>>>b", DiffPath.Native | DiffPath.Cuda, Issue: 722),
-
-        // StackLinq fused Average(float) return type (#997)
-        new(SingleFusedAverage, "FusedAvgAsFloat", DiffPath.Native | DiffPath.Cuda, Issue: 997),
-        new(SingleFusedAverage, "FusedAvgAsDouble", DiffPath.Native | DiffPath.Cuda, Issue: 997),
-        new(SingleFusedAverage, "FusedAvgPlus0.1", DiffPath.Native | DiffPath.Cuda, Issue: 997),
-        new(SingleFusedAverage, "WhereFusedAvg", DiffPath.Native | DiffPath.Cuda, Issue: 997),
-
-        // StackLinq unfused Average(float) return type (#997)
-        new(SingleUnfusedAverage, "UnfusedAvgAsFloat", DiffPath.Native | DiffPath.Cuda, Issue: 997),
-        new(SingleUnfusedAverage, "UnfusedAvgAsDouble", DiffPath.Native | DiffPath.Cuda, Issue: 997),
-        new(SingleUnfusedAverage, "UnfusedAvgPlus0.1", DiffPath.Native | DiffPath.Cuda, Issue: 997),
-
-        // StackLinq Contains(NaN) (#997)
-        new(ContainsNaN, "FusedContainsFloatNaN", DiffPath.Native | DiffPath.Cuda, Issue: 997),
-        new(ContainsNaN, "UnfusedContainsFloatNaN", DiffPath.Native | DiffPath.Cuda, Issue: 997),
-        new(ContainsNaN, "FusedContainsDoubleNaN", DiffPath.Native | DiffPath.Cuda, Issue: 997),
-        new(ContainsNaN, "UnfusedContainsDoubleNaN", DiffPath.Native | DiffPath.Cuda, Issue: 997),
-
-        // StackLinq fused Contains argument evaluation timing (#997)
-        new(ContainsEvaluationOrder, "FusedContainsSideEffectCount", DiffPath.Native | DiffPath.Cuda, Issue: 997),
-        new(ContainsEvaluationOrder, "FusedEmptyContainsSideEffectCount", DiffPath.Native | DiffPath.Cuda, Issue: 997),
-        new(ContainsEvaluationOrder, "FusedSelectMutatesContainsArg", DiffPath.Native | DiffPath.Cuda, Issue: 997),
-
-        // StackLinq unfused Select + Skip / Where / Max (#997)
-        new(UnfusedSelectEvaluation, "SelectSkipElementAtVal", DiffPath.Native | DiffPath.Cuda, Issue: 997),
-        new(UnfusedSelectEvaluation, "SelectSkipElementAtCount", DiffPath.Native | DiffPath.Cuda, Issue: 997),
-        new(UnfusedSelectEvaluation, "SelectWhereElementAtVal", DiffPath.Native | DiffPath.Cuda, Issue: 997),
-        new(UnfusedSelectEvaluation, "SelectWhereElementAtCount", DiffPath.Native | DiffPath.Cuda, Issue: 997),
-        new(UnfusedSelectEvaluation, "UnfusedSelectMaxCount", DiffPath.Native | DiffPath.Cuda, Issue: 997),
 
         // empty stackalloc Span<T> / collection expression == null (#998)
         new(EmptyStackSpanNullComparison, "stackalloc_zero_eq_null", DiffPath.Native | DiffPath.Cuda, Issue: 998),
@@ -95,16 +168,125 @@ public static class KnownDivergences
         new(StructUserDefinedImplicitConversion, "scaled_field_val", DiffPath.Native | DiffPath.Cuda, Issue: 963),
         new(StructUserDefinedImplicitConversion, "converted_back_int", DiffPath.Native | DiffPath.Cuda, Issue: 963),
 
-
-        // ref ternary targeting scalar kernel parameter across barrier (#1000)
-        new(RefTernaryParameterWriteAcrossBarrier, "ref_ternary_param_assign", DiffPath.Managed | DiffPath.Native, Issue: 1000),
-        new(RefTernaryParameterWriteAcrossBarrier, "ref_ternary_param_compound", DiffPath.Managed | DiffPath.Native, Issue: 1000),
-        new(RefTernaryParameterWriteAcrossBarrier, "ref_ternary_param_inc", DiffPath.Managed | DiffPath.Native, Issue: 1000),
-
         // Warp.ShuffleXor after sub-warp conditional ShuffleDown on CPU emulator (#1001)
         new(SubWarpConditionalShuffle, "reconvergedFullWarpXor16", DiffPath.Managed | DiffPath.Native, Issue: 1001),
 
         // generic struct static method SharedMemory.Allocate<T> collides across type arguments (#543)
         new(GenericStructStaticSharedMemory, "SharedSlot<int>", DiffPath.Managed | DiffPath.Native, Issue: 543),
+
+        // Nullable<T> scalar / byref kernel arguments throw MarshalDirectiveException in CPU Native Launch (#961)
+        new(NullableBlitScalarArg, "v_has", DiffPath.Native, Issue: 961),
+        new(NullableBlitScalarArg, "v_val", DiffPath.Native, Issue: 961),
+        new(NullableBlitScalarArg, "rb_has", DiffPath.Native, Issue: 961),
+        new(NullableBlitScalarArg, "rb_val", DiffPath.Native, Issue: 961),
+        new(NullableBlitScalarArg, "rb", DiffPath.Native, Issue: 961),
+        new(NullableBlitScalarArg, "oc", DiffPath.Native, Issue: 961),
+
+        // Nullable<Vector2> host 12B vs CUDA 16B layout mismatch (#961)
+        new(NullableConvertPositions, "v_x", DiffPath.Cuda, Issue: 961),
+        new(NullableConvertPositions, "v_y", DiffPath.Cuda, Issue: 961),
+        new(NullableConvertPositions, "rv_x", DiffPath.Cuda, Issue: 961),
+        new(NullableConvertPositions, "rv_y", DiffPath.Cuda, Issue: 961),
+        new(NullableConvertPositions, "h", DiffPath.Cuda, Issue: 961),
+
+        // [InlineArray(2)] of Nullable<Vector2> block-copied without per-element conversion on CUDA (#961)
+        new(InlineArrayNullableVec2, "item0_x", DiffPath.Cuda, Issue: 961),
+        new(InlineArrayNullableVec2, "item0_y", DiffPath.Cuda, Issue: 961),
+        new(InlineArrayNullableVec2, "item1_has", DiffPath.Cuda, Issue: 961),
+        new(InlineArrayNullableVec2, "item1_x", DiffPath.Cuda, Issue: 961),
+        new(InlineArrayNullableVec2, "item1_y", DiffPath.Cuda, Issue: 961),
+        new(InlineArrayNullableVec2, "h", DiffPath.Cuda, Issue: 961),
+
+        // Partially overlapping Span<T> slices from same array do not share device memory on CUDA (#857)
+        new(OverlappingSpanSlice, "backing", DiffPath.Cuda, Issue: 857),
+        new(OverlappingSpanSlice, "observed", DiffPath.Cuda, Issue: 857),
+
+        // Aliased ref scalar parameters allocate separate device buffers and overwrite on DtoH copyback on CUDA
+        new(AliasedRefScalars, "sharedRef", DiffPath.Cuda, Issue: 1061),
+        new(AliasedRefScalars, "observed", DiffPath.Cuda, Issue: 1061),
+
+        // [In] DeepStruct[] element array field cloned unconditionally on CPU even when aliasing writable int[] (#985)
+        new(CrossAliasInDeepArrayAndRwArray, "observed", DiffPath.Managed | DiffPath.Native, Issue: 985),
+
+        // Launch{Kernel}Ptr with raw IntPtr passes Length = 0 in GSharpArrayProxy (#720)
+        new(PtrLengthGuardedScale, "data", DiffPath.Cuda, Issue: 720),
+        new(PtrLengthGuardedScale, "outLen", DiffPath.Cuda, Issue: 720),
+
+        // Span/Slice/ArraySegment/Memory/InlineArray bounds and BCE guards on native (#718)
+        new(SpanCanaryIndexBounds, KnownDivergence.ExceptionColumn, DiffPath.Native, Issue: 718),
+        new(SpanSliceStart, KnownDivergence.ExceptionColumn, DiffPath.Native, Issue: 718),
+        new(SpanSliceStartCount, KnownDivergence.ExceptionColumn, DiffPath.Native, Issue: 718),
+        new(ArraySegmentBounds, KnownDivergence.ExceptionColumn, DiffPath.Native, Issue: 718),
+        new(MemoryBounds, KnownDivergence.ExceptionColumn, DiffPath.Native, Issue: 718),
+        new(InlineArrayBounds, KnownDivergence.ExceptionColumn, DiffPath.Native, Issue: 718),
+        new(BoundsCheckEliminationOffByOne, KnownDivergence.ExceptionColumn, DiffPath.Native, Issue: 718),
+        new(BoundsCheckEliminationWrongSpan, KnownDivergence.ExceptionColumn, DiffPath.Native, Issue: 718),
+        new(BoundsCheckEliminationPostIncrement, KnownDivergence.ExceptionColumn, DiffPath.Native, Issue: 718),
+        new(BoundsCheckEliminationUpperOnly, KnownDivergence.ExceptionColumn, DiffPath.Native, Issue: 718),
+
+        // Array and span bounds, BCE guards, simultaneous traps, integer divide-by-zero, and Math.Abs(MinValue) on CUDA (#729)
+        new(ArrayIndexBounds, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
+        new(SpanCanaryIndexBounds, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
+        new(SpanSliceStart, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
+        new(SpanSliceStartCount, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
+        new(ArraySegmentBounds, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
+        new(MemoryBounds, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
+        new(InlineArrayBounds, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
+        new(BoundsCheckEliminationOffByOne, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
+        new(BoundsCheckEliminationWrongSpan, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
+        new(BoundsCheckEliminationPostIncrement, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
+        new(BoundsCheckEliminationUpperOnly, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
+        new(AllThreadsNullDereferenceTrap, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
+        new(AllThreadsEmptyFirstTrap, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
+        new(Int32Divide, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
+        new(Int32Remainder, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
+        new(UInt32Divide, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
+        new(UInt32Remainder, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
+        new(Int64Divide, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
+        new(UInt64Divide, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
+        new(Int16CompoundDivide, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
+        new(SByteCompoundRemainder, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
+        new(MathAbsInt32, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
+
+        // Nullable<T>.Value and Math.Clamp traps on native and CUDA (#718)
+        new(NullableInt32ValueAccess, KnownDivergence.ExceptionColumn, DiffPath.Native | DiffPath.Cuda, Issue: 718),
+        new(NullableStructValueAccess, KnownDivergence.ExceptionColumn, DiffPath.Native | DiffPath.Cuda, Issue: 718),
+        new(MathClampInt32, KnownDivergence.ExceptionColumn, DiffPath.Native | DiffPath.Cuda, Issue: 718),
+        new(MathClampSingle, KnownDivergence.ExceptionColumn, DiffPath.Native | DiffPath.Cuda, Issue: 718),
+        new(MathClampDouble, KnownDivergence.ExceptionColumn, DiffPath.Native | DiffPath.Cuda, Issue: 718),
+
+        // StackLinq empty sequence, bounds traps, Sort faults, and trap guard on CUDA (#729)
+        new(StackLinqFirst, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
+        new(StackLinqSingle, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
+        new(StackLinqSingleTwoElements, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
+        new(StackLinqLast, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
+        new(StackLinqMin, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
+        new(StackLinqMax, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
+        new(StackLinqAverage, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
+        new(StackLinqAggregate, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
+        new(StackLinqElementAtNegative, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
+        new(StackLinqElementAtPastEnd, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
+        new(MemoryExtensionsSortLengthMismatch, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
+        new(MemoryExtensionsSortComparerTrap, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
+        new(TrapNonContinuationGuard, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
+
+        // Unchecked MinValue / -1 and MinValue % -1 Managed path throws OverflowException (#718)
+        new(Int32MinValueDivide, KnownDivergence.ExceptionColumn, DiffPath.Managed, Issue: 718),
+        new(Int32MinValueRemainder, KnownDivergence.ExceptionColumn, DiffPath.Managed, Issue: 718),
+        new(Int64MinValueDivide, KnownDivergence.ExceptionColumn, DiffPath.Managed, Issue: 718),
+        new(Int64MinValueRemainder, KnownDivergence.ExceptionColumn, DiffPath.Managed, Issue: 718),
+
+        // Math.Abs(MinValue) overflow trap (#947)
+        new(MathAbsInt32, KnownDivergence.ExceptionColumn, DiffPath.Native, Issue: 947),
+
+        // StackLinq ElementAtOrDefault(-1) side effects (#1060)
+        new(ElementAtOrDefaultNegativeIndexSideEffect, "select_neg_eval_count", DiffPath.Managed | DiffPath.Native | DiffPath.Cuda, Issue: 1060),
+        new(ElementAtOrDefaultNegativeIndexSideEffect, "where_neg_eval_count", DiffPath.Managed | DiffPath.Native | DiffPath.Cuda, Issue: 1060),
+
+        // Interlocked long overloads return unsigned long long in C++, and signed 32-bit add overflow UB in CUDA prelude (#1057, #1058)
+        new(InterlockedReturnExpression, "add64_lt_zero", DiffPath.Native | DiffPath.Cuda, Issue: 1057), // Interlocked.Add(ref long) returns unsigned long long in C++ (#1057)
+        new(InterlockedReturnExpression, "exch64_sar_sign", DiffPath.Native | DiffPath.Cuda, Issue: 1057), // Interlocked.Exchange(ref long) returns unsigned long long in C++ (#1057)
+        new(InterlockedReturnExpression, "cas64_lt_zero", DiffPath.Native | DiffPath.Cuda, Issue: 1057), // Interlocked.CompareExchange(ref long) returns unsigned long long in C++ (#1057)
+        new(InterlockedReturnExpression, "add32_wrap_min", DiffPath.Cuda, Issue: 1058), // __gsharp_atomicAdd(int*, int) performs signed int addition without unsigned cast, triggering C++ signed overflow UB under nvcc (#1058)
     ];
 }

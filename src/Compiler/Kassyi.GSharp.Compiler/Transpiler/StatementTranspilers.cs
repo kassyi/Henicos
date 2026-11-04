@@ -105,15 +105,20 @@ internal static class StatementTranspilers
                 out var sourceInvocation,
                 out var iteratorMethod))
         {
-            if (context.Emitter.IteratorInlineDepth >= IteratorInliner.MaxInlineDepth)
+            if (IteratorTypeResolver.IsRecursiveIterator(iteratorMethod, context.Query.SemanticModel.Compilation))
             {
+                var location = iteratorMethod.TryGetDeclaringSyntax<MethodDeclarationSyntax>(out var decl)
+                    ? decl.Identifier.GetLocation()
+                    : node.GetLocation();
                 context.Reporter.Fail(
                     GSharpDiagnostics.IteratorShapeNotSupported,
-                    node,
+                    location,
                     iteratorMethod.Name,
-                    $"inline expansion depth exceeds the maximum of {IteratorInliner.MaxInlineDepth}");
+                    "recursive iterators are not supported");
                 return;
             }
+
+            RuntimeHelpers.EnsureSufficientExecutionStack();
 
             if (IteratorTypeResolver.IsGenericIEnumerable(iteratorMethod.ReturnType, out var elementType))
             {
@@ -130,16 +135,7 @@ internal static class StatementTranspilers
                 context.Emitter.Dialect,
                 context.Reporter);
 
-            context.Emitter.IteratorInlineDepth++;
-            try
-            {
-                context.Visitor.VisitBlock(expandedBlock);
-            }
-            finally
-            {
-                context.Emitter.IteratorInlineDepth--;
-            }
-
+            context.Visitor.VisitBlock(expandedBlock);
             return;
         }
 
