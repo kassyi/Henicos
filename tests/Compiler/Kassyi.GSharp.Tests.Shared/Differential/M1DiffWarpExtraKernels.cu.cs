@@ -349,6 +349,7 @@ public static partial class M1DiffWarpExtraKernels
     [GpuKernel]
     public static void GenericStructNestedInnerSharedMemoryKernel(int[] input, int[] output)
     {
+        InnerSharedMemory dummy = default;
         int tid = ThreadIndex.X + BlockIndex.X * BlockDimension.X;
         int lane = ThreadIndex.X & 31;
         int n = input.Length;
