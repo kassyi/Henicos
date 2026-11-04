@@ -432,6 +432,8 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
         var args = new StringBuilder();
         args.Append("--fatbin ");
         args.Append("-std=c++17 ");
+        // -diag-suppress 177 = Synthesized switch-case labels (__gsharp_switch_<n>_state_<case>) and prelude guard locals (__gsharp_sort_compare_scope) are unreferenced
+        // -diag-suppress 550 = Synthesized locals or shared memory buffers (__shared__ int __gsharp_id_<n>_b[...]) are assigned but never read
         args.Append("-diag-suppress 177,550 ");
         if (Toolchain.IsWindows)
         {

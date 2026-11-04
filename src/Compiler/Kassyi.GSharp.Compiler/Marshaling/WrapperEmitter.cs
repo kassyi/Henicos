@@ -73,9 +73,12 @@ internal static class WrapperEmitter
         }
     }
 
-    // Generated lowered code (state machines, frames, and CPU/CUDA host wrappers) may contain synthesized labels,
-    // unreachable branches after lowering, unused locals, unassigned internal frame/context fields, self-comparisons
-    // (x != x for NaN), and unused local functions.
+    // CS0162 = Lowered state machines emit statements or 'goto case' transitions immediately after unconditional throw or goto
+    // CS0164 = Lowered state machines preserve user labels (e.g. sync:) or synthesized branch targets (__gsharp_sg_next_<n>) that no jump targets
+    // CS0219 = Lowered state machines declare locals (e.g. int unused = 0) that are assigned but never read
+    // CS0649 = Internal frame fields (e.g. __gsharp_warp_exchange) are populated by the runtime rather than C# assignment
+    // CS1718 = Lowered switch/pattern dispatch performs __gsharp_switch_temp_<n> != __gsharp_switch_temp_<n> self-comparisons for NaN detection
+    // CS8321 = Local functions preserved in lowered methods when their calls are removed during lowering (candidate for removal: not observed in current generated code)
     private const string GeneratedCSharpWarningSuppressions =
         "#pragma warning disable CS0162, CS0164, CS0219, CS0649, CS1718, CS8321";
 
@@ -131,6 +134,7 @@ internal static class WrapperEmitter
         // stay valid
         var writer = new SourceWriter();
         writer.AppendGeneratedFileHeader(enableNullable: false);
+        // #nullable enable annotations = Preserves user type annotations without emitting warnings for unassigned generated fields
         writer.AppendLine("#nullable enable annotations");
         writer.AppendLine("""
             using System;
@@ -162,6 +166,7 @@ internal static class WrapperEmitter
     {
         var writer = new SourceWriter();
         writer.AppendGeneratedFileHeader(enableNullable: false);
+        // #nullable enable annotations = Preserves user type annotations without emitting warnings for unassigned generated fields
         writer.AppendLine("#nullable enable annotations");
         writer.AppendLine("""
             using System;
