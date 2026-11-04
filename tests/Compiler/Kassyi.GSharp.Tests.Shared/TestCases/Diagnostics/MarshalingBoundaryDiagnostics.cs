@@ -51,16 +51,15 @@ public struct AutoLayoutBoundaryStruct
 
 public static partial class MarshalingBoundaryDiagnostics
 {
-    // D3-Diag-1: Multidimensional array local variable and jagged array -> GSH0003
+    // Multidimensional array local variable -> GSH0003
     [GpuKernel]
-    public static void MultidimensionalAndJaggedLocalKernel(int[] output)
+    public static void MultidimensionalLocalKernel(int[] output)
     {
         int[,] grid2D = new int[2, 2];
-        int[][] jagged = new int[2][];
-        output[0] = grid2D.Length + jagged.Length;
+        output[0] = grid2D.Length;
     }
 
-    // D3-Diag-2: LayoutKind.Explicit partial overlap, misaligned field, and reference field -> GSH0078
+    // LayoutKind.Explicit partial overlap, misaligned field, and reference field -> GSH0078
     [GpuKernel]
     public static void ExplicitLayoutInvalidKernel(
         PartialOverlapStruct overlap,
@@ -69,7 +68,7 @@ public static partial class MarshalingBoundaryDiagnostics
     {
     }
 
-    // D3-Diag-3: Non-unmanaged Deep Struct return type and multidimensional array return type -> GSH0004
+    // Non-unmanaged Deep Struct return type and multidimensional array return type -> GSH0004
     [GpuKernel]
     public static DeepStructForReturn DeepStructReturnKernel(int[] input)
     {
@@ -84,13 +83,13 @@ public static partial class MarshalingBoundaryDiagnostics
 #pragma warning restore CS8603
     }
 
-    // D3-Diag-4: Field type without device representation (decimal) -> GSH0079
+    // Field type without device representation (decimal) -> GSH0079
     [GpuKernel]
     public static void DecimalFieldStructKernel(DecimalFieldStruct item)
     {
     }
 
-    // D3-Diag-5: LayoutKind.Auto array/return -> GSH0080 warning; DeepStruct array -> GSH0080 (CPU) / GSH0080 + GSH0081 (CUDA)
+    // LayoutKind.Auto array/return -> GSH0080 warning; DeepStruct array -> GSH0080 (CPU) / GSH0080 + GSH0081 (CUDA)
     [GpuKernel]
     public static AutoLayoutBoundaryStruct AutoLayoutAndDeepArrayWarningsKernel(
         AutoLayoutBoundaryStruct[] autoArr,

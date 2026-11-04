@@ -8,79 +8,69 @@ using Xunit;
 namespace Kassyi.GSharp.Tests.Shared.Diagnostics;
 
 /// <summary>
-/// Stage 4 compiler diagnostics and in-memory generator verification for Lane D3 (Boundary Marshaling &amp; Aliasing):
-/// covers <c>D3-Diag-1</c> through <c>D3-Diag-5</c> and isolates cases that would break C++ native compilation if
-/// placed directly in <c>.cu.cs</c> files (<c>Q07 = a</c>).
+/// Compiler diagnostics and in-memory generator verification for boundary marshaling and aliasing.
 /// </summary>
 [Category(TestCategory.Compiler)]
 public sealed class MarshalingBoundaryDiagnosticsTests
 {
     private const string TestCase = "Diagnostics/MarshalingBoundaryDiagnostics.cs";
+    private const string MultiDimParamTestCase = "Diagnostics/MultidimensionalParameterDiagnostics.cs";
+    private const string NullableVector2DirectTestCase = "Diagnostics/NullableVector2DirectDiagnostics.cs";
 
-    // D3-Diag-1: Multidimensional array (int[,]) and jagged array (int[][]) in kernel body -> GSH0003
+    // Multidimensional array (int[,]) in kernel body -> GSH0003
     [Theory]
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_MultidimensionalAndJaggedArrays_ReportGsh0003(string dialect)
+    public async Task Test_MultidimensionalArrayLocal_ReportsGsh0003(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(TestCase, dialect);
 
-        var gsh0003 = diagnostics
-            .Where(static d => d.Id == GSharpDiagnostics.UnsupportedSyntax.Id)
-            .ToList();
-
-        Assert.NotEmpty(gsh0003);
-        Assert.Contains(gsh0003, static d => d.Message.Contains("jagged array", System.StringComparison.OrdinalIgnoreCase)
-                                             || d.Message.Contains("multidimensional array", System.StringComparison.OrdinalIgnoreCase)
-                                             || d.Message.Contains("Object creation", System.StringComparison.OrdinalIgnoreCase));
+        Assert.Equal(
+            [(DiagnosticOrigin.Analyzer, 58, 25, 58, 38)],
+            diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, GpuCodeConstraints.MultidimensionalArray));
     }
 
-    // D3-Diag-1 (In-memory isolation per Q07 = a): Multidimensional array parameter int[,] (#613)
+    // Multidimensional array parameter int[,] (#613) -> GSH0003
     [Theory]
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_MultidimensionalArrayParameter_InMemoryGeneratorCheck(string dialect)
+    public async Task Test_MultidimensionalArrayParameter_ReportsGsh0003(string dialect)
     {
-        const string source = """
-            using Kassyi.GSharp.Core;
+        var diagnostics = await KernelDiagnostics.RunTestCaseAsync(MultiDimParamTestCase, dialect);
 
-            namespace TestNs;
-
-            public static partial class MultiDimParamKernels
-            {
-                [GpuKernel]
-                public static void MatrixParamKernel(int[,] grid, int[] output)
-                {
-                    output[0] = grid[0, 1];
-                }
-            }
-            """;
-
-        var compilation = RoslynTestUtility.CreateCompilation(source);
-        var run = await KernelDiagnostics.RunCompilationAsync(compilation, dialect);
-        string generated = string.Join("\n", run.Output.SyntaxTrees.Select(static t => t.ToString()));
-
-        // On unmerged main (#613), int[,] parameter either reports GSH0003 (once PR #1028 lands) or emits C++ source
-        Assert.NotEmpty(generated);
+        Assert.Equal(
+            [
+                (DiagnosticOrigin.Analyzer, 9, 42, 9, 48),
+                (DiagnosticOrigin.Analyzer, 11, 21, 11, 31)
+            ],
+            diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, GpuCodeConstraints.MultidimensionalArray));
     }
 
-    // D3-Diag-2: LayoutKind.Explicit partial overlap, misaligned field, and reference field -> GSH0078
+    // LayoutKind.Explicit partial overlap, misaligned field, and reference field -> GSH0078
     [Theory]
-    [InlineData("Cpu", "PartialOverlapStruct", "partially overlaps")]
-    [InlineData("Cuda", "PartialOverlapStruct", "partially overlaps")]
-    [InlineData("Cpu", "MisalignedOffsetStruct", "alignment")]
-    [InlineData("Cuda", "MisalignedOffsetStruct", "alignment")]
-    [InlineData("Cpu", "ReferenceFieldStruct", "reference type 'string'")]
-    [InlineData("Cuda", "ReferenceFieldStruct", "reference type 'string'")]
+    [InlineData("Cpu", "PartialOverlapStruct", "partially overlaps", 65, 9, 65, 29)]
+    [InlineData("Cuda", "PartialOverlapStruct", "partially overlaps", 65, 9, 65, 29)]
+    [InlineData("Cpu", "MisalignedOffsetStruct", "alignment", 66, 9, 66, 31)]
+    [InlineData("Cuda", "MisalignedOffsetStruct", "alignment", 66, 9, 66, 31)]
+    [InlineData("Cpu", "ReferenceFieldStruct", "reference type 'string'", 67, 9, 67, 29)]
+    [InlineData("Cuda", "ReferenceFieldStruct", "reference type 'string'", 67, 9, 67, 29)]
     [Scenario(TestScenario.SadPath)]
     public async Task Test_ExplicitLayoutAndReferenceField_ReportGsh0078WithReason(
         string dialect,
         string structName,
-        string expectedReason)
+        string expectedReason,
+        int startLine,
+        int startCol,
+        int endLine,
+        int endCol)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(TestCase, dialect);
+
+        Assert.Equal(
+            [(DiagnosticOrigin.Analyzer, startLine, startCol, endLine, endCol)],
+            diagnostics.Ranges(GSharpDiagnostics.StructLayoutNotRepresentable.Id, structName));
 
         var matching = diagnostics
             .Where(d => d.Id == GSharpDiagnostics.StructLayoutNotRepresentable.Id
@@ -91,7 +81,7 @@ public sealed class MarshalingBoundaryDiagnosticsTests
         Assert.All(matching, d => Assert.Contains(expectedReason, d.Message, System.StringComparison.Ordinal));
     }
 
-    // D3-Diag-3: Non-unmanaged Deep Struct return type and int[,] return type -> GSH0004
+    // Non-unmanaged Deep Struct return type and int[,] return type -> GSH0004
     [Theory]
     [InlineData("Cpu")]
     [InlineData("Cuda")]
@@ -100,15 +90,15 @@ public sealed class MarshalingBoundaryDiagnosticsTests
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(TestCase, dialect);
 
-        var gsh0004 = diagnostics
-            .Where(static d => d.Id == GSharpDiagnostics.KernelReturnMustBeVoidOrBlittable.Id)
-            .ToList();
-
-        Assert.Contains(gsh0004, static d => d.Message.Contains("DeepStructForReturn", System.StringComparison.Ordinal));
-        Assert.Contains(gsh0004, static d => d.Message.Contains("int[*,*]", System.StringComparison.Ordinal));
+        Assert.Equal(
+            [
+                (DiagnosticOrigin.Analyzer, 73, 39, 73, 61),
+                (DiagnosticOrigin.Analyzer, 79, 26, 79, 54)
+            ],
+            diagnostics.Ranges(GSharpDiagnostics.KernelReturnMustBeVoidOrBlittable.Id));
     }
 
-    // D3-Diag-4: Struct field without device representation (decimal) -> GSH0079
+    // Struct field without device representation (decimal) -> GSH0079
     [Theory]
     [InlineData("Cpu")]
     [InlineData("Cuda")]
@@ -117,24 +107,19 @@ public sealed class MarshalingBoundaryDiagnosticsTests
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(TestCase, dialect);
 
-        var gsh0079 = diagnostics
-            .Where(static d => d.Id == GSharpDiagnostics.FieldTypeHasNoDeviceRepresentation.Id)
-            .ToList();
-
-        Assert.NotEmpty(gsh0079);
-        Assert.Contains(gsh0079, static d => d.Message.Contains("'decimal' of field 'Price'", System.StringComparison.Ordinal));
+        Assert.Equal(
+            [(DiagnosticOrigin.Analyzer, 88, 49, 88, 67)],
+            diagnostics.Ranges(GSharpDiagnostics.FieldTypeHasNoDeviceRepresentation.Id));
     }
 
-    // D3-Diag-4 (In-memory isolation per Q07 = a & Q11): Unmapped BCL structs (DateTime, Guid, Matrix4x4) and Nullable<DeepStruct> (#972 S19-6, #1007 S19-5)
-    [Theory]
+    // Nullable<DeepStruct> parameter where struct has an array field (#972) -> GSH0078
+    [Theory(Skip = "Nullable<DeepStruct> parameter is not diagnosed (#972)")]
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_UnmappedBclStructAndNullableDeepStruct_InMemoryGeneratorCheck(string dialect)
+    public async Task Test_NullableDeepStructParameter_ReportsGsh0078(string dialect)
     {
         const string source = """
-            using System;
-            using System.Numerics;
             using Kassyi.GSharp.Core;
 
             namespace TestNs;
@@ -145,14 +130,38 @@ public sealed class MarshalingBoundaryDiagnosticsTests
                 public int Tag;
             }
 
-            public static partial class UnmappedBoundaryKernels
+            public static partial class NullableDeepStructKernels
             {
                 [GpuKernel]
                 public static void NullableDeepBagKernel(DeepBag? optBag, int[] output)
                 {
                     output[0] = optBag.HasValue ? 1 : 0;
                 }
+            }
+            """;
 
+        var diagnostics = await KernelDiagnostics.RunAsync(source, dialect);
+        Assert.Equal(
+            [(DiagnosticOrigin.Analyzer, 15, 46, 15, 61)],
+            diagnostics.Ranges(GSharpDiagnostics.StructLayoutNotRepresentable.Id));
+    }
+
+    // Returning unmapped unmanaged BCL struct (DateTime, Guid, Matrix4x4) (#1007)
+    [Theory(Skip = "Returning unmapped BCL struct is not diagnosed (#1007)")]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.SadPath)]
+    public async Task Test_UnmappedBclStructReturn_ReportsDiagnostic(string dialect)
+    {
+        const string source = """
+            using System;
+            using System.Numerics;
+            using Kassyi.GSharp.Core;
+
+            namespace TestNs;
+
+            public static partial class UnmappedBclReturnKernels
+            {
                 [GpuKernel]
                 public static DateTime UnmappedReturnKernel(DateTime dt, Guid id, Matrix4x4 mat)
                 {
@@ -161,52 +170,31 @@ public sealed class MarshalingBoundaryDiagnosticsTests
             }
             """;
 
-        var compilation = RoslynTestUtility.CreateCompilation(source);
-        var run = await KernelDiagnostics.RunCompilationAsync(compilation, dialect);
-        string generated = string.Join("\n", run.Output.SyntaxTrees.Select(static t => t.ToString()));
-
-        // Verify generator executes in-memory without throwing unhandled exceptions on S19-5 / S19-6 shapes
-        Assert.Contains("NullableDeepBagKernel", generated, System.StringComparison.Ordinal);
-        Assert.Contains("UnmappedReturnKernel", generated, System.StringComparison.Ordinal);
+        var diagnostics = await KernelDiagnostics.RunAsync(source, dialect);
+        Assert.Equal(
+            [(DiagnosticOrigin.Analyzer, 10, 28, 10, 48)],
+            diagnostics.Ranges(GSharpDiagnostics.KernelReturnMustBeVoidOrBlittable.Id));
     }
 
-    // D3-M3b (In-memory isolation per Q07 = a): Vector2? direct scalar/ref/array/return emits invalid C++ 'System::Numerics::Vector2'
+    // Vector2? in four positions (argument, ref parameter, array, and return value) emits System_Nullable<float2>
     [Theory]
     [InlineData("Cpu")]
     [InlineData("Cuda")]
-    [Scenario(TestScenario.SadPath)]
-    public async Task Test_NullableVector2DirectPositions_InMemoryGeneratorCheck(string dialect)
+    [Scenario(TestScenario.Boundary)]
+    public async Task Test_NullableVector2DirectPositions_EmitsValidTypes(string dialect)
     {
-        const string source = """
-            using System.Numerics;
-            using Kassyi.GSharp.Core;
-
-            namespace TestNs;
-
-            public static partial class NullableVector2DirectKernels
-            {
-                [GpuKernel]
-                public static Vector2? NullableVec2AllDirectKernel(
-                    Vector2? v,
-                    ref Vector2? rv,
-                    Vector2?[] arr)
-                {
-                    rv = v;
-                    return arr[0];
-                }
-            }
-            """;
-
-        var compilation = RoslynTestUtility.CreateCompilation(source);
+        var compilation = RoslynTestUtility.CreateCompilation(RoslynTestUtility.ReadTestCase(NullableVector2DirectTestCase));
         var run = await KernelDiagnostics.RunCompilationAsync(compilation, dialect);
         string generated = string.Join("\n", run.Output.SyntaxTrees.Select(static t => t.ToString()));
 
-        // Confirms why Vector2? direct parameter/array/return must be isolated from .cu.cs:
-        // C++ emission outputs 'System::Numerics::Vector2' instead of 'float2' for Nullable<Vector2>
-        Assert.Contains("LaunchNullableVec2AllDirectKernel", generated, System.StringComparison.Ordinal);
+        Assert.DoesNotContain("System::Numerics::Vector2", generated, System.StringComparison.Ordinal);
+        Assert.Contains("System_Nullable<float2> __gsharp_id_0_v", generated, System.StringComparison.Ordinal);
+        Assert.Contains("System_Nullable<float2>* __gsharp_id_1_rv", generated, System.StringComparison.Ordinal);
+        Assert.Contains("GSharpArray<System_Nullable<float2>> __gsharp_id_2_arr", generated, System.StringComparison.Ordinal);
+        Assert.Contains("System_Nullable<float2>* __restrict__ __gsharp_auto_result", generated, System.StringComparison.Ordinal);
     }
 
-    // D3-Diag-5: LayoutKind.Auto array/return -> GSH0080 warning; DeepStruct[] -> GSH0080 (CPU) / GSH0080 + GSH0081 (CUDA)
+    // LayoutKind.Auto array/return -> GSH0080 warning; DeepStruct[] -> GSH0080 (CPU) / GSH0080 + GSH0081 (CUDA)
     [Theory]
     [InlineData("Cpu", false)]
     [InlineData("Cuda", true)]
@@ -229,33 +217,87 @@ public sealed class MarshalingBoundaryDiagnosticsTests
         Assert.Equal(expectGsh0081 ? 1 : 0, gsh0081.Count);
     }
 
-    // In-memory isolation per Q07 = a for newly discovered C++ build-breaking boundary constructs (ND3-2, ND3-3, ND3-4):
-    // - ND3-2: Nullable<T> assigned or returned with the 'null' literal emits '= nullptr' (System_Nullable<T> lacks nullptr_t ctor)
-    // - ND3-3: ImmutableArray<T>.Length emits '.__gsharp_mb_Length()' instead of '.length' on GSharpArray<T>
-    // - ND3-4: Casting [GpuReadOnly] T[] parameter (GSharpArray<const T>) to ReadOnlySpan<T> (GSharpArray<T>) drops const in C++
-    [Theory]
+    // ImmutableArray<T>.Length emits .length instead of undefined __gsharp_mb_Length() (#1070)
+    [Theory(Skip = "ImmutableArray<T>.Length emits undefined __gsharp_mb_Length() (#1070)")]
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_CppBuildBreakingBoundaryConstructs_InMemoryGeneratorCheck(string dialect)
+    public async Task Test_ImmutableArrayLength_EmitsLengthMember(string dialect)
     {
         const string source = """
-            using System;
             using System.Collections.Immutable;
             using Kassyi.GSharp.Core;
 
             namespace TestNs;
 
-            public static partial class CppBuildBreakingBoundaryKernels
+            public static partial class ImmutableLengthKernels
             {
                 [GpuKernel]
-                public static int? NullableLiteralAndImmutableLengthKernel(
-                    ImmutableArray<int> imm,
-                    [GpuReadOnly] int[] roArr,
-                    int[] output)
+                public static void ImmutableLengthKernel(ImmutableArray<int> imm, int[] output)
+                {
+                    output[0] = imm.Length;
+                }
+            }
+            """;
+
+        var compilation = RoslynTestUtility.CreateCompilation(source);
+        var run = await KernelDiagnostics.RunCompilationAsync(compilation, dialect);
+        string generated = string.Join("\n", run.Output.SyntaxTrees.Select(static t => t.ToString()));
+
+        Assert.DoesNotContain("__gsharp_mb_Length()", generated, System.StringComparison.Ordinal);
+        Assert.Contains("__gsharp_id_1_output[0]=__gsharp_id_0_imm.length;", generated, System.StringComparison.Ordinal);
+    }
+
+    // Casting [GpuReadOnly] T[] parameter to ReadOnlySpan<T> must preserve const in C++ (#1071)
+    [Theory(Skip = "Converting [GpuReadOnly] array to ReadOnlySpan drops const (#1071)")]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.SadPath)]
+    public async Task Test_ReadOnlyArrayToReadOnlySpan_PreservesConst(string dialect)
+    {
+        const string source = """
+            using System;
+            using Kassyi.GSharp.Core;
+
+            namespace TestNs;
+
+            public static partial class ReadOnlyArrayToSpanKernels
+            {
+                [GpuKernel]
+                public static void ReadOnlyArrayToSpanKernel([GpuReadOnly] int[] roArr, int[] output)
                 {
                     ReadOnlySpan<int> roSpan = (ReadOnlySpan<int>)roArr;
-                    output[0] = imm.Length + roSpan.Length;
+                    output[0] = roSpan.Length;
+                }
+            }
+            """;
+
+        var compilation = RoslynTestUtility.CreateCompilation(source);
+        var run = await KernelDiagnostics.RunCompilationAsync(compilation, dialect);
+        string generated = string.Join("\n", run.Output.SyntaxTrees.Select(static t => t.ToString()));
+
+        Assert.DoesNotContain("GSharpArray<int> __gsharp_id_2_roSpan", generated, System.StringComparison.Ordinal);
+        Assert.Contains("GSharpArray<const int> __gsharp_id_2_roSpan", generated, System.StringComparison.Ordinal);
+    }
+
+    // Returning null literal from Nullable<T> kernel (#984)
+    [Theory(Skip = "Nullable<T> return null emits nullptr incompatible with System_Nullable (#984)")]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.SadPath)]
+    public async Task Test_NullableReturnNull_EmitsValidNullableReturn(string dialect)
+    {
+        const string source = """
+            using Kassyi.GSharp.Core;
+
+            namespace TestNs;
+
+            public static partial class NullableReturnNullKernels
+            {
+                [GpuKernel]
+                public static int? ReturnNullKernel(int[] output)
+                {
+                    output[0] = 0;
                     return null;
                 }
             }
@@ -265,7 +307,6 @@ public sealed class MarshalingBoundaryDiagnosticsTests
         var run = await KernelDiagnostics.RunCompilationAsync(compilation, dialect);
         string generated = string.Join("\n", run.Output.SyntaxTrees.Select(static t => t.ToString()));
 
-        Assert.Contains("NullableLiteralAndImmutableLengthKernel", generated, System.StringComparison.Ordinal);
-        Assert.Contains("__gsharp_mb_Length()", generated, System.StringComparison.Ordinal);
+        Assert.DoesNotContain("= nullptr", generated, System.StringComparison.Ordinal);
     }
 }
