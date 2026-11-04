@@ -30,7 +30,8 @@ public sealed class PostfixUnaryExpressionTranspilerRule : SyntaxNodeTranspilerR
             return;
         }
 
-        // int and long ++ / -- wrap in C#; C++ leaves the overflow undefined (#722)
+        // Narrow, int and long ++ / -- wrap in C#; C++ leaves signed overflow undefined and nvcc can keep the
+        // unnarrowed value of a raw narrow step (#722, #1079)
         if (context.Query.SemanticModel.GetSafeOperation(node) is IIncrementOrDecrementOperation step &&
             step.Syntax.RawKind == node.RawKind &&
             IntegerSemantics.GetIncrementHelper(step, node, ref context) is { } helper)

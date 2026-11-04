@@ -5,8 +5,7 @@ namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel;
 public class GpuKernelAnalyzer : DiagnosticAnalyzer
 {
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
-        DiagnosticRuleRegistry.AllSupportedDiagnostics
-            .Add(GSharpDiagnostics.KernelClassMustBePartial);
+        GSharpDiagnostics.All;
 
     public override void Initialize(AnalysisContext context)
     {
@@ -21,7 +20,10 @@ public class GpuKernelAnalyzer : DiagnosticAnalyzer
             var exports = !(start.Options.AnalyzerConfigOptionsProvider.GlobalOptions
                                 .TryGetValue("build_property.GSharpExportDeviceCode", out var export) &&
                             string.Equals(export, "false", StringComparison.OrdinalIgnoreCase));
-            start.RegisterSyntaxNodeAction(context => AnalyzeMethod(context, dialect, exports), SyntaxKind.MethodDeclaration);
+            // One GSH0036 per type declaration, however many GPU methods it holds or encloses
+            var reportedTypes = new ConcurrentDictionary<TypeDeclarationSyntax, byte>();
+            start.RegisterSyntaxNodeAction(context => AnalyzeMethod(context, dialect, exports, reportedTypes),
+                SyntaxKind.MethodDeclaration);
             start.RegisterSyntaxNodeAction(context => AnalyzeDestructor(context, dialect, exports),
                 SyntaxKind.DestructorDeclaration);
         });
@@ -43,7 +45,8 @@ public class GpuKernelAnalyzer : DiagnosticAnalyzer
         walker.Visit(destructor);
     }
 
-    private static void AnalyzeMethod(SyntaxNodeAnalysisContext context, ITranspilerDialect dialect, bool exports)
+    private static void AnalyzeMethod(SyntaxNodeAnalysisContext context, ITranspilerDialect dialect, bool exports,
+        ConcurrentDictionary<TypeDeclarationSyntax, byte> reportedTypes)
     {
         var methodDeclaration = (MethodDeclarationSyntax)context.Node;
         var methodSymbol = context.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(methodDeclaration);
@@ -57,15 +60,17 @@ public class GpuKernelAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        // Check if the containing class is partial
-        if (methodDeclaration.Parent is ClassDeclarationSyntax classDecl)
+        // The generator adds members to the class that holds GPU code, so that class and every type enclosing it must be
+        // partial (#941). A struct that holds device functions is not reopened, so it is not reported.
+        var reopened = methodDeclaration.Parent is ClassDeclarationSyntax ? methodDeclaration.Parent : null;
+        for (var parent = reopened; parent is TypeDeclarationSyntax typeDecl; parent = parent.Parent)
         {
-            if (!classDecl.Modifiers.Any(SyntaxKind.PartialKeyword))
+            if (!typeDecl.Modifiers.Any(SyntaxKind.PartialKeyword) && reportedTypes.TryAdd(typeDecl, 0))
             {
                 context.ReportDiagnostic(
                     GSharpDiagnostics.KernelClassMustBePartial,
-                    classDecl.Identifier.GetLocation(),
-                    classDecl.Identifier.Text);
+                    typeDecl.Identifier.GetLocation(),
+                    typeDecl.Identifier.Text);
             }
         }
 

@@ -53,6 +53,28 @@ public class OperatorMacroRoutingTests : TranspilerTestBase
 
         Assert.Equal(OperatorMacroRoutingCases.Lambda, result);
     }
+
+    [SkippableFact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_ExtensionMethodGroup_ExpandsAndCapturesReceiverByValue()
+    {
+        var result = new int[2];
+
+        OperatorMacroRoutingKernels.LaunchExtensionMethodGroupKernel([1, 2, 3], [10], [99], result, blockDimX: 1);
+
+        Assert.Equal(OperatorMacroRoutingCases.ExtensionMethodGroup, result);
+    }
+
+    [SkippableFact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_NestedInPartialOuterClass_Expands()
+    {
+        var result = new int[2];
+
+        RouteOuter.NestedRoutingKernels.LaunchNestedKernel([6, 7], result, blockDimX: 1);
+
+        Assert.Equal(OperatorMacroRoutingCases.Nested, result);
+    }
 }
 
 /// <summary>The expected values of <see cref="OperatorMacroRoutingKernels"/>.</summary>
@@ -69,4 +91,10 @@ internal static class OperatorMacroRoutingCases
 
     // (1 + 1) + (2 + 1) + (3 + 1)
     public static readonly int[] Lambda = [9];
+
+    // (10 + 1) + (10 + 2) + (10 + 3) = 36, both directly and after mutating x to 99
+    public static readonly int[] ExtensionMethodGroup = [36, 36];
+
+    // 6 + 7, one call
+    public static readonly int[] Nested = [13, 1];
 }

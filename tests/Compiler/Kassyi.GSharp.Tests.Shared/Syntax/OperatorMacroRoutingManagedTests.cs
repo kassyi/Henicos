@@ -57,5 +57,27 @@ public class OperatorMacroRoutingManagedTests : TranspilerTestBase
 
         Assert.Equal(OperatorMacroRoutingCases.Lambda, result);
     }
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_Managed_ExtensionMethodGroup_ExpandsAndCapturesReceiverByValue()
+    {
+        var result = new int[2];
+
+        ManagedKernelRun.Run(() => OperatorMacroRoutingKernels.LaunchExtensionMethodGroupKernel([1, 2, 3], [10], [99], result, blockDimX: 1));
+
+        Assert.Equal(OperatorMacroRoutingCases.ExtensionMethodGroup, result);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_Managed_NestedInPartialOuterClass_Expands()
+    {
+        var result = new int[2];
+
+        ManagedKernelRun.Run(() => RouteOuter.NestedRoutingKernels.LaunchNestedKernel([6, 7], result, blockDimX: 1));
+
+        Assert.Equal(OperatorMacroRoutingCases.Nested, result);
+    }
 }
 #endif

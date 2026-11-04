@@ -29,10 +29,10 @@ internal sealed class GpuMacroTranspilerRule : IInvocationTranspilerRule
         }
 
         // The analyzer warns (GSH0054); the call becomes a runtime failure
-        if (!GpuCodeConstraints.SupportsInlinePtx(context.Emitter.Dialect))
+        if (!DialectCallSupport.SupportsInlinePtx(context.Emitter.Dialect))
         {
             var dialectName = context.Emitter.Dialect.Name;
-            context.Emitter.Writer.Append($"{GSharpInternalNames.Prelude.Unsupported}(\"Gpu.InlinePtx is not supported by the {dialectName} dialect\");");
+            context.Emitter.Writer.Append($"{GSharpInternalNames.Prelude.Unsupported}(\"{DialectCallSupport.GetInlinePtxUnsupportedMessage(dialectName)}\");");
             context.Emitter.Writer.AppendLine();
             if (!context.Emitter.Dialect.EmulatesThreadsWithStateMachine() || !context.Emitter.IsGpuKernelEntry)
             {

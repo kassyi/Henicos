@@ -34,7 +34,7 @@ internal readonly ref struct TranspilationSession
     {
         var semanticModel = plan.SemanticModel;
         var methodSymbol = plan.Symbol;
-        if (methodSymbol != null && !GpuCodeConstraints.HasSupportedReturnType(methodSymbol))
+        if (methodSymbol != null && !GpuCodeConstraints.HasSupportedReturnType(methodSymbol, dialect))
         {
             reportFailure?.Invoke(new TranspileFailure(
                 GSharpDiagnostics.KernelReturnMustBeVoidOrBlittable,
