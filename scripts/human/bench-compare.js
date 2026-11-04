@@ -5,6 +5,7 @@
 //   iteration samples (Nanoseconds / Operations), computes the two-sided Mann-Whitney U test (with tie and continuity
 //   correction on the normal approximation, plus exact distribution for small untied samples), prints a summary table,
 //   and exits with code 1 when any benchmark regresses by more than --threshold % (default 5%) with p < --pvalue (0.01).
+//   Each job of a benchmark is compared on its own; the same benchmark and job twice on one side is an error.
 'use strict';
 
 const fs = require('fs');
@@ -110,7 +111,15 @@ function findReportFiles(target, label) {
     };
 
     walk(target);
-    const selected = fullReports.length > 0 ? fullReports : fallbackJsons;
+    // A run that exported both JsonExporter.Full and JsonExporter.FullCompressed holds the same benchmarks twice;
+    // keep the uncompressed report of such a pair.
+    const fullSet = new Set(fullReports.map(f => f.toLowerCase()));
+    const dedupedFullReports = fullReports.filter(f => {
+        const lower = f.toLowerCase();
+        return !lower.endsWith('-report-full-compressed.json') ||
+            !fullSet.has(lower.replace(/-report-full-compressed\.json$/, '-report-full.json'));
+    });
+    const selected = dedupedFullReports.length > 0 ? dedupedFullReports : fallbackJsons;
     selected.sort((a, b) => a.localeCompare(b));
     if (selected.length === 0) {
         fail(`No BenchmarkDotNet JSON report files found in ${label}: ${target}`);
@@ -118,25 +127,57 @@ function findReportFiles(target, label) {
     return selected;
 }
 
+// BenchmarkDotNet writes DisplayInfo as "<Type>.<Method>: <job id>(<characteristics>)", followed by
+// " [<parameters>]" when the benchmark has parameters. Returns the job part, or '' when it is missing.
+function jobDisplayInfo(bench) {
+    const info = typeof bench.DisplayInfo === 'string' ? bench.DisplayInfo : '';
+    const separator = info.indexOf(': ');
+    if (separator < 0) {
+        return '';
+    }
+    let job = info.slice(separator + 2).trim();
+    if (bench.Parameters) {
+        job = job.replace(/\s\[[^\]]*\]$/, '');
+    }
+    return job;
+}
+
+// The job id alone ("Dry", "ShortRun", "Job-ABCDEF"), as shown in the table.
+function jobId(bench) {
+    const job = jobDisplayInfo(bench);
+    const paren = job.indexOf('(');
+    return paren >= 0 ? job.slice(0, paren) : job;
+}
+
+// The job part of the key. An id that BenchmarkDotNet generated ("Job-ABCDEF") is replaced by "Job" so that the key
+// rests on the characteristics, which are the same in a base and a head run of the same configuration.
+function jobKey(bench) {
+    return jobDisplayInfo(bench).replace(/^Job-[A-Za-z0-9]+(?=\(|$)/, 'Job');
+}
+
 function benchmarkKey(bench) {
     const ns = bench.Namespace ? `${bench.Namespace}.` : '';
     const type = bench.Type || '';
     const method = bench.Method || bench.MethodTitle || '';
     const params = bench.Parameters ? `[${bench.Parameters}]` : '';
+    const job = jobKey(bench);
+    const jobSuffix = job ? ` @ ${job}` : '';
     if (type || method) {
-        return `${ns}${type}.${method}${params}`;
+        return `${ns}${type}.${method}${params}${jobSuffix}`;
     }
-    return bench.FullName || 'UnknownBenchmark';
+    return `${bench.FullName || 'UnknownBenchmark'}${jobSuffix}`;
 }
 
 function displayName(bench) {
     const type = bench.Type || '';
     const method = bench.Method || bench.MethodTitle || '';
     const params = bench.Parameters ? `[${bench.Parameters}]` : '';
+    const id = jobId(bench);
+    const jobSuffix = id ? ` (${id})` : '';
     if (type && method) {
-        return `${type}.${method}${params}`;
+        return `${type}.${method}${params}${jobSuffix}`;
     }
-    return bench.FullName || benchmarkKey(bench);
+    return `${bench.FullName || benchmarkKey(bench)}${jobSuffix}`;
 }
 
 function extractWorkloadSamples(bench) {
@@ -184,12 +225,20 @@ function loadBenchmarks(files, label) {
                     'Ensure JsonExporter.Full or JsonExporter.FullCompressed is enabled.'
                 );
             }
+            const relativeFile = path.relative(repoRoot, file).split(path.sep).join('/');
+            const existing = map.get(key);
+            if (existing) {
+                fail(
+                    `Benchmark '${key}' appears twice in ${label}: in ${existing.file} and in ${relativeFile}. ` +
+                    `Pass one run per side (a single report file or a directory holding one run).`
+                );
+            }
             map.set(key, {
                 key,
                 name: displayName(bench),
                 fullName: bench.FullName || key,
                 samples,
-                file: path.relative(repoRoot, file).split(path.sep).join('/'),
+                file: relativeFile,
             });
         }
     }
