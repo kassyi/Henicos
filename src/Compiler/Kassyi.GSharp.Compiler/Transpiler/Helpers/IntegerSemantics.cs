@@ -159,7 +159,8 @@ internal static class IntegerSemantics
     /// target is narrower than <see langword="int"/> (<c>short++</c> computes in int, #1079); null when it is not.
     /// </summary>
     public static ITypeSymbol? GetStepNarrowing(IIncrementOrDecrementOperation operation) =>
-        UnderlyingOrSelf(operation.Target.Type) is { } target && target.SpecialType != Promote(target)
+        UnderlyingOrSelf(operation.Target.Type) is { } target && Promote(target) == SpecialType.System_Int32 &&
+        target.SpecialType != SpecialType.System_Int32
             ? target
             : null;
 
