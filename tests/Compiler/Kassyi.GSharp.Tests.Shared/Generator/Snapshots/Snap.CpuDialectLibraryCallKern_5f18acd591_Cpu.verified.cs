@@ -5146,13 +5146,14 @@ __gsharp_id_1_results[4]=(([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = 0;
 bool __gsharp_fusion_res = false;
+int __gsharp_fusion_res_target = 7;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
 {
 auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
-if (__gsharp_val_0 == (7))
+if (__gsharp_linq_equals(__gsharp_val_0, __gsharp_fusion_res_target))
 {__gsharp_fusion_res = true; break;
 }}
 return __gsharp_fusion_res;
