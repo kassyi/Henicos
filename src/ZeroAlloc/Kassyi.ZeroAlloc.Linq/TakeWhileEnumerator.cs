@@ -36,7 +36,7 @@ public ref struct TakeWhileEnumerator<TEnumerator, TSource> : IStackEnumerator<T
     /// <see langword="true"/> if the enumerator was successfully advanced to the next element satisfying the predicate;
     /// <see langword="false"/> if the end of the sequence was reached or the predicate returned false.
     /// </returns>
-    public bool TryGetNext(out TSource current)
+    public bool TryGetNext([MaybeNullWhen(false)] out TSource current)
     {
         if (_source.TryGetNext(out current))
         {
@@ -46,7 +46,7 @@ public ref struct TakeWhileEnumerator<TEnumerator, TSource> : IStackEnumerator<T
             }
         }
 
-        current = default!;
+        current = default;
         return false;
     }
 }

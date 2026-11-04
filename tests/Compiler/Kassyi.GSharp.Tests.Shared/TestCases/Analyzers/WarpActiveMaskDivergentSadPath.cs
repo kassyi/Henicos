@@ -128,4 +128,79 @@ public class WarpActiveMaskDivergentSadPath
 
         r[t] = Warp.ActiveMask();
     }
+
+    // #1072: Interlocked.* returns a thread-variant value and writes a thread-variant value to its ref target
+    [GpuKernel]
+    public static void InterlockedActiveMaskKernel(uint[] r, int[] counter)
+    {
+        int slot = System.Threading.Interlocked.Add(ref counter[0], 1);
+        if (slot == 0)
+        {
+            r[0] = Warp.ActiveMask();
+        }
+    }
+
+    [GpuKernel]
+    public static void InterlockedRefLocalActiveMaskKernel(uint[] r)
+    {
+        int localCounter = 0;
+        _ = System.Threading.Interlocked.Add(ref localCounter, 1);
+        if (localCounter == 0)
+        {
+            r[0] = Warp.ActiveMask();
+        }
+    }
+
+    // #847: a local assigned ThreadIndex.X and reassigned a constant before the branch is uniform
+    [GpuKernel]
+    public static void ReassignedUniformActiveMaskKernel(uint[] r)
+    {
+        int x = ThreadIndex.X;
+        r[x] = 0u;
+        x = 0;
+        if (x == 0)
+        {
+            r[0] = Warp.ActiveMask();
+        }
+    }
+
+    // #847: deconstruction assigns each element its own variance
+    [GpuKernel]
+    public static void DeconstructedActiveMaskKernel(uint[] r)
+    {
+        (int a, int b) = (ThreadIndex.X, 0);
+        if (b == 0)
+        {
+            r[0] = Warp.ActiveMask();
+        }
+
+        if (a < 4)
+        {
+            r[a] = Warp.ActiveMask();
+        }
+    }
+
+    // #847: reading memory written since the last barrier is thread-variant
+    [GpuKernel]
+    public static void WrittenMemoryActiveMaskKernel(uint[] r, int[] scratch)
+    {
+        scratch[ThreadIndex.X] = ThreadIndex.X;
+        if (scratch[0] == 0)
+        {
+            r[0] = Warp.ActiveMask();
+        }
+    }
+
+    // #847: the loop index of Gpu.ForUnroll is uniform across the block
+    [GpuKernel]
+    public static void ForUnrollActiveMaskKernel(uint[] r)
+    {
+        Gpu.ForUnroll(2, i =>
+        {
+            if (i == 0)
+            {
+                r[ThreadIndex.X] = Warp.ActiveMask();
+            }
+        });
+    }
 }

@@ -35,11 +35,14 @@ internal static class TranspilerFailureCheck
                 method.HasAttribute(KnownAttributes.GpuDeviceFunction) &&
                 !method.HasAttribute(KnownAttributes.GpuKernel) &&
                 IteratorTypeResolver.ContainsDirectYield(declaration.Body);
+            var isRecursiveIterator =
+                isDeviceIteratorCandidate &&
+                IteratorTypeResolver.IsRecursiveIterator(method, semanticModel.Compilation);
             Transpile(
                 declaration,
                 method,
                 semanticModel,
-                new FailureSink(diagnostics, declaration, semanticModel.Compilation, isDeviceIteratorCandidate));
+                new FailureSink(diagnostics, declaration, semanticModel.Compilation, isDeviceIteratorCandidate, isRecursiveIterator));
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
@@ -71,13 +74,26 @@ internal static class TranspilerFailureCheck
         ImmutableArray<Diagnostic>.Builder diagnostics,
         MethodDeclarationSyntax declaration,
         Compilation compilation,
-        bool isDeviceIteratorCandidate)
+        bool isDeviceIteratorCandidate,
+        bool isRecursiveIterator)
     {
         public void Add(TranspileFailure failure)
         {
+            // [WHY] DeviceIteratorChecks already reports GSH0070 on the declaration of a recursive device iterator.
+            // When transpiling that iterator body, inline expansion hits MaxInlineDepth and would report a second
+            // GSH0070 on the recursive foreach loop; drop this forwarded failure to avoid duplicate reports for the
+            // same recursive iterator.
+            if (isRecursiveIterator && failure.Descriptor.Id == GSharpDiagnostics.IteratorShapeNotSupported.Id)
+            {
+                return;
+            }
+
             // A valid device iterator body is validated once by its own standalone expansion; drop failures located in
             // another standalone-validated iterator method so consumers do not re-report its body failures.
-            if (IsInOtherDeviceIteratorMethod(failure.Location))
+            // Inline depth expansion failures (GSH0070) are caused by the consumer's chain, not the target method body,
+            // and have no other report, so they must not be dropped.
+            if (failure.Descriptor.Id != GSharpDiagnostics.IteratorShapeNotSupported.Id &&
+                IsInOtherDeviceIteratorMethod(failure.Location))
             {
                 return;
             }

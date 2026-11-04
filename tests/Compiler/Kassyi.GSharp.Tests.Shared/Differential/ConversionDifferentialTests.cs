@@ -143,7 +143,7 @@ public class ConversionDifferentialTests
 
     private static readonly DifferentialCase s_foreachFloatToInt = new($"{nameof(ConversionDifferentialKernels)}.{nameof(ConversionDifferentialKernels.ForeachFloatToIntMatrixKernel)}")
     {
-        Shape = LaunchShape.ForRows(64, blockX: 32),
+        Shapes = LaunchShapes.OneDimensionalMatrix(64),
         Inputs = static (rng, rows) => new DiffBuffers()
             .In("f", DiffValues.Single(rng, rows))
             .In("d", DoubleValues(rng, rows))
@@ -155,7 +155,7 @@ public class ConversionDifferentialTests
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
-        Oracle = static b => ConversionDifferentialKernels.ForeachFloatToIntMatrixKernel(
+        Oracle = static (b, _) => ConversionDifferentialKernels.ForeachFloatToIntMatrixKernel(
             b.Get<float>("f"),
             b.Get<double>("d"),
             b.Get<long>("r")
@@ -164,7 +164,7 @@ public class ConversionDifferentialTests
 
     private static readonly DifferentialCase s_enumCast = new($"{nameof(ConversionDifferentialKernels)}.{nameof(ConversionDifferentialKernels.EnumCastMatrixKernel)}")
     {
-        Shape = LaunchShape.ForRows(64, blockX: 32),
+        Shapes = LaunchShapes.OneDimensionalMatrix(64),
         Inputs = static (rng, rows) => new DiffBuffers()
             .In("f", DiffValues.Single(rng, rows))
             .In("d", DoubleValues(rng, rows))
@@ -178,7 +178,7 @@ public class ConversionDifferentialTests
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
-        Oracle = static b => ConversionDifferentialKernels.EnumCastMatrixKernel(
+        Oracle = static (b, _) => ConversionDifferentialKernels.EnumCastMatrixKernel(
             b.Get<float>("f"),
             b.Get<double>("d"),
             b.Get<int>("i"),
@@ -188,7 +188,7 @@ public class ConversionDifferentialTests
 
     private static readonly DifferentialCase s_intToFloat = new($"{nameof(ConversionDifferentialKernels)}.{nameof(ConversionDifferentialKernels.IntToFloatConversionMatrixKernel)}")
     {
-        Shape = LaunchShape.ForRows(70, blockX: 32),
+        Shapes = LaunchShapes.OneDimensionalMatrix(70),
         Inputs = static (rng, rows) =>
         {
             var i = DiffValues.Int32(rng, rows);
@@ -209,7 +209,7 @@ public class ConversionDifferentialTests
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
-        Oracle = static b => ConversionDifferentialKernels.IntToFloatConversionMatrixKernel(
+        Oracle = static (b, _) => ConversionDifferentialKernels.IntToFloatConversionMatrixKernel(
             b.Get<int>("i"),
             b.Get<uint>("u"),
             b.Get<long>("l"),
@@ -220,7 +220,7 @@ public class ConversionDifferentialTests
 
     private static readonly DifferentialCase s_intToDouble = new($"{nameof(ConversionDifferentialKernels)}.{nameof(ConversionDifferentialKernels.IntToDoubleConversionMatrixKernel)}")
     {
-        Shape = LaunchShape.ForRows(70, blockX: 32),
+        Shapes = LaunchShapes.OneDimensionalMatrix(70),
         Inputs = static (rng, rows) =>
         {
             var i = DiffValues.Int32(rng, rows);
@@ -241,7 +241,7 @@ public class ConversionDifferentialTests
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
-        Oracle = static b => ConversionDifferentialKernels.IntToDoubleConversionMatrixKernel(
+        Oracle = static (b, _) => ConversionDifferentialKernels.IntToDoubleConversionMatrixKernel(
             b.Get<int>("i"),
             b.Get<uint>("u"),
             b.Get<long>("l"),
@@ -252,7 +252,7 @@ public class ConversionDifferentialTests
 
     private static readonly DifferentialCase s_charScalarArg = new($"{nameof(ConversionDifferentialKernels)}.{nameof(ConversionDifferentialKernels.CharScalarArgKernel)}")
     {
-        Shape = LaunchShape.ForRows(24, blockX: 16),
+        Shapes = LaunchShapes.OneDimensionalMatrix(24),
         Inputs = static (rng, rows) => new DiffBuffers()
             .In("cArr", CharValues(rng, rows))
             .Out<int>("r", rows, ConversionDifferentialKernels.CharScalarArgColumns, OutputPolicy.Exact),
@@ -263,7 +263,7 @@ public class ConversionDifferentialTests
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
-        Oracle = static b => ConversionDifferentialKernels.CharScalarArgKernel(
+        Oracle = static (b, _) => ConversionDifferentialKernels.CharScalarArgKernel(
             '\u1234',
             b.Get<char>("cArr"),
             b.Get<int>("r")

@@ -14,7 +14,7 @@ public class StructDifferentialTests
     private static readonly DifferentialCase s_mutationAndCopy = new(
         $"{nameof(StructDifferentialKernels)}.{nameof(StructDifferentialKernels.StructMutationAndCopySemantics)}")
     {
-        Shape = LaunchShape.ForRows(Rows, blockX: 64),
+        Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
         Inputs = static (rng, rows) =>
         {
             var (inputs, deltas) = DiffValues.Int32Pairs(rng, rows);
@@ -29,7 +29,7 @@ public class StructDifferentialTests
             b.Get<int>("r"),
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static b => StructDifferentialKernels.StructMutationAndCopySemantics(
+        Oracle = static (b, _) => StructDifferentialKernels.StructMutationAndCopySemantics(
             b.Get<int>("inputs"),
             b.Get<int>("deltas"),
             b.Get<int>("r")),
@@ -38,7 +38,7 @@ public class StructDifferentialTests
     private static readonly DifferentialCase s_defaultVsNew = new(
         $"{nameof(StructDifferentialKernels)}.{nameof(StructDifferentialKernels.StructDefaultVsNewAndFieldInitializers)}")
     {
-        Shape = LaunchShape.ForRows(Rows, blockX: 64),
+        Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
         Inputs = static (rng, rows) =>
         {
             var (inputs, flags) = DiffValues.Int32Pairs(rng, rows);
@@ -53,7 +53,7 @@ public class StructDifferentialTests
             b.Get<int>("r"),
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static b => StructDifferentialKernels.StructDefaultVsNewAndFieldInitializers(
+        Oracle = static (b, _) => StructDifferentialKernels.StructDefaultVsNewAndFieldInitializers(
             b.Get<int>("inputs"),
             b.Get<int>("flags"),
             b.Get<int>("r")),
@@ -62,7 +62,7 @@ public class StructDifferentialTests
     private static readonly DifferentialCase s_recordWith = new(
         $"{nameof(StructDifferentialKernels)}.{nameof(StructDifferentialKernels.RecordStructWithExpressions)}")
     {
-        Shape = LaunchShape.ForRows(Rows, blockX: 64),
+        Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
         Inputs = static (rng, rows) =>
         {
             var (xs, ys) = DiffValues.Int32Pairs(rng, rows);
@@ -80,7 +80,7 @@ public class StructDifferentialTests
             b.Get<int>("r"),
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static b => StructDifferentialKernels.RecordStructWithExpressions(
+        Oracle = static (b, _) => StructDifferentialKernels.RecordStructWithExpressions(
             b.Get<int>("xs"),
             b.Get<int>("ys"),
             b.Get<int>("zs"),
@@ -90,7 +90,7 @@ public class StructDifferentialTests
     private static readonly DifferentialCase s_autoPropInDefensiveCopy = new(
         $"{nameof(StructDifferentialKernels)}.{nameof(StructDifferentialKernels.AutoPropertyPassedToInParameterDefensiveCopy)}")
     {
-        Shape = LaunchShape.ForRows(Rows, blockX: 64),
+        Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
         Inputs = static (rng, rows) =>
         {
             var (initialValues, mutatedValues) = DiffValues.Int32Pairs(rng, rows);
@@ -113,7 +113,7 @@ public class StructDifferentialTests
             b.Get<int>("r"),
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static b => StructDifferentialKernels.AutoPropertyPassedToInParameterDefensiveCopy(
+        Oracle = static (b, _) => StructDifferentialKernels.AutoPropertyPassedToInParameterDefensiveCopy(
             b.Get<int>("initialValues"),
             b.Get<int>("mutatedValues"),
             b.Get<int>("r")),
@@ -122,7 +122,7 @@ public class StructDifferentialTests
     private static readonly DifferentialCase s_userDefinedImplicitConv = new(
         $"{nameof(StructDifferentialKernels)}.{nameof(StructDifferentialKernels.StructUserDefinedImplicitConversion)}")
     {
-        Shape = LaunchShape.ForRows(Rows, blockX: 64),
+        Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
         Inputs = static (rng, rows) =>
         {
             var inputs = DiffValues.Int32(rng, rows);
@@ -135,7 +135,7 @@ public class StructDifferentialTests
             b.Get<int>("r"),
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static b => StructDifferentialKernels.StructUserDefinedImplicitConversion(
+        Oracle = static (b, _) => StructDifferentialKernels.StructUserDefinedImplicitConversion(
             b.Get<int>("inputs"),
             b.Get<int>("r")),
     };

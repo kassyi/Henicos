@@ -39,7 +39,9 @@ public static class LoopUnrollAudit
             int at = pragmaIndexes[n];
             Assert.Equal(expectedPragmas[n].Pragma, lines[at]);
             Assert.True(at + 1 < lines.Length, "A pragma must be followed by a loop.");
-            Assert.StartsWith(expectedPragmas[n].LoopKeyword!, lines[at + 1], StringComparison.Ordinal);
+            var loopKeyword = expectedPragmas[n].LoopKeyword;
+            Assert.NotNull(loopKeyword);
+            Assert.StartsWith(loopKeyword, lines[at + 1], StringComparison.Ordinal);
         }
     }
 

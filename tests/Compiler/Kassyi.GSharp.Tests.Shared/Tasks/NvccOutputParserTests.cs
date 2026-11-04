@@ -16,7 +16,7 @@ public class NvccOutputParserTests
             {
                 MSBuildLocator.RegisterDefaults();
             }
-            catch
+            catch (InvalidOperationException)
             {
                 // ignore
             }
@@ -29,7 +29,7 @@ public class NvccOutputParserTests
             typeof(CompileCudaToFatbinTask).Assembly.GetType("Kassyi.GSharp.Compiler.Tasks.NvccOutputParser");
         var detectMethod = parserType.GetMethod("DetectRegisterSpill", BindingFlags.Public | BindingFlags.Static);
 
-        var args = new object[] { output, error, null };
+        var args = new object[] { output, error, null, null };
         var result = (bool)detectMethod.Invoke(null, args);
         errorMessage = (string)args[2];
         return result;
@@ -71,5 +71,62 @@ public class NvccOutputParserTests
         Assert.True(hasSpill);
         Assert.Contains("Register spill detected", errorMessage);
         Assert.Contains("4 bytes spill", errorMessage);
+    }
+
+    [Fact]
+    public void Test_ExtractWarnings_EdgUnusedVariableAndLabel_ReturnsStructuredWarnings()
+    {
+        var parserType =
+            typeof(CompileCudaToFatbinTask).Assembly.GetType("Kassyi.GSharp.Compiler.Tasks.NvccOutputParser");
+        Assert.NotNull(parserType);
+        var extractMethod = parserType.GetMethod("ExtractWarnings", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
+        Assert.NotNull(extractMethod);
+
+        var output = """
+            C:\temp\kernel.g.cu(102): warning #550-D: variable "dummy" was set but never used
+            C:\temp\kernel.g.cu(527): warning #177-D: label "__gsharp_iter_end_1" was declared but never referenced
+            """;
+        var warnings = ((System.Collections.IEnumerable)extractMethod.Invoke(null, [output, "", null])).Cast<object>().ToList();
+
+        Assert.Equal(2, warnings.Count);
+    }
+
+    [Fact]
+    public void Test_DetectRegisterSpill_ScopedSuppression_OnlySuppressesMarkedFunction()
+    {
+        var parserType =
+            typeof(CompileCudaToFatbinTask).Assembly.GetType("Kassyi.GSharp.Compiler.Tasks.NvccOutputParser");
+        Assert.NotNull(parserType);
+        var getSuppressedMethod = parserType.GetMethod("GetSuppressedSpillFunctions", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
+        Assert.NotNull(getSuppressedMethod);
+        var detectMethods = parserType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static)
+            .Where(m => m.Name == "DetectRegisterSpill" && m.GetParameters().Length == 4)
+            .ToArray();
+        var detectMethod = Assert.Single(detectMethods);
+
+        var cuContent = """
+            // gsharp:suppress GS0001
+            extern "C" __global__ void __gsharp_k_SuppressedKernel(int* a) {}
+            extern "C" __global__ void __gsharp_k_UnsuppressedKernel(int* b) {}
+            """;
+        var suppressed = getSuppressedMethod.Invoke(null, [cuContent]);
+
+        var suppressedOnlyOutput = """
+            ptxas warning : Registers are spilled to local memory in function '__gsharp_k_SuppressedKernel', 12 bytes spill stores, 12 bytes spill loads
+            ptxas info    : Function properties for __gsharp_k_SuppressedKernel
+                16 bytes stack frame, 12 bytes spill stores, 12 bytes spill loads
+            """;
+        var args1 = new object[] { suppressedOnlyOutput, "", null, suppressed };
+        Assert.False((bool)detectMethod.Invoke(null, args1));
+
+        var mixedOutput = suppressedOnlyOutput + "\n" + """
+            ptxas warning : Registers are spilled to local memory in function '__gsharp_k_UnsuppressedKernel', 8 bytes spill stores, 8 bytes spill loads
+            ptxas info    : Function properties for __gsharp_k_UnsuppressedKernel
+                8 bytes stack frame, 8 bytes spill stores, 8 bytes spill loads
+            """;
+        var args2 = new object[] { mixedOutput, "", null, suppressed };
+        Assert.True((bool)detectMethod.Invoke(null, args2));
+        Assert.Contains("__gsharp_k_UnsuppressedKernel", (string)args2[2]);
+        Assert.DoesNotContain("__gsharp_k_SuppressedKernel", (string)args2[2]);
     }
 }

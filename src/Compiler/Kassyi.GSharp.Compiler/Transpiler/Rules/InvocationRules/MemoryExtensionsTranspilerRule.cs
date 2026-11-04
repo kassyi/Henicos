@@ -93,8 +93,8 @@ public sealed class MemoryExtensionsTranspilerRule : IInvocationTranspilerRule
         return new SortCall(receiver, hasItems, comparerArgument, isComparison, method.TypeArguments[0]);
     }
 
-    // The comparison: the classified comparer argument, or the default order of the key; a receiver that the arguments
-    // interfere with is reported. Registers the comparison member that the call uses.
+    // The comparison: the classified comparer argument, or the default order of the key. Registers the comparison
+    // member that the call uses.
     private static bool TryResolveComparison(in SortCall shape, InvocationExpressionSyntax node,
         ref TranspileContext context, out SortCall call)
     {
@@ -107,14 +107,6 @@ public sealed class MemoryExtensionsTranspilerRule : IInvocationTranspilerRule
 
         if (kind == ComparisonKind.Default && !TryGetDefaultOrder(shape.KeyType, node, ref context, out compareMember))
         {
-            return false;
-        }
-
-        if (shape.Receiver != null &&
-            ReceiverInterferes(shape.Receiver, node.ArgumentList.Arguments, context.Query.SemanticModel))
-        {
-            context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, node,
-                ExpressionRules.InvocationExpressionTranspilerRule.ExtensionReceiverInterferes);
             return false;
         }
 
@@ -138,14 +130,15 @@ public sealed class MemoryExtensionsTranspilerRule : IInvocationTranspilerRule
         var comparerParameter = call.ComparerArgument != null
             ? symbol.FindParameter(arguments, arguments.Count - 1)
             : null;
-        using var sequence = EvaluationOrder.BeginCall(ref context, arguments, symbol, receiver: null, spillAll: false);
+        var receiverParameter = call.Receiver != null ? (symbol.ReducedFrom ?? symbol).Parameters[0] : null;
+        using var sequence = EvaluationOrder.BeginExtensionCall(ref context, call.Receiver, receiverParameter, arguments, symbol);
         var writer = context.Emitter.Writer;
         writer.Append(GetFunctionName(call.HasItems, call.Kind, call.CompareMember != null));
         using (writer.Parentheses())
         {
             if (call.Receiver != null)
             {
-                context.Visitor.Visit(call.Receiver);
+                sequence.AppendReceiver(call.Receiver, byReference: false, ref context);
             }
 
             var written = call.Receiver != null ? 1 : 0;
@@ -331,18 +324,5 @@ public sealed class MemoryExtensionsTranspilerRule : IInvocationTranspilerRule
         }
 
         return true;
-    }
-
-    // Whether an argument writes what the receiver reads or reads what it writes (the receiver is written first in C++,
-    // but the temporaries of EvaluationOrder are evaluated before it)
-    private static bool ReceiverInterferes(ExpressionSyntax receiver, SeparatedSyntaxList<ArgumentSyntax> arguments,
-        SemanticModel model)
-    {
-        var receiverEffects = ExpressionEffects.Of(receiver, model);
-        return arguments
-            .AsStackEnumerable()
-            .Any((Receiver: receiverEffects, Model: model), static (argument, s) =>
-                ExpressionEffects.Of(argument.Expression, s.Model) is var effects &&
-                (s.Receiver.InterferesWith(effects) || effects.InterferesWith(s.Receiver)));
     }
 }

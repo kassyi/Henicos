@@ -13,13 +13,18 @@ namespace Kassyi.GSharp.Compiler;
 internal static class GpuCodeConstraints
 {
     /// <summary>
-    /// Whether a GPU function returns <see langword="void"/>, an unmanaged type, or is a valid device iterator
-    /// (GSH0004).
+    /// Whether a GPU function returns <see langword="void"/>, an unmanaged type with a device representation, or is a
+    /// valid device iterator (GSH0004).
     /// </summary>
-    public static bool HasSupportedReturnType(IMethodSymbol method) =>
+    public static bool HasSupportedReturnType(IMethodSymbol method, ITranspilerDialect dialect) =>
         method.ReturnType.SpecialType == SpecialType.System_Void ||
-        method.ReturnType.IsUnmanagedType ||
-        IteratorTypeResolver.IsDeviceIteratorMethod(method);
+        IteratorTypeResolver.IsDeviceIteratorMethod(method) ||
+        (method.ReturnType.IsUnmanagedType &&
+         (StructLayoutValidator.HasDeviceRepresentation(method.ReturnType, dialect) ||
+          IsReportedAsRuntimeOnly(method.ReturnType)));
+
+    // [WHY] GSH0003 already reports a runtime-only type (decimal, GCHandle, ...); GSH0004 would repeat it
+    private static bool IsReportedAsRuntimeOnly(ITypeSymbol type) => GetRuntimeOnlyTypeName(type) is not null;
 
     /// <summary>The return type of <paramref name="method"/> as the GSH0004 message names it.</summary>
     public static string FormatReturnType(IMethodSymbol method) =>
@@ -236,8 +241,9 @@ internal static class GpuCodeConstraints
 
     /// <summary>
     /// Whether <paramref name="dialect"/> emits <c>Gpu.InlinePtx</c>; the others replace the call with a runtime failure
-    /// (GSH0054).
+    /// (GSH0054). Kept temporarily until #1052 and #1054 merge; use <see cref="Dialects.DialectCallSupport.SupportsInlinePtx"/> instead.
     /// </summary>
+    // TODO(#581): Remove once #1052 and #1054 merge.
     public static bool SupportsInlinePtx(ITranspilerDialect dialect) =>
         dialect.Capabilities.HasFlag(DialectCapabilities.InlineAssembly);
 
