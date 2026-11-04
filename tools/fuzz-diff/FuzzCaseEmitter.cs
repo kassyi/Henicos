@@ -60,8 +60,10 @@ internal static class FuzzCaseEmitter
         string kernelMethodName,
         int? inputSeed,
         string headerComment,
-        string column = "hash")
+        string column = "hash",
+        string? oracleMethodName = null)
     {
+        string effectiveOracleName = oracleMethodName ?? kernelMethodName;
         string seedsLine = inputSeed is { } s
             ? string.Create(CultureInfo.InvariantCulture, $"\nSeeds = [{s}],")
             : string.Empty;
@@ -83,7 +85,7 @@ internal static class FuzzCaseEmitter
             .Out<ulong>("checksum", rows, ["{{column}}"], OutputPolicy.Exact);
             },
             Launch = static (b, s) => {{kernelClassName}}.Launch{{kernelMethodName}}(b.Get<int>("inA"), b.Get<int>("inB"), b.Get<int>("inC"), b.Get<ulong>("checksum"), gridDimX: s.GridX, blockDimX: s.BlockX),
-            Oracle = static (b, _) => {{kernelClassName}}.{{kernelMethodName}}(b.Get<int>("inA"), b.Get<int>("inB"), b.Get<int>("inC"), b.Get<ulong>("checksum")),
+            Oracle = static (b, _) => {{kernelClassName}}.{{effectiveOracleName}}(b.Get<int>("inA"), b.Get<int>("inB"), b.Get<int>("inC"), b.Get<ulong>("checksum")),
             };
             """;
     }

@@ -25,6 +25,7 @@ public static class Program
           --profile <M|C|G>        Target profile controlling active known-issue avoidance switches (default: C).
           --allow-issue <n>        Re-enable generation of shapes avoided for known issue #<n> (repeatable).
           --swarm-focus <mode>     Optional Swarm focus mode (default, coalesce-assign-value, tuple-deconstruct-complex).
+          --metamorphic            Emit semantics-preserving metamorphic variants alongside each generated kernel.
           --out-dir <dir>          Output directory for FuzzBatchKernels.cu.cs and FuzzBatchCases.cs (default: tmp/differential-fuzz/Generated).
           --repo-root <dir>        Repository root path used to emit FuzzBatch.Cpu.csproj and FuzzBatch.Cuda.csproj in the parent work directory.
           --cuda-arch <arch>       Optional single GSharpTargetArchitectures value (e.g. compute_86,sm_86).

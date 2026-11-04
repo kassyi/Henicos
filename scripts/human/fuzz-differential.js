@@ -30,6 +30,7 @@ const helpText = [
   '  --input-seed <int>                 Optional explicit runtime data input seed (default: 0..8).',
   '  --allow-issue <n>                  Re-enable generation of shapes avoided for known issue #<n> (repeatable).',
   '  --swarm-focus <mode>               Optional Swarm focus mode (default, coalesce-assign-value, tuple-deconstruct-complex).',
+  '  --metamorphic                      Generate semantics-preserving transformed kernel variants per kernel.',
   '  --compare-base <ref>               Compare generated C++/CUDA (.g.cpp and .g.cu) against git <ref> without a GPU.',
   '  --expect-change                    Exit 0 when --compare-base finds generated C++/CUDA differences.',
   '  --work-dir <dir>                   Workspace directory for temporary projects (default: tmp/differential-fuzz).',
@@ -76,6 +77,7 @@ function parseArgs(argv) {
     inputSeed: null,
     allowedIssues: [],
     swarmFocus: null,
+    metamorphic: false,
     compareBase: null,
     expectChange: false,
     compareSingle: null,
@@ -144,6 +146,8 @@ function parseArgs(argv) {
       i = nextIndex;
       if (!value) fail('--swarm-focus requires a focus mode.', 2);
       options.swarmFocus = value;
+    } else if (arg === '--metamorphic') {
+      options.metamorphic = true;
     } else if (arg === '--compare-base' || arg.startsWith('--compare-base=')) {
       const { value, nextIndex } = takeValue(i, '--compare-base');
       i = nextIndex;
@@ -459,6 +463,7 @@ function runSingleBatch(ctx, batchIndex, seedHex) {
   if (options.inputSeed !== null) genArgs.push('--input-seed', String(options.inputSeed));
   for (const allowedIssue of options.allowedIssues) genArgs.push('--allow-issue', String(allowedIssue));
   if (options.swarmFocus) genArgs.push('--swarm-focus', options.swarmFocus);
+  if (options.metamorphic) genArgs.push('--metamorphic');
   if (cudaArch) genArgs.push('--cuda-arch', cudaArch);
 
   const genRes = runCommand('dotnet', genArgs, { timeoutMs: 60_000 });
@@ -585,6 +590,7 @@ function writeRunSummary(ctx) {
   const finalPureKernelsPerHour = Math.round((totalKernels / pureEvalTotalSec) * 3600);
   const summary = {
     profile: options.profile, allowedIssues: options.allowedIssues, swarmFocus: options.swarmFocus || 'default',
+    metamorphic: Boolean(options.metamorphic),
     activeKnownIssues, batches: batchIndex, batchSize: options.batchSize, totalKernels,
     elapsedSeconds: Number(elapsedSec), reductionSeconds: Number((totalReductionMs / 1000).toFixed(2)),
     kernelsPerHour: finalKernelsPerHour, pureEvalKernelsPerHour: finalPureKernelsPerHour,
@@ -915,6 +921,7 @@ function runCompareBaseMode(options) {
       if (options.inputSeed !== null) genArgs.push('--input-seed', String(options.inputSeed));
       for (const allowedIssue of options.allowedIssues) genArgs.push('--allow-issue', String(allowedIssue));
       if (options.swarmFocus) genArgs.push('--swarm-focus', options.swarmFocus);
+      if (options.metamorphic) genArgs.push('--metamorphic');
 
       const genRes = runCommand('dotnet', genArgs, { timeoutMs: 60_000 });
       if (genRes.status !== 0) {
@@ -1056,6 +1063,7 @@ function runCompareBaseMode(options) {
     mode: 'compare-base',
     compareBase: options.compareBase,
     expectChange: Boolean(options.expectChange),
+    metamorphic: Boolean(options.metamorphic),
     batches: totalBatches,
     batchSize: options.batchSize,
     totalKernels,
@@ -1101,7 +1109,7 @@ function main() {
     handleBatchFindings(ctx, seedHex, batchResult);
 
     ctx.batchIndex++;
-    ctx.totalKernels += options.batchSize;
+    ctx.totalKernels += options.metamorphic ? options.batchSize * 3 : options.batchSize;
 
     const batchSec = ((Date.now() - batchStartMs) / 1000).toFixed(2);
     const totalSec = (Date.now() - ctx.startMs) / 1000;

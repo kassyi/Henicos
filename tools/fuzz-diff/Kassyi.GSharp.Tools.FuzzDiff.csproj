@@ -13,6 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\Core\Kassyi.GSharp.Core\Kassyi.GSharp.Core.csproj" />
     <ProjectReference Include="..\..\src\Compiler\Kassyi.GSharp.Compiler\Kassyi.GSharp.Compiler.csproj" />
     <None Include="known-issues.json" CopyToOutputDirectory="PreserveNewest" />
     <Using Include="System" />

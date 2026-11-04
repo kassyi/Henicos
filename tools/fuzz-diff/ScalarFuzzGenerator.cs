@@ -47,13 +47,16 @@ public sealed class ScalarFuzzGenerator
     public IReadOnlyList<DeviceFunctionSpec> DeviceFunctions => _deviceFunctions;
 
     /// <summary>
-    /// Generates a full batch of <see cref="FuzzOptions.BatchSize"/> kernels and their companion <c>DifferentialCase</c> definitions.
+    /// Generates a full batch of <see cref="FuzzOptions.BatchSize"/> kernels (plus metamorphic variants when
+    /// <see cref="FuzzOptions.Metamorphic"/> is enabled) and their companion <c>DifferentialCase</c> definitions.
     /// </summary>
     public GeneratedBatch GenerateBatch()
     {
         int batchSize = Math.Clamp(_options.BatchSize, 1, 256);
+        int metaVariants = _options.Metamorphic ? Math.Clamp(_options.MetamorphicVariantsPerKernel, 1, 4) : 0;
         var masterRng = new FuzzRandom(_options.FuzzSeed);
-        var kernels = new List<GeneratedKernelSpec>(batchSize);
+        var kernels = new List<GeneratedKernelSpec>(batchSize * (1 + metaVariants));
+        var extraDeviceFunctions = new List<string>();
 
         for (int i = 0; i < batchSize; i++)
         {
@@ -63,10 +66,47 @@ public sealed class ScalarFuzzGenerator
                 : 1 + (i * 8 / batchSize);
             size = Math.Clamp(size, 1, 8);
             string kernelName = string.Create(CultureInfo.InvariantCulture, $"Kernel_{i:D2}");
-            kernels.Add(GenerateSingleKernel(kernelName, kernelSeed, size));
+            var baseSpec = GenerateSingleKernel(kernelName, kernelSeed, size);
+            kernels.Add(baseSpec);
+
+            for (int m = 0; m < metaVariants; m++)
+            {
+                string metaKernelName = string.Create(CultureInfo.InvariantCulture, $"{kernelName}_Meta{m}");
+                ulong metaSeed = kernelSeed ^ ((ulong)(m + 1) * 0x9E3779B97F4A7C15UL);
+                var (variantMethodSource, extraHelpers) = FuzzMetamorphicRewriter.BuildMetamorphicVariant(
+                    _options.KernelClassName,
+                    _deviceFunctions,
+                    kernelName,
+                    baseSpec.KernelMethodSource,
+                    metaKernelName,
+                    m,
+                    metaSeed);
+                foreach (string h in extraHelpers)
+                {
+                    extraDeviceFunctions.Add(h);
+                }
+
+                string metaCaseHeader = string.Create(
+                    CultureInfo.InvariantCulture,
+                    $"// fuzz-seed: {FuzzRandom.FormatSeed(kernelSeed)}, metamorphic-variant: {m}");
+                string metaCaseProperty = FuzzCaseEmitter.RenderDifferentialCaseProperty(
+                    _options.KernelClassName,
+                    metaKernelName,
+                    _options.InputSeed,
+                    metaCaseHeader,
+                    oracleMethodName: kernelName);
+                kernels.Add(new GeneratedKernelSpec(
+                    metaKernelName,
+                    kernelSeed,
+                    size,
+                    variantMethodSource,
+                    metaCaseProperty,
+                    baseSpec.LocalVariableNames,
+                    baseSpec.StatementTexts));
+            }
         }
 
-        string kernelsSource = BuildKernelsCompilationUnit(kernels);
+        string kernelsSource = BuildKernelsCompilationUnit(kernels, extraDeviceFunctions);
         string casesSource = BuildCasesCompilationUnit(kernels);
 
         ValidateSyntaxTree(kernelsSource, "FuzzBatchKernels.cu.cs");
@@ -466,7 +506,9 @@ public sealed class ScalarFuzzGenerator
         return writer.ToString().AsSpan().TrimEnd().ToString();
     }
 
-    private string BuildKernelsCompilationUnit(IReadOnlyList<GeneratedKernelSpec> kernels)
+    private string BuildKernelsCompilationUnit(
+        IReadOnlyList<GeneratedKernelSpec> kernels,
+        IReadOnlyList<string> extraDeviceFunctions)
     {
         using var writer = new SourceWriter();
         FuzzCaseEmitter.AppendKernelsFileHeader(writer, _options.Namespace);
@@ -479,6 +521,12 @@ public sealed class ScalarFuzzGenerator
         {
             FuzzDeviceFunctionEmitter.AppendDeviceFunctionDeclarations(writer, _deviceFunctions);
             writer.AppendLine();
+            for (int h = 0; h < extraDeviceFunctions.Count; h++)
+            {
+                writer.AppendLine(extraDeviceFunctions[h]);
+                writer.AppendLine();
+            }
+
             for (int i = 0; i < kernels.Count; i++)
             {
                 if (i > 0)
