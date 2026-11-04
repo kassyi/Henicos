@@ -59,8 +59,8 @@ if(__gsharp_id_3_t>=__gsharp_id_0_f.length)
 __gsharp_state = -1;return;
 }
 int __gsharp_id_4_o = __gsharp_mul_i32(__gsharp_id_3_t,15);
-GSharpArray<float> __gsharp_id_5_sf = __gsharp_id_0_f.AsSpan().Slice(__gsharp_id_3_t,1);
-GSharpArray<double> __gsharp_id_6_sd = __gsharp_id_1_d.AsSpan().Slice(__gsharp_id_3_t,1);
+GSharpArray<float> __gsharp_id_5_sf = __gsharp_id_0_f.AsSpan().Slice(__gsharp_id_3_t,1, ""G#: index was out of range at ConversionDifferentialKernels.cs(167,26)"");
+GSharpArray<double> __gsharp_id_6_sd = __gsharp_id_1_d.AsSpan().Slice(__gsharp_id_3_t,1, ""G#: index was out of range at ConversionDifferentialKernels.cs(168,27)"");
 for(auto __gsharp_foreach_e_0 : __gsharp_id_5_sf)
 {
 int __gsharp_id_7_x = __gsharp_to_i32(__gsharp_foreach_e_0);

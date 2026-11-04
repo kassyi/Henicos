@@ -67,6 +67,11 @@ global::Kassyi.GSharp.Tests.Shared.Syntax.SpanWriteKernels.WarmupFunctionPointer
 global::Kassyi.GSharp.Tests.Shared.Syntax.SpanWriteKernels.WarmupFunctionPointerArraySortFloatKeysKernel();
 global::Kassyi.GSharp.Tests.Shared.Syntax.SpanWriteKernels.WarmupFunctionPointerArraySortPairsKernel();
 global::Kassyi.GSharp.Tests.Shared.Syntax.SpanWriteKernels.WarmupFunctionPointerEvaluationOrderSpanWriteKernel();
+global::Kassyi.GSharp.Tests.Shared.Syntax.SpanWriteKernels.WarmupFunctionPointerOutOfRangeArrayClearKernel();
+global::Kassyi.GSharp.Tests.Shared.Syntax.SpanWriteKernels.WarmupFunctionPointerOutOfRangeArrayFillKernel();
+global::Kassyi.GSharp.Tests.Shared.Syntax.SpanWriteKernels.WarmupFunctionPointerOutOfRangeArrayCopyKernel();
+global::Kassyi.GSharp.Tests.Shared.Syntax.SpanWriteKernels.WarmupFunctionPointerOutOfRangeAsSpanFillKernel();
+global::Kassyi.GSharp.Tests.Shared.Syntax.SpanWriteKernels.WarmupFunctionPointerOutOfRangeSliceFillKernel();
 }}}
 
 
@@ -107,7 +112,7 @@ public static partial class AotContexts
 }
 public const string Issue731AsSpanFillReverseKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__SpanWriteKernels__Issue731AsSpanFillReverseKernel(GSharpArray<int> __gsharp_id_0_data){
 auto __gsharp_id_1_tid = (int)(__gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x));
-GSharpArray<int> __gsharp_id_2_mine = __gsharp_id_0_data.AsSpan(__gsharp_mul_i32(__gsharp_id_1_tid,4),4);
+GSharpArray<int> __gsharp_id_2_mine = __gsharp_id_0_data.AsSpan(__gsharp_mul_i32(__gsharp_id_1_tid,4),4, ""G#: index was out of range at SpanWriteKernels.cs(30,26)"");
 __gsharp_id_2_mine.Fill(7);
 __gsharp_id_2_mine[0]=1;
 __gsharp_id_2_mine.Reverse();
@@ -226,7 +231,7 @@ if((int)threadIdx.x!=0||(int)blockIdx.x!=0)
 return;
 }
 GSharpArray<int> __gsharp_id_4_span = __gsharp_id_0_data;
-__gsharp_id_4_span.Slice(__gsharp_id_1_offset,__gsharp_id_2_count).Fill(__gsharp_id_3_value);
+__gsharp_id_4_span.Slice(__gsharp_id_1_offset,__gsharp_id_2_count, ""G#: index was out of range at SpanWriteKernels.cs(45,9)"").Fill(__gsharp_id_3_value);
 }
 ";
 public static readonly string FillSliceKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +FillSliceKernel_Source;
@@ -354,7 +359,7 @@ if((int)threadIdx.x!=0||(int)blockIdx.x!=0)
 return;
 }
 GSharpArray<int> __gsharp_id_3_span = __gsharp_id_0_data;
-__gsharp_id_3_span.Slice(__gsharp_id_1_offset,__gsharp_id_2_count).Clear();
+__gsharp_id_3_span.Slice(__gsharp_id_1_offset,__gsharp_id_2_count, ""G#: index was out of range at SpanWriteKernels.cs(57,9)"").Clear();
 }
 ";
 public static readonly string ClearSliceKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ClearSliceKernel_Source;
@@ -490,7 +495,7 @@ if((int)threadIdx.x!=0||(int)blockIdx.x!=0)
 {
 return;
 }
-__gsharp_id_0_data.AsSpan(__gsharp_id_1_offset,__gsharp_id_2_count).Clear();
+__gsharp_id_0_data.AsSpan(__gsharp_id_1_offset,__gsharp_id_2_count, ""G#: index was out of range at SpanWriteKernels.cs(68,9)"").Clear();
 }
 ";
 public static readonly string ClearStructSliceKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ClearStructSliceKernel_Source;
@@ -626,10 +631,10 @@ return;
 }
 int __gsharp_id_1_scratch[8]{};
 __gsharp_stackalloc_span(__gsharp_id_1_scratch).Fill(9);
-__gsharp_stackalloc_span(__gsharp_id_1_scratch).Slice(2,3).Clear();
+__gsharp_stackalloc_span(__gsharp_id_1_scratch).Slice(2,3, ""G#: index was out of range at SpanWriteKernels.cs(81,9)"").Clear();
 __gsharp_id_1_scratch[0]=42;
 __gsharp_stackalloc_span(__gsharp_id_1_scratch).Reverse();
-__gsharp_stackalloc_span(__gsharp_id_1_scratch).CopyTo(__gsharp_id_0_output.AsSpan(0,8));
+__gsharp_stackalloc_span(__gsharp_id_1_scratch).CopyTo(__gsharp_id_0_output.AsSpan(0,8, ""G#: index was out of range at SpanWriteKernels.cs(84,24)""));
 }
 ";
 public static readonly string StackAllocFillClearReverseKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +StackAllocFillClearReverseKernel_Source;
@@ -745,7 +750,7 @@ if((int)threadIdx.x!=0||(int)blockIdx.x!=0)
 return;
 }
 GSharpArray<int> __gsharp_id_3_span = __gsharp_id_0_data;
-__gsharp_id_3_span.Slice(__gsharp_id_1_offset,__gsharp_id_2_count).Reverse();
+__gsharp_id_3_span.Slice(__gsharp_id_1_offset,__gsharp_id_2_count, ""G#: index was out of range at SpanWriteKernels.cs(96,9)"").Reverse();
 }
 ";
 public static readonly string ReverseSliceKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ReverseSliceKernel_Source;
@@ -872,7 +877,7 @@ __gsharp_id_0_a.AsSpan().Reverse();
 __gsharp_id_1_b.Reverse();
 int __gsharp_id_3_local[5]={ 10, 20, 30, 40, 50 };
 __gsharp_stackalloc_span(__gsharp_id_3_local).Reverse();
-__gsharp_stackalloc_span(__gsharp_id_3_local).CopyTo(__gsharp_id_2_c.AsSpan(0,5));
+__gsharp_stackalloc_span(__gsharp_id_3_local).CopyTo(__gsharp_id_2_c.AsSpan(0,5, ""G#: index was out of range at SpanWriteKernels.cs(112,22)""));
 }
 ";
 public static readonly string ReverseVariantsKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ReverseVariantsKernel_Source;
@@ -1086,7 +1091,7 @@ if((int)threadIdx.x!=0||(int)blockIdx.x!=0)
 return;
 }
 GSharpArray<int> __gsharp_id_4_span = __gsharp_id_0_data;
-__gsharp_id_4_span.Slice(__gsharp_id_1_srcOffset,__gsharp_id_3_count).CopyTo(__gsharp_id_4_span.Slice(__gsharp_id_2_dstOffset,__gsharp_id_3_count));
+__gsharp_id_4_span.Slice(__gsharp_id_1_srcOffset,__gsharp_id_3_count, ""G#: index was out of range at SpanWriteKernels.cs(124,9)"").CopyTo(__gsharp_id_4_span.Slice(__gsharp_id_2_dstOffset,__gsharp_id_3_count, ""G#: index was out of range at SpanWriteKernels.cs(124,45)""));
 }
 ";
 public static readonly string CopyToSameBufferKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +CopyToSameBufferKernel_Source;
@@ -1227,7 +1232,7 @@ if((int)threadIdx.x!=0||(int)blockIdx.x!=0)
 return;
 }
 GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__SpanWritePair> __gsharp_id_4_span = __gsharp_id_0_data;
-__gsharp_id_4_span.Slice(__gsharp_id_1_srcOffset,__gsharp_id_3_count).CopyTo(__gsharp_id_4_span.Slice(__gsharp_id_2_dstOffset,__gsharp_id_3_count));
+__gsharp_id_4_span.Slice(__gsharp_id_1_srcOffset,__gsharp_id_3_count, ""G#: index was out of range at SpanWriteKernels.cs(136,9)"").CopyTo(__gsharp_id_4_span.Slice(__gsharp_id_2_dstOffset,__gsharp_id_3_count, ""G#: index was out of range at SpanWriteKernels.cs(136,45)""));
 }
 ";
 public static readonly string CopyToStructSameBufferKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +CopyToStructSameBufferKernel_Source;
@@ -1366,10 +1371,10 @@ if((int)threadIdx.x!=0||(int)blockIdx.x!=0)
 return;
 }
 GSharpArray<int> __gsharp_id_4_ro = __gsharp_id_0_src;
-__gsharp_id_4_ro.Slice(1,4).CopyTo(__gsharp_id_1_dst1.AsSpan(2,5));
-__gsharp_id_0_src.CopyTo(__gsharp_id_2_dst2.AsSpan(1));
+__gsharp_id_4_ro.Slice(1,4, ""G#: index was out of range at SpanWriteKernels.cs(148,9)"").CopyTo(__gsharp_id_1_dst1.AsSpan(2,5, ""G#: index was out of range at SpanWriteKernels.cs(148,31)""));
+__gsharp_id_0_src.CopyTo(__gsharp_id_2_dst2.AsSpan(1, ""G#: index was out of range at SpanWriteKernels.cs(150,20)""));
 int __gsharp_id_5_local[3]={ 100, 200, 300 };
-__gsharp_stackalloc_span(__gsharp_id_5_local).CopyTo(__gsharp_id_3_dst3.AsSpan(0,4));
+__gsharp_stackalloc_span(__gsharp_id_5_local).CopyTo(__gsharp_id_3_dst3.AsSpan(0,4, ""G#: index was out of range at SpanWriteKernels.cs(153,22)""));
 }
 ";
 public static readonly string CopyToVariantsKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +CopyToVariantsKernel_Source;
@@ -1799,8 +1804,8 @@ if((int)threadIdx.x!=0||(int)blockIdx.x!=0)
 {
 return;
 }
-GSharpArray<int> __gsharp_id_7_s = __gsharp_id_0_src.AsSpan(__gsharp_id_1_srcOffset,__gsharp_id_2_srcCount);
-GSharpArray<int> __gsharp_id_8_d = __gsharp_id_3_dst.AsSpan(__gsharp_id_4_dstOffset,__gsharp_id_5_dstCount);
+GSharpArray<int> __gsharp_id_7_s = __gsharp_id_0_src.AsSpan(__gsharp_id_1_srcOffset,__gsharp_id_2_srcCount, ""G#: index was out of range at SpanWriteKernels.cs(175,31)"");
+GSharpArray<int> __gsharp_id_8_d = __gsharp_id_3_dst.AsSpan(__gsharp_id_4_dstOffset,__gsharp_id_5_dstCount, ""G#: index was out of range at SpanWriteKernels.cs(176,23)"");
 __gsharp_id_6_ok[0]=(__gsharp_id_7_s.TryCopyTo(__gsharp_id_8_d)?1:0);
 }
 ";
@@ -2031,7 +2036,7 @@ if((int)threadIdx.x!=0||(int)blockIdx.x!=0)
 return;
 }
 GSharpArray<int> __gsharp_id_6_span = __gsharp_id_0_data;
-__gsharp_id_5_ok[0]=(__gsharp_id_6_span.Slice(__gsharp_id_1_srcOffset,__gsharp_id_2_srcCount).TryCopyTo(__gsharp_id_6_span.Slice(__gsharp_id_3_dstOffset,__gsharp_id_4_dstCount))?1:0);
+__gsharp_id_5_ok[0]=(__gsharp_id_6_span.Slice(__gsharp_id_1_srcOffset,__gsharp_id_2_srcCount, ""G#: index was out of range at SpanWriteKernels.cs(189,17)"").TryCopyTo(__gsharp_id_6_span.Slice(__gsharp_id_3_dstOffset,__gsharp_id_4_dstCount, ""G#: index was out of range at SpanWriteKernels.cs(189,59)""))?1:0);
 }
 ";
 public static readonly string TryCopyToSameBufferKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +TryCopyToSameBufferKernel_Source;
@@ -2210,10 +2215,10 @@ if((int)threadIdx.x!=0||(int)blockIdx.x!=0)
 return;
 }
 GSharpArray<int> __gsharp_id_4_full = __gsharp_id_0_data.AsSpan();
-GSharpArray<int> __gsharp_id_5_tail = __gsharp_id_0_data.AsSpan(__gsharp_id_1_start);
-GSharpArray<int> __gsharp_id_6_sub = __gsharp_id_0_data.AsSpan(__gsharp_id_1_start,__gsharp_id_2_length);
-GSharpArray<int> __gsharp_id_7_atEnd1 = __gsharp_id_0_data.AsSpan(__gsharp_id_0_data.length);
-GSharpArray<int> __gsharp_id_8_atEnd2 = __gsharp_id_0_data.AsSpan(__gsharp_id_0_data.length,0);
+GSharpArray<int> __gsharp_id_5_tail = __gsharp_id_0_data.AsSpan(__gsharp_id_1_start, ""G#: index was out of range at SpanWriteKernels.cs(201,26)"");
+GSharpArray<int> __gsharp_id_6_sub = __gsharp_id_0_data.AsSpan(__gsharp_id_1_start,__gsharp_id_2_length, ""G#: index was out of range at SpanWriteKernels.cs(202,25)"");
+GSharpArray<int> __gsharp_id_7_atEnd1 = __gsharp_id_0_data.AsSpan(__gsharp_id_0_data.length, ""G#: index was out of range at SpanWriteKernels.cs(203,28)"");
+GSharpArray<int> __gsharp_id_8_atEnd2 = __gsharp_id_0_data.AsSpan(__gsharp_id_0_data.length,0, ""G#: index was out of range at SpanWriteKernels.cs(204,28)"");
 __gsharp_id_3_results[0]=__gsharp_id_4_full.length;
 __gsharp_id_3_results[1]=__gsharp_id_5_tail.length;
 __gsharp_id_3_results[2]=__gsharp_id_6_sub.length;
@@ -2395,7 +2400,7 @@ GSharpArray<int> __gsharp_id_2_emptySpan = GSharpArray<int>{};
 GSharpArray<int> __gsharp_id_3_emptyRo = GSharpArray<int>{};
 GSharpArray<int> __gsharp_id_4_nonEmpty = __gsharp_id_0_data.AsSpan();
 GSharpArray<int> __gsharp_id_5_nonEmptyRo = __gsharp_id_0_data;
-GSharpArray<int> __gsharp_id_6_zeroTail = __gsharp_id_4_nonEmpty.Slice(__gsharp_id_4_nonEmpty.length);
+GSharpArray<int> __gsharp_id_6_zeroTail = __gsharp_id_4_nonEmpty.Slice(__gsharp_id_4_nonEmpty.length, ""G#: index was out of range at SpanWriteKernels.cs(228,30)"");
 __gsharp_id_2_emptySpan.Fill(123);
 __gsharp_id_2_emptySpan.Clear();
 __gsharp_id_2_emptySpan.Reverse();
@@ -2567,9 +2572,9 @@ if((int)threadIdx.x!=0||(int)blockIdx.x!=0)
 return;
 }
 __gsharp_id_0_a.Fill(5);
-__gsharp_id_1_b.AsSpan(2,3).Fill(8);
+__gsharp_id_1_b.AsSpan(2,3, ""G#: index was out of range at SpanWriteKernels.cs(251,9)"").Fill(8);
 __gsharp_id_2_c.Clear();
-__gsharp_id_3_d.AsSpan(1,4).Clear();
+__gsharp_id_3_d.AsSpan<GSharpErrorCode::IndexOutOfRange>(1,4, ""G#: index was outside the bounds of the array at SpanWriteKernels.cs(253,9)"").Clear();
 }
 ";
 public static readonly string ArrayFillAndClearKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ArrayFillAndClearKernel_Source;
@@ -2838,7 +2843,7 @@ if((int)threadIdx.x!=0||(int)blockIdx.x!=0)
 return;
 }
 __gsharp_id_0_a.Reverse();
-__gsharp_id_1_b.AsSpan(2,5).Reverse();
+__gsharp_id_1_b.AsSpan(2,5, ""G#: index was out of range at SpanWriteKernels.cs(265,9)"").Reverse();
 }
 ";
 public static readonly string ArrayReverseKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ArrayReverseKernel_Source;
@@ -3000,7 +3005,7 @@ if((int)threadIdx.x!=0||(int)blockIdx.x!=0)
 {
 return;
 }
-__gsharp_id_0_src.AsSpan(0,__gsharp_id_2_length).CopyTo(__gsharp_id_1_dst.AsSpan(0,__gsharp_id_2_length));
+__gsharp_id_0_src.AsSpan<GSharpErrorCode::Argument>(0,__gsharp_id_2_length, ""G#: offset and length were out of bounds for the array at SpanWriteKernels.cs(276,9)"").CopyTo(__gsharp_id_1_dst.AsSpan<GSharpErrorCode::Argument>(0,__gsharp_id_2_length, ""G#: offset and length were out of bounds for the array at SpanWriteKernels.cs(276,9)""));
 }
 ";
 public static readonly string ArrayCopy3Kernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ArrayCopy3Kernel_Source;
@@ -3166,7 +3171,7 @@ if((int)threadIdx.x!=0||(int)blockIdx.x!=0)
 {
 return;
 }
-__gsharp_id_0_src.AsSpan(__gsharp_id_1_srcIdx,__gsharp_id_4_length).CopyTo(__gsharp_id_2_dst.AsSpan(__gsharp_id_3_dstIdx,__gsharp_id_4_length));
+__gsharp_id_0_src.AsSpan<GSharpErrorCode::Argument>(__gsharp_id_1_srcIdx,__gsharp_id_4_length, ""G#: offset and length were out of bounds for the array at SpanWriteKernels.cs(287,9)"").CopyTo(__gsharp_id_2_dst.AsSpan<GSharpErrorCode::Argument>(__gsharp_id_3_dstIdx,__gsharp_id_4_length, ""G#: offset and length were out of bounds for the array at SpanWriteKernels.cs(287,9)""));
 }
 ";
 public static readonly string ArrayCopy5Kernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ArrayCopy5Kernel_Source;
@@ -3340,7 +3345,7 @@ if((int)threadIdx.x!=0||(int)blockIdx.x!=0)
 {
 return;
 }
-__gsharp_id_0_data.AsSpan(__gsharp_id_1_srcIdx,__gsharp_id_3_length).CopyTo(__gsharp_id_0_data.AsSpan(__gsharp_id_2_dstIdx,__gsharp_id_3_length));
+__gsharp_id_0_data.AsSpan<GSharpErrorCode::Argument>(__gsharp_id_1_srcIdx,__gsharp_id_3_length, ""G#: offset and length were out of bounds for the array at SpanWriteKernels.cs(298,9)"").CopyTo(__gsharp_id_0_data.AsSpan<GSharpErrorCode::Argument>(__gsharp_id_2_dstIdx,__gsharp_id_3_length, ""G#: offset and length were out of bounds for the array at SpanWriteKernels.cs(298,9)""));
 }
 ";
 public static readonly string ArrayCopySameBufferKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ArrayCopySameBufferKernel_Source;
@@ -3864,7 +3869,7 @@ GSharpArray<int> __gsharp_id_6_sub = ([&]() {
 auto __gsharp_seq_0 = __gsharp_id_0_src.AsSpan();
 int __gsharp_seq_1 = __gsharp_sub_i32((__gsharp_id_5_i=__gsharp_add_i32(__gsharp_id_5_i,1)),1);
 int __gsharp_seq_2 = __gsharp_sub_i32((__gsharp_id_5_i=__gsharp_add_i32(__gsharp_id_5_i,1)),1);
-return __gsharp_seq_0.Slice(__gsharp_seq_1,__gsharp_seq_2);
+return __gsharp_seq_0.Slice(__gsharp_seq_1,__gsharp_seq_2, ""G#: index was out of range at SpanWriteKernels.cs(343,25)"");
 }());
 __gsharp_id_6_sub.CopyTo(__gsharp_id_1_dst1.AsSpan());
 __gsharp_id_4_counters[0]=__gsharp_id_5_i;
@@ -3874,7 +3879,7 @@ auto __gsharp_seq_3 = __gsharp_id_2_dst2;
 int __gsharp_seq_4 = __gsharp_mul_i32(__gsharp_id_7_j,10);
 int __gsharp_seq_5 = __gsharp_sub_i32((__gsharp_id_7_j=__gsharp_add_i32(__gsharp_id_7_j,1)),1);
 int __gsharp_seq_6 = (__gsharp_id_7_j=__gsharp_add_i32(__gsharp_id_7_j,1));
-return __gsharp_seq_3.AsSpan(__gsharp_seq_5,__gsharp_seq_6).Fill(__gsharp_seq_4);
+return __gsharp_seq_3.AsSpan(__gsharp_seq_5,__gsharp_seq_6, ""G#: index was out of range at SpanWriteKernels.cs(348,9)"").Fill(__gsharp_seq_4);
 }());
 __gsharp_id_4_counters[1]=__gsharp_id_7_j;
 auto __gsharp_id_8_k = 0;
@@ -3885,7 +3890,7 @@ int __gsharp_seq_8 = __gsharp_sub_i32((__gsharp_id_8_k=__gsharp_add_i32(__gsharp
 auto __gsharp_seq_9 = __gsharp_id_3_dst3;
 int __gsharp_seq_10 = __gsharp_sub_i32((__gsharp_id_8_k=__gsharp_add_i32(__gsharp_id_8_k,1)),1);
 int __gsharp_seq_11 = (__gsharp_id_9_len=__gsharp_add_i32(__gsharp_id_9_len,1));
-return __gsharp_seq_7.AsSpan(__gsharp_seq_8,__gsharp_seq_11).CopyTo(__gsharp_seq_9.AsSpan(__gsharp_seq_10,__gsharp_seq_11));
+return __gsharp_seq_7.AsSpan<GSharpErrorCode::Argument>(__gsharp_seq_8,__gsharp_seq_11, ""G#: offset and length were out of bounds for the array at SpanWriteKernels.cs(353,9)"").CopyTo(__gsharp_seq_9.AsSpan<GSharpErrorCode::Argument>(__gsharp_seq_10,__gsharp_seq_11, ""G#: offset and length were out of bounds for the array at SpanWriteKernels.cs(353,9)""));
 }());
 __gsharp_id_4_counters[2]=__gsharp_id_8_k;
 __gsharp_id_4_counters[3]=__gsharp_id_9_len;
@@ -4194,6 +4199,628 @@ proxy_counters[0] = counters;
 ((int*)(proxy_counters + 1))[0] = 0; // Length is unknown for raw IntPtr
 ((int*)(proxy_counters + 1))[1] = 0;
 kernelParams[4] = proxy_counters;
+CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
+hfunc,
+gridDimX, gridDimY, gridDimZ, // Grid dim
+blockDimX, blockDimY, blockDimZ, // Block dim
+sharedMemBytes, // Shared mem
+hStream, // Stream
+kernelParams,
+IntPtr.Zero // Extra
+));
+}
+finally
+{
+}
+}
+}
+#pragma warning restore CS8500
+public const string OutOfRangeArrayClearKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__SpanWriteKernels__OutOfRangeArrayClearKernel(GSharpArray<int> __gsharp_id_0_a){
+if((int)threadIdx.x!=0||(int)blockIdx.x!=0)
+{
+return;
+}
+__gsharp_id_0_a.AsSpan<GSharpErrorCode::IndexOutOfRange>(2,10, ""G#: index was outside the bounds of the array at SpanWriteKernels.cs(366,9)"").Clear();
+}
+";
+public static readonly string OutOfRangeArrayClearKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +OutOfRangeArrayClearKernel_Source;
+private static IntPtr? s_hfunc_OutOfRangeArrayClearKernel;
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
+public static void WarmupFunctionPointerOutOfRangeArrayClearKernel()
+{
+if (s_hfunc_OutOfRangeArrayClearKernel.HasValue) return;
+IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
+s_hfunc_OutOfRangeArrayClearKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, "__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__SpanWriteKernels__OutOfRangeArrayClearKernel");
+}
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchOutOfRangeArrayClearKernel(global::System.Int32[] a, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+if (a is null){
+throw new global::System.ArgumentNullException(nameof(a));
+}
+if (a.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(a));
+}
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+{
+WarmupFunctionPointerOutOfRangeArrayClearKernel();
+IntPtr hfunc = s_hfunc_OutOfRangeArrayClearKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SpanWriteKernels.OutOfRangeArrayClearKernel");
+IntPtr d_a = IntPtr.Zero;
+try
+{
+void** kernelParams = stackalloc void*[1];
+// Marshal array: a
+int a_size = a.Length * sizeof(global::System.Int32);
+IntPtr* proxy_a = stackalloc IntPtr[2];
+proxy_a[0] = IntPtr.Zero;
+((int*)(proxy_a + 1))[0] = a.Length;
+((int*)(proxy_a + 1))[1] = 0;
+if (a_size > 0)
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_a, (IntPtr)a_size, hStream));
+fixed (global::System.Int32* p_a = a)
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_a, (IntPtr)p_a, (IntPtr)a_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
+}
+proxy_a[0] = d_a;
+}
+kernelParams[0] = proxy_a;
+CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
+hfunc,
+gridDimX, gridDimY, gridDimZ, // Grid dim
+blockDimX, blockDimY, blockDimZ, // Block dim
+sharedMemBytes, // Shared mem
+hStream, // Stream
+kernelParams,
+IntPtr.Zero // Extra
+));
+// Copy back array: a
+if (a_size > 0 && d_a != IntPtr.Zero)
+{
+fixed (global::System.Int32* p_a = a)
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2((IntPtr)p_a, d_a, (IntPtr)a_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+}
+finally
+{
+if (d_a != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_a, hStream);
+}
+}
+}
+#pragma warning restore CS8500
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchOutOfRangeArrayClearKernelPtr(IntPtr a, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+{
+WarmupFunctionPointerOutOfRangeArrayClearKernel();
+IntPtr hfunc = s_hfunc_OutOfRangeArrayClearKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SpanWriteKernels.OutOfRangeArrayClearKernel");
+try
+{
+void** kernelParams = stackalloc void*[1];
+// Marshal device array: a
+IntPtr* proxy_a = stackalloc IntPtr[2];
+proxy_a[0] = a;
+((int*)(proxy_a + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_a + 1))[1] = 0;
+kernelParams[0] = proxy_a;
+CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
+hfunc,
+gridDimX, gridDimY, gridDimZ, // Grid dim
+blockDimX, blockDimY, blockDimZ, // Block dim
+sharedMemBytes, // Shared mem
+hStream, // Stream
+kernelParams,
+IntPtr.Zero // Extra
+));
+}
+finally
+{
+}
+}
+}
+#pragma warning restore CS8500
+public const string OutOfRangeArrayFillKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__SpanWriteKernels__OutOfRangeArrayFillKernel(GSharpArray<int> __gsharp_id_0_a){
+if((int)threadIdx.x!=0||(int)blockIdx.x!=0)
+{
+return;
+}
+__gsharp_id_0_a.AsSpan(2,10, ""G#: index was out of range at SpanWriteKernels.cs(377,9)"").Fill(5);
+}
+";
+public static readonly string OutOfRangeArrayFillKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +OutOfRangeArrayFillKernel_Source;
+private static IntPtr? s_hfunc_OutOfRangeArrayFillKernel;
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
+public static void WarmupFunctionPointerOutOfRangeArrayFillKernel()
+{
+if (s_hfunc_OutOfRangeArrayFillKernel.HasValue) return;
+IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
+s_hfunc_OutOfRangeArrayFillKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, "__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__SpanWriteKernels__OutOfRangeArrayFillKernel");
+}
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchOutOfRangeArrayFillKernel(global::System.Int32[] a, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+if (a is null){
+throw new global::System.ArgumentNullException(nameof(a));
+}
+if (a.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(a));
+}
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+{
+WarmupFunctionPointerOutOfRangeArrayFillKernel();
+IntPtr hfunc = s_hfunc_OutOfRangeArrayFillKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SpanWriteKernels.OutOfRangeArrayFillKernel");
+IntPtr d_a = IntPtr.Zero;
+try
+{
+void** kernelParams = stackalloc void*[1];
+// Marshal array: a
+int a_size = a.Length * sizeof(global::System.Int32);
+IntPtr* proxy_a = stackalloc IntPtr[2];
+proxy_a[0] = IntPtr.Zero;
+((int*)(proxy_a + 1))[0] = a.Length;
+((int*)(proxy_a + 1))[1] = 0;
+if (a_size > 0)
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_a, (IntPtr)a_size, hStream));
+fixed (global::System.Int32* p_a = a)
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_a, (IntPtr)p_a, (IntPtr)a_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
+}
+proxy_a[0] = d_a;
+}
+kernelParams[0] = proxy_a;
+CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
+hfunc,
+gridDimX, gridDimY, gridDimZ, // Grid dim
+blockDimX, blockDimY, blockDimZ, // Block dim
+sharedMemBytes, // Shared mem
+hStream, // Stream
+kernelParams,
+IntPtr.Zero // Extra
+));
+// Copy back array: a
+if (a_size > 0 && d_a != IntPtr.Zero)
+{
+fixed (global::System.Int32* p_a = a)
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2((IntPtr)p_a, d_a, (IntPtr)a_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+}
+finally
+{
+if (d_a != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_a, hStream);
+}
+}
+}
+#pragma warning restore CS8500
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchOutOfRangeArrayFillKernelPtr(IntPtr a, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+{
+WarmupFunctionPointerOutOfRangeArrayFillKernel();
+IntPtr hfunc = s_hfunc_OutOfRangeArrayFillKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SpanWriteKernels.OutOfRangeArrayFillKernel");
+try
+{
+void** kernelParams = stackalloc void*[1];
+// Marshal device array: a
+IntPtr* proxy_a = stackalloc IntPtr[2];
+proxy_a[0] = a;
+((int*)(proxy_a + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_a + 1))[1] = 0;
+kernelParams[0] = proxy_a;
+CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
+hfunc,
+gridDimX, gridDimY, gridDimZ, // Grid dim
+blockDimX, blockDimY, blockDimZ, // Block dim
+sharedMemBytes, // Shared mem
+hStream, // Stream
+kernelParams,
+IntPtr.Zero // Extra
+));
+}
+finally
+{
+}
+}
+}
+#pragma warning restore CS8500
+public const string OutOfRangeArrayCopyKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__SpanWriteKernels__OutOfRangeArrayCopyKernel(GSharpArray<int> __gsharp_id_0_src, GSharpArray<int> __gsharp_id_1_dst){
+if((int)threadIdx.x!=0||(int)blockIdx.x!=0)
+{
+return;
+}
+__gsharp_id_0_src.AsSpan<GSharpErrorCode::Argument>(0,4, ""G#: offset and length were out of bounds for the array at SpanWriteKernels.cs(388,9)"").CopyTo(__gsharp_id_1_dst.AsSpan<GSharpErrorCode::Argument>(2,4, ""G#: offset and length were out of bounds for the array at SpanWriteKernels.cs(388,9)""));
+}
+";
+public static readonly string OutOfRangeArrayCopyKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +OutOfRangeArrayCopyKernel_Source;
+private static IntPtr? s_hfunc_OutOfRangeArrayCopyKernel;
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
+public static void WarmupFunctionPointerOutOfRangeArrayCopyKernel()
+{
+if (s_hfunc_OutOfRangeArrayCopyKernel.HasValue) return;
+IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
+s_hfunc_OutOfRangeArrayCopyKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, "__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__SpanWriteKernels__OutOfRangeArrayCopyKernel");
+}
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchOutOfRangeArrayCopyKernel(global::System.Int32[] src, global::System.Int32[] dst, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+if (src is null){
+throw new global::System.ArgumentNullException(nameof(src));
+}
+if (src.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(src));
+}
+if (dst is null){
+throw new global::System.ArgumentNullException(nameof(dst));
+}
+if (dst.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(dst));
+}
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+{
+WarmupFunctionPointerOutOfRangeArrayCopyKernel();
+IntPtr hfunc = s_hfunc_OutOfRangeArrayCopyKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SpanWriteKernels.OutOfRangeArrayCopyKernel");
+IntPtr d_src = IntPtr.Zero;
+IntPtr d_dst = IntPtr.Zero;
+try
+{
+void** kernelParams = stackalloc void*[2];
+// Marshal array: src
+int src_size = src.Length * sizeof(global::System.Int32);
+IntPtr* proxy_src = stackalloc IntPtr[2];
+proxy_src[0] = IntPtr.Zero;
+((int*)(proxy_src + 1))[0] = src.Length;
+((int*)(proxy_src + 1))[1] = 0;
+if (src_size > 0)
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_src, (IntPtr)src_size, hStream));
+fixed (global::System.Int32* p_src = src)
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_src, (IntPtr)p_src, (IntPtr)src_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
+}
+proxy_src[0] = d_src;
+}
+kernelParams[0] = proxy_src;
+// Marshal array: dst
+int dst_size = dst.Length * sizeof(global::System.Int32);
+IntPtr* proxy_dst = stackalloc IntPtr[2];
+proxy_dst[0] = IntPtr.Zero;
+((int*)(proxy_dst + 1))[0] = dst.Length;
+((int*)(proxy_dst + 1))[1] = 0;
+if (dst_size > 0)
+{
+if (global::System.Object.ReferenceEquals(dst, src))
+{
+d_dst = d_src;
+}
+else
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_dst, (IntPtr)dst_size, hStream));
+fixed (global::System.Int32* p_dst = dst)
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_dst, (IntPtr)p_dst, (IntPtr)dst_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+proxy_dst[0] = d_dst;
+}
+kernelParams[1] = proxy_dst;
+CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
+hfunc,
+gridDimX, gridDimY, gridDimZ, // Grid dim
+blockDimX, blockDimY, blockDimZ, // Block dim
+sharedMemBytes, // Shared mem
+hStream, // Stream
+kernelParams,
+IntPtr.Zero // Extra
+));
+// Copy back array: src
+if (src_size > 0 && d_src != IntPtr.Zero)
+{
+fixed (global::System.Int32* p_src = src)
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2((IntPtr)p_src, d_src, (IntPtr)src_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+// Copy back array: dst
+if (dst_size > 0 && d_dst != IntPtr.Zero && !global::System.Object.ReferenceEquals(dst, src))
+{
+fixed (global::System.Int32* p_dst = dst)
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2((IntPtr)p_dst, d_dst, (IntPtr)dst_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+}
+finally
+{
+if (d_src != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_src, hStream);
+if (d_dst != IntPtr.Zero && d_dst != d_src) CudaDriverApi.cuMemFreeAsync(d_dst, hStream);
+}
+}
+}
+#pragma warning restore CS8500
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchOutOfRangeArrayCopyKernelPtr(IntPtr src, IntPtr dst, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+{
+WarmupFunctionPointerOutOfRangeArrayCopyKernel();
+IntPtr hfunc = s_hfunc_OutOfRangeArrayCopyKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SpanWriteKernels.OutOfRangeArrayCopyKernel");
+try
+{
+void** kernelParams = stackalloc void*[2];
+// Marshal device array: src
+IntPtr* proxy_src = stackalloc IntPtr[2];
+proxy_src[0] = src;
+((int*)(proxy_src + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_src + 1))[1] = 0;
+kernelParams[0] = proxy_src;
+// Marshal device array: dst
+IntPtr* proxy_dst = stackalloc IntPtr[2];
+proxy_dst[0] = dst;
+((int*)(proxy_dst + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_dst + 1))[1] = 0;
+kernelParams[1] = proxy_dst;
+CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
+hfunc,
+gridDimX, gridDimY, gridDimZ, // Grid dim
+blockDimX, blockDimY, blockDimZ, // Block dim
+sharedMemBytes, // Shared mem
+hStream, // Stream
+kernelParams,
+IntPtr.Zero // Extra
+));
+}
+finally
+{
+}
+}
+}
+#pragma warning restore CS8500
+public const string OutOfRangeAsSpanFillKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__SpanWriteKernels__OutOfRangeAsSpanFillKernel(GSharpArray<int> __gsharp_id_0_a){
+if((int)threadIdx.x!=0||(int)blockIdx.x!=0)
+{
+return;
+}
+__gsharp_id_0_a.AsSpan(2,10, ""G#: index was out of range at SpanWriteKernels.cs(399,9)"").Fill(5);
+}
+";
+public static readonly string OutOfRangeAsSpanFillKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +OutOfRangeAsSpanFillKernel_Source;
+private static IntPtr? s_hfunc_OutOfRangeAsSpanFillKernel;
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
+public static void WarmupFunctionPointerOutOfRangeAsSpanFillKernel()
+{
+if (s_hfunc_OutOfRangeAsSpanFillKernel.HasValue) return;
+IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
+s_hfunc_OutOfRangeAsSpanFillKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, "__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__SpanWriteKernels__OutOfRangeAsSpanFillKernel");
+}
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchOutOfRangeAsSpanFillKernel(global::System.Int32[] a, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+if (a is null){
+throw new global::System.ArgumentNullException(nameof(a));
+}
+if (a.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(a));
+}
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+{
+WarmupFunctionPointerOutOfRangeAsSpanFillKernel();
+IntPtr hfunc = s_hfunc_OutOfRangeAsSpanFillKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SpanWriteKernels.OutOfRangeAsSpanFillKernel");
+IntPtr d_a = IntPtr.Zero;
+try
+{
+void** kernelParams = stackalloc void*[1];
+// Marshal array: a
+int a_size = a.Length * sizeof(global::System.Int32);
+IntPtr* proxy_a = stackalloc IntPtr[2];
+proxy_a[0] = IntPtr.Zero;
+((int*)(proxy_a + 1))[0] = a.Length;
+((int*)(proxy_a + 1))[1] = 0;
+if (a_size > 0)
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_a, (IntPtr)a_size, hStream));
+fixed (global::System.Int32* p_a = a)
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_a, (IntPtr)p_a, (IntPtr)a_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
+}
+proxy_a[0] = d_a;
+}
+kernelParams[0] = proxy_a;
+CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
+hfunc,
+gridDimX, gridDimY, gridDimZ, // Grid dim
+blockDimX, blockDimY, blockDimZ, // Block dim
+sharedMemBytes, // Shared mem
+hStream, // Stream
+kernelParams,
+IntPtr.Zero // Extra
+));
+// Copy back array: a
+if (a_size > 0 && d_a != IntPtr.Zero)
+{
+fixed (global::System.Int32* p_a = a)
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2((IntPtr)p_a, d_a, (IntPtr)a_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+}
+finally
+{
+if (d_a != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_a, hStream);
+}
+}
+}
+#pragma warning restore CS8500
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchOutOfRangeAsSpanFillKernelPtr(IntPtr a, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+{
+WarmupFunctionPointerOutOfRangeAsSpanFillKernel();
+IntPtr hfunc = s_hfunc_OutOfRangeAsSpanFillKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SpanWriteKernels.OutOfRangeAsSpanFillKernel");
+try
+{
+void** kernelParams = stackalloc void*[1];
+// Marshal device array: a
+IntPtr* proxy_a = stackalloc IntPtr[2];
+proxy_a[0] = a;
+((int*)(proxy_a + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_a + 1))[1] = 0;
+kernelParams[0] = proxy_a;
+CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
+hfunc,
+gridDimX, gridDimY, gridDimZ, // Grid dim
+blockDimX, blockDimY, blockDimZ, // Block dim
+sharedMemBytes, // Shared mem
+hStream, // Stream
+kernelParams,
+IntPtr.Zero // Extra
+));
+}
+finally
+{
+}
+}
+}
+#pragma warning restore CS8500
+public const string OutOfRangeSliceFillKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__SpanWriteKernels__OutOfRangeSliceFillKernel(GSharpArray<int> __gsharp_id_0_a){
+if((int)threadIdx.x!=0||(int)blockIdx.x!=0)
+{
+return;
+}
+__gsharp_id_0_a.AsSpan().Slice(2,10, ""G#: index was out of range at SpanWriteKernels.cs(410,9)"").Fill(5);
+}
+";
+public static readonly string OutOfRangeSliceFillKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +OutOfRangeSliceFillKernel_Source;
+private static IntPtr? s_hfunc_OutOfRangeSliceFillKernel;
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
+public static void WarmupFunctionPointerOutOfRangeSliceFillKernel()
+{
+if (s_hfunc_OutOfRangeSliceFillKernel.HasValue) return;
+IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
+s_hfunc_OutOfRangeSliceFillKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, "__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__SpanWriteKernels__OutOfRangeSliceFillKernel");
+}
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchOutOfRangeSliceFillKernel(global::System.Int32[] a, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+if (a is null){
+throw new global::System.ArgumentNullException(nameof(a));
+}
+if (a.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(a));
+}
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+{
+WarmupFunctionPointerOutOfRangeSliceFillKernel();
+IntPtr hfunc = s_hfunc_OutOfRangeSliceFillKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SpanWriteKernels.OutOfRangeSliceFillKernel");
+IntPtr d_a = IntPtr.Zero;
+try
+{
+void** kernelParams = stackalloc void*[1];
+// Marshal array: a
+int a_size = a.Length * sizeof(global::System.Int32);
+IntPtr* proxy_a = stackalloc IntPtr[2];
+proxy_a[0] = IntPtr.Zero;
+((int*)(proxy_a + 1))[0] = a.Length;
+((int*)(proxy_a + 1))[1] = 0;
+if (a_size > 0)
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_a, (IntPtr)a_size, hStream));
+fixed (global::System.Int32* p_a = a)
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_a, (IntPtr)p_a, (IntPtr)a_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
+}
+proxy_a[0] = d_a;
+}
+kernelParams[0] = proxy_a;
+CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
+hfunc,
+gridDimX, gridDimY, gridDimZ, // Grid dim
+blockDimX, blockDimY, blockDimZ, // Block dim
+sharedMemBytes, // Shared mem
+hStream, // Stream
+kernelParams,
+IntPtr.Zero // Extra
+));
+// Copy back array: a
+if (a_size > 0 && d_a != IntPtr.Zero)
+{
+fixed (global::System.Int32* p_a = a)
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2((IntPtr)p_a, d_a, (IntPtr)a_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+}
+finally
+{
+if (d_a != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_a, hStream);
+}
+}
+}
+#pragma warning restore CS8500
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchOutOfRangeSliceFillKernelPtr(IntPtr a, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+{
+WarmupFunctionPointerOutOfRangeSliceFillKernel();
+IntPtr hfunc = s_hfunc_OutOfRangeSliceFillKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "SpanWriteKernels.OutOfRangeSliceFillKernel");
+try
+{
+void** kernelParams = stackalloc void*[1];
+// Marshal device array: a
+IntPtr* proxy_a = stackalloc IntPtr[2];
+proxy_a[0] = a;
+((int*)(proxy_a + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(proxy_a + 1))[1] = 0;
+kernelParams[0] = proxy_a;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim
