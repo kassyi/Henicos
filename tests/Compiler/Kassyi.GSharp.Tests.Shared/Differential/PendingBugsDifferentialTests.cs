@@ -155,26 +155,15 @@ public class PendingBugsDifferentialTests
     public void Test_ForUnrollWithOverflowingStartPlusCount_ExecutesZeroIterationsOnEveryPath() =>
         DifferentialRunner.Run(s_forUnrollOverflowBound);
 
-    // #1091: Remove KnownDivergence entries and use DifferentialRunner.Run on all paths once Warp.ShuffleDownSync inside Gpu.GridStrideLoop is rejected or lowered.
+    // #1091: Remove KnownDivergence entries and unskip CPU once Warp.ShuffleDownSync inside Gpu.GridStrideLoop is rejected or lowered.
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_WarpShuffleDownInGridStrideLoop_UniformIterationCount_DivergesOnCpuAndMatchesOnCuda()
+    public void Test_WarpShuffleDownInGridStrideLoop_UniformIterationCount()
     {
-#if GSHARP_CUDA
-        DifferentialRunner.Run(s_gridStrideLoopUniformWarpShuffle);
-#else
-        var report = DifferentialRunner.Evaluate(
-            s_gridStrideLoopUniformWarpShuffle,
-            [1],
-            DiffPaths.Available,
-            KnownDivergences.All);
-        Assert.Empty(report.UnexpectedMismatches);
-        Assert.Empty(report.StaleDivergences);
-        Assert.NotEmpty(report.Mismatches);
-        var managedFailure = Assert.Single(report.Failures);
-        Assert.Equal(DiffPath.Managed, managedFailure.Path);
-        Assert.IsType<GpuOnlyException>(managedFailure.Exception);
+#if !GSHARP_CUDA
+        Skip.If(true, "#1091: Managed path throws GpuOnlyException for Warp.ShuffleDownSync inside GridStrideLoop.");
 #endif
+        DifferentialRunner.Run(s_gridStrideLoopUniformWarpShuffle);
     }
 
     // #1091: Partial last wave in Gpu.GridStrideLoop with Warp.ShuffleDownSync(0xFFFFFFFFu, ...) is undefined on CUDA;

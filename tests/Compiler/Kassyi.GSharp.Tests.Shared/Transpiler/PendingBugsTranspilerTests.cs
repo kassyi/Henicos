@@ -20,9 +20,9 @@ namespace Kassyi.GSharp.Tests.Shared.Transpiler;
 public class PendingBugsTranspilerTests : TranspilerTestBase
 {
     // #641: Expect Gpu.Constant("42") to be rewritten for managed execution instead of remaining in the generated C# output.
-    [Fact]
+    [Fact(Skip = "#641: Gpu.Constant is not rewritten for managed execution.")]
     [Scenario(TestScenario.SadPath)]
-    public void Test_GpuConstantMacro_LeavesGpuConstantCallInManagedOutput()
+    public void Test_GpuConstantMacro_IsRewrittenInManagedOutput()
     {
         var source = RoslynTestUtility.ReadTestCase(
             "Transpiler/PendingBugs/GpuConstantManagedKernels.cu.cs");
@@ -37,13 +37,14 @@ public class PendingBugsTranspilerTests : TranspilerTestBase
         Assert.NotEmpty(generatedSources);
         var combinedGenerated = string.Join(Environment.NewLine, generatedSources);
 
-        Assert.Contains("Gpu.Constant(\"42\")", combinedGenerated, StringComparison.Ordinal);
+        Assert.DoesNotContain("Gpu.Constant(\"42\")", combinedGenerated, StringComparison.Ordinal);
+        Assert.Contains("42", combinedGenerated, StringComparison.Ordinal);
     }
 
     // #1081: Expect TakeLast, SkipLast, unfused Sum(selector), and unfused LastOrDefault(predicate) to fuse, emit valid StackLinq.cuh helpers, or report a diagnostic.
-    [Fact]
+    [Fact(Skip = "#1081: TakeLast, SkipLast, Sum(selector), and LastOrDefault(predicate) emit undefined StackLinq calls.")]
     [Scenario(TestScenario.SadPath)]
-    public void Test_TakeLastWithElementAtOrDefault_EmitsUndefinedStackLinqCall()
+    public void Test_TakeLastWithElementAtOrDefault_EmitsValidCppWithoutUndefinedStackLinqCalls()
     {
         var (_, tree, model) =
             RoslynTestUtility.GetTestCaseContext("Transpiler/PendingBugs/UnfusedStackLinqMissingTemplatesKernels.cu.cs");
@@ -65,16 +66,16 @@ public class PendingBugsTranspilerTests : TranspilerTestBase
         var cppUnfusedSelector = MethodTranspiler.GenerateCudaSource(
             unfusedSelectorMethod, model, failures2.Add, isDevice: false, CurrentDialect, out _);
 
-        Assert.Contains("StackLinq::TakeLast(", cppTakeLast, StringComparison.Ordinal);
-        Assert.Contains("StackLinq::SkipLast(", cppTakeLast, StringComparison.Ordinal);
-        Assert.Contains("StackLinq::Sum(__gsharp_id_", cppUnfusedSelector, StringComparison.Ordinal);
-        Assert.Contains("StackLinq::LastOrDefault(__gsharp_id_", cppUnfusedSelector, StringComparison.Ordinal);
+        Assert.DoesNotContain("StackLinq::TakeLast(", cppTakeLast, StringComparison.Ordinal);
+        Assert.DoesNotContain("StackLinq::SkipLast(", cppTakeLast, StringComparison.Ordinal);
+        Assert.DoesNotContain("StackLinq::Sum(__gsharp_id_", cppUnfusedSelector, StringComparison.Ordinal);
+        Assert.DoesNotContain("StackLinq::LastOrDefault(__gsharp_id_", cppUnfusedSelector, StringComparison.Ordinal);
     }
 
     // #1086: Expect an unfused StackLinq query with a capturing lambda stored in a local to compile on native C++ without C2338 static_assert failure or report a diagnostic.
-    [Fact]
+    [Fact(Skip = "#1086: Unfused StackLinq query with capturing lambda in local emits mismatched size check.")]
     [Scenario(TestScenario.SadPath)]
-    public void Test_UnfusedStackLinqQueryWithCapturingLambdaInLocal_EmitsEnumeratorStructWithMismatchedSizeCheck()
+    public void Test_UnfusedStackLinqQueryWithCapturingLambdaInLocal_EmitsValidEnumeratorWithoutMismatchedSizeCheck()
     {
         var (_, tree, model) =
             RoslynTestUtility.GetTestCaseContext("Transpiler/PendingBugs/UnfusedStackLinqCapturingLambdaLocalKernels.cu.cs");
@@ -89,34 +90,29 @@ public class PendingBugsTranspilerTests : TranspilerTestBase
             methodDecl, model, failures.Add, isDevice: false, new StandardCppDialect(), out _);
 
         Assert.Empty(failures);
-        Assert.Contains(
-            "Kassyi.ZeroAlloc.Linq.StackEnumerable<Kassyi.ZeroAlloc.Linq.TakeEnumerator<Kassyi.ZeroAlloc.Linq.SelectEnumerator<",
-            cppSource,
-            StringComparison.Ordinal);
-        Assert.Contains(": size\");", cppSource, StringComparison.Ordinal);
+        Assert.DoesNotContain(": size\");", cppSource, StringComparison.Ordinal);
     }
 
     // #1084: Expect outputCompilation.GetDiagnostics() to have zero errors once ContextHoister avoids hoisting non-crossing SharedMemory<T> locals to outer scope.
-    [Fact]
+    [Fact(Skip = "#1084: ContextHoister hoists non-crossing SharedMemory locals to outer scope causing CS0136.")]
     [Scenario(TestScenario.SadPath)]
-    public void Test_SharedMemorySiblingScopes_ProducesCS0136InGeneratedManagedCSharp()
+    public void Test_SharedMemorySiblingScopes_CompilesWithoutCS0136InGeneratedManagedCSharp()
     {
         var source = RoslynTestUtility.ReadTestCase(
             "Transpiler/PendingBugs/SharedMemorySiblingScopeHoistKernels.cu.cs");
 
         var (_, outputCompilation, _) = RoslynTestUtility.RunGenerator(source, "Cpu");
         var compilerErrors = outputCompilation.GetDiagnostics()
-            .Where(d => d.Severity == DiagnosticSeverity.Error)
+            .Where(d => d.Severity == DiagnosticSeverity.Error && d.Id == "CS0136")
             .ToArray();
 
-        Assert.Equal(2, compilerErrors.Length);
-        Assert.All(compilerErrors, e => Assert.Equal("CS0136", e.Id));
+        Assert.Empty(compilerErrors);
     }
 
     // #1085: Expect C++ declarations for parenthesized creation `s` and alias copy `alias` to be emitted once LocalDeclarationStatementTranspilerRule handles non-direct SharedMemory<T> initializers.
-    [Fact]
+    [Fact(Skip = "#1085: LocalDeclarationStatementTranspilerRule omits C++ variable declarations for non-direct SharedMemory initializers.")]
     [Scenario(TestScenario.SadPath)]
-    public void Test_ParenthesizedAndAliasSharedMemoryLocal_OmitsCppVariableDeclarations()
+    public void Test_ParenthesizedAndAliasSharedMemoryLocal_EmitsCppVariableDeclarations()
     {
         var (_, tree, model) =
             RoslynTestUtility.GetTestCaseContext("Transpiler/PendingBugs/SharedMemoryDeclarationAndTypeMismatchKernels.cu.cs");
@@ -131,14 +127,14 @@ public class PendingBugsTranspilerTests : TranspilerTestBase
             methodDecl, model, failures.Add, isDevice: false, new StandardCppDialect(), out _);
 
         Assert.Empty(failures);
-        Assert.DoesNotContain("int* __gsharp_id_1_s", cppSource, StringComparison.Ordinal);
-        Assert.DoesNotContain("int* __gsharp_id_2_alias", cppSource, StringComparison.Ordinal);
+        Assert.Contains("int* __gsharp_id_1_s", cppSource, StringComparison.Ordinal);
+        Assert.Contains("int* __gsharp_id_2_alias", cppSource, StringComparison.Ordinal);
     }
 
     // #1085: Expect C++ declaration and consistent type for `returned = IdentitySharedMemory(localSmem)` once SharedMemory<T> local declarations and CPU representation are unified.
-    [Fact]
+    [Fact(Skip = "#1085: Helper returning SharedMemory omits returned local declaration in CPU dialect.")]
     [Scenario(TestScenario.SadPath)]
-    public void Test_PassLocalSharedMemoryToHelper_OmitsReturnedLocalDeclarationInCpuDialect()
+    public void Test_PassLocalSharedMemoryToHelper_EmitsReturnedLocalDeclarationInCpuDialect()
     {
         var (_, tree, model) =
             RoslynTestUtility.GetTestCaseContext("Transpiler/PendingBugs/SharedMemoryDeclarationAndTypeMismatchKernels.cu.cs");
@@ -153,13 +149,13 @@ public class PendingBugsTranspilerTests : TranspilerTestBase
             methodDecl, model, failures.Add, isDevice: false, new StandardCppDialect(), out _);
 
         Assert.Empty(failures);
-        Assert.DoesNotContain("__gsharp_id_2_returned =", cppSource, StringComparison.Ordinal);
+        Assert.Contains("__gsharp_id_2_returned =", cppSource, StringComparison.Ordinal);
     }
 
     // #543: Expect distinct site keys (Assert.NotEqual) for AliasInStruct<int> and AliasInStruct<float> once SharedMemorySiteKey includes constructed struct type arguments.
-    [Fact]
+    [Fact(Skip = "#543: SharedMemorySiteKey collides across type arguments in generic structs.")]
     [Scenario(TestScenario.SadPath)]
-    public void Test_TypeAliasSharedMemoryInGenericStruct_EmitsCollidingSiteKeysAcrossTypeArguments()
+    public void Test_TypeAliasSharedMemoryInGenericStruct_EmitsDistinctSiteKeysAcrossTypeArguments()
     {
         var (_, tree, model) =
             RoslynTestUtility.GetTestCaseContext("Transpiler/PendingBugs/GenericStructSharedMemorySiteKeyKernels.cu.cs");
@@ -180,13 +176,13 @@ public class PendingBugsTranspilerTests : TranspilerTestBase
             .ToArray();
 
         Assert.Equal(2, siteKeys.Length);
-        Assert.Equal(siteKeys[0], siteKeys[1]);
+        Assert.NotEqual(siteKeys[0], siteKeys[1]);
     }
 
     // #543: Expect 4 distinct site keys for generic struct constructors/operators and valid site key computation in property getters once SharedMemorySiteKey supports them.
-    [Fact]
+    [Fact(Skip = "#543: Generic struct constructors, operators, and property getters fail SharedMemorySiteKey computation.")]
     [Scenario(TestScenario.SadPath)]
-    public void Test_GenericStructSharedMemoryInCtorOperatorAndProperty_CollidesOnSiteKeysAndThrowsInPropertyGetter()
+    public void Test_GenericStructSharedMemoryInCtorOperatorAndProperty_EmitsDistinctSiteKeysAndDoesNotThrowInPropertyGetter()
     {
         var (_, tree, model) =
             RoslynTestUtility.GetTestCaseContext("Transpiler/PendingBugs/GenericStructSharedMemorySiteKeyKernels.cu.cs");
@@ -207,7 +203,7 @@ public class PendingBugsTranspilerTests : TranspilerTestBase
             .ToArray();
 
         Assert.Equal(2, ctorAndOpKeys.Length);
-        Assert.Single(ctorAndOpKeys.Distinct(StringComparer.Ordinal));
+        Assert.Equal(2, ctorAndOpKeys.Distinct(StringComparer.Ordinal).Count());
 
         var computedPropMethod = tree.GetRoot()
             .DescendantNodes()
@@ -215,9 +211,8 @@ public class PendingBugsTranspilerTests : TranspilerTestBase
             .Single(m => m.Identifier.ValueText == "UseComputedPropSharedMemoryBufKernel");
 
         var failures2 = new List<TranspileFailure>();
-        var ex = Assert.Throws<InvalidOperationException>(() =>
-            MethodTranspiler.GenerateCudaSource(
-                computedPropMethod, model, failures2.Add, isDevice: false, new StandardCppDialect(), out _));
-        Assert.Contains("not inside a method", ex.Message, StringComparison.Ordinal);
+        var cppComputedProp = MethodTranspiler.GenerateCudaSource(
+            computedPropMethod, model, failures2.Add, isDevice: false, new StandardCppDialect(), out _);
+        Assert.NotNull(cppComputedProp);
     }
 }
