@@ -45,7 +45,7 @@ public class NullableDifferentialTests
             b.Get<int>("r"),
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static b => NullableDifferentialKernels.NullableCoalesceAndSideEffects(
+        Oracle = static (b, _) => NullableDifferentialKernels.NullableCoalesceAndSideEffects(
             b.Get<int>("hasA"),
             b.Get<int>("valsA"),
             b.Get<int>("hasB"),
@@ -85,7 +85,7 @@ public class NullableDifferentialTests
             b.Get<int>("r"),
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static b => NullableDifferentialKernels.NullableDeviceFunctionsAndKleeneLogic(
+        Oracle = static (b, _) => NullableDifferentialKernels.NullableDeviceFunctionsAndKleeneLogic(
             b.Get<int>("hasA"),
             b.Get<int>("valsA"),
             b.Get<int>("hasB"),
@@ -120,7 +120,7 @@ public class NullableDifferentialTests
             b.Get<float>("r"),
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static b => NullableDifferentialKernels.NullableFloatCoalesceWithNaN(
+        Oracle = static (b, _) => NullableDifferentialKernels.NullableFloatCoalesceWithNaN(
             b.Get<int>("hasA"),
             b.Get<float>("valsA"),
             b.Get<float>("fallbacks"),
@@ -161,7 +161,7 @@ public class NullableDifferentialTests
             b.Get<int>("r"),
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static b => NullableDifferentialKernels.CoalesceWiderNullableWithNarrowerNullable(
+        Oracle = static (b, _) => NullableDifferentialKernels.CoalesceWiderNullableWithNarrowerNullable(
             b.Get<int>("hasA"),
             b.Get<int>("valsA"),
             b.Get<int>("hasB"),
@@ -184,7 +184,7 @@ public class NullableDifferentialTests
         Launch = static (b, s) => NullableDifferentialKernels.LaunchEmptyStackSpanNullComparisonReproKernel(
             b.Get<int>("a"), b.Get<int>("dst"), s.Rows,
             gridDimX: s.GridX, blockDimX: s.BlockX),
-        Oracle = static b => NullableDifferentialKernels.EmptyStackSpanNullComparisonReproKernel(
+        Oracle = static (b, _) => NullableDifferentialKernels.EmptyStackSpanNullComparisonReproKernel(
             b.Get<int>("a"), b.Get<int>("dst"), ReproRows),
     };
 
@@ -198,7 +198,7 @@ public class NullableDifferentialTests
         Launch = static (b, s) => NullableDifferentialKernels.LaunchNullableArrayLikeDefaultValueNullCheckReproKernel(
             b.Get<int>("a"), b.Get<int>("dst"), s.Rows,
             gridDimX: s.GridX, blockDimX: s.BlockX),
-        Oracle = static b => NullableDifferentialKernels.NullableArrayLikeDefaultValueNullCheckReproKernel(
+        Oracle = static (b, _) => NullableDifferentialKernels.NullableArrayLikeDefaultValueNullCheckReproKernel(
             b.Get<int>("a"), b.Get<int>("dst"), ReproRows),
     };
 
@@ -214,7 +214,7 @@ public class NullableDifferentialTests
         Launch = static (b, s) => NullableDifferentialKernels.LaunchNarrowNullableCoalesceVarPromotionReproKernel(
             b.Get<int>("conds"), b.Get<byte>("ba"), b.Get<ushort>("usa"), b.Get<int>("dst"), s.Rows,
             gridDimX: s.GridX, blockDimX: s.BlockX),
-        Oracle = static b => NullableDifferentialKernels.NarrowNullableCoalesceVarPromotionReproKernel(
+        Oracle = static (b, _) => NullableDifferentialKernels.NarrowNullableCoalesceVarPromotionReproKernel(
             b.Get<int>("conds"), b.Get<byte>("ba"), b.Get<ushort>("usa"), b.Get<int>("dst"), ReproRows),
     };
 

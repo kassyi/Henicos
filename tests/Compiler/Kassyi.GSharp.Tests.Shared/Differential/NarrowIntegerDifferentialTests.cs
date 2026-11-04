@@ -110,7 +110,7 @@ public class NarrowIntegerDifferentialTests
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
-        Oracle = static b => NarrowIntegerDifferentialKernels.NarrowCompoundAndStepMatrixKernel(
+        Oracle = static (b, _) => NarrowIntegerDifferentialKernels.NarrowCompoundAndStepMatrixKernel(
             b.Get<int>("a"),
             b.Get<int>("b"),
             b.Get<int>("sh"),
@@ -132,7 +132,7 @@ public class NarrowIntegerDifferentialTests
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
-        Oracle = static b => NarrowIntegerDifferentialKernels.NarrowEnumAndSignedEnumMatrixKernel(
+        Oracle = static (b, _) => NarrowIntegerDifferentialKernels.NarrowEnumAndSignedEnumMatrixKernel(
             b.Get<int>("a"),
             b.Get<int>("b"),
             b.Get<int>("r")
@@ -164,7 +164,7 @@ public class NarrowIntegerDifferentialTests
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
-        Oracle = static b => NarrowIntegerDifferentialKernels.MixedSignDivRemMatrixKernel(
+        Oracle = static (b, _) => NarrowIntegerDifferentialKernels.MixedSignDivRemMatrixKernel(
             b.Get<long>("l"),
             b.Get<int>("iNz"),
             b.Get<uint>("uNz"),
@@ -192,7 +192,7 @@ public class NarrowIntegerDifferentialTests
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
-        Oracle = static b => NarrowIntegerDifferentialKernels.BitOpsReturnSignMatrixKernel(
+        Oracle = static (b, _) => NarrowIntegerDifferentialKernels.BitOpsReturnSignMatrixKernel(
             b.Get<uint>("u"),
             b.Get<ulong>("ul"),
             b.Get<int>("r")
@@ -211,7 +211,7 @@ public class NarrowIntegerDifferentialTests
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
-        Oracle = static b => NarrowIntegerDifferentialKernels.TargetEvaluationOrderMatrixKernel(
+        Oracle = static (b, _) => NarrowIntegerDifferentialKernels.TargetEvaluationOrderMatrixKernel(
             b.Get<int>("a"),
             b.Get<int>("r")
         ),

@@ -25,6 +25,10 @@ test-differential-cpu *args="":
 test-differential-cuda *args="":
     dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cuda/Kassyi.GSharp.Tests.Cuda.csproj --filter "Category=Differential&Category!=Stress" {{args}}
 
+# Run differential kernel fuzzer (profile: M|C|G or managed|cpu|all)
+fuzz-diff profile="cpu" minutes="5" *args="":
+    node scripts/human/fuzz-differential.js --profile {{profile}} --minutes {{minutes}} {{args}}
+
 # Run tests multiple times to detect flaky tests
 # count can take the time: 
 #	test-stability 5h15m # for 5 hours 15 minutes

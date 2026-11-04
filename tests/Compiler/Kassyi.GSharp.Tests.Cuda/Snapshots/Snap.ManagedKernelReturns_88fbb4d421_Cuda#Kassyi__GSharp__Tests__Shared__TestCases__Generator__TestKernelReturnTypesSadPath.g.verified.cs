@@ -23,67 +23,59 @@ public static partial class AotContexts
 public const string ArrayKernel_Source = @"#error ""(10,27): GSH0004: Method 'ArrayKernel' is marked with [GpuKernel] but returns unsupported type 'float[]'. GpuKernel methods must return void or an unmanaged blittable type.""
 ";
 public static readonly string ArrayKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ArrayKernel_Source;
-private static IntPtr? s_hfunc_ArrayKernel;
+private static global::System.IntPtr? __gsharp_hfunc_ArrayKernel;
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
 public static void WarmupFunctionPointerArrayKernel()
 {
-if (s_hfunc_ArrayKernel.HasValue) return;
-IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_MegaTestCompilationBase.GetOrLoadModule();
-s_hfunc_ArrayKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, "__gsharp_k_Kassyi__GSharp__Tests__Shared__TestCases__Generator__TestKernelReturnTypesSadPath__ArrayKernel");
+if (__gsharp_hfunc_ArrayKernel.HasValue) return;
+global::System.IntPtr __gsharp_hmodule = global::Kassyi.GSharp.Generated.GSharpModuleContext_MegaTestCompilationBase.GetOrLoadModule();
+__gsharp_hfunc_ArrayKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(__gsharp_hmodule, "__gsharp_k_Kassyi__GSharp__Tests__Shared__TestCases__Generator__TestKernelReturnTypesSadPath__ArrayKernel");
 }
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-public static unsafe global::System.Single[][] LaunchArrayKernel(uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe global::System.Single[][] LaunchArrayKernel(uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (gridDimX == 0 || gridDimY == 0 || gridDimZ == 0 || blockDimX == 0 || blockDimY == 0 || blockDimZ == 0) throw new global::System.ArgumentOutOfRangeException("Dimensions", "Launch dimensions must be greater than 0.");
 uint __gsharp_total_threads; checked { __gsharp_total_threads = (gridDimX * gridDimY * gridDimZ) * (blockDimX * blockDimY * blockDimZ); }
 var __gsharp_auto_result = new global::System.Single[][__gsharp_total_threads];
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-WarmupFunctionPointerArrayKernel();
-IntPtr hfunc = s_hfunc_ArrayKernel!.Value;
-global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "TestKernelReturnTypesSadPath.ArrayKernel");
-IntPtr d___gsharp_auto_result = IntPtr.Zero;
+global::Kassyi.GSharp.Tests.Shared.TestCases.Generator.TestKernelReturnTypesSadPath.WarmupFunctionPointerArrayKernel();
+global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_ArrayKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "TestKernelReturnTypesSadPath.ArrayKernel");
+global::System.IntPtr d___gsharp_auto_result = global::System.IntPtr.Zero;
 try
 {
-void** kernelParams = stackalloc void*[1];
+void** __gsharp_kernel_params = stackalloc void*[1];
 // Marshal auto result array
 int __gsharp_auto_result_size = checked(__gsharp_auto_result.Length * sizeof(global::System.Single[]));
 if (__gsharp_auto_result_size > 0)
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d___gsharp_auto_result, (IntPtr)__gsharp_auto_result_size, hStream));
-kernelParams[0] = &d___gsharp_auto_result;
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out d___gsharp_auto_result, (global::System.IntPtr)__gsharp_auto_result_size, hStream));
+__gsharp_kernel_params[0] = &d___gsharp_auto_result;
 }
-CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
-hfunc,
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
+__gsharp_hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim
 blockDimX, blockDimY, blockDimZ, // Block dim
 sharedMemBytes, // Shared mem
 hStream, // Stream
-kernelParams,
-IntPtr.Zero // Extra
+__gsharp_kernel_params,
+global::System.IntPtr.Zero // Extra
 ));
-if (__gsharp_auto_result_size > 0 && d___gsharp_auto_result != IntPtr.Zero)
+if (__gsharp_auto_result_size > 0 && d___gsharp_auto_result != global::System.IntPtr.Zero)
 {
-var handle = System.Runtime.InteropServices.GCHandle.Alloc(__gsharp_auto_result, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
+fixed (global::System.Single[]* p___gsharp_auto_result = __gsharp_auto_result)
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), d___gsharp_auto_result, (IntPtr)__gsharp_auto_result_size, hStream));
-CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
-}
-finally
-{
-handle.Free();
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)p___gsharp_auto_result, d___gsharp_auto_result, (global::System.IntPtr)__gsharp_auto_result_size, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
 }
 finally
 {
-if (d___gsharp_auto_result != IntPtr.Zero)
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemFreeAsync(d___gsharp_auto_result, hStream));
-}
+if (d___gsharp_auto_result != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(d___gsharp_auto_result, hStream);
 }
 }
 return __gsharp_auto_result;
@@ -92,56 +84,48 @@ return __gsharp_auto_result;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-public static unsafe global::System.Single[][] LaunchArrayKernelPtr(uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe global::System.Single[][] LaunchArrayKernelPtr(uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (gridDimX == 0 || gridDimY == 0 || gridDimZ == 0 || blockDimX == 0 || blockDimY == 0 || blockDimZ == 0) throw new global::System.ArgumentOutOfRangeException("Dimensions", "Launch dimensions must be greater than 0.");
 uint __gsharp_total_threads; checked { __gsharp_total_threads = (gridDimX * gridDimY * gridDimZ) * (blockDimX * blockDimY * blockDimZ); }
 var __gsharp_auto_result = new global::System.Single[][__gsharp_total_threads];
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-WarmupFunctionPointerArrayKernel();
-IntPtr hfunc = s_hfunc_ArrayKernel!.Value;
-global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "TestKernelReturnTypesSadPath.ArrayKernel");
-IntPtr d___gsharp_auto_result = IntPtr.Zero;
+global::Kassyi.GSharp.Tests.Shared.TestCases.Generator.TestKernelReturnTypesSadPath.WarmupFunctionPointerArrayKernel();
+global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_ArrayKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "TestKernelReturnTypesSadPath.ArrayKernel");
+global::System.IntPtr d___gsharp_auto_result = global::System.IntPtr.Zero;
 try
 {
-void** kernelParams = stackalloc void*[1];
+void** __gsharp_kernel_params = stackalloc void*[1];
 // Marshal auto result array
 int __gsharp_auto_result_size = checked(__gsharp_auto_result.Length * sizeof(global::System.Single[]));
 if (__gsharp_auto_result_size > 0)
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d___gsharp_auto_result, (IntPtr)__gsharp_auto_result_size, hStream));
-kernelParams[0] = &d___gsharp_auto_result;
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out d___gsharp_auto_result, (global::System.IntPtr)__gsharp_auto_result_size, hStream));
+__gsharp_kernel_params[0] = &d___gsharp_auto_result;
 }
-CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
-hfunc,
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
+__gsharp_hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim
 blockDimX, blockDimY, blockDimZ, // Block dim
 sharedMemBytes, // Shared mem
 hStream, // Stream
-kernelParams,
-IntPtr.Zero // Extra
+__gsharp_kernel_params,
+global::System.IntPtr.Zero // Extra
 ));
-if (__gsharp_auto_result_size > 0 && d___gsharp_auto_result != IntPtr.Zero)
+if (__gsharp_auto_result_size > 0 && d___gsharp_auto_result != global::System.IntPtr.Zero)
 {
-var handle = System.Runtime.InteropServices.GCHandle.Alloc(__gsharp_auto_result, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
+fixed (global::System.Single[]* p___gsharp_auto_result = __gsharp_auto_result)
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), d___gsharp_auto_result, (IntPtr)__gsharp_auto_result_size, hStream));
-CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
-}
-finally
-{
-handle.Free();
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)p___gsharp_auto_result, d___gsharp_auto_result, (global::System.IntPtr)__gsharp_auto_result_size, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
 }
 finally
 {
-if (d___gsharp_auto_result != IntPtr.Zero)
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemFreeAsync(d___gsharp_auto_result, hStream));
-}
+if (d___gsharp_auto_result != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(d___gsharp_auto_result, hStream);
 }
 }
 return __gsharp_auto_result;
@@ -150,67 +134,59 @@ return __gsharp_auto_result;
 public const string StringKernel_Source = @"#error ""(14,26): GSH0004: Method 'StringKernel' is marked with [GpuKernel] but returns unsupported type 'string'. GpuKernel methods must return void or an unmanaged blittable type.""
 ";
 public static readonly string StringKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +StringKernel_Source;
-private static IntPtr? s_hfunc_StringKernel;
+private static global::System.IntPtr? __gsharp_hfunc_StringKernel;
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
 public static void WarmupFunctionPointerStringKernel()
 {
-if (s_hfunc_StringKernel.HasValue) return;
-IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_MegaTestCompilationBase.GetOrLoadModule();
-s_hfunc_StringKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, "__gsharp_k_Kassyi__GSharp__Tests__Shared__TestCases__Generator__TestKernelReturnTypesSadPath__StringKernel");
+if (__gsharp_hfunc_StringKernel.HasValue) return;
+global::System.IntPtr __gsharp_hmodule = global::Kassyi.GSharp.Generated.GSharpModuleContext_MegaTestCompilationBase.GetOrLoadModule();
+__gsharp_hfunc_StringKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(__gsharp_hmodule, "__gsharp_k_Kassyi__GSharp__Tests__Shared__TestCases__Generator__TestKernelReturnTypesSadPath__StringKernel");
 }
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-public static unsafe global::System.String[] LaunchStringKernel(uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe global::System.String[] LaunchStringKernel(uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (gridDimX == 0 || gridDimY == 0 || gridDimZ == 0 || blockDimX == 0 || blockDimY == 0 || blockDimZ == 0) throw new global::System.ArgumentOutOfRangeException("Dimensions", "Launch dimensions must be greater than 0.");
 uint __gsharp_total_threads; checked { __gsharp_total_threads = (gridDimX * gridDimY * gridDimZ) * (blockDimX * blockDimY * blockDimZ); }
 var __gsharp_auto_result = new global::System.String[__gsharp_total_threads];
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-WarmupFunctionPointerStringKernel();
-IntPtr hfunc = s_hfunc_StringKernel!.Value;
-global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "TestKernelReturnTypesSadPath.StringKernel");
-IntPtr d___gsharp_auto_result = IntPtr.Zero;
+global::Kassyi.GSharp.Tests.Shared.TestCases.Generator.TestKernelReturnTypesSadPath.WarmupFunctionPointerStringKernel();
+global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_StringKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "TestKernelReturnTypesSadPath.StringKernel");
+global::System.IntPtr d___gsharp_auto_result = global::System.IntPtr.Zero;
 try
 {
-void** kernelParams = stackalloc void*[1];
+void** __gsharp_kernel_params = stackalloc void*[1];
 // Marshal auto result array
 int __gsharp_auto_result_size = checked(__gsharp_auto_result.Length * sizeof(global::System.String));
 if (__gsharp_auto_result_size > 0)
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d___gsharp_auto_result, (IntPtr)__gsharp_auto_result_size, hStream));
-kernelParams[0] = &d___gsharp_auto_result;
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out d___gsharp_auto_result, (global::System.IntPtr)__gsharp_auto_result_size, hStream));
+__gsharp_kernel_params[0] = &d___gsharp_auto_result;
 }
-CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
-hfunc,
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
+__gsharp_hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim
 blockDimX, blockDimY, blockDimZ, // Block dim
 sharedMemBytes, // Shared mem
 hStream, // Stream
-kernelParams,
-IntPtr.Zero // Extra
+__gsharp_kernel_params,
+global::System.IntPtr.Zero // Extra
 ));
-if (__gsharp_auto_result_size > 0 && d___gsharp_auto_result != IntPtr.Zero)
+if (__gsharp_auto_result_size > 0 && d___gsharp_auto_result != global::System.IntPtr.Zero)
 {
-var handle = System.Runtime.InteropServices.GCHandle.Alloc(__gsharp_auto_result, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
+fixed (global::System.String* p___gsharp_auto_result = __gsharp_auto_result)
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), d___gsharp_auto_result, (IntPtr)__gsharp_auto_result_size, hStream));
-CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
-}
-finally
-{
-handle.Free();
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)p___gsharp_auto_result, d___gsharp_auto_result, (global::System.IntPtr)__gsharp_auto_result_size, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
 }
 finally
 {
-if (d___gsharp_auto_result != IntPtr.Zero)
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemFreeAsync(d___gsharp_auto_result, hStream));
-}
+if (d___gsharp_auto_result != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(d___gsharp_auto_result, hStream);
 }
 }
 return __gsharp_auto_result;
@@ -219,56 +195,48 @@ return __gsharp_auto_result;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-public static unsafe global::System.String[] LaunchStringKernelPtr(uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe global::System.String[] LaunchStringKernelPtr(uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (gridDimX == 0 || gridDimY == 0 || gridDimZ == 0 || blockDimX == 0 || blockDimY == 0 || blockDimZ == 0) throw new global::System.ArgumentOutOfRangeException("Dimensions", "Launch dimensions must be greater than 0.");
 uint __gsharp_total_threads; checked { __gsharp_total_threads = (gridDimX * gridDimY * gridDimZ) * (blockDimX * blockDimY * blockDimZ); }
 var __gsharp_auto_result = new global::System.String[__gsharp_total_threads];
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-WarmupFunctionPointerStringKernel();
-IntPtr hfunc = s_hfunc_StringKernel!.Value;
-global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "TestKernelReturnTypesSadPath.StringKernel");
-IntPtr d___gsharp_auto_result = IntPtr.Zero;
+global::Kassyi.GSharp.Tests.Shared.TestCases.Generator.TestKernelReturnTypesSadPath.WarmupFunctionPointerStringKernel();
+global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_StringKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "TestKernelReturnTypesSadPath.StringKernel");
+global::System.IntPtr d___gsharp_auto_result = global::System.IntPtr.Zero;
 try
 {
-void** kernelParams = stackalloc void*[1];
+void** __gsharp_kernel_params = stackalloc void*[1];
 // Marshal auto result array
 int __gsharp_auto_result_size = checked(__gsharp_auto_result.Length * sizeof(global::System.String));
 if (__gsharp_auto_result_size > 0)
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d___gsharp_auto_result, (IntPtr)__gsharp_auto_result_size, hStream));
-kernelParams[0] = &d___gsharp_auto_result;
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out d___gsharp_auto_result, (global::System.IntPtr)__gsharp_auto_result_size, hStream));
+__gsharp_kernel_params[0] = &d___gsharp_auto_result;
 }
-CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
-hfunc,
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
+__gsharp_hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim
 blockDimX, blockDimY, blockDimZ, // Block dim
 sharedMemBytes, // Shared mem
 hStream, // Stream
-kernelParams,
-IntPtr.Zero // Extra
+__gsharp_kernel_params,
+global::System.IntPtr.Zero // Extra
 ));
-if (__gsharp_auto_result_size > 0 && d___gsharp_auto_result != IntPtr.Zero)
+if (__gsharp_auto_result_size > 0 && d___gsharp_auto_result != global::System.IntPtr.Zero)
 {
-var handle = System.Runtime.InteropServices.GCHandle.Alloc(__gsharp_auto_result, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
+fixed (global::System.String* p___gsharp_auto_result = __gsharp_auto_result)
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), d___gsharp_auto_result, (IntPtr)__gsharp_auto_result_size, hStream));
-CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
-}
-finally
-{
-handle.Free();
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)p___gsharp_auto_result, d___gsharp_auto_result, (global::System.IntPtr)__gsharp_auto_result_size, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
 }
 finally
 {
-if (d___gsharp_auto_result != IntPtr.Zero)
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemFreeAsync(d___gsharp_auto_result, hStream));
-}
+if (d___gsharp_auto_result != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(d___gsharp_auto_result, hStream);
 }
 }
 return __gsharp_auto_result;
@@ -281,67 +249,59 @@ return;
 }
 ";
 public static readonly string PointerKernel2_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +PointerKernel2_Source;
-private static IntPtr? s_hfunc_PointerKernel2;
+private static global::System.IntPtr? __gsharp_hfunc_PointerKernel2;
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
 public static void WarmupFunctionPointerPointerKernel2()
 {
-if (s_hfunc_PointerKernel2.HasValue) return;
-IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_MegaTestCompilationBase.GetOrLoadModule();
-s_hfunc_PointerKernel2 = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, "__gsharp_k_Kassyi__GSharp__Tests__Shared__TestCases__Generator__TestKernelReturnTypesSadPath__PointerKernel2");
+if (__gsharp_hfunc_PointerKernel2.HasValue) return;
+global::System.IntPtr __gsharp_hmodule = global::Kassyi.GSharp.Generated.GSharpModuleContext_MegaTestCompilationBase.GetOrLoadModule();
+__gsharp_hfunc_PointerKernel2 = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(__gsharp_hmodule, "__gsharp_k_Kassyi__GSharp__Tests__Shared__TestCases__Generator__TestKernelReturnTypesSadPath__PointerKernel2");
 }
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-public static unsafe global::System.Single*[] LaunchPointerKernel2(uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe global::System.Single*[] LaunchPointerKernel2(uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (gridDimX == 0 || gridDimY == 0 || gridDimZ == 0 || blockDimX == 0 || blockDimY == 0 || blockDimZ == 0) throw new global::System.ArgumentOutOfRangeException("Dimensions", "Launch dimensions must be greater than 0.");
 uint __gsharp_total_threads; checked { __gsharp_total_threads = (gridDimX * gridDimY * gridDimZ) * (blockDimX * blockDimY * blockDimZ); }
 var __gsharp_auto_result = new global::System.Single*[__gsharp_total_threads];
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-WarmupFunctionPointerPointerKernel2();
-IntPtr hfunc = s_hfunc_PointerKernel2!.Value;
-global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "TestKernelReturnTypesSadPath.PointerKernel2");
-IntPtr d___gsharp_auto_result = IntPtr.Zero;
+global::Kassyi.GSharp.Tests.Shared.TestCases.Generator.TestKernelReturnTypesSadPath.WarmupFunctionPointerPointerKernel2();
+global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_PointerKernel2!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "TestKernelReturnTypesSadPath.PointerKernel2");
+global::System.IntPtr d___gsharp_auto_result = global::System.IntPtr.Zero;
 try
 {
-void** kernelParams = stackalloc void*[1];
+void** __gsharp_kernel_params = stackalloc void*[1];
 // Marshal auto result array
 int __gsharp_auto_result_size = checked(__gsharp_auto_result.Length * sizeof(global::System.Single*));
 if (__gsharp_auto_result_size > 0)
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d___gsharp_auto_result, (IntPtr)__gsharp_auto_result_size, hStream));
-kernelParams[0] = &d___gsharp_auto_result;
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out d___gsharp_auto_result, (global::System.IntPtr)__gsharp_auto_result_size, hStream));
+__gsharp_kernel_params[0] = &d___gsharp_auto_result;
 }
-CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
-hfunc,
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
+__gsharp_hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim
 blockDimX, blockDimY, blockDimZ, // Block dim
 sharedMemBytes, // Shared mem
 hStream, // Stream
-kernelParams,
-IntPtr.Zero // Extra
+__gsharp_kernel_params,
+global::System.IntPtr.Zero // Extra
 ));
-if (__gsharp_auto_result_size > 0 && d___gsharp_auto_result != IntPtr.Zero)
+if (__gsharp_auto_result_size > 0 && d___gsharp_auto_result != global::System.IntPtr.Zero)
 {
-var handle = System.Runtime.InteropServices.GCHandle.Alloc(__gsharp_auto_result, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
+fixed (global::System.Single** p___gsharp_auto_result = __gsharp_auto_result)
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), d___gsharp_auto_result, (IntPtr)__gsharp_auto_result_size, hStream));
-CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
-}
-finally
-{
-handle.Free();
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)p___gsharp_auto_result, d___gsharp_auto_result, (global::System.IntPtr)__gsharp_auto_result_size, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
 }
 finally
 {
-if (d___gsharp_auto_result != IntPtr.Zero)
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemFreeAsync(d___gsharp_auto_result, hStream));
-}
+if (d___gsharp_auto_result != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(d___gsharp_auto_result, hStream);
 }
 }
 return __gsharp_auto_result;
@@ -350,56 +310,48 @@ return __gsharp_auto_result;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-public static unsafe global::System.Single*[] LaunchPointerKernel2Ptr(uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe global::System.Single*[] LaunchPointerKernel2Ptr(uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (gridDimX == 0 || gridDimY == 0 || gridDimZ == 0 || blockDimX == 0 || blockDimY == 0 || blockDimZ == 0) throw new global::System.ArgumentOutOfRangeException("Dimensions", "Launch dimensions must be greater than 0.");
 uint __gsharp_total_threads; checked { __gsharp_total_threads = (gridDimX * gridDimY * gridDimZ) * (blockDimX * blockDimY * blockDimZ); }
 var __gsharp_auto_result = new global::System.Single*[__gsharp_total_threads];
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-WarmupFunctionPointerPointerKernel2();
-IntPtr hfunc = s_hfunc_PointerKernel2!.Value;
-global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "TestKernelReturnTypesSadPath.PointerKernel2");
-IntPtr d___gsharp_auto_result = IntPtr.Zero;
+global::Kassyi.GSharp.Tests.Shared.TestCases.Generator.TestKernelReturnTypesSadPath.WarmupFunctionPointerPointerKernel2();
+global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_PointerKernel2!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "TestKernelReturnTypesSadPath.PointerKernel2");
+global::System.IntPtr d___gsharp_auto_result = global::System.IntPtr.Zero;
 try
 {
-void** kernelParams = stackalloc void*[1];
+void** __gsharp_kernel_params = stackalloc void*[1];
 // Marshal auto result array
 int __gsharp_auto_result_size = checked(__gsharp_auto_result.Length * sizeof(global::System.Single*));
 if (__gsharp_auto_result_size > 0)
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d___gsharp_auto_result, (IntPtr)__gsharp_auto_result_size, hStream));
-kernelParams[0] = &d___gsharp_auto_result;
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out d___gsharp_auto_result, (global::System.IntPtr)__gsharp_auto_result_size, hStream));
+__gsharp_kernel_params[0] = &d___gsharp_auto_result;
 }
-CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
-hfunc,
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
+__gsharp_hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim
 blockDimX, blockDimY, blockDimZ, // Block dim
 sharedMemBytes, // Shared mem
 hStream, // Stream
-kernelParams,
-IntPtr.Zero // Extra
+__gsharp_kernel_params,
+global::System.IntPtr.Zero // Extra
 ));
-if (__gsharp_auto_result_size > 0 && d___gsharp_auto_result != IntPtr.Zero)
+if (__gsharp_auto_result_size > 0 && d___gsharp_auto_result != global::System.IntPtr.Zero)
 {
-var handle = System.Runtime.InteropServices.GCHandle.Alloc(__gsharp_auto_result, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
+fixed (global::System.Single** p___gsharp_auto_result = __gsharp_auto_result)
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), d___gsharp_auto_result, (IntPtr)__gsharp_auto_result_size, hStream));
-CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
-}
-finally
-{
-handle.Free();
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)p___gsharp_auto_result, d___gsharp_auto_result, (global::System.IntPtr)__gsharp_auto_result_size, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
 }
 finally
 {
-if (d___gsharp_auto_result != IntPtr.Zero)
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemFreeAsync(d___gsharp_auto_result, hStream));
-}
+if (d___gsharp_auto_result != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(d___gsharp_auto_result, hStream);
 }
 }
 return __gsharp_auto_result;
@@ -408,67 +360,59 @@ return __gsharp_auto_result;
 public const string ManagedStructKernel_Source = @"#error ""(30,33): GSH0004: Method 'ManagedStructKernel' is marked with [GpuKernel] but returns unsupported type 'Kassyi.GSharp.Tests.Shared.TestCases.Generator.TestKernelReturnTypesSadPath.ManagedStruct'. GpuKernel methods must return void or an unmanaged blittable type.""
 ";
 public static readonly string ManagedStructKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ManagedStructKernel_Source;
-private static IntPtr? s_hfunc_ManagedStructKernel;
+private static global::System.IntPtr? __gsharp_hfunc_ManagedStructKernel;
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
 public static void WarmupFunctionPointerManagedStructKernel()
 {
-if (s_hfunc_ManagedStructKernel.HasValue) return;
-IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_MegaTestCompilationBase.GetOrLoadModule();
-s_hfunc_ManagedStructKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, "__gsharp_k_Kassyi__GSharp__Tests__Shared__TestCases__Generator__TestKernelReturnTypesSadPath__ManagedStructKernel");
+if (__gsharp_hfunc_ManagedStructKernel.HasValue) return;
+global::System.IntPtr __gsharp_hmodule = global::Kassyi.GSharp.Generated.GSharpModuleContext_MegaTestCompilationBase.GetOrLoadModule();
+__gsharp_hfunc_ManagedStructKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(__gsharp_hmodule, "__gsharp_k_Kassyi__GSharp__Tests__Shared__TestCases__Generator__TestKernelReturnTypesSadPath__ManagedStructKernel");
 }
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-public static unsafe global::Kassyi.GSharp.Tests.Shared.TestCases.Generator.TestKernelReturnTypesSadPath.ManagedStruct[] LaunchManagedStructKernel(uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe global::Kassyi.GSharp.Tests.Shared.TestCases.Generator.TestKernelReturnTypesSadPath.ManagedStruct[] LaunchManagedStructKernel(uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (gridDimX == 0 || gridDimY == 0 || gridDimZ == 0 || blockDimX == 0 || blockDimY == 0 || blockDimZ == 0) throw new global::System.ArgumentOutOfRangeException("Dimensions", "Launch dimensions must be greater than 0.");
 uint __gsharp_total_threads; checked { __gsharp_total_threads = (gridDimX * gridDimY * gridDimZ) * (blockDimX * blockDimY * blockDimZ); }
 var __gsharp_auto_result = new global::Kassyi.GSharp.Tests.Shared.TestCases.Generator.TestKernelReturnTypesSadPath.ManagedStruct[__gsharp_total_threads];
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-WarmupFunctionPointerManagedStructKernel();
-IntPtr hfunc = s_hfunc_ManagedStructKernel!.Value;
-global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "TestKernelReturnTypesSadPath.ManagedStructKernel");
-IntPtr d___gsharp_auto_result = IntPtr.Zero;
+global::Kassyi.GSharp.Tests.Shared.TestCases.Generator.TestKernelReturnTypesSadPath.WarmupFunctionPointerManagedStructKernel();
+global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_ManagedStructKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "TestKernelReturnTypesSadPath.ManagedStructKernel");
+global::System.IntPtr d___gsharp_auto_result = global::System.IntPtr.Zero;
 try
 {
-void** kernelParams = stackalloc void*[1];
+void** __gsharp_kernel_params = stackalloc void*[1];
 // Marshal auto result array
 int __gsharp_auto_result_size = checked(__gsharp_auto_result.Length * sizeof(global::Kassyi.GSharp.Tests.Shared.TestCases.Generator.TestKernelReturnTypesSadPath.ManagedStruct));
 if (__gsharp_auto_result_size > 0)
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d___gsharp_auto_result, (IntPtr)__gsharp_auto_result_size, hStream));
-kernelParams[0] = &d___gsharp_auto_result;
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out d___gsharp_auto_result, (global::System.IntPtr)__gsharp_auto_result_size, hStream));
+__gsharp_kernel_params[0] = &d___gsharp_auto_result;
 }
-CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
-hfunc,
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
+__gsharp_hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim
 blockDimX, blockDimY, blockDimZ, // Block dim
 sharedMemBytes, // Shared mem
 hStream, // Stream
-kernelParams,
-IntPtr.Zero // Extra
+__gsharp_kernel_params,
+global::System.IntPtr.Zero // Extra
 ));
-if (__gsharp_auto_result_size > 0 && d___gsharp_auto_result != IntPtr.Zero)
+if (__gsharp_auto_result_size > 0 && d___gsharp_auto_result != global::System.IntPtr.Zero)
 {
-var handle = System.Runtime.InteropServices.GCHandle.Alloc(__gsharp_auto_result, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
+fixed (global::Kassyi.GSharp.Tests.Shared.TestCases.Generator.TestKernelReturnTypesSadPath.ManagedStruct* p___gsharp_auto_result = __gsharp_auto_result)
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), d___gsharp_auto_result, (IntPtr)__gsharp_auto_result_size, hStream));
-CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
-}
-finally
-{
-handle.Free();
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)p___gsharp_auto_result, d___gsharp_auto_result, (global::System.IntPtr)__gsharp_auto_result_size, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
 }
 finally
 {
-if (d___gsharp_auto_result != IntPtr.Zero)
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemFreeAsync(d___gsharp_auto_result, hStream));
-}
+if (d___gsharp_auto_result != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(d___gsharp_auto_result, hStream);
 }
 }
 return __gsharp_auto_result;
@@ -477,56 +421,48 @@ return __gsharp_auto_result;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-public static unsafe global::Kassyi.GSharp.Tests.Shared.TestCases.Generator.TestKernelReturnTypesSadPath.ManagedStruct[] LaunchManagedStructKernelPtr(uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe global::Kassyi.GSharp.Tests.Shared.TestCases.Generator.TestKernelReturnTypesSadPath.ManagedStruct[] LaunchManagedStructKernelPtr(uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (gridDimX == 0 || gridDimY == 0 || gridDimZ == 0 || blockDimX == 0 || blockDimY == 0 || blockDimZ == 0) throw new global::System.ArgumentOutOfRangeException("Dimensions", "Launch dimensions must be greater than 0.");
 uint __gsharp_total_threads; checked { __gsharp_total_threads = (gridDimX * gridDimY * gridDimZ) * (blockDimX * blockDimY * blockDimZ); }
 var __gsharp_auto_result = new global::Kassyi.GSharp.Tests.Shared.TestCases.Generator.TestKernelReturnTypesSadPath.ManagedStruct[__gsharp_total_threads];
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-WarmupFunctionPointerManagedStructKernel();
-IntPtr hfunc = s_hfunc_ManagedStructKernel!.Value;
-global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "TestKernelReturnTypesSadPath.ManagedStructKernel");
-IntPtr d___gsharp_auto_result = IntPtr.Zero;
+global::Kassyi.GSharp.Tests.Shared.TestCases.Generator.TestKernelReturnTypesSadPath.WarmupFunctionPointerManagedStructKernel();
+global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_ManagedStructKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "TestKernelReturnTypesSadPath.ManagedStructKernel");
+global::System.IntPtr d___gsharp_auto_result = global::System.IntPtr.Zero;
 try
 {
-void** kernelParams = stackalloc void*[1];
+void** __gsharp_kernel_params = stackalloc void*[1];
 // Marshal auto result array
 int __gsharp_auto_result_size = checked(__gsharp_auto_result.Length * sizeof(global::Kassyi.GSharp.Tests.Shared.TestCases.Generator.TestKernelReturnTypesSadPath.ManagedStruct));
 if (__gsharp_auto_result_size > 0)
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d___gsharp_auto_result, (IntPtr)__gsharp_auto_result_size, hStream));
-kernelParams[0] = &d___gsharp_auto_result;
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out d___gsharp_auto_result, (global::System.IntPtr)__gsharp_auto_result_size, hStream));
+__gsharp_kernel_params[0] = &d___gsharp_auto_result;
 }
-CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
-hfunc,
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
+__gsharp_hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim
 blockDimX, blockDimY, blockDimZ, // Block dim
 sharedMemBytes, // Shared mem
 hStream, // Stream
-kernelParams,
-IntPtr.Zero // Extra
+__gsharp_kernel_params,
+global::System.IntPtr.Zero // Extra
 ));
-if (__gsharp_auto_result_size > 0 && d___gsharp_auto_result != IntPtr.Zero)
+if (__gsharp_auto_result_size > 0 && d___gsharp_auto_result != global::System.IntPtr.Zero)
 {
-var handle = System.Runtime.InteropServices.GCHandle.Alloc(__gsharp_auto_result, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
+fixed (global::Kassyi.GSharp.Tests.Shared.TestCases.Generator.TestKernelReturnTypesSadPath.ManagedStruct* p___gsharp_auto_result = __gsharp_auto_result)
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), d___gsharp_auto_result, (IntPtr)__gsharp_auto_result_size, hStream));
-CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
-}
-finally
-{
-handle.Free();
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)p___gsharp_auto_result, d___gsharp_auto_result, (global::System.IntPtr)__gsharp_auto_result_size, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
 }
 finally
 {
-if (d___gsharp_auto_result != IntPtr.Zero)
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemFreeAsync(d___gsharp_auto_result, hStream));
-}
+if (d___gsharp_auto_result != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(d___gsharp_auto_result, hStream);
 }
 }
 return __gsharp_auto_result;
@@ -535,67 +471,59 @@ return __gsharp_auto_result;
 public const string SpanKernel_Source = @"#error ""(34,39): GSH0004: Method 'SpanKernel' is marked with [GpuKernel] but returns unsupported type 'System.ReadOnlySpan<float>'. GpuKernel methods must return void or an unmanaged blittable type.""
 ";
 public static readonly string SpanKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +SpanKernel_Source;
-private static IntPtr? s_hfunc_SpanKernel;
+private static global::System.IntPtr? __gsharp_hfunc_SpanKernel;
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
 public static void WarmupFunctionPointerSpanKernel()
 {
-if (s_hfunc_SpanKernel.HasValue) return;
-IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_MegaTestCompilationBase.GetOrLoadModule();
-s_hfunc_SpanKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, "__gsharp_k_Kassyi__GSharp__Tests__Shared__TestCases__Generator__TestKernelReturnTypesSadPath__SpanKernel");
+if (__gsharp_hfunc_SpanKernel.HasValue) return;
+global::System.IntPtr __gsharp_hmodule = global::Kassyi.GSharp.Generated.GSharpModuleContext_MegaTestCompilationBase.GetOrLoadModule();
+__gsharp_hfunc_SpanKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(__gsharp_hmodule, "__gsharp_k_Kassyi__GSharp__Tests__Shared__TestCases__Generator__TestKernelReturnTypesSadPath__SpanKernel");
 }
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-public static unsafe global::System.ReadOnlySpan<global::System.Single>[] LaunchSpanKernel(uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe global::System.ReadOnlySpan<global::System.Single>[] LaunchSpanKernel(uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (gridDimX == 0 || gridDimY == 0 || gridDimZ == 0 || blockDimX == 0 || blockDimY == 0 || blockDimZ == 0) throw new global::System.ArgumentOutOfRangeException("Dimensions", "Launch dimensions must be greater than 0.");
 uint __gsharp_total_threads; checked { __gsharp_total_threads = (gridDimX * gridDimY * gridDimZ) * (blockDimX * blockDimY * blockDimZ); }
 var __gsharp_auto_result = new global::System.ReadOnlySpan<global::System.Single>[__gsharp_total_threads];
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-WarmupFunctionPointerSpanKernel();
-IntPtr hfunc = s_hfunc_SpanKernel!.Value;
-global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "TestKernelReturnTypesSadPath.SpanKernel");
-IntPtr d___gsharp_auto_result = IntPtr.Zero;
+global::Kassyi.GSharp.Tests.Shared.TestCases.Generator.TestKernelReturnTypesSadPath.WarmupFunctionPointerSpanKernel();
+global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_SpanKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "TestKernelReturnTypesSadPath.SpanKernel");
+global::System.IntPtr d___gsharp_auto_result = global::System.IntPtr.Zero;
 try
 {
-void** kernelParams = stackalloc void*[1];
+void** __gsharp_kernel_params = stackalloc void*[1];
 // Marshal auto result array
 int __gsharp_auto_result_size = checked(__gsharp_auto_result.Length * sizeof(global::System.ReadOnlySpan<global::System.Single>));
 if (__gsharp_auto_result_size > 0)
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d___gsharp_auto_result, (IntPtr)__gsharp_auto_result_size, hStream));
-kernelParams[0] = &d___gsharp_auto_result;
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out d___gsharp_auto_result, (global::System.IntPtr)__gsharp_auto_result_size, hStream));
+__gsharp_kernel_params[0] = &d___gsharp_auto_result;
 }
-CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
-hfunc,
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
+__gsharp_hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim
 blockDimX, blockDimY, blockDimZ, // Block dim
 sharedMemBytes, // Shared mem
 hStream, // Stream
-kernelParams,
-IntPtr.Zero // Extra
+__gsharp_kernel_params,
+global::System.IntPtr.Zero // Extra
 ));
-if (__gsharp_auto_result_size > 0 && d___gsharp_auto_result != IntPtr.Zero)
+if (__gsharp_auto_result_size > 0 && d___gsharp_auto_result != global::System.IntPtr.Zero)
 {
-var handle = System.Runtime.InteropServices.GCHandle.Alloc(__gsharp_auto_result, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
+fixed (global::System.ReadOnlySpan<global::System.Single>* p___gsharp_auto_result = __gsharp_auto_result)
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), d___gsharp_auto_result, (IntPtr)__gsharp_auto_result_size, hStream));
-CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
-}
-finally
-{
-handle.Free();
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)p___gsharp_auto_result, d___gsharp_auto_result, (global::System.IntPtr)__gsharp_auto_result_size, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
 }
 finally
 {
-if (d___gsharp_auto_result != IntPtr.Zero)
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemFreeAsync(d___gsharp_auto_result, hStream));
-}
+if (d___gsharp_auto_result != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(d___gsharp_auto_result, hStream);
 }
 }
 return __gsharp_auto_result;
@@ -604,56 +532,48 @@ return __gsharp_auto_result;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-public static unsafe global::System.ReadOnlySpan<global::System.Single>[] LaunchSpanKernelPtr(uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe global::System.ReadOnlySpan<global::System.Single>[] LaunchSpanKernelPtr(uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (gridDimX == 0 || gridDimY == 0 || gridDimZ == 0 || blockDimX == 0 || blockDimY == 0 || blockDimZ == 0) throw new global::System.ArgumentOutOfRangeException("Dimensions", "Launch dimensions must be greater than 0.");
 uint __gsharp_total_threads; checked { __gsharp_total_threads = (gridDimX * gridDimY * gridDimZ) * (blockDimX * blockDimY * blockDimZ); }
 var __gsharp_auto_result = new global::System.ReadOnlySpan<global::System.Single>[__gsharp_total_threads];
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-WarmupFunctionPointerSpanKernel();
-IntPtr hfunc = s_hfunc_SpanKernel!.Value;
-global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "TestKernelReturnTypesSadPath.SpanKernel");
-IntPtr d___gsharp_auto_result = IntPtr.Zero;
+global::Kassyi.GSharp.Tests.Shared.TestCases.Generator.TestKernelReturnTypesSadPath.WarmupFunctionPointerSpanKernel();
+global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_SpanKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "TestKernelReturnTypesSadPath.SpanKernel");
+global::System.IntPtr d___gsharp_auto_result = global::System.IntPtr.Zero;
 try
 {
-void** kernelParams = stackalloc void*[1];
+void** __gsharp_kernel_params = stackalloc void*[1];
 // Marshal auto result array
 int __gsharp_auto_result_size = checked(__gsharp_auto_result.Length * sizeof(global::System.ReadOnlySpan<global::System.Single>));
 if (__gsharp_auto_result_size > 0)
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d___gsharp_auto_result, (IntPtr)__gsharp_auto_result_size, hStream));
-kernelParams[0] = &d___gsharp_auto_result;
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out d___gsharp_auto_result, (global::System.IntPtr)__gsharp_auto_result_size, hStream));
+__gsharp_kernel_params[0] = &d___gsharp_auto_result;
 }
-CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
-hfunc,
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
+__gsharp_hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim
 blockDimX, blockDimY, blockDimZ, // Block dim
 sharedMemBytes, // Shared mem
 hStream, // Stream
-kernelParams,
-IntPtr.Zero // Extra
+__gsharp_kernel_params,
+global::System.IntPtr.Zero // Extra
 ));
-if (__gsharp_auto_result_size > 0 && d___gsharp_auto_result != IntPtr.Zero)
+if (__gsharp_auto_result_size > 0 && d___gsharp_auto_result != global::System.IntPtr.Zero)
 {
-var handle = System.Runtime.InteropServices.GCHandle.Alloc(__gsharp_auto_result, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
+fixed (global::System.ReadOnlySpan<global::System.Single>* p___gsharp_auto_result = __gsharp_auto_result)
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), d___gsharp_auto_result, (IntPtr)__gsharp_auto_result_size, hStream));
-CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
-}
-finally
-{
-handle.Free();
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)p___gsharp_auto_result, d___gsharp_auto_result, (global::System.IntPtr)__gsharp_auto_result_size, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
 }
 finally
 {
-if (d___gsharp_auto_result != IntPtr.Zero)
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemFreeAsync(d___gsharp_auto_result, hStream));
-}
+if (d___gsharp_auto_result != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(d___gsharp_auto_result, hStream);
 }
 }
 return __gsharp_auto_result;

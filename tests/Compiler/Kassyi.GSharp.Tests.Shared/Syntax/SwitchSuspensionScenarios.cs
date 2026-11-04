@@ -186,4 +186,32 @@ internal static class SwitchSuspensionScenarios
             Assert.Equal(expected, output[i]);
         }
     }
+
+    public static void GotoCaseChar(Action<Action> run, int flag)
+    {
+        var output = new int[WarpSize];
+
+        run(() => SwitchSuspensionKernels.LaunchGotoCaseCharKernel(output, flag, blockDimX: WarpSize));
+
+        for (int i = 0; i < WarpSize; i++)
+        {
+            // flag == 0 ('A'): lane i ^ 1, then goto case 66 ('B') reads lane i ^ 2 from that (+ 100)
+            int expected = flag == 0 ? (i ^ 3) + 100 : i + 1000;
+            Assert.Equal(expected, output[i]);
+        }
+    }
+
+    public static void GotoCaseEnum(Action<Action> run, int flag)
+    {
+        var output = new int[WarpSize];
+
+        run(() => SwitchSuspensionKernels.LaunchGotoCaseEnumKernel(output, flag, blockDimX: WarpSize));
+
+        for (int i = 0; i < WarpSize; i++)
+        {
+            // flag == 0 (First): lane i ^ 1, then goto case (SwitchGotoCaseMode)2 (Third) reads lane i ^ 2 (+ 100)
+            int expected = flag == 0 ? (i ^ 3) + 100 : i + 1000;
+            Assert.Equal(expected, output[i]);
+        }
+    }
 }

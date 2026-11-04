@@ -112,4 +112,14 @@ namespace StructLayoutDiagnosticsTest
         [GpuKernel]
         public static void AlignedVectorsKernel(WideFirst[] w, VectorFirst[] v, float[] r) { r[0] = w[0].A + v[0].A; }
     }
+
+    [StructLayout(LayoutKind.Explicit)]
+    public struct NamedUnion { [FieldOffset(0)] public long L; [FieldOffset(0)] public string Name; }
+
+    // A reference-type member in a union group is reported for the member, as in a sequential struct
+    public static partial class StructLayoutUnionArmKernels
+    {
+        [GpuKernel]
+        public static void NamedUnionKernel(NamedUnion u, int[] r) { r[0] = (int)u.L; }
+    }
 }
