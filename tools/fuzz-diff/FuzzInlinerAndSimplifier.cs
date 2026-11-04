@@ -143,6 +143,28 @@ public static class FuzzInlinerAndSimplifier
         Func<string, bool> isInteresting)
     {
         var root = FuzzSyntaxHelpers.ParseRoot(current);
+        var unreferenced = new List<MethodDeclarationSyntax>();
+        foreach (var helper in helpers)
+        {
+            if (!FuzzSyntaxHelpers.IsHelperReferencedOutsideItself(root, helper))
+            {
+                unreferenced.Add(helper);
+            }
+        }
+
+        if (unreferenced.Count > 1)
+        {
+            var withoutAll = root.RemoveNodes(unreferenced, SyntaxRemoveOptions.KeepNoTrivia);
+            if (withoutAll is not null)
+            {
+                string bulkCandidate = FuzzSyntaxHelpers.RenderFullNode(withoutAll);
+                if (isInteresting(bulkCandidate))
+                {
+                    return bulkCandidate;
+                }
+            }
+        }
+
         foreach (var helper in helpers)
         {
             if (FuzzSyntaxHelpers.IsHelperReferencedOutsideItself(root, helper))

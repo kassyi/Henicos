@@ -30,6 +30,8 @@ const helpText = [
   '  --input-seed <int>                 Optional explicit runtime data input seed (default: 0..8).',
   '  --allow-issue <n>                  Re-enable generation of shapes avoided for known issue #<n> (repeatable).',
   '  --swarm-focus <mode>               Optional Swarm focus mode (default, coalesce-assign-value, tuple-deconstruct-complex).',
+  '  --compare-base <ref>               Compare generated C++/CUDA (.g.cpp and .g.cu) against git <ref> without a GPU.',
+  '  --expect-change                    Exit 0 when --compare-base finds generated C++/CUDA differences.',
   '  --work-dir <dir>                   Workspace directory for temporary projects (default: tmp/differential-fuzz).',
   '  --out-dir <dir>                    Output directory for generated sources (default: <work-dir>/Generated).',
   '  --no-reduce                        Skip automatic 2-stage reduction and fingerprint deduplication on failure.',
@@ -74,6 +76,13 @@ function parseArgs(argv) {
     inputSeed: null,
     allowedIssues: [],
     swarmFocus: null,
+    compareBase: null,
+    expectChange: false,
+    compareSingle: null,
+    baseWorktree: null,
+    compareDialect: 'Cpu,Cuda',
+    compareKernel: null,
+    compareScope: 'kernel',
     workDir: path.join(repoRoot, 'tmp', 'differential-fuzz'),
     outDir: null,
     noReduce: false,
@@ -135,6 +144,36 @@ function parseArgs(argv) {
       i = nextIndex;
       if (!value) fail('--swarm-focus requires a focus mode.', 2);
       options.swarmFocus = value;
+    } else if (arg === '--compare-base' || arg.startsWith('--compare-base=')) {
+      const { value, nextIndex } = takeValue(i, '--compare-base');
+      i = nextIndex;
+      if (!value) fail('--compare-base requires a git ref.', 2);
+      options.compareBase = value;
+    } else if (arg === '--expect-change') {
+      options.expectChange = true;
+    } else if (arg === '--compare-single' || arg.startsWith('--compare-single=')) {
+      const { value, nextIndex } = takeValue(i, '--compare-single');
+      i = nextIndex;
+      if (!value) fail('--compare-single requires a file path.', 2);
+      options.compareSingle = path.resolve(repoRoot, value);
+    } else if (arg === '--base-worktree' || arg.startsWith('--base-worktree=')) {
+      const { value, nextIndex } = takeValue(i, '--base-worktree');
+      i = nextIndex;
+      if (!value) fail('--base-worktree requires a directory path.', 2);
+      options.baseWorktree = path.resolve(repoRoot, value);
+    } else if (arg === '--compare-dialect' || arg.startsWith('--compare-dialect=')) {
+      const { value, nextIndex } = takeValue(i, '--compare-dialect');
+      i = nextIndex;
+      if (!value) fail('--compare-dialect requires Cpu, Cuda, or Cpu,Cuda.', 2);
+      options.compareDialect = value;
+    } else if (arg === '--compare-kernel' || arg.startsWith('--compare-kernel=')) {
+      const { value, nextIndex } = takeValue(i, '--compare-kernel');
+      i = nextIndex;
+      options.compareKernel = value || null;
+    } else if (arg === '--compare-scope' || arg.startsWith('--compare-scope=')) {
+      const { value, nextIndex } = takeValue(i, '--compare-scope');
+      i = nextIndex;
+      options.compareScope = value || 'kernel';
     } else if (arg === '--work-dir' || arg.startsWith('--work-dir=')) {
       const { value, nextIndex } = takeValue(i, '--work-dir');
       i = nextIndex;
@@ -185,9 +224,9 @@ function selectActiveKnownIssues(catalogEntries, profile, allowedIssues) {
     }));
 }
 
-function runCommand(command, args, { extraEnv = {}, timeoutMs = DEFAULT_BUILD_TIMEOUT_MS } = {}) {
+function runCommand(command, args, { cwd = repoRoot, extraEnv = {}, timeoutMs = DEFAULT_BUILD_TIMEOUT_MS } = {}) {
   const result = spawnSync(command, args, {
-    cwd: repoRoot,
+    cwd,
     env: { ...process.env, DiffEngine_Disabled: 'true', CI: 'true', DOTNET_NOLOGO: '1', ...extraEnv },
     encoding: 'utf8',
     maxBuffer: 64 * 1024 * 1024,
@@ -223,7 +262,27 @@ function hasAssetsJson(csprojPath) {
   return fs.existsSync(path.join(path.dirname(csprojPath), 'obj', hostOs, 'project.assets.json'));
 }
 
-function ensurePrereqsBuilt(fuzzToolProj) {
+function ensureCompilerPrereqsBuiltForRoot(targetRoot, forceRebuildCompiler = false) {
+  const prereqProjects = [
+    { proj: path.join(targetRoot, 'src', 'Core', 'Kassyi.GSharp.Core', 'Kassyi.GSharp.Core.csproj'), dll: path.join(targetRoot, 'src', 'Core', 'Kassyi.GSharp.Core', 'bin', hostOs, 'Debug', 'net10.0', 'Kassyi.GSharp.Core.dll'), force: false },
+    { proj: path.join(targetRoot, 'src', 'Runtime', 'Kassyi.GSharp.Runtime', 'Kassyi.GSharp.Runtime.csproj'), dll: path.join(targetRoot, 'src', 'Runtime', 'Kassyi.GSharp.Runtime', 'bin', hostOs, 'Debug', 'net10.0', 'Kassyi.GSharp.Runtime.dll'), force: false },
+    { proj: path.join(targetRoot, 'src', 'Compiler', 'Kassyi.GSharp.Compiler', 'Kassyi.GSharp.Compiler.csproj'), dll: path.join(targetRoot, 'src', 'Compiler', 'Kassyi.GSharp.Compiler', 'bin', hostOs, 'Debug', 'netstandard2.0', 'Kassyi.GSharp.Compiler.dll'), force: forceRebuildCompiler },
+    { proj: path.join(targetRoot, 'src', 'Compiler', 'Kassyi.GSharp.Compiler.Tasks', 'Kassyi.GSharp.Compiler.Tasks.csproj'), dll: path.join(targetRoot, 'src', 'Compiler', 'Kassyi.GSharp.Compiler.Tasks', 'bin', hostOs, 'Debug', 'netstandard2.0', 'Kassyi.GSharp.Compiler.Tasks.dll'), force: false },
+  ];
+
+  for (const item of prereqProjects) {
+    if (!item.force && fs.existsSync(item.dll)) continue;
+    const buildArgs = ['build', item.proj, '-c', 'Debug', '-m:1', '-nodeReuse:false'];
+    if (hasAssetsJson(item.proj)) buildArgs.push('--no-restore');
+    const res = runCommand('dotnet', buildArgs, { cwd: targetRoot });
+    if (res.status !== 0) {
+      process.stderr.write(res.stdout + '\n' + res.stderr + '\n');
+      fail(`Failed to build prerequisite project: ${item.proj}`);
+    }
+  }
+}
+
+function ensurePrereqsBuilt(fuzzToolProj, forceRebuildCompiler = false) {
   process.stdout.write('[fuzz-diff] Building tools/fuzz-diff and compiler/runtime prerequisites...\n');
   const toolArgs = ['build', fuzzToolProj, '-c', 'Debug', '-m:1', '-nodeReuse:false'];
   if (hasAssetsJson(fuzzToolProj)) toolArgs.push('--no-restore');
@@ -233,23 +292,7 @@ function ensurePrereqsBuilt(fuzzToolProj) {
     fail('Failed to build tools/fuzz-diff.');
   }
 
-  const prereqProjects = [
-    { proj: path.join(repoRoot, 'src', 'Core', 'Kassyi.GSharp.Core', 'Kassyi.GSharp.Core.csproj'), dll: path.join(repoRoot, 'src', 'Core', 'Kassyi.GSharp.Core', 'bin', hostOs, 'Debug', 'net10.0', 'Kassyi.GSharp.Core.dll') },
-    { proj: path.join(repoRoot, 'src', 'Runtime', 'Kassyi.GSharp.Runtime', 'Kassyi.GSharp.Runtime.csproj'), dll: path.join(repoRoot, 'src', 'Runtime', 'Kassyi.GSharp.Runtime', 'bin', hostOs, 'Debug', 'net10.0', 'Kassyi.GSharp.Runtime.dll') },
-    { proj: path.join(repoRoot, 'src', 'Compiler', 'Kassyi.GSharp.Compiler', 'Kassyi.GSharp.Compiler.csproj'), dll: path.join(repoRoot, 'src', 'Compiler', 'Kassyi.GSharp.Compiler', 'bin', hostOs, 'Debug', 'netstandard2.0', 'Kassyi.GSharp.Compiler.dll') },
-    { proj: path.join(repoRoot, 'src', 'Compiler', 'Kassyi.GSharp.Compiler.Tasks', 'Kassyi.GSharp.Compiler.Tasks.csproj'), dll: path.join(repoRoot, 'src', 'Compiler', 'Kassyi.GSharp.Compiler.Tasks', 'bin', hostOs, 'Debug', 'netstandard2.0', 'Kassyi.GSharp.Compiler.Tasks.dll') },
-  ];
-
-  for (const item of prereqProjects) {
-    if (fs.existsSync(item.dll)) continue;
-    const buildArgs = ['build', item.proj, '-c', 'Debug', '-m:1', '-nodeReuse:false'];
-    if (hasAssetsJson(item.proj)) buildArgs.push('--no-restore');
-    const res = runCommand('dotnet', buildArgs);
-    if (res.status !== 0) {
-      process.stderr.write(res.stdout + '\n' + res.stderr + '\n');
-      fail(`Failed to build prerequisite project: ${item.proj}`);
-    }
-  }
+  ensureCompilerPrereqsBuiltForRoot(repoRoot, forceRebuildCompiler);
 }
 
 function classifySuspectedIssue(details, catalogEntries) {
@@ -553,8 +596,494 @@ function writeRunSummary(ctx) {
   );
 }
 
+function normalizeSlashes(p) {
+  return String(p || '').replace(/\\/g, '/');
+}
+
+function buildCompareDirectoryBuildProps() {
+  return [
+    '<Project>',
+    '  <PropertyGroup>',
+    "    <GSharpHostOs Condition=\"$([MSBuild]::IsOSPlatform('Windows'))\">win</GSharpHostOs>",
+    "    <GSharpHostOs Condition=\"'$(GSharpHostOs)' == '' and $([MSBuild]::IsOSPlatform('Linux'))\">linux</GSharpHostOs>",
+    "    <GSharpHostOs Condition=\"'$(GSharpHostOs)' == '' and $([MSBuild]::IsOSPlatform('OSX'))\">osx</GSharpHostOs>",
+    "    <GSharpHostOs Condition=\"'$(GSharpHostOs)' == ''\">unix</GSharpHostOs>",
+    '    <BaseOutputPath>bin\\$(GSharpHostOs)\\$(MSBuildProjectName)\\</BaseOutputPath>',
+    '    <BaseIntermediateOutputPath>obj\\$(GSharpHostOs)\\$(MSBuildProjectName)\\</BaseIntermediateOutputPath>',
+    '    <DefaultItemExcludes>$(DefaultItemExcludes);bin\\**;obj\\**;findings\\**</DefaultItemExcludes>',
+    '    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>',
+    '    <GenerateDocumentationFile>false</GenerateDocumentationFile>',
+    '    <GSharpExportDeviceCode>false</GSharpExportDeviceCode>',
+    '    <GSharpGenerateSnapshotTestCases>false</GSharpGenerateSnapshotTestCases>',
+    '    <NoWarn>$(NoWarn);GS0001;GS0002;CS0162;CS0169;CS0219;CS1591;CS1717;CS1718;CS8019;CS8321;SA1600</NoWarn>',
+    '  </PropertyGroup>',
+    '</Project>',
+    '',
+  ].join('\n');
+}
+
+function buildCompareProjectXml(dialect, relRepo) {
+  const isCuda = dialect.toLowerCase() === 'cuda';
+  const defineConstant = isCuda ? 'GSHARP_CUDA' : 'GSHARP_CPU';
+  return [
+    '<Project Sdk="Microsoft.NET.Sdk">',
+    '  <PropertyGroup>',
+    '    <OutputType>Library</OutputType>',
+    '    <TargetFramework>net10.0</TargetFramework>',
+    '    <ImplicitUsings>enable</ImplicitUsings>',
+    '    <Nullable>enable</Nullable>',
+    '    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>',
+    `    <GSharpTargetDialect>${dialect}</GSharpTargetDialect>`,
+    '    <GSharpEmitSource>true</GSharpEmitSource>',
+    '    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>',
+    '    <GSharpExportDeviceCode>false</GSharpExportDeviceCode>',
+    '    <GSharpGenerateSnapshotTestCases>false</GSharpGenerateSnapshotTestCases>',
+    '    <GSharpSkipCpuCompilation>true</GSharpSkipCpuCompilation>',
+    '    <GSharpSkipCudaCompilation>true</GSharpSkipCudaCompilation>',
+    `    <GSharpCompilerTaskAssembly>$(MSBuildThisFileDirectory)${relRepo}/src/Compiler/Kassyi.GSharp.Compiler.Tasks/bin/$(GSharpHostOs)/$(Configuration)/netstandard2.0/Kassyi.GSharp.Compiler.Tasks.dll</GSharpCompilerTaskAssembly>`,
+    `    <DefineConstants>$(DefineConstants);${defineConstant}</DefineConstants>`,
+    '  </PropertyGroup>',
+    '  <ItemGroup>',
+    '    <CompilerVisibleProperty Include="GSharpTargetDialect" />',
+    '    <CompilerVisibleProperty Include="GSharpEmitSource" />',
+    '    <CompilerVisibleProperty Include="GSharpGenerateSnapshotTestCases" />',
+    '    <Compile Include="CompareTargetKernels.cu.cs" />',
+    '  </ItemGroup>',
+    '  <ItemGroup>',
+    `    <ProjectReference Include="${relRepo}/src/Core/Kassyi.GSharp.Core/Kassyi.GSharp.Core.csproj" />`,
+    `    <ProjectReference Include="${relRepo}/src/Runtime/Kassyi.GSharp.Runtime/Kassyi.GSharp.Runtime.csproj" />`,
+    `    <ProjectReference Include="${relRepo}/src/Compiler/Kassyi.GSharp.Compiler/Kassyi.GSharp.Compiler.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="true" />`,
+    `    <ProjectReference Include="${relRepo}/src/Compiler/Kassyi.GSharp.Compiler.Tasks/Kassyi.GSharp.Compiler.Tasks.csproj" ReferenceOutputAssembly="false" />`,
+    '  </ItemGroup>',
+    '  <UsingTask TaskName="Kassyi.GSharp.Compiler.Tasks.CompileCudaToFatbinTask" AssemblyFile="$(GSharpCompilerTaskAssembly)" />',
+    '  <UsingTask TaskName="Kassyi.GSharp.Compiler.Tasks.CompileCppToNativeTask" AssemblyFile="$(GSharpCompilerTaskAssembly)" />',
+    `  <Import Project="${relRepo}/src/Compiler/Kassyi.GSharp.Compiler/build/Kassyi.GSharp.Compiler.targets" />`,
+    '</Project>',
+    '',
+  ].join('\n');
+}
+
+function writeCompareProjectScaffolds(compareDir, targetRepoRoot) {
+  fs.mkdirSync(compareDir, { recursive: true });
+  const relRepo = normalizeSlashes(path.relative(compareDir, targetRepoRoot));
+  fs.writeFileSync(path.join(compareDir, 'Directory.Build.props'), buildCompareDirectoryBuildProps(), 'utf8');
+  fs.writeFileSync(path.join(compareDir, 'FuzzCompareCpu.csproj'), buildCompareProjectXml('Cpu', relRepo), 'utf8');
+  fs.writeFileSync(path.join(compareDir, 'FuzzCompareCuda.csproj'), buildCompareProjectXml('Cuda', relRepo), 'utf8');
+}
+
+function runCompareGeneratorBuild(compareDir, dialect, kernelsSourceContent) {
+  const projName = `FuzzCompare${dialect}`;
+  const csprojPath = path.join(compareDir, `${projName}.csproj`);
+  const targetKernelsPath = path.join(compareDir, 'CompareTargetKernels.cu.cs');
+  fs.writeFileSync(targetKernelsPath, kernelsSourceContent, 'utf8');
+
+  const ext = dialect.toLowerCase() === 'cuda' ? 'cu' : 'cpp';
+  const objNetDir = path.join(compareDir, 'obj', hostOs, projName, 'Debug', 'net10.0');
+  const binNetDir = path.join(compareDir, 'bin', hostOs, projName, 'Debug', 'net10.0');
+  const aotFilePath = path.join(objNetDir, `Kassyi.GSharp.Kernels_${projName}.g.${ext}`);
+  const wrapperGenPath = path.join(
+    objNetDir,
+    'generated',
+    'Kassyi.GSharp.Compiler',
+    'Kassyi.GSharp.Compiler.GpuKernelGenerator',
+    'Kassyi_GSharp_Tests_Shared_Differential_FuzzBatchKernels.g.cs'
+  );
+  const objDllPath = path.join(objNetDir, `${projName}.dll`);
+  const binDllPath = path.join(binNetDir, `${projName}.dll`);
+
+  for (const stale of [aotFilePath, wrapperGenPath, objDllPath, binDllPath]) {
+    if (fs.existsSync(stale)) {
+      try { fs.unlinkSync(stale); } catch { /* ignore */ }
+    }
+  }
+
+  const assetsPath = path.join(compareDir, 'obj', hostOs, projName, 'project.assets.json');
+  const buildArgs = [
+    'build', csprojPath, '-c', 'Debug', '-m:1', '-nodeReuse:false', '--no-dependencies',
+    '-p:GSharpSkipCpuCompilation=true', '-p:GSharpSkipCudaCompilation=true',
+  ];
+  if (fs.existsSync(assetsPath)) buildArgs.push('--no-restore');
+
+  const buildRes = runCommand('dotnet', buildArgs, { cwd: compareDir, timeoutMs: DEFAULT_BUILD_TIMEOUT_MS });
+  if (buildRes.status !== 0 || !fs.existsSync(aotFilePath)) {
+    return { ok: false, stdout: buildRes.stdout, stderr: buildRes.stderr, aotSource: '', wrapperGeneratedCs: '' };
+  }
+
+  const aotSource = fs.readFileSync(aotFilePath, 'utf8');
+  const wrapperGeneratedCs = fs.existsSync(wrapperGenPath) ? fs.readFileSync(wrapperGenPath, 'utf8') : '';
+  return { ok: true, stdout: buildRes.stdout, stderr: buildRes.stderr, aotSource, wrapperGeneratedCs };
+}
+
+function stripSymbolHeader(sourceText) {
+  const lines = String(sourceText || '').replace(/\r\n/g, '\n').split('\n');
+  if (lines.length > 0 && lines[0].startsWith('// gsharp-symbols:')) {
+    return { hadHeader: true, body: lines.slice(1).join('\n'), lines: lines.slice(1) };
+  }
+  return { hadHeader: false, body: lines.join('\n'), lines };
+}
+
+function extractKernelNamesFromCSharp(kernelsSource) {
+  const names = [];
+  const re = /\[GpuKernel\]\s*public\s+static\s+void\s+([A-Za-z0-9_]+)\s*\(/g;
+  let m;
+  while ((m = re.exec(kernelsSource)) !== null) {
+    names.push(m[1]);
+  }
+  return names;
+}
+
+function extractPerKernelSourcesFromWrapper(wrapperCs) {
+  const map = new Map();
+  if (!wrapperCs) return map;
+  const re = /public const string ([A-Za-z0-9_]+)_Source = @"([\s\S]*?)";\r?\n\s*public static readonly string \1_FullSource=/g;
+  let m;
+  while ((m = re.exec(wrapperCs)) !== null) {
+    const kernelName = m[1];
+    const unescaped = m[2].replace(/""/g, '"').replace(/\r\n/g, '\n');
+    map.set(kernelName, unescaped);
+  }
+  return map;
+}
+
+function findFirstLineDiff(baseText, headText) {
+  const baseLines = String(baseText || '').replace(/\r\n/g, '\n').split('\n');
+  const headLines = String(headText || '').replace(/\r\n/g, '\n').split('\n');
+  const maxLen = Math.max(baseLines.length, headLines.length);
+  for (let i = 0; i < maxLen; i++) {
+    const b = i < baseLines.length ? baseLines[i] : '<EOF>';
+    const h = i < headLines.length ? headLines[i] : '<EOF>';
+    if (b !== h) {
+      return { line: i + 1, baseText: b, headText: h };
+    }
+  }
+  return null;
+}
+
+function computeAotLineOffset(aotBody, kernelChunk) {
+  if (!aotBody || !kernelChunk) return 0;
+  const idx = aotBody.indexOf(kernelChunk);
+  if (idx < 0) return 0;
+  return aotBody.slice(0, idx).split('\n').length;
+}
+
+function compareBatchDialect(baseRes, headRes, dialect, kernelNames) {
+  const baseStripped = stripSymbolHeader(baseRes.aotSource);
+  const headStripped = stripSymbolHeader(headRes.aotSource);
+  if (baseStripped.body === headStripped.body) {
+    return [];
+  }
+
+  const baseKernelMap = extractPerKernelSourcesFromWrapper(baseRes.wrapperGeneratedCs);
+  const headKernelMap = extractPerKernelSourcesFromWrapper(headRes.wrapperGeneratedCs);
+  const diffs = [];
+
+  for (const kernelName of kernelNames) {
+    const baseK = baseKernelMap.get(kernelName);
+    const headK = headKernelMap.get(kernelName);
+    if (baseK !== undefined && headK !== undefined && baseK !== headK) {
+      const firstDiff = findFirstLineDiff(baseK, headK);
+      if (firstDiff) {
+        const baseOffset = computeAotLineOffset(baseStripped.body, baseK);
+        const aotLine = baseOffset > 0 ? baseOffset + firstDiff.line : firstDiff.line + 1;
+        diffs.push({
+          kernel: kernelName,
+          dialect,
+          scope: 'kernel',
+          line: firstDiff.line,
+          aotLine,
+          baseText: firstDiff.baseText,
+          headText: firstDiff.headText,
+        });
+      }
+    }
+  }
+
+  if (diffs.length === 0) {
+    const firstDiff = findFirstLineDiff(baseStripped.body, headStripped.body);
+    if (firstDiff) {
+      diffs.push({
+        kernel: kernelNames[0] || 'Kernel_00',
+        dialect,
+        scope: 'module',
+        line: firstDiff.line,
+        aotLine: firstDiff.line + (baseStripped.hadHeader ? 1 : 0),
+        baseText: firstDiff.baseText,
+        headText: firstDiff.headText,
+      });
+    }
+  }
+
+  return diffs;
+}
+
+function parseCompareDialects(raw) {
+  const parts = String(raw || 'Cpu,Cuda').split(',').map((s) => s.trim()).filter(Boolean);
+  const result = [];
+  for (const p of parts) {
+    const norm = p.toLowerCase() === 'cuda' ? 'Cuda' : 'Cpu';
+    if (!result.includes(norm)) result.push(norm);
+  }
+  return result.length > 0 ? result : ['Cpu', 'Cuda'];
+}
+
+function runCompareSingleMode(options) {
+  if (!options.compareSingle || !fs.existsSync(options.compareSingle)) {
+    process.exit(1);
+  }
+  const candidateSource = fs.readFileSync(options.compareSingle, 'utf8');
+  const headCompareDir = path.join(options.workDir, 'compare-head');
+  const baseCompareDir = path.join(options.workDir, 'compare-base');
+  const dialects = parseCompareDialects(options.compareDialect);
+
+  for (const dialect of dialects) {
+    const baseRes = runCompareGeneratorBuild(baseCompareDir, dialect, candidateSource);
+    const headRes = runCompareGeneratorBuild(headCompareDir, dialect, candidateSource);
+    if (!baseRes.ok || !headRes.ok) {
+      process.exit(1);
+    }
+
+    if (options.compareScope === 'kernel' && options.compareKernel) {
+      const baseKernelMap = extractPerKernelSourcesFromWrapper(baseRes.wrapperGeneratedCs);
+      const headKernelMap = extractPerKernelSourcesFromWrapper(headRes.wrapperGeneratedCs);
+      const baseK = baseKernelMap.get(options.compareKernel);
+      const headK = headKernelMap.get(options.compareKernel);
+      if (baseK !== undefined && headK !== undefined) {
+        if (baseK !== headK) {
+          process.exit(0);
+        }
+        continue;
+      }
+    }
+
+    const baseStripped = stripSymbolHeader(baseRes.aotSource);
+    const headStripped = stripSymbolHeader(headRes.aotSource);
+    if (baseStripped.body !== headStripped.body) {
+      process.exit(0);
+    }
+  }
+
+  process.exit(1);
+}
+
+function runCompareBaseMode(options) {
+  const totalBatches = options.batches !== null ? options.batches : 20;
+  const fuzzToolProj = path.join(repoRoot, 'tools', 'fuzz-diff', 'Kassyi.GSharp.Tools.FuzzDiff.csproj');
+  const fuzzToolDll = path.join(repoRoot, 'tools', 'fuzz-diff', 'bin', hostOs, 'Debug', 'net10.0', 'Kassyi.GSharp.Tools.FuzzDiff.dll');
+  ensurePrereqsBuilt(fuzzToolProj, true);
+
+  fs.mkdirSync(options.workDir, { recursive: true });
+  fs.mkdirSync(options.outDir, { recursive: true });
+  const findingsDir = path.join(options.workDir, 'findings');
+  const baseWorktreeDir = path.join(options.workDir, 'base-worktree');
+  const headCompareDir = path.join(options.workDir, 'compare-head');
+  const baseCompareDir = path.join(options.workDir, 'compare-base');
+
+  spawnSync('git', ['worktree', 'remove', '--force', baseWorktreeDir], { cwd: repoRoot, encoding: 'utf8' });
+  if (fs.existsSync(baseWorktreeDir)) {
+    fs.rmSync(baseWorktreeDir, { recursive: true, force: true });
+  }
+
+  process.stdout.write(`[fuzz-compare] Creating detached worktree for '${options.compareBase}' at ${baseWorktreeDir}...\n`);
+  const wtAdd = runCommand('git', ['worktree', 'add', '--detach', baseWorktreeDir, options.compareBase]);
+  if (wtAdd.status !== 0) {
+    fail(`Failed to create git worktree for '${options.compareBase}': ${wtAdd.stderr || wtAdd.stdout}`);
+  }
+
+  const startMs = Date.now();
+  let totalKernels = 0;
+  let totalDiffKernels = 0;
+  const allDiffRecords = [];
+  const reducedBySignature = new Map();
+
+  try {
+    process.stdout.write(`[fuzz-compare] Building compiler prerequisites in base worktree (${options.compareBase})...\n`);
+    ensureCompilerPrereqsBuiltForRoot(baseWorktreeDir, false);
+
+    writeCompareProjectScaffolds(headCompareDir, repoRoot);
+    writeCompareProjectScaffolds(baseCompareDir, baseWorktreeDir);
+
+    for (let batchIndex = 0; batchIndex < totalBatches; batchIndex++) {
+      const currentSeed = BigInt.asUintN(64, options.fuzzSeed + BigInt(batchIndex));
+      const seedHex = formatHexSeed(currentSeed);
+      const batchStartMs = Date.now();
+
+      const genArgs = [
+        'exec', fuzzToolDll, 'gen',
+        '--fuzz-seed', seedHex, '--batch-size', String(options.batchSize),
+        '--profile', options.profile, '--out-dir', options.outDir, '--repo-root', repoRoot,
+      ];
+      if (options.inputSeed !== null) genArgs.push('--input-seed', String(options.inputSeed));
+      for (const allowedIssue of options.allowedIssues) genArgs.push('--allow-issue', String(allowedIssue));
+      if (options.swarmFocus) genArgs.push('--swarm-focus', options.swarmFocus);
+
+      const genRes = runCommand('dotnet', genArgs, { timeoutMs: 60_000 });
+      if (genRes.status !== 0) {
+        process.stderr.write(genRes.stdout + '\n' + genRes.stderr + '\n');
+        fail(`fuzz-diff gen failed on seed ${seedHex}`);
+      }
+
+      const kernelsSource = fs.readFileSync(path.join(options.outDir, 'FuzzBatchKernels.cu.cs'), 'utf8');
+      const kernelNames = extractKernelNamesFromCSharp(kernelsSource);
+      totalKernels += kernelNames.length;
+
+      const byKernel = new Map();
+      for (const dialect of ['Cpu', 'Cuda']) {
+        const baseRes = runCompareGeneratorBuild(baseCompareDir, dialect, kernelsSource);
+        const headRes = runCompareGeneratorBuild(headCompareDir, dialect, kernelsSource);
+        if (!baseRes.ok || !headRes.ok) {
+          fail(`Generator CoreCompile failed on batch ${seedHex} (${dialect}):\nBase:\n${baseRes.stdout}\n${baseRes.stderr}\nHead:\n${headRes.stdout}\n${headRes.stderr}`);
+        }
+
+        const dialectDiffs = compareBatchDialect(baseRes, headRes, dialect, kernelNames);
+        for (const d of dialectDiffs) {
+          let entry = byKernel.get(d.kernel);
+          if (!entry) {
+            entry = { seedHex, kernel: d.kernel, dialects: [], scope: d.scope, diffsByDialect: {} };
+            byKernel.set(d.kernel, entry);
+          }
+          if (!entry.dialects.includes(dialect)) entry.dialects.push(dialect);
+          entry.diffsByDialect[dialect] = {
+            line: d.line,
+            aotLine: d.aotLine,
+            baseText: d.baseText,
+            headText: d.headText,
+          };
+        }
+      }
+
+      for (const entry of byKernel.values()) {
+        totalDiffKernels++;
+        process.stdout.write(
+          `[fuzz-compare] DIFF seed=${entry.seedHex} kernel=${entry.kernel} dialects=${entry.dialects.join(',')}\n`
+        );
+        for (const dialect of entry.dialects) {
+          const info = entry.diffsByDialect[dialect];
+          process.stdout.write(
+            `  [${dialect}] kernel line ${info.line} (AOT line ${info.aotLine}):\n    base (${options.compareBase}): ${info.baseText}\n    working-tree: ${info.headText}\n`
+          );
+        }
+
+        fs.mkdirSync(findingsDir, { recursive: true });
+        const findingDir = path.join(findingsDir, `${entry.seedHex}_compare_${entry.kernel}`);
+        fs.mkdirSync(findingDir, { recursive: true });
+
+        const firstDialect = entry.dialects[0];
+        const firstInfo = entry.diffsByDialect[firstDialect];
+        const diffSigKey = `${entry.dialects.join(',')}|${firstInfo.baseText.replace(/Kernel_\d+/g, 'K')}|${firstInfo.headText.replace(/Kernel_\d+/g, 'K')}`;
+
+        let reducedKernelSource = null;
+        let reductionMeta = {};
+        if (!options.noReduce) {
+          if (reducedBySignature.has(diffSigKey)) {
+            const cached = reducedBySignature.get(diffSigKey);
+            reducedKernelSource = cached.reducedKernelSource;
+            reductionMeta = { ...cached.reductionMeta, reusedFromKernel: cached.kernel };
+          } else {
+            const tmpSourcePath = path.join(findingsDir, `_tmp_cmp_${entry.seedHex}_${entry.kernel}.cu.cs`);
+            const tmpReducedPath = path.join(findingsDir, `_tmp_cmp_${entry.seedHex}_${entry.kernel}.reduced.cu.cs`);
+            try {
+              fs.writeFileSync(tmpSourcePath, kernelsSource, 'utf8');
+              const testCmd = `node "${__filename}" --compare-single "{source}" --base-worktree "${baseWorktreeDir}" --work-dir "${options.workDir}" --compare-dialect "${entry.dialects.join(',')}" --compare-kernel "${entry.kernel}" --compare-scope "${entry.scope}"`;
+              const reduceArgs = [
+                'exec', fuzzToolDll, 'reduce',
+                '--source', tmpSourcePath,
+                '--fuzz-seed', entry.seedHex,
+                '--kernel', entry.kernel,
+                '--test-cmd', testCmd,
+                '--failing-paths', entry.dialects.join(','),
+                '--failure-kind', 'CodegenDiff',
+                '--out', tmpReducedPath,
+              ];
+              const redRes = runCommand('dotnet', reduceArgs, { timeoutMs: DEFAULT_REDUCE_TIMEOUT_MS });
+              if (redRes.status === 0 && fs.existsSync(tmpReducedPath)) {
+                reducedKernelSource = fs.readFileSync(tmpReducedPath, 'utf8');
+                const redInfo = parseBatchJsonl(redRes.stdout).find((e) => e.status === 'reduced') || {};
+                reductionMeta = {
+                  fingerprint: redInfo.fingerprint || null,
+                  originalStatements: redInfo.originalStatements,
+                  reducedStatements: redInfo.reducedStatements,
+                  iterations: redInfo.iterations,
+                };
+                reducedBySignature.set(diffSigKey, {
+                  kernel: entry.kernel,
+                  reducedKernelSource,
+                  reductionMeta,
+                });
+                process.stdout.write(
+                  `  [reduced] ${entry.kernel}: ${reductionMeta.originalStatements} -> ${reductionMeta.reducedStatements} statements (${reductionMeta.iterations} iterations)\n`
+                );
+              }
+            } finally {
+              if (fs.existsSync(tmpSourcePath)) fs.unlinkSync(tmpSourcePath);
+              if (fs.existsSync(tmpReducedPath)) fs.unlinkSync(tmpReducedPath);
+            }
+          }
+        }
+
+        if (reducedKernelSource) {
+          fs.writeFileSync(path.join(findingDir, 'ReproKernel.cu.cs'), reducedKernelSource, 'utf8');
+        }
+        fs.writeFileSync(path.join(findingDir, 'FuzzBatchKernels.cu.cs'), kernelsSource, 'utf8');
+        const findingRecord = {
+          status: 'codegen_diff',
+          failureKind: 'CodegenDiff',
+          compareBase: options.compareBase,
+          batchFuzzSeed: entry.seedHex,
+          kernel: entry.kernel,
+          differingDialects: entry.dialects,
+          diffsByDialect: entry.diffsByDialect,
+          ...reductionMeta,
+        };
+        fs.writeFileSync(path.join(findingDir, 'finding.json'), JSON.stringify(findingRecord, null, 2) + '\n', 'utf8');
+        fs.appendFileSync(path.join(findingsDir, 'occurrences.jsonl'), JSON.stringify(findingRecord) + '\n', 'utf8');
+        allDiffRecords.push(findingRecord);
+      }
+
+      const batchSec = ((Date.now() - batchStartMs) / 1000).toFixed(2);
+      process.stdout.write(
+        `[fuzz-compare] Batch #${batchIndex + 1}/${totalBatches} (seed=${seedHex}, kernels=${kernelNames.length}) finished in ${batchSec}s | diffs_in_batch=${byKernel.size}, total_diffs=${totalDiffKernels}\n`
+      );
+    }
+  } finally {
+    spawnSync('git', ['worktree', 'remove', '--force', baseWorktreeDir], { cwd: repoRoot, encoding: 'utf8' });
+    if (fs.existsSync(baseWorktreeDir)) {
+      fs.rmSync(baseWorktreeDir, { recursive: true, force: true });
+    }
+  }
+
+  const elapsedSec = ((Date.now() - startMs) / 1000).toFixed(2);
+  const summary = {
+    mode: 'compare-base',
+    compareBase: options.compareBase,
+    expectChange: Boolean(options.expectChange),
+    batches: totalBatches,
+    batchSize: options.batchSize,
+    totalKernels,
+    totalDifferences: totalDiffKernels,
+    elapsedSeconds: Number(elapsedSec),
+    differences: allDiffRecords,
+  };
+  fs.writeFileSync(path.join(options.workDir, 'compare-summary.json'), JSON.stringify(summary, null, 2) + '\n', 'utf8');
+  process.stdout.write(
+    `[fuzz-compare] Completed ${totalBatches} batches (${totalKernels} kernels) vs '${options.compareBase}' in ${elapsedSec}s. Differences: ${totalDiffKernels}.\n`
+  );
+
+  if (totalDiffKernels > 0 && !options.expectChange) {
+    process.exit(1);
+  }
+  process.exit(0);
+}
+
 function main() {
   const options = parseArgs(process.argv.slice(2));
+  if (options.compareSingle) {
+    runCompareSingleMode(options);
+    return;
+  }
+  if (options.compareBase) {
+    runCompareBaseMode(options);
+    return;
+  }
   const ctx = prepareWorkspace(options);
 
   while (true) {
