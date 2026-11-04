@@ -559,7 +559,12 @@ public static class DifferentialRunner
                     continue;
                 }
 
-                if (!first.SameBits(second, i))
+                // [WHY] a computed floating-point cell (Bitwise) promises only that it is a NaN, not which one: the
+                // optimized JIT code may quiet a signaling NaN that the unoptimized code returns as it is. A moved value
+                // (Exact) still has to keep every bit
+                bool sameValue = first.SameBits(second, i) ||
+                    (first.PolicyOf(i).Kind == OutputPolicyKind.Bitwise && first.CellsMatch(second, i));
+                if (!sameValue)
                 {
                     throw new DifferentialHarnessException(
                         $"{testCase.Name}: kernel output depends on thread order, so the kernel races (undefined on the GPU) " +
