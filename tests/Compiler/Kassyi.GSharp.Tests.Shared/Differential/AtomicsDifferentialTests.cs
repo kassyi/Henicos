@@ -8,7 +8,7 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 
 /// <summary>
 /// Differential tests for <see cref="Gpu"/> atomics, <see cref="System.Threading.Interlocked"/> intrinsics,
-/// shared-memory atomics, struct-field atomics, CAS spinlocks, and cooperative lock-free stacks (Lane D4 Stages 1–2).
+/// shared-memory atomics, struct-field atomics, CAS spinlocks, and cooperative lock-free stacks.
 /// </summary>
 public class AtomicsDifferentialTests
 {
@@ -89,8 +89,61 @@ public class AtomicsDifferentialTests
             },
         };
 
-    private static readonly DifferentialCase s_integerArbitraryAtomics =
-        new($"{nameof(AtomicsDifferentialKernels)}.{nameof(AtomicsDifferentialKernels.IntegerArbitraryAtomicsKernel)}")
+    private static PropertyResult CheckExchangeAndCas<T>(
+        DiffBuffers initial,
+        DiffBuffers actual,
+        int rows,
+        string inputName,
+        string oldName,
+        string stateName,
+        int slotIndex,
+        T casExpected,
+        T casValue)
+        where T : struct, IComparable<T>, IEquatable<T>
+    {
+        var input = initial.Get<T>(inputName);
+        var old = actual.Get<T>(oldName);
+        var stateInitial = initial.Get<T>(stateName);
+        var stateActual = actual.Get<T>(stateName);
+
+        var expectedSet = new T[rows + 1];
+        var actualSet = new T[rows + 1];
+        expectedSet[0] = stateInitial[slotIndex];
+        actualSet[0] = stateActual[slotIndex];
+
+        int casWinners = 0;
+        for (int i = 0; i < rows; i++)
+        {
+            expectedSet[i + 1] = input[i];
+            actualSet[i + 1] = old[i * 2 + 0];
+            T casOld = old[i * 2 + 1];
+            if (casOld.Equals(casExpected))
+            {
+                casWinners++;
+            }
+            else if (!casOld.Equals(casValue))
+            {
+                return PropertyResult.Fail($"Unexpected {typeof(T).Name} CAS old value {casOld} at thread {i}.");
+            }
+        }
+
+        Array.Sort(expectedSet);
+        Array.Sort(actualSet);
+        if (!expectedSet.AsSpan().SequenceEqual(actualSet))
+        {
+            return PropertyResult.Fail($"AtomicExch({typeof(T).Name}) conservation multiset mismatch.");
+        }
+
+        if (casWinners != 1)
+        {
+            return PropertyResult.Fail($"Expected exactly 1 {typeof(T).Name} CAS winner, observed {casWinners}.");
+        }
+
+        return PropertyResult.Pass();
+    }
+
+    private static readonly DifferentialCase s_integerArbitraryAtomicsInt32 =
+        new($"{nameof(AtomicsDifferentialKernels)}.{nameof(AtomicsDifferentialKernels.IntegerArbitraryAtomicsInt32Kernel)}")
         {
             Shapes =
             [
@@ -101,18 +154,6 @@ public class AtomicsDifferentialTests
             {
                 int rows = s.ThreadCount;
                 var inInt = DiffValues.Int32(rng, rows);
-                var inUInt = new uint[rows];
-                var inULong = new ulong[rows];
-                for (int i = 0; i < rows; i++)
-                {
-                    inUInt[i] = rng.IsBoundarySeed
-                        ? unchecked((uint)inInt[i])
-                        : rng.NextUInt32();
-                    inULong[i] = rng.IsBoundarySeed
-                        ? ((ulong)inUInt[i] << 32) ^ (uint)i
-                        : ((ulong)rng.NextUInt32() << 32) | rng.NextUInt32();
-                }
-
                 var packets = new DiffAtomicPacket[4];
                 for (int i = 0; i < 4; i++)
                 {
@@ -121,32 +162,14 @@ public class AtomicsDifferentialTests
 
                 return new DiffBuffers()
                     .In("inInt", inInt, OutputPolicy.Exact, readOnly: true)
-                    .In("inUInt", inUInt, OutputPolicy.Exact, readOnly: true)
-                    .In("inULong", inULong, OutputPolicy.Exact, readOnly: true)
-                    .In("stateInt", [50, 500, int.MaxValue, -1, 0x12345678, -999999, 25], OutputPolicy.Exact)
-                    .In("stateUInt", [100u, 1000u, uint.MaxValue, 0u, 0xFFFFFFFFu, 0u, 0xA5A5A5A5u, 0xCAFEBABEu, uint.MaxValue], OutputPolicy.Exact)
-                    .In("stateULong", [200UL, ulong.MaxValue, 0UL, ulong.MaxValue, 0UL, 0x0F0F0F0F_F0F0F0F0UL, 0xDEADBEEF_CAFEBABEUL, 0UL], OutputPolicy.Exact)
-                    .In("exchSlotInt", [777777], OutputPolicy.Ignore)
-                    .In("exchSlotUInt", [0x88888888u], OutputPolicy.Ignore)
-                    .In("exchSlotULong", [0x99999999_AAAAAAAAUL], OutputPolicy.Ignore)
+                    .In("stateInt", [50, 500, int.MaxValue, -1, 0x12345678, -999999, 25, 777777], OutputPolicy.Ignore)
                     .Out<int>("oldExchAndCasInt", rows * 2, OutputPolicy.Ignore)
-                    .Out<uint>("oldExchAndCasUInt", rows * 2, OutputPolicy.Ignore)
-                    .Out<ulong>("oldExchAndCasULong", rows * 2, OutputPolicy.Ignore)
                     .In("packets", packets, OutputPolicy.Exact);
             },
-            Launch = static (b, s) => AtomicsDifferentialKernels.LaunchIntegerArbitraryAtomicsKernel(
+            Launch = static (b, s) => AtomicsDifferentialKernels.LaunchIntegerArbitraryAtomicsInt32Kernel(
                 b.Get<int>("inInt"),
-                b.Get<uint>("inUInt"),
-                b.Get<ulong>("inULong"),
                 b.Get<int>("stateInt"),
-                b.Get<uint>("stateUInt"),
-                b.Get<ulong>("stateULong"),
-                b.Get<int>("exchSlotInt"),
-                b.Get<uint>("exchSlotUInt"),
-                b.Get<ulong>("exchSlotULong"),
                 b.Get<int>("oldExchAndCasInt"),
-                b.Get<uint>("oldExchAndCasUInt"),
-                b.Get<ulong>("oldExchAndCasULong"),
                 b.Get<DiffAtomicPacket>("packets"),
                 gridDimX: s.GridX,
                 blockDimX: s.BlockX
@@ -154,11 +177,6 @@ public class AtomicsDifferentialTests
             Reference = static (b, s) =>
             {
                 var inInt = b.Get<int>("inInt");
-                var inUInt = b.Get<uint>("inUInt");
-                var inULong = b.Get<ulong>("inULong");
-                var stateInt = b.Get<int>("stateInt");
-                var stateUInt = b.Get<uint>("stateUInt");
-                var stateULong = b.Get<ulong>("stateULong");
                 var packets = b.Get<DiffAtomicPacket>("packets");
                 int rows = s.ThreadCount;
 
@@ -166,59 +184,6 @@ public class AtomicsDifferentialTests
                 {
                     int bucket = tid & 3;
                     int vInt = inInt[tid];
-                    uint vUInt = inUInt[tid];
-                    ulong vULong = inULong[tid];
-
-                    stateInt[0] = unchecked(stateInt[0] + vInt);
-                    stateInt[1] = unchecked(stateInt[1] - vInt);
-                    if (vInt < stateInt[2])
-                    {
-                        stateInt[2] = vInt;
-                    }
-
-                    stateInt[3] &= vInt;
-                    stateInt[4] ^= vInt;
-                    stateInt[5] = 100000;
-                    stateInt[6] = unchecked(stateInt[6] + vInt);
-
-                    stateUInt[0] = unchecked(stateUInt[0] + vUInt);
-                    stateUInt[1] = unchecked(stateUInt[1] - vUInt);
-                    if (vUInt < stateUInt[2])
-                    {
-                        stateUInt[2] = vUInt;
-                    }
-
-                    if (vUInt > stateUInt[3])
-                    {
-                        stateUInt[3] = vUInt;
-                    }
-
-                    stateUInt[4] &= vUInt;
-                    stateUInt[5] |= vUInt;
-                    stateUInt[6] ^= vUInt;
-                    stateUInt[7] = 0x12345678u;
-                    if (vUInt < stateUInt[8])
-                    {
-                        stateUInt[8] = vUInt;
-                    }
-
-                    stateULong[0] = unchecked(stateULong[0] + vULong);
-                    if (vULong < stateULong[1])
-                    {
-                        stateULong[1] = vULong;
-                    }
-
-                    if (vULong > stateULong[2])
-                    {
-                        stateULong[2] = vULong;
-                    }
-
-                    stateULong[3] &= vULong;
-                    stateULong[4] |= vULong;
-                    stateULong[5] ^= vULong;
-                    stateULong[6] = 0x01020304_05060708UL;
-                    stateULong[7] ^= vULong;
-
                     packets[bucket].Counter += (vInt & 0xFF) + 1;
                     packets[bucket].Flags |= 1u << (tid & 31);
                 }
@@ -226,116 +191,160 @@ public class AtomicsDifferentialTests
             VerifyAgainstInitial = static (initial, actual, s) =>
             {
                 int rows = s.ThreadCount;
-
-                // 1. Verify AtomicExch multiset conservation: {finalSlot} U {oldExch_i} == {initialSlot} U {input_i}
                 var inInt = initial.Get<int>("inInt");
-                var oldInt = actual.Get<int>("oldExchAndCasInt");
-                var expectedIntSet = new int[rows + 1];
-                var actualIntSet = new int[rows + 1];
-                expectedIntSet[0] = initial.Get<int>("exchSlotInt")[0];
-                actualIntSet[0] = actual.Get<int>("exchSlotInt")[0];
-                int casIntWinners = 0;
+                var initState = initial.Get<int>("stateInt");
+                var actualState = actual.Get<int>("stateInt");
+
+                int s0 = initState[0], s1 = initState[1], s2 = initState[2], s3 = initState[3], s4 = initState[4], s6 = initState[6];
                 for (int i = 0; i < rows; i++)
                 {
-                    expectedIntSet[i + 1] = inInt[i];
-                    actualIntSet[i + 1] = oldInt[i * 2 + 0];
-                    int casOld = oldInt[i * 2 + 1];
-                    if (casOld == -999999)
-                    {
-                        casIntWinners++;
-                    }
-                    else if (casOld != 100000)
-                    {
-                        return PropertyResult.Fail($"Unexpected int CAS old value {casOld} at thread {i}.");
-                    }
+                    int v = inInt[i];
+                    s0 = unchecked(s0 + v);
+                    s1 = unchecked(s1 - v);
+                    if (v < s2) s2 = v;
+                    s3 &= v;
+                    s4 ^= v;
+                    s6 = unchecked(s6 + v);
                 }
 
-                Array.Sort(expectedIntSet);
-                Array.Sort(actualIntSet);
-                if (!expectedIntSet.AsSpan().SequenceEqual(actualIntSet))
+                if (actualState[0] != s0 || actualState[1] != s1 || actualState[2] != s2 ||
+                    actualState[3] != s3 || actualState[4] != s4 || actualState[5] != 100000 || actualState[6] != s6)
                 {
-                    return PropertyResult.Fail("AtomicExch(int) conservation multiset mismatch.");
+                    return PropertyResult.Fail("Deterministic state mismatch in IntegerArbitraryAtomicsInt32.");
                 }
 
-                if (casIntWinners != 1)
-                {
-                    return PropertyResult.Fail($"Expected exactly 1 int CAS winner, observed {casIntWinners}.");
-                }
-
-                var inUInt = initial.Get<uint>("inUInt");
-                var oldUInt = actual.Get<uint>("oldExchAndCasUInt");
-                var expectedUIntSet = new uint[rows + 1];
-                var actualUIntSet = new uint[rows + 1];
-                expectedUIntSet[0] = initial.Get<uint>("exchSlotUInt")[0];
-                actualUIntSet[0] = actual.Get<uint>("exchSlotUInt")[0];
-                int casUIntWinners = 0;
-                for (int i = 0; i < rows; i++)
-                {
-                    expectedUIntSet[i + 1] = inUInt[i];
-                    actualUIntSet[i + 1] = oldUInt[i * 2 + 0];
-                    uint casOld = oldUInt[i * 2 + 1];
-                    if (casOld == 0xCAFEBABEu)
-                    {
-                        casUIntWinners++;
-                    }
-                    else if (casOld != 0x12345678u)
-                    {
-                        return PropertyResult.Fail($"Unexpected uint CAS old value 0x{casOld:X8} at thread {i}.");
-                    }
-                }
-
-                Array.Sort(expectedUIntSet);
-                Array.Sort(actualUIntSet);
-                if (!expectedUIntSet.AsSpan().SequenceEqual(actualUIntSet))
-                {
-                    return PropertyResult.Fail("AtomicExch(uint) conservation multiset mismatch.");
-                }
-
-                if (casUIntWinners != 1)
-                {
-                    return PropertyResult.Fail($"Expected exactly 1 uint CAS winner, observed {casUIntWinners}.");
-                }
-
-                var inULong = initial.Get<ulong>("inULong");
-                var oldULong = actual.Get<ulong>("oldExchAndCasULong");
-                var expectedULongSet = new ulong[rows + 1];
-                var actualULongSet = new ulong[rows + 1];
-                expectedULongSet[0] = initial.Get<ulong>("exchSlotULong")[0];
-                actualULongSet[0] = actual.Get<ulong>("exchSlotULong")[0];
-                int casULongWinners = 0;
-                for (int i = 0; i < rows; i++)
-                {
-                    expectedULongSet[i + 1] = inULong[i];
-                    actualULongSet[i + 1] = oldULong[i * 2 + 0];
-                    ulong casOld = oldULong[i * 2 + 1];
-                    if (casOld == 0xDEADBEEF_CAFEBABEUL)
-                    {
-                        casULongWinners++;
-                    }
-                    else if (casOld != 0x01020304_05060708UL)
-                    {
-                        return PropertyResult.Fail($"Unexpected ulong CAS old value 0x{casOld:X16} at thread {i}.");
-                    }
-                }
-
-                Array.Sort(expectedULongSet);
-                Array.Sort(actualULongSet);
-                if (!expectedULongSet.AsSpan().SequenceEqual(actualULongSet))
-                {
-                    return PropertyResult.Fail("AtomicExch(ulong) conservation multiset mismatch.");
-                }
-
-                if (casULongWinners != 1)
-                {
-                    return PropertyResult.Fail($"Expected exactly 1 ulong CAS winner, observed {casULongWinners}.");
-                }
-
-                return PropertyResult.Pass();
+                return CheckExchangeAndCas<int>(initial, actual, rows, "inInt", "oldExchAndCasInt", "stateInt", 7, -999999, 100000);
             },
         };
 
-    private static readonly DifferentialCase s_integerSharedMemoryTwoStageAtomics =
-        new($"{nameof(AtomicsDifferentialKernels)}.{nameof(AtomicsDifferentialKernels.IntegerSharedMemoryTwoStageAtomicsKernel)}")
+    private static readonly DifferentialCase s_integerArbitraryAtomicsUInt32 =
+        new($"{nameof(AtomicsDifferentialKernels)}.{nameof(AtomicsDifferentialKernels.IntegerArbitraryAtomicsUInt32Kernel)}")
+        {
+            Shapes =
+            [
+                LaunchShape.ForRows(64, blockX: 32),
+                LaunchShape.ForRows(64, blockX: 64),
+            ],
+            Inputs = static (rng, s) =>
+            {
+                int rows = s.ThreadCount;
+                var inUInt = new uint[rows];
+                for (int i = 0; i < rows; i++)
+                {
+                    inUInt[i] = rng.IsBoundarySeed ? unchecked((uint)rng.NextUInt32()) : rng.NextUInt32();
+                }
+
+                return new DiffBuffers()
+                    .In("inUInt", inUInt, OutputPolicy.Exact, readOnly: true)
+                    .In("stateUInt", [100u, 1000u, uint.MaxValue, 0u, 0xFFFFFFFFu, 0u, 0xA5A5A5A5u, 0xCAFEBABEu, uint.MaxValue, 0x88888888u], OutputPolicy.Ignore)
+                    .Out<uint>("oldExchAndCasUInt", rows * 2, OutputPolicy.Ignore);
+            },
+            Launch = static (b, s) => AtomicsDifferentialKernels.LaunchIntegerArbitraryAtomicsUInt32Kernel(
+                b.Get<uint>("inUInt"),
+                b.Get<uint>("stateUInt"),
+                b.Get<uint>("oldExchAndCasUInt"),
+                gridDimX: s.GridX,
+                blockDimX: s.BlockX
+            ),
+            Reference = static (_, _) => { },
+            VerifyAgainstInitial = static (initial, actual, s) =>
+            {
+                int rows = s.ThreadCount;
+                var inUInt = initial.Get<uint>("inUInt");
+                var initState = initial.Get<uint>("stateUInt");
+                var actualState = actual.Get<uint>("stateUInt");
+
+                uint s0 = initState[0], s1 = initState[1], s2 = initState[2], s3 = initState[3];
+                uint s4 = initState[4], s5 = initState[5], s6 = initState[6], s8 = initState[8];
+                for (int i = 0; i < rows; i++)
+                {
+                    uint v = inUInt[i];
+                    s0 = unchecked(s0 + v);
+                    s1 = unchecked(s1 - v);
+                    if (v < s2) s2 = v;
+                    if (v > s3) s3 = v;
+                    s4 &= v;
+                    s5 |= v;
+                    s6 ^= v;
+                    if (v < s8) s8 = v;
+                }
+
+                if (actualState[0] != s0 || actualState[1] != s1 || actualState[2] != s2 || actualState[3] != s3 ||
+                    actualState[4] != s4 || actualState[5] != s5 || actualState[6] != s6 || actualState[7] != 0x12345678u || actualState[8] != s8)
+                {
+                    return PropertyResult.Fail("Deterministic state mismatch in IntegerArbitraryAtomicsUInt32.");
+                }
+
+                return CheckExchangeAndCas<uint>(initial, actual, rows, "inUInt", "oldExchAndCasUInt", "stateUInt", 9, 0xCAFEBABEu, 0x12345678u);
+            },
+        };
+
+    private static readonly DifferentialCase s_integerArbitraryAtomicsUInt64 =
+        new($"{nameof(AtomicsDifferentialKernels)}.{nameof(AtomicsDifferentialKernels.IntegerArbitraryAtomicsUInt64Kernel)}")
+        {
+            Shapes =
+            [
+                LaunchShape.ForRows(64, blockX: 32),
+                LaunchShape.ForRows(64, blockX: 64),
+            ],
+            Inputs = static (rng, s) =>
+            {
+                int rows = s.ThreadCount;
+                var inULong = new ulong[rows];
+                for (int i = 0; i < rows; i++)
+                {
+                    inULong[i] = rng.IsBoundarySeed
+                        ? ((ulong)rng.NextUInt32() << 32) ^ (uint)i
+                        : ((ulong)rng.NextUInt32() << 32) | rng.NextUInt32();
+                }
+
+                return new DiffBuffers()
+                    .In("inULong", inULong, OutputPolicy.Exact, readOnly: true)
+                    .In("stateULong", [200UL, ulong.MaxValue, 0UL, ulong.MaxValue, 0UL, 0x0F0F0F0F_F0F0F0F0UL, 0xDEADBEEF_CAFEBABEUL, 0UL, 0x99999999_AAAAAAAAUL], OutputPolicy.Ignore)
+                    .Out<ulong>("oldExchAndCasULong", rows * 2, OutputPolicy.Ignore);
+            },
+            Launch = static (b, s) => AtomicsDifferentialKernels.LaunchIntegerArbitraryAtomicsUInt64Kernel(
+                b.Get<ulong>("inULong"),
+                b.Get<ulong>("stateULong"),
+                b.Get<ulong>("oldExchAndCasULong"),
+                gridDimX: s.GridX,
+                blockDimX: s.BlockX
+            ),
+            Reference = static (_, _) => { },
+            VerifyAgainstInitial = static (initial, actual, s) =>
+            {
+                int rows = s.ThreadCount;
+                var inULong = initial.Get<ulong>("inULong");
+                var initState = initial.Get<ulong>("stateULong");
+                var actualState = actual.Get<ulong>("stateULong");
+
+                ulong s0 = initState[0], s1 = initState[1], s2 = initState[2], s3 = initState[3];
+                ulong s4 = initState[4], s5 = initState[5], s7 = initState[7];
+                for (int i = 0; i < rows; i++)
+                {
+                    ulong v = inULong[i];
+                    s0 = unchecked(s0 + v);
+                    if (v < s1) s1 = v;
+                    if (v > s2) s2 = v;
+                    s3 &= v;
+                    s4 |= v;
+                    s5 ^= v;
+                    s7 ^= v;
+                }
+
+                if (actualState[0] != s0 || actualState[1] != s1 || actualState[2] != s2 ||
+                    actualState[3] != s3 || actualState[4] != s4 || actualState[5] != s5 ||
+                    actualState[6] != 0x01020304_05060708UL || actualState[7] != s7)
+                {
+                    return PropertyResult.Fail("Deterministic state mismatch in IntegerArbitraryAtomicsUInt64.");
+                }
+
+                return CheckExchangeAndCas<ulong>(initial, actual, rows, "inULong", "oldExchAndCasULong", "stateULong", 8, 0xDEADBEEF_CAFEBABEUL, 0x01020304_05060708UL);
+            },
+        };
+
+    private static readonly DifferentialCase s_integerSharedMemoryTwoStageAtomicsInt32 =
+        new($"{nameof(AtomicsDifferentialKernels)}.{nameof(AtomicsDifferentialKernels.IntegerSharedMemoryTwoStageAtomicsInt32Kernel)}")
         {
             Shapes =
             [
@@ -344,14 +353,12 @@ public class AtomicsDifferentialTests
             ],
             Inputs = static (rng, s) => new DiffBuffers()
                 .In("input", DiffValues.Int32(rng, s.ThreadCount), OutputPolicy.Exact, readOnly: true)
-                .Out<int>("threadOutput", s.ThreadCount, AtomicsDifferentialKernels.SharedTwoStageThreadColumns, OutputPolicy.Exact)
-                .In("globalSummary", [0, int.MaxValue, 0, 0, 0, 0], OutputPolicy.Exact)
-                .In("globalMaxU", [0u], OutputPolicy.Exact),
-            Launch = static (b, s) => AtomicsDifferentialKernels.LaunchIntegerSharedMemoryTwoStageAtomicsKernel(
+                .Out<int>("threadOutput", s.ThreadCount, AtomicsDifferentialKernels.SharedTwoStageThreadInt32Columns, OutputPolicy.Exact)
+                .In("globalSummary", [0, int.MaxValue, 0, 0], OutputPolicy.Exact),
+            Launch = static (b, s) => AtomicsDifferentialKernels.LaunchIntegerSharedMemoryTwoStageAtomicsInt32Kernel(
                 b.Get<int>("input"),
                 b.Get<int>("threadOutput"),
                 b.Get<int>("globalSummary"),
-                b.Get<uint>("globalMaxU"),
                 dynSize: 8,
                 gridDimX: s.GridX,
                 blockDimX: s.BlockX,
@@ -362,19 +369,15 @@ public class AtomicsDifferentialTests
                 var input = b.Get<int>("input");
                 var threadOutput = b.Get<int>("threadOutput");
                 var globalSummary = b.Get<int>("globalSummary");
-                var globalMaxU = b.Get<uint>("globalMaxU");
                 int blockSize = (int)s.BlockX;
                 int totalThreads = s.ThreadCount;
 
                 Span<int> sAdd = stackalloc int[8];
                 Span<int> sSub = stackalloc int[8];
                 Span<int> sMin = stackalloc int[8];
-                Span<uint> sMaxU = stackalloc uint[8];
                 Span<int> sAnd = stackalloc int[8];
-                Span<uint> sOrU = stackalloc uint[8];
                 Span<int> sXor = stackalloc int[8];
                 Span<int> sCas = stackalloc int[4];
-                Span<ulong> sU64 = stackalloc ulong[4];
                 Span<int> sDyn = stackalloc int[8];
 
                 for (int blockStart = 0; blockStart < totalThreads; blockStart += blockSize)
@@ -384,9 +387,7 @@ public class AtomicsDifferentialTests
                         sAdd[i] = 100;
                         sSub[i] = 1000;
                         sMin[i] = int.MaxValue;
-                        sMaxU[i] = 0u;
                         sAnd[i] = -1;
-                        sOrU[i] = 0u;
                         sXor[i] = 0;
                         sDyn[i] = 50;
                     }
@@ -394,7 +395,6 @@ public class AtomicsDifferentialTests
                     for (int i = 0; i < 4; i++)
                     {
                         sCas[i] = -1;
-                        sU64[i] = 0UL;
                     }
 
                     for (int localTid = 0; localTid < blockSize; localTid++)
@@ -402,8 +402,6 @@ public class AtomicsDifferentialTests
                         int gid = blockStart + localTid;
                         int bucket = localTid & 7;
                         int v = (input[gid] & 0x7FFF) - 0x3FFF;
-                        uint vu = (uint)(input[gid] & 0xFFFF);
-                        ulong vu64 = ((ulong)vu << 16) ^ (ulong)(uint)localTid;
 
                         sAdd[bucket] += v;
                         sSub[bucket] -= v;
@@ -412,16 +410,9 @@ public class AtomicsDifferentialTests
                             sMin[bucket] = v;
                         }
 
-                        if (vu > sMaxU[bucket])
-                        {
-                            sMaxU[bucket] = vu;
-                        }
-
                         sAnd[bucket] &= (v | 0x101);
-                        sOrU[bucket] |= vu;
                         sXor[bucket] ^= v;
                         sCas[localTid & 3] = 777;
-                        sU64[localTid & 3] += vu64;
                         sDyn[bucket] += v + localTid;
                     }
 
@@ -429,21 +420,18 @@ public class AtomicsDifferentialTests
                     {
                         int gid = blockStart + localTid;
                         int bucket = localTid & 7;
-                        int o = gid * 9;
+                        int o = gid * 7;
                         threadOutput[o + 0] = sAdd[bucket];
                         threadOutput[o + 1] = sSub[bucket];
                         threadOutput[o + 2] = sMin[bucket];
-                        threadOutput[o + 3] = (int)sMaxU[bucket];
-                        threadOutput[o + 4] = sAnd[bucket];
-                        threadOutput[o + 5] = (int)sOrU[bucket];
-                        threadOutput[o + 6] = sXor[bucket];
-                        threadOutput[o + 7] = sCas[localTid & 3];
-                        threadOutput[o + 8] = sDyn[bucket];
+                        threadOutput[o + 3] = sAnd[bucket];
+                        threadOutput[o + 4] = sXor[bucket];
+                        threadOutput[o + 5] = sCas[localTid & 3];
+                        threadOutput[o + 6] = sDyn[bucket];
                     }
 
                     int blockAddTotal = 0;
                     int blockMin = int.MaxValue;
-                    uint blockMaxU = 0u;
                     int blockXor = 0;
                     int blockDynTotal = 0;
                     for (int i = 0; i < 8; i++)
@@ -454,16 +442,9 @@ public class AtomicsDifferentialTests
                             blockMin = sMin[i];
                         }
 
-                        if (sMaxU[i] > blockMaxU)
-                        {
-                            blockMaxU = sMaxU[i];
-                        }
-
                         blockXor ^= sXor[i];
                         blockDynTotal += sDyn[i];
                     }
-
-                    ulong blockU64Xor = sU64[0] ^ sU64[1] ^ sU64[2] ^ sU64[3];
 
                     globalSummary[0] += blockAddTotal;
                     if (blockMin < globalSummary[1])
@@ -471,20 +452,167 @@ public class AtomicsDifferentialTests
                         globalSummary[1] = blockMin;
                     }
 
-                    if (blockMaxU > globalMaxU[0])
-                    {
-                        globalMaxU[0] = blockMaxU;
-                    }
-
-                    globalSummary[3] ^= blockXor;
-                    globalSummary[4] += blockDynTotal;
-                    globalSummary[5] ^= (int)blockU64Xor ^ (int)(blockU64Xor >> 32);
+                    globalSummary[2] ^= blockXor;
+                    globalSummary[3] += blockDynTotal;
                 }
             },
         };
 
-    private static readonly DifferentialCase s_interlockedAllOverloads =
-        new($"{nameof(AtomicsDifferentialKernels)}.{nameof(AtomicsDifferentialKernels.InterlockedAllOverloadsKernel)}")
+    private static readonly DifferentialCase s_integerSharedMemoryTwoStageAtomicsUInt32 =
+        new($"{nameof(AtomicsDifferentialKernels)}.{nameof(AtomicsDifferentialKernels.IntegerSharedMemoryTwoStageAtomicsUInt32Kernel)}")
+        {
+            Shapes =
+            [
+                LaunchShape.ForRows(64, blockX: 32),
+                LaunchShape.ForRows(128, blockX: 64),
+            ],
+            Inputs = static (rng, s) =>
+            {
+                int rows = s.ThreadCount;
+                var inUInt = new uint[rows];
+                for (int i = 0; i < rows; i++)
+                {
+                    inUInt[i] = rng.NextUInt32();
+                }
+
+                return new DiffBuffers()
+                    .In("input", inUInt, OutputPolicy.Exact, readOnly: true)
+                    .Out<uint>("threadOutput", rows, AtomicsDifferentialKernels.SharedTwoStageThreadUInt32Columns, OutputPolicy.Exact)
+                    .In("globalSummary", [0u], OutputPolicy.Exact);
+            },
+            Launch = static (b, s) => AtomicsDifferentialKernels.LaunchIntegerSharedMemoryTwoStageAtomicsUInt32Kernel(
+                b.Get<uint>("input"),
+                b.Get<uint>("threadOutput"),
+                b.Get<uint>("globalSummary"),
+                gridDimX: s.GridX,
+                blockDimX: s.BlockX
+            ),
+            Reference = static (b, s) =>
+            {
+                var input = b.Get<uint>("input");
+                var threadOutput = b.Get<uint>("threadOutput");
+                var globalSummary = b.Get<uint>("globalSummary");
+                int blockSize = (int)s.BlockX;
+                int totalThreads = s.ThreadCount;
+
+                Span<uint> sMaxU = stackalloc uint[8];
+                Span<uint> sOrU = stackalloc uint[8];
+
+                for (int blockStart = 0; blockStart < totalThreads; blockStart += blockSize)
+                {
+                    for (int i = 0; i < 8; i++)
+                    {
+                        sMaxU[i] = 0u;
+                        sOrU[i] = 0u;
+                    }
+
+                    for (int localTid = 0; localTid < blockSize; localTid++)
+                    {
+                        int gid = blockStart + localTid;
+                        int bucket = localTid & 7;
+                        uint vu = (uint)(input[gid] & 0xFFFF);
+
+                        if (vu > sMaxU[bucket])
+                        {
+                            sMaxU[bucket] = vu;
+                        }
+
+                        sOrU[bucket] |= vu;
+                    }
+
+                    for (int localTid = 0; localTid < blockSize; localTid++)
+                    {
+                        int gid = blockStart + localTid;
+                        int bucket = localTid & 7;
+                        int o = gid * 2;
+                        threadOutput[o + 0] = sMaxU[bucket];
+                        threadOutput[o + 1] = sOrU[bucket];
+                    }
+
+                    uint blockMaxU = 0u;
+                    for (int i = 0; i < 8; i++)
+                    {
+                        if (sMaxU[i] > blockMaxU)
+                        {
+                            blockMaxU = sMaxU[i];
+                        }
+                    }
+
+                    if (blockMaxU > globalSummary[0])
+                    {
+                        globalSummary[0] = blockMaxU;
+                    }
+                }
+            },
+        };
+
+    private static readonly DifferentialCase s_integerSharedMemoryTwoStageAtomicsUInt64 =
+        new($"{nameof(AtomicsDifferentialKernels)}.{nameof(AtomicsDifferentialKernels.IntegerSharedMemoryTwoStageAtomicsUInt64Kernel)}")
+        {
+            Shapes =
+            [
+                LaunchShape.ForRows(64, blockX: 32),
+                LaunchShape.ForRows(128, blockX: 64),
+            ],
+            Inputs = static (rng, s) =>
+            {
+                int rows = s.ThreadCount;
+                var inULong = new ulong[rows];
+                for (int i = 0; i < rows; i++)
+                {
+                    inULong[i] = ((ulong)rng.NextUInt32() << 32) | rng.NextUInt32();
+                }
+
+                return new DiffBuffers()
+                    .In("input", inULong, OutputPolicy.Exact, readOnly: true)
+                    .Out<ulong>("threadOutput", rows, AtomicsDifferentialKernels.SharedTwoStageThreadUInt64Columns, OutputPolicy.Exact)
+                    .In("globalSummary", [0UL], OutputPolicy.Exact);
+            },
+            Launch = static (b, s) => AtomicsDifferentialKernels.LaunchIntegerSharedMemoryTwoStageAtomicsUInt64Kernel(
+                b.Get<ulong>("input"),
+                b.Get<ulong>("threadOutput"),
+                b.Get<ulong>("globalSummary"),
+                gridDimX: s.GridX,
+                blockDimX: s.BlockX
+            ),
+            Reference = static (b, s) =>
+            {
+                var input = b.Get<ulong>("input");
+                var threadOutput = b.Get<ulong>("threadOutput");
+                var globalSummary = b.Get<ulong>("globalSummary");
+                int blockSize = (int)s.BlockX;
+                int totalThreads = s.ThreadCount;
+
+                Span<ulong> sU64 = stackalloc ulong[4];
+
+                for (int blockStart = 0; blockStart < totalThreads; blockStart += blockSize)
+                {
+                    for (int i = 0; i < 4; i++)
+                    {
+                        sU64[i] = 0UL;
+                    }
+
+                    for (int localTid = 0; localTid < blockSize; localTid++)
+                    {
+                        int gid = blockStart + localTid;
+                        ulong vu64 = input[gid];
+                        sU64[localTid & 3] += vu64;
+                    }
+
+                    for (int localTid = 0; localTid < blockSize; localTid++)
+                    {
+                        int gid = blockStart + localTid;
+                        threadOutput[gid] = sU64[localTid & 3];
+                    }
+
+                    ulong blockU64Xor = sU64[0] ^ sU64[1] ^ sU64[2] ^ sU64[3];
+                    globalSummary[0] ^= blockU64Xor;
+                }
+            },
+        };
+
+    private static readonly DifferentialCase s_interlockedInt32Overloads =
+        new($"{nameof(AtomicsDifferentialKernels)}.{nameof(AtomicsDifferentialKernels.InterlockedInt32OverloadsKernel)}")
         {
             Shapes =
             [
@@ -495,65 +623,34 @@ public class AtomicsDifferentialTests
                 int rows = s.ThreadCount;
                 var inInt = DiffValues.Int32(rng, rows);
                 var uncontendedInt = new int[rows * 3];
-                var uncontendedUInt = new uint[rows * 2];
-                var uncontendedLong = new long[rows * 3];
-                var uncontendedULong = new ulong[rows * 2];
 
                 for (int i = 0; i < rows; i++)
                 {
                     uncontendedInt[i * 3 + 0] = 100 + i;
                     uncontendedInt[i * 3 + 1] = 200 + i;
                     uncontendedInt[i * 3 + 2] = 300 + i;
-
-                    uncontendedUInt[i * 2 + 0] = (uint)(400 + i);
-                    uncontendedUInt[i * 2 + 1] = (uint)(500 + i);
-
-                    uncontendedLong[i * 3 + 0] = 1000L + i;
-                    uncontendedLong[i * 3 + 1] = 2000L + i;
-                    uncontendedLong[i * 3 + 2] = 3000L + i;
-
-                    uncontendedULong[i * 2 + 0] = (ulong)(4000 + i);
-                    uncontendedULong[i * 2 + 1] = (ulong)(5000 + i);
                 }
 
                 return new DiffBuffers()
-                    .In("inInt", inInt, OutputPolicy.Exact, readOnly: true)
-                    .In("uncontendedIntSlots", uncontendedInt, OutputPolicy.Exact)
-                    .In("uncontendedUIntSlots", uncontendedUInt, OutputPolicy.Exact)
-                    .In("uncontendedLongSlots", uncontendedLong, OutputPolicy.Exact)
-                    .In("uncontendedULongSlots", uncontendedULong, OutputPolicy.Exact)
-                    .Out<int>("uncontendedReturnsOut", rows, AtomicsDifferentialKernels.InterlockedUncontendedColumns, OutputPolicy.Exact)
-                    .In("contendedIntState", [50, -111111, 0], OutputPolicy.Exact)
-                    .In("contendedUIntState", [0x11223344u], OutputPolicy.Exact)
-                    .In("contendedLongState", [500L, -1234567890L], OutputPolicy.Exact)
-                    .In("contendedULongState", [0x0123456789ABCDEFUL], OutputPolicy.Exact);
+                    .In("input", inInt, OutputPolicy.Exact, readOnly: true)
+                    .In("uncontendedSlots", uncontendedInt, OutputPolicy.Exact)
+                    .Out<int>("returnsOut", rows, AtomicsDifferentialKernels.InterlockedInt32Columns, OutputPolicy.Exact)
+                    .In("contendedState", [50, -111111, 0], OutputPolicy.Exact);
             },
-            Launch = static (b, s) => AtomicsDifferentialKernels.LaunchInterlockedAllOverloadsKernel(
-                b.Get<int>("inInt"),
-                b.Get<int>("uncontendedIntSlots"),
-                b.Get<uint>("uncontendedUIntSlots"),
-                b.Get<long>("uncontendedLongSlots"),
-                b.Get<ulong>("uncontendedULongSlots"),
-                b.Get<int>("uncontendedReturnsOut"),
-                b.Get<int>("contendedIntState"),
-                b.Get<uint>("contendedUIntState"),
-                b.Get<long>("contendedLongState"),
-                b.Get<ulong>("contendedULongState"),
+            Launch = static (b, s) => AtomicsDifferentialKernels.LaunchInterlockedInt32OverloadsKernel(
+                b.Get<int>("input"),
+                b.Get<int>("uncontendedSlots"),
+                b.Get<int>("returnsOut"),
+                b.Get<int>("contendedState"),
                 gridDimX: s.GridX,
                 blockDimX: s.BlockX
             ),
             Reference = static (b, s) =>
             {
-                var inInt = b.Get<int>("inInt");
-                var uncontendedInt = b.Get<int>("uncontendedIntSlots");
-                var uncontendedUInt = b.Get<uint>("uncontendedUIntSlots");
-                var uncontendedLong = b.Get<long>("uncontendedLongSlots");
-                var uncontendedULong = b.Get<ulong>("uncontendedULongSlots");
-                var uncontendedReturns = b.Get<int>("uncontendedReturnsOut");
-                var contendedInt = b.Get<int>("contendedIntState");
-                var contendedUInt = b.Get<uint>("contendedUIntState");
-                var contendedLong = b.Get<long>("contendedLongState");
-                var contendedULong = b.Get<ulong>("contendedULongState");
+                var inInt = b.Get<int>("input");
+                var uncontendedInt = b.Get<int>("uncontendedSlots");
+                var returnsOut = b.Get<int>("returnsOut");
+                var contendedInt = b.Get<int>("contendedState");
 
                 int rows = s.ThreadCount;
                 int blockSize = (int)s.BlockX;
@@ -562,9 +659,6 @@ public class AtomicsDifferentialTests
                 for (int tid = 0; tid < rows; tid++)
                 {
                     int v = (inInt[tid] & 0x3FFF) - 0x1FFF;
-                    uint vu = (uint)(v & 0xFFFF) + 1u;
-                    long vl = (long)v * 17L;
-                    ulong vul = (ulong)vu * 33UL;
 
                     uncontendedInt[tid * 3 + 0] += v;
                     int retAddI32 = uncontendedInt[tid * 3 + 0];
@@ -576,11 +670,130 @@ public class AtomicsDifferentialTests
                     uncontendedInt[tid * 3 + 2] = v + 900;
                     int retCasMissI32 = uncontendedInt[tid * 3 + 2];
 
+                    contendedInt[0] += v;
+                    contendedInt[2] += v;
+
+                    int o = tid * 4;
+                    returnsOut[o + 0] = retAddI32;
+                    returnsOut[o + 1] = retExchI32;
+                    returnsOut[o + 2] = retCasHitI32;
+                    returnsOut[o + 3] = retCasMissI32;
+                }
+
+                contendedInt[1] = 424242;
+                contendedInt[2] += blocks * 4 * 1000;
+            },
+        };
+
+    private static readonly DifferentialCase s_interlockedUInt32Overloads =
+        new($"{nameof(AtomicsDifferentialKernels)}.{nameof(AtomicsDifferentialKernels.InterlockedUInt32OverloadsKernel)}")
+        {
+            Shapes =
+            [
+                LaunchShape.ForRows(64, blockX: 32),
+            ],
+            Inputs = static (rng, s) =>
+            {
+                int rows = s.ThreadCount;
+                var inUInt = new uint[rows];
+                var uncontendedUInt = new uint[rows * 2];
+
+                for (int i = 0; i < rows; i++)
+                {
+                    inUInt[i] = (uint)(rng.NextUInt32() & 0xFFFF) + 1u;
+                    uncontendedUInt[i * 2 + 0] = (uint)(400 + i);
+                    uncontendedUInt[i * 2 + 1] = (uint)(500 + i);
+                }
+
+                return new DiffBuffers()
+                    .In("input", inUInt, OutputPolicy.Exact, readOnly: true)
+                    .In("uncontendedSlots", uncontendedUInt, OutputPolicy.Exact)
+                    .Out<uint>("returnsOut", rows, AtomicsDifferentialKernels.InterlockedUInt32Columns, OutputPolicy.Exact)
+                    .In("contendedState", [0x11223344u], OutputPolicy.Exact);
+            },
+            Launch = static (b, s) => AtomicsDifferentialKernels.LaunchInterlockedUInt32OverloadsKernel(
+                b.Get<uint>("input"),
+                b.Get<uint>("uncontendedSlots"),
+                b.Get<uint>("returnsOut"),
+                b.Get<uint>("contendedState"),
+                gridDimX: s.GridX,
+                blockDimX: s.BlockX
+            ),
+            Reference = static (b, s) =>
+            {
+                var inUInt = b.Get<uint>("input");
+                var uncontendedUInt = b.Get<uint>("uncontendedSlots");
+                var returnsOut = b.Get<uint>("returnsOut");
+                var contendedUInt = b.Get<uint>("contendedState");
+
+                int rows = s.ThreadCount;
+
+                for (int tid = 0; tid < rows; tid++)
+                {
+                    uint vu = inUInt[tid];
+
                     uint retExchU32 = uncontendedUInt[tid * 2 + 0];
                     uncontendedUInt[tid * 2 + 0] = vu + 100u;
 
                     uint retCasHitU32 = uncontendedUInt[tid * 2 + 1];
                     uncontendedUInt[tid * 2 + 1] = vu + 200u;
+
+                    int o = tid * 2;
+                    returnsOut[o + 0] = retExchU32;
+                    returnsOut[o + 1] = retCasHitU32;
+                }
+
+                contendedUInt[0] = 0x87654321u;
+            },
+        };
+
+    private static readonly DifferentialCase s_interlockedInt64Overloads =
+        new($"{nameof(AtomicsDifferentialKernels)}.{nameof(AtomicsDifferentialKernels.InterlockedInt64OverloadsKernel)}")
+        {
+            Shapes =
+            [
+                LaunchShape.ForRows(64, blockX: 32),
+            ],
+            Inputs = static (rng, s) =>
+            {
+                int rows = s.ThreadCount;
+                var inLong = new long[rows];
+                var uncontendedLong = new long[rows * 3];
+
+                for (int i = 0; i < rows; i++)
+                {
+                    inLong[i] = ((long)rng.NextUInt32() << 16) ^ i;
+                    uncontendedLong[i * 3 + 0] = 1000L + i;
+                    uncontendedLong[i * 3 + 1] = 2000L + i;
+                    uncontendedLong[i * 3 + 2] = 3000L + i;
+                }
+
+                return new DiffBuffers()
+                    .In("input", inLong, OutputPolicy.Exact, readOnly: true)
+                    .In("uncontendedSlots", uncontendedLong, OutputPolicy.Exact)
+                    .Out<long>("returnsOut", rows, AtomicsDifferentialKernels.InterlockedInt64Columns, OutputPolicy.Exact)
+                    .In("contendedState", [500L, -1234567890L], OutputPolicy.Exact);
+            },
+            Launch = static (b, s) => AtomicsDifferentialKernels.LaunchInterlockedInt64OverloadsKernel(
+                b.Get<long>("input"),
+                b.Get<long>("uncontendedSlots"),
+                b.Get<long>("returnsOut"),
+                b.Get<long>("contendedState"),
+                gridDimX: s.GridX,
+                blockDimX: s.BlockX
+            ),
+            Reference = static (b, s) =>
+            {
+                var inLong = b.Get<long>("input");
+                var uncontendedLong = b.Get<long>("uncontendedSlots");
+                var returnsOut = b.Get<long>("returnsOut");
+                var contendedLong = b.Get<long>("contendedState");
+
+                int rows = s.ThreadCount;
+
+                for (int tid = 0; tid < rows; tid++)
+                {
+                    long vl = inLong[tid];
 
                     uncontendedLong[tid * 3 + 0] += vl;
                     long retAddI64 = uncontendedLong[tid * 3 + 0];
@@ -591,34 +804,76 @@ public class AtomicsDifferentialTests
                     long retCasHitI64 = uncontendedLong[tid * 3 + 2];
                     uncontendedLong[tid * 3 + 2] = vl + 2000L;
 
+                    contendedLong[0] += vl;
+
+                    int o = tid * 3;
+                    returnsOut[o + 0] = retAddI64;
+                    returnsOut[o + 1] = retExchI64;
+                    returnsOut[o + 2] = retCasHitI64;
+                }
+
+                contendedLong[1] = -9876543210L;
+            },
+        };
+
+    private static readonly DifferentialCase s_interlockedUInt64Overloads =
+        new($"{nameof(AtomicsDifferentialKernels)}.{nameof(AtomicsDifferentialKernels.InterlockedUInt64OverloadsKernel)}")
+        {
+            Shapes =
+            [
+                LaunchShape.ForRows(64, blockX: 32),
+            ],
+            Inputs = static (rng, s) =>
+            {
+                int rows = s.ThreadCount;
+                var inULong = new ulong[rows];
+                var uncontendedULong = new ulong[rows * 2];
+
+                for (int i = 0; i < rows; i++)
+                {
+                    inULong[i] = ((ulong)rng.NextUInt32() << 32) | rng.NextUInt32();
+                    uncontendedULong[i * 2 + 0] = (ulong)(4000 + i);
+                    uncontendedULong[i * 2 + 1] = (ulong)(5000 + i);
+                }
+
+                return new DiffBuffers()
+                    .In("input", inULong, OutputPolicy.Exact, readOnly: true)
+                    .In("uncontendedSlots", uncontendedULong, OutputPolicy.Exact)
+                    .Out<ulong>("returnsOut", rows, AtomicsDifferentialKernels.InterlockedUInt64Columns, OutputPolicy.Exact)
+                    .In("contendedState", [0x0123456789ABCDEFUL], OutputPolicy.Exact);
+            },
+            Launch = static (b, s) => AtomicsDifferentialKernels.LaunchInterlockedUInt64OverloadsKernel(
+                b.Get<ulong>("input"),
+                b.Get<ulong>("uncontendedSlots"),
+                b.Get<ulong>("returnsOut"),
+                b.Get<ulong>("contendedState"),
+                gridDimX: s.GridX,
+                blockDimX: s.BlockX
+            ),
+            Reference = static (b, s) =>
+            {
+                var inULong = b.Get<ulong>("input");
+                var uncontendedULong = b.Get<ulong>("uncontendedSlots");
+                var returnsOut = b.Get<ulong>("returnsOut");
+                var contendedULong = b.Get<ulong>("contendedState");
+
+                int rows = s.ThreadCount;
+
+                for (int tid = 0; tid < rows; tid++)
+                {
+                    ulong vul = inULong[tid];
+
                     ulong retExchU64 = uncontendedULong[tid * 2 + 0];
                     uncontendedULong[tid * 2 + 0] = vul + 300UL;
 
                     ulong retCasHitU64 = uncontendedULong[tid * 2 + 1];
                     uncontendedULong[tid * 2 + 1] = vul + 400UL;
 
-                    contendedInt[0] += v;
-                    contendedInt[2] += v;
-                    contendedLong[0] += vl;
-
-                    int o = tid * 11;
-                    uncontendedReturns[o + 0] = retAddI32;
-                    uncontendedReturns[o + 1] = retExchI32;
-                    uncontendedReturns[o + 2] = retCasHitI32;
-                    uncontendedReturns[o + 3] = retCasMissI32;
-                    uncontendedReturns[o + 4] = (int)retExchU32;
-                    uncontendedReturns[o + 5] = (int)retCasHitU32;
-                    uncontendedReturns[o + 6] = (int)retAddI64;
-                    uncontendedReturns[o + 7] = (int)retExchI64;
-                    uncontendedReturns[o + 8] = (int)retCasHitI64;
-                    uncontendedReturns[o + 9] = (int)retExchU64;
-                    uncontendedReturns[o + 10] = (int)retCasHitU64;
+                    int o = tid * 2;
+                    returnsOut[o + 0] = retExchU64;
+                    returnsOut[o + 1] = retCasHitU64;
                 }
 
-                contendedInt[1] = 424242;
-                contendedInt[2] += blocks * 4 * 1000;
-                contendedUInt[0] = 0x87654321u;
-                contendedLong[1] = -9876543210L;
                 contendedULong[0] = 0xFEDCBA9876543210UL;
             },
         };
@@ -1015,22 +1270,71 @@ public class AtomicsDifferentialTests
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_IntegerArbitraryAtomics_MatchesTheReferenceAndConservationProperties() =>
-        DifferentialRunner.Run(s_integerArbitraryAtomics);
+    public void Test_IntegerArbitraryAtomicsInt32_MatchesTheReferenceAndConservationProperties() =>
+        DifferentialRunner.Run(s_integerArbitraryAtomicsInt32);
+
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Differential)]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_IntegerArbitraryAtomicsUInt32_MatchesTheReferenceAndConservationProperties() =>
+        DifferentialRunner.Run(s_integerArbitraryAtomicsUInt32);
+
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Differential)]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_IntegerArbitraryAtomicsUInt64_MatchesTheReferenceAndConservationProperties() =>
+        DifferentialRunner.Run(s_integerArbitraryAtomicsUInt64);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_IntegerSharedMemoryTwoStageAtomics_MatchesTheReferenceOnEveryPath() =>
-        DifferentialRunner.Run(s_integerSharedMemoryTwoStageAtomics);
+    public void Test_IntegerSharedMemoryTwoStageAtomicsInt32_MatchesTheReferenceOnEveryPath() =>
+        DifferentialRunner.Run(s_integerSharedMemoryTwoStageAtomicsInt32);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_InterlockedAllOverloads_MatchesTheReferenceOnEveryPath() =>
-        DifferentialRunner.Run(s_interlockedAllOverloads);
+    public void Test_IntegerSharedMemoryTwoStageAtomicsUInt32_MatchesTheReferenceOnEveryPath() =>
+        DifferentialRunner.Run(s_integerSharedMemoryTwoStageAtomicsUInt32);
+
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Differential)]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_IntegerSharedMemoryTwoStageAtomicsUInt64_MatchesTheReferenceOnEveryPath() =>
+        DifferentialRunner.Run(s_integerSharedMemoryTwoStageAtomicsUInt64);
+
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Differential)]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_InterlockedInt32Overloads_MatchesTheReferenceOnEveryPath() =>
+        DifferentialRunner.Run(s_interlockedInt32Overloads);
+
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Differential)]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_InterlockedUInt32Overloads_MatchesTheReferenceOnEveryPath() =>
+        DifferentialRunner.Run(s_interlockedUInt32Overloads);
+
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Differential)]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_InterlockedInt64Overloads_MatchesTheReferenceOnEveryPath() =>
+        DifferentialRunner.Run(s_interlockedInt64Overloads);
+
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Differential)]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_InterlockedUInt64Overloads_MatchesTheReferenceOnEveryPath() =>
+        DifferentialRunner.Run(s_interlockedUInt64Overloads);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]

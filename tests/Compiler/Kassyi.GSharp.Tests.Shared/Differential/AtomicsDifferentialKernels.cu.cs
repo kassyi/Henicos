@@ -17,11 +17,11 @@ public struct DiffAtomicPacket
 
 /// <summary>
 /// Differential test kernels for <see cref="Gpu"/> atomics, <see cref="Interlocked"/> intrinsics, shared-memory atomics,
-/// struct-field atomics, CAS spinlocks, and cooperative lock-free data structures (Lane D4 Stages 1–2).
+/// struct-field atomics, CAS spinlocks, and cooperative lock-free data structures.
 /// </summary>
 public static partial class AtomicsDifferentialKernels
 {
-    /// <summary>Per-thread old-value multiset columns for <see cref="IntegerSameStepAtomicsKernel"/> (F1a).</summary>
+    /// <summary>Per-thread old-value multiset columns for <see cref="IntegerSameStepAtomicsKernel"/>.</summary>
     public static readonly string[] SameStepOldColumns =
     [
         "old_add_i32",
@@ -32,7 +32,7 @@ public static partial class AtomicsDifferentialKernels
         "old_dec_u32_mod8",
     ];
 
-    /// <summary>Final global accumulator columns for <see cref="IntegerSameStepAtomicsKernel"/> (F1a).</summary>
+    /// <summary>Final global accumulator columns for <see cref="IntegerSameStepAtomicsKernel"/>.</summary>
     public static readonly string[] SameStepFinalIntColumns =
     [
         "final_add_i32",
@@ -44,7 +44,7 @@ public static partial class AtomicsDifferentialKernels
         "final_bucket3_i32",
     ];
 
-    /// <summary>Final global unsigned accumulator columns for <see cref="IntegerSameStepAtomicsKernel"/> (F1a).</summary>
+    /// <summary>Final global unsigned accumulator columns for <see cref="IntegerSameStepAtomicsKernel"/>.</summary>
     public static readonly string[] SameStepFinalUIntColumns =
     [
         "final_add_u32",
@@ -58,15 +58,15 @@ public static partial class AtomicsDifferentialKernels
         "final_bucket3_u32",
     ];
 
-    /// <summary>Final global 64-bit unsigned accumulator columns for <see cref="IntegerSameStepAtomicsKernel"/> (F1a).</summary>
+    /// <summary>Final global 64-bit unsigned accumulator columns for <see cref="IntegerSameStepAtomicsKernel"/>.</summary>
     public static readonly string[] SameStepFinalULongColumns =
     [
         "final_add_u64",
         "final_red_u64",
     ];
 
-    /// <summary>Final global 32-bit signed state columns for <see cref="IntegerArbitraryAtomicsKernel"/> (F1b).</summary>
-    public static readonly string[] ArbitraryFinalIntColumns =
+    /// <summary>Final global 32-bit signed state columns for <see cref="IntegerArbitraryAtomicsInt32Kernel"/>.</summary>
+    public static readonly string[] ArbitraryFinalInt32Columns =
     [
         "add_i32",
         "sub_i32",
@@ -75,10 +75,11 @@ public static partial class AtomicsDifferentialKernels
         "xor_i32",
         "cas_winner_i32",
         "helper_add_i32",
+        "exch_slot_i32",
     ];
 
-    /// <summary>Final global 32-bit unsigned state columns for <see cref="IntegerArbitraryAtomicsKernel"/> (F1b).</summary>
-    public static readonly string[] ArbitraryFinalUIntColumns =
+    /// <summary>Final global 32-bit unsigned state columns for <see cref="IntegerArbitraryAtomicsUInt32Kernel"/>.</summary>
+    public static readonly string[] ArbitraryFinalUInt32Columns =
     [
         "add_u32",
         "sub_u32",
@@ -89,10 +90,11 @@ public static partial class AtomicsDifferentialKernels
         "xor_u32",
         "cas_winner_u32",
         "helper_min_u32",
+        "exch_slot_u32",
     ];
 
-    /// <summary>Final global 64-bit unsigned state columns for <see cref="IntegerArbitraryAtomicsKernel"/> (F1b).</summary>
-    public static readonly string[] ArbitraryFinalULongColumns =
+    /// <summary>Final global 64-bit unsigned state columns for <see cref="IntegerArbitraryAtomicsUInt64Kernel"/>.</summary>
+    public static readonly string[] ArbitraryFinalUInt64Columns =
     [
         "add_u64",
         "min_u64",
@@ -102,50 +104,87 @@ public static partial class AtomicsDifferentialKernels
         "xor_u64",
         "cas_winner_u64",
         "helper_xor_u64",
+        "exch_slot_u64",
     ];
 
-    /// <summary>Per-thread output columns for <see cref="IntegerSharedMemoryTwoStageAtomicsKernel"/> (F1c).</summary>
-    public static readonly string[] SharedTwoStageThreadColumns =
+    /// <summary>Per-thread output columns for <see cref="IntegerSharedMemoryTwoStageAtomicsInt32Kernel"/>.</summary>
+    public static readonly string[] SharedTwoStageThreadInt32Columns =
     [
         "s_add_bucket",
         "s_sub_bucket",
         "s_min_bucket",
-        "s_max_bucket_u32",
         "s_and_bucket",
-        "s_or_bucket_u32",
         "s_xor_bucket",
         "s_cas_slot",
         "dyn_add_bucket",
     ];
 
-    /// <summary>Global cross-block summary columns for <see cref="IntegerSharedMemoryTwoStageAtomicsKernel"/> (F1c).</summary>
-    public static readonly string[] SharedTwoStageGlobalColumns =
+    /// <summary>Global cross-block summary columns for <see cref="IntegerSharedMemoryTwoStageAtomicsInt32Kernel"/>.</summary>
+    public static readonly string[] SharedTwoStageGlobalInt32Columns =
     [
         "global_sum_i32",
         "global_min_i32",
-        "global_max_u32_as_i32",
         "global_xor_i32",
         "global_dyn_sum_i32",
-        "global_u64_low_xor",
     ];
 
-    /// <summary>Per-thread uncontended return-value columns for <see cref="InterlockedAllOverloadsKernel"/> (F2a).</summary>
-    public static readonly string[] InterlockedUncontendedColumns =
+    /// <summary>Per-thread output columns for <see cref="IntegerSharedMemoryTwoStageAtomicsUInt32Kernel"/>.</summary>
+    public static readonly string[] SharedTwoStageThreadUInt32Columns =
+    [
+        "s_max_bucket_u32",
+        "s_or_bucket_u32",
+    ];
+
+    /// <summary>Global cross-block summary columns for <see cref="IntegerSharedMemoryTwoStageAtomicsUInt32Kernel"/>.</summary>
+    public static readonly string[] SharedTwoStageGlobalUInt32Columns =
+    [
+        "global_max_u32",
+    ];
+
+    /// <summary>Per-thread output columns for <see cref="IntegerSharedMemoryTwoStageAtomicsUInt64Kernel"/>.</summary>
+    public static readonly string[] SharedTwoStageThreadUInt64Columns =
+    [
+        "s_u64_slot",
+    ];
+
+    /// <summary>Global cross-block summary columns for <see cref="IntegerSharedMemoryTwoStageAtomicsUInt64Kernel"/>.</summary>
+    public static readonly string[] SharedTwoStageGlobalUInt64Columns =
+    [
+        "global_u64_xor",
+    ];
+
+    /// <summary>Per-thread return-value columns for <see cref="InterlockedInt32OverloadsKernel"/>.</summary>
+    public static readonly string[] InterlockedInt32Columns =
     [
         "ret_add_i32",
         "ret_exch_i32",
         "ret_cas_hit_i32",
         "ret_cas_miss_i32",
-        "ret_exch_u32_bits",
-        "ret_cas_hit_u32_bits",
-        "ret_add_i64_low",
-        "ret_exch_i64_low",
-        "ret_cas_hit_i64_low",
-        "ret_exch_u64_low",
-        "ret_cas_hit_u64_low",
     ];
 
-    /// <summary>Expression-level return-value columns for <see cref="InterlockedReturnExpressionKernel"/> (F2b).</summary>
+    /// <summary>Per-thread return-value columns for <see cref="InterlockedUInt32OverloadsKernel"/>.</summary>
+    public static readonly string[] InterlockedUInt32Columns =
+    [
+        "ret_exch_u32",
+        "ret_cas_hit_u32",
+    ];
+
+    /// <summary>Per-thread return-value columns for <see cref="InterlockedInt64OverloadsKernel"/>.</summary>
+    public static readonly string[] InterlockedInt64Columns =
+    [
+        "ret_add_i64",
+        "ret_exch_i64",
+        "ret_cas_hit_i64",
+    ];
+
+    /// <summary>Per-thread return-value columns for <see cref="InterlockedUInt64OverloadsKernel"/>.</summary>
+    public static readonly string[] InterlockedUInt64Columns =
+    [
+        "ret_exch_u64",
+        "ret_cas_hit_u64",
+    ];
+
+    /// <summary>Expression-level return-value columns for <see cref="InterlockedReturnExpressionKernel"/>.</summary>
     public static readonly string[] InterlockedExpressionColumns =
     [
         "add64_lt_zero",
@@ -155,7 +194,7 @@ public static partial class AtomicsDifferentialKernels
         "cas32_named_args_reversed",
     ];
 
-    /// <summary>Exact float accumulator columns for <see cref="FloatExactPowersOfTwoAtomicKernel"/> (F3a).</summary>
+    /// <summary>Exact float accumulator columns for <see cref="FloatExactPowersOfTwoAtomicKernel"/>.</summary>
     public static readonly string[] FloatExactSummaryColumns =
     [
         "global_add_0p5",
@@ -164,7 +203,7 @@ public static partial class AtomicsDifferentialKernels
         "dyn_smem_to_global",
     ];
 
-    /// <summary>Special-value float atomic columns for <see cref="FloatSpecialValuesContentionKernel"/> (F3c).</summary>
+    /// <summary>Special-value float atomic columns for <see cref="FloatSpecialValuesContentionKernel"/>.</summary>
     public static readonly string[] FloatSpecialColumns =
     [
         "global_subnormal_ftz",
@@ -175,7 +214,7 @@ public static partial class AtomicsDifferentialKernels
         "global_inf_minus_inf_nan",
     ];
 
-    /// <summary>Critical-section state columns for <see cref="BlockLeaderCasSpinlockKernel"/> (F4a).</summary>
+    /// <summary>Critical-section state columns for <see cref="BlockLeaderCasSpinlockKernel"/>.</summary>
     public static readonly string[] SpinlockStateColumns =
     [
         "visited_blocks",
@@ -201,7 +240,7 @@ public static partial class AtomicsDifferentialKernels
         Gpu.AtomicAdd(ref packet.Counter, delta);
 
     // -------------------------------------------------------------------------
-    // F1a: Contended same-step integer atomics (Add, Sub, ReductionAdd, Inc, Dec)
+    // Contended same-step integer atomics (Add, Sub, ReductionAdd, Inc, Dec)
     //      across int, uint, ulong on global scalar slots and 4-way bucket slots.
     //      Old values form a deterministic multiset; final values are exact.
     // -------------------------------------------------------------------------
@@ -242,32 +281,18 @@ public static partial class AtomicsDifferentialKernels
     }
 
     // -------------------------------------------------------------------------
-    // F1b: Contended arbitrary-input integer atomics (Add, Sub, Min, Max, And,
-    //      Or, Xor, Exch, CAS) across int, uint, ulong + [GpuDeviceFunction]
-    //      ref T forwarding + struct field atomics (ref packets[bucket].Counter).
+    // Contended arbitrary-input integer atomics across int, uint, ulong.
     // -------------------------------------------------------------------------
     [GpuKernel]
-    public static void IntegerArbitraryAtomicsKernel(
+    public static void IntegerArbitraryAtomicsInt32Kernel(
         int[] inInt,
-        uint[] inUInt,
-        ulong[] inULong,
         int[] stateInt,
-        uint[] stateUInt,
-        ulong[] stateULong,
-        int[] exchSlotInt,
-        uint[] exchSlotUInt,
-        ulong[] exchSlotULong,
-        int[] oldExchAndCasInt,
-        uint[] oldExchAndCasUInt,
-        ulong[] oldExchAndCasULong,
+        int[] oldValuesInt,
         DiffAtomicPacket[] packets)
     {
         int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
         int bucket = tid & 3;
-
         int vInt = inInt[tid];
-        uint vUInt = inUInt[tid];
-        ulong vULong = inULong[tid];
 
         // 32-bit signed commutative atomics + single-winner CAS + device helper forwarding
         Gpu.AtomicAdd(ref stateInt[0], vInt);
@@ -277,6 +302,24 @@ public static partial class AtomicsDifferentialKernels
         Gpu.AtomicXor(ref stateInt[4], vInt);
         int oldCasInt = Gpu.AtomicCAS(ref stateInt[5], -999999, 100000);
         ForwardAtomicAddInt32(ref stateInt[6], vInt);
+        int oldExchInt = Gpu.AtomicExch(ref stateInt[7], vInt);
+
+        oldValuesInt[tid * 2 + 0] = oldExchInt;
+        oldValuesInt[tid * 2 + 1] = oldCasInt;
+
+        // Struct-field atomics (direct field ref and via [GpuDeviceFunction] ref struct forwarding)
+        ForwardPacketCounterAdd(ref packets[bucket], (vInt & 0xFF) + 1);
+        Gpu.AtomicOr(ref packets[bucket].Flags, 1u << (tid & 31));
+    }
+
+    [GpuKernel]
+    public static void IntegerArbitraryAtomicsUInt32Kernel(
+        uint[] inUInt,
+        uint[] stateUInt,
+        uint[] oldValuesUInt)
+    {
+        int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        uint vUInt = inUInt[tid];
 
         // 32-bit unsigned commutative atomics + single-winner CAS + device helper forwarding
         Gpu.AtomicAdd(ref stateUInt[0], vUInt);
@@ -288,6 +331,20 @@ public static partial class AtomicsDifferentialKernels
         Gpu.AtomicXor(ref stateUInt[6], vUInt);
         uint oldCasUInt = Gpu.AtomicCAS(ref stateUInt[7], 0xCAFEBABEu, 0x12345678u);
         ForwardAtomicMinUInt32(ref stateUInt[8], vUInt);
+        uint oldExchUInt = Gpu.AtomicExch(ref stateUInt[9], vUInt);
+
+        oldValuesUInt[tid * 2 + 0] = oldExchUInt;
+        oldValuesUInt[tid * 2 + 1] = oldCasUInt;
+    }
+
+    [GpuKernel]
+    public static void IntegerArbitraryAtomicsUInt64Kernel(
+        ulong[] inULong,
+        ulong[] stateULong,
+        ulong[] oldValuesULong)
+    {
+        int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        ulong vULong = inULong[tid];
 
         // 64-bit unsigned commutative atomics + single-winner CAS + device helper forwarding
         Gpu.AtomicAdd(ref stateULong[0], vULong);
@@ -298,36 +355,21 @@ public static partial class AtomicsDifferentialKernels
         Gpu.AtomicXor(ref stateULong[5], vULong);
         ulong oldCasULong = Gpu.AtomicCAS(ref stateULong[6], 0xDEADBEEF_CAFEBABEUL, 0x01020304_05060708UL);
         ForwardAtomicXorUInt64(ref stateULong[7], vULong);
+        ulong oldExchULong = Gpu.AtomicExch(ref stateULong[8], vULong);
 
-        // Contended AtomicExch conservation check across int, uint, ulong
-        int oldExchInt = Gpu.AtomicExch(ref exchSlotInt[0], vInt);
-        uint oldExchUInt = Gpu.AtomicExch(ref exchSlotUInt[0], vUInt);
-        ulong oldExchULong = Gpu.AtomicExch(ref exchSlotULong[0], vULong);
-
-        oldExchAndCasInt[tid * 2 + 0] = oldExchInt;
-        oldExchAndCasInt[tid * 2 + 1] = oldCasInt;
-
-        oldExchAndCasUInt[tid * 2 + 0] = oldExchUInt;
-        oldExchAndCasUInt[tid * 2 + 1] = oldCasUInt;
-
-        oldExchAndCasULong[tid * 2 + 0] = oldExchULong;
-        oldExchAndCasULong[tid * 2 + 1] = oldCasULong;
-
-        // Struct-field atomics (direct field ref and via [GpuDeviceFunction] ref struct forwarding)
-        ForwardPacketCounterAdd(ref packets[bucket], (vInt & 0xFF) + 1);
-        Gpu.AtomicOr(ref packets[bucket].Flags, 1u << (tid & 31));
+        oldValuesULong[tid * 2 + 0] = oldExchULong;
+        oldValuesULong[tid * 2 + 1] = oldCasULong;
     }
 
     // -------------------------------------------------------------------------
-    // F1c: SharedMemory<T> (static and dynamic) integer atomics + Gpu.SyncThreads()
+    // SharedMemory<T> (static and dynamic) integer atomics + Gpu.SyncThreads()
     //      + block-leader global atomic aggregation across multiple blocks.
     // -------------------------------------------------------------------------
     [GpuKernel]
-    public static void IntegerSharedMemoryTwoStageAtomicsKernel(
+    public static void IntegerSharedMemoryTwoStageAtomicsInt32Kernel(
         int[] input,
         int[] threadOutput,
         int[] globalSummary,
-        uint[] globalMaxU,
         int dynSize)
     {
         int localTid = ThreadIndex.X;
@@ -337,12 +379,9 @@ public static partial class AtomicsDifferentialKernels
         var sAdd = new SharedMemory<int>(8);
         var sSub = new SharedMemory<int>(8);
         var sMin = new SharedMemory<int>(8);
-        var sMaxU = new SharedMemory<uint>(8);
         var sAnd = new SharedMemory<int>(8);
-        var sOrU = new SharedMemory<uint>(8);
         var sXor = new SharedMemory<int>(8);
         var sCas = new SharedMemory<int>(4);
-        var sU64 = new SharedMemory<ulong>(4);
         var sDyn = new SharedMemory<int>(dynSize);
 
         if (localTid < 8)
@@ -350,9 +389,7 @@ public static partial class AtomicsDifferentialKernels
             sAdd[localTid] = 100;
             sSub[localTid] = 1000;
             sMin[localTid] = int.MaxValue;
-            sMaxU[localTid] = 0u;
             sAnd[localTid] = -1;
-            sOrU[localTid] = 0u;
             sXor[localTid] = 0;
             sDyn[localTid] = 50;
         }
@@ -360,44 +397,35 @@ public static partial class AtomicsDifferentialKernels
         if (localTid < 4)
         {
             sCas[localTid] = -1;
-            sU64[localTid] = 0UL;
         }
 
         Gpu.SyncThreads();
 
         int v = (input[gid] & 0x7FFF) - 0x3FFF;
-        uint vu = (uint)(input[gid] & 0xFFFF);
-        ulong vu64 = ((ulong)vu << 16) ^ (ulong)(uint)localTid;
 
         Gpu.AtomicAdd(ref sAdd[bucket], v);
         Gpu.AtomicSub(ref sSub[bucket], v);
         Gpu.AtomicMin(ref sMin[bucket], v);
-        Gpu.AtomicMax(ref sMaxU[bucket], vu);
         Gpu.AtomicAnd(ref sAnd[bucket], v | 0x101);
-        Gpu.AtomicOr(ref sOrU[bucket], vu);
         Gpu.AtomicXor(ref sXor[bucket], v);
         Gpu.AtomicCAS(ref sCas[localTid & 3], -1, 777);
-        Gpu.AtomicAdd(ref sU64[localTid & 3], vu64);
         Gpu.AtomicAdd(ref sDyn[bucket], v + localTid);
 
         Gpu.SyncThreads();
 
-        int o = gid * 9;
+        int o = gid * 7;
         threadOutput[o + 0] = sAdd[bucket];
         threadOutput[o + 1] = sSub[bucket];
         threadOutput[o + 2] = sMin[bucket];
-        threadOutput[o + 3] = (int)sMaxU[bucket];
-        threadOutput[o + 4] = sAnd[bucket];
-        threadOutput[o + 5] = (int)sOrU[bucket];
-        threadOutput[o + 6] = sXor[bucket];
-        threadOutput[o + 7] = sCas[localTid & 3];
-        threadOutput[o + 8] = sDyn[bucket];
+        threadOutput[o + 3] = sAnd[bucket];
+        threadOutput[o + 4] = sXor[bucket];
+        threadOutput[o + 5] = sCas[localTid & 3];
+        threadOutput[o + 6] = sDyn[bucket];
 
         if (localTid == 0)
         {
             int blockAddTotal = 0;
             int blockMin = int.MaxValue;
-            uint blockMaxU = 0u;
             int blockXor = 0;
             int blockDynTotal = 0;
             for (int i = 0; i < 8; i++)
@@ -408,51 +436,111 @@ public static partial class AtomicsDifferentialKernels
                     blockMin = sMin[i];
                 }
 
-                if (sMaxU[i] > blockMaxU)
-                {
-                    blockMaxU = sMaxU[i];
-                }
-
                 blockXor ^= sXor[i];
                 blockDynTotal += sDyn[i];
             }
 
-            ulong blockU64Xor = sU64[0] ^ sU64[1] ^ sU64[2] ^ sU64[3];
-
             Gpu.AtomicAdd(ref globalSummary[0], blockAddTotal);
             Gpu.AtomicMin(ref globalSummary[1], blockMin);
-            Gpu.AtomicMax(ref globalMaxU[0], blockMaxU);
-            Gpu.AtomicXor(ref globalSummary[3], blockXor);
-            Gpu.AtomicAdd(ref globalSummary[4], blockDynTotal);
-            Gpu.AtomicXor(ref globalSummary[5], (int)blockU64Xor ^ (int)(blockU64Xor >> 32));
+            Gpu.AtomicXor(ref globalSummary[2], blockXor);
+            Gpu.AtomicAdd(ref globalSummary[3], blockDynTotal);
+        }
+    }
+
+    [GpuKernel]
+    public static void IntegerSharedMemoryTwoStageAtomicsUInt32Kernel(
+        uint[] input,
+        uint[] threadOutput,
+        uint[] globalSummary)
+    {
+        int localTid = ThreadIndex.X;
+        int gid = BlockIndex.X * BlockDimension.X + localTid;
+        int bucket = localTid & 7;
+
+        var sMaxU = new SharedMemory<uint>(8);
+        var sOrU = new SharedMemory<uint>(8);
+
+        if (localTid < 8)
+        {
+            sMaxU[localTid] = 0u;
+            sOrU[localTid] = 0u;
+        }
+
+        Gpu.SyncThreads();
+
+        uint vu = (uint)(input[gid] & 0xFFFF);
+
+        Gpu.AtomicMax(ref sMaxU[bucket], vu);
+        Gpu.AtomicOr(ref sOrU[bucket], vu);
+
+        Gpu.SyncThreads();
+
+        int o = gid * 2;
+        threadOutput[o + 0] = sMaxU[bucket];
+        threadOutput[o + 1] = sOrU[bucket];
+
+        if (localTid == 0)
+        {
+            uint blockMaxU = 0u;
+            for (int i = 0; i < 8; i++)
+            {
+                if (sMaxU[i] > blockMaxU)
+                {
+                    blockMaxU = sMaxU[i];
+                }
+            }
+
+            Gpu.AtomicMax(ref globalSummary[0], blockMaxU);
+        }
+    }
+
+    [GpuKernel]
+    public static void IntegerSharedMemoryTwoStageAtomicsUInt64Kernel(
+        ulong[] input,
+        ulong[] threadOutput,
+        ulong[] globalSummary)
+    {
+        int localTid = ThreadIndex.X;
+        int gid = BlockIndex.X * BlockDimension.X + localTid;
+
+        var sU64 = new SharedMemory<ulong>(4);
+
+        if (localTid < 4)
+        {
+            sU64[localTid] = 0UL;
+        }
+
+        Gpu.SyncThreads();
+
+        ulong vu64 = input[gid];
+
+        Gpu.AtomicAdd(ref sU64[localTid & 3], vu64);
+
+        Gpu.SyncThreads();
+
+        threadOutput[gid] = sU64[localTid & 3];
+
+        if (localTid == 0)
+        {
+            ulong blockU64Xor = sU64[0] ^ sU64[1] ^ sU64[2] ^ sU64[3];
+            Gpu.AtomicXor(ref globalSummary[0], blockU64Xor);
         }
     }
 
     // -------------------------------------------------------------------------
-    // F2a: System.Threading.Interlocked all 10 overloads (Add int/long,
-    //      Exchange int/uint/long/ulong, CompareExchange int/uint/long/ulong)
-    //      across uncontended per-thread slots, contended global slots, and
-    //      static SharedMemory<int>.
+    // System.Threading.Interlocked overloads across uncontended per-thread slots,
+    //      contended global slots, and static SharedMemory<int>.
     // -------------------------------------------------------------------------
     [GpuKernel]
-    public static void InterlockedAllOverloadsKernel(
-        int[] inInt,
-        int[] uncontendedIntSlots,
-        uint[] uncontendedUIntSlots,
-        long[] uncontendedLongSlots,
-        ulong[] uncontendedULongSlots,
-        int[] uncontendedReturnsOut,
-        int[] contendedIntState,
-        uint[] contendedUIntState,
-        long[] contendedLongState,
-        ulong[] contendedULongState)
+    public static void InterlockedInt32OverloadsKernel(
+        int[] input,
+        int[] uncontendedSlots,
+        int[] returnsOut,
+        int[] contendedState)
     {
         int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
         int localTid = ThreadIndex.X;
-        int v = (inInt[tid] & 0x3FFF) - 0x1FFF;
-        uint vu = (uint)(v & 0xFFFF) + 1u;
-        long vl = (long)v * 17L;
-        ulong vul = (ulong)vu * 33UL;
+        int v = (input[tid] & 0x3FFF) - 0x1FFF;
 
         var sInterlocked = new SharedMemory<int>(4);
         if (localTid < 4)
@@ -463,24 +551,11 @@ public static partial class AtomicsDifferentialKernels
         Gpu.SyncThreads();
 
         // 1. Uncontended per-thread slots: verify exact return value (Add returns NEW value, Exchange/CAS return OLD value)
-        int retAddI32 = Interlocked.Add(ref uncontendedIntSlots[tid * 3 + 0], v);
-        int retExchI32 = Interlocked.Exchange(ref uncontendedIntSlots[tid * 3 + 1], v + 500);
-        int expectedCasI32 = uncontendedIntSlots[tid * 3 + 2];
-        int retCasHitI32 = Interlocked.CompareExchange(ref uncontendedIntSlots[tid * 3 + 2], v + 900, expectedCasI32);
-        int retCasMissI32 = Interlocked.CompareExchange(ref uncontendedIntSlots[tid * 3 + 2], -777777, expectedCasI32);
-
-        uint retExchU32 = Interlocked.Exchange(ref uncontendedUIntSlots[tid * 2 + 0], vu + 100u);
-        uint expectedCasU32 = uncontendedUIntSlots[tid * 2 + 1];
-        uint retCasHitU32 = Interlocked.CompareExchange(ref uncontendedUIntSlots[tid * 2 + 1], vu + 200u, expectedCasU32);
-
-        long retAddI64 = Interlocked.Add(ref uncontendedLongSlots[tid * 3 + 0], vl);
-        long retExchI64 = Interlocked.Exchange(ref uncontendedLongSlots[tid * 3 + 1], vl + 1000L);
-        long expectedCasI64 = uncontendedLongSlots[tid * 3 + 2];
-        long retCasHitI64 = Interlocked.CompareExchange(ref uncontendedLongSlots[tid * 3 + 2], vl + 2000L, expectedCasI64);
-
-        ulong retExchU64 = Interlocked.Exchange(ref uncontendedULongSlots[tid * 2 + 0], vul + 300UL);
-        ulong expectedCasU64 = uncontendedULongSlots[tid * 2 + 1];
-        ulong retCasHitU64 = Interlocked.CompareExchange(ref uncontendedULongSlots[tid * 2 + 1], vul + 400UL, expectedCasU64);
+        int retAdd = Interlocked.Add(ref uncontendedSlots[tid * 3 + 0], v);
+        int retExch = Interlocked.Exchange(ref uncontendedSlots[tid * 3 + 1], v + 500);
+        int expectedCas = uncontendedSlots[tid * 3 + 2];
+        int retCasHit = Interlocked.CompareExchange(ref uncontendedSlots[tid * 3 + 2], v + 900, expectedCas);
+        int retCasMiss = Interlocked.CompareExchange(ref uncontendedSlots[tid * 3 + 2], -777777, expectedCas);
 
         // 2. Shared-memory Interlocked.Add and Interlocked.CompareExchange
         Interlocked.Add(ref sInterlocked[localTid & 3], v);
@@ -490,34 +565,89 @@ public static partial class AtomicsDifferentialKernels
         if (localTid == 0)
         {
             int blockSharedSum = sInterlocked[0] + sInterlocked[1] + sInterlocked[2] + sInterlocked[3];
-            Interlocked.Add(ref contendedIntState[2], blockSharedSum);
+            Interlocked.Add(ref contendedState[2], blockSharedSum);
         }
 
         // 3. Contended global Interlocked operations
-        Interlocked.Add(ref contendedIntState[0], v);
-        Interlocked.CompareExchange(ref contendedIntState[1], 424242, -111111);
-        Interlocked.CompareExchange(ref contendedUIntState[0], 0x87654321u, 0x11223344u);
-        Interlocked.Add(ref contendedLongState[0], vl);
-        Interlocked.CompareExchange(ref contendedLongState[1], -9876543210L, -1234567890L);
-        Interlocked.CompareExchange(ref contendedULongState[0], 0xFEDCBA9876543210UL, 0x0123456789ABCDEFUL);
+        Interlocked.Add(ref contendedState[0], v);
+        Interlocked.CompareExchange(ref contendedState[1], 424242, -111111);
 
-        int o = tid * 11;
-        uncontendedReturnsOut[o + 0] = retAddI32;
-        uncontendedReturnsOut[o + 1] = retExchI32;
-        uncontendedReturnsOut[o + 2] = retCasHitI32;
-        uncontendedReturnsOut[o + 3] = retCasMissI32;
-        uncontendedReturnsOut[o + 4] = (int)retExchU32;
-        uncontendedReturnsOut[o + 5] = (int)retCasHitU32;
-        uncontendedReturnsOut[o + 6] = (int)retAddI64;
-        uncontendedReturnsOut[o + 7] = (int)retExchI64;
-        uncontendedReturnsOut[o + 8] = (int)retCasHitI64;
-        uncontendedReturnsOut[o + 9] = (int)retExchU64;
-        uncontendedReturnsOut[o + 10] = (int)retCasHitU64;
+        int o = tid * 4;
+        returnsOut[o + 0] = retAdd;
+        returnsOut[o + 1] = retExch;
+        returnsOut[o + 2] = retCasHit;
+        returnsOut[o + 3] = retCasMiss;
+    }
+
+    [GpuKernel]
+    public static void InterlockedUInt32OverloadsKernel(
+        uint[] input,
+        uint[] uncontendedSlots,
+        uint[] returnsOut,
+        uint[] contendedState)
+    {
+        int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        uint vu = input[tid];
+
+        uint retExch = Interlocked.Exchange(ref uncontendedSlots[tid * 2 + 0], vu + 100u);
+        uint expectedCas = uncontendedSlots[tid * 2 + 1];
+        uint retCasHit = Interlocked.CompareExchange(ref uncontendedSlots[tid * 2 + 1], vu + 200u, expectedCas);
+
+        Interlocked.CompareExchange(ref contendedState[0], 0x87654321u, 0x11223344u);
+
+        int o = tid * 2;
+        returnsOut[o + 0] = retExch;
+        returnsOut[o + 1] = retCasHit;
+    }
+
+    [GpuKernel]
+    public static void InterlockedInt64OverloadsKernel(
+        long[] input,
+        long[] uncontendedSlots,
+        long[] returnsOut,
+        long[] contendedState)
+    {
+        int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        long vl = input[tid];
+
+        long retAdd = Interlocked.Add(ref uncontendedSlots[tid * 3 + 0], vl);
+        long retExch = Interlocked.Exchange(ref uncontendedSlots[tid * 3 + 1], vl + 1000L);
+        long expectedCas = uncontendedSlots[tid * 3 + 2];
+        long retCasHit = Interlocked.CompareExchange(ref uncontendedSlots[tid * 3 + 2], vl + 2000L, expectedCas);
+
+        Interlocked.Add(ref contendedState[0], vl);
+        Interlocked.CompareExchange(ref contendedState[1], -9876543210L, -1234567890L);
+
+        int o = tid * 3;
+        returnsOut[o + 0] = retAdd;
+        returnsOut[o + 1] = retExch;
+        returnsOut[o + 2] = retCasHit;
+    }
+
+    [GpuKernel]
+    public static void InterlockedUInt64OverloadsKernel(
+        ulong[] input,
+        ulong[] uncontendedSlots,
+        ulong[] returnsOut,
+        ulong[] contendedState)
+    {
+        int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        ulong vul = input[tid];
+
+        ulong retExch = Interlocked.Exchange(ref uncontendedSlots[tid * 2 + 0], vul + 300UL);
+        ulong expectedCas = uncontendedSlots[tid * 2 + 1];
+        ulong retCasHit = Interlocked.CompareExchange(ref uncontendedSlots[tid * 2 + 1], vul + 400UL, expectedCas);
+
+        Interlocked.CompareExchange(ref contendedState[0], 0xFEDCBA9876543210UL, 0x0123456789ABCDEFUL);
+
+        int o = tid * 2;
+        returnsOut[o + 0] = retExch;
+        returnsOut[o + 1] = retCasHit;
     }
 
     // -------------------------------------------------------------------------
-    // F2b: Direct consumption of Interlocked return values in signed comparisons,
-    //      shifts, wraparound, and named-argument calls (S23, S24, S46).
+    // Direct consumption of Interlocked return values in signed comparisons,
+    //      shifts, wraparound, and named-argument calls (#1057, #1058, #1059).
     // -------------------------------------------------------------------------
     [GpuKernel]
     public static void InterlockedReturnExpressionKernel(
@@ -527,19 +657,19 @@ public static partial class AtomicsDifferentialKernels
     {
         int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
 
-        // S23 probe 1: Interlocked.Add(ref long, long) return value compared directly with < 0L
+        // #1057 probe 1: Interlocked.Add(ref long, long) return value compared directly with < 0L
         int add64LtZero = Interlocked.Add(ref state64[tid * 3 + 0], -5L) < 0L ? 1 : 0;
 
-        // S23 probe 2: Interlocked.Exchange(ref long, long) return value right-shifted directly (arithmetic vs logical)
+        // #1057 probe 2: Interlocked.Exchange(ref long, long) return value right-shifted directly (arithmetic vs logical)
         int exch64SarSign = (int)(Interlocked.Exchange(ref state64[tid * 3 + 1], 42L) >> 62);
 
-        // S23 probe 3: Interlocked.CompareExchange(ref long, long, long) return value compared directly with < 0L
+        // #1057 probe 3: Interlocked.CompareExchange(ref long, long, long) return value compared directly with < 0L
         int cas64LtZero = Interlocked.CompareExchange(ref state64[tid * 3 + 2], 99L, -10L) < 0L ? 1 : 0;
 
-        // S24 probe: Interlocked.Add(ref int, int) wrapping across int.MaxValue -> int.MinValue
+        // #1058 probe: Interlocked.Add(ref int, int) wrapping across int.MaxValue -> int.MinValue
         int add32WrapMin = Interlocked.Add(ref state32[tid * 2 + 0], 1) == int.MinValue ? 1 : 0;
 
-        // S46 probe: Interlocked.CompareExchange with reversed named arguments (comparand: ..., value: ...)
+        // #1059 probe: Interlocked.CompareExchange with reversed named arguments (comparand: ..., value: ...)
         Interlocked.CompareExchange(ref state32[tid * 2 + 1], comparand: 100, value: 555);
         int casNamedUpdated = state32[tid * 2 + 1];
 
@@ -552,7 +682,7 @@ public static partial class AtomicsDifferentialKernels
     }
 
     // -------------------------------------------------------------------------
-    // F3a: Exact dyadic (powers-of-two) float atomics (AtomicAdd, ReductionAdd,
+    // Exact dyadic (powers-of-two) float atomics (AtomicAdd, ReductionAdd,
     //      AtomicExch) on global memory, static SharedMemory<float>, dynamic
     //      SharedMemory<float>, and DiffAtomicPacket.Accumulator.
     // -------------------------------------------------------------------------
@@ -603,7 +733,7 @@ public static partial class AtomicsDifferentialKernels
     }
 
     // -------------------------------------------------------------------------
-    // F3b: Non-power-of-two normal float atomic accumulation in [0.5f, 2.0f)
+    // Non-power-of-two normal float atomic accumulation in [0.5f, 2.0f)
     //      comparing direct global AtomicAdd and two-stage SharedMemory->global
     //      accumulation against Higham's forward rounding error bound.
     // -------------------------------------------------------------------------
@@ -638,7 +768,7 @@ public static partial class AtomicsDifferentialKernels
     }
 
     // -------------------------------------------------------------------------
-    // F3c: Float special values under atomic contention (subnormals on global vs
+    // Float special values under atomic contention (subnormals on global vs
     //      shared memory, non-canonical NaN payload canonicalization, -0.0f sign
     //      preservation, +Infinity, and (+Inf)+(-Inf) -> NaN) (#868).
     // -------------------------------------------------------------------------
@@ -697,7 +827,7 @@ public static partial class AtomicsDifferentialKernels
     }
 
     // -------------------------------------------------------------------------
-    // F4a: Multi-block leader-only CAS spinlock protecting a multi-word
+    // Multi-block leader-only CAS spinlock protecting a multi-word
     //      non-atomic critical section + AtomicExch unlock.
     // -------------------------------------------------------------------------
     [GpuKernel]
@@ -730,7 +860,7 @@ public static partial class AtomicsDifferentialKernels
     }
 
     // -------------------------------------------------------------------------
-    // F4b: Cooperative all-threads AtomicCAS Treiber lock-free stack push ->
+    // Cooperative all-threads AtomicCAS Treiber lock-free stack push ->
     //      Gpu.SyncGrid() -> lock-free stack pop.
     // -------------------------------------------------------------------------
     [GpuKernel(Cooperative = true)]

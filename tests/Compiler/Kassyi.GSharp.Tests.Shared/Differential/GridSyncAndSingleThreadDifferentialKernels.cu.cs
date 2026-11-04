@@ -9,7 +9,7 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 /// </summary>
 public static partial class GridSyncAndSingleThreadDifferentialKernels
 {
-    /// <summary>Per-thread output columns for <see cref="CooperativeMultiPhaseReduceNormalizeKernel"/> (F5a).</summary>
+    /// <summary>Per-thread output columns for <see cref="CooperativeMultiPhaseReduceNormalizeKernel"/>.</summary>
     public static readonly string[] MultiPhaseReduceColumns =
     [
         "own_block_sum",
@@ -18,7 +18,7 @@ public static partial class GridSyncAndSingleThreadDifferentialKernels
         "normalized_diff_from_max_block",
     ];
 
-    /// <summary>Grid-wide summary columns for <see cref="CooperativeMultiPhaseReduceNormalizeKernel"/> (F5a).</summary>
+    /// <summary>Grid-wide summary columns for <see cref="CooperativeMultiPhaseReduceNormalizeKernel"/>.</summary>
     public static readonly string[] MultiPhaseGridStatsColumns =
     [
         "single_thread_grid_total",
@@ -26,7 +26,7 @@ public static partial class GridSyncAndSingleThreadDifferentialKernels
         "atomic_grid_total",
     ];
 
-    /// <summary>Per-thread output columns for <see cref="SingleThreadMultiDimAndReturnKernel"/> (F6a).</summary>
+    /// <summary>Per-thread output columns for <see cref="SingleThreadMultiDimAndReturnKernel"/>.</summary>
     public static readonly string[] SingleThreadMultiDimColumns =
     [
         "linear_gid",
@@ -34,7 +34,7 @@ public static partial class GridSyncAndSingleThreadDifferentialKernels
         "post_single_thread_marker",
     ];
 
-    /// <summary>Counter columns for <see cref="SingleThreadMultiDimAndReturnKernel"/> (F6a).</summary>
+    /// <summary>Counter columns for <see cref="SingleThreadMultiDimAndReturnKernel"/>.</summary>
     public static readonly string[] SingleThreadCounterColumns =
     [
         "exec_count_block1",
@@ -70,7 +70,7 @@ public static partial class GridSyncAndSingleThreadDifferentialKernels
     }
 
     // -------------------------------------------------------------------------
-    // F5a: Cooperative multi-phase reduction and normalization across 1D and 2D
+    // Cooperative multi-phase reduction and normalization across 1D and 2D
     //      grids using dynamic SharedMemory<int>, Gpu.SyncThreads(), Gpu.SyncGrid(),
     //      Gpu.SingleThread(), and Gpu.AtomicAdd.
     // -------------------------------------------------------------------------
@@ -140,7 +140,7 @@ public static partial class GridSyncAndSingleThreadDifferentialKernels
     }
 
     // -------------------------------------------------------------------------
-    // F5b: Cooperative multi-step iterative ping-pong cross-block halo stencil
+    // Cooperative multi-step iterative ping-pong cross-block halo stencil
     //      and CLSmith-style gated XOR-pair exchange with two Gpu.SyncGrid()
     //      barriers per loop iteration.
     // -------------------------------------------------------------------------
@@ -178,7 +178,7 @@ public static partial class GridSyncAndSingleThreadDifferentialKernels
     }
 
     // -------------------------------------------------------------------------
-    // F5c: Gpu.SyncGrid(Action) with divergent early return, local & out variable
+    // Gpu.SyncGrid(Action) with divergent early return, local & out variable
     //      declarations after return, switch with return, loop-nested SyncGrid(body),
     //      and 2-level nested [GpuDeviceFunction] calling Gpu.SyncGrid().
     // -------------------------------------------------------------------------
@@ -250,7 +250,7 @@ public static partial class GridSyncAndSingleThreadDifferentialKernels
     }
 
     // -------------------------------------------------------------------------
-    // F6a: Gpu.SingleThread(Action) across 3D grid x 3D block (6-axis) launch
+    // Gpu.SingleThread(Action) across 3D grid x 3D block (6-axis) launch
     //      shapes (#690), early return inside SingleThread (#693), local function
     //      return inside SingleThread, and non-suspending [GpuDeviceFunction]
     //      invocation inside SingleThread (#667).
@@ -312,7 +312,7 @@ public static partial class GridSyncAndSingleThreadDifferentialKernels
     }
 
     // -------------------------------------------------------------------------
-    // F6b: Cooperative kernel combining Gpu.SingleThread global initialization ->
+    // Cooperative kernel combining Gpu.SingleThread global initialization ->
     //      Gpu.SyncGrid() -> per-block SharedMemory + AtomicAdd -> Gpu.SyncGrid()
     //      -> Gpu.SingleThread global finalization -> Gpu.SyncGrid().
     // -------------------------------------------------------------------------
