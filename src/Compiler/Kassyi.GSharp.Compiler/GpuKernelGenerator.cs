@@ -1,5 +1,6 @@
 using Kassyi.GSharp.Compiler.Aot;
 using Kassyi.GSharp.Compiler.Models;
+using Kassyi.GSharp.Compiler.Transpiler.Managed;
 
 namespace Kassyi.GSharp.Compiler;
 
@@ -36,6 +37,12 @@ public class GpuKernelGenerator : IIncrementalGenerator
 
     /// <summary>The tracking name of the input of the output that writes the device code export records.</summary>
     public const string DeviceExportsTrackingName = "GpuDeviceExportsInput";
+
+    /// <summary>The tracking name of the step that collects site keys of type-keyed shared memory creations (#543).</summary>
+    public const string TypeKeyedSitesTrackingName = "GpuTypeKeyedSites";
+
+    /// <summary>The tracking name of the input of the output that registers type-keyed shared memory sites (#543).</summary>
+    public const string TypeKeyedSitesRegistrationTrackingName = "GpuTypeKeyedSitesRegistrationInput";
 
     /// <summary>
     /// The tracking name of the step that reads the device code export records of the referenced assemblies, which the
@@ -136,7 +143,10 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 options.GlobalOptions.TryGetValue("build_property.GSharpExportDeviceCode", out var exportStr);
                 var exportDeviceCode = !string.Equals(exportStr, "false", StringComparison.OrdinalIgnoreCase);
 
-                return new GeneratorConfig(dialect, emitSource, intermediatePath, exportDeviceCode);
+                options.GlobalOptions.TryGetValue("build_property.GSharpCheckedBuild", out var checkedStr);
+                var isCheckedBuild = string.Equals(checkedStr, "true", StringComparison.OrdinalIgnoreCase);
+
+                return new GeneratorConfig(dialect, emitSource, intermediatePath, exportDeviceCode, isCheckedBuild);
             });
 
         // The wrappers take only the assembly names from the compilation, so this value compares equal across edits and
@@ -248,6 +258,48 @@ public class GpuKernelGenerator : IIncrementalGenerator
         context.RegisterSourceOutput(
             deviceExports.Combine(configProvider).WithTrackingName(DeviceExportsTrackingName),
             static (spc, input) => EmitDeviceExports(spc, input.Left, input.Right));
+
+        var typeKeyedSites = context.SyntaxProvider
+            .CreateSyntaxProvider(
+                predicate: static (node, _) => TypeKeyedSharedMemoryCollector.IsCandidate(node),
+                transform: static (ctx, _) => TypeKeyedSharedMemoryCollector.Collect(ctx))
+            .WithTrackingName(TypeKeyedSitesTrackingName)
+            .Where(static sites => !sites.IsDefaultOrEmpty)
+            .Collect();
+
+        var allTypeKeyedSites = typeKeyedSites.Select(static (arrays, _) =>
+        {
+            if (arrays.IsDefaultOrEmpty)
+            {
+                return default;
+            }
+
+            var set = new HashSet<ulong>();
+            foreach (var array in arrays)
+            {
+                foreach (var site in array)
+                {
+                    set.Add(site);
+                }
+            }
+
+            if (set.Count == 0)
+            {
+                return default;
+            }
+
+            var builder = ImmutableArray.CreateBuilder<ulong>(set.Count);
+            foreach (var site in set)
+            {
+                builder.Add(site);
+            }
+            builder.Sort();
+            return builder.MoveToImmutable().AsEquatableArray();
+        });
+
+        context.RegisterSourceOutput(
+            allTypeKeyedSites.WithTrackingName(TypeKeyedSitesRegistrationTrackingName),
+            static (spc, sites) => EmitTypeKeyedSitesRegistration(spc, sites));
     }
 
     private static TranspiledKernelResult? TranspileKernel(GeneratorAttributeSyntaxContext context)
@@ -275,13 +327,15 @@ public class GpuKernelGenerator : IIncrementalGenerator
 
             var cudaStructs = new StructSourceCollector();
             var cppStructs = new StructSourceCollector();
+            var errorSites = new ErrorSiteTable();
             var cudaSource = cudaFailures.Apply(MethodTranspiler.GenerateCudaSource(in plan, cudaFailures.Fail, cudaDialect,
-                out var requiredIncludesCuda, cudaStructs));
+                out var requiredIncludesCuda, cudaStructs, errorSites));
             var cppSource = cppFailures.Apply(MethodTranspiler.GenerateCudaSource(in plan, cppFailures.Fail, cppDialect,
-                out var requiredIncludesCpp, cppStructs));
+                out var requiredIncludesCpp, cppStructs, errorSites));
             var managedCSharpSource = MethodTranspiler.GenerateManagedCSharpSource(in plan);
             var structExports = DeviceExportEmitter.CreateStructRecords(context.SemanticModel.Compilation, cudaStructs,
                 cppStructs);
+            var kernelErrorSites = errorSites.Entries.AsEquatableArray();
 
             if (!CheckSuppressGs0001(methodDeclaration))
             {
@@ -294,7 +348,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
                     ToIncludes(requiredIncludesCuda),
                     ToIncludes(requiredIncludesCpp),
                     "",
-                    structExports
+                    structExports,
+                    kernelErrorSites
                 );
             }
 
@@ -310,7 +365,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 ToIncludes(requiredIncludesCuda),
                 ToIncludes(requiredIncludesCpp),
                 "",
-                structExports
+                structExports,
+                kernelErrorSites
             );
         }
         catch (Exception ex)
@@ -424,6 +480,17 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 managedCSharpSource,
                 export,
                 structExports);
+        }
+        catch (InsufficientExecutionStackException)
+        {
+            var location = methodDeclaration.Identifier.GetLocation();
+            var failure = new TranspileFailure(GSharpDiagnostics.MethodTooComplexToCompile, location, [methodSymbol.Name]);
+            var errorSource = NativeModuleAssembler.FormatTranspileFailures([failure.Format()]);
+            return new TranspiledDeviceMethodResult(
+                HostClassHeader.Create(methodSymbol.ContainingType),
+                methodSymbol.Name,
+                "", errorSource, "", errorSource,
+                new EquatableArray<string>(), new EquatableArray<string>(), "");
         }
         catch (Exception ex)
         {
@@ -801,6 +868,46 @@ public class GpuKernelGenerator : IIncrementalGenerator
         var distinctDeviceMethods = GetDistinctDeviceMethods(deviceMethods);
         var commonDeviceSource = imports.Source + NativeModuleAssembler.AssembleDeviceSource(distinctDeviceMethods, isCuda);
         var preludeSource = NativeModuleAssembler.GetPreludeSource(config.CreateDialect());
+        if (isCuda && config.IsCheckedBuild)
+        {
+            preludeSource = "#define GSHARP_CHECKED 1\n" + preludeSource;
+        }
+
+        var symbolSites = ImmutableArray.CreateBuilder<GSharpNameEncoding.SymbolErrorSiteRecord>();
+        var rawSites = new List<ErrorSiteEntry>();
+        foreach (var method in kernelMethods)
+        {
+            if (!method.ErrorSites.IsDefaultOrEmpty)
+            {
+                foreach (var site in method.ErrorSites)
+                {
+                    rawSites.Add(site);
+                }
+            }
+        }
+
+        if (!ErrorSiteTable.TryBuildModuleSites(rawSites, out var moduleSites, out var c1, out var c2))
+        {
+            context.ReportDiagnostic(Diagnostic.Create(
+                GSharpDiagnostics.ErrorSiteIdCollision,
+                Location.None,
+                c1.SiteId,
+                c1.MemberName, c1.File, c1.Line, c1.Column,
+                c2.MemberName, c2.File, c2.Line, c2.Column));
+        }
+        else
+        {
+            foreach (var site in moduleSites)
+            {
+                symbolSites.Add(new GSharpNameEncoding.SymbolErrorSiteRecord(
+                    site.SiteId,
+                    site.File,
+                    site.Line,
+                    site.Column,
+                    site.MemberName,
+                    site.DefaultMessage));
+            }
+        }
 
         var allKernelsSource = new StringBuilder();
         foreach (var method in kernelMethods)
@@ -814,7 +921,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
             .AddTo(requiredIncludes);
         var bodySource = NativeModuleAssembler.AssembleBody(requiredIncludes, preludeSource, commonDeviceSource,
             allKernelsSource.ToString());
-        AotArtifactWriter.Write(target, config, bodySource, context, imports.FindFullName);
+        AotArtifactWriter.Write(target, config, bodySource, context, imports.FindFullName, symbolSites.ToImmutable());
     }
 
     // The device code of other assemblies that the kernels and device functions of the module reach
@@ -882,5 +989,39 @@ public class GpuKernelGenerator : IIncrementalGenerator
             .AsStackEnumerable()
             .AddTo(builder);
         return builder.MoveToImmutable().AsEquatableArray();
+    }
+
+    private static void EmitTypeKeyedSitesRegistration(SourceProductionContext context, EquatableArray<ulong> sites)
+    {
+        if (sites.IsDefaultOrEmpty)
+        {
+            return;
+        }
+
+        using var writer = new SourceWriter();
+        writer.AppendGeneratedFileHeader(enableNullable: true);
+        writer.AppendLine("namespace Kassyi.GSharp.Generated");
+        using (writer.Scope())
+        {
+            writer.AppendLine("internal static class GSharpTypeKeyedSharedMemorySitesRegistration");
+            using (writer.Scope())
+            {
+                writer.AppendLine("#pragma warning disable CA2255");
+                writer.AppendLine("[global::System.Runtime.CompilerServices.ModuleInitializer]");
+                writer.AppendLine("internal static void RegisterTypeKeyedSharedMemorySites()");
+                using (writer.Scope())
+                {
+                    writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.RegisterTypeKeyedSites([");
+                    foreach (var site in sites)
+                    {
+                        writer.AppendLine($"0x{site:x16}UL,");
+                    }
+                    writer.AppendLine("]);");
+                }
+            }
+        }
+
+        context.AddSource("GSharpSharedTypeKeyedSites.g.cs",
+            SourceText.From(writer.ToString(), Encoding.UTF8));
     }
 }

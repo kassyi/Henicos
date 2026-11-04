@@ -6,13 +6,13 @@ namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel.Rules.StackArrays;
 /// </summary>
 internal static class AssignmentPairs
 {
-    public static List<(SyntaxNode Target, ExpressionSyntax Value)> Pairs(AssignmentExpressionSyntax assignment)
+    public static ImmutableArray<(SyntaxNode Target, ExpressionSyntax Value)> Pairs(AssignmentExpressionSyntax assignment)
     {
-        var pairs = new List<(SyntaxNode, ExpressionSyntax)>();
+        var pairs = ImmutableArray.CreateBuilder<(SyntaxNode, ExpressionSyntax)>();
         AddPairs(assignment.Left, assignment.Right, pairs);
-        return pairs;
+        return pairs.ToImmutable();
 
-        static void AddPairs(SyntaxNode target, ExpressionSyntax value, List<(SyntaxNode, ExpressionSyntax)> pairs)
+        static void AddPairs(SyntaxNode target, ExpressionSyntax value, ImmutableArray<(SyntaxNode, ExpressionSyntax)>.Builder pairs)
         {
             switch (target)
             {

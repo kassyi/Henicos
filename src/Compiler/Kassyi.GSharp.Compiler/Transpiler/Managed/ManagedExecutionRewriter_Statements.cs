@@ -29,6 +29,7 @@ internal sealed partial class ManagedExecutionRewriter
             return base.VisitExpressionStatement(node);
         }
 
+        invocation = BindCopiesToSource(invocation);
         StatementSyntax? rewritten = call.Kind switch
         {
             GpuMacroKind.ForUnroll => RewriteForUnroll(invocation, call),
@@ -47,6 +48,16 @@ internal sealed partial class ManagedExecutionRewriter
             : default;
         return call.Kind is GpuMacroKind.ForUnroll or GpuMacroKind.GridStrideLoop or GpuMacroKind.SingleThread;
     }
+
+    // [WHY] The rewrites below visit copies of the macro's parts: the lambda body with the loop parameter replaced
+    // (MacroLambdaSubstituter), an expression body put into a block, arguments without trivia. A copy of a node of the
+    // user's tree (the body of a managed version is not lowered) is outside that tree and binds to nothing, so no name in
+    // it would be qualified or routed (#1151). With the original-span annotation on every node, as a lowered body has,
+    // each copy binds through the node it was copied from. A call of a lowered body already carries its annotations
+    private InvocationExpressionSyntax BindCopiesToSource(InvocationExpressionSyntax invocation) =>
+        invocation.SyntaxTree == semanticModel.SyntaxTree
+            ? LoweringAnnotations.AnnotateOriginalSpans(invocation, semanticModel.Compilation)
+            : invocation;
 
     // Gpu.SingleThread(body) becomes:
     // if (<six indices are 0>) <body>

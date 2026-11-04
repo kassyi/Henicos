@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Compiler.Analysis;
+
 namespace Kassyi.GSharp.Compiler.Lowering;
 
 /// <summary>Lowers flat C# AST statements into a switch-based state machine separated by thread barriers.</summary>
@@ -97,9 +99,9 @@ public class StateMachineLowerer(bool isDeviceFunction = false, SemanticModel? s
         {
             LowerSuspendingCall(stmt, splitPoint, sections);
         }
-        else if (BarrierHelper.TryGetWarpShuffleRead(splitPoint, out var readFunction))
+        else if (BarrierHelper.TryGetWarpShuffle(splitPoint, out var shuffleKind))
         {
-            LowerWarpShuffle(stmt, splitPoint, readFunction, labelStates, sections);
+            LowerWarpShuffle(stmt, splitPoint, shuffleKind, labelStates, sections);
         }
         else
         {
@@ -114,7 +116,7 @@ public class StateMachineLowerer(bool isDeviceFunction = false, SemanticModel? s
         sections.Add(CreateResumeStatement(stmt, call, sections.State));
     }
 
-    private void LowerWarpShuffle(StatementSyntax stmt, InvocationExpressionSyntax shuffle, string readFunction,
+    private void LowerWarpShuffle(StatementSyntax stmt, InvocationExpressionSyntax shuffle, WarpShuffleKind shuffleKind,
         IReadOnlyDictionary<DeclarationKey, int> labelStates, SectionBuilder sections)
     {
         // 1. Publish val to the context's warp exchange slot
@@ -124,7 +126,7 @@ public class StateMachineLowerer(bool isDeviceFunction = false, SemanticModel? s
         sections.CommitState(sections.State + 1, isBarrier: true);
 
         // 3. Rewrite original Warp.ShuffleXXX(...) to __gsharp_warp_shuffle_read_XXX(...)
-        var readStmt = RewriteWarpShuffleRead(stmt, shuffle, readFunction);
+        var readStmt = RewriteWarpShuffleRead(stmt, shuffle, shuffleKind);
         sections.Add(RewriteGoto(readStmt, labelStates));
     }
 
@@ -368,24 +370,87 @@ public class StateMachineLowerer(bool isDeviceFunction = false, SemanticModel? s
             )
         );
 
-    private StatementSyntax RewriteWarpShuffleRead(StatementSyntax stmt, InvocationExpressionSyntax barrierInv,
-        string readFunction)
+    private readonly record struct ShuffleShape(
+        string ReadFunction,
+        bool HasLane,
+        string? PredicateArgument,
+        bool HasWidth,
+        string? ThirdArgumentName)
     {
+        private static readonly Dictionary<WarpShuffleKind, ShuffleShape> s_shapes = new()
+        {
+            [WarpShuffleKind.Sync] = new(
+                GSharpInternalNames.Prelude.WarpShuffleReadSync,
+                HasLane: true,
+                PredicateArgument: null,
+                HasWidth: true,
+                ThirdArgumentName: "srcLane"),
+            [WarpShuffleKind.Down] = new(
+                GSharpInternalNames.Prelude.WarpShuffleReadDownSync,
+                HasLane: true,
+                PredicateArgument: null,
+                HasWidth: true,
+                ThirdArgumentName: "delta"),
+            [WarpShuffleKind.Up] = new(
+                GSharpInternalNames.Prelude.WarpShuffleReadUpSync,
+                HasLane: true,
+                PredicateArgument: null,
+                HasWidth: true,
+                ThirdArgumentName: "delta"),
+            [WarpShuffleKind.Xor] = new(
+                GSharpInternalNames.Prelude.WarpShuffleReadXorSync,
+                HasLane: true,
+                PredicateArgument: null,
+                HasWidth: true,
+                ThirdArgumentName: "laneMask"),
+            [WarpShuffleKind.MatchAny] = new(
+                GSharpInternalNames.Prelude.WarpMatchAnyRead,
+                HasLane: false,
+                PredicateArgument: null,
+                HasWidth: false,
+                ThirdArgumentName: null),
+            [WarpShuffleKind.MatchAll] = new(
+                GSharpInternalNames.Prelude.WarpMatchAllRead,
+                HasLane: false,
+                PredicateArgument: "pred",
+                HasWidth: false,
+                ThirdArgumentName: "pred"),
+        };
+
+        public static ShuffleShape ForKind(WarpShuffleKind kind) =>
+            s_shapes.TryGetValue(kind, out var shape)
+                ? shape
+                : throw new ArgumentOutOfRangeException(nameof(kind), kind, $"No shuffle shape for kind {kind}");
+    }
+
+    private StatementSyntax RewriteWarpShuffleRead(StatementSyntax stmt, InvocationExpressionSyntax barrierInv,
+        WarpShuffleKind shuffleKind)
+    {
+        var shape = ShuffleShape.ForKind(shuffleKind);
         var newArgs = SyntaxFactory.SeparatedList<ArgumentSyntax>();
         // The root context owns the warp exchange, also when the shuffle is in a device function
         newArgs = newArgs.Add(
             SyntaxFactory.Argument(SyntaxFactory.IdentifierName(GSharpInternalNames.SuspendingCall.Root)));
         newArgs = newArgs.Add(GetShuffleArgument(barrierInv, ShuffleMaskPosition));
         newArgs = newArgs.Add(GetShuffleArgument(barrierInv, ShuffleValuePosition)); // pass val for type inference
-        newArgs = newArgs.Add(GetShuffleArgument(barrierInv, ShuffleLanePosition));
-        // The width is always passed, so that the place of the shuffle can follow it; 32 is the default of every shuffle
-        newArgs = newArgs.Add(
-            TryGetShuffleArgument(barrierInv, ShuffleWidthPosition, out var width)
-                ? width
-                : SyntaxFactory.Argument(
-                    SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression, SyntaxFactory.Literal(32))
-                )
-        );
+        if (shape.HasLane || shape.PredicateArgument is not null)
+        {
+            // For shuffles, this is srcLane/delta/mask; for MatchAll, this is pred (the out predicate argument)
+            newArgs = newArgs.Add(GetShuffleArgument(barrierInv, ShuffleLanePosition));
+        }
+
+        if (shape.HasWidth)
+        {
+            // The width is always passed, so that the place of the shuffle can follow it; 32 is the default of every shuffle
+            newArgs = newArgs.Add(
+                TryGetShuffleArgument(barrierInv, ShuffleWidthPosition, out var width)
+                    ? width
+                    : SyntaxFactory.Argument(
+                        SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression, SyntaxFactory.Literal(32))
+                    )
+            );
+        }
+
         newArgs = newArgs.Add(
             SyntaxFactory.Argument(
                 SyntaxFactory.LiteralExpression(
@@ -397,7 +462,7 @@ public class StateMachineLowerer(bool isDeviceFunction = false, SemanticModel? s
 
         // __gsharp_warp_shuffle_read_<kind>(__gsharp_root, mask, val, delta, width, "<file>(<line>,<column>)")
         var rewrittenInv = SyntaxFactory.InvocationExpression(
-            SyntaxFactory.IdentifierName(readFunction),
+            SyntaxFactory.IdentifierName(shape.ReadFunction),
             SyntaxFactory.ArgumentList(newArgs)
         );
 
@@ -412,6 +477,7 @@ public class StateMachineLowerer(bool isDeviceFunction = false, SemanticModel? s
     private const int ShuffleWidthPosition = 3;
     private const string ShuffleMaskParameter = "mask";
     private const string ShuffleValueParameter = "var";
+    private const string MatchValueParameter = "value";
     private const string ShuffleWidthParameter = "width";
 
     // The argument of a shuffle for the parameter at position, which the call compiled with (so it is there)
@@ -434,7 +500,7 @@ public class StateMachineLowerer(bool isDeviceFunction = false, SemanticModel? s
             {
                 null => i,
                 ShuffleMaskParameter => ShuffleMaskPosition,
-                ShuffleValueParameter => ShuffleValuePosition,
+                ShuffleValueParameter or MatchValueParameter => ShuffleValuePosition,
                 ShuffleWidthParameter => ShuffleWidthPosition,
                 _ => ShuffleLanePosition
             };

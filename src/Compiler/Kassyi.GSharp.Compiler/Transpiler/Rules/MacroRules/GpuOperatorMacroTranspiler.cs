@@ -197,7 +197,10 @@ internal static class GpuOperatorMacroTranspiler
 
         if (IsPassedByReference(parameter))
         {
-            RefSyntaxHelper.TranspileAsByRefArgument(ref context, operand);
+            // [WHY] An auto-property is stored directly as a field on device. Passing its storage address
+            // preserves operator operand aliasing (when target and operand are the same property) and
+            // avoids an unnecessary defensive copy on device, matching OperatorMacroArgumentTests.
+            RefSyntaxHelper.TranspileAsOperatorOperand(ref context, operand);
             return;
         }
 

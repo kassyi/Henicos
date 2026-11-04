@@ -5,7 +5,7 @@ namespace Kassyi.GSharp.Tests.Shared.Syntax;
 
 /// <summary>
 /// An operator macro used as an operand of another one is computed into a temporary first, in the C# order of
-/// evaluation, on the GPU and the native CPU build (<see cref="OperatorMacroNestingManagedTests"/>: the managed fallback).
+/// evaluation, on the GPU and the native CPU build (<c>OperatorMacroNestingManagedTests</c>: the managed fallback).
 /// </summary>
 [TestTarget(ExecutionTarget.GpuExecution)]
 [Category(TestCategory.Syntax)]

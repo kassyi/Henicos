@@ -105,6 +105,23 @@ timer.Stop();
 Console.WriteLine($"Kernel executed in: {timer.ElapsedMilliseconds()} ms");
 ```
 
+## 2.6 Device Exception Channel (`DeviceErrorSlot`)
+
+G# surfaces GPU device traps, hardware assertions, and sequence errors as standard .NET exceptions (such as `ArgumentOutOfRangeException`, `IndexOutOfRangeException`, and `InvalidOperationException`) carrying exact source locations and 3D thread/block coordinates (#729).
+
+### 2.6.1 Process-Wide Single Error Slot Architecture
+
+A single pinned, host-mapped memory slot (`GSharpDeviceErrorSlot`, 24 bytes) is shared process-wide across all CUDA modules, streams, and execution contexts.
+
+- **Warp Leader Election**: When a device trap occurs on any thread, the warp elects a single leader via active mask ballot. The leader executes an atomic CAS on the slot's error code to claim first-writer status.
+- **Coordinate and Module Recording**: The winning leader records the error site ID (a 31-bit hash of the file name, the start and end line and column, and the trap kind), the module ID, the packed 3D thread coordinates, and the direct 3D block coordinates (`blockIdx.x` and packed `blockIdx.y | (blockIdx.z << 16)`), executing double system memory fences before and after setting the ready bit.
+- **Host Consumption and Context Invalidation**: When the host synchronizes or driver error handling detects a failure (`CudaDriverApi.ThrowIfError`, stream completion, or explicit `ThrowIfDeviceError`), the slot is atomically consumed and reset. Because a device trap fundamentally invalidates the underlying CUDA context, all concurrent and subsequent operations on that context will fail; whichever host check runs first consumes and reports the rich error details.
+- **Module Loading Decoupling**: Loading a module (`GetOrLoadModule`) intentionally does not check or reset the error slot, preventing an unrelated module load from consuming an in-flight kernel's trap details.
+
+### 2.6.2 Native CPU Consistency
+
+The native CPU execution path (`CpuKernelLoader`) mirrors this architecture using thread-local `GSharpErrorSlot` instances exporting `__gsharp_consume_last_error_details`. The runtime unpacks thread and block coordinates with identical layout decoding, producing uniform exception types, messages, and `Exception.Data` key-value pairs across CUDA GPU and native CPU targets.
+
 ## See also
 
 ### Getting Started

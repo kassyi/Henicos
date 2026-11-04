@@ -14,7 +14,6 @@ public static class StructLayoutValidator
     /// </remarks>
     public static bool HasDeviceRepresentation(ITypeSymbol type, ITranspilerDialect dialect)
     {
-        type = type.UnwrapNullableArrayLike() ?? type;
         if (type.IsArrayLikeType() ||
             type is IPointerTypeSymbol or IFunctionPointerTypeSymbol or ITypeParameterSymbol ||
             type.SpecialType is SpecialType.System_IntPtr or SpecialType.System_UIntPtr ||
@@ -69,8 +68,8 @@ public static class StructLayoutValidator
                     null);
             }
 
-            var type = member.Type.UnwrapNullableArrayLike() ?? member.Type;
-            if (type.IsArrayLikeType())
+            var type = member.Type;
+            if (type.IsArrayLikeType() || type.IsNullableArrayLike())
             {
                 continue;
             }
