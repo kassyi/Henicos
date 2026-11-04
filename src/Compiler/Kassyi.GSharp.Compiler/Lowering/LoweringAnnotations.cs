@@ -54,6 +54,12 @@ public static class LoweringAnnotations
     /// </summary>
     public const string StateMachineReturnAnnotationKind = "StateMachineReturn";
 
+    /// <summary>Annotation kind that marks the root block of a state machine with a split point (#944).</summary>
+    public const string SplitStateMachineAnnotationKind = "GSharpSplitStateMachine";
+
+    /// <summary>Annotation that marks the root block of a state machine with a split point.</summary>
+    public static readonly SyntaxAnnotation SplitStateMachineAnnotation = new(SplitStateMachineAnnotationKind);
+
     /// <summary>
     /// Annotation kind that marks a lowered <c>foreach</c> array/span source receiver
     /// (<c>__gsharp_foreach_src_&lt;id&gt;</c>) so <c>.Length</c> emits as <c>.length</c>.

@@ -62,14 +62,18 @@ public static class AstLoweringPipeline
         var conditionalRewriter = new ConditionalEvaluationRewriter();
         var warpRewriter = new WarpInstructionRewriter(bodyModel);
         var branchRewriter = new BranchRewriter(bodyModel);
-        var hoistedBody = conditionalRewriter.Rewrite(annotatedBody);
-        hoistedBody = warpRewriter.Rewrite(hoistedBody);
-        hoistedBody = branchRewriter.Rewrite(hoistedBody);
-        hoistedBody = new ForEachRewriter(bodyModel).Rewrite(hoistedBody);
-        hoistedBody = new LoopRewriter().Rewrite(hoistedBody);
-        hoistedBody = conditionalRewriter.Rewrite(hoistedBody);
-        hoistedBody = warpRewriter.Rewrite(hoistedBody);
-        hoistedBody = branchRewriter.Rewrite(hoistedBody);
+        IBlockLoweringPass[] passes =
+        [
+            conditionalRewriter, warpRewriter, branchRewriter,
+            new ForEachRewriter(bodyModel),
+            new LoopRewriter(),
+            conditionalRewriter, warpRewriter, branchRewriter
+        ];
+        var hoistedBody = annotatedBody;
+        foreach (var pass in passes)
+        {
+            hoistedBody = pass.Rewrite(hoistedBody);
+        }
 
         // [WHY] Found once, before ContextHoister rewrites declarations, and given to both passes so that they agree
         var statePlan = StateLabelPlanner.Plan(hoistedBody, bodyModel);
@@ -83,6 +87,10 @@ public static class AstLoweringPipeline
 
         var lowerer = new StateMachineLowerer(isDeviceFunction, bodyModel, statePlan);
         var stateMachineBody = lowerer.Lower(contextHoistedBody);
+        if (hoister.HasSplitPoint)
+        {
+            stateMachineBody = stateMachineBody.WithAdditionalAnnotations(LoweringAnnotations.SplitStateMachineAnnotation);
+        }
 
         return new LoweredStateMachine(stateMachineBody, contextFields, lowerer.CallSites, copiedParameters);
     }
@@ -95,17 +103,24 @@ public static class AstLoweringPipeline
                 ? semanticModel
                 : semanticModel.Compilation.GetSemanticModel(body.SyntaxTree);
 
-    private static BlockSyntax ToBlock(SyntaxNode body, bool returnsValue) => body switch
+    private static BlockSyntax ToBlock(SyntaxNode body, bool returnsValue)
     {
-        BlockSyntax block => block,
-        ArrowExpressionClauseSyntax { Expression: var expression } => SyntaxFactory.Block(
-                (returnsValue
-                    ? (StatementSyntax)SyntaxFactory.ReturnStatement(expression)
-                    : SyntaxFactory.ExpressionStatement(expression))
-                .WithAdditionalAnnotations(body.GetAnnotations(LoweringAnnotations.OriginalSpanAnnotationKind)))
-            .WithAdditionalAnnotations(body.GetAnnotations(LoweringAnnotations.OriginalSpanAnnotationKind)),
-        _ => throw new InvalidOperationException($"Cannot lower a body of kind '{body.Kind()}'.")
-    };
+        switch (body)
+        {
+            case BlockSyntax block:
+                return block;
+            case ArrowExpressionClauseSyntax { Expression: var expression }:
+                var spanAnnotations = body.GetAnnotations(LoweringAnnotations.OriginalSpanAnnotationKind);
+                return SyntaxFactory.Block(
+                        (returnsValue
+                            ? (StatementSyntax)SyntaxFactory.ReturnStatement(expression)
+                            : SyntaxFactory.ExpressionStatement(expression))
+                        .WithAdditionalAnnotations(spanAnnotations))
+                    .WithAdditionalAnnotations(spanAnnotations);
+            default:
+                throw new InvalidOperationException($"Cannot lower a body of kind '{body.Kind()}'.");
+        }
+    }
 
     // Maps the span of each call that splits the state machine to its annotation: a call to a device function that
     // suspends (whether its callee returns a value), or a synchronization intrinsic that splits the state machine,
@@ -150,7 +165,8 @@ public static class AstLoweringPipeline
         var copied = ImmutableArray.CreateBuilder<string>(method.Parameters.Length);
         method.Parameters
             .AsStackEnumerable()
-            .Where(static parameter => parameter.RefKind == RefKind.None && !parameter.Type.IsRefLikeType)
+            .Where(static parameter => parameter.RefKind == RefKind.None &&
+                                       !parameter.Type.IsRefLikeType)
             .Select(static parameter => parameter.Name)
             .AddTo(copied);
         return copied.ToImmutable();
@@ -181,9 +197,4 @@ public static class AstLoweringPipeline
     }
 }
 
-/// <summary>Provides extension methods for chaining syntax rewriter passes on a block.</summary>
-internal static class BlockSyntaxLoweringExtensions
-{
-    public static BlockSyntax LowerWith<T>(this BlockSyntax block) where T : CSharpSyntaxRewriter, new() =>
-        (BlockSyntax)new T().Visit(block);
-}
+

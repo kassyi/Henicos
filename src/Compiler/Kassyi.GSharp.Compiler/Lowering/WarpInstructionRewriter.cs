@@ -11,7 +11,7 @@ namespace Kassyi.GSharp.Compiler.Lowering;
 /// writes the variable that an earlier one reads (<see cref="ExpressionEffects"/>) and which arguments are constant.
 /// Without it, the arguments are compared by name and only literals count as constant.
 /// </param>
-public class WarpInstructionRewriter(SemanticModel? semanticModel = null) : CSharpSyntaxRewriter
+public class WarpInstructionRewriter(SemanticModel? semanticModel = null) : CSharpSyntaxRewriter, IBlockLoweringPass
 {
     private readonly SemanticModel? _semanticModel = semanticModel;
     private int _tempCounter;

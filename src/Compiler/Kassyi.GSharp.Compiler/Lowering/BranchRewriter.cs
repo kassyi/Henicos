@@ -8,7 +8,7 @@ namespace Kassyi.GSharp.Compiler.Lowering;
 /// Matches a <c>goto case</c> of a flattened switch to its case label by constant value
 /// (<see cref="SwitchStatementFlattener"/>); without it, equivalent case expressions are matched.
 /// </param>
-public class BranchRewriter(SemanticModel? semanticModel = null) : CSharpSyntaxRewriter
+public class BranchRewriter(SemanticModel? semanticModel = null) : CSharpSyntaxRewriter, IBlockLoweringPass
 {
     private int _labelCounter;
     private int _switchCounter;
