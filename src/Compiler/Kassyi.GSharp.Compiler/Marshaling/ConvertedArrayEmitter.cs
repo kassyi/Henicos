@@ -15,8 +15,8 @@ internal static class ConvertedArrayEmitter
     // for (int __gsharp_index_<ord> = 0; __gsharp_index_<ord> < __gsharp_native_<ord>.Length; __gsharp_index_<ord>++)
     private static void WriteElementLoopHeader(SourceWriter writer, in KernelParameterShape shape)
     {
-        var index = KernelHostNames.GetElementIndexLocal(shape);
-        var native = KernelHostNames.GetNativeLocal(shape);
+        var index = KernelHostNames.GetLocal(LauncherLocal.ElementIndex, shape);
+        var native = KernelHostNames.GetLocal(LauncherLocal.Native, shape);
         writer.AppendLine($"for (int {index} = 0; {index} < {native}.Length; {index}++)");
     }
 
@@ -26,10 +26,10 @@ internal static class ConvertedArrayEmitter
     internal static void WriteShadowAndHostSpans(SourceWriter writer, in KernelParameterShape shape,
         in ParameterTransfer transfer)
     {
-        var native = KernelHostNames.GetNativeLocal(shape);
-        var shadow = KernelHostNames.GetShadowLocal(shape);
-        var size = KernelHostNames.GetSizeLocal(shape);
-        var host = KernelHostNames.GetHostSpanLocal(shape);
+        var native = KernelHostNames.GetLocal(LauncherLocal.Native, shape);
+        var shadow = KernelHostNames.GetLocal(LauncherLocal.Shadow, shape);
+        var size = KernelHostNames.GetLocal(LauncherLocal.Size, shape);
+        var host = KernelHostNames.GetLocal(LauncherLocal.HostSpan, shape);
         writer.AppendLine(
             $"var {native} = global::System.Runtime.InteropServices.MemoryMarshal" +
             $".Cast<byte, {GetElementShadowPath(shape, transfer)}>({shadow}.AsSpan(0, {size}));");
@@ -45,9 +45,9 @@ internal static class ConvertedArrayEmitter
     internal static void WriteElementMarshalLoop(SourceWriter writer, in KernelParameterShape shape,
         in ParameterTransfer transfer, string allocations)
     {
-        var index = KernelHostNames.GetElementIndexLocal(shape);
-        var host = KernelHostNames.GetHostSpanLocal(shape);
-        var native = KernelHostNames.GetNativeLocal(shape);
+        var index = KernelHostNames.GetLocal(LauncherLocal.ElementIndex, shape);
+        var host = KernelHostNames.GetLocal(LauncherLocal.HostSpan, shape);
+        var native = KernelHostNames.GetLocal(LauncherLocal.Native, shape);
         WriteElementLoopHeader(writer, shape);
         using (writer.Scope())
         {
@@ -55,7 +55,7 @@ internal static class ConvertedArrayEmitter
             if (shape.IsReadOnlyContainer)
             {
                 // A read-only container gives no ref to its element; Marshal_ only reads its copy
-                var elementLocal = KernelHostNames.GetElementLocal(shape);
+                var elementLocal = KernelHostNames.GetLocal(LauncherLocal.Element, shape);
                 writer.AppendLine($"var {elementLocal} = {host}[{index}];");
                 hostElement = elementLocal;
             }
@@ -71,9 +71,9 @@ internal static class ConvertedArrayEmitter
     internal static void WriteElementUnmarshalLoop(SourceWriter writer, in KernelParameterShape shape,
         in ParameterTransfer transfer)
     {
-        var index = KernelHostNames.GetElementIndexLocal(shape);
-        var host = KernelHostNames.GetHostSpanLocal(shape);
-        var native = KernelHostNames.GetNativeLocal(shape);
+        var index = KernelHostNames.GetLocal(LauncherLocal.ElementIndex, shape);
+        var host = KernelHostNames.GetLocal(LauncherLocal.HostSpan, shape);
+        var native = KernelHostNames.GetLocal(LauncherLocal.Native, shape);
         WriteElementLoopHeader(writer, shape);
         using (writer.Scope())
         {

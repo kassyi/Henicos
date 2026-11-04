@@ -138,7 +138,7 @@ internal static class NativeStructEmitter
     // The result is computed once, when the mirror is first used.
     private static void WriteFieldOffsetCheck(SourceWriter writer, INamedTypeSymbol s)
     {
-        const string Unsafe = "global::System.Runtime.CompilerServices.Unsafe";
+        const string Unsafe = HostTypeNames.Unsafe;
         writer.AppendLine($"public static readonly bool {HostMirrorOffsetsMatch} = CheckFieldOffsets();");
         writer.AppendLine("private static bool CheckFieldOffsets()");
         using (writer.Scope())

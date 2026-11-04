@@ -37,13 +37,16 @@ public class HostWrapperNameCollisionTests : TranspilerTestBase
             host: 15,
             pinned: ref pinned,
             payload: payload,
+            kernelParams: new VerifyPair { A = 7, B = 11 },
+            kernelParamsValue: new VerifyPair { A = 10, B = 20 },
             gridDimX: 1,
             blockDimX: 4);
 
         // Sum of scalar parameters (1+2+3+4+5+6+8+9+11+12+13+14+15) + initial pinned (7) = 110
+        // Plus VerifyPair values: kernelParams (7 + 11) + kernelParamsValue (10 + 20) = 48 -> Total base = 158
         Assert.Equal(17, pinned);
-        Assert.Equal([115, 120, 125, 130], args);
-        Assert.Equal([116, 121, 126, 131], returned);
+        Assert.Equal([163, 168, 173, 178], args);
+        Assert.Equal([164, 169, 174, 179], returned);
     }
 
     [SkippableFact]
@@ -81,12 +84,14 @@ public class HostWrapperNameCollisionTests : TranspilerTestBase
                 host: 15,
                 pinned: ref pinned,
                 payload: payload,
+                kernelParams: new VerifyPair { A = 7, B = 11 },
+                kernelParamsValue: new VerifyPair { A = 10, B = 20 },
                 gridDimX: 1,
                 blockDimX: 4);
 
             Assert.Equal(17, pinned);
-            Assert.Equal([115, 120, 125, 130], args);
-            Assert.Equal([116, 121, 126, 131], returned);
+            Assert.Equal([163, 168, 173, 178], args);
+            Assert.Equal([164, 169, 174, 179], returned);
         }
         finally
         {

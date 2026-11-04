@@ -1,3 +1,6 @@
+using System.Collections.Immutable;
+using System.Text;
+
 namespace Kassyi.GSharp.Compiler.Marshaling;
 
 /// <summary>
@@ -19,15 +22,71 @@ internal static class KernelHostNames
     private const string PointerSuffix = "Ptr";
     private const string WarmupPrefix = "WarmupFunctionPointer";
 
+    /// <summary>The public launch option parameters appended to generated kernel wrappers.</summary>
+    internal static readonly ImmutableArray<LaunchOption> LaunchOptions =
+        ImmutableArray.Create(
+            new LaunchOption("uint", "gridDimX", "1"),
+            new LaunchOption("uint", "gridDimY", "1"),
+            new LaunchOption("uint", "gridDimZ", "1"),
+            new LaunchOption("uint", "blockDimX", "1"),
+            new LaunchOption("uint", "blockDimY", "1"),
+            new LaunchOption("uint", "blockDimZ", "1"),
+            new LaunchOption("uint", "sharedMemBytes", "0"),
+            new LaunchOption("global::System.IntPtr", "hStream", "default"),
+            new LaunchOption("global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>>", "macros", "default"));
+
     /// <summary>The comma-separated list of reserved launch option parameter names for the GSH0106 diagnostic message.</summary>
-    public const string ReservedLaunchParameterList =
-        "gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, hStream, macros";
+    public static readonly string ReservedLaunchParameterList = BuildReservedLaunchParameterList();
+
+    internal static readonly string LaunchOptionParameters = BuildLaunchOptionParameters();
 
     /// <summary>Whether <paramref name="name"/> is one of the public launch option parameters of the generated host wrapper (GSH0106).</summary>
-    public static bool IsReservedLaunchParameterName(string name) => name is
-        "gridDimX" or "gridDimY" or "gridDimZ" or
-        "blockDimX" or "blockDimY" or "blockDimZ" or
-        "sharedMemBytes" or "hStream" or "macros";
+    public static bool IsReservedLaunchParameterName(string name)
+    {
+        for (var i = 0; i < LaunchOptions.Length; i++)
+        {
+            if (LaunchOptions[i].Name == name)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static string BuildReservedLaunchParameterList()
+    {
+        var sb = new StringBuilder();
+        for (var i = 0; i < LaunchOptions.Length; i++)
+        {
+            if (i > 0)
+            {
+                sb.Append(", ");
+            }
+
+            sb.Append(LaunchOptions[i].Name);
+        }
+
+        return sb.ToString();
+    }
+
+    private static string BuildLaunchOptionParameters()
+    {
+        var sb = new StringBuilder();
+        for (var i = 0; i < LaunchOptions.Length; i++)
+        {
+            if (i > 0)
+            {
+                // Historical spacing: no space between blockDimY and blockDimZ to preserve snapshot parity
+                sb.Append(i == 5 ? "," : ", ");
+            }
+
+            var opt = LaunchOptions[i];
+            sb.Append(opt.Type).Append(' ').Append(opt.Name).Append(" = ").Append(opt.DefaultValue);
+        }
+
+        return sb.ToString();
+    }
 
     /// <summary>The kernel in a run-time error of the CPU paths: <c>Type.Method</c>.</summary>
     public static string GetMessageName(IMethodSymbol kernel) => kernel.ContainingType.Name + "." + kernel.Name;
@@ -64,69 +123,30 @@ internal static class KernelHostNames
     public static string GetDelegateTypeName(in KernelEmission kernel) =>
         GSharpInternalNames.Launcher.DelegateTypePrefix + kernel.MemberKey;
 
-    /// <summary>The CUDA device pointer local of <paramref name="parameter"/>, <c>__gsharp_d_{ordinal}</c>.</summary>
-    public static string GetDevicePointerLocal(in KernelParameterShape parameter) =>
-        FormatOrdinal(GSharpInternalNames.Launcher.DevicePointerPrefix, parameter.Ordinal);
+    /// <summary>Returns the generated launcher local variable name for <paramref name="parameter"/> of kind <paramref name="kind"/>.</summary>
+    public static string GetLocal(LauncherLocal kind, in KernelParameterShape parameter) =>
+        FormatOrdinal(GetPrefix(kind), parameter.Ordinal);
 
-    /// <summary>The stackalloc'd <c>GSharpArrayProxy</c> pointer local of <paramref name="parameter"/>, <c>__gsharp_proxy_{ordinal}</c>.</summary>
-    public static string GetProxyLocal(in KernelParameterShape parameter) =>
-        FormatOrdinal(GSharpInternalNames.Launcher.ProxyPrefix, parameter.Ordinal);
-
-    /// <summary>The native shadow struct or span local of <paramref name="parameter"/>, <c>__gsharp_native_{ordinal}</c>.</summary>
-    public static string GetNativeLocal(in KernelParameterShape parameter) =>
-        FormatOrdinal(GSharpInternalNames.Launcher.NativePrefix, parameter.Ordinal);
-
-    /// <summary>The <c>fixed</c> pointer local of <paramref name="parameter"/>, <c>__gsharp_p_{ordinal}</c>.</summary>
-    public static string GetPinnedLocal(in KernelParameterShape parameter) =>
-        FormatOrdinal(GSharpInternalNames.Launcher.PinnedPrefix, parameter.Ordinal);
-
-    /// <summary>The <c>fixed</c> temporary pointer local of a <c>ref</c> scalar <paramref name="parameter"/>, <c>__gsharp_p_temp_{ordinal}</c>.</summary>
-    public static string GetPinnedTempLocal(in KernelParameterShape parameter) =>
-        FormatOrdinal(GSharpInternalNames.Launcher.PinnedTempPrefix, parameter.Ordinal);
-
-    /// <summary>The <c>fixed</c> copy-back pointer local of a <c>ref</c> / <c>out</c> scalar <paramref name="parameter"/>, <c>__gsharp_ptr_{ordinal}</c>.</summary>
-    public static string GetScalarPointerLocal(in KernelParameterShape parameter) =>
-        FormatOrdinal(GSharpInternalNames.Launcher.ScalarPointerPrefix, parameter.Ordinal);
-
-    /// <summary>The byte size local of <paramref name="parameter"/>, <c>__gsharp_size_{ordinal}</c>.</summary>
-    public static string GetSizeLocal(in KernelParameterShape parameter) =>
-        FormatOrdinal(GSharpInternalNames.Launcher.SizePrefix, parameter.Ordinal);
-
-    /// <summary>The rented <c>ArrayPool&lt;byte&gt;</c> shadow buffer local of <paramref name="parameter"/>, <c>__gsharp_shadow_{ordinal}</c>.</summary>
-    public static string GetShadowLocal(in KernelParameterShape parameter) =>
-        FormatOrdinal(GSharpInternalNames.Launcher.ShadowPrefix, parameter.Ordinal);
-
-    /// <summary>The shared shadow buffer local of <paramref name="parameter"/> on the CPU, <c>__gsharp_shared_shadow_{ordinal}</c>.</summary>
-    public static string GetSharedShadowLocal(in KernelParameterShape parameter) =>
-        FormatOrdinal(GSharpInternalNames.Launcher.SharedShadowPrefix, parameter.Ordinal);
-
-    /// <summary>The list of pinned <c>GCHandle</c> pointers of <paramref name="parameter"/> on the CPU, <c>__gsharp_allocated_ptrs_{ordinal}</c>.</summary>
-    public static string GetAllocatedPointersLocal(in KernelParameterShape parameter) =>
-        FormatOrdinal(GSharpInternalNames.Launcher.AllocatedPointersPrefix, parameter.Ordinal);
-
-    /// <summary>The element loop index local of a converted array <paramref name="parameter"/>, <c>__gsharp_index_{ordinal}</c>.</summary>
-    public static string GetElementIndexLocal(in KernelParameterShape parameter) =>
-        FormatOrdinal(GSharpInternalNames.Launcher.ElementIndexPrefix, parameter.Ordinal);
-
-    /// <summary>The host span local of a converted array <paramref name="parameter"/>, <c>__gsharp_host_{ordinal}</c>.</summary>
-    public static string GetHostSpanLocal(in KernelParameterShape parameter) =>
-        FormatOrdinal(GSharpInternalNames.Launcher.HostSpanPrefix, parameter.Ordinal);
-
-    /// <summary>The temporary element copy local of a read-only converted array <paramref name="parameter"/>, <c>__gsharp_element_{ordinal}</c>.</summary>
-    public static string GetElementLocal(in KernelParameterShape parameter) =>
-        FormatOrdinal(GSharpInternalNames.Launcher.ElementPrefix, parameter.Ordinal);
-
-    /// <summary>The saved original array reference local of an <c>[In]</c> array <paramref name="parameter"/> on the CPU, <c>__gsharp_source_{ordinal}</c>.</summary>
-    public static string GetCopySourceLocal(in KernelParameterShape parameter) =>
-        FormatOrdinal(GSharpInternalNames.Launcher.CopySourcePrefix, parameter.Ordinal);
-
-    /// <summary>The cloned array buffer local of an <c>[In]</c> array <paramref name="parameter"/> on the CPU, <c>__gsharp_copy_{ordinal}</c>.</summary>
-    public static string GetCopyBufferLocal(in KernelParameterShape parameter) =>
-        FormatOrdinal(GSharpInternalNames.Launcher.CopyBufferPrefix, parameter.Ordinal);
-
-    /// <summary>The loop index local that copies nested arrays of <paramref name="parameter"/> on the CPU, <c>__gsharp_copy_index_{ordinal}</c>.</summary>
-    public static string GetCopyIndexLocal(in KernelParameterShape parameter) =>
-        FormatOrdinal(GSharpInternalNames.Launcher.CopyIndexPrefix, parameter.Ordinal);
+    private static string GetPrefix(LauncherLocal kind) => kind switch
+    {
+        LauncherLocal.DevicePointer => GSharpInternalNames.Launcher.DevicePointerPrefix,
+        LauncherLocal.Proxy => GSharpInternalNames.Launcher.ProxyPrefix,
+        LauncherLocal.Native => GSharpInternalNames.Launcher.NativePrefix,
+        LauncherLocal.Pinned => GSharpInternalNames.Launcher.PinnedPrefix,
+        LauncherLocal.PinnedTemp => GSharpInternalNames.Launcher.PinnedTempPrefix,
+        LauncherLocal.ScalarPointer => GSharpInternalNames.Launcher.ScalarPointerPrefix,
+        LauncherLocal.Size => GSharpInternalNames.Launcher.SizePrefix,
+        LauncherLocal.Shadow => GSharpInternalNames.Launcher.ShadowPrefix,
+        LauncherLocal.SharedShadow => GSharpInternalNames.Launcher.SharedShadowPrefix,
+        LauncherLocal.AllocatedPointers => GSharpInternalNames.Launcher.AllocatedPointersPrefix,
+        LauncherLocal.ElementIndex => GSharpInternalNames.Launcher.ElementIndexPrefix,
+        LauncherLocal.HostSpan => GSharpInternalNames.Launcher.HostSpanPrefix,
+        LauncherLocal.Element => GSharpInternalNames.Launcher.ElementPrefix,
+        LauncherLocal.CopySource => GSharpInternalNames.Launcher.CopySourcePrefix,
+        LauncherLocal.CopyBuffer => GSharpInternalNames.Launcher.CopyBufferPrefix,
+        LauncherLocal.CopyIndex => GSharpInternalNames.Launcher.CopyIndexPrefix,
+        _ => throw new System.ArgumentOutOfRangeException(nameof(kind), kind, null)
+    };
 
     /// <summary>Formats a kernel as <c>Name(type, type)</c> for diagnostics.</summary>
     public static string FormatSignature(string name, EquatableArray<KernelParameterShape> parameters)

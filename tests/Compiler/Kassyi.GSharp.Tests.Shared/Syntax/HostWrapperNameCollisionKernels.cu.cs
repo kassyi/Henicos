@@ -18,6 +18,12 @@ public static class CudaDriverApi
     public static int NotTheDriver;
 }
 
+public struct VerifyPair
+{
+    public int A;
+    public int B;
+}
+
 [SkipSnapshotConsistency("Covered by HostWrapperNameCollisionGeneratorTests")]
 public static partial class HostWrapperNameCollisionKernels
 {
@@ -44,14 +50,18 @@ public static partial class HostWrapperNameCollisionKernels
         int native,
         int host,
         ref int pinned,
-        CollisionPayload payload)
+        CollisionPayload payload,
+        VerifyPair kernelParams,
+        VerifyPair kernelParamsValue)
     {
         int idx = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
         if (idx < args.Length)
         {
             args[idx] = hModule + hFunc + totalThreads + dllPath + hLib + fnPtr + invoke +
                         totalBlocks + blockSize + startBlock + endBlock + native + host +
-                        pinned + payload.Data[idx] * payload.Scale;
+                        pinned + payload.Data[idx] * payload.Scale +
+                        kernelParams.A + kernelParams.B +
+                        kernelParamsValue.A + kernelParamsValue.B;
         }
 
         if (idx == args.Length - 1)

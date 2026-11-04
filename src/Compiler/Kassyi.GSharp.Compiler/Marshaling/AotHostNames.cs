@@ -46,7 +46,7 @@ internal static class AotHostNames
     /// is given), or <c>{parent path}.{Name}</c> for a struct nested in a custom struct.
     /// </summary>
     public static ref readonly SourceWriter AppendAotStructPath(this in SourceWriter writer, ISymbol symbol,
-        INamedTypeSymbol? kernelClass = null)
+        INamedTypeSymbol? kernelClass)
     {
         if (GetEnclosingCustomStruct(symbol) is { } parentType)
         {
@@ -62,13 +62,21 @@ internal static class AotHostNames
         return ref writer;
     }
 
-    /// <summary>Gets the path that <see cref="AppendAotStructPath"/> writes.</summary>
-    public static string GetAotStructPath(ISymbol symbol, INamedTypeSymbol? kernelClass = null)
+    /// <summary>Appends the path that <see cref="AppendAotStructPath(in SourceWriter, ISymbol, INamedTypeSymbol?)"/> writes within <c>AotContexts</c> itself.</summary>
+    public static ref readonly SourceWriter AppendAotStructPath(this in SourceWriter writer, ISymbol symbol) =>
+        ref writer.AppendAotStructPath(symbol, kernelClass: null);
+
+    /// <summary>Gets the path that <see cref="AppendAotStructPath(in SourceWriter, ISymbol, INamedTypeSymbol?)"/> writes.</summary>
+    public static string GetAotStructPath(ISymbol symbol, INamedTypeSymbol? kernelClass)
     {
         using var writer = new SourceWriter();
         writer.AppendAotStructPath(symbol, kernelClass);
         return writer.ToString();
     }
+
+    /// <summary>Gets the path that <see cref="AppendAotStructPath(in SourceWriter, ISymbol)"/> writes within <c>AotContexts</c> itself.</summary>
+    public static string GetAotStructPath(ISymbol symbol) =>
+        GetAotStructPath(symbol, kernelClass: null);
 
     /// <summary>The name that the native shadow struct of <paramref name="symbol"/> declares: the type name without a trailing <c>Context</c>.</summary>
     public static string GetNativeStructName(ISymbol symbol) => TrimContextSuffix(symbol.Name);
@@ -133,7 +141,7 @@ internal static class AotHostNames
 
     /// <summary>Appends <c>AotContexts.Marshal_{key}</c> (qualified by <paramref name="kernelClass"/> when given), the way a kernel wrapper calls it.</summary>
     public static ref readonly SourceWriter AppendQualifiedMarshalMethodName(this in SourceWriter writer, ISymbol symbol,
-        INamedTypeSymbol? kernelClass = null)
+        INamedTypeSymbol? kernelClass)
     {
         AppendAotContextsQualifier(writer, kernelClass).AppendMarshalMethodName(symbol);
         return ref writer;
@@ -141,14 +149,14 @@ internal static class AotHostNames
 
     /// <summary>Appends <c>AotContexts.Unmarshal_{key}</c> (qualified by <paramref name="kernelClass"/> when given), the way a kernel wrapper calls it.</summary>
     public static ref readonly SourceWriter AppendQualifiedUnmarshalMethodName(this in SourceWriter writer, ISymbol symbol,
-        INamedTypeSymbol? kernelClass = null)
+        INamedTypeSymbol? kernelClass)
     {
         AppendAotContextsQualifier(writer, kernelClass).AppendUnmarshalMethodName(symbol);
         return ref writer;
     }
 
     /// <summary>Gets <c>AotContexts.CopyArrays_{key}</c> (qualified by <paramref name="kernelClass"/> when given), the way a kernel wrapper calls it.</summary>
-    public static string GetQualifiedCopyArraysMethodName(ISymbol symbol, INamedTypeSymbol? kernelClass = null)
+    public static string GetQualifiedCopyArraysMethodName(ISymbol symbol, INamedTypeSymbol? kernelClass)
     {
         using var writer = new SourceWriter();
         AppendAotContextsQualifier(writer, kernelClass).AppendCopyArraysMethodName(symbol);
@@ -156,7 +164,7 @@ internal static class AotHostNames
     }
 
     /// <summary>Gets <c>AotContexts.HoldsArray_{key}</c> (qualified by <paramref name="kernelClass"/> when given), the way a kernel wrapper calls it.</summary>
-    public static string GetQualifiedHoldsArrayMethodName(ISymbol symbol, INamedTypeSymbol? kernelClass = null)
+    public static string GetQualifiedHoldsArrayMethodName(ISymbol symbol, INamedTypeSymbol? kernelClass)
     {
         using var writer = new SourceWriter();
         AppendAotContextsQualifier(writer, kernelClass).AppendHoldsArrayMethodName(symbol);
@@ -164,7 +172,7 @@ internal static class AotHostNames
     }
 
     /// <summary>Gets the name that <see cref="AppendQualifiedMarshalMethodName"/> writes.</summary>
-    public static string GetQualifiedMarshalMethodName(ISymbol symbol, INamedTypeSymbol? kernelClass = null)
+    public static string GetQualifiedMarshalMethodName(ISymbol symbol, INamedTypeSymbol? kernelClass)
     {
         using var writer = new SourceWriter();
         writer.AppendQualifiedMarshalMethodName(symbol, kernelClass);
@@ -172,7 +180,7 @@ internal static class AotHostNames
     }
 
     /// <summary>Gets the name that <see cref="AppendQualifiedUnmarshalMethodName"/> writes.</summary>
-    public static string GetQualifiedUnmarshalMethodName(ISymbol symbol, INamedTypeSymbol? kernelClass = null)
+    public static string GetQualifiedUnmarshalMethodName(ISymbol symbol, INamedTypeSymbol? kernelClass)
     {
         using var writer = new SourceWriter();
         writer.AppendQualifiedUnmarshalMethodName(symbol, kernelClass);

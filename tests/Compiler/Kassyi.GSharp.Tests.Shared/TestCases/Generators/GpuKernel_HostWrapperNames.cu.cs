@@ -45,6 +45,12 @@ public struct HostWrapperSimpleConvert
     public int Number;
 }
 
+public struct VerifyPair
+{
+    public int A;
+    public int B;
+}
+
 // Kernel parameters and sibling types intentionally use names that would collide with
 // synthesized locals, helper members, and unqualified BCL/runtime references in the host wrapper (#406).
 public static partial class HostWrapperNameCollisionKernels
@@ -89,7 +95,8 @@ public static partial class HostWrapperNameCollisionKernels
         int d_f,
         int f_size,
         int p_f,
-        int kernelParams,
+        VerifyPair kernelParams,
+        VerifyPair kernelParamsValue,
         int hfunc,
         int hModule,
         int archSuffix,
@@ -120,7 +127,8 @@ public static partial class HostWrapperNameCollisionKernels
             a_sharedShadow + a_allocatedPtrs + a_index + a_host + a_element + a_source + a_copy + a_copyIndex +
             p_b + p_b_temp + native_b + c_size + c_source + c_copy + c_copyIndex + p_c +
             d_d + p_d + ptr_d + d_f + f_size + p_f +
-            kernelParams + hfunc + hModule + archSuffix + dllName + dllPath + handle + i +
+            kernelParams.A + kernelParams.B + kernelParamsValue.A + kernelParamsValue.B +
+            hfunc + hModule + archSuffix + dllName + dllPath + handle + i +
             threadAtBlockBarrier + threadAtGridSync + anyGridActive + firstFinishedBlock +
             anyBlockAtGridSync + blockAtGridSync + anyBlockActive + TotalThreads +
             System + IntPtr + CudaDriverApi + CudaException + AotContexts +

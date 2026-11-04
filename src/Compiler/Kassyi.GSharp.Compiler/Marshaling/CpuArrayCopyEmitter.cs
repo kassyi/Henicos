@@ -31,7 +31,7 @@ internal static class CpuArrayCopyEmitter
             var shape = plan.Parameters[i];
 
             // var __gsharp_source_<ord> = <name>;             (an [In] T[] that a later [In] T[] may hold as well)
-            writer.AppendLineIf(plan.KeepsSource(i), $"var {KernelHostNames.GetCopySourceLocal(shape)} = {shape.Identifier};");
+            writer.AppendLineIf(plan.KeepsSource(i), $"var {KernelHostNames.GetLocal(LauncherLocal.CopySource, shape)} = {shape.Identifier};");
 
             if (shape.IsOptional)
             {
@@ -93,7 +93,7 @@ internal static class CpuArrayCopyEmitter
 
             var earlier = plan.Parameters[k];
             writer.AppendLine(
-                $"{(hasCondition ? "else if" : "if")} ({ReferenceEqualsMethod}({shape.Identifier}, {KernelHostNames.GetCopySourceLocal(earlier)}))");
+                $"{(hasCondition ? "else if" : "if")} ({ReferenceEqualsMethod}({shape.Identifier}, {KernelHostNames.GetLocal(LauncherLocal.CopySource, earlier)}))");
             using (writer.Scope())
             {
                 writer.AppendLine(shape.TypeName == earlier.TypeName
@@ -165,8 +165,8 @@ internal static class CpuArrayCopyEmitter
             return;
         }
 
-        var copy = KernelHostNames.GetCopyBufferLocal(shape);
-        var copyIndex = KernelHostNames.GetCopyIndexLocal(shape);
+        var copy = KernelHostNames.GetLocal(LauncherLocal.CopyBuffer, shape);
+        var copyIndex = KernelHostNames.GetLocal(LauncherLocal.CopyIndex, shape);
         writer.Append($"var {copy} = ");
         WriteElementsCopy(writer, shape);
         writer.AppendLine(";");

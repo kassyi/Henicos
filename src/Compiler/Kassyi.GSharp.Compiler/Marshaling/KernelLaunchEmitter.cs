@@ -12,9 +12,25 @@ internal static class KernelLaunchEmitter
 
     private const string KernelParams = GSharpInternalNames.Launcher.KernelParams;
     private const string FunctionHandle = GSharpInternalNames.Launcher.FunctionHandle;
-    private const string CudaDriverApiType = "global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi";
-    private const string CudaExceptionType = "global::Kassyi.GSharp.Runtime.Interop.CudaException";
-    private const string IntPtrType = "global::System.IntPtr";
+    private const string CudaDriverApiType = HostTypeNames.CudaDriverApi;
+    private const string CudaExceptionType = HostTypeNames.CudaException;
+    private const string IntPtrType = HostTypeNames.IntPtr;
+
+    internal enum CopyDirection
+    {
+        HostToDevice,
+        DeviceToHost,
+    }
+
+    private static void WriteSynchronizedCopy(SourceWriter writer, CopyDirection direction, string destination,
+        string source, string size, string stream = "hStream")
+    {
+        var method = direction is CopyDirection.HostToDevice ? "cuMemcpyHtoDAsync_v2" : "cuMemcpyDtoHAsync_v2";
+        writer.AppendLine(
+            $"{HostTypeNames.CudaException}.ThrowIfError({HostTypeNames.CudaDriverApi}.{method}({destination}, {source}, ({HostTypeNames.IntPtr}){size}, {stream}));");
+        writer.AppendLine(
+            $"{HostTypeNames.CudaException}.ThrowIfError({HostTypeNames.CudaDriverApi}.cuStreamSynchronize({stream}));");
+    }
 
     private const string ReferenceEqualsMethod = ArraySharingPlan.ReferenceEqualsMethod;
 
@@ -34,12 +50,12 @@ internal static class KernelLaunchEmitter
 
             if (shape.IsCudaConvertedArray)
             {
-                writer.AppendLine($"byte[]? {KernelHostNames.GetShadowLocal(shape)} = null;");
+                writer.AppendLine($"byte[]? {KernelHostNames.GetLocal(LauncherLocal.Shadow, shape)} = null;");
             }
 
             if (shape.IsArray || shape.IsByRef)
             {
-                writer.AppendLine($"{IntPtrType} {KernelHostNames.GetDevicePointerLocal(shape)} = {IntPtrType}.Zero;");
+                writer.AppendLine($"{IntPtrType} {KernelHostNames.GetLocal(LauncherLocal.DevicePointer, shape)} = {IntPtrType}.Zero;");
             }
         }
 
@@ -174,7 +190,7 @@ internal static class KernelLaunchEmitter
             writer.AppendLine($"// Marshal device {kind}: {shape.Identifier}");
             if (shape.IsArray)
             {
-                var proxy = KernelHostNames.GetProxyLocal(shape);
+                var proxy = KernelHostNames.GetLocal(LauncherLocal.Proxy, shape);
                 writer.AppendLine($"{IntPtrType}* {proxy} = stackalloc {IntPtrType}[2];");
                 writer.AppendLine($"{proxy}[0] = {shape.Identifier};");
                 writer.AppendLine($"((int*)({proxy} + 1))[0] = 0; // Length is unknown for raw IntPtr");
@@ -213,11 +229,11 @@ internal static class KernelLaunchEmitter
         if (shape.IsDirectCudaValueStruct)
         {
             writer.AppendLine($"// Marshal scalar struct: {shape.Identifier}");
-            writer.AppendLine($"kernelParams[{paramIndex}] = &{shape.Identifier};".Replace("kernelParams", KernelParams));
+            writer.AppendLine($"{KernelParams}[{paramIndex}] = &{shape.Identifier};");
             return;
         }
 
-        var native = KernelHostNames.GetNativeLocal(shape);
+        var native = KernelHostNames.GetLocal(LauncherLocal.Native, shape);
         writer.AppendLine($"{shape.AotStructPath} {native} = default;");
         writer.Append(shape.MarshalMethodName);
         using (writer.Parentheses())
@@ -230,8 +246,8 @@ internal static class KernelLaunchEmitter
 
         if (shape.RefKind is RefKind.Ref or RefKind.Out)
         {
-            var size = KernelHostNames.GetSizeLocal(shape);
-            var device = KernelHostNames.GetDevicePointerLocal(shape);
+            var size = KernelHostNames.GetLocal(LauncherLocal.Size, shape);
+            var device = KernelHostNames.GetLocal(LauncherLocal.DevicePointer, shape);
             writer.AppendLine($"// Marshal ref/out struct: {shape.Identifier}");
             writer.AppendLine($"int {size} = sizeof({shape.AotStructPath});");
 
@@ -240,10 +256,7 @@ internal static class KernelLaunchEmitter
             if (shape.RefKind == RefKind.Ref)
             {
                 writer.AppendLine("// Fast zero-allocation copy to device");
-                writer.AppendLine(
-                    $"{CudaExceptionType}.ThrowIfError({CudaDriverApiType}.cuMemcpyHtoDAsync_v2({device}, " +
-                    $"({IntPtrType})(&{native}), ({IntPtrType}){size}, hStream));");
-                writer.AppendLine($"{CudaExceptionType}.ThrowIfError({CudaDriverApiType}.cuStreamSynchronize(hStream));");
+                WriteSynchronizedCopy(writer, CopyDirection.HostToDevice, device, $"({IntPtrType})(&{native})", size);
             }
 
             writer.AppendLine($"{KernelParams}[{paramIndex}] = &{device};");
@@ -265,9 +278,9 @@ internal static class KernelLaunchEmitter
         }
 
         var lenExpr = shape.LengthExpression;
-        var size = KernelHostNames.GetSizeLocal(shape);
-        var proxy = KernelHostNames.GetProxyLocal(shape);
-        var device = KernelHostNames.GetDevicePointerLocal(shape);
+        var size = KernelHostNames.GetLocal(LauncherLocal.Size, shape);
+        var proxy = KernelHostNames.GetLocal(LauncherLocal.Proxy, shape);
+        var device = KernelHostNames.GetLocal(LauncherLocal.DevicePointer, shape);
 
         writer.AppendLine($"// Marshal array: {shape.Identifier}");
         writer.AppendLine($"int {size} = checked({lenExpr} * sizeof({GetElementTypeName(shape)}));");
@@ -295,7 +308,7 @@ internal static class KernelLaunchEmitter
     // every local and field that takes the array, so it is always defined.
     private static void WriteNullReadsAsEmptyFlag(SourceWriter writer, in KernelParameterShape shape, string nullTest)
     {
-        var proxy = KernelHostNames.GetProxyLocal(shape);
+        var proxy = KernelHostNames.GetLocal(LauncherLocal.Proxy, shape);
         if (!shape.IsNullableReference)
         {
             writer.AppendLine($"((int*)({proxy} + 1))[1] = 0;");
@@ -311,7 +324,7 @@ internal static class KernelLaunchEmitter
     {
         var shape = plan.Parameters[paramIndex];
         var notNull = plan.UsesTable && plan.IsShared(paramIndex) ? NotNullPrefix(shape) : "";
-        writer.AppendLine($"if ({notNull}{KernelHostNames.GetSizeLocal(shape)} > 0)");
+        writer.AppendLine($"if ({notNull}{KernelHostNames.GetLocal(LauncherLocal.Size, shape)} > 0)");
     }
 
     // Table:    if (!deviceArrays.TryGetRegion(<name>, out __gsharp_d_<ord>)) { <own region> } [else { <rent shadow> }]
@@ -325,7 +338,7 @@ internal static class KernelLaunchEmitter
     private static void WriteRegion(SourceWriter writer, in ArraySharingPlan plan, int paramIndex, bool rentOnReuse)
     {
         var shape = plan.Parameters[paramIndex];
-        var device = KernelHostNames.GetDevicePointerLocal(shape);
+        var device = KernelHostNames.GetLocal(LauncherLocal.DevicePointer, shape);
         if (!plan.IsShared(paramIndex))
         {
             WriteOwnRegion(writer, plan, paramIndex);
@@ -365,7 +378,7 @@ internal static class KernelLaunchEmitter
                 $"{(hasEarlier ? "else if" : "if")} ({ReferenceEqualsMethod}({shape.Identifier}, {earlier.Identifier}))");
             using (writer.Scope())
             {
-                writer.AppendLine($"{device} = {KernelHostNames.GetDevicePointerLocal(earlier)};");
+                writer.AppendLine($"{device} = {KernelHostNames.GetLocal(LauncherLocal.DevicePointer, earlier)};");
                 // An earlier holder that copies back copies this array back as well (WriteCopyBackClaim)
                 if (rentOnReuse && !plan.IsEarlierCopyBack(paramIndex, k))
                 {
@@ -406,9 +419,9 @@ internal static class KernelLaunchEmitter
     private static void WriteArrayAllocationAndCopyIn(SourceWriter writer, in KernelParameterShape shape,
         bool recorded, bool copiesIn)
     {
-        var device = KernelHostNames.GetDevicePointerLocal(shape);
-        var size = KernelHostNames.GetSizeLocal(shape);
-        var pinned = KernelHostNames.GetPinnedLocal(shape);
+        var device = KernelHostNames.GetLocal(LauncherLocal.DevicePointer, shape);
+        var size = KernelHostNames.GetLocal(LauncherLocal.Size, shape);
+        var pinned = KernelHostNames.GetLocal(LauncherLocal.Pinned, shape);
         writer.AppendLine(
             $"{CudaExceptionType}.ThrowIfError({CudaDriverApiType}.cuMemAllocAsync(out {device}, ({IntPtrType}){size}, hStream));");
         writer.AppendLineIf(recorded, $"{DeviceArrays}.Add({shape.Identifier}, {device});");
@@ -422,10 +435,7 @@ internal static class KernelLaunchEmitter
         writer.AppendLine($"fixed ({GetElementTypeName(shape)}* {pinned} = {shape.SpanExpression})");
         using (writer.Scope())
         {
-            writer.AppendLine(
-                $"{CudaExceptionType}.ThrowIfError({CudaDriverApiType}.cuMemcpyHtoDAsync_v2(" +
-                $"{device}, ({IntPtrType}){pinned}, ({IntPtrType}){size}, hStream));");
-            writer.AppendLine($"{CudaExceptionType}.ThrowIfError({CudaDriverApiType}.cuStreamSynchronize(hStream));");
+            WriteSynchronizedCopy(writer, CopyDirection.HostToDevice, device, $"({IntPtrType}){pinned}", size);
         }
     }
 
@@ -435,9 +445,9 @@ internal static class KernelLaunchEmitter
     {
         var shape = plan.Parameters[paramIndex];
         var lenExpr = shape.LengthExpression;
-        var size = KernelHostNames.GetSizeLocal(shape);
-        var proxy = KernelHostNames.GetProxyLocal(shape);
-        var device = KernelHostNames.GetDevicePointerLocal(shape);
+        var size = KernelHostNames.GetLocal(LauncherLocal.Size, shape);
+        var proxy = KernelHostNames.GetLocal(LauncherLocal.Proxy, shape);
+        var device = KernelHostNames.GetLocal(LauncherLocal.DevicePointer, shape);
 
         writer.AppendLine($"// Marshal array element by element: {shape.Identifier}");
         writer.AppendLine($"int {size} = checked({lenExpr} * sizeof({ConvertedArrayEmitter.GetElementShadowPath(shape, shape.Cuda)}));");
@@ -460,10 +470,10 @@ internal static class KernelLaunchEmitter
     private static void WriteConvertedArrayAllocationAndCopyIn(SourceWriter writer, in KernelParameterShape shape,
         bool recorded, bool copiesIn)
     {
-        var device = KernelHostNames.GetDevicePointerLocal(shape);
-        var size = KernelHostNames.GetSizeLocal(shape);
-        var shadow = KernelHostNames.GetShadowLocal(shape);
-        var pinned = KernelHostNames.GetPinnedLocal(shape);
+        var device = KernelHostNames.GetLocal(LauncherLocal.DevicePointer, shape);
+        var size = KernelHostNames.GetLocal(LauncherLocal.Size, shape);
+        var shadow = KernelHostNames.GetLocal(LauncherLocal.Shadow, shape);
+        var pinned = KernelHostNames.GetLocal(LauncherLocal.Pinned, shape);
         WriteShadowRent(writer, shape);
         writer.AppendLine(
             $"{CudaExceptionType}.ThrowIfError({CudaDriverApiType}.cuMemAllocAsync(" +
@@ -484,21 +494,18 @@ internal static class KernelLaunchEmitter
         writer.AppendLine($"fixed (byte* {pinned} = {shadow})");
         using (writer.Scope())
         {
-            writer.AppendLine(
-                $"{CudaExceptionType}.ThrowIfError({CudaDriverApiType}.cuMemcpyHtoDAsync_v2(" +
-                $"{device}, ({IntPtrType}){pinned}, ({IntPtrType}){size}, hStream));");
-            writer.AppendLine($"{CudaExceptionType}.ThrowIfError({CudaDriverApiType}.cuStreamSynchronize(hStream));");
+            WriteSynchronizedCopy(writer, CopyDirection.HostToDevice, device, $"({IntPtrType}){pinned}", size);
         }
     }
 
     private static void WriteShadowRent(SourceWriter writer, in KernelParameterShape shape) =>
-        writer.AppendLine($"{KernelHostNames.GetShadowLocal(shape)} = global::System.Buffers.ArrayPool<byte>.Shared.Rent({KernelHostNames.GetSizeLocal(shape)});");
+        writer.AppendLine($"{KernelHostNames.GetLocal(LauncherLocal.Shadow, shape)} = {HostTypeNames.ArrayPoolShared}.Rent({KernelHostNames.GetLocal(LauncherLocal.Size, shape)});");
 
     private static void WriteRefOrOutScalarMarshal(SourceWriter writer, in KernelParameterShape shape, int paramIndex)
     {
-        var size = KernelHostNames.GetSizeLocal(shape);
-        var device = KernelHostNames.GetDevicePointerLocal(shape);
-        var pinnedTemp = KernelHostNames.GetPinnedTempLocal(shape);
+        var size = KernelHostNames.GetLocal(LauncherLocal.Size, shape);
+        var device = KernelHostNames.GetLocal(LauncherLocal.DevicePointer, shape);
+        var pinnedTemp = KernelHostNames.GetLocal(LauncherLocal.PinnedTemp, shape);
         writer.AppendLine($"// Marshal ref/out scalar: {shape.Identifier}");
         writer.AppendLine($"int {size} = sizeof({shape.TypeName});");
         writer.AppendLine(
@@ -510,10 +517,7 @@ internal static class KernelLaunchEmitter
             writer.AppendLine($"fixed ({shape.TypeName}* {pinnedTemp} = &{shape.Identifier})");
             using (writer.Scope())
             {
-                writer.AppendLine(
-                    $"{CudaExceptionType}.ThrowIfError({CudaDriverApiType}.cuMemcpyHtoDAsync_v2({device}," +
-                    $" ({IntPtrType}){pinnedTemp}, ({IntPtrType}){size}, hStream));");
-                writer.AppendLine($"{CudaExceptionType}.ThrowIfError({CudaDriverApiType}.cuStreamSynchronize(hStream));");
+                WriteSynchronizedCopy(writer, CopyDirection.HostToDevice, device, $"({IntPtrType}){pinnedTemp}", size);
             }
         }
 
@@ -593,18 +597,15 @@ internal static class KernelLaunchEmitter
             return;
         }
 
-        var native = KernelHostNames.GetNativeLocal(shape);
-        var device = KernelHostNames.GetDevicePointerLocal(shape);
-        var size = KernelHostNames.GetSizeLocal(shape);
+        var native = KernelHostNames.GetLocal(LauncherLocal.Native, shape);
+        var device = KernelHostNames.GetLocal(LauncherLocal.DevicePointer, shape);
+        var size = KernelHostNames.GetLocal(LauncherLocal.Size, shape);
         if (shape.IsByRef)
         {
             if (!isDevicePtr)
             {
                 writer.AppendLine("// Fast zero-allocation copy from device");
-                writer.AppendLine(
-                    $"{CudaExceptionType}.ThrowIfError({CudaDriverApiType}.cuMemcpyDtoHAsync_v2(({IntPtrType})(&{native})," +
-                    $" {device}, ({IntPtrType}){size}, hStream));");
-                writer.AppendLine($"{CudaExceptionType}.ThrowIfError({CudaDriverApiType}.cuStreamSynchronize(hStream));");
+                WriteSynchronizedCopy(writer, CopyDirection.DeviceToHost, $"({IntPtrType})(&{native})", device, size);
             }
         }
 
@@ -638,9 +639,9 @@ internal static class KernelLaunchEmitter
             return;
         }
 
-        var size = KernelHostNames.GetSizeLocal(shape);
-        var device = KernelHostNames.GetDevicePointerLocal(shape);
-        var pinned = KernelHostNames.GetPinnedLocal(shape);
+        var size = KernelHostNames.GetLocal(LauncherLocal.Size, shape);
+        var device = KernelHostNames.GetLocal(LauncherLocal.DevicePointer, shape);
+        var pinned = KernelHostNames.GetLocal(LauncherLocal.Pinned, shape);
         writer.AppendLine($"// Copy back array: {shape.Identifier}");
         writer.Append("if ");
         using (writer.Parentheses())
@@ -655,9 +656,7 @@ internal static class KernelLaunchEmitter
             writer.AppendLine($"fixed ({GetElementTypeName(shape)}* {pinned} = {shape.SpanExpression})");
             using (writer.Scope())
             {
-                writer.AppendLine(
-                    $"{CudaExceptionType}.ThrowIfError({CudaDriverApiType}.cuMemcpyDtoHAsync_v2(({IntPtrType}){pinned}, {device}, ({IntPtrType}){size}, hStream));");
-                writer.AppendLine($"{CudaExceptionType}.ThrowIfError({CudaDriverApiType}.cuStreamSynchronize(hStream));");
+                WriteSynchronizedCopy(writer, CopyDirection.DeviceToHost, $"({IntPtrType}){pinned}", device, size);
             }
         }
     }
@@ -665,10 +664,10 @@ internal static class KernelLaunchEmitter
     private static void WriteConvertedArrayUnmarshal(SourceWriter writer, in ArraySharingPlan plan, int paramIndex)
     {
         var shape = plan.Parameters[paramIndex];
-        var size = KernelHostNames.GetSizeLocal(shape);
-        var device = KernelHostNames.GetDevicePointerLocal(shape);
-        var shadow = KernelHostNames.GetShadowLocal(shape);
-        var pinned = KernelHostNames.GetPinnedLocal(shape);
+        var size = KernelHostNames.GetLocal(LauncherLocal.Size, shape);
+        var device = KernelHostNames.GetLocal(LauncherLocal.DevicePointer, shape);
+        var shadow = KernelHostNames.GetLocal(LauncherLocal.Shadow, shape);
+        var pinned = KernelHostNames.GetLocal(LauncherLocal.Pinned, shape);
         writer.AppendLine($"// Copy back array element by element: {shape.Identifier}");
         writer.Append("if ");
         using (writer.Parentheses())
@@ -683,10 +682,7 @@ internal static class KernelLaunchEmitter
             writer.AppendLine($"fixed (byte* {pinned} = {shadow})");
             using (writer.Scope())
             {
-                writer.AppendLine(
-                    $"{CudaExceptionType}.ThrowIfError({CudaDriverApiType}.cuMemcpyDtoHAsync_v2(" +
-                    $"({IntPtrType}){pinned}, {device}, ({IntPtrType}){size}, hStream));");
-                writer.AppendLine($"{CudaExceptionType}.ThrowIfError({CudaDriverApiType}.cuStreamSynchronize(hStream));");
+                WriteSynchronizedCopy(writer, CopyDirection.DeviceToHost, $"({IntPtrType}){pinned}", device, size);
             }
 
             ConvertedArrayEmitter.WriteShadowAndHostSpans(writer, shape, shape.Cuda);
@@ -734,17 +730,14 @@ internal static class KernelLaunchEmitter
             writer.AppendLine($"{shape.Identifier} = default;");
         }
 
-        var scalarPtr = KernelHostNames.GetScalarPointerLocal(shape);
-        var device = KernelHostNames.GetDevicePointerLocal(shape);
-        var size = KernelHostNames.GetSizeLocal(shape);
+        var scalarPtr = KernelHostNames.GetLocal(LauncherLocal.ScalarPointer, shape);
+        var device = KernelHostNames.GetLocal(LauncherLocal.DevicePointer, shape);
+        var size = KernelHostNames.GetLocal(LauncherLocal.Size, shape);
         writer.AppendLine($"// Fast zero-allocation copy from device for scalar: {shape.Identifier}");
         writer.AppendLine($"fixed ({shape.TypeName}* {scalarPtr} = &{shape.Identifier})");
         using (writer.Scope())
         {
-            writer.AppendLine(
-                $"{CudaExceptionType}.ThrowIfError({CudaDriverApiType}.cuMemcpyDtoHAsync_v2(" +
-                $"({IntPtrType}){scalarPtr}, {device}, ({IntPtrType}){size}, hStream));");
-            writer.AppendLine($"{CudaExceptionType}.ThrowIfError({CudaDriverApiType}.cuStreamSynchronize(hStream));");
+            WriteSynchronizedCopy(writer, CopyDirection.DeviceToHost, $"({IntPtrType}){scalarPtr}", device, size);
         }
     }
 
@@ -762,9 +755,9 @@ internal static class KernelLaunchEmitter
         var shape = plan.Parameters[paramIndex];
         if (shape.IsCudaConvertedArray)
         {
-            var shadow = KernelHostNames.GetShadowLocal(shape);
+            var shadow = KernelHostNames.GetLocal(LauncherLocal.Shadow, shape);
             writer.AppendLine(
-                $"if ({shadow} != null) global::System.Buffers.ArrayPool<byte>.Shared.Return({shadow});");
+                $"if ({shadow} != null) {HostTypeNames.ArrayPoolShared}.Return({shadow});");
         }
 
         var freesOwnRegion = shape.IsByRef || (shape.IsArray && !(plan.UsesTable && plan.IsShared(paramIndex)));
@@ -773,7 +766,7 @@ internal static class KernelLaunchEmitter
             return;
         }
 
-        var device = KernelHostNames.GetDevicePointerLocal(shape);
+        var device = KernelHostNames.GetLocal(LauncherLocal.DevicePointer, shape);
         writer.Append("if ");
         using (writer.Parentheses())
         {
@@ -782,7 +775,7 @@ internal static class KernelLaunchEmitter
             {
                 if (plan.IsEarlierHolder(paramIndex, k))
                 {
-                    writer.Append($" && {device} != {KernelHostNames.GetDevicePointerLocal(plan.Parameters[k])}");
+                    writer.Append($" && {device} != {KernelHostNames.GetLocal(LauncherLocal.DevicePointer, plan.Parameters[k])}");
                 }
             }
         }

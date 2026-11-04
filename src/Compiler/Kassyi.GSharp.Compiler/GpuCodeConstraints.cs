@@ -17,19 +17,12 @@ internal static class GpuCodeConstraints
     public static bool HasSupportedReturnType(IMethodSymbol method, ITranspilerDialect dialect) =>
         method.ReturnType.SpecialType == SpecialType.System_Void ||
         IteratorTypeResolver.IsDeviceIteratorMethod(method) ||
-        (method.ReturnType.IsUnmanagedType && HasReturnDeviceRepresentation(method.ReturnType, dialect));
+        (method.ReturnType.IsUnmanagedType &&
+         (StructLayoutValidator.HasDeviceRepresentation(method.ReturnType, dialect) ||
+          IsReportedAsRuntimeOnly(method.ReturnType)));
 
-    private static bool HasReturnDeviceRepresentation(ITypeSymbol type, ITranspilerDialect dialect)
-    {
-        if (type.SpecialType == SpecialType.System_Decimal ||
-            GetRuntimeOnlyTypeName(type) is not null ||
-            type is IPointerTypeSymbol or IFunctionPointerTypeSymbol)
-        {
-            return true;
-        }
-
-        return TypeLayoutCalculator.HasDeviceRepresentation(type, dialect);
-    }
+    // [WHY] GSH0003 already reports a runtime-only type (decimal, GCHandle, ...); GSH0004 would repeat it
+    private static bool IsReportedAsRuntimeOnly(ITypeSymbol type) => GetRuntimeOnlyTypeName(type) is not null;
 
     /// <summary>The return type of <paramref name="method"/> as the GSH0004 message names it.</summary>
     public static string FormatReturnType(IMethodSymbol method) =>

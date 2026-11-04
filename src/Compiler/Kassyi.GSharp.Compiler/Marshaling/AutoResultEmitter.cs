@@ -20,9 +20,9 @@ internal static class AutoResultEmitter
     private const string Native = GSharpInternalNames.ReturnValue.BufferNative;
     private const string TotalThreads = GSharpInternalNames.ReturnValue.TotalThreads;
     private const string KernelParams = GSharpInternalNames.Launcher.KernelParams;
-    private const string CudaDriverApiType = "global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi";
-    private const string CudaExceptionType = "global::Kassyi.GSharp.Runtime.Interop.CudaException";
-    private const string IntPtrType = "global::System.IntPtr";
+    private const string CudaDriverApiType = HostTypeNames.CudaDriverApi;
+    private const string CudaExceptionType = HostTypeNames.CudaException;
+    private const string IntPtrType = HostTypeNames.IntPtr;
 
     /// <summary>The device copy of the auto result buffer in the generated CUDA launcher.</summary>
     private const string DeviceAutoResult = "d_" + Buffer;
@@ -128,7 +128,7 @@ internal static class AutoResultEmitter
         writer.AppendLine($"if ({Size} > 0 && {DeviceAutoResult} != {IntPtrType}.Zero)");
         using (writer.Scope())
         {
-            writer.AppendLine($"var {Shadow} = global::System.Buffers.ArrayPool<byte>.Shared.Rent({Size});");
+            writer.AppendLine($"var {Shadow} = {HostTypeNames.ArrayPoolShared}.Rent({Size});");
             writer.AppendLine("try");
             using (writer.Scope())
             {
@@ -148,7 +148,7 @@ internal static class AutoResultEmitter
             writer.AppendLine("finally");
             using (writer.Scope())
             {
-                writer.AppendLine($"global::System.Buffers.ArrayPool<byte>.Shared.Return({Shadow});");
+                writer.AppendLine($"{HostTypeNames.ArrayPoolShared}.Return({Shadow});");
             }
         }
     }
@@ -208,7 +208,7 @@ internal static class AutoResultEmitter
             return;
         }
 
-        writer.AppendLine($"{Shadow} = global::System.Buffers.ArrayPool<byte>.Shared.Rent({Size});");
+        writer.AppendLine($"{Shadow} = {HostTypeNames.ArrayPoolShared}.Rent({Size});");
         WriteShadowSpan(writer, kernel.CpuReturn);
         writer.AppendLine($"{Native}.Clear();");
     }
@@ -244,7 +244,7 @@ internal static class AutoResultEmitter
     /// <summary>CPU: emits the return of the rented shadow of a converted returned struct, in the <c>finally</c> block.</summary>
     internal static void WriteCpuConvertedRelease(SourceWriter writer, in KernelHostModel kernel) =>
         writer.AppendLineIf(kernel.IsCpuConvertedReturn,
-            $"if ({Shadow} != null) global::System.Buffers.ArrayPool<byte>.Shared.Return({Shadow});");
+            $"if ({Shadow} != null) {HostTypeNames.ArrayPoolShared}.Return({Shadow});");
 
     // var __gsharp_auto_result_native = MemoryMarshal.Cast<byte, <element shadow>>(
     //     __gsharp_auto_result_shadow.AsSpan(0, __gsharp_auto_result_size));

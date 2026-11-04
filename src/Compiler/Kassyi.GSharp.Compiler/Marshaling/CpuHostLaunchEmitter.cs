@@ -177,17 +177,17 @@ internal static class CpuHostLaunchEmitter
     private static bool WriteConvertedDeclaration(SourceWriter writer, in ArraySharingPlan sharing, int index)
     {
         var shape = sharing.Parameters[index];
-        writer.AppendLineIf(sharing.HasShadowSource(index), $"byte[]? {KernelHostNames.GetSharedShadowLocal(shape)} = null;");
+        writer.AppendLineIf(sharing.HasShadowSource(index), $"byte[]? {KernelHostNames.GetLocal(LauncherLocal.SharedShadow, shape)} = null;");
         switch (shape)
         {
             case { IsCpuConvertedStruct: true, AotStructPath: { } shadow }:
-                writer.AppendLine($"{shadow} {KernelHostNames.GetNativeLocal(shape)} = default;");
-                writer.AppendLine($"var {KernelHostNames.GetAllocatedPointersLocal(shape)} = new global::System.Collections.Generic.List<global::System.IntPtr>();");
+                writer.AppendLine($"{shadow} {KernelHostNames.GetLocal(LauncherLocal.Native, shape)} = default;");
+                writer.AppendLine($"var {KernelHostNames.GetLocal(LauncherLocal.AllocatedPointers, shape)} = new global::System.Collections.Generic.List<global::System.IntPtr>();");
                 return true;
             case { IsCpuConvertedArray: true, Cpu.ConvertedElementAotStructPath: { } element }:
-                writer.AppendLine($"byte[]? {KernelHostNames.GetShadowLocal(shape)} = null;");
-                writer.AppendLine($"var {KernelHostNames.GetAllocatedPointersLocal(shape)} = new global::System.Collections.Generic.List<global::System.IntPtr>();");
-                writer.AppendLine($"int {KernelHostNames.GetSizeLocal(shape)} = checked({shape.LengthExpression} * sizeof({element}));");
+                writer.AppendLine($"byte[]? {KernelHostNames.GetLocal(LauncherLocal.Shadow, shape)} = null;");
+                writer.AppendLine($"var {KernelHostNames.GetLocal(LauncherLocal.AllocatedPointers, shape)} = new global::System.Collections.Generic.List<global::System.IntPtr>();");
+                writer.AppendLine($"int {KernelHostNames.GetLocal(LauncherLocal.Size, shape)} = checked({shape.LengthExpression} * sizeof({element}));");
                 return true;
             default:
                 return false;
@@ -211,13 +211,13 @@ internal static class CpuHostLaunchEmitter
         {
             case { IsCpuConvertedStruct: true, MarshalMethodName: { } marshal }:
                 writer.AppendLine(
-                    $"{marshal}(ref {shape.Identifier}, ref {KernelHostNames.GetNativeLocal(shape)}, false, {KernelHostNames.GetAllocatedPointersLocal(shape)}, hStream);");
+                    $"{marshal}(ref {shape.Identifier}, ref {KernelHostNames.GetLocal(LauncherLocal.Native, shape)}, false, {KernelHostNames.GetLocal(LauncherLocal.AllocatedPointers, shape)}, hStream);");
                 break;
             case { IsCpuConvertedArray: true } when sharing.HasShadowSource(index):
-                var sharedShadow = KernelHostNames.GetSharedShadowLocal(shape);
+                var sharedShadow = KernelHostNames.GetLocal(LauncherLocal.SharedShadow, shape);
                 WriteSharedShadowLookup(writer, sharing, index);
                 writer.AppendLine(
-                    $"{KernelHostNames.GetShadowLocal(shape)} = {sharedShadow} ?? global::System.Buffers.ArrayPool<byte>.Shared.Rent({KernelHostNames.GetSizeLocal(shape)});");
+                    $"{KernelHostNames.GetLocal(LauncherLocal.Shadow, shape)} = {sharedShadow} ?? global::System.Buffers.ArrayPool<byte>.Shared.Rent({KernelHostNames.GetLocal(LauncherLocal.Size, shape)});");
                 ConvertedArrayEmitter.WriteShadowAndHostSpans(writer, shape, shape.Cpu);
                 writer.AppendLine($"if ({sharedShadow} == null)");
                 using (writer.Scope())
@@ -227,7 +227,7 @@ internal static class CpuHostLaunchEmitter
 
                 break;
             case { IsCpuConvertedArray: true }:
-                writer.AppendLine($"{KernelHostNames.GetShadowLocal(shape)} = global::System.Buffers.ArrayPool<byte>.Shared.Rent({KernelHostNames.GetSizeLocal(shape)});");
+                writer.AppendLine($"{KernelHostNames.GetLocal(LauncherLocal.Shadow, shape)} = global::System.Buffers.ArrayPool<byte>.Shared.Rent({KernelHostNames.GetLocal(LauncherLocal.Size, shape)});");
                 ConvertedArrayEmitter.WriteShadowAndHostSpans(writer, shape, shape.Cpu);
                 WriteConvertedElements(writer, sharing, index);
                 break;
@@ -240,11 +240,11 @@ internal static class CpuHostLaunchEmitter
         var shape = sharing.Parameters[index];
         if (!sharing.CopiesIn(index))
         {
-            writer.AppendLine($"{KernelHostNames.GetNativeLocal(shape)}.Clear();");
+            writer.AppendLine($"{KernelHostNames.GetLocal(LauncherLocal.Native, shape)}.Clear();");
         }
         else
         {
-            ConvertedArrayEmitter.WriteElementMarshalLoop(writer, shape, shape.Cpu, KernelHostNames.GetAllocatedPointersLocal(shape));
+            ConvertedArrayEmitter.WriteElementMarshalLoop(writer, shape, shape.Cpu, KernelHostNames.GetLocal(LauncherLocal.AllocatedPointers, shape));
         }
     }
 
@@ -256,14 +256,14 @@ internal static class CpuHostLaunchEmitter
     private static void WriteSharedShadowLookup(SourceWriter writer, in ArraySharingPlan sharing, int index)
     {
         var shape = sharing.Parameters[index];
-        writer.Append($"{KernelHostNames.GetSharedShadowLocal(shape)} = ");
+        writer.Append($"{KernelHostNames.GetLocal(LauncherLocal.SharedShadow, shape)} = ");
         for (var k = 0; k < sharing.Parameters.Length; k++)
         {
             if (sharing.IsShadowSource(index, k))
             {
                 var source = sharing.Parameters[k];
                 writer.Append(
-                    $"{ReferenceEqualsMethod}({shape.Identifier}, {source.Identifier}) ? {KernelHostNames.GetShadowLocal(source)} : ");
+                    $"{ReferenceEqualsMethod}({shape.Identifier}, {source.Identifier}) ? {KernelHostNames.GetLocal(LauncherLocal.Shadow, source)} : ");
             }
         }
 
@@ -280,7 +280,7 @@ internal static class CpuHostLaunchEmitter
         switch (shape)
         {
             case { IsCpuConvertedStruct: true, UnmarshalMethodName: { } unmarshal }:
-                writer.AppendLine($"{unmarshal}(ref {shape.Identifier}, ref {KernelHostNames.GetNativeLocal(shape)}, false, hStream);");
+                writer.AppendLine($"{unmarshal}(ref {shape.Identifier}, ref {KernelHostNames.GetLocal(LauncherLocal.Native, shape)}, false, hStream);");
                 break;
             case { IsCpuConvertedArray: true, CopyOut: true, IsReadOnlyContainer: false }:
                 ConvertedArrayEmitter.WriteElementUnmarshalLoop(writer, shape, shape.Cpu);
@@ -294,14 +294,14 @@ internal static class CpuHostLaunchEmitter
     private static void WriteConvertedRelease(SourceWriter writer, in ArraySharingPlan sharing, int index)
     {
         var shape = sharing.Parameters[index];
-        var notShared = sharing.HasShadowSource(index) ? $" && {KernelHostNames.GetSharedShadowLocal(shape)} == null" : "";
+        var notShared = sharing.HasShadowSource(index) ? $" && {KernelHostNames.GetLocal(LauncherLocal.SharedShadow, shape)} == null" : "";
         switch (shape)
         {
             case { IsCpuConvertedStruct: true }:
                 WriteHandleRelease(writer, shape);
                 break;
             case { IsCpuConvertedArray: true }:
-                var shadow = KernelHostNames.GetShadowLocal(shape);
+                var shadow = KernelHostNames.GetLocal(LauncherLocal.Shadow, shape);
                 WriteHandleRelease(writer, shape);
                 writer.AppendLine(
                     $"if ({shadow} != null{notShared}) global::System.Buffers.ArrayPool<byte>.Shared.Return({shadow});");
@@ -311,7 +311,7 @@ internal static class CpuHostLaunchEmitter
 
     private static void WriteHandleRelease(SourceWriter writer, in KernelParameterShape shape) =>
         writer.AppendLine(
-            $"foreach (var {PinnedHandle} in {KernelHostNames.GetAllocatedPointersLocal(shape)}) global::System.Runtime.InteropServices.GCHandle.FromIntPtr({PinnedHandle}).Free();");
+            $"foreach (var {PinnedHandle} in {KernelHostNames.GetLocal(LauncherLocal.AllocatedPointers, shape)}) global::System.Runtime.InteropServices.GCHandle.FromIntPtr({PinnedHandle}).Free();");
 
     private static void WriteFixedBlocksAndInvoke(SourceWriter writer, in KernelHostModel kernel)
     {
@@ -319,10 +319,10 @@ internal static class CpuHostLaunchEmitter
 
         foreach (var shape in kernel.Parameters)
         {
-            var pinned = KernelHostNames.GetPinnedLocal(shape);
+            var pinned = KernelHostNames.GetLocal(LauncherLocal.Pinned, shape);
             if (shape.IsCpuConvertedArray)
             {
-                writer.AppendLine($"fixed (byte* {pinned} = {KernelHostNames.GetShadowLocal(shape)})");
+                writer.AppendLine($"fixed (byte* {pinned} = {KernelHostNames.GetLocal(LauncherLocal.Shadow, shape)})");
                 hasFixed = true;
             }
             else if (shape is { IsArray: true, ElementTypeName: { } elementType })
@@ -381,7 +381,7 @@ internal static class CpuHostLaunchEmitter
     // string is built (transpiler-emission.md section 1)
     private static void WriteDelegateArgument(SourceWriter writer, in KernelParameterShape shape)
     {
-        var pinned = KernelHostNames.GetPinnedLocal(shape);
+        var pinned = KernelHostNames.GetLocal(LauncherLocal.Pinned, shape);
         switch (shape)
         {
             case { IsArray: true, IsNullableReference: true }:
@@ -396,7 +396,7 @@ internal static class CpuHostLaunchEmitter
                     $"new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy {{ Data = (global::System.IntPtr){pinned}, Length = {shape.LengthExpression} }}");
                 break;
             case { IsCpuConvertedStruct: true }:
-                writer.Append($"&{KernelHostNames.GetNativeLocal(shape)}");
+                writer.Append($"&{KernelHostNames.GetLocal(LauncherLocal.Native, shape)}");
                 break;
             case { IsByRef: true }:
                 writer.Append(pinned);

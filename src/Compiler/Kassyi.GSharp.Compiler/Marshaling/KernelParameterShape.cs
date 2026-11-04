@@ -46,7 +46,7 @@ internal enum ArrayContainerKind
 /// <param name="ConvertedElementMarshalMethodName"><c>AotContexts.Marshal_{key}</c> of that element, otherwise <see langword="null"/>.</param>
 /// <param name="ConvertedElementUnmarshalMethodName"><c>AotContexts.Unmarshal_{key}</c> of that element, otherwise <see langword="null"/>.</param>
 /// <param name="ConvertedElementHasArrayFields">
-/// Whether the converted element has array fields (<see cref="TypeLayoutCalculator.TryFindArrayField"/>), which
+/// Whether the converted element has array fields (<see cref="TransferClassifier.TryFindArrayField"/>), which
 /// <c>Marshal_</c> handles even for an <c>[Out]</c> array.
 /// </param>
 /// <param name="ConvertedElementCopyArraysMethodName">
@@ -66,7 +66,7 @@ internal readonly record struct ParameterTransfer(
     /// <paramref name="dialect"/>.
     /// </summary>
     public static ParameterTransfer Create(ITypeSymbol marshaledType, ITranspilerDialect dialect,
-        INamedTypeSymbol? kernelClass = null)
+        INamedTypeSymbol? kernelClass)
     {
         if (TypeLayoutCalculator.IsUserStruct(marshaledType))
         {
@@ -91,7 +91,7 @@ internal readonly record struct ParameterTransfer(
     /// otherwise <see langword="default"/>.
     /// </summary>
     public static ParameterTransfer CreateForReturn(ITypeSymbol returnType, ITranspilerDialect dialect,
-        INamedTypeSymbol? kernelClass = null) =>
+        INamedTypeSymbol? kernelClass) =>
         KernelParameterShape.IsConvertedReturn(returnType, dialect)
             ? CreateForElement(returnType, dialect, kernelClass)
             : default;
@@ -106,7 +106,7 @@ internal readonly record struct ParameterTransfer(
         }
 
         var hasArrayFields = element is INamedTypeSymbol namedElement &&
-            TypeLayoutCalculator.TryFindArrayField(namedElement, out _);
+            TransferClassifier.TryFindArrayField(namedElement, out _);
         return new ParameterTransfer(
             false,
             AotHostNames.GetAotStructPath(element, kernelClass),
@@ -185,7 +185,7 @@ internal readonly record struct KernelParameterShape
 
     /// <summary>
     /// Whether the parameter is a user struct with array fields at any depth
-    /// (<see cref="TypeLayoutCalculator.TryFindArrayField"/>), which its <c>Marshal_</c> copies.
+    /// (<see cref="TransferClassifier.TryFindArrayField"/>), which its <c>Marshal_</c> copies.
     /// </summary>
     public bool HasArrayFields { get; init; }
 
@@ -339,7 +339,7 @@ internal readonly record struct KernelParameterShape
         if (TypeLayoutCalculator.IsUserStruct(marshaledType))
         {
             var hasArrayFields = marshaledType is INamedTypeSymbol named &&
-                TypeLayoutCalculator.TryFindArrayField(named, out _);
+                TransferClassifier.TryFindArrayField(named, out _);
             return shape with
             {
                 Kind = KernelParameterKind.CustomStruct,
