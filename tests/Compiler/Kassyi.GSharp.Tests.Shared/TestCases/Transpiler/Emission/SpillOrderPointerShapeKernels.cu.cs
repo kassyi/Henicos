@@ -53,4 +53,66 @@ public static unsafe partial class SpillOrderPointerShapeKernels
 
     public static void RunAddressOfHoistedLocalBeforeBarrier(int[] output, int seed, uint blockDimX) =>
         LaunchAddressOfHoistedLocalBeforeBarrierKernel(output, seed, blockDimX: blockDimX);
+
+    // Shape 12 (#957): Taking address of a value parameter written through pointer before Gpu.SyncThreads()
+    [GpuKernel]
+    public static void AddressOfValueParameterAcrossBarrierKernel(int[] output, int value)
+    {
+        int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        {
+            int* p = &value;
+            *p += tid + 1;
+        }
+        Gpu.SyncThreads();
+        output[tid] = value;
+    }
+
+    public static void RunAddressOfValueParameterAcrossBarrier(int[] output, int value, uint blockDimX) =>
+        LaunchAddressOfValueParameterAcrossBarrierKernel(output, value, blockDimX: blockDimX);
+
+    // Shape 13 (#966): Address of hoisted local stored in pointer local across Gpu.SyncThreads()
+    [GpuKernel]
+    public static void AddressOfHoistedLocalAcrossBarrierKernel(int[] output, int seed)
+    {
+        int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        int x = tid * 10;
+        int* p = &x;
+        Gpu.SyncThreads();
+        *p += 1;
+        Gpu.SyncThreads();
+        output[tid] = x;
+    }
+
+    public static void RunAddressOfHoistedLocalAcrossBarrier(int[] output, int seed, uint blockDimX) =>
+        LaunchAddressOfHoistedLocalAcrossBarrierKernel(output, seed, blockDimX: blockDimX);
+
+    // Shape 14 (#970): By-value pointer parameter modified before Gpu.SyncThreads()
+    [GpuKernel]
+    public static void PointerParameterAcrossBarrierKernel(int* ptr, int[] output)
+    {
+        int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        ptr = ptr + tid;
+        *ptr += tid + 10;
+        Gpu.SyncThreads();
+        output[tid] = *ptr;
+    }
+
+    public static void RunPointerParameterAcrossBarrier(int* ptr, int[] output, uint blockDimX) =>
+        LaunchPointerParameterAcrossBarrierKernel(ptr, output, blockDimX: blockDimX);
+
+    // Shape 15 (#1036): Value parameter written through ref local before Gpu.SyncThreads()
+    [GpuKernel]
+    public static void RefLocalToValueParameterAcrossBarrierKernel(int[] output, int value)
+    {
+        int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        {
+            ref int r = ref value;
+            r += tid + 1;
+        }
+        Gpu.SyncThreads();
+        output[tid] = value;
+    }
+
+    public static void RunRefLocalToValueParameterAcrossBarrier(int[] output, int value, uint blockDimX) =>
+        LaunchRefLocalToValueParameterAcrossBarrierKernel(output, value, blockDimX: blockDimX);
 }

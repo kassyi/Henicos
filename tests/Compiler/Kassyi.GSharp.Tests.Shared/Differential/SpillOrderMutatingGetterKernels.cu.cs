@@ -145,4 +145,52 @@ public static unsafe partial class SpillOrderMutatingGetterKernels
 
         output[tid] = lane0Value + tid;
     }
+
+    [GpuDeviceFunction]
+    private static int Pair(int first, int second) => first * 1000 + second;
+
+    [GpuDeviceFunction]
+    private static int Bump(ref int b)
+    {
+        b += 100;
+        return b;
+    }
+
+    // Ref conditional read as value (c2 ? ref a : ref b)
+    [GpuKernel]
+    public static void RefConditionalValueReadOneLevelKernel(int[] output, int seed)
+    {
+        int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        int a = seed;
+        int b = tid + 9;
+        bool c2 = false;
+        output[tid] = Pair(c2 ? ref a : ref b, Bump(ref b));
+    }
+
+    // Nested ref conditional read as value (c1 ? ref (c2 ? ref a : ref b) : ref d)
+    [GpuKernel]
+    public static void RefConditionalValueReadNestedKernel(int[] output, int seed)
+    {
+        int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        int a = seed;
+        int b = tid + 9;
+        int d = seed * 2;
+        bool c1 = true;
+        bool c2 = false;
+        output[tid] = Pair(c1 ? ref (c2 ? ref a : ref b) : ref d, Bump(ref b));
+    }
+
+    // Nested ref conditional read as value across barrier
+    [GpuKernel]
+    public static void RefConditionalValueReadNestedWithBarrierKernel(int[] output, int seed)
+    {
+        int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        int a = seed;
+        int b = tid + 9;
+        int d = seed * 2;
+        bool c1 = true;
+        bool c2 = false;
+        Gpu.SyncThreads();
+        output[tid] = Pair(c1 ? ref (c2 ? ref a : ref b) : ref d, Bump(ref b));
+    }
 }

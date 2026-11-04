@@ -56,6 +56,24 @@ public sealed class SpillOrderMutatingGetterTests : TranspilerTestBase
         };
     }
 
+    private static unsafe Action<int[], int[]> CompileAndCreateManagedRawPointerInvoker(string runMethodName)
+    {
+        var assembly = CompileManagedShapeAssembly(runMethodName, "Transpiler/Emission/SpillOrderPointerShapeKernels.cu.cs");
+        var kernelsType = assembly.GetType("Kassyi.GSharp.Tests.Shared.TestCases.Transpiler.Emission.SpillOrderPointerShapeKernels", throwOnError: true);
+        Assert.NotNull(kernelsType);
+        var runMethod = kernelsType.GetMethod(runMethodName, BindingFlags.Public | BindingFlags.Static);
+        Assert.NotNull(runMethod);
+
+        return (backing, output) =>
+        {
+            fixed (int* basePtr = backing)
+            {
+                object?[] parameters = [System.Reflection.Pointer.Box(basePtr, typeof(int*)), output, (uint)ThreadCount];
+                runMethod.Invoke(null, parameters);
+            }
+        };
+    }
+
     private static unsafe Action<int[], int[]> CompileAndCreateManagedPointerInvoker(string runMethodName)
     {
         var assembly = CompileManagedShapeAssembly(runMethodName, "Transpiler/Emission/SpillOrderPointerShapeKernels.cu.cs");
@@ -630,6 +648,286 @@ public sealed class SpillOrderMutatingGetterTests : TranspilerTestBase
         }
 
         Assert.Equal(expected, managedActual);
+#endif
+    }
+
+    // -------------------------------------------------------------------------
+    // A ref conditional read as a value keeps its read, so the call after it is sequenced
+    // -------------------------------------------------------------------------
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Differential)]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_RefConditionalValueRead_OneLevel_SequencedCorrectly()
+    {
+        int[] expected = Enumerable.Range(0, ThreadCount).Select(tid => (tid + 9) * 1000 + (tid + 9 + 100)).ToArray();
+
+        int[] actual = new int[ThreadCount];
+        SpillOrderMutatingGetterKernels.LaunchRefConditionalValueReadOneLevelKernel(
+            actual, 7, blockDimX: ThreadCount);
+        Assert.Equal(expected, actual);
+
+#if GSHARP_CPU
+        int[] managedActual = new int[ThreadCount];
+        bool prev = CpuKernelLoader.ForceManagedExecution;
+        CpuKernelLoader.ForceManagedExecution = true;
+        try
+        {
+            SpillOrderMutatingGetterKernels.LaunchRefConditionalValueReadOneLevelKernel(
+                managedActual, 7, blockDimX: ThreadCount);
+        }
+        finally
+        {
+            CpuKernelLoader.ForceManagedExecution = prev;
+        }
+
+        Assert.Equal(expected, managedActual);
+#endif
+    }
+
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Differential)]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_RefConditionalValueRead_Nested_SequencedCorrectly()
+    {
+        int[] expected = Enumerable.Range(0, ThreadCount).Select(tid => (tid + 9) * 1000 + (tid + 9 + 100)).ToArray();
+
+        int[] actual = new int[ThreadCount];
+        SpillOrderMutatingGetterKernels.LaunchRefConditionalValueReadNestedKernel(
+            actual, 7, blockDimX: ThreadCount);
+        Assert.Equal(expected, actual);
+
+#if GSHARP_CPU
+        int[] managedActual = new int[ThreadCount];
+        bool prev = CpuKernelLoader.ForceManagedExecution;
+        CpuKernelLoader.ForceManagedExecution = true;
+        try
+        {
+            SpillOrderMutatingGetterKernels.LaunchRefConditionalValueReadNestedKernel(
+                managedActual, 7, blockDimX: ThreadCount);
+        }
+        finally
+        {
+            CpuKernelLoader.ForceManagedExecution = prev;
+        }
+
+        Assert.Equal(expected, managedActual);
+#endif
+    }
+
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Differential)]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_RefConditionalValueRead_NestedWithBarrier_SequencedCorrectly()
+    {
+        int[] expected = Enumerable.Range(0, ThreadCount).Select(tid => (tid + 9) * 1000 + (tid + 9 + 100)).ToArray();
+
+        int[] actual = new int[ThreadCount];
+        SpillOrderMutatingGetterKernels.LaunchRefConditionalValueReadNestedWithBarrierKernel(
+            actual, 7, blockDimX: ThreadCount);
+        Assert.Equal(expected, actual);
+
+#if GSHARP_CPU
+        int[] managedActual = new int[ThreadCount];
+        bool prev = CpuKernelLoader.ForceManagedExecution;
+        CpuKernelLoader.ForceManagedExecution = true;
+        try
+        {
+            SpillOrderMutatingGetterKernels.LaunchRefConditionalValueReadNestedWithBarrierKernel(
+                managedActual, 7, blockDimX: ThreadCount);
+        }
+        finally
+        {
+            CpuKernelLoader.ForceManagedExecution = prev;
+        }
+
+        Assert.Equal(expected, managedActual);
+#endif
+    }
+
+    // -------------------------------------------------------------------------
+    // #957: Taking address of value parameter across barrier
+    // -------------------------------------------------------------------------
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Differential)]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_AddressOfValueParameterAcrossBarrier_PreservesMutation()
+    {
+        Skip.If(IsCudaDialect, "Managed compilation shape test runs on the CPU runner.");
+
+        var invoke = CompileAndCreateManagedSeedInvoker(
+            "RunAddressOfValueParameterAcrossBarrier",
+            "Transpiler/Emission/SpillOrderPointerShapeKernels.cu.cs",
+            "Kassyi.GSharp.Tests.Shared.TestCases.Transpiler.Emission.SpillOrderPointerShapeKernels");
+        int[] actual = new int[ThreadCount];
+#if GSHARP_CPU
+        bool prev = CpuKernelLoader.ForceManagedExecution;
+        CpuKernelLoader.ForceManagedExecution = true;
+        try
+        {
+            invoke(actual, 100);
+        }
+        finally
+        {
+            CpuKernelLoader.ForceManagedExecution = prev;
+        }
+#endif
+
+        int[] expected = Enumerable.Range(0, ThreadCount).Select(tid => 100 + tid + 1).ToArray();
+        Assert.Equal(expected, actual);
+    }
+
+    // -------------------------------------------------------------------------
+    // #966: Taking address of hoisted local across barrier
+    // -------------------------------------------------------------------------
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Differential)]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_AddressOfHoistedLocalAcrossBarrier_PreservesMutation()
+    {
+        Skip.If(IsCudaDialect, "Managed compilation shape test runs on the CPU runner.");
+
+        var invoke = CompileAndCreateManagedSeedInvoker(
+            "RunAddressOfHoistedLocalAcrossBarrier",
+            "Transpiler/Emission/SpillOrderPointerShapeKernels.cu.cs",
+            "Kassyi.GSharp.Tests.Shared.TestCases.Transpiler.Emission.SpillOrderPointerShapeKernels");
+        int[] actual = new int[ThreadCount];
+#if GSHARP_CPU
+        bool prev = CpuKernelLoader.ForceManagedExecution;
+        CpuKernelLoader.ForceManagedExecution = true;
+        try
+        {
+            invoke(actual, 0);
+        }
+        finally
+        {
+            CpuKernelLoader.ForceManagedExecution = prev;
+        }
+#endif
+
+        int[] expected = Enumerable.Range(0, ThreadCount).Select(tid => tid * 10 + 1).ToArray();
+        Assert.Equal(expected, actual);
+    }
+
+    // -------------------------------------------------------------------------
+    // #970: By-value pointer parameter across barrier
+    // -------------------------------------------------------------------------
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Differential)]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_PointerParameterAcrossBarrier_PreservesValue()
+    {
+        Skip.If(IsCudaDialect, "Managed compilation shape test runs on the CPU runner.");
+
+        var invoke = CompileAndCreateManagedRawPointerInvoker("RunPointerParameterAcrossBarrier");
+        int[] backing = Enumerable.Range(10, ThreadCount).ToArray();
+        int[] actual = new int[ThreadCount];
+#if GSHARP_CPU
+        bool prev = CpuKernelLoader.ForceManagedExecution;
+        CpuKernelLoader.ForceManagedExecution = true;
+        try
+        {
+            invoke(backing, actual);
+        }
+        finally
+        {
+            CpuKernelLoader.ForceManagedExecution = prev;
+        }
+#endif
+
+        int[] expected = Enumerable.Range(0, ThreadCount).Select(tid => 10 + tid + tid + 10).ToArray();
+        Assert.Equal(expected, actual);
+    }
+
+    // -------------------------------------------------------------------------
+    // #1036: Value parameter written through ref local across barrier
+    // -------------------------------------------------------------------------
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Differential)]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_RefLocalToValueParameterAcrossBarrier_PreservesMutation()
+    {
+        Skip.If(IsCudaDialect, "Managed compilation shape test runs on the CPU runner.");
+
+        var invoke = CompileAndCreateManagedSeedInvoker(
+            "RunRefLocalToValueParameterAcrossBarrier",
+            "Transpiler/Emission/SpillOrderPointerShapeKernels.cu.cs",
+            "Kassyi.GSharp.Tests.Shared.TestCases.Transpiler.Emission.SpillOrderPointerShapeKernels");
+        int[] actual = new int[ThreadCount];
+#if GSHARP_CPU
+        bool prev = CpuKernelLoader.ForceManagedExecution;
+        CpuKernelLoader.ForceManagedExecution = true;
+        try
+        {
+            invoke(actual, 200);
+        }
+        finally
+        {
+            CpuKernelLoader.ForceManagedExecution = prev;
+        }
+#endif
+
+        int[] expected = Enumerable.Range(0, ThreadCount).Select(tid => 200 + tid + 1).ToArray();
+        Assert.Equal(expected, actual);
+    }
+
+    // -------------------------------------------------------------------------
+    // #966: Address of hoisted local across barrier under heavy GC pressure (300 launches)
+    // -------------------------------------------------------------------------
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Differential)]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_AddressOfHoistedLocalAcrossBarrier_StressGcPressure()
+    {
+        Skip.If(IsCudaDialect, "Managed compilation shape test runs on the CPU runner.");
+
+        var invoke = CompileAndCreateManagedSeedInvoker(
+            "RunAddressOfHoistedLocalAcrossBarrier",
+            "Transpiler/Emission/SpillOrderPointerShapeKernels.cu.cs",
+            "Kassyi.GSharp.Tests.Shared.TestCases.Transpiler.Emission.SpillOrderPointerShapeKernels");
+
+#if GSHARP_CPU
+        bool prev = CpuKernelLoader.ForceManagedExecution;
+        CpuKernelLoader.ForceManagedExecution = true;
+        try
+        {
+            using var cts = new System.Threading.CancellationTokenSource();
+            var gcTask = System.Threading.Tasks.Task.Run(() =>
+            {
+                while (!cts.IsCancellationRequested)
+                {
+                    GC.Collect(2, GCCollectionMode.Forced, blocking: true, compacting: true);
+                }
+            });
+
+            try
+            {
+                int[] expected = Enumerable.Range(0, ThreadCount).Select(tid => tid * 10 + 1).ToArray();
+                int[] actual = new int[ThreadCount];
+                for (int i = 0; i < 300; i++)
+                {
+                    Array.Clear(actual, 0, actual.Length);
+                    invoke(actual, 0);
+                    Assert.Equal(expected, actual);
+                }
+            }
+            finally
+            {
+                cts.Cancel();
+                gcTask.Wait(TimeSpan.FromSeconds(5));
+            }
+        }
+        finally
+        {
+            CpuKernelLoader.ForceManagedExecution = prev;
+        }
 #endif
     }
 }
