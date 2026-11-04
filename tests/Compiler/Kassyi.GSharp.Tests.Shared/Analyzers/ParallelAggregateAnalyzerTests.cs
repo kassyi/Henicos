@@ -49,6 +49,14 @@ public class ParallelAggregateAnalyzerTests : TranspilerTestBase
             // #847: struct field deconstruction from ThreadIndex, and reduced extension device function call
             (206, 89, 94, ParallelAggregateFallback.ThreadVariantInput),
             (230, 99, 104, ParallelAggregateFallback.ThreadVariantInput),
+            // #847 review: switch arm with when clause, goto into region, and switch statement with when clause
+            (240, 79, 84, ParallelAggregateFallback.DivergentCall),
+            (258, 70, 75, ParallelAggregateFallback.DivergentCall),
+            (269, 78, 83, ParallelAggregateFallback.DivergentCall),
+            // #847 review: else branch, non-first switch arm, and after null-conditional access
+            (286, 74, 79, ParallelAggregateFallback.DivergentCall),
+            (299, 78, 83, ParallelAggregateFallback.DivergentCall),
+            (314, 79, 84, ParallelAggregateFallback.DivergentCall),
         ];
         var actual = diagnostics
             .Where(static d => d.Id == GSharpDiagnostics.ParallelAggregateRunsSequentially.Id)

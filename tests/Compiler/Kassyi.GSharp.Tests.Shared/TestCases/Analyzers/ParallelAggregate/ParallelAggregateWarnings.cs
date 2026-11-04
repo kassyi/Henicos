@@ -230,4 +230,88 @@ public static partial class ParallelAggregateWarnings
     {
         result[ThreadIndex.X] = data.AsStackEnumerable().Select(x => x + 0.TidPlus()).AsParallel().Sum();
     }
+
+    // #847: switch arm with a thread-variant when clause reaches the call only in some threads
+    [GpuKernel]
+    public static void SwitchArmWhenKernel(int[] data, int[] result)
+    {
+        int mode = 0;
+        result[ThreadIndex.X] = mode switch
+        {
+            0 when ThreadIndex.X == 0 => data.AsStackEnumerable().AsParallel().Sum(),
+            _ => 0
+        };
+    }
+
+    // #847: goto into a thread-variant branch influence region reaches the call only in some threads
+    [GpuKernel]
+    public static void GotoRegionKernel(int[] data, int[] result)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            goto InRegion;
+        }
+
+        result[ThreadIndex.X] = 0;
+        return;
+
+    InRegion:
+        result[ThreadIndex.X] = data.AsStackEnumerable().AsParallel().Sum();
+    }
+
+    // #847: switch statement with a thread-variant when clause reaches the call only in some threads
+    [GpuKernel]
+    public static void SwitchStatementWhenKernel(int[] data, int[] result)
+    {
+        int mode = 0;
+        switch (mode)
+        {
+            case 0 when ThreadIndex.X == 0:
+                result[ThreadIndex.X] = data.AsStackEnumerable().AsParallel().Sum();
+                break;
+            default:
+                result[ThreadIndex.X] = 0;
+                break;
+        }
+    }
+
+    // #847: call in else branch of a thread-variant if
+    [GpuKernel]
+    public static void IfElseDivergentKernel(int[] data, int[] result)
+    {
+        if (ThreadIndex.X < 5)
+        {
+        }
+        else
+        {
+            result[ThreadIndex.X] = data.AsStackEnumerable().AsParallel().Sum();
+        }
+    }
+
+    // #847: call in non-first arm of a thread-variant switch
+    [GpuKernel]
+    public static void SwitchDefaultDivergentKernel(int[] data, int[] result)
+    {
+        switch (ThreadIndex.X)
+        {
+            case 0:
+                break;
+            default:
+                result[ThreadIndex.X] = data.AsStackEnumerable().AsParallel().Sum();
+                break;
+        }
+    }
+
+    public sealed class DataBox
+    {
+        public int[]? Elements;
+    }
+
+    // #847: call after a thread-variant null-conditional access
+    [GpuKernel]
+    public static void NullConditionalDivergentKernel(int[] data, int[] result)
+    {
+        DataBox? box = ThreadIndex.X < 5 ? new DataBox { Elements = data } : null;
+        result[ThreadIndex.X] = box?.Elements.AsStackEnumerable().AsParallel().Sum() ?? 0;
+    }
 }

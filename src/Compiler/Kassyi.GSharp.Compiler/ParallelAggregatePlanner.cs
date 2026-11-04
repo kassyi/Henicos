@@ -84,8 +84,8 @@ internal static class ParallelAggregatePlanner
         // The first reason that applies, in the order of the arms
         var fallback = true switch
         {
-            _ when uniformity.IsReachedByPartOfBlock(original) =>
-                IsUnderVariantCondition(original, method, uniformity)
+            _ when uniformity.GetPartialReach(original) is var reach && reach != PartialReach.None =>
+                reach == PartialReach.Branch
                     ? ParallelAggregateFallback.DivergentCall
                     : ParallelAggregateFallback.EarlyExit,
             _ when !IsSharedSource(chain.SourceArrayExpression, originalModel, kernel)
@@ -174,42 +174,6 @@ internal static class ParallelAggregatePlanner
             if (lambda.Parent is not ArgumentSyntax { Parent.Parent: InvocationExpressionSyntax macro } ||
                 model.GetSymbol(macro) is not IMethodSymbol macroSymbol ||
                 GpuMacroClassifier.Classify(macroSymbol).Kind is not (GpuMacroKind.SyncGrid or GpuMacroKind.ForUnroll))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    // Whether a branch, loop, switch section or arm, for incrementor or operand around node has a thread-variant
-    // condition (DivergentCall vs EarlyExit when only part of the block reaches node)
-    private static bool IsUnderVariantCondition(SyntaxNode node, MethodDeclarationSyntax method,
-        UniformityAnalysis uniformity)
-    {
-        var child = node;
-        for (var ancestor = node.Parent; ancestor != null && ancestor != method; child = ancestor, ancestor = ancestor.Parent)
-        {
-            var condition = ancestor switch
-            {
-                IfStatementSyntax ifStatement when child != ifStatement.Condition => ifStatement.Condition,
-                WhileStatementSyntax whileStatement when child != whileStatement.Condition => whileStatement.Condition,
-                DoStatementSyntax doStatement when child != doStatement.Condition => doStatement.Condition,
-                ForStatementSyntax { Condition: { } forCondition } forStatement when
-                    child == forStatement.Statement ||
-                    (child is ExpressionSyntax incrementor && forStatement.Incrementors.Contains(incrementor)) => forCondition,
-                SwitchStatementSyntax switchStatement when child != switchStatement.Expression => switchStatement.Expression,
-                SwitchExpressionSyntax switchExpression when child != switchExpression.GoverningExpression =>
-                    switchExpression.GoverningExpression,
-                ConditionalExpressionSyntax conditional when child != conditional.Condition => conditional.Condition,
-                BinaryExpressionSyntax binary when child == binary.Right &&
-                                                   binary.IsKind(SyntaxKind.LogicalAndExpression, SyntaxKind.LogicalOrExpression,
-                                                       SyntaxKind.CoalesceExpression) => binary.Left,
-                ForEachStatementSyntax forEach when child == forEach.Statement => forEach.Expression,
-                _ => null
-            };
-
-            if (condition != null && uniformity.IsThreadVariant(condition))
             {
                 return true;
             }
