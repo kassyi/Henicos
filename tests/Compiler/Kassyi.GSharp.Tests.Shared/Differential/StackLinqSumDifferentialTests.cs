@@ -69,7 +69,7 @@ public class StackLinqSumDifferentialTests
         DifferentialRunner.Run(s_doubleSum);
     }
 
-    private static void FillReference<T>(DiffBuffers b) where T : unmanaged, INumberBase<T>
+    private static void FillReference<T>(DiffBuffers b, LaunchShape _) where T : unmanaged, INumberBase<T>
     {
         var data = b.Get<T>("data");
         var r = b.Get<T>("r");
