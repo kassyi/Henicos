@@ -837,44 +837,44 @@ finally
 }
 #pragma warning restore CS8500
 public const string CrossAxisWarpShuffleAndActiveMaskKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__LaunchShapeDifferentialKernels__CrossAxisWarpShuffleAndActiveMaskKernel(GSharpArray<int> __gsharp_id_0_srcInt, GSharpArray<float> __gsharp_id_1_srcFloat, GSharpArray<unsigned int> __gsharp_id_2_srcUInt, GSharpArray<unsigned int> __gsharp_id_3_outMask, GSharpArray<int> __gsharp_id_4_outShflInt, GSharpArray<float> __gsharp_id_5_outShflFloat, GSharpArray<unsigned int> __gsharp_id_6_outShflUInt){
-int __gsharp_id_7_bdx = (int)blockDim.x;
-int __gsharp_id_8_bdy = (int)blockDim.y;
-int __gsharp_id_9_bdz = (int)blockDim.z;
-int __gsharp_id_10_gdx = (int)gridDim.x;
-int __gsharp_id_11_gdy = (int)gridDim.y;
-int __gsharp_id_12_blockTid = __gsharp_add_i32(__gsharp_add_i32((int)threadIdx.x,__gsharp_mul_i32((int)threadIdx.y,__gsharp_id_7_bdx)),__gsharp_mul_i32(__gsharp_mul_i32((int)threadIdx.z,__gsharp_id_7_bdx),__gsharp_id_8_bdy));
-int __gsharp_id_13_blockThreads = __gsharp_mul_i32(__gsharp_mul_i32(__gsharp_id_7_bdx,__gsharp_id_8_bdy),__gsharp_id_9_bdz);
-long long __gsharp_id_14_blockBid = __gsharp_add_i64(__gsharp_add_i64((int)blockIdx.x,(long long)(int)blockIdx.y*__gsharp_id_10_gdx),__gsharp_mul_i64((long long)(int)blockIdx.z*__gsharp_id_10_gdx,__gsharp_id_11_gdy));
-int __gsharp_id_15_gid = (int)(__gsharp_add_i64(__gsharp_mul_i64(__gsharp_id_14_blockBid,__gsharp_id_13_blockThreads),__gsharp_id_12_blockTid));
-int __gsharp_id_16_rows = __gsharp_id_0_srcInt.length;
-int __gsharp_id_17_v = (__gsharp_id_15_gid<__gsharp_id_16_rows?__gsharp_id_0_srcInt[__gsharp_id_15_gid]:(__gsharp_add_i32(__gsharp_id_12_blockTid,1)));
-float __gsharp_id_18_fv = (__gsharp_id_15_gid<__gsharp_id_16_rows?__gsharp_id_1_srcFloat[__gsharp_id_15_gid]:(__gsharp_id_12_blockTid*0.5f));
-unsigned int __gsharp_id_19_uv = (__gsharp_id_15_gid<__gsharp_id_16_rows?__gsharp_id_2_srcUInt[__gsharp_id_15_gid]:(unsigned int)(__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_12_blockTid,3),7)));
-unsigned int __gsharp_id_20_mask = __activemask();
-int __gsharp_id_21_lane = __gsharp_id_12_blockTid&31;
-int __gsharp_id_22_warpStart = __gsharp_id_12_blockTid&(-32);
-int __gsharp_id_23_rem = __gsharp_sub_i32(__gsharp_id_13_blockThreads,__gsharp_id_22_warpStart);
+unsigned int __gsharp_id_7_mask = __activemask();
+int __gsharp_id_8_bdx = (int)blockDim.x;
+int __gsharp_id_9_bdy = (int)blockDim.y;
+int __gsharp_id_10_bdz = (int)blockDim.z;
+int __gsharp_id_11_gdx = (int)gridDim.x;
+int __gsharp_id_12_gdy = (int)gridDim.y;
+int __gsharp_id_13_blockTid = __gsharp_add_i32(__gsharp_add_i32((int)threadIdx.x,__gsharp_mul_i32((int)threadIdx.y,__gsharp_id_8_bdx)),__gsharp_mul_i32(__gsharp_mul_i32((int)threadIdx.z,__gsharp_id_8_bdx),__gsharp_id_9_bdy));
+int __gsharp_id_14_blockThreads = __gsharp_mul_i32(__gsharp_mul_i32(__gsharp_id_8_bdx,__gsharp_id_9_bdy),__gsharp_id_10_bdz);
+long long __gsharp_id_15_blockBid = __gsharp_add_i64(__gsharp_add_i64((int)blockIdx.x,(long long)(int)blockIdx.y*__gsharp_id_11_gdx),__gsharp_mul_i64((long long)(int)blockIdx.z*__gsharp_id_11_gdx,__gsharp_id_12_gdy));
+int __gsharp_id_16_gid = (int)(__gsharp_add_i64(__gsharp_mul_i64(__gsharp_id_15_blockBid,__gsharp_id_14_blockThreads),__gsharp_id_13_blockTid));
+int __gsharp_id_17_rows = __gsharp_id_0_srcInt.length;
+int __gsharp_id_18_v = (__gsharp_id_16_gid<__gsharp_id_17_rows?__gsharp_id_0_srcInt[__gsharp_id_16_gid]:(__gsharp_add_i32(__gsharp_id_13_blockTid,1)));
+float __gsharp_id_19_fv = (__gsharp_id_16_gid<__gsharp_id_17_rows?__gsharp_id_1_srcFloat[__gsharp_id_16_gid]:(__gsharp_id_13_blockTid*0.5f));
+unsigned int __gsharp_id_20_uv = (__gsharp_id_16_gid<__gsharp_id_17_rows?__gsharp_id_2_srcUInt[__gsharp_id_16_gid]:(unsigned int)(__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_13_blockTid,3),7)));
+int __gsharp_id_21_lane = __gsharp_id_13_blockTid&31;
+int __gsharp_id_22_warpStart = __gsharp_id_13_blockTid&(-32);
+int __gsharp_id_23_rem = __gsharp_sub_i32(__gsharp_id_14_blockThreads,__gsharp_id_22_warpStart);
 int __gsharp_id_24_activeLanes = (__gsharp_id_23_rem>=32?32:((__gsharp_id_23_rem>0?__gsharp_id_23_rem:0)));
-int __gsharp_id_25_shfl0 = __shfl_sync(__gsharp_id_20_mask,__gsharp_id_17_v,0,32);
-int __gsharp_id_26_up1 = __shfl_up_sync(__gsharp_id_20_mask,__gsharp_id_17_v,1u,32);
+int __gsharp_id_25_shfl0 = __shfl_sync(__gsharp_id_7_mask,__gsharp_id_18_v,0,32);
+int __gsharp_id_26_up1 = __shfl_up_sync(__gsharp_id_7_mask,__gsharp_id_18_v,1u,32);
 int __gsharp_id_27_safeXor1 = (((__gsharp_id_21_lane^1)<__gsharp_id_24_activeLanes)?1:0);
-int __gsharp_id_28_xor1 = __shfl_xor_sync(__gsharp_id_20_mask,__gsharp_id_17_v,__gsharp_id_27_safeXor1,32);
+int __gsharp_id_28_xor1 = __shfl_xor_sync(__gsharp_id_7_mask,__gsharp_id_18_v,__gsharp_id_27_safeXor1,32);
 int __gsharp_id_29_seg4Target = __gsharp_add_i32(__gsharp_id_21_lane&(-4),(__gsharp_add_i32(__gsharp_id_21_lane,1))&3);
 int __gsharp_id_30_safeSeg4Lane = (__gsharp_id_29_seg4Target<__gsharp_id_24_activeLanes?(__gsharp_id_29_seg4Target&3):(__gsharp_id_21_lane&3));
-int __gsharp_id_31_shflSeg4 = __shfl_sync(__gsharp_id_20_mask,__gsharp_id_17_v,__gsharp_id_30_safeSeg4Lane,4);
+int __gsharp_id_31_shflSeg4 = __shfl_sync(__gsharp_id_7_mask,__gsharp_id_18_v,__gsharp_id_30_safeSeg4Lane,4);
 unsigned int __gsharp_id_32_safeDown1 = ((__gsharp_add_i32(__gsharp_id_21_lane,1)<__gsharp_id_24_activeLanes)?1u:0u);
-float __gsharp_id_33_fDown1 = __shfl_down_sync(__gsharp_id_20_mask,__gsharp_id_18_fv,__gsharp_id_32_safeDown1,32);
-unsigned int __gsharp_id_34_uXor1 = __shfl_xor_sync(__gsharp_id_20_mask,__gsharp_id_19_uv,__gsharp_id_27_safeXor1,32);
-if(__gsharp_id_15_gid<__gsharp_id_16_rows)
+float __gsharp_id_33_fDown1 = __shfl_down_sync(__gsharp_id_7_mask,__gsharp_id_19_fv,__gsharp_id_32_safeDown1,32);
+unsigned int __gsharp_id_34_uXor1 = __shfl_xor_sync(__gsharp_id_7_mask,__gsharp_id_20_uv,__gsharp_id_27_safeXor1,32);
+if(__gsharp_id_16_gid<__gsharp_id_17_rows)
 {
-__gsharp_id_3_outMask[__gsharp_id_15_gid]=__gsharp_id_20_mask;
-int __gsharp_id_35_baseIdx = __gsharp_mul_i32(__gsharp_id_15_gid,4);
+__gsharp_id_3_outMask[__gsharp_id_16_gid]=__gsharp_id_7_mask;
+int __gsharp_id_35_baseIdx = __gsharp_mul_i32(__gsharp_id_16_gid,4);
 __gsharp_id_4_outShflInt[__gsharp_id_35_baseIdx+0]=__gsharp_id_25_shfl0;
 __gsharp_id_4_outShflInt[__gsharp_add_i32(__gsharp_id_35_baseIdx,1)]=__gsharp_id_26_up1;
 __gsharp_id_4_outShflInt[__gsharp_add_i32(__gsharp_id_35_baseIdx,2)]=__gsharp_id_28_xor1;
 __gsharp_id_4_outShflInt[__gsharp_add_i32(__gsharp_id_35_baseIdx,3)]=__gsharp_id_31_shflSeg4;
-__gsharp_id_5_outShflFloat[__gsharp_id_15_gid]=__gsharp_id_33_fDown1;
-__gsharp_id_6_outShflUInt[__gsharp_id_15_gid]=__gsharp_id_34_uXor1;
+__gsharp_id_5_outShflFloat[__gsharp_id_16_gid]=__gsharp_id_33_fDown1;
+__gsharp_id_6_outShflUInt[__gsharp_id_16_gid]=__gsharp_id_34_uXor1;
 }
 }
 ";

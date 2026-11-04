@@ -180,6 +180,8 @@ public static partial class LaunchShapeDifferentialKernels
         float[] outShflFloat,
         uint[] outShflUInt)
     {
+        uint mask = Warp.ActiveMask();
+
         int bdx = BlockDimension.X;
         int bdy = BlockDimension.Y;
         int bdz = BlockDimension.Z;
@@ -196,7 +198,6 @@ public static partial class LaunchShapeDifferentialKernels
         float fv = gid < rows ? srcFloat[gid] : (blockTid * 0.5f);
         uint uv = gid < rows ? srcUInt[gid] : (uint)(blockTid * 3 + 7);
 
-        uint mask = Warp.ActiveMask();
         int lane = blockTid & 31;
         int warpStart = blockTid & ~31;
         int rem = blockThreads - warpStart;
