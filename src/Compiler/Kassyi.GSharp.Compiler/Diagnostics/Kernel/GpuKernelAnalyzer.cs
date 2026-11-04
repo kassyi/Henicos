@@ -5,9 +5,7 @@ namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel;
 public class GpuKernelAnalyzer : DiagnosticAnalyzer
 {
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
-        DiagnosticRuleRegistry.AllSupportedDiagnostics
-            .Add(GSharpDiagnostics.KernelClassMustBePartial)
-            .Add(GSharpDiagnostics.IteratorShapeNotSupported);
+        GSharpDiagnostics.All;
 
     public override void Initialize(AnalysisContext context)
     {
