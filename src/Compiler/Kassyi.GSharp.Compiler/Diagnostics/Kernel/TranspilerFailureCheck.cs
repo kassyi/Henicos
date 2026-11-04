@@ -108,6 +108,13 @@ internal static class TranspilerFailureCheck
                 return;
             }
 
+            // IteratorShapeNotSupported (GSH0070) is validated and reported directly by DeviceIteratorChecks on the
+            // iterator declaration header; drop transpiler failures so they are not doubly reported through consumers.
+            if (failure.Descriptor.Id == GSharpDiagnostics.IteratorShapeNotSupported.Id)
+            {
+                return;
+            }
+
             diagnostics.Add(Diagnostic.Create(failure.Descriptor, failure.Location, failure.MessageArgs));
         }
 

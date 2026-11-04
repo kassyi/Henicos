@@ -105,6 +105,19 @@ internal static class StatementTranspilers
                 out var sourceInvocation,
                 out var iteratorMethod))
         {
+            if (IteratorTypeResolver.IsRecursiveIterator(iteratorMethod, context.Query.SemanticModel.Compilation))
+            {
+                var location = iteratorMethod.TryGetDeclaringSyntax<MethodDeclarationSyntax>(out var decl)
+                    ? decl.Identifier.GetLocation()
+                    : node.GetLocation();
+                context.Reporter.Fail(
+                    GSharpDiagnostics.IteratorShapeNotSupported,
+                    location,
+                    iteratorMethod.Name,
+                    "recursive iterators are not supported");
+                return;
+            }
+
             RuntimeHelpers.EnsureSufficientExecutionStack();
 
             if (IteratorTypeResolver.IsGenericIEnumerable(iteratorMethod.ReturnType, out var elementType))
