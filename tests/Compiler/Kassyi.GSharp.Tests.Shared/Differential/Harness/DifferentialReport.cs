@@ -67,7 +67,8 @@ public sealed record CellMismatch(
 /// <param name="Path">The path.</param>
 /// <param name="Exception">What it threw.</param>
 /// <param name="Shape">The launch shape on which the path threw.</param>
-public sealed record PathFailure(int Seed, DiffPath Path, Exception Exception, LaunchShape? Shape = null);
+/// <param name="Known">The registry entry that covers the thrown exception, or <see langword="null"/>.</param>
+public sealed record PathFailure(int Seed, DiffPath Path, Exception Exception, LaunchShape? Shape = null, KnownDivergence? Known = null);
 
 /// <summary>A post-launch property or invariant check (<see cref="DifferentialCase.Verify"/> or <see cref="DifferentialCase.VerifyAgainstInitial"/>) that failed on one path.</summary>
 /// <param name="Seed">The seed.</param>
@@ -136,7 +137,7 @@ public sealed class DifferentialReport
 
     /// <summary>Gets a value indicating whether the test must fail.</summary>
     public bool HasFailures =>
-        _failures.Count > 0 ||
+        _failures.Any(static f => f.Known is null) ||
         _propertyFailures.Count > 0 ||
         _stale.Count > 0 ||
         _mismatches.Any(static m => !m.IsKnown);
@@ -178,7 +179,7 @@ public sealed class DifferentialReport
         foreach (int seed in Seeds)
         {
             var cells = _mismatches.Where(m => m.Seed == seed && !m.IsKnown).ToList();
-            var failures = _failures.Where(f => f.Seed == seed).ToList();
+            var failures = _failures.Where(f => f.Seed == seed && f.Known is null).ToList();
             var propFailures = _propertyFailures.Where(p => p.Seed == seed).ToList();
             if (cells.Count == 0 && failures.Count == 0 && propFailures.Count == 0)
             {

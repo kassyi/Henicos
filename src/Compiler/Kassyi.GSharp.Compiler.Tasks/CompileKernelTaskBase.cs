@@ -156,9 +156,11 @@ public abstract class CompileKernelTaskBase : Microsoft.Build.Utilities.Task, IC
         return Toolchain.GetEnvironmentVariables(vcvarsArch);
     }
 
-    protected void SafeDeleteFiles(params string[] paths) => CleanupFiles(paths);
+    protected void SafeDeleteFiles(params string[] paths) => CleanupFiles(Log, paths);
 
-    internal static void CleanupFiles(params string[] paths)
+    internal static void CleanupFiles(params string[] paths) => CleanupFiles(null, paths);
+
+    internal static void CleanupFiles(TaskLoggingHelper? log, params string[] paths)
     {
         foreach (var path in paths)
         {
@@ -174,9 +176,10 @@ public abstract class CompileKernelTaskBase : Microsoft.Build.Utilities.Task, IC
                     File.Delete(path);
                 }
             }
-            catch
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
             {
-                // Ignore cleanup errors on best-effort basis
+                log?.LogMessage(MessageImportance.Low,
+                    $"Could not delete '{path}' during cleanup: {ex.Message}");
             }
         }
     }

@@ -132,7 +132,9 @@ public static partial class OperatorMacroRoutingKernels
     [GpuDeviceFunction]
     public static int AddOne(int value)
     {
+#pragma warning disable CS0219 // ctx is consumed by [GpuOperatorMacro("ctx.AddInto({0}, {1})")] during transpilation
         RouteCtx ctx = default;
+#pragma warning restore CS0219
         RouteValue x = new RouteValue(value);
         RouteValue y = new RouteValue(1);
         RouteValue z = new RouteValue(0);

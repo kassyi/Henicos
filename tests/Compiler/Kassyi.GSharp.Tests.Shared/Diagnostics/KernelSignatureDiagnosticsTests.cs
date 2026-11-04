@@ -77,4 +77,45 @@ public class KernelSignatureDiagnosticsTests
             ],
             diagnostics.Ranges(GSharpDiagnostics.KernelParameterSpaceExceeded.Id));
     }
+
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.SadPath)]
+    public async Task Test_ReservedLaunchParameterNames_ReportGsh0106AtTheParameterAndSkipWrappers(string dialect)
+    {
+        var source = RoslynTestUtility.ReadTestCase("Analyzers/KernelReservedLaunchParameter_SadPath.cs");
+        var compilation = RoslynTestUtility.CreateCompilation(source);
+        var run = await KernelDiagnostics.RunCompilationAsync(compilation, dialect);
+
+        var reported = run.Analyzer
+            .Select(static d => ReportedDiagnostic.From(DiagnosticOrigin.Analyzer, d))
+            .Concat(run.Generator.Select(static d => ReportedDiagnostic.From(DiagnosticOrigin.Generator, d)))
+            .OrderBy(static d => d.StartLine)
+            .ThenBy(static d => d.StartColumn)
+            .ToImmutableArray();
+
+        Assert.Equal(
+            [
+                (Analyzer, 8, 43, 8, 51),
+                (Analyzer, 18, 58, 18, 65),
+                (Analyzer, 18, 71, 18, 85)
+            ],
+            reported.Ranges(GSharpDiagnostics.KernelParameterConflictsWithLaunchParameter.Id));
+
+        var generatedSources = run.Output.SyntaxTrees
+            .Where(t => !run.Input.SyntaxTrees.Contains(t))
+            .Select(static t => t.ToString())
+            .ToList();
+
+        Assert.Contains(generatedSources, static generated => generated.Contains("LaunchPlainKernel("));
+        foreach (var generated in generatedSources)
+        {
+            Assert.DoesNotContain("LaunchGridDimXKernel", generated);
+            Assert.DoesNotContain("LaunchStreamAndSharedMemBytesKernel", generated);
+        }
+
+        var outputDiagnostics = run.Output.GetDiagnostics();
+        Assert.DoesNotContain(outputDiagnostics, static d => d.Id == "CS0100");
+    }
 }

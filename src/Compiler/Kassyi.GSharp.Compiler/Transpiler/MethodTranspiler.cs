@@ -93,7 +93,22 @@ public static class MethodTranspiler
         context.Emitter.Writer = bodyWriter;
         DynamicSharedMemoryEmitter.BeginMethod(in plan, ref context);
         WriteStateMachineHeader(in plan, lowered, ref context);
-        WriteMethodBody(in plan, lowered, resumeLocals, ref context);
+        try
+        {
+            WriteMethodBody(in plan, lowered, resumeLocals, ref context);
+        }
+        catch (InsufficientExecutionStackException)
+        {
+            var location = plan.Declaration.Identifier.GetLocation();
+            var methodName = plan.Declaration.Identifier.ValueText;
+            var failure = new TranspileFailure(GSharpDiagnostics.MethodTooComplexToCompile, location, [methodName]);
+            context.Reporter.Fail(
+                GSharpDiagnostics.MethodTooComplexToCompile,
+                location,
+                methodName);
+            requiredIncludes = [];
+            return Aot.NativeModuleAssembler.FormatTranspileFailures([failure.Format()]);
+        }
 
         // The struct members and Dispose bodies written below have no table of dynamic shared memory regions
         context.Emitter.DynamicSharedMemorySlotScope = null;
@@ -135,7 +150,19 @@ public static class MethodTranspiler
             ref iteratorContext.Emitter.ArgumentTempCounter,
             dialect,
             iteratorContext.Reporter);
-        iteratorContext.Visitor.Visit(expanded);
+
+        try
+        {
+            iteratorContext.Visitor.Visit(expanded);
+        }
+        catch (InsufficientExecutionStackException)
+        {
+            var location = plan.Declaration.Identifier.GetLocation();
+            iteratorContext.Reporter.Fail(
+                GSharpDiagnostics.MethodTooComplexToCompile,
+                location,
+                plan.Declaration.Identifier.ValueText);
+        }
     }
 
     // The frame struct of a state machine (a plan with one always has a symbol), then the signature of the function
