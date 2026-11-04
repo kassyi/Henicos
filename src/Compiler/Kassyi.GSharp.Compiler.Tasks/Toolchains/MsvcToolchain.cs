@@ -98,7 +98,8 @@ public sealed class MsvcToolchain : INativeToolchain
         string outputPath,
         string architecture,
         TaskLoggingHelper log,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        NativeSanitizers sanitizers = NativeSanitizers.None)
     {
         var vcvarsArch = ToVcvarsArchitecture(architecture);
 
@@ -119,7 +120,19 @@ public sealed class MsvcToolchain : INativeToolchain
         //        compiler assume that the extern "C" kernels never throw
         // /bigobj = Allow more than 65,279 sections: one translation unit holds every kernel of the assembly, and a
         //           large one (the test assemblies) fails with C1128 without it
-        var clArgs = $"/O2 /LD /nologo /std:c++17 /openmp /EHs /Zc:preprocessor /bigobj \"{sourcePath}\" /Fo:\"{objPath}\" /Fe:\"{outputPath}\"";
+        if ((sanitizers & NativeSanitizers.Undefined) != 0)
+        {
+            log.LogWarning(
+                "GSharpNativeSanitizers specifies 'undefined', which is not supported by MSVC (no UndefinedBehaviorSanitizer). Continuing with AddressSanitizer only when 'address' is specified, ignoring 'undefined'.");
+        }
+
+        var enableAddress = (sanitizers & NativeSanitizers.Address) != 0;
+        var vcPdbPath = Path.Combine(baseDir, baseName + ".vc.pdb");
+        var sanitizerFlags = enableAddress
+            ? $" /fsanitize=address /Zi /Fd:\"{vcPdbPath}\""
+            : "";
+
+        var clArgs = $"/O2 /LD /nologo /std:c++17 /openmp /EHs /Zc:preprocessor /bigobj{sanitizerFlags} \"{sourcePath}\" /Fo:\"{objPath}\" /Fe:\"{outputPath}\"";
 
         log.LogMessage(MessageImportance.Normal, $"Compiling C++ source for {vcvarsArch}: {sourcePath}");
 
@@ -180,7 +193,8 @@ public sealed class MsvcToolchain : INativeToolchain
                 var cwdObjPath = Path.Combine(Environment.CurrentDirectory,
                     Path.GetFileNameWithoutExtension(sourcePath) + ".obj");
 
-                CompileKernelTaskBase.CleanupFiles(objPath, libPath, expPath, srcObjPath, cwdObjPath);
+                var ilkPath = Path.Combine(baseDir, baseName + ".ilk");
+                CompileKernelTaskBase.CleanupFiles(objPath, libPath, expPath, ilkPath, vcPdbPath, srcObjPath, cwdObjPath);
 
                 return true;
             }

@@ -9,6 +9,12 @@ public class CompileCppToNativeTask : CompileKernelTaskBase
     [Required]
     public ITaskItem[] CppSources { get; set; } = [];
 
+    /// <summary>
+    /// Gets or sets the native sanitizers to enable when compiling host C++ kernels (e.g., <c>address;undefined</c>,
+    /// <c>address</c>, or <c>undefined</c>). Empty leaves sanitizers disabled.
+    /// </summary>
+    public string GSharpNativeSanitizers { get; set; } = string.Empty;
+
     /// <summary>Gets or sets a value indicating whether to compile for multiple architectures (x64 and arm64).</summary>
     public bool GSharpMultiTarget
     {
@@ -20,6 +26,7 @@ public class CompileCppToNativeTask : CompileKernelTaskBase
     public ITaskItem[] OutputDlls { get; set; } = [];
 
     private string[] _architectures = [];
+    private NativeSanitizers _sanitizers;
     private bool _skipCompilation;
 
     /// <inheritdoc />
@@ -32,6 +39,13 @@ public class CompileCppToNativeTask : CompileKernelTaskBase
     protected override bool OnBeforeExecute()
     {
         _architectures = GetTargetArchitectures();
+
+        if (!NativeSanitizerParser.TryParse(GSharpNativeSanitizers, out _sanitizers, out var invalidToken))
+        {
+            Log.LogError(
+                $"Unknown GSharpNativeSanitizers value '{invalidToken}' in '{GSharpNativeSanitizers}'. Supported values are 'address' and 'undefined' (separated by ';' or ','), or empty to disable sanitizers.");
+            return false;
+        }
 
         if (MockCompilation)
         {
@@ -85,7 +99,7 @@ public class CompileCppToNativeTask : CompileKernelTaskBase
                 return;
             }
 
-            if (!Toolchain.CompileCppToSharedLibrary(sourcePath, outputDllPath, arch, Log, CancellationToken) ||
+            if (!Toolchain.CompileCppToSharedLibrary(sourcePath, outputDllPath, arch, Log, CancellationToken, _sanitizers) ||
                 !ArtifactHelper.ProcessArtifact(outputDllPath, Log))
             {
                 Interlocked.Exchange(ref hasErrorsBox[0], 1);

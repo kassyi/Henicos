@@ -68,7 +68,8 @@ public sealed class GccClangToolchain : INativeToolchain
         string outputPath,
         string architecture,
         TaskLoggingHelper log,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        NativeSanitizers sanitizers = NativeSanitizers.None)
     {
         var compiler = _resolvedCompiler ?? _compilerCandidates[0];
 
@@ -76,7 +77,17 @@ public sealed class GccClangToolchain : INativeToolchain
         // -shared -fPIC = Build position-independent shared library
         // -std=c++17 = C++17 standard
         // -fopenmp = Enable OpenMP for BSP CPU scheduler parallelism
-        var args = $"-O2 -shared -fPIC -std=c++17 -fopenmp \"{sourcePath}\" -o \"{outputPath}\"";
+        var enableAddress = (sanitizers & NativeSanitizers.Address) != 0;
+        var enableUndefined = (sanitizers & NativeSanitizers.Undefined) != 0;
+        var sanitizerFlags = (enableAddress, enableUndefined) switch
+        {
+            (true, true) => " -fsanitize=address,undefined -fno-sanitize-recover=undefined -fno-omit-frame-pointer -g",
+            (true, false) => " -fsanitize=address -fno-omit-frame-pointer -g",
+            (false, true) => " -fsanitize=undefined -fno-sanitize-recover=undefined -fno-omit-frame-pointer -g",
+            _ => ""
+        };
+
+        var args = $"-O2 -shared -fPIC -std=c++17 -fopenmp{sanitizerFlags} \"{sourcePath}\" -o \"{outputPath}\"";
 
         log.LogMessage(MessageImportance.Normal, $"Compiling C++ source for {architecture} with {compiler}: {sourcePath}");
 
