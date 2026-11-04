@@ -21,6 +21,10 @@ coverage-diff base="main":
 test-differential-cpu *args="":
     dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cpu/Kassyi.GSharp.Tests.Cpu.csproj --filter "Category=Differential&Category!=Stress" {{args}}
 
+# Build Tests.Cpu with native sanitizers (ASan/UBSan on Linux, ASan on Windows) and run Differential + Execution tests
+test-sanitized *args="":
+    node scripts/human/test-sanitized.js {{args}}
+
 # Differential tests: C# oracle vs CUDA (agents: wrap in node scripts/agent/gpu-lock.js -- "...")
 test-differential-cuda *args="":
     dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cuda/Kassyi.GSharp.Tests.Cuda.csproj --filter "Category=Differential&Category!=Stress" {{args}}
