@@ -1035,38 +1035,16 @@ public class MathDifferentialTests
     [Scenario(TestScenario.Boundary)]
     public void Test_FastMath_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_fastMath);
 
-    // Case N03 (Q07 = a, ND7-01): BclMappings maps all 6 BitOperations nuint overloads, but CppTypeNameWriter emits
-    // undeclared System_UIntPtr for nuint locals/casts so AOT C++/CUDA compilation would fail with C2065
-    [Fact]
+    // BclMappings maps all 6 BitOperations nuint overloads, but CppTypeNameWriter emits
+    // undeclared System_UIntPtr for nuint locals/casts so AOT C++/CUDA compilation would fail with C2065 (#983)
+    [Fact(Skip = "Blocked by #983 (nint and nuint constants and casts in kernels build wrong or not at all)")]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_BitOperationsNuintOverloads_EmitIntrinsicCallsWithUndeclaredSystemUIntPtr()
+    public void Test_BitOperationsNuintOverloads_EmitIntrinsicCallsWithoutUndeclaredSystemUIntPtr()
     {
-        const string Source = """
-            using System.Numerics;
-            using Kassyi.GSharp.Core;
-
-            namespace Kassyi.GSharp.Tests.Shared.Differential;
-
-            public static partial class BitOpsNuintProbeKernels
-            {
-                [GpuKernel]
-                public static void ProbeKernel(ulong[] u64, int[] offsets, ulong[] r)
-                {
-                    nuint vn = (nuint)u64[0];
-                    int s = offsets[0];
-                    r[0] = (ulong)BitOperations.LeadingZeroCount(vn);
-                    r[1] = (ulong)BitOperations.TrailingZeroCount(vn);
-                    r[2] = (ulong)BitOperations.PopCount(vn);
-                    r[3] = (ulong)BitOperations.Log2(vn);
-                    r[4] = BitOperations.RotateLeft(vn, s);
-                    r[5] = BitOperations.RotateRight(vn, s);
-                }
-            }
-            """;
-
-        var (driver, _, _) = Helpers.RoslynTestUtility.RunGenerator(Source, "Cpu");
+        var source = Helpers.RoslynTestUtility.ReadTestCase("Differential/BitOpsNuintProbeKernels.cs");
+        var (driver, _, _) = Helpers.RoslynTestUtility.RunGenerator(source, "Cpu");
         var sb = new System.Text.StringBuilder();
         foreach (var tree in driver.GetRunResult().GeneratedTrees)
         {
@@ -1075,7 +1053,7 @@ public class MathDifferentialTests
 
         var generated = sb.ToString();
 
-        Assert.Contains("System_UIntPtr", generated, StringComparison.Ordinal);
+        Assert.DoesNotContain("System_UIntPtr", generated, StringComparison.Ordinal);
         Assert.Contains("__gsharp_lzc_64((unsigned long long int)(", generated, StringComparison.Ordinal);
         Assert.Contains("__gsharp_tzc_64((unsigned long long int)(", generated, StringComparison.Ordinal);
         Assert.Contains("__popcll((unsigned long long int)(", generated, StringComparison.Ordinal);
