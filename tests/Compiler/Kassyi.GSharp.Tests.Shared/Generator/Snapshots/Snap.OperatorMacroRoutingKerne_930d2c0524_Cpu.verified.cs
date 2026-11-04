@@ -503,7 +503,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroRoutingKernels__TransitiveKernel(int[] values, int[] result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroRoutingKernels__TransitiveKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroRoutingKernels__TransitiveKernel(int[] values, int[] result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroRoutingKernels__TransitiveKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -763,7 +763,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroRoutingKernels__RecursionKernel(int[] result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroRoutingKernels__RecursionKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroRoutingKernels__RecursionKernel(int[] result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroRoutingKernels__RecursionKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -1015,7 +1015,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroRoutingKernels__ExtensionKernel(int[] values, int[] result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroRoutingKernels__ExtensionKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroRoutingKernels__ExtensionKernel(int[] values, int[] result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroRoutingKernels__ExtensionKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -1276,7 +1276,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroRoutingKernels__LambdaKernel(int[] values, int[] result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroRoutingKernels__LambdaKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroRoutingKernels__LambdaKernel(int[] values, int[] result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroRoutingKernels__LambdaKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -1548,7 +1548,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroRoutingKernels__ExtensionMethodGroupKernel(int[] values, int[] ten, int[] ninetyNine, int[] result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroRoutingKernels__ExtensionMethodGroupKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroRoutingKernels__ExtensionMethodGroupKernel(int[] values, int[] ten, int[] ninetyNine, int[] result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroRoutingKernels__ExtensionMethodGroupKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -1934,7 +1934,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__RouteOuter__NestedRoutingKernels__NestedKernel(int[] values, int[] result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__RouteOuter__NestedRoutingKernels__NestedKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__RouteOuter__NestedRoutingKernels__NestedKernel(int[] values, int[] result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__RouteOuter__NestedRoutingKernels__NestedKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {

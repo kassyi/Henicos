@@ -150,7 +150,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortIntKernel(global::System.Span<int> data, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortIntKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortIntKernel(global::System.Span<int> data, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortIntKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -391,7 +391,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortLongKernel(global::System.Span<long> data, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortLongKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortLongKernel(global::System.Span<long> data, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortLongKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -632,7 +632,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortUIntKernel(global::System.Span<uint> data, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortUIntKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortUIntKernel(global::System.Span<uint> data, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortUIntKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -873,7 +873,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortCharKernel(global::System.Span<char> data, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortCharKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortCharKernel(global::System.Span<char> data, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortCharKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -1114,7 +1114,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortEnumKernel(global::System.Span<global::Kassyi.GSharp.Tests.Shared.Syntax.SortRank> data, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortEnumKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortEnumKernel(global::System.Span<global::Kassyi.GSharp.Tests.Shared.Syntax.SortRank> data, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortEnumKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -1355,7 +1355,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortFloatKernel(global::System.Span<float> data, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortFloatKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortFloatKernel(global::System.Span<float> data, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortFloatKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -1596,7 +1596,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortDoubleKernel(global::System.Span<double> data, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortDoubleKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortDoubleKernel(global::System.Span<double> data, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortDoubleKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -1844,7 +1844,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortSegmentsKernel(int[] data, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortSegmentsKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortSegmentsKernel(int[] data, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortSegmentsKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -2118,7 +2118,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortComparerKernel(global::System.Span<int> data, int mask, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortComparerKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortComparerKernel(global::System.Span<int> data, int mask, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortComparerKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -2376,7 +2376,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortDescendingKernel(global::System.Span<int> data, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortDescendingKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortDescendingKernel(global::System.Span<int> data, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortDescendingKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -2620,7 +2620,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortComparisonKernel(global::System.Span<int> data, int mask, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortComparisonKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortComparisonKernel(global::System.Span<int> data, int mask, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortComparisonKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -2861,7 +2861,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortMethodGroupKernel(global::System.Span<int> data, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortMethodGroupKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortMethodGroupKernel(global::System.Span<int> data, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortMethodGroupKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -3102,7 +3102,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortNullComparerKernel(global::System.Span<int> data, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortNullComparerKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortNullComparerKernel(global::System.Span<int> data, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortNullComparerKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -3363,7 +3363,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortComparableKernel(global::System.Span<global::Kassyi.GSharp.Tests.Shared.Syntax.SortRecord> data, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortComparableKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortComparableKernel(global::System.Span<global::Kassyi.GSharp.Tests.Shared.Syntax.SortRecord> data, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortComparableKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -3615,7 +3615,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortPairsKernel(global::System.Span<int> keys, global::System.Span<int> items, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortPairsKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortPairsKernel(global::System.Span<int> keys, global::System.Span<int> items, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortPairsKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -3860,7 +3860,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortPairsFloatKernel(global::System.Span<float> keys, global::System.Span<int> items, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortPairsFloatKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortPairsFloatKernel(global::System.Span<float> keys, global::System.Span<int> items, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortPairsFloatKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -4127,7 +4127,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortPairsComparerKernel(global::System.Span<int> keys, global::System.Span<int> items, int mask, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortPairsComparerKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortPairsComparerKernel(global::System.Span<int> keys, global::System.Span<int> items, int mask, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortPairsComparerKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -4375,7 +4375,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortPairsComparisonKernel(global::System.Span<int> keys, global::System.Span<int> items, int mask, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortPairsComparisonKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortPairsComparisonKernel(global::System.Span<int> keys, global::System.Span<int> items, int mask, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortPairsComparisonKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -4640,7 +4640,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortPairsComparableKernel(global::System.Span<global::Kassyi.GSharp.Tests.Shared.Syntax.SortRecord> keys, global::System.Span<int> items, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortPairsComparableKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortPairsComparableKernel(global::System.Span<global::Kassyi.GSharp.Tests.Shared.Syntax.SortRecord> keys, global::System.Span<int> items, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortPairsComparableKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -4913,7 +4913,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortBogusComparerKernel(global::System.Span<int> data, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortBogusComparerKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortBogusComparerKernel(global::System.Span<int> data, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortBogusComparerKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -5172,7 +5172,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortPairsInconsistentKernel(global::System.Span<global::Kassyi.GSharp.Tests.Shared.Syntax.InconsistentRecord> keys, global::System.Span<int> items, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortPairsInconsistentKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortPairsInconsistentKernel(global::System.Span<global::Kassyi.GSharp.Tests.Shared.Syntax.InconsistentRecord> keys, global::System.Span<int> items, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortPairsInconsistentKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -5434,7 +5434,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortTrappingComparisonKernel(global::System.Span<int> data, int[] table, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortTrappingComparisonKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortTrappingComparisonKernel(global::System.Span<int> data, int[] table, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortTrappingComparisonKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {

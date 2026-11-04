@@ -156,7 +156,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Henicos__Benchmarks__ComputeBenchmarks__MandelbrotKernels__MandelbrotKernel(int[] output, int width, int height, int maxIter, float xMin, float xMax, float yMin, float yMax, __gsharp_context_Henicos__Benchmarks__ComputeBenchmarks__MandelbrotKernels__MandelbrotKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Henicos__Benchmarks__ComputeBenchmarks__MandelbrotKernels__MandelbrotKernel(int[] output, int width, int height, int maxIter, float xMin, float xMax, float yMin, float yMax, __gsharp_context_Henicos__Benchmarks__ComputeBenchmarks__MandelbrotKernels__MandelbrotKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {

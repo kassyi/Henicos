@@ -375,7 +375,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__RefOutTestKernel(int[] data, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__RefOutTestKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__RefOutTestKernel(int[] data, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__RefOutTestKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -661,7 +661,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__RefReadOnlyAndInParameterKernel(int[] input, int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__RefReadOnlyAndInParameterKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__RefReadOnlyAndInParameterKernel(int[] input, int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__RefReadOnlyAndInParameterKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -961,7 +961,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__RValueArgumentsForReadOnlyRefKernel(int[] input, int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__RValueArgumentsForReadOnlyRefKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__RValueArgumentsForReadOnlyRefKernel(int[] input, int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__RValueArgumentsForReadOnlyRefKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -1249,7 +1249,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__KernelWithInParameters(in int scalar, in global::Kassyi.GSharp.Tests.Shared.Syntax.RefTestStruct s, int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__KernelWithInParameters __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__KernelWithInParameters(in int scalar, in global::Kassyi.GSharp.Tests.Shared.Syntax.RefTestStruct s, int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__KernelWithInParameters __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {

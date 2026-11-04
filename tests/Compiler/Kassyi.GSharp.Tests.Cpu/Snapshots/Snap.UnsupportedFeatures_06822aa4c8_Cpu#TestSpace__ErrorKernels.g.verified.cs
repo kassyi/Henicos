@@ -128,7 +128,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_TestSpace__ErrorKernels__NonVoidReturnKernel(__gsharp_context_TestSpace__ErrorKernels__NonVoidReturnKernel __gsharp_ctx, ref int __gsharp_auto_result) {
+public static void __gsharp_statemachine_TestSpace__ErrorKernels__NonVoidReturnKernel(__gsharp_context_TestSpace__ErrorKernels__NonVoidReturnKernel __gsharp_ctx, ref int __gsharp_auto_result) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -367,7 +367,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_TestSpace__ErrorKernels__ManagedParamKernel(global::TestSpace.ManagedClass obj, __gsharp_context_TestSpace__ErrorKernels__ManagedParamKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_TestSpace__ErrorKernels__ManagedParamKernel(global::TestSpace.ManagedClass obj, __gsharp_context_TestSpace__ErrorKernels__ManagedParamKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {

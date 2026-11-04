@@ -28,6 +28,7 @@ public class EvaluationOrderAnalysisTests
     [InlineData("PointerAlias", 1)]
     [InlineData("CapturedAlias", 1)]
     [InlineData("RefReturnAlias", 1)]
+    [InlineData("MutatingStructGetterRead", 1)]
     public void Test_LastSpilledOperand_InterferingOperands_IsTheLastOneThatInterferes(string method, int expected) =>
         Assert.Equal(expected, EvaluationOrder.LastSpilledOperand(GetOperandEffects(method)));
 
@@ -40,6 +41,9 @@ public class EvaluationOrderAnalysisTests
     [InlineData("LambdaIsNotEvaluated")]
     [InlineData("RefArgumentsOnly")]
     [InlineData("PureLambdaCall")]
+    [InlineData("ArrayLengthAndElement")]
+    [InlineData("StructPureGetterAndConstant")]
+    [InlineData("PureStructGetterRead")]
     public void Test_LastSpilledOperand_IndependentOperands_IsNone(string method) =>
         Assert.Equal(-1, EvaluationOrder.LastSpilledOperand(GetOperandEffects(method)));
 

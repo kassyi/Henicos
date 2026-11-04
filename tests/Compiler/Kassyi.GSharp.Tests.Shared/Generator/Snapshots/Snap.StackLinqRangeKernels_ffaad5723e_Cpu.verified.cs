@@ -603,7 +603,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Runtime__StackLinqRangeKernels__TwoStageRangeKernel(int[] data, int combo, int a, int b, int[] result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Runtime__StackLinqRangeKernels__TwoStageRangeKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Runtime__StackLinqRangeKernels__TwoStageRangeKernel(int[] data, int combo, int a, int b, int[] result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Runtime__StackLinqRangeKernels__TwoStageRangeKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -954,7 +954,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Runtime__StackLinqRangeKernels__FilteredTakeKernel(int[] data, int[] counter, int[] result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Runtime__StackLinqRangeKernels__FilteredTakeKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Runtime__StackLinqRangeKernels__FilteredTakeKernel(int[] data, int[] counter, int[] result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Runtime__StackLinqRangeKernels__FilteredTakeKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -1233,7 +1233,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Runtime__StackLinqRangeKernels__SelectSkipCountKernel(int[] data, int[] counter, int[] result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Runtime__StackLinqRangeKernels__SelectSkipCountKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Runtime__StackLinqRangeKernels__SelectSkipCountKernel(int[] data, int[] counter, int[] result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Runtime__StackLinqRangeKernels__SelectSkipCountKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -1532,7 +1532,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Runtime__StackLinqRangeKernels__TakeCountKernel(int[] data, int[] counter, int take, int[] result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Runtime__StackLinqRangeKernels__TakeCountKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Runtime__StackLinqRangeKernels__TakeCountKernel(int[] data, int[] counter, int take, int[] result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Runtime__StackLinqRangeKernels__TakeCountKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -1870,7 +1870,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Runtime__StackLinqRangeKernels__TakeSkipCountKernel(int[] data, int[] counter, int take, int skip, int[] result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Runtime__StackLinqRangeKernels__TakeSkipCountKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Runtime__StackLinqRangeKernels__TakeSkipCountKernel(int[] data, int[] counter, int take, int skip, int[] result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Runtime__StackLinqRangeKernels__TakeSkipCountKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -3279,7 +3279,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Runtime__StackLinqRangeKernels__ThreeStageSweepKernel(int[] data, int a, int b, int c, int[] result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Runtime__StackLinqRangeKernels__ThreeStageSweepKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Runtime__StackLinqRangeKernels__ThreeStageSweepKernel(int[] data, int a, int b, int c, int[] result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Runtime__StackLinqRangeKernels__ThreeStageSweepKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {

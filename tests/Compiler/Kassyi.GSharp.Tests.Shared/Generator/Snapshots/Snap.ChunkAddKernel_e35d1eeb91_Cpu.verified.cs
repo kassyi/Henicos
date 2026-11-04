@@ -157,7 +157,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Stdlib__GpuMath__BigNum__GpuBigIntKernels__ChunkAddKernel(uint[] dA, uint[] dB, uint[] dResult, long[] carryBuffer, int numWords, int chunkSize, __gsharp_context_Kassyi__GSharp__Stdlib__GpuMath__BigNum__GpuBigIntKernels__ChunkAddKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Stdlib__GpuMath__BigNum__GpuBigIntKernels__ChunkAddKernel(uint[] dA, uint[] dB, uint[] dResult, long[] carryBuffer, int numWords, int chunkSize, __gsharp_context_Kassyi__GSharp__Stdlib__GpuMath__BigNum__GpuBigIntKernels__ChunkAddKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {

@@ -298,7 +298,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SmallConstantVarKernels__IncrementKernel(int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SmallConstantVarKernels__IncrementKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SmallConstantVarKernels__IncrementKernel(int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SmallConstantVarKernels__IncrementKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -567,7 +567,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SmallConstantVarKernels__EnumIncrementKernel(int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SmallConstantVarKernels__EnumIncrementKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SmallConstantVarKernels__EnumIncrementKernel(int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SmallConstantVarKernels__EnumIncrementKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -812,7 +812,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SmallConstantVarKernels__NarrowConstantUsesKernel(int[] input, int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SmallConstantVarKernels__NarrowConstantUsesKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SmallConstantVarKernels__NarrowConstantUsesKernel(int[] input, int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SmallConstantVarKernels__NarrowConstantUsesKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -1059,7 +1059,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SmallConstantVarKernels__LocalConstKernel(int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SmallConstantVarKernels__LocalConstKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SmallConstantVarKernels__LocalConstKernel(int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SmallConstantVarKernels__LocalConstKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {

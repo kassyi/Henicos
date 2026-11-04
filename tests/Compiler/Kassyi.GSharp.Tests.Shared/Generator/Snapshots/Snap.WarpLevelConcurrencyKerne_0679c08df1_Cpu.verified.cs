@@ -41,6 +41,8 @@ uint64_t __gsharp_warp_exchange[2] = {};
 uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
+GSharpArray<int> __gsharp_id_0_input;
+GSharpArray<int> __gsharp_id_1_output;
 int __gsharp_id_2_tid;
 int __gsharp_id_3_lane;
 int __gsharp_id_4_warpId;
@@ -51,11 +53,15 @@ int __gsharp_warp_temp_1;
 int __gsharp_warp_temp_2;
 int __gsharp_warp_temp_3;
 };
-extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__WarpLevelConcurrencyKernels__WarpReduceSumKernel(GSharpArray<int> __gsharp_id_0_input, GSharpArray<int> __gsharp_id_1_output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WarpLevelConcurrencyKernels__WarpReduceSumKernel* __gsharp_ctx){
+extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__WarpLevelConcurrencyKernels__WarpReduceSumKernel(GSharpArray<int> __gsharp_in___gsharp_id_0_input, GSharpArray<int> __gsharp_in___gsharp_id_1_output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WarpLevelConcurrencyKernels__WarpReduceSumKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
 auto* __gsharp_root = __gsharp_ctx;
+if(__gsharp_state==0){
+__gsharp_ctx->__gsharp_id_0_input=__gsharp_in___gsharp_id_0_input;
+__gsharp_ctx->__gsharp_id_1_output=__gsharp_in___gsharp_id_1_output;
+}
 switch(__gsharp_state)
 {
 case 0:
@@ -64,7 +70,7 @@ __gsharp_switch_1_state_0:
 __gsharp_ctx->__gsharp_id_2_tid=(int)threadIdx.x;
 __gsharp_ctx->__gsharp_id_3_lane=__gsharp_ctx->__gsharp_id_2_tid%32;
 __gsharp_ctx->__gsharp_id_4_warpId=__gsharp_ctx->__gsharp_id_2_tid/32;
-__gsharp_ctx->__gsharp_id_5_val=__gsharp_id_0_input[__gsharp_ctx->__gsharp_id_2_tid];
+__gsharp_ctx->__gsharp_id_5_val=__gsharp_ctx->__gsharp_id_0_input[__gsharp_ctx->__gsharp_id_2_tid];
 __gsharp_ctx->__gsharp_id_6_mask=0xffffffff;
 __gsharp_warp_exchange_assign(__gsharp_ctx->__gsharp_id_5_val);
 __gsharp_state=1;
@@ -113,7 +119,7 @@ auto __gsharp_warp_temp_4 = __gsharp_warp_shuffle_read_down_sync(__gsharp_root,_
 __gsharp_ctx->__gsharp_id_5_val=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_5_val,__gsharp_warp_temp_4);
 if(__gsharp_ctx->__gsharp_id_3_lane==0)
 {
-__gsharp_id_1_output[__gsharp_ctx->__gsharp_id_4_warpId]=__gsharp_ctx->__gsharp_id_5_val;
+__gsharp_ctx->__gsharp_id_1_output[__gsharp_ctx->__gsharp_id_4_warpId]=__gsharp_ctx->__gsharp_id_5_val;
 }
 __gsharp_state=-1;
 return;
@@ -199,6 +205,8 @@ public static readonly string WarpReduceSumKernel_FullSource=global::Kassyi.GSha
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WarpLevelConcurrencyKernels__WarpReduceSumKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
+public int[] input;
+public int[] output;
 public int tid;
 public int lane;
 public int warpId;
@@ -210,7 +218,11 @@ public int __gsharp_warp_temp_2;
 public int __gsharp_warp_temp_3;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__WarpLevelConcurrencyKernels__WarpReduceSumKernel(int[] input, int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WarpLevelConcurrencyKernels__WarpReduceSumKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__WarpLevelConcurrencyKernels__WarpReduceSumKernel(int[] __gsharp_in_input, int[] __gsharp_in_output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WarpLevelConcurrencyKernels__WarpReduceSumKernel __gsharp_ctx) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.input = __gsharp_in_input;
+__gsharp_ctx.output = __gsharp_in_output;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -219,7 +231,7 @@ case 0:
 __gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 __gsharp_ctx.lane = __gsharp_ctx.tid % 32;
 __gsharp_ctx.warpId = __gsharp_ctx.tid / 32;
-__gsharp_ctx.val = input[__gsharp_ctx.tid];
+__gsharp_ctx.val = __gsharp_ctx.input[__gsharp_ctx.tid];
 __gsharp_ctx.mask = 0xffffffff;
 __gsharp_warp_exchange_assign(__gsharp_ctx.val);
 __gsharp_ctx.__gsharp_state = 1;
@@ -228,7 +240,7 @@ return;
 
 case 1:
 {
-__gsharp_ctx.__gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_down_sync(__gsharp_ctx, __gsharp_ctx.mask, __gsharp_ctx.val, 16, 32, "WarpLevelConcurrencyKernels.cs(19,16)");
+__gsharp_ctx.__gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_down_sync(0, __gsharp_ctx.mask, __gsharp_ctx.val, 16, 32, "WarpLevelConcurrencyKernels.cs(19,16)");
 __gsharp_ctx.val += __gsharp_ctx.__gsharp_warp_temp_0;
 __gsharp_warp_exchange_assign(__gsharp_ctx.val);
 __gsharp_ctx.__gsharp_state = 2;
@@ -237,7 +249,7 @@ return;
 
 case 2:
 {
-__gsharp_ctx.__gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_down_sync(__gsharp_ctx, __gsharp_ctx.mask, __gsharp_ctx.val, 8, 32, "WarpLevelConcurrencyKernels.cs(20,16)");
+__gsharp_ctx.__gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_down_sync(0, __gsharp_ctx.mask, __gsharp_ctx.val, 8, 32, "WarpLevelConcurrencyKernels.cs(20,16)");
 __gsharp_ctx.val += __gsharp_ctx.__gsharp_warp_temp_1;
 __gsharp_warp_exchange_assign(__gsharp_ctx.val);
 __gsharp_ctx.__gsharp_state = 3;
@@ -246,7 +258,7 @@ return;
 
 case 3:
 {
-__gsharp_ctx.__gsharp_warp_temp_2 = __gsharp_warp_shuffle_read_down_sync(__gsharp_ctx, __gsharp_ctx.mask, __gsharp_ctx.val, 4, 32, "WarpLevelConcurrencyKernels.cs(21,16)");
+__gsharp_ctx.__gsharp_warp_temp_2 = __gsharp_warp_shuffle_read_down_sync(0, __gsharp_ctx.mask, __gsharp_ctx.val, 4, 32, "WarpLevelConcurrencyKernels.cs(21,16)");
 __gsharp_ctx.val += __gsharp_ctx.__gsharp_warp_temp_2;
 __gsharp_warp_exchange_assign(__gsharp_ctx.val);
 __gsharp_ctx.__gsharp_state = 4;
@@ -255,7 +267,7 @@ return;
 
 case 4:
 {
-__gsharp_ctx.__gsharp_warp_temp_3 = __gsharp_warp_shuffle_read_down_sync(__gsharp_ctx, __gsharp_ctx.mask, __gsharp_ctx.val, 2, 32, "WarpLevelConcurrencyKernels.cs(22,16)");
+__gsharp_ctx.__gsharp_warp_temp_3 = __gsharp_warp_shuffle_read_down_sync(0, __gsharp_ctx.mask, __gsharp_ctx.val, 2, 32, "WarpLevelConcurrencyKernels.cs(22,16)");
 __gsharp_ctx.val += __gsharp_ctx.__gsharp_warp_temp_3;
 __gsharp_warp_exchange_assign(__gsharp_ctx.val);
 __gsharp_ctx.__gsharp_state = 5;
@@ -264,12 +276,12 @@ return;
 
 case 5:
 {
-var __gsharp_warp_temp_4 = __gsharp_warp_shuffle_read_down_sync(__gsharp_ctx, __gsharp_ctx.mask, __gsharp_ctx.val, 1, 32, "WarpLevelConcurrencyKernels.cs(23,16)");
+var __gsharp_warp_temp_4 = __gsharp_warp_shuffle_read_down_sync(0, __gsharp_ctx.mask, __gsharp_ctx.val, 1, 32, "WarpLevelConcurrencyKernels.cs(23,16)");
 __gsharp_ctx.val += __gsharp_warp_temp_4;
 // First thread of each warp writes the result
 if (__gsharp_ctx.lane == 0)
 {
-output[__gsharp_ctx.warpId] = __gsharp_ctx.val;
+__gsharp_ctx.output[__gsharp_ctx.warpId] = __gsharp_ctx.val;
 }
 
 __gsharp_ctx.__gsharp_state = -1;
@@ -411,6 +423,8 @@ uint64_t __gsharp_warp_exchange[2] = {};
 uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
+GSharpArray<int> __gsharp_id_0_input;
+GSharpArray<int> __gsharp_id_1_output;
 int __gsharp_id_2_tid;
 unsigned int __gsharp_id_3_mask;
 int __gsharp_id_4_val;
@@ -422,11 +436,15 @@ unsigned int __gsharp_arg_temp_4;
 unsigned int __gsharp_warp_temp_5;
 int __gsharp_warp_temp_6;
 };
-extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__WarpLevelConcurrencyKernels__WarpPrimitivesKernel(GSharpArray<int> __gsharp_id_0_input, GSharpArray<int> __gsharp_id_1_output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WarpLevelConcurrencyKernels__WarpPrimitivesKernel* __gsharp_ctx){
+extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__WarpLevelConcurrencyKernels__WarpPrimitivesKernel(GSharpArray<int> __gsharp_in___gsharp_id_0_input, GSharpArray<int> __gsharp_in___gsharp_id_1_output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WarpLevelConcurrencyKernels__WarpPrimitivesKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
 auto* __gsharp_root = __gsharp_ctx;
+if(__gsharp_state==0){
+__gsharp_ctx->__gsharp_id_0_input=__gsharp_in___gsharp_id_0_input;
+__gsharp_ctx->__gsharp_id_1_output=__gsharp_in___gsharp_id_1_output;
+}
 switch(__gsharp_state)
 {
 case 0:
@@ -434,7 +452,7 @@ __gsharp_switch_1_state_0:
 {
 __gsharp_ctx->__gsharp_id_2_tid=(int)threadIdx.x;
 __gsharp_ctx->__gsharp_id_3_mask=__activemask();
-__gsharp_ctx->__gsharp_id_4_val=__gsharp_id_0_input[__gsharp_ctx->__gsharp_id_2_tid];
+__gsharp_ctx->__gsharp_id_4_val=__gsharp_ctx->__gsharp_id_0_input[__gsharp_ctx->__gsharp_id_2_tid];
 __gsharp_warp_exchange_assign(__gsharp_ctx->__gsharp_id_4_val);
 __gsharp_state=1;
 return;
@@ -491,7 +509,7 @@ __gsharp_switch_1_state_6:
 {
 auto __gsharp_warp_temp_7 = __gsharp_warp_shuffle_read_xor_sync(__gsharp_root,__gsharp_ctx->__gsharp_id_3_mask,__gsharp_ctx->__gsharp_id_4_val,1,32,""WarpLevelConcurrencyKernels.cs(46,15)"");
 __gsharp_ctx->__gsharp_id_4_val=__gsharp_warp_temp_7;
-__gsharp_id_1_output[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_ctx->__gsharp_id_4_val;
+__gsharp_ctx->__gsharp_id_1_output[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_ctx->__gsharp_id_4_val;
 __gsharp_state=-1;
 return;
 }
@@ -576,6 +594,8 @@ public static readonly string WarpPrimitivesKernel_FullSource=global::Kassyi.GSh
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WarpLevelConcurrencyKernels__WarpPrimitivesKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
+public int[] input;
+public int[] output;
 public int tid;
 public uint mask;
 public int val;
@@ -588,7 +608,11 @@ public uint __gsharp_warp_temp_5;
 public int __gsharp_warp_temp_6;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__WarpLevelConcurrencyKernels__WarpPrimitivesKernel(int[] input, int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WarpLevelConcurrencyKernels__WarpPrimitivesKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__WarpLevelConcurrencyKernels__WarpPrimitivesKernel(int[] __gsharp_in_input, int[] __gsharp_in_output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WarpLevelConcurrencyKernels__WarpPrimitivesKernel __gsharp_ctx) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.input = __gsharp_in_input;
+__gsharp_ctx.output = __gsharp_in_output;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -596,7 +620,7 @@ case 0:
 {
 __gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 __gsharp_ctx.mask = global::Kassyi.GSharp.Core.Warp.ActiveMask();
-__gsharp_ctx.val = input[__gsharp_ctx.tid];
+__gsharp_ctx.val = __gsharp_ctx.input[__gsharp_ctx.tid];
 __gsharp_warp_exchange_assign(__gsharp_ctx.val);
 __gsharp_ctx.__gsharp_state = 1;
 return;
@@ -604,7 +628,7 @@ return;
 
 case 1:
 {
-__gsharp_ctx.__gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_sync(__gsharp_ctx, __gsharp_ctx.mask, __gsharp_ctx.val, 0, 32, "WarpLevelConcurrencyKernels.cs(41,15)");
+__gsharp_ctx.__gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_sync(0, __gsharp_ctx.mask, __gsharp_ctx.val, 0, 32, "WarpLevelConcurrencyKernels.cs(41,15)");
 // Test all primitives to ensure they emit correct C++ intrinsics
 __gsharp_ctx.val = __gsharp_ctx.__gsharp_warp_temp_0;
 __gsharp_ctx.__gsharp_arg_temp_1 = (uint)__gsharp_ctx.val;
@@ -615,7 +639,7 @@ return;
 
 case 2:
 {
-__gsharp_ctx.__gsharp_warp_temp_2 = __gsharp_warp_shuffle_read_sync(__gsharp_ctx, __gsharp_ctx.mask, __gsharp_ctx.__gsharp_arg_temp_1, 0, 32, "WarpLevelConcurrencyKernels.cs(42,20)");
+__gsharp_ctx.__gsharp_warp_temp_2 = __gsharp_warp_shuffle_read_sync(0, __gsharp_ctx.mask, __gsharp_ctx.__gsharp_arg_temp_1, 0, 32, "WarpLevelConcurrencyKernels.cs(42,20)");
 __gsharp_ctx.val = (int)__gsharp_ctx.__gsharp_warp_temp_2;
 __gsharp_warp_exchange_assign(__gsharp_ctx.val);
 __gsharp_ctx.__gsharp_state = 3;
@@ -624,7 +648,7 @@ return;
 
 case 3:
 {
-__gsharp_ctx.__gsharp_warp_temp_3 = __gsharp_warp_shuffle_read_down_sync(__gsharp_ctx, __gsharp_ctx.mask, __gsharp_ctx.val, 1, 32, "WarpLevelConcurrencyKernels.cs(43,15)");
+__gsharp_ctx.__gsharp_warp_temp_3 = __gsharp_warp_shuffle_read_down_sync(0, __gsharp_ctx.mask, __gsharp_ctx.val, 1, 32, "WarpLevelConcurrencyKernels.cs(43,15)");
 __gsharp_ctx.val = __gsharp_ctx.__gsharp_warp_temp_3;
 __gsharp_ctx.__gsharp_arg_temp_4 = (uint)__gsharp_ctx.val;
 __gsharp_warp_exchange_assign(__gsharp_ctx.__gsharp_arg_temp_4);
@@ -634,7 +658,7 @@ return;
 
 case 4:
 {
-__gsharp_ctx.__gsharp_warp_temp_5 = __gsharp_warp_shuffle_read_down_sync(__gsharp_ctx, __gsharp_ctx.mask, __gsharp_ctx.__gsharp_arg_temp_4, 1, 32, "WarpLevelConcurrencyKernels.cs(44,20)");
+__gsharp_ctx.__gsharp_warp_temp_5 = __gsharp_warp_shuffle_read_down_sync(0, __gsharp_ctx.mask, __gsharp_ctx.__gsharp_arg_temp_4, 1, 32, "WarpLevelConcurrencyKernels.cs(44,20)");
 __gsharp_ctx.val = (int)__gsharp_ctx.__gsharp_warp_temp_5;
 __gsharp_warp_exchange_assign(__gsharp_ctx.val);
 __gsharp_ctx.__gsharp_state = 5;
@@ -643,7 +667,7 @@ return;
 
 case 5:
 {
-__gsharp_ctx.__gsharp_warp_temp_6 = __gsharp_warp_shuffle_read_up_sync(__gsharp_ctx, __gsharp_ctx.mask, __gsharp_ctx.val, 1, 32, "WarpLevelConcurrencyKernels.cs(45,15)");
+__gsharp_ctx.__gsharp_warp_temp_6 = __gsharp_warp_shuffle_read_up_sync(0, __gsharp_ctx.mask, __gsharp_ctx.val, 1, 32, "WarpLevelConcurrencyKernels.cs(45,15)");
 __gsharp_ctx.val = __gsharp_ctx.__gsharp_warp_temp_6;
 __gsharp_warp_exchange_assign(__gsharp_ctx.val);
 __gsharp_ctx.__gsharp_state = 6;
@@ -652,9 +676,9 @@ return;
 
 case 6:
 {
-var __gsharp_warp_temp_7 = __gsharp_warp_shuffle_read_xor_sync(__gsharp_ctx, __gsharp_ctx.mask, __gsharp_ctx.val, 1, 32, "WarpLevelConcurrencyKernels.cs(46,15)");
+var __gsharp_warp_temp_7 = __gsharp_warp_shuffle_read_xor_sync(0, __gsharp_ctx.mask, __gsharp_ctx.val, 1, 32, "WarpLevelConcurrencyKernels.cs(46,15)");
 __gsharp_ctx.val = __gsharp_warp_temp_7;
-output[__gsharp_ctx.tid] = __gsharp_ctx.val;
+__gsharp_ctx.output[__gsharp_ctx.tid] = __gsharp_ctx.val;
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }

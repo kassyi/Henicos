@@ -152,7 +152,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__WmmaKernels__WmmaInt8RowMajorKernel(sbyte[] a, sbyte[] b, int[] c, int[] d, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WmmaKernels__WmmaInt8RowMajorKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__WmmaKernels__WmmaInt8RowMajorKernel(sbyte[] a, sbyte[] b, int[] c, int[] d, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WmmaKernels__WmmaInt8RowMajorKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -424,7 +424,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__WmmaKernels__WmmaInt8ColMajorBKernel(sbyte[] a, sbyte[] bColMajor, int[] c, int[] d, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WmmaKernels__WmmaInt8ColMajorBKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__WmmaKernels__WmmaInt8ColMajorBKernel(sbyte[] a, sbyte[] bColMajor, int[] c, int[] d, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WmmaKernels__WmmaInt8ColMajorBKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -696,7 +696,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__WmmaKernels__WmmaInt8ColMajorStoreKernel(sbyte[] a, sbyte[] b, int[] dColMajor, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WmmaKernels__WmmaInt8ColMajorStoreKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__WmmaKernels__WmmaInt8ColMajorStoreKernel(sbyte[] a, sbyte[] b, int[] dColMajor, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WmmaKernels__WmmaInt8ColMajorStoreKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -961,7 +961,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__WmmaKernels__WmmaDoubleM8N8K4Kernel(double[] a, double[] b, double[] d, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WmmaKernels__WmmaDoubleM8N8K4Kernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__WmmaKernels__WmmaDoubleM8N8K4Kernel(double[] a, double[] b, double[] d, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WmmaKernels__WmmaDoubleM8N8K4Kernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {

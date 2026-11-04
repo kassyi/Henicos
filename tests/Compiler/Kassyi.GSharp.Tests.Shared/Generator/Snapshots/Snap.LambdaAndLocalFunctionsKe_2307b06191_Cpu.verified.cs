@@ -144,7 +144,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__LambdaAndLocalFunctionsKernels__NonCapturingLambdaKernel(int[] data, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__LambdaAndLocalFunctionsKernels__NonCapturingLambdaKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__LambdaAndLocalFunctionsKernels__NonCapturingLambdaKernel(int[] data, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__LambdaAndLocalFunctionsKernels__NonCapturingLambdaKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -389,7 +389,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__LambdaAndLocalFunctionsKernels__ValueCapturingLambdaKernel(int[] data, int factor, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__LambdaAndLocalFunctionsKernels__ValueCapturingLambdaKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__LambdaAndLocalFunctionsKernels__ValueCapturingLambdaKernel(int[] data, int factor, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__LambdaAndLocalFunctionsKernels__ValueCapturingLambdaKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -634,7 +634,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__LambdaAndLocalFunctionsKernels__ImmediatelyEvaluatedLambdaKernel(int[] data, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__LambdaAndLocalFunctionsKernels__ImmediatelyEvaluatedLambdaKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__LambdaAndLocalFunctionsKernels__ImmediatelyEvaluatedLambdaKernel(int[] data, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__LambdaAndLocalFunctionsKernels__ImmediatelyEvaluatedLambdaKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -884,7 +884,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__LambdaAndLocalFunctionsKernels__ShadowedVariableCaptureKernel(int[] data, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__LambdaAndLocalFunctionsKernels__ShadowedVariableCaptureKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__LambdaAndLocalFunctionsKernels__ShadowedVariableCaptureKernel(int[] data, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__LambdaAndLocalFunctionsKernels__ShadowedVariableCaptureKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -1138,7 +1138,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__LambdaAndLocalFunctionsKernels__NestedReturnsKernel(int someValue, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__LambdaAndLocalFunctionsKernels__NestedReturnsKernel __gsharp_ctx, ref float __gsharp_auto_result) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__LambdaAndLocalFunctionsKernels__NestedReturnsKernel(int someValue, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__LambdaAndLocalFunctionsKernels__NestedReturnsKernel __gsharp_ctx, ref float __gsharp_auto_result) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {

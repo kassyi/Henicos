@@ -183,7 +183,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__TestCases__Emission__IntegerSemanticsShapeKernels__WrappedKernel(int[] a, long[] l, uint[] u, int[] s, __gsharp_context_Kassyi__GSharp__Tests__TestCases__Emission__IntegerSemanticsShapeKernels__WrappedKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__TestCases__Emission__IntegerSemanticsShapeKernels__WrappedKernel(int[] a, long[] l, uint[] u, int[] s, __gsharp_context_Kassyi__GSharp__Tests__TestCases__Emission__IntegerSemanticsShapeKernels__WrappedKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -499,7 +499,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__TestCases__Emission__IntegerSemanticsShapeKernels__UnchangedKernel(short[] h, byte[] b, int[] a, long[] l, uint[] u, __gsharp_context_Kassyi__GSharp__Tests__TestCases__Emission__IntegerSemanticsShapeKernels__UnchangedKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__TestCases__Emission__IntegerSemanticsShapeKernels__UnchangedKernel(short[] h, byte[] b, int[] a, long[] l, uint[] u, __gsharp_context_Kassyi__GSharp__Tests__TestCases__Emission__IntegerSemanticsShapeKernels__UnchangedKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -815,7 +815,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__TestCases__Emission__IntegerSemanticsShapeKernels__LoopStepKernel(int[] a, int n, __gsharp_context_Kassyi__GSharp__Tests__TestCases__Emission__IntegerSemanticsShapeKernels__LoopStepKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__TestCases__Emission__IntegerSemanticsShapeKernels__LoopStepKernel(int[] a, int n, __gsharp_context_Kassyi__GSharp__Tests__TestCases__Emission__IntegerSemanticsShapeKernels__LoopStepKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -1091,7 +1091,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__TestCases__Emission__IntegerSemanticsShapeKernels__ConversionKernel(float[] f, double[] d, int[] i, uint[] u, long[] l, ulong[] ul, byte[] b, short[] s, __gsharp_context_Kassyi__GSharp__Tests__TestCases__Emission__IntegerSemanticsShapeKernels__ConversionKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__TestCases__Emission__IntegerSemanticsShapeKernels__ConversionKernel(float[] f, double[] d, int[] i, uint[] u, long[] l, ulong[] ul, byte[] b, short[] s, __gsharp_context_Kassyi__GSharp__Tests__TestCases__Emission__IntegerSemanticsShapeKernels__ConversionKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -1387,7 +1387,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__TestCases__Emission__IntegerSemanticsShapeKernels__BuiltInKernel(int[] a, __gsharp_context_Kassyi__GSharp__Tests__TestCases__Emission__IntegerSemanticsShapeKernels__BuiltInKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__TestCases__Emission__IntegerSemanticsShapeKernels__BuiltInKernel(int[] a, __gsharp_context_Kassyi__GSharp__Tests__TestCases__Emission__IntegerSemanticsShapeKernels__BuiltInKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {

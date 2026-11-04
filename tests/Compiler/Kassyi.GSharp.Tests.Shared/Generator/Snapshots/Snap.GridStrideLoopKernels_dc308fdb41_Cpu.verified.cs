@@ -156,7 +156,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__GridStrideLoopKernels__CountVisitsKernel(int[] visits, int count, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__GridStrideLoopKernels__CountVisitsKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__GridStrideLoopKernels__CountVisitsKernel(int[] visits, int count, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__GridStrideLoopKernels__CountVisitsKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -413,7 +413,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__GridStrideLoopKernels__CountVisitsWithContextKernel(int[] visits, int count, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__GridStrideLoopKernels__CountVisitsWithContextKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__GridStrideLoopKernels__CountVisitsWithContextKernel(int[] visits, int count, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__GridStrideLoopKernels__CountVisitsWithContextKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -674,7 +674,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__GridStrideLoopKernels__CountReadOnceKernel(int[] length, int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__GridStrideLoopKernels__CountReadOnceKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__GridStrideLoopKernels__CountReadOnceKernel(int[] length, int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__GridStrideLoopKernels__CountReadOnceKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -942,7 +942,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__GridStrideLoopKernels__CountCallOnceKernel(int[] calls, int[] visits, int count, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__GridStrideLoopKernels__CountCallOnceKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__GridStrideLoopKernels__CountCallOnceKernel(int[] calls, int[] visits, int count, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__GridStrideLoopKernels__CountCallOnceKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {

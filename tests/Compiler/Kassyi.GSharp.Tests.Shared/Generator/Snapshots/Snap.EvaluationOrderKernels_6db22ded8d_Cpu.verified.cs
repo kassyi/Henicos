@@ -169,11 +169,17 @@ return 2;
 
 struct __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__CombineAcrossBarrier {
 int __gsharp_state = 0;
+int __gsharp_id_0_a;
+int __gsharp_id_1_b;
 };
-template <typename TRoot> inline bool __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__CombineAcrossBarrier(int __gsharp_id_0_a, int __gsharp_id_1_b, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__CombineAcrossBarrier* __gsharp_ctx, TRoot* __gsharp_root, int* __gsharp_result){
+template <typename TRoot> inline bool __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__CombineAcrossBarrier(int __gsharp_in___gsharp_id_0_a, int __gsharp_in___gsharp_id_1_b, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__CombineAcrossBarrier* __gsharp_ctx, TRoot* __gsharp_root, int* __gsharp_result){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_root->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_root->__gsharp_yielded_for_block_barrier
+if(__gsharp_state==0){
+__gsharp_ctx->__gsharp_id_0_a=__gsharp_in___gsharp_id_0_a;
+__gsharp_ctx->__gsharp_id_1_b=__gsharp_in___gsharp_id_1_b;
+}
 switch(__gsharp_state)
 {
 case 0:
@@ -186,7 +192,7 @@ return false;
 case 1:
 __gsharp_switch_1_state_1:
 {
-*__gsharp_result = __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_0_a,10),__gsharp_id_1_b);
+*__gsharp_result = __gsharp_add_i32(__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_0_a,10),__gsharp_ctx->__gsharp_id_1_b);
 __gsharp_state = 0;return true;
 __gsharp_state = 0;return true;
 }
@@ -218,9 +224,15 @@ public partial class EvaluationOrderKernels
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__CombineAcrossBarrier {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
+internal int a;
+internal int b;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__CombineAcrossBarrier(int a, int b, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__CombineAcrossBarrier __gsharp_ctx, ref int __gsharp_result) {
+public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__CombineAcrossBarrier(int __gsharp_in_a, int __gsharp_in_b, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__CombineAcrossBarrier __gsharp_ctx, ref int __gsharp_result) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.a = __gsharp_in_a;
+__gsharp_ctx.b = __gsharp_in_b;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -234,7 +246,7 @@ return false;
 case 1:
 {
 {
-__gsharp_result = a * 10 + b;
+__gsharp_result = __gsharp_ctx.a * 10 + __gsharp_ctx.b;
 __gsharp_ctx.__gsharp_state = 0;
 return true;
 }
@@ -434,7 +446,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__CallArgumentsKernel(int[] buffer, int[] scratch, int[] result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__CallArgumentsKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__CallArgumentsKernel(int[] buffer, int[] scratch, int[] result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__CallArgumentsKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -716,7 +728,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__VectorArgumentsKernel(float[] buffer, float[] result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__VectorArgumentsKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__VectorArgumentsKernel(float[] buffer, float[] result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__VectorArgumentsKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -976,7 +988,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__NoSpillCallsKernel(int[] a, int[] b, int[] result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__NoSpillCallsKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__NoSpillCallsKernel(int[] a, int[] b, int[] result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__NoSpillCallsKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -1134,17 +1146,21 @@ uint64_t __gsharp_warp_exchange[2] = {};
 uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
+GSharpArray<int> __gsharp_id_0_result;
 int __gsharp_id_1_a;
 int __gsharp_arg_temp_0;
 int __gsharp_arg_temp_1;
 int __gsharp_call_temp_2;
 __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__CombineAcrossBarrier __gsharp_call_frame_0;
 };
-extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__SuspendingCallArgumentsKernel(GSharpArray<int> __gsharp_id_0_result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__SuspendingCallArgumentsKernel* __gsharp_ctx){
+extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__SuspendingCallArgumentsKernel(GSharpArray<int> __gsharp_in___gsharp_id_0_result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__SuspendingCallArgumentsKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
 auto* __gsharp_root = __gsharp_ctx;
+if(__gsharp_state==0){
+__gsharp_ctx->__gsharp_id_0_result=__gsharp_in___gsharp_id_0_result;
+}
 switch(__gsharp_state)
 {
 case 0:
@@ -1163,8 +1179,8 @@ if(!__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__C
 __gsharp_state=1;
 return;
 }
-__gsharp_id_0_result[0]=__gsharp_ctx->__gsharp_call_temp_2;
-__gsharp_id_0_result[1]=__gsharp_ctx->__gsharp_id_1_a;
+__gsharp_ctx->__gsharp_id_0_result[0]=__gsharp_ctx->__gsharp_call_temp_2;
+__gsharp_ctx->__gsharp_id_0_result[1]=__gsharp_ctx->__gsharp_id_1_a;
 __gsharp_state=-1;
 return;
 }
@@ -1249,6 +1265,7 @@ public static readonly string SuspendingCallArgumentsKernel_FullSource=global::K
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__SuspendingCallArgumentsKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
+public int[] result;
 public int a;
 public int __gsharp_arg_temp_0;
 public int __gsharp_arg_temp_1;
@@ -1256,7 +1273,10 @@ public int __gsharp_call_temp_2;
 internal global::Kassyi.GSharp.Tests.Shared.Syntax.EvaluationOrderKernels.__gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__CombineAcrossBarrier __gsharp_call_frame_0 = new();
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__SuspendingCallArgumentsKernel(int[] result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__SuspendingCallArgumentsKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__SuspendingCallArgumentsKernel(int[] __gsharp_in_result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__SuspendingCallArgumentsKernel __gsharp_ctx) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.result = __gsharp_in_result;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -1276,8 +1296,8 @@ __gsharp_ctx.__gsharp_state = 1;
 return;
 }
 
-result[0] = __gsharp_ctx.__gsharp_call_temp_2;
-result[1] = __gsharp_ctx.a;
+__gsharp_ctx.result[0] = __gsharp_ctx.__gsharp_call_temp_2;
+__gsharp_ctx.result[1] = __gsharp_ctx.a;
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -1527,14 +1547,14 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 ";
 public static readonly string ReadsAndAliasesKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +ReadsAndAliasesKernel_Source;
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__ReadsAndAliasesKernel {
+public unsafe struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__ReadsAndAliasesKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__ReadsAndAliasesKernel(int[] result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__ReadsAndAliasesKernel __gsharp_ctx) {
+public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__ReadsAndAliasesKernel(int[] result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__ReadsAndAliasesKernel* __gsharp_ctx) {
 {
-switch (__gsharp_ctx.__gsharp_state)
+switch (__gsharp_ctx->__gsharp_state)
 {
 case 0:
 {
@@ -1552,7 +1572,7 @@ result[2] = (int)global::Kassyi.GSharp.Tests.Shared.Syntax.EvaluationOrderKernel
 // K26: a nested call inside the first argument is evaluated before the second argument
 int k = 0;
 result[3] = global::Kassyi.GSharp.Tests.Shared.Syntax.EvaluationOrderKernels.Combine(global::Kassyi.GSharp.Tests.Shared.Syntax.EvaluationOrderKernels.Pure(global::Kassyi.GSharp.Tests.Shared.Syntax.EvaluationOrderKernels.Next(ref k)), global::Kassyi.GSharp.Tests.Shared.Syntax.EvaluationOrderKernels.Next(ref k));
-__gsharp_ctx.__gsharp_state = -1;
+__gsharp_ctx->__gsharp_state = -1;
 return;
 }
 }
@@ -1580,12 +1600,10 @@ if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(
 int __gsharp_total_blocks = (int)(gridDimX * gridDimY * gridDimZ);
 int __gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);
 var __gsharp_contexts = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__ReadsAndAliasesKernel[__gsharp_total_blocks * __gsharp_threads_per_block];
-for (int __gsharp_context_index = 0; __gsharp_context_index < __gsharp_contexts.Length; __gsharp_context_index++)
-{
-__gsharp_contexts[__gsharp_context_index] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__ReadsAndAliasesKernel();
-}
 global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks, sharedMemBytes, false);
 var __gsharp_thread_at_block_barrier = new bool[__gsharp_contexts.Length];
+fixed (__gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__ReadsAndAliasesKernel* __gsharp_pinned_contexts = __gsharp_contexts)
+{
 bool __gsharp_any_grid_active = true;
 try
 {
@@ -1623,12 +1641,12 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX = __gsharp_tx;
 global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxY = __gsharp_ty;
 global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxZ = __gsharp_tz;
 int __gsharp_linear_tid = __gsharp_block_index * __gsharp_threads_per_block + __gsharp_thread_index;
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1 && !__gsharp_thread_at_block_barrier[__gsharp_linear_tid])
+if (__gsharp_pinned_contexts[__gsharp_linear_tid].__gsharp_state != -1 && !__gsharp_thread_at_block_barrier[__gsharp_linear_tid])
 {
 __gsharp_any_grid_active = true;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = false;
-__gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__ReadsAndAliasesKernel(result, __gsharp_contexts[__gsharp_linear_tid]);
+__gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__ReadsAndAliasesKernel(result, &__gsharp_pinned_contexts[__gsharp_linear_tid]);
 if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 throw global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncInKernelThatIsNotCooperative("EvaluationOrderKernels.ReadsAndAliasesKernel");
@@ -1637,7 +1655,7 @@ if (global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested)
 {
 __gsharp_thread_at_block_barrier[__gsharp_linear_tid] = true;
 }
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1 && !__gsharp_thread_at_block_barrier[__gsharp_linear_tid])
+if (__gsharp_pinned_contexts[__gsharp_linear_tid].__gsharp_state != -1 && !__gsharp_thread_at_block_barrier[__gsharp_linear_tid])
 {
 __gsharp_any_block_active = true;
 }
@@ -1666,6 +1684,7 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;
 finally
 {
 global::Kassyi.GSharp.Core.ManagedGpuContext.EndGrid();
+}
 }
 return;
 }
@@ -1806,7 +1825,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__RefReturnKernel(int[] a, int[] b, int[] result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__RefReturnKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__RefReturnKernel(int[] a, int[] b, int[] result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__RefReturnKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -2083,7 +2102,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__ConversionsKernel(float[] floats, byte[] bytes, int[] result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__ConversionsKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__ConversionsKernel(float[] floats, byte[] bytes, int[] result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__ConversionsKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -2353,7 +2372,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__ConditionalBranchesKernel(int[] input, int[] result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__ConditionalBranchesKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__ConditionalBranchesKernel(int[] input, int[] result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__ConditionalBranchesKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -2620,7 +2639,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__OperatorMacroKernel(int[] result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__OperatorMacroKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__OperatorMacroKernel(int[] result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__OperatorMacroKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -2877,7 +2896,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__NoSpillOperatorMacroKernel(int[] input, int[] result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__NoSpillOperatorMacroKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__NoSpillOperatorMacroKernel(int[] input, int[] result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__NoSpillOperatorMacroKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -3144,7 +3163,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__AssignmentKernel(int[] a, int[] b, int[] e, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__AssignmentKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__AssignmentKernel(int[] a, int[] b, int[] e, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__AssignmentKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -3413,7 +3432,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__CompoundAssignmentKernel(int[] d, int[] result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__CompoundAssignmentKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__CompoundAssignmentKernel(int[] d, int[] result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__CompoundAssignmentKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -3668,7 +3687,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__NoSpillAssignmentsKernel(int[] output, int[] log, int[] result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__NoSpillAssignmentsKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__NoSpillAssignmentsKernel(int[] output, int[] log, int[] result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__NoSpillAssignmentsKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -3956,7 +3975,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__BinaryOperatorKernel(int[] data, int[] result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__BinaryOperatorKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__BinaryOperatorKernel(int[] data, int[] result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__BinaryOperatorKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -4214,7 +4233,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__NoSpillBinaryKernel(uint[] input, int[] a, int[] b, uint[] rotated, int[] sums, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__NoSpillBinaryKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__NoSpillBinaryKernel(uint[] input, int[] a, int[] b, uint[] rotated, int[] sums, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__NoSpillBinaryKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {

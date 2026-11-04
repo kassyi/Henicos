@@ -155,7 +155,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__CoreSyntaxKernels__ComplexLogicKernel(int[] a, int[] b, int[] c, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__CoreSyntaxKernels__ComplexLogicKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__CoreSyntaxKernels__ComplexLogicKernel(int[] a, int[] b, int[] c, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__CoreSyntaxKernels__ComplexLogicKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -455,7 +455,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__CoreSyntaxKernels__ControlFlowKernel(int[] data, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__CoreSyntaxKernels__ControlFlowKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__CoreSyntaxKernels__ControlFlowKernel(int[] data, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__CoreSyntaxKernels__ControlFlowKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -746,7 +746,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__CoreSyntaxKernels__StructKernel(global::Kassyi.GSharp.Tests.Shared.Syntax.Vector2[] vectors, int length, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__CoreSyntaxKernels__StructKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__CoreSyntaxKernels__StructKernel(global::Kassyi.GSharp.Tests.Shared.Syntax.Vector2[] vectors, int length, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__CoreSyntaxKernels__StructKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -1028,7 +1028,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__CoreSyntaxKernels__PaddedStructKernel(global::Kassyi.GSharp.Tests.Shared.Syntax.MixedPaddingStruct[] items, int length, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__CoreSyntaxKernels__PaddedStructKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__CoreSyntaxKernels__PaddedStructKernel(global::Kassyi.GSharp.Tests.Shared.Syntax.MixedPaddingStruct[] items, int length, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__CoreSyntaxKernels__PaddedStructKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -1289,7 +1289,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__CoreSyntaxKernels__DeviceMethodKernel(int[] data, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__CoreSyntaxKernels__DeviceMethodKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__CoreSyntaxKernels__DeviceMethodKernel(int[] data, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__CoreSyntaxKernels__DeviceMethodKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {

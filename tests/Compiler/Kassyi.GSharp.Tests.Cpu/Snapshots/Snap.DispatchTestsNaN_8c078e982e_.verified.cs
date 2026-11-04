@@ -11,7 +11,7 @@
             __gsharp_ctx->tid = ThreadIndex.X;
             __gsharp_ctx->value = __gsharp_ctx->tid;
             {
-                var __gsharp_switch_temp_0 = selector;
+                var __gsharp_switch_temp_0 = __gsharp_ctx->selector;
                 if (__gsharp_switch_temp_0 != __gsharp_switch_temp_0)
                     goto case 1;
                 if (__gsharp_switch_temp_0 == 1f)
@@ -53,7 +53,7 @@
 
         case 5:
         {
-            output[__gsharp_ctx->tid] = __gsharp_ctx->value;
+            __gsharp_ctx->output[__gsharp_ctx->tid] = __gsharp_ctx->value;
             __gsharp_state = -1;
             return;
         }

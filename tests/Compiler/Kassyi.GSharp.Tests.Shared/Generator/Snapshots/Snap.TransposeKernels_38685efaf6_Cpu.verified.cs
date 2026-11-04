@@ -144,7 +144,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Henicos__Benchmarks__ComputeBenchmarks__TransposeKernels__TransposeKernel(float[] input, float[] output, int width, int height, __gsharp_context_Henicos__Benchmarks__ComputeBenchmarks__TransposeKernels__TransposeKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Henicos__Benchmarks__ComputeBenchmarks__TransposeKernels__TransposeKernel(float[] input, float[] output, int width, int height, __gsharp_context_Henicos__Benchmarks__ComputeBenchmarks__TransposeKernels__TransposeKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {

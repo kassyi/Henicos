@@ -24,20 +24,26 @@ template <typename TRoot> inline bool __gsharp_fn_Kassyi__GSharp__Tests__Shared_
 
 struct __gsharp_frame_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ShiftInBlock {
 int __gsharp_state = 0;
+GSharpArray<int> __gsharp_id_0_c;
+int __gsharp_id_1_tid;
 int __gsharp_id_2_lane;
 int __gsharp_id_3_next;
 int __gsharp_id_4_value;
 };
-template <typename TRoot> inline bool __gsharp_fn_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ShiftInBlock(GSharpArray<int> __gsharp_id_0_c, int __gsharp_id_1_tid, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ShiftInBlock* __gsharp_ctx, TRoot* __gsharp_root){
+template <typename TRoot> inline bool __gsharp_fn_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ShiftInBlock(GSharpArray<int> __gsharp_in___gsharp_id_0_c, int __gsharp_in___gsharp_id_1_tid, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ShiftInBlock* __gsharp_ctx, TRoot* __gsharp_root){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_root->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_root->__gsharp_yielded_for_block_barrier
+if(__gsharp_state==0){
+__gsharp_ctx->__gsharp_id_0_c=__gsharp_in___gsharp_id_0_c;
+__gsharp_ctx->__gsharp_id_1_tid=__gsharp_in___gsharp_id_1_tid;
+}
 switch(__gsharp_state)
 {
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_array_at(__gsharp_id_0_c, __gsharp_id_1_tid, ""G#: a null array is read at SyncGridBodyKernels.cs(244,9)"")=__gsharp_id_1_tid;
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_c, __gsharp_ctx->__gsharp_id_1_tid, ""G#: a null array is read at SyncGridBodyKernels.cs(244,9)"")=__gsharp_ctx->__gsharp_id_1_tid;
 __gsharp_yielded_for_block_barrier=true;
 __gsharp_state=1;
 return false;
@@ -45,9 +51,9 @@ return false;
 case 1:
 __gsharp_switch_1_state_1:
 {
-__gsharp_ctx->__gsharp_id_2_lane=__gsharp_id_1_tid%(int)blockDim.x;
-__gsharp_ctx->__gsharp_id_3_next=__gsharp_add_i32(__gsharp_sub_i32(__gsharp_id_1_tid,__gsharp_ctx->__gsharp_id_2_lane),(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_2_lane,1))%(int)blockDim.x);
-__gsharp_ctx->__gsharp_id_4_value=__gsharp_array_at(__gsharp_id_0_c, __gsharp_ctx->__gsharp_id_3_next, ""G#: a null array is read at SyncGridBodyKernels.cs(248,21)"");
+__gsharp_ctx->__gsharp_id_2_lane=__gsharp_ctx->__gsharp_id_1_tid%(int)blockDim.x;
+__gsharp_ctx->__gsharp_id_3_next=__gsharp_add_i32(__gsharp_sub_i32(__gsharp_ctx->__gsharp_id_1_tid,__gsharp_ctx->__gsharp_id_2_lane),(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_2_lane,1))%(int)blockDim.x);
+__gsharp_ctx->__gsharp_id_4_value=__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_c, __gsharp_ctx->__gsharp_id_3_next, ""G#: a null array is read at SyncGridBodyKernels.cs(248,21)"");
 __gsharp_yielded_for_block_barrier=true;
 __gsharp_state=2;
 return false;
@@ -55,7 +61,7 @@ return false;
 case 2:
 __gsharp_switch_1_state_2:
 {
-__gsharp_array_at(__gsharp_id_0_c, __gsharp_id_1_tid, ""G#: a null array is read at SyncGridBodyKernels.cs(250,9)"")=__gsharp_ctx->__gsharp_id_4_value;
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_c, __gsharp_ctx->__gsharp_id_1_tid, ""G#: a null array is read at SyncGridBodyKernels.cs(250,9)"")=__gsharp_ctx->__gsharp_id_4_value;
 __gsharp_state = 0;return true;
 }
 }
@@ -67,18 +73,30 @@ return false;
 
 struct __gsharp_frame_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__Step {
 int __gsharp_state = 0;
+GSharpArray<int> __gsharp_id_0_a;
+GSharpArray<int> __gsharp_id_1_b;
+GSharpArray<int> __gsharp_id_2_c;
+int __gsharp_id_3_tid;
+int __gsharp_id_4_n;
 __gsharp_frame_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ShiftInBlock __gsharp_call_frame_0;
 };
-template <typename TRoot> inline bool __gsharp_fn_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__Step(GSharpArray<int> __gsharp_id_0_a, GSharpArray<int> __gsharp_id_1_b, GSharpArray<int> __gsharp_id_2_c, int __gsharp_id_3_tid, int __gsharp_id_4_n, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__Step* __gsharp_ctx, TRoot* __gsharp_root){
+template <typename TRoot> inline bool __gsharp_fn_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__Step(GSharpArray<int> __gsharp_in___gsharp_id_0_a, GSharpArray<int> __gsharp_in___gsharp_id_1_b, GSharpArray<int> __gsharp_in___gsharp_id_2_c, int __gsharp_in___gsharp_id_3_tid, int __gsharp_in___gsharp_id_4_n, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__Step* __gsharp_ctx, TRoot* __gsharp_root){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_root->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_root->__gsharp_yielded_for_block_barrier
+if(__gsharp_state==0){
+__gsharp_ctx->__gsharp_id_0_a=__gsharp_in___gsharp_id_0_a;
+__gsharp_ctx->__gsharp_id_1_b=__gsharp_in___gsharp_id_1_b;
+__gsharp_ctx->__gsharp_id_2_c=__gsharp_in___gsharp_id_2_c;
+__gsharp_ctx->__gsharp_id_3_tid=__gsharp_in___gsharp_id_3_tid;
+__gsharp_ctx->__gsharp_id_4_n=__gsharp_in___gsharp_id_4_n;
+}
 switch(__gsharp_state)
 {
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_array_at(__gsharp_id_0_a, __gsharp_id_3_tid, ""G#: a null array is read at SyncGridBodyKernels.cs(234,13)"")=__gsharp_add_i32(__gsharp_id_3_tid,1);
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_a, __gsharp_ctx->__gsharp_id_3_tid, ""G#: a null array is read at SyncGridBodyKernels.cs(234,13)"")=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_3_tid,1);
 __gsharp_yielded_for_grid_sync=true;
 __gsharp_state=1;
 return false;
@@ -91,7 +109,7 @@ goto __gsharp_switch_1_state_2;
 case 2:
 __gsharp_switch_1_state_2:
 {
-if(!__gsharp_fn_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ShiftInBlock(__gsharp_id_2_c,__gsharp_id_3_tid,&__gsharp_ctx->__gsharp_call_frame_0,__gsharp_root))
+if(!__gsharp_fn_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ShiftInBlock(__gsharp_ctx->__gsharp_id_2_c,__gsharp_ctx->__gsharp_id_3_tid,&__gsharp_ctx->__gsharp_call_frame_0,__gsharp_root))
 {
 __gsharp_state=2;
 return false;
@@ -103,7 +121,7 @@ return false;
 case 3:
 __gsharp_switch_1_state_3:
 {
-__gsharp_array_at(__gsharp_id_1_b, __gsharp_id_3_tid, ""G#: a null array is read at SyncGridBodyKernels.cs(236,13)"")=__gsharp_array_at(__gsharp_id_0_a, (__gsharp_add_i32(__gsharp_id_3_tid,1))%__gsharp_id_4_n, ""G#: a null array is read at SyncGridBodyKernels.cs(236,22)"");
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_1_b, __gsharp_ctx->__gsharp_id_3_tid, ""G#: a null array is read at SyncGridBodyKernels.cs(236,13)"")=__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_a, (__gsharp_add_i32(__gsharp_ctx->__gsharp_id_3_tid,1))%__gsharp_ctx->__gsharp_id_4_n, ""G#: a null array is read at SyncGridBodyKernels.cs(236,22)"");
 __gsharp_state = 0;return true;
 }
 }
@@ -125,17 +143,27 @@ return (*__gsharp_id_2_value)>=0;
 
 struct __gsharp_frame_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__WriteSyncRead {
 int __gsharp_state = 0;
+GSharpArray<int> __gsharp_id_0_a;
+GSharpArray<int> __gsharp_id_1_b;
+int __gsharp_id_2_tid;
+int __gsharp_id_3_n;
 };
-template <typename TRoot> inline bool __gsharp_fn_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__WriteSyncRead(GSharpArray<int> __gsharp_id_0_a, GSharpArray<int> __gsharp_id_1_b, int __gsharp_id_2_tid, int __gsharp_id_3_n, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__WriteSyncRead* __gsharp_ctx, TRoot* __gsharp_root){
+template <typename TRoot> inline bool __gsharp_fn_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__WriteSyncRead(GSharpArray<int> __gsharp_in___gsharp_id_0_a, GSharpArray<int> __gsharp_in___gsharp_id_1_b, int __gsharp_in___gsharp_id_2_tid, int __gsharp_in___gsharp_id_3_n, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__WriteSyncRead* __gsharp_ctx, TRoot* __gsharp_root){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_root->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_root->__gsharp_yielded_for_block_barrier
+if(__gsharp_state==0){
+__gsharp_ctx->__gsharp_id_0_a=__gsharp_in___gsharp_id_0_a;
+__gsharp_ctx->__gsharp_id_1_b=__gsharp_in___gsharp_id_1_b;
+__gsharp_ctx->__gsharp_id_2_tid=__gsharp_in___gsharp_id_2_tid;
+__gsharp_ctx->__gsharp_id_3_n=__gsharp_in___gsharp_id_3_n;
+}
 switch(__gsharp_state)
 {
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_array_at(__gsharp_id_0_a, __gsharp_id_2_tid, ""G#: a null array is read at SyncGridBodyKernels.cs(461,9)"")=__gsharp_add_i32(__gsharp_id_2_tid,1);
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_a, __gsharp_ctx->__gsharp_id_2_tid, ""G#: a null array is read at SyncGridBodyKernels.cs(461,9)"")=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_2_tid,1);
 __gsharp_yielded_for_grid_sync=true;
 __gsharp_state=1;
 return false;
@@ -143,7 +171,7 @@ return false;
 case 1:
 __gsharp_switch_1_state_1:
 {
-__gsharp_array_at(__gsharp_id_1_b, __gsharp_id_2_tid, ""G#: a null array is read at SyncGridBodyKernels.cs(463,9)"")=__gsharp_array_at(__gsharp_id_0_a, (__gsharp_add_i32(__gsharp_id_2_tid,1))%__gsharp_id_3_n, ""G#: a null array is read at SyncGridBodyKernels.cs(463,18)"");
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_1_b, __gsharp_ctx->__gsharp_id_2_tid, ""G#: a null array is read at SyncGridBodyKernels.cs(463,9)"")=__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_a, (__gsharp_add_i32(__gsharp_ctx->__gsharp_id_2_tid,1))%__gsharp_ctx->__gsharp_id_3_n, ""G#: a null array is read at SyncGridBodyKernels.cs(463,18)"");
 __gsharp_state = 0;return true;
 }
 }
@@ -155,12 +183,22 @@ return false;
 
 struct __gsharp_frame_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__CallWriteSyncRead {
 int __gsharp_state = 0;
+GSharpArray<int> __gsharp_id_0_a;
+GSharpArray<int> __gsharp_id_1_b;
+int __gsharp_id_2_tid;
+int __gsharp_id_3_n;
 __gsharp_frame_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__WriteSyncRead __gsharp_call_frame_0;
 };
-template <typename TRoot> inline bool __gsharp_fn_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__CallWriteSyncRead(GSharpArray<int> __gsharp_id_0_a, GSharpArray<int> __gsharp_id_1_b, int __gsharp_id_2_tid, int __gsharp_id_3_n, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__CallWriteSyncRead* __gsharp_ctx, TRoot* __gsharp_root){
+template <typename TRoot> inline bool __gsharp_fn_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__CallWriteSyncRead(GSharpArray<int> __gsharp_in___gsharp_id_0_a, GSharpArray<int> __gsharp_in___gsharp_id_1_b, int __gsharp_in___gsharp_id_2_tid, int __gsharp_in___gsharp_id_3_n, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__CallWriteSyncRead* __gsharp_ctx, TRoot* __gsharp_root){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_root->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_root->__gsharp_yielded_for_block_barrier
+if(__gsharp_state==0){
+__gsharp_ctx->__gsharp_id_0_a=__gsharp_in___gsharp_id_0_a;
+__gsharp_ctx->__gsharp_id_1_b=__gsharp_in___gsharp_id_1_b;
+__gsharp_ctx->__gsharp_id_2_tid=__gsharp_in___gsharp_id_2_tid;
+__gsharp_ctx->__gsharp_id_3_n=__gsharp_in___gsharp_id_3_n;
+}
 switch(__gsharp_state)
 {
 case 0:
@@ -171,7 +209,7 @@ goto __gsharp_switch_1_state_1;
 case 1:
 __gsharp_switch_1_state_1:
 {
-if(!__gsharp_fn_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__WriteSyncRead(__gsharp_id_0_a,__gsharp_id_1_b,__gsharp_id_2_tid,__gsharp_id_3_n,&__gsharp_ctx->__gsharp_call_frame_0,__gsharp_root))
+if(!__gsharp_fn_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__WriteSyncRead(__gsharp_ctx->__gsharp_id_0_a,__gsharp_ctx->__gsharp_id_1_b,__gsharp_ctx->__gsharp_id_2_tid,__gsharp_ctx->__gsharp_id_3_n,&__gsharp_ctx->__gsharp_call_frame_0,__gsharp_root))
 {
 __gsharp_state=1;
 return false;
@@ -206,16 +244,28 @@ public partial class SyncGridBodyKernels
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__Step {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
+internal int[] a;
+internal int[] b;
+internal int[] c;
+internal int tid;
+internal int n;
 internal global::Kassyi.GSharp.Tests.Shared.Transpiler.SyncGridBodyKernels.__gsharp_frame_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ShiftInBlock __gsharp_call_frame_0 = new();
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__Step(int[] a, int[] b, int[] c, int tid, int n, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__Step __gsharp_ctx) {
+public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__Step(int[] __gsharp_in_a, int[] __gsharp_in_b, int[] __gsharp_in_c, int __gsharp_in_tid, int __gsharp_in_n, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__Step __gsharp_ctx) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.a = __gsharp_in_a;
+__gsharp_ctx.b = __gsharp_in_b;
+__gsharp_ctx.c = __gsharp_in_c;
+__gsharp_ctx.tid = __gsharp_in_tid;
+__gsharp_ctx.n = __gsharp_in_n;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-a[tid] = tid + 1;
+__gsharp_ctx.a[__gsharp_ctx.tid] = __gsharp_ctx.tid + 1;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
 return false;
@@ -228,7 +278,7 @@ goto case 2;
 
 case 2:
 {
-if (!global::Kassyi.GSharp.Tests.Shared.Transpiler.SyncGridBodyKernels.__gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ShiftInBlock(c, tid, __gsharp_ctx.__gsharp_call_frame_0))
+if (!global::Kassyi.GSharp.Tests.Shared.Transpiler.SyncGridBodyKernels.__gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ShiftInBlock(__gsharp_ctx.c, __gsharp_ctx.tid, __gsharp_ctx.__gsharp_call_frame_0))
 {
 __gsharp_ctx.__gsharp_state = 2;
 return false;
@@ -241,7 +291,7 @@ return false;
 
 case 3:
 {
-b[tid] = a[(tid + 1) % n];
+__gsharp_ctx.b[__gsharp_ctx.tid] = __gsharp_ctx.a[(__gsharp_ctx.tid + 1) % __gsharp_ctx.n];
 {
 __gsharp_ctx.__gsharp_state = 0;
 return true;
@@ -256,18 +306,24 @@ throw new global::System.InvalidOperationException("The device function state ma
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ShiftInBlock {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
+internal int[] c;
+internal int tid;
 internal int lane;
 internal int next;
 internal int value;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ShiftInBlock(int[] c, int tid, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ShiftInBlock __gsharp_ctx) {
+public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ShiftInBlock(int[] __gsharp_in_c, int __gsharp_in_tid, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ShiftInBlock __gsharp_ctx) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.c = __gsharp_in_c;
+__gsharp_ctx.tid = __gsharp_in_tid;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-c[tid] = tid;
+__gsharp_ctx.c[__gsharp_ctx.tid] = __gsharp_ctx.tid;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
 return false;
@@ -275,9 +331,9 @@ return false;
 
 case 1:
 {
-__gsharp_ctx.lane = tid % global::Kassyi.GSharp.Core.BlockDimension.X;
-__gsharp_ctx.next = tid - __gsharp_ctx.lane + (__gsharp_ctx.lane + 1) % global::Kassyi.GSharp.Core.BlockDimension.X;
-__gsharp_ctx.value = c[__gsharp_ctx.next];
+__gsharp_ctx.lane = __gsharp_ctx.tid % global::Kassyi.GSharp.Core.BlockDimension.X;
+__gsharp_ctx.next = __gsharp_ctx.tid - __gsharp_ctx.lane + (__gsharp_ctx.lane + 1) % global::Kassyi.GSharp.Core.BlockDimension.X;
+__gsharp_ctx.value = __gsharp_ctx.c[__gsharp_ctx.next];
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 2;
 return false;
@@ -285,7 +341,7 @@ return false;
 
 case 2:
 {
-c[tid] = __gsharp_ctx.value;
+__gsharp_ctx.c[__gsharp_ctx.tid] = __gsharp_ctx.value;
 {
 __gsharp_ctx.__gsharp_state = 0;
 return true;
@@ -300,15 +356,25 @@ throw new global::System.InvalidOperationException("The device function state ma
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__WriteSyncRead {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
+internal int[] a;
+internal int[] b;
+internal int tid;
+internal int n;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__WriteSyncRead(int[] a, int[] b, int tid, int n, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__WriteSyncRead __gsharp_ctx) {
+public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__WriteSyncRead(int[] __gsharp_in_a, int[] __gsharp_in_b, int __gsharp_in_tid, int __gsharp_in_n, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__WriteSyncRead __gsharp_ctx) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.a = __gsharp_in_a;
+__gsharp_ctx.b = __gsharp_in_b;
+__gsharp_ctx.tid = __gsharp_in_tid;
+__gsharp_ctx.n = __gsharp_in_n;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-a[tid] = tid + 1;
+__gsharp_ctx.a[__gsharp_ctx.tid] = __gsharp_ctx.tid + 1;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
 return false;
@@ -316,7 +382,7 @@ return false;
 
 case 1:
 {
-b[tid] = a[(tid + 1) % n];
+__gsharp_ctx.b[__gsharp_ctx.tid] = __gsharp_ctx.a[(__gsharp_ctx.tid + 1) % __gsharp_ctx.n];
 {
 __gsharp_ctx.__gsharp_state = 0;
 return true;
@@ -331,10 +397,20 @@ throw new global::System.InvalidOperationException("The device function state ma
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__CallWriteSyncRead {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
+internal int[] a;
+internal int[] b;
+internal int tid;
+internal int n;
 internal global::Kassyi.GSharp.Tests.Shared.Transpiler.SyncGridBodyKernels.__gsharp_frame_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__WriteSyncRead __gsharp_call_frame_0 = new();
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__CallWriteSyncRead(int[] a, int[] b, int tid, int n, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__CallWriteSyncRead __gsharp_ctx) {
+public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__CallWriteSyncRead(int[] __gsharp_in_a, int[] __gsharp_in_b, int __gsharp_in_tid, int __gsharp_in_n, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__CallWriteSyncRead __gsharp_ctx) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.a = __gsharp_in_a;
+__gsharp_ctx.b = __gsharp_in_b;
+__gsharp_ctx.tid = __gsharp_in_tid;
+__gsharp_ctx.n = __gsharp_in_n;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -345,7 +421,7 @@ goto case 1;
 
 case 1:
 {
-if (!global::Kassyi.GSharp.Tests.Shared.Transpiler.SyncGridBodyKernels.__gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__WriteSyncRead(a, b, tid, n, __gsharp_ctx.__gsharp_call_frame_0))
+if (!global::Kassyi.GSharp.Tests.Shared.Transpiler.SyncGridBodyKernels.__gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__WriteSyncRead(__gsharp_ctx.a, __gsharp_ctx.b, __gsharp_ctx.tid, __gsharp_ctx.n, __gsharp_ctx.__gsharp_call_frame_0))
 {
 __gsharp_ctx.__gsharp_state = 1;
 return false;
@@ -395,20 +471,24 @@ uint64_t __gsharp_warp_exchange[2] = {};
 uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
+GSharpArray<int> __gsharp_id_0_a;
 int __gsharp_id_1_tid;
 };
-extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__BodyRunsKernel(GSharpArray<int> __gsharp_id_0_a, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__BodyRunsKernel* __gsharp_ctx){
+extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__BodyRunsKernel(GSharpArray<int> __gsharp_in___gsharp_id_0_a, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__BodyRunsKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
 auto* __gsharp_root = __gsharp_ctx;
+if(__gsharp_state==0){
+__gsharp_ctx->__gsharp_id_0_a=__gsharp_in___gsharp_id_0_a;
+}
 switch(__gsharp_state)
 {
 case 0:
 __gsharp_switch_1_state_0:
 {
 __gsharp_ctx->__gsharp_id_1_tid=__gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
-__gsharp_id_0_a[__gsharp_ctx->__gsharp_id_1_tid]=__gsharp_ctx->__gsharp_id_1_tid;
+__gsharp_ctx->__gsharp_id_0_a[__gsharp_ctx->__gsharp_id_1_tid]=__gsharp_ctx->__gsharp_id_1_tid;
 __gsharp_yielded_for_grid_sync=true;
 __gsharp_state=1;
 return;
@@ -416,7 +496,7 @@ return;
 case 1:
 __gsharp_switch_1_state_1:
 {
-__gsharp_id_0_a[__gsharp_ctx->__gsharp_id_1_tid]=__gsharp_add_i32(__gsharp_id_0_a[__gsharp_ctx->__gsharp_id_1_tid],1);
+__gsharp_ctx->__gsharp_id_0_a[__gsharp_ctx->__gsharp_id_1_tid]=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_0_a[__gsharp_ctx->__gsharp_id_1_tid],1);
 __gsharp_state=-1;
 return;
 }
@@ -538,17 +618,21 @@ public static readonly string BodyRunsKernel_FullSource=global::Kassyi.GSharp.Ge
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__BodyRunsKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
+public int[] a;
 public int tid;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__BodyRunsKernel(int[] a, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__BodyRunsKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__BodyRunsKernel(int[] __gsharp_in_a, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__BodyRunsKernel __gsharp_ctx) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.a = __gsharp_in_a;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
 __gsharp_ctx.tid = global::Kassyi.GSharp.Core.BlockIndex.X * global::Kassyi.GSharp.Core.BlockDimension.X + global::Kassyi.GSharp.Core.ThreadIndex.X;
-a[__gsharp_ctx.tid] = __gsharp_ctx.tid;
+__gsharp_ctx.a[__gsharp_ctx.tid] = __gsharp_ctx.tid;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
 return;
@@ -556,7 +640,7 @@ return;
 
 case 1:
 {
-a[__gsharp_ctx.tid] += 1;
+__gsharp_ctx.a[__gsharp_ctx.tid] += 1;
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -711,14 +795,20 @@ uint64_t __gsharp_warp_exchange[2] = {};
 uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
+GSharpArray<int> __gsharp_id_0_a;
+GSharpArray<int> __gsharp_id_1_b;
 int __gsharp_id_2_tid;
 int __gsharp_id_3_n;
 };
-extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__NeighborKernel(GSharpArray<int> __gsharp_id_0_a, GSharpArray<int> __gsharp_id_1_b, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__NeighborKernel* __gsharp_ctx){
+extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__NeighborKernel(GSharpArray<int> __gsharp_in___gsharp_id_0_a, GSharpArray<int> __gsharp_in___gsharp_id_1_b, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__NeighborKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
 auto* __gsharp_root = __gsharp_ctx;
+if(__gsharp_state==0){
+__gsharp_ctx->__gsharp_id_0_a=__gsharp_in___gsharp_id_0_a;
+__gsharp_ctx->__gsharp_id_1_b=__gsharp_in___gsharp_id_1_b;
+}
 switch(__gsharp_state)
 {
 case 0:
@@ -726,7 +816,7 @@ __gsharp_switch_1_state_0:
 {
 __gsharp_ctx->__gsharp_id_2_tid=__gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 __gsharp_ctx->__gsharp_id_3_n=__gsharp_mul_i32((int)gridDim.x,(int)blockDim.x);
-__gsharp_id_0_a[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_2_tid,1);
+__gsharp_ctx->__gsharp_id_0_a[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_2_tid,1);
 __gsharp_yielded_for_grid_sync=true;
 __gsharp_state=1;
 return;
@@ -734,7 +824,7 @@ return;
 case 1:
 __gsharp_switch_1_state_1:
 {
-__gsharp_id_1_b[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_id_0_a[(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_2_tid,1))%__gsharp_ctx->__gsharp_id_3_n];
+__gsharp_ctx->__gsharp_id_1_b[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_ctx->__gsharp_id_0_a[(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_2_tid,1))%__gsharp_ctx->__gsharp_id_3_n];
 __gsharp_state=-1;
 return;
 }
@@ -856,11 +946,17 @@ public static readonly string NeighborKernel_FullSource=global::Kassyi.GSharp.Ge
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__NeighborKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
+public int[] a;
+public int[] b;
 public int tid;
 public int n;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__NeighborKernel(int[] a, int[] b, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__NeighborKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__NeighborKernel(int[] __gsharp_in_a, int[] __gsharp_in_b, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__NeighborKernel __gsharp_ctx) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.a = __gsharp_in_a;
+__gsharp_ctx.b = __gsharp_in_b;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -868,7 +964,7 @@ case 0:
 {
 __gsharp_ctx.tid = global::Kassyi.GSharp.Core.BlockIndex.X * global::Kassyi.GSharp.Core.BlockDimension.X + global::Kassyi.GSharp.Core.ThreadIndex.X;
 __gsharp_ctx.n = global::Kassyi.GSharp.Core.GridDimension.X * global::Kassyi.GSharp.Core.BlockDimension.X;
-a[__gsharp_ctx.tid] = __gsharp_ctx.tid + 1;
+__gsharp_ctx.a[__gsharp_ctx.tid] = __gsharp_ctx.tid + 1;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
 return;
@@ -876,7 +972,7 @@ return;
 
 case 1:
 {
-b[__gsharp_ctx.tid] = a[(__gsharp_ctx.tid + 1) % __gsharp_ctx.n];
+__gsharp_ctx.b[__gsharp_ctx.tid] = __gsharp_ctx.a[(__gsharp_ctx.tid + 1) % __gsharp_ctx.n];
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -1038,26 +1134,32 @@ uint64_t __gsharp_warp_exchange[2] = {};
 uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
+GSharpArray<int> __gsharp_id_0_a;
+int __gsharp_id_1_n;
 };
-extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__NestedKernel(GSharpArray<int> __gsharp_id_0_a, int __gsharp_id_1_n, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__NestedKernel* __gsharp_ctx){
+extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__NestedKernel(GSharpArray<int> __gsharp_in___gsharp_id_0_a, int __gsharp_in___gsharp_id_1_n, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__NestedKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
 auto* __gsharp_root = __gsharp_ctx;
+if(__gsharp_state==0){
+__gsharp_ctx->__gsharp_id_0_a=__gsharp_in___gsharp_id_0_a;
+__gsharp_ctx->__gsharp_id_1_n=__gsharp_in___gsharp_id_1_n;
+}
 switch(__gsharp_state)
 {
 case 0:
 __gsharp_switch_1_state_0:
 {
 {
-unsigned int __gsharp_gsl_n_0 = __gsharp_grid_stride_count(__gsharp_id_1_n);
+unsigned int __gsharp_gsl_n_0 = __gsharp_grid_stride_count(__gsharp_ctx->__gsharp_id_1_n);
 unsigned int __gsharp_gsl_s_0 = __gsharp_grid_stride_step();
 for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += __gsharp_gsl_s_0)
 {
 int __gsharp_id_2_i = (int)__gsharp_gsl_0;
 {
-__gsharp_id_0_a[__gsharp_id_2_i]=__gsharp_add_i32(__gsharp_id_0_a[__gsharp_id_2_i],1);
-__gsharp_id_0_a[__gsharp_id_2_i]=__gsharp_mul_i32(__gsharp_id_0_a[__gsharp_id_2_i],2);
+__gsharp_ctx->__gsharp_id_0_a[__gsharp_id_2_i]=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_0_a[__gsharp_id_2_i],1);
+__gsharp_ctx->__gsharp_id_0_a[__gsharp_id_2_i]=__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_0_a[__gsharp_id_2_i],2);
 }
 }
 }
@@ -1070,8 +1172,8 @@ __gsharp_switch_1_state_1:
 {
 if((int)threadIdx.x==0)
 {
-__gsharp_id_0_a[__gsharp_mul_i32((int)blockIdx.x,2)]=__gsharp_add_i32(__gsharp_id_0_a[__gsharp_mul_i32((int)blockIdx.x,2)],1);
-__gsharp_id_0_a[__gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,2),1)]=__gsharp_add_i32(__gsharp_id_0_a[__gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,2),1)],1);
+__gsharp_ctx->__gsharp_id_0_a[__gsharp_mul_i32((int)blockIdx.x,2)]=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_0_a[__gsharp_mul_i32((int)blockIdx.x,2)],1);
+__gsharp_ctx->__gsharp_id_0_a[__gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,2),1)]=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_0_a[__gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,2),1)],1);
 }
 __gsharp_state=-1;
 return;
@@ -1194,22 +1296,28 @@ public static readonly string NestedKernel_FullSource=global::Kassyi.GSharp.Gene
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__NestedKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
+public int[] a;
+public int n;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__NestedKernel(int[] a, int n, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__NestedKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__NestedKernel(int[] __gsharp_in_a, int __gsharp_in_n, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__NestedKernel __gsharp_ctx) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.a = __gsharp_in_a;
+__gsharp_ctx.n = __gsharp_in_n;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
 {
-uint __gsharp_gsl_n_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideCount(n);
+uint __gsharp_gsl_n_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideCount(__gsharp_ctx.n);
 uint __gsharp_gsl_s_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideStep();
 for (uint __gsharp_gsl_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideStart(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += __gsharp_gsl_s_0)
 {
 int __gsharp_unroll_0 = (int)__gsharp_gsl_0;
-a[__gsharp_unroll_0] += 1;
-a[__gsharp_unroll_0] *= 2;
+__gsharp_ctx.a[__gsharp_unroll_0] += 1;
+__gsharp_ctx.a[__gsharp_unroll_0] *= 2;
 }
 }
 
@@ -1222,8 +1330,8 @@ case 1:
 {
 if (global::Kassyi.GSharp.Core.ThreadIndex.X == 0)
 {
-a[global::Kassyi.GSharp.Core.BlockIndex.X * 2] += 1;
-a[global::Kassyi.GSharp.Core.BlockIndex.X * 2 + 1] += 1;
+__gsharp_ctx.a[global::Kassyi.GSharp.Core.BlockIndex.X * 2] += 1;
+__gsharp_ctx.a[global::Kassyi.GSharp.Core.BlockIndex.X * 2 + 1] += 1;
 }
 
 __gsharp_ctx.__gsharp_state = -1;
@@ -1380,14 +1488,20 @@ uint64_t __gsharp_warp_exchange[2] = {};
 uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
+GSharpArray<int> __gsharp_id_0_a;
+GSharpArray<int> __gsharp_id_1_b;
 int __gsharp_id_2_tid;
 int __gsharp_id_3_n;
 };
-extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__MixedKernel(GSharpArray<int> __gsharp_id_0_a, GSharpArray<int> __gsharp_id_1_b, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__MixedKernel* __gsharp_ctx){
+extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__MixedKernel(GSharpArray<int> __gsharp_in___gsharp_id_0_a, GSharpArray<int> __gsharp_in___gsharp_id_1_b, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__MixedKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
 auto* __gsharp_root = __gsharp_ctx;
+if(__gsharp_state==0){
+__gsharp_ctx->__gsharp_id_0_a=__gsharp_in___gsharp_id_0_a;
+__gsharp_ctx->__gsharp_id_1_b=__gsharp_in___gsharp_id_1_b;
+}
 switch(__gsharp_state)
 {
 case 0:
@@ -1395,7 +1509,7 @@ __gsharp_switch_1_state_0:
 {
 __gsharp_ctx->__gsharp_id_2_tid=__gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 __gsharp_ctx->__gsharp_id_3_n=__gsharp_mul_i32((int)gridDim.x,(int)blockDim.x);
-__gsharp_id_0_a[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_2_tid,1);
+__gsharp_ctx->__gsharp_id_0_a[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_2_tid,1);
 ;
 __gsharp_yielded_for_grid_sync=true;
 __gsharp_state=1;
@@ -1404,7 +1518,7 @@ return;
 case 1:
 __gsharp_switch_1_state_1:
 {
-__gsharp_id_1_b[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_id_0_a[(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_2_tid,1))%__gsharp_ctx->__gsharp_id_3_n];
+__gsharp_ctx->__gsharp_id_1_b[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_ctx->__gsharp_id_0_a[(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_2_tid,1))%__gsharp_ctx->__gsharp_id_3_n];
 __gsharp_yielded_for_grid_sync=true;
 __gsharp_state=2;
 return;
@@ -1412,7 +1526,7 @@ return;
 case 2:
 __gsharp_switch_1_state_2:
 {
-__gsharp_id_1_b[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_id_1_b[__gsharp_ctx->__gsharp_id_2_tid],100);
+__gsharp_ctx->__gsharp_id_1_b[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_1_b[__gsharp_ctx->__gsharp_id_2_tid],100);
 __gsharp_state=-1;
 return;
 }
@@ -1534,11 +1648,17 @@ public static readonly string MixedKernel_FullSource=global::Kassyi.GSharp.Gener
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__MixedKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
+public int[] a;
+public int[] b;
 public int tid;
 public int n;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__MixedKernel(int[] a, int[] b, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__MixedKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__MixedKernel(int[] __gsharp_in_a, int[] __gsharp_in_b, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__MixedKernel __gsharp_ctx) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.a = __gsharp_in_a;
+__gsharp_ctx.b = __gsharp_in_b;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -1546,7 +1666,7 @@ case 0:
 {
 __gsharp_ctx.tid = global::Kassyi.GSharp.Core.BlockIndex.X * global::Kassyi.GSharp.Core.BlockDimension.X + global::Kassyi.GSharp.Core.ThreadIndex.X;
 __gsharp_ctx.n = global::Kassyi.GSharp.Core.GridDimension.X * global::Kassyi.GSharp.Core.BlockDimension.X;
-a[__gsharp_ctx.tid] = __gsharp_ctx.tid + 1;
+__gsharp_ctx.a[__gsharp_ctx.tid] = __gsharp_ctx.tid + 1;
 ;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
@@ -1555,7 +1675,7 @@ return;
 
 case 1:
 {
-b[__gsharp_ctx.tid] = a[(__gsharp_ctx.tid + 1) % __gsharp_ctx.n];
+__gsharp_ctx.b[__gsharp_ctx.tid] = __gsharp_ctx.a[(__gsharp_ctx.tid + 1) % __gsharp_ctx.n];
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
 __gsharp_ctx.__gsharp_state = 2;
 return;
@@ -1564,7 +1684,7 @@ return;
 case 2:
 {
 {
-b[__gsharp_ctx.tid] += 100;
+__gsharp_ctx.b[__gsharp_ctx.tid] += 100;
 }
 
 __gsharp_ctx.__gsharp_state = -1;
@@ -1728,15 +1848,21 @@ uint64_t __gsharp_warp_exchange[2] = {};
 uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
+GSharpArray<int> __gsharp_id_0_a;
+GSharpArray<int> __gsharp_id_1_b;
 int __gsharp_id_2_tid;
 int __gsharp_id_3_n;
 int __gsharp_id_4_mine;
 };
-extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__HoistedLocalKernel(GSharpArray<int> __gsharp_id_0_a, GSharpArray<int> __gsharp_id_1_b, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__HoistedLocalKernel* __gsharp_ctx){
+extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__HoistedLocalKernel(GSharpArray<int> __gsharp_in___gsharp_id_0_a, GSharpArray<int> __gsharp_in___gsharp_id_1_b, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__HoistedLocalKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
 auto* __gsharp_root = __gsharp_ctx;
+if(__gsharp_state==0){
+__gsharp_ctx->__gsharp_id_0_a=__gsharp_in___gsharp_id_0_a;
+__gsharp_ctx->__gsharp_id_1_b=__gsharp_in___gsharp_id_1_b;
+}
 switch(__gsharp_state)
 {
 case 0:
@@ -1752,7 +1878,7 @@ return;
 case 1:
 __gsharp_switch_1_state_1:
 {
-__gsharp_id_0_a[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_ctx->__gsharp_id_4_mine;
+__gsharp_ctx->__gsharp_id_0_a[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_ctx->__gsharp_id_4_mine;
 __gsharp_yielded_for_grid_sync=true;
 __gsharp_state=2;
 return;
@@ -1760,7 +1886,7 @@ return;
 case 2:
 __gsharp_switch_1_state_2:
 {
-__gsharp_id_1_b[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_id_0_a[(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_2_tid,1))%__gsharp_ctx->__gsharp_id_3_n],__gsharp_ctx->__gsharp_id_4_mine);
+__gsharp_ctx->__gsharp_id_1_b[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_0_a[(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_2_tid,1))%__gsharp_ctx->__gsharp_id_3_n],__gsharp_ctx->__gsharp_id_4_mine);
 __gsharp_state=-1;
 return;
 }
@@ -1882,12 +2008,18 @@ public static readonly string HoistedLocalKernel_FullSource=global::Kassyi.GShar
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__HoistedLocalKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
+public int[] a;
+public int[] b;
 public int tid;
 public int n;
 public int mine;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__HoistedLocalKernel(int[] a, int[] b, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__HoistedLocalKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__HoistedLocalKernel(int[] __gsharp_in_a, int[] __gsharp_in_b, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__HoistedLocalKernel __gsharp_ctx) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.a = __gsharp_in_a;
+__gsharp_ctx.b = __gsharp_in_b;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -1903,7 +2035,7 @@ return;
 
 case 1:
 {
-a[__gsharp_ctx.tid] = __gsharp_ctx.mine;
+__gsharp_ctx.a[__gsharp_ctx.tid] = __gsharp_ctx.mine;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
 __gsharp_ctx.__gsharp_state = 2;
 return;
@@ -1911,7 +2043,7 @@ return;
 
 case 2:
 {
-b[__gsharp_ctx.tid] = a[(__gsharp_ctx.tid + 1) % __gsharp_ctx.n] + __gsharp_ctx.mine;
+__gsharp_ctx.b[__gsharp_ctx.tid] = __gsharp_ctx.a[(__gsharp_ctx.tid + 1) % __gsharp_ctx.n] + __gsharp_ctx.mine;
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -2073,15 +2205,21 @@ uint64_t __gsharp_warp_exchange[2] = {};
 uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
+GSharpArray<int> __gsharp_id_0_a;
+GSharpArray<int> __gsharp_id_1_b;
 int __gsharp_id_2_tid;
 int __gsharp_id_3_n;
 int __gsharp_id_4_k;
 };
-extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__LoopNestedKernel(GSharpArray<int> __gsharp_id_0_a, GSharpArray<int> __gsharp_id_1_b, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__LoopNestedKernel* __gsharp_ctx){
+extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__LoopNestedKernel(GSharpArray<int> __gsharp_in___gsharp_id_0_a, GSharpArray<int> __gsharp_in___gsharp_id_1_b, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__LoopNestedKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
 auto* __gsharp_root = __gsharp_ctx;
+if(__gsharp_state==0){
+__gsharp_ctx->__gsharp_id_0_a=__gsharp_in___gsharp_id_0_a;
+__gsharp_ctx->__gsharp_id_1_b=__gsharp_in___gsharp_id_1_b;
+}
 switch(__gsharp_state)
 {
 case 0:
@@ -2099,7 +2237,7 @@ if(!(__gsharp_ctx->__gsharp_id_4_k<2))
 {
 goto __gsharp_switch_1_state_5;
 }
-__gsharp_id_0_a[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_2_tid,1),__gsharp_ctx->__gsharp_id_4_k);
+__gsharp_ctx->__gsharp_id_0_a[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_2_tid,1),__gsharp_ctx->__gsharp_id_4_k);
 __gsharp_yielded_for_grid_sync=true;
 __gsharp_state=2;
 return;
@@ -2107,7 +2245,7 @@ return;
 case 2:
 __gsharp_switch_1_state_2:
 {
-__gsharp_id_1_b[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_id_1_b[__gsharp_ctx->__gsharp_id_2_tid],__gsharp_id_0_a[(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_2_tid,1))%__gsharp_ctx->__gsharp_id_3_n]);
+__gsharp_ctx->__gsharp_id_1_b[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_1_b[__gsharp_ctx->__gsharp_id_2_tid],__gsharp_ctx->__gsharp_id_0_a[(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_2_tid,1))%__gsharp_ctx->__gsharp_id_3_n]);
 __gsharp_yielded_for_grid_sync=true;
 __gsharp_state=3;
 return;
@@ -2248,12 +2386,18 @@ public static readonly string LoopNestedKernel_FullSource=global::Kassyi.GSharp.
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__LoopNestedKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
+public int[] a;
+public int[] b;
 public int tid;
 public int n;
 public int k;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__LoopNestedKernel(int[] a, int[] b, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__LoopNestedKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__LoopNestedKernel(int[] __gsharp_in_a, int[] __gsharp_in_b, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__LoopNestedKernel __gsharp_ctx) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.a = __gsharp_in_a;
+__gsharp_ctx.b = __gsharp_in_b;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -2269,7 +2413,7 @@ case 1:
 {
 if (!(__gsharp_ctx.k < 2))
 goto case 5;
-a[__gsharp_ctx.tid] = __gsharp_ctx.tid + 1 + __gsharp_ctx.k;
+__gsharp_ctx.a[__gsharp_ctx.tid] = __gsharp_ctx.tid + 1 + __gsharp_ctx.k;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
 __gsharp_ctx.__gsharp_state = 2;
 return;
@@ -2277,7 +2421,7 @@ return;
 
 case 2:
 {
-b[__gsharp_ctx.tid] += a[(__gsharp_ctx.tid + 1) % __gsharp_ctx.n];
+__gsharp_ctx.b[__gsharp_ctx.tid] += __gsharp_ctx.a[(__gsharp_ctx.tid + 1) % __gsharp_ctx.n];
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
 __gsharp_ctx.__gsharp_state = 3;
 return;
@@ -2458,15 +2602,21 @@ uint64_t __gsharp_warp_exchange[2] = {};
 uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
+GSharpArray<int> __gsharp_id_0_a;
+GSharpArray<int> __gsharp_id_1_b;
 int __gsharp_id_2_tid;
 int __gsharp_id_3_v;
 int __gsharp_id_4_v;
 };
-extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__SiblingLocalsKernel(GSharpArray<int> __gsharp_id_0_a, GSharpArray<int> __gsharp_id_1_b, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__SiblingLocalsKernel* __gsharp_ctx){
+extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__SiblingLocalsKernel(GSharpArray<int> __gsharp_in___gsharp_id_0_a, GSharpArray<int> __gsharp_in___gsharp_id_1_b, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__SiblingLocalsKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
 auto* __gsharp_root = __gsharp_ctx;
+if(__gsharp_state==0){
+__gsharp_ctx->__gsharp_id_0_a=__gsharp_in___gsharp_id_0_a;
+__gsharp_ctx->__gsharp_id_1_b=__gsharp_in___gsharp_id_1_b;
+}
 switch(__gsharp_state)
 {
 case 0:
@@ -2481,7 +2631,7 @@ return;
 case 1:
 __gsharp_switch_1_state_1:
 {
-__gsharp_id_0_a[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_ctx->__gsharp_id_3_v;
+__gsharp_ctx->__gsharp_id_0_a[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_ctx->__gsharp_id_3_v;
 __gsharp_yielded_for_grid_sync=true;
 __gsharp_state=2;
 return;
@@ -2489,7 +2639,7 @@ return;
 case 2:
 __gsharp_switch_1_state_2:
 {
-__gsharp_id_0_a[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_id_0_a[__gsharp_ctx->__gsharp_id_2_tid],__gsharp_ctx->__gsharp_id_3_v);
+__gsharp_ctx->__gsharp_id_0_a[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_0_a[__gsharp_ctx->__gsharp_id_2_tid],__gsharp_ctx->__gsharp_id_3_v);
 __gsharp_ctx->__gsharp_id_4_v=__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_2_tid,2);
 __gsharp_yielded_for_grid_sync=true;
 __gsharp_state=3;
@@ -2498,7 +2648,7 @@ return;
 case 3:
 __gsharp_switch_1_state_3:
 {
-__gsharp_id_1_b[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_ctx->__gsharp_id_4_v;
+__gsharp_ctx->__gsharp_id_1_b[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_ctx->__gsharp_id_4_v;
 __gsharp_yielded_for_grid_sync=true;
 __gsharp_state=4;
 return;
@@ -2506,7 +2656,7 @@ return;
 case 4:
 __gsharp_switch_1_state_4:
 {
-__gsharp_id_1_b[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_id_1_b[__gsharp_ctx->__gsharp_id_2_tid],__gsharp_ctx->__gsharp_id_4_v);
+__gsharp_ctx->__gsharp_id_1_b[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_1_b[__gsharp_ctx->__gsharp_id_2_tid],__gsharp_ctx->__gsharp_id_4_v);
 __gsharp_state=-1;
 return;
 }
@@ -2628,12 +2778,18 @@ public static readonly string SiblingLocalsKernel_FullSource=global::Kassyi.GSha
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__SiblingLocalsKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
+public int[] a;
+public int[] b;
 public int tid;
 public int __gsharp_id_3_v;
 public int __gsharp_id_4_v;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__SiblingLocalsKernel(int[] a, int[] b, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__SiblingLocalsKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__SiblingLocalsKernel(int[] __gsharp_in_a, int[] __gsharp_in_b, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__SiblingLocalsKernel __gsharp_ctx) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.a = __gsharp_in_a;
+__gsharp_ctx.b = __gsharp_in_b;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -2648,7 +2804,7 @@ return;
 
 case 1:
 {
-a[__gsharp_ctx.tid] = __gsharp_ctx.__gsharp_id_3_v;
+__gsharp_ctx.a[__gsharp_ctx.tid] = __gsharp_ctx.__gsharp_id_3_v;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
 __gsharp_ctx.__gsharp_state = 2;
 return;
@@ -2656,7 +2812,7 @@ return;
 
 case 2:
 {
-a[__gsharp_ctx.tid] += __gsharp_ctx.__gsharp_id_3_v;
+__gsharp_ctx.a[__gsharp_ctx.tid] += __gsharp_ctx.__gsharp_id_3_v;
 __gsharp_ctx.__gsharp_id_4_v = __gsharp_ctx.tid * 2;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
 __gsharp_ctx.__gsharp_state = 3;
@@ -2665,7 +2821,7 @@ return;
 
 case 3:
 {
-b[__gsharp_ctx.tid] = __gsharp_ctx.__gsharp_id_4_v;
+__gsharp_ctx.b[__gsharp_ctx.tid] = __gsharp_ctx.__gsharp_id_4_v;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
 __gsharp_ctx.__gsharp_state = 4;
 return;
@@ -2673,7 +2829,7 @@ return;
 
 case 4:
 {
-b[__gsharp_ctx.tid] += __gsharp_ctx.__gsharp_id_4_v;
+__gsharp_ctx.b[__gsharp_ctx.tid] += __gsharp_ctx.__gsharp_id_4_v;
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -2835,15 +2991,23 @@ uint64_t __gsharp_warp_exchange[2] = {};
 uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
+GSharpArray<int> __gsharp_id_0_a;
+GSharpArray<int> __gsharp_id_1_b;
+int __gsharp_id_2_n;
 int __gsharp_id_3_tid;
 int __gsharp_id_4_size;
 bool __gsharp_sg_done_0;
 };
-extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__UniformReturnKernel(GSharpArray<int> __gsharp_id_0_a, GSharpArray<int> __gsharp_id_1_b, int __gsharp_id_2_n, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__UniformReturnKernel* __gsharp_ctx){
+extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__UniformReturnKernel(GSharpArray<int> __gsharp_in___gsharp_id_0_a, GSharpArray<int> __gsharp_in___gsharp_id_1_b, int __gsharp_in___gsharp_id_2_n, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__UniformReturnKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
 auto* __gsharp_root = __gsharp_ctx;
+if(__gsharp_state==0){
+__gsharp_ctx->__gsharp_id_0_a=__gsharp_in___gsharp_id_0_a;
+__gsharp_ctx->__gsharp_id_1_b=__gsharp_in___gsharp_id_1_b;
+__gsharp_ctx->__gsharp_id_2_n=__gsharp_in___gsharp_id_2_n;
+}
 switch(__gsharp_state)
 {
 case 0:
@@ -2852,7 +3016,7 @@ __gsharp_switch_1_state_0:
 __gsharp_ctx->__gsharp_id_3_tid=__gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 __gsharp_ctx->__gsharp_id_4_size=__gsharp_mul_i32((int)gridDim.x,(int)blockDim.x);
 __gsharp_ctx->__gsharp_sg_done_0=false;
-__gsharp_id_0_a[__gsharp_ctx->__gsharp_id_3_tid]=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_3_tid,1);
+__gsharp_ctx->__gsharp_id_0_a[__gsharp_ctx->__gsharp_id_3_tid]=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_3_tid,1);
 __gsharp_yielded_for_grid_sync=true;
 __gsharp_state=1;
 return;
@@ -2860,7 +3024,7 @@ return;
 case 1:
 __gsharp_switch_1_state_1:
 {
-if(__gsharp_id_2_n==0)
+if(__gsharp_ctx->__gsharp_id_2_n==0)
 {
 __gsharp_ctx->__gsharp_sg_done_0=true;
 goto __gsharp_sg_next_0_1;
@@ -2880,7 +3044,7 @@ __gsharp_switch_1_state_3:
 {
 if(!__gsharp_ctx->__gsharp_sg_done_0)
 {
-__gsharp_id_1_b[__gsharp_ctx->__gsharp_id_3_tid]=__gsharp_id_0_a[(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_3_tid,1))%__gsharp_ctx->__gsharp_id_4_size];
+__gsharp_ctx->__gsharp_id_1_b[__gsharp_ctx->__gsharp_id_3_tid]=__gsharp_ctx->__gsharp_id_0_a[(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_3_tid,1))%__gsharp_ctx->__gsharp_id_4_size];
 }
 __gsharp_yielded_for_grid_sync=true;
 __gsharp_state=4;
@@ -2891,9 +3055,9 @@ __gsharp_switch_1_state_4:
 {
 if(!__gsharp_ctx->__gsharp_sg_done_0)
 {
-__gsharp_id_1_b[__gsharp_ctx->__gsharp_id_3_tid]=__gsharp_add_i32(__gsharp_id_1_b[__gsharp_ctx->__gsharp_id_3_tid],100);
+__gsharp_ctx->__gsharp_id_1_b[__gsharp_ctx->__gsharp_id_3_tid]=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_1_b[__gsharp_ctx->__gsharp_id_3_tid],100);
 }
-__gsharp_id_0_a[__gsharp_ctx->__gsharp_id_3_tid]=__gsharp_add_i32(__gsharp_id_0_a[__gsharp_ctx->__gsharp_id_3_tid],1000);
+__gsharp_ctx->__gsharp_id_0_a[__gsharp_ctx->__gsharp_id_3_tid]=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_0_a[__gsharp_ctx->__gsharp_id_3_tid],1000);
 __gsharp_state=-1;
 return;
 }
@@ -3015,12 +3179,20 @@ public static readonly string UniformReturnKernel_FullSource=global::Kassyi.GSha
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__UniformReturnKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
+public int[] a;
+public int[] b;
+public int n;
 public int tid;
 public int size;
 public bool __gsharp_sg_done_0;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__UniformReturnKernel(int[] a, int[] b, int n, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__UniformReturnKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__UniformReturnKernel(int[] __gsharp_in_a, int[] __gsharp_in_b, int __gsharp_in_n, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__UniformReturnKernel __gsharp_ctx) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.a = __gsharp_in_a;
+__gsharp_ctx.b = __gsharp_in_b;
+__gsharp_ctx.n = __gsharp_in_n;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -3029,7 +3201,7 @@ case 0:
 __gsharp_ctx.tid = global::Kassyi.GSharp.Core.BlockIndex.X * global::Kassyi.GSharp.Core.BlockDimension.X + global::Kassyi.GSharp.Core.ThreadIndex.X;
 __gsharp_ctx.size = global::Kassyi.GSharp.Core.GridDimension.X * global::Kassyi.GSharp.Core.BlockDimension.X;
 __gsharp_ctx.__gsharp_sg_done_0 = false;
-a[__gsharp_ctx.tid] = __gsharp_ctx.tid + 1;
+__gsharp_ctx.a[__gsharp_ctx.tid] = __gsharp_ctx.tid + 1;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
 return;
@@ -3037,7 +3209,7 @@ return;
 
 case 1:
 {
-if (n == 0)
+if (__gsharp_ctx.n == 0)
 {
 __gsharp_ctx.__gsharp_sg_done_0 = true;
 goto __gsharp_sg_next_0_1;
@@ -3059,7 +3231,7 @@ case 3:
 {
 if (!__gsharp_ctx.__gsharp_sg_done_0)
 {
-b[__gsharp_ctx.tid] = a[(__gsharp_ctx.tid + 1) % __gsharp_ctx.size];
+__gsharp_ctx.b[__gsharp_ctx.tid] = __gsharp_ctx.a[(__gsharp_ctx.tid + 1) % __gsharp_ctx.size];
 }
 
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
@@ -3071,10 +3243,10 @@ case 4:
 {
 if (!__gsharp_ctx.__gsharp_sg_done_0)
 {
-b[__gsharp_ctx.tid] += 100;
+__gsharp_ctx.b[__gsharp_ctx.tid] += 100;
 }
 
-a[__gsharp_ctx.tid] += 1000;
+__gsharp_ctx.a[__gsharp_ctx.tid] += 1000;
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -3236,15 +3408,21 @@ uint64_t __gsharp_warp_exchange[2] = {};
 uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
+GSharpArray<int> __gsharp_id_0_a;
+GSharpArray<int> __gsharp_id_1_b;
 int __gsharp_id_2_tid;
 int __gsharp_id_3_size;
 bool __gsharp_sg_done_0;
 };
-extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__DivergentReturnKernel(GSharpArray<int> __gsharp_id_0_a, GSharpArray<int> __gsharp_id_1_b, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__DivergentReturnKernel* __gsharp_ctx){
+extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__DivergentReturnKernel(GSharpArray<int> __gsharp_in___gsharp_id_0_a, GSharpArray<int> __gsharp_in___gsharp_id_1_b, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__DivergentReturnKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
 auto* __gsharp_root = __gsharp_ctx;
+if(__gsharp_state==0){
+__gsharp_ctx->__gsharp_id_0_a=__gsharp_in___gsharp_id_0_a;
+__gsharp_ctx->__gsharp_id_1_b=__gsharp_in___gsharp_id_1_b;
+}
 switch(__gsharp_state)
 {
 case 0:
@@ -3253,7 +3431,7 @@ __gsharp_switch_1_state_0:
 __gsharp_ctx->__gsharp_id_2_tid=__gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 __gsharp_ctx->__gsharp_id_3_size=__gsharp_mul_i32((int)gridDim.x,(int)blockDim.x);
 __gsharp_ctx->__gsharp_sg_done_0=false;
-__gsharp_id_0_a[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_2_tid,1);
+__gsharp_ctx->__gsharp_id_0_a[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_2_tid,1);
 __gsharp_yielded_for_grid_sync=true;
 __gsharp_state=1;
 return;
@@ -3281,7 +3459,7 @@ __gsharp_switch_1_state_3:
 {
 if(!__gsharp_ctx->__gsharp_sg_done_0)
 {
-__gsharp_id_1_b[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_id_0_a[(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_2_tid,1))%__gsharp_ctx->__gsharp_id_3_size];
+__gsharp_ctx->__gsharp_id_1_b[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_ctx->__gsharp_id_0_a[(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_2_tid,1))%__gsharp_ctx->__gsharp_id_3_size];
 }
 __gsharp_state=-1;
 return;
@@ -3404,12 +3582,18 @@ public static readonly string DivergentReturnKernel_FullSource=global::Kassyi.GS
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__DivergentReturnKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
+public int[] a;
+public int[] b;
 public int tid;
 public int size;
 public bool __gsharp_sg_done_0;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__DivergentReturnKernel(int[] a, int[] b, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__DivergentReturnKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__DivergentReturnKernel(int[] __gsharp_in_a, int[] __gsharp_in_b, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__DivergentReturnKernel __gsharp_ctx) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.a = __gsharp_in_a;
+__gsharp_ctx.b = __gsharp_in_b;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -3418,7 +3602,7 @@ case 0:
 __gsharp_ctx.tid = global::Kassyi.GSharp.Core.BlockIndex.X * global::Kassyi.GSharp.Core.BlockDimension.X + global::Kassyi.GSharp.Core.ThreadIndex.X;
 __gsharp_ctx.size = global::Kassyi.GSharp.Core.GridDimension.X * global::Kassyi.GSharp.Core.BlockDimension.X;
 __gsharp_ctx.__gsharp_sg_done_0 = false;
-a[__gsharp_ctx.tid] = __gsharp_ctx.tid + 1;
+__gsharp_ctx.a[__gsharp_ctx.tid] = __gsharp_ctx.tid + 1;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
 return;
@@ -3448,7 +3632,7 @@ case 3:
 {
 if (!__gsharp_ctx.__gsharp_sg_done_0)
 {
-b[__gsharp_ctx.tid] = a[(__gsharp_ctx.tid + 1) % __gsharp_ctx.size];
+__gsharp_ctx.b[__gsharp_ctx.tid] = __gsharp_ctx.a[(__gsharp_ctx.tid + 1) % __gsharp_ctx.size];
 }
 
 __gsharp_ctx.__gsharp_state = -1;
@@ -3612,15 +3796,21 @@ uint64_t __gsharp_warp_exchange[2] = {};
 uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
+GSharpArray<int> __gsharp_id_0_a;
+GSharpArray<int> __gsharp_id_1_b;
 int __gsharp_id_2_tid;
 int __gsharp_id_3_size;
 bool __gsharp_sg_done_1;
 };
-extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__NestedReturnKernel(GSharpArray<int> __gsharp_id_0_a, GSharpArray<int> __gsharp_id_1_b, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__NestedReturnKernel* __gsharp_ctx){
+extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__NestedReturnKernel(GSharpArray<int> __gsharp_in___gsharp_id_0_a, GSharpArray<int> __gsharp_in___gsharp_id_1_b, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__NestedReturnKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
 auto* __gsharp_root = __gsharp_ctx;
+if(__gsharp_state==0){
+__gsharp_ctx->__gsharp_id_0_a=__gsharp_in___gsharp_id_0_a;
+__gsharp_ctx->__gsharp_id_1_b=__gsharp_in___gsharp_id_1_b;
+}
 switch(__gsharp_state)
 {
 case 0:
@@ -3628,7 +3818,7 @@ __gsharp_switch_1_state_0:
 {
 __gsharp_ctx->__gsharp_id_2_tid=__gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 __gsharp_ctx->__gsharp_id_3_size=__gsharp_mul_i32((int)gridDim.x,(int)blockDim.x);
-__gsharp_id_0_a[__gsharp_ctx->__gsharp_id_2_tid]=1;
+__gsharp_ctx->__gsharp_id_0_a[__gsharp_ctx->__gsharp_id_2_tid]=1;
 __gsharp_yielded_for_grid_sync=true;
 __gsharp_state=1;
 return;
@@ -3657,7 +3847,7 @@ __gsharp_switch_1_state_3:
 {
 if(!__gsharp_ctx->__gsharp_sg_done_1)
 {
-__gsharp_id_0_a[__gsharp_ctx->__gsharp_id_2_tid]=2;
+__gsharp_ctx->__gsharp_id_0_a[__gsharp_ctx->__gsharp_id_2_tid]=2;
 }
 __gsharp_yielded_for_grid_sync=true;
 __gsharp_state=4;
@@ -3666,7 +3856,7 @@ return;
 case 4:
 __gsharp_switch_1_state_4:
 {
-__gsharp_id_1_b[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_id_0_a[(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_2_tid,1))%__gsharp_ctx->__gsharp_id_3_size];
+__gsharp_ctx->__gsharp_id_1_b[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_ctx->__gsharp_id_0_a[(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_2_tid,1))%__gsharp_ctx->__gsharp_id_3_size];
 __gsharp_state=-1;
 return;
 }
@@ -3788,12 +3978,18 @@ public static readonly string NestedReturnKernel_FullSource=global::Kassyi.GShar
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__NestedReturnKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
+public int[] a;
+public int[] b;
 public int tid;
 public int size;
 public bool __gsharp_sg_done_1;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__NestedReturnKernel(int[] a, int[] b, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__NestedReturnKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__NestedReturnKernel(int[] __gsharp_in_a, int[] __gsharp_in_b, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__NestedReturnKernel __gsharp_ctx) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.a = __gsharp_in_a;
+__gsharp_ctx.b = __gsharp_in_b;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -3801,7 +3997,7 @@ case 0:
 {
 __gsharp_ctx.tid = global::Kassyi.GSharp.Core.BlockIndex.X * global::Kassyi.GSharp.Core.BlockDimension.X + global::Kassyi.GSharp.Core.ThreadIndex.X;
 __gsharp_ctx.size = global::Kassyi.GSharp.Core.GridDimension.X * global::Kassyi.GSharp.Core.BlockDimension.X;
-a[__gsharp_ctx.tid] = 1;
+__gsharp_ctx.a[__gsharp_ctx.tid] = 1;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
 return;
@@ -3832,7 +4028,7 @@ case 3:
 {
 if (!__gsharp_ctx.__gsharp_sg_done_1)
 {
-a[__gsharp_ctx.tid] = 2;
+__gsharp_ctx.a[__gsharp_ctx.tid] = 2;
 }
 
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
@@ -3842,7 +4038,7 @@ return;
 
 case 4:
 {
-b[__gsharp_ctx.tid] = a[(__gsharp_ctx.tid + 1) % __gsharp_ctx.size];
+__gsharp_ctx.b[__gsharp_ctx.tid] = __gsharp_ctx.a[(__gsharp_ctx.tid + 1) % __gsharp_ctx.size];
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -4004,15 +4200,21 @@ uint64_t __gsharp_warp_exchange[2] = {};
 uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
+GSharpArray<int> __gsharp_id_0_a;
+GSharpArray<int> __gsharp_id_1_b;
 int __gsharp_id_2_tid;
 bool __gsharp_sg_done_0;
 int __gsharp_id_3_i;
 };
-extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ReturnFromLoopKernel(GSharpArray<int> __gsharp_id_0_a, GSharpArray<int> __gsharp_id_1_b, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ReturnFromLoopKernel* __gsharp_ctx){
+extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ReturnFromLoopKernel(GSharpArray<int> __gsharp_in___gsharp_id_0_a, GSharpArray<int> __gsharp_in___gsharp_id_1_b, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ReturnFromLoopKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
 auto* __gsharp_root = __gsharp_ctx;
+if(__gsharp_state==0){
+__gsharp_ctx->__gsharp_id_0_a=__gsharp_in___gsharp_id_0_a;
+__gsharp_ctx->__gsharp_id_1_b=__gsharp_in___gsharp_id_1_b;
+}
 switch(__gsharp_state)
 {
 case 0:
@@ -4022,7 +4224,7 @@ __gsharp_ctx->__gsharp_id_2_tid=__gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.
 __gsharp_ctx->__gsharp_sg_done_0=false;
 for(__gsharp_ctx->__gsharp_id_3_i=0;__gsharp_ctx->__gsharp_id_3_i<4;__gsharp_ctx->__gsharp_id_3_i=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_3_i,1))
 {
-__gsharp_id_0_a[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_id_0_a[__gsharp_ctx->__gsharp_id_2_tid],1);
+__gsharp_ctx->__gsharp_id_0_a[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_0_a[__gsharp_ctx->__gsharp_id_2_tid],1);
 if(__gsharp_ctx->__gsharp_id_3_i==1)
 {
 __gsharp_ctx->__gsharp_sg_done_0=true;
@@ -4044,14 +4246,14 @@ __gsharp_switch_1_state_2:
 {
 if(!__gsharp_ctx->__gsharp_sg_done_0)
 {
-__gsharp_id_1_b[__gsharp_ctx->__gsharp_id_2_tid]=7;
+__gsharp_ctx->__gsharp_id_1_b[__gsharp_ctx->__gsharp_id_2_tid]=7;
 }
 auto __gsharp_id_4_Add = [&]() {
 if(__gsharp_ctx->__gsharp_id_2_tid>1000)
 {
 return;
 }
-__gsharp_id_0_a[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_id_0_a[__gsharp_ctx->__gsharp_id_2_tid],10);
+__gsharp_ctx->__gsharp_id_0_a[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_0_a[__gsharp_ctx->__gsharp_id_2_tid],10);
 }
 ;
 __gsharp_id_4_Add();
@@ -4062,7 +4264,7 @@ return;
 case 3:
 __gsharp_switch_1_state_3:
 {
-__gsharp_id_1_b[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_id_1_b[__gsharp_ctx->__gsharp_id_2_tid],1);
+__gsharp_ctx->__gsharp_id_1_b[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_1_b[__gsharp_ctx->__gsharp_id_2_tid],1);
 __gsharp_state=-1;
 return;
 }
@@ -4184,12 +4386,18 @@ public static readonly string ReturnFromLoopKernel_FullSource=global::Kassyi.GSh
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ReturnFromLoopKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
+public int[] a;
+public int[] b;
 public int tid;
 public bool __gsharp_sg_done_0;
 public int i;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ReturnFromLoopKernel(int[] a, int[] b, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ReturnFromLoopKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ReturnFromLoopKernel(int[] __gsharp_in_a, int[] __gsharp_in_b, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ReturnFromLoopKernel __gsharp_ctx) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.a = __gsharp_in_a;
+__gsharp_ctx.b = __gsharp_in_b;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -4199,7 +4407,7 @@ __gsharp_ctx.tid = global::Kassyi.GSharp.Core.BlockIndex.X * global::Kassyi.GSha
 __gsharp_ctx.__gsharp_sg_done_0 = false;
 for (__gsharp_ctx.i = 0; __gsharp_ctx.i < 4; __gsharp_ctx.i++)
 {
-a[__gsharp_ctx.tid] += 1;
+__gsharp_ctx.a[__gsharp_ctx.tid] += 1;
 if (__gsharp_ctx.i == 1)
 {
 __gsharp_ctx.__gsharp_sg_done_0 = true;
@@ -4223,14 +4431,14 @@ case 2:
 {
 if (!__gsharp_ctx.__gsharp_sg_done_0)
 {
-b[__gsharp_ctx.tid] = 7;
+__gsharp_ctx.b[__gsharp_ctx.tid] = 7;
 }
 
 void Add()
 {
 if (__gsharp_ctx.tid > 1000)
 return;
-a[__gsharp_ctx.tid] += 10;
+__gsharp_ctx.a[__gsharp_ctx.tid] += 10;
 }
 
 Add();
@@ -4241,7 +4449,7 @@ return;
 
 case 3:
 {
-b[__gsharp_ctx.tid] += 1;
+__gsharp_ctx.b[__gsharp_ctx.tid] += 1;
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -4403,6 +4611,11 @@ uint64_t __gsharp_warp_exchange[2] = {};
 uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
+GSharpArray<int> __gsharp_id_0_a;
+GSharpArray<int> __gsharp_id_1_b;
+GSharpArray<int> __gsharp_id_2_c;
+GSharpArray<int> __gsharp_id_3_counter;
+int __gsharp_id_4_n;
 int __gsharp_id_5_tid;
 bool __gsharp_sg_done_0;
 int __gsharp_id_6_v;
@@ -4412,11 +4625,18 @@ int __gsharp_id_9_y;
 int __gsharp_id_11_z;
 int __gsharp_id_10_k;
 };
-extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__DeclarationAfterReturnKernel(GSharpArray<int> __gsharp_id_0_a, GSharpArray<int> __gsharp_id_1_b, GSharpArray<int> __gsharp_id_2_c, GSharpArray<int> __gsharp_id_3_counter, int __gsharp_id_4_n, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__DeclarationAfterReturnKernel* __gsharp_ctx){
+extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__DeclarationAfterReturnKernel(GSharpArray<int> __gsharp_in___gsharp_id_0_a, GSharpArray<int> __gsharp_in___gsharp_id_1_b, GSharpArray<int> __gsharp_in___gsharp_id_2_c, GSharpArray<int> __gsharp_in___gsharp_id_3_counter, int __gsharp_in___gsharp_id_4_n, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__DeclarationAfterReturnKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
 auto* __gsharp_root = __gsharp_ctx;
+if(__gsharp_state==0){
+__gsharp_ctx->__gsharp_id_0_a=__gsharp_in___gsharp_id_0_a;
+__gsharp_ctx->__gsharp_id_1_b=__gsharp_in___gsharp_id_1_b;
+__gsharp_ctx->__gsharp_id_2_c=__gsharp_in___gsharp_id_2_c;
+__gsharp_ctx->__gsharp_id_3_counter=__gsharp_in___gsharp_id_3_counter;
+__gsharp_ctx->__gsharp_id_4_n=__gsharp_in___gsharp_id_4_n;
+}
 switch(__gsharp_state)
 {
 case 0:
@@ -4424,7 +4644,7 @@ __gsharp_switch_1_state_0:
 {
 __gsharp_ctx->__gsharp_id_5_tid=__gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 __gsharp_ctx->__gsharp_sg_done_0=false;
-if(__gsharp_ctx->__gsharp_id_5_tid>=__gsharp_id_4_n)
+if(__gsharp_ctx->__gsharp_id_5_tid>=__gsharp_ctx->__gsharp_id_4_n)
 {
 __gsharp_ctx->__gsharp_sg_done_0=true;
 goto __gsharp_sg_next_0_0;
@@ -4444,7 +4664,7 @@ __gsharp_switch_1_state_2:
 {
 if(!__gsharp_ctx->__gsharp_sg_done_0)
 {
-__gsharp_ctx->__gsharp_id_6_v=__gsharp_id_0_a[__gsharp_ctx->__gsharp_id_5_tid];
+__gsharp_ctx->__gsharp_id_6_v=__gsharp_ctx->__gsharp_id_0_a[__gsharp_ctx->__gsharp_id_5_tid];
 }
 __gsharp_yielded_for_grid_sync=true;
 __gsharp_state=3;
@@ -4486,7 +4706,7 @@ __gsharp_switch_1_state_6:
 {
 if(!__gsharp_ctx->__gsharp_sg_done_0)
 {
-__gsharp_ctx->__gsharp_id_11_z=(__gsharp_id_3_counter[__gsharp_ctx->__gsharp_id_5_tid]=__gsharp_add_i32(__gsharp_id_3_counter[__gsharp_ctx->__gsharp_id_5_tid],1));
+__gsharp_ctx->__gsharp_id_11_z=(__gsharp_ctx->__gsharp_id_3_counter[__gsharp_ctx->__gsharp_id_5_tid]=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_3_counter[__gsharp_ctx->__gsharp_id_5_tid],1));
 }
 __gsharp_yielded_for_grid_sync=true;
 __gsharp_state=7;
@@ -4497,7 +4717,7 @@ __gsharp_switch_1_state_7:
 {
 if(!__gsharp_ctx->__gsharp_sg_done_0)
 {
-__gsharp_id_1_b[__gsharp_ctx->__gsharp_id_5_tid]=__gsharp_add_i32(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_6_v,__gsharp_ctx->__gsharp_id_9_y),__gsharp_ctx->__gsharp_id_10_k);
+__gsharp_ctx->__gsharp_id_1_b[__gsharp_ctx->__gsharp_id_5_tid]=__gsharp_add_i32(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_6_v,__gsharp_ctx->__gsharp_id_9_y),__gsharp_ctx->__gsharp_id_10_k);
 }
 __gsharp_yielded_for_grid_sync=true;
 __gsharp_state=8;
@@ -4508,7 +4728,7 @@ __gsharp_switch_1_state_8:
 {
 if(!__gsharp_ctx->__gsharp_sg_done_0)
 {
-__gsharp_id_2_c[__gsharp_ctx->__gsharp_id_5_tid]=__gsharp_ctx->__gsharp_id_11_z;
+__gsharp_ctx->__gsharp_id_2_c[__gsharp_ctx->__gsharp_id_5_tid]=__gsharp_ctx->__gsharp_id_11_z;
 }
 __gsharp_state=-1;
 return;
@@ -4631,6 +4851,11 @@ public static readonly string DeclarationAfterReturnKernel_FullSource=global::Ka
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__DeclarationAfterReturnKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
+public int[] a;
+public int[] b;
+public int[] c;
+public int[] counter;
+public int n;
 public int tid;
 public bool __gsharp_sg_done_0;
 public int v;
@@ -4641,7 +4866,14 @@ public int z;
 public int k;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__DeclarationAfterReturnKernel(int[] a, int[] b, int[] c, int[] counter, int n, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__DeclarationAfterReturnKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__DeclarationAfterReturnKernel(int[] __gsharp_in_a, int[] __gsharp_in_b, int[] __gsharp_in_c, int[] __gsharp_in_counter, int __gsharp_in_n, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__DeclarationAfterReturnKernel __gsharp_ctx) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.a = __gsharp_in_a;
+__gsharp_ctx.b = __gsharp_in_b;
+__gsharp_ctx.c = __gsharp_in_c;
+__gsharp_ctx.counter = __gsharp_in_counter;
+__gsharp_ctx.n = __gsharp_in_n;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -4649,7 +4881,7 @@ case 0:
 {
 __gsharp_ctx.tid = global::Kassyi.GSharp.Core.BlockIndex.X * global::Kassyi.GSharp.Core.BlockDimension.X + global::Kassyi.GSharp.Core.ThreadIndex.X;
 __gsharp_ctx.__gsharp_sg_done_0 = false;
-if (__gsharp_ctx.tid >= n)
+if (__gsharp_ctx.tid >= __gsharp_ctx.n)
 {
 __gsharp_ctx.__gsharp_sg_done_0 = true;
 goto __gsharp_sg_next_0_0;
@@ -4671,7 +4903,7 @@ case 2:
 {
 if (!__gsharp_ctx.__gsharp_sg_done_0)
 {
-__gsharp_ctx.v = a[__gsharp_ctx.tid];
+__gsharp_ctx.v = __gsharp_ctx.a[__gsharp_ctx.tid];
 }
 
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
@@ -4716,7 +4948,7 @@ case 6:
 {
 if (!__gsharp_ctx.__gsharp_sg_done_0)
 {
-__gsharp_ctx.z = ++counter[__gsharp_ctx.tid];
+__gsharp_ctx.z = ++__gsharp_ctx.counter[__gsharp_ctx.tid];
 }
 
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
@@ -4728,7 +4960,7 @@ case 7:
 {
 if (!__gsharp_ctx.__gsharp_sg_done_0)
 {
-b[__gsharp_ctx.tid] = __gsharp_ctx.v + __gsharp_ctx.y + __gsharp_ctx.k;
+__gsharp_ctx.b[__gsharp_ctx.tid] = __gsharp_ctx.v + __gsharp_ctx.y + __gsharp_ctx.k;
 }
 
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
@@ -4740,7 +4972,7 @@ case 8:
 {
 if (!__gsharp_ctx.__gsharp_sg_done_0)
 {
-c[__gsharp_ctx.tid] = __gsharp_ctx.z;
+__gsharp_ctx.c[__gsharp_ctx.tid] = __gsharp_ctx.z;
 }
 
 __gsharp_ctx.__gsharp_state = -1;
@@ -4918,15 +5150,23 @@ uint64_t __gsharp_warp_exchange[2] = {};
 uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
+GSharpArray<int> __gsharp_id_0_a;
+GSharpArray<int> __gsharp_id_1_b;
+GSharpArray<int> __gsharp_id_2_c;
 int __gsharp_id_3_tid;
 int __gsharp_id_4_size;
 __gsharp_frame_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__Step __gsharp_call_frame_0;
 };
-extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__DeviceFunctionKernel(GSharpArray<int> __gsharp_id_0_a, GSharpArray<int> __gsharp_id_1_b, GSharpArray<int> __gsharp_id_2_c, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__DeviceFunctionKernel* __gsharp_ctx){
+extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__DeviceFunctionKernel(GSharpArray<int> __gsharp_in___gsharp_id_0_a, GSharpArray<int> __gsharp_in___gsharp_id_1_b, GSharpArray<int> __gsharp_in___gsharp_id_2_c, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__DeviceFunctionKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
 auto* __gsharp_root = __gsharp_ctx;
+if(__gsharp_state==0){
+__gsharp_ctx->__gsharp_id_0_a=__gsharp_in___gsharp_id_0_a;
+__gsharp_ctx->__gsharp_id_1_b=__gsharp_in___gsharp_id_1_b;
+__gsharp_ctx->__gsharp_id_2_c=__gsharp_in___gsharp_id_2_c;
+}
 switch(__gsharp_state)
 {
 case 0:
@@ -4939,7 +5179,7 @@ goto __gsharp_switch_1_state_1;
 case 1:
 __gsharp_switch_1_state_1:
 {
-if(!__gsharp_fn_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__Step(__gsharp_id_0_a,__gsharp_id_1_b,__gsharp_id_2_c,__gsharp_ctx->__gsharp_id_3_tid,__gsharp_ctx->__gsharp_id_4_size,&__gsharp_ctx->__gsharp_call_frame_0,__gsharp_root))
+if(!__gsharp_fn_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__Step(__gsharp_ctx->__gsharp_id_0_a,__gsharp_ctx->__gsharp_id_1_b,__gsharp_ctx->__gsharp_id_2_c,__gsharp_ctx->__gsharp_id_3_tid,__gsharp_ctx->__gsharp_id_4_size,&__gsharp_ctx->__gsharp_call_frame_0,__gsharp_root))
 {
 __gsharp_state=1;
 return;
@@ -5065,12 +5305,20 @@ public static readonly string DeviceFunctionKernel_FullSource=global::Kassyi.GSh
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__DeviceFunctionKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
+public int[] a;
+public int[] b;
+public int[] c;
 public int tid;
 public int size;
 internal global::Kassyi.GSharp.Tests.Shared.Transpiler.SyncGridBodyKernels.__gsharp_frame_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__Step __gsharp_call_frame_0 = new();
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__DeviceFunctionKernel(int[] a, int[] b, int[] c, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__DeviceFunctionKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__DeviceFunctionKernel(int[] __gsharp_in_a, int[] __gsharp_in_b, int[] __gsharp_in_c, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__DeviceFunctionKernel __gsharp_ctx) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.a = __gsharp_in_a;
+__gsharp_ctx.b = __gsharp_in_b;
+__gsharp_ctx.c = __gsharp_in_c;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -5083,7 +5331,7 @@ goto case 1;
 
 case 1:
 {
-if (!global::Kassyi.GSharp.Tests.Shared.Transpiler.SyncGridBodyKernels.__gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__Step(a, b, c, __gsharp_ctx.tid, __gsharp_ctx.size, __gsharp_ctx.__gsharp_call_frame_0))
+if (!global::Kassyi.GSharp.Tests.Shared.Transpiler.SyncGridBodyKernels.__gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__Step(__gsharp_ctx.a, __gsharp_ctx.b, __gsharp_ctx.c, __gsharp_ctx.tid, __gsharp_ctx.size, __gsharp_ctx.__gsharp_call_frame_0))
 {
 __gsharp_ctx.__gsharp_state = 1;
 return;
@@ -5257,15 +5505,21 @@ uint64_t __gsharp_warp_exchange[2] = {};
 uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
+GSharpArray<int> __gsharp_id_0_a;
+GSharpArray<int> __gsharp_id_1_b;
 int __gsharp_id_2_tid;
 int __gsharp_id_3_size;
 int __gsharp_id_4_k;
 };
-extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__BodyInLoopOfBodyKernel(GSharpArray<int> __gsharp_id_0_a, GSharpArray<int> __gsharp_id_1_b, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__BodyInLoopOfBodyKernel* __gsharp_ctx){
+extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__BodyInLoopOfBodyKernel(GSharpArray<int> __gsharp_in___gsharp_id_0_a, GSharpArray<int> __gsharp_in___gsharp_id_1_b, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__BodyInLoopOfBodyKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
 auto* __gsharp_root = __gsharp_ctx;
+if(__gsharp_state==0){
+__gsharp_ctx->__gsharp_id_0_a=__gsharp_in___gsharp_id_0_a;
+__gsharp_ctx->__gsharp_id_1_b=__gsharp_in___gsharp_id_1_b;
+}
 switch(__gsharp_state)
 {
 case 0:
@@ -5273,7 +5527,7 @@ __gsharp_switch_1_state_0:
 {
 __gsharp_ctx->__gsharp_id_2_tid=__gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 __gsharp_ctx->__gsharp_id_3_size=__gsharp_mul_i32((int)gridDim.x,(int)blockDim.x);
-__gsharp_id_1_b[__gsharp_ctx->__gsharp_id_2_tid]=0;
+__gsharp_ctx->__gsharp_id_1_b[__gsharp_ctx->__gsharp_id_2_tid]=0;
 __gsharp_yielded_for_grid_sync=true;
 __gsharp_state=1;
 return;
@@ -5291,7 +5545,7 @@ if(!(__gsharp_ctx->__gsharp_id_4_k<2))
 {
 goto __gsharp_switch_1_state_6;
 }
-__gsharp_id_0_a[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_2_tid,1),__gsharp_ctx->__gsharp_id_4_k);
+__gsharp_ctx->__gsharp_id_0_a[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_2_tid,1),__gsharp_ctx->__gsharp_id_4_k);
 __gsharp_yielded_for_grid_sync=true;
 __gsharp_state=3;
 return;
@@ -5299,7 +5553,7 @@ return;
 case 3:
 __gsharp_switch_1_state_3:
 {
-__gsharp_id_1_b[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_id_1_b[__gsharp_ctx->__gsharp_id_2_tid],__gsharp_id_0_a[(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_2_tid,1))%__gsharp_ctx->__gsharp_id_3_size]);
+__gsharp_ctx->__gsharp_id_1_b[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_1_b[__gsharp_ctx->__gsharp_id_2_tid],__gsharp_ctx->__gsharp_id_0_a[(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_2_tid,1))%__gsharp_ctx->__gsharp_id_3_size]);
 __gsharp_yielded_for_grid_sync=true;
 __gsharp_state=4;
 return;
@@ -5326,7 +5580,7 @@ return;
 case 7:
 __gsharp_switch_1_state_7:
 {
-__gsharp_id_1_b[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_id_1_b[__gsharp_ctx->__gsharp_id_2_tid],1000);
+__gsharp_ctx->__gsharp_id_1_b[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_1_b[__gsharp_ctx->__gsharp_id_2_tid],1000);
 __gsharp_state=-1;
 return;
 }
@@ -5448,12 +5702,18 @@ public static readonly string BodyInLoopOfBodyKernel_FullSource=global::Kassyi.G
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__BodyInLoopOfBodyKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
+public int[] a;
+public int[] b;
 public int tid;
 public int size;
 public int k;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__BodyInLoopOfBodyKernel(int[] a, int[] b, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__BodyInLoopOfBodyKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__BodyInLoopOfBodyKernel(int[] __gsharp_in_a, int[] __gsharp_in_b, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__BodyInLoopOfBodyKernel __gsharp_ctx) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.a = __gsharp_in_a;
+__gsharp_ctx.b = __gsharp_in_b;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -5461,7 +5721,7 @@ case 0:
 {
 __gsharp_ctx.tid = global::Kassyi.GSharp.Core.BlockIndex.X * global::Kassyi.GSharp.Core.BlockDimension.X + global::Kassyi.GSharp.Core.ThreadIndex.X;
 __gsharp_ctx.size = global::Kassyi.GSharp.Core.GridDimension.X * global::Kassyi.GSharp.Core.BlockDimension.X;
-b[__gsharp_ctx.tid] = 0;
+__gsharp_ctx.b[__gsharp_ctx.tid] = 0;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
 return;
@@ -5477,7 +5737,7 @@ case 2:
 {
 if (!(__gsharp_ctx.k < 2))
 goto case 6;
-a[__gsharp_ctx.tid] = __gsharp_ctx.tid + 1 + __gsharp_ctx.k;
+__gsharp_ctx.a[__gsharp_ctx.tid] = __gsharp_ctx.tid + 1 + __gsharp_ctx.k;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
 __gsharp_ctx.__gsharp_state = 3;
 return;
@@ -5485,7 +5745,7 @@ return;
 
 case 3:
 {
-b[__gsharp_ctx.tid] += a[(__gsharp_ctx.tid + 1) % __gsharp_ctx.size];
+__gsharp_ctx.b[__gsharp_ctx.tid] += __gsharp_ctx.a[(__gsharp_ctx.tid + 1) % __gsharp_ctx.size];
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
 __gsharp_ctx.__gsharp_state = 4;
 return;
@@ -5512,7 +5772,7 @@ return;
 
 case 7:
 {
-b[__gsharp_ctx.tid] += 1000;
+__gsharp_ctx.b[__gsharp_ctx.tid] += 1000;
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -5674,14 +5934,20 @@ uint64_t __gsharp_warp_exchange[2] = {};
 uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
+GSharpArray<int> __gsharp_id_0_a;
+GSharpArray<int> __gsharp_id_1_b;
 int __gsharp_id_2_tid;
 int __gsharp_id_3_size;
 };
-extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ExpressionBodyIsBodyKernel(GSharpArray<int> __gsharp_id_0_a, GSharpArray<int> __gsharp_id_1_b, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ExpressionBodyIsBodyKernel* __gsharp_ctx){
+extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ExpressionBodyIsBodyKernel(GSharpArray<int> __gsharp_in___gsharp_id_0_a, GSharpArray<int> __gsharp_in___gsharp_id_1_b, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ExpressionBodyIsBodyKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
 auto* __gsharp_root = __gsharp_ctx;
+if(__gsharp_state==0){
+__gsharp_ctx->__gsharp_id_0_a=__gsharp_in___gsharp_id_0_a;
+__gsharp_ctx->__gsharp_id_1_b=__gsharp_in___gsharp_id_1_b;
+}
 switch(__gsharp_state)
 {
 case 0:
@@ -5689,7 +5955,7 @@ __gsharp_switch_1_state_0:
 {
 __gsharp_ctx->__gsharp_id_2_tid=__gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 __gsharp_ctx->__gsharp_id_3_size=__gsharp_mul_i32((int)gridDim.x,(int)blockDim.x);
-__gsharp_id_0_a[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_2_tid,1);
+__gsharp_ctx->__gsharp_id_0_a[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_2_tid,1);
 __gsharp_yielded_for_grid_sync=true;
 __gsharp_state=1;
 return;
@@ -5697,7 +5963,7 @@ return;
 case 1:
 __gsharp_switch_1_state_1:
 {
-__gsharp_id_1_b[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_id_0_a[(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_2_tid,1))%__gsharp_ctx->__gsharp_id_3_size];
+__gsharp_ctx->__gsharp_id_1_b[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_ctx->__gsharp_id_0_a[(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_2_tid,1))%__gsharp_ctx->__gsharp_id_3_size];
 __gsharp_state=-1;
 return;
 }
@@ -5819,11 +6085,17 @@ public static readonly string ExpressionBodyIsBodyKernel_FullSource=global::Kass
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ExpressionBodyIsBodyKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
+public int[] a;
+public int[] b;
 public int tid;
 public int size;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ExpressionBodyIsBodyKernel(int[] a, int[] b, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ExpressionBodyIsBodyKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ExpressionBodyIsBodyKernel(int[] __gsharp_in_a, int[] __gsharp_in_b, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ExpressionBodyIsBodyKernel __gsharp_ctx) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.a = __gsharp_in_a;
+__gsharp_ctx.b = __gsharp_in_b;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -5831,7 +6103,7 @@ case 0:
 {
 __gsharp_ctx.tid = global::Kassyi.GSharp.Core.BlockIndex.X * global::Kassyi.GSharp.Core.BlockDimension.X + global::Kassyi.GSharp.Core.ThreadIndex.X;
 __gsharp_ctx.size = global::Kassyi.GSharp.Core.GridDimension.X * global::Kassyi.GSharp.Core.BlockDimension.X;
-a[__gsharp_ctx.tid] = __gsharp_ctx.tid + 1;
+__gsharp_ctx.a[__gsharp_ctx.tid] = __gsharp_ctx.tid + 1;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
 return;
@@ -5839,7 +6111,7 @@ return;
 
 case 1:
 {
-b[__gsharp_ctx.tid] = a[(__gsharp_ctx.tid + 1) % __gsharp_ctx.size];
+__gsharp_ctx.b[__gsharp_ctx.tid] = __gsharp_ctx.a[(__gsharp_ctx.tid + 1) % __gsharp_ctx.size];
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -6001,6 +6273,9 @@ uint64_t __gsharp_warp_exchange[2] = {};
 uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
+GSharpArray<int> __gsharp_id_0_a;
+GSharpArray<int> __gsharp_id_1_b;
+int __gsharp_id_2_n;
 int __gsharp_id_3_tid;
 bool __gsharp_sg_done_0;
 int __gsharp_id_4_x;
@@ -6008,11 +6283,16 @@ int __gsharp_id_5_y;
 int __gsharp_id_6_s;
 int __gsharp_id_7_z;
 };
-extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__OutVariableAfterReturnKernel(GSharpArray<int> __gsharp_id_0_a, GSharpArray<int> __gsharp_id_1_b, int __gsharp_id_2_n, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__OutVariableAfterReturnKernel* __gsharp_ctx){
+extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__OutVariableAfterReturnKernel(GSharpArray<int> __gsharp_in___gsharp_id_0_a, GSharpArray<int> __gsharp_in___gsharp_id_1_b, int __gsharp_in___gsharp_id_2_n, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__OutVariableAfterReturnKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
 auto* __gsharp_root = __gsharp_ctx;
+if(__gsharp_state==0){
+__gsharp_ctx->__gsharp_id_0_a=__gsharp_in___gsharp_id_0_a;
+__gsharp_ctx->__gsharp_id_1_b=__gsharp_in___gsharp_id_1_b;
+__gsharp_ctx->__gsharp_id_2_n=__gsharp_in___gsharp_id_2_n;
+}
 switch(__gsharp_state)
 {
 case 0:
@@ -6020,7 +6300,7 @@ __gsharp_switch_1_state_0:
 {
 __gsharp_ctx->__gsharp_id_3_tid=__gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 __gsharp_ctx->__gsharp_sg_done_0=false;
-if(__gsharp_ctx->__gsharp_id_3_tid>=__gsharp_id_2_n)
+if(__gsharp_ctx->__gsharp_id_3_tid>=__gsharp_ctx->__gsharp_id_2_n)
 {
 __gsharp_ctx->__gsharp_sg_done_0=true;
 goto __gsharp_sg_next_0_0;
@@ -6040,7 +6320,7 @@ __gsharp_switch_1_state_2:
 {
 if(!__gsharp_ctx->__gsharp_sg_done_0)
 {
-__gsharp_fn_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ReadPlusOne(__gsharp_id_0_a,__gsharp_ctx->__gsharp_id_3_tid,&__gsharp_ctx->__gsharp_id_4_x);
+__gsharp_fn_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ReadPlusOne(__gsharp_ctx->__gsharp_id_0_a,__gsharp_ctx->__gsharp_id_3_tid,&__gsharp_ctx->__gsharp_id_4_x);
 }
 __gsharp_yielded_for_grid_sync=true;
 __gsharp_state=3;
@@ -6051,7 +6331,7 @@ __gsharp_switch_1_state_3:
 {
 if(!__gsharp_ctx->__gsharp_sg_done_0)
 {
-if(!__gsharp_fn_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__TryDouble(__gsharp_id_0_a,__gsharp_ctx->__gsharp_id_3_tid,&__gsharp_ctx->__gsharp_id_5_y))
+if(!__gsharp_fn_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__TryDouble(__gsharp_ctx->__gsharp_id_0_a,__gsharp_ctx->__gsharp_id_3_tid,&__gsharp_ctx->__gsharp_id_5_y))
 {
 __gsharp_ctx->__gsharp_id_5_y=(-1);
 }
@@ -6065,7 +6345,7 @@ __gsharp_switch_1_state_4:
 {
 if(!__gsharp_ctx->__gsharp_sg_done_0)
 {
-__gsharp_ctx->__gsharp_id_6_s=__gsharp_add_i32(__gsharp_fn_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ReadPlusOne(__gsharp_id_0_a,__gsharp_ctx->__gsharp_id_3_tid,&__gsharp_ctx->__gsharp_id_7_z),1);
+__gsharp_ctx->__gsharp_id_6_s=__gsharp_add_i32(__gsharp_fn_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ReadPlusOne(__gsharp_ctx->__gsharp_id_0_a,__gsharp_ctx->__gsharp_id_3_tid,&__gsharp_ctx->__gsharp_id_7_z),1);
 }
 __gsharp_yielded_for_grid_sync=true;
 __gsharp_state=5;
@@ -6076,7 +6356,7 @@ __gsharp_switch_1_state_5:
 {
 if(!__gsharp_ctx->__gsharp_sg_done_0)
 {
-__gsharp_id_1_b[__gsharp_ctx->__gsharp_id_3_tid]=__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_4_x,__gsharp_ctx->__gsharp_id_5_y),__gsharp_ctx->__gsharp_id_6_s),__gsharp_ctx->__gsharp_id_7_z);
+__gsharp_ctx->__gsharp_id_1_b[__gsharp_ctx->__gsharp_id_3_tid]=__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_4_x,__gsharp_ctx->__gsharp_id_5_y),__gsharp_ctx->__gsharp_id_6_s),__gsharp_ctx->__gsharp_id_7_z);
 }
 __gsharp_state=-1;
 return;
@@ -6199,6 +6479,9 @@ public static readonly string OutVariableAfterReturnKernel_FullSource=global::Ka
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__OutVariableAfterReturnKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
+public int[] a;
+public int[] b;
+public int n;
 public int tid;
 public bool __gsharp_sg_done_0;
 public int x;
@@ -6207,7 +6490,12 @@ public int s;
 public int z;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__OutVariableAfterReturnKernel(int[] a, int[] b, int n, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__OutVariableAfterReturnKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__OutVariableAfterReturnKernel(int[] __gsharp_in_a, int[] __gsharp_in_b, int __gsharp_in_n, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__OutVariableAfterReturnKernel __gsharp_ctx) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.a = __gsharp_in_a;
+__gsharp_ctx.b = __gsharp_in_b;
+__gsharp_ctx.n = __gsharp_in_n;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -6215,7 +6503,7 @@ case 0:
 {
 __gsharp_ctx.tid = global::Kassyi.GSharp.Core.BlockIndex.X * global::Kassyi.GSharp.Core.BlockDimension.X + global::Kassyi.GSharp.Core.ThreadIndex.X;
 __gsharp_ctx.__gsharp_sg_done_0 = false;
-if (__gsharp_ctx.tid >= n)
+if (__gsharp_ctx.tid >= __gsharp_ctx.n)
 {
 __gsharp_ctx.__gsharp_sg_done_0 = true;
 goto __gsharp_sg_next_0_0;
@@ -6237,7 +6525,7 @@ case 2:
 {
 if (!__gsharp_ctx.__gsharp_sg_done_0)
 {
-global::Kassyi.GSharp.Tests.Shared.Transpiler.SyncGridBodyKernels.ReadPlusOne(a, __gsharp_ctx.tid, out __gsharp_ctx.x);
+global::Kassyi.GSharp.Tests.Shared.Transpiler.SyncGridBodyKernels.ReadPlusOne(__gsharp_ctx.a, __gsharp_ctx.tid, out __gsharp_ctx.x);
 }
 
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
@@ -6249,7 +6537,7 @@ case 3:
 {
 if (!__gsharp_ctx.__gsharp_sg_done_0)
 {
-if (!global::Kassyi.GSharp.Tests.Shared.Transpiler.SyncGridBodyKernels.TryDouble(a, __gsharp_ctx.tid, out __gsharp_ctx.y))
+if (!global::Kassyi.GSharp.Tests.Shared.Transpiler.SyncGridBodyKernels.TryDouble(__gsharp_ctx.a, __gsharp_ctx.tid, out __gsharp_ctx.y))
 __gsharp_ctx.y = -1;
 }
 
@@ -6262,7 +6550,7 @@ case 4:
 {
 if (!__gsharp_ctx.__gsharp_sg_done_0)
 {
-__gsharp_ctx.s = global::Kassyi.GSharp.Tests.Shared.Transpiler.SyncGridBodyKernels.ReadPlusOne(a, __gsharp_ctx.tid, out __gsharp_ctx.z) + 1;
+__gsharp_ctx.s = global::Kassyi.GSharp.Tests.Shared.Transpiler.SyncGridBodyKernels.ReadPlusOne(__gsharp_ctx.a, __gsharp_ctx.tid, out __gsharp_ctx.z) + 1;
 }
 
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
@@ -6274,7 +6562,7 @@ case 5:
 {
 if (!__gsharp_ctx.__gsharp_sg_done_0)
 {
-b[__gsharp_ctx.tid] = __gsharp_ctx.x + __gsharp_ctx.y + __gsharp_ctx.s + __gsharp_ctx.z;
+__gsharp_ctx.b[__gsharp_ctx.tid] = __gsharp_ctx.x + __gsharp_ctx.y + __gsharp_ctx.s + __gsharp_ctx.z;
 }
 
 __gsharp_ctx.__gsharp_state = -1;
@@ -6438,15 +6726,23 @@ uint64_t __gsharp_warp_exchange[2] = {};
 uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
+GSharpArray<int> __gsharp_id_0_a;
+GSharpArray<int> __gsharp_id_1_b;
+GSharpArray<int> __gsharp_id_2_mode;
 int __gsharp_id_3_tid;
 int __gsharp_id_4_size;
 bool __gsharp_sg_done_0;
 };
-extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ReturnInSwitchKernel(GSharpArray<int> __gsharp_id_0_a, GSharpArray<int> __gsharp_id_1_b, GSharpArray<int> __gsharp_id_2_mode, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ReturnInSwitchKernel* __gsharp_ctx){
+extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ReturnInSwitchKernel(GSharpArray<int> __gsharp_in___gsharp_id_0_a, GSharpArray<int> __gsharp_in___gsharp_id_1_b, GSharpArray<int> __gsharp_in___gsharp_id_2_mode, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ReturnInSwitchKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
 auto* __gsharp_root = __gsharp_ctx;
+if(__gsharp_state==0){
+__gsharp_ctx->__gsharp_id_0_a=__gsharp_in___gsharp_id_0_a;
+__gsharp_ctx->__gsharp_id_1_b=__gsharp_in___gsharp_id_1_b;
+__gsharp_ctx->__gsharp_id_2_mode=__gsharp_in___gsharp_id_2_mode;
+}
 switch(__gsharp_state)
 {
 case 0:
@@ -6455,7 +6751,7 @@ __gsharp_switch_1_state_0:
 __gsharp_ctx->__gsharp_id_3_tid=__gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 __gsharp_ctx->__gsharp_id_4_size=__gsharp_mul_i32((int)gridDim.x,(int)blockDim.x);
 __gsharp_ctx->__gsharp_sg_done_0=false;
-__gsharp_id_0_a[__gsharp_ctx->__gsharp_id_3_tid]=1;
+__gsharp_ctx->__gsharp_id_0_a[__gsharp_ctx->__gsharp_id_3_tid]=1;
 __gsharp_yielded_for_grid_sync=true;
 __gsharp_state=1;
 return;
@@ -6463,7 +6759,7 @@ return;
 case 1:
 __gsharp_switch_1_state_1:
 {
-switch(__gsharp_id_2_mode[__gsharp_ctx->__gsharp_id_3_tid])
+switch(__gsharp_ctx->__gsharp_id_2_mode[__gsharp_ctx->__gsharp_id_3_tid])
 {
 case 0:
 __gsharp_switch_2_state_0:
@@ -6474,7 +6770,7 @@ goto __gsharp_sg_next_0_1;
 case 2:
 __gsharp_switch_2_state_2:
 {
-__gsharp_id_0_a[__gsharp_ctx->__gsharp_id_3_tid]=__gsharp_add_i32(__gsharp_id_0_a[__gsharp_ctx->__gsharp_id_3_tid],100);
+__gsharp_ctx->__gsharp_id_0_a[__gsharp_ctx->__gsharp_id_3_tid]=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_0_a[__gsharp_ctx->__gsharp_id_3_tid],100);
 break;
 }
 default:
@@ -6498,7 +6794,7 @@ __gsharp_switch_1_state_3:
 {
 if(!__gsharp_ctx->__gsharp_sg_done_0)
 {
-__gsharp_id_1_b[__gsharp_ctx->__gsharp_id_3_tid]=__gsharp_id_0_a[(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_3_tid,1))%__gsharp_ctx->__gsharp_id_4_size];
+__gsharp_ctx->__gsharp_id_1_b[__gsharp_ctx->__gsharp_id_3_tid]=__gsharp_ctx->__gsharp_id_0_a[(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_3_tid,1))%__gsharp_ctx->__gsharp_id_4_size];
 }
 __gsharp_state=-1;
 return;
@@ -6621,12 +6917,20 @@ public static readonly string ReturnInSwitchKernel_FullSource=global::Kassyi.GSh
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ReturnInSwitchKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
+public int[] a;
+public int[] b;
+public int[] mode;
 public int tid;
 public int size;
 public bool __gsharp_sg_done_0;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ReturnInSwitchKernel(int[] a, int[] b, int[] mode, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ReturnInSwitchKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ReturnInSwitchKernel(int[] __gsharp_in_a, int[] __gsharp_in_b, int[] __gsharp_in_mode, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ReturnInSwitchKernel __gsharp_ctx) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.a = __gsharp_in_a;
+__gsharp_ctx.b = __gsharp_in_b;
+__gsharp_ctx.mode = __gsharp_in_mode;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -6635,7 +6939,7 @@ case 0:
 __gsharp_ctx.tid = global::Kassyi.GSharp.Core.BlockIndex.X * global::Kassyi.GSharp.Core.BlockDimension.X + global::Kassyi.GSharp.Core.ThreadIndex.X;
 __gsharp_ctx.size = global::Kassyi.GSharp.Core.GridDimension.X * global::Kassyi.GSharp.Core.BlockDimension.X;
 __gsharp_ctx.__gsharp_sg_done_0 = false;
-a[__gsharp_ctx.tid] = 1;
+__gsharp_ctx.a[__gsharp_ctx.tid] = 1;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
 return;
@@ -6643,7 +6947,7 @@ return;
 
 case 1:
 {
-switch (mode[__gsharp_ctx.tid])
+switch (__gsharp_ctx.mode[__gsharp_ctx.tid])
 {
 case 0:
 {
@@ -6652,7 +6956,7 @@ goto __gsharp_sg_next_0_1;
 }
 
 case 2:
-a[__gsharp_ctx.tid] += 100;
+__gsharp_ctx.a[__gsharp_ctx.tid] += 100;
 break;
 default:
 break;
@@ -6674,7 +6978,7 @@ case 3:
 {
 if (!__gsharp_ctx.__gsharp_sg_done_0)
 {
-b[__gsharp_ctx.tid] = a[(__gsharp_ctx.tid + 1) % __gsharp_ctx.size];
+__gsharp_ctx.b[__gsharp_ctx.tid] = __gsharp_ctx.a[(__gsharp_ctx.tid + 1) % __gsharp_ctx.size];
 }
 
 __gsharp_ctx.__gsharp_state = -1;
@@ -6845,15 +7149,23 @@ uint64_t __gsharp_warp_exchange[2] = {};
 uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
+GSharpArray<int> __gsharp_id_0_a;
+GSharpArray<int> __gsharp_id_1_b;
+GSharpArray<int> __gsharp_id_2_mode;
 int __gsharp_id_3_tid;
 int __gsharp_id_4_size;
 bool __gsharp_sg_done_0;
 };
-extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ReturnInSwitchWithoutCaseKernel(GSharpArray<int> __gsharp_id_0_a, GSharpArray<int> __gsharp_id_1_b, GSharpArray<int> __gsharp_id_2_mode, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ReturnInSwitchWithoutCaseKernel* __gsharp_ctx){
+extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ReturnInSwitchWithoutCaseKernel(GSharpArray<int> __gsharp_in___gsharp_id_0_a, GSharpArray<int> __gsharp_in___gsharp_id_1_b, GSharpArray<int> __gsharp_in___gsharp_id_2_mode, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ReturnInSwitchWithoutCaseKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
 auto* __gsharp_root = __gsharp_ctx;
+if(__gsharp_state==0){
+__gsharp_ctx->__gsharp_id_0_a=__gsharp_in___gsharp_id_0_a;
+__gsharp_ctx->__gsharp_id_1_b=__gsharp_in___gsharp_id_1_b;
+__gsharp_ctx->__gsharp_id_2_mode=__gsharp_in___gsharp_id_2_mode;
+}
 switch(__gsharp_state)
 {
 case 0:
@@ -6862,7 +7174,7 @@ __gsharp_switch_1_state_0:
 __gsharp_ctx->__gsharp_id_3_tid=__gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 __gsharp_ctx->__gsharp_id_4_size=__gsharp_mul_i32((int)gridDim.x,(int)blockDim.x);
 __gsharp_ctx->__gsharp_sg_done_0=false;
-__gsharp_id_0_a[__gsharp_ctx->__gsharp_id_3_tid]=1;
+__gsharp_ctx->__gsharp_id_0_a[__gsharp_ctx->__gsharp_id_3_tid]=1;
 __gsharp_yielded_for_grid_sync=true;
 __gsharp_state=1;
 return;
@@ -6870,7 +7182,7 @@ return;
 case 1:
 __gsharp_switch_1_state_1:
 {
-switch(__gsharp_id_2_mode[__gsharp_ctx->__gsharp_id_3_tid])
+switch(__gsharp_ctx->__gsharp_id_2_mode[__gsharp_ctx->__gsharp_id_3_tid])
 {
 case 0:
 __gsharp_switch_2_state_0:
@@ -6899,7 +7211,7 @@ __gsharp_switch_1_state_3:
 {
 if(!__gsharp_ctx->__gsharp_sg_done_0)
 {
-__gsharp_id_1_b[__gsharp_ctx->__gsharp_id_3_tid]=__gsharp_id_0_a[(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_3_tid,1))%__gsharp_ctx->__gsharp_id_4_size];
+__gsharp_ctx->__gsharp_id_1_b[__gsharp_ctx->__gsharp_id_3_tid]=__gsharp_ctx->__gsharp_id_0_a[(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_3_tid,1))%__gsharp_ctx->__gsharp_id_4_size];
 }
 __gsharp_state=-1;
 return;
@@ -7022,12 +7334,20 @@ public static readonly string ReturnInSwitchWithoutCaseKernel_FullSource=global:
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ReturnInSwitchWithoutCaseKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
+public int[] a;
+public int[] b;
+public int[] mode;
 public int tid;
 public int size;
 public bool __gsharp_sg_done_0;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ReturnInSwitchWithoutCaseKernel(int[] a, int[] b, int[] mode, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ReturnInSwitchWithoutCaseKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ReturnInSwitchWithoutCaseKernel(int[] __gsharp_in_a, int[] __gsharp_in_b, int[] __gsharp_in_mode, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ReturnInSwitchWithoutCaseKernel __gsharp_ctx) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.a = __gsharp_in_a;
+__gsharp_ctx.b = __gsharp_in_b;
+__gsharp_ctx.mode = __gsharp_in_mode;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -7036,7 +7356,7 @@ case 0:
 __gsharp_ctx.tid = global::Kassyi.GSharp.Core.BlockIndex.X * global::Kassyi.GSharp.Core.BlockDimension.X + global::Kassyi.GSharp.Core.ThreadIndex.X;
 __gsharp_ctx.size = global::Kassyi.GSharp.Core.GridDimension.X * global::Kassyi.GSharp.Core.BlockDimension.X;
 __gsharp_ctx.__gsharp_sg_done_0 = false;
-a[__gsharp_ctx.tid] = 1;
+__gsharp_ctx.a[__gsharp_ctx.tid] = 1;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
 return;
@@ -7044,7 +7364,7 @@ return;
 
 case 1:
 {
-switch (mode[__gsharp_ctx.tid])
+switch (__gsharp_ctx.mode[__gsharp_ctx.tid])
 {
 case 0:
 {
@@ -7072,7 +7392,7 @@ case 3:
 {
 if (!__gsharp_ctx.__gsharp_sg_done_0)
 {
-b[__gsharp_ctx.tid] = a[(__gsharp_ctx.tid + 1) % __gsharp_ctx.size];
+__gsharp_ctx.b[__gsharp_ctx.tid] = __gsharp_ctx.a[(__gsharp_ctx.tid + 1) % __gsharp_ctx.size];
 }
 
 __gsharp_ctx.__gsharp_state = -1;
@@ -7243,15 +7563,23 @@ uint64_t __gsharp_warp_exchange[2] = {};
 uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
+GSharpArray<int> __gsharp_id_0_a;
+GSharpArray<int> __gsharp_id_1_b;
+GSharpArray<int> __gsharp_id_2_values;
 int __gsharp_id_3_tid;
 int __gsharp_id_4_size;
 bool __gsharp_sg_done_0;
 };
-extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ReturnInForEachKernel(GSharpArray<int> __gsharp_id_0_a, GSharpArray<int> __gsharp_id_1_b, GSharpArray<int> __gsharp_id_2_values, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ReturnInForEachKernel* __gsharp_ctx){
+extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ReturnInForEachKernel(GSharpArray<int> __gsharp_in___gsharp_id_0_a, GSharpArray<int> __gsharp_in___gsharp_id_1_b, GSharpArray<int> __gsharp_in___gsharp_id_2_values, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ReturnInForEachKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
 auto* __gsharp_root = __gsharp_ctx;
+if(__gsharp_state==0){
+__gsharp_ctx->__gsharp_id_0_a=__gsharp_in___gsharp_id_0_a;
+__gsharp_ctx->__gsharp_id_1_b=__gsharp_in___gsharp_id_1_b;
+__gsharp_ctx->__gsharp_id_2_values=__gsharp_in___gsharp_id_2_values;
+}
 switch(__gsharp_state)
 {
 case 0:
@@ -7260,7 +7588,7 @@ __gsharp_switch_1_state_0:
 __gsharp_ctx->__gsharp_id_3_tid=__gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 __gsharp_ctx->__gsharp_id_4_size=__gsharp_mul_i32((int)gridDim.x,(int)blockDim.x);
 __gsharp_ctx->__gsharp_sg_done_0=false;
-__gsharp_id_0_a[__gsharp_ctx->__gsharp_id_3_tid]=0;
+__gsharp_ctx->__gsharp_id_0_a[__gsharp_ctx->__gsharp_id_3_tid]=0;
 __gsharp_yielded_for_grid_sync=true;
 __gsharp_state=1;
 return;
@@ -7268,14 +7596,14 @@ return;
 case 1:
 __gsharp_switch_1_state_1:
 {
-for(auto __gsharp_id_5_value : __gsharp_id_2_values)
+for(auto __gsharp_id_5_value : __gsharp_ctx->__gsharp_id_2_values)
 {
 if(__gsharp_id_5_value==__gsharp_ctx->__gsharp_id_3_tid)
 {
 __gsharp_ctx->__gsharp_sg_done_0=true;
 goto __gsharp_sg_next_0_1;
 }
-__gsharp_id_0_a[__gsharp_ctx->__gsharp_id_3_tid]=__gsharp_add_i32(__gsharp_id_0_a[__gsharp_ctx->__gsharp_id_3_tid],1);
+__gsharp_ctx->__gsharp_id_0_a[__gsharp_ctx->__gsharp_id_3_tid]=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_0_a[__gsharp_ctx->__gsharp_id_3_tid],1);
 }
 goto __gsharp_switch_1_state_2;
 }
@@ -7292,7 +7620,7 @@ __gsharp_switch_1_state_3:
 {
 if(!__gsharp_ctx->__gsharp_sg_done_0)
 {
-__gsharp_id_1_b[__gsharp_ctx->__gsharp_id_3_tid]=__gsharp_id_0_a[(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_3_tid,1))%__gsharp_ctx->__gsharp_id_4_size];
+__gsharp_ctx->__gsharp_id_1_b[__gsharp_ctx->__gsharp_id_3_tid]=__gsharp_ctx->__gsharp_id_0_a[(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_3_tid,1))%__gsharp_ctx->__gsharp_id_4_size];
 }
 __gsharp_state=-1;
 return;
@@ -7415,12 +7743,20 @@ public static readonly string ReturnInForEachKernel_FullSource=global::Kassyi.GS
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ReturnInForEachKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
+public int[] a;
+public int[] b;
+public int[] values;
 public int tid;
 public int size;
 public bool __gsharp_sg_done_0;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ReturnInForEachKernel(int[] a, int[] b, int[] values, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ReturnInForEachKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ReturnInForEachKernel(int[] __gsharp_in_a, int[] __gsharp_in_b, int[] __gsharp_in_values, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ReturnInForEachKernel __gsharp_ctx) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.a = __gsharp_in_a;
+__gsharp_ctx.b = __gsharp_in_b;
+__gsharp_ctx.values = __gsharp_in_values;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -7429,7 +7765,7 @@ case 0:
 __gsharp_ctx.tid = global::Kassyi.GSharp.Core.BlockIndex.X * global::Kassyi.GSharp.Core.BlockDimension.X + global::Kassyi.GSharp.Core.ThreadIndex.X;
 __gsharp_ctx.size = global::Kassyi.GSharp.Core.GridDimension.X * global::Kassyi.GSharp.Core.BlockDimension.X;
 __gsharp_ctx.__gsharp_sg_done_0 = false;
-a[__gsharp_ctx.tid] = 0;
+__gsharp_ctx.a[__gsharp_ctx.tid] = 0;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
 return;
@@ -7437,7 +7773,7 @@ return;
 
 case 1:
 {
-foreach (var value in values)
+foreach (var value in __gsharp_ctx.values)
 {
 if (value == __gsharp_ctx.tid)
 {
@@ -7445,7 +7781,7 @@ __gsharp_ctx.__gsharp_sg_done_0 = true;
 goto __gsharp_sg_next_0_1;
 }
 
-a[__gsharp_ctx.tid] += 1;
+__gsharp_ctx.a[__gsharp_ctx.tid] += 1;
 }
 
 goto case 2;
@@ -7464,7 +7800,7 @@ case 3:
 {
 if (!__gsharp_ctx.__gsharp_sg_done_0)
 {
-b[__gsharp_ctx.tid] = a[(__gsharp_ctx.tid + 1) % __gsharp_ctx.size];
+__gsharp_ctx.b[__gsharp_ctx.tid] = __gsharp_ctx.a[(__gsharp_ctx.tid + 1) % __gsharp_ctx.size];
 }
 
 __gsharp_ctx.__gsharp_state = -1;
@@ -7635,15 +7971,21 @@ uint64_t __gsharp_warp_exchange[2] = {};
 uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
+GSharpArray<int> __gsharp_id_0_a;
+GSharpArray<int> __gsharp_id_1_b;
 int __gsharp_id_2_tid;
 int __gsharp_id_3_size;
 bool __gsharp_sg_done_0;
 };
-extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ReturnInLabeledStatementKernel(GSharpArray<int> __gsharp_id_0_a, GSharpArray<int> __gsharp_id_1_b, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ReturnInLabeledStatementKernel* __gsharp_ctx){
+extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ReturnInLabeledStatementKernel(GSharpArray<int> __gsharp_in___gsharp_id_0_a, GSharpArray<int> __gsharp_in___gsharp_id_1_b, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ReturnInLabeledStatementKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
 auto* __gsharp_root = __gsharp_ctx;
+if(__gsharp_state==0){
+__gsharp_ctx->__gsharp_id_0_a=__gsharp_in___gsharp_id_0_a;
+__gsharp_ctx->__gsharp_id_1_b=__gsharp_in___gsharp_id_1_b;
+}
 switch(__gsharp_state)
 {
 case 0:
@@ -7652,7 +7994,7 @@ __gsharp_switch_1_state_0:
 __gsharp_ctx->__gsharp_id_2_tid=__gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 __gsharp_ctx->__gsharp_id_3_size=__gsharp_mul_i32((int)gridDim.x,(int)blockDim.x);
 __gsharp_ctx->__gsharp_sg_done_0=false;
-__gsharp_id_0_a[__gsharp_ctx->__gsharp_id_2_tid]=1;
+__gsharp_ctx->__gsharp_id_0_a[__gsharp_ctx->__gsharp_id_2_tid]=1;
 __gsharp_yielded_for_grid_sync=true;
 __gsharp_state=1;
 return;
@@ -7681,7 +8023,7 @@ __gsharp_switch_1_state_3:
 {
 if(!__gsharp_ctx->__gsharp_sg_done_0)
 {
-__gsharp_id_1_b[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_id_0_a[(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_2_tid,1))%__gsharp_ctx->__gsharp_id_3_size];
+__gsharp_ctx->__gsharp_id_1_b[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_ctx->__gsharp_id_0_a[(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_2_tid,1))%__gsharp_ctx->__gsharp_id_3_size];
 }
 __gsharp_state=-1;
 return;
@@ -7804,12 +8146,18 @@ public static readonly string ReturnInLabeledStatementKernel_FullSource=global::
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ReturnInLabeledStatementKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
+public int[] a;
+public int[] b;
 public int tid;
 public int size;
 public bool __gsharp_sg_done_0;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ReturnInLabeledStatementKernel(int[] a, int[] b, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ReturnInLabeledStatementKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ReturnInLabeledStatementKernel(int[] __gsharp_in_a, int[] __gsharp_in_b, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ReturnInLabeledStatementKernel __gsharp_ctx) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.a = __gsharp_in_a;
+__gsharp_ctx.b = __gsharp_in_b;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -7818,7 +8166,7 @@ case 0:
 __gsharp_ctx.tid = global::Kassyi.GSharp.Core.BlockIndex.X * global::Kassyi.GSharp.Core.BlockDimension.X + global::Kassyi.GSharp.Core.ThreadIndex.X;
 __gsharp_ctx.size = global::Kassyi.GSharp.Core.GridDimension.X * global::Kassyi.GSharp.Core.BlockDimension.X;
 __gsharp_ctx.__gsharp_sg_done_0 = false;
-a[__gsharp_ctx.tid] = 1;
+__gsharp_ctx.a[__gsharp_ctx.tid] = 1;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
 return;
@@ -7849,7 +8197,7 @@ case 3:
 {
 if (!__gsharp_ctx.__gsharp_sg_done_0)
 {
-b[__gsharp_ctx.tid] = a[(__gsharp_ctx.tid + 1) % __gsharp_ctx.size];
+__gsharp_ctx.b[__gsharp_ctx.tid] = __gsharp_ctx.a[(__gsharp_ctx.tid + 1) % __gsharp_ctx.size];
 }
 
 __gsharp_ctx.__gsharp_state = -1;
@@ -8013,16 +8361,24 @@ uint64_t __gsharp_warp_exchange[2] = {};
 uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
+GSharpArray<int> __gsharp_id_0_a;
+GSharpArray<int> __gsharp_id_1_b;
+GSharpArray<int> __gsharp_id_2_c;
 int __gsharp_id_3_tid;
 int __gsharp_id_4_size;
 bool __gsharp_sg_done_0;
 bool __gsharp_sg_done_1;
 };
-extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__NestedReturnAfterReturnKernel(GSharpArray<int> __gsharp_id_0_a, GSharpArray<int> __gsharp_id_1_b, GSharpArray<int> __gsharp_id_2_c, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__NestedReturnAfterReturnKernel* __gsharp_ctx){
+extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__NestedReturnAfterReturnKernel(GSharpArray<int> __gsharp_in___gsharp_id_0_a, GSharpArray<int> __gsharp_in___gsharp_id_1_b, GSharpArray<int> __gsharp_in___gsharp_id_2_c, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__NestedReturnAfterReturnKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
 auto* __gsharp_root = __gsharp_ctx;
+if(__gsharp_state==0){
+__gsharp_ctx->__gsharp_id_0_a=__gsharp_in___gsharp_id_0_a;
+__gsharp_ctx->__gsharp_id_1_b=__gsharp_in___gsharp_id_1_b;
+__gsharp_ctx->__gsharp_id_2_c=__gsharp_in___gsharp_id_2_c;
+}
 switch(__gsharp_state)
 {
 case 0:
@@ -8031,7 +8387,7 @@ __gsharp_switch_1_state_0:
 __gsharp_ctx->__gsharp_id_3_tid=__gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 __gsharp_ctx->__gsharp_id_4_size=__gsharp_mul_i32((int)gridDim.x,(int)blockDim.x);
 __gsharp_ctx->__gsharp_sg_done_0=false;
-__gsharp_id_0_a[__gsharp_ctx->__gsharp_id_3_tid]=1;
+__gsharp_ctx->__gsharp_id_0_a[__gsharp_ctx->__gsharp_id_3_tid]=1;
 __gsharp_yielded_for_grid_sync=true;
 __gsharp_state=1;
 return;
@@ -8081,7 +8437,7 @@ __gsharp_switch_1_state_5:
 {
 if(!__gsharp_ctx->__gsharp_sg_done_0&&!__gsharp_ctx->__gsharp_sg_done_1)
 {
-__gsharp_id_1_b[__gsharp_ctx->__gsharp_id_3_tid]=__gsharp_id_0_a[(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_3_tid,1))%__gsharp_ctx->__gsharp_id_4_size];
+__gsharp_ctx->__gsharp_id_1_b[__gsharp_ctx->__gsharp_id_3_tid]=__gsharp_ctx->__gsharp_id_0_a[(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_3_tid,1))%__gsharp_ctx->__gsharp_id_4_size];
 }
 __gsharp_yielded_for_grid_sync=true;
 __gsharp_state=6;
@@ -8092,7 +8448,7 @@ __gsharp_switch_1_state_6:
 {
 if(!__gsharp_ctx->__gsharp_sg_done_0)
 {
-__gsharp_id_2_c[__gsharp_ctx->__gsharp_id_3_tid]=5;
+__gsharp_ctx->__gsharp_id_2_c[__gsharp_ctx->__gsharp_id_3_tid]=5;
 }
 __gsharp_state=-1;
 return;
@@ -8215,13 +8571,21 @@ public static readonly string NestedReturnAfterReturnKernel_FullSource=global::K
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__NestedReturnAfterReturnKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
+public int[] a;
+public int[] b;
+public int[] c;
 public int tid;
 public int size;
 public bool __gsharp_sg_done_0;
 public bool __gsharp_sg_done_1;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__NestedReturnAfterReturnKernel(int[] a, int[] b, int[] c, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__NestedReturnAfterReturnKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__NestedReturnAfterReturnKernel(int[] __gsharp_in_a, int[] __gsharp_in_b, int[] __gsharp_in_c, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__NestedReturnAfterReturnKernel __gsharp_ctx) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.a = __gsharp_in_a;
+__gsharp_ctx.b = __gsharp_in_b;
+__gsharp_ctx.c = __gsharp_in_c;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -8230,7 +8594,7 @@ case 0:
 __gsharp_ctx.tid = global::Kassyi.GSharp.Core.BlockIndex.X * global::Kassyi.GSharp.Core.BlockDimension.X + global::Kassyi.GSharp.Core.ThreadIndex.X;
 __gsharp_ctx.size = global::Kassyi.GSharp.Core.GridDimension.X * global::Kassyi.GSharp.Core.BlockDimension.X;
 __gsharp_ctx.__gsharp_sg_done_0 = false;
-a[__gsharp_ctx.tid] = 1;
+__gsharp_ctx.a[__gsharp_ctx.tid] = 1;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
 return;
@@ -8284,7 +8648,7 @@ case 5:
 {
 if (!__gsharp_ctx.__gsharp_sg_done_0 && !__gsharp_ctx.__gsharp_sg_done_1)
 {
-b[__gsharp_ctx.tid] = a[(__gsharp_ctx.tid + 1) % __gsharp_ctx.size];
+__gsharp_ctx.b[__gsharp_ctx.tid] = __gsharp_ctx.a[(__gsharp_ctx.tid + 1) % __gsharp_ctx.size];
 }
 
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
@@ -8296,7 +8660,7 @@ case 6:
 {
 if (!__gsharp_ctx.__gsharp_sg_done_0)
 {
-c[__gsharp_ctx.tid] = 5;
+__gsharp_ctx.c[__gsharp_ctx.tid] = 5;
 }
 
 __gsharp_ctx.__gsharp_state = -1;
@@ -8467,14 +8831,20 @@ uint64_t __gsharp_warp_exchange[2] = {};
 uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
+GSharpArray<int> __gsharp_id_0_a;
+GSharpArray<int> __gsharp_id_1_b;
 int __gsharp_id_2_tid;
 bool __gsharp_sg_done_0;
 };
-extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__TwoReturnsKernel(GSharpArray<int> __gsharp_id_0_a, GSharpArray<int> __gsharp_id_1_b, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__TwoReturnsKernel* __gsharp_ctx){
+extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__TwoReturnsKernel(GSharpArray<int> __gsharp_in___gsharp_id_0_a, GSharpArray<int> __gsharp_in___gsharp_id_1_b, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__TwoReturnsKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
 auto* __gsharp_root = __gsharp_ctx;
+if(__gsharp_state==0){
+__gsharp_ctx->__gsharp_id_0_a=__gsharp_in___gsharp_id_0_a;
+__gsharp_ctx->__gsharp_id_1_b=__gsharp_in___gsharp_id_1_b;
+}
 switch(__gsharp_state)
 {
 case 0:
@@ -8502,7 +8872,7 @@ __gsharp_switch_1_state_2:
 {
 if(!__gsharp_ctx->__gsharp_sg_done_0)
 {
-__gsharp_id_0_a[__gsharp_ctx->__gsharp_id_2_tid]=1;
+__gsharp_ctx->__gsharp_id_0_a[__gsharp_ctx->__gsharp_id_2_tid]=1;
 }
 __gsharp_yielded_for_grid_sync=true;
 __gsharp_state=3;
@@ -8519,7 +8889,7 @@ if(__gsharp_id_3_i==1)
 {
 goto __gsharp_id_4_next;
 }
-__gsharp_id_0_a[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_id_0_a[__gsharp_ctx->__gsharp_id_2_tid],10);
+__gsharp_ctx->__gsharp_id_0_a[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_0_a[__gsharp_ctx->__gsharp_id_2_tid],10);
 __gsharp_id_4_next:;
 }
 }
@@ -8553,7 +8923,7 @@ __gsharp_switch_1_state_6:
 {
 if(!__gsharp_ctx->__gsharp_sg_done_0)
 {
-__gsharp_id_1_b[__gsharp_ctx->__gsharp_id_2_tid]=2;
+__gsharp_ctx->__gsharp_id_1_b[__gsharp_ctx->__gsharp_id_2_tid]=2;
 }
 __gsharp_state=-1;
 return;
@@ -8676,11 +9046,17 @@ public static readonly string TwoReturnsKernel_FullSource=global::Kassyi.GSharp.
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__TwoReturnsKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
+public int[] a;
+public int[] b;
 public int tid;
 public bool __gsharp_sg_done_0;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__TwoReturnsKernel(int[] a, int[] b, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__TwoReturnsKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__TwoReturnsKernel(int[] __gsharp_in_a, int[] __gsharp_in_b, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__TwoReturnsKernel __gsharp_ctx) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.a = __gsharp_in_a;
+__gsharp_ctx.b = __gsharp_in_b;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -8710,7 +9086,7 @@ case 2:
 {
 if (!__gsharp_ctx.__gsharp_sg_done_0)
 {
-a[__gsharp_ctx.tid] = 1;
+__gsharp_ctx.a[__gsharp_ctx.tid] = 1;
 }
 
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
@@ -8726,7 +9102,7 @@ for (int i = 0; i < 3; i++)
 {
 if (i == 1)
 goto next;
-a[__gsharp_ctx.tid] += 10;
+__gsharp_ctx.a[__gsharp_ctx.tid] += 10;
 next:
 ;
 }
@@ -8764,7 +9140,7 @@ case 6:
 {
 if (!__gsharp_ctx.__gsharp_sg_done_0)
 {
-b[__gsharp_ctx.tid] = 2;
+__gsharp_ctx.b[__gsharp_ctx.tid] = 2;
 }
 
 __gsharp_ctx.__gsharp_state = -1;
@@ -8928,15 +9304,19 @@ uint64_t __gsharp_warp_exchange[2] = {};
 uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
+GSharpArray<int> __gsharp_id_0_a;
 int __gsharp_id_1_tid;
 int __gsharp_unroll_0;
 bool __gsharp_sg_done_1;
 };
-extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ForUnrollReturnKernel(GSharpArray<int> __gsharp_id_0_a, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ForUnrollReturnKernel* __gsharp_ctx){
+extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ForUnrollReturnKernel(GSharpArray<int> __gsharp_in___gsharp_id_0_a, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ForUnrollReturnKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
 auto* __gsharp_root = __gsharp_ctx;
+if(__gsharp_state==0){
+__gsharp_ctx->__gsharp_id_0_a=__gsharp_in___gsharp_id_0_a;
+}
 switch(__gsharp_state)
 {
 case 0:
@@ -8974,7 +9354,7 @@ __gsharp_switch_1_state_3:
 {
 if(!__gsharp_ctx->__gsharp_sg_done_1)
 {
-__gsharp_id_0_a[__gsharp_ctx->__gsharp_id_1_tid]=__gsharp_add_i32(__gsharp_id_0_a[__gsharp_ctx->__gsharp_id_1_tid],1);
+__gsharp_ctx->__gsharp_id_0_a[__gsharp_ctx->__gsharp_id_1_tid]=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_0_a[__gsharp_ctx->__gsharp_id_1_tid],1);
 }
 goto __gsharp_switch_1_state_4;
 }
@@ -9109,12 +9489,16 @@ public static readonly string ForUnrollReturnKernel_FullSource=global::Kassyi.GS
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ForUnrollReturnKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
+public int[] a;
 public int tid;
 public int __gsharp_unroll_0;
 public bool __gsharp_sg_done_1;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ForUnrollReturnKernel(int[] a, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ForUnrollReturnKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ForUnrollReturnKernel(int[] __gsharp_in_a, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ForUnrollReturnKernel __gsharp_ctx) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.a = __gsharp_in_a;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -9152,7 +9536,7 @@ case 3:
 {
 if (!__gsharp_ctx.__gsharp_sg_done_1)
 {
-a[__gsharp_ctx.tid] += 1;
+__gsharp_ctx.a[__gsharp_ctx.tid] += 1;
 }
 
 goto case 4;
@@ -9321,15 +9705,21 @@ uint64_t __gsharp_warp_exchange[2] = {};
 uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
+GSharpArray<int> __gsharp_id_0_a;
+GSharpArray<int> __gsharp_id_1_b;
 int __gsharp_id_2_tid;
 int __gsharp_id_3_size;
 __gsharp_frame_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__WriteSyncRead __gsharp_call_frame_0;
 };
-extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__DeviceFunctionSyncKernel(GSharpArray<int> __gsharp_id_0_a, GSharpArray<int> __gsharp_id_1_b, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__DeviceFunctionSyncKernel* __gsharp_ctx){
+extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__DeviceFunctionSyncKernel(GSharpArray<int> __gsharp_in___gsharp_id_0_a, GSharpArray<int> __gsharp_in___gsharp_id_1_b, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__DeviceFunctionSyncKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
 auto* __gsharp_root = __gsharp_ctx;
+if(__gsharp_state==0){
+__gsharp_ctx->__gsharp_id_0_a=__gsharp_in___gsharp_id_0_a;
+__gsharp_ctx->__gsharp_id_1_b=__gsharp_in___gsharp_id_1_b;
+}
 switch(__gsharp_state)
 {
 case 0:
@@ -9342,7 +9732,7 @@ goto __gsharp_switch_1_state_1;
 case 1:
 __gsharp_switch_1_state_1:
 {
-if(!__gsharp_fn_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__WriteSyncRead(__gsharp_id_0_a,__gsharp_id_1_b,__gsharp_ctx->__gsharp_id_2_tid,__gsharp_ctx->__gsharp_id_3_size,&__gsharp_ctx->__gsharp_call_frame_0,__gsharp_root))
+if(!__gsharp_fn_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__WriteSyncRead(__gsharp_ctx->__gsharp_id_0_a,__gsharp_ctx->__gsharp_id_1_b,__gsharp_ctx->__gsharp_id_2_tid,__gsharp_ctx->__gsharp_id_3_size,&__gsharp_ctx->__gsharp_call_frame_0,__gsharp_root))
 {
 __gsharp_state=1;
 return;
@@ -9468,12 +9858,18 @@ public static readonly string DeviceFunctionSyncKernel_FullSource=global::Kassyi
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__DeviceFunctionSyncKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
+public int[] a;
+public int[] b;
 public int tid;
 public int size;
 internal global::Kassyi.GSharp.Tests.Shared.Transpiler.SyncGridBodyKernels.__gsharp_frame_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__WriteSyncRead __gsharp_call_frame_0 = new();
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__DeviceFunctionSyncKernel(int[] a, int[] b, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__DeviceFunctionSyncKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__DeviceFunctionSyncKernel(int[] __gsharp_in_a, int[] __gsharp_in_b, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__DeviceFunctionSyncKernel __gsharp_ctx) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.a = __gsharp_in_a;
+__gsharp_ctx.b = __gsharp_in_b;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -9486,7 +9882,7 @@ goto case 1;
 
 case 1:
 {
-if (!global::Kassyi.GSharp.Tests.Shared.Transpiler.SyncGridBodyKernels.__gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__WriteSyncRead(a, b, __gsharp_ctx.tid, __gsharp_ctx.size, __gsharp_ctx.__gsharp_call_frame_0))
+if (!global::Kassyi.GSharp.Tests.Shared.Transpiler.SyncGridBodyKernels.__gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__WriteSyncRead(__gsharp_ctx.a, __gsharp_ctx.b, __gsharp_ctx.tid, __gsharp_ctx.size, __gsharp_ctx.__gsharp_call_frame_0))
 {
 __gsharp_ctx.__gsharp_state = 1;
 return;
@@ -9653,15 +10049,21 @@ uint64_t __gsharp_warp_exchange[2] = {};
 uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
+GSharpArray<int> __gsharp_id_0_a;
+GSharpArray<int> __gsharp_id_1_b;
 int __gsharp_id_2_tid;
 int __gsharp_id_3_size;
 __gsharp_frame_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__CallWriteSyncRead __gsharp_call_frame_0;
 };
-extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__NestedDeviceFunctionSyncKernel(GSharpArray<int> __gsharp_id_0_a, GSharpArray<int> __gsharp_id_1_b, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__NestedDeviceFunctionSyncKernel* __gsharp_ctx){
+extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__NestedDeviceFunctionSyncKernel(GSharpArray<int> __gsharp_in___gsharp_id_0_a, GSharpArray<int> __gsharp_in___gsharp_id_1_b, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__NestedDeviceFunctionSyncKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
 auto* __gsharp_root = __gsharp_ctx;
+if(__gsharp_state==0){
+__gsharp_ctx->__gsharp_id_0_a=__gsharp_in___gsharp_id_0_a;
+__gsharp_ctx->__gsharp_id_1_b=__gsharp_in___gsharp_id_1_b;
+}
 switch(__gsharp_state)
 {
 case 0:
@@ -9674,7 +10076,7 @@ goto __gsharp_switch_1_state_1;
 case 1:
 __gsharp_switch_1_state_1:
 {
-if(!__gsharp_fn_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__CallWriteSyncRead(__gsharp_id_0_a,__gsharp_id_1_b,__gsharp_ctx->__gsharp_id_2_tid,__gsharp_ctx->__gsharp_id_3_size,&__gsharp_ctx->__gsharp_call_frame_0,__gsharp_root))
+if(!__gsharp_fn_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__CallWriteSyncRead(__gsharp_ctx->__gsharp_id_0_a,__gsharp_ctx->__gsharp_id_1_b,__gsharp_ctx->__gsharp_id_2_tid,__gsharp_ctx->__gsharp_id_3_size,&__gsharp_ctx->__gsharp_call_frame_0,__gsharp_root))
 {
 __gsharp_state=1;
 return;
@@ -9800,12 +10202,18 @@ public static readonly string NestedDeviceFunctionSyncKernel_FullSource=global::
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__NestedDeviceFunctionSyncKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
+public int[] a;
+public int[] b;
 public int tid;
 public int size;
 internal global::Kassyi.GSharp.Tests.Shared.Transpiler.SyncGridBodyKernels.__gsharp_frame_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__CallWriteSyncRead __gsharp_call_frame_0 = new();
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__NestedDeviceFunctionSyncKernel(int[] a, int[] b, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__NestedDeviceFunctionSyncKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__NestedDeviceFunctionSyncKernel(int[] __gsharp_in_a, int[] __gsharp_in_b, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__NestedDeviceFunctionSyncKernel __gsharp_ctx) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.a = __gsharp_in_a;
+__gsharp_ctx.b = __gsharp_in_b;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -9818,7 +10226,7 @@ goto case 1;
 
 case 1:
 {
-if (!global::Kassyi.GSharp.Tests.Shared.Transpiler.SyncGridBodyKernels.__gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__CallWriteSyncRead(a, b, __gsharp_ctx.tid, __gsharp_ctx.size, __gsharp_ctx.__gsharp_call_frame_0))
+if (!global::Kassyi.GSharp.Tests.Shared.Transpiler.SyncGridBodyKernels.__gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__CallWriteSyncRead(__gsharp_ctx.a, __gsharp_ctx.b, __gsharp_ctx.tid, __gsharp_ctx.size, __gsharp_ctx.__gsharp_call_frame_0))
 {
 __gsharp_ctx.__gsharp_state = 1;
 return;

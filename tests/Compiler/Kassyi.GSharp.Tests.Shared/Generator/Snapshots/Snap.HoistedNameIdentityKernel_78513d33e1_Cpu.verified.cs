@@ -54,14 +54,18 @@ uint64_t __gsharp_warp_exchange[2] = {};
 uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
+GSharpArray<int> __gsharp_id_0_output;
 int __gsharp_id_1_tid;
 int __gsharp_id_2_X;
 };
-extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__HoistedNameIdentityKernels__BarrierLocalSameNameInitializerKernel(GSharpArray<int> __gsharp_id_0_output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__HoistedNameIdentityKernels__BarrierLocalSameNameInitializerKernel* __gsharp_ctx){
+extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__HoistedNameIdentityKernels__BarrierLocalSameNameInitializerKernel(GSharpArray<int> __gsharp_in___gsharp_id_0_output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__HoistedNameIdentityKernels__BarrierLocalSameNameInitializerKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
 auto* __gsharp_root = __gsharp_ctx;
+if(__gsharp_state==0){
+__gsharp_ctx->__gsharp_id_0_output=__gsharp_in___gsharp_id_0_output;
+}
 switch(__gsharp_state)
 {
 case 0:
@@ -79,7 +83,7 @@ __gsharp_switch_1_state_1:
 auto __gsharp_id_3_p = ([&]() {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproPt __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_X = 1; __gsharp_tmp.__gsharp_mb_Y = 2; return __gsharp_tmp; }
 ());
-__gsharp_id_0_output[__gsharp_ctx->__gsharp_id_1_tid]=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_2_X,100),__gsharp_id_3_p.__gsharp_mb_X);
+__gsharp_ctx->__gsharp_id_0_output[__gsharp_ctx->__gsharp_id_1_tid]=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_2_X,100),__gsharp_id_3_p.__gsharp_mb_X);
 __gsharp_state=-1;
 return;
 }
@@ -164,11 +168,15 @@ public static readonly string BarrierLocalSameNameInitializerKernel_FullSource=g
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__HoistedNameIdentityKernels__BarrierLocalSameNameInitializerKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
+public int[] output;
 public int tid;
 public int X;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__HoistedNameIdentityKernels__BarrierLocalSameNameInitializerKernel(int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__HoistedNameIdentityKernels__BarrierLocalSameNameInitializerKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__HoistedNameIdentityKernels__BarrierLocalSameNameInitializerKernel(int[] __gsharp_in_output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__HoistedNameIdentityKernels__BarrierLocalSameNameInitializerKernel __gsharp_ctx) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.output = __gsharp_in_output;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -188,7 +196,7 @@ var p = new global::Kassyi.GSharp.Tests.Shared.Syntax.ReproPt
 X = 1,
 Y = 2
 };
-output[__gsharp_ctx.tid] = __gsharp_ctx.X * 100 + p.X;
+__gsharp_ctx.output[__gsharp_ctx.tid] = __gsharp_ctx.X * 100 + p.X;
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -334,14 +342,18 @@ uint64_t __gsharp_warp_exchange[2] = {};
 uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
+GSharpArray<int> __gsharp_id_0_output;
 int __gsharp_id_1_tid;
 int __gsharp_id_2_X;
 };
-extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__HoistedNameIdentityKernels__BarrierLocalSameNameWithKernel(GSharpArray<int> __gsharp_id_0_output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__HoistedNameIdentityKernels__BarrierLocalSameNameWithKernel* __gsharp_ctx){
+extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__HoistedNameIdentityKernels__BarrierLocalSameNameWithKernel(GSharpArray<int> __gsharp_in___gsharp_id_0_output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__HoistedNameIdentityKernels__BarrierLocalSameNameWithKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
 auto* __gsharp_root = __gsharp_ctx;
+if(__gsharp_state==0){
+__gsharp_ctx->__gsharp_id_0_output=__gsharp_in___gsharp_id_0_output;
+}
 switch(__gsharp_state)
 {
 case 0:
@@ -364,7 +376,7 @@ __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproPt __gsharp_tmp = __gsha
 __gsharp_tmp.__gsharp_mb_X = 3;
 return __gsharp_tmp;
 }());
-__gsharp_id_0_output[__gsharp_ctx->__gsharp_id_1_tid]=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_2_X,100),__gsharp_id_4_q.__gsharp_mb_X);
+__gsharp_ctx->__gsharp_id_0_output[__gsharp_ctx->__gsharp_id_1_tid]=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_2_X,100),__gsharp_id_4_q.__gsharp_mb_X);
 __gsharp_state=-1;
 return;
 }
@@ -449,11 +461,15 @@ public static readonly string BarrierLocalSameNameWithKernel_FullSource=global::
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__HoistedNameIdentityKernels__BarrierLocalSameNameWithKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
+public int[] output;
 public int tid;
 public int X;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__HoistedNameIdentityKernels__BarrierLocalSameNameWithKernel(int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__HoistedNameIdentityKernels__BarrierLocalSameNameWithKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__HoistedNameIdentityKernels__BarrierLocalSameNameWithKernel(int[] __gsharp_in_output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__HoistedNameIdentityKernels__BarrierLocalSameNameWithKernel __gsharp_ctx) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.output = __gsharp_in_output;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -477,7 +493,7 @@ var q = p with
 {
 X = 3
 };
-output[__gsharp_ctx.tid] = __gsharp_ctx.X * 100 + q.X;
+__gsharp_ctx.output[__gsharp_ctx.tid] = __gsharp_ctx.X * 100 + q.X;
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -623,14 +639,18 @@ uint64_t __gsharp_warp_exchange[2] = {};
 uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
+GSharpArray<int> __gsharp_id_0_output;
 int __gsharp_id_1_tid;
 int __gsharp_id_2_X;
 };
-extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__HoistedNameIdentityKernels__BarrierLocalSameNameMemberAccessKernel(GSharpArray<int> __gsharp_id_0_output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__HoistedNameIdentityKernels__BarrierLocalSameNameMemberAccessKernel* __gsharp_ctx){
+extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__HoistedNameIdentityKernels__BarrierLocalSameNameMemberAccessKernel(GSharpArray<int> __gsharp_in___gsharp_id_0_output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__HoistedNameIdentityKernels__BarrierLocalSameNameMemberAccessKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
 auto* __gsharp_root = __gsharp_ctx;
+if(__gsharp_state==0){
+__gsharp_ctx->__gsharp_id_0_output=__gsharp_in___gsharp_id_0_output;
+}
 switch(__gsharp_state)
 {
 case 0:
@@ -647,7 +667,7 @@ __gsharp_switch_1_state_1:
 {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproPt __gsharp_id_3_p = {};
 __gsharp_id_3_p.__gsharp_mb_Y=5;
-__gsharp_id_0_output[__gsharp_ctx->__gsharp_id_1_tid]=__gsharp_add_i32(__gsharp_add_i32(__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_2_X,100),__gsharp_id_3_p.__gsharp_mb_X),__gsharp_id_3_p.__gsharp_mb_Y);
+__gsharp_ctx->__gsharp_id_0_output[__gsharp_ctx->__gsharp_id_1_tid]=__gsharp_add_i32(__gsharp_add_i32(__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_2_X,100),__gsharp_id_3_p.__gsharp_mb_X),__gsharp_id_3_p.__gsharp_mb_Y);
 __gsharp_state=-1;
 return;
 }
@@ -732,11 +752,15 @@ public static readonly string BarrierLocalSameNameMemberAccessKernel_FullSource=
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__HoistedNameIdentityKernels__BarrierLocalSameNameMemberAccessKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
+public int[] output;
 public int tid;
 public int X;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__HoistedNameIdentityKernels__BarrierLocalSameNameMemberAccessKernel(int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__HoistedNameIdentityKernels__BarrierLocalSameNameMemberAccessKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__HoistedNameIdentityKernels__BarrierLocalSameNameMemberAccessKernel(int[] __gsharp_in_output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__HoistedNameIdentityKernels__BarrierLocalSameNameMemberAccessKernel __gsharp_ctx) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.output = __gsharp_in_output;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -753,7 +777,7 @@ case 1:
 {
 global::Kassyi.GSharp.Tests.Shared.Syntax.ReproPt p = default;
 p.Y = 5;
-output[__gsharp_ctx.tid] = __gsharp_ctx.X * 100 + p.X + p.Y;
+__gsharp_ctx.output[__gsharp_ctx.tid] = __gsharp_ctx.X * 100 + p.X + p.Y;
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -886,14 +910,18 @@ uint64_t __gsharp_warp_exchange[2] = {};
 uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
+GSharpArray<int> __gsharp_id_0_output;
 int __gsharp_id_1_t;
 int __gsharp_id_2_i;
 };
-extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__HoistedNameIdentityKernels__BarrierLocalSameNameLambdaParameterKernel(GSharpArray<int> __gsharp_id_0_output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__HoistedNameIdentityKernels__BarrierLocalSameNameLambdaParameterKernel* __gsharp_ctx){
+extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__HoistedNameIdentityKernels__BarrierLocalSameNameLambdaParameterKernel(GSharpArray<int> __gsharp_in___gsharp_id_0_output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__HoistedNameIdentityKernels__BarrierLocalSameNameLambdaParameterKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
 auto* __gsharp_root = __gsharp_ctx;
+if(__gsharp_state==0){
+__gsharp_ctx->__gsharp_id_0_output=__gsharp_in___gsharp_id_0_output;
+}
 switch(__gsharp_state)
 {
 case 0:
@@ -919,7 +947,7 @@ __gsharp_id_3_sum=__gsharp_add_i32(__gsharp_id_3_sum,1);
 {
 __gsharp_id_3_sum=__gsharp_add_i32(__gsharp_id_3_sum,2);
 }
-__gsharp_id_0_output[__gsharp_ctx->__gsharp_id_1_t]=__gsharp_add_i32(__gsharp_id_3_sum,__gsharp_ctx->__gsharp_id_2_i);
+__gsharp_ctx->__gsharp_id_0_output[__gsharp_ctx->__gsharp_id_1_t]=__gsharp_add_i32(__gsharp_id_3_sum,__gsharp_ctx->__gsharp_id_2_i);
 __gsharp_state=-1;
 return;
 }
@@ -1004,11 +1032,15 @@ public static readonly string BarrierLocalSameNameLambdaParameterKernel_FullSour
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__HoistedNameIdentityKernels__BarrierLocalSameNameLambdaParameterKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
+public int[] output;
 public int t;
 public int i;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__HoistedNameIdentityKernels__BarrierLocalSameNameLambdaParameterKernel(int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__HoistedNameIdentityKernels__BarrierLocalSameNameLambdaParameterKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__HoistedNameIdentityKernels__BarrierLocalSameNameLambdaParameterKernel(int[] __gsharp_in_output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__HoistedNameIdentityKernels__BarrierLocalSameNameLambdaParameterKernel __gsharp_ctx) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.output = __gsharp_in_output;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -1029,7 +1061,7 @@ for (int __gsharp_unroll_0 = 0; __gsharp_unroll_0 < unchecked(0 + 3); __gsharp_u
 sum += __gsharp_unroll_0;
 }
 
-output[__gsharp_ctx.t] = sum + __gsharp_ctx.i;
+__gsharp_ctx.output[__gsharp_ctx.t] = sum + __gsharp_ctx.i;
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -1162,16 +1194,20 @@ uint64_t __gsharp_warp_exchange[2] = {};
 uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
+GSharpArray<int> __gsharp_id_0_output;
 int __gsharp_id_1_t;
 int __gsharp_id_2_acc;
 int __gsharp_id_3_step;
 int __gsharp_id_5_step;
 };
-extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__HoistedNameIdentityKernels__SiblingBlockSameLabelKernel(GSharpArray<int> __gsharp_id_0_output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__HoistedNameIdentityKernels__SiblingBlockSameLabelKernel* __gsharp_ctx){
+extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__HoistedNameIdentityKernels__SiblingBlockSameLabelKernel(GSharpArray<int> __gsharp_in___gsharp_id_0_output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__HoistedNameIdentityKernels__SiblingBlockSameLabelKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
 auto* __gsharp_root = __gsharp_ctx;
+if(__gsharp_state==0){
+__gsharp_ctx->__gsharp_id_0_output=__gsharp_in___gsharp_id_0_output;
+}
 switch(__gsharp_state)
 {
 case 0:
@@ -1209,7 +1245,7 @@ goto __gsharp_id_6_done;
 }
 __gsharp_ctx->__gsharp_id_2_acc=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_2_acc,2000);
 __gsharp_id_6_done:;
-__gsharp_id_0_output[__gsharp_ctx->__gsharp_id_1_t]=__gsharp_ctx->__gsharp_id_2_acc;
+__gsharp_ctx->__gsharp_id_0_output[__gsharp_ctx->__gsharp_id_1_t]=__gsharp_ctx->__gsharp_id_2_acc;
 __gsharp_state=-1;
 return;
 }
@@ -1294,13 +1330,17 @@ public static readonly string SiblingBlockSameLabelKernel_FullSource=global::Kas
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__HoistedNameIdentityKernels__SiblingBlockSameLabelKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
+public int[] output;
 public int t;
 public int acc;
 public int __gsharp_id_3_step;
 public int __gsharp_id_5_step;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__HoistedNameIdentityKernels__SiblingBlockSameLabelKernel(int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__HoistedNameIdentityKernels__SiblingBlockSameLabelKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__HoistedNameIdentityKernels__SiblingBlockSameLabelKernel(int[] __gsharp_in_output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__HoistedNameIdentityKernels__SiblingBlockSameLabelKernel __gsharp_ctx) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.output = __gsharp_in_output;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -1342,7 +1382,7 @@ goto __gsharp_label_2_done;
 __gsharp_ctx.acc += 2000;
 __gsharp_label_2_done:
 ;
-output[__gsharp_ctx.t] = __gsharp_ctx.acc;
+__gsharp_ctx.output[__gsharp_ctx.t] = __gsharp_ctx.acc;
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }

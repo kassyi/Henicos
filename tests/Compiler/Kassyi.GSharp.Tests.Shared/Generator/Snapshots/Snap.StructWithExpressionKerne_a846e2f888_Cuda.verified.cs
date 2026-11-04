@@ -180,18 +180,24 @@ public partial class StructWithExpressionKernels
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__StructWithExpressionKernels__SuspendingWith {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
+internal global::Kassyi.GSharp.Tests.Shared.Syntax.WithPlainStruct p;
+internal int tid;
 internal global::Kassyi.GSharp.Tests.Shared.Syntax.WithPlainStruct q;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__StructWithExpressionKernels__SuspendingWith(global::Kassyi.GSharp.Tests.Shared.Syntax.WithPlainStruct p, int tid, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__StructWithExpressionKernels__SuspendingWith __gsharp_ctx, ref int __gsharp_result) {
+public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__StructWithExpressionKernels__SuspendingWith(global::Kassyi.GSharp.Tests.Shared.Syntax.WithPlainStruct __gsharp_in_p, int __gsharp_in_tid, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__StructWithExpressionKernels__SuspendingWith __gsharp_ctx, ref int __gsharp_result) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.p = __gsharp_in_p;
+__gsharp_ctx.tid = __gsharp_in_tid;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_ctx.q = p with
+__gsharp_ctx.q = __gsharp_ctx.p with
 {
-Y = tid + 1
+Y = __gsharp_ctx.tid + 1
 };
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
