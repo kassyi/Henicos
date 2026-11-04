@@ -213,18 +213,12 @@ public static unsafe class GpuKernelLoader
         DeviceErrorSlot.RegisterErrorSites(aotFatbin, sites);
 
     /// <summary>
-    /// Clears the pinned device error slot before a kernel launch or test.
-    /// </summary>
-    public static void ResetDeviceErrorSlot() =>
-        DeviceErrorSlot.ResetSlot();
-
-    /// <summary>
     /// Inspects the pinned device error slot and throws the corresponding standard .NET exception if a device error was recorded.
     /// </summary>
     /// <param name="gridDim">Optional launch grid dimensions used when unpacking 3D block coordinates.</param>
     /// <param name="innerException">Optional inner <see cref="CudaException"/> from the CUDA driver.</param>
     /// <remarks>
-    /// <b>[NOTE]:</b> The error slot is shared process-wide across all streams and modules (#1056 item 4). When multiple kernels
+    /// <b>[NOTE]:</b> The error slot is shared process-wide across all streams and modules. When multiple kernels
     /// are in flight and a trap occurs, whichever thread/call executes this method first consumes and clears the slot.
     /// </remarks>
     public static void ThrowIfDeviceError((int X, int Y, int Z) gridDim = default, Exception? innerException = null) =>

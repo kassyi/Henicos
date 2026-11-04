@@ -37,7 +37,7 @@ public enum GSharpErrorCode
 }
 
 /// <summary>
-/// Represents a 1-based or deterministic 31-bit error site recorded by the transpiler (#729, #1056).
+/// Represents a 1-based or deterministic 31-bit error site recorded by the transpiler (#729).
 /// </summary>
 /// <param name="SiteId">The deterministic 31-bit site ID.</param>
 /// <param name="File">The source file name where the trap expression was evaluated.</param>
@@ -54,7 +54,7 @@ public readonly record struct GSharpErrorSite(
     string DefaultMessage);
 
 /// <summary>
-/// Represents the 24-byte pinned host-mapped device error slot shared with CUDA modules (#729, #1056).
+/// Represents the 24-byte pinned host-mapped device error slot shared with CUDA modules (#729).
 /// </summary>
 [StructLayout(LayoutKind.Sequential)]
 public struct GSharpDeviceErrorSlot
@@ -70,7 +70,7 @@ public struct GSharpDeviceErrorSlot
     public uint SiteId;
 
     /// <summary>
-    /// Explicit 1-based module ID assigned to the containing CUDA module or dynamic library (#1056 item 5).
+    /// Explicit 1-based module ID assigned to the containing CUDA module or dynamic library.
     /// </summary>
     public uint ModuleId;
 
@@ -80,7 +80,7 @@ public struct GSharpDeviceErrorSlot
     public uint ThreadLinear;
 
     /// <summary>
-    /// Block X coordinate (<c>blockIdx.x</c>). Preserves large grid coordinates up to 2^31 - 1 (#1056 item 2).
+    /// Block X coordinate (<c>blockIdx.x</c>). Preserves large grid coordinates up to 2^31 - 1.
     /// </summary>
     public uint BlockX;
 
@@ -294,7 +294,7 @@ public static class GSharpErrorMapper
         ((int)(threadLinear & 0x3FFu), (int)((threadLinear >> 10) & 0x3FFu), (int)((threadLinear >> 20) & 0x3FFu));
 
     /// <summary>
-    /// Unpacks 3D block coordinates from the error slot fields <paramref name="blockX"/> and <paramref name="blockYZ"/> (#1056 item 2).
+    /// Unpacks 3D block coordinates from the error slot fields <paramref name="blockX"/> and <paramref name="blockYZ"/>.
     /// </summary>
     /// <param name="blockX">The 32-bit block X coordinate (<c>blockIdx.x</c>).</param>
     /// <param name="blockYZ">The packed block Y and Z coordinates (<c>blockIdx.y | (blockIdx.z &lt;&lt; 16)</c>).</param>
@@ -390,7 +390,7 @@ public static class GSharpErrorMapper
 
 
     /// <summary>
-    /// Creates a standard .NET exception for the specified <see cref="GSharpErrorCode"/>, explicit site ID, module ID, and block coordinates (#1056 item 2, item 5).
+    /// Creates a standard .NET exception for the specified <see cref="GSharpErrorCode"/>, explicit site ID, module ID, and block coordinates.
     /// </summary>
     /// <param name="code">The runtime error code.</param>
     /// <param name="siteId">The 1-based local error site ID.</param>
@@ -466,7 +466,7 @@ public static class GSharpErrorMapper
         }
         else
         {
-            // Consistent exception message format across CUDA and Native CPU (#1056 item 1)
+            // Consistent exception message format across CUDA and Native CPU
             formattedMessage = $"{baseMessage} in thread {threadCoord} of block {blockCoordStr}";
         }
 

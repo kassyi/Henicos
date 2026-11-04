@@ -7,7 +7,7 @@ using System.Threading;
 using Kassyi.GSharp.Runtime.Interop;
 
 /// <summary>
-/// Manages the process-wide pinned host-mapped error slot shared between the host and device kernels (#729, #1056).
+/// Manages the process-wide pinned host-mapped error slot shared between the host and device kernels (#729).
 /// </summary>
 /// <remarks>
 /// <para>
@@ -177,21 +177,6 @@ public static unsafe class DeviceErrorSlot
             *s_hostErrorSlot = default;
             Volatile.Write(ref s_hostErrorSlot->Code, 0u);
             return true;
-        }
-    }
-
-    /// <summary>
-    /// Explicitly resets the pinned device error slot to default state.
-    /// </summary>
-    public static void ResetSlot()
-    {
-        lock (s_errorSlotLock)
-        {
-            if (s_hostErrorSlot != null)
-            {
-                *s_hostErrorSlot = default;
-                Volatile.Write(ref s_hostErrorSlot->Code, 0u);
-            }
         }
     }
 

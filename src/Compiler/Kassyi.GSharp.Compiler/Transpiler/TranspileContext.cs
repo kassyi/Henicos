@@ -44,7 +44,7 @@ public struct Emitter(
     public int CallableDepth;
 
     /// <summary>
-    /// The compile-time error site table used to record source locations for device runtime traps (#729, #1056).
+    /// The compile-time error site table used to record source locations for device runtime traps (#729).
     /// </summary>
     internal ErrorSiteTable? ErrorSites;
 
