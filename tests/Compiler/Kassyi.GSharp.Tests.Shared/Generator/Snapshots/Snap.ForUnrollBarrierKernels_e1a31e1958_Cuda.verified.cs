@@ -91,16 +91,24 @@ public partial class ForUnrollBarrierKernels
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__ForUnrollBarrierKernels__Neighbor {
 internal int __gsharp_state;
 internal uint __gsharp_warp_exchange;
+internal int[] buffer;
+internal int tid;
+internal int value;
 internal int r;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__ForUnrollBarrierKernels__Neighbor(int[] buffer, int tid, int value, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__ForUnrollBarrierKernels__Neighbor __gsharp_ctx, ref int __gsharp_result) {
+public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__ForUnrollBarrierKernels__Neighbor(int[] __gsharp_in_buffer, int __gsharp_in_tid, int __gsharp_in_value, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__ForUnrollBarrierKernels__Neighbor __gsharp_ctx, ref int __gsharp_result) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.buffer = __gsharp_in_buffer;
+__gsharp_ctx.tid = __gsharp_in_tid;
+__gsharp_ctx.value = __gsharp_in_value;
+}
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-buffer[tid] = value;
+__gsharp_ctx.buffer[__gsharp_ctx.tid] = __gsharp_ctx.value;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
 return false;
@@ -108,7 +116,7 @@ return false;
 
 case 1:
 {
-__gsharp_ctx.r = buffer[(tid + 1) % 4];
+__gsharp_ctx.r = __gsharp_ctx.buffer[(__gsharp_ctx.tid + 1) % 4];
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 2;
 return false;

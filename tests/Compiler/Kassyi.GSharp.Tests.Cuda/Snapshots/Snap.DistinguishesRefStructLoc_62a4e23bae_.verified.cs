@@ -13,7 +13,7 @@
         {
             __gsharp_ctx->tid = ThreadIndex.X;
             __gsharp_ctx->__gsharp_il_1_2_s = __gsharp_ctx->tid * 2;
-            __gsharp_il_1_3_view = output;
+            __gsharp_il_1_3_view = __gsharp_ctx->output;
             __gsharp_yielded_for_block_barrier = true;
             __gsharp_state = 1;
             return;
@@ -21,10 +21,10 @@
 
         case 1:
         {
-            __gsharp_il_1_3_view = output;
+            __gsharp_il_1_3_view = __gsharp_ctx->output;
             __gsharp_il_1_3_view[__gsharp_ctx->tid] = __gsharp_ctx->__gsharp_il_1_2_s;
             __gsharp_ctx->__gsharp_il_2_2_s = __gsharp_ctx->tid * 2;
-            __gsharp_il_2_3_view = output;
+            __gsharp_il_2_3_view = __gsharp_ctx->output;
             __gsharp_yielded_for_block_barrier = true;
             __gsharp_state = 2;
             return;
@@ -32,7 +32,7 @@
 
         case 2:
         {
-            __gsharp_il_2_3_view = output;
+            __gsharp_il_2_3_view = __gsharp_ctx->output;
             __gsharp_il_2_3_view[__gsharp_ctx->tid] = __gsharp_ctx->__gsharp_il_2_2_s;
             __gsharp_state = -1;
             return;
