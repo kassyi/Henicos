@@ -94,7 +94,7 @@ internal static class CrossBarrierChecks
             return;
         }
 
-        KernelConstructChecks.CollectStackPointerLocals(scan);
+        StackPointerProvenance.CollectStackPointerLocals(scan);
 
         // The tracked locals, then the by-value ref struct parameters
         var variables = ImmutableArray.CreateBuilder<ISymbol>(scan.TrackedLocals.Count);

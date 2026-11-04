@@ -482,6 +482,45 @@ public static partial class CrossBarrierFlowKernels
         outData[0] = *r;
     }
 
+    // GSH0041: ternary expression whose branch reads stack pointer before Broadcast (#1040 1c)
+    [GpuDeviceFunction]
+    public static unsafe int ConditionalReadStackPointerBeforeBroadcast(bool c)
+    {
+        int* p = stackalloc int[4];
+        p[0] = 42;
+        return (c ? p[0] : 0) + Broadcast(0);
+    }
+
+    // GSH0041: stack pointer derived via increment operator crosses barrier (#1040 3a)
+    [GpuKernel]
+    public static unsafe void StackPointerDerivedViaIncrementKernel(int[] outData)
+    {
+        int* p = stackalloc int[4];
+        int* q = ++p;
+        Gpu.SyncThreads();
+        outData[0] = *q;
+    }
+
+    // GSH0041: stack pointer derived via chained assignment crosses barrier (#1040 3b)
+    [GpuKernel]
+    public static unsafe void StackPointerDerivedViaChainedAssignmentKernel(int[] outData)
+    {
+        int* p;
+        int* q = p = stackalloc int[4];
+        Gpu.SyncThreads();
+        outData[0] = *q;
+    }
+
+    // GSH0041: stack pointer derived via switch expression crosses barrier (#1040 3c)
+    [GpuKernel]
+    public static unsafe void StackPointerDerivedViaSwitchExpressionKernel(int* globalPtr, int[] outData, int mode)
+    {
+        int* p = stackalloc int[4];
+        int* q = mode switch { 0 => p, _ => globalPtr };
+        Gpu.SyncThreads();
+        outData[0] = *q;
+    }
+
     // No diagnostic: a pointer derived from a global pointer parameter does not point to stack memory (#1004 F11 control)
     [GpuKernel]
     public static unsafe void GlobalPointerArithmeticKernel(int* globalPtr, int[] outData)
