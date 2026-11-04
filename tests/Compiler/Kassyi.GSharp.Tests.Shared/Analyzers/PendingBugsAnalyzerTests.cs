@@ -118,6 +118,15 @@ public class PendingBugsAnalyzerTests : TranspilerTestBase
     [Scenario(TestScenario.SadPath)]
     public async Task Test_DirectSyncThreadsInGridStrideLoop_ReportsGSH0037()
     {
+        var (_, tree, _) =
+            RoslynTestUtility.GetTestCaseContext("Analyzers/PendingBugs/GridStrideLoopBarrierKernels.cu.cs");
+
+        var syncThreadsInvocation = tree.GetRoot()
+            .DescendantNodes()
+            .OfType<InvocationExpressionSyntax>()
+            .Single(inv => inv.Expression.ToString() == "Gpu.SyncThreads");
+        var expectedSpan = syncThreadsInvocation.GetLocation().GetLineSpan();
+
         var diagnostics = await TestAnalyzer(
                 "Analyzers/PendingBugs/GridStrideLoopBarrierKernels.cu.cs",
                 s_barrierAnalyzer)
@@ -127,10 +136,12 @@ public class PendingBugsAnalyzerTests : TranspilerTestBase
             .Where(d => d.Id == GSharpDiagnostics.DivergentBarrierProhibited.Id)
             .ToArray();
         var gsh0062 = diagnostics
-            .Where(d => d.Id == "GSH0062")
+            .Where(d => d.Id == GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id)
             .ToArray();
 
-        Assert.Single(gsh0037);
+        var diagnostic = Assert.Single(gsh0037);
+        Assert.Equal(GSharpDiagnostics.DivergentBarrierProhibited.Id, diagnostic.Id);
+        Assert.Equal(expectedSpan.Span, diagnostic.Location.GetLineSpan().Span);
         Assert.Empty(gsh0062);
     }
 
