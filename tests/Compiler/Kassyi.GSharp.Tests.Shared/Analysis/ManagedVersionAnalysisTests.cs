@@ -26,6 +26,9 @@ public class ManagedVersionAnalysisTests
     [InlineData("Functions", "FloatSumDirect")]
     [InlineData("Functions", "DoubleSumSelector")]
     [InlineData("Functions", "CallsFloatSum")]
+    [InlineData("Functions", "InlinePtxDirect")]
+    [InlineData("Functions", "InlinePtxUnqualified")]
+    [InlineData("Functions", "CallsInlinePtx")]
     [InlineData("Extensions", "Doubled")]
     [InlineData("Extensions", "AddToIndex")]
     [InlineData("Extensions", "AddGeneric")]
@@ -41,6 +44,7 @@ public class ManagedVersionAnalysisTests
     [InlineData("CallsPlain")]
     [InlineData("Add")]
     [InlineData("IntSumPlain")]
+    [InlineData("UserInlinePtx")]
     public void Test_Needs_ReachesNoOperatorMacro_IsFalse(string name)
     {
         Assert.False(ManagedVersionAnalysis.Needs(GetMethod("Functions", name), s_compilation));
@@ -90,10 +94,14 @@ public class ManagedVersionAnalysisTests
         Assert.True(HasDirectRewrite("Suspends"));
         Assert.True(HasDirectRewrite("FloatSumDirect"));
         Assert.True(HasDirectRewrite("DoubleSumSelector"));
+        Assert.True(HasDirectRewrite("InlinePtxDirect"));
+        Assert.True(HasDirectRewrite("InlinePtxUnqualified"));
         Assert.False(HasDirectRewrite("Transitive"));
         Assert.False(HasDirectRewrite("CallsFloatSum"));
+        Assert.False(HasDirectRewrite("CallsInlinePtx"));
         Assert.False(HasDirectRewrite("Plain"));
         Assert.False(HasDirectRewrite("IntSumPlain"));
+        Assert.False(HasDirectRewrite("UserInlinePtx"));
     }
 
     [Fact]
@@ -212,6 +220,68 @@ public class ManagedVersionAnalysisTests
         var caller = GenerateManagedVersion("Callers", "CallsNested");
         Assert.Contains("global::ManagedVersionCases.Outer.Inner.Nested(ref ctx, a)", caller);
         Assert.Contains($"global::ManagedVersionCases.Functions.{ManagedName("Functions", "Direct")}(ref ctx, a)", caller);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void Test_ManagedRewrite_UserDefinedInlinePtx_IsNotReplacedWithThrow()
+    {
+        var method = GetMethod("Functions", "UserInlinePtx");
+        Assert.True(method.TryGetDeclaringSyntax<MethodDeclarationSyntax>(out var declaration));
+        var body = declaration.GetBodyNode();
+        Assert.NotNull(body);
+
+        var model = s_compilation.GetSemanticModel(declaration.SyntaxTree);
+        var rewritten = new ManagedExecutionRewriter(model, ManagedBodyKind.ManagedVersion,
+                new ManagedAccessorSet(method, s_compilation))
+            .Visit(body)?.ToFullString();
+
+        Assert.NotNull(rewritten);
+        Assert.Contains("global::ManagedVersionCases.Lookalike.InlinePtx(\"nop;\");", rewritten);
+        Assert.DoesNotContain("NotSupportedException", rewritten);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_ManagedRewrite_UnqualifiedInlinePtx_IsReplacedWithThrow()
+    {
+        var method = GetMethod("Functions", "InlinePtxUnqualified");
+        Assert.True(method.TryGetDeclaringSyntax<MethodDeclarationSyntax>(out var declaration));
+        var body = declaration.GetBodyNode();
+        Assert.NotNull(body);
+
+        var model = s_compilation.GetSemanticModel(declaration.SyntaxTree);
+        var rewritten = new ManagedExecutionRewriter(model, ManagedBodyKind.ManagedVersion,
+                new ManagedAccessorSet(method, s_compilation))
+            .Visit(body)?.ToFullString();
+
+        Assert.NotNull(rewritten);
+        Assert.Contains(
+            "throw new global::System.NotSupportedException(\"Gpu.InlinePtx is not supported by the StandardCppDialect dialect\");",
+            rewritten);
+        Assert.DoesNotContain("InlinePtx(\"nop;\")", rewritten);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_ManagedVersion_RewritesQualifiedAndUnqualifiedInlinePtxToThrow()
+    {
+        var directSource = GenerateManagedVersion("Functions", "InlinePtxDirect");
+        var unqualifiedSource = GenerateManagedVersion("Functions", "InlinePtxUnqualified");
+        var callerSource = GenerateManagedVersion("Functions", "CallsInlinePtx");
+
+        const string ExpectedThrow =
+            "throw new global::System.NotSupportedException(\"Gpu.InlinePtx is not supported by the StandardCppDialect dialect\");";
+
+        Assert.Contains(ExpectedThrow, directSource);
+        Assert.DoesNotContain("InlinePtx(\"nop;\")", directSource);
+
+        Assert.Contains(ExpectedThrow, unqualifiedSource);
+        Assert.DoesNotContain("InlinePtx(\"nop;\")", unqualifiedSource);
+
+        Assert.Contains(
+            $"global::ManagedVersionCases.Functions.{ManagedName("Functions", "InlinePtxDirect")}()",
+            callerSource);
     }
 
     private static bool HasDirectRewrite(string name)

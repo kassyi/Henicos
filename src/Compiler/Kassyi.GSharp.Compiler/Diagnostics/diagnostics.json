@@ -822,6 +822,15 @@
     "isEnabledByDefault": true
   },
   {
+    "name": "KernelParameterConflictsWithLaunchParameter",
+    "id": "GSH0106",
+    "title": "Kernel parameter name conflicts with a launch parameter",
+    "messageFormat": "Parameter '{0}' of kernel '{1}' has the same name as a launch wrapper parameter ({2}). Rename the parameter.",
+    "category": "GSharpTranspiler",
+    "defaultSeverity": "Error",
+    "isEnabledByDefault": true
+  },
+  {
     "name": "StackLinqChainTooDeep",
     "id": "SLQ0001",
     "title": "StackLinq method chain is too deep",
