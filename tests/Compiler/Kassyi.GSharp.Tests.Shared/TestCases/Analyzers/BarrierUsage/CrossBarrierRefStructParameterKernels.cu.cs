@@ -378,6 +378,39 @@ public static partial class CrossBarrierRefStructParameterKernels
         return holder.Target;
     }
 
+    // GSH0039: ternary expression whose branch reads the sliced span before Broadcast (#1040 1a)
+    [GpuDeviceFunction]
+    public static int ConditionalReadSpanBeforeBroadcast(Span<int> s, bool c)
+    {
+        s = s.Slice(1);
+        return (c ? s[0] : 0) + Broadcast(0);
+    }
+
+    // GSH0039: ternary expression whose branch reads the sliced local span before Broadcast (#1040 1b)
+    [GpuDeviceFunction]
+    public static int ConditionalReadLocalSpanBeforeBroadcast(Span<int> s, bool c)
+    {
+        Span<int> tail = s.Slice(1);
+        return (c ? tail[0] : 0) + Broadcast(0);
+    }
+
+    // GSH0039: ternary element ref assignment where one branch mutates sliced span across Broadcast (#1040 1d)
+    [GpuDeviceFunction]
+    public static void ConditionalRefAssignSpanAcrossBroadcast(Span<int> s, Span<int> other, bool c)
+    {
+        s = s.Slice(1);
+        (c ? ref s[0] : ref other[0]) = Broadcast(99);
+    }
+
+    // GSH0039: multi-branch ref ternary mutation marks all captured parameter targets as changed (#1040 2a)
+    [GpuDeviceFunction]
+    public static int MultiBranchRefCapturePropertyMutation(PropertyCursor a, PropertyCursor b, bool c)
+    {
+        (c ? ref a.Position : ref b.Position) = 1;
+        Gpu.SyncThreads();
+        return a.Position;
+    }
+
     // --- Not reported (#1004 controls) ---
 
     // A non-suspending call that mutates ref s without any subsequent barrier
