@@ -1,5 +1,4 @@
 using Kassyi.GSharp.Tests.Shared.Helpers;
-using Kassyi.GSharp.Tests.TestCases.Emission;
 using Xunit;
 #if GSHARP_CPU
 using System;
