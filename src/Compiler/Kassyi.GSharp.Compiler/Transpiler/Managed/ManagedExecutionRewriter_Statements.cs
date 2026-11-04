@@ -6,13 +6,11 @@ internal sealed partial class ManagedExecutionRewriter
 {
     public override SyntaxNode? VisitExpressionStatement(ExpressionStatementSyntax node)
     {
-        if (node.Expression is InvocationExpressionSyntax
-            {
-                Expression: MemberAccessExpressionSyntax { Name.Identifier.Text: TypeConstants.GpuMacros.InlinePtx }
-            })
+        if (node.Expression is InvocationExpressionSyntax inlinePtx &&
+            DialectCallSupport.IsUnsupportedInlinePtxCall(inlinePtx, semanticModel, HostDialects.Cpu))
         {
             return SyntaxFactory.ParseStatement(
-                    "throw new global::System.NotSupportedException(\"Gpu.InlinePtx is not supported by the StandardCppDialect dialect\");")
+                    $"throw new global::System.NotSupportedException(\"{DialectCallSupport.GetInlinePtxUnsupportedMessage(HostDialects.Cpu.Name)}\");")
                 .WithTriviaFrom(node);
         }
 
@@ -407,11 +405,11 @@ internal sealed partial class ManagedExecutionRewriter
             SyntaxFactory.AssignmentExpression(SyntaxKind.SimpleAssignmentExpression, target, value)
         );
 
-    // __gsharp_ctx.__gsharp_state = <state>;
-    private static ExpressionStatementSyntax CreateContextStateAssignment(int state) =>
+    // __gsharp_ctx->__gsharp_state = <state>;
+    private ExpressionStatementSyntax CreateContextStateAssignment(int state) =>
         CreateAssignment(
             SyntaxFactory.MemberAccessExpression(
-                SyntaxKind.SimpleMemberAccessExpression,
+                _isUnsafe ? SyntaxKind.PointerMemberAccessExpression : SyntaxKind.SimpleMemberAccessExpression,
                 SyntaxFactory.IdentifierName(GSharpInternalNames.StateMachine.Context),
                 SyntaxFactory.IdentifierName(GSharpInternalNames.StateMachine.State)
             ),

@@ -23,3 +23,8 @@ public static class ThreadIndex
 {
     public static int X => 0;
 }
+
+public static class Interlocked
+{
+    public static int Add(ref int location1, int value) => location1 += value;
+}

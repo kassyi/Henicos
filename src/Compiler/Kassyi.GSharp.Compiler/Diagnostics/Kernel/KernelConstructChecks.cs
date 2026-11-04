@@ -143,20 +143,16 @@ internal static class KernelConstructChecks
         }
 
         var isRefLikeOrRef = (localSym.Type.IsRefLikeType && !localSym.Type.IsSharedMemoryType()) || localSym.IsRef;
-        var isLocalPointer = localSym.Type is IPointerTypeSymbol &&
-            varDecl.Initializer != null &&
-            varDecl.Initializer.DescendantNodes()
-                .AsStackEnumerable()
-                .Any(static initChild =>
-                    initChild is StackAllocArrayCreationExpressionSyntax
-                        or ImplicitStackAllocArrayCreationExpressionSyntax ||
-                    initChild.IsKind(SyntaxKind.AddressOfExpression)
-                );
         var isIteratorLocal = IteratorTypeResolver.IsGenericIEnumerable(localSym.Type, out _);
 
-        if (isRefLikeOrRef || isLocalPointer || isIteratorLocal)
+        if (isRefLikeOrRef || isIteratorLocal)
         {
-            scan.TrackedLocals.Add(new TrackedLocalInfo(varDecl, localSym, isRefLikeOrRef, isLocalPointer, isIteratorLocal));
+            scan.TrackedLocals.Add(new TrackedLocalInfo(varDecl, localSym, isRefLikeOrRef, isLocalPointer: false, isIteratorLocal));
+        }
+        else if (localSym.Type is IPointerTypeSymbol)
+        {
+            scan.PointerLocals.Add((varDecl, localSym));
         }
     }
+
 }
