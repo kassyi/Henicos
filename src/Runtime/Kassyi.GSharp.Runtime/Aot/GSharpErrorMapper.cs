@@ -303,41 +303,6 @@ public static class GSharpErrorMapper
         ((int)blockX, (int)(blockYZ & 0xFFFFu), (int)((blockYZ >> 16) & 0xFFFFu));
 
     /// <summary>
-    /// Unpacks 3D block coordinates from a linearized block index and grid dimensions.
-    /// </summary>
-    /// <param name="blockLinear">The linearized block index.</param>
-    /// <param name="gridDim">The 3D grid dimensions <c>(X, Y, Z)</c>.</param>
-    /// <returns>The unpacked <c>(X, Y, Z)</c> block coordinates.</returns>
-    public static (int X, int Y, int Z) UnpackBlockIndex(uint blockLinear, (int X, int Y, int Z) gridDim)
-    {
-        var gx = gridDim.X > 0 ? (uint)gridDim.X : 1u;
-        var gy = gridDim.Y > 0 ? (uint)gridDim.Y : 1u;
-        var bx = (int)(blockLinear % gx);
-        var q = blockLinear / gx;
-        var by = (int)(q % gy);
-        var bz = (int)(q / gy);
-        return (bx, by, bz);
-    }
-
-    /// <summary>
-    /// Unpacks the optional compact grid dimensions encoded in bits 20..31 of <see cref="GSharpDeviceErrorSlot.Code"/>.
-    /// </summary>
-    /// <param name="rawCode">The raw 32-bit code value from the device error slot.</param>
-    /// <param name="fallbackGridDim">The fallback grid dimensions when compact dimensions were not encoded.</param>
-    /// <returns>The resolved <c>(X, Y, Z)</c> grid dimensions.</returns>
-    public static (int X, int Y, int Z) UnpackGridDimFromCode(uint rawCode, (int X, int Y, int Z) fallbackGridDim)
-    {
-        var gx = (int)((rawCode >> 20) & 0x3Fu);
-        var gy = (int)((rawCode >> 26) & 0x3Fu);
-        if (gx > 0 && gy > 0)
-        {
-            return (gx, gy, fallbackGridDim.Z > 0 ? fallbackGridDim.Z : 1);
-        }
-
-        return fallbackGridDim;
-    }
-
-    /// <summary>
     /// Returns the default base message for a <see cref="GSharpErrorCode"/> when neither a site message nor an explicit message is present.
     /// </summary>
     /// <param name="code">The runtime error code.</param>
@@ -361,14 +326,12 @@ public static class GSharpErrorMapper
     /// Creates a standard .NET exception from a <see cref="GSharpDeviceErrorSlot"/>, populating <see cref="Exception.Data"/>.
     /// </summary>
     /// <param name="slot">The device error slot read from pinned host memory.</param>
-    /// <param name="gridDim">Optional fallback 3D grid dimensions.</param>
     /// <param name="innerException">An optional inner exception (such as <see cref="CudaException"/>).</param>
     /// <param name="explicitMessage">An optional explicit message overriding the site message.</param>
     /// <param name="preserveRawMessageWhenNoSite">Whether to preserve <paramref name="explicitMessage"/> verbatim when no site metadata is registered.</param>
     /// <returns>The constructed standard .NET exception.</returns>
     public static Exception CreateExceptionFromSlot(
         in GSharpDeviceErrorSlot slot,
-        (int X, int Y, int Z) gridDim = default,
         Exception? innerException = null,
         string? explicitMessage = null,
         bool preserveRawMessageWhenNoSite = false)

@@ -109,17 +109,16 @@ public static unsafe class DeviceErrorSlot
     /// <summary>
     /// Inspects the pinned device error slot and throws the corresponding standard .NET exception if a device error was recorded.
     /// </summary>
-    /// <param name="gridDim">Optional launch grid dimensions (ignored with modern direct 3D coordinate decoding).</param>
     /// <param name="innerException">Optional inner <see cref="CudaException"/> from the CUDA driver.</param>
     /// <remarks>
     /// <b>[NOTE]:</b> The error slot is shared process-wide across all streams and modules. When multiple kernels are in flight
     /// and a trap occurs, whichever thread/call executes this method first consumes and clears the slot.
     /// </remarks>
-    public static void ThrowIfDeviceError((int X, int Y, int Z) gridDim = default, Exception? innerException = null)
+    public static void ThrowIfDeviceError(Exception? innerException = null)
     {
         if (TryConsumeSlot(out var slot))
         {
-            throw GSharpErrorMapper.CreateExceptionFromSlot(in slot, gridDim, innerException);
+            throw GSharpErrorMapper.CreateExceptionFromSlot(in slot, innerException);
         }
     }
 
@@ -136,7 +135,6 @@ public static unsafe class DeviceErrorSlot
         {
             return GSharpErrorMapper.CreateExceptionFromSlot(
                 in slot,
-                gridDim: (1, 1, 1),
                 innerException: cudaEx);
         }
 

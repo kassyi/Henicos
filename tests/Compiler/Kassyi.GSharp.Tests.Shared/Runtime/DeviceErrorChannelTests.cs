@@ -46,15 +46,12 @@ public sealed class DeviceErrorChannelTests
                 new GSharpErrorSite(1u, "MyKernels.cu.cs", 42, 13, "MyKernel", $"Custom error for {code}")
             ]);
 
-        var compositeSiteId = (moduleId << 20) | 1u;
         var packedThread = GSharpErrorMapper.PackThreadIndex(7, 3, 1);
-        var gridDim = (X: 5, Y: 6, Z: 2);
-        var blockLinear = (uint)((1 * gridDim.Y + 4) * gridDim.X + 2);
         var innerCuda = new CudaException(CUresult.CudaErrorIllegalInstruction);
 
         var slot = new GSharpDeviceErrorSlot
         {
-            Code = (uint)code | GSharpErrorMapper.CompletionBit | (5u << 20) | (6u << 26),
+            Code = (uint)code | GSharpErrorMapper.CompletionBit,
             SiteId = 1u,
             ModuleId = moduleId,
             ThreadLinear = packedThread,
@@ -62,7 +59,7 @@ public sealed class DeviceErrorChannelTests
             BlockYZ = 4u | (1u << 16)
         };
 
-        var ex = GSharpErrorMapper.CreateExceptionFromSlot(in slot, (1, 1, 1), innerCuda);
+        var ex = GSharpErrorMapper.CreateExceptionFromSlot(in slot, innerCuda);
 
         Assert.IsType(expectedExceptionType, ex);
         Assert.Same(innerCuda, ex.InnerException);
@@ -83,9 +80,8 @@ public sealed class DeviceErrorChannelTests
         var packedThread = GSharpErrorMapper.PackThreadIndex(511, 15, 3);
         Assert.Equal((511, 15, 3), GSharpErrorMapper.UnpackThreadIndex(packedThread));
 
-        var gridDim = (X: 7, Y: 11, Z: 5);
-        var blockLinear = (uint)((3 * gridDim.Y + 9) * gridDim.X + 4);
-        Assert.Equal((4, 9, 3), GSharpErrorMapper.UnpackBlockIndex(blockLinear, gridDim));
+        Assert.Equal((4, 9, 3), GSharpErrorMapper.UnpackBlockIndex(4u, 9u | (3u << 16)));
+        Assert.Equal((int.MaxValue, 65535, 65535), GSharpErrorMapper.UnpackBlockIndex(0x7FFFFFFFu, 0xFFFFFFFFu));
     }
 
     [Fact]
