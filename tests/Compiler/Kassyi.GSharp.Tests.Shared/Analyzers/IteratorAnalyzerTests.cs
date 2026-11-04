@@ -132,7 +132,7 @@ public class IteratorAnalyzerTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_IteratorInlineDepth_SadPath_ReportsGSH0070WhenExceedingMaxDepth()
+    public async Task Test_IteratorInlineDepth_NoDepthLimit_ReportsOnlyTheOtherDiagnostic()
     {
         var diagnostics = await GetDiagnosticsAsync("Analyzers/IteratorInlineDepth_SadPath.cs");
         Assert.DoesNotContain(diagnostics, static d => d.Id == "AD0001");
@@ -141,7 +141,6 @@ public class IteratorAnalyzerTests : TranspilerTestBase
 
         Assert.Equal(
             [
-                (GSharpDiagnostics.IteratorShapeNotSupported.Id, 155, 9, 158, 10),
                 (GSharpDiagnostics.StringNotSupported.Id, 159, 9, 159, 12)
             ],
             actual);
