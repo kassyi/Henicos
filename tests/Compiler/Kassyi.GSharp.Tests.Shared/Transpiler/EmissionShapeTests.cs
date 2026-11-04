@@ -402,6 +402,49 @@ public partial class EmissionShapeTests
         Assert.Contains($"ReadFirst({view}({storage.Groups[1].Value}))", body, StringComparison.Ordinal);
     }
 
+    [Theory]
+    [Scenario(TestScenario.SadPath)]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    public async Task RecursiveIterators_ReportGSH0070AndNoInternalCompilerError(string dialect)
+    {
+        var compilation = RoslynTestUtility.CreateCompilation(
+            RoslynTestUtility.ReadTestCase("Transpiler/Emission/RecursiveIteratorKernels.cu.cs"));
+
+        var run = await KernelDiagnostics.RunCompilationAsync(compilation, dialect);
+
+        // Verify no GSH0048 (internal compiler error)
+        Assert.DoesNotContain(run.Generator, static d => d.Id == GSharpDiagnostics.InternalCompilerError.Id);
+
+        // Verify no GSH0102 (method too complex)
+        Assert.DoesNotContain(run.Analyzer, static d => d.Id == GSharpDiagnostics.MethodTooComplexToCompile.Id);
+
+        // Verify GSH0070 is reported for Rec, MutualA, and MutualB with exact spans and no duplicates
+        var gsh0070Diagnostics = run.Analyzer
+            .Where(static d => d.Id == GSharpDiagnostics.IteratorShapeNotSupported.Id)
+            .OrderBy(static d => d.Location.GetLineSpan().StartLinePosition.Line)
+            .Select(static d =>
+            {
+                var span = d.Location.GetLineSpan().Span;
+                return (
+                    d.Id,
+                    span.Start.Line + 1,
+                    span.Start.Character + 1,
+                    span.End.Line + 1,
+                    span.End.Character + 1,
+                    d.GetMessage());
+            })
+            .ToList();
+
+        Assert.Equal(
+            [
+                (GSharpDiagnostics.IteratorShapeNotSupported.Id, 10, 36, 10, 39, "Iterator method 'Rec' is not supported on the GPU: recursive iterators are not supported."),
+                (GSharpDiagnostics.IteratorShapeNotSupported.Id, 33, 36, 33, 43, "Iterator method 'MutualA' is not supported on the GPU: recursive iterators are not supported."),
+                (GSharpDiagnostics.IteratorShapeNotSupported.Id, 46, 36, 46, 43, "Iterator method 'MutualB' is not supported on the GPU: recursive iterators are not supported.")
+            ],
+            gsh0070Diagnostics);
+    }
+
     [GeneratedRegex(@"(?m)^(\w+):;?$")]
     private static partial Regex LabelRegex();
 
