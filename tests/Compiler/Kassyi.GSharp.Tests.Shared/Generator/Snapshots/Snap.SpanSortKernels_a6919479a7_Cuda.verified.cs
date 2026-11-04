@@ -107,6 +107,11 @@ namespace Kassyi.GSharp.Tests.Shared.Syntax
 {
 public partial class SpanSortKernels
 {
+private static readonly global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[] s_errorSites = new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[]
+{
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(166922133u, "SpanSortKernels.cs", 277, 33, "SortTrappingComparisonKernel", "Index was out of range."),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(506488466u, "SpanSortKernels.cs", 277, 74, "SortTrappingComparisonKernel", "Index was out of range."),
+};
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static partial class AotContexts
@@ -2870,8 +2875,8 @@ if(((int)threadIdx.x|(int)threadIdx.y|(int)threadIdx.z|(int)blockIdx.x|(int)bloc
 {
 __gsharp_sort(__gsharp_id_0_data,[&](auto __gsharp_id_2_a, auto __gsharp_id_3_b) {
 return (([&]() {
-auto __gsharp_seq_0 = Kassyi::ZeroAlloc::Linq::StackLinq::ElementAt(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_id_1_table),__gsharp_id_2_a);
-auto __gsharp_seq_1 = Kassyi::ZeroAlloc::Linq::StackLinq::ElementAt(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_id_1_table),__gsharp_id_3_b);
+auto __gsharp_seq_0 = Kassyi::ZeroAlloc::Linq::StackLinq::ElementAt(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_id_1_table),__gsharp_id_2_a,166922133u);
+auto __gsharp_seq_1 = Kassyi::ZeroAlloc::Linq::StackLinq::ElementAt(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_id_1_table),__gsharp_id_3_b,506488466u);
 return __gsharp_seq_0<__gsharp_seq_1;
 }())?(-1):1);
 }
@@ -2887,6 +2892,15 @@ public static void WarmupFunctionPointerSortTrappingComparisonKernel()
 if (__gsharp_hfunc_SortTrappingComparisonKernel.HasValue) return;
 global::System.IntPtr __gsharp_hmodule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
 __gsharp_hfunc_SortTrappingComparisonKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(__gsharp_hmodule, "__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortTrappingComparisonKernel");
+if (s_errorSites.Length > 0)
+{
+var baseDir = global::System.IO.Path.GetDirectoryName(typeof(global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest).Assembly.Location) ?? global::System.AppContext.BaseDirectory;
+var fatbinPath = global::System.IO.Path.Combine(baseDir, "Kassyi.GSharp.Kernels_SnapshotTest.gfatbin");
+if (global::System.IO.File.Exists(fatbinPath))
+{
+global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.RegisterErrorSites(global::System.IO.File.ReadAllBytes(fatbinPath), s_errorSites);
+}
+}
 }
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]

@@ -24,16 +24,86 @@ public sealed class StackLinqTranspilerRule : IInvocationTranspilerRule
             }
         }
 
+        var sites = RegisterErrorSites(node, symbol, methodName, ref context);
         if (symbol.ReducedFrom != null && node.Expression is MemberAccessExpressionSyntax memberAccess)
         {
-            TranspileReducedCall(node, memberAccess.Expression, symbol, symbol.ReducedFrom, methodName, ref context);
+            TranspileReducedCall(node, memberAccess.Expression, symbol, symbol.ReducedFrom, methodName, sites, ref context);
         }
         else
         {
-            TranspileStaticCall(node, symbol, methodName, ref context);
+            TranspileStaticCall(node, symbol, methodName, sites, ref context);
         }
 
         return true;
+    }
+
+    // Registers the error sites of a trapping terminal; the ids are appended after its arguments (zero: no site)
+    private static (uint First, uint Second) RegisterErrorSites(
+        InvocationExpressionSyntax node,
+        IMethodSymbol symbol,
+        string methodName,
+        ref TranspileContext context)
+    {
+        var table = context.Emitter.ErrorSites;
+        if (table == null)
+        {
+            return (0u, 0u);
+        }
+
+        var model = context.Query.SemanticModel;
+        var memberName = context.Emitter.CurrentMemberName ?? symbol.Name;
+        var hasPredicate = StackLinqHelper.GetStageArgumentCount(symbol) > 0;
+        switch (methodName)
+        {
+            case "ElementAt":
+                return (table.Register(node, model, memberName, "Index was out of range.", "ElementAt"), 0u);
+            case "First" when hasPredicate:
+                return (table.Register(node, model, memberName, "Sequence contains no matching element", "First.Predicate"), 0u);
+            case "First":
+                return (table.Register(node, model, memberName, "Sequence contains no elements", "First"), 0u);
+            case "Last":
+            case "Aggregate" when !HasSeedParameter(symbol):
+            case "Max":
+            case "Min":
+            case "Average":
+                return (table.Register(node, model, memberName, "Sequence contains no elements", methodName), 0u);
+            case "Single" when hasPredicate:
+                return (
+                    table.Register(node, model, memberName, "Sequence contains more than one matching element", "Single.MoreThanOneMatching"),
+                    table.Register(node, model, memberName, "Sequence contains no matching element", "Single.NoMatching")
+                );
+            case "Single":
+                return (
+                    table.Register(node, model, memberName, "Sequence contains no elements", "Single.Empty"),
+                    table.Register(node, model, memberName, "Sequence contains more than one element", "Single.MoreThanOne")
+                );
+            case "SingleOrDefault" when hasPredicate:
+                return (table.Register(node, model, memberName, "Sequence contains more than one matching element", "SingleOrDefault.MoreThanOneMatching"), 0u);
+            case "SingleOrDefault":
+                return (table.Register(node, model, memberName, "Sequence contains more than one element", "SingleOrDefault.MoreThanOne"), 0u);
+            default:
+                return (0u, 0u);
+        }
+    }
+
+    private static bool HasSeedParameter(IMethodSymbol symbol) =>
+        symbol.Parameters
+            .AsStackEnumerable()
+            .Any(static p => p.Name == "seed");
+
+    // ,<site>u[,<site>u]
+    private static void AppendErrorSites((uint First, uint Second) sites, ref TranspileContext context)
+    {
+        if (sites.First == 0)
+        {
+            return;
+        }
+
+        context.Emitter.Writer.Append($",{sites.First}u");
+        if (sites.Second != 0)
+        {
+            context.Emitter.Writer.Append($",{sites.Second}u");
+        }
     }
 
     private static void TranspileReducedCall(
@@ -42,6 +112,7 @@ public sealed class StackLinqTranspilerRule : IInvocationTranspilerRule
         IMethodSymbol symbol,
         IMethodSymbol extension,
         string methodName,
+        (uint First, uint Second) sites,
         ref TranspileContext context)
     {
         using var sequence = EvaluationOrder.BeginExtensionCall(
@@ -67,6 +138,8 @@ public sealed class StackLinqTranspilerRule : IInvocationTranspilerRule
                 context.Emitter.Writer.Append(',');
                 AppendStageArgument(stageArg, symbol.Parameters[i], in sequence, ref context);
             }
+
+            AppendErrorSites(sites, ref context);
         }
     }
 
@@ -74,6 +147,7 @@ public sealed class StackLinqTranspilerRule : IInvocationTranspilerRule
         InvocationExpressionSyntax node,
         IMethodSymbol symbol,
         string methodName,
+        (uint First, uint Second) sites,
         ref TranspileContext context)
     {
         using var sequence = EvaluationOrder.BeginCall(
@@ -104,6 +178,8 @@ public sealed class StackLinqTranspilerRule : IInvocationTranspilerRule
                 context.Emitter.Writer.Append(',');
                 AppendStageArgument(stageArg, symbol.Parameters[i + 1], in sequence, ref context);
             }
+
+            AppendErrorSites(sites, ref context);
         }
     }
 

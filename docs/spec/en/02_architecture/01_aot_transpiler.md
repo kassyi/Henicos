@@ -363,6 +363,14 @@ A kernel can call a `[GpuDeviceFunction]` of a referenced assembly, use its stru
 - **Versions**: each record carries a hash of the preludes, `InternalNames.yml` and the record format. A record written by another G# version, or one that the library's build could not transpile for the consumer's dialect, is not imported.
 - **Diagnostics**: a use that the native module cannot import is reported at the use, also when the problem is in a record that the used one reaches: no record ([GSH0088](../03_bcl_api/diagnostics/GSH0088.md)), a record of another G# version or one that failed in the dialect ([GSH0089](../03_bcl_api/diagnostics/GSH0089.md)), or a C++ name that two assemblies give to the same C# path ([GSH0090](../03_bcl_api/diagnostics/GSH0090.md)). An iterator of another assembly is GSH0003.
 
+## 1.8 Build Properties (`GSharpCheckedBuild`)
+
+The MSBuild property `<GSharpCheckedBuild>true</GSharpCheckedBuild>` configures the transpiler and launcher stubs for synchronized device assertion and exception checking:
+
+- **Immediate Launch Synchronization**: In checked builds, the CUDA launcher stub emits a synchronous stream check (`CudaDriverApi.cuStreamSynchronize(hStream)`) immediately following kernel launches, causing any device trap or invariant failure to be raised at the call site as a standard .NET exception before control returns.
+- **Header Preprocessor Macro**: The compiler automatically defines `#define GSHARP_CHECKED 1` at the beginning of the emitted native module prelude, enabling device-side bounds checks and assertions.
+- **Scope Division with Issue #716**: The device error channel (#729) provides the core runtime exception channel, slot recording, block coordinate decoding, error site registration, and standard .NET exception mapping plumbing. Issue #716 builds upon this foundation by adding comprehensive device-side invariant assertions and structured bounds diagnostics across standard library math and collection primitives.
+
 ## See also
 
 ### Language Specification
