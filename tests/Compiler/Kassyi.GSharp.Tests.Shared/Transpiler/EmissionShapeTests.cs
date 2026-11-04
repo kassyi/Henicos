@@ -248,8 +248,7 @@ public partial class EmissionShapeTests
         }
     }
 
-    // The expansion depth is counted along one chain of nested expansions (16 allowed), not across siblings; one more
-    // level fails with GSH0070 at the foreach that would expand it
+    // Deeply nested iterator chains (16 and 17 levels) and sibling expansions all inline without a fixed depth limit
     [Theory]
     [Scenario(TestScenario.Boundary)]
     [InlineData("Cpu")]
@@ -259,13 +258,8 @@ public partial class EmissionShapeTests
         var source = Generate("IteratorDepthKernels", dialect);
 
         Assert.Equal(16, Regex.Matches(KernelSource(source, "SixteenLevelsKernel"), @"__gsharp_iter_end_\d+:;").Count);
+        Assert.Equal(17, Regex.Matches(KernelSource(source, "SeventeenLevelsKernel"), @"__gsharp_iter_end_\d+:;").Count);
         Assert.Equal(17, Regex.Matches(KernelSource(source, "SiblingsKernel"), @"__gsharp_iter_end_\d+:;").Count);
-
-        var overflow = GenerateAllowingFailures("IteratorDepthOverflowKernels", dialect);
-        Assert.Contains(
-            "SeventeenLevelsKernel_Source = @\"#error \"\"(148,9): GSH0070: Iterator method 'L17' is not supported on the GPU: inline expansion depth exceeds the maximum of 16.\"\"",
-            overflow,
-            StringComparison.Ordinal);
     }
 
     // What the transpiler cannot emit is stated as #error in the generated source, once per failure, at the place the
@@ -408,6 +402,49 @@ public partial class EmissionShapeTests
         Assert.Contains($"ReadFirst({view}({storage.Groups[1].Value}))", body, StringComparison.Ordinal);
     }
 
+    [Theory]
+    [Scenario(TestScenario.SadPath)]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    public async Task RecursiveIterators_ReportGSH0070AndNoInternalCompilerError(string dialect)
+    {
+        var compilation = RoslynTestUtility.CreateCompilation(
+            RoslynTestUtility.ReadTestCase("Transpiler/Emission/RecursiveIteratorKernels.cu.cs"));
+
+        var run = await KernelDiagnostics.RunCompilationAsync(compilation, dialect);
+
+        // Verify no GSH0048 (internal compiler error)
+        Assert.DoesNotContain(run.Generator, static d => d.Id == GSharpDiagnostics.InternalCompilerError.Id);
+
+        // Verify no GSH0102 (method too complex)
+        Assert.DoesNotContain(run.Analyzer, static d => d.Id == GSharpDiagnostics.MethodTooComplexToCompile.Id);
+
+        // Verify GSH0070 is reported for Rec, MutualA, and MutualB with exact spans and no duplicates
+        var gsh0070Diagnostics = run.Analyzer
+            .Where(static d => d.Id == GSharpDiagnostics.IteratorShapeNotSupported.Id)
+            .OrderBy(static d => d.Location.GetLineSpan().StartLinePosition.Line)
+            .Select(static d =>
+            {
+                var span = d.Location.GetLineSpan().Span;
+                return (
+                    d.Id,
+                    span.Start.Line + 1,
+                    span.Start.Character + 1,
+                    span.End.Line + 1,
+                    span.End.Character + 1,
+                    d.GetMessage());
+            })
+            .ToList();
+
+        Assert.Equal(
+            [
+                (GSharpDiagnostics.IteratorShapeNotSupported.Id, 10, 36, 10, 39, "Iterator method 'Rec' is not supported on the GPU: recursive iterators are not supported."),
+                (GSharpDiagnostics.IteratorShapeNotSupported.Id, 33, 36, 33, 43, "Iterator method 'MutualA' is not supported on the GPU: recursive iterators are not supported."),
+                (GSharpDiagnostics.IteratorShapeNotSupported.Id, 46, 36, 46, 43, "Iterator method 'MutualB' is not supported on the GPU: recursive iterators are not supported.")
+            ],
+            gsh0070Diagnostics);
+    }
+
     [GeneratedRegex(@"(?m)^(\w+):;?$")]
     private static partial Regex LabelRegex();
 
@@ -426,15 +463,6 @@ public partial class EmissionShapeTests
     {
         var expected = string.Join("\n", lines);
         Assert.True(source.Contains(expected, StringComparison.Ordinal), "Missing lines:\n" + expected);
-    }
-
-    private static string GenerateAllowingFailures(string testCase, string dialect)
-    {
-        var compilation = RoslynTestUtility.CreateCompilation(
-            RoslynTestUtility.ReadTestCase($"Transpiler/Emission/{testCase}.cu.cs"));
-        var (driver, _, _) = RoslynTestUtility.RunGenerator(compilation, dialect);
-        return string.Join("\n", driver.GetRunResult().GeneratedTrees.Select(static t => t.GetText().ToString()))
-            .Replace("\r\n", "\n", StringComparison.Ordinal);
     }
 
     // Not cached across tests: a mutation test run activates one compiler mutant after another in the same process
