@@ -1,5 +1,3 @@
-using System.Security.Cryptography;
-
 namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum;
 
 [TestTarget(ExecutionTarget.GpuExecution)]
@@ -21,10 +19,10 @@ public class ModPowPolyAlgorithmTests : IDisposable
         _scope.Dispose();
     }
 
-    private static BigInteger GenerateRandomBigInteger(int bits)
+    private static BigInteger GenerateRandomBigInteger(int bits, Random rng)
     {
         var bytes = new byte[(bits + 7) / 8];
-        RandomNumberGenerator.Fill(bytes);
+        rng.NextBytes(bytes);
 
         var positiveBytes = new byte[bytes.Length + 1];
         Array.Copy(bytes, positiveBytes, bytes.Length);
@@ -53,9 +51,10 @@ public class ModPowPolyAlgorithmTests : IDisposable
         // For >1024-bit host-loop crossover cases, use a 64-bit (2-word) exponent to verify full-width
         // 2048/4096-bit multiplications and Barrett reductions across word boundaries without thousands of host-loop iterations.
         int expBitLength = bitLength <= _context.PolyAlgorithmThreshold ? bitLength / 2 : 64;
-        var baseValue = GenerateRandomBigInteger(bitLength);
-        var expValue = GenerateRandomBigInteger(expBitLength);
-        var modValue = GenerateRandomBigInteger(bitLength);
+        var rng = new Random(1337 + bitLength);
+        var baseValue = GenerateRandomBigInteger(bitLength, rng);
+        var expValue = GenerateRandomBigInteger(expBitLength, rng);
+        var modValue = GenerateRandomBigInteger(bitLength, rng);
 
         // Ensure mod is odd for Montgomery reduction (as a general strictness check, though ModPow should handle it)
         if (modValue.IsEven)

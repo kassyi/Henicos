@@ -28,7 +28,7 @@ public class TypeLayoutCalculatorTests
         var decl = tree.GetRoot().DescendantNodes()
             .OfType<StructDeclarationSyntax>()
             .First(s => s.Identifier.Text == structName);
-        return (INamedTypeSymbol)model.GetDeclaredSymbol(decl)!;
+        return Assert.IsAssignableFrom<INamedTypeSymbol>(model.GetDeclaredSymbol(decl));
     }
 
     private static int OffsetOf<TStruct, TField>(ref TStruct s, ref TField field) =>
@@ -726,4 +726,36 @@ public class TypeLayoutCalculatorTests
         field.Member.Name is ['<', .. var rest] && rest.EndsWith(">k__BackingField", StringComparison.Ordinal)
             ? rest[..^">k__BackingField".Length]
             : field.Member.Name;
+
+    [Fact]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.SadPath)]
+    public void GetDeviceLayout_TypeParameter_ReturnsFallback()
+    {
+        var compilation = RoslynTestUtility.CreateCompilation("public class Generic<T> { public T Field; }");
+        var tree = compilation.SyntaxTrees.Last();
+        var model = compilation.GetSemanticModel(tree);
+        var typeDecl = tree.GetRoot().DescendantNodes().OfType<TypeDeclarationSyntax>().First();
+        var typeSymbol = Assert.IsAssignableFrom<INamedTypeSymbol>(model.GetDeclaredSymbol(typeDecl));
+        var typeParam = typeSymbol.TypeParameters[0];
+
+        var layout = TypeLayoutCalculator.GetDeviceLayout(typeParam, s_cudaDialect);
+        Assert.Equal(new TypeLayout(4, 4), layout);
+    }
+
+    [Fact]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.SadPath)]
+    public void GetDeviceLayout_UnresolvedErrorType_ReturnsFallback()
+    {
+        var compilation = RoslynTestUtility.CreateCompilation("public class C { public UnknownType Field; }");
+        var tree = compilation.SyntaxTrees.Last();
+        var model = compilation.GetSemanticModel(tree);
+        var fieldDecl = tree.GetRoot().DescendantNodes().OfType<FieldDeclarationSyntax>().First();
+        var fieldSymbol = Assert.IsAssignableFrom<IFieldSymbol>(model.GetDeclaredSymbol(fieldDecl.Declaration.Variables[0]));
+        var errorType = fieldSymbol.Type;
+
+        var layout = TypeLayoutCalculator.GetDeviceLayout(errorType, s_cudaDialect);
+        Assert.Equal(new TypeLayout(4, 4), layout);
+    }
 }

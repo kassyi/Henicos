@@ -573,8 +573,15 @@ internal static class DeviceFunctionEffects
             return true;
         }
 
+        if (method is { MethodKind: MethodKind.PropertyGet, AssociatedSymbol: IPropertySymbol property } &&
+            SpanWriteClassifier.ClassifyProperty(property) is not (SpanPropertyKind.None or SpanPropertyKind.Unsupported))
+        {
+            return true;
+        }
+
         var ns = type.ContainingNamespace;
-        return type.SpecialType != SpecialType.None ||
+        return (type.SpecialType != SpecialType.None && type.SpecialType != SpecialType.System_Array) ||
+               SpanWriteClassifier.IsPureViewMethod(method) ||
                (ns.IsSystemNamespace() && type.Name is TypeConstants.MathType or TypeConstants.MathFType) ||
                (ns.IsSystemOrNumerics() && !ns.IsSystemNamespace()) ||
                (ns.IsCoreNamespace() && type.Name == FastMathType);

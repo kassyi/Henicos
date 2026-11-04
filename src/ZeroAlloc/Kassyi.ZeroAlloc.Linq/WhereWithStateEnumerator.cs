@@ -44,7 +44,7 @@ public ref struct WhereWithStateEnumerator<TEnumerator, TSource, TState> : IStac
     /// <see langword="true"/> if a matching element is found;
     /// <see langword="false"/> if the end of the sequence was reached without finding another match.
     /// </returns>
-    public bool TryGetNext(out TSource current)
+    public bool TryGetNext([MaybeNullWhen(false)] out TSource current)
     {
         while (_source.TryGetNext(out var value))
         {
@@ -56,7 +56,7 @@ public ref struct WhereWithStateEnumerator<TEnumerator, TSource, TState> : IStac
         }
 
         // Safe fallback: default value when enumeration has reached the end
-        current = default!;
+        current = default;
         return false;
     }
 }

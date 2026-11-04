@@ -5,7 +5,7 @@ namespace Kassyi.GSharp.Tests.Shared.Core;
 /// <summary>
 /// The kernels of <see cref="ManagedQualificationKernels"/> on the native target (CPU or CUDA): they name types, device
 /// functions, constants and extension methods of another namespace through <c>using</c>, <c>using static</c> and an alias,
-/// which the native output resolves by symbol. <see cref="ManagedQualificationManagedTests"/> runs the same kernels on
+/// which the native output resolves by symbol. <c>ManagedQualificationManagedTests</c> runs the same kernels on
 /// the managed fallback (#433), and both must give these values.
 /// </summary>
 [TestTarget(ExecutionTarget.GpuExecution)]

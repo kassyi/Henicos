@@ -110,6 +110,17 @@ public static class CpuKernelLoader
         return (TDelegate)s_delegateCache.GetOrAdd(delegateKey, typedDelegate);
     }
 
+    /// <summary>
+    /// Registers an error site table for the specified native CPU DLL.
+    /// </summary>
+    /// <param name="dllPath">The file path to the native dynamic library.</param>
+    /// <param name="sites">The 1-based error site table.</param>
+    public static void RegisterErrorSites(string dllPath, ReadOnlySpan<GSharpErrorSite> sites)
+    {
+        var fullPath = Path.GetFullPath(dllPath);
+        _ = GSharpErrorMapper.RegisterErrorSites(fullPath, sites);
+    }
+
     private static IntPtr GetOrLoadModule(string fullPath)
     {
         var lazyModule = s_moduleCache.GetOrAdd(
@@ -140,13 +151,55 @@ public static class CpuKernelLoader
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     private delegate int GetLastErrorDelegate(out IntPtr outMessage);
 
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    private delegate int GetLastErrorDetailsDelegate(
+        out IntPtr outMessage,
+        out uint outSiteId,
+        out uint outThreadLinear,
+        out uint outBlockX,
+        out uint outBlockYZ);
+
     /// <summary>
     /// Checks the native runtime error slot in the specified CPU AOT library and throws the corresponding managed exception if an error occurred.
     /// </summary>
     /// <param name="dllPath">The file path to the native dynamic library.</param>
     public static void ThrowIfNativeError(string dllPath)
     {
-        var consumeLastError = LoadAotKernel<GetLastErrorDelegate>("__gsharp_consume_last_error", dllPath);
+        var fullPath = Path.GetFullPath(dllPath);
+        var module = GetOrLoadModule(fullPath);
+
+        if (NativeLibrary.TryGetExport(module, "__gsharp_consume_last_error_details", out _))
+        {
+            var consumeDetails = LoadAotKernel<GetLastErrorDetailsDelegate>("__gsharp_consume_last_error_details", fullPath);
+            var detailedCode = consumeDetails(
+                out var detailedMsgPtr,
+                out var siteId,
+                out var threadLinear,
+                out var blockX,
+                out var blockYZ);
+            if (detailedCode == 0)
+            {
+                return;
+            }
+
+            var detailedMessage = detailedMsgPtr != IntPtr.Zero
+                ? Marshal.PtrToStringUTF8(detailedMsgPtr)
+                : null;
+
+            var (bx, by, bz) = GSharpErrorMapper.UnpackBlockIndex(blockX, blockYZ);
+
+            throw GSharpErrorMapper.CreateException(
+                (GSharpErrorCode)detailedCode,
+                siteId,
+                moduleId: 0u,
+                threadLinear,
+                (bx, by, bz),
+                innerException: null,
+                explicitMessage: detailedMessage,
+                preserveRawMessageWhenNoSite: true);
+        }
+
+        var consumeLastError = LoadAotKernel<GetLastErrorDelegate>("__gsharp_consume_last_error", fullPath);
         var errorCode = consumeLastError(out var msgPtr);
         if (errorCode == 0)
         {
@@ -158,15 +211,14 @@ public static class CpuKernelLoader
             ? Marshal.PtrToStringUTF8(msgPtr) ?? "Unknown G# CPU runtime error."
             : "Unknown G# CPU runtime error.";
 
-        throw errorCode switch
-        {
-            1 => new NotSupportedException(message),
-            2 => new InvalidOperationException(message),
-            3 => new IndexOutOfRangeException(message),
-            4 => new ArgumentOutOfRangeException(null, message),
-            5 => new ArgumentException(message),
-            6 => new NullReferenceException(message),
-            _ => new InvalidOperationException(message)
-        };
+        throw GSharpErrorMapper.CreateException(
+            (GSharpErrorCode)errorCode,
+            siteId: 0u,
+            moduleId: 0u,
+            threadLinear: 0u,
+            (0, 0, 0),
+            innerException: null,
+            explicitMessage: message,
+            preserveRawMessageWhenNoSite: true);
     }
 }

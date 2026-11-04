@@ -57,8 +57,10 @@ public static class MethodTranspiler
     /// When given, receives each struct definition and <c>Dispose</c> definition written in front of the method, one by
     /// one (a device code export records them apart from the function). The returned text is the same either way.
     /// </param>
+    /// <param name="errorSites">The error site table to register runtime trap sites, or null.</param>
     internal static string GenerateCudaSource(in MethodEmissionPlan plan, Action<TranspileFailure>? reportFailure,
-        ITranspilerDialect dialect, out HashSet<string> requiredIncludes, StructSourceCollector? structSources = null)
+        ITranspilerDialect dialect, out HashSet<string> requiredIncludes, StructSourceCollector? structSources = null,
+        ErrorSiteTable? errorSites = null)
     {
         if (plan.Kind == MethodEmissionKind.Iterator)
         {
@@ -75,6 +77,8 @@ public static class MethodTranspiler
         }
 
         ref var context = ref session.Context;
+        context.Emitter.ErrorSites = errorSites;
+        context.Emitter.CurrentMemberName = plan.Symbol?.Name;
         requiredIncludes = context.Emitter.RequiredIncludes;
         context.Emitter.IsSuspendingDeviceFunction = plan.IsSuspendingOn(dialect);
 
@@ -93,7 +97,22 @@ public static class MethodTranspiler
         context.Emitter.Writer = bodyWriter;
         DynamicSharedMemoryEmitter.BeginMethod(in plan, ref context);
         WriteStateMachineHeader(in plan, lowered, ref context);
-        WriteMethodBody(in plan, lowered, resumeLocals, ref context);
+        try
+        {
+            WriteMethodBody(in plan, lowered, resumeLocals, ref context);
+        }
+        catch (InsufficientExecutionStackException)
+        {
+            var location = plan.Declaration.Identifier.GetLocation();
+            var methodName = plan.Declaration.Identifier.ValueText;
+            var failure = new TranspileFailure(GSharpDiagnostics.MethodTooComplexToCompile, location, [methodName]);
+            context.Reporter.Fail(
+                GSharpDiagnostics.MethodTooComplexToCompile,
+                location,
+                methodName);
+            requiredIncludes = [];
+            return Aot.NativeModuleAssembler.FormatTranspileFailures([failure.Format()]);
+        }
 
         // The struct members and Dispose bodies written below have no table of dynamic shared memory regions
         context.Emitter.DynamicSharedMemorySlotScope = null;
@@ -135,7 +154,19 @@ public static class MethodTranspiler
             ref iteratorContext.Emitter.ArgumentTempCounter,
             dialect,
             iteratorContext.Reporter);
-        iteratorContext.Visitor.Visit(expanded);
+
+        try
+        {
+            iteratorContext.Visitor.Visit(expanded);
+        }
+        catch (InsufficientExecutionStackException)
+        {
+            var location = plan.Declaration.Identifier.GetLocation();
+            iteratorContext.Reporter.Fail(
+                GSharpDiagnostics.MethodTooComplexToCompile,
+                location,
+                plan.Declaration.Identifier.ValueText);
+        }
     }
 
     // The frame struct of a state machine (a plan with one always has a symbol), then the signature of the function
@@ -339,13 +370,20 @@ public static class MethodTranspiler
     private static void WriteCopiedParameterMember(IParameterSymbol parameter, ref TranspileContext context)
     {
         var name = CppNameResolver.Resolve(parameter, parameter.Name, context.Emitter.Dialect);
+        if (parameter.ContainingSymbol is IMethodSymbol method && method.HasAttribute(KnownAttributes.GpuKernel) &&
+            parameter.Type.IsNullableArrayLike())
+        {
+            WriteMember(parameter.Type, name, ref context);
+            return;
+        }
+
         if (!parameter.TryGetDeclaringSyntax<ParameterSyntax>(out var syntax))
         {
             WriteMember(parameter.Type, name, ref context);
             return;
         }
 
-        var type = parameter.Type.UnwrapNullableArrayLike();
+        var type = parameter.Type;
         StructTranspiler.RegisterUsedStructIfApplicable(type, ref context);
         context.Emitter.Dialect.AppendParameter(ref context, syntax, type, parameter);
         context.Emitter.Writer.Append(' ').AppendCppName(name).AppendLine(";");
@@ -376,6 +414,11 @@ public static class MethodTranspiler
                     $"unsigned int {GSharpInternalNames.ReturnValue.GlobalThreadIndex} = (blockIdx.z * gridDim.y * gridDim.x + blockIdx.y * gridDim.x + blockIdx.x)" +
                     " * (blockDim.x * blockDim.y * blockDim.z) +" +
                     " threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;");
+            }
+
+            if (plan.Kind == MethodEmissionKind.Kernel && plan.Symbol != null)
+            {
+                WriteKernelNullableArrayParameters(plan.Symbol, ref context);
             }
 
             if (lowered != null)
@@ -470,10 +513,36 @@ public static class MethodTranspiler
             foreach (var parameter in parameters)
             {
                 var name = CppNameResolver.Resolve(parameter, parameter.Name, context.Emitter.Dialect);
+                var isKernel = plan.Kind == MethodEmissionKind.Kernel;
+                var sourcePrefix = isKernel && parameter.Type.IsNullableArrayLike()
+                    ? ""
+                    : GSharpInternalNames.StateMachine.CopiedParameterPrefix;
                 context.Emitter.Writer.Append($"{GSharpInternalNames.StateMachine.Context}->").AppendCppName(name)
-                    .Append($"={GSharpInternalNames.StateMachine.CopiedParameterPrefix}").AppendCppName(name)
+                    .Append($"={sourcePrefix}").AppendCppName(name)
                     .AppendLine(";");
             }
+        }
+    }
+
+    private static void WriteKernelNullableArrayParameters(IMethodSymbol kernel, ref TranspileContext context)
+    {
+        foreach (var parameter in kernel.Parameters)
+        {
+            if (!parameter.Type.IsNullableArrayLike())
+            {
+                continue;
+            }
+
+            var paramName = CppNameResolver.Resolve(parameter, parameter.Name, context.Emitter.Dialect);
+            context.Emitter.Dialect.AppendType(ref context, parameter.Type);
+            context.Emitter.Writer.Append(' ').AppendCppName(paramName)
+                .Append($" = {GSharpInternalNames.Kernel.RawArgumentPrefix}").AppendCppName(paramName)
+                .Append($".data != nullptr && ({GSharpInternalNames.Kernel.RawArgumentPrefix}").AppendCppName(paramName)
+                .Append($".flags & {GSharpInternalNames.Prelude.ArrayNullReadsEmpty}) == 0 ? ");
+            context.Emitter.Dialect.AppendType(ref context, parameter.Type);
+            context.Emitter.Writer.Append($"({GSharpInternalNames.Kernel.RawArgumentPrefix}").AppendCppName(paramName).Append(") : ");
+            context.Emitter.Dialect.AppendType(ref context, parameter.Type);
+            context.Emitter.Writer.AppendLine("();");
         }
     }
 }

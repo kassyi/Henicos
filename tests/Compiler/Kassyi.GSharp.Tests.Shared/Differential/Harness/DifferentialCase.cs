@@ -111,6 +111,12 @@ public sealed record DifferentialCase(string name)
     public OracleExceptionMode OracleExceptions { get; init; } = OracleExceptionMode.None;
 
     /// <summary>
+    /// Gets or initializes optional reasons why specific execution paths are skipped for this case
+    /// (e.g. fatal host-level fault terminating the process on <see cref="DiffPath.Native"/>).
+    /// </summary>
+    public IReadOnlyDictionary<DiffPath, string>? SkippedPaths { get; init; }
+
+    /// <summary>
     /// Gets or initializes the execution paths required to throw matching exceptions when <see cref="OracleExceptions"/>
     /// is <see cref="OracleExceptionMode.MatchOracle"/>.
     /// </summary>

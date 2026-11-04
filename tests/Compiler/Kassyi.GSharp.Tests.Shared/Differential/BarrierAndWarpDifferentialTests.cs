@@ -353,6 +353,7 @@ public class BarrierAndWarpDifferentialTests
     // computation without it
     private const int RefTernaryRows = 64;
 
+    // Fixed to an exact multiple of RefTernaryRows because early `if (t >= n) return;` precedes `Gpu.SyncThreads()`.
     private static readonly DifferentialCase s_refTernaryParameterWriteAcrossBarrier = new(
         $"{nameof(BarrierAndWarpDifferentialKernels)}.{nameof(BarrierAndWarpDifferentialKernels.RefTernaryParameterWriteAcrossBarrierReproKernel)}")
     {
@@ -430,10 +431,271 @@ public class BarrierAndWarpDifferentialTests
     public void Test_GenericStructStaticSharedMemory_MatchesTheReferenceOnEveryPath() =>
         DifferentialRunner.Run(s_genericStructStaticSharedMemory);
 
+    private static readonly DifferentialCase s_subWarpUpperHalfConditionalShuffle =
+        new("M1DiffWarpExtraKernels.SubWarpUpperHalfConditionalShuffleKernel")
+        {
+            Shape = LaunchShape.ForRows(32, blockX: 32),
+            Inputs = static (rng, rows) => new DiffBuffers()
+                .In("input", DiffValues.Int32(rng, rows))
+                .Out<int>("output", rows, M1DiffWarpExtraKernels.UpperHalfConditionalShuffleColumns, OutputPolicy.Exact),
+            Launch = static (b, s) => M1DiffWarpExtraKernels.LaunchSubWarpUpperHalfConditionalShuffleKernel(
+                b.Get<int>("input"),
+                b.Get<int>("output"),
+                gridDimX: s.GridX,
+                blockDimX: s.BlockX
+            ),
+            Reference = static (b, _) =>
+            {
+                var input = b.Get<int>("input");
+                var output = b.Get<int>("output");
+                int cols = M1DiffWarpExtraKernels.UpperHalfConditionalShuffleColumns.Length;
+
+                Span<int> aInit = stackalloc int[32];
+                Span<int> aAfterUpper = stackalloc int[32];
+                Span<int> bInit = stackalloc int[32];
+                for (int lane = 0; lane < 32; lane++)
+                {
+                    int baseVal = (input[lane] & 0xFF) + 1;
+                    aInit[lane] = baseVal * 10 + lane;
+                    bInit[lane] = baseVal * 1000 + lane;
+                }
+
+                for (int lane = 0; lane < 32; lane++)
+                {
+                    aAfterUpper[lane] = lane >= 16
+                        ? (lane > 16 ? aInit[lane - 1] : aInit[lane])
+                        : aInit[lane];
+                }
+
+                for (int lane = 0; lane < 32; lane++)
+                {
+                    int fromUpper = lane + 16 < 32 ? aAfterUpper[lane + 16] : aAfterUpper[lane];
+                    int xor16 = bInit[lane ^ 16];
+
+                    int o = lane * cols;
+                    output[o + 0] = aAfterUpper[lane];
+                    output[o + 1] = fromUpper;
+                    output[o + 2] = xor16;
+                }
+            },
+        };
+
+    private static readonly DifferentialCase s_genericPairStructStaticSharedMemory =
+        new("M1DiffWarpExtraKernels.GenericPairStructStaticSharedMemoryKernel")
+        {
+            Shape = LaunchShape.ForRows(32, blockX: 32),
+            Inputs = static (rng, rows) => new DiffBuffers()
+                .In("input", DiffValues.Int32(rng, rows))
+                .Out<int>("output", rows, M1DiffWarpExtraKernels.GenericPairStructSharedColumns, OutputPolicy.Exact),
+            Launch = static (b, s) => M1DiffWarpExtraKernels.LaunchGenericPairStructStaticSharedMemoryKernel(
+                b.Get<int>("input"),
+                b.Get<int>("output"),
+                gridDimX: s.GridX,
+                blockDimX: s.BlockX
+            ),
+            Reference = static (b, _) =>
+            {
+                var input = b.Get<int>("input");
+                var output = b.Get<int>("output");
+                int cols = M1DiffWarpExtraKernels.GenericPairStructSharedColumns.Length;
+
+                Span<int> sharedA = stackalloc int[32];
+                Span<int> sharedB = stackalloc int[32];
+                Span<int> sharedC = stackalloc int[32];
+                for (int lane = 0; lane < 32; lane++)
+                {
+                    int v = (input[lane] & 0xFF) + 1;
+                    sharedA[lane] = v * 10 + lane;
+                    sharedB[lane] = v * 100 + lane;
+                    sharedC[lane] = v * 1000 + lane;
+                }
+
+                for (int lane = 0; lane < 32; lane++)
+                {
+                    int mirror = 31 - lane;
+                    int o = lane * cols;
+                    output[o + 0] = sharedA[mirror];
+                    output[o + 1] = sharedB[mirror];
+                    output[o + 2] = sharedC[mirror];
+                }
+            },
+        };
+
+    private static readonly DifferentialCase s_warpMatchAnyAndAllSync =
+        new("M1DiffWarpExtraKernels.WarpMatchAnyAndAllSyncKernel")
+        {
+            Shape = LaunchShape.ForRows(32, blockX: 32),
+            Inputs = static (rng, rows) => new DiffBuffers()
+                .In("input", DiffValues.Int32(rng, rows))
+                .Out<uint>("output", rows, M1DiffWarpExtraKernels.WarpMatchColumns, OutputPolicy.Exact),
+            Launch = static (b, s) => M1DiffWarpExtraKernels.LaunchWarpMatchAnyAndAllSyncKernel(
+                b.Get<int>("input"),
+                b.Get<uint>("output"),
+                gridDimX: s.GridX,
+                blockDimX: s.BlockX
+            ),
+            Reference = static (b, _) =>
+            {
+                var input = b.Get<int>("input");
+                var output = b.Get<uint>("output");
+                int cols = M1DiffWarpExtraKernels.WarpMatchColumns.Length;
+
+                Span<int> group4 = stackalloc int[32];
+                Span<uint> bucket8 = stackalloc uint[32];
+                Span<long> parity = stackalloc long[32];
+                Span<ulong> halfKey = stackalloc ulong[32];
+                for (int lane = 0; lane < 32; lane++)
+                {
+                    int raw = input[lane];
+                    group4[lane] = raw & 3;
+                    bucket8[lane] = (uint)(lane >> 3) + (uint)((raw & 1) << 4);
+                    parity[lane] = ((long)(lane & 1) << 40) | (long)(raw & 1);
+                    halfKey[lane] = 0x100000000UL + (ulong)(lane & 3);
+                }
+
+                for (int lane = 0; lane < 32; lane++)
+                {
+                    uint anyGroup4 = 0u;
+                    uint anyBucket8 = 0u;
+                    uint anyParity = 0u;
+                    uint anyHalf = 0u;
+                    uint subMask = lane < 16 ? 0x0000FFFFu : 0xFFFF0000u;
+
+                    for (int src = 0; src < 32; src++)
+                    {
+                        if (group4[src] == group4[lane])
+                        {
+                            anyGroup4 |= 1u << src;
+                        }
+
+                        if (bucket8[src] == bucket8[lane])
+                        {
+                            anyBucket8 |= 1u << src;
+                        }
+
+                        if (parity[src] == parity[lane])
+                        {
+                            anyParity |= 1u << src;
+                        }
+
+                        if (((subMask >> src) & 1u) != 0u && halfKey[src] == halfKey[lane])
+                        {
+                            anyHalf |= 1u << src;
+                        }
+                    }
+
+                    int o = lane * cols;
+                    output[o + 0] = anyGroup4;
+                    output[o + 1] = anyBucket8;
+                    output[o + 2] = anyParity;
+                    output[o + 3] = anyHalf;
+                    output[o + 4] = 0xFFFFFFFFu;
+                    output[o + 5] = 1u;
+                    output[o + 6] = 0u;
+                    output[o + 7] = 0u;
+                    output[o + 8] = subMask;
+                    output[o + 9] = 1u;
+                    output[o + 10] = lane < 16 ? 0x0000FFFFu : 0u;
+                    output[o + 11] = lane < 16 ? 1u : 0u;
+                    output[o + 12] = 0xFFFFFFFFu;
+                    output[o + 13] = (lane & 1) == 0 ? 0x55555555u : 0xAAAAAAAAu;
+                    output[o + 14] = 0xFFFFFFFFu;
+                    output[o + 15] = 1u;
+                    output[o + 16] = 0u;
+                    output[o + 17] = 0u;
+                }
+            },
+        };
+
+    private static readonly DifferentialCase s_genericStructNestedCalleeSharedMemory =
+        new("M1DiffWarpExtraKernels.GenericStructNestedCalleeSharedMemoryKernel")
+        {
+            Shape = LaunchShape.ForRows(32, blockX: 32),
+            Inputs = static (rng, rows) => new DiffBuffers()
+                .In("input", DiffValues.Int32(rng, rows))
+                .Out<int>("output", rows, M1DiffWarpExtraKernels.GenericStructNestedCalleeColumns, OutputPolicy.Exact),
+            Launch = static (b, s) => M1DiffWarpExtraKernels.LaunchGenericStructNestedCalleeSharedMemoryKernel(
+                b.Get<int>("input"),
+                b.Get<int>("output"),
+                gridDimX: s.GridX,
+                blockDimX: s.BlockX
+            ),
+            Reference = static (b, _) =>
+            {
+                var input = b.Get<int>("input");
+                var output = b.Get<int>("output");
+                int length = input.Length;
+                for (int tid = 0; tid < length; tid++)
+                {
+                    output[tid] = tid + 100;
+                }
+            },
+        };
+
+    private static readonly DifferentialCase s_genericStructNestedInnerSharedMemory =
+        new("M1DiffWarpExtraKernels.GenericStructNestedInnerSharedMemoryKernel")
+        {
+            Shape = LaunchShape.ForRows(32, blockX: 32),
+            Inputs = static (rng, rows) => new DiffBuffers()
+                .In("input", DiffValues.Int32(rng, rows))
+                .Out<int>("output", rows, M1DiffWarpExtraKernels.GenericStructNestedInnerColumns, OutputPolicy.Exact),
+            Launch = static (b, s) => M1DiffWarpExtraKernels.LaunchGenericStructNestedInnerSharedMemoryKernel(
+                b.Get<int>("input"),
+                b.Get<int>("output"),
+                gridDimX: s.GridX,
+                blockDimX: s.BlockX
+            ),
+            Reference = static (b, _) =>
+            {
+                var input = b.Get<int>("input");
+                var output = b.Get<int>("output");
+                int length = input.Length;
+                for (int tid = 0; tid < length; tid++)
+                {
+                    output[tid] = tid + 100;
+                }
+            },
+        };
+
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Differential)]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_SubWarpUpperHalfConditionalShuffleBeforeFullWarpShuffle_MatchesTheReferenceOnEveryPath() =>
+        DifferentialRunner.Run(s_subWarpUpperHalfConditionalShuffle);
+
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Differential)]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_GenericPairStructStaticSharedMemory_MatchesTheReferenceOnEveryPath() =>
+        DifferentialRunner.Run(s_genericPairStructStaticSharedMemory);
+
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Differential)]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_WarpMatchAnyAndAllSync_MatchesTheReferenceOnEveryPath() =>
+        DifferentialRunner.Run(s_warpMatchAnyAndAllSync);
+
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
     public void Test_RefTernaryParameterWriteAcrossBarrier_MatchesTheReferenceOnEveryPath() =>
         DifferentialRunner.Run(s_refTernaryParameterWriteAcrossBarrier);
+
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Differential)]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_GenericStructNestedCalleeSharedMemory_MatchesTheReferenceOnEveryPath() =>
+        DifferentialRunner.Run(s_genericStructNestedCalleeSharedMemory);
+
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Differential)]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_GenericStructNestedInnerSharedMemory_MatchesTheReferenceOnEveryPath() =>
+        DifferentialRunner.Run(s_genericStructNestedInnerSharedMemory);
 }

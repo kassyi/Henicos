@@ -1,3 +1,4 @@
+using Kassyi.GSharp.Compiler.Analysis;
 using Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules;
 using Kassyi.GSharp.Compiler.Transpiler.Rules.MacroRules;
 
@@ -117,9 +118,17 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
         try
         {
             // The source of a lowered foreach, which C# checks for null at the loop entry (#706)
-            if (node is ExpressionSyntax expression && ArrayNullCheck.TryAppendAnnotatedCheck(expression, ref Context))
+            if (node is ExpressionSyntax expression)
             {
-                return;
+                if (ArrayNullCheck.TryAppendAnnotatedCheck(expression, ref Context))
+                {
+                    return;
+                }
+
+                if (UserDefinedConversionHelper.TryAppendImplicitConversion(expression, ref Context))
+                {
+                    return;
+                }
             }
 
             if (Context.RuleRegistry.GetRule(node.Kind()) is { } rule)
@@ -428,6 +437,11 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
                 if (symbol is IMethodSymbol method)
                 {
                     DynamicSharedMemoryEmitter.FailIfReferencedWithoutCall(node, method, ref Context);
+                }
+
+                if (SpanWriteClassifier.TryFailUninvoked(node, ref Context))
+                {
+                    return;
                 }
 
                 // A member function reads a captured primary constructor parameter from its hidden field (#495)
