@@ -27,12 +27,13 @@ internal sealed class ErrorSiteTable
     public ImmutableArray<ErrorSiteEntry> Entries => _entries.ToImmutable();
 
     /// <summary>
-    /// Computes a deterministic 31-bit site ID from source location and trap kind.
+    /// Computes a deterministic 31-bit site ID from the file name, the 1-based start and end line and column of the site,
+    /// and the trap kind. Lines and columns (not character offsets) keep the ID the same for LF and CRLF checkouts.
     /// Bit 31 is always 0 to avoid collision with BuiltinSiteFlag (0x80000000u).
     /// </summary>
-    public static uint ComputeSiteId(string file, int start, int length, string trapKind)
+    public static uint ComputeSiteId(string file, int startLine, int startColumn, int endLine, int endColumn, string trapKind)
     {
-        var key = $"{file}#{start}#{length}#{trapKind}";
+        var key = $"{file}#{startLine}:{startColumn}#{endLine}:{endColumn}#{trapKind}";
         var hash = HashHelper.ComputeFnv1A64(key);
         var siteId = (uint)(hash & 0x7FFFFFFFu);
         return siteId == 0u ? 1u : siteId;
@@ -52,16 +53,8 @@ internal sealed class ErrorSiteTable
     /// </summary>
     public uint Register(string file, int line, int column, string memberName, string defaultMessage, string trapKind = "")
     {
-        return Register(file, line, column, line, column, memberName, defaultMessage, trapKind);
-    }
-
-    /// <summary>
-    /// Registers an error site with explicit coordinates and returns its deterministic 31-bit site ID.
-    /// </summary>
-    public uint Register(string file, int line, int column, int start, int length, string memberName, string defaultMessage, string trapKind = "")
-    {
         var kind = string.IsNullOrEmpty(trapKind) ? defaultMessage : trapKind;
-        var siteId = ComputeSiteId(file, start, length, kind);
+        var siteId = ComputeSiteId(file, line, column, line, column, kind);
         var entry = new ErrorSiteEntry(siteId, file, line, column, memberName, defaultMessage);
         return RegisterEntry(entry);
     }
@@ -99,13 +92,13 @@ internal sealed class ErrorSiteTable
             if (!string.IsNullOrEmpty(fileName))
             {
                 var start = span.StartLinePosition;
-                var sourceSpan = location.SourceSpan;
-                var siteId = ComputeSiteId(fileName, sourceSpan.Start, sourceSpan.Length, kind);
+                var end = span.EndLinePosition;
+                var siteId = ComputeSiteId(fileName, start.Line + 1, start.Character + 1, end.Line + 1, end.Character + 1, kind);
                 return new ErrorSiteEntry(siteId, fileName, start.Line + 1, start.Character + 1, memberName, defaultMessage);
             }
         }
 
-        var fallbackId = ComputeSiteId(SourcePlace.Unknown, 0, 0, kind);
+        var fallbackId = ComputeSiteId(SourcePlace.Unknown, 0, 0, 0, 0, kind);
         return new ErrorSiteEntry(fallbackId, SourcePlace.Unknown, 0, 0, memberName, defaultMessage);
     }
 

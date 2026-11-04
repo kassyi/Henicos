@@ -161,6 +161,49 @@ public sealed class DeviceErrorChannelTests
         Assert.Equal("KernelOther", second.MemberName);
     }
 
+    [Fact]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_T729_14_ErrorSiteTable_SiteIdsDoNotDependOnLineEndings()
+    {
+        var source = RoslynTestUtility.ReadTestCase("Runtime/ErrorSiteLineEndingCases.cs").Replace("\r\n", "\n");
+
+        var lf = CreateSitesForTerminals(source);
+        var crlf = CreateSitesForTerminals(source.Replace("\n", "\r\n"));
+
+        // Three terminals on different lines, each with a real file name, so the comparison below cannot pass vacuously
+        Assert.Equal(3, lf.Count);
+        Assert.All(lf, static site => Assert.Equal("ErrorSiteLineEndingCases.cs", site.File));
+        Assert.Equal(lf.Select(static site => site.SiteId).Distinct().Count(), lf.Count);
+        Assert.Equal(lf, crlf);
+    }
+
+    private static List<ErrorSiteEntry> CreateSitesForTerminals(string source)
+    {
+        var tree = CSharpSyntaxTree.ParseText(
+            source,
+            new CSharpParseOptions(LanguageVersion.Preview),
+            path: "ErrorSiteLineEndingCases.cs");
+        var compilation = CSharpCompilation.Create("ErrorSiteLineEndings")
+            .AddReferences(RoslynTestUtility.BaseReferences)
+            .AddSyntaxTrees(tree);
+        var model = compilation.GetSemanticModel(tree);
+        return tree.GetRoot()
+            .DescendantNodes()
+            .OfType<Microsoft.CodeAnalysis.CSharp.Syntax.InvocationExpressionSyntax>()
+            .Where(static call => call.Expression is Microsoft.CodeAnalysis.CSharp.Syntax.MemberAccessExpressionSyntax
+            {
+                Name.Identifier.ValueText: "ElementAt" or "First" or "Last"
+            })
+            .Select(call => ErrorSiteTable.CreateSite(
+                call,
+                model,
+                "SitesOnSeveralLinesKernel",
+                "Sequence contains no elements",
+                ((Microsoft.CodeAnalysis.CSharp.Syntax.MemberAccessExpressionSyntax)call.Expression).Name.Identifier.ValueText)
+            ).ToList();
+    }
+
     [Theory]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.HappyPath)]
