@@ -31,18 +31,18 @@ public partial class StackLinqDifferentialKernels
 {
 private static readonly global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[] s_errorSites = new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[]
 {
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1751383757u, "StackLinqDifferentialKernels.cs", 93, 20, "Int32StackLinqMatrixKernel", "Sequence contains no elements"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(716887003u, "StackLinqDifferentialKernels.cs", 94, 20, "Int32StackLinqMatrixKernel", "Sequence contains no elements"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(308243718u, "StackLinqDifferentialKernels.cs", 178, 20, "Int32AverageKernel", "Sequence contains no elements"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1601379178u, "StackLinqDifferentialKernels.cs", 231, 16, "SingleUnfusedAverageKernel", "Sequence contains no elements"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1073204919u, "StackLinqDifferentialKernels.cs", 232, 28, "SingleUnfusedAverageKernel", "Sequence contains no elements"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2087472931u, "StackLinqDifferentialKernels.cs", 233, 20, "SingleUnfusedAverageKernel", "Sequence contains no elements"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1294661925u, "StackLinqDifferentialKernels.cs", 271, 20, "FloatingExtremaAndZeroContainsKernel", "Sequence contains no elements"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(600842264u, "StackLinqDifferentialKernels.cs", 272, 20, "FloatingExtremaAndZeroContainsKernel", "Sequence contains no elements"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(551103086u, "StackLinqDifferentialKernels.cs", 276, 20, "FloatingExtremaAndZeroContainsKernel", "Sequence contains no elements"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2009856971u, "StackLinqDifferentialKernels.cs", 279, 20, "FloatingExtremaAndZeroContainsKernel", "Sequence contains no elements"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(848844069u, "StackLinqDifferentialKernels.cs", 280, 21, "FloatingExtremaAndZeroContainsKernel", "Sequence contains no elements"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(141771717u, "StackLinqDifferentialKernels.cs", 385, 18, "UnfusedSelectEvaluationKernel", "Sequence contains no elements"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2086439491u, "StackLinqDifferentialKernels.cs", 93, 20, "Int32StackLinqMatrixKernel", "Sequence contains no elements"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1690715761u, "StackLinqDifferentialKernels.cs", 94, 20, "Int32StackLinqMatrixKernel", "Sequence contains no elements"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1962419512u, "StackLinqDifferentialKernels.cs", 178, 20, "Int32AverageKernel", "Sequence contains no elements"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(569509191u, "StackLinqDifferentialKernels.cs", 231, 16, "SingleUnfusedAverageKernel", "Sequence contains no elements"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(275345127u, "StackLinqDifferentialKernels.cs", 232, 28, "SingleUnfusedAverageKernel", "Sequence contains no elements"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(135464616u, "StackLinqDifferentialKernels.cs", 233, 20, "SingleUnfusedAverageKernel", "Sequence contains no elements"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1605161980u, "StackLinqDifferentialKernels.cs", 271, 20, "FloatingExtremaAndZeroContainsKernel", "Sequence contains no elements"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1910522944u, "StackLinqDifferentialKernels.cs", 272, 20, "FloatingExtremaAndZeroContainsKernel", "Sequence contains no elements"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1479401799u, "StackLinqDifferentialKernels.cs", 276, 20, "FloatingExtremaAndZeroContainsKernel", "Sequence contains no elements"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1285134652u, "StackLinqDifferentialKernels.cs", 279, 20, "FloatingExtremaAndZeroContainsKernel", "Sequence contains no elements"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(752369964u, "StackLinqDifferentialKernels.cs", 280, 21, "FloatingExtremaAndZeroContainsKernel", "Sequence contains no elements"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1751278166u, "StackLinqDifferentialKernels.cs", 385, 18, "UnfusedSelectEvaluationKernel", "Sequence contains no elements"),
 };
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -186,8 +186,8 @@ if (!__gsharp_fusion_res_init)
 }return __gsharp_fusion_res;
 }());
 auto __gsharp_id_9_unfused = Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_id_4_slice);
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_6_o,5)]=Kassyi::ZeroAlloc::Linq::StackLinq::Max(__gsharp_id_9_unfused,1751383757u);
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_6_o,6)]=Kassyi::ZeroAlloc::Linq::StackLinq::Min(__gsharp_id_9_unfused,716887003u);
+__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_6_o,5)]=Kassyi::ZeroAlloc::Linq::StackLinq::Max(__gsharp_id_9_unfused,2086439491u);
+__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_6_o,6)]=Kassyi::ZeroAlloc::Linq::StackLinq::Min(__gsharp_id_9_unfused,1690715761u);
 __gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_6_o,7)]=Kassyi::ZeroAlloc::Linq::StackLinq::Sum(__gsharp_id_9_unfused);
 __gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_6_o,8)]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_4_slice;
@@ -1187,7 +1187,7 @@ if (__gsharp_fusion_res_count == 0)
 }return __gsharp_fusion_res;
 }());
 auto __gsharp_id_7_unfused = Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_id_4_slice);
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_5_o,2)]=Kassyi::ZeroAlloc::Linq::StackLinq::Average(__gsharp_id_7_unfused,308243718u);
+__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_5_o,2)]=Kassyi::ZeroAlloc::Linq::StackLinq::Average(__gsharp_id_7_unfused,1962419512u);
 __gsharp_state=-1;
 return;
 }
@@ -1828,9 +1828,9 @@ __gsharp_state = -1;return;
 auto __gsharp_id_4_slice = __gsharp_id_0_xs.AsSpan().Slice(__gsharp_id_3_baseIdx,4);
 auto __gsharp_id_5_unfused = Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_id_4_slice);
 int __gsharp_id_6_o = __gsharp_mul_i32(__gsharp_id_2_t,3);
-__gsharp_id_1_r[__gsharp_id_6_o]=Kassyi::ZeroAlloc::Linq::StackLinq::Average(__gsharp_id_5_unfused,1601379178u);
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_6_o,1)]=(double)Kassyi::ZeroAlloc::Linq::StackLinq::Average(__gsharp_id_5_unfused,1073204919u);
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_6_o,2)]=Kassyi::ZeroAlloc::Linq::StackLinq::Average(__gsharp_id_5_unfused,2087472931u)+0.1;
+__gsharp_id_1_r[__gsharp_id_6_o]=Kassyi::ZeroAlloc::Linq::StackLinq::Average(__gsharp_id_5_unfused,569509191u);
+__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_6_o,1)]=(double)Kassyi::ZeroAlloc::Linq::StackLinq::Average(__gsharp_id_5_unfused,275345127u);
+__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_6_o,2)]=Kassyi::ZeroAlloc::Linq::StackLinq::Average(__gsharp_id_5_unfused,135464616u)+0.1;
 __gsharp_state=-1;
 return;
 }
@@ -2192,8 +2192,8 @@ if (!__gsharp_fusion_res_init)
 {__gsharp_trap(GSharpErrorCode::InvalidOperation, ""Sequence contains no elements"");
 }return __gsharp_fusion_res;
 }());
-__gsharp_id_2_r[__gsharp_add_i32(__gsharp_id_9_o,2)]=Kassyi::ZeroAlloc::Linq::StackLinq::Max(__gsharp_id_7_fUnfused,1294661925u);
-__gsharp_id_2_r[__gsharp_add_i32(__gsharp_id_9_o,3)]=Kassyi::ZeroAlloc::Linq::StackLinq::Min(__gsharp_id_7_fUnfused,600842264u);
+__gsharp_id_2_r[__gsharp_add_i32(__gsharp_id_9_o,2)]=Kassyi::ZeroAlloc::Linq::StackLinq::Max(__gsharp_id_7_fUnfused,1605161980u);
+__gsharp_id_2_r[__gsharp_add_i32(__gsharp_id_9_o,3)]=Kassyi::ZeroAlloc::Linq::StackLinq::Min(__gsharp_id_7_fUnfused,1910522944u);
 __gsharp_id_2_r[__gsharp_add_i32(__gsharp_id_9_o,4)]=(([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_5_fSlice;
 bool __gsharp_fusion_res = false;
@@ -2226,7 +2226,7 @@ if (__gsharp_fusion_res_count == 0)
 {__gsharp_fusion_res = __gsharp_fusion_res / (double)(__gsharp_fusion_res_count);
 }return __gsharp_fusion_res;
 }());
-__gsharp_id_2_r[__gsharp_add_i32(__gsharp_id_9_o,6)]=Kassyi::ZeroAlloc::Linq::StackLinq::Average(__gsharp_id_8_dUnfused,551103086u);
+__gsharp_id_2_r[__gsharp_add_i32(__gsharp_id_9_o,6)]=Kassyi::ZeroAlloc::Linq::StackLinq::Average(__gsharp_id_8_dUnfused,1479401799u);
 __gsharp_id_2_r[__gsharp_add_i32(__gsharp_id_9_o,7)]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_6_dSlice;
 double __gsharp_fusion_res = {};
@@ -2267,8 +2267,8 @@ if (!__gsharp_fusion_res_init)
 {__gsharp_trap(GSharpErrorCode::InvalidOperation, ""Sequence contains no elements"");
 }return __gsharp_fusion_res;
 }());
-__gsharp_id_2_r[__gsharp_add_i32(__gsharp_id_9_o,9)]=Kassyi::ZeroAlloc::Linq::StackLinq::Max(__gsharp_id_8_dUnfused,2009856971u);
-__gsharp_id_2_r[__gsharp_add_i32(__gsharp_id_9_o,10)]=Kassyi::ZeroAlloc::Linq::StackLinq::Min(__gsharp_id_8_dUnfused,848844069u);
+__gsharp_id_2_r[__gsharp_add_i32(__gsharp_id_9_o,9)]=Kassyi::ZeroAlloc::Linq::StackLinq::Max(__gsharp_id_8_dUnfused,1285134652u);
+__gsharp_id_2_r[__gsharp_add_i32(__gsharp_id_9_o,10)]=Kassyi::ZeroAlloc::Linq::StackLinq::Min(__gsharp_id_8_dUnfused,752369964u);
 __gsharp_id_2_r[__gsharp_add_i32(__gsharp_id_9_o,11)]=(([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_6_dSlice;
 bool __gsharp_fusion_res = false;
@@ -3301,7 +3301,7 @@ auto __gsharp_id_14_unfused = Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumera
 int __gsharp_id_15_v2 = Kassyi::ZeroAlloc::Linq::StackLinq::Max(Kassyi::ZeroAlloc::Linq::StackLinq::Select(__gsharp_id_14_unfused,[&](auto __gsharp_id_16_x) {
 return __gsharp_add_i32(__gsharp_id_16_x&0xFFFF,(__gsharp_id_13_k2=__gsharp_add_i32(__gsharp_id_13_k2,1)));
 }
-),141771717u);
+),1751278166u);
 __gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_5_o,4)]=__gsharp_id_13_k2;
 __gsharp_state=-1;
 return;

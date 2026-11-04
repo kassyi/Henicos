@@ -31,19 +31,19 @@ public partial class CpuDialectLibraryCallKernels
 {
 private static readonly global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[] s_errorSites = new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[]
 {
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1198861384u, "CpuDialectLibraryCallKernels.cs", 12, 21, "ElementAtKernel", "Index was out of range."),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1414937717u, "CpuDialectLibraryCallKernels.cs", 18, 21, "ElementAtIndexKernel", "Index was out of range."),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1370282122u, "CpuDialectLibraryCallKernels.cs", 30, 21, "SelectAtRepeatedCurrentKernel", "Index was out of range."),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(710987653u, "CpuDialectLibraryCallKernels.cs", 39, 21, "UnfusedFirstKernel", "Sequence contains no elements"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(183243595u, "CpuDialectLibraryCallKernels.cs", 45, 21, "UnfusedLastKernel", "Sequence contains no elements"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1926509798u, "CpuDialectLibraryCallKernels.cs", 51, 21, "UnfusedSingleKernel", "Sequence contains no elements"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1998686769u, "CpuDialectLibraryCallKernels.cs", 51, 21, "UnfusedSingleKernel", "Sequence contains more than one element"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1620005898u, "CpuDialectLibraryCallKernels.cs", 57, 21, "UnfusedSingleOrDefaultKernel", "Sequence contains more than one element"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(397983232u, "CpuDialectLibraryCallKernels.cs", 111, 21, "UnfusedMaxKernel", "Sequence contains no elements"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2138052517u, "CpuDialectLibraryCallKernels.cs", 117, 21, "UnfusedMinKernel", "Sequence contains no elements"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1315808641u, "CpuDialectLibraryCallKernels.cs", 123, 21, "UnfusedAverageKernel", "Sequence contains no elements"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(326917242u, "CpuDialectLibraryCallKernels.cs", 129, 21, "UnfusedSeedlessAggregateKernel", "Sequence contains no elements"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(600102918u, "CpuDialectLibraryCallKernels.cs", 142, 22, "EmptySequenceBoundaryKernel", "Sequence contains more than one element"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1166699080u, "CpuDialectLibraryCallKernels.cs", 12, 21, "ElementAtKernel", "Index was out of range."),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(14685589u, "CpuDialectLibraryCallKernels.cs", 18, 21, "ElementAtIndexKernel", "Index was out of range."),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(527262482u, "CpuDialectLibraryCallKernels.cs", 30, 21, "SelectAtRepeatedCurrentKernel", "Index was out of range."),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1085811562u, "CpuDialectLibraryCallKernels.cs", 39, 21, "UnfusedFirstKernel", "Sequence contains no elements"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1069777737u, "CpuDialectLibraryCallKernels.cs", 45, 21, "UnfusedLastKernel", "Sequence contains no elements"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(812093582u, "CpuDialectLibraryCallKernels.cs", 51, 21, "UnfusedSingleKernel", "Sequence contains no elements"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(943075897u, "CpuDialectLibraryCallKernels.cs", 51, 21, "UnfusedSingleKernel", "Sequence contains more than one element"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1413694742u, "CpuDialectLibraryCallKernels.cs", 57, 21, "UnfusedSingleOrDefaultKernel", "Sequence contains more than one element"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(65685545u, "CpuDialectLibraryCallKernels.cs", 111, 21, "UnfusedMaxKernel", "Sequence contains no elements"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(609991563u, "CpuDialectLibraryCallKernels.cs", 117, 21, "UnfusedMinKernel", "Sequence contains no elements"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1593698141u, "CpuDialectLibraryCallKernels.cs", 123, 21, "UnfusedAverageKernel", "Sequence contains no elements"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1843304260u, "CpuDialectLibraryCallKernels.cs", 129, 21, "UnfusedSeedlessAggregateKernel", "Sequence contains no elements"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1931126294u, "CpuDialectLibraryCallKernels.cs", 142, 22, "EmptySequenceBoundaryKernel", "Sequence contains more than one element"),
 };
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -68,7 +68,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_id_1_result[0]=Kassyi::ZeroAlloc::Linq::StackLinq::ElementAt(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_id_0_data),1,1198861384u);
+__gsharp_id_1_result[0]=Kassyi::ZeroAlloc::Linq::StackLinq::ElementAt(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_id_0_data),1,1166699080u);
 __gsharp_state=-1;
 return;
 }
@@ -316,7 +316,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_id_2_result[0]=Kassyi::ZeroAlloc::Linq::StackLinq::ElementAt(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_id_0_data),__gsharp_id_1_index,1414937717u);
+__gsharp_id_2_result[0]=Kassyi::ZeroAlloc::Linq::StackLinq::ElementAt(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_id_0_data),__gsharp_id_1_index,14685589u);
 __gsharp_state=-1;
 return;
 }
@@ -804,7 +804,7 @@ return __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_2_x,10),__gsharp_id_3_i);
 ),[&](auto __gsharp_id_4_v) {
 return __gsharp_id_4_v>=20;
 }
-),1,1370282122u);
+),1,527262482u);
 __gsharp_state=-1;
 return;
 }
@@ -1052,7 +1052,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_id_2_result[0]=Kassyi::ZeroAlloc::Linq::StackLinq::First((Kassyi::ZeroAlloc::Linq::StackLinq::Take(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_id_0_data),__gsharp_id_1_takeCount)),710987653u);
+__gsharp_id_2_result[0]=Kassyi::ZeroAlloc::Linq::StackLinq::First((Kassyi::ZeroAlloc::Linq::StackLinq::Take(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_id_0_data),__gsharp_id_1_takeCount)),1085811562u);
 __gsharp_state=-1;
 return;
 }
@@ -1300,7 +1300,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_id_2_result[0]=Kassyi::ZeroAlloc::Linq::StackLinq::Last((Kassyi::ZeroAlloc::Linq::StackLinq::Take(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_id_0_data),__gsharp_id_1_takeCount)),183243595u);
+__gsharp_id_2_result[0]=Kassyi::ZeroAlloc::Linq::StackLinq::Last((Kassyi::ZeroAlloc::Linq::StackLinq::Take(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_id_0_data),__gsharp_id_1_takeCount)),1069777737u);
 __gsharp_state=-1;
 return;
 }
@@ -1548,7 +1548,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_id_2_result[0]=Kassyi::ZeroAlloc::Linq::StackLinq::Single(Kassyi::ZeroAlloc::Linq::StackLinq::Take(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_id_0_data),__gsharp_id_1_takeCount),1926509798u,1998686769u);
+__gsharp_id_2_result[0]=Kassyi::ZeroAlloc::Linq::StackLinq::Single(Kassyi::ZeroAlloc::Linq::StackLinq::Take(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_id_0_data),__gsharp_id_1_takeCount),812093582u,943075897u);
 __gsharp_state=-1;
 return;
 }
@@ -1796,7 +1796,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_id_2_result[0]=Kassyi::ZeroAlloc::Linq::StackLinq::SingleOrDefault(Kassyi::ZeroAlloc::Linq::StackLinq::Take(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_id_0_data),__gsharp_id_1_takeCount),1620005898u);
+__gsharp_id_2_result[0]=Kassyi::ZeroAlloc::Linq::StackLinq::SingleOrDefault(Kassyi::ZeroAlloc::Linq::StackLinq::Take(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_id_0_data),__gsharp_id_1_takeCount),1413694742u);
 __gsharp_state=-1;
 return;
 }
@@ -4148,7 +4148,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_id_2_result[0]=Kassyi::ZeroAlloc::Linq::StackLinq::Max((Kassyi::ZeroAlloc::Linq::StackLinq::Take(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_id_0_data),__gsharp_id_1_takeCount)),397983232u);
+__gsharp_id_2_result[0]=Kassyi::ZeroAlloc::Linq::StackLinq::Max((Kassyi::ZeroAlloc::Linq::StackLinq::Take(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_id_0_data),__gsharp_id_1_takeCount)),65685545u);
 __gsharp_state=-1;
 return;
 }
@@ -4396,7 +4396,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_id_2_result[0]=Kassyi::ZeroAlloc::Linq::StackLinq::Min((Kassyi::ZeroAlloc::Linq::StackLinq::Take(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_id_0_data),__gsharp_id_1_takeCount)),2138052517u);
+__gsharp_id_2_result[0]=Kassyi::ZeroAlloc::Linq::StackLinq::Min((Kassyi::ZeroAlloc::Linq::StackLinq::Take(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_id_0_data),__gsharp_id_1_takeCount)),609991563u);
 __gsharp_state=-1;
 return;
 }
@@ -4644,7 +4644,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_id_2_result[0]=Kassyi::ZeroAlloc::Linq::StackLinq::Average((Kassyi::ZeroAlloc::Linq::StackLinq::Take(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_id_0_data),__gsharp_id_1_takeCount)),1315808641u);
+__gsharp_id_2_result[0]=Kassyi::ZeroAlloc::Linq::StackLinq::Average((Kassyi::ZeroAlloc::Linq::StackLinq::Take(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_id_0_data),__gsharp_id_1_takeCount)),1593698141u);
 __gsharp_state=-1;
 return;
 }
@@ -4895,7 +4895,7 @@ __gsharp_switch_1_state_0:
 __gsharp_id_2_result[0]=Kassyi::ZeroAlloc::Linq::StackLinq::Aggregate((Kassyi::ZeroAlloc::Linq::StackLinq::Take(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_id_0_data),__gsharp_id_1_takeCount)),[&](int __gsharp_id_3_acc, int __gsharp_id_4_x) {
 return __gsharp_add_i32(__gsharp_id_3_acc,__gsharp_id_4_x);
 }
-,326917242u);
+,1843304260u);
 __gsharp_state=-1;
 return;
 }
@@ -5247,7 +5247,7 @@ __gsharp_fusion_res = __gsharp_val_0;
 }
 return __gsharp_fusion_res;
 }());
-__gsharp_id_1_results[7]=Kassyi::ZeroAlloc::Linq::StackLinq::SingleOrDefault(Kassyi::ZeroAlloc::Linq::StackLinq::Take(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_id_0_data),0),600102918u);
+__gsharp_id_1_results[7]=Kassyi::ZeroAlloc::Linq::StackLinq::SingleOrDefault(Kassyi::ZeroAlloc::Linq::StackLinq::Take(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_id_0_data),0),1931126294u);
 __gsharp_id_1_results[8]=Kassyi::ZeroAlloc::Linq::StackLinq::ElementAtOrDefault(Kassyi::ZeroAlloc::Linq::StackLinq::Take(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_id_0_data),0),0);
 __gsharp_id_1_results[9]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
