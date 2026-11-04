@@ -163,56 +163,10 @@ internal static partial class DiffGenBoxExtensions
 
 /// <summary>
 /// Differential tests for C# generics, nested types, extension methods, reduced extension method groups,
-/// tuple deconstruction, <c>record struct</c> / <c>readonly struct</c>, and pattern matching (Lane D6 Stage 1).
+/// tuple deconstruction, <c>record struct</c> / <c>readonly struct</c>, and pattern matching.
 /// </summary>
 public static partial class LanguageGenericsAndTypesDifferentialKernels
 {
-    public static readonly string[] GenericStructsAndNestedTypesColumns =
-    [
-        "int_box_val",
-        "int_box_tag_plus_ten",
-        "int_box_disposed_marker",
-        "uint_box_val",
-        "short_box_val",
-        "nested_pair_first_val",
-        "nested_pair_first_tag",
-        "nested_pair_second",
-        "ro_cell_weighted_sum",
-        "nested_scope_add",
-        "nested_scope_xor",
-        "nested_scope_scale",
-    ];
-
-    public static readonly string[] ExtensionMethodsAndDelegatesColumns =
-    [
-        "val_ext_ret",
-        "val_ext_caller_unchanged",
-        "in_ext_ret",
-        "ref_ext_mutated_val",
-        "ref_ext_mutated_tag",
-        "static_delegate_ret",
-        "reduced_ext_delegate_captured_receiver",
-        "caller_tag_before_in_mut",
-        "in_ext_defensive_copy_after",
-        "ro_field_defensive_copy_after",
-    ];
-
-    public static readonly string[] DeconstructionRecordsAndPatternsColumns =
-    [
-        "swap_a",
-        "swap_b",
-        "rot_x",
-        "rot_y",
-        "rot_z",
-        "arr_target_order",
-        "dup_target_last_wins",
-        "widened_deconstruct_sum",
-        "ro_record_with_combined",
-        "ro_record_with_side_effect_once",
-        "null_and_not_null_pattern_flags",
-        "switch_expr_val_and_single_eval",
-    ];
-
     [GpuDeviceFunction]
     public static int CombineStaticForDelegate(int a, int b) => (a * 5) - (b * 3) + 7;
 
@@ -223,8 +177,9 @@ public static partial class LanguageGenericsAndTypesDifferentialKernels
         return value;
     }
 
+    // 1. Generic Structs & Nested Types
     [GpuKernel]
-    public static void GenericStructsAndNestedTypesKernel(int[] xs, int[] ys, int[] r)
+    public static void GenericStructScopeUsingKernel(int[] xs, int[] ys, int[] r)
     {
         int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
         if (tid >= xs.Length)
@@ -234,50 +189,54 @@ public static partial class LanguageGenericsAndTypesDifferentialKernels
 
         int x = xs[tid];
         int y = ys[tid];
-        int o = tid * 12;
+        int o = tid * 3;
 
-        int intBoxVal;
-        int intBoxTagPlusTen;
         using (var intBox = new DiffGenScope<int>(x, y & 0xFF, r, o + 2))
         {
-            intBoxVal = intBox.Value + (intBox.IsPositiveTag ? 1 : 0);
-            intBoxTagPlusTen = intBox.TagPlusTen;
+            r[o + 0] = intBox.Value + (intBox.IsPositiveTag ? 1 : 0);
+            r[o + 1] = intBox.TagPlusTen;
         }
+    }
+
+    [GpuKernel]
+    public static void GenericStructPrimitivesAndNestingKernel(int[] xs, int[] ys, int[] r)
+    {
+        int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        if (tid >= xs.Length)
+        {
+            return;
+        }
+
+        int x = xs[tid];
+        int y = ys[tid];
+        int o = tid * 5;
 
         var uintBox = new DiffGenBox<uint>((uint)(x & 0x7FFF), 3);
         var shortBox = new DiffGenBox<short>((short)(y & 0x3FF), 7);
         var nestedPair = new DiffGenPair<DiffGenBox<short>, int>(shortBox, x - y);
-        var roCell = new DiffReadonlyCell(x, y);
 
-        var pAdd = new OuterTypeScope.MidTypeScope.NestedPayload(
-            x,
-            y,
-            OuterTypeScope.MidTypeScope.NestedMode.Add);
-        var pXor = new OuterTypeScope.MidTypeScope.NestedPayload(
-            x,
-            y,
-            OuterTypeScope.MidTypeScope.NestedMode.Xor);
-        var pScale = new OuterTypeScope.MidTypeScope.NestedPayload(
-            x,
-            y,
-            OuterTypeScope.MidTypeScope.NestedMode.Scale);
-
-        r[o + 0] = intBoxVal;
-        r[o + 1] = intBoxTagPlusTen;
-        // r[o + 2] is written by intBox.Dispose() upon exiting the using block above.
-        r[o + 3] = (int)uintBox.Value + uintBox.Tag;
-        r[o + 4] = shortBox.Value + shortBox.Tag;
-        r[o + 5] = nestedPair.First.Value;
-        r[o + 6] = nestedPair.First.Tag;
-        r[o + 7] = nestedPair.Second;
-        r[o + 8] = roCell.WeightedSum;
-        r[o + 9] = OuterTypeScope.MidTypeScope.InnerHelper.EvaluatePayload(pAdd);
-        r[o + 10] = OuterTypeScope.MidTypeScope.InnerHelper.EvaluatePayload(pXor);
-        r[o + 11] = OuterTypeScope.MidTypeScope.InnerHelper.EvaluatePayload(pScale);
+        r[o + 0] = (int)uintBox.Value + uintBox.Tag;
+        r[o + 1] = shortBox.Value + shortBox.Tag;
+        r[o + 2] = nestedPair.First.Value;
+        r[o + 3] = nestedPair.First.Tag;
+        r[o + 4] = nestedPair.Second;
     }
 
     [GpuKernel]
-    public static void ExtensionMethodsAndDelegatesKernel(int[] xs, int[] ys, int[] r)
+    public static void ReadonlyStructWeightedSumKernel(int[] xs, int[] ys, int[] r)
+    {
+        int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        if (tid >= xs.Length)
+        {
+            return;
+        }
+
+        var roCell = new DiffReadonlyCell(xs[tid], ys[tid]);
+        r[tid] = roCell.WeightedSum;
+    }
+
+    [GpuKernel]
+    public static void NestedTypesInNamespaceAndClassKernel(int[] xs, int[] ys, int[] r)
     {
         int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
         if (tid >= xs.Length)
@@ -287,33 +246,104 @@ public static partial class LanguageGenericsAndTypesDifferentialKernels
 
         int x = xs[tid];
         int y = ys[tid];
-        int o = tid * 10;
+        int o = tid * 3;
 
-        var box = new DiffGenBox<int>(x, y);
+        var pAdd = new OuterTypeScope.MidTypeScope.NestedPayload(x, y, OuterTypeScope.MidTypeScope.NestedMode.Add);
+        var pXor = new OuterTypeScope.MidTypeScope.NestedPayload(x, y, OuterTypeScope.MidTypeScope.NestedMode.Xor);
+        var pScale = new OuterTypeScope.MidTypeScope.NestedPayload(x, y, OuterTypeScope.MidTypeScope.NestedMode.Scale);
 
-        // 1. Value-receiver extension method does not mutate caller's struct
+        r[o + 0] = OuterTypeScope.MidTypeScope.InnerHelper.EvaluatePayload(pAdd);
+        r[o + 1] = OuterTypeScope.MidTypeScope.InnerHelper.EvaluatePayload(pXor);
+        r[o + 2] = OuterTypeScope.MidTypeScope.InnerHelper.EvaluatePayload(pScale);
+    }
+
+    // 2. Extension Methods & Delegates
+    [GpuKernel]
+    public static void ValueReceiverExtensionMethodKernel(int[] xs, int[] ys, int[] r)
+    {
+        int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        if (tid >= xs.Length)
+        {
+            return;
+        }
+
+        int o = tid * 2;
+        var box = new DiffGenBox<int>(xs[tid], ys[tid]);
         int valExtRet = box.AddValueScaled(3);
-        int valExtUnchanged = box.Value;
+        r[o + 0] = valExtRet;
+        r[o + 1] = box.Value;
+    }
 
-        // 2. in-receiver extension method
-        int inExtRet = box.ReadInWeighted(11);
+    [GpuKernel]
+    public static void InReceiverExtensionMethodKernel(int[] xs, int[] ys, int[] r)
+    {
+        int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        if (tid >= xs.Length)
+        {
+            return;
+        }
 
-        // 3. ref-receiver extension method mutates caller's struct in place
+        var box = new DiffGenBox<int>(xs[tid], ys[tid]);
+        r[tid] = box.ReadInWeighted(11);
+    }
+
+    [GpuKernel]
+    public static void RefReceiverExtensionMethodKernel(int[] xs, int[] ys, int[] r)
+    {
+        int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        if (tid >= xs.Length)
+        {
+            return;
+        }
+
+        int o = tid * 2;
+        var box = new DiffGenBox<int>(xs[tid], ys[tid]);
         box.AccumulateInPlace(5, 2);
-        int refMutVal = box.Value;
-        int refMutTag = box.Tag;
+        r[o + 0] = box.Value;
+        r[o + 1] = box.Tag;
+    }
 
-        // 4. Static [GpuDeviceFunction] method group conversion
+    [GpuKernel]
+    public static void StaticMethodGroupConversionKernel(int[] xs, int[] ys, int[] r)
+    {
+        int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        if (tid >= xs.Length)
+        {
+            return;
+        }
+
         Func<int, int, int> staticFn = CombineStaticForDelegate;
-        int staticDelegateRet = staticFn(x, y);
+        r[tid] = staticFn(xs[tid], ys[tid]);
+    }
 
-        // 5. Reduced extension method group (#940): receiver array reference is captured at delegate creation
+    [GpuKernel]
+    public static void ReducedExtensionMethodGroupKernel(int[] xs, int[] ys, int[] r)
+    {
+        int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        if (tid >= xs.Length)
+        {
+            return;
+        }
+
         int[] receiverArr = xs;
         Func<int, int> boundExtFn = receiverArr.AddOffsetFromArray;
         receiverArr = ys;
-        int boundDelegateRet = boundExtFn(tid);
+        r[tid] = boundExtFn(tid);
+    }
 
-        // 6. Readonly property access via `in` extension parameter and `readonly` struct field
+    [GpuKernel]
+    public static void ReadonlyPropertyAccessOnInAndFieldKernel(int[] xs, int[] ys, int[] r)
+    {
+        int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        if (tid >= xs.Length)
+        {
+            return;
+        }
+
+        int x = xs[tid];
+        int y = ys[tid];
+        int o = tid * 3;
+
         var probeBox = new DiffGenBox<int>(x, y);
         int tagBefore = probeBox.Tag;
         int tagAfterInExt = probeBox.ReadTagPlusTenOnIn();
@@ -321,20 +351,14 @@ public static partial class LanguageGenericsAndTypesDifferentialKernels
         var roHolder = new DiffReadonlyBoxHolder(new DiffGenBox<int>(x, y));
         int roFieldTagAfter = roHolder.ReadonlyBox.TagPlusTen + roHolder.ReadonlyBox.Value;
 
-        r[o + 0] = valExtRet;
-        r[o + 1] = valExtUnchanged;
-        r[o + 2] = inExtRet;
-        r[o + 3] = refMutVal;
-        r[o + 4] = refMutTag;
-        r[o + 5] = staticDelegateRet;
-        r[o + 6] = boundDelegateRet;
-        r[o + 7] = tagBefore;
-        r[o + 8] = tagAfterInExt;
-        r[o + 9] = roFieldTagAfter;
+        r[o + 0] = tagBefore;
+        r[o + 1] = tagAfterInExt;
+        r[o + 2] = roFieldTagAfter;
     }
 
+    // 3. Deconstruction, Records & Patterns
     [GpuKernel]
-    public static void DeconstructionRecordsAndPatternsKernel(int[] xs, int[] ys, int[] r)
+    public static void TupleDeconstructionSwapAndRotationKernel(int[] xs, int[] ys, int[] r)
     {
         int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
         if (tid >= xs.Length)
@@ -344,9 +368,8 @@ public static partial class LanguageGenericsAndTypesDifferentialKernels
 
         int x = xs[tid];
         int y = ys[tid];
-        int o = tid * 12;
+        int o = tid * 5;
 
-        // 1. Tuple deconstruction swap and 3-way rotation
         int a = x;
         int b = y;
         (a, b) = (b, a + b);
@@ -356,23 +379,74 @@ public static partial class LanguageGenericsAndTypesDifferentialKernels
         int rz = x - y;
         (rx, ry, rz) = (ry, rz, rx + 1);
 
-        // 2. Side-effecting array element targets in deconstruction (left-to-right target evaluation)
+        r[o + 0] = a;
+        r[o + 1] = b;
+        r[o + 2] = rx;
+        r[o + 3] = ry;
+        r[o + 4] = rz;
+    }
+
+    [GpuKernel]
+    public static void DeconstructionSideEffectingTargetOrderKernel(int[] xs, int[] ys, int[] r)
+    {
+        int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        if (tid >= xs.Length)
+        {
+            return;
+        }
+
+        int x = xs[tid];
+        int y = ys[tid];
         Span<int> scratch = stackalloc int[2];
         int idx = 0;
         (scratch[idx++], scratch[idx++]) = (x + 10, y + 20);
-        int arrTargetOrder = (scratch[0] * 3) + scratch[1] + (idx * 100);
+        r[tid] = (scratch[0] * 3) + scratch[1] + (idx * 100);
+    }
 
-        // 3. Duplicate target in deconstruction: later element overwrites earlier
+    [GpuKernel]
+    public static void DeconstructionDuplicateTargetOverwriteKernel(int[] xs, int[] ys, int[] r)
+    {
+        int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        if (tid >= xs.Length)
+        {
+            return;
+        }
+
+        int x = xs[tid];
+        int y = ys[tid];
         int dup = 0;
         (dup, dup) = (x + 11, y + 22);
+        r[tid] = dup;
+    }
 
-        // 4. Implicit widening conversion during deconstruction
-        short narrowA = (short)x;
-        int narrowB = y;
+    [GpuKernel]
+    public static void DeconstructionImplicitWideningKernel(int[] xs, int[] ys, int[] r)
+    {
+        int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        if (tid >= xs.Length)
+        {
+            return;
+        }
+
+        short narrowA = (short)xs[tid];
+        int narrowB = ys[tid];
         (int wideA, long wideB) = (narrowA, narrowB);
-        int widenedSum = wideA + (int)wideB;
+        r[tid] = wideA + (int)wideB;
+    }
 
-        // 5. readonly record struct with-expression and side-effect count
+    [GpuKernel]
+    public static void ReadonlyRecordStructWithExpressionKernel(int[] xs, int[] ys, int[] r)
+    {
+        int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        if (tid >= xs.Length)
+        {
+            return;
+        }
+
+        int x = xs[tid];
+        int y = ys[tid];
+        int o = tid * 2;
+
         var rec0 = new DiffReadonlyRecordPair(x, y);
         int sideCount = 0;
         var rec1 = rec0 with
@@ -382,7 +456,23 @@ public static partial class LanguageGenericsAndTypesDifferentialKernels
         };
         var rec2 = rec1 with { Right = y - 4 };
 
-        // 6. Pattern matching: is null / is not null on array and nullable array, plus switch expression with constant & discard arms
+        r[o + 0] = rec2.Combined;
+        r[o + 1] = sideCount;
+    }
+
+    [GpuKernel]
+    public static void PatternMatchingAndSwitchExpressionKernel(int[] xs, int[] ys, int[] r)
+    {
+        int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        if (tid >= xs.Length)
+        {
+            return;
+        }
+
+        int x = xs[tid];
+        int y = ys[tid];
+        int o = tid * 2;
+
         int[]? nullArr = default;
         int[]? nonNullArr = ys;
         int nullFlags =
@@ -400,17 +490,7 @@ public static partial class LanguageGenericsAndTypesDifferentialKernels
             _ => y + 400,
         };
 
-        r[o + 0] = a;
-        r[o + 1] = b;
-        r[o + 2] = rx;
-        r[o + 3] = ry;
-        r[o + 4] = rz;
-        r[o + 5] = arrTargetOrder;
-        r[o + 6] = dup;
-        r[o + 7] = widenedSum;
-        r[o + 8] = rec2.Combined;
-        r[o + 9] = sideCount;
-        r[o + 10] = nullFlags;
-        r[o + 11] = bucket + (switchEvalCount * 1000);
+        r[o + 0] = nullFlags;
+        r[o + 1] = bucket + (switchEvalCount * 1000);
     }
 }

@@ -7,8 +7,11 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 
 /// <summary>
 /// Differential tests for user-defined conversion operators (#963), <c>[GpuOperatorMacro]</c> expansions
-/// (#478, #641, #711), and <c>using static</c> / type alias directives (#503) (Lane D6 Stage 2).
+/// (#478, #641, #711), and <c>using static</c> / type alias directives (#503).
 /// </summary>
+[TestTarget(ExecutionTarget.GpuExecution)]
+[Category(TestCategory.Differential)]
+[Scenario(TestScenario.Boundary)]
 public class LanguageConversionsAndMacrosDifferentialTests
 {
     private const int Rows = 128;
@@ -37,8 +40,11 @@ public class LanguageConversionsAndMacrosDifferentialTests
             b.Get<int>("r")),
     };
 
-    private static readonly DifferentialCase s_operatorMacros = new(
-        $"{nameof(LanguageConversionsAndMacrosDifferentialKernels)}.{nameof(LanguageConversionsAndMacrosDifferentialKernels.OperatorMacrosAndEvaluationOrderKernel)}")
+    private static int MacroAdd(int left, int right, int bias) => (left * 3) + right + bias;
+    private static int MacroSub(int left, int right) => (left * 2) - right + 9;
+
+    private static readonly DifferentialCase s_macroArithmetic = new(
+        $"{nameof(LanguageConversionsAndMacrosDifferentialKernels)}.{nameof(LanguageConversionsAndMacrosDifferentialKernels.OperatorMacroArithmeticKernel)}")
     {
         Shape = LaunchShape.ForRows(Rows, blockX: 64),
         Inputs = static (rng, rows) =>
@@ -47,9 +53,9 @@ public class LanguageConversionsAndMacrosDifferentialTests
             return new DiffBuffers()
                 .In("xs", xs)
                 .In("ys", ys)
-                .Out<int>("r", rows, LanguageConversionsAndMacrosDifferentialKernels.OperatorMacrosColumns, OutputPolicy.Exact);
+                .Out<int>("r", rows, ["direct_add", "direct_private_sub", "nested_right_assoc", "nested_left_assoc"], OutputPolicy.Exact);
         },
-        Launch = static (b, s) => LanguageConversionsAndMacrosDifferentialKernels.LaunchOperatorMacrosAndEvaluationOrderKernel(
+        Launch = static (b, s) => LanguageConversionsAndMacrosDifferentialKernels.LaunchOperatorMacroArithmeticKernel(
             b.Get<int>("xs"),
             b.Get<int>("ys"),
             b.Get<int>("r"),
@@ -57,43 +63,127 @@ public class LanguageConversionsAndMacrosDifferentialTests
             blockDimX: s.BlockX),
         Reference = static (b, _) =>
         {
-            static int MacroAdd(int left, int right, int bias) => (left * 3) + right + bias;
-            static int MacroSub(int left, int right) => (left * 2) - right + 9;
-
             var xs = b.Get<int>("xs");
             var ys = b.Get<int>("ys");
             var r = b.Get<int>("r");
             const int Bias = 5;
-
             for (int tid = 0; tid < xs.Length; tid++)
             {
                 int x = xs[tid] & 0xFFF;
                 int y = ys[tid] & 0xFFF;
                 int z = (x ^ y) & 0x3FF;
-                int o = tid * 9;
+                int o = tid * 4;
+                r[o + 0] = MacroAdd(x, y, Bias);
+                r[o + 1] = MacroSub(x, y);
+                r[o + 2] = MacroAdd(x, MacroSub(y, z), Bias);
+                r[o + 3] = MacroAdd(MacroSub(x, y), z, Bias);
+            }
+        },
+    };
 
-                int cAdd = MacroAdd(x, y, Bias);
-                int cSub = MacroSub(x, y);
-                int cRight = MacroAdd(x, MacroSub(y, z), Bias);
-                int cLeft = MacroAdd(MacroSub(x, y), z, Bias);
-                int cOrder = MacroAdd(x + 1, MacroSub(y + 2, z + 3), Bias);
-                int cCast = MacroAdd(x, y, Bias);
-                int cShift = x >> 2;
+    private static readonly DifferentialCase s_macroEvaluationOrder = new(
+        $"{nameof(LanguageConversionsAndMacrosDifferentialKernels)}.{nameof(LanguageConversionsAndMacrosDifferentialKernels.OperatorMacroEvaluationOrderKernel)}")
+    {
+        Shape = LaunchShape.ForRows(Rows, blockX: 64),
+        Inputs = static (rng, rows) =>
+        {
+            var (xs, ys) = DiffValues.Int32Pairs(rng, rows);
+            return new DiffBuffers()
+                .In("xs", xs)
+                .In("ys", ys)
+                .Out<int>("r", rows, ["nested_eval_order_val", "nested_eval_order_trace"], OutputPolicy.Exact);
+        },
+        Launch = static (b, s) => LanguageConversionsAndMacrosDifferentialKernels.LaunchOperatorMacroEvaluationOrderKernel(
+            b.Get<int>("xs"),
+            b.Get<int>("ys"),
+            b.Get<int>("r"),
+            gridDimX: s.GridX,
+            blockDimX: s.BlockX),
+        Reference = static (b, _) =>
+        {
+            var xs = b.Get<int>("xs");
+            var ys = b.Get<int>("ys");
+            var r = b.Get<int>("r");
+            const int Bias = 5;
+            for (int tid = 0; tid < xs.Length; tid++)
+            {
+                int x = xs[tid] & 0xFFF;
+                int y = ys[tid] & 0xFFF;
+                int z = (x ^ y) & 0x3FF;
+                int o = tid * 2;
+                r[o + 0] = MacroAdd(x + 1, MacroSub(y + 2, z + 3), Bias);
+                r[o + 1] = 123;
+            }
+        },
+    };
 
+    private static readonly DifferentialCase s_macroCastAndShift = new(
+        $"{nameof(LanguageConversionsAndMacrosDifferentialKernels)}.{nameof(LanguageConversionsAndMacrosDifferentialKernels.OperatorMacroCastAndShiftKernel)}")
+    {
+        Shape = LaunchShape.ForRows(Rows, blockX: 64),
+        Inputs = static (rng, rows) =>
+        {
+            var (xs, ys) = DiffValues.Int32Pairs(rng, rows);
+            return new DiffBuffers()
+                .In("xs", xs)
+                .In("ys", ys)
+                .Out<int>("r", rows, ["parenthesized_cast_macro", "shift_overload_long_wins"], OutputPolicy.Exact);
+        },
+        Launch = static (b, s) => LanguageConversionsAndMacrosDifferentialKernels.LaunchOperatorMacroCastAndShiftKernel(
+            b.Get<int>("xs"),
+            b.Get<int>("ys"),
+            b.Get<int>("r"),
+            gridDimX: s.GridX,
+            blockDimX: s.BlockX),
+        Reference = static (b, _) =>
+        {
+            var xs = b.Get<int>("xs");
+            var ys = b.Get<int>("ys");
+            var r = b.Get<int>("r");
+            const int Bias = 5;
+            for (int tid = 0; tid < xs.Length; tid++)
+            {
+                int x = xs[tid] & 0xFFF;
+                int y = ys[tid] & 0xFFF;
+                int o = tid * 2;
+                r[o + 0] = MacroAdd(x, y, Bias);
+                r[o + 1] = x >> 2;
+            }
+        },
+    };
+
+    private static readonly DifferentialCase s_macroInDeviceFunction = new(
+        $"{nameof(LanguageConversionsAndMacrosDifferentialKernels)}.{nameof(LanguageConversionsAndMacrosDifferentialKernels.OperatorMacroInDeviceFunctionKernel)}")
+    {
+        Shape = LaunchShape.ForRows(Rows, blockX: 64),
+        Inputs = static (rng, rows) =>
+        {
+            var (xs, ys) = DiffValues.Int32Pairs(rng, rows);
+            return new DiffBuffers()
+                .In("xs", xs)
+                .In("ys", ys)
+                .Out<int>("r", rows, ["helper_fn_macro_and_ctx_calls"], OutputPolicy.Exact);
+        },
+        Launch = static (b, s) => LanguageConversionsAndMacrosDifferentialKernels.LaunchOperatorMacroInDeviceFunctionKernel(
+            b.Get<int>("xs"),
+            b.Get<int>("ys"),
+            b.Get<int>("r"),
+            gridDimX: s.GridX,
+            blockDimX: s.BlockX),
+        Reference = static (b, _) =>
+        {
+            var xs = b.Get<int>("xs");
+            var ys = b.Get<int>("ys");
+            var r = b.Get<int>("r");
+            const int Bias = 5;
+            for (int tid = 0; tid < xs.Length; tid++)
+            {
+                int x = xs[tid] & 0xFFF;
+                int y = ys[tid] & 0xFFF;
                 int helperSum = MacroAdd(x, y, Bias);
                 int helperDiff = MacroSub(helperSum, x);
-                // Calls to AddWithContext: cAdd (1), cRight (1), cLeft (1), cOrder (1), cCast (1), helperSum (1) = 6
-                const int TotalAddCalls = 6;
-
-                r[o + 0] = cAdd;
-                r[o + 1] = cSub;
-                r[o + 2] = cRight;
-                r[o + 3] = cLeft;
-                r[o + 4] = cOrder;
-                r[o + 5] = 123;
-                r[o + 6] = cCast;
-                r[o + 7] = cShift;
-                r[o + 8] = (helperDiff * 10) + TotalAddCalls;
+                const int TotalAddCalls = 1;
+                r[tid] = (helperDiff * 10) + TotalAddCalls;
             }
         },
     };
@@ -159,23 +249,22 @@ public class LanguageConversionsAndMacrosDifferentialTests
     };
 
     [SkippableFact]
-    [TestTarget(ExecutionTarget.GpuExecution)]
-    [Category(TestCategory.Differential)]
-    [Scenario(TestScenario.Boundary)]
     public void Test_UserDefinedImplicitConversions_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_implicitConversions);
 
     [SkippableFact]
-    [TestTarget(ExecutionTarget.GpuExecution)]
-    [Category(TestCategory.Differential)]
-    [Scenario(TestScenario.Boundary)]
-    public void Test_OperatorMacrosAndEvaluationOrder_MatchesTheReferenceOnEveryPath() =>
-        DifferentialRunner.Run(s_operatorMacros);
+    public void Test_OperatorMacroArithmetic_MatchesTheReferenceOnEveryPath() => DifferentialRunner.Run(s_macroArithmetic);
 
     [SkippableFact]
-    [TestTarget(ExecutionTarget.GpuExecution)]
-    [Category(TestCategory.Differential)]
-    [Scenario(TestScenario.Boundary)]
+    public void Test_OperatorMacroEvaluationOrder_MatchesTheReferenceOnEveryPath() => DifferentialRunner.Run(s_macroEvaluationOrder);
+
+    [SkippableFact]
+    public void Test_OperatorMacroCastAndShift_MatchesTheReferenceOnEveryPath() => DifferentialRunner.Run(s_macroCastAndShift);
+
+    [SkippableFact]
+    public void Test_OperatorMacroInDeviceFunction_MatchesTheReferenceOnEveryPath() => DifferentialRunner.Run(s_macroInDeviceFunction);
+
+    [SkippableFact]
     public void Test_OperatorMacroAcrossBarrierAndUsingStatic_MatchesTheReferenceOnEveryPath() =>
         DifferentialRunner.Run(s_macroAcrossBarrierAndUsingStatic);
 }

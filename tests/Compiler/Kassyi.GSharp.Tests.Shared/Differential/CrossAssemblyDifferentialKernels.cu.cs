@@ -11,22 +11,6 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 /// </summary>
 public static partial class CrossAssemblyDifferentialKernels
 {
-    public static readonly string[] StructsAndLayoutsColumns =
-    [
-        "vec2_x",
-        "vec2_y",
-        "vec2_sum",
-        "particle_weight",
-        "scaled_val",
-        "alpha_inner_v",
-        "alpha_probe",
-        "length3_sq",
-        "dot3_val",
-        "swap_pair_a",
-        "packed_pair_val",
-        "disposed_lib_guard",
-    ];
-
     public static readonly string[] FunctionsAndMacrosColumns =
     [
         "mu_unqualified",
@@ -42,7 +26,7 @@ public static partial class CrossAssemblyDifferentialKernels
     ];
 
     [GpuKernel]
-    public static void CrossAssemblyStructsAndLayoutsKernel(int[] xs, int[] ys, int[] r)
+    public static void CrossAssemblyVec2Kernel(int[] xs, int[] ys, int[] r)
     {
         int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
         if (tid >= xs.Length)
@@ -52,44 +36,109 @@ public static partial class CrossAssemblyDifferentialKernels
 
         int x = xs[tid] & 0x3FF;
         int y = ys[tid] & 0x3FF;
-        int o = tid * 12;
+        int o = tid * 3;
 
-        // 1. Vec2: non-trivial constructor body (X = x * 2, Y = y + 1) and computed property Sum
         var v2 = new Vec2(x, y);
+        r[o + 0] = (int)v2.X;
+        r[o + 1] = (int)v2.Y;
+        r[o + 2] = (int)v2.Sum;
+    }
 
-        // 2. Particle: struct containing Core Float3 field (#538)
-        var particle = new Particle(new Float3((float)x, (float)y, 2f), 3f);
-
-        // 3. Scaled: struct constructor calling library [GpuDeviceFunction] LibMath.Twice -> LibMath.Helper
-        var scaled = new Scaled(x);
-
-        // 4. Alpha -> Omega -> Zeta transitive struct chain
-        var alpha = new Alpha(x);
-
-        // 5. Library functions taking/constructing Float3
-        float len3 = LibMath.Length3((float)x, (float)y, 2f);
-        float dot3 = LibMath.Dot3(new Float3((float)x, (float)y, 2f));
-
-        // 6. Explicit and packed layout structs constructed locally
-        var swap = new SwapPair { A = x + 10, B = y + 20 };
-        var packed = new PackedPair { Tag = (byte)(x & 0x7F), Value = y + 30 };
-
-        // 7. Cross-assembly IDisposable struct in a using statement
-        using (var guard = new LibDisposableGuard { Log = r, Slot = o + 11, Marker = x + y })
+    [GpuKernel]
+    public static void CrossAssemblyParticleKernel(int[] xs, int[] ys, int[] r)
+    {
+        int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        if (tid >= xs.Length)
         {
-            r[o + 0] = (int)v2.X;
-            r[o + 1] = (int)v2.Y;
-            r[o + 2] = (int)v2.Sum;
+            return;
         }
 
-        r[o + 3] = (int)particle.Weight;
-        r[o + 4] = scaled.V;
-        r[o + 5] = alpha.Inner.V;
-        r[o + 6] = alpha.Probe;
-        r[o + 7] = (int)len3;
-        r[o + 8] = (int)dot3;
-        r[o + 9] = (swap.A * 3) + swap.B;
-        r[o + 10] = packed.Tag + packed.Value;
+        int x = xs[tid] & 0x3FF;
+        int y = ys[tid] & 0x3FF;
+        var particle = new Particle(new Float3((float)x, (float)y, 2f), 3f);
+        r[tid] = (int)particle.Weight;
+    }
+
+    [GpuKernel]
+    public static void CrossAssemblyScaledKernel(int[] xs, int[] ys, int[] r)
+    {
+        int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        if (tid >= xs.Length)
+        {
+            return;
+        }
+
+        int x = xs[tid] & 0x3FF;
+        var scaled = new Scaled(x);
+        r[tid] = scaled.V;
+    }
+
+    [GpuKernel]
+    public static void CrossAssemblyTransitiveStructKernel(int[] xs, int[] ys, int[] r)
+    {
+        int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        if (tid >= xs.Length)
+        {
+            return;
+        }
+
+        int x = xs[tid] & 0x3FF;
+        int o = tid * 2;
+        var alpha = new Alpha(x);
+        r[o + 0] = alpha.Inner.V;
+        r[o + 1] = alpha.Probe;
+    }
+
+    [GpuKernel]
+    public static void CrossAssemblyFloat3FunctionsKernel(int[] xs, int[] ys, int[] r)
+    {
+        int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        if (tid >= xs.Length)
+        {
+            return;
+        }
+
+        int x = xs[tid] & 0x3FF;
+        int y = ys[tid] & 0x3FF;
+        int o = tid * 2;
+        float len3 = LibMath.Length3((float)x, (float)y, 2f);
+        float dot3 = LibMath.Dot3(new Float3((float)x, (float)y, 2f));
+        r[o + 0] = (int)len3;
+        r[o + 1] = (int)dot3;
+    }
+
+    [GpuKernel]
+    public static void CrossAssemblyExplicitPackedLayoutKernel(int[] xs, int[] ys, int[] r)
+    {
+        int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        if (tid >= xs.Length)
+        {
+            return;
+        }
+
+        int x = xs[tid] & 0x3FF;
+        int y = ys[tid] & 0x3FF;
+        int o = tid * 2;
+        var swap = new SwapPair { A = x + 10, B = y + 20 };
+        var packed = new PackedPair { Tag = (byte)(x & 0x7F), Value = y + 30 };
+        r[o + 0] = (swap.A * 3) + swap.B;
+        r[o + 1] = packed.Tag + packed.Value;
+    }
+
+    [GpuKernel]
+    public static void CrossAssemblyDisposableGuardKernel(int[] xs, int[] ys, int[] r)
+    {
+        int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        if (tid >= xs.Length)
+        {
+            return;
+        }
+
+        int x = xs[tid] & 0x3FF;
+        int y = ys[tid] & 0x3FF;
+        using (var guard = new LibDisposableGuard { Log = r, Slot = tid, Marker = x + y })
+        {
+        }
     }
 
     [GpuKernel]

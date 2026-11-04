@@ -112,7 +112,7 @@ public static partial class LocalGpuShadow
 /// <summary>
 /// Differential kernels for user-defined conversion operators (#963), <c>[GpuOperatorMacro]</c> expansion
 /// (direct, inside <c>[GpuDeviceFunction]</c>, across barriers, nested evaluation order, private target #711,
-/// overload resolution #478), and <c>using static</c> / type alias directives (#503) (Lane D6 Stage 2).
+/// overload resolution #478), and <c>using static</c> / type alias directives (#503).
 /// </summary>
 public static partial class LanguageConversionsAndMacrosDifferentialKernels
 {
@@ -126,19 +126,6 @@ public static partial class LanguageConversionsAndMacrosDifferentialKernels
         "linear_meter_from_int",
         "int_from_linear_meter",
         "fn_arg_implicit_linear_meter",
-    ];
-
-    public static readonly string[] OperatorMacrosColumns =
-    [
-        "direct_add",
-        "direct_private_sub",
-        "nested_right_assoc",
-        "nested_left_assoc",
-        "nested_eval_order_val",
-        "nested_eval_order_trace",
-        "parenthesized_cast_macro",
-        "shift_overload_long_wins",
-        "helper_fn_macro_and_ctx_calls",
     ];
 
     public static readonly string[] MacroAcrossBarrierAndUsingStaticColumns =
@@ -233,7 +220,7 @@ public static partial class LanguageConversionsAndMacrosDifferentialKernels
     }
 
     [GpuKernel]
-    public static void OperatorMacrosAndEvaluationOrderKernel(int[] xs, int[] ys, int[] r)
+    public static void OperatorMacroArithmeticKernel(int[] xs, int[] ys, int[] r)
     {
         int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
         if (tid >= xs.Length)
@@ -244,7 +231,7 @@ public static partial class LanguageConversionsAndMacrosDifferentialKernels
         int x = xs[tid] & 0xFFF;
         int y = ys[tid] & 0xFFF;
         int z = (x ^ y) & 0x3FF;
-        int o = tid * 9;
+        int o = tid * 4;
 
         DiffMacroContext ctx = new DiffMacroContext { Bias = 5, Calls = 0 };
         var a = new DiffMacroNum(x);
@@ -263,10 +250,52 @@ public static partial class LanguageConversionsAndMacrosDifferentialKernels
         DiffMacroNum cLeft = default;
         cLeft = (a - b) + d;
 
+        r[o + 0] = cAdd.Value;
+        r[o + 1] = cSub.Value;
+        r[o + 2] = cRight.Value;
+        r[o + 3] = cLeft.Value;
+    }
+
+    [GpuKernel]
+    public static void OperatorMacroEvaluationOrderKernel(int[] xs, int[] ys, int[] r)
+    {
+        int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        if (tid >= xs.Length)
+        {
+            return;
+        }
+
+        int x = xs[tid] & 0xFFF;
+        int y = ys[tid] & 0xFFF;
+        int z = (x ^ y) & 0x3FF;
+        int o = tid * 2;
+
+        DiffMacroContext ctx = new DiffMacroContext { Bias = 5, Calls = 0 };
         int orderTrace = 0;
         DiffMacroNum cOrder = default;
         cOrder = MakeOperandWithStep(ref orderTrace, 1, x) +
                  (MakeOperandWithStep(ref orderTrace, 2, y) - MakeOperandWithStep(ref orderTrace, 3, z));
+
+        r[o + 0] = cOrder.Value;
+        r[o + 1] = orderTrace;
+    }
+
+    [GpuKernel]
+    public static void OperatorMacroCastAndShiftKernel(int[] xs, int[] ys, int[] r)
+    {
+        int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        if (tid >= xs.Length)
+        {
+            return;
+        }
+
+        int x = xs[tid] & 0xFFF;
+        int y = ys[tid] & 0xFFF;
+        int o = tid * 2;
+
+        DiffMacroContext ctx = new DiffMacroContext { Bias = 5, Calls = 0 };
+        var a = new DiffMacroNum(x);
+        var b = new DiffMacroNum(y);
 
         DiffMacroNum cCast = default;
         cCast = (DiffMacroNum)(a + b);
@@ -274,17 +303,26 @@ public static partial class LanguageConversionsAndMacrosDifferentialKernels
         DiffMacroNum cShift = default;
         cShift = a >> 2;
 
+        r[o + 0] = cCast.Value;
+        r[o + 1] = cShift.Value;
+    }
+
+    [GpuKernel]
+    public static void OperatorMacroInDeviceFunctionKernel(int[] xs, int[] ys, int[] r)
+    {
+        int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        if (tid >= xs.Length)
+        {
+            return;
+        }
+
+        int x = xs[tid] & 0xFFF;
+        int y = ys[tid] & 0xFFF;
+
+        DiffMacroContext ctx = new DiffMacroContext { Bias = 5, Calls = 0 };
         int helperVal = EvalMacrosInDeviceFunction(ref ctx, x, y);
 
-        r[o + 0] = cAdd.Value;
-        r[o + 1] = cSub.Value;
-        r[o + 2] = cRight.Value;
-        r[o + 3] = cLeft.Value;
-        r[o + 4] = cOrder.Value;
-        r[o + 5] = orderTrace;
-        r[o + 6] = cCast.Value;
-        r[o + 7] = cShift.Value;
-        r[o + 8] = (helperVal * 10) + ctx.Calls;
+        r[tid] = (helperVal * 10) + ctx.Calls;
     }
 
     [GpuKernel]

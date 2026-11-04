@@ -7,8 +7,11 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 
 /// <summary>
 /// Differential tests for cross-assembly structs, explicit/packed layouts, functions, operator macros (#711),
-/// and barrier-suspending device functions (#433) from <c>Kassyi.GSharp.Tests.DeviceLibrary</c> (Lane D6 Stage 2).
+/// and barrier-suspending device functions (#433) from <c>Kassyi.GSharp.Tests.DeviceLibrary</c>.
 /// </summary>
+[TestTarget(ExecutionTarget.GpuExecution)]
+[Category(TestCategory.Differential)]
+[Scenario(TestScenario.Boundary)]
 public class CrossAssemblyDifferentialTests
 {
     private const int Rows = 128;
@@ -37,29 +40,67 @@ public class CrossAssemblyDifferentialTests
             ctx.Field(nameof(IntFloatUnion.Tag), e.Tag, a.Tag);
         });
 
-    private static readonly DifferentialCase s_structsAndLayouts = new(
-        $"{nameof(CrossAssemblyDifferentialKernels)}.{nameof(CrossAssemblyDifferentialKernels.CrossAssemblyStructsAndLayoutsKernel)}")
-    {
-        Shape = LaunchShape.ForRows(Rows, blockX: 64),
-        Inputs = static (rng, rows) =>
+    private static DifferentialCase CreateStructCase(
+        string kernelName,
+        string[] columns,
+        Action<int[], int[], int[], uint, uint> launch,
+        Action<int[], int[], int[]> oracle) =>
+        new($"{nameof(CrossAssemblyDifferentialKernels)}.{kernelName}")
         {
-            var (xs, ys) = DiffValues.Int32Pairs(rng, rows);
-            return new DiffBuffers()
-                .In("xs", xs)
-                .In("ys", ys)
-                .Out<int>("r", rows, CrossAssemblyDifferentialKernels.StructsAndLayoutsColumns, OutputPolicy.Exact);
-        },
-        Launch = static (b, s) => CrossAssemblyDifferentialKernels.LaunchCrossAssemblyStructsAndLayoutsKernel(
-            b.Get<int>("xs"),
-            b.Get<int>("ys"),
-            b.Get<int>("r"),
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        Oracle = static (b, _) => CrossAssemblyDifferentialKernels.CrossAssemblyStructsAndLayoutsKernel(
-            b.Get<int>("xs"),
-            b.Get<int>("ys"),
-            b.Get<int>("r")),
-    };
+            Shape = LaunchShape.ForRows(Rows, blockX: 64),
+            Inputs = (rng, rows) =>
+            {
+                var (xs, ys) = DiffValues.Int32Pairs(rng, rows);
+                return new DiffBuffers()
+                    .In("xs", xs)
+                    .In("ys", ys)
+                    .Out<int>("r", rows, columns, OutputPolicy.Exact);
+            },
+            Launch = (b, s) => launch(b.Get<int>("xs"), b.Get<int>("ys"), b.Get<int>("r"), s.GridX, s.BlockX),
+            Oracle = (b, _) => oracle(b.Get<int>("xs"), b.Get<int>("ys"), b.Get<int>("r")),
+        };
+
+    private static readonly DifferentialCase s_vec2 = CreateStructCase(
+        nameof(CrossAssemblyDifferentialKernels.CrossAssemblyVec2Kernel),
+        ["vec2_x", "vec2_y", "vec2_sum"],
+        static (xs, ys, r, gx, bx) => CrossAssemblyDifferentialKernels.LaunchCrossAssemblyVec2Kernel(xs, ys, r, gridDimX: gx, blockDimX: bx),
+        CrossAssemblyDifferentialKernels.CrossAssemblyVec2Kernel);
+
+    private static readonly DifferentialCase s_particle = CreateStructCase(
+        nameof(CrossAssemblyDifferentialKernels.CrossAssemblyParticleKernel),
+        ["particle_weight"],
+        static (xs, ys, r, gx, bx) => CrossAssemblyDifferentialKernels.LaunchCrossAssemblyParticleKernel(xs, ys, r, gridDimX: gx, blockDimX: bx),
+        CrossAssemblyDifferentialKernels.CrossAssemblyParticleKernel);
+
+    private static readonly DifferentialCase s_scaled = CreateStructCase(
+        nameof(CrossAssemblyDifferentialKernels.CrossAssemblyScaledKernel),
+        ["scaled_val"],
+        static (xs, ys, r, gx, bx) => CrossAssemblyDifferentialKernels.LaunchCrossAssemblyScaledKernel(xs, ys, r, gridDimX: gx, blockDimX: bx),
+        CrossAssemblyDifferentialKernels.CrossAssemblyScaledKernel);
+
+    private static readonly DifferentialCase s_transitiveStruct = CreateStructCase(
+        nameof(CrossAssemblyDifferentialKernels.CrossAssemblyTransitiveStructKernel),
+        ["alpha_inner_v", "alpha_probe"],
+        static (xs, ys, r, gx, bx) => CrossAssemblyDifferentialKernels.LaunchCrossAssemblyTransitiveStructKernel(xs, ys, r, gridDimX: gx, blockDimX: bx),
+        CrossAssemblyDifferentialKernels.CrossAssemblyTransitiveStructKernel);
+
+    private static readonly DifferentialCase s_float3Functions = CreateStructCase(
+        nameof(CrossAssemblyDifferentialKernels.CrossAssemblyFloat3FunctionsKernel),
+        ["length3_sq", "dot3_val"],
+        static (xs, ys, r, gx, bx) => CrossAssemblyDifferentialKernels.LaunchCrossAssemblyFloat3FunctionsKernel(xs, ys, r, gridDimX: gx, blockDimX: bx),
+        CrossAssemblyDifferentialKernels.CrossAssemblyFloat3FunctionsKernel);
+
+    private static readonly DifferentialCase s_explicitPackedLayout = CreateStructCase(
+        nameof(CrossAssemblyDifferentialKernels.CrossAssemblyExplicitPackedLayoutKernel),
+        ["swap_pair_a", "packed_pair_val"],
+        static (xs, ys, r, gx, bx) => CrossAssemblyDifferentialKernels.LaunchCrossAssemblyExplicitPackedLayoutKernel(xs, ys, r, gridDimX: gx, blockDimX: bx),
+        CrossAssemblyDifferentialKernels.CrossAssemblyExplicitPackedLayoutKernel);
+
+    private static readonly DifferentialCase s_disposableGuard = CreateStructCase(
+        nameof(CrossAssemblyDifferentialKernels.CrossAssemblyDisposableGuardKernel),
+        ["disposed_lib_guard"],
+        static (xs, ys, r, gx, bx) => CrossAssemblyDifferentialKernels.LaunchCrossAssemblyDisposableGuardKernel(xs, ys, r, gridDimX: gx, blockDimX: bx),
+        CrossAssemblyDifferentialKernels.CrossAssemblyDisposableGuardKernel);
 
     private static readonly DifferentialCase s_functionsAndMacros = new(
         $"{nameof(CrossAssemblyDifferentialKernels)}.{nameof(CrossAssemblyDifferentialKernels.CrossAssemblyFunctionsAndMacrosKernel)}")
@@ -189,30 +230,35 @@ public class CrossAssemblyDifferentialTests
     };
 
     [SkippableFact]
-    [TestTarget(ExecutionTarget.GpuExecution)]
-    [Category(TestCategory.Differential)]
-    [Scenario(TestScenario.Boundary)]
-    public void Test_CrossAssemblyStructsAndLayouts_MatchesTheOracleOnEveryPath() =>
-        DifferentialRunner.Run(s_structsAndLayouts);
+    public void Test_CrossAssemblyVec2_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_vec2);
 
     [SkippableFact]
-    [TestTarget(ExecutionTarget.GpuExecution)]
-    [Category(TestCategory.Differential)]
-    [Scenario(TestScenario.Boundary)]
+    public void Test_CrossAssemblyParticle_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_particle);
+
+    [SkippableFact]
+    public void Test_CrossAssemblyScaled_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_scaled);
+
+    [SkippableFact]
+    public void Test_CrossAssemblyTransitiveStruct_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_transitiveStruct);
+
+    [SkippableFact]
+    public void Test_CrossAssemblyFloat3Functions_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_float3Functions);
+
+    [SkippableFact]
+    public void Test_CrossAssemblyExplicitPackedLayout_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_explicitPackedLayout);
+
+    [SkippableFact]
+    public void Test_CrossAssemblyDisposableGuard_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_disposableGuard);
+
+    [SkippableFact]
     public void Test_CrossAssemblyFunctionsAndMacros_MatchesTheReferenceOnEveryPath() =>
         DifferentialRunner.Run(s_functionsAndMacros);
 
     [SkippableFact]
-    [TestTarget(ExecutionTarget.GpuExecution)]
-    [Category(TestCategory.Differential)]
-    [Scenario(TestScenario.Boundary)]
     public void Test_CrossAssemblyExplicitLayoutArray_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_explicitLayoutArrays);
 
     [SkippableFact]
-    [TestTarget(ExecutionTarget.GpuExecution)]
-    [Category(TestCategory.Differential)]
-    [Scenario(TestScenario.Boundary)]
     public void Test_CrossAssemblyBarrierExchange_MatchesTheReferenceOnEveryPath() =>
         DifferentialRunner.Run(s_barrierExchange);
 }

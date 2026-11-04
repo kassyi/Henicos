@@ -21,7 +21,7 @@ public struct LibDisposableGuard : IDisposable
 }
 
 /// <summary>
-/// Additional cross-assembly <c>[GpuDeviceFunction]</c> overloads and extension methods for Lane D6 differential testing.
+/// Additional cross-assembly <c>[GpuDeviceFunction]</c> overloads and extension methods used by the cross-assembly differential tests.
 /// </summary>
 public static partial class LibLanguageExports
 {
