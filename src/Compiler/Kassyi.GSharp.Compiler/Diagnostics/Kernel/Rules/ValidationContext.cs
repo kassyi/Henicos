@@ -1,3 +1,6 @@
+using System.Diagnostics.CodeAnalysis;
+using Kassyi.GSharp.Compiler.Analysis;
+
 namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel.Rules;
 
 /// <summary>Encapsulates semantic and method symbol context for AST validation rules.</summary>
@@ -16,6 +19,14 @@ internal readonly struct ValidationContext(
     ITranspilerDialect? dialect = null,
     bool exportsDeviceCode = true)
 {
+    private sealed class MethodAnalysisCache
+    {
+        public MethodFlowGraph? FlowGraph;
+        public readonly Dictionary<ArgumentMasks, UniformityAnalysis?> Uniformity = new();
+    }
+
+    private readonly MethodAnalysisCache _analysisCache = new();
+
     public readonly SemanticModel SemanticModel = semanticModel;
     public readonly IMethodSymbol MethodSymbol = methodSymbol;
     public readonly ITranspilerDialect Dialect = dialect ?? TranspilerDialects.Create(TranspilerDialects.DefaultName);
@@ -30,6 +41,42 @@ internal readonly struct ValidationContext(
     /// </summary>
     public bool NeedsManagedStateMachines =>
         !Dialect.IsCuda || (ExportsDeviceCode && !MethodSymbol.HasAttribute(KnownAttributes.GpuKernel));
+
+    /// <summary>
+    /// The uniformity analysis of <paramref name="declaration"/>, solved once for the given argument masks.
+    /// </summary>
+    public bool TryGetUniformity(MethodDeclarationSyntax declaration, ArgumentMasks masks,
+        [NotNullWhen(true)] out UniformityAnalysis? uniformity)
+    {
+        var cache = _analysisCache;
+        if (cache != null && cache.Uniformity.TryGetValue(masks, out uniformity))
+        {
+            return uniformity != null;
+        }
+
+        var flow = cache?.FlowGraph ?? new MethodFlowGraph(SemanticModel, declaration);
+        if (cache != null)
+        {
+            cache.FlowGraph = flow;
+        }
+
+        if (flow.TryGetUniformity(masks, out uniformity))
+        {
+            if (cache != null)
+            {
+                cache.Uniformity[masks] = uniformity;
+            }
+
+            return true;
+        }
+
+        if (cache != null)
+        {
+            cache.Uniformity[masks] = null;
+        }
+
+        return false;
+    }
 
     public void ReportDiagnostic(Diagnostic diagnostic) => reportDiagnostic(diagnostic);
 
