@@ -96,9 +96,6 @@ public struct Emitter(
     /// <summary>Monotonically increasing region counter for inlined <c>foreach</c> iterator expansions in the current method.</summary>
     public int IteratorExpansionCounter;
 
-    /// <summary>Current nesting depth of inlined <c>foreach</c> iterator expansions.</summary>
-    public int IteratorInlineDepth;
-
     /// <summary>Monotonically increasing ordinal for <c>__gsharp_arg_temp_&lt;n&gt;</c> temporaries synthesized for out-of-order named arguments.</summary>
     public int ArgumentTempCounter;
 
