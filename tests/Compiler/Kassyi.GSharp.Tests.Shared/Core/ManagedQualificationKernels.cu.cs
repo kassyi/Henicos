@@ -212,14 +212,27 @@ namespace Kassyi.GSharp.Tests.Shared.Core
         // loop macro or a StackLinq query, and outside it. Thrice holds an operator macro, so these device functions have a
         // managed version (#711), whose body is the user's, not a lowered one: the names inside the lambda must be bound
         // on that body too, also in a lambda with an expression body, which the rewrite puts into a block.
+        //
+        // Each of the device-function / kernel pairs below has the same body on purpose: the kernel runs through the
+        // lowered kernel body, the device function through its managed version. Edit both of a pair together.
+
+        // Same body as GridStrideBlockBodyKernel, on the managed version (a block-bodied lambda)
         [GpuDeviceFunction]
-        public static void ThriceEachStrided(int[] values, int[] result, int count)
+        public static void ThriceEachStridedBlockBody(int[] values, int[] result, int count)
         {
             int outside = Thrice(Offset);
             Gpu.GridStrideLoop(count, i => { result[i] = Thrice(values[i]) + Offset + outside; });
-            Gpu.GridStrideLoop(count, i => result[i] += Count);
         }
 
+        // Same body as GridStrideExpressionBodyKernel, on the managed version (an expression-bodied lambda)
+        [GpuDeviceFunction]
+        public static void ThriceEachStridedExpressionBody(int[] values, int[] result, int count)
+        {
+            int outside = Thrice(Offset);
+            Gpu.GridStrideLoop(count, i => result[i] = Thrice(values[i]) + Count + outside);
+        }
+
+        // Same body as ForUnrollKernel, on the managed version
         [GpuDeviceFunction]
         public static int SumThricesUnrolled(int value)
         {
@@ -228,6 +241,7 @@ namespace Kassyi.GSharp.Tests.Shared.Core
             return sum;
         }
 
+        // Same body as StackLinqKernel, on the managed version
         [GpuDeviceFunction]
         public static int SumThricesAboveOffset(int[] values, int tid)
         {
@@ -236,6 +250,7 @@ namespace Kassyi.GSharp.Tests.Shared.Core
                    tid + outside;
         }
 
+        // Same body as SingleThreadKernel, on the managed version
         [GpuDeviceFunction]
         public static void ThriceFirstOnce(int[] values, int[] result)
         {
@@ -243,20 +258,33 @@ namespace Kassyi.GSharp.Tests.Shared.Core
         }
 
         [GpuKernel]
-        public static void GridStrideDeviceFunctionKernel(int[] values, int[] result, int count) =>
-            ThriceEachStrided(values, result, count);
+        public static void GridStrideBlockBodyDeviceFunctionKernel(int[] values, int[] result, int count) =>
+            ThriceEachStridedBlockBody(values, result, count);
 
+        // Same body as ThriceEachStridedBlockBody, on the lowered kernel path
         [GpuKernel]
-        public static void GridStrideKernel(int[] values, int[] result, int count)
+        public static void GridStrideBlockBodyKernel(int[] values, int[] result, int count)
         {
             int outside = Thrice(Offset);
             Gpu.GridStrideLoop(count, i => { result[i] = Thrice(values[i]) + Offset + outside; });
-            Gpu.GridStrideLoop(count, i => result[i] += Count);
+        }
+
+        [GpuKernel]
+        public static void GridStrideExpressionBodyDeviceFunctionKernel(int[] values, int[] result, int count) =>
+            ThriceEachStridedExpressionBody(values, result, count);
+
+        // Same body as ThriceEachStridedExpressionBody, on the lowered kernel path
+        [GpuKernel]
+        public static void GridStrideExpressionBodyKernel(int[] values, int[] result, int count)
+        {
+            int outside = Thrice(Offset);
+            Gpu.GridStrideLoop(count, i => result[i] = Thrice(values[i]) + Count + outside);
         }
 
         [GpuKernel]
         public static void SingleThreadDeviceFunctionKernel(int[] values, int[] result) => ThriceFirstOnce(values, result);
 
+        // Same body as ThriceFirstOnce, on the lowered kernel path
         [GpuKernel]
         public static void SingleThreadKernel(int[] values, int[] result)
         {
@@ -270,6 +298,7 @@ namespace Kassyi.GSharp.Tests.Shared.Core
             result[tid] = SumThricesUnrolled(values[tid]);
         }
 
+        // Same body as SumThricesUnrolled, on the lowered kernel path
         [GpuKernel]
         public static void ForUnrollKernel(int[] values, int[] result)
         {
@@ -286,6 +315,7 @@ namespace Kassyi.GSharp.Tests.Shared.Core
             result[tid] = SumThricesAboveOffset(values, tid);
         }
 
+        // Same body as SumThricesAboveOffset, on the lowered kernel path
         [GpuKernel]
         public static void StackLinqKernel(int[] values, int[] result)
         {
