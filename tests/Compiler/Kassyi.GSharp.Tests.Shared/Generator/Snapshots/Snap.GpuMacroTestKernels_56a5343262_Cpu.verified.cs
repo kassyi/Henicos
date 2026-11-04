@@ -213,7 +213,7 @@ public uint fillValue;
 public uint singleValue;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Stdlib__GpuMath__Tests__Kernels__GpuMacroTestKernels__Kernel_uMacroTest_uFillAndSingle(uint[] __gsharp_in_outputBuffer, int __gsharp_in_length, uint __gsharp_in_fillValue, uint __gsharp_in_singleValue, __gsharp_context_Kassyi__GSharp__Stdlib__GpuMath__Tests__Kernels__GpuMacroTestKernels__Kernel_uMacroTest_uFillAndSingle __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Stdlib__GpuMath__Tests__Kernels__GpuMacroTestKernels__Kernel_uMacroTest_uFillAndSingle(uint[] __gsharp_in_outputBuffer, int __gsharp_in_length, uint __gsharp_in_fillValue, uint __gsharp_in_singleValue, __gsharp_context_Kassyi__GSharp__Stdlib__GpuMath__Tests__Kernels__GpuMacroTestKernels__Kernel_uMacroTest_uFillAndSingle __gsharp_ctx) {
 if (__gsharp_ctx.__gsharp_state == 0) {
 __gsharp_ctx.outputBuffer = __gsharp_in_outputBuffer;
 __gsharp_ctx.length = __gsharp_in_length;

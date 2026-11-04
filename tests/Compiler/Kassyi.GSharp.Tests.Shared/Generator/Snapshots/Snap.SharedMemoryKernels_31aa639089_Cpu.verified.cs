@@ -169,7 +169,7 @@ public int length;
 public int tid;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryKernels__ReverseArrayWithSharedMemoryKernel(int[] __gsharp_in_input, int[] __gsharp_in_output, int __gsharp_in_length, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryKernels__ReverseArrayWithSharedMemoryKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryKernels__ReverseArrayWithSharedMemoryKernel(int[] __gsharp_in_input, int[] __gsharp_in_output, int __gsharp_in_length, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryKernels__ReverseArrayWithSharedMemoryKernel __gsharp_ctx) {
 global::Kassyi.GSharp.Core.SharedMemory<int> shared = new global::Kassyi.GSharp.Core.SharedMemory<int>(256, 0x1fd6d4cf4ba521cfUL);
 if (__gsharp_ctx.__gsharp_state == 0) {
 __gsharp_ctx.input = __gsharp_in_input;

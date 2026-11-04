@@ -443,7 +443,7 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 ";
 public static readonly string ProcessPhysics_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +ProcessPhysics_Source;
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public class __gsharp_context_DebugReduc__ComprehensiveSpecKernel__ProcessPhysics {
+public unsafe struct __gsharp_context_DebugReduc__ComprehensiveSpecKernel__ProcessPhysics {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 public global::DebugReduc.PhysicsVector[] particles;
@@ -474,99 +474,99 @@ public int i;
 public int counter;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_DebugReduc__ComprehensiveSpecKernel__ProcessPhysics(global::DebugReduc.PhysicsVector[] __gsharp_in_particles, ref float totalMagnitude, ref bool successFlag, global::DebugReduc.SpecTypes __gsharp_in_largeStructVal, int __gsharp_in_particleCount, int __gsharp_in_unrollFactor, __gsharp_context_DebugReduc__ComprehensiveSpecKernel__ProcessPhysics __gsharp_ctx) {
+public static unsafe void __gsharp_statemachine_DebugReduc__ComprehensiveSpecKernel__ProcessPhysics(global::DebugReduc.PhysicsVector[] __gsharp_in_particles, ref float totalMagnitude, ref bool successFlag, global::DebugReduc.SpecTypes __gsharp_in_largeStructVal, int __gsharp_in_particleCount, int __gsharp_in_unrollFactor, __gsharp_context_DebugReduc__ComprehensiveSpecKernel__ProcessPhysics* __gsharp_ctx) {
 global::Kassyi.GSharp.Core.SharedMemory<int> staticCache = new global::Kassyi.GSharp.Core.SharedMemory<int>(10000, 0xe20e17017ad9529aUL);
 global::Kassyi.GSharp.Core.SharedMemory<float> dynamicCache = global::Kassyi.GSharp.Core.SharedMemory<float>.FindDynamic(0xe20e18017ad9544dUL);
 global::Kassyi.GSharp.Core.SharedMemory<int> targetTypedCache = new(256, 0xe20e15017ad94f34UL);
-if (__gsharp_ctx.__gsharp_state == 0) {
-__gsharp_ctx.particles = __gsharp_in_particles;
-__gsharp_ctx.largeStructVal = __gsharp_in_largeStructVal;
-__gsharp_ctx.particleCount = __gsharp_in_particleCount;
-__gsharp_ctx.unrollFactor = __gsharp_in_unrollFactor;
+if (__gsharp_ctx->__gsharp_state == 0) {
+__gsharp_ctx->particles = __gsharp_in_particles;
+__gsharp_ctx->largeStructVal = __gsharp_in_largeStructVal;
+__gsharp_ctx->particleCount = __gsharp_in_particleCount;
+__gsharp_ctx->unrollFactor = __gsharp_in_unrollFactor;
 }
 {
-switch (__gsharp_ctx.__gsharp_state)
+switch (__gsharp_ctx->__gsharp_state)
 {
 case 0:
 {
 successFlag = false;
-__gsharp_ctx.Gravity = 9.8f;
-__gsharp_ctx.tx = global::Kassyi.GSharp.Core.ThreadIndex.X;
-__gsharp_ctx.ty = global::Kassyi.GSharp.Core.ThreadIndex.Y;
-__gsharp_ctx.tz = global::Kassyi.GSharp.Core.ThreadIndex.Z;
-__gsharp_ctx.bx = global::Kassyi.GSharp.Core.BlockIndex.X;
-__gsharp_ctx.by = global::Kassyi.GSharp.Core.BlockIndex.Y;
-__gsharp_ctx.bz = global::Kassyi.GSharp.Core.BlockIndex.Z;
-__gsharp_ctx.bdimX = global::Kassyi.GSharp.Core.BlockDimension.X;
-__gsharp_ctx.bdimY = global::Kassyi.GSharp.Core.BlockDimension.Y;
-__gsharp_ctx.bdimZ = global::Kassyi.GSharp.Core.BlockDimension.Z;
-__gsharp_ctx.gdimX = global::Kassyi.GSharp.Core.GridDimension.X;
-__gsharp_ctx.gdimY = global::Kassyi.GSharp.Core.GridDimension.Y;
-__gsharp_ctx.gdimZ = global::Kassyi.GSharp.Core.GridDimension.Z;
-__gsharp_ctx.tid = __gsharp_ctx.tx + __gsharp_ctx.bx * __gsharp_ctx.bdimX;
-dynamicCache = new global::Kassyi.GSharp.Core.SharedMemory<float>(__gsharp_ctx.particleCount, 0xe20e18017ad9544dUL, "an unknown place");
-if (!(__gsharp_ctx.tid < __gsharp_ctx.particleCount))
+__gsharp_ctx->Gravity = 9.8f;
+__gsharp_ctx->tx = global::Kassyi.GSharp.Core.ThreadIndex.X;
+__gsharp_ctx->ty = global::Kassyi.GSharp.Core.ThreadIndex.Y;
+__gsharp_ctx->tz = global::Kassyi.GSharp.Core.ThreadIndex.Z;
+__gsharp_ctx->bx = global::Kassyi.GSharp.Core.BlockIndex.X;
+__gsharp_ctx->by = global::Kassyi.GSharp.Core.BlockIndex.Y;
+__gsharp_ctx->bz = global::Kassyi.GSharp.Core.BlockIndex.Z;
+__gsharp_ctx->bdimX = global::Kassyi.GSharp.Core.BlockDimension.X;
+__gsharp_ctx->bdimY = global::Kassyi.GSharp.Core.BlockDimension.Y;
+__gsharp_ctx->bdimZ = global::Kassyi.GSharp.Core.BlockDimension.Z;
+__gsharp_ctx->gdimX = global::Kassyi.GSharp.Core.GridDimension.X;
+__gsharp_ctx->gdimY = global::Kassyi.GSharp.Core.GridDimension.Y;
+__gsharp_ctx->gdimZ = global::Kassyi.GSharp.Core.GridDimension.Z;
+__gsharp_ctx->tid = __gsharp_ctx->tx + __gsharp_ctx->bx * __gsharp_ctx->bdimX;
+dynamicCache = new global::Kassyi.GSharp.Core.SharedMemory<float>(__gsharp_ctx->particleCount, 0xe20e18017ad9544dUL, "an unknown place");
+if (!(__gsharp_ctx->tid < __gsharp_ctx->particleCount))
 goto case 2;
-__gsharp_ctx.p = __gsharp_ctx.particles[__gsharp_ctx.tid];
-__gsharp_ctx.types = __gsharp_ctx.largeStructVal;
-__gsharp_ctx.origin = new global::DebugReduc.Point(0, 0);
-__gsharp_ctx.distance = __gsharp_ctx.origin.X + __gsharp_ctx.p.X;
-__gsharp_ctx.nested = new global::DebugReduc.NestedPhysicsState
+__gsharp_ctx->p = __gsharp_ctx->particles[__gsharp_ctx->tid];
+__gsharp_ctx->types = __gsharp_ctx->largeStructVal;
+__gsharp_ctx->origin = new global::DebugReduc.Point(0, 0);
+__gsharp_ctx->distance = __gsharp_ctx->origin.X + __gsharp_ctx->p.X;
+__gsharp_ctx->nested = new global::DebugReduc.NestedPhysicsState
 {
-Position = __gsharp_ctx.p,
-Velocity = __gsharp_ctx.p,
+Position = __gsharp_ctx->p,
+Velocity = __gsharp_ctx->p,
 StatusFlag = 1
 };
-__gsharp_ctx.mag = global::DebugReduc.ComprehensiveSpecKernel.ComputeMagnitude(__gsharp_ctx.p);
-__gsharp_ctx.mag = (float)global::System.Math.Abs(__gsharp_ctx.mag);
+__gsharp_ctx->mag = global::DebugReduc.ComprehensiveSpecKernel.ComputeMagnitude(__gsharp_ctx->p);
+__gsharp_ctx->mag = (float)global::System.Math.Abs(__gsharp_ctx->mag);
 // 5. Automatic Loop Unrolling via Constant (for)
-for (__gsharp_ctx.i = 0; __gsharp_ctx.i < __gsharp_ctx.unrollFactor; __gsharp_ctx.i++)
+for (__gsharp_ctx->i = 0; __gsharp_ctx->i < __gsharp_ctx->unrollFactor; __gsharp_ctx->i++)
 {
-if (__gsharp_ctx.i == 1)
+if (__gsharp_ctx->i == 1)
 continue;
-__gsharp_ctx.mag = (float)global::System.Math.Max(__gsharp_ctx.mag, __gsharp_ctx.p.X * __gsharp_ctx.i + __gsharp_ctx.Gravity);
+__gsharp_ctx->mag = (float)global::System.Math.Max(__gsharp_ctx->mag, __gsharp_ctx->p.X * __gsharp_ctx->i + __gsharp_ctx->Gravity);
 }
 
-if (!global::DebugReduc.ComprehensiveSpecKernel.IsPositive(__gsharp_ctx.mag))
+if (!global::DebugReduc.ComprehensiveSpecKernel.IsPositive(__gsharp_ctx->mag))
 {
-__gsharp_ctx.mag = 0;
+__gsharp_ctx->mag = 0;
 }
 
-__gsharp_ctx.counter = 0;
-while (__gsharp_ctx.counter < 2)
+__gsharp_ctx->counter = 0;
+while (__gsharp_ctx->counter < 2)
 {
-__gsharp_ctx.mag = (float)global::System.Math.Min(__gsharp_ctx.mag, __gsharp_ctx.mag + 1);
-__gsharp_ctx.counter++;
+__gsharp_ctx->mag = (float)global::System.Math.Min(__gsharp_ctx->mag, __gsharp_ctx->mag + 1);
+__gsharp_ctx->counter++;
 }
 
 do
 {
-__gsharp_ctx.counter--;
+__gsharp_ctx->counter--;
 }
-while (__gsharp_ctx.counter > 0);
+while (__gsharp_ctx->counter > 0);
 // 7. Switch statement
-switch (__gsharp_ctx.tx)
+switch (__gsharp_ctx->tx)
 {
 case 0:
-__gsharp_ctx.mag += 1;
+__gsharp_ctx->mag += 1;
 break;
 default:
-__gsharp_ctx.mag += 0;
+__gsharp_ctx->mag += 0;
 break;
 }
 
 // 8. Memory writes
-staticCache[__gsharp_ctx.tx] = __gsharp_ctx.tid;
-dynamicCache[__gsharp_ctx.tx] = __gsharp_ctx.mag;
+staticCache[__gsharp_ctx->tx] = __gsharp_ctx->tid;
+dynamicCache[__gsharp_ctx->tx] = __gsharp_ctx->mag;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
-__gsharp_ctx.__gsharp_state = 1;
+__gsharp_ctx->__gsharp_state = 1;
 return;
 }
 
 case 1:
 {
 // 10. Atomics and Out parameter
-if (__gsharp_ctx.tx == 0)
+if (__gsharp_ctx->tx == 0)
 {
 global::Kassyi.GSharp.Core.Gpu.AtomicAdd(ref totalMagnitude, dynamicCache[0]);
 successFlag = true;
@@ -592,25 +592,25 @@ state.Flags = 1;
 }
 
 // 11.6 Operators (Ternary, Bitwise, Logical, else if)
-bool condition1 = __gsharp_ctx.tx > 0;
-bool condition2 = __gsharp_ctx.ty == 0;
+bool condition1 = __gsharp_ctx->tx > 0;
+bool condition2 = __gsharp_ctx->ty == 0;
 if (condition1 && condition2) // Logical short-circuit
 {
-int bitwise = (__gsharp_ctx.tx << 2) | (__gsharp_ctx.ty >> 1) ^ 0xFF;
+int bitwise = (__gsharp_ctx->tx << 2) | (__gsharp_ctx->ty >> 1) ^ 0xFF;
 bitwise &= ~1; // Bitwise assignment and NOT
 }
 else if (condition1 || !condition2)
 {
-__gsharp_ctx.mag += 1.5f;
+__gsharp_ctx->mag += 1.5f;
 }
 
 // 11.5 Inline PTX
 throw new global::System.NotSupportedException("Gpu.InlinePtx is not supported by the StandardCppDialect dialect");
 // 12. Early return
-if (__gsharp_ctx.ty > 0)
+if (__gsharp_ctx->ty > 0)
 {
 {
-__gsharp_ctx.__gsharp_state = -1;
+__gsharp_ctx->__gsharp_state = -1;
 return;
 }
 }
@@ -620,7 +620,7 @@ goto case 2;
 
 case 2:
 {
-__gsharp_ctx.__gsharp_state = -1;
+__gsharp_ctx->__gsharp_state = -1;
 return;
 }
 }
@@ -650,12 +650,10 @@ if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(
 int __gsharp_total_blocks = (int)(gridDimX * gridDimY * gridDimZ);
 int __gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);
 var __gsharp_contexts = new __gsharp_context_DebugReduc__ComprehensiveSpecKernel__ProcessPhysics[__gsharp_total_blocks * __gsharp_threads_per_block];
-for (int i = 0; i < __gsharp_contexts.Length; i++)
-{
-__gsharp_contexts[i] = new __gsharp_context_DebugReduc__ComprehensiveSpecKernel__ProcessPhysics();
-}
 global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks, sharedMemBytes, false);
 var threadAtBlockBarrier = new bool[__gsharp_contexts.Length];
+fixed (__gsharp_context_DebugReduc__ComprehensiveSpecKernel__ProcessPhysics* __gsharp_pinned_contexts = __gsharp_contexts)
+{
 bool anyGridActive = true;
 try
 {
@@ -693,12 +691,12 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX = __gsharp_tx;
 global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxY = __gsharp_ty;
 global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxZ = __gsharp_tz;
 int __gsharp_linear_tid = __gsharp_block_index * __gsharp_threads_per_block + __gsharp_thread_index;
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1 && !threadAtBlockBarrier[__gsharp_linear_tid])
+if (__gsharp_pinned_contexts[__gsharp_linear_tid].__gsharp_state != -1 && !threadAtBlockBarrier[__gsharp_linear_tid])
 {
 anyGridActive = true;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = false;
-__gsharp_statemachine_DebugReduc__ComprehensiveSpecKernel__ProcessPhysics(particles, ref totalMagnitude, ref successFlag, largeStructVal, particleCount, unrollFactor, __gsharp_contexts[__gsharp_linear_tid]);
+__gsharp_statemachine_DebugReduc__ComprehensiveSpecKernel__ProcessPhysics(particles, ref totalMagnitude, ref successFlag, largeStructVal, particleCount, unrollFactor, &__gsharp_pinned_contexts[__gsharp_linear_tid]);
 if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 throw global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncInKernelThatIsNotCooperative("ComprehensiveSpecKernel.ProcessPhysics");
@@ -707,7 +705,7 @@ if (global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested)
 {
 threadAtBlockBarrier[__gsharp_linear_tid] = true;
 }
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1 && !threadAtBlockBarrier[__gsharp_linear_tid])
+if (__gsharp_pinned_contexts[__gsharp_linear_tid].__gsharp_state != -1 && !threadAtBlockBarrier[__gsharp_linear_tid])
 {
 anyBlockActive = true;
 }
@@ -736,6 +734,7 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;
 finally
 {
 global::Kassyi.GSharp.Core.ManagedGpuContext.EndGrid();
+}
 }
 return;
 }
@@ -932,7 +931,7 @@ public int[] data;
 public int tid;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_DebugReduc__ComprehensiveSpecKernel__CooperativePhysicsProcess(int[] __gsharp_in_data, __gsharp_context_DebugReduc__ComprehensiveSpecKernel__CooperativePhysicsProcess __gsharp_ctx) {
+public static void __gsharp_statemachine_DebugReduc__ComprehensiveSpecKernel__CooperativePhysicsProcess(int[] __gsharp_in_data, __gsharp_context_DebugReduc__ComprehensiveSpecKernel__CooperativePhysicsProcess __gsharp_ctx) {
 if (__gsharp_ctx.__gsharp_state == 0) {
 __gsharp_ctx.data = __gsharp_in_data;
 }

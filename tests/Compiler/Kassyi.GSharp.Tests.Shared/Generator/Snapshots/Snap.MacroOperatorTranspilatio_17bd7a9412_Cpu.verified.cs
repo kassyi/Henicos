@@ -234,7 +234,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_TestNamespace__TestKernels__MacroKernel(global::TestNamespace.DummyContext ctx, uint[] dA, uint[] dB, uint[] dResult, __gsharp_context_TestNamespace__TestKernels__MacroKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_TestNamespace__TestKernels__MacroKernel(global::TestNamespace.DummyContext ctx, uint[] dA, uint[] dB, uint[] dResult, __gsharp_context_TestNamespace__TestKernels__MacroKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {

@@ -194,7 +194,7 @@ public global::Kassyi.GSharp.Tests.Shared.Syntax.CustomPoint[] pointOutput;
 public int tid;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__MemoryAndFixedArraysKernels__SharedMemoryStaticKernel(int[] __gsharp_in_intOutput, float[] __gsharp_in_floatOutput, global::Kassyi.GSharp.Tests.Shared.Syntax.CustomPoint[] __gsharp_in_pointOutput, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__MemoryAndFixedArraysKernels__SharedMemoryStaticKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__MemoryAndFixedArraysKernels__SharedMemoryStaticKernel(int[] __gsharp_in_intOutput, float[] __gsharp_in_floatOutput, global::Kassyi.GSharp.Tests.Shared.Syntax.CustomPoint[] __gsharp_in_pointOutput, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__MemoryAndFixedArraysKernels__SharedMemoryStaticKernel __gsharp_ctx) {
 global::Kassyi.GSharp.Core.SharedMemory<int> intSmem = new(256, 0x671c4908e990809cUL);
 global::Kassyi.GSharp.Core.SharedMemory<float> floatSmem = new(256, 0x671c4a08e990824fUL);
 global::Kassyi.GSharp.Core.SharedMemory<global::Kassyi.GSharp.Tests.Shared.Syntax.CustomPoint> pointSmem = new(64, 0x671c4b08e9908402UL);

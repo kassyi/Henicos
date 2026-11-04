@@ -81,11 +81,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__
 inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__StructDifferentialKernels__ReadInCopyMutatedLocally(const __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffStructCounter* __gsharp_id_0_inCounter, int __gsharp_id_1_delta){
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffStructCounter __gsharp_id_2_localCopy = (*__gsharp_id_0_inCounter);
 __gsharp_id_2_localCopy.__gsharp_mb_Addend(__gsharp_id_1_delta);
-return ([&]() {
-auto __gsharp_seq_0 = __gsharp_add_i32(__gsharp_id_2_localCopy.__gsharp_mb_Value,(*__gsharp_id_0_inCounter).__gsharp_mb_Value);
-auto __gsharp_seq_1 = (*__gsharp_id_0_inCounter).__gsharp_mb_ComputedDoubled();
-return __gsharp_add_i32(__gsharp_seq_0,__gsharp_seq_1);
-}());
+return __gsharp_add_i32(__gsharp_add_i32(__gsharp_id_2_localCopy.__gsharp_mb_Value,(*__gsharp_id_0_inCounter).__gsharp_mb_Value),(*__gsharp_id_0_inCounter).__gsharp_mb_ComputedDoubled());
 }
 
 #ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffStructCounter__
@@ -388,7 +384,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__StructDifferentialKernels__StructMutationAndCopySemantics(int[] inputs, int[] deltas, int[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__StructDifferentialKernels__StructMutationAndCopySemantics __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__StructDifferentialKernels__StructMutationAndCopySemantics(int[] inputs, int[] deltas, int[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__StructDifferentialKernels__StructMutationAndCopySemantics __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -793,7 +789,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__StructDifferentialKernels__StructDefaultVsNewAndFieldInitializers(int[] inputs, int[] flags, int[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__StructDifferentialKernels__StructDefaultVsNewAndFieldInitializers __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__StructDifferentialKernels__StructDefaultVsNewAndFieldInitializers(int[] inputs, int[] flags, int[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__StructDifferentialKernels__StructDefaultVsNewAndFieldInitializers __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -1151,7 +1147,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__StructDifferentialKernels__RecordStructWithExpressions(int[] xs, int[] ys, int[] zs, int[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__StructDifferentialKernels__RecordStructWithExpressions __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__StructDifferentialKernels__RecordStructWithExpressions(int[] xs, int[] ys, int[] zs, int[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__StructDifferentialKernels__RecordStructWithExpressions __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -1518,7 +1514,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__StructDifferentialKernels__AutoPropertyPassedToInParameterDefensiveCopy(int[] initialValues, int[] mutatedValues, int[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__StructDifferentialKernels__AutoPropertyPassedToInParameterDefensiveCopy __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__StructDifferentialKernels__AutoPropertyPassedToInParameterDefensiveCopy(int[] initialValues, int[] mutatedValues, int[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__StructDifferentialKernels__AutoPropertyPassedToInParameterDefensiveCopy __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -1814,7 +1810,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__StructDifferentialKernels__StructUserDefinedImplicitConversion(int[] inputs, int[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__StructDifferentialKernels__StructUserDefinedImplicitConversion __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__StructDifferentialKernels__StructUserDefinedImplicitConversion(int[] inputs, int[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__StructDifferentialKernels__StructUserDefinedImplicitConversion __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {

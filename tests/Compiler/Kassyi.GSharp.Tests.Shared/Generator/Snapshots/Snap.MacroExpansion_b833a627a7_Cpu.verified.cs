@@ -171,7 +171,7 @@ public int[] data;
 public int length;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_TestSpace__MacroExpansionKernel__TestMacroKernel(int[] __gsharp_in_data, int __gsharp_in_length, __gsharp_context_TestSpace__MacroExpansionKernel__TestMacroKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_TestSpace__MacroExpansionKernel__TestMacroKernel(int[] __gsharp_in_data, int __gsharp_in_length, __gsharp_context_TestSpace__MacroExpansionKernel__TestMacroKernel __gsharp_ctx) {
 if (__gsharp_ctx.__gsharp_state == 0) {
 __gsharp_ctx.data = __gsharp_in_data;
 __gsharp_ctx.length = __gsharp_in_length;

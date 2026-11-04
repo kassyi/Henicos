@@ -305,7 +305,7 @@ public float __gsharp_warp_temp_5;
 public float __gsharp_warp_temp_6;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Henicos__Benchmarks__ComputeBenchmarks__ReductionKernels__ReductionKernel(global::Kassyi.GSharp.Core.Float4[] __gsharp_in_input, float[] __gsharp_in_output, int __gsharp_in_n, __gsharp_context_Henicos__Benchmarks__ComputeBenchmarks__ReductionKernels__ReductionKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Henicos__Benchmarks__ComputeBenchmarks__ReductionKernels__ReductionKernel(global::Kassyi.GSharp.Core.Float4[] __gsharp_in_input, float[] __gsharp_in_output, int __gsharp_in_n, __gsharp_context_Henicos__Benchmarks__ComputeBenchmarks__ReductionKernels__ReductionKernel __gsharp_ctx) {
 global::Kassyi.GSharp.Core.SharedMemory<float> sdata = new(8, 0x80cb9df64cf94963UL);
 if (__gsharp_ctx.__gsharp_state == 0) {
 __gsharp_ctx.input = __gsharp_in_input;
@@ -339,7 +339,7 @@ return;
 
 case 1:
 {
-__gsharp_ctx.__gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_down_sync(__gsharp_ctx, 0xFFFFFFFF, __gsharp_ctx.sum, 16, 32, "ReductionKernels.cs(25,16)");
+__gsharp_ctx.__gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_down_sync(0, 0xFFFFFFFF, __gsharp_ctx.sum, 16, 32, "ReductionKernels.cs(25,16)");
 __gsharp_ctx.sum += __gsharp_ctx.__gsharp_warp_temp_0;
 __gsharp_warp_exchange_assign(__gsharp_ctx.sum);
 __gsharp_ctx.__gsharp_state = 2;
@@ -348,7 +348,7 @@ return;
 
 case 2:
 {
-__gsharp_ctx.__gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_down_sync(__gsharp_ctx, 0xFFFFFFFF, __gsharp_ctx.sum, 8, 32, "ReductionKernels.cs(26,16)");
+__gsharp_ctx.__gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_down_sync(0, 0xFFFFFFFF, __gsharp_ctx.sum, 8, 32, "ReductionKernels.cs(26,16)");
 __gsharp_ctx.sum += __gsharp_ctx.__gsharp_warp_temp_1;
 __gsharp_warp_exchange_assign(__gsharp_ctx.sum);
 __gsharp_ctx.__gsharp_state = 3;
@@ -357,7 +357,7 @@ return;
 
 case 3:
 {
-__gsharp_ctx.__gsharp_warp_temp_2 = __gsharp_warp_shuffle_read_down_sync(__gsharp_ctx, 0xFFFFFFFF, __gsharp_ctx.sum, 4, 32, "ReductionKernels.cs(27,16)");
+__gsharp_ctx.__gsharp_warp_temp_2 = __gsharp_warp_shuffle_read_down_sync(0, 0xFFFFFFFF, __gsharp_ctx.sum, 4, 32, "ReductionKernels.cs(27,16)");
 __gsharp_ctx.sum += __gsharp_ctx.__gsharp_warp_temp_2;
 __gsharp_warp_exchange_assign(__gsharp_ctx.sum);
 __gsharp_ctx.__gsharp_state = 4;
@@ -366,7 +366,7 @@ return;
 
 case 4:
 {
-__gsharp_ctx.__gsharp_warp_temp_3 = __gsharp_warp_shuffle_read_down_sync(__gsharp_ctx, 0xFFFFFFFF, __gsharp_ctx.sum, 2, 32, "ReductionKernels.cs(28,16)");
+__gsharp_ctx.__gsharp_warp_temp_3 = __gsharp_warp_shuffle_read_down_sync(0, 0xFFFFFFFF, __gsharp_ctx.sum, 2, 32, "ReductionKernels.cs(28,16)");
 __gsharp_ctx.sum += __gsharp_ctx.__gsharp_warp_temp_3;
 __gsharp_warp_exchange_assign(__gsharp_ctx.sum);
 __gsharp_ctx.__gsharp_state = 5;
@@ -375,7 +375,7 @@ return;
 
 case 5:
 {
-__gsharp_ctx.__gsharp_warp_temp_4 = __gsharp_warp_shuffle_read_down_sync(__gsharp_ctx, 0xFFFFFFFF, __gsharp_ctx.sum, 1, 32, "ReductionKernels.cs(29,16)");
+__gsharp_ctx.__gsharp_warp_temp_4 = __gsharp_warp_shuffle_read_down_sync(0, 0xFFFFFFFF, __gsharp_ctx.sum, 1, 32, "ReductionKernels.cs(29,16)");
 __gsharp_ctx.sum += __gsharp_ctx.__gsharp_warp_temp_4;
 __gsharp_ctx.lane = __gsharp_ctx.tid % 32;
 __gsharp_ctx.warpId = __gsharp_ctx.tid / 32;
@@ -401,7 +401,7 @@ return;
 
 case 7:
 {
-__gsharp_ctx.__gsharp_warp_temp_5 = __gsharp_warp_shuffle_read_down_sync(__gsharp_ctx, 0xFFFFFFFF, __gsharp_ctx.val, 4, 32, "ReductionKernels.cs(45,20)");
+__gsharp_ctx.__gsharp_warp_temp_5 = __gsharp_warp_shuffle_read_down_sync(0, 0xFFFFFFFF, __gsharp_ctx.val, 4, 32, "ReductionKernels.cs(45,20)");
 __gsharp_ctx.val += __gsharp_ctx.__gsharp_warp_temp_5;
 __gsharp_warp_exchange_assign(__gsharp_ctx.val);
 __gsharp_ctx.__gsharp_state = 8;
@@ -410,7 +410,7 @@ return;
 
 case 8:
 {
-__gsharp_ctx.__gsharp_warp_temp_6 = __gsharp_warp_shuffle_read_down_sync(__gsharp_ctx, 0xFFFFFFFF, __gsharp_ctx.val, 2, 32, "ReductionKernels.cs(46,20)");
+__gsharp_ctx.__gsharp_warp_temp_6 = __gsharp_warp_shuffle_read_down_sync(0, 0xFFFFFFFF, __gsharp_ctx.val, 2, 32, "ReductionKernels.cs(46,20)");
 __gsharp_ctx.val += __gsharp_ctx.__gsharp_warp_temp_6;
 __gsharp_warp_exchange_assign(__gsharp_ctx.val);
 __gsharp_ctx.__gsharp_state = 9;
@@ -419,7 +419,7 @@ return;
 
 case 9:
 {
-var __gsharp_warp_temp_7 = __gsharp_warp_shuffle_read_down_sync(__gsharp_ctx, 0xFFFFFFFF, __gsharp_ctx.val, 1, 32, "ReductionKernels.cs(47,20)");
+var __gsharp_warp_temp_7 = __gsharp_warp_shuffle_read_down_sync(0, 0xFFFFFFFF, __gsharp_ctx.val, 1, 32, "ReductionKernels.cs(47,20)");
 __gsharp_ctx.val += __gsharp_warp_temp_7;
 if (__gsharp_ctx.tid == 0)
 {

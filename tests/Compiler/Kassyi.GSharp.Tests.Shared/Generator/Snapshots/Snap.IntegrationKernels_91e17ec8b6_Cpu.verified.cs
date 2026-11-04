@@ -410,7 +410,7 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 ";
 public static readonly string AllInOneKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +AllInOneKernel_Source;
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__AllInOneKernel {
+public unsafe struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__AllInOneKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 public int[] intInput;
@@ -423,25 +423,25 @@ public int dynamicSharedSize;
 public int t;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__AllInOneKernel(int[] __gsharp_in_intInput, float[] __gsharp_in_floatInput, float[] __gsharp_in_results, global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1CustomStruct __gsharp_in_config, ulong[] __gsharp_in_globalCounter, int __gsharp_in_count, int __gsharp_in_dynamicSharedSize, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__AllInOneKernel __gsharp_ctx) {
+public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__AllInOneKernel(int[] __gsharp_in_intInput, float[] __gsharp_in_floatInput, float[] __gsharp_in_results, global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1CustomStruct __gsharp_in_config, ulong[] __gsharp_in_globalCounter, int __gsharp_in_count, int __gsharp_in_dynamicSharedSize, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__AllInOneKernel* __gsharp_ctx) {
 global::Kassyi.GSharp.Core.SharedMemory<float> dynamicSharedMem = global::Kassyi.GSharp.Core.SharedMemory<float>.FindDynamic(0xf4a8b89f8fdf4f71UL);
-if (__gsharp_ctx.__gsharp_state == 0) {
-__gsharp_ctx.intInput = __gsharp_in_intInput;
-__gsharp_ctx.floatInput = __gsharp_in_floatInput;
-__gsharp_ctx.results = __gsharp_in_results;
-__gsharp_ctx.config = __gsharp_in_config;
-__gsharp_ctx.globalCounter = __gsharp_in_globalCounter;
-__gsharp_ctx.count = __gsharp_in_count;
-__gsharp_ctx.dynamicSharedSize = __gsharp_in_dynamicSharedSize;
+if (__gsharp_ctx->__gsharp_state == 0) {
+__gsharp_ctx->intInput = __gsharp_in_intInput;
+__gsharp_ctx->floatInput = __gsharp_in_floatInput;
+__gsharp_ctx->results = __gsharp_in_results;
+__gsharp_ctx->config = __gsharp_in_config;
+__gsharp_ctx->globalCounter = __gsharp_in_globalCounter;
+__gsharp_ctx->count = __gsharp_in_count;
+__gsharp_ctx->dynamicSharedSize = __gsharp_in_dynamicSharedSize;
 }
 {
-switch (__gsharp_ctx.__gsharp_state)
+switch (__gsharp_ctx->__gsharp_state)
 {
 case 0:
 {
 // SYN-94: Macro DSL
 {
-uint __gsharp_gsl_n_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideCount(__gsharp_ctx.count);
+uint __gsharp_gsl_n_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideCount(__gsharp_ctx->count);
 uint __gsharp_gsl_s_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideStep();
 for (uint __gsharp_gsl_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideStart(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += __gsharp_gsl_s_0)
 {
@@ -453,14 +453,14 @@ int LocalInlineFunc(int x) => x + 5 - 5; // effectively x
 (int a, int b) = (LocalInlineFunc(__gsharp_unroll_0), __gsharp_unroll_0 * 2);
 (a, b) = (b, a); // Swap
 (a, b) = (b, a); // Swap back
-bool ok = global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1IntegrationKernels.TryProcess(__gsharp_ctx.intInput[__gsharp_unroll_0], out var processed); // var support
+bool ok = global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1IntegrationKernels.TryProcess(__gsharp_ctx->intInput[__gsharp_unroll_0], out var processed); // var support
 // Bitwise and Shifts
 int bitwise = (a << 1) | (b >> 1) ^ 0xFF;
 bitwise &= ~1;
 // Math & Hardware Math (SYN-68)
-float mag = global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1IntegrationKernels.HelperMath(__gsharp_ctx.floatInput[__gsharp_unroll_0], (float)processed);
+float mag = global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1IntegrationKernels.HelperMath(__gsharp_ctx->floatInput[__gsharp_unroll_0], (float)processed);
 mag = global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1IntegrationKernels.HelperMathAggressive(mag); // SYN-28
-mag = (float)global::System.Math.Max(mag, __gsharp_ctx.config.FloatVal);
+mag = (float)global::System.Math.Max(mag, __gsharp_ctx->config.FloatVal);
 // SYN-01: Switch expression
 mag += (__gsharp_unroll_0 % 3) switch
 {
@@ -524,38 +524,38 @@ sum += stackSum + stackBuf.Length;
 global::System.Func<float, float, float> multiplier = (float x, float m) => x * m;
 sum = multiplier(sum, 2.0f);
 // Atomic Operations (SYN-49)
-if (ok && __gsharp_ctx.config.BoolVal)
+if (ok && __gsharp_ctx->config.BoolVal)
 {
-global::Kassyi.GSharp.Core.Gpu.AtomicAdd(ref __gsharp_ctx.globalCounter[0], (ulong)bitwise);
+global::Kassyi.GSharp.Core.Gpu.AtomicAdd(ref __gsharp_ctx->globalCounter[0], (ulong)bitwise);
 }
 
 // The loop leaves its sum in the result; the barrier comes after the loop (GBI-31)
-__gsharp_ctx.results[__gsharp_unroll_0] = sum;
+__gsharp_ctx->results[__gsharp_unroll_0] = sum;
 }
 }
 
-__gsharp_ctx.t = global::Kassyi.GSharp.Core.ThreadIndex.X;
-dynamicSharedMem = new global::Kassyi.GSharp.Core.SharedMemory<float>(__gsharp_ctx.dynamicSharedSize, 0xf4a8b89f8fdf4f71UL, "Tier1_IntegrationKernels.cs(163,48)");
-if (__gsharp_ctx.t < __gsharp_ctx.count)
+__gsharp_ctx->t = global::Kassyi.GSharp.Core.ThreadIndex.X;
+dynamicSharedMem = new global::Kassyi.GSharp.Core.SharedMemory<float>(__gsharp_ctx->dynamicSharedSize, 0xf4a8b89f8fdf4f71UL, "Tier1_IntegrationKernels.cs(163,48)");
+if (__gsharp_ctx->t < __gsharp_ctx->count)
 {
-dynamicSharedMem[__gsharp_ctx.t] = __gsharp_ctx.results[__gsharp_ctx.t];
+dynamicSharedMem[__gsharp_ctx->t] = __gsharp_ctx->results[__gsharp_ctx->t];
 }
 
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
-__gsharp_ctx.__gsharp_state = 1;
+__gsharp_ctx->__gsharp_state = 1;
 return;
 }
 
 case 1:
 {
-if (__gsharp_ctx.t < __gsharp_ctx.count)
+if (__gsharp_ctx->t < __gsharp_ctx->count)
 {
 // The same bits as in the loop
-(int a, int b) = (__gsharp_ctx.t, __gsharp_ctx.t * 2);
+(int a, int b) = (__gsharp_ctx->t, __gsharp_ctx->t * 2);
 int bitwise = (a << 1) | (b >> 1) ^ 0xFF;
 bitwise &= ~1;
 // Complex ternary (GSH-01)
-float finalVal = (bitwise > 0) ? (dynamicSharedMem[__gsharp_ctx.t] > 10.0f ? 10.0f : dynamicSharedMem[__gsharp_ctx.t]) : 0.0f;
+float finalVal = (bitwise > 0) ? (dynamicSharedMem[__gsharp_ctx->t] > 10.0f ? 10.0f : dynamicSharedMem[__gsharp_ctx->t]) : 0.0f;
 // SYN-14: fixed buffers inside structs
 unsafe
 {
@@ -591,10 +591,10 @@ finalVal -= 0.5f;
 loopCounter++;
 }
 while (loopCounter < 3);
-__gsharp_ctx.results[__gsharp_ctx.t] = finalVal;
+__gsharp_ctx->results[__gsharp_ctx->t] = finalVal;
 }
 
-__gsharp_ctx.__gsharp_state = -1;
+__gsharp_ctx->__gsharp_state = -1;
 return;
 }
 }
@@ -641,12 +641,10 @@ if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(
 int __gsharp_total_blocks = (int)(gridDimX * gridDimY * gridDimZ);
 int __gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);
 var __gsharp_contexts = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__AllInOneKernel[__gsharp_total_blocks * __gsharp_threads_per_block];
-for (int i = 0; i < __gsharp_contexts.Length; i++)
-{
-__gsharp_contexts[i] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__AllInOneKernel();
-}
 global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks, sharedMemBytes, false);
 var threadAtBlockBarrier = new bool[__gsharp_contexts.Length];
+fixed (__gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__AllInOneKernel* __gsharp_pinned_contexts = __gsharp_contexts)
+{
 bool anyGridActive = true;
 try
 {
@@ -684,12 +682,12 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX = __gsharp_tx;
 global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxY = __gsharp_ty;
 global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxZ = __gsharp_tz;
 int __gsharp_linear_tid = __gsharp_block_index * __gsharp_threads_per_block + __gsharp_thread_index;
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1 && !threadAtBlockBarrier[__gsharp_linear_tid])
+if (__gsharp_pinned_contexts[__gsharp_linear_tid].__gsharp_state != -1 && !threadAtBlockBarrier[__gsharp_linear_tid])
 {
 anyGridActive = true;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = false;
-__gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__AllInOneKernel(intInput, floatInput, results, config, globalCounter, count, dynamicSharedSize, __gsharp_contexts[__gsharp_linear_tid]);
+__gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__AllInOneKernel(intInput, floatInput, results, config, globalCounter, count, dynamicSharedSize, &__gsharp_pinned_contexts[__gsharp_linear_tid]);
 if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 throw global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncInKernelThatIsNotCooperative("Tier1IntegrationKernels.AllInOneKernel");
@@ -698,7 +696,7 @@ if (global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested)
 {
 threadAtBlockBarrier[__gsharp_linear_tid] = true;
 }
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1 && !threadAtBlockBarrier[__gsharp_linear_tid])
+if (__gsharp_pinned_contexts[__gsharp_linear_tid].__gsharp_state != -1 && !threadAtBlockBarrier[__gsharp_linear_tid])
 {
 anyBlockActive = true;
 }
@@ -727,6 +725,7 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;
 finally
 {
 global::Kassyi.GSharp.Core.ManagedGpuContext.EndGrid();
+}
 }
 return;
 }

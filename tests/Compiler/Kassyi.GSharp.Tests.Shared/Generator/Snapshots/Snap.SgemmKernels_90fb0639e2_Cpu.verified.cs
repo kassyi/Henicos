@@ -240,7 +240,7 @@ public int m;
 public int k;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Henicos__Benchmarks__ComputeBenchmarks__SgemmKernels__SgemmKernel(float[] __gsharp_in_a, float[] __gsharp_in_b, float[] __gsharp_in_c, int __gsharp_in_n, __gsharp_context_Henicos__Benchmarks__ComputeBenchmarks__SgemmKernels__SgemmKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Henicos__Benchmarks__ComputeBenchmarks__SgemmKernels__SgemmKernel(float[] __gsharp_in_a, float[] __gsharp_in_b, float[] __gsharp_in_c, int __gsharp_in_n, __gsharp_context_Henicos__Benchmarks__ComputeBenchmarks__SgemmKernels__SgemmKernel __gsharp_ctx) {
 global::Kassyi.GSharp.Core.SharedMemory<float> As = new(256, 0x73f1e09054a8d88dUL);
 global::Kassyi.GSharp.Core.SharedMemory<float> Bs = new(256, 0x73f1df9054a8d6daUL);
 if (__gsharp_ctx.__gsharp_state == 0) {

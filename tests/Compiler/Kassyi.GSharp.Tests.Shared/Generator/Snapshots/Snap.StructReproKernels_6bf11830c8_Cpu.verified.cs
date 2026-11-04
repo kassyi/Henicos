@@ -215,7 +215,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__StructReproKernels__GenericIntFirstKernel(int[] ints, float[] floats, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__StructReproKernels__GenericIntFirstKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__StructReproKernels__GenericIntFirstKernel(int[] ints, float[] floats, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__StructReproKernels__GenericIntFirstKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -503,7 +503,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__StructReproKernels__GenericFloatFirstKernel(int[] ints, float[] floats, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__StructReproKernels__GenericFloatFirstKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__StructReproKernels__GenericFloatFirstKernel(int[] ints, float[] floats, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__StructReproKernels__GenericFloatFirstKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -825,7 +825,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__StructReproKernels__GenericNestedKernel(int[] ints, float[] floats, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__StructReproKernels__GenericNestedKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__StructReproKernels__GenericNestedKernel(int[] ints, float[] floats, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__StructReproKernels__GenericNestedKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -1125,7 +1125,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__StructReproKernels__GenericArrayFieldKernel(int[] ints, float[] floats, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__StructReproKernels__GenericArrayFieldKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__StructReproKernels__GenericArrayFieldKernel(int[] ints, float[] floats, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__StructReproKernels__GenericArrayFieldKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -1391,7 +1391,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__StructReproKernels__ReturnOnlyStructKernel(int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__StructReproKernels__ReturnOnlyStructKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__StructReproKernels__ReturnOnlyStructKernel(int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__StructReproKernels__ReturnOnlyStructKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -1642,7 +1642,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__StructReproKernels__ReturnAndLocalStructKernel(int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__StructReproKernels__ReturnAndLocalStructKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__StructReproKernels__ReturnAndLocalStructKernel(int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__StructReproKernels__ReturnAndLocalStructKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -1919,7 +1919,7 @@ public int tid;
 public int W;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__StructReproKernels__BarrierLocalDifferentNameKernel(int[] __gsharp_in_output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__StructReproKernels__BarrierLocalDifferentNameKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__StructReproKernels__BarrierLocalDifferentNameKernel(int[] __gsharp_in_output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__StructReproKernels__BarrierLocalDifferentNameKernel __gsharp_ctx) {
 if (__gsharp_ctx.__gsharp_state == 0) {
 __gsharp_ctx.output = __gsharp_in_output;
 }
@@ -2209,7 +2209,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__StructReproKernels__InitBodyKernel(int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__StructReproKernels__InitBodyKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__StructReproKernels__InitBodyKernel(int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__StructReproKernels__InitBodyKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
@@ -2408,21 +2408,9 @@ __gsharp_tmp.__gsharp_mb_Value(8);
 return __gsharp_tmp;
 }());
 __gsharp_id_3_e.__gsharp_mb_Scaled(5);
-__gsharp_id_0_output[0]=([&]() {
-auto __gsharp_seq_0 = __gsharp_mul_i32(__gsharp_id_1_c.__gsharp_mb_Value(),100);
-auto __gsharp_seq_1 = __gsharp_id_1_c.__gsharp_mb_Scaled();
-return __gsharp_add_i32(__gsharp_seq_0,__gsharp_seq_1);
-}());
-__gsharp_id_0_output[1]=([&]() {
-auto __gsharp_seq_2 = __gsharp_mul_i32(__gsharp_id_2_d.__gsharp_mb_Value(),100);
-auto __gsharp_seq_3 = __gsharp_id_2_d.__gsharp_mb_Scaled();
-return __gsharp_add_i32(__gsharp_seq_2,__gsharp_seq_3);
-}());
-__gsharp_id_0_output[2]=([&]() {
-auto __gsharp_seq_4 = __gsharp_mul_i32(__gsharp_id_3_e.__gsharp_mb_Value(),100);
-auto __gsharp_seq_5 = __gsharp_id_3_e.__gsharp_mb_Scaled();
-return __gsharp_add_i32(__gsharp_seq_4,__gsharp_seq_5);
-}());
+__gsharp_id_0_output[0]=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_1_c.__gsharp_mb_Value(),100),__gsharp_id_1_c.__gsharp_mb_Scaled());
+__gsharp_id_0_output[1]=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_2_d.__gsharp_mb_Value(),100),__gsharp_id_2_d.__gsharp_mb_Scaled());
+__gsharp_id_0_output[2]=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_3_e.__gsharp_mb_Value(),100),__gsharp_id_3_e.__gsharp_mb_Scaled());
 __gsharp_state=-1;
 return;
 }
@@ -2509,7 +2497,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__StructReproKernels__SetAndWithAccessorBodyKernel(int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__StructReproKernels__SetAndWithAccessorBodyKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__StructReproKernels__SetAndWithAccessorBodyKernel(int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__StructReproKernels__SetAndWithAccessorBodyKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
