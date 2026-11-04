@@ -172,8 +172,6 @@ internal static class TypeLayoutCalculator
         return new TypeLayout(Math.Max(AlignUp(end, maxAlign), 1), maxAlign);
     }
 
-    // [WHY] The device can express an explicit layout only as union groups (fields at the same offset) that do not
-
     private static ImmutableArray<FieldLayout> MarkCopiedFields(ImmutableArray<FieldLayout> fields, TypeLayoutKind kind)
     {
         if (kind != TypeLayoutKind.Explicit || fields.Length <= 1)
