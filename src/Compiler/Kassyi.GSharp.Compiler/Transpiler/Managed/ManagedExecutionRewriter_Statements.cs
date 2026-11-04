@@ -7,7 +7,7 @@ internal sealed partial class ManagedExecutionRewriter
     public override SyntaxNode? VisitExpressionStatement(ExpressionStatementSyntax node)
     {
         if (node.Expression is InvocationExpressionSyntax inlinePtx &&
-            DialectCallSupport.IsUnsupportedInlinePtxCall(inlinePtx, semanticModel))
+            DialectCallSupport.IsUnsupportedInlinePtxCall(inlinePtx, semanticModel, HostDialects.Cpu))
         {
             return SyntaxFactory.ParseStatement(
                     $"throw new global::System.NotSupportedException(\"{DialectCallSupport.GetInlinePtxUnsupportedMessage(HostDialects.Cpu.Name)}\");")

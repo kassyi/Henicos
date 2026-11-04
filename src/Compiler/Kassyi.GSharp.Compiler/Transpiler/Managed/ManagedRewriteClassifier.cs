@@ -1,3 +1,4 @@
+using Kassyi.GSharp.Compiler.Transpiler.Dialects;
 using Kassyi.GSharp.Compiler.Transpiler.Rules.InvocationRules.StackLinq;
 
 namespace Kassyi.GSharp.Compiler.Transpiler;
@@ -75,5 +76,5 @@ internal static class ManagedRewriteClassifier
     /// </summary>
     public static bool IsInlinePtx(InvocationExpressionSyntax invocation, SemanticModel semanticModel) =>
         invocation.Parent is ExpressionStatementSyntax &&
-        DialectCallSupport.IsUnsupportedInlinePtxCall(invocation, semanticModel);
+        DialectCallSupport.IsUnsupportedInlinePtxCall(invocation, semanticModel, HostDialects.Cpu);
 }
