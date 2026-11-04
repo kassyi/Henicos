@@ -885,8 +885,8 @@ public class MathDifferentialTests
                 expX[i] = (float)(-10.0 + u1 * 20.0);
                 logUnitX[i] = (float)(0.5 + u2 * 1.5);
                 int expIdx = rng.IsBoundarySeed ? (i % 38) : rng.NextBelow(38);
-                int expPow = expIdx < 19 ? (expIdx - 20) : (expIdx - 17); // [-20..-2] U [2..20], strictly outside [0.5, 2.0]
-                logWideX[i] = MathF.ScaleB((float)(1.0 + u1), expPow);
+                int expPow = expIdx < 19 ? (expIdx - 21) : (expIdx - 17); // [-21..-3] U [2..20], strictly outside [0.5, 2.0]
+                logWideX[i] = MathF.ScaleB((float)(1.0 + u1 * 0.999), expPow);
             }
 
             if (rows > 0)
