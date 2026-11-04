@@ -1085,12 +1085,34 @@ uint32_t srcLogicalLane = (uint32_t)srcLane & (uint32_t)(width - 1);
 return __gsharp_warp_shuffle_read_lane(__gsharp_ctx, val, tid, laneId - logicalLane + srcLogicalLane, name, location);
 }
 
+template<typename T>
+inline bool __gsharp_raw_bits_equal(T a, T b) {
+if constexpr (sizeof(T) == sizeof(uint32_t)) {
+uint32_t ra = 0, rb = 0;
+std::memcpy(&ra, &a, sizeof(T));
+std::memcpy(&rb, &b, sizeof(T));
+return ra == rb;
+} else if constexpr (sizeof(T) == sizeof(uint64_t)) {
+uint64_t ra = 0, rb = 0;
+std::memcpy(&ra, &a, sizeof(T));
+std::memcpy(&rb, &b, sizeof(T));
+return ra == rb;
+} else {
+return std::memcmp(&a, &b, sizeof(T)) == 0;
+}
+}
+
 template<typename TContext, typename T>
 inline uint32_t __gsharp_warp_match_any_read_sync(TContext* __gsharp_ctx, uint32_t mask, T val, const char* location) {
 __gsharp_ctx->__gsharp_warp_shuffle_count++;
 uint32_t tid = __gsharp_warp_linear_tid();
 uint32_t laneId = tid & 31u;
 if ((mask & (1u << laneId)) == 0u) {
+char text[512];
+std::snprintf(text, sizeof(text),
+""G#: Gpu.MatchAnySync at %s has mask 0x%08X without caller lane %u (CUDA leaves the result undefined)"",
+location, mask, laneId);
+__gsharp_trap(GSharpErrorCode::InvalidOperation, text);
 return 0u;
 }
 uint32_t active = __activemask() & mask;
@@ -1098,7 +1120,7 @@ uint32_t result = 0u;
 for (uint32_t srcLane = 0u; srcLane < 32u; srcLane++) {
 if ((active & (1u << srcLane)) != 0u) {
 T laneVal = __gsharp_warp_shuffle_read_lane(__gsharp_ctx, val, tid, srcLane, ""Gpu.MatchAnySync"", location);
-if (laneVal == val) {
+if (__gsharp_raw_bits_equal(laneVal, val)) {
 result |= (1u << srcLane);
 }
 }
@@ -1113,6 +1135,11 @@ __gsharp_ctx->__gsharp_warp_shuffle_count++;
 uint32_t tid = __gsharp_warp_linear_tid();
 uint32_t laneId = tid & 31u;
 if ((mask & (1u << laneId)) == 0u) {
+char text[512];
+std::snprintf(text, sizeof(text),
+""G#: Gpu.MatchAllSync at %s has mask 0x%08X without caller lane %u (CUDA leaves the result undefined)"",
+location, mask, laneId);
+__gsharp_trap(GSharpErrorCode::InvalidOperation, text);
 if (pred) *pred = 0;
 return 0u;
 }
@@ -1121,7 +1148,7 @@ bool allEqual = true;
 for (uint32_t srcLane = 0u; srcLane < 32u; srcLane++) {
 if ((active & (1u << srcLane)) != 0u) {
 T laneVal = __gsharp_warp_shuffle_read_lane(__gsharp_ctx, val, tid, srcLane, ""Gpu.MatchAllSync"", location);
-if (!(laneVal == val)) {
+if (!__gsharp_raw_bits_equal(laneVal, val)) {
 allEqual = false;
 break;
 }
