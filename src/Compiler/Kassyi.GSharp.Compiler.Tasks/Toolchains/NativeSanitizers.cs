@@ -38,40 +38,28 @@ public static class NativeSanitizerParser
             return true;
         }
 
-        var span = value.AsSpan();
-        while (span.Length > 0)
+        foreach (var part in value.Split([';', ','], StringSplitOptions.RemoveEmptyEntries))
         {
-            var semiIdx = span.IndexOf(';');
-            var commaIdx = span.IndexOf(',');
-            var sepIdx = semiIdx >= 0 && commaIdx >= 0
-                ? Math.Min(semiIdx, commaIdx)
-                : Math.Max(semiIdx, commaIdx);
-
-            var segment = (sepIdx >= 0 ? span.Slice(0, sepIdx) : span).Trim();
-            if (segment.Length > 0)
+            var name = part.Trim();
+            if (name.Length == 0)
             {
-                if (segment.Equals("address".AsSpan(), StringComparison.OrdinalIgnoreCase))
-                {
-                    sanitizers |= NativeSanitizers.Address;
-                }
-                else if (segment.Equals("undefined".AsSpan(), StringComparison.OrdinalIgnoreCase))
-                {
-                    sanitizers |= NativeSanitizers.Undefined;
-                }
-                else
-                {
-                    sanitizers = NativeSanitizers.None;
-                    invalidToken = segment.ToString();
-                    return false;
-                }
+                continue;
             }
 
-            if (sepIdx < 0)
+            if (string.Equals(name, "address", StringComparison.OrdinalIgnoreCase))
             {
-                break;
+                sanitizers |= NativeSanitizers.Address;
             }
-
-            span = span.Slice(sepIdx + 1);
+            else if (string.Equals(name, "undefined", StringComparison.OrdinalIgnoreCase))
+            {
+                sanitizers |= NativeSanitizers.Undefined;
+            }
+            else
+            {
+                sanitizers = NativeSanitizers.None;
+                invalidToken = name;
+                return false;
+            }
         }
 
         return true;

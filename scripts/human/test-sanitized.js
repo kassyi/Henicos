@@ -1,6 +1,9 @@
 #!/usr/bin/env node
 // Builds Kassyi.GSharp.Tests.Cpu with native sanitizers (ASan + UBSan on Linux/Unix, ASan on Windows),
 // runs the Differential and Execution test categories, and demangles any sanitizer report via LogDemangler.
+// The sanitized build goes to bin/<os>-sanitized and obj/<os>-sanitized (GSharpOutputVariant in Directory.Build.props),
+// so a normal build or `dotnet test --no-build` afterwards still uses the uninstrumented native libraries.
+// Test output is streamed to the console and to tmp/test-sanitized.log.
 //
 // Usage:
 //   node scripts/human/test-sanitized.js [--sanitizers <list>] [--no-build] [--help] [<dotnet-test-args>...]
@@ -10,11 +13,14 @@
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { spawnSync } = require('child_process');
+const { spawn, spawnSync } = require('child_process');
 
 const repoRoot = path.resolve(__dirname, '..', '..');
 const testProject = path.join('tests', 'Compiler', 'Kassyi.GSharp.Tests.Cpu', 'Kassyi.GSharp.Tests.Cpu.csproj');
-const symbolsDir = path.join('tests', 'Compiler', 'Kassyi.GSharp.Tests.Cpu', 'obj');
+const outputVariant = 'sanitized';
+// Same names as GSharpHostOs in Directory.Build.props.
+const hostOs = { win32: 'win', linux: 'linux', darwin: 'osx' }[process.platform] || 'unix';
+const symbolsDir = path.join('tests', 'Compiler', 'Kassyi.GSharp.Tests.Cpu', 'obj', `${hostOs}-${outputVariant}`);
 const generatorProject = path.join('src', 'Compiler', 'Kassyi.GSharp.Compiler.Generators');
 const defaultFilter = '(Category=Differential|Category=Execution|Category=GpuExecution|Category=CpuExecution)&Category!=Stress&Category!=Benchmark';
 
@@ -29,6 +35,7 @@ function printHelp() {
             '',
             'Builds Kassyi.GSharp.Tests.Cpu with GSharpNativeSanitizers enabled, runs the Differential',
             'and Execution test suites, and pipes output through the G# demangler if ASan or UBSan triggers.',
+            'The build goes to bin/<os>-sanitized and obj/<os>-sanitized; output is also written to tmp/test-sanitized.log.',
             '',
             'Options:',
             '  --sanitizers <list>  Sanitizer list passed to GSharpNativeSanitizers',
@@ -108,7 +115,30 @@ function resolveAsanPreload(env) {
     return res.stdout.trim();
 }
 
-function main() {
+// Runs `dotnet <args>` with its stdout and stderr written to the console and to logPath as they arrive.
+function runTeed(args, env, logPath) {
+    return new Promise(resolve => {
+        const log = fs.createWriteStream(logPath, { encoding: 'utf8' });
+        const child = spawn('dotnet', args, { cwd: repoRoot, env, stdio: ['inherit', 'pipe', 'pipe'] });
+        child.stdout.on('data', chunk => {
+            process.stdout.write(chunk);
+            log.write(chunk);
+        });
+        child.stderr.on('data', chunk => {
+            process.stderr.write(chunk);
+            log.write(chunk);
+        });
+        child.on('error', err => {
+            console.error(`Error: Failed to start dotnet test: ${err.message}`);
+            log.end(() => resolve(1));
+        });
+        child.on('close', code => {
+            log.end(() => resolve(code ?? 1));
+        });
+    });
+}
+
+async function main() {
     const { sanitizers, noBuild, testArgs } = parseArgs(process.argv.slice(2));
     const env = buildEnv();
 
@@ -123,6 +153,7 @@ function main() {
             'build',
             testProject,
             `-p:GSharpNativeSanitizers=${msbuildSanitizers}`,
+            `-p:GSharpOutputVariant=${outputVariant}`,
             '-nodeReuse:false'
         ];
 
@@ -162,24 +193,18 @@ function main() {
         }
     }
 
-    const dotnetTestArgs = ['test', testProject, '--no-build'];
+    const dotnetTestArgs = ['test', testProject, '--no-build', `-p:GSharpOutputVariant=${outputVariant}`];
     if (!hasCustomFilter(testArgs)) {
         dotnetTestArgs.push('--filter', defaultFilter);
     }
     dotnetTestArgs.push(...testArgs);
 
-    const testRes = spawnSync('dotnet', dotnetTestArgs, {
-        cwd: repoRoot,
-        env: testEnv,
-        encoding: 'utf8',
-        maxBuffer: 128 * 1024 * 1024
-    });
+    let exitCode = await runTeed(dotnetTestArgs, testEnv, logPath);
 
-    const combinedOutput = (testRes.stdout || '') + (testRes.stderr || '');
-    fs.writeFileSync(logPath, combinedOutput, 'utf8');
-
-    let exitCode = testRes.status ?? 1;
+    const combinedOutput = fs.readFileSync(logPath, 'utf8');
     if (SANITIZER_REPORT_PATTERN.test(combinedOutput)) {
+        // The raw output is already on the console; print the report again with C# names.
+        console.log(`\nSanitizer report found; demangled log (${path.relative(repoRoot, logPath)}):`);
         const demangleRes = spawnSync(
             'dotnet',
             ['run', '--project', generatorProject, '--no-build', '--', 'demangle', logPath, symbolsDir],
@@ -190,16 +215,17 @@ function main() {
             }
         );
         if (demangleRes.status !== 0) {
-            process.stdout.write(combinedOutput);
+            console.error('Error: The demangler failed; the log above keeps the mangled names.');
         }
         if (exitCode === 0) {
             exitCode = 1;
         }
-    } else {
-        process.stdout.write(combinedOutput);
     }
 
     process.exit(exitCode);
 }
 
-main();
+main().catch(err => {
+    console.error(err);
+    process.exit(1);
+});

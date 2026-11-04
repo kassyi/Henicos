@@ -78,17 +78,7 @@ public sealed class GccClangToolchain : INativeToolchain
         // -std=c++17 = C++17 standard
         // -fopenmp = Enable OpenMP for BSP CPU scheduler parallelism
         // -Wno-unused-label = C# already diagnoses unused user labels (CS0164); synthesized labels may be unreferenced
-        var enableAddress = (sanitizers & NativeSanitizers.Address) != 0;
-        var enableUndefined = (sanitizers & NativeSanitizers.Undefined) != 0;
-        var sanitizerFlags = (enableAddress, enableUndefined) switch
-        {
-            (true, true) => " -fsanitize=address,undefined -fno-sanitize-recover=undefined -fno-omit-frame-pointer -g",
-            (true, false) => " -fsanitize=address -fno-omit-frame-pointer -g",
-            (false, true) => " -fsanitize=undefined -fno-sanitize-recover=undefined -fno-omit-frame-pointer -g",
-            _ => ""
-        };
-
-        var args = $"-O2 -shared -fPIC -std=c++17 -fopenmp -Wno-unused-label{sanitizerFlags} \"{sourcePath}\" -o \"{outputPath}\"";
+        var args = $"-O2 -shared -fPIC -std=c++17 -fopenmp -Wno-unused-label{BuildSanitizerFlags(sanitizers)} \"{sourcePath}\" -o \"{outputPath}\"";
 
         log.LogMessage(MessageImportance.Normal, $"Compiling C++ source for {architecture} with {compiler}: {sourcePath}");
 
@@ -131,6 +121,31 @@ public sealed class GccClangToolchain : INativeToolchain
             log.LogError($"Failed to start {compiler}. Ensure a C++ compiler is installed. Details: {ex.Message}");
             return false;
         }
+    }
+
+    // " -fsanitize=<names> [-fno-sanitize-recover=undefined] -fno-omit-frame-pointer -g", or "" when none is enabled.
+    // -fno-sanitize-recover=undefined stops at the first UBSan report; -fno-omit-frame-pointer and -g give readable stacks.
+    private static string BuildSanitizerFlags(NativeSanitizers sanitizers)
+    {
+        if (sanitizers == NativeSanitizers.None)
+        {
+            return "";
+        }
+
+        var names = new List<string>(2);
+        if ((sanitizers & NativeSanitizers.Address) != 0)
+        {
+            names.Add("address");
+        }
+
+        var enableUndefined = (sanitizers & NativeSanitizers.Undefined) != 0;
+        if (enableUndefined)
+        {
+            names.Add("undefined");
+        }
+
+        var recover = enableUndefined ? " -fno-sanitize-recover=undefined" : "";
+        return $" -fsanitize={string.Join(",", names)}{recover} -fno-omit-frame-pointer -g";
     }
 
     private bool IsCompilerAvailable(string executable, CancellationToken cancellationToken)

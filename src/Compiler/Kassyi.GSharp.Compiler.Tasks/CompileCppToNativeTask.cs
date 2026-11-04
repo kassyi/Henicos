@@ -47,6 +47,11 @@ public class CompileCppToNativeTask : CompileKernelTaskBase
             return false;
         }
 
+        if ((_sanitizers & NativeSanitizers.Undefined) != 0 && Toolchain is MsvcToolchain)
+        {
+            Log.LogWarning(MsvcToolchain.UndefinedSanitizerUnsupportedWarning);
+        }
+
         if (MockCompilation)
         {
             return true;
