@@ -128,7 +128,7 @@ public class LanguageFeaturesPendingBugsTests
         Assert.DoesNotContain("GSH0003:", code, StringComparison.Ordinal);
     }
 
-    [Fact(Skip = "Pending #674, #963, #1033: User-defined explicit operator and custom struct indexer omitted from emitted C++ struct")]
+    [Fact(Skip = "Pending #1148, #1033: User-defined explicit operator and custom struct indexer omitted from emitted C++ struct")]
     public void Test_ExplicitConversionAndCustomIndexer_EmittedInCppStruct()
     {
         string source = RoslynTestUtility.ReadTestCase("Transpiler/LanguageFeaturesPending/ExplicitConversionAndCustomIndexerCase.cs");
