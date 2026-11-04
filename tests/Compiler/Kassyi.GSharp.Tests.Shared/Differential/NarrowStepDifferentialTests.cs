@@ -40,7 +40,7 @@ public class NarrowStepDifferentialTests
                 .In("a", DiffValues.Mixed(rng, rows, s_narrowStepBoundaries, static r => unchecked((int)r.NextUInt64())))
                 .Out<long>("r", rows, NarrowStepDifferentialKernels.NarrowStepColumns, OutputPolicy.Exact),
             Launch = launch,
-            Oracle = oracle,
+            Oracle = (b, _) => oracle(b),
         };
 
     private static readonly DifferentialCase s_sbyteStep = CreateStepCase(
