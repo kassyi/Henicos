@@ -14,7 +14,7 @@ namespace Kassyi.GSharp.Compiler.Lowering;
 /// The temporary of a conditional operator is initialized with <c>default</c> carrying the span of the original
 /// operator, which is how <see cref="Transpiler.HoistedFieldTypeResolver"/> finds its type.
 /// </remarks>
-public class ConditionalEvaluationRewriter : CSharpSyntaxRewriter
+public class ConditionalEvaluationRewriter : CSharpSyntaxRewriter, IBlockLoweringPass
 {
     private int _tempCounter;
 

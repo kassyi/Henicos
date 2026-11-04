@@ -162,6 +162,9 @@ internal sealed class ContextLocalRewriter : CSharpSyntaxRewriter
         return base.VisitExpressionStatement(node);
     }
 
+    public override SyntaxNode? VisitBlock(BlockSyntax node) =>
+        (BlockSyntax?)base.VisitBlock(node) ?? node;
+
     // The initialization of a dynamic SharedMemory<T> stays where it is, as an assignment to the local that each resume
     // declares: it places the region in the order the kernel reaches the declarations, as on CUDA (#544)
     private bool PlacesDynamicSharedMemory(ExpressionSyntax value) =>

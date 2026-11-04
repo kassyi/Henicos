@@ -44,7 +44,7 @@ public class TestStrengthAnalyzer : DiagnosticAnalyzer
         title: "Test method checks nothing",
         messageFormat: "Test method '{0}' never reaches an assertion (Xunit.Assert, VerifyXunit.Verifier or FluentAssertions), not even through the methods it calls. Check its results.",
         category: "GSharpTestArchitecture",
-        defaultSeverity: DiagnosticSeverity.Warning,
+        defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true,
         customTags: WellKnownDiagnosticTags.CompilationEnd);
 
@@ -53,7 +53,7 @@ public class TestStrengthAnalyzer : DiagnosticAnalyzer
         title: "Debug.Assert in a test method",
         messageFormat: "Debug.Assert is removed from Release builds, so this check does not run there. Use an xUnit Assert member.",
         category: "GSharpTestArchitecture",
-        defaultSeverity: DiagnosticSeverity.Warning,
+        defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
 
     public static readonly DiagnosticDescriptor UnseededRandom = new(
@@ -61,7 +61,7 @@ public class TestStrengthAnalyzer : DiagnosticAnalyzer
         title: "Unseeded random source in a test assembly",
         messageFormat: "{0} gives different inputs on every run, so a failure cannot be reproduced. Use new Random(seed) with a fixed seed.",
         category: "GSharpTestArchitecture",
-        defaultSeverity: DiagnosticSeverity.Warning,
+        defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
 
     public static readonly DiagnosticDescriptor BroadCatchInTest = new(
@@ -69,7 +69,7 @@ public class TestStrengthAnalyzer : DiagnosticAnalyzer
         title: "Catch of every exception in a test method",
         messageFormat: "'{0}' catches every exception and drops it, so a failure of the code under test can pass unnoticed. Catch a narrow type, add a 'when' filter, record the exception and assert on it, or use Assert.Throws.",
         category: "GSharpTestArchitecture",
-        defaultSeverity: DiagnosticSeverity.Warning,
+        defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
 #pragma warning restore RS2008
 

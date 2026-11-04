@@ -196,7 +196,7 @@ public partial class EmissionShapeTests
         Assert.Single(Regex.Matches(cuda, @"int __gsharp_id_13_found;"));
         AssertContainsLines(cpu,
             "int __gsharp_id_1_w;",
-            $"*__gsharp_result = ({Statements}TryGet(__gsharp_id_0_data,&__gsharp_id_1_w)?__gsharp_id_1_w:0);");
+            $"*__gsharp_result = ({Statements}TryGet(__gsharp_ctx->__gsharp_id_0_data,&__gsharp_id_1_w)?__gsharp_id_1_w:0);");
     }
 
     // An early return in a struct constructor returns the value under construction

@@ -20,7 +20,7 @@
 
         case 1:
         {
-            output[__gsharp_ctx->tid] = __gsharp_ctx->buffer[(__gsharp_ctx->tid + 1) % 4];
+            __gsharp_ctx->output[__gsharp_ctx->tid] = __gsharp_ctx->buffer[(__gsharp_ctx->tid + 1) % 4];
             __gsharp_state = -1;
             return;
         }

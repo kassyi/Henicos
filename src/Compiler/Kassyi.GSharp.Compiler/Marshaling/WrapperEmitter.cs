@@ -22,7 +22,7 @@ internal static class WrapperEmitter
         {
             if (IsIntPtr)
             {
-                writer.Append("IntPtr ");
+                writer.Append("global::System.IntPtr ");
             }
             else
             {
@@ -73,10 +73,13 @@ internal static class WrapperEmitter
         }
     }
 
-    // A context or frame field that a kernel never assigns is reported (CS0649) unless the field is visible outside the
-    // assembly, which it is only in a public class.
-    private static void WriteUnassignedFieldSuppression(SourceWriter writer, in HostClassHeader header) =>
-        writer.AppendLineIf(!header.IsPublic, "#pragma warning disable CS0649");
+    // CS0162 = Lowered state machines emit statements or 'goto case' transitions immediately after unconditional throw or goto
+    // CS0164 = Lowered state machines preserve user labels (e.g. sync:) or synthesized branch targets (__gsharp_sg_next_<n>) that no jump targets
+    // CS0219 = Lowered state machines declare locals (e.g. int unused = 0) that are assigned but never read
+    // CS0649 = Internal frame fields (e.g. __gsharp_warp_exchange) are populated by the runtime rather than C# assignment
+    // CS1718 = Lowered switch/pattern dispatch performs __gsharp_switch_temp_<n> != __gsharp_switch_temp_<n> self-comparisons for NaN detection
+    private const string GeneratedCSharpWarningSuppressions =
+        "#pragma warning disable CS0162, CS0164, CS0219, CS0649, CS1718";
 
     // namespace <namespace> { <outer partial declarations> <accessibility> partial class <name>, without the namespace
     // for the global namespace. The generated part must declare the accessibility of the user's part, or the compiler
@@ -130,6 +133,7 @@ internal static class WrapperEmitter
         // stay valid
         var writer = new SourceWriter();
         writer.AppendGeneratedFileHeader(enableNullable: false);
+        // #nullable enable annotations = Preserves user type annotations without emitting warnings for unassigned generated fields
         writer.AppendLine("#nullable enable annotations");
         writer.AppendLine("""
             using System;
@@ -137,9 +141,7 @@ internal static class WrapperEmitter
             using static global::Kassyi.GSharp.Core.ManagedGpuContext;
             """);
         writer.AppendLineIf(referencesStackLinq, "using global::Kassyi.ZeroAlloc.Linq;");
-        // The frames' fields are internal (as WriteUnassignedFieldSuppression does for the fields of a class that is not
-        // public): the fields of the warp exchange and the grid sync are read by the code but written only by the runtime
-        writer.AppendLine("#pragma warning disable CS0649");
+        writer.AppendLine(GeneratedCSharpWarningSuppressions);
         writer.AppendLine();
 
         WriteClassDeclaration(writer, header);
@@ -162,7 +164,9 @@ internal static class WrapperEmitter
     public static string GenerateKernelExtensions(in KernelClassModel model, GeneratorConfig config, string assemblyName)
     {
         var writer = new SourceWriter();
-        writer.AppendGeneratedFileHeader();
+        writer.AppendGeneratedFileHeader(enableNullable: false);
+        // #nullable enable annotations = Preserves user type annotations without emitting warnings for unassigned generated fields
+        writer.AppendLine("#nullable enable annotations");
         writer.AppendLine("""
             using System;
             #pragma warning disable RS1035 // Do not use APIs banned for analyzers
@@ -175,7 +179,7 @@ internal static class WrapperEmitter
             using static global::Kassyi.GSharp.Core.ManagedGpuContext;
             using global::Kassyi.ZeroAlloc.Linq;
             """);
-        WriteUnassignedFieldSuppression(writer, model.Class);
+        writer.AppendLine(GeneratedCSharpWarningSuppressions);
 
         writer.AppendLine();
 
@@ -191,8 +195,8 @@ internal static class WrapperEmitter
 
             foreach (var kernel in model.Kernels)
             {
-                // GSH0059: the analyzer reports the overload; its wrappers would duplicate an earlier overload's.
-                if (kernel.IsIndistinguishable)
+                // GSH0059 / GSH0106: the analyzer reports the overload or reserved launch parameter name; its wrappers would not compile.
+                if (kernel.IsIndistinguishable || kernel.Host.HasReservedLaunchParameterName)
                 {
                     continue;
                 }
@@ -259,10 +263,7 @@ internal static class WrapperEmitter
         writer.AppendLine();
     }
 
-    internal const string LaunchOptionParameters =
-        "uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1," +
-        "uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, " +
-        "System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default";
+    internal static string LaunchOptionParameters => KernelHostNames.LaunchOptionParameters;
 
     internal static void WriteLaunchReturnType(SourceWriter writer, in KernelHostModel kernel)
     {
@@ -276,13 +277,10 @@ internal static class WrapperEmitter
         }
     }
 
-    // The flag of a kernel whose launch has passed its layout guards once (WriteLayoutGuards)
-    private const string LayoutCheckedPrefix = "s_layoutChecked_";
-
-    // private static bool s_layoutChecked_<key>; for a kernel with layout guards
+    // private static bool __gsharp_layout_checked_<key>; for a kernel with layout guards
     internal static void WriteLayoutCheckedField(SourceWriter writer, EquatableArray<StructLayoutGuard> guards,
         string memberKey) =>
-        writer.AppendLineIf(guards.Length > 0, $"private static bool {LayoutCheckedPrefix}{memberKey};");
+        writer.AppendLineIf(guards.Length > 0, $"private static bool {KernelHostNames.GetLayoutCheckedFieldName(memberKey)};");
 
     // if (!s_layoutChecked_<key>) {
     //   For each block-copied struct:
@@ -301,9 +299,10 @@ internal static class WrapperEmitter
             return;
         }
 
-        const string Unsafe = "global::System.Runtime.CompilerServices.Unsafe";
+        const string Unsafe = HostTypeNames.Unsafe;
         const string Probe = GSharpInternalNames.Launcher.LayoutProbe;
-        writer.AppendLine($"if (!{LayoutCheckedPrefix}{memberKey})");
+        var layoutChecked = KernelHostNames.GetLayoutCheckedFieldName(memberKey);
+        writer.AppendLine($"if (!{layoutChecked})");
         using (writer.Scope())
         {
             foreach (var guard in guards)
@@ -333,7 +332,7 @@ internal static class WrapperEmitter
                 }
             }
 
-            writer.AppendLine($"{LayoutCheckedPrefix}{memberKey} = true;");
+            writer.AppendLine($"{layoutChecked} = true;");
         }
     }
 
