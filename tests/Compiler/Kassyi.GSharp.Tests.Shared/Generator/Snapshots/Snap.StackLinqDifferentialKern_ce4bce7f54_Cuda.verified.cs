@@ -3540,7 +3540,7 @@ if(__gsharp_add_i32(__gsharp_id_3_baseIdx,4)>__gsharp_id_0_xs.length)
 {
 return;
 }
-auto __gsharp_id_4_slice = __gsharp_id_0_xs.AsSpan().Slice(__gsharp_id_3_baseIdx,4);
+auto __gsharp_id_4_slice = __gsharp_id_0_xs.AsSpan().Slice(__gsharp_id_3_baseIdx,4, ""G#: index was out of range at StackLinqDifferentialKernels.cs(482,21)"");
 int __gsharp_id_5_o = __gsharp_mul_i32(__gsharp_id_2_t,4);
 __gsharp_id_1_r[__gsharp_id_5_o]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_4_slice;
@@ -3756,7 +3756,7 @@ if(__gsharp_add_i32(__gsharp_id_3_baseIdx,4)>__gsharp_id_0_xs.length)
 {
 return;
 }
-auto __gsharp_id_4_slice = __gsharp_id_0_xs.AsSpan().Slice(__gsharp_id_3_baseIdx,4);
+auto __gsharp_id_4_slice = __gsharp_id_0_xs.AsSpan().Slice(__gsharp_id_3_baseIdx,4, ""G#: index was out of range at StackLinqDifferentialKernels.cs(502,21)"");
 __gsharp_id_1_r[__gsharp_id_2_t]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_4_slice;
 int __gsharp_fusion_res = {};
@@ -3935,7 +3935,7 @@ if(__gsharp_add_i32(__gsharp_id_3_baseIdx,4)>__gsharp_id_0_xs.length)
 {
 return;
 }
-auto __gsharp_id_4_slice = __gsharp_id_0_xs.AsSpan().Slice(__gsharp_id_3_baseIdx,4);
+auto __gsharp_id_4_slice = __gsharp_id_0_xs.AsSpan().Slice(__gsharp_id_3_baseIdx,4, ""G#: index was out of range at StackLinqDifferentialKernels.cs(516,21)"");
 int __gsharp_id_5_s2 = __gsharp_id_4_slice[2];
 __gsharp_id_1_r[__gsharp_id_2_t]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_4_slice;
@@ -4119,7 +4119,7 @@ if(__gsharp_add_i32(__gsharp_id_3_baseIdx,4)>__gsharp_id_0_xs.length)
 {
 return;
 }
-auto __gsharp_id_4_slice = __gsharp_id_0_xs.AsSpan().Slice(__gsharp_id_3_baseIdx,4);
+auto __gsharp_id_4_slice = __gsharp_id_0_xs.AsSpan().Slice(__gsharp_id_3_baseIdx,4, ""G#: index was out of range at StackLinqDifferentialKernels.cs(531,21)"");
 __gsharp_id_1_r[__gsharp_id_2_t]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_4_slice;
 int __gsharp_fusion_res = {};
@@ -4298,7 +4298,7 @@ if(__gsharp_add_i32(__gsharp_id_3_baseIdx,4)>__gsharp_id_0_xs.length)
 {
 return;
 }
-auto __gsharp_id_4_slice = __gsharp_id_0_xs.AsSpan().Slice(__gsharp_id_3_baseIdx,4);
+auto __gsharp_id_4_slice = __gsharp_id_0_xs.AsSpan().Slice(__gsharp_id_3_baseIdx,4, ""G#: index was out of range at StackLinqDifferentialKernels.cs(545,21)"");
 int __gsharp_id_5_s1 = __gsharp_id_4_slice[1];
 __gsharp_id_1_r[__gsharp_id_2_t]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_4_slice;
@@ -4482,8 +4482,8 @@ if(__gsharp_add_i32(__gsharp_id_3_baseIdx,4)>__gsharp_id_0_xs.length)
 {
 return;
 }
-auto __gsharp_id_4_slice = __gsharp_id_0_xs.AsSpan().Slice(__gsharp_id_3_baseIdx,4);
-auto __gsharp_id_5_oneElemSlice = __gsharp_id_4_slice.Slice(1,1);
+auto __gsharp_id_4_slice = __gsharp_id_0_xs.AsSpan().Slice(__gsharp_id_3_baseIdx,4, ""G#: index was out of range at StackLinqDifferentialKernels.cs(560,21)"");
+auto __gsharp_id_5_oneElemSlice = __gsharp_id_4_slice.Slice(1,1, ""G#: index was out of range at StackLinqDifferentialKernels.cs(561,28)"");
 __gsharp_id_1_r[__gsharp_id_2_t]=Kassyi::ZeroAlloc::Linq::StackLinq::Single(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_id_5_oneElemSlice),778405771u,1692562108u);
 }
 ";
@@ -4657,8 +4657,8 @@ if(__gsharp_add_i32(__gsharp_id_3_baseIdx,4)>__gsharp_id_0_xs.length)
 {
 return;
 }
-auto __gsharp_id_4_slice = __gsharp_id_0_xs.AsSpan().Slice(__gsharp_id_3_baseIdx,4);
-auto __gsharp_id_5_oneElemSlice = __gsharp_id_4_slice.Slice(1,1);
+auto __gsharp_id_4_slice = __gsharp_id_0_xs.AsSpan().Slice(__gsharp_id_3_baseIdx,4, ""G#: index was out of range at StackLinqDifferentialKernels.cs(575,21)"");
+auto __gsharp_id_5_oneElemSlice = __gsharp_id_4_slice.Slice(1,1, ""G#: index was out of range at StackLinqDifferentialKernels.cs(576,28)"");
 __gsharp_id_1_r[__gsharp_id_2_t]=Kassyi::ZeroAlloc::Linq::StackLinq::Single(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_id_5_oneElemSlice),[&](auto __gsharp_id_6_x) {
 return true;
 }
@@ -4835,8 +4835,8 @@ if(__gsharp_add_i32(__gsharp_id_3_baseIdx,4)>__gsharp_id_0_xs.length)
 {
 return;
 }
-auto __gsharp_id_4_slice = __gsharp_id_0_xs.AsSpan().Slice(__gsharp_id_3_baseIdx,4);
-auto __gsharp_id_5_emptySlice = __gsharp_id_4_slice.Slice(0,0);
+auto __gsharp_id_4_slice = __gsharp_id_0_xs.AsSpan().Slice(__gsharp_id_3_baseIdx,4, ""G#: index was out of range at StackLinqDifferentialKernels.cs(590,21)"");
+auto __gsharp_id_5_emptySlice = __gsharp_id_4_slice.Slice(0,0, ""G#: index was out of range at StackLinqDifferentialKernels.cs(591,26)"");
 __gsharp_id_1_r[__gsharp_id_2_t]=Kassyi::ZeroAlloc::Linq::StackLinq::SingleOrDefault(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_id_5_emptySlice),1607832938u);
 }
 ";
@@ -5010,8 +5010,8 @@ if(__gsharp_add_i32(__gsharp_id_3_baseIdx,4)>__gsharp_id_0_xs.length)
 {
 return;
 }
-auto __gsharp_id_4_slice = __gsharp_id_0_xs.AsSpan().Slice(__gsharp_id_3_baseIdx,4);
-auto __gsharp_id_5_oneElemSlice = __gsharp_id_4_slice.Slice(1,1);
+auto __gsharp_id_4_slice = __gsharp_id_0_xs.AsSpan().Slice(__gsharp_id_3_baseIdx,4, ""G#: index was out of range at StackLinqDifferentialKernels.cs(605,21)"");
+auto __gsharp_id_5_oneElemSlice = __gsharp_id_4_slice.Slice(1,1, ""G#: index was out of range at StackLinqDifferentialKernels.cs(606,28)"");
 __gsharp_id_1_r[__gsharp_id_2_t]=Kassyi::ZeroAlloc::Linq::StackLinq::SingleOrDefault(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_id_5_oneElemSlice),761357354u);
 }
 ";
@@ -5185,7 +5185,7 @@ if(__gsharp_add_i32(__gsharp_id_3_baseIdx,4)>__gsharp_id_0_xs.length)
 {
 return;
 }
-auto __gsharp_id_4_slice = __gsharp_id_0_xs.AsSpan().Slice(__gsharp_id_3_baseIdx,4);
+auto __gsharp_id_4_slice = __gsharp_id_0_xs.AsSpan().Slice(__gsharp_id_3_baseIdx,4, ""G#: index was out of range at StackLinqDifferentialKernels.cs(620,21)"");
 __gsharp_id_1_r[__gsharp_id_2_t]=Kassyi::ZeroAlloc::Linq::StackLinq::SingleOrDefault(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_id_4_slice),[&](auto __gsharp_id_5_x) {
 return __gsharp_id_5_x>0&&__gsharp_id_5_x<0;
 }
@@ -5362,7 +5362,7 @@ if(__gsharp_add_i32(__gsharp_id_3_baseIdx,4)>__gsharp_id_0_xs.length)
 {
 return;
 }
-auto __gsharp_id_4_slice = __gsharp_id_0_xs.AsSpan().Slice(__gsharp_id_3_baseIdx,4);
+auto __gsharp_id_4_slice = __gsharp_id_0_xs.AsSpan().Slice(__gsharp_id_3_baseIdx,4, ""G#: index was out of range at StackLinqDifferentialKernels.cs(634,21)"");
 __gsharp_id_1_r[__gsharp_id_2_t]=Kassyi::ZeroAlloc::Linq::StackLinq::ElementAt(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_id_4_slice),0,364324610u);
 }
 ";
@@ -5536,7 +5536,7 @@ if(__gsharp_add_i32(__gsharp_id_3_baseIdx,4)>__gsharp_id_0_xs.length)
 {
 return;
 }
-auto __gsharp_id_4_slice = __gsharp_id_0_xs.AsSpan().Slice(__gsharp_id_3_baseIdx,4);
+auto __gsharp_id_4_slice = __gsharp_id_0_xs.AsSpan().Slice(__gsharp_id_3_baseIdx,4, ""G#: index was out of range at StackLinqDifferentialKernels.cs(648,21)"");
 __gsharp_id_1_r[__gsharp_id_2_t]=Kassyi::ZeroAlloc::Linq::StackLinq::ElementAt(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_id_4_slice),2,809866876u);
 }
 ";
@@ -5710,7 +5710,7 @@ if(__gsharp_add_i32(__gsharp_id_3_baseIdx,4)>__gsharp_id_0_xs.length)
 {
 return;
 }
-auto __gsharp_id_4_slice = __gsharp_id_0_xs.AsSpan().Slice(__gsharp_id_3_baseIdx,4);
+auto __gsharp_id_4_slice = __gsharp_id_0_xs.AsSpan().Slice(__gsharp_id_3_baseIdx,4, ""G#: index was out of range at StackLinqDifferentialKernels.cs(662,21)"");
 int __gsharp_id_5_twCalls = 0;
 int __gsharp_id_6_twSum = ([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_4_slice;
@@ -5893,7 +5893,7 @@ if(__gsharp_add_i32(__gsharp_id_3_baseIdx,4)>__gsharp_id_0_xs.length)
 {
 return;
 }
-auto __gsharp_id_4_slice = __gsharp_id_0_xs.AsSpan().Slice(__gsharp_id_3_baseIdx,4);
+auto __gsharp_id_4_slice = __gsharp_id_0_xs.AsSpan().Slice(__gsharp_id_3_baseIdx,4, ""G#: index was out of range at StackLinqDifferentialKernels.cs(678,21)"");
 int __gsharp_id_5_swCalls = 0;
 int __gsharp_id_6_swSum = ([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_4_slice;
