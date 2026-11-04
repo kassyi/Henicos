@@ -153,7 +153,8 @@ public readonly struct GpuBigIntExpr : IDisposable
     /// <see cref="ObjectDisposedException"/>.
     /// </remarks>
     /// <exception cref="InvalidOperationException">
-    /// The expression has already been compiled into a graph that is alive, or the warm-up evaluation failed.
+    /// The expression, or any of its sub-expressions, is part of another CUDA graph that is currently alive, or
+    /// the warm-up evaluation failed.
     /// </exception>
     public GpuBigIntExecutableGraph CompileToGraph(GpuWorkspace workspace, GpuBigUInt? targetResult = null) =>
         Compile(workspace, targetResult, ownsExpression: true);
@@ -443,24 +444,84 @@ internal static class GraphOwnership
 {
     private static readonly ConditionalWeakTable<IGpuBigIntExpression, object> s_owned = new();
     private static readonly object s_owner = new();
+    private static readonly object s_lock = new();
 
     public static void Take(IGpuBigIntExpression node)
     {
-        if (!s_owned.TryAdd(node, s_owner))
+        var nodes = new HashSet<IGpuBigIntExpression>(ReferenceEqualityComparer.Instance);
+        CollectSubtree(node, nodes);
+
+        lock (s_lock)
         {
-            throw new InvalidOperationException(
-                "The expression was compiled into a CUDA graph; dispose the graph instead.");
+            foreach (var n in nodes)
+            {
+                if (s_owned.TryGetValue(n, out _))
+                {
+                    throw new InvalidOperationException(
+                        "The expression was compiled into a CUDA graph; dispose the graph instead.");
+                }
+            }
+
+            foreach (var n in nodes)
+            {
+                s_owned.AddOrUpdate(n, s_owner);
+            }
         }
     }
 
-    public static void Release(IGpuBigIntExpression node) => s_owned.Remove(node);
+    public static void Release(IGpuBigIntExpression node)
+    {
+        var nodes = new HashSet<IGpuBigIntExpression>(ReferenceEqualityComparer.Instance);
+        CollectSubtree(node, nodes);
+
+        lock (s_lock)
+        {
+            foreach (var n in nodes)
+            {
+                s_owned.Remove(n);
+            }
+        }
+    }
 
     public static void ThrowIfOwned(IGpuBigIntExpression node)
     {
-        if (s_owned.TryGetValue(node, out _))
+        var nodes = new HashSet<IGpuBigIntExpression>(ReferenceEqualityComparer.Instance);
+        CollectSubtree(node, nodes);
+
+        foreach (var n in nodes)
         {
-            throw new InvalidOperationException(
-                "The expression was compiled into a CUDA graph; dispose the graph instead.");
+            if (s_owned.TryGetValue(n, out _))
+            {
+                throw new InvalidOperationException(
+                    "The expression was compiled into a CUDA graph; dispose the graph instead.");
+            }
+        }
+    }
+
+    private static void CollectSubtree(IGpuBigIntExpression node, HashSet<IGpuBigIntExpression> nodes)
+    {
+        if (!nodes.Add(node))
+        {
+            return;
+        }
+
+        AddChildren(node, nodes);
+    }
+
+    private static void AddChildren(IGpuBigIntExpression node, HashSet<IGpuBigIntExpression> into)
+    {
+        switch (node)
+        {
+            case SignedBinaryExpression binary:
+                CollectSubtree(binary.Left, into);
+                CollectSubtree(binary.Right, into);
+                break;
+            case SignedNegateExpression negate:
+                CollectSubtree(negate.Target, into);
+                break;
+            case SignedUnaryExpression unary:
+                CollectSubtree(unary.Target, into);
+                break;
         }
     }
 }
