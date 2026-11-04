@@ -405,11 +405,11 @@ internal sealed partial class ManagedExecutionRewriter
             SyntaxFactory.AssignmentExpression(SyntaxKind.SimpleAssignmentExpression, target, value)
         );
 
-    // __gsharp_ctx.__gsharp_state = <state>;
-    private static ExpressionStatementSyntax CreateContextStateAssignment(int state) =>
+    // __gsharp_ctx->__gsharp_state = <state>;
+    private ExpressionStatementSyntax CreateContextStateAssignment(int state) =>
         CreateAssignment(
             SyntaxFactory.MemberAccessExpression(
-                SyntaxKind.SimpleMemberAccessExpression,
+                _isUnsafe ? SyntaxKind.PointerMemberAccessExpression : SyntaxKind.SimpleMemberAccessExpression,
                 SyntaxFactory.IdentifierName(GSharpInternalNames.StateMachine.Context),
                 SyntaxFactory.IdentifierName(GSharpInternalNames.StateMachine.State)
             ),

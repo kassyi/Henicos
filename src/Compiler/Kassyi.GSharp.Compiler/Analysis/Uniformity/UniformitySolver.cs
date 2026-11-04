@@ -12,6 +12,9 @@ internal sealed class UniformitySolver(UniformityState state)
     // The values written in the influence region of each branch, each once, computed on first use
     private ImmutableArray<int>?[] _writtenInRegion = [];
 
+    // The values fixed as uniform during EvaluateWithUniformParameters
+    private HashSet<int>? _uniformValues;
+
     /// <summary>The forward data flow and the influence regions, alternately until the regions stop growing; both only grow.</summary>
     public void Solve()
     {
@@ -43,7 +46,9 @@ internal sealed class UniformitySolver(UniformityState state)
             switch (flowEvent)
             {
                 case { Kind: UniformityEventKind.Define }:
-                    current[flowEvent.Value] = flowEvent.Variance;
+                    current[flowEvent.Value] = _uniformValues != null && _uniformValues.Contains(flowEvent.Value)
+                        ? ThreadVariance.Uniform
+                        : flowEvent.Variance;
                     break;
                 case { Kind: UniformityEventKind.Write, Operation: { } operation, Graph: { } graph }:
                     ApplyWrite(operation, graph, current, flowEvent.Opaque);
@@ -75,6 +80,69 @@ internal sealed class UniformitySolver(UniformityState state)
             {
                 state.Reader.Evaluate(condition, graph, current);
             }
+        }
+    }
+
+    /// <summary>The observed variance of <paramref name="expression"/>, unwrapping parentheses.</summary>
+    public ThreadVariance GetObservedVariance(SyntaxNode expression)
+    {
+        if (state.Observed == null)
+        {
+            Observe();
+        }
+
+        while (expression is ParenthesizedExpressionSyntax parenthesized)
+        {
+            expression = parenthesized.Expression;
+        }
+
+        if (state.Observed != null && state.Observed.TryGetValue(expression, out var variance))
+        {
+            return variance;
+        }
+
+        var combined = ThreadVariance.Uniform;
+        if (state.Observed != null)
+        {
+            foreach (var node in expression.DescendantNodes())
+            {
+                if (state.Observed.TryGetValue(node, out var childVariance))
+                {
+                    combined |= childVariance;
+                }
+            }
+        }
+
+        return combined;
+    }
+
+    /// <summary>
+    /// The variance of <paramref name="expression"/> when <paramref name="uniformParameters"/> are taken as uniform.
+    /// </summary>
+    public ThreadVariance EvaluateWithUniformParameters(SyntaxNode expression,
+        ImmutableArray<IParameterSymbol> uniformParameters)
+    {
+        var uniformValues = new HashSet<int>();
+        foreach (var parameter in uniformParameters)
+        {
+            if (state.Recorder.TryGetValue(parameter, out var index))
+            {
+                uniformValues.Add(index);
+            }
+        }
+
+        var (savedIn, savedRegion, savedBranch, savedObserved) = (state.In, state.Region, state.Branch, state.Observed);
+        _uniformValues = uniformValues;
+        try
+        {
+            Solve();
+            Observe();
+            return GetObservedVariance(expression);
+        }
+        finally
+        {
+            _uniformValues = null;
+            (state.In, state.Region, state.Branch, state.Observed) = (savedIn, savedRegion, savedBranch, savedObserved);
         }
     }
 
@@ -328,14 +396,17 @@ internal sealed class UniformitySolver(UniformityState state)
     }
 
     // M(ref x), M(out y): what the callee writes through them, thread-variant when its summary says so (a device
-    // function) or when any argument is (any other method); an out argument is always written
+    // function), when the intrinsic returns a thread-variant value (an atomic), or when any argument is (any other
+    // method); an out argument is always written
     private void WriteArguments(IInvocationOperation invocation, ControlFlowGraph graph, ThreadVariance[] current,
         SyntaxNode? opaque)
     {
         var reader = state.Reader;
         var written = reader.TryGetDeviceFunction(invocation.TargetMethod, out var callee, out var declaration)
             ? reader.GetCallVariance(callee, declaration, invocation, graph, current).ByReference
-            : reader.EvaluateOperands(invocation, graph, current);
+            : SyncIntrinsicClassifier.Classify(invocation.TargetMethod).ResultIsThreadVariant
+                ? ThreadVariance.Block
+                : reader.EvaluateOperands(invocation, graph, current);
         foreach (var argument in invocation.Arguments)
         {
             if (argument.Parameter?.RefKind is RefKind.Ref or RefKind.Out)
