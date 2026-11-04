@@ -35,8 +35,11 @@ internal static class KernelHostNames
             new LaunchOption("global::System.IntPtr", "hStream", "default"),
             new LaunchOption("global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>>", "macros", "default"));
 
-    /// <summary>The comma-separated list of reserved launch option parameter names for the GSH0106 diagnostic message.</summary>
-    public static readonly string ReservedLaunchParameterList = BuildReservedLaunchParameterList();
+    /// <summary>
+    /// The launch option names joined by <c>, </c>: the arguments that forward the options to another wrapper, and the
+    /// list in the GSH0106 message.
+    /// </summary>
+    public static readonly string LaunchOptionNames = BuildLaunchOptionNames();
 
     internal static readonly string LaunchOptionParameters = BuildLaunchOptionParameters();
 
@@ -54,7 +57,7 @@ internal static class KernelHostNames
         return false;
     }
 
-    private static string BuildReservedLaunchParameterList()
+    private static string BuildLaunchOptionNames()
     {
         var sb = new StringBuilder();
         for (var i = 0; i < LaunchOptions.Length; i++)
@@ -77,8 +80,9 @@ internal static class KernelHostNames
         {
             if (i > 0)
             {
-                // Historical spacing: no space between blockDimY and blockDimZ to preserve snapshot parity
-                sb.Append(i == 5 ? "," : ", ");
+                // [WHY] The wrappers have always been written "uint blockDimY = 1,uint blockDimZ = 1"; existing output is
+                // not respaced (transpiler-emission section 3), so the missing space is kept, keyed by name
+                sb.Append(LaunchOptions[i].Name == "blockDimZ" ? "," : ", ");
             }
 
             var opt = LaunchOptions[i];

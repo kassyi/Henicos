@@ -91,7 +91,7 @@ internal sealed class KernelSignatureRule : ISyntaxValidationRule<MethodDeclarat
                     parameterSyntax.Identifier.GetLocation(),
                     parameter.Name,
                     $"{kernel.ContainingType.Name}.{kernel.Name}",
-                    KernelHostNames.ReservedLaunchParameterList);
+                    KernelHostNames.LaunchOptionNames);
             }
         }
     }

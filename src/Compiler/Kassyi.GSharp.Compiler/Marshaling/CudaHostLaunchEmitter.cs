@@ -62,9 +62,6 @@ internal static class CudaHostLaunchEmitter
         writer.AppendLine("#pragma warning restore CS8500");
     }
 
-    private const string LaunchOptionArguments =
-        "gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, hStream, macros";
-
     // The public Launch{Name}Ptr of an overloaded kernel: device pointers are typed GpuBuffer<T>, so C# selects the
     // overload, and the wrapper forwards their device pointers to the private IntPtr implementation.
     private static void WriteTypedPointerLaunchMethod(SourceWriter writer, in KernelEmission kernel)
@@ -112,7 +109,7 @@ internal static class CudaHostLaunchEmitter
                 writer.Append(", ");
             }
 
-            writer.Append(LaunchOptionArguments);
+            writer.Append(KernelHostNames.LaunchOptionNames);
         }
 
         writer.AppendLine(";");
