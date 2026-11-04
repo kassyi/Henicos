@@ -316,7 +316,7 @@ public sealed class MarshalingBoundaryDifferentialTests
         Shape = LaunchShape.ForRows(DefaultRows, blockX: DefaultBlockX),
         Inputs = static (rng, s) =>
         {
-            // Always pick a non-ASCII UTF-16 code unit for v and iv so #971 consistently reproduces on Native CPU
+            // Always pick a non-ASCII UTF-16 code unit for v and iv, which the Ansi conversion of the native delegate changed (#971)
             char v = (char)(0x1234 ^ (rng.NextInt32() & 0x00FF));
             char iv = (char)(0x8001 | (rng.NextInt32() & 0x0FFF));
             char rv = '\u1234';
@@ -1043,7 +1043,7 @@ public sealed class MarshalingBoundaryDifferentialTests
     public void Test_BoolAllPositions_MatchesOracle() =>
         DifferentialRunner.Run(s_boolAllPositions);
 
-    // char across all 4 positions (value, in, ref, out, char[], return char, struct field; #971 on Native)
+    // char across all 4 positions (value, in, ref, out, char[], return char, struct field; regression test for #971)
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
@@ -1083,12 +1083,12 @@ public sealed class MarshalingBoundaryDifferentialTests
     public void Test_ExplicitLayoutAndUnionPositions_MatchesOracle() =>
         DifferentialRunner.Run(s_explicitLayoutAndUnionPositions);
 
-    // LayoutKind.Explicit union containing a Convert arm (#1006 on CUDA)
+    // LayoutKind.Explicit union containing a Convert arm (regression test for #1006)
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_ExplicitUnionWithConvertArm_MatchesOracleExceptKnownCudaIssue() =>
+    public void Test_ExplicitUnionWithConvertArm_MatchesOracle() =>
         DifferentialRunner.Run(s_explicitUnionWithConvertArm);
 
     // LayoutKind.Auto across value, in, ref, out, array, return value, and nested struct

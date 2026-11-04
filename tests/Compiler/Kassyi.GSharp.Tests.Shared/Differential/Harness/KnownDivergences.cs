@@ -25,14 +25,10 @@ public static class KnownDivergences
         $"{nameof(BarrierAndWarpDifferentialKernels)}.{nameof(BarrierAndWarpDifferentialKernels.SubWarpConditionalShuffleKernel)}";
     private const string GenericStructStaticSharedMemory =
         $"{nameof(BarrierAndWarpDifferentialKernels)}.{nameof(BarrierAndWarpDifferentialKernels.GenericStructStaticSharedMemoryKernel)}";
-    private const string CharAllPositions =
-        $"{nameof(MarshalingBoundaryDifferentialKernels)}.{nameof(MarshalingBoundaryDifferentialKernels.CharAllPositionsKernel)}";
     private const string NullableBlitScalarArg =
         $"{nameof(MarshalingBoundaryDifferentialKernels)}.{nameof(MarshalingBoundaryDifferentialKernels.NullableBlitScalarArgKernel)}";
     private const string NullableConvertPositions =
         $"{nameof(MarshalingBoundaryDifferentialKernels)}.{nameof(MarshalingBoundaryDifferentialKernels.NullableConvertPositionsKernel)}";
-    private const string ExplicitUnionWithConvertArm =
-        $"{nameof(MarshalingBoundaryDifferentialKernels)}.{nameof(MarshalingBoundaryDifferentialKernels.ExplicitUnionWithConvertArmKernel)}";
     private const string InlineArrayNullableVec2 =
         $"{nameof(MarshalingBoundaryDifferentialKernels)}.{nameof(MarshalingBoundaryDifferentialKernels.InlineArrayNullableVec2Kernel)}";
     private const string OverlappingSpanSlice =
@@ -80,12 +76,6 @@ public static class KnownDivergences
         // generic struct static method SharedMemory.Allocate<T> collides across type arguments (#543)
         new(GenericStructStaticSharedMemory, "SharedSlot<int>", DiffPath.Managed | DiffPath.Native, Issue: 543),
 
-        // char by-value / in kernel arguments truncated in CPU Native Launch (#971)
-        new(CharAllPositions, "char_val", DiffPath.Native, Issue: 971),
-        new(CharAllPositions, "char_in", DiffPath.Native, Issue: 971),
-        new(CharAllPositions, "ov", DiffPath.Native, Issue: 971),
-        new(CharAllPositions, "__result", DiffPath.Native, Issue: 971),
-
         // Nullable<T> scalar / byref kernel arguments throw MarshalDirectiveException in CPU Native Launch (#961)
         new(NullableBlitScalarArg, "v_has", DiffPath.Native, Issue: 961),
         new(NullableBlitScalarArg, "v_val", DiffPath.Native, Issue: 961),
@@ -100,9 +90,6 @@ public static class KnownDivergences
         new(NullableConvertPositions, "rv_x", DiffPath.Cuda, Issue: 961),
         new(NullableConvertPositions, "rv_y", DiffPath.Cuda, Issue: 961),
         new(NullableConvertPositions, "h", DiffPath.Cuda, Issue: 961),
-
-        // LayoutKind.Explicit union with Convert arm overwritten by subsequent union arm during CUDA unmarshal (#1006)
-        new(ExplicitUnionWithConvertArm, "u", DiffPath.Cuda, Issue: 1006),
 
         // [InlineArray(2)] of Nullable<Vector2> block-copied without per-element conversion on CUDA (#961)
         new(InlineArrayNullableVec2, "item0_x", DiffPath.Cuda, Issue: 961),

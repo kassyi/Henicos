@@ -569,7 +569,7 @@ public static partial class MarshalingBoundaryDifferentialKernels
         return updatedUnion;
     }
 
-    // LayoutKind.Explicit union containing a Convert arm (#1006 on CUDA)
+    // LayoutKind.Explicit union containing a Convert arm (regression test for #1006)
     [GpuKernel]
     public static void ExplicitUnionWithConvertArmKernel(
         ref DiffConvertExplicitUnion u,

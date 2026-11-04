@@ -146,8 +146,8 @@ public sealed class MarshalingBoundaryDiagnosticsTests
             diagnostics.Ranges(GSharpDiagnostics.StructLayoutNotRepresentable.Id));
     }
 
-    // Returning unmapped unmanaged BCL struct (DateTime, Guid, Matrix4x4) (#1007)
-    [Theory(Skip = "Returning unmapped BCL struct is not diagnosed (#1007)")]
+    // Returning an unmapped BCL struct (DateTime) reports GSH0004 at the kernel name (regression test for #1007)
+    [Theory]
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
