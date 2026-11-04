@@ -8,7 +8,7 @@ namespace Henicos.Benchmarks;
 [MemoryDiagnoser]
 public class StackLinqBenchmark
 {
-    private int[] _data = null!;
+    private int[] _data = [];
     private int _targetForShortCircuit;
     private int _endMarkerForWindowing;
 

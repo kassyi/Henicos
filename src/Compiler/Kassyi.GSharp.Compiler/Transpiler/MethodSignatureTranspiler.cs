@@ -351,19 +351,10 @@ internal static class MethodSignatureTranspiler
         return "inline";
     }
 
-    private static MethodImplOptions ExtractMethodImplOptions(AttributeData attr)
-    {
-        if (attr.ConstructorArguments.Length > 0 && attr.ConstructorArguments[0].Value is int or short)
-        {
-            return (MethodImplOptions)Convert.ToInt32(attr.ConstructorArguments[0].Value);
-        }
-
-        var hasValue = attr.NamedArguments
-            .AsStackEnumerable()
-            .TryFirst(static namedArg => namedArg is { Key: "Value", Value.Value: int or short }, out var valueArg);
-
-        return hasValue ? (MethodImplOptions)Convert.ToInt32(valueArg.Value.Value) : default;
-    }
+    private static MethodImplOptions ExtractMethodImplOptions(AttributeData attr) =>
+        attr.ConstructorArguments.Length > 0 && attr.ConstructorArguments[0].Value is int or short
+            ? (MethodImplOptions)Convert.ToInt32(attr.ConstructorArguments[0].Value)
+            : default;
 
     private static void WriteKernelMethodPrefix(ref TranspileContext context)
     {

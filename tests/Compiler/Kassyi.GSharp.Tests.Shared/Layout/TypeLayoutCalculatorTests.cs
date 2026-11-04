@@ -28,7 +28,7 @@ public class TypeLayoutCalculatorTests
         var decl = tree.GetRoot().DescendantNodes()
             .OfType<StructDeclarationSyntax>()
             .First(s => s.Identifier.Text == structName);
-        return (INamedTypeSymbol)model.GetDeclaredSymbol(decl)!;
+        return Assert.IsAssignableFrom<INamedTypeSymbol>(model.GetDeclaredSymbol(decl));
     }
 
     private static int OffsetOf<TStruct, TField>(ref TStruct s, ref TField field) =>

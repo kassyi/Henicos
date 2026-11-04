@@ -1,6 +1,11 @@
+using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
 using System.Text.RegularExpressions;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Kassyi.GSharp.Compiler;
+using Kassyi.GSharp.Compiler.Dialects;
 using Kassyi.GSharp.Compiler.Transpiler;
 using Kassyi.GSharp.Tests.Shared.Helpers;
 
@@ -106,6 +111,38 @@ public class BclIntrinsicMapBuilderTests
                 $"System.Numerics.BitOperations.IsPow2(nint) => user_ispow2_nint ({nativeSizedCast})"
             ],
             userMappings);
+    }
+
+    [Fact]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.Boundary)]
+    public void BclIntrinsicTranspilerRule_OmittedOptionalParameter_EmitsDefaultAndNoDanglingComma()
+    {
+        var source = RoslynTestUtility.ReadTestCase("Transpiler/BclIntrinsicMap/OptionalParameterMappings.cs");
+        var compilation = RoslynTestUtility.CreateCompilation(source);
+        Assert.Empty(compilation.GetDiagnostics().Where(static d => d.Severity == DiagnosticSeverity.Error));
+
+        var tree = compilation.SyntaxTrees.First(static t => t.ToString().Contains("MockBclCaller", StringComparison.Ordinal));
+        var model = compilation.GetSemanticModel(tree);
+
+        var middleCallMethod = tree.GetRoot().DescendantNodes()
+            .OfType<MethodDeclarationSyntax>()
+            .First(static m => m.Identifier.Text == "CallWithOmittedMiddle");
+        var trailingCallMethod = tree.GetRoot().DescendantNodes()
+            .OfType<MethodDeclarationSyntax>()
+            .First(static m => m.Identifier.Text == "CallWithOmittedTrailing");
+
+        var failures = new List<TranspileFailure>();
+        var middleCuda = MethodTranspiler.GenerateCudaSource(middleCallMethod, model, failures.Add, isDevice: false,
+            new GSharpCudaDialect(), out _);
+        Assert.Empty(failures);
+        Assert.Contains("mock_compute(__gsharp_seq_0,42,__gsharp_seq_1)", middleCuda);
+
+        var trailingCuda = MethodTranspiler.GenerateCudaSource(trailingCallMethod, model, failures.Add, isDevice: false,
+            new GSharpCudaDialect(), out _);
+        Assert.Empty(failures);
+        Assert.Contains("mock_compute(__gsharp_seq_0,__gsharp_seq_1,99)", trailingCuda);
+        Assert.DoesNotContain(",)", trailingCuda);
     }
 
     private static bool DeclaresIdentifier(string source, string identifier) =>

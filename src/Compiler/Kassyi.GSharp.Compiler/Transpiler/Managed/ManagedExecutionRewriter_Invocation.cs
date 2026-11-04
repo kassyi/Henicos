@@ -10,9 +10,13 @@ internal sealed partial class ManagedExecutionRewriter
                 Identifier.ValueText: GSharpInternalNames.SuspendingCall.ResumeCall
             })
         {
-            return ManagedNameQualifier.TryRewriteInvocation(node, this, semanticModel) is { } rewritten
+            var result = ManagedNameQualifier.TryRewriteInvocation(node, this, semanticModel) is { } rewritten
                 ? RouteExtensionCall(node, rewritten)
                 : base.VisitInvocationExpression(node);
+            return ManagedRewriteClassifier.IsSequentialSum(node, semanticModel) &&
+                   result is InvocationExpressionSyntax sumCall
+                ? RewriteSequentialSum(sumCall)
+                : result;
         }
 
         var arguments = node.ArgumentList.Arguments;
@@ -42,14 +46,17 @@ internal sealed partial class ManagedExecutionRewriter
                 : visited);
         }
 
-        // __gsharp_ctx.__gsharp_call_frame_<frame index>
+        // __gsharp_ctx.__gsharp_call_frame_<frame index> or &__gsharp_ctx->__gsharp_call_frame_<frame index>
         var frameName = GSharpInternalNames.SuspendingCall.CallFramePrefix + frameIndex.Token.ValueText;
-        var frame = SyntaxFactory.MemberAccessExpression(
-            SyntaxKind.SimpleMemberAccessExpression,
+        var frameAccess = SyntaxFactory.MemberAccessExpression(
+            _isUnsafe ? SyntaxKind.PointerMemberAccessExpression : SyntaxKind.SimpleMemberAccessExpression,
             SyntaxFactory.IdentifierName(GSharpInternalNames.StateMachine.Context),
             SyntaxFactory.IdentifierName(frameName)
         );
-        callArguments = callArguments.Add(SyntaxFactory.Argument(frame));
+        var frameArg = _isUnsafe
+            ? (ExpressionSyntax)SyntaxFactory.PrefixUnaryExpression(SyntaxKind.AddressOfExpression, frameAccess)
+            : frameAccess;
+        callArguments = callArguments.Add(SyntaxFactory.Argument(frameArg));
 
         if (arguments.Count <= 2)
         {
@@ -67,5 +74,25 @@ internal sealed partial class ManagedExecutionRewriter
             SyntaxFactory.ParseExpression(ManagedStateMachineEmitter.GetDeviceFunctionMember(callee,
                 GSharpInternalNames.Kernel.StateMachinePrefix)),
             SyntaxFactory.ArgumentList(callArguments));
+    }
+
+    private static InvocationExpressionSyntax RewriteSequentialSum(InvocationExpressionSyntax call) =>
+        call.Expression switch
+        {
+            QualifiedNameSyntax qualified =>
+                call.WithExpression(qualified.WithRight(WithSequentialSumName(qualified.Right))),
+            MemberAccessExpressionSyntax access =>
+                call.WithExpression(access.WithName(WithSequentialSumName(access.Name))),
+            SimpleNameSyntax simple =>
+                call.WithExpression(WithSequentialSumName(simple)),
+            _ => call
+        };
+
+    private static SimpleNameSyntax WithSequentialSumName(SimpleNameSyntax name)
+    {
+        var identifier = SyntaxFactory.Identifier("SumSequential").WithTriviaFrom(name.Identifier);
+        return name is GenericNameSyntax generic
+            ? generic.WithIdentifier(identifier)
+            : SyntaxFactory.IdentifierName(identifier).WithTriviaFrom(name);
     }
 }

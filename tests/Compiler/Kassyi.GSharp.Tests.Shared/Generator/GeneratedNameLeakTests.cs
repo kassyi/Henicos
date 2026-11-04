@@ -94,9 +94,7 @@ public partial class GeneratedNameLeakTests
                 _ => default
             };
 
-            // Keyword-named declarations are covered by CppIdentifierRenameTests: a leak there fails to compile.
-            if (!identifier.IsKind(SyntaxKind.None) && !CppNameFormatter.IsReservedCppKeyword(identifier.ValueText) &&
-                !s_systemVocabulary.Value.Contains(identifier.ValueText))
+            if (!identifier.IsKind(SyntaxKind.None) && !s_systemVocabulary.Value.Contains(identifier.ValueText))
             {
                 names.Add(identifier.ValueText);
             }

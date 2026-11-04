@@ -49,7 +49,7 @@ public class MathDifferentialTests
 
     private static readonly DifferentialCase s_mathOfSingle = new($"{nameof(MathDifferentialKernels)}.{nameof(MathDifferentialKernels.MathOfSingleMatrixKernel)}")
     {
-        Shape = LaunchShape.ForRows(s_singleRoundBoundaries.Length * 4, blockX: 64),
+        Shapes = LaunchShapes.OneDimensionalMatrix(s_singleRoundBoundaries.Length * 4),
         Inputs = static (rng, rows) => new DiffBuffers()
             .In("f", SingleRoundValues(rng, rows))
             .Out<double>("r", rows, MathDifferentialKernels.MathOfSingleColumns, OutputPolicy.Bitwise),
@@ -59,12 +59,12 @@ public class MathDifferentialTests
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
-        Oracle = static b => MathDifferentialKernels.MathOfSingleMatrixKernel(b.Get<float>("f"), b.Get<double>("r")),
+        Oracle = static (b, _) => MathDifferentialKernels.MathOfSingleMatrixKernel(b.Get<float>("f"), b.Get<double>("r")),
     };
 
     private static readonly DifferentialCase s_singleRoundingAndUnary = new($"{nameof(MathDifferentialKernels)}.{nameof(MathDifferentialKernels.SingleRoundingAndUnaryMatrixKernel)}")
     {
-        Shape = LaunchShape.ForRows(s_singleRoundBoundaries.Length * 4, blockX: 64),
+        Shapes = LaunchShapes.OneDimensionalMatrix(s_singleRoundBoundaries.Length * 4),
         Inputs = static (rng, rows) => new DiffBuffers()
             .In("f", SingleRoundValues(rng, rows))
             .Out<float>("r", rows, MathDifferentialKernels.SingleRoundingAndUnaryColumns, OutputPolicy.Bitwise),
@@ -74,12 +74,12 @@ public class MathDifferentialTests
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
-        Oracle = static b => MathDifferentialKernels.SingleRoundingAndUnaryMatrixKernel(b.Get<float>("f"), b.Get<float>("r")),
+        Oracle = static (b, _) => MathDifferentialKernels.SingleRoundingAndUnaryMatrixKernel(b.Get<float>("f"), b.Get<float>("r")),
     };
 
     private static readonly DifferentialCase s_doubleRoundingAndUnary = new($"{nameof(MathDifferentialKernels)}.{nameof(MathDifferentialKernels.DoubleRoundingAndUnaryMatrixKernel)}")
     {
-        Shape = LaunchShape.ForRows(s_doubleBoundaries.Length * 4, blockX: 64),
+        Shapes = LaunchShapes.OneDimensionalMatrix(s_doubleBoundaries.Length * 4),
         Inputs = static (rng, rows) => new DiffBuffers()
             .In("d", DoubleValues(rng, rows))
             .Out<double>("r", rows, MathDifferentialKernels.DoubleRoundingAndUnaryColumns, OutputPolicy.Bitwise),
@@ -89,12 +89,12 @@ public class MathDifferentialTests
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
-        Oracle = static b => MathDifferentialKernels.DoubleRoundingAndUnaryMatrixKernel(b.Get<double>("d"), b.Get<double>("r")),
+        Oracle = static (b, _) => MathDifferentialKernels.DoubleRoundingAndUnaryMatrixKernel(b.Get<double>("d"), b.Get<double>("r")),
     };
 
     private static readonly DifferentialCase s_singleMaxMinClamp = new($"{nameof(MathDifferentialKernels)}.{nameof(MathDifferentialKernels.SingleMaxMinClampMatrixKernel)}")
     {
-        Shape = LaunchShape.ForRows(DiffValues.SingleBoundaries.Length * DiffValues.SingleBoundaries.Length, blockX: 64),
+        Shapes = LaunchShapes.OneDimensionalMatrix(DiffValues.SingleBoundaries.Length * DiffValues.SingleBoundaries.Length),
         Inputs = static (rng, rows) =>
         {
             var (a, b) = SinglePairs(rng, rows);
@@ -115,7 +115,7 @@ public class MathDifferentialTests
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
-        Oracle = static b => MathDifferentialKernels.SingleMaxMinClampMatrixKernel(
+        Oracle = static (b, _) => MathDifferentialKernels.SingleMaxMinClampMatrixKernel(
             b.Get<float>("a"),
             b.Get<float>("b"),
             b.Get<float>("min"),
@@ -126,7 +126,7 @@ public class MathDifferentialTests
 
     private static readonly DifferentialCase s_doubleMaxMinClamp = new($"{nameof(MathDifferentialKernels)}.{nameof(MathDifferentialKernels.DoubleMaxMinClampMatrixKernel)}")
     {
-        Shape = LaunchShape.ForRows(s_doubleBoundaries.Length * s_doubleBoundaries.Length, blockX: 64),
+        Shapes = LaunchShapes.OneDimensionalMatrix(s_doubleBoundaries.Length * s_doubleBoundaries.Length),
         Inputs = static (rng, rows) =>
         {
             var (a, b) = DoublePairs(rng, rows);
@@ -147,7 +147,7 @@ public class MathDifferentialTests
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
-        Oracle = static b => MathDifferentialKernels.DoubleMaxMinClampMatrixKernel(
+        Oracle = static (b, _) => MathDifferentialKernels.DoubleMaxMinClampMatrixKernel(
             b.Get<double>("a"),
             b.Get<double>("b"),
             b.Get<double>("min"),
@@ -158,7 +158,7 @@ public class MathDifferentialTests
 
     private static readonly DifferentialCase s_mixedFloatMaxMin = new($"{nameof(MathDifferentialKernels)}.{nameof(MathDifferentialKernels.MixedFloatMaxMinMatrixKernel)}")
     {
-        Shape = LaunchShape.ForRows(DiffValues.SingleBoundaries.Length * s_doubleBoundaries.Length, blockX: 64),
+        Shapes = LaunchShapes.OneDimensionalMatrix(DiffValues.SingleBoundaries.Length * s_doubleBoundaries.Length),
         Inputs = static (rng, rows) =>
         {
             var (f, d) = SingleDoublePairs(rng, rows);
@@ -179,7 +179,7 @@ public class MathDifferentialTests
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
-        Oracle = static b => MathDifferentialKernels.MixedFloatMaxMinMatrixKernel(
+        Oracle = static (b, _) => MathDifferentialKernels.MixedFloatMaxMinMatrixKernel(
             b.Get<float>("f"),
             b.Get<double>("d"),
             b.Get<int>("i"),
@@ -190,7 +190,7 @@ public class MathDifferentialTests
 
     private static readonly DifferentialCase s_int32Math = new($"{nameof(MathDifferentialKernels)}.{nameof(MathDifferentialKernels.Int32MathMatrixKernel)}")
     {
-        Shape = LaunchShape.ForRows(s_intSafeAbsBoundaries.Length * s_intSafeAbsBoundaries.Length, blockX: 64),
+        Shapes = LaunchShapes.OneDimensionalMatrix(s_intSafeAbsBoundaries.Length * s_intSafeAbsBoundaries.Length),
         Inputs = static (rng, rows) =>
         {
             var (a, b) = SafeAbsInt32Pairs(rng, rows);
@@ -217,7 +217,7 @@ public class MathDifferentialTests
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
-        Oracle = static b => MathDifferentialKernels.Int32MathMatrixKernel(
+        Oracle = static (b, _) => MathDifferentialKernels.Int32MathMatrixKernel(
             b.Get<int>("a"),
             b.Get<int>("b"),
             b.Get<short>("s"),
@@ -230,7 +230,7 @@ public class MathDifferentialTests
 
     private static readonly DifferentialCase s_mathFIntArgument = new($"{nameof(MathDifferentialKernels)}.{nameof(MathDifferentialKernels.MathFIntArgumentMatrixKernel)}")
     {
-        Shape = LaunchShape.ForRows(s_intSafeAbsBoundaries.Length * 4, blockX: 64),
+        Shapes = LaunchShapes.OneDimensionalMatrix(s_intSafeAbsBoundaries.Length * 4),
         Inputs = static (rng, rows) =>
         {
             var (v, rawBound) = SafeAbsInt32Pairs(rng, rows);
@@ -249,7 +249,7 @@ public class MathDifferentialTests
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
-        Oracle = static b => MathDifferentialKernels.MathFIntArgumentMatrixKernel(
+        Oracle = static (b, _) => MathDifferentialKernels.MathFIntArgumentMatrixKernel(
             b.Get<int>("v"),
             b.Get<int>("min"),
             b.Get<int>("max"),
