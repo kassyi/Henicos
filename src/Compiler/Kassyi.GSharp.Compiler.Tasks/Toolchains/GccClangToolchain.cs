@@ -68,7 +68,8 @@ public sealed class GccClangToolchain : INativeToolchain
         string outputPath,
         string architecture,
         TaskLoggingHelper log,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        NativeSanitizers sanitizers = NativeSanitizers.None)
     {
         var compiler = _resolvedCompiler ?? _compilerCandidates[0];
 
@@ -77,7 +78,7 @@ public sealed class GccClangToolchain : INativeToolchain
         // -std=c++17 = C++17 standard
         // -fopenmp = Enable OpenMP for BSP CPU scheduler parallelism
         // -Wno-unused-label = C# already diagnoses unused user labels (CS0164); synthesized labels may be unreferenced
-        var args = $"-O2 -shared -fPIC -std=c++17 -fopenmp -Wno-unused-label \"{sourcePath}\" -o \"{outputPath}\"";
+        var args = $"-O2 -shared -fPIC -std=c++17 -fopenmp -Wno-unused-label{BuildSanitizerFlags(sanitizers)} \"{sourcePath}\" -o \"{outputPath}\"";
 
         log.LogMessage(MessageImportance.Normal, $"Compiling C++ source for {architecture} with {compiler}: {sourcePath}");
 
@@ -120,6 +121,31 @@ public sealed class GccClangToolchain : INativeToolchain
             log.LogError($"Failed to start {compiler}. Ensure a C++ compiler is installed. Details: {ex.Message}");
             return false;
         }
+    }
+
+    // " -fsanitize=<names> [-fno-sanitize-recover=undefined] -fno-omit-frame-pointer -g", or "" when none is enabled.
+    // -fno-sanitize-recover=undefined stops at the first UBSan report; -fno-omit-frame-pointer and -g give readable stacks.
+    private static string BuildSanitizerFlags(NativeSanitizers sanitizers)
+    {
+        if (sanitizers == NativeSanitizers.None)
+        {
+            return "";
+        }
+
+        var names = new List<string>(2);
+        if ((sanitizers & NativeSanitizers.Address) != 0)
+        {
+            names.Add("address");
+        }
+
+        var enableUndefined = (sanitizers & NativeSanitizers.Undefined) != 0;
+        if (enableUndefined)
+        {
+            names.Add("undefined");
+        }
+
+        var recover = enableUndefined ? " -fno-sanitize-recover=undefined" : "";
+        return $" -fsanitize={string.Join(",", names)}{recover} -fno-omit-frame-pointer -g";
     }
 
     private bool IsCompilerAvailable(string executable, CancellationToken cancellationToken)

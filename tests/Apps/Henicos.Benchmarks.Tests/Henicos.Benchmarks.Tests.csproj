@@ -21,6 +21,10 @@
     <Compile Include="..\..\Compiler\Kassyi.GSharp.Tests.Shared\Helpers\CudaCapability.cs" Link="Helpers\CudaCapability.cs" />
   </ItemGroup>
   <ItemGroup>
+    <!-- BenchmarkDotNet reports that the bench-compare tests read -->
+    <None Include="Comparison\Reports\**\*.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\..\..\src\Apps\Henicos.Benchmarks\Henicos.Benchmarks.csproj" />
     <ProjectReference Include="..\..\..\src\Runtime\Kassyi.GSharp.Runtime\Kassyi.GSharp.Runtime.csproj" />
   </ItemGroup>

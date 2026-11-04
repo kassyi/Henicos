@@ -21,6 +21,10 @@ coverage-diff base="main":
 test-differential-cpu *args="":
     dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cpu/Kassyi.GSharp.Tests.Cpu.csproj --filter "Category=Differential&Category!=Stress" {{args}}
 
+# Build Tests.Cpu with native sanitizers (ASan/UBSan on Linux, ASan on Windows) and run Differential + Execution tests
+test-sanitized *args="":
+    node scripts/human/test-sanitized.js {{args}}
+
 # Differential tests: C# oracle vs CUDA (agents: wrap in node scripts/agent/gpu-lock.js -- "...")
 test-differential-cuda *args="":
     dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cuda/Kassyi.GSharp.Tests.Cuda.csproj --filter "Category=Differential&Category!=Stress" {{args}}
@@ -418,3 +422,9 @@ trusted-key-line key:
         h=$(( (h ^ c) * 1099511628211 ))
     done
     printf '%s,fnv1a64:%s\n' "$k" "$(printf '%016x' "$h" | cut -c1-10)"
+
+
+# Compare the BenchmarkDotNet *-report-full.json reports of a base and a head run with a Mann-Whitney U test;
+# exits 1 on a significant slowdown (options: --threshold <percent>, --pvalue <p>, --json-out <file>)
+bench-compare base head *args="":
+    dotnet run --project src/Apps/Henicos.Benchmarks -c Release -- bench-compare {{base}} {{head}} {{args}}

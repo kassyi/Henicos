@@ -6,8 +6,12 @@
     <GSharpHostOs Condition="'$(GSharpHostOs)' == ''">unix</GSharpHostOs>
 
     <!-- Windows と Linux 等でビルド出力先・中間ディレクトリを完全に分離 -->
-    <BaseOutputPath>bin\$(GSharpHostOs)\</BaseOutputPath>
-    <BaseIntermediateOutputPath>obj\$(GSharpHostOs)\</BaseIntermediateOutputPath>
+    <!-- GSharpOutputVariant (e.g. "sanitized" from scripts/human/test-sanitized.js) gives a build its own
+         bin\<os>-<variant>\ and obj\<os>-<variant>\, so instrumented outputs never replace the normal ones -->
+    <GSharpOutputDir>$(GSharpHostOs)</GSharpOutputDir>
+    <GSharpOutputDir Condition="'$(GSharpOutputVariant)' != ''">$(GSharpHostOs)-$(GSharpOutputVariant)</GSharpOutputDir>
+    <BaseOutputPath>bin\$(GSharpOutputDir)\</BaseOutputPath>
+    <BaseIntermediateOutputPath>obj\$(GSharpOutputDir)\</BaseIntermediateOutputPath>
     <DefaultItemExcludes>$(DefaultItemExcludes);bin\**;obj\**</DefaultItemExcludes>
 
     <SolutionDir Condition="'$(SolutionDir)' == '' or '$(SolutionDir)' == '*Undefined*'">$(MSBuildThisFileDirectory)</SolutionDir>

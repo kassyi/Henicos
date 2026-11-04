@@ -102,4 +102,61 @@ public class ManagedQualificationNativeTests : TranspilerTestBase
         // 3 * (next thread + 1)
         Assert.Equal([6, 9, 12, 3], result);
     }
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_UsingStaticInGridStrideLoop_BlockBody_KernelBody() =>
+        Run(ManagedQualificationCases.GridStrideBlockBody);
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_UsingStaticInGridStrideLoop_BlockBody_DeviceFunction() =>
+        Run(ManagedQualificationCases.GridStrideBlockBodyInDeviceFunction);
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_UsingStaticInGridStrideLoop_ExpressionBody_KernelBody() =>
+        Run(ManagedQualificationCases.GridStrideExpressionBody);
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_UsingStaticInGridStrideLoop_ExpressionBody_DeviceFunction() =>
+        Run(ManagedQualificationCases.GridStrideExpressionBodyInDeviceFunction);
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_UsingStaticInSingleThread_KernelBody() => Run(ManagedQualificationCases.SingleThread);
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_UsingStaticInSingleThread_DeviceFunction() =>
+        Run(ManagedQualificationCases.SingleThreadInDeviceFunction);
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_UsingStaticInForUnroll_KernelBody() => Run(ManagedQualificationCases.ForUnroll);
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_UsingStaticInForUnroll_DeviceFunction() =>
+        Run(ManagedQualificationCases.ForUnrollInDeviceFunction);
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_UsingStaticInStackLinqLambda_KernelBody() => Run(ManagedQualificationCases.StackLinq);
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_UsingStaticInStackLinqLambda_DeviceFunction() =>
+        Run(ManagedQualificationCases.StackLinqInDeviceFunction);
+
+    private static void Run(QualificationCase qualificationCase)
+    {
+        int[] values = [1, 2, 3, 4];
+        var result = new int[4];
+
+        qualificationCase.Launch(values, result);
+
+        Assert.Equal(qualificationCase.Expected(values), result);
+    }
 }
