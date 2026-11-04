@@ -5,7 +5,7 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 
 /// <summary>
 /// Differential test kernels for <see cref="Gpu.SyncGrid()"/>, <see cref="Gpu.SyncGrid(System.Action)"/>,
-/// <see cref="Gpu.SingleThread(System.Action)"/>, and cooperative multi-phase barrier + atomic workflows (Lane D4 Stage 3).
+/// <see cref="Gpu.SingleThread(System.Action)"/>, and cooperative multi-phase barrier + atomic workflows.
 /// </summary>
 public static partial class GridSyncAndSingleThreadDifferentialKernels
 {
