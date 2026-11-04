@@ -35,8 +35,15 @@ public readonly ref struct SharedMemory<T> where T : unmanaged
     /// </remarks>
     public SharedMemory(int size, [CallerFilePath] string callerFilePath = "", [CallerLineNumber] int callerLineNumber = 0,
         [CallerMemberName] string callerMemberName = "")
-        : this(size, ComputeSiteKey(callerFilePath, callerLineNumber, callerMemberName))
+        : this(size, ComputeInitialSiteKey(callerFilePath, callerLineNumber, callerMemberName))
     {
+    }
+
+    private static ulong ComputeInitialSiteKey(string callerFilePath, int callerLineNumber, string callerMemberName)
+    {
+        var rawKey = ComputeSiteKey(callerFilePath, callerLineNumber, callerMemberName, 0UL);
+        var salt = ManagedGpuContext.IsTypeKeyedSite(rawKey) ? ManagedGpuContext.CurrentTypeKeySalt : 0UL;
+        return rawKey ^ salt;
     }
 
     /// <summary>
@@ -49,7 +56,7 @@ public readonly ref struct SharedMemory<T> where T : unmanaged
     public SharedMemory(int size, ulong siteKey)
     {
         _span = ManagedGpuContext.IsActive
-            ? ManagedGpuContext.AllocateSharedMemory<T>(siteKey ^ ManagedGpuContext.CurrentTypeKeySalt, size)
+            ? ManagedGpuContext.AllocateSharedMemory<T>(siteKey, size)
             : default;
     }
 
@@ -68,7 +75,7 @@ public readonly ref struct SharedMemory<T> where T : unmanaged
     {
         _span = ManagedGpuContext.IsActive
             ? ManagedGpuContext.AllocateDynamicSharedMemory<T>(
-                siteKey ^ ManagedGpuContext.CurrentTypeKeySalt, size, dynamicPlace)
+                siteKey, size, dynamicPlace)
             : default;
     }
 
@@ -88,7 +95,7 @@ public readonly ref struct SharedMemory<T> where T : unmanaged
     [EditorBrowsable(EditorBrowsableState.Never)]
     public static SharedMemory<T> FindDynamic(ulong siteKey) =>
         new(ManagedGpuContext.IsActive
-            ? ManagedGpuContext.FindDynamicSharedMemory<T>(siteKey ^ ManagedGpuContext.CurrentTypeKeySalt)
+            ? ManagedGpuContext.FindDynamicSharedMemory<T>(siteKey)
             : default);
 
     /// <summary>
@@ -111,12 +118,12 @@ public readonly ref struct SharedMemory<T> where T : unmanaged
     }
 
     // FNV-1a 64-bit over the path, the line and the method name; the compiler's keys share the same 64-bit space
-    private static ulong ComputeSiteKey(string filePath, int lineNumber, string memberName)
+    private static ulong ComputeSiteKey(string filePath, int lineNumber, string memberName, ulong salt = 0UL)
     {
         var hash = new Fnv1A64();
         hash.Append(filePath);
         hash.Append(unchecked((uint)lineNumber));
         hash.Append(memberName);
-        return hash.Value;
+        return hash.Value ^ salt;
     }
 }

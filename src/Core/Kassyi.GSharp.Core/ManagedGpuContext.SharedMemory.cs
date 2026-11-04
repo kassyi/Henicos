@@ -83,6 +83,45 @@ public static partial class ManagedGpuContext
 
     internal static ulong CurrentTypeKeySalt => s_currentTypeKeySalt;
 
+    private static ulong[] s_typeKeyedSites = [];
+    private static readonly object s_typeKeyedSitesLock = new();
+
+    /// <summary>
+    /// Registers site keys of <see cref="SharedMemory{T}"/> creations written directly inside generic struct constructors.
+    /// Disambiguates shared memory slots across distinct closed generic struct types (#543).
+    /// For generated code only.
+    /// </summary>
+    /// <param name="sites">The site keys to register.</param>
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public static void RegisterTypeKeyedSites(ReadOnlySpan<ulong> sites)
+    {
+        if (sites.IsEmpty)
+        {
+            return;
+        }
+
+        lock (s_typeKeyedSitesLock)
+        {
+            var current = s_typeKeyedSites;
+            var set = new HashSet<ulong>(current);
+            foreach (var site in sites)
+            {
+                set.Add(site);
+            }
+
+            var array = new ulong[set.Count];
+            set.CopyTo(array);
+            Array.Sort(array);
+            Volatile.Write(ref s_typeKeyedSites, array);
+        }
+    }
+
+    internal static bool IsTypeKeyedSite(ulong siteKey)
+    {
+        var array = Volatile.Read(ref s_typeKeyedSites);
+        return array.Length > 0 && Array.BinarySearch(array, siteKey) >= 0;
+    }
+
     // A generic struct constructor is monomorphized per closed struct type on CUDA and on the native CPU path (#543), so
     // each closed generic struct gets a distinct 64-bit salt on the managed path without reflection.
     private static class TypeKeySalt<TKey>
