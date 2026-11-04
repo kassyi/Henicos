@@ -471,6 +471,33 @@ public static partial class ManagedGpuContext
         return ReadShuffleLane<T>(linearTid, laneId - logicalLane + (srcLane & (width - 1)), Name, location);
     }
 
+    private static unsafe bool RawBitsEqual<T>(T a, T b) where T : unmanaged
+    {
+        if (sizeof(T) == 4)
+        {
+            return Unsafe.As<T, uint>(ref a) == Unsafe.As<T, uint>(ref b);
+        }
+
+        if (sizeof(T) == 8)
+        {
+            return Unsafe.As<T, ulong>(ref a) == Unsafe.As<T, ulong>(ref b);
+        }
+
+        if (sizeof(T) == 1)
+        {
+            return Unsafe.As<T, byte>(ref a) == Unsafe.As<T, byte>(ref b);
+        }
+
+        if (sizeof(T) == 2)
+        {
+            return Unsafe.As<T, ushort>(ref a) == Unsafe.As<T, ushort>(ref b);
+        }
+
+        var spanA = new ReadOnlySpan<byte>(&a, sizeof(T));
+        var spanB = new ReadOnlySpan<byte>(&b, sizeof(T));
+        return spanA.SequenceEqual(spanB);
+    }
+
     /// <summary>
     /// Internal mock for <c>Gpu.MatchAnySync</c>. Do not use directly.
     /// </summary>
@@ -491,7 +518,8 @@ public static partial class ManagedGpuContext
         var laneId = linearTid & 31;
         if ((mask & (1u << laneId)) == 0u)
         {
-            return 0u;
+            throw new InvalidOperationException(
+                $"G#: {Name} at {location} has mask 0x{mask:X8} without caller lane {laneId} (CUDA leaves the result undefined)");
         }
 
         var active = ActiveMask() & mask;
@@ -501,7 +529,7 @@ public static partial class ManagedGpuContext
             if ((active & (1u << srcLane)) != 0u)
             {
                 var laneVal = ReadShuffleLane<T>(linearTid, srcLane, Name, location);
-                if (EqualityComparer<T>.Default.Equals(laneVal, val))
+                if (RawBitsEqual(laneVal, val))
                 {
                     result |= 1u << srcLane;
                 }
@@ -532,8 +560,8 @@ public static partial class ManagedGpuContext
         var laneId = linearTid & 31;
         if ((mask & (1u << laneId)) == 0u)
         {
-            pred = 0;
-            return 0u;
+            throw new InvalidOperationException(
+                $"G#: {Name} at {location} has mask 0x{mask:X8} without caller lane {laneId} (CUDA leaves the result undefined)");
         }
 
         var active = ActiveMask() & mask;
@@ -543,7 +571,7 @@ public static partial class ManagedGpuContext
             if ((active & (1u << srcLane)) != 0u)
             {
                 var laneVal = ReadShuffleLane<T>(linearTid, srcLane, Name, location);
-                if (!EqualityComparer<T>.Default.Equals(laneVal, val))
+                if (!RawBitsEqual(laneVal, val))
                 {
                     allEqual = false;
                     break;
