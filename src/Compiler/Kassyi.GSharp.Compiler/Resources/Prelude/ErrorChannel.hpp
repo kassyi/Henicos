@@ -20,9 +20,8 @@ struct GSharpErrorSlot {
     std::atomic<int32_t> code{0};
     uint32_t site_id{0};
     uint32_t thread_linear{0};
-    uint32_t block_linear{0};
-    uint32_t grid_dim_x{1};
-    uint32_t grid_dim_y{1};
+    uint32_t block_x{0};
+    uint32_t block_yz{0};
     const char* message{nullptr};
     // The first report's message, copied: a message formatted at run time (with the place and the values) does not
     // outlive the function that formats it. Reset keeps the text, so a message just consumed stays readable. The text is
@@ -45,9 +44,8 @@ struct GSharpErrorSlot {
     inline void Reset() noexcept {
         site_id = 0;
         thread_linear = 0;
-        block_linear = 0;
-        grid_dim_x = 1;
-        grid_dim_y = 1;
+        block_x = 0;
+        block_yz = 0;
         message = nullptr;
         current_launch_slot = nullptr;
         code.store(0, std::memory_order_release);
@@ -59,11 +57,8 @@ struct GSharpErrorSlot {
 
     inline void CaptureCoordinates() noexcept {
         thread_linear = (threadIdx.x & 0x3FFu) | ((threadIdx.y & 0x3FFu) << 10) | ((threadIdx.z & 0x3FFu) << 20);
-        uint32_t gx = gridDim.x > 0u ? gridDim.x : 1u;
-        uint32_t gy = gridDim.y > 0u ? gridDim.y : 1u;
-        grid_dim_x = gx;
-        grid_dim_y = gy;
-        block_linear = (blockIdx.z * gy + blockIdx.y) * gx + blockIdx.x;
+        block_x = blockIdx.x;
+        block_yz = (blockIdx.y & 0xFFFFu) | ((blockIdx.z & 0xFFFFu) << 16);
     }
 
     inline void Report(GSharpErrorCode errCode, const char* msg, uint32_t siteId = 0) noexcept {
@@ -74,9 +69,8 @@ struct GSharpErrorSlot {
             if (current_launch_slot != nullptr && current_launch_slot != this && current_launch_slot->HasError()) {
                 site_id = current_launch_slot->site_id;
                 thread_linear = current_launch_slot->thread_linear;
-                block_linear = current_launch_slot->block_linear;
-                grid_dim_x = current_launch_slot->grid_dim_x;
-                grid_dim_y = current_launch_slot->grid_dim_y;
+                block_x = current_launch_slot->block_x;
+                block_yz = current_launch_slot->block_yz;
             } else {
                 site_id = siteId;
                 CaptureCoordinates();
@@ -118,9 +112,8 @@ extern "C" __declspec(dllexport) int32_t __gsharp_consume_last_error_details(
     const char** outMessage,
     uint32_t* outSiteId,
     uint32_t* outThreadLinear,
-    uint32_t* outBlockLinear,
-    uint32_t* outGridDimX,
-    uint32_t* outGridDimY) {
+    uint32_t* outBlockX,
+    uint32_t* outBlockYZ) {
     int32_t c = __gsharp_host_last_error.code.load(std::memory_order_acquire);
     if (c != 0) {
         if (outMessage != nullptr) {
@@ -132,14 +125,11 @@ extern "C" __declspec(dllexport) int32_t __gsharp_consume_last_error_details(
         if (outThreadLinear != nullptr) {
             *outThreadLinear = __gsharp_host_last_error.thread_linear;
         }
-        if (outBlockLinear != nullptr) {
-            *outBlockLinear = __gsharp_host_last_error.block_linear;
+        if (outBlockX != nullptr) {
+            *outBlockX = __gsharp_host_last_error.block_x;
         }
-        if (outGridDimX != nullptr) {
-            *outGridDimX = __gsharp_host_last_error.grid_dim_x;
-        }
-        if (outGridDimY != nullptr) {
-            *outGridDimY = __gsharp_host_last_error.grid_dim_y;
+        if (outBlockYZ != nullptr) {
+            *outBlockYZ = __gsharp_host_last_error.block_yz;
         }
         __gsharp_host_last_error.Reset();
     }

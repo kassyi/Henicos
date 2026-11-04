@@ -444,8 +444,10 @@ enum class GSharpErrorCode : int {
 struct GSharpDeviceErrorSlot {
     unsigned int code;
     unsigned int site_id;
+    unsigned int module_id;
     unsigned int thread_linear;
-    unsigned int block_linear;
+    unsigned int block_x;
+    unsigned int block_yz;
 };
 
 __device__ GSharpDeviceErrorSlot* __gsharp_error_slot = nullptr;
@@ -472,19 +474,15 @@ __device__ __noinline__ void __gsharp_trap_site(GSharpErrorCode code, unsigned i
         if (lane == leader) {
             unsigned int c = static_cast<unsigned int>(code) & 0xFFFFu;
             if (atomicCAS(&slot->code, 0u, c) == 0u) {
-                unsigned int full_site = (site_id & 0x80000000u) != 0u
-                    ? site_id
-                    : ((__gsharp_error_module_id << 20) | (site_id & 0xFFFFFu));
-                slot->site_id = full_site;
+                slot->site_id = site_id;
+                slot->module_id = __gsharp_error_module_id;
                 slot->thread_linear = (threadIdx.x & 0x3FFu)
                     | ((threadIdx.y & 0x3FFu) << 10)
                     | ((threadIdx.z & 0x3FFu) << 20);
-                slot->block_linear = (blockIdx.z * gridDim.y + blockIdx.y) * gridDim.x + blockIdx.x;
-                unsigned int gpack = (gridDim.x < 64u && gridDim.y < 64u)
-                    ? (((gridDim.x & 0x3Fu) << 20) | ((gridDim.y & 0x3Fu) << 26))
-                    : 0u;
+                slot->block_x = blockIdx.x;
+                slot->block_yz = (blockIdx.y & 0xFFFFu) | ((blockIdx.z & 0xFFFFu) << 16);
                 __threadfence_system();
-                atomicExch(&slot->code, c | 0x10000u | gpack);
+                atomicExch(&slot->code, c | 0x10000u);
                 __threadfence_system();
             } else {
                 for (int spin = 0; spin < 100000; ++spin) {

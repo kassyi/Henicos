@@ -14,9 +14,6 @@ public static unsafe class GpuKernelLoader
     private static volatile bool s_isCpuFallbackMode;
     private static int s_deviceMajor;
     private static int s_deviceMinor;
-    private static GSharpDeviceErrorSlot* s_hostErrorSlot;
-    private static ulong s_deviceErrorSlotPtr;
-    private static readonly Lock s_errorSlotLock = new();
 
     /// <summary>
     /// Gets the global CUDA context handle.
@@ -178,7 +175,7 @@ public static unsafe class GpuKernelLoader
                 CudaException.ThrowIfError(CudaDriverApi.cuDeviceGet(out var device, 0));
 
                 CudaException.ThrowIfError(CudaDriverApi.cuCtxCreate_v2(out s_globalContext, 0, device));
-                AllocateErrorSlotInCurrentContext();
+                DeviceErrorSlot.AllocateInCurrentContext();
                 CudaException.ThrowIfError(CudaDriverApi.cuCtxPopCurrent_v2(out _)); // Immediately pop to avoid poisoning the ThreadPool thread
 
                 CudaException.ThrowIfError(CudaDriverApi.cuDeviceGetAttribute(out s_deviceMajor,
@@ -201,92 +198,37 @@ public static unsafe class GpuKernelLoader
         }
     }
 
-    private static void AllocateErrorSlotInCurrentContext()
-    {
-        lock (s_errorSlotLock)
-        {
-            if (s_hostErrorSlot != null)
-            {
-                return;
-            }
-
-            var flags = CudaDriverApi.MemHostAllocPortable | CudaDriverApi.MemHostAllocDeviceMap;
-            var allocResult = CudaDriverApi.cuMemHostAlloc(out var hostPtr, sizeof(GSharpDeviceErrorSlot), flags);
-            if (allocResult != CUresult.CudaSuccess || hostPtr == IntPtr.Zero)
-            {
-                return;
-            }
-
-            var mapResult = CudaDriverApi.cuMemHostGetDevicePointer(out var devPtr, hostPtr, 0);
-            if (mapResult != CUresult.CudaSuccess)
-            {
-                CudaDriverApi.cuMemFreeHost(hostPtr);
-                return;
-            }
-
-            s_hostErrorSlot = (GSharpDeviceErrorSlot*)hostPtr;
-            *s_hostErrorSlot = default;
-            s_deviceErrorSlotPtr = (ulong)devPtr;
-        }
-    }
-
     // Module cache indexed by 256-bit signature hash to avoid duplicate cuModuleLoadDataEx calls per fatbin
     private static readonly ConcurrentDictionary<AotSignatureValidator.Hash256, Lazy<IntPtr>> s_moduleCache = new();
 
-    // Module ID cache indexed by 256-bit signature hash for ErrorSiteTable correlation
-    private static readonly ConcurrentDictionary<AotSignatureValidator.Hash256, uint> s_moduleIds = new();
-
     // Function cache indexed by (Hash256, KernelName)
     private static readonly ConcurrentDictionary<(AotSignatureValidator.Hash256 Hash, string KernelName), IntPtr> s_functionCache = new();
-
-    private static uint GetOrAssignModuleId(AotSignatureValidator.Hash256 hash) =>
-        s_moduleIds.GetOrAdd(hash, static _ => GSharpErrorMapper.AllocateModuleId());
 
     /// <summary>
     /// Registers an error site table for the specified AOT fatbin binary.
     /// </summary>
     /// <param name="aotFatbin">The raw byte span of the AOT Fatbin binary.</param>
     /// <param name="sites">The 1-based error site table.</param>
-    public static void RegisterErrorSites(ReadOnlySpan<byte> aotFatbin, ReadOnlySpan<GSharpErrorSite> sites)
-    {
-        if (aotFatbin.Length < AotSignatureValidator.SignatureSize)
-        {
-            return;
-        }
-
-        var embeddedHash = new AotSignatureValidator.Hash256(
-            aotFatbin.Slice(aotFatbin.Length - AotSignatureValidator.SignatureSize, 32));
-        var moduleId = GetOrAssignModuleId(embeddedHash);
-        GSharpErrorMapper.RegisterModuleErrorSites(moduleId, sites);
-    }
+    public static void RegisterErrorSites(ReadOnlySpan<byte> aotFatbin, ReadOnlySpan<GSharpErrorSite> sites) =>
+        DeviceErrorSlot.RegisterErrorSites(aotFatbin, sites);
 
     /// <summary>
     /// Clears the pinned device error slot before a kernel launch or test.
     /// </summary>
-    public static void ResetDeviceErrorSlot()
-    {
-        lock (s_errorSlotLock)
-        {
-            if (s_hostErrorSlot != null)
-            {
-                *s_hostErrorSlot = default;
-                Volatile.Write(ref s_hostErrorSlot->Code, 0u);
-            }
-        }
-    }
+    public static void ResetDeviceErrorSlot() =>
+        DeviceErrorSlot.ResetSlot();
 
     /// <summary>
     /// Inspects the pinned device error slot and throws the corresponding standard .NET exception if a device error was recorded.
     /// </summary>
     /// <param name="gridDim">Optional launch grid dimensions used when unpacking 3D block coordinates.</param>
     /// <param name="innerException">Optional inner <see cref="CudaException"/> from the CUDA driver.</param>
-    public static void ThrowIfDeviceError((int X, int Y, int Z) gridDim = default, Exception? innerException = null)
-    {
-        if (TryConsumeDeviceErrorSlot(out var slot))
-        {
-            throw GSharpErrorMapper.CreateExceptionFromSlot(in slot, gridDim, innerException);
-        }
-    }
+    /// <remarks>
+    /// <b>[NOTE]:</b> The error slot is shared process-wide across all streams and modules (#1056 item 4). When multiple kernels
+    /// are in flight and a trap occurs, whichever thread/call executes this method first consumes and clears the slot.
+    /// </remarks>
+    public static void ThrowIfDeviceError((int X, int Y, int Z) gridDim = default, Exception? innerException = null) =>
+        DeviceErrorSlot.ThrowIfDeviceError(gridDim, innerException);
 
     /// <summary>
     /// Creates a managed exception for a non-success <see cref="CUresult"/>, translating any recorded device trap slot into the matching standard .NET exception.
@@ -294,51 +236,11 @@ public static unsafe class GpuKernelLoader
     /// <param name="result">The non-success <see cref="CUresult"/> returned by the CUDA driver.</param>
     /// <param name="fallbackMessage">An optional fallback message for the <see cref="CudaException"/>.</param>
     /// <returns>The standard .NET exception if the device error slot contains a record; otherwise, a <see cref="CudaException"/>.</returns>
-    public static Exception CreateExceptionForDriverError(CUresult result, string? fallbackMessage = null)
-    {
-        var cudaEx = new CudaException(result, fallbackMessage);
-        if (TryConsumeDeviceErrorSlot(out var slot))
-        {
-            return GSharpErrorMapper.CreateExceptionFromSlot(
-                in slot,
-                gridDim: (1, 1, 1),
-                innerException: cudaEx);
-        }
+    public static Exception CreateExceptionForDriverError(CUresult result, string? fallbackMessage = null) =>
+        DeviceErrorSlot.CreateExceptionForDriverError(result, fallbackMessage);
 
-        return cudaEx;
-    }
-
-    internal static bool TryConsumeDeviceErrorSlot(out GSharpDeviceErrorSlot slot)
-    {
-        lock (s_errorSlotLock)
-        {
-            if (s_hostErrorSlot == null)
-            {
-                slot = default;
-                return false;
-            }
-
-            var rawCode = Volatile.Read(ref s_hostErrorSlot->Code);
-            if ((rawCode & GSharpErrorMapper.ErrorCodeMask) == 0u)
-            {
-                slot = default;
-                return false;
-            }
-
-            // Wait briefly if the device winner set the error code but PCIe completion bit is still in flight
-            for (var spin = 0; spin < 1000 && (rawCode & GSharpErrorMapper.CompletionBit) == 0u; spin++)
-            {
-                Thread.SpinWait(16);
-                rawCode = Volatile.Read(ref s_hostErrorSlot->Code);
-            }
-
-            slot = *s_hostErrorSlot;
-            slot.Code = rawCode;
-            *s_hostErrorSlot = default;
-            Volatile.Write(ref s_hostErrorSlot->Code, 0u);
-            return true;
-        }
-    }
+    internal static bool TryConsumeDeviceErrorSlot(out GSharpDeviceErrorSlot slot) =>
+        DeviceErrorSlot.TryConsumeSlot(out slot);
 
 #pragma warning disable IDE0051 // Justification: Public API for library
     /// <summary>
@@ -377,15 +279,7 @@ public static unsafe class GpuKernelLoader
                 }
             }
 
-            lock (s_errorSlotLock)
-            {
-                if (s_hostErrorSlot != null)
-                {
-                    CudaDriverApi.cuMemFreeHost((IntPtr)s_hostErrorSlot);
-                    s_hostErrorSlot = null;
-                    s_deviceErrorSlotPtr = 0;
-                }
-            }
+            DeviceErrorSlot.FreeInCurrentContext();
         }
         catch (Exception ex)
         {
@@ -500,7 +394,7 @@ public static unsafe class GpuKernelLoader
             throw new InvalidOperationException(DescribeIncompatibleFatbin(fatbin, s_deviceMajor, s_deviceMinor));
         }
 
-        var moduleId = GetOrAssignModuleId(embeddedHash);
+        var moduleId = DeviceErrorSlot.GetOrAssignModuleId(embeddedHash);
         var lazyModule = s_moduleCache.GetOrAdd(
             embeddedHash,
             _ => new Lazy<IntPtr>(() => LoadModuleCore(processed, fatbin, moduleId), LazyThreadSafetyMode.ExecutionAndPublication));
@@ -519,7 +413,7 @@ public static unsafe class GpuKernelLoader
     private static IntPtr LoadModuleCore(byte[] binaryData, FatbinImage? fatbin, uint moduleId)
     {
         using var scope = new CudaContextScope();
-        AllocateErrorSlotInCurrentContext();
+        DeviceErrorSlot.AllocateInCurrentContext();
 
         // Fatbins MUST be 8-byte aligned for cuModuleLoadDataEx
         var pAlignedBinary = NativeMemory.AlignedAlloc((nuint)binaryData.Length, 8);
@@ -535,30 +429,12 @@ public static unsafe class GpuKernelLoader
                 throw CreateModuleLoadException(loadResult, fatbin, s_deviceMajor, s_deviceMinor);
             }
 
-            ConfigureModuleErrorSlot(module, moduleId);
+            DeviceErrorSlot.ConfigureModule(module, moduleId);
             return module;
         }
         finally
         {
             NativeMemory.AlignedFree(pAlignedBinary);
-        }
-    }
-
-    private static void ConfigureModuleErrorSlot(IntPtr module, uint moduleId)
-    {
-        var devSlotPtr = s_deviceErrorSlotPtr;
-        if (devSlotPtr != 0 &&
-            CudaDriverApi.cuModuleGetGlobal_v2(out var slotGlobalDptr, out var slotGlobalSize, module, "__gsharp_error_slot") == CUresult.CudaSuccess &&
-            slotGlobalSize == (nuint)sizeof(ulong))
-        {
-            CudaDriverApi.cuMemcpyHtoD_v2(slotGlobalDptr, (IntPtr)(&devSlotPtr), sizeof(ulong));
-        }
-
-        if (moduleId != 0 &&
-            CudaDriverApi.cuModuleGetGlobal_v2(out var idGlobalDptr, out var idGlobalSize, module, "__gsharp_error_module_id") == CUresult.CudaSuccess &&
-            idGlobalSize == sizeof(uint))
-        {
-            CudaDriverApi.cuMemcpyHtoD_v2(idGlobalDptr, (IntPtr)(&moduleId), sizeof(uint));
         }
     }
 

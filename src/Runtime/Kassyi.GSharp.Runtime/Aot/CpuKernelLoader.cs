@@ -156,9 +156,8 @@ public static class CpuKernelLoader
         out IntPtr outMessage,
         out uint outSiteId,
         out uint outThreadLinear,
-        out uint outBlockLinear,
-        out uint outGridDimX,
-        out uint outGridDimY);
+        out uint outBlockX,
+        out uint outBlockYZ);
 
     /// <summary>
     /// Checks the native runtime error slot in the specified CPU AOT library and throws the corresponding managed exception if an error occurred.
@@ -176,9 +175,8 @@ public static class CpuKernelLoader
                 out var detailedMsgPtr,
                 out var siteId,
                 out var threadLinear,
-                out var blockLinear,
-                out var gridDimX,
-                out var gridDimY);
+                out var blockX,
+                out var blockYZ);
             if (detailedCode == 0)
             {
                 return;
@@ -188,17 +186,14 @@ public static class CpuKernelLoader
                 ? Marshal.PtrToStringUTF8(detailedMsgPtr)
                 : null;
 
-            var gridDim = (
-                gridDimX > 0u ? (int)gridDimX : 1,
-                gridDimY > 0u ? (int)gridDimY : 1,
-                1);
+            var (bx, by, bz) = GSharpErrorMapper.UnpackBlockIndex(blockX, blockYZ);
 
             throw GSharpErrorMapper.CreateException(
                 (GSharpErrorCode)detailedCode,
                 siteId,
+                moduleId: 0u,
                 threadLinear,
-                blockLinear,
-                gridDim,
+                (bx, by, bz),
                 innerException: null,
                 explicitMessage: detailedMessage,
                 preserveRawMessageWhenNoSite: true);
@@ -219,9 +214,9 @@ public static class CpuKernelLoader
         throw GSharpErrorMapper.CreateException(
             (GSharpErrorCode)errorCode,
             siteId: 0u,
+            moduleId: 0u,
             threadLinear: 0u,
-            blockLinear: 0u,
-            gridDim: (1, 1, 1),
+            (0, 0, 0),
             innerException: null,
             explicitMessage: message,
             preserveRawMessageWhenNoSite: true);
