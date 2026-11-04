@@ -87,6 +87,21 @@ namespace Kassyi.GSharp.Tests.Shared.Differential
 {
 public partial class StackLinqDifferentialKernels
 {
+private static readonly global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[] s_errorSites = new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[]
+{
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1751383757u, "StackLinqDifferentialKernels.cs", 93, 20, "Int32StackLinqMatrixKernel", "Sequence contains no elements"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(716887003u, "StackLinqDifferentialKernels.cs", 94, 20, "Int32StackLinqMatrixKernel", "Sequence contains no elements"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(308243718u, "StackLinqDifferentialKernels.cs", 178, 20, "Int32AverageKernel", "Sequence contains no elements"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1601379178u, "StackLinqDifferentialKernels.cs", 231, 16, "SingleUnfusedAverageKernel", "Sequence contains no elements"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1073204919u, "StackLinqDifferentialKernels.cs", 232, 28, "SingleUnfusedAverageKernel", "Sequence contains no elements"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2087472931u, "StackLinqDifferentialKernels.cs", 233, 20, "SingleUnfusedAverageKernel", "Sequence contains no elements"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1294661925u, "StackLinqDifferentialKernels.cs", 271, 20, "FloatingExtremaAndZeroContainsKernel", "Sequence contains no elements"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(600842264u, "StackLinqDifferentialKernels.cs", 272, 20, "FloatingExtremaAndZeroContainsKernel", "Sequence contains no elements"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(551103086u, "StackLinqDifferentialKernels.cs", 276, 20, "FloatingExtremaAndZeroContainsKernel", "Sequence contains no elements"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2009856971u, "StackLinqDifferentialKernels.cs", 279, 20, "FloatingExtremaAndZeroContainsKernel", "Sequence contains no elements"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(848844069u, "StackLinqDifferentialKernels.cs", 280, 21, "FloatingExtremaAndZeroContainsKernel", "Sequence contains no elements"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(141771717u, "StackLinqDifferentialKernels.cs", 385, 18, "UnfusedSelectEvaluationKernel", "Sequence contains no elements"),
+};
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static partial class AotContexts
@@ -212,8 +227,8 @@ if (!__gsharp_fusion_res_init)
 }return __gsharp_fusion_res;
 }());
 auto __gsharp_id_9_unfused = Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_id_4_slice);
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_6_o,5)]=Kassyi::ZeroAlloc::Linq::StackLinq::Max(__gsharp_id_9_unfused);
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_6_o,6)]=Kassyi::ZeroAlloc::Linq::StackLinq::Min(__gsharp_id_9_unfused);
+__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_6_o,5)]=Kassyi::ZeroAlloc::Linq::StackLinq::Max(__gsharp_id_9_unfused,1751383757u);
+__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_6_o,6)]=Kassyi::ZeroAlloc::Linq::StackLinq::Min(__gsharp_id_9_unfused,716887003u);
 __gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_6_o,7)]=Kassyi::ZeroAlloc::Linq::StackLinq::Sum(__gsharp_id_9_unfused);
 __gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_6_o,8)]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_4_slice;
@@ -835,6 +850,15 @@ public static void WarmupFunctionPointerInt32StackLinqMatrixKernel()
 if (__gsharp_hfunc_Int32StackLinqMatrixKernel.HasValue) return;
 global::System.IntPtr __gsharp_hmodule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
 __gsharp_hfunc_Int32StackLinqMatrixKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(__gsharp_hmodule, "__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__StackLinqDifferentialKernels__Int32StackLinqMatrixKernel");
+if (s_errorSites.Length > 0)
+{
+var baseDir = global::System.IO.Path.GetDirectoryName(typeof(global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest).Assembly.Location) ?? global::System.AppContext.BaseDirectory;
+var fatbinPath = global::System.IO.Path.Combine(baseDir, "Kassyi.GSharp.Kernels_SnapshotTest.gfatbin");
+if (global::System.IO.File.Exists(fatbinPath))
+{
+global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.RegisterErrorSites(global::System.IO.File.ReadAllBytes(fatbinPath), s_errorSites);
+}
+}
 }
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
@@ -1057,7 +1081,7 @@ if (__gsharp_fusion_res_count == 0)
 }return __gsharp_fusion_res;
 }());
 auto __gsharp_id_7_unfused = Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_id_4_slice);
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_5_o,2)]=Kassyi::ZeroAlloc::Linq::StackLinq::Average(__gsharp_id_7_unfused);
+__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_5_o,2)]=Kassyi::ZeroAlloc::Linq::StackLinq::Average(__gsharp_id_7_unfused,308243718u);
 }
 ";
 public static readonly string Int32AverageKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +Int32AverageKernel_Source;
@@ -1068,6 +1092,15 @@ public static void WarmupFunctionPointerInt32AverageKernel()
 if (__gsharp_hfunc_Int32AverageKernel.HasValue) return;
 global::System.IntPtr __gsharp_hmodule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
 __gsharp_hfunc_Int32AverageKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(__gsharp_hmodule, "__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__StackLinqDifferentialKernels__Int32AverageKernel");
+if (s_errorSites.Length > 0)
+{
+var baseDir = global::System.IO.Path.GetDirectoryName(typeof(global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest).Assembly.Location) ?? global::System.AppContext.BaseDirectory;
+var fatbinPath = global::System.IO.Path.Combine(baseDir, "Kassyi.GSharp.Kernels_SnapshotTest.gfatbin");
+if (global::System.IO.File.Exists(fatbinPath))
+{
+global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.RegisterErrorSites(global::System.IO.File.ReadAllBytes(fatbinPath), s_errorSites);
+}
+}
 }
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
@@ -1491,9 +1524,9 @@ return;
 auto __gsharp_id_4_slice = __gsharp_id_0_xs.AsSpan().Slice(__gsharp_id_3_baseIdx,4);
 auto __gsharp_id_5_unfused = Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_id_4_slice);
 int __gsharp_id_6_o = __gsharp_mul_i32(__gsharp_id_2_t,3);
-__gsharp_id_1_r[__gsharp_id_6_o]=Kassyi::ZeroAlloc::Linq::StackLinq::Average(__gsharp_id_5_unfused);
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_6_o,1)]=(double)Kassyi::ZeroAlloc::Linq::StackLinq::Average(__gsharp_id_5_unfused);
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_6_o,2)]=Kassyi::ZeroAlloc::Linq::StackLinq::Average(__gsharp_id_5_unfused)+0.1;
+__gsharp_id_1_r[__gsharp_id_6_o]=Kassyi::ZeroAlloc::Linq::StackLinq::Average(__gsharp_id_5_unfused,1601379178u);
+__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_6_o,1)]=(double)Kassyi::ZeroAlloc::Linq::StackLinq::Average(__gsharp_id_5_unfused,1073204919u);
+__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_6_o,2)]=Kassyi::ZeroAlloc::Linq::StackLinq::Average(__gsharp_id_5_unfused,2087472931u)+0.1;
 }
 ";
 public static readonly string SingleUnfusedAverageKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +SingleUnfusedAverageKernel_Source;
@@ -1504,6 +1537,15 @@ public static void WarmupFunctionPointerSingleUnfusedAverageKernel()
 if (__gsharp_hfunc_SingleUnfusedAverageKernel.HasValue) return;
 global::System.IntPtr __gsharp_hmodule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
 __gsharp_hfunc_SingleUnfusedAverageKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(__gsharp_hmodule, "__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__StackLinqDifferentialKernels__SingleUnfusedAverageKernel");
+if (s_errorSites.Length > 0)
+{
+var baseDir = global::System.IO.Path.GetDirectoryName(typeof(global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest).Assembly.Location) ?? global::System.AppContext.BaseDirectory;
+var fatbinPath = global::System.IO.Path.Combine(baseDir, "Kassyi.GSharp.Kernels_SnapshotTest.gfatbin");
+if (global::System.IO.File.Exists(fatbinPath))
+{
+global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.RegisterErrorSites(global::System.IO.File.ReadAllBytes(fatbinPath), s_errorSites);
+}
+}
 }
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
@@ -1750,8 +1792,8 @@ if (!__gsharp_fusion_res_init)
 {__gsharp_trap(GSharpErrorCode::InvalidOperation, ""Sequence contains no elements"");
 }return __gsharp_fusion_res;
 }());
-__gsharp_id_2_r[__gsharp_add_i32(__gsharp_id_9_o,2)]=Kassyi::ZeroAlloc::Linq::StackLinq::Max(__gsharp_id_7_fUnfused);
-__gsharp_id_2_r[__gsharp_add_i32(__gsharp_id_9_o,3)]=Kassyi::ZeroAlloc::Linq::StackLinq::Min(__gsharp_id_7_fUnfused);
+__gsharp_id_2_r[__gsharp_add_i32(__gsharp_id_9_o,2)]=Kassyi::ZeroAlloc::Linq::StackLinq::Max(__gsharp_id_7_fUnfused,1294661925u);
+__gsharp_id_2_r[__gsharp_add_i32(__gsharp_id_9_o,3)]=Kassyi::ZeroAlloc::Linq::StackLinq::Min(__gsharp_id_7_fUnfused,600842264u);
 __gsharp_id_2_r[__gsharp_add_i32(__gsharp_id_9_o,4)]=(([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_5_fSlice;
 bool __gsharp_fusion_res = false;
@@ -1784,7 +1826,7 @@ if (__gsharp_fusion_res_count == 0)
 {__gsharp_fusion_res = __gsharp_fusion_res / (double)(__gsharp_fusion_res_count);
 }return __gsharp_fusion_res;
 }());
-__gsharp_id_2_r[__gsharp_add_i32(__gsharp_id_9_o,6)]=Kassyi::ZeroAlloc::Linq::StackLinq::Average(__gsharp_id_8_dUnfused);
+__gsharp_id_2_r[__gsharp_add_i32(__gsharp_id_9_o,6)]=Kassyi::ZeroAlloc::Linq::StackLinq::Average(__gsharp_id_8_dUnfused,551103086u);
 __gsharp_id_2_r[__gsharp_add_i32(__gsharp_id_9_o,7)]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_6_dSlice;
 double __gsharp_fusion_res = {};
@@ -1825,8 +1867,8 @@ if (!__gsharp_fusion_res_init)
 {__gsharp_trap(GSharpErrorCode::InvalidOperation, ""Sequence contains no elements"");
 }return __gsharp_fusion_res;
 }());
-__gsharp_id_2_r[__gsharp_add_i32(__gsharp_id_9_o,9)]=Kassyi::ZeroAlloc::Linq::StackLinq::Max(__gsharp_id_8_dUnfused);
-__gsharp_id_2_r[__gsharp_add_i32(__gsharp_id_9_o,10)]=Kassyi::ZeroAlloc::Linq::StackLinq::Min(__gsharp_id_8_dUnfused);
+__gsharp_id_2_r[__gsharp_add_i32(__gsharp_id_9_o,9)]=Kassyi::ZeroAlloc::Linq::StackLinq::Max(__gsharp_id_8_dUnfused,2009856971u);
+__gsharp_id_2_r[__gsharp_add_i32(__gsharp_id_9_o,10)]=Kassyi::ZeroAlloc::Linq::StackLinq::Min(__gsharp_id_8_dUnfused,848844069u);
 __gsharp_id_2_r[__gsharp_add_i32(__gsharp_id_9_o,11)]=(([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_6_dSlice;
 bool __gsharp_fusion_res = false;
@@ -1851,6 +1893,15 @@ public static void WarmupFunctionPointerFloatingExtremaAndZeroContainsKernel()
 if (__gsharp_hfunc_FloatingExtremaAndZeroContainsKernel.HasValue) return;
 global::System.IntPtr __gsharp_hmodule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
 __gsharp_hfunc_FloatingExtremaAndZeroContainsKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(__gsharp_hmodule, "__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__StackLinqDifferentialKernels__FloatingExtremaAndZeroContainsKernel");
+if (s_errorSites.Length > 0)
+{
+var baseDir = global::System.IO.Path.GetDirectoryName(typeof(global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest).Assembly.Location) ?? global::System.AppContext.BaseDirectory;
+var fatbinPath = global::System.IO.Path.Combine(baseDir, "Kassyi.GSharp.Kernels_SnapshotTest.gfatbin");
+if (global::System.IO.File.Exists(fatbinPath))
+{
+global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.RegisterErrorSites(global::System.IO.File.ReadAllBytes(fatbinPath), s_errorSites);
+}
+}
 }
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
@@ -2620,7 +2671,7 @@ auto __gsharp_id_14_unfused = Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumera
 int __gsharp_id_15_v2 = Kassyi::ZeroAlloc::Linq::StackLinq::Max(Kassyi::ZeroAlloc::Linq::StackLinq::Select(__gsharp_id_14_unfused,[&](auto __gsharp_id_16_x) {
 return __gsharp_add_i32(__gsharp_id_16_x&0xFFFF,(__gsharp_id_13_k2=__gsharp_add_i32(__gsharp_id_13_k2,1)));
 }
-));
+),141771717u);
 __gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_5_o,4)]=__gsharp_id_13_k2;
 }
 ";
@@ -2632,6 +2683,15 @@ public static void WarmupFunctionPointerUnfusedSelectEvaluationKernel()
 if (__gsharp_hfunc_UnfusedSelectEvaluationKernel.HasValue) return;
 global::System.IntPtr __gsharp_hmodule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
 __gsharp_hfunc_UnfusedSelectEvaluationKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(__gsharp_hmodule, "__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__StackLinqDifferentialKernels__UnfusedSelectEvaluationKernel");
+if (s_errorSites.Length > 0)
+{
+var baseDir = global::System.IO.Path.GetDirectoryName(typeof(global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest).Assembly.Location) ?? global::System.AppContext.BaseDirectory;
+var fatbinPath = global::System.IO.Path.Combine(baseDir, "Kassyi.GSharp.Kernels_SnapshotTest.gfatbin");
+if (global::System.IO.File.Exists(fatbinPath))
+{
+global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.RegisterErrorSites(global::System.IO.File.ReadAllBytes(fatbinPath), s_errorSites);
+}
+}
 }
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
