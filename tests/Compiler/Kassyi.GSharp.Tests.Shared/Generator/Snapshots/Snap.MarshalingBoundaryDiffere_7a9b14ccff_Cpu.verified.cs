@@ -4898,7 +4898,7 @@ if(__gsharp_id_10_tid>=__gsharp_id_8_roTable.length)
 {
 __gsharp_state = -1;return;
 }
-GSharpArray<int> __gsharp_id_11_emptySlice = ((GSharpArray<int>)__gsharp_id_9_probe).Slice(0,0);
+GSharpArray<int> __gsharp_id_11_emptySlice = ((GSharpArray<int>)__gsharp_id_9_probe).Slice(0,0, ""G#: index was out of range at MarshalingBoundaryDifferentialKernels.cs(877,40)"");
 int __gsharp_id_12_ptrVal = (__gsharp_id_5_pValid!=nullptr?__gsharp_id_5_pValid[__gsharp_id_10_tid]:(-1));
 int __gsharp_id_13_nullFlag = (__gsharp_id_6_pNull==nullptr?1:0);
 int __gsharp_id_14_o = __gsharp_mul_i32(__gsharp_id_10_tid,4);

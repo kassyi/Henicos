@@ -1,3 +1,4 @@
+using Kassyi.GSharp.Compiler.Analysis;
 using Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules;
 using Kassyi.GSharp.Compiler.Transpiler.Rules.MacroRules;
 
@@ -436,6 +437,11 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
                 if (symbol is IMethodSymbol method)
                 {
                     DynamicSharedMemoryEmitter.FailIfReferencedWithoutCall(node, method, ref Context);
+                }
+
+                if (SpanWriteClassifier.TryFailUninvoked(node, ref Context))
+                {
+                    return;
                 }
 
                 // A member function reads a captured primary constructor parameter from its hidden field (#495)
