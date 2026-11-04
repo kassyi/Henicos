@@ -66,6 +66,7 @@ public static partial class StackLinqDifferentialKernels
         "SkipLast(0).Sum",
         "SkipLast(-1).Sum",
         "SkipLast(10).Sum",
+        "UnfusedContainsShort",
     ];
 
     [GpuKernel]
@@ -80,7 +81,7 @@ public static partial class StackLinqDifferentialKernels
 
         var slice = xs.AsSpan().Slice(baseIdx, SliceLength);
         int x0 = slice[0];
-        int o = t * 50;
+        int o = t * 51;
 
         r[o] = slice.AsStackEnumerable().Sum();
         r[o + 1] = slice.AsStackEnumerable().Sum(x => x);
@@ -143,6 +144,10 @@ public static partial class StackLinqDifferentialKernels
         r[o + 47] = slice.AsStackEnumerable().SkipLast(0).Sum();
         r[o + 48] = slice.AsStackEnumerable().SkipLast(-1).Sum();
         r[o + 49] = slice.AsStackEnumerable().SkipLast(10).Sum();
+
+        var unfusedContains = slice.AsStackEnumerable();
+        short s = 2;
+        r[o + 50] = unfusedContains.Contains(s) ? 1L : 0L;
     }
 
     /// <summary>The columns of <see cref="Int32AverageKernel"/>.</summary>
@@ -393,6 +398,7 @@ public static partial class StackLinqDifferentialKernels
         "Int64FirstOrDefault",
         "Int64LastOrDefault",
         "Int64ElementAtOrDefault(2)",
+        "UnfusedInt64ContainsInt",
     ];
 
     [GpuKernel]
@@ -408,7 +414,7 @@ public static partial class StackLinqDifferentialKernels
         var bSlice = bs.AsSpan().Slice(baseIdx, SliceLength);
         var sSlice = ss.AsSpan().Slice(baseIdx, SliceLength);
         var lSlice = ls.AsSpan().Slice(baseIdx, SliceLength);
-        int o = t * 9;
+        int o = t * 10;
 
         r[o] = bSlice.AsStackEnumerable().Sum(x => (int)x);
         r[o + 1] = sSlice.AsStackEnumerable().Sum(x => (int)x);
@@ -419,6 +425,10 @@ public static partial class StackLinqDifferentialKernels
         r[o + 6] = lSlice.AsStackEnumerable().FirstOrDefault(x => x < 0);
         r[o + 7] = lSlice.AsStackEnumerable().LastOrDefault(x => x > 0);
         r[o + 8] = lSlice.AsStackEnumerable().ElementAtOrDefault(2);
+
+        var lUnfused = lSlice.AsStackEnumerable();
+        int k = 2;
+        r[o + 9] = lUnfused.Contains(k) ? 1L : 0L;
     }
 
     /// <summary>The columns of <see cref="FloatSequentialSumKernel"/>.</summary>
