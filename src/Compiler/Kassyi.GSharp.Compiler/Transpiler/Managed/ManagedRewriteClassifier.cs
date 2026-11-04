@@ -1,3 +1,6 @@
+using Kassyi.GSharp.Compiler.Transpiler.Dialects;
+using Kassyi.GSharp.Compiler.Transpiler.Rules.InvocationRules.StackLinq;
+
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
 /// <summary>
@@ -8,8 +11,16 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 /// </summary>
 /// <remarks>
 /// <para>
-/// The list is one case today: an operator macro assignment (<c>c = a + b;</c> with a <c>[GpuOperatorMacro]</c>
-/// operator), whose operator body throws <c>GpuOnlyException</c> and has no run-time stand-in.
+/// The list has three cases today:
+/// <list type="bullet">
+/// <item><description>an operator macro assignment (<c>c = a + b;</c> with a <c>[GpuOperatorMacro]</c> operator), whose
+/// operator body throws <c>GpuOnlyException</c> and has no run-time stand-in;</description></item>
+/// <item><description>a <c>StackLinqExtensions.Sum</c> call on <c>StackEnumerable&lt;TEnumerator, T&gt;</c> whose result
+/// is <see cref="float"/> or <see cref="double"/> (#730), which the host <c>Sum</c> vectorized with SIMD in a different
+/// addition order from the GPU loop;</description></item>
+/// <item><description>a <c>Gpu.InlinePtx</c> statement (#581), which the managed path replaces with a
+/// <see cref="NotSupportedException"/> throw instead of the stub's <c>GpuOnlyException</c>.</description></item>
+/// </list>
 /// </para>
 /// <para>
 /// Not on the list, because the user's C# already gives the GPU result: the respellings of <c>ManagedNameQualifier</c>,
@@ -24,7 +35,9 @@ internal static class ManagedRewriteClassifier
 {
     /// <summary>Whether the managed path rewrites <paramref name="node"/> into code that G# writes.</summary>
     public static bool IsSemanticRewrite(SyntaxNode node, SemanticModel semanticModel) =>
-        node is AssignmentExpressionSyntax assignment && TryGetOperatorMacro(assignment, semanticModel, out _);
+        (node is AssignmentExpressionSyntax assignment && TryGetOperatorMacro(assignment, semanticModel, out _)) ||
+        (node is InvocationExpressionSyntax invocation &&
+         (IsSequentialSum(invocation, semanticModel) || IsInlinePtx(invocation, semanticModel)));
 
     /// <summary>
     /// The operator macro that the managed path expands at <paramref name="assignment"/>: a simple assignment statement
@@ -40,4 +53,28 @@ internal static class ManagedRewriteClassifier
                OperatorMacroResolver.TryResolve(assignment, semanticModel, out macro) &&
                macro.TargetMethod != null;
     }
+
+    /// <summary>
+    /// Whether <paramref name="invocation"/> is a <c>StackLinqExtensions.Sum</c> call on a
+    /// <c>StackEnumerable&lt;TEnumerator, T&gt;</c> whose result is <see cref="float"/> or <see cref="double"/> (#730).
+    /// The managed path rewrites it to <c>SumSequential</c> so elements are added from start to end without SIMD
+    /// reassociation, matching the GPU and native CPU loop order.
+    /// </summary>
+    public static bool IsSequentialSum(InvocationExpressionSyntax invocation, SemanticModel semanticModel) =>
+        semanticModel.GetSymbol(invocation) is IMethodSymbol
+        {
+            Name: "Sum",
+            ReturnType.SpecialType: SpecialType.System_Single or SpecialType.System_Double,
+            ContainingType.Name: "StackLinqExtensions"
+        } method &&
+        StackLinqHelper.IsStackLinqMethod(method) &&
+        (method.ReducedFrom ?? method).Parameters is [{ Type.Name: "StackEnumerable" }, ..];
+
+    /// <summary>
+    /// Whether <paramref name="invocation"/> is a <c>Gpu.InlinePtx</c> statement that the managed path replaces with a
+    /// <see cref="NotSupportedException"/> throw (#581).
+    /// </summary>
+    public static bool IsInlinePtx(InvocationExpressionSyntax invocation, SemanticModel semanticModel) =>
+        invocation.Parent is ExpressionStatementSyntax &&
+        DialectCallSupport.IsUnsupportedInlinePtxCall(invocation, semanticModel, HostDialects.Cpu);
 }

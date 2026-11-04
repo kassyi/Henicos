@@ -10,27 +10,27 @@ namespace Kassyi.GSharp.Generated
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static class GSharpModuleContext_SnapshotTest
 {
-private static IntPtr? s_hModule;
+private static global::System.IntPtr? s_hModule;
 private static readonly object s_lock = new object();
 
 /// <summary>
 /// Loads the fatbin module for this assembly into the CUDA driver if it hasn't been loaded yet.
 /// </summary>
-public static IntPtr GetOrLoadModule()
+public static global::System.IntPtr GetOrLoadModule()
 {
 if (s_hModule.HasValue) return s_hModule.Value;
 lock (s_lock)
 {
 if (s_hModule.HasValue) return s_hModule.Value;
 
-var baseDir = System.IO.Path.GetDirectoryName(typeof(GSharpModuleContext_SnapshotTest).Assembly.Location) ?? System.AppContext.BaseDirectory;
-var fatbinPath = System.IO.Path.Combine(baseDir, "Kassyi.GSharp.Kernels_SnapshotTest.gfatbin");
-if (!System.IO.File.Exists(fatbinPath))
+var baseDir = global::System.IO.Path.GetDirectoryName(typeof(GSharpModuleContext_SnapshotTest).Assembly.Location) ?? global::System.AppContext.BaseDirectory;
+var fatbinPath = global::System.IO.Path.Combine(baseDir, "Kassyi.GSharp.Kernels_SnapshotTest.gfatbin");
+if (!global::System.IO.File.Exists(fatbinPath))
 {
-throw new System.InvalidOperationException($"AOT kernel binary was not found at '{fatbinPath}'.");
+throw new global::System.InvalidOperationException($"AOT kernel binary was not found at '{fatbinPath}'.");
 }
 
-byte[] binaryData = System.IO.File.ReadAllBytes(fatbinPath);
+byte[] binaryData = global::System.IO.File.ReadAllBytes(fatbinPath);
 s_hModule = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadModule(binaryData);
 return s_hModule.Value;
 }
@@ -105,18 +105,18 @@ __gsharp_id_3_carryBuffer[__gsharp_add_i32(__gsharp_id_6_chunkIdx,1)]=(long long
 }
 ";
 public static readonly string ChunkAddKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ChunkAddKernel_Source;
-private static IntPtr? s_hfunc_ChunkAddKernel;
+private static global::System.IntPtr? __gsharp_hfunc_ChunkAddKernel;
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
 public static void WarmupFunctionPointerChunkAddKernel()
 {
-if (s_hfunc_ChunkAddKernel.HasValue) return;
-IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
-s_hfunc_ChunkAddKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, "__gsharp_k_Kassyi__GSharp__Stdlib__GpuMath__BigNum__GpuBigIntKernels__ChunkAddKernel");
+if (__gsharp_hfunc_ChunkAddKernel.HasValue) return;
+global::System.IntPtr __gsharp_hmodule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
+__gsharp_hfunc_ChunkAddKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(__gsharp_hmodule, "__gsharp_k_Kassyi__GSharp__Stdlib__GpuMath__BigNum__GpuBigIntKernels__ChunkAddKernel");
 }
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-public static unsafe void LaunchChunkAddKernel(global::System.UInt32[] dA, global::System.UInt32[] dB, global::System.UInt32[] dResult, global::System.Int64[] carryBuffer, global::System.Int32 numWords, global::System.Int32 chunkSize, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchChunkAddKernel(global::System.UInt32[] dA, global::System.UInt32[] dB, global::System.UInt32[] dResult, global::System.Int64[] carryBuffer, global::System.Int32 numWords, global::System.Int32 chunkSize, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (dA is null){
 throw new global::System.ArgumentNullException(nameof(dA));
@@ -144,173 +144,173 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-WarmupFunctionPointerChunkAddKernel();
-IntPtr hfunc = s_hfunc_ChunkAddKernel!.Value;
-global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "GpuBigIntKernels.ChunkAddKernel");
-IntPtr d_dA = IntPtr.Zero;
-IntPtr d_dB = IntPtr.Zero;
-IntPtr d_dResult = IntPtr.Zero;
-IntPtr d_carryBuffer = IntPtr.Zero;
+global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.GpuBigIntKernels.WarmupFunctionPointerChunkAddKernel();
+global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_ChunkAddKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "GpuBigIntKernels.ChunkAddKernel");
+global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
+global::System.IntPtr __gsharp_d_1 = global::System.IntPtr.Zero;
+global::System.IntPtr __gsharp_d_2 = global::System.IntPtr.Zero;
+global::System.IntPtr __gsharp_d_3 = global::System.IntPtr.Zero;
 try
 {
-void** kernelParams = stackalloc void*[6];
+void** __gsharp_kernel_params = stackalloc void*[6];
 // Marshal array: dA
-int dA_size = dA.Length * sizeof(global::System.UInt32);
-IntPtr* proxy_dA = stackalloc IntPtr[2];
-proxy_dA[0] = IntPtr.Zero;
-((int*)(proxy_dA + 1))[0] = dA.Length;
-((int*)(proxy_dA + 1))[1] = 0;
-if (dA_size > 0)
+int __gsharp_size_0 = checked(dA.Length * sizeof(global::System.UInt32));
+global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
+__gsharp_proxy_0[0] = global::System.IntPtr.Zero;
+((int*)(__gsharp_proxy_0 + 1))[0] = dA.Length;
+((int*)(__gsharp_proxy_0 + 1))[1] = 0;
+if (__gsharp_size_0 > 0)
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_dA, (IntPtr)dA_size, hStream));
-fixed (global::System.UInt32* p_dA = dA)
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
+fixed (global::System.UInt32* __gsharp_p_0 = dA)
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_dA, (IntPtr)p_dA, (IntPtr)dA_size, hStream));
-CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyHtoDAsync_v2(__gsharp_d_0, (global::System.IntPtr)__gsharp_p_0, (global::System.IntPtr)__gsharp_size_0, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
-proxy_dA[0] = d_dA;
+__gsharp_proxy_0[0] = __gsharp_d_0;
 }
-kernelParams[0] = proxy_dA;
+__gsharp_kernel_params[0] = __gsharp_proxy_0;
 // Marshal array: dB
-int dB_size = dB.Length * sizeof(global::System.UInt32);
-IntPtr* proxy_dB = stackalloc IntPtr[2];
-proxy_dB[0] = IntPtr.Zero;
-((int*)(proxy_dB + 1))[0] = dB.Length;
-((int*)(proxy_dB + 1))[1] = 0;
-if (dB_size > 0)
+int __gsharp_size_1 = checked(dB.Length * sizeof(global::System.UInt32));
+global::System.IntPtr* __gsharp_proxy_1 = stackalloc global::System.IntPtr[2];
+__gsharp_proxy_1[0] = global::System.IntPtr.Zero;
+((int*)(__gsharp_proxy_1 + 1))[0] = dB.Length;
+((int*)(__gsharp_proxy_1 + 1))[1] = 0;
+if (__gsharp_size_1 > 0)
 {
 if (global::System.Object.ReferenceEquals(dB, dA))
 {
-d_dB = d_dA;
+__gsharp_d_1 = __gsharp_d_0;
 }
 else
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_dB, (IntPtr)dB_size, hStream));
-fixed (global::System.UInt32* p_dB = dB)
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out __gsharp_d_1, (global::System.IntPtr)__gsharp_size_1, hStream));
+fixed (global::System.UInt32* __gsharp_p_1 = dB)
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_dB, (IntPtr)p_dB, (IntPtr)dB_size, hStream));
-CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyHtoDAsync_v2(__gsharp_d_1, (global::System.IntPtr)__gsharp_p_1, (global::System.IntPtr)__gsharp_size_1, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
-proxy_dB[0] = d_dB;
+__gsharp_proxy_1[0] = __gsharp_d_1;
 }
-kernelParams[1] = proxy_dB;
+__gsharp_kernel_params[1] = __gsharp_proxy_1;
 // Marshal array: dResult
-int dResult_size = dResult.Length * sizeof(global::System.UInt32);
-IntPtr* proxy_dResult = stackalloc IntPtr[2];
-proxy_dResult[0] = IntPtr.Zero;
-((int*)(proxy_dResult + 1))[0] = dResult.Length;
-((int*)(proxy_dResult + 1))[1] = 0;
-if (dResult_size > 0)
+int __gsharp_size_2 = checked(dResult.Length * sizeof(global::System.UInt32));
+global::System.IntPtr* __gsharp_proxy_2 = stackalloc global::System.IntPtr[2];
+__gsharp_proxy_2[0] = global::System.IntPtr.Zero;
+((int*)(__gsharp_proxy_2 + 1))[0] = dResult.Length;
+((int*)(__gsharp_proxy_2 + 1))[1] = 0;
+if (__gsharp_size_2 > 0)
 {
 if (global::System.Object.ReferenceEquals(dResult, dA))
 {
-d_dResult = d_dA;
+__gsharp_d_2 = __gsharp_d_0;
 }
 else if (global::System.Object.ReferenceEquals(dResult, dB))
 {
-d_dResult = d_dB;
+__gsharp_d_2 = __gsharp_d_1;
 }
 else
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_dResult, (IntPtr)dResult_size, hStream));
-fixed (global::System.UInt32* p_dResult = dResult)
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out __gsharp_d_2, (global::System.IntPtr)__gsharp_size_2, hStream));
+fixed (global::System.UInt32* __gsharp_p_2 = dResult)
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_dResult, (IntPtr)p_dResult, (IntPtr)dResult_size, hStream));
-CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyHtoDAsync_v2(__gsharp_d_2, (global::System.IntPtr)__gsharp_p_2, (global::System.IntPtr)__gsharp_size_2, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
-proxy_dResult[0] = d_dResult;
+__gsharp_proxy_2[0] = __gsharp_d_2;
 }
-kernelParams[2] = proxy_dResult;
+__gsharp_kernel_params[2] = __gsharp_proxy_2;
 // Marshal array: carryBuffer
-int carryBuffer_size = carryBuffer.Length * sizeof(global::System.Int64);
-IntPtr* proxy_carryBuffer = stackalloc IntPtr[2];
-proxy_carryBuffer[0] = IntPtr.Zero;
-((int*)(proxy_carryBuffer + 1))[0] = carryBuffer.Length;
-((int*)(proxy_carryBuffer + 1))[1] = 0;
-if (carryBuffer_size > 0)
+int __gsharp_size_3 = checked(carryBuffer.Length * sizeof(global::System.Int64));
+global::System.IntPtr* __gsharp_proxy_3 = stackalloc global::System.IntPtr[2];
+__gsharp_proxy_3[0] = global::System.IntPtr.Zero;
+((int*)(__gsharp_proxy_3 + 1))[0] = carryBuffer.Length;
+((int*)(__gsharp_proxy_3 + 1))[1] = 0;
+if (__gsharp_size_3 > 0)
 {
 if (global::System.Object.ReferenceEquals(carryBuffer, dA))
 {
-d_carryBuffer = d_dA;
+__gsharp_d_3 = __gsharp_d_0;
 }
 else if (global::System.Object.ReferenceEquals(carryBuffer, dB))
 {
-d_carryBuffer = d_dB;
+__gsharp_d_3 = __gsharp_d_1;
 }
 else if (global::System.Object.ReferenceEquals(carryBuffer, dResult))
 {
-d_carryBuffer = d_dResult;
+__gsharp_d_3 = __gsharp_d_2;
 }
 else
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_carryBuffer, (IntPtr)carryBuffer_size, hStream));
-fixed (global::System.Int64* p_carryBuffer = carryBuffer)
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out __gsharp_d_3, (global::System.IntPtr)__gsharp_size_3, hStream));
+fixed (global::System.Int64* __gsharp_p_3 = carryBuffer)
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_carryBuffer, (IntPtr)p_carryBuffer, (IntPtr)carryBuffer_size, hStream));
-CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyHtoDAsync_v2(__gsharp_d_3, (global::System.IntPtr)__gsharp_p_3, (global::System.IntPtr)__gsharp_size_3, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
-proxy_carryBuffer[0] = d_carryBuffer;
+__gsharp_proxy_3[0] = __gsharp_d_3;
 }
-kernelParams[3] = proxy_carryBuffer;
+__gsharp_kernel_params[3] = __gsharp_proxy_3;
 // Marshal scalar: numWords
-kernelParams[4] = &numWords;
+__gsharp_kernel_params[4] = &numWords;
 // Marshal scalar: chunkSize
-kernelParams[5] = &chunkSize;
-CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
-hfunc,
+__gsharp_kernel_params[5] = &chunkSize;
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
+__gsharp_hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim
 blockDimX, blockDimY, blockDimZ, // Block dim
 sharedMemBytes, // Shared mem
 hStream, // Stream
-kernelParams,
-IntPtr.Zero // Extra
+__gsharp_kernel_params,
+global::System.IntPtr.Zero // Extra
 ));
 // Copy back array: dA
-if (dA_size > 0 && d_dA != IntPtr.Zero)
+if (__gsharp_size_0 > 0 && __gsharp_d_0 != global::System.IntPtr.Zero)
 {
-fixed (global::System.UInt32* p_dA = dA)
+fixed (global::System.UInt32* __gsharp_p_0 = dA)
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2((IntPtr)p_dA, d_dA, (IntPtr)dA_size, hStream));
-CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)__gsharp_p_0, __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
 // Copy back array: dB
-if (dB_size > 0 && d_dB != IntPtr.Zero && !global::System.Object.ReferenceEquals(dB, dA))
+if (__gsharp_size_1 > 0 && __gsharp_d_1 != global::System.IntPtr.Zero && !global::System.Object.ReferenceEquals(dB, dA))
 {
-fixed (global::System.UInt32* p_dB = dB)
+fixed (global::System.UInt32* __gsharp_p_1 = dB)
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2((IntPtr)p_dB, d_dB, (IntPtr)dB_size, hStream));
-CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)__gsharp_p_1, __gsharp_d_1, (global::System.IntPtr)__gsharp_size_1, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
 // Copy back array: dResult
-if (dResult_size > 0 && d_dResult != IntPtr.Zero && !global::System.Object.ReferenceEquals(dResult, dA) && !global::System.Object.ReferenceEquals(dResult, dB))
+if (__gsharp_size_2 > 0 && __gsharp_d_2 != global::System.IntPtr.Zero && !global::System.Object.ReferenceEquals(dResult, dA) && !global::System.Object.ReferenceEquals(dResult, dB))
 {
-fixed (global::System.UInt32* p_dResult = dResult)
+fixed (global::System.UInt32* __gsharp_p_2 = dResult)
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2((IntPtr)p_dResult, d_dResult, (IntPtr)dResult_size, hStream));
-CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)__gsharp_p_2, __gsharp_d_2, (global::System.IntPtr)__gsharp_size_2, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
 // Copy back array: carryBuffer
-if (carryBuffer_size > 0 && d_carryBuffer != IntPtr.Zero && !global::System.Object.ReferenceEquals(carryBuffer, dA) && !global::System.Object.ReferenceEquals(carryBuffer, dB) && !global::System.Object.ReferenceEquals(carryBuffer, dResult))
+if (__gsharp_size_3 > 0 && __gsharp_d_3 != global::System.IntPtr.Zero && !global::System.Object.ReferenceEquals(carryBuffer, dA) && !global::System.Object.ReferenceEquals(carryBuffer, dB) && !global::System.Object.ReferenceEquals(carryBuffer, dResult))
 {
-fixed (global::System.Int64* p_carryBuffer = carryBuffer)
+fixed (global::System.Int64* __gsharp_p_3 = carryBuffer)
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2((IntPtr)p_carryBuffer, d_carryBuffer, (IntPtr)carryBuffer_size, hStream));
-CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)__gsharp_p_3, __gsharp_d_3, (global::System.IntPtr)__gsharp_size_3, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
 }
 finally
 {
-if (d_dA != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_dA, hStream);
-if (d_dB != IntPtr.Zero && d_dB != d_dA) CudaDriverApi.cuMemFreeAsync(d_dB, hStream);
-if (d_dResult != IntPtr.Zero && d_dResult != d_dA && d_dResult != d_dB) CudaDriverApi.cuMemFreeAsync(d_dResult, hStream);
-if (d_carryBuffer != IntPtr.Zero && d_carryBuffer != d_dA && d_carryBuffer != d_dB && d_carryBuffer != d_dResult) CudaDriverApi.cuMemFreeAsync(d_carryBuffer, hStream);
+if (__gsharp_d_0 != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_0, hStream);
+if (__gsharp_d_1 != global::System.IntPtr.Zero && __gsharp_d_1 != __gsharp_d_0) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_1, hStream);
+if (__gsharp_d_2 != global::System.IntPtr.Zero && __gsharp_d_2 != __gsharp_d_0 && __gsharp_d_2 != __gsharp_d_1) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_2, hStream);
+if (__gsharp_d_3 != global::System.IntPtr.Zero && __gsharp_d_3 != __gsharp_d_0 && __gsharp_d_3 != __gsharp_d_1 && __gsharp_d_3 != __gsharp_d_2) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_3, hStream);
 }
 }
 }
@@ -318,52 +318,52 @@ if (d_carryBuffer != IntPtr.Zero && d_carryBuffer != d_dA && d_carryBuffer != d_
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-public static unsafe void LaunchChunkAddKernelPtr(IntPtr dA, IntPtr dB, IntPtr dResult, IntPtr carryBuffer, global::System.Int32 numWords, global::System.Int32 chunkSize, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchChunkAddKernelPtr(global::System.IntPtr dA, global::System.IntPtr dB, global::System.IntPtr dResult, global::System.IntPtr carryBuffer, global::System.Int32 numWords, global::System.Int32 chunkSize, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-WarmupFunctionPointerChunkAddKernel();
-IntPtr hfunc = s_hfunc_ChunkAddKernel!.Value;
-global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(hfunc, sharedMemBytes, "GpuBigIntKernels.ChunkAddKernel");
+global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.GpuBigIntKernels.WarmupFunctionPointerChunkAddKernel();
+global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_ChunkAddKernel!.Value;
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "GpuBigIntKernels.ChunkAddKernel");
 try
 {
-void** kernelParams = stackalloc void*[6];
+void** __gsharp_kernel_params = stackalloc void*[6];
 // Marshal device array: dA
-IntPtr* proxy_dA = stackalloc IntPtr[2];
-proxy_dA[0] = dA;
-((int*)(proxy_dA + 1))[0] = 0; // Length is unknown for raw IntPtr
-((int*)(proxy_dA + 1))[1] = 0;
-kernelParams[0] = proxy_dA;
+global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
+__gsharp_proxy_0[0] = dA;
+((int*)(__gsharp_proxy_0 + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(__gsharp_proxy_0 + 1))[1] = 0;
+__gsharp_kernel_params[0] = __gsharp_proxy_0;
 // Marshal device array: dB
-IntPtr* proxy_dB = stackalloc IntPtr[2];
-proxy_dB[0] = dB;
-((int*)(proxy_dB + 1))[0] = 0; // Length is unknown for raw IntPtr
-((int*)(proxy_dB + 1))[1] = 0;
-kernelParams[1] = proxy_dB;
+global::System.IntPtr* __gsharp_proxy_1 = stackalloc global::System.IntPtr[2];
+__gsharp_proxy_1[0] = dB;
+((int*)(__gsharp_proxy_1 + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(__gsharp_proxy_1 + 1))[1] = 0;
+__gsharp_kernel_params[1] = __gsharp_proxy_1;
 // Marshal device array: dResult
-IntPtr* proxy_dResult = stackalloc IntPtr[2];
-proxy_dResult[0] = dResult;
-((int*)(proxy_dResult + 1))[0] = 0; // Length is unknown for raw IntPtr
-((int*)(proxy_dResult + 1))[1] = 0;
-kernelParams[2] = proxy_dResult;
+global::System.IntPtr* __gsharp_proxy_2 = stackalloc global::System.IntPtr[2];
+__gsharp_proxy_2[0] = dResult;
+((int*)(__gsharp_proxy_2 + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(__gsharp_proxy_2 + 1))[1] = 0;
+__gsharp_kernel_params[2] = __gsharp_proxy_2;
 // Marshal device array: carryBuffer
-IntPtr* proxy_carryBuffer = stackalloc IntPtr[2];
-proxy_carryBuffer[0] = carryBuffer;
-((int*)(proxy_carryBuffer + 1))[0] = 0; // Length is unknown for raw IntPtr
-((int*)(proxy_carryBuffer + 1))[1] = 0;
-kernelParams[3] = proxy_carryBuffer;
+global::System.IntPtr* __gsharp_proxy_3 = stackalloc global::System.IntPtr[2];
+__gsharp_proxy_3[0] = carryBuffer;
+((int*)(__gsharp_proxy_3 + 1))[0] = 0; // Length is unknown for raw IntPtr
+((int*)(__gsharp_proxy_3 + 1))[1] = 0;
+__gsharp_kernel_params[3] = __gsharp_proxy_3;
 // Marshal scalar: numWords
-kernelParams[4] = &numWords;
+__gsharp_kernel_params[4] = &numWords;
 // Marshal scalar: chunkSize
-kernelParams[5] = &chunkSize;
-CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
-hfunc,
+__gsharp_kernel_params[5] = &chunkSize;
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
+__gsharp_hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim
 blockDimX, blockDimY, blockDimZ, // Block dim
 sharedMemBytes, // Shared mem
 hStream, // Stream
-kernelParams,
-IntPtr.Zero // Extra
+__gsharp_kernel_params,
+global::System.IntPtr.Zero // Extra
 ));
 }
 finally

@@ -22,7 +22,7 @@ internal static class WrapperEmitter
         {
             if (IsIntPtr)
             {
-                writer.Append("IntPtr ");
+                writer.Append("global::System.IntPtr ");
             }
             else
             {
@@ -78,8 +78,9 @@ internal static class WrapperEmitter
     private static void WriteUnassignedFieldSuppression(SourceWriter writer, in HostClassHeader header) =>
         writer.AppendLineIf(!header.IsPublic, "#pragma warning disable CS0649");
 
-    // namespace <namespace> { <accessibility> partial class <name>, without the namespace for the global namespace. The
-    // generated part must declare the accessibility of the user's part, or the compiler reports CS0262.
+    // namespace <namespace> { <outer partial declarations> <accessibility> partial class <name>, without the namespace
+    // for the global namespace. The generated part must declare the accessibility of the user's part, or the compiler
+    // reports CS0262.
     private static void WriteClassDeclaration(SourceWriter writer, in HostClassHeader header)
     {
         if (!header.IsGlobalNamespace)
@@ -88,7 +89,24 @@ internal static class WrapperEmitter
             writer.AppendLine("{");
         }
 
+        // A nested class is written inside partial declarations of the types that contain it
+        foreach (var outer in header.OuterDeclarations)
+        {
+            writer.AppendLine(outer);
+            writer.AppendLine("{");
+        }
+
         writer.AppendLine($"{header.Accessibility} partial class {header.Name}");
+    }
+
+    private static void CloseClassDeclaration(SourceWriter writer, in HostClassHeader header)
+    {
+        for (var i = 0; i < header.OuterDeclarations.Length; i++)
+        {
+            writer.AppendLine("}");
+        }
+
+        writer.AppendLineIf(!header.IsGlobalNamespace, "}");
     }
 
     /// <summary>The assembly of StackLinq, whose namespace the generated managed code imports when it is referenced.</summary>
@@ -124,20 +142,7 @@ internal static class WrapperEmitter
         writer.AppendLine("#pragma warning disable CS0649");
         writer.AppendLine();
 
-        if (!header.IsGlobalNamespace)
-        {
-            writer.AppendLine($"namespace {header.Namespace}");
-            writer.AppendLine("{");
-        }
-
-        // A nested class is written inside partial declarations of the types that contain it
-        foreach (var outer in header.OuterDeclarations)
-        {
-            writer.AppendLine(outer);
-            writer.AppendLine("{");
-        }
-
-        writer.AppendLine($"{header.Accessibility} partial class {header.Name}");
+        WriteClassDeclaration(writer, header);
         using (writer.Scope())
         {
             foreach (var source in sources)
@@ -146,12 +151,7 @@ internal static class WrapperEmitter
             }
         }
 
-        for (var i = 0; i < header.OuterDeclarations.Length; i++)
-        {
-            writer.AppendLine("}");
-        }
-
-        writer.AppendLineIf(!header.IsGlobalNamespace, "}");
+        CloseClassDeclaration(writer, header);
         return writer.ToString();
     }
 
@@ -191,8 +191,8 @@ internal static class WrapperEmitter
 
             foreach (var kernel in model.Kernels)
             {
-                // GSH0059: the analyzer reports the overload; its wrappers would duplicate an earlier overload's.
-                if (kernel.IsIndistinguishable)
+                // GSH0059 / GSH0106: the analyzer reports the overload or reserved launch parameter name; its wrappers would not compile.
+                if (kernel.IsIndistinguishable || kernel.Host.HasReservedLaunchParameterName)
                 {
                     continue;
                 }
@@ -210,7 +210,7 @@ internal static class WrapperEmitter
             }
         }
 
-        writer.AppendLineIf(!model.Class.IsGlobalNamespace, "}");
+        CloseClassDeclaration(writer, model.Class);
         return writer.ToString();
     }
 
@@ -259,10 +259,7 @@ internal static class WrapperEmitter
         writer.AppendLine();
     }
 
-    internal const string LaunchOptionParameters =
-        "uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1," +
-        "uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, " +
-        "System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default";
+    internal static string LaunchOptionParameters => KernelHostNames.LaunchOptionParameters;
 
     internal static void WriteLaunchReturnType(SourceWriter writer, in KernelHostModel kernel)
     {
@@ -276,13 +273,10 @@ internal static class WrapperEmitter
         }
     }
 
-    // The flag of a kernel whose launch has passed its layout guards once (WriteLayoutGuards)
-    private const string LayoutCheckedPrefix = "s_layoutChecked_";
-
-    // private static bool s_layoutChecked_<key>; for a kernel with layout guards
+    // private static bool __gsharp_layout_checked_<key>; for a kernel with layout guards
     internal static void WriteLayoutCheckedField(SourceWriter writer, EquatableArray<StructLayoutGuard> guards,
         string memberKey) =>
-        writer.AppendLineIf(guards.Length > 0, $"private static bool {LayoutCheckedPrefix}{memberKey};");
+        writer.AppendLineIf(guards.Length > 0, $"private static bool {KernelHostNames.GetLayoutCheckedFieldName(memberKey)};");
 
     // if (!s_layoutChecked_<key>) {
     //   For each block-copied struct:
@@ -301,9 +295,10 @@ internal static class WrapperEmitter
             return;
         }
 
-        const string Unsafe = "global::System.Runtime.CompilerServices.Unsafe";
+        const string Unsafe = HostTypeNames.Unsafe;
         const string Probe = GSharpInternalNames.Launcher.LayoutProbe;
-        writer.AppendLine($"if (!{LayoutCheckedPrefix}{memberKey})");
+        var layoutChecked = KernelHostNames.GetLayoutCheckedFieldName(memberKey);
+        writer.AppendLine($"if (!{layoutChecked})");
         using (writer.Scope())
         {
             foreach (var guard in guards)
@@ -333,7 +328,7 @@ internal static class WrapperEmitter
                 }
             }
 
-            writer.AppendLine($"{LayoutCheckedPrefix}{memberKey} = true;");
+            writer.AppendLine($"{layoutChecked} = true;");
         }
     }
 

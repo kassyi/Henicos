@@ -1,4 +1,3 @@
-
 namespace Kassyi.GSharp.Tests.Shared.Analyzers;
 
 public class GpuKernelAnalyzerTests
@@ -61,5 +60,88 @@ public class GpuKernelAnalyzerTests
         Assert.DoesNotContain(diagnostics, d => d.Id == GSharpDiagnostics.SyncGridRequiresCooperativeKernel.Id);
         Assert.DoesNotContain(diagnostics, d => d.Id == GSharpDiagnostics.UnrollFactorMustBeNonNegativeConstant.Id);
         Assert.DoesNotContain(diagnostics, d => d.Id == GSharpDiagnostics.UnrollHintMustPrecedeLoop.Id);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public async Task Test_EnclosingTypesMustBePartial_ReportsGsh0036AtIdentifierSpan()
+    {
+        const string ExpectedMessageFormat =
+            "The type '{0}' that contains or encloses GPU code must be declared partial to support source generation of contexts and launch methods.";
+
+        var diagnostics = await RoslynTestUtility.TestAnalyzer("Analyzers/EnclosingTypeMustBePartial_SadPath.cs", s_analyzer)
+                                                 .GetDiagnosticsAsync();
+        var actual = diagnostics
+            .Where(d => d.Id == GSharpDiagnostics.KernelClassMustBePartial.Id)
+            .OrderBy(d => d.Location.GetLineSpan().StartLinePosition.Line)
+            .Select(d =>
+            {
+                var span = d.Location.GetLineSpan();
+                return (
+                    span.StartLinePosition.Line,
+                    span.StartLinePosition.Character,
+                    span.EndLinePosition.Line,
+                    span.EndLinePosition.Character,
+                    d.GetMessage());
+            })
+            .ToArray();
+
+        // DeviceOnlyStruct is not reported, and OuterOfTwoClasses only once
+        Assert.Equal(
+        [
+            (4, 13, 4, 33, string.Format(ExpectedMessageFormat, "OuterNonPartialClass")),
+            (6, 18, 6, 39, string.Format(ExpectedMessageFormat, "OuterNonPartialStruct")),
+            (18, 14, 18, 35, string.Format(ExpectedMessageFormat, "OuterNonPartialRecord")),
+            (35, 13, 35, 30, string.Format(ExpectedMessageFormat, "OuterOfTwoClasses")),
+        ], actual);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public async Task Test_TranspilerFailureCheck_ForwardsGSH0070WithoutThrowingAD0001()
+    {
+        var diagnostics = await RoslynTestUtility.TestAnalyzer("Analyzers/IteratorInlineDepth_SadPath.cs", s_analyzer)
+                                                 .GetDiagnosticsAsync();
+
+        Assert.DoesNotContain(diagnostics, static d => d.Id == "AD0001");
+
+        var actual = diagnostics
+            .Select(static d =>
+            {
+                var span = d.Location.GetLineSpan().Span;
+                return (
+                    d.Id,
+                    span.Start.Line + 1,
+                    span.Start.Character + 1,
+                    span.End.Line + 1,
+                    span.End.Character + 1);
+            })
+            .OrderBy(static d => d.Item2)
+            .ThenBy(static d => d.Item3)
+            .ThenBy(static d => d.Id, StringComparer.Ordinal)
+            .ToArray();
+
+        Assert.Equal(
+            [
+                (GSharpDiagnostics.IteratorShapeNotSupported.Id, 155, 9, 158, 10),
+                // Another diagnostic of the method whose transpiler failure is forwarded: still reported next to it
+                (GSharpDiagnostics.StringNotSupported.Id, 159, 9, 159, 12)
+            ],
+            actual);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_SupportedDiagnostics_CoversAllDefinedDiagnostics()
+    {
+        var supportedIds = s_analyzer.SupportedDiagnostics
+            .Select(static d => d.Id)
+            .ToHashSet(StringComparer.Ordinal);
+
+        Assert.NotEmpty(GSharpDiagnostics.All);
+        foreach (var descriptor in GSharpDiagnostics.All)
+        {
+            Assert.Contains(descriptor.Id, supportedIds);
+        }
     }
 }
