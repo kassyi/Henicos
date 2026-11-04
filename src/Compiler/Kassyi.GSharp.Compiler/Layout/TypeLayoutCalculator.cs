@@ -67,47 +67,40 @@ internal static class TypeLayoutCalculator
     }
 
     /// <summary>Calculates the device size and alignment requirements for <paramref name="type"/> under <paramref name="dialect"/>.</summary>
-    public static TypeLayout GetDeviceLayout(ITypeSymbol type, ITranspilerDialect dialect)
+    public static TypeLayout GetDeviceLayout(ITypeSymbol type, ITranspilerDialect dialect) => type switch
     {
-        if (type.IsArrayLikeType())
-        {
-            return dialect.ArrayViewLayout;
-        }
+        _ when type.IsArrayLikeType() => dialect.ArrayViewLayout,
+        IPointerTypeSymbol or IFunctionPointerTypeSymbol
+            or { SpecialType: SpecialType.System_IntPtr or SpecialType.System_UIntPtr } => dialect.PointerLayout,
+        INamedTypeSymbol { TypeKind: TypeKind.Enum, EnumUnderlyingType: { } underlying } => GetDeviceLayout(underlying, dialect),
+        _ when dialect.TryGetTypeLayout(type, out var mapped) => mapped,
+        INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T, TypeArguments: [var value] } =>
+            GetNullableLayout(GetDeviceLayout(value, dialect)),
+        INamedTypeSymbol { TypeKind: TypeKind.Struct } named => GetDeviceStructLayout(named, dialect),
+        // [WHY] Type parameters (ITypeParameterSymbol) arrive during pre-substitution layout estimates
+        // on open generic types/methods or analyzer parameter space checks. A 4-byte fallback suffices.
+        ITypeParameterSymbol or { TypeKind: TypeKind.TypeParameter } => new TypeLayout(4, 4),
+        // [WHY] Unresolved error types (IErrorTypeSymbol / TypeKind.Error) arrive when user code has syntax or
+        // reference errors while being edited in IDE. C# emits CS0246/etc., so a 4-byte fallback prevents AD0001 crashes.
+        IErrorTypeSymbol or { TypeKind: TypeKind.Error } => new TypeLayout(4, 4),
+        // [WHY] Structs containing reference type fields (such as string) reach GetDeviceLayout when
+        // ComputeDeviceStructLayout lays out candidate members before FindUnsupportedLayout rejects
+        // them as UnsupportedLayout. A fallback 4-byte size/alignment is sufficient for this pass.
+        _ when type.IsReferenceType => new TypeLayout(4, 4),
+        _ => throw new InvalidOperationException($"Unexpected type in GetDeviceLayout: {type.GetType().Name} ({FormatTypeName(type)})")
+    };
 
-        if (type is IPointerTypeSymbol or IFunctionPointerTypeSymbol ||
-            type.SpecialType is SpecialType.System_IntPtr or SpecialType.System_UIntPtr)
-        {
-            return dialect.PointerLayout;
-        }
+    private static TypeLayout GetNullableLayout(TypeLayout valLayout)
+    {
+        var valOffset = AlignUp(1, valLayout.Alignment);
+        var size = AlignUp(valOffset + valLayout.Size, valLayout.Alignment);
+        return new TypeLayout(size, valLayout.Alignment);
+    }
 
-        if (type is INamedTypeSymbol { TypeKind: TypeKind.Enum, EnumUnderlyingType: { } enumUnderlyingType })
-        {
-            return GetDeviceLayout(enumUnderlyingType, dialect);
-        }
-
-        if (dialect.TryGetTypeLayout(type, out var mappedLayout))
-        {
-            return mappedLayout;
-        }
-
-        if (type is INamedTypeSymbol
-            {
-                OriginalDefinition.SpecialType: SpecialType.System_Nullable_T, TypeArguments.Length: 1
-            } nullableType)
-        {
-            var valLayout = GetDeviceLayout(nullableType.TypeArguments[0], dialect);
-            var valOffset = AlignUp(1, valLayout.Alignment);
-            var size = AlignUp(valOffset + valLayout.Size, valLayout.Alignment);
-            return new TypeLayout(size, valLayout.Alignment);
-        }
-
-        if (type is INamedTypeSymbol { TypeKind: TypeKind.Struct } namedStruct)
-        {
-            StructLayoutReader.Read(namedStruct, out var kind, out var pack, out var explicitSize);
-            return ComputeDeviceStructLayout(namedStruct, dialect, kind, pack, explicitSize, fields: null);
-        }
-
-        return new TypeLayout(4, 4);
+    private static TypeLayout GetDeviceStructLayout(INamedTypeSymbol namedStruct, ITranspilerDialect dialect)
+    {
+        StructLayoutReader.Read(namedStruct, out var kind, out var pack, out var explicitSize);
+        return ComputeDeviceStructLayout(namedStruct, dialect, kind, pack, explicitSize, fields: null);
     }
 
     /// <summary>Calculates the complete device (D), host (H), and transfer classification model for <paramref name="structType"/>.</summary>

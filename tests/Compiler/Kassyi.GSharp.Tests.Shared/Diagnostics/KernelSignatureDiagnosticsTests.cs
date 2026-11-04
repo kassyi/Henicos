@@ -77,4 +77,34 @@ public class KernelSignatureDiagnosticsTests
             ],
             diagnostics.Ranges(GSharpDiagnostics.KernelParameterSpaceExceeded.Id));
     }
+
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.SadPath)]
+    public async Task Test_UnknownTypeParameter_DoesNotCrashAnalyzerWithAD0001(string dialect)
+    {
+        const string TestCasePath = "Analyzers/KernelUnknownParameter.cs";
+        var source = RoslynTestUtility.ReadTestCase(TestCasePath);
+        var compilation = RoslynTestUtility.CreateCompilation(source);
+
+        var compilationErrors = compilation.GetDiagnostics();
+        Assert.Contains(compilationErrors, static d => d.Id == "CS0246");
+
+        var diagnostics = await KernelDiagnostics.RunAsync(source, dialect);
+        Assert.DoesNotContain(diagnostics, static d => d.Id == "AD0001");
+    }
+
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.SadPath)]
+    public async Task Test_TypeParameter_DoesNotCrashAnalyzerWithAD0001(string dialect)
+    {
+        const string TestCasePath = "Analyzers/KernelTypeParameter.cs";
+        var source = RoslynTestUtility.ReadTestCase(TestCasePath);
+
+        var diagnostics = await KernelDiagnostics.RunAsync(source, dialect);
+        Assert.DoesNotContain(diagnostics, static d => d.Id == "AD0001");
+    }
 }
