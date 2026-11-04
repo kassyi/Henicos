@@ -102,4 +102,149 @@ public class ManagedQualificationNativeTests : TranspilerTestBase
         // 3 * (next thread + 1)
         Assert.Equal([6, 9, 12, 3], result);
     }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_UsingStaticInGridStrideLoop_MatchesCSharp(bool throughDeviceFunction)
+    {
+        int[] values = [1, 2, 3, 4];
+        var result = new int[4];
+
+        if (throughDeviceFunction)
+        {
+            ManagedQualificationKernels.LaunchGridStrideDeviceFunctionKernel(values, result, values.Length, blockDimX: 4);
+        }
+        else
+        {
+            ManagedQualificationKernels.LaunchGridStrideKernel(values, result, values.Length, blockDimX: 4);
+        }
+
+        Assert.Equal(ExpectedGridStride(values), result);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_UsingStaticInSingleThread_MatchesCSharp(bool throughDeviceFunction)
+    {
+        int[] values = [1, 2, 3, 4];
+        var result = new int[4];
+
+        if (throughDeviceFunction)
+        {
+            ManagedQualificationKernels.LaunchSingleThreadDeviceFunctionKernel(values, result, blockDimX: 4);
+        }
+        else
+        {
+            ManagedQualificationKernels.LaunchSingleThreadKernel(values, result, blockDimX: 4);
+        }
+
+        Assert.Equal(ExpectedSingleThread(values), result);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_UsingStaticInForUnroll_MatchesCSharp(bool throughDeviceFunction)
+    {
+        int[] values = [1, 2, 3, 4];
+        var result = new int[4];
+
+        if (throughDeviceFunction)
+        {
+            ManagedQualificationKernels.LaunchForUnrollDeviceFunctionKernel(values, result, blockDimX: 4);
+        }
+        else
+        {
+            ManagedQualificationKernels.LaunchForUnrollKernel(values, result, blockDimX: 4);
+        }
+
+        Assert.Equal(ExpectedForUnroll(values), result);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_UsingStaticInStackLinqLambda_MatchesCSharp(bool throughDeviceFunction)
+    {
+        int[] values = [1, 2, 3, 4];
+        var result = new int[4];
+
+        if (throughDeviceFunction)
+        {
+            ManagedQualificationKernels.LaunchStackLinqDeviceFunctionKernel(values, result, blockDimX: 4);
+        }
+        else
+        {
+            ManagedQualificationKernels.LaunchStackLinqKernel(values, result, blockDimX: 4);
+        }
+
+        Assert.Equal(ExpectedStackLinq(values), result);
+    }
+
+    // The C# results of the loop and query kernels, written without the macros: Thrice(x) = 3x, Offset = 5, Count = 4
+
+    // result[i] = Thrice(values[i]) + Offset + Thrice(Offset), then + Count
+    internal static int[] ExpectedGridStride(int[] values)
+    {
+        var expected = new int[values.Length];
+        for (var i = 0; i < values.Length; i++)
+        {
+            expected[i] = 3 * values[i] + 5 + 3 * 5 + 4;
+        }
+
+        return expected;
+    }
+
+    // result[0] = Thrice(values[0]) + Offset, by one thread; the others stay 0
+    internal static int[] ExpectedSingleThread(int[] values)
+    {
+        var expected = new int[values.Length];
+        expected[0] = 3 * values[0] + 5;
+        return expected;
+    }
+
+    // Thrice(Offset) + the sum over k < Count of Thrice(values[tid] + k) + Offset
+    internal static int[] ExpectedForUnroll(int[] values)
+    {
+        var expected = new int[values.Length];
+        for (var tid = 0; tid < values.Length; tid++)
+        {
+            var sum = 3 * 5;
+            for (var k = 0; k < 4; k++)
+            {
+                sum += 3 * (values[tid] + k) + 5;
+            }
+
+            expected[tid] = sum;
+        }
+
+        return expected;
+    }
+
+    // The sum over the values with Thrice(x) > Offset of x + Count, plus tid and Thrice(Count)
+    internal static int[] ExpectedStackLinq(int[] values)
+    {
+        var total = 0;
+        foreach (var x in values)
+        {
+            if (3 * x > 5)
+            {
+                total += x + 4;
+            }
+        }
+
+        var expected = new int[values.Length];
+        for (var tid = 0; tid < values.Length; tid++)
+        {
+            expected[tid] = total + tid + 3 * 4;
+        }
+
+        return expected;
+    }
 }

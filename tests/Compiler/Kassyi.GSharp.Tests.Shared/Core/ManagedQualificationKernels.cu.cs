@@ -36,8 +36,34 @@ namespace Kassyi.GSharp.Tests.Shared.Core.Qualification
         public const int Count = 4;
     }
 
+    // A value whose addition is an operator macro: a device function that adds two has a managed version (#711)
+    public struct QualifyWide
+    {
+        public int V;
+
+        [GpuOperatorMacro(typeof(QualifyMath), nameof(QualifyMath.AddWide))]
+        public static QualifyWide operator +(QualifyWide left, QualifyWide right) => throw new GpuOnlyException();
+    }
+
     public static partial class QualifyMath
     {
+        [GpuDeviceFunction]
+        public static void AddWide(ref QualifyWide result, QualifyWide left, QualifyWide right) =>
+            result.V = left.V + right.V;
+
+        // 3x through the operator macro of QualifyWide
+        [GpuDeviceFunction]
+        public static int Thrice(int x)
+        {
+            QualifyWide once;
+            once.V = x;
+            QualifyWide twice;
+            twice.V = x * 2;
+            QualifyWide sum = default;
+            sum = once + twice;
+            return sum.V;
+        }
+
         [GpuDeviceFunction]
         public static int Twice(int x) => x * 2;
 
@@ -79,6 +105,7 @@ namespace Kassyi.GSharp.Tests.Shared.Core
     using static Kassyi.GSharp.Tests.Shared.Core.Qualification.QualifyConstants;
     using static Kassyi.GSharp.Tests.Shared.Core.Qualification.QualifyMath;
     using static Kassyi.GSharp.Tests.Shared.Core.Qualification.QualifyMode;
+    using Kassyi.ZeroAlloc.Linq;
     using Q = Kassyi.GSharp.Tests.Shared.Core.Qualification;
 
     public static partial class ManagedQualificationKernels
@@ -179,6 +206,93 @@ namespace Kassyi.GSharp.Tests.Shared.Core
         {
             int tid = ThreadIndex.X;
             result[tid] = ExchangeWithNext(buffer, tid, tid + 1);
+        }
+
+        // A device function (Thrice) and constants (Offset, Count) named through using static inside the lambda of a
+        // loop macro or a StackLinq query, and outside it. Thrice holds an operator macro, so these device functions have a
+        // managed version (#711), whose body is the user's, not a lowered one: the names inside the lambda must be bound
+        // on that body too, also in a lambda with an expression body, which the rewrite puts into a block.
+        [GpuDeviceFunction]
+        public static void ThriceEachStrided(int[] values, int[] result, int count)
+        {
+            int outside = Thrice(Offset);
+            Gpu.GridStrideLoop(count, i => { result[i] = Thrice(values[i]) + Offset + outside; });
+            Gpu.GridStrideLoop(count, i => result[i] += Count);
+        }
+
+        [GpuDeviceFunction]
+        public static int SumThricesUnrolled(int value)
+        {
+            int sum = Thrice(Offset);
+            Gpu.ForUnroll(0, Count, k => { sum += Thrice(value + k) + Offset; });
+            return sum;
+        }
+
+        [GpuDeviceFunction]
+        public static int SumThricesAboveOffset(int[] values, int tid)
+        {
+            int outside = Thrice(Count);
+            return values.AsSpan().AsStackEnumerable().Where(x => Thrice(x) > Offset).Select(x => x + Count).Sum() +
+                   tid + outside;
+        }
+
+        [GpuDeviceFunction]
+        public static void ThriceFirstOnce(int[] values, int[] result)
+        {
+            Gpu.SingleThread(() => result[0] = Thrice(values[0]) + Offset);
+        }
+
+        [GpuKernel]
+        public static void GridStrideDeviceFunctionKernel(int[] values, int[] result, int count) =>
+            ThriceEachStrided(values, result, count);
+
+        [GpuKernel]
+        public static void GridStrideKernel(int[] values, int[] result, int count)
+        {
+            int outside = Thrice(Offset);
+            Gpu.GridStrideLoop(count, i => { result[i] = Thrice(values[i]) + Offset + outside; });
+            Gpu.GridStrideLoop(count, i => result[i] += Count);
+        }
+
+        [GpuKernel]
+        public static void SingleThreadDeviceFunctionKernel(int[] values, int[] result) => ThriceFirstOnce(values, result);
+
+        [GpuKernel]
+        public static void SingleThreadKernel(int[] values, int[] result)
+        {
+            Gpu.SingleThread(() => result[0] = Thrice(values[0]) + Offset);
+        }
+
+        [GpuKernel]
+        public static void ForUnrollDeviceFunctionKernel(int[] values, int[] result)
+        {
+            int tid = ThreadIndex.X;
+            result[tid] = SumThricesUnrolled(values[tid]);
+        }
+
+        [GpuKernel]
+        public static void ForUnrollKernel(int[] values, int[] result)
+        {
+            int tid = ThreadIndex.X;
+            int sum = Thrice(Offset);
+            Gpu.ForUnroll(0, Count, k => { sum += Thrice(values[tid] + k) + Offset; });
+            result[tid] = sum;
+        }
+
+        [GpuKernel]
+        public static void StackLinqDeviceFunctionKernel(int[] values, int[] result)
+        {
+            int tid = ThreadIndex.X;
+            result[tid] = SumThricesAboveOffset(values, tid);
+        }
+
+        [GpuKernel]
+        public static void StackLinqKernel(int[] values, int[] result)
+        {
+            int tid = ThreadIndex.X;
+            int outside = Thrice(Count);
+            result[tid] = values.AsSpan().AsStackEnumerable().Where(x => Thrice(x) > Offset).Select(x => x + Count).Sum() +
+                          tid + outside;
         }
     }
 }

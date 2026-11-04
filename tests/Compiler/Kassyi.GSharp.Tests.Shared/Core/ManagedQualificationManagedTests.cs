@@ -104,5 +104,102 @@ public class ManagedQualificationManagedTests : TranspilerTestBase
         // 3 * (next thread + 1)
         Assert.Equal([6, 9, 12, 3], result);
     }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_Managed_UsingStaticInGridStrideLoop_MatchesCSharp(bool throughDeviceFunction)
+    {
+        int[] values = [1, 2, 3, 4];
+        var result = new int[4];
+
+        ManagedKernelRun.Run(() =>
+        {
+            if (throughDeviceFunction)
+            {
+                ManagedQualificationKernels.LaunchGridStrideDeviceFunctionKernel(values, result, values.Length,
+                    blockDimX: 4);
+            }
+            else
+            {
+                ManagedQualificationKernels.LaunchGridStrideKernel(values, result, values.Length, blockDimX: 4);
+            }
+        });
+
+        Assert.Equal(ManagedQualificationNativeTests.ExpectedGridStride(values), result);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_Managed_UsingStaticInSingleThread_MatchesCSharp(bool throughDeviceFunction)
+    {
+        int[] values = [1, 2, 3, 4];
+        var result = new int[4];
+
+        ManagedKernelRun.Run(() =>
+        {
+            if (throughDeviceFunction)
+            {
+                ManagedQualificationKernels.LaunchSingleThreadDeviceFunctionKernel(values, result, blockDimX: 4);
+            }
+            else
+            {
+                ManagedQualificationKernels.LaunchSingleThreadKernel(values, result, blockDimX: 4);
+            }
+        });
+
+        Assert.Equal(ManagedQualificationNativeTests.ExpectedSingleThread(values), result);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_Managed_UsingStaticInForUnroll_MatchesCSharp(bool throughDeviceFunction)
+    {
+        int[] values = [1, 2, 3, 4];
+        var result = new int[4];
+
+        ManagedKernelRun.Run(() =>
+        {
+            if (throughDeviceFunction)
+            {
+                ManagedQualificationKernels.LaunchForUnrollDeviceFunctionKernel(values, result, blockDimX: 4);
+            }
+            else
+            {
+                ManagedQualificationKernels.LaunchForUnrollKernel(values, result, blockDimX: 4);
+            }
+        });
+
+        Assert.Equal(ManagedQualificationNativeTests.ExpectedForUnroll(values), result);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_Managed_UsingStaticInStackLinqLambda_MatchesCSharp(bool throughDeviceFunction)
+    {
+        int[] values = [1, 2, 3, 4];
+        var result = new int[4];
+
+        ManagedKernelRun.Run(() =>
+        {
+            if (throughDeviceFunction)
+            {
+                ManagedQualificationKernels.LaunchStackLinqDeviceFunctionKernel(values, result, blockDimX: 4);
+            }
+            else
+            {
+                ManagedQualificationKernels.LaunchStackLinqKernel(values, result, blockDimX: 4);
+            }
+        });
+
+        Assert.Equal(ManagedQualificationNativeTests.ExpectedStackLinq(values), result);
+    }
 }
 #endif
