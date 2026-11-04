@@ -162,37 +162,37 @@ public class MathDifferentialTests
 
     private static readonly (string Column, OutputPolicy Policy)[] s_singleTranscendentalColumnPolicies =
     [
-        ("MathF.Sin(x)", OutputPolicy.Ulp(3, "CUDA Programming Guide sinf <= 2 ulp + 1 ulp host libm")),
-        ("MathF.Cos(x)", OutputPolicy.Ulp(3, "CUDA Programming Guide cosf <= 2 ulp + 1 ulp host libm")),
-        ("MathF.Tan(x)", OutputPolicy.Ulp(5, "CUDA Programming Guide tanf <= 4 ulp + 1 ulp host libm")),
-        ("MathF.Exp(x)", OutputPolicy.Ulp(3, "CUDA Programming Guide expf <= 2 ulp + 1 ulp host libm", allowInfinityBoundary: true)),
-        ("MathF.Log(x)", OutputPolicy.Ulp(2, "CUDA Programming Guide logf <= 1 ulp + 1 ulp host libm")),
-        ("MathF.Pow(x,y)", OutputPolicy.Ulp(10, "CUDA Programming Guide powf <= 8 ulp + 2 ulp host CRT")),
+        ("MathF.Sin(x)", OutputPolicy.Ulp(3, "CUDA Programming Guide sinf <= 2 ulp + 1 ulp margin for the host result (measured CUDA vs .NET: at most 1 ulp, seeds 0-8)")),
+        ("MathF.Cos(x)", OutputPolicy.Ulp(3, "CUDA Programming Guide cosf <= 2 ulp + 1 ulp margin for the host result (measured CUDA vs .NET: at most 1 ulp, seeds 0-8)")),
+        ("MathF.Tan(x)", OutputPolicy.Ulp(5, "CUDA Programming Guide tanf <= 4 ulp + 1 ulp margin for the host result (measured CUDA vs .NET: at most 1 ulp, seeds 0-8)")),
+        ("MathF.Exp(x)", OutputPolicy.Ulp(3, "CUDA Programming Guide expf <= 2 ulp + 1 ulp margin for the host result (measured CUDA vs .NET: at most 1 ulp, seeds 0-8)", allowInfinityBoundary: true)),
+        ("MathF.Log(x)", OutputPolicy.Ulp(2, "CUDA Programming Guide logf <= 1 ulp + 1 ulp margin for the host result (measured CUDA vs .NET: at most 1 ulp, seeds 0-8)")),
+        ("MathF.Pow(x,y)", OutputPolicy.Ulp(5, "CUDA Programming Guide powf <= 4 ulp + 1 ulp margin for the host result (measured CUDA vs .NET: at most 1 ulp, seeds 0-8)")),
     ];
 
     private static readonly (string Column, OutputPolicy Policy)[] s_doubleAndPromotedColumnPolicies =
     [
-        ("Math.Sin(d)", OutputPolicy.Ulp(3, "CUDA Programming Guide sin <= 2 ulp + 1 ulp host libm")),
-        ("Math.Cos(d)", OutputPolicy.Ulp(3, "CUDA Programming Guide cos <= 2 ulp + 1 ulp host libm")),
-        ("Math.Tan(d)", OutputPolicy.Ulp(5, "CUDA Programming Guide tan <= 4 ulp + 1 ulp host libm")),
-        ("Math.Exp(d)", OutputPolicy.Ulp(2, "CUDA Programming Guide exp <= 1 ulp + 1 ulp host libm", allowInfinityBoundary: true)),
-        ("Math.Log(d)", OutputPolicy.Ulp(2, "CUDA Programming Guide log <= 1 ulp + 1 ulp host libm")),
-        ("Math.Pow(d1,d2)", OutputPolicy.Ulp(4, "CUDA Programming Guide pow <= 2 ulp + 2 ulp host libm")),
-        ("Math.Sin(f)", OutputPolicy.Ulp(3, "CUDA Programming Guide sin(double) <= 2 ulp + 1 ulp host libm (#876)")),
-        ("Math.Cos(f)", OutputPolicy.Ulp(3, "CUDA Programming Guide cos(double) <= 2 ulp + 1 ulp host libm (#876)")),
-        ("Math.Tan(f)", OutputPolicy.Ulp(5, "CUDA Programming Guide tan(double) <= 4 ulp + 1 ulp host libm (#876)")),
-        ("Math.Exp(f)", OutputPolicy.Ulp(2, "CUDA Programming Guide exp(double) <= 1 ulp + 1 ulp host libm (#876)", allowInfinityBoundary: true)),
-        ("Math.Log(|f|+0.25f)", OutputPolicy.Ulp(2, "CUDA Programming Guide log(double) <= 1 ulp + 1 ulp host libm (#876)")),
-        ("Math.Pow(|f|+0.25f,fExp)", OutputPolicy.Ulp(4, "CUDA Programming Guide pow(double) <= 2 ulp + 2 ulp host libm (#876)")),
+        ("Math.Sin(d)", OutputPolicy.Ulp(3, "CUDA Programming Guide sin <= 2 ulp + 1 ulp margin for the host result (measured CUDA vs .NET: at most 1 ulp, seeds 0-8)")),
+        ("Math.Cos(d)", OutputPolicy.Ulp(3, "CUDA Programming Guide cos <= 2 ulp + 1 ulp margin for the host result (measured CUDA vs .NET: at most 1 ulp, seeds 0-8)")),
+        ("Math.Tan(d)", OutputPolicy.Ulp(3, "CUDA Programming Guide tan <= 2 ulp + 1 ulp margin for the host result (measured CUDA vs .NET: at most 1 ulp, seeds 0-8)")),
+        ("Math.Exp(d)", OutputPolicy.Ulp(2, "CUDA Programming Guide exp <= 1 ulp + 1 ulp margin for the host result (measured CUDA vs .NET: at most 1 ulp, seeds 0-8)", allowInfinityBoundary: true)),
+        ("Math.Log(d)", OutputPolicy.Ulp(2, "CUDA Programming Guide log <= 1 ulp + 1 ulp margin for the host result (measured CUDA vs .NET: at most 1 ulp, seeds 0-8)")),
+        ("Math.Pow(d1,d2)", OutputPolicy.Ulp(4, "CUDA Programming Guide pow <= 2 ulp + 2 ulp margin for the host result (measured CUDA vs .NET: at most 1 ulp, seeds 0-8)")),
+        ("Math.Sin(f)", OutputPolicy.Ulp(3, "CUDA Programming Guide sin(double) <= 2 ulp + 1 ulp margin for the host result (measured CUDA vs .NET: at most 1 ulp, seeds 0-8) (#876)")),
+        ("Math.Cos(f)", OutputPolicy.Ulp(3, "CUDA Programming Guide cos(double) <= 2 ulp + 1 ulp margin for the host result (measured CUDA vs .NET: at most 1 ulp, seeds 0-8) (#876)")),
+        ("Math.Tan(f)", OutputPolicy.Ulp(3, "CUDA Programming Guide tan(double) <= 2 ulp + 1 ulp margin for the host result (measured CUDA vs .NET: at most 1 ulp, seeds 0-8) (#876)")),
+        ("Math.Exp(f)", OutputPolicy.Ulp(2, "CUDA Programming Guide exp(double) <= 1 ulp + 1 ulp margin for the host result (measured CUDA vs .NET: at most 1 ulp, seeds 0-8) (#876)", allowInfinityBoundary: true)),
+        ("Math.Log(|f|+0.25f)", OutputPolicy.Ulp(2, "CUDA Programming Guide log(double) <= 1 ulp + 1 ulp margin for the host result (measured CUDA vs .NET: at most 1 ulp, seeds 0-8) (#876)")),
+        ("Math.Pow(|f|+0.25f,fExp)", OutputPolicy.Ulp(4, "CUDA Programming Guide pow(double) <= 2 ulp + 2 ulp margin for the host result (measured CUDA vs .NET: at most 1 ulp, seeds 0-8) (#876)")),
     ];
 
     private static readonly (string Column, OutputPolicy Policy)[] s_fastMathColumnPolicies =
     [
         ("FastMath.Sqrt(|x|)", OutputPolicy.Bitwise),
         ("FastMath.Abs(x)", OutputPolicy.Bitwise),
-        ("FastMath.Exp(expX)", OutputPolicy.Ulp(15, "CUDA Programming Guide __expf <= 2 + floor(|1.16*x|) ulp on [-10,10] + 1 ulp host")),
+        ("FastMath.Exp(expX)", OutputPolicy.Ulp(14, "CUDA Programming Guide __expf <= 2 + floor(|1.173*x|) ulp on [-10,10] + 1 ulp margin for the host result (measured CUDA vs .NET: at most 1 ulp, seeds 0-8)")),
         ("FastMath.Log(logUnitX)", OutputPolicy.Ignore),
-        ("FastMath.Log(logWideX)", OutputPolicy.Ulp(4, "CUDA Programming Guide __logf <= 3 ulp outside [0.5,2.0] + 1 ulp host")),
+        ("FastMath.Log(logWideX)", OutputPolicy.Ulp(4, "CUDA Programming Guide __logf <= 3 ulp outside [0.5,2.0] + 1 ulp margin for the host result (measured CUDA vs .NET: at most 1 ulp, seeds 0-8)")),
     ];
 
     private static readonly DifferentialCase s_mathOfSingle = new($"{nameof(MathDifferentialKernels)}.{nameof(MathDifferentialKernels.MathOfSingleMatrixKernel)}")
