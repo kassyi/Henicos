@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Compiler.Analysis;
+
 namespace Kassyi.GSharp.Compiler.Lowering;
 
 /// <summary>Provides helper methods to detect phase barrier and warp shuffle invocations in lowered syntax trees.</summary>
@@ -44,34 +46,36 @@ internal static class BarrierHelper
     }
 
     /// <summary>
-    /// Determines whether the specified invocation is a warp shuffle (<c>Warp.ShuffleSync</c>, <c>ShuffleDownSync</c>,
-    /// <c>ShuffleUpSync</c> or <c>ShuffleXorSync</c>).
+    /// Determines whether the specified invocation is a warp shuffle (<c>Warp.Shuffle*Sync</c>, <c>Gpu.Match*Sync</c>).
     /// </summary>
     /// <remarks>
     /// Other <c>Warp</c> / <c>Gpu</c> members (<c>Gpu.WarpId()</c>, <c>Gpu.LaneId()</c>) are plain intrinsics and do not
     /// split the state machine.
     /// </remarks>
-    public static bool IsWarpShuffle(InvocationExpressionSyntax inv) => TryGetWarpShuffleRead(inv, out _);
+    public static bool IsWarpShuffle(InvocationExpressionSyntax inv) => TryGetWarpShuffle(inv, out _);
 
     /// <summary>
-    /// Gets the Prelude function that reads the result of a warp shuffle after the state machine resumes
-    /// (<c>__gsharp_warp_shuffle_read_down_sync</c> for <c>Warp.ShuffleDownSync</c>, ...).
+    /// Gets the <see cref="WarpShuffleKind"/> of a warp shuffle invocation that splits the state machine.
     /// </summary>
-    public static bool TryGetWarpShuffleRead(InvocationExpressionSyntax inv, [NotNullWhen(true)] out string? readFunction)
+    public static bool TryGetWarpShuffle(InvocationExpressionSyntax inv, out WarpShuffleKind kind)
     {
-        readFunction = TryGetSyncIntrinsic(inv, out var data)
-            ? data switch
+        if (TryGetSyncIntrinsic(inv, out var data))
+        {
+            kind = data switch
             {
-                LoweringAnnotations.ShuffleSyncAnnotationData => GSharpInternalNames.Prelude.WarpShuffleReadSync,
-                LoweringAnnotations.ShuffleDownAnnotationData => GSharpInternalNames.Prelude.WarpShuffleReadDownSync,
-                LoweringAnnotations.ShuffleUpAnnotationData => GSharpInternalNames.Prelude.WarpShuffleReadUpSync,
-                LoweringAnnotations.ShuffleXorAnnotationData => GSharpInternalNames.Prelude.WarpShuffleReadXorSync,
-                LoweringAnnotations.MatchAnyAnnotationData => GSharpInternalNames.Prelude.WarpMatchAnyRead,
-                LoweringAnnotations.MatchAllAnnotationData => GSharpInternalNames.Prelude.WarpMatchAllRead,
-                _ => null
-            }
-            : null;
-        return readFunction is not null;
+                LoweringAnnotations.ShuffleSyncAnnotationData => WarpShuffleKind.Sync,
+                LoweringAnnotations.ShuffleDownAnnotationData => WarpShuffleKind.Down,
+                LoweringAnnotations.ShuffleUpAnnotationData => WarpShuffleKind.Up,
+                LoweringAnnotations.ShuffleXorAnnotationData => WarpShuffleKind.Xor,
+                LoweringAnnotations.MatchAnyAnnotationData => WarpShuffleKind.MatchAny,
+                LoweringAnnotations.MatchAllAnnotationData => WarpShuffleKind.MatchAll,
+                _ => WarpShuffleKind.None
+            };
+            return kind != WarpShuffleKind.None;
+        }
+
+        kind = WarpShuffleKind.None;
+        return false;
     }
 
     // The data of the synchronization intrinsic annotation of a call
