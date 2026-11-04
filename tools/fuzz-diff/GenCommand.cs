@@ -60,6 +60,7 @@ public sealed class GenCommand : IFuzzCommand
         string profile = "C";
         var allowedIssues = new HashSet<int>();
         FuzzSwarmFocus swarmFocus = FuzzSwarmFocus.Default;
+        bool metamorphic = false;
         string outDir = Path.Combine("tmp", "differential-fuzz", "Generated");
         string? repoRoot = null;
         string? cudaArch = null;
@@ -141,6 +142,10 @@ public sealed class GenCommand : IFuzzCommand
 
                     break;
 
+                case "--metamorphic":
+                    metamorphic = true;
+                    break;
+
                 case "--out-dir":
                     if (i + 1 >= args.Length)
                     {
@@ -186,6 +191,7 @@ public sealed class GenCommand : IFuzzCommand
             Profile = profile,
             AllowedIssues = allowedIssues,
             SwarmFocus = swarmFocus,
+            Metamorphic = metamorphic,
         };
 
         options = new GenCommandOptions(fuzzOptions, outDir, repoRoot, cudaArch);

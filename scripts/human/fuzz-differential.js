@@ -30,6 +30,9 @@ const helpText = [
   '  --input-seed <int>                 Optional explicit runtime data input seed (default: 0..8).',
   '  --allow-issue <n>                  Re-enable generation of shapes avoided for known issue #<n> (repeatable).',
   '  --swarm-focus <mode>               Optional Swarm focus mode (default, coalesce-assign-value, tuple-deconstruct-complex).',
+  '  --metamorphic                      Generate semantics-preserving transformed kernel variants per kernel.',
+  '  --compare-base <ref>               Compare the generated native and C# code with git <ref> (fuzz-diff compare, no GPU).',
+  '  --expect-change                    Exit 0 when --compare-base finds differences.',
   '  --work-dir <dir>                   Workspace directory for temporary projects (default: tmp/differential-fuzz).',
   '  --out-dir <dir>                    Output directory for generated sources (default: <work-dir>/Generated).',
   '  --no-reduce                        Skip automatic 2-stage reduction and fingerprint deduplication on failure.',
@@ -74,6 +77,9 @@ function parseArgs(argv) {
     inputSeed: null,
     allowedIssues: [],
     swarmFocus: null,
+    metamorphic: false,
+    compareBase: null,
+    expectChange: false,
     workDir: path.join(repoRoot, 'tmp', 'differential-fuzz'),
     outDir: null,
     noReduce: false,
@@ -135,6 +141,15 @@ function parseArgs(argv) {
       i = nextIndex;
       if (!value) fail('--swarm-focus requires a focus mode.', 2);
       options.swarmFocus = value;
+    } else if (arg === '--metamorphic') {
+      options.metamorphic = true;
+    } else if (arg === '--compare-base' || arg.startsWith('--compare-base=')) {
+      const { value, nextIndex } = takeValue(i, '--compare-base');
+      i = nextIndex;
+      if (!value) fail('--compare-base requires a git ref.', 2);
+      options.compareBase = value;
+    } else if (arg === '--expect-change') {
+      options.expectChange = true;
     } else if (arg === '--work-dir' || arg.startsWith('--work-dir=')) {
       const { value, nextIndex } = takeValue(i, '--work-dir');
       i = nextIndex;
@@ -223,8 +238,7 @@ function hasAssetsJson(csprojPath) {
   return fs.existsSync(path.join(path.dirname(csprojPath), 'obj', hostOs, 'project.assets.json'));
 }
 
-function ensurePrereqsBuilt(fuzzToolProj) {
-  process.stdout.write('[fuzz-diff] Building tools/fuzz-diff and compiler/runtime prerequisites...\n');
+function buildFuzzTool(fuzzToolProj) {
   const toolArgs = ['build', fuzzToolProj, '-c', 'Debug', '-m:1', '-nodeReuse:false'];
   if (hasAssetsJson(fuzzToolProj)) toolArgs.push('--no-restore');
   const toolBuild = runCommand('dotnet', toolArgs);
@@ -232,6 +246,11 @@ function ensurePrereqsBuilt(fuzzToolProj) {
     process.stderr.write(toolBuild.stdout + '\n' + toolBuild.stderr + '\n');
     fail('Failed to build tools/fuzz-diff.');
   }
+}
+
+function ensurePrereqsBuilt(fuzzToolProj) {
+  process.stdout.write('[fuzz-diff] Building tools/fuzz-diff and compiler/runtime prerequisites...\n');
+  buildFuzzTool(fuzzToolProj);
 
   const prereqProjects = [
     { proj: path.join(repoRoot, 'src', 'Core', 'Kassyi.GSharp.Core', 'Kassyi.GSharp.Core.csproj'), dll: path.join(repoRoot, 'src', 'Core', 'Kassyi.GSharp.Core', 'bin', hostOs, 'Debug', 'net10.0', 'Kassyi.GSharp.Core.dll') },
@@ -416,6 +435,7 @@ function runSingleBatch(ctx, batchIndex, seedHex) {
   if (options.inputSeed !== null) genArgs.push('--input-seed', String(options.inputSeed));
   for (const allowedIssue of options.allowedIssues) genArgs.push('--allow-issue', String(allowedIssue));
   if (options.swarmFocus) genArgs.push('--swarm-focus', options.swarmFocus);
+  if (options.metamorphic) genArgs.push('--metamorphic');
   if (cudaArch) genArgs.push('--cuda-arch', cudaArch);
 
   const genRes = runCommand('dotnet', genArgs, { timeoutMs: 60_000 });
@@ -542,6 +562,7 @@ function writeRunSummary(ctx) {
   const finalPureKernelsPerHour = Math.round((totalKernels / pureEvalTotalSec) * 3600);
   const summary = {
     profile: options.profile, allowedIssues: options.allowedIssues, swarmFocus: options.swarmFocus || 'default',
+    metamorphic: Boolean(options.metamorphic),
     activeKnownIssues, batches: batchIndex, batchSize: options.batchSize, totalKernels,
     elapsedSeconds: Number(elapsedSec), reductionSeconds: Number((totalReductionMs / 1000).toFixed(2)),
     kernelsPerHour: finalKernelsPerHour, pureEvalKernelsPerHour: finalPureKernelsPerHour,
@@ -553,8 +574,46 @@ function writeRunSummary(ctx) {
   );
 }
 
+// Compares the generated code of --compare-base <ref> and the working tree with `fuzz-diff compare`, which builds
+// both compilers, compares per kernel, reduces and writes findings; its exit code is passed on.
+function runCompareBaseMode(options) {
+  const fuzzToolProj = path.join(repoRoot, 'tools', 'fuzz-diff', 'Kassyi.GSharp.Tools.FuzzDiff.csproj');
+  const fuzzToolDll = path.join(repoRoot, 'tools', 'fuzz-diff', 'bin', hostOs, 'Debug', 'net10.0', 'Kassyi.GSharp.Tools.FuzzDiff.dll');
+  process.stdout.write('[fuzz-compare] Building tools/fuzz-diff...\n');
+  buildFuzzTool(fuzzToolProj);
+
+  const args = [
+    'exec', fuzzToolDll, 'compare',
+    '--base', options.compareBase,
+    '--batches', String(options.batches !== null ? options.batches : 20),
+    '--batch-size', String(options.batchSize),
+    '--fuzz-seed', formatHexSeed(options.fuzzSeed),
+    '--profile', options.profile,
+    '--work-dir', options.workDir,
+    '--repo-root', repoRoot,
+  ];
+  if (options.inputSeed !== null) args.push('--input-seed', String(options.inputSeed));
+  for (const allowedIssue of options.allowedIssues) args.push('--allow-issue', String(allowedIssue));
+  if (options.swarmFocus) args.push('--swarm-focus', options.swarmFocus);
+  if (options.metamorphic) args.push('--metamorphic');
+  if (options.expectChange) args.push('--expect-change');
+  if (options.noReduce) args.push('--no-reduce');
+
+  const result = spawnSync('dotnet', args, {
+    cwd: repoRoot,
+    env: { ...process.env, DiffEngine_Disabled: 'true', CI: 'true', DOTNET_NOLOGO: '1' },
+    stdio: 'inherit',
+  });
+  if (result.error) fail(`Failed to start fuzz-diff compare: ${result.error.message}`);
+  process.exit(result.status === null ? 1 : result.status);
+}
+
 function main() {
   const options = parseArgs(process.argv.slice(2));
+  if (options.compareBase) {
+    runCompareBaseMode(options);
+    return;
+  }
   const ctx = prepareWorkspace(options);
 
   while (true) {
@@ -572,7 +631,7 @@ function main() {
     handleBatchFindings(ctx, seedHex, batchResult);
 
     ctx.batchIndex++;
-    ctx.totalKernels += options.batchSize;
+    ctx.totalKernels += options.metamorphic ? options.batchSize * 3 : options.batchSize;
 
     const batchSec = ((Date.now() - batchStartMs) / 1000).toFixed(2);
     const totalSec = (Date.now() - ctx.startMs) / 1000;

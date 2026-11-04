@@ -33,6 +33,10 @@ test-differential-cuda *args="":
 fuzz-diff profile="cpu" minutes="5" *args="":
     node scripts/human/fuzz-differential.js --profile {{profile}} --minutes {{minutes}} {{args}}
 
+# Compare generated C++/CUDA of a base ref and the working tree on fuzzer kernels
+fuzz-compare base="origin/main" batches="20" *args="":
+    node scripts/human/fuzz-differential.js --compare-base {{base}} --batches {{batches}} {{args}}
+
 # Run tests multiple times to detect flaky tests
 # count can take the time: 
 #	test-stability 5h15m # for 5 hours 15 minutes

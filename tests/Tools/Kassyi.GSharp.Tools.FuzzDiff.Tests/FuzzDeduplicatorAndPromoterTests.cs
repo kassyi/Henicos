@@ -191,7 +191,8 @@ public class FuzzDeduplicatorAndPromoterTests
     [Scenario(TestScenario.HappyPath)]
     public void FuzzCommands_CommandTableAndOptionParsing_SeparatesOptionsFromExecution()
     {
-        Assert.Equal(4, Program.Commands.Count);
+        Assert.Equal(5, Program.Commands.Count);
+        Assert.Contains(Program.Commands, static c => c.Name == "compare");
 
         bool parsedGen = GenCommand.TryParseOptions(
             ["--fuzz-seed", "0x2A", "--batch-size", "8", "--profile", "G", "--allow-issue", "1101", "--swarm-focus", "coalesce-assign-value"],

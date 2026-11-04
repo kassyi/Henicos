@@ -21,6 +21,9 @@
     <Using Include="Kassyi.GSharp.Tests.Shared.Helpers" />
     <Compile Include="..\..\Compiler\Kassyi.GSharp.Tests.Shared\Differential\Harness\*.cs" Exclude="..\..\Compiler\Kassyi.GSharp.Tests.Shared\Differential\Harness\KnownDivergences.cs" />
     <Compile Include="..\..\Compiler\Kassyi.GSharp.Tests.Shared\Helpers\ManagedKernelRun.cs" />
+    <!-- Kernel sources that the tests read as input; they are not compiled into the test assembly -->
+    <Compile Remove="TestCases\**\*.cs" />
+    <None Include="TestCases\**\*.cs" />
   </ItemGroup>
 
   <ItemGroup>

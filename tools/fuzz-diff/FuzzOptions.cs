@@ -55,6 +55,12 @@ public sealed record FuzzOptions
 
     /// <summary>Gets the optional Swarm Testing focus mode.</summary>
     public FuzzSwarmFocus SwarmFocus { get; init; } = FuzzSwarmFocus.Default;
+
+    /// <summary>Gets whether to emit C#-semantics-preserving metamorphic kernel variants alongside each generated kernel (#1138).</summary>
+    public bool Metamorphic { get; init; }
+
+    /// <summary>Gets the number of metamorphic variants emitted per base kernel when <see cref="Metamorphic"/> is <see langword="true"/>.</summary>
+    public int MetamorphicVariantsPerKernel { get; init; } = 2;
 }
 
 /// <summary>

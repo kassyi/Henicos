@@ -60,7 +60,7 @@ public static class FuzzBatchWorkspaceWriter
         WriteIfChanged(cudaProjPath, BuildProjectXml(dialect: "Cuda", relGen, relRepo, cudaArch));
     }
 
-    private static string BuildDirectoryBuildProps() =>
+    internal static string BuildDirectoryBuildProps() =>
         """
         <Project>
           <!-- Isolated temporary fuzz batch build configuration: stops root analyzer/StyleCop inheritance. -->
@@ -189,7 +189,7 @@ public static class FuzzBatchWorkspaceWriter
             """;
     }
 
-    private static string NormalizeSlashes(string path) =>
+    internal static string NormalizeSlashes(string path) =>
         string.Create(path.Length, path, static (span, src) =>
         {
             for (int i = 0; i < src.Length; i++)
