@@ -111,9 +111,9 @@ internal static class PinnedStagingPool
                 {
                     buffer.Dispose();
                 }
+                // smell-scan: ignore swallowed-exception -- the failure is reported through Logger.Warning; the memory stays allocated but untracked, and a broken context cannot reuse it either way
                 catch (CudaException ex)
                 {
-                    // The memory stays allocated but is no longer tracked; a broken context cannot reuse it either way.
                     Logger.Warning(nameof(PinnedStagingPool), $"Failed to free a pinned staging buffer: {ex.Message}");
                 }
                 finally

@@ -122,6 +122,7 @@ internal sealed class CodegenCompareRunner
         {
             Directory.Delete(runDir, recursive: true);
         }
+        // smell-scan: ignore swallowed-exception -- the failure is written to standard error; a run directory that cannot be deleted must not stop the comparison
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             Console.Error.WriteLine($"[fuzz-compare] Could not delete {runDir}: {ex.Message}");

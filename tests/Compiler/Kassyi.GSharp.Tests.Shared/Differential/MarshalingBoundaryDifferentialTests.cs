@@ -483,11 +483,9 @@ public sealed class MarshalingBoundaryDifferentialTests
                 );
                 b.SetScalar("oc", oc);
             }
+            // smell-scan: ignore swallowed-exception -- #961: the native CPU P/Invoke delegate cannot marshal System.Nullable<T>; probe/rb/oc keep their initial values so KnownDivergences reports the mismatch
             catch (MarshalDirectiveException) when (!CpuKernelLoader.ForceManagedExecution)
             {
-                // #961: Native CPU P/Invoke delegate embeds generic System.Nullable<T> directly,
-                // throwing MarshalDirectiveException. Leaving probe/rb/oc at initial values
-                // surfaces the mismatch for KnownDivergences (#961).
             }
 #else
             MarshalingBoundaryDifferentialKernels.LaunchNullableBlitScalarArgKernel(
