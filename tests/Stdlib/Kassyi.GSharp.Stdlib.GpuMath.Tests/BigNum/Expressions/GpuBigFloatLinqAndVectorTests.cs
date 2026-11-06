@@ -738,6 +738,31 @@ public class GpuBigFloatLinqAndVectorTests : IDisposable
         Assert.Throws<ArgumentException>(() => new GpuBigFloatArray(significands, exponents, signs));
     }
 
+    // One-word significands with equal exponents: the sum of two full words carries out of the element width and is
+    // kept by raising the exponent, and a sum of opposite signs takes its sign from the borrow, not from the top bit.
+    // mutant: the carry out dropped (4294967294); the sign read from the top bit of the difference (+2)
+    [Theory]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(new long[] { 0xFFFFFFFFL, 0xFFFFFFFFL }, 8589934590L)]
+    [InlineData(new long[] { 1, -0xFFFFFFFFL }, -4294967294L)]
+    [InlineData(new long[] { -0xFFFFFFFFL, 1 }, -4294967294L)]
+    [InlineData(new long[] { 0x80000000L, 0x80000000L, 0x80000000L, 0x80000000L }, 8589934592L)]
+    [InlineData(new long[] { -0x80000000L, -0x80000000L, 0x7FFFFFFEL }, -2147483650L)]
+    public void GpuBigFloatArray_Sum_OneWordElements_KeepsTheCarryAndTheSign(long[] values, long expected)
+    {
+        using var array = new GpuBigFloatArray(_context, values.Length, 1);
+        for (var i = 0; i < values.Length; i++)
+        {
+            using var element = CreateFloat(values[i], numWords: 1);
+            array.SetElement(i, element);
+        }
+
+        using var sum = array.AsVectorizedEnumerable().Sum(_context);
+
+        AssertExactSum("Sum", expected, 1, sum);
+    }
+
     // SetElement replaces the whole element: a shorter value leaves no stale upper words, and it never writes
     // past the element into its neighbour.
     [Fact]
