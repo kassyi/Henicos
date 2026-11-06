@@ -80,6 +80,7 @@ internal sealed class LongStringLiteralDetector : ThresholdSmellDetector
                 }
 
                 info.HasOther |= !isRaw.Value;
+                info.Literals.Add(token.Text);
             }
         }
 
@@ -113,7 +114,8 @@ internal sealed class LongStringLiteralDetector : ThresholdSmellDetector
             info.Parent is null ? string.Empty : SyntaxSymbolNamer.Name(info.Parent),
             columns,
             1,
-            textLine.Start));
+            textLine.Start,
+            NodeKey: SyntaxText.HashOf(string.Join("\u0001", info.Literals))));
     }
 
     private static int CodePoints(SourceText text, TextSpan span)
@@ -174,5 +176,7 @@ internal sealed class LongStringLiteralDetector : ThresholdSmellDetector
         public SyntaxNode? Parent { get; } = parent;
 
         public bool HasOther { get; set; }
+
+        public List<string> Literals { get; } = [];
     }
 }

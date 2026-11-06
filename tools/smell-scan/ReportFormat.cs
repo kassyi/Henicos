@@ -11,4 +11,10 @@ internal enum ReportFormat
 
     /// <summary>Plain text.</summary>
     Text,
+
+    /// <summary>Markdown tables: counts by rule, project and file, and the largest findings of each rule.</summary>
+    Markdown,
+
+    /// <summary>GitHub Actions workflow commands, one warning per finding.</summary>
+    Github,
 }

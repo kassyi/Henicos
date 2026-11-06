@@ -31,6 +31,12 @@ internal static class SyntaxText
         return text.ToString();
     }
 
+    /// <summary>Returns a hash of <see cref="Compact"/> of <paramref name="node"/>, the same for any formatting or comments.</summary>
+    public static string Hash(SyntaxNode node) => HashOf(Compact(node));
+
+    /// <summary>Returns the hash of <paramref name="text"/> as 16 hexadecimal digits.</summary>
+    public static string HashOf(string text) => Kassyi.GSharp.Hashing.Fnv1A64.Compute(text).ToString("x16");
+
     // A name that follows a closing type token is an element name of a tuple: List<int> Items, int[] Numbers, string? Name.
     private static bool NeedsSpace(char previous, char next) =>
         IsWordCharacter(next) && (IsWordCharacter(previous) || previous is '>' or ']' or '?');

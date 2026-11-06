@@ -13,6 +13,7 @@ public static class Program
     internal const string HelpText =
         """
         Usage:
+          node scripts/human/smell-scan.js [options] [paths...]
           dotnet run --project tools/smell-scan -c Release -- [options] [paths...]
 
         Measures size, nesting and error-handling smells of C# files with Roslyn and prints a report.
@@ -25,8 +26,12 @@ public static class Program
                                The files are read from the working tree, so uncommitted edits are measured.
                                A partial type is added up from the files scanned, so list all its parts for a full size.
           --root <dir>         Repository root (default: the checkout that holds the current directory).
-          --out <file>         Write the report here instead of standard output.
-          --format <name>      json (default), sarif or text.
+          --baseline <json>    A JSON report of an earlier run (same configuration); report only the findings whose
+                               fingerprint it does not have, that is, the new ones.
+          --out <file>         Write the report here instead of standard output. With several formats it is a directory
+                               that receives smells.json, smells.sarif, smells.md and smells.txt.
+          --format <names>     json (default), sarif, text, markdown or github (GitHub Actions warnings, for a new-findings
+                               run); comma-separated for several, as in json,sarif,markdown.
           --report <name>      findings (default) or metrics. metrics lists the largest measurements of each rule,
                                above the threshold or not, as text.
           --top <n>            Measurements of each rule that --report metrics lists (default 10).
@@ -95,18 +100,13 @@ public static class Program
         var metricsTop = options.Report == ReportMode.Metrics ? options.Top ?? DefaultTop : 0;
         var runner = new ScanRunner(root, config, options.Parallelism ?? Environment.ProcessorCount, metricsTop);
         var report = runner.Run(selection.Files, configPath, configText);
+        if (options.Baseline is not null)
+        {
+            report = BaselineFilter.KeepNew(report, File.ReadAllText(options.Baseline));
+        }
 
         clock.Restart();
-        var bytes = Write(report, options);
-        if (options.Out is null)
-        {
-            using var output = Console.OpenStandardOutput();
-            output.Write(bytes);
-        }
-        else
-        {
-            File.WriteAllBytes(options.Out, bytes);
-        }
+        WriteReports(report, options);
 
         if (options.Timing)
         {
@@ -116,17 +116,45 @@ public static class Program
         return 0;
     }
 
-    private static byte[] Write(ScanReport report, CommandLineOptions options)
+    private static void WriteReports(ScanReport report, CommandLineOptions options)
+    {
+        if (options.Formats.Count > 1 && options.Out is { } directory)
+        {
+            Directory.CreateDirectory(directory);
+            foreach (var format in options.Formats)
+            {
+                File.WriteAllBytes(Path.Combine(directory, ReportFormatFiles.NameOf(format)), Write(report, options, format));
+            }
+
+            return;
+        }
+
+        var single = options.Formats.Count > 0 ? options.Formats[0] : ReportFormat.Json;
+        var bytes = Write(report, options, single);
+        if (options.Out is null)
+        {
+            using var output = Console.OpenStandardOutput();
+            output.Write(bytes);
+        }
+        else
+        {
+            File.WriteAllBytes(options.Out, bytes);
+        }
+    }
+
+    private static byte[] Write(ScanReport report, CommandLineOptions options, ReportFormat format)
     {
         if (options.Report == ReportMode.Metrics)
         {
             return TextReportWriter.WriteMetrics(report);
         }
 
-        return options.Format switch
+        return format switch
         {
             ReportFormat.Sarif => SarifReportWriter.Write(report),
             ReportFormat.Text => TextReportWriter.WriteFindings(report),
+            ReportFormat.Markdown => MarkdownReportWriter.Write(report),
+            ReportFormat.Github => GithubAnnotationWriter.Write(report),
             _ => JsonReportWriter.Write(report),
         };
     }

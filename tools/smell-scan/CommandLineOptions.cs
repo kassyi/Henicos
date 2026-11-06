@@ -12,7 +12,7 @@ internal sealed class CommandLineOptions
     /// <summary>Gets or sets the JSON file that lists the files to scan.</summary>
     public string? FilesFrom { get; set; }
 
-    /// <summary>Gets or sets the file the report is written to; standard output when not given.</summary>
+    /// <summary>Gets or sets the file the report is written to (the directory when several formats are given); standard output when not given.</summary>
     public string? Out { get; set; }
 
     /// <summary>Gets or sets the degree of parallelism; the number of processors when not given.</summary>
@@ -21,8 +21,14 @@ internal sealed class CommandLineOptions
     /// <summary>Gets or sets the git revision; the files that changed since its common ancestor with HEAD are scanned.</summary>
     public string? Changed { get; set; }
 
-    /// <summary>Gets or sets the form of the report; <see cref="ReportFormat.Json"/> when not given (text for a metrics listing).</summary>
-    public ReportFormat? Format { get; set; }
+    /// <summary>
+    /// Gets the forms of the report; <see cref="ReportFormat.Json"/> when empty (text for a metrics listing). Several forms
+    /// are written as files into the directory of <see cref="Out"/>.
+    /// </summary>
+    public List<ReportFormat> Formats { get; } = [];
+
+    /// <summary>Gets or sets the JSON report of an earlier run; only the findings it does not have are reported.</summary>
+    public string? Baseline { get; set; }
 
     /// <summary>Gets or sets what the report lists.</summary>
     public ReportMode Report { get; set; } = ReportMode.Findings;

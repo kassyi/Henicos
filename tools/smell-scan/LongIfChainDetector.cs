@@ -54,7 +54,8 @@ internal sealed class LongIfChainDetector : ThresholdSmellDetector
                 SyntaxSymbolNamer.Name(first),
                 branches,
                 CodeLineCounter.PhysicalLines(context.Text, first),
-                first.IfKeyword.SpanStart));
+                first.IfKeyword.SpanStart,
+                NodeKey: SyntaxText.Hash(first)));
         }
     }
 

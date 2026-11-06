@@ -59,7 +59,8 @@ internal sealed class LargeSwitchDetector : ThresholdSmellDetector
             SyntaxSymbolNamer.Name(node),
             cases,
             CodeLineCounter.PhysicalLines(context.Text, node),
-            UnitAnchor.Of(node)));
+            UnitAnchor.Of(node),
+            NodeKey: SyntaxText.Hash(node)));
 
     private static bool IsTable(SwitchStatementSyntax statement)
     {

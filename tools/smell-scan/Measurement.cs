@@ -13,6 +13,11 @@ namespace Kassyi.GSharp.Tools.SmellScan;
 /// Names a unit that is spread over several files, such as a partial type; measurements of the same group in the same
 /// project are added up before they are judged. <see langword="null"/> for a unit that sits in one place.
 /// </param>
+/// <param name="NodeKey">
+/// For a smell that several places of one symbol can have (a catch clause, a string literal, a switch, an if chain), the
+/// hash of the normalized text of the reported node; the fingerprint uses it, so adding, removing or moving one of them
+/// leaves the others' fingerprints as they are. <see langword="null"/> when the symbol itself is the unit.
+/// </param>
 internal sealed record Measurement(
     string Detector,
     string Metric,
@@ -22,4 +27,5 @@ internal sealed record Measurement(
     int Value,
     int PhysicalLines,
     int UnitPosition,
-    string? Group = null);
+    string? Group = null,
+    string? NodeKey = null);

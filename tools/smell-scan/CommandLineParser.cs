@@ -31,7 +31,10 @@ internal static class CommandLineParser
                     options.Out = Value(args, ref i);
                     break;
                 case "--format":
-                    options.Format = Format(Value(args, ref i));
+                    AddFormats(options, Value(args, ref i));
+                    break;
+                case "--baseline":
+                    options.Baseline = Value(args, ref i);
                     break;
                 case "--changed":
                     options.Changed = Value(args, ref i);
@@ -73,9 +76,24 @@ internal static class CommandLineParser
             throw new UsageException("Give only one of paths, --files-from and --changed.");
         }
 
-        if (options.Report == ReportMode.Metrics && options.Format is ReportFormat.Json or ReportFormat.Sarif)
+        if (options.Report == ReportMode.Metrics && options.Formats.Exists(static format => format != ReportFormat.Text))
         {
             throw new UsageException("A metrics listing is written as text only.");
+        }
+
+        if (options.Report == ReportMode.Metrics && options.Baseline is not null)
+        {
+            throw new UsageException("--baseline applies to --report findings.");
+        }
+
+        if (options.Formats.Count > 1 && options.Out is null)
+        {
+            throw new UsageException("Several formats need --out <directory> to write their files into.");
+        }
+
+        if (options.Formats.Count > 1 && options.Formats.Contains(ReportFormat.Github))
+        {
+            throw new UsageException("The github format is written alone, to standard output.");
         }
 
         if (options.Top is not null && options.Report != ReportMode.Metrics)
@@ -84,12 +102,29 @@ internal static class CommandLineParser
         }
     }
 
+    private static void AddFormats(CommandLineOptions options, string names)
+    {
+        foreach (var range in names.AsSpan().Split(','))
+        {
+            var name = names[range];
+            var format = Format(name);
+            if (options.Formats.Contains(format))
+            {
+                throw new UsageException($"The format '{name}' is given twice.");
+            }
+
+            options.Formats.Add(format);
+        }
+    }
+
     private static ReportFormat Format(string name) => name switch
     {
         "json" => ReportFormat.Json,
         "sarif" => ReportFormat.Sarif,
         "text" => ReportFormat.Text,
-        _ => throw new UsageException($"Unsupported format '{name}'; use json, sarif or text."),
+        "markdown" => ReportFormat.Markdown,
+        "github" => ReportFormat.Github,
+        _ => throw new UsageException($"Unsupported format '{name}'; use json, sarif, text, markdown or github."),
     };
 
     private static ReportMode Report(string name) => name switch

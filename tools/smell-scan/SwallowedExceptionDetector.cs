@@ -62,7 +62,8 @@ internal sealed class SwallowedExceptionDetector : ThresholdSmellDetector
                 SyntaxSymbolNamer.Name(clause),
                 1,
                 CodeLineCounter.PhysicalLines(context.Text, clause),
-                clause.CatchKeyword.SpanStart));
+                clause.CatchKeyword.SpanStart,
+                NodeKey: SyntaxText.Hash(clause)));
         }
     }
 
