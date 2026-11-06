@@ -14,8 +14,9 @@ namespace Kassyi.GSharp.Runtime.Aot;
 /// <see cref="GpuKernelLoader"/>, which loads the module once per context.
 /// </para>
 /// <para>
-/// The last function resolved is kept with the identity of its context, so a launch in the same context compares two
-/// numbers and makes no driver call or dictionary lookup.
+/// The last function resolved is kept with the identity of its context and the <see cref="CudaModuleCache.Generation"/>
+/// it was loaded in, so a launch in the same context compares two numbers each and makes no driver call or dictionary
+/// lookup, and a launch after <see cref="GpuKernelLoader.Shutdown"/> loads the module again.
 /// </para>
 /// </remarks>
 /// <param name="kernelName">The entry point of the kernel in the module.</param>
@@ -34,9 +35,11 @@ public sealed class CudaKernelFunction(string kernelName, Func<byte[]> fatbin)
     /// </summary>
     public IntPtr Resolve(ReadOnlySpan<GSharpErrorSite> errorSites)
     {
+        // Read before resolving: a Shutdown during the resolution leaves an older number, so the next launch resolves again
+        var generation = CudaModuleCache.Generation;
         var context = CudaModuleCache.CurrentContextId;
         var last = Volatile.Read(ref _last);
-        if (last is not null && last.ContextId == context)
+        if (last is not null && last.ContextId == context && last.Generation == generation)
         {
             return last.Function;
         }
@@ -48,9 +51,9 @@ public sealed class CudaKernelFunction(string kernelName, Func<byte[]> fatbin)
         }
 
         var function = GpuKernelLoader.LoadAotKernel(module, kernelName);
-        Volatile.Write(ref _last, new Resolved(context, function));
+        Volatile.Write(ref _last, new Resolved(context, generation, function));
         return function;
     }
 
-    private sealed record Resolved(long ContextId, IntPtr Function);
+    private sealed record Resolved(long ContextId, long Generation, IntPtr Function);
 }
