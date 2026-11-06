@@ -196,27 +196,27 @@ public static class InternalNamesGenerator
             return text;
         }
 
-        var builder = new StringBuilder(text.Length + 16);
+        using var escaped = new SourceWriter();
         foreach (var c in text)
         {
             switch (c)
             {
                 case '&':
-                    builder.Append("&amp;");
+                    escaped.Append("&amp;");
                     break;
                 case '<':
-                    builder.Append("&lt;");
+                    escaped.Append("&lt;");
                     break;
                 case '>':
-                    builder.Append("&gt;");
+                    escaped.Append("&gt;");
                     break;
                 default:
-                    builder.Append(c);
+                    escaped.Append(c);
                     break;
             }
         }
 
-        return builder.ToString();
+        return escaped.ToString();
     }
 
     private static InvalidOperationException Fail(string message) => new($"InternalNames.yml: {message}");

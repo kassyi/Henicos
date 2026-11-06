@@ -39,7 +39,7 @@ public static class PreludeGenerator
     // raw string literal, so the leading whitespace of a line is never part of a value.
     private static string RemoveIndentation(string text)
     {
-        var builder = new StringBuilder(text.Length);
+        using var builder = new SourceWriter();
         var atLineStart = true;
         foreach (var c in text)
         {

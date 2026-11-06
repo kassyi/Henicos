@@ -281,6 +281,7 @@ internal sealed class YamlSubsetParser
         return node;
     }
 
+#pragma warning disable RS0030 // Decodes a YAML scalar character by character: text processing, not emitted code
     private YamlScalar ParseBlockScalar(string rest, int cursor, int ownerIndent, int lineNumber)
     {
         var folded = rest[cursor] == '>';
@@ -353,6 +354,7 @@ internal sealed class YamlSubsetParser
 
         return new YamlScalar(lineNumber, builder.ToString());
     }
+#pragma warning restore RS0030
 
     private YamlNode ParseFlow(string text, ref int position, int lineNumber)
     {
@@ -509,6 +511,7 @@ internal sealed class YamlSubsetParser
         return new YamlScalar(lineNumber, value);
     }
 
+#pragma warning disable RS0030 // Decodes a YAML scalar character by character: text processing, not emitted code
     private string ParseQuoted(string text, ref int position, int lineNumber)
     {
         var quote = text[position];
@@ -565,6 +568,7 @@ internal sealed class YamlSubsetParser
 
         throw Error(lineNumber - 1, "Unterminated quoted scalar (multi-line quoted scalars are not supported).");
     }
+#pragma warning restore RS0030
 
     private void EnsureLineEnd(string text, int position, int lineNumber)
     {

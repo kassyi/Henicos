@@ -25,7 +25,7 @@ internal static class OperatorMacroOverloadResolver
         }
 
         var applicable = ImmutableArray.CreateBuilder<(IMethodSymbol Method, bool HasContext)>();
-        var reasons = new StringBuilder();
+        using var reasons = new SourceWriter();
         foreach (var member in type.GetMembers(name))
         {
             if (member is not IMethodSymbol method)
@@ -39,10 +39,8 @@ internal static class OperatorMacroOverloadResolver
                 continue;
             }
 
-            reasons.Append(reasons.Length > 0 ? "; " : string.Empty)
-                .Append(FormatSignature(method))
-                .Append(": ")
-                .Append(reason);
+            reasons.AppendIf(reasons.Length > 0, "; ");
+            reasons.Append($"{FormatSignature(method)}: {reason}");
         }
 
         if (applicable.Count == 0)
@@ -68,7 +66,7 @@ internal static class OperatorMacroOverloadResolver
         }
 
         // Ambiguous: the candidates that no other one is better than, in declaration order
-        var names = new StringBuilder();
+        using var names = new SourceWriter();
         var tied = 0;
         var last = string.Empty;
         for (var i = 0; i < applicable.Count; i++)
@@ -86,13 +84,14 @@ internal static class OperatorMacroOverloadResolver
 
             if (tied++ > 0)
             {
-                names.Append(names.Length > 0 ? ", " : string.Empty).Append(last);
+                names.AppendIf(names.Length > 0, ", ");
+                names.Append(last);
             }
 
             last = FormatSignature(applicable[i].Method);
         }
 
-        failure = $"is ambiguous between {names} and {last}";
+        failure = $"is ambiguous between {names.ToString()} and {last}";
         return null;
     }
 
@@ -288,11 +287,11 @@ internal static class OperatorMacroOverloadResolver
     // OverloadValue result, OverloadValue value, int shift
     private static string FormatOperands(IMethodSymbol operatorMethod)
     {
-        var text = new StringBuilder();
-        text.Append(FormatType(operatorMethod.ReturnType)).Append(" result");
+        using var text = new SourceWriter();
+        text.Append($"{FormatType(operatorMethod.ReturnType)} result");
         foreach (var parameter in operatorMethod.Parameters)
         {
-            text.Append(", ").Append(FormatType(parameter.Type)).Append(' ').Append(parameter.Name);
+            text.Append($", {FormatType(parameter.Type)} {parameter.Name}");
         }
 
         return text.ToString();

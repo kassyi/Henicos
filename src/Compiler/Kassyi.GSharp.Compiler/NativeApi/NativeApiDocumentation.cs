@@ -59,6 +59,7 @@ internal static class NativeApiDocumentation
         }
     }
 
+#pragma warning disable RS0030 // Escapes the text character by character: text processing, not emitted code
     /// <summary>
     /// Escapes XML special characters and keeps multi-line text inside the <c>///</c> comment.
     /// </summary>
@@ -96,4 +97,5 @@ internal static class NativeApiDocumentation
 
         return sb.ToString();
     }
+#pragma warning restore RS0030
 }

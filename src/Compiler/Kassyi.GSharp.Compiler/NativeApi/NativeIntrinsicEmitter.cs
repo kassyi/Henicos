@@ -285,6 +285,7 @@ internal static class NativeIntrinsicEmitter
         }
     }
 
+#pragma warning disable RS0030 // Replaces whole identifiers in a template: text processing, not emitted code
     /// <summary>
     /// Replaces each whole-identifier occurrence of <paramref name="placeholder"/>, so that <c>T</c> becomes the
     /// element type in <c>ref T</c> and <c>Fragment&lt;TShape, T&gt;</c> but leaves <c>TShape</c> alone.
@@ -316,4 +317,5 @@ internal static class NativeIntrinsicEmitter
 
         return sb.Append(template, copied, template.Length - copied).ToString();
     }
+#pragma warning restore RS0030
 }

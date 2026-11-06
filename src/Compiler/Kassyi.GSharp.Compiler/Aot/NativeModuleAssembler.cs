@@ -19,7 +19,7 @@ internal static class NativeModuleAssembler
     /// </summary>
     public static string AssembleDeviceSource(IReadOnlyList<TranspiledDeviceMethodResult> deviceMethods, bool isCuda)
     {
-        var deviceSourceBuilder = new StringBuilder();
+        using var deviceSourceBuilder = new SourceWriter();
 
         // Pass 1: Forward declarations
         foreach (var method in deviceMethods)
@@ -129,12 +129,12 @@ internal static class NativeModuleAssembler
     public static string AssembleBody(HashSet<string> requiredIncludes, string preludeSource, string deviceSource,
         string kernelsSource)
     {
-        var includesBuilder = new StringBuilder();
+        using var includesBuilder = new SourceWriter();
         foreach (var inc in requiredIncludes)
         {
             includesBuilder.AppendLine($"#include {inc}");
         }
 
-        return includesBuilder + preludeSource + deviceSource + kernelsSource;
+        return includesBuilder.ToString() + preludeSource + deviceSource + kernelsSource;
     }
 }
