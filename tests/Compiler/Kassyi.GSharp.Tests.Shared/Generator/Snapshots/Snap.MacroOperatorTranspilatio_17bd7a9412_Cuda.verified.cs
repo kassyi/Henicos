@@ -156,12 +156,8 @@ struct __gsharp_ty_TestNamespace__DummyRef
 {
 GSharpArray<unsigned int> __gsharp_mb_Data;
 __device__ inline __gsharp_ty_TestNamespace__DummyRef() {}
-__device__ inline __gsharp_ty_TestNamespace__DummyRef(GSharpArray<unsigned int> v) {
-this->__gsharp_mb_Data = v;
-}
-__device__ inline operator GSharpArray<unsigned int>() const {
-return this->__gsharp_mb_Data;
-}
+__device__ inline __gsharp_ty_TestNamespace__DummyRef(GSharpArray<unsigned int> v);
+__device__ inline operator GSharpArray<unsigned int>() const;
 }
 ;
 static_assert(sizeof(__gsharp_ty_TestNamespace__DummyRef)==16,""TestNamespace.DummyRef: size"");
@@ -172,6 +168,14 @@ __gsharp_ty_TestNamespace__DummyRef __gsharp_self{};
 __gsharp_self.__gsharp_mb_Data=__gsharp_id_0_data;
 return __gsharp_self;
 }
+__device__ inline __gsharp_ty_TestNamespace__DummyRef __gsharp_fn_TestNamespace__DummyRef__op_uImplicit_o0(GSharpArray<unsigned int> __gsharp_id_0_data) {
+return __gsharp_ctor_TestNamespace__DummyRef(__gsharp_id_0_data);
+}
+__device__ inline __gsharp_ty_TestNamespace__DummyRef::__gsharp_ty_TestNamespace__DummyRef(GSharpArray<unsigned int> v) { *this = __gsharp_fn_TestNamespace__DummyRef__op_uImplicit_o0(v); }
+__device__ inline GSharpArray<unsigned int> __gsharp_fn_TestNamespace__DummyRef__op_uImplicit_o1(__gsharp_ty_TestNamespace__DummyRef __gsharp_id_0_data) {
+return __gsharp_id_0_data.__gsharp_mb_Data;
+}
+__device__ inline __gsharp_ty_TestNamespace__DummyRef::operator GSharpArray<unsigned int>() const { return __gsharp_fn_TestNamespace__DummyRef__op_uImplicit_o1(*this); }
 #endif
 extern ""C"" __global__ void __gsharp_k_TestNamespace__TestKernels__MacroKernel(__gsharp_ty_TestNamespace__DummyContext __gsharp_id_0_ctx, GSharpArray<unsigned int> __gsharp_id_1_dA, GSharpArray<unsigned int> __gsharp_id_2_dB, GSharpArray<unsigned int> __gsharp_id_3_dResult){
 __gsharp_ty_TestNamespace__DummyRef __gsharp_id_4_a = __gsharp_id_1_dA;
