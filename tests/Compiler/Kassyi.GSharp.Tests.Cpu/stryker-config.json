@@ -4,6 +4,7 @@
     "test-projects": ["Kassyi.GSharp.Tests.Cpu.csproj"],
     "mutate": ["!**/*.g.cs"],
     "coverage-analysis": "perTest",
+    "test-case-filter": "(Category!=Differential)|(FullyQualifiedName~SpillOrderMutatingGetterTests)|(FullyQualifiedName~MathDifferentialTests)",
     "concurrency": 10,
     "reporters": ["json", "html", "cleartext"],
     "verbosity": "info"
