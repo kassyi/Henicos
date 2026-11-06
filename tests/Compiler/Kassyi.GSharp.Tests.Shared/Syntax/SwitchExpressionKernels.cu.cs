@@ -48,4 +48,24 @@ public static partial class SwitchExpressionKernels
             _ => 0
         };
     }
+
+#pragma warning disable CS8509 // Without a discard arm the switch ends with the trap of an unmatched input
+    [GpuKernel]
+    public static void NoDiscardArmSwitchKernel(int[] input, int[] output)
+    {
+        int tid = ThreadIndex.X;
+        output[tid] = input[tid] switch
+        {
+            0 => 10,
+            1 => 20
+        } + NoDiscardArm(input[tid]);
+    }
+
+    [GpuDeviceFunction]
+    public static int NoDiscardArm(int value) => value switch
+    {
+        0 => 1,
+        1 => 2
+    };
+#pragma warning restore CS8509
 }
