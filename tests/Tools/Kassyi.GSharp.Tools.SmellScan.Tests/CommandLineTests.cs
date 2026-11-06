@@ -29,7 +29,7 @@ public class CommandLineTests
     [Scenario(TestScenario.SadPath)]
     public void Parse_UnknownOptionOrMissingValue_Throws(string argument)
     {
-        Assert.Throws<ArgumentException>(() => CommandLineParser.Parse([argument]));
+        Assert.Throws<UsageException>(() => CommandLineParser.Parse([argument]));
     }
 
     [Theory]
@@ -41,16 +41,16 @@ public class CommandLineTests
     [Scenario(TestScenario.Boundary)]
     public void Parse_ParallelismThatIsNotPositive_Throws(string value)
     {
-        Assert.Throws<ArgumentException>(() => CommandLineParser.Parse(["--parallelism", value]));
+        Assert.Throws<UsageException>(() => CommandLineParser.Parse(["--parallelism", value]));
     }
 
     [Fact]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.SadPath)]
-    public void Parse_FormatOtherThanJson_Throws()
+    public void Parse_UnknownFormat_Throws()
     {
-        Assert.Throws<ArgumentException>(() => CommandLineParser.Parse(["--format", "sarif"]));
+        Assert.Throws<UsageException>(() => CommandLineParser.Parse(["--format", "xml"]));
     }
 
     [Fact]

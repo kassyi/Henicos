@@ -1,0 +1,1013 @@
+﻿{
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "smell-scan",
+          "rules": [
+            {
+              "id": "large-switch",
+              "name": "LargeSwitch",
+              "shortDescription": {
+                "text": "A switch with many sections or arms that is more than a table of one-statement cases."
+              },
+              "help": {
+                "text": "Extract the cases."
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "properties": {
+                "parameters": {
+                  "max_cases": 4
+                }
+              }
+            },
+            {
+              "id": "large-type",
+              "name": "TypeSize",
+              "shortDescription": {
+                "text": "A type that is large in code lines or in members."
+              },
+              "help": {
+                "text": "Split the type."
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "properties": {
+                "parameters": {
+                  "max_code_lines": 8,
+                  "max_members": 4
+                }
+              }
+            },
+            {
+              "id": "long-if-chain",
+              "name": "LongIfChain",
+              "shortDescription": {
+                "text": "A chain of if / else if branches that is long."
+              },
+              "help": {
+                "text": "Decompose the conditional."
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "properties": {
+                "parameters": {
+                  "max_branches": 5
+                }
+              }
+            },
+            {
+              "id": "long-string-literal",
+              "name": "LongStringLiteral",
+              "shortDescription": {
+                "text": "A line past the column limit that contains a string literal."
+              },
+              "help": {
+                "text": "Break the literal."
+              },
+              "defaultConfiguration": {
+                "level": "note"
+              },
+              "properties": {
+                "guidance": "docs/long-lines.md",
+                "parameters": {
+                  "include_multiline_raw_content": 0,
+                  "max_columns": 120
+                }
+              }
+            },
+            {
+              "id": "swallowed-exception",
+              "name": "SwallowedException",
+              "shortDescription": {
+                "text": "A catch clause that drops the exception without handling it."
+              },
+              "help": {
+                "text": "Do not drop the exception."
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "properties": {
+                "parameters": {}
+              }
+            }
+          ]
+        }
+      },
+      "originalUriBaseIds": {
+        "SRCROOT": {
+          "description": {
+            "text": "The repository root."
+          }
+        }
+      },
+      "columnKind": "utf16CodeUnits",
+      "properties": {
+        "config": "Config/all-detectors.yml",
+        "configHash": "e71ebb0311af15c0",
+        "filesMeasured": 6
+      },
+      "results": [
+        {
+          "ruleId": "large-type",
+          "ruleIndex": 1,
+          "level": "warning",
+          "message": {
+            "text": "Cases.LargeSwitchCases: 286 code lines (limit 8). Split the type."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "proj/LargeSwitchCases.cs",
+                  "uriBaseId": "SRCROOT"
+                },
+                "region": {
+                  "startLine": 11,
+                  "startColumn": 1,
+                  "endLine": 324,
+                  "endColumn": 2
+                }
+              },
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "Cases.LargeSwitchCases"
+                }
+              ]
+            }
+          ],
+          "partialFingerprints": {
+            "smellScan/v1": "db7ae3a8a2e4f128"
+          },
+          "properties": {
+            "metric": "codeLines",
+            "value": 286,
+            "threshold": 8,
+            "physicalLines": 314
+          }
+        },
+        {
+          "ruleId": "large-type",
+          "ruleIndex": 1,
+          "level": "warning",
+          "message": {
+            "text": "Cases.LargeSwitchCases: 24 members (limit 4). Split the type."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "proj/LargeSwitchCases.cs",
+                  "uriBaseId": "SRCROOT"
+                },
+                "region": {
+                  "startLine": 11,
+                  "startColumn": 1,
+                  "endLine": 324,
+                  "endColumn": 2
+                }
+              },
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "Cases.LargeSwitchCases"
+                }
+              ]
+            }
+          ],
+          "partialFingerprints": {
+            "smellScan/v1": "8a10429e028c3c79"
+          },
+          "properties": {
+            "metric": "members",
+            "value": 24,
+            "threshold": 4
+          }
+        },
+        {
+          "ruleId": "large-switch",
+          "ruleIndex": 0,
+          "level": "warning",
+          "message": {
+            "text": "Cases.LargeSwitchCases.EnumSwitch(Kind): 5 switch cases (limit 4). Extract the cases."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "proj/LargeSwitchCases.cs",
+                  "uriBaseId": "SRCROOT"
+                },
+                "region": {
+                  "startLine": 129,
+                  "startColumn": 9,
+                  "endLine": 142,
+                  "endColumn": 10
+                }
+              },
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "Cases.LargeSwitchCases.EnumSwitch(Kind)"
+                }
+              ]
+            }
+          ],
+          "partialFingerprints": {
+            "smellScan/v1": "d36414aed74a9fdf"
+          },
+          "properties": {
+            "metric": "cases",
+            "value": 5,
+            "threshold": 4,
+            "physicalLines": 14
+          }
+        },
+        {
+          "ruleId": "large-switch",
+          "ruleIndex": 0,
+          "level": "warning",
+          "message": {
+            "text": "Cases.LargeSwitchCases.ExpressionWithABlockLambdaArm(int): 5 switch cases (limit 4). Extract the cases."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "proj/LargeSwitchCases.cs",
+                  "uriBaseId": "SRCROOT"
+                },
+                "region": {
+                  "startLine": 145,
+                  "startColumn": 56,
+                  "endLine": 152,
+                  "endColumn": 6
+                }
+              },
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "Cases.LargeSwitchCases.ExpressionWithABlockLambdaArm(int)"
+                }
+              ]
+            }
+          ],
+          "partialFingerprints": {
+            "smellScan/v1": "bea5b7c842a8b364"
+          },
+          "properties": {
+            "metric": "cases",
+            "value": 5,
+            "threshold": 4,
+            "physicalLines": 8
+          }
+        },
+        {
+          "ruleId": "large-type",
+          "ruleIndex": 1,
+          "level": "warning",
+          "message": {
+            "text": "Cases.LongIfChainCases: 64 code lines (limit 8). Split the type."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "proj/LongIfChainCases.cs",
+                  "uriBaseId": "SRCROOT"
+                },
+                "region": {
+                  "startLine": 3,
+                  "startColumn": 1,
+                  "endLine": 71,
+                  "endColumn": 2
+                }
+              },
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "Cases.LongIfChainCases"
+                }
+              ]
+            }
+          ],
+          "partialFingerprints": {
+            "smellScan/v1": "956966a8dc7d6dff"
+          },
+          "properties": {
+            "metric": "codeLines",
+            "value": 64,
+            "threshold": 8,
+            "physicalLines": 69
+          }
+        },
+        {
+          "ruleId": "large-type",
+          "ruleIndex": 1,
+          "level": "warning",
+          "message": {
+            "text": "Cases.LongIfChainCases: 6 members (limit 4). Split the type."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "proj/LongIfChainCases.cs",
+                  "uriBaseId": "SRCROOT"
+                },
+                "region": {
+                  "startLine": 3,
+                  "startColumn": 1,
+                  "endLine": 71,
+                  "endColumn": 2
+                }
+              },
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "Cases.LongIfChainCases"
+                }
+              ]
+            }
+          ],
+          "partialFingerprints": {
+            "smellScan/v1": "6c7deacab8f9284e"
+          },
+          "properties": {
+            "metric": "members",
+            "value": 6,
+            "threshold": 4
+          }
+        },
+        {
+          "ruleId": "long-if-chain",
+          "ruleIndex": 2,
+          "level": "error",
+          "message": {
+            "text": "Cases.LongIfChainCases.Seven(int): 7 branches in one if chain (limit 5). Decompose the conditional."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "proj/LongIfChainCases.cs",
+                  "uriBaseId": "SRCROOT"
+                },
+                "region": {
+                  "startLine": 40,
+                  "startColumn": 9,
+                  "endLine": 46,
+                  "endColumn": 23
+                }
+              },
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "Cases.LongIfChainCases.Seven(int)"
+                }
+              ]
+            }
+          ],
+          "partialFingerprints": {
+            "smellScan/v1": "cb69ee3dc04d192c"
+          },
+          "properties": {
+            "metric": "branches",
+            "value": 7,
+            "threshold": 5,
+            "physicalLines": 7
+          }
+        },
+        {
+          "ruleId": "large-type",
+          "ruleIndex": 1,
+          "level": "warning",
+          "message": {
+            "text": "Cases.LongStringCases: 21 code lines (limit 8). Split the type."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "proj/LongStringCases.cs",
+                  "uriBaseId": "SRCROOT"
+                },
+                "region": {
+                  "startLine": 3,
+                  "startColumn": 1,
+                  "endLine": 24,
+                  "endColumn": 2
+                }
+              },
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "Cases.LongStringCases"
+                }
+              ]
+            }
+          ],
+          "partialFingerprints": {
+            "smellScan/v1": "da3366f057d0c530"
+          },
+          "properties": {
+            "metric": "codeLines",
+            "value": 21,
+            "threshold": 8,
+            "physicalLines": 22
+          }
+        },
+        {
+          "ruleId": "large-type",
+          "ruleIndex": 1,
+          "level": "warning",
+          "message": {
+            "text": "Cases.LongStringCases: 15 members (limit 4). Split the type."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "proj/LongStringCases.cs",
+                  "uriBaseId": "SRCROOT"
+                },
+                "region": {
+                  "startLine": 3,
+                  "startColumn": 1,
+                  "endLine": 24,
+                  "endColumn": 2
+                }
+              },
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "Cases.LongStringCases"
+                }
+              ]
+            }
+          ],
+          "partialFingerprints": {
+            "smellScan/v1": "8d0b1d2eac68f38f"
+          },
+          "properties": {
+            "metric": "members",
+            "value": 15,
+            "threshold": 4
+          }
+        },
+        {
+          "ruleId": "long-string-literal",
+          "ruleIndex": 3,
+          "level": "note",
+          "message": {
+            "text": "Cases.LongStringCases: a line of 121 columns holds a string literal (limit 120). Break the literal."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "proj/LongStringCases.cs",
+                  "uriBaseId": "SRCROOT"
+                },
+                "region": {
+                  "startLine": 6,
+                  "startColumn": 5,
+                  "endLine": 6,
+                  "endColumn": 122
+                }
+              },
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "Cases.LongStringCases"
+                }
+              ]
+            }
+          ],
+          "partialFingerprints": {
+            "smellScan/v1": "99845bbe0e76a621"
+          },
+          "properties": {
+            "metric": "columns",
+            "value": 121,
+            "threshold": 120,
+            "physicalLines": 1
+          }
+        },
+        {
+          "ruleId": "long-string-literal",
+          "ruleIndex": 3,
+          "level": "note",
+          "message": {
+            "text": "Cases.LongStringCases: a line of 130 columns holds a string literal (limit 120). Break the literal."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "proj/LongStringCases.cs",
+                  "uriBaseId": "SRCROOT"
+                },
+                "region": {
+                  "startLine": 10,
+                  "startColumn": 1,
+                  "endLine": 10,
+                  "endColumn": 131
+                }
+              },
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "Cases.LongStringCases"
+                }
+              ]
+            }
+          ],
+          "partialFingerprints": {
+            "smellScan/v1": "99845abe0e76a46e"
+          },
+          "properties": {
+            "metric": "columns",
+            "value": 130,
+            "threshold": 120,
+            "physicalLines": 1
+          }
+        },
+        {
+          "ruleId": "long-string-literal",
+          "ruleIndex": 3,
+          "level": "note",
+          "message": {
+            "text": "Cases.LongStringCases: a line of 124 columns holds a string literal (limit 120). Break the literal."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "proj/LongStringCases.cs",
+                  "uriBaseId": "SRCROOT"
+                },
+                "region": {
+                  "startLine": 15,
+                  "startColumn": 5,
+                  "endLine": 15,
+                  "endColumn": 125
+                }
+              },
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "Cases.LongStringCases"
+                }
+              ]
+            }
+          ],
+          "partialFingerprints": {
+            "smellScan/v1": "998459be0e76a2bb"
+          },
+          "properties": {
+            "metric": "columns",
+            "value": 124,
+            "threshold": 120,
+            "physicalLines": 1
+          }
+        },
+        {
+          "ruleId": "long-string-literal",
+          "ruleIndex": 3,
+          "level": "note",
+          "message": {
+            "text": "Cases.LongStringCases: a line of 123 columns holds a string literal (limit 120). Break the literal."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "proj/LongStringCases.cs",
+                  "uriBaseId": "SRCROOT"
+                },
+                "region": {
+                  "startLine": 16,
+                  "startColumn": 5,
+                  "endLine": 16,
+                  "endColumn": 124
+                }
+              },
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "Cases.LongStringCases"
+                }
+              ]
+            }
+          ],
+          "partialFingerprints": {
+            "smellScan/v1": "998458be0e76a108"
+          },
+          "properties": {
+            "metric": "columns",
+            "value": 123,
+            "threshold": 120,
+            "physicalLines": 1
+          }
+        },
+        {
+          "ruleId": "long-string-literal",
+          "ruleIndex": 3,
+          "level": "note",
+          "message": {
+            "text": "Cases.LongStringCases: a line of 122 columns holds a string literal (limit 120). Break the literal."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "proj/LongStringCases.cs",
+                  "uriBaseId": "SRCROOT"
+                },
+                "region": {
+                  "startLine": 17,
+                  "startColumn": 5,
+                  "endLine": 17,
+                  "endColumn": 123
+                }
+              },
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "Cases.LongStringCases"
+                }
+              ]
+            }
+          ],
+          "partialFingerprints": {
+            "smellScan/v1": "99845fbe0e76aced"
+          },
+          "properties": {
+            "metric": "columns",
+            "value": 122,
+            "threshold": 120,
+            "physicalLines": 1
+          }
+        },
+        {
+          "ruleId": "long-string-literal",
+          "ruleIndex": 3,
+          "level": "note",
+          "message": {
+            "text": "Cases.LongStringCases: a line of 147 columns holds a string literal (limit 120). Break the literal."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "proj/LongStringCases.cs",
+                  "uriBaseId": "SRCROOT"
+                },
+                "region": {
+                  "startLine": 19,
+                  "startColumn": 5,
+                  "endLine": 19,
+                  "endColumn": 148
+                }
+              },
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "Cases.LongStringCases"
+                }
+              ]
+            }
+          ],
+          "partialFingerprints": {
+            "smellScan/v1": "99845ebe0e76ab3a"
+          },
+          "properties": {
+            "metric": "columns",
+            "value": 147,
+            "threshold": 120,
+            "physicalLines": 1
+          }
+        },
+        {
+          "ruleId": "long-string-literal",
+          "ruleIndex": 3,
+          "level": "note",
+          "message": {
+            "text": "Cases.LongStringCases: a line of 121 columns holds a string literal (limit 120). Break the literal."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "proj/LongStringCases.cs",
+                  "uriBaseId": "SRCROOT"
+                },
+                "region": {
+                  "startLine": 20,
+                  "startColumn": 5,
+                  "endLine": 20,
+                  "endColumn": 215
+                }
+              },
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "Cases.LongStringCases"
+                }
+              ]
+            }
+          ],
+          "partialFingerprints": {
+            "smellScan/v1": "99845dbe0e76a987"
+          },
+          "properties": {
+            "metric": "columns",
+            "value": 121,
+            "threshold": 120,
+            "physicalLines": 1
+          }
+        },
+        {
+          "ruleId": "large-type",
+          "ruleIndex": 1,
+          "level": "warning",
+          "message": {
+            "text": "Cases.Split: 11 code lines (limit 8). Split the type."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "proj/PartialAlphaA.cs",
+                  "uriBaseId": "SRCROOT"
+                },
+                "region": {
+                  "startLine": 3,
+                  "startColumn": 1,
+                  "endLine": 8,
+                  "endColumn": 2
+                }
+              },
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "Cases.Split"
+                }
+              ]
+            }
+          ],
+          "relatedLocations": [
+            {
+              "id": 1,
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "proj/PartialAlphaB.cs",
+                  "uriBaseId": "SRCROOT"
+                },
+                "region": {
+                  "startLine": 3,
+                  "startColumn": 1,
+                  "endLine": 7,
+                  "endColumn": 2
+                }
+              },
+              "message": {
+                "text": "Another part of Cases.Split"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "smellScan/v1": "7e525b85b116bbd0"
+          },
+          "properties": {
+            "metric": "codeLines",
+            "value": 11,
+            "threshold": 8,
+            "physicalLines": 11
+          }
+        },
+        {
+          "ruleId": "large-type",
+          "ruleIndex": 1,
+          "level": "warning",
+          "message": {
+            "text": "Cases.Split: 5 members (limit 4). Split the type."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "proj/PartialAlphaA.cs",
+                  "uriBaseId": "SRCROOT"
+                },
+                "region": {
+                  "startLine": 3,
+                  "startColumn": 1,
+                  "endLine": 8,
+                  "endColumn": 2
+                }
+              },
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "Cases.Split"
+                }
+              ]
+            }
+          ],
+          "relatedLocations": [
+            {
+              "id": 1,
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "proj/PartialAlphaB.cs",
+                  "uriBaseId": "SRCROOT"
+                },
+                "region": {
+                  "startLine": 3,
+                  "startColumn": 1,
+                  "endLine": 7,
+                  "endColumn": 2
+                }
+              },
+              "message": {
+                "text": "Another part of Cases.Split"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "smellScan/v1": "8c75562d89b1e837"
+          },
+          "properties": {
+            "metric": "members",
+            "value": 5,
+            "threshold": 4
+          }
+        },
+        {
+          "ruleId": "large-type",
+          "ruleIndex": 1,
+          "level": "warning",
+          "message": {
+            "text": "Cases.Gen<TItem>: 9 code lines (limit 8). Split the type."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "proj/PartialAlphaB.cs",
+                  "uriBaseId": "SRCROOT"
+                },
+                "region": {
+                  "startLine": 9,
+                  "startColumn": 1,
+                  "endLine": 13,
+                  "endColumn": 2
+                }
+              },
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "Cases.Gen<TItem>"
+                }
+              ]
+            }
+          ],
+          "relatedLocations": [
+            {
+              "id": 1,
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "proj/PartialAlphaA.cs",
+                  "uriBaseId": "SRCROOT"
+                },
+                "region": {
+                  "startLine": 10,
+                  "startColumn": 1,
+                  "endLine": 13,
+                  "endColumn": 2
+                }
+              },
+              "message": {
+                "text": "Another part of Cases.Gen<TItem>"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "smellScan/v1": "d839714edbef6c35"
+          },
+          "properties": {
+            "metric": "codeLines",
+            "value": 9,
+            "threshold": 8,
+            "physicalLines": 9
+          }
+        },
+        {
+          "ruleId": "large-type",
+          "ruleIndex": 1,
+          "level": "warning",
+          "message": {
+            "text": "Cases.SwallowedSmall: 14 code lines (limit 8). Split the type."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "proj/SwallowedSmall.cs",
+                  "uriBaseId": "SRCROOT"
+                },
+                "region": {
+                  "startLine": 3,
+                  "startColumn": 1,
+                  "endLine": 18,
+                  "endColumn": 2
+                }
+              },
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "Cases.SwallowedSmall"
+                }
+              ]
+            }
+          ],
+          "partialFingerprints": {
+            "smellScan/v1": "58db88d28a4969dd"
+          },
+          "properties": {
+            "metric": "codeLines",
+            "value": 14,
+            "threshold": 8,
+            "physicalLines": 16
+          }
+        },
+        {
+          "ruleId": "swallowed-exception",
+          "ruleIndex": 4,
+          "level": "warning",
+          "message": {
+            "text": "Cases.SwallowedSmall.Empty(): a catch clause with an empty handler. Do not drop the exception."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "proj/SwallowedSmall.cs",
+                  "uriBaseId": "SRCROOT"
+                },
+                "region": {
+                  "startLine": 8,
+                  "startColumn": 9,
+                  "endLine": 8,
+                  "endColumn": 18
+                }
+              },
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "Cases.SwallowedSmall.Empty()"
+                }
+              ]
+            }
+          ],
+          "partialFingerprints": {
+            "smellScan/v1": "c38517cf81e87305"
+          },
+          "properties": {
+            "metric": "emptyCatch",
+            "value": 1,
+            "threshold": 0,
+            "physicalLines": 1
+          }
+        },
+        {
+          "ruleId": "swallowed-exception",
+          "ruleIndex": 4,
+          "level": "warning",
+          "message": {
+            "text": "Cases.SwallowedSmall.LogOnly(): a catch clause whose handler only writes a log line. Do not drop the exception."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "proj/SwallowedSmall.cs",
+                  "uriBaseId": "SRCROOT"
+                },
+                "region": {
+                  "startLine": 14,
+                  "startColumn": 9,
+                  "endLine": 14,
+                  "endColumn": 74
+                }
+              },
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "Cases.SwallowedSmall.LogOnly()"
+                }
+              ]
+            }
+          ],
+          "partialFingerprints": {
+            "smellScan/v1": "03c9a7149bd9513d"
+          },
+          "properties": {
+            "metric": "logOnlyCatch",
+            "value": 1,
+            "threshold": 0,
+            "physicalLines": 1
+          }
+        }
+      ]
+    }
+  ]
+}

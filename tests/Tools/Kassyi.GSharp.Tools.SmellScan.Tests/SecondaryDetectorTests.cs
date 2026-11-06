@@ -56,6 +56,19 @@ public class SecondaryDetectorTests
     [Fact]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.Boundary)]
+    public void Symbol_TupleElementNames_KeepTheirSpaceAfterTheType()
+    {
+        var measurement = Assert.Single(DetectorHarness.Measure(s_length, "TupleNameCases.cs"));
+
+        Assert.Equal(
+            "Cases.TupleNameCases.Take((List<int> Items,int[] Numbers,string? Name,int Count))",
+            measurement.Symbol);
+    }
+
+    [Fact]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Unit)]
     [Scenario(TestScenario.HappyPath)]
     public void MethodLength_TopLevelStatements_AreOneUnit()
     {

@@ -1,0 +1,9 @@
+version: 1
+rules:
+  - id: large-type
+    detector: TypeSize
+    severity: warning
+    parameters:
+      max_code_lines: 11
+      max_members: 100
+    suggestion: "Split the type."

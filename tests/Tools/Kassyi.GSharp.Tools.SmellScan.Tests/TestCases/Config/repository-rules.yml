@@ -1,0 +1,15 @@
+version: 1
+defaults:
+  exclude:
+    - "**/obj/**"
+rules:
+  - id: large-type
+    detector: TypeSize
+    severity: warning
+    parameters:
+      max_code_lines: 8
+      max_members: 30
+    overrides:
+      - files: ["tests/**"]
+        parameters: { max_code_lines: 100, max_members: 0 }
+    suggestion: "Split the type."

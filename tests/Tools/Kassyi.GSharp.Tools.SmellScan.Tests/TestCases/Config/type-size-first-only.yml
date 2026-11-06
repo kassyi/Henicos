@@ -1,0 +1,10 @@
+version: 1
+rules:
+  - id: large-type
+    detector: TypeSize
+    severity: warning
+    parameters:
+      max_code_lines: 8
+      max_members: 4
+    include: ["proj/PartialAlphaA.cs"]
+    suggestion: "Split the type."

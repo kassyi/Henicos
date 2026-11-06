@@ -1,0 +1,7 @@
+version: 1
+rules:
+  - id: swallowed-exception
+    detector: SwallowedException
+    severity: warning
+    parameters:
+      max_catches: 1

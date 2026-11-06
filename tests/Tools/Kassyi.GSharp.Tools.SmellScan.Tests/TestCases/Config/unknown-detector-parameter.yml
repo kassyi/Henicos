@@ -1,0 +1,7 @@
+version: 1
+rules:
+  - id: large-switch
+    detector: LargeSwitch
+    severity: warning
+    parameters:
+      max_columns: 4

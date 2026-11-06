@@ -1,0 +1,33 @@
+version: 1
+rules:
+  - id: large-type
+    detector: TypeSize
+    severity: warning
+    parameters:
+      max_code_lines: 8
+      max_members: 4
+    suggestion: "Split the type."
+  - id: large-switch
+    detector: LargeSwitch
+    severity: warning
+    parameters:
+      max_cases: 4
+    suggestion: "Extract the cases."
+  - id: long-string-literal
+    detector: LongStringLiteral
+    severity: note
+    parameters:
+      max_columns: 120
+    help: "docs/long-lines.md"
+    suggestion: "Break the literal."
+  - id: long-if-chain
+    detector: LongIfChain
+    severity: error
+    parameters:
+      max_branches: 5
+    suggestion: "Decompose the conditional."
+  - id: swallowed-exception
+    detector: SwallowedException
+    severity: warning
+    include: ["proj/Swallowed*.cs"]
+    suggestion: "Do not drop the exception."
