@@ -115,6 +115,34 @@ function resolveAsanPreload(env) {
     return res.stdout.trim();
 }
 
+// The kernel DLL built with /fsanitize=address imports clang_rt.asan_dynamic-<arch>.dll, which sits next to cl.exe
+// and is not on PATH outside a developer prompt. Returns the bin directory of the default MSVC toolset (the one
+// vcvars selects for the native build), found through vswhere.
+function resolveMsvcAsanDir() {
+    const programFiles = process.env['ProgramFiles(x86)'] || 'C:\\Program Files (x86)';
+    const vswhere = path.join(programFiles, 'Microsoft Visual Studio', 'Installer', 'vswhere.exe');
+    const query = spawnSync(vswhere, [
+        '-latest', '-products', '*',
+        '-requires', 'Microsoft.VisualStudio.Component.VC.Tools.x86.x64',
+        '-property', 'installationPath'
+    ], { encoding: 'utf8' });
+    const installPath = query.status === 0 ? query.stdout.trim().split(/\r?\n/)[0] : '';
+    if (!installPath) {
+        console.error(`Error: vswhere (${vswhere}) found no Visual Studio with the C++ tools; the ASan runtime DLL cannot be located.`);
+        process.exit(1);
+    }
+    const versionFile = path.join(installPath, 'VC', 'Auxiliary', 'Build', 'Microsoft.VCToolsVersion.default.txt');
+    const toolset = fs.readFileSync(versionFile, 'utf8').trim();
+    const arch = process.arch === 'arm64' ? 'arm64' : 'x64';
+    const binDir = path.join(installPath, 'VC', 'Tools', 'MSVC', toolset, 'bin', `Host${arch}`, arch);
+    const runtime = arch === 'arm64' ? 'clang_rt.asan_dynamic-aarch64.dll' : 'clang_rt.asan_dynamic-x86_64.dll';
+    if (!fs.existsSync(path.join(binDir, runtime))) {
+        console.error(`Error: ${runtime} was not found in ${binDir}.`);
+        process.exit(1);
+    }
+    return binDir;
+}
+
 // Runs `dotnet <args>` with its stdout and stderr written to the console and to logPath as they arrive.
 function runTeed(args, env, logPath) {
     return new Promise(resolve => {
@@ -179,6 +207,8 @@ async function main() {
 
     const testEnv = { ...env };
     if (process.platform === 'win32') {
+        const pathKey = Object.keys(testEnv).find((key) => key.toUpperCase() === 'PATH') || 'Path';
+        testEnv[pathKey] = `${resolveMsvcAsanDir()}${path.delimiter}${testEnv[pathKey] || ''}`;
         if (!testEnv.ASAN_OPTIONS) {
             testEnv.ASAN_OPTIONS = 'halt_on_error=1:abort_on_error=0';
         }
@@ -207,7 +237,7 @@ async function main() {
         console.log(`\nSanitizer report found; demangled log (${path.relative(repoRoot, logPath)}):`);
         const demangleRes = spawnSync(
             'dotnet',
-            ['run', '--project', generatorProject, '--no-build', '--', 'demangle', logPath, symbolsDir],
+            ['run', '--project', generatorProject, '--', 'demangle', logPath, symbolsDir],
             {
                 cwd: repoRoot,
                 env,
