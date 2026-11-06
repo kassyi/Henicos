@@ -16,26 +16,24 @@ internal sealed class ForUnrollMacroRule : IMacroTranspilerRule
             return false;
         }
 
-        var offset = call.ArgumentOffset;
         var args = invocation.ArgumentList.Arguments;
-
-        if (args.Count <= call.LambdaArgumentIndex || args[call.LambdaArgumentIndex].Expression is not LambdaExpressionSyntax lambdaExpr)
+        if (call.GetBody(args) is not { } lambdaExpr ||
+            call.GetArgument(args, call.ValueOrdinal)?.Expression is not { } startExpr ||
+            call.GetArgument(args, call.ValueOrdinal + 1)?.Expression is not { } countExpr)
         {
             return false;
         }
 
-        var hasStart = GpuCodeConstraints.TryGetMacroConstantInt(args[offset].Expression, context.Query.SemanticModel,
-            out var start);
-        var hasCount = GpuCodeConstraints.TryGetMacroConstantInt(args[offset + 1].Expression, context.Query.SemanticModel,
-            out var count);
+        var hasStart = GpuCodeConstraints.TryGetMacroConstantInt(startExpr, context.Query.SemanticModel, out var start);
+        var hasCount = GpuCodeConstraints.TryGetMacroConstantInt(countExpr, context.Query.SemanticModel, out var count);
         if (!hasStart || !hasCount)
         {
-            FailIfNotConstant(hasStart, args[offset].Expression, "start", ref context);
-            FailIfNotConstant(hasCount, args[offset + 1].Expression, "count", ref context);
+            FailIfNotConstant(hasStart, startExpr, "start", ref context);
+            FailIfNotConstant(hasCount, countExpr, "count", ref context);
             return false;
         }
 
-        if (!MacroTranspilerHelper.TryBeginMacroScope(invocation, lambdaExpr, call.HasContext, args, ref context, TypeConstants.GpuMacros.ForUnroll, out var macroScope))
+        if (!MacroTranspilerHelper.TryBeginMacroScope(invocation, lambdaExpr, call, args, ref context, TypeConstants.GpuMacros.ForUnroll, out var macroScope))
         {
             return false;
         }

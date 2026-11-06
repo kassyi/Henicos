@@ -18,8 +18,8 @@ internal sealed class GridStrideLoopMacroRule : IMacroTranspilerRule
         }
 
         var args = invocation.ArgumentList.Arguments;
-
-        if (args.Count <= call.LambdaArgumentIndex || args[call.LambdaArgumentIndex].Expression is not LambdaExpressionSyntax lambdaExpr)
+        if (call.GetBody(args) is not { } lambdaExpr ||
+            call.GetArgument(args, call.ValueOrdinal)?.Expression is not { } countExpr)
         {
             return false;
         }
@@ -27,7 +27,7 @@ internal sealed class GridStrideLoopMacroRule : IMacroTranspilerRule
         if (!MacroTranspilerHelper.TryBeginMacroScope(
                 invocation,
                 lambdaExpr,
-                call.HasContext,
+                call,
                 args,
                 ref context,
                 TypeConstants.GpuMacros.GridStrideLoop,
@@ -67,7 +67,7 @@ internal sealed class GridStrideLoopMacroRule : IMacroTranspilerRule
             writer.Append($"unsigned int {count} = {GSharpInternalNames.Prelude.GridStrideCount}");
             using (writer.Parentheses())
             {
-                context.Visitor.Visit(args[call.ArgumentOffset].Expression);
+                context.Visitor.Visit(countExpr);
             }
 
             writer.AppendLine(";");

@@ -122,7 +122,8 @@ internal sealed partial class ManagedExecutionRewriter
     private BlockSyntax? RewriteGridStrideLoop(InvocationExpressionSyntax invocation, GpuMacroCall call)
     {
         var arguments = invocation.ArgumentList.Arguments;
-        if (!TryGetLoopMacroBody(arguments, call, out var lambda, out var loopParameter))
+        if (!TryGetLoopMacroBody(arguments, call, out var lambda, out var loopParameter) ||
+            call.GetArgument(arguments, call.ValueOrdinal)?.Expression is not { } countArg)
         {
             return null;
         }
@@ -133,7 +134,6 @@ internal sealed partial class ManagedExecutionRewriter
         var countName = $"{GSharpInternalNames.Lowering.GridStrideCountPrefix}{number}";
         var stepName = $"{GSharpInternalNames.Lowering.GridStrideStepPrefix}{number}";
         // Visit the count so that context accesses in it are rewritten like the rest of the body
-        var countArg = arguments[call.ArgumentOffset].Expression;
         var countExpr = Visit(countArg) as ExpressionSyntax ?? countArg;
 
         var countDeclaration = DeclareLocal(
@@ -150,7 +150,7 @@ internal sealed partial class ManagedExecutionRewriter
             SyntaxFactory.InvocationExpression(ManagedGpuContextMember("GridStrideStep"))
         );
 
-        var substituter = CreateSubstituter(arguments, lambda, loopParameter, indexName);
+        var substituter = CreateSubstituter(call.GetContext(arguments), lambda, loopParameter, indexName);
         var body = VisitLoopBody(lambda, substituter);
         // int <index> = (int)<unsigned index>;
         var indexDeclaration = DeclareLocal(
@@ -214,18 +214,20 @@ internal sealed partial class ManagedExecutionRewriter
     private ForStatementSyntax? RewriteForUnroll(InvocationExpressionSyntax invocation, GpuMacroCall call)
     {
         var arguments = invocation.ArgumentList.Arguments;
-        if (!TryGetLoopMacroBody(arguments, call, out var lambda, out var loopParameter))
+        if (!TryGetLoopMacroBody(arguments, call, out var lambda, out var loopParameter) ||
+            call.GetArgument(arguments, call.ValueOrdinal)?.Expression is not { } start ||
+            call.GetArgument(arguments, call.ValueOrdinal + 1)?.Expression is not { } count)
         {
             return null;
         }
 
-        var startArg = arguments[call.ArgumentOffset].Expression.WithoutTrivia();
-        var countArg = arguments[call.ArgumentOffset + 1].Expression.WithoutTrivia();
+        var startArg = start.WithoutTrivia();
+        var countArg = count.WithoutTrivia();
         var startExpr = Visit(startArg) as ExpressionSyntax ?? startArg;
         var countExpr = Visit(countArg) as ExpressionSyntax ?? countArg;
         var indexName = NextLoopVariableName();
 
-        var substituter = CreateSubstituter(arguments, lambda, loopParameter, indexName);
+        var substituter = CreateSubstituter(call.GetContext(arguments), lambda, loopParameter, indexName);
         var body = VisitLoopBody(lambda, substituter);
 
         var declaration = SyntaxFactory.VariableDeclaration(
@@ -277,8 +279,7 @@ internal sealed partial class ManagedExecutionRewriter
     {
         loopParameter = null;
         lambda = null;
-        if (arguments.Count <= call.LambdaArgumentIndex ||
-            arguments[call.LambdaArgumentIndex].Expression is not LambdaExpressionSyntax bodyLambda ||
+        if (call.GetBody(arguments) is not { } bodyLambda ||
             GpuCodeConstraints.GetMacroLoopParameter(bodyLambda, call.HasContext) is not { } parameter ||
             parameter.Identifier.ValueText.Length == 0)
         {
@@ -293,7 +294,7 @@ internal sealed partial class ManagedExecutionRewriter
     // Replaces the loop parameter by <loopName> and, for the ref ctx overloads, the context parameter by the context
     // argument
     private MacroLambdaSubstituter CreateSubstituter(
-        SeparatedSyntaxList<ArgumentSyntax> arguments,
+        ExpressionSyntax? context,
         LambdaExpressionSyntax lambda,
         ParameterSyntax loopParameter,
         string loopName)
@@ -301,10 +302,10 @@ internal sealed partial class ManagedExecutionRewriter
         ParameterSyntax? contextParameter = null;
         ExpressionSyntax? contextArgument = null;
         if (lambda is ParenthesizedLambdaExpressionSyntax { ParameterList.Parameters.Count: 2 } parenthesized &&
-            arguments.Count > 0)
+            context is not null)
         {
             contextParameter = parenthesized.ParameterList.Parameters[0];
-            contextArgument = arguments[0].Expression.WithoutTrivia();
+            contextArgument = context.WithoutTrivia();
         }
 
         return new MacroLambdaSubstituter(semanticModel, loopParameter, loopName, contextParameter, contextArgument);
