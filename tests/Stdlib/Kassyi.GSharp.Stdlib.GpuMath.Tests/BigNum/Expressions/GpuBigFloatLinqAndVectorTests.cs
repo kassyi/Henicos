@@ -763,6 +763,38 @@ public class GpuBigFloatLinqAndVectorTests : IDisposable
         Assert.Throws<DivideByZeroException>(() => byVector.Evaluate(_context));
     }
 
+    // 600-word significands, past the 512 words of the division kernel's shared buffers: the quotient keeps the top
+    // word instead of dividing the low 512 words.
+    // mutant: evalWords clamped to DivModSharedWords again
+    [Fact]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.Boundary)]
+    public void GpuBigFloatArray_Divide_SignificandsWiderThanTheSharedBuffers_UseEveryWord()
+    {
+        const int words = 600;
+        var dividendWords = new uint[words];
+        dividendWords[0] = 3;
+        dividendWords[words - 1] = 1;
+        var oneWords = new uint[words];
+        oneWords[0] = 1;
+        using var dividend = new GpuBigFloat(new GpuBigUInt(_context, dividendWords), 0, false);
+        using var one = new GpuBigFloat(new GpuBigUInt(_context, oneWords), 0, false);
+        using var array = new GpuBigFloatArray(_context, 2, words);
+        array.SetElement(0, dividend);
+        array.SetElement(1, dividend);
+
+        using var byScalar = array.AsVectorizedEnumerable().SelectDivide(one);
+        using var byItself = array.AsVectorizedEnumerable().ZipDivide(array.AsVectorizedEnumerable());
+        var quotients = byScalar.Evaluate(_context);
+        var ones = byItself.Evaluate(_context);
+
+        var expected = FromWords(dividendWords);
+        AssertElement(quotients.GetElement(0), expected, 1, "SelectDivide element 0");
+        AssertElement(quotients.GetElement(1), expected, 1, "SelectDivide element 1");
+        AssertElement(ones.GetElement(0), 1, 1, "ZipDivide element 0");
+        AssertElement(ones.GetElement(1), 1, 1, "ZipDivide element 1");
+    }
+
     // SetElement replaces the whole element: a shorter value leaves no stale upper words, and it never writes
     // past the element into its neighbour.
     [Fact]

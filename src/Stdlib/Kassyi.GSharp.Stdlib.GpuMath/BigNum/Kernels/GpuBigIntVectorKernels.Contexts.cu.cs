@@ -198,6 +198,12 @@ public static partial class GpuBigIntVectorKernels
         /// scalar node, which rejects a zero divisor on the host, passes none.
         /// </summary>
         public uint[] ZeroDivisor;
+
+        /// <summary>
+        /// The work buffers of elements wider than <see cref="DivModSharedWords"/>: <c>2 * evalWords</c> words per block
+        /// (the remainder, then the quotient), from <c>DivModScratch</c>; none for narrower elements.
+        /// </summary>
+        public uint[] Scratch;
     }
 
     public struct VectorFloatAddSubContext
@@ -218,6 +224,9 @@ public static partial class GpuBigIntVectorKernels
 
         /// <inheritdoc cref="VectorDivModContext.ZeroDivisor"/>
         public uint[] ZeroDivisor;
+
+        /// <inheritdoc cref="VectorDivModContext.Scratch"/>
+        public uint[] Scratch;
     }
 
     public struct VectorFloatCompareContext
