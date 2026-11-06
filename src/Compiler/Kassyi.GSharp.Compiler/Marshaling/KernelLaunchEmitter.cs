@@ -573,28 +573,24 @@ internal static class KernelLaunchEmitter
             return;
         }
 
+        // Only the managed-array launcher gets past here: the Ptr launcher passes every kind below through
         switch (shape.Kind)
         {
             case KernelParameterKind.CustomStruct:
-                WriteCustomStructUnmarshal(writer, shape, isDevicePtr);
+                WriteCustomStructUnmarshal(writer, shape);
                 break;
             case KernelParameterKind.Array:
-                WriteArrayUnmarshal(writer, plan, paramIndex, isDevicePtr);
+                WriteArrayUnmarshal(writer, plan, paramIndex);
                 break;
             case KernelParameterKind.RefScalar:
-                WriteRefOrOutScalarUnmarshal(writer, shape, isDevicePtr);
+                WriteRefOrOutScalarUnmarshal(writer, shape);
                 break;
         }
     }
 
-    private static void WriteCustomStructUnmarshal(SourceWriter writer, in KernelParameterShape shape, bool isDevicePtr)
+    private static void WriteCustomStructUnmarshal(SourceWriter writer, in KernelParameterShape shape)
     {
         if (shape.IsDirectCudaValueStruct)
-        {
-            return;
-        }
-
-        if (isDevicePtr && shape.IsByRef)
         {
             return;
         }
@@ -604,30 +600,21 @@ internal static class KernelLaunchEmitter
         var size = KernelHostNames.GetLocal(LauncherLocal.Size, shape);
         if (shape.IsByRef)
         {
-            if (!isDevicePtr)
-            {
-                writer.AppendLine("// Fast zero-allocation copy from device");
-                WriteSynchronizedCopy(writer, CopyDirection.DeviceToHost, $"({IntPtrType})(&{native})", device, size);
-            }
+            writer.AppendLine("// Fast zero-allocation copy from device");
+            WriteSynchronizedCopy(writer, CopyDirection.DeviceToHost, $"({IntPtrType})(&{native})", device, size);
         }
 
         writer.Append(shape.UnmarshalMethodName);
         using (writer.Parentheses())
         {
-            writer.Append($"ref {shape.Identifier}, ref {native}, {(isDevicePtr ? "true" : "false")}, hStream");
+            writer.Append($"ref {shape.Identifier}, ref {native}, false, hStream");
         }
 
         writer.AppendLine(";");
     }
 
-    private static void WriteArrayUnmarshal(SourceWriter writer, in ArraySharingPlan plan, int paramIndex,
-        bool isDevicePtr)
+    private static void WriteArrayUnmarshal(SourceWriter writer, in ArraySharingPlan plan, int paramIndex)
     {
-        if (isDevicePtr)
-        {
-            return;
-        }
-
         var shape = plan.Parameters[paramIndex];
         if (!plan.CopiesBack(paramIndex))
         {
@@ -720,13 +707,8 @@ internal static class KernelLaunchEmitter
         }
     }
 
-    private static void WriteRefOrOutScalarUnmarshal(SourceWriter writer, in KernelParameterShape shape, bool isDevicePtr)
+    private static void WriteRefOrOutScalarUnmarshal(SourceWriter writer, in KernelParameterShape shape)
     {
-        if (isDevicePtr)
-        {
-            return;
-        }
-
         if (shape.RefKind == RefKind.Out)
         {
             writer.AppendLine($"{shape.Identifier} = default;");
