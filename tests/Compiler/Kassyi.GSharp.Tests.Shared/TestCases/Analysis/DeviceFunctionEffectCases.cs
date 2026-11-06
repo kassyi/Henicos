@@ -57,6 +57,28 @@ public struct Box
     }
 }
 
+public struct Chained
+{
+    public int V;
+
+    public Chained(int[] log, int v)
+    {
+        log[0] = v;
+        V = v;
+    }
+
+    // Writes memory only through the constructor it chains to
+    public Chained(int[] log) : this(log, 7)
+    {
+    }
+}
+
+public static class CounterExtensions
+{
+    [GpuDeviceFunction]
+    public static void Advance(this ref Counter counter) => counter.Value++;
+}
+
 public static class Effects
 {
     private static int s_total;
@@ -111,6 +133,34 @@ public static class Effects
     [GpuDeviceFunction]
     public static int GetterRead(Box box) => box.First;
 
+    [GpuDeviceFunction]
+    public static int ExtensionOnLocal(int x)
+    {
+        var counter = new Counter(x);
+        counter.Advance();
+        return counter.Value;
+    }
+
+    // The local functions write a by-value parameter: their own (None), or the one of this function (Memory to them,
+    // None to this function)
+    [GpuDeviceFunction]
+    public static int CapturedParameter(int p)
+    {
+        int BumpOwn(int v)
+        {
+            v++;
+            return v;
+        }
+
+        int BumpCaptured()
+        {
+            p++;
+            return 0;
+        }
+
+        return BumpOwn(p) + BumpCaptured();
+    }
+
     // --- RefParameters ---
 
     [GpuDeviceFunction]
@@ -127,6 +177,9 @@ public static class Effects
 
     [GpuDeviceFunction]
     public static void ForwardsRef(ref int value) => Increment(ref value);
+
+    [GpuDeviceFunction]
+    public static void ExtensionWrite(ref Counter counter) => counter.Advance();
 
     [GpuDeviceFunction]
     public static void CarryIntrinsic(uint a, uint b, ref ulong carry)

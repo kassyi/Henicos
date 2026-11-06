@@ -87,6 +87,11 @@ public class EvaluationOrderTests : TranspilerTestBase
         EvaluationOrderScenarios.BinaryOperator(s_runNative);
 
     [SkippableFact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_WritesHiddenInTheCallee_KeepTheArgumentOrder() =>
+        EvaluationOrderScenarios.HiddenWrites(s_runNative);
+
+    [SkippableFact]
     [Scenario(TestScenario.Boundary)]
     public void Test_BinaryOperandsWithoutInterference_KeepTheirValues() =>
         EvaluationOrderScenarios.NoSpillBinary(s_runNative);

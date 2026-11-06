@@ -22,6 +22,8 @@ public class DeviceFunctionEffectsTests
     [InlineData("InitializerOnly")]
     [InlineData("QuietUsing")]
     [InlineData("GetterRead")]
+    [InlineData("ExtensionOnLocal")]
+    [InlineData("CapturedParameter")]
     public void Test_Classify_WritesOnlyOwnLocals_IsNone(string name) =>
         Assert.Equal(DeviceFunctionEffect.None, Classify("EffectCases.Effects", name));
 
@@ -33,6 +35,7 @@ public class DeviceFunctionEffectsTests
     [InlineData("ForwardsRef")]
     [InlineData("CarryIntrinsic")]
     [InlineData("CloseByExpression")]
+    [InlineData("ExtensionWrite")]
     public void Test_Classify_WritesThroughRefParameters_IsRefParameters(string name) =>
         Assert.Equal(DeviceFunctionEffect.RefParameters, Classify("EffectCases.Effects", name));
 
@@ -77,6 +80,22 @@ public class DeviceFunctionEffectsTests
         Assert.Equal(DeviceFunctionEffect.Memory, ClassifyConstructor("EffectCases.InitializerWrites"));
     }
 
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_Classify_LocalFunction_WritesToACapturedParameterAreMemory()
+    {
+        Assert.Equal(DeviceFunctionEffect.None, ClassifyLocalFunction("BumpOwn"));
+        Assert.Equal(DeviceFunctionEffect.Memory, ClassifyLocalFunction("BumpCaptured"));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_Classify_ChainedConstructor_IncludesTheConstructorItCalls() =>
+        Assert.Equal(DeviceFunctionEffect.Memory,
+            DeviceFunctionEffects.Classify(
+                GetType("EffectCases.Chained").InstanceConstructors.First(static c => c.Parameters.Length == 1),
+                s_compilation));
+
     [Theory]
     [Scenario(TestScenario.HappyPath)]
     [InlineData("System.Math", "Max", nameof(DeviceFunctionEffect.None))]
@@ -94,6 +113,17 @@ public class DeviceFunctionEffectsTests
     private static DeviceFunctionEffect ClassifyConstructor(string type) =>
         DeviceFunctionEffects.Classify(
             GetType(type).InstanceConstructors.First(static c => c.Parameters.Length > 0), s_compilation);
+
+    private static DeviceFunctionEffect ClassifyLocalFunction(string name)
+    {
+        var function = s_compilation.SyntaxTrees
+            .SelectMany(static tree => tree.GetRoot().DescendantNodes().OfType<LocalFunctionStatementSyntax>())
+            .First(f => f.Identifier.ValueText == name);
+        var model = s_compilation.GetSemanticModel(function.SyntaxTree);
+        var symbol = model.GetDeclaredSymbol(function) as IMethodSymbol ??
+                     throw new InvalidOperationException($"Local function '{name}' not found.");
+        return DeviceFunctionEffects.Classify(symbol, s_compilation);
+    }
 
     private static INamedTypeSymbol GetType(string metadataName) =>
         s_compilation.GetTypeByMetadataName(metadataName) ??

@@ -69,6 +69,11 @@ public class EvaluationOrderManagedTests : TranspilerTestBase
     public void Test_Managed_BinaryOperands_AreEvaluatedFromLeftToRight() =>
         EvaluationOrderScenarios.BinaryOperator(s_runManaged);
 
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_Managed_WritesHiddenInTheCallee_KeepTheArgumentOrder() =>
+        EvaluationOrderScenarios.HiddenWrites(s_runManaged);
+
     private static void RunManaged(Action launch)
     {
         bool previousState = CpuKernelLoader.ForceManagedExecution;

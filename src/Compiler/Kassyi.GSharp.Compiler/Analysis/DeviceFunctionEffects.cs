@@ -23,8 +23,10 @@ internal enum DeviceFunctionEffect
 /// A function with a body is classified by walking it: every assignment, increment, <c>ref</c> / <c>out</c> argument and
 /// call is checked for the variable it writes. A write to a local or by-value parameter of the function (lambdas and
 /// local functions inside it included) is invisible to the caller; a write through a <c>ref</c> / <c>out</c> parameter
-/// (or to a field of the receiver of a struct member) is <see cref="DeviceFunctionEffect.RefParameters"/>; anything else
-/// is <see cref="DeviceFunctionEffect.Memory"/>. A function in a call cycle is <see cref="DeviceFunctionEffect.Memory"/>.
+/// (or to a field of the receiver of a struct member, or to the receiver of a <c>this ref</c> extension) is
+/// <see cref="DeviceFunctionEffect.RefParameters"/>; anything else, a local or by-value parameter that a lambda or local
+/// function captures from the function around it included, is <see cref="DeviceFunctionEffect.Memory"/>. A constructor
+/// that chains with <c>: this(...)</c> also does what the constructor it calls does. A function in a call cycle is <see cref="DeviceFunctionEffect.Memory"/>.
 /// </para>
 /// <para>
 /// A function without a body (YAML mapped, <c>[CudaIntrinsic]</c>, metadata) is classified by its declaration: the
@@ -364,19 +366,24 @@ internal static class DeviceFunctionEffects
 
                 return ClassifyCall(creation, creation.ArgumentList, model.GetSymbol(creation), method, body, model,
                     compilation, visiting);
+            case ConstructorInitializerSyntax initializer:
+                return ClassifyCall(initializer, initializer.ArgumentList, model.GetSymbol(initializer), method, body,
+                    model, compilation, visiting);
             default:
                 return DeviceFunctionEffect.None;
         }
     }
 
-    private static DeviceFunctionEffect ClassifyCall(ExpressionSyntax call, ArgumentListSyntax? arguments,
+    private static DeviceFunctionEffect ClassifyCall(SyntaxNode call, ArgumentListSyntax? arguments,
         ISymbol? symbol, IMethodSymbol method, SyntaxNode body, SemanticModel model, Compilation compilation,
         HashSet<IMethodSymbol> visiting)
     {
         if (symbol is not IMethodSymbol callee)
         {
             // nameof(...) binds to no method and is a constant
-            return model.GetSafeConstantValue(call).HasValue ? DeviceFunctionEffect.None : DeviceFunctionEffect.Memory;
+            return call is ExpressionSyntax expression && model.GetSafeConstantValue(expression).HasValue
+                ? DeviceFunctionEffect.None
+                : DeviceFunctionEffect.Memory;
         }
 
         // A local function is part of the body, whose walk sees its writes; a delegate may do anything
@@ -414,6 +421,13 @@ internal static class DeviceFunctionEffects
             result = Max(result, call is InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax access }
                 ? ClassifyTarget(access.Expression, method, body, model)
                 : ClassifyReceiverOfThis(method));
+        }
+
+        // c.Inc() of 'static void Inc(this ref Cell c)' passes c by reference, with no ref keyword at the call
+        if (callee.ReducedFrom is { Parameters: [{ RefKind: RefKind.Ref }, ..] } &&
+            call is InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax receiver })
+        {
+            result = Max(result, ClassifyTarget(receiver.Expression, method, body, model));
         }
 
         return result;
@@ -470,7 +484,9 @@ internal static class DeviceFunctionEffects
             ILocalSymbol { IsRef: false } local => IsDeclaredIn(local, body)
                 ? DeviceFunctionEffect.None
                 : DeviceFunctionEffect.Memory,
-            IParameterSymbol { RefKind: RefKind.None } => DeviceFunctionEffect.None,
+            IParameterSymbol { RefKind: RefKind.None } parameter => IsOwnParameter(parameter, method, body)
+                ? DeviceFunctionEffect.None
+                : DeviceFunctionEffect.Memory,
             IParameterSymbol { RefKind: RefKind.Ref or RefKind.Out } parameter =>
                 parameter.ContainingSymbol.IsEqualTo(method)
                     ? DeviceFunctionEffect.RefParameters
@@ -487,10 +503,15 @@ internal static class DeviceFunctionEffects
                 ? DeviceFunctionEffect.RefParameters
                 : DeviceFunctionEffect.Memory;
 
+    // A by-value parameter of the function itself, or of a lambda or local function inside it (a captured parameter of
+    // an enclosing function is the caller's)
+    private static bool IsOwnParameter(IParameterSymbol parameter, IMethodSymbol method, SyntaxNode body) =>
+        parameter.ContainingSymbol.OriginalDefinition.IsEqualTo(method) || IsDeclaredIn(parameter, body);
+
     // A local of the function itself, lambdas and local functions inside it included (a captured local of an
     // enclosing function is the caller's)
-    private static bool IsDeclaredIn(ILocalSymbol local, SyntaxNode body) =>
-        local.DeclaringSyntaxReferences
+    private static bool IsDeclaredIn(ISymbol variable, SyntaxNode body) =>
+        variable.DeclaringSyntaxReferences
             .AsStackEnumerable()
             .Any(body, static (reference, b) => reference.SyntaxTree == b.SyntaxTree && b.FullSpan.Contains(reference.Span));
 
