@@ -155,6 +155,23 @@ public class FingerprintStabilityTests
     [Fact]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.Boundary)]
+    public void KeepNew_MultiLineVerbatimLiteralCheckedOutWithCrlf_IsTheSameFinding()
+    {
+        var source = "namespace N;\npublic class C\n{\n    public string S = @\"first\n" + new string('v', 130) + "\nlast\";\n}\n";
+        using var workspace = new ScanWorkspace();
+        workspace.Write("proj/Verbatim.cs", source);
+        var before = Scan(workspace, "proj/Verbatim.cs");
+        workspace.Write("proj/Verbatim.cs", source.Replace("\n", "\r\n", StringComparison.Ordinal));
+        var after = Scan(workspace, "proj/Verbatim.cs");
+
+        Assert.Single(Of(after, "long-string-literal"));
+        Assert.Empty(New(before, after, "long-string-literal"));
+    }
+
+    [Fact]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Unit)]
     [Scenario(TestScenario.HappyPath)]
     public void KeepNew_IfChainAddedBeforeAnotherInTheSameMethod_ReportsTheAddedChain()
     {

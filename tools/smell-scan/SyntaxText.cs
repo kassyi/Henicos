@@ -34,8 +34,13 @@ internal static class SyntaxText
     /// <summary>Returns a hash of <see cref="Compact"/> of <paramref name="node"/>, the same for any formatting or comments.</summary>
     public static string Hash(SyntaxNode node) => HashOf(Compact(node));
 
-    /// <summary>Returns the hash of <paramref name="text"/> as 16 hexadecimal digits.</summary>
-    public static string HashOf(string text) => Kassyi.GSharp.Hashing.Fnv1A64.Compute(text).ToString("x16");
+    /// <summary>
+    /// Returns the hash of <paramref name="text"/> as 16 hexadecimal digits. Line breaks count as <c>\n</c>, so a
+    /// multi-line verbatim or raw string hashes the same in a Windows checkout (CRLF) and a Linux one (LF).
+    /// </summary>
+    public static string HashOf(string text) =>
+        Kassyi.GSharp.Hashing.Fnv1A64.Compute(text.Replace("\r\n", "\n", StringComparison.Ordinal).Replace('\r', '\n'))
+            .ToString("x16");
 
     // A name that follows a closing type token is an element name of a tuple: List<int> Items, int[] Numbers, string? Name.
     private static bool NeedsSpace(char previous, char next) =>
