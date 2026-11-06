@@ -439,7 +439,7 @@ public static partial class StackLinqDifferentialKernels
         "UnfusedSum",
     ];
 
-    // Uses Reference model (not Oracle) because host StackLinq.Sum(float) uses Vector<float> SIMD for SpanEnumerator (#730).
+    // The reference is System.Linq's Sum: a double accumulator, in sequence order
     [GpuKernel]
     public static void FloatSequentialSumKernel(float[] xs, float[] r)
     {
@@ -468,7 +468,7 @@ public static partial class StackLinqDifferentialKernels
         "SelectorSum",
     ];
 
-    // Uses Reference model because host StackLinq.Sum(double) uses Vector<double> SIMD for SpanEnumerator (#730).
+    // The reference is System.Linq's Sum: in sequence order
     [GpuKernel]
     public static void DoubleSequentialSumKernel(double[] xs, double[] r)
     {

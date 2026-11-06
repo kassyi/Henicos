@@ -51,6 +51,10 @@ int total = numbers
 
 This extension method guarantees zero heap allocations by returning a `ref struct` enumerator that is fully inlineable by the G# Transpiler.
 
+A `float` or `double` sum gives the result of `System.Linq`: the elements are added in sequence order, and a `float`
+sum adds them in a `double` accumulator that is rounded to `float` once at the end. This holds on the host, in kernels
+on CUDA and on both CPU paths; the sum is never reordered for SIMD. `SumSequential` gives the same result.
+
 ## See also
 
 ### BCL API > LINQ

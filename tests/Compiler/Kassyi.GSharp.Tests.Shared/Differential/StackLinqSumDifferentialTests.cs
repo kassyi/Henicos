@@ -5,8 +5,9 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 
 /// <summary>
 /// Differential tests for <c>StackLinq</c> <see cref="float"/> and <see cref="double"/> <c>Sum</c> overloads (#730).
-/// Verifies that the managed path sums elements sequentially from start to end, matching the GPU and the native CPU path
-/// bitwise even on ill-conditioned sequences where SIMD lane summation rounds differently.
+/// Every path gives the result of System.Linq's Sum: the elements are added in sequence order, and a float sum adds them
+/// in a double accumulator, bitwise even on ill-conditioned sequences where SIMD lane summation or a float accumulator
+/// rounds differently.
 /// </summary>
 public class StackLinqSumDifferentialTests
 {
@@ -24,7 +25,7 @@ public class StackLinqSumDifferentialTests
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
-        Reference = FillReference<float>,
+        Reference = static (b, _) => FillReference(b, (float)System.Linq.Enumerable.Sum(b.Get<float>("data"))),
     };
 
     private static readonly DifferentialCase s_doubleSum = new("StackLinqSumDifferentialKernels.DoubleSumMatrixKernel")
@@ -39,7 +40,7 @@ public class StackLinqSumDifferentialTests
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
-        Reference = FillReference<double>,
+        Reference = static (b, _) => FillReference(b, System.Linq.Enumerable.Sum(b.Get<double>("data"))),
     };
 
     [SkippableFact]
@@ -50,8 +51,8 @@ public class StackLinqSumDifferentialTests
     {
         // Every form of StackLinq float Sum (direct, selector, Select, Where, Take, static call, and [GpuDeviceFunction]
         // direct and transitive) sums elements in index order from 0 to Length - 1, matching the GPU on ill-conditioned
-        // inputs where SIMD vector reduction rounds away small terms (1.0f vs 0.0f).
-        // mutant: ManagedExecutionRewriter_Invocation.cs TryRewriteSequentialSum returns null (direct, static and device forms fail with 0 vs 1)
+        // inputs where SIMD vector reduction or a float accumulator rounds away small terms (8.0f vs 1.0f or 0.0f).
+        // mutant: StackLinq.cuh __gsharp_linq_sum_accumulator<float> keeps float (the native columns fail with 1 vs 8)
         Assert.NotEmpty(DiffPaths.Available);
         DifferentialRunner.Run(s_floatSum);
     }
@@ -64,21 +65,15 @@ public class StackLinqSumDifferentialTests
     {
         // Every form of StackLinq double Sum sums elements in index order from 0 to Length - 1, matching the GPU on
         // ill-conditioned inputs where SIMD vector reduction rounds away small terms (1.0 vs 0.0).
-        // mutant: ManagedRewriteClassifier.cs IsSequentialSum excludes SpecialType.System_Double (double columns fail with 0 vs 1)
+        // mutant: StackLinqExtensions.Sum.cs double Sum sums a contiguous source with SumVectorized again (the managed columns fail)
         Assert.NotEmpty(DiffPaths.Available);
         DifferentialRunner.Run(s_doubleSum);
     }
 
-    private static void FillReference<T>(DiffBuffers b, LaunchShape _) where T : unmanaged, INumberBase<T>
+    // Every column holds the sum, except the last: a device function that adds two sums
+    private static void FillReference<T>(DiffBuffers b, T sum) where T : unmanaged, INumberBase<T>
     {
-        var data = b.Get<T>("data");
         var r = b.Get<T>("r");
-        T sum = T.Zero;
-        foreach (T v in data)
-        {
-            sum += v;
-        }
-
         int cols = StackLinqSumDifferentialKernels.Columns.Length;
         for (int t = 0; t < Rows; t++)
         {

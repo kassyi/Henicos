@@ -3319,7 +3319,7 @@ auto __gsharp_id_4_slice = __gsharp_id_0_xs.AsSpan().Slice(__gsharp_id_3_baseIdx
 int __gsharp_id_5_o = __gsharp_mul_i32(__gsharp_id_2_t,3);
 __gsharp_id_1_r[__gsharp_id_5_o]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_4_slice;
-float __gsharp_fusion_res = 0;
+double __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
@@ -3327,11 +3327,11 @@ for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsh
 auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return (float)__gsharp_fusion_res;
 }());
 __gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_5_o,1)]=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_4_slice;
-float __gsharp_fusion_res = 0;
+double __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
@@ -3349,7 +3349,7 @@ return __gsharp_id_7_x;
 __gsharp_fusion_res += __gsharp_val_1;
 }
 }
-return __gsharp_fusion_res;
+return (float)__gsharp_fusion_res;
 }());
 auto __gsharp_id_8_unfused = Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_id_4_slice);
 __gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_5_o,2)]=Kassyi::ZeroAlloc::Linq::StackLinq::Sum(__gsharp_id_8_unfused);

@@ -250,11 +250,7 @@ public class StackLinqDifferentialTests
             int rows = xs.Length / SliceLen;
             for (int t = 0; t < rows; t++)
             {
-                float sum = 0f;
-                for (int i = 0; i < SliceLen; i++)
-                {
-                    sum += xs[t * SliceLen + i];
-                }
+                float sum = System.Linq.Enumerable.Sum(xs.AsSpan(t * SliceLen, SliceLen).ToArray());
 
                 int o = t * 3;
                 r[o] = sum;
@@ -283,14 +279,9 @@ public class StackLinqDifferentialTests
             int rows = xs.Length / SliceLen;
             for (int t = 0; t < rows; t++)
             {
-                double sum = 0.0;
-                double selSum = 0.0;
-                for (int i = 0; i < SliceLen; i++)
-                {
-                    double val = xs[t * SliceLen + i];
-                    sum += val;
-                    selSum += val * 2.0;
-                }
+                var slice = xs.AsSpan(t * SliceLen, SliceLen).ToArray();
+                double sum = System.Linq.Enumerable.Sum(slice);
+                double selSum = System.Linq.Enumerable.Sum(slice, static x => x * 2.0);
 
                 int o = t * 4;
                 r[o + 0] = sum;

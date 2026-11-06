@@ -98,6 +98,8 @@ public static partial class StackLinqExtensions
     /// <param name="source">A sequence of <see cref="float"/> values to calculate the sum of.</param>
     /// <returns>The sum of the values in the sequence.</returns>
     /// <remarks>
+    /// <para>As <c>System.Linq</c>, the elements are added in sequence order in a <see cref="double"/> accumulator, which
+    /// is rounded to <see cref="float"/> once at the end.</para>
     /// <para><b>Performance:</b> Consumes the enumerator in $O(N)$ time with zero heap allocations.</para>
     /// </remarks>
     public static float Sum<TEnumerator>(
@@ -105,18 +107,37 @@ public static partial class StackLinqExtensions
         where TEnumerator : struct, IStackEnumerator<float>, allows ref struct
     {
         var enumerator = source.Enumerator;
-        if (TryTakeRemainingSpan<TEnumerator, float>(ref enumerator, out var span))
-        {
-            return SumVectorized(span);
-        }
-
-        float sum = 0;
+        double sum = 0;
         while (enumerator.TryGetNext(out var value))
         {
             sum += value;
         }
 
-        return sum;
+        return (float)sum;
+    }
+
+    /// <summary>
+    /// Computes the sum of a parallel sequence of <see cref="float"/> values. CPU fallback implementation.
+    /// </summary>
+    /// <typeparam name="TEnumerator">The type of the source enumerator.</typeparam>
+    /// <param name="source">A parallel sequence of <see cref="float"/> values to calculate the sum of.</param>
+    /// <returns>The sum of the values in the sequence.</returns>
+    /// <remarks>
+    /// As the sequential <c>Sum</c>, the elements are added in a <see cref="double"/> accumulator, which is rounded to
+    /// <see cref="float"/> once at the end.
+    /// </remarks>
+    public static float Sum<TEnumerator>(
+        this ParallelStackEnumerable<TEnumerator, float> source)
+        where TEnumerator : struct, IStackEnumerator<float>, allows ref struct
+    {
+        var enumerator = source.Enumerator;
+        double sum = 0;
+        while (enumerator.TryGetNext(out var value))
+        {
+            sum += value;
+        }
+
+        return (float)sum;
     }
 
     /// <summary>
@@ -144,6 +165,7 @@ public static partial class StackLinqExtensions
     /// <param name="source">A sequence of <see cref="double"/> values to calculate the sum of.</param>
     /// <returns>The sum of the values in the sequence.</returns>
     /// <remarks>
+    /// <para>As <c>System.Linq</c>, the elements are added in sequence order.</para>
     /// <para><b>Performance:</b> Consumes the enumerator in $O(N)$ time with zero heap allocations.</para>
     /// </remarks>
     public static double Sum<TEnumerator>(
@@ -151,11 +173,6 @@ public static partial class StackLinqExtensions
         where TEnumerator : struct, IStackEnumerator<double>, allows ref struct
     {
         var enumerator = source.Enumerator;
-        if (TryTakeRemainingSpan<TEnumerator, double>(ref enumerator, out var span))
-        {
-            return SumVectorized(span);
-        }
-
         double sum = 0;
         while (enumerator.TryGetNext(out var value))
         {
@@ -189,19 +206,11 @@ public static partial class StackLinqExtensions
     /// <typeparam name="TEnumerator">The type of the source enumerator.</typeparam>
     /// <param name="source">A sequence of <see cref="float"/> values to calculate the sum of.</param>
     /// <returns>The sequential sum of the values in the sequence.</returns>
+    /// <remarks>The same as <c>Sum</c>, which adds in sequence order too.</remarks>
     public static float SumSequential<TEnumerator>(
         this StackEnumerable<TEnumerator, float> source)
-        where TEnumerator : struct, IStackEnumerator<float>, allows ref struct
-    {
-        var enumerator = source.Enumerator;
-        float sum = 0;
-        while (enumerator.TryGetNext(out var value))
-        {
-            sum += value;
-        }
-
-        return sum;
-    }
+        where TEnumerator : struct, IStackEnumerator<float>, allows ref struct =>
+        source.Sum();
 
     /// <summary>
     /// Computes the sum of the sequence of <see cref="float"/> values obtained by invoking a transform function on each element of the input sequence, in sequential element order without SIMD reassociation.
@@ -224,19 +233,11 @@ public static partial class StackLinqExtensions
     /// <typeparam name="TEnumerator">The type of the source enumerator.</typeparam>
     /// <param name="source">A sequence of <see cref="double"/> values to calculate the sum of.</param>
     /// <returns>The sequential sum of the values in the sequence.</returns>
+    /// <remarks>The same as <c>Sum</c>, which adds in sequence order too.</remarks>
     public static double SumSequential<TEnumerator>(
         this StackEnumerable<TEnumerator, double> source)
-        where TEnumerator : struct, IStackEnumerator<double>, allows ref struct
-    {
-        var enumerator = source.Enumerator;
-        double sum = 0;
-        while (enumerator.TryGetNext(out var value))
-        {
-            sum += value;
-        }
-
-        return sum;
-    }
+        where TEnumerator : struct, IStackEnumerator<double>, allows ref struct =>
+        source.Sum();
 
     /// <summary>
     /// Computes the sum of the sequence of <see cref="double"/> values obtained by invoking a transform function on each element of the input sequence, in sequential element order without SIMD reassociation.
@@ -253,7 +254,8 @@ public static partial class StackLinqExtensions
         where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct =>
         source.Select(selector).SumSequential();
 
-    // The SIMD path of the int, float and double sums: whole vectors first, then the elements left over
+    // The SIMD path of the int sum: whole vectors first, then the elements left over. Integer addition wraps, so the
+    // order does not change the result
     private static T SumVectorized<T>(ReadOnlySpan<T> span)
         where T : struct, IAdditionOperators<T, T, T>, IAdditiveIdentity<T, T>
     {

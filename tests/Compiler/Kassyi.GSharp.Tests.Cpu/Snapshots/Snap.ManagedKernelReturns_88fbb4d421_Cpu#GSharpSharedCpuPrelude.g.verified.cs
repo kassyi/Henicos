@@ -1862,6 +1862,12 @@ __device__ __forceinline__ bool __gsharp_linq_equals(const T& a, const T& b) { r
 __device__ __forceinline__ bool __gsharp_linq_equals(float a, float b) { return a == b || (a != a && b != b); }
 __device__ __forceinline__ bool __gsharp_linq_equals(double a, double b) { return a == b || (a != a && b != b); }
 
+// The accumulator of a Sum: float adds in double and rounds once at the end, as System.Linq does
+template <typename T>
+struct __gsharp_linq_sum_accumulator { typedef T type; };
+template <>
+struct __gsharp_linq_sum_accumulator<float> { typedef double type; };
+
 namespace Kassyi { namespace ZeroAlloc { namespace Linq {
 
 template <typename T>
@@ -2335,11 +2341,12 @@ return result;
 
 template <typename TSource>
 __device__ static inline auto Sum(TSource source) {
-decltype(source.Current()) sum = 0;
+using TElement = decltype(source.Current());
+typename __gsharp_linq_sum_accumulator<TElement>::type sum = 0;
 while (source.MoveNext()) {
 sum += source.Current();
 }
-return sum;
+return (TElement)sum;
 }
 
 template <typename TSource, typename TFunc>
