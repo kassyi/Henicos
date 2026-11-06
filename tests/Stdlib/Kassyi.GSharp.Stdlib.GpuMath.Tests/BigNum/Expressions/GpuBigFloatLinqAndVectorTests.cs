@@ -738,6 +738,35 @@ public class GpuBigFloatLinqAndVectorTests : IDisposable
         Assert.Throws<ArgumentException>(() => new GpuBigFloatArray(significands, exponents, signs));
     }
 
+    // One-word significands: 0xFFFFFFFF * 2^32 - 1 aligns the left operand 32 bits up into the carry word, so the
+    // difference fills the top bit of the result. Its sign comes from the borrow of the magnitude subtraction.
+    // mutant: the sign read from the top bit of the result instead of the borrow (-4294967297)
+    [Fact]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.Boundary)]
+    public void GpuBigFloatArray_Subtract_DifferenceReachesTheTopBit_TakesTheSignFromTheBorrow()
+    {
+        using var left = new GpuBigFloatArray(_context, 2, 1);
+        using var right = new GpuBigFloatArray(_context, 2, 1);
+        using var big = CreateFloat(0xFFFFFFFFL, exponent: 32, numWords: 1);
+        using var one = CreateFloat(1, numWords: 1);
+        left.SetElement(0, big);
+        left.SetElement(1, one);
+        right.SetElement(0, one);
+        right.SetElement(1, big);
+
+        using var zip = left.AsVectorizedEnumerable().ZipSubtract(right.AsVectorizedEnumerable());
+        var zipResult = zip.Evaluate(_context);
+        using var select = left.AsVectorizedEnumerable().SelectSubtract(one);
+        var selectResult = select.Evaluate(_context);
+
+        var difference = (BigInteger.One << 64) - (BigInteger.One << 32) - 1;
+        AssertElement(zipResult.GetElement(0), difference, 1, "ZipSubtract element 0");
+        AssertElement(zipResult.GetElement(1), -difference, 1, "ZipSubtract element 1");
+        AssertElement(selectResult.GetElement(0), difference, 1, "SelectSubtract element 0");
+        AssertElement(selectResult.GetElement(1), 0, 1, "SelectSubtract element 1");
+    }
+
     // SetElement replaces the whole element: a shorter value leaves no stale upper words, and it never writes
     // past the element into its neighbour.
     [Fact]

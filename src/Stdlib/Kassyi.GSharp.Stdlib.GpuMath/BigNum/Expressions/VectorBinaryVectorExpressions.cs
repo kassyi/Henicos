@@ -148,7 +148,7 @@ internal sealed class VectorAddVectorExpression(
 internal sealed class VectorSubVectorExpression(
     [TakesOwnership] IGpuBigIntVectorExpression left,
     [TakesOwnership] IGpuBigIntVectorExpression right)
-    : VectorBinaryVectorExpressionBase(left, right, Math.Max(left.WordsPerElement, right.WordsPerElement))
+    : VectorBinaryVectorExpressionBase(left, right, Math.Max(left.WordsPerElement, right.WordsPerElement) + 1)
 {
     protected override void DispatchKernel(
         GpuWorkspace workspace,

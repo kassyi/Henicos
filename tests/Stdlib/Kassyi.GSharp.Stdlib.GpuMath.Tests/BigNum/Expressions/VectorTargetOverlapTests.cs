@@ -230,7 +230,8 @@ public sealed class VectorTargetOverlapTests : IDisposable
     public void Int_TargetOverTheInputSigns_ReceivesTheExactResult()
     {
         // The target is the input's own signs shifted by one element: the kernel would write a magnitude over the sign
-        // another block still reads, so the overlap check covers the signs of an input, not only its values.
+        // another block still reads, so the overlap check covers the signs of an input, not only its values. Division
+        // keeps the one-word width of the input, so the sign words can serve as its target.
         // mutant: DeviceRanges.Overlaps(GpuBigUIntArrayView, GpuBigIntArrayView) without `|| Overlaps(a, b.Signs)`
         // (signs flipped)
         const int count = 65536;
@@ -238,12 +239,12 @@ public sealed class VectorTargetOverlapTests : IDisposable
         var values = Enumerable.Range(0, count).Select(_ => new BigInteger(random.Next(0, 1 << 30))).ToArray();
         using var array = CreateSignedArray(values);
         using var scalar = new GpuBigInt(GpuBigUInt.FromBigInteger(_workspace, 5, 1), false);
-        using var expression = array.AsVectorizedEnumerable().SelectSubtract(scalar);
+        using var expression = array.AsVectorizedEnumerable().SelectDivide(scalar);
         GpuBigUIntArrayView signs = array.Signs;
 
         var result = expression.Evaluate(_workspace, 0, count - 1, signs.Slice(1, count - 1));
 
-        Assert.Equal(values.Take(count - 1).Select(static v => v - 5), ReadSigned(result));
+        Assert.Equal(values.Take(count - 1).Select(static v => v / 5), ReadSigned(result));
     }
 
     [SkippableFact]
@@ -295,26 +296,26 @@ public sealed class VectorTargetOverlapTests : IDisposable
     [Scenario(TestScenario.Boundary)]
     [InlineData(false)]
     [InlineData(true)]
-    public void Int_PublicSliceOfTheInput_AsTarget_ReceivesTheExactResult(bool subtract)
+    public void Int_PublicSliceOfTheInput_AsTarget_ReceivesTheExactResult(bool modulo)
     {
         // The reproduction of #864 through the public API only: element i of the input written to slot i + 1 of the
-        // same array.
-        // mutant: the overlap check removed (SelectDivide: almost every quotient wrong; SelectSubtract: racy)
+        // same array. Division and modulo keep the width of the input, so a slice of it can be their target.
+        // mutant: the overlap check removed (almost every quotient or remainder wrong)
         const int count = 2000;
         const int words = 64;
-        var random = new Random(Seed + (subtract ? 1 : 0));
+        var random = new Random(Seed + (modulo ? 1 : 0));
         var values = RandomValues(random, count, words * 32 - 40);
         var scalarValue = new BigInteger(12345);
         using var array = CreateIntArray(values, words);
         using var scalar = new GpuBigInt(GpuBigUInt.FromBigInteger(_workspace, scalarValue, words), false);
-        using var expression = subtract
-            ? array.AsVectorizedEnumerable().SelectSubtract(scalar)
+        using var expression = modulo
+            ? array.AsVectorizedEnumerable().SelectModulo(scalar)
             : array.AsVectorizedEnumerable().SelectDivide(scalar);
         GpuBigUIntArrayView arrayValues = array.Values;
 
         var result = expression.Evaluate(_workspace, 0, count - 1, arrayValues.Slice(1, count - 1));
 
-        var expected = values.Take(count - 1).Select(v => subtract ? v - scalarValue : v / scalarValue);
+        var expected = values.Take(count - 1).Select(v => modulo ? v % scalarValue : v / scalarValue);
         Assert.Equal(expected, ReadSigned(result));
     }
 
