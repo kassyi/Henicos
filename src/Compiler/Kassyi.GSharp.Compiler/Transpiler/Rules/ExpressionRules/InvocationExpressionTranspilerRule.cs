@@ -89,7 +89,7 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
         context.Visitor.Visit(node.Expression);
         using (context.Emitter.Writer.Parentheses())
         {
-            TranspileArguments(symbol.Parameters, node.ArgumentList.Arguments, in sequence, ref context, convertArguments);
+            TranspileArguments(symbol, node.ArgumentList.Arguments, in sequence, ref context, convertArguments);
             DynamicSharedMemoryEmitter.AppendTableArgument(node, symbol, ref context);
         }
     }
@@ -116,7 +116,7 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
             sequence.AppendReceiver(receiver, byReference, ref context);
 
             context.Emitter.Writer.AppendIf(symbol.Parameters.Length > 0, ",");
-            TranspileArguments(symbol.Parameters, node.ArgumentList.Arguments, in sequence, ref context);
+            TranspileArguments(symbol, node.ArgumentList.Arguments, in sequence, ref context);
             DynamicSharedMemoryEmitter.AppendTableArgument(node, extension, ref context);
         }
     }
@@ -156,7 +156,7 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
         using (context.Emitter.Writer.Parentheses())
         {
             // Lowering has evaluated the arguments into temporaries already (WarpInstructionRewriter.SpillArguments)
-            TranspileArguments(callee.Parameters, call.ArgumentList.Arguments, default, ref context);
+            TranspileArguments(callee, call.ArgumentList.Arguments, default, ref context);
             if (callee.Parameters.Length > 0)
             {
                 context.Emitter.Writer.Append(',');
@@ -200,45 +200,37 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
         }
     }
 
+    // The arguments in the order of the parameters, each the argument that C# binds to the parameter: the one that names
+    // it, or the one at its position (a positional argument may follow a named one in its own position, F(a: 1, 5)).
+    // A params parameter takes every argument it binds; an omitted optional parameter takes its default value
     private static void TranspileArguments(
-        ImmutableArray<IParameterSymbol> parameters,
+        IMethodSymbol callee,
         SeparatedSyntaxList<ArgumentSyntax> arguments,
         in EvaluationOrder.CallSequence sequence,
         ref TranspileContext context,
         bool convertArguments = false)
     {
-        var positionalArgIndex = 0;
-
+        var parameters = callee.Parameters;
         for (var i = 0; i < parameters.Length; i++)
         {
             var parameter = parameters[i];
-            var providedArg = FindNamedArgument(arguments, parameter.Name);
-
-            if (providedArg == null && positionalArgIndex < arguments.Count &&
-                arguments[positionalArgIndex].NameColon == null)
+            var hasArgument = false;
+            for (var j = 0; j < arguments.Count; j++)
             {
-                providedArg = arguments[positionalArgIndex];
-                positionalArgIndex++;
-            }
-
-            if (providedArg != null)
-            {
-                // The argument itself, or the temporary it was evaluated into (an in or ref readonly parameter by address)
-                sequence.AppendArgument(providedArg, parameter, ref context, convertArguments);
-
-                if (parameter.IsParams && positionalArgIndex < arguments.Count)
+                if (callee.FindParameter(arguments, j)?.Ordinal != i)
                 {
-                    while (positionalArgIndex < arguments.Count && arguments[positionalArgIndex].NameColon == null)
-                    {
-                        context.Emitter.Writer.Append(',');
-                        sequence.AppendArgument(arguments[positionalArgIndex], parameter, ref context, convertArguments);
-                        positionalArgIndex++;
-                    }
+                    continue;
                 }
+
+                context.Emitter.Writer.AppendIf(hasArgument, ",");
+                // The argument itself, or the temporary it was evaluated into (an in or ref readonly parameter by address)
+                sequence.AppendArgument(arguments[j], parameter, ref context, convertArguments);
+                hasArgument = true;
             }
-            else if (parameter.HasExplicitDefaultValue)
+
+            if (!hasArgument)
             {
-                EmitDefaultValue(parameter, ref context);
+                AppendOmittedArgument(parameter, ref context);
             }
 
             if (i < parameters.Length - 1)
@@ -248,12 +240,19 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
         }
     }
 
-    private static ArgumentSyntax? FindNamedArgument(
-        SeparatedSyntaxList<ArgumentSyntax> arguments,
-        string parameterName) =>
-        arguments
-            .AsStackEnumerable()
-            .FirstOrDefault(parameterName, static (arg, name) => arg.NameColon?.Name.Identifier.Text == name);
+    // An optional parameter the call omits: its default value, or for [Optional] without one default(T), as C# passes.
+    // A params parameter without arguments takes nothing
+    private static void AppendOmittedArgument(IParameterSymbol parameter, ref TranspileContext context)
+    {
+        if (parameter.HasExplicitDefaultValue)
+        {
+            EmitDefaultValue(parameter, ref context);
+        }
+        else if (parameter.IsOptional)
+        {
+            context.Emitter.Writer.Append("{}");
+        }
+    }
 
     private static void EmitDefaultValue(IParameterSymbol parameter, ref TranspileContext context)
     {
