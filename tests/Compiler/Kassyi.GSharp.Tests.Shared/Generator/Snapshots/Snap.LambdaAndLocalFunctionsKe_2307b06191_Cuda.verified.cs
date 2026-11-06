@@ -10,19 +10,15 @@ namespace Kassyi.GSharp.Generated
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static class GSharpModuleContext_SnapshotTest
 {
-private static global::System.IntPtr? s_hModule;
-private static readonly object s_lock = new object();
+private static byte[]? s_fatbin;
 
 /// <summary>
-/// Loads the fatbin module for this assembly into the CUDA driver if it hasn't been loaded yet.
+/// Reads the fatbin module of this assembly; the file is read once.
 /// </summary>
-public static global::System.IntPtr GetOrLoadModule()
+public static byte[] GetFatbin()
 {
-if (s_hModule.HasValue) return s_hModule.Value;
-lock (s_lock)
-{
-if (s_hModule.HasValue) return s_hModule.Value;
-
+var fatbin = global::System.Threading.Volatile.Read(ref s_fatbin);
+if (fatbin is not null) return fatbin;
 var baseDir = global::System.IO.Path.GetDirectoryName(typeof(GSharpModuleContext_SnapshotTest).Assembly.Location) ?? global::System.AppContext.BaseDirectory;
 var fatbinPath = global::System.IO.Path.Combine(baseDir, "Kassyi.GSharp.Kernels_SnapshotTest.gfatbin");
 if (!global::System.IO.File.Exists(fatbinPath))
@@ -30,11 +26,14 @@ if (!global::System.IO.File.Exists(fatbinPath))
 throw new global::System.InvalidOperationException($"AOT kernel binary was not found at '{fatbinPath}'.");
 }
 
-byte[] binaryData = global::System.IO.File.ReadAllBytes(fatbinPath);
-s_hModule = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadModule(binaryData);
-return s_hModule.Value;
+fatbin = global::System.IO.File.ReadAllBytes(fatbinPath);
+return global::System.Threading.Interlocked.CompareExchange(ref s_fatbin, fatbin, null) ?? fatbin;
 }
-}
+
+/// <summary>
+/// Loads the fatbin module of this assembly into the current CUDA context if it is not loaded there yet.
+/// </summary>
+public static global::System.IntPtr GetOrLoadModule() => global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadModule(GetFatbin());
 
 /// <summary>
 /// Preloads the module and all function pointers for kernels in this assembly to eliminate lazy-loading latency.
@@ -97,14 +96,9 @@ __gsharp_id_0_data[__gsharp_id_1_tid]=__gsharp_id_2_doubleValue(__gsharp_id_0_da
 }
 ";
 public static readonly string NonCapturingLambdaKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +NonCapturingLambdaKernel_Source;
-private static global::System.IntPtr? __gsharp_hfunc_NonCapturingLambdaKernel;
-/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
-public static void WarmupFunctionPointerNonCapturingLambdaKernel()
-{
-if (__gsharp_hfunc_NonCapturingLambdaKernel.HasValue) return;
-global::System.IntPtr __gsharp_hmodule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
-__gsharp_hfunc_NonCapturingLambdaKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(__gsharp_hmodule, "__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__LambdaAndLocalFunctionsKernels__NonCapturingLambdaKernel");
-}
+private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_NonCapturingLambdaKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__LambdaAndLocalFunctionsKernels__NonCapturingLambdaKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
+public static void WarmupFunctionPointerNonCapturingLambdaKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.LambdaAndLocalFunctionsKernels.__gsharp_hfunc_NonCapturingLambdaKernel.Resolve();
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -118,8 +112,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Syntax.LambdaAndLocalFunctionsKernels.WarmupFunctionPointerNonCapturingLambdaKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_NonCapturingLambdaKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.LambdaAndLocalFunctionsKernels.__gsharp_hfunc_NonCapturingLambdaKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "LambdaAndLocalFunctionsKernels.NonCapturingLambdaKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 try
@@ -175,8 +168,7 @@ public static unsafe void LaunchNonCapturingLambdaKernelPtr(global::System.IntPt
 {
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Syntax.LambdaAndLocalFunctionsKernels.WarmupFunctionPointerNonCapturingLambdaKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_NonCapturingLambdaKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.LambdaAndLocalFunctionsKernels.__gsharp_hfunc_NonCapturingLambdaKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "LambdaAndLocalFunctionsKernels.NonCapturingLambdaKernel");
 try
 {
@@ -213,14 +205,9 @@ __gsharp_id_0_data[__gsharp_id_2_tid]=__gsharp_id_3_multiply(__gsharp_id_0_data[
 }
 ";
 public static readonly string ValueCapturingLambdaKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ValueCapturingLambdaKernel_Source;
-private static global::System.IntPtr? __gsharp_hfunc_ValueCapturingLambdaKernel;
-/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
-public static void WarmupFunctionPointerValueCapturingLambdaKernel()
-{
-if (__gsharp_hfunc_ValueCapturingLambdaKernel.HasValue) return;
-global::System.IntPtr __gsharp_hmodule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
-__gsharp_hfunc_ValueCapturingLambdaKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(__gsharp_hmodule, "__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__LambdaAndLocalFunctionsKernels__ValueCapturingLambdaKernel");
-}
+private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ValueCapturingLambdaKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__LambdaAndLocalFunctionsKernels__ValueCapturingLambdaKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
+public static void WarmupFunctionPointerValueCapturingLambdaKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.LambdaAndLocalFunctionsKernels.__gsharp_hfunc_ValueCapturingLambdaKernel.Resolve();
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -234,8 +221,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Syntax.LambdaAndLocalFunctionsKernels.WarmupFunctionPointerValueCapturingLambdaKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_ValueCapturingLambdaKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.LambdaAndLocalFunctionsKernels.__gsharp_hfunc_ValueCapturingLambdaKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "LambdaAndLocalFunctionsKernels.ValueCapturingLambdaKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 try
@@ -293,8 +279,7 @@ public static unsafe void LaunchValueCapturingLambdaKernelPtr(global::System.Int
 {
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Syntax.LambdaAndLocalFunctionsKernels.WarmupFunctionPointerValueCapturingLambdaKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_ValueCapturingLambdaKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.LambdaAndLocalFunctionsKernels.__gsharp_hfunc_ValueCapturingLambdaKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "LambdaAndLocalFunctionsKernels.ValueCapturingLambdaKernel");
 try
 {
@@ -333,14 +318,9 @@ __gsharp_id_0_data[__gsharp_id_1_tid]=__gsharp_id_2_LocalAdd(__gsharp_id_0_data[
 }
 ";
 public static readonly string ImmediatelyEvaluatedLambdaKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ImmediatelyEvaluatedLambdaKernel_Source;
-private static global::System.IntPtr? __gsharp_hfunc_ImmediatelyEvaluatedLambdaKernel;
-/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
-public static void WarmupFunctionPointerImmediatelyEvaluatedLambdaKernel()
-{
-if (__gsharp_hfunc_ImmediatelyEvaluatedLambdaKernel.HasValue) return;
-global::System.IntPtr __gsharp_hmodule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
-__gsharp_hfunc_ImmediatelyEvaluatedLambdaKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(__gsharp_hmodule, "__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__LambdaAndLocalFunctionsKernels__ImmediatelyEvaluatedLambdaKernel");
-}
+private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ImmediatelyEvaluatedLambdaKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__LambdaAndLocalFunctionsKernels__ImmediatelyEvaluatedLambdaKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
+public static void WarmupFunctionPointerImmediatelyEvaluatedLambdaKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.LambdaAndLocalFunctionsKernels.__gsharp_hfunc_ImmediatelyEvaluatedLambdaKernel.Resolve();
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -354,8 +334,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Syntax.LambdaAndLocalFunctionsKernels.WarmupFunctionPointerImmediatelyEvaluatedLambdaKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_ImmediatelyEvaluatedLambdaKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.LambdaAndLocalFunctionsKernels.__gsharp_hfunc_ImmediatelyEvaluatedLambdaKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "LambdaAndLocalFunctionsKernels.ImmediatelyEvaluatedLambdaKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 try
@@ -411,8 +390,7 @@ public static unsafe void LaunchImmediatelyEvaluatedLambdaKernelPtr(global::Syst
 {
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Syntax.LambdaAndLocalFunctionsKernels.WarmupFunctionPointerImmediatelyEvaluatedLambdaKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_ImmediatelyEvaluatedLambdaKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.LambdaAndLocalFunctionsKernels.__gsharp_hfunc_ImmediatelyEvaluatedLambdaKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "LambdaAndLocalFunctionsKernels.ImmediatelyEvaluatedLambdaKernel");
 try
 {
@@ -450,14 +428,9 @@ __gsharp_id_0_data[__gsharp_id_1_tid]=__gsharp_add_i32(__gsharp_id_3_calc(__gsha
 }
 ";
 public static readonly string ShadowedVariableCaptureKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ShadowedVariableCaptureKernel_Source;
-private static global::System.IntPtr? __gsharp_hfunc_ShadowedVariableCaptureKernel;
-/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
-public static void WarmupFunctionPointerShadowedVariableCaptureKernel()
-{
-if (__gsharp_hfunc_ShadowedVariableCaptureKernel.HasValue) return;
-global::System.IntPtr __gsharp_hmodule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
-__gsharp_hfunc_ShadowedVariableCaptureKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(__gsharp_hmodule, "__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__LambdaAndLocalFunctionsKernels__ShadowedVariableCaptureKernel");
-}
+private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ShadowedVariableCaptureKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__LambdaAndLocalFunctionsKernels__ShadowedVariableCaptureKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
+public static void WarmupFunctionPointerShadowedVariableCaptureKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.LambdaAndLocalFunctionsKernels.__gsharp_hfunc_ShadowedVariableCaptureKernel.Resolve();
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -471,8 +444,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Syntax.LambdaAndLocalFunctionsKernels.WarmupFunctionPointerShadowedVariableCaptureKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_ShadowedVariableCaptureKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.LambdaAndLocalFunctionsKernels.__gsharp_hfunc_ShadowedVariableCaptureKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "LambdaAndLocalFunctionsKernels.ShadowedVariableCaptureKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 try
@@ -528,8 +500,7 @@ public static unsafe void LaunchShadowedVariableCaptureKernelPtr(global::System.
 {
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Syntax.LambdaAndLocalFunctionsKernels.WarmupFunctionPointerShadowedVariableCaptureKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_ShadowedVariableCaptureKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.LambdaAndLocalFunctionsKernels.__gsharp_hfunc_ShadowedVariableCaptureKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "LambdaAndLocalFunctionsKernels.ShadowedVariableCaptureKernel");
 try
 {
@@ -571,14 +542,9 @@ return;
 }
 ";
 public static readonly string NestedReturnsKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +NestedReturnsKernel_Source;
-private static global::System.IntPtr? __gsharp_hfunc_NestedReturnsKernel;
-/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
-public static void WarmupFunctionPointerNestedReturnsKernel()
-{
-if (__gsharp_hfunc_NestedReturnsKernel.HasValue) return;
-global::System.IntPtr __gsharp_hmodule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
-__gsharp_hfunc_NestedReturnsKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(__gsharp_hmodule, "__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__LambdaAndLocalFunctionsKernels__NestedReturnsKernel");
-}
+private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_NestedReturnsKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__LambdaAndLocalFunctionsKernels__NestedReturnsKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
+public static void WarmupFunctionPointerNestedReturnsKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.LambdaAndLocalFunctionsKernels.__gsharp_hfunc_NestedReturnsKernel.Resolve();
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -589,8 +555,7 @@ uint __gsharp_total_threads; checked { __gsharp_total_threads = (gridDimX * grid
 var __gsharp_auto_result = new global::System.Single[__gsharp_total_threads];
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Syntax.LambdaAndLocalFunctionsKernels.WarmupFunctionPointerNestedReturnsKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_NestedReturnsKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.LambdaAndLocalFunctionsKernels.__gsharp_hfunc_NestedReturnsKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "LambdaAndLocalFunctionsKernels.NestedReturnsKernel");
 global::System.IntPtr d___gsharp_auto_result = global::System.IntPtr.Zero;
 try
@@ -641,8 +606,7 @@ uint __gsharp_total_threads; checked { __gsharp_total_threads = (gridDimX * grid
 var __gsharp_auto_result = new global::System.Single[__gsharp_total_threads];
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Syntax.LambdaAndLocalFunctionsKernels.WarmupFunctionPointerNestedReturnsKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_NestedReturnsKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.LambdaAndLocalFunctionsKernels.__gsharp_hfunc_NestedReturnsKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "LambdaAndLocalFunctionsKernels.NestedReturnsKernel");
 global::System.IntPtr d___gsharp_auto_result = global::System.IntPtr.Zero;
 try

@@ -63,6 +63,9 @@ public static unsafe class GpuKernelLoader
         [ThreadStatic]
         private static IntPtr t_activeContext;
 
+        /// <summary>The context that a scope opened without a custom context activates on this thread.</summary>
+        internal static IntPtr DefaultTarget => t_activeContext != IntPtr.Zero ? t_activeContext : s_globalContext;
+
         private readonly IntPtr _prevContext;
         private readonly IntPtr _targetContext;
         private readonly IntPtr _prevActiveContext;
@@ -94,9 +97,7 @@ public static unsafe class GpuKernelLoader
             _isFallback = false;
             _prevActiveContext = t_activeContext;
 
-            _targetContext = customContext != IntPtr.Zero
-                ? customContext
-                : (t_activeContext != IntPtr.Zero ? t_activeContext : s_globalContext);
+            _targetContext = customContext != IntPtr.Zero ? customContext : DefaultTarget;
 
             t_activeContext = _targetContext;
 
@@ -198,12 +199,6 @@ public static unsafe class GpuKernelLoader
         }
     }
 
-    // Module cache indexed by 256-bit signature hash to avoid duplicate cuModuleLoadDataEx calls per fatbin
-    private static readonly ConcurrentDictionary<AotSignatureValidator.Hash256, Lazy<IntPtr>> s_moduleCache = new();
-
-    // Function cache indexed by (Hash256, KernelName)
-    private static readonly ConcurrentDictionary<(AotSignatureValidator.Hash256 Hash, string KernelName), IntPtr> s_functionCache = new();
-
     /// <summary>
     /// Registers an error site table for the specified AOT fatbin binary.
     /// </summary>
@@ -242,38 +237,18 @@ public static unsafe class GpuKernelLoader
     // ReSharper disable once UnusedMember.Global -- Public API exposed for runtime consumers
     public static void Shutdown()
     {
-        s_functionCache.Clear();
         DynamicSharedMemoryOptIn.Clear();
 
         if (!s_isGlobalInit)
         {
-            s_moduleCache.Clear();
+            CudaModuleCache.Clear();
             return;
         }
 
         try
         {
+            CudaModuleCache.UnloadAll();
             using var scope = new CudaContextScope();
-
-            foreach (var lazyModule in s_moduleCache.Values)
-            {
-                if (!lazyModule.IsValueCreated)
-                {
-                    continue;
-                }
-
-                try
-                {
-                    CudaDriverApi.cuModuleUnload(lazyModule.Value);
-                }
-                // smell-scan: ignore swallowed-exception -- the failure is reported through Logger.Warning; shutdown
-                // unloads every other module instead of stopping at the first failure
-                catch (Exception ex)
-                {
-                    Logger.Warning(nameof(GpuKernelLoader), $"Failed to unload CUDA module during shutdown: {ex.Message}");
-                }
-            }
-
             DeviceErrorSlot.FreeInCurrentContext();
         }
         // smell-scan: ignore swallowed-exception -- the failure is reported through Logger.Warning; shutdown must not
@@ -284,7 +259,7 @@ public static unsafe class GpuKernelLoader
         }
         finally
         {
-            s_moduleCache.Clear();
+            CudaModuleCache.Clear();
         }
     }
 
@@ -324,116 +299,35 @@ public static unsafe class GpuKernelLoader
     public static void DestroyContext(IntPtr context)
     {
         CudaStreamCompletionSource.AbandonContext(context);
+        CudaModuleCache.ForgetContext(context);
         CudaException.ThrowIfError(CudaDriverApi.cuCtxDestroy_v2(context));
     }
 
     /// <summary>
-    /// Loads an Ahead-Of-Time (AOT) compiled Fatbin directly into the CUDA driver.
+    /// Loads an Ahead-Of-Time (AOT) compiled Fatbin into the CUDA context current for a launch on this thread, once per
+    /// context, and returns the function of <paramref name="kernelName"/> in it.
     /// </summary>
     /// <param name="aotFatbin">The raw byte span of the AOT Fatbin binary.</param>
     /// <param name="kernelName">The name of the kernel entry point to load.</param>
     /// <returns>A native handle (<see cref="IntPtr"/>) to the loaded CUDA kernel function (<c>CUfunction</c>).</returns>
     // ReSharper disable once UnusedMember.Global -- Public API exposed for runtime consumers
-    public static IntPtr LoadAotKernel(ReadOnlySpan<byte> aotFatbin, string kernelName)
-    {
-        if (aotFatbin.Length < AotSignatureValidator.SignatureSize)
-        {
-            throw new InvalidOperationException("AOT kernel binary is too small to contain a valid signature.");
-        }
-
-        EnsureInitialized();
-        var embeddedHash = new AotSignatureValidator.Hash256(
-            aotFatbin.Slice(aotFatbin.Length - AotSignatureValidator.SignatureSize, 32));
-        var cacheKey = (embeddedHash, kernelName);
-
-        if (s_functionCache.TryGetValue(cacheKey, out var cachedFunction))
-        {
-            return cachedFunction;
-        }
-
-        var module = GetOrLoadModule(aotFatbin);
-        var hfunc = GetFunction(module, kernelName);
-        return s_functionCache.GetOrAdd(cacheKey, hfunc);
-    }
+    public static IntPtr LoadAotKernel(ReadOnlySpan<byte> aotFatbin, string kernelName) =>
+        CudaModuleCache.GetOrLoadFunction(aotFatbin, kernelName);
 
     /// <summary>
-    /// Loads a fatbin module directly into the CUDA driver and returns the module handle.
+    /// Loads a fatbin module into the CUDA context current for a launch on this thread, once per context, and returns the
+    /// module handle, which is valid only in that context.
     /// </summary>
     /// <param name="binaryData">The raw byte array containing the Fatbin module binary.</param>
     /// <returns>A native handle (<see cref="IntPtr"/>) to the loaded CUDA module (<c>CUmodule</c>).</returns>
     public static IntPtr LoadModule(byte[] binaryData)
     {
         ArgumentNullException.ThrowIfNull(binaryData);
-        return GetOrLoadModule(binaryData);
+        return CudaModuleCache.GetOrLoadModule(binaryData);
     }
 
-    private static IntPtr GetOrLoadModule(ReadOnlySpan<byte> aotFatbin)
-    {
-        if (aotFatbin.Length < AotSignatureValidator.SignatureSize)
-        {
-            throw new InvalidOperationException("AOT kernel binary is too small to contain a valid signature.");
-        }
-
-        EnsureInitialized();
-        var embeddedHash = new AotSignatureValidator.Hash256(
-            aotFatbin.Slice(aotFatbin.Length - AotSignatureValidator.SignatureSize, 32));
-
-        if (s_moduleCache.TryGetValue(embeddedHash, out var cachedModule))
-        {
-            return cachedModule.Value;
-        }
-
-        var (processed, _) = AotSignatureValidator.ExtractAndVerify(aotFatbin);
-
-        var fatbin = FatbinParser.TryParse(processed, out var parsed) ? parsed : null;
-        if (fatbin is not null && !fatbin.IsCompatibleWith(s_deviceMajor, s_deviceMinor))
-        {
-            throw new InvalidOperationException(DescribeIncompatibleFatbin(fatbin, s_deviceMajor, s_deviceMinor));
-        }
-
-        var moduleId = DeviceErrorSlot.GetOrAssignModuleId(embeddedHash);
-        var lazyModule = s_moduleCache.GetOrAdd(
-            embeddedHash,
-            _ => new Lazy<IntPtr>(() => LoadModuleCore(processed, fatbin, moduleId), LazyThreadSafetyMode.ExecutionAndPublication));
-
-        try
-        {
-            return lazyModule.Value;
-        }
-        catch
-        {
-            s_moduleCache.TryRemove(embeddedHash, out _);
-            throw;
-        }
-    }
-
-    private static IntPtr LoadModuleCore(byte[] binaryData, FatbinImage? fatbin, uint moduleId)
-    {
-        using var scope = new CudaContextScope();
-        DeviceErrorSlot.AllocateInCurrentContext();
-
-        // Fatbins MUST be 8-byte aligned for cuModuleLoadDataEx
-        var pAlignedBinary = NativeMemory.AlignedAlloc((nuint)binaryData.Length, 8);
-        try
-        {
-            Marshal.Copy(binaryData, 0, (IntPtr)pAlignedBinary, binaryData.Length);
-
-            // Do NOT pass JIT options (like ERROR_LOG_BUFFER) when loading an AOT Fatbin,
-            // as it causes CUDA_ERROR_INVALID_VALUE when the driver simply loads a matching CUBIN without JITing.
-            var loadResult = CudaDriverApi.cuModuleLoadDataEx(out var module, (IntPtr)pAlignedBinary, 0, null, null);
-            if (loadResult != CUresult.CudaSuccess)
-            {
-                throw CreateModuleLoadException(loadResult, fatbin, s_deviceMajor, s_deviceMinor);
-            }
-
-            DeviceErrorSlot.ConfigureModule(module, moduleId);
-            return module;
-        }
-        finally
-        {
-            NativeMemory.AlignedFree(pAlignedBinary);
-        }
-    }
+    /// <summary>The compute capability of device 0, read by <see cref="EnsureInitialized"/>.</summary>
+    internal static (int Major, int Minor) DeviceComputeCapability => (s_deviceMajor, s_deviceMinor);
 
     /// <summary>Creates the exception for a failed <c>cuModuleLoadDataEx</c> call on a fatbin module.</summary>
     /// <remarks>

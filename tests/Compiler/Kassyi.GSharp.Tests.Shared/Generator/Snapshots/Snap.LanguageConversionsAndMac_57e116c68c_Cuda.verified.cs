@@ -10,19 +10,15 @@ namespace Kassyi.GSharp.Generated
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static class GSharpModuleContext_SnapshotTest
 {
-private static global::System.IntPtr? s_hModule;
-private static readonly object s_lock = new object();
+private static byte[]? s_fatbin;
 
 /// <summary>
-/// Loads the fatbin module for this assembly into the CUDA driver if it hasn't been loaded yet.
+/// Reads the fatbin module of this assembly; the file is read once.
 /// </summary>
-public static global::System.IntPtr GetOrLoadModule()
+public static byte[] GetFatbin()
 {
-if (s_hModule.HasValue) return s_hModule.Value;
-lock (s_lock)
-{
-if (s_hModule.HasValue) return s_hModule.Value;
-
+var fatbin = global::System.Threading.Volatile.Read(ref s_fatbin);
+if (fatbin is not null) return fatbin;
 var baseDir = global::System.IO.Path.GetDirectoryName(typeof(GSharpModuleContext_SnapshotTest).Assembly.Location) ?? global::System.AppContext.BaseDirectory;
 var fatbinPath = global::System.IO.Path.Combine(baseDir, "Kassyi.GSharp.Kernels_SnapshotTest.gfatbin");
 if (!global::System.IO.File.Exists(fatbinPath))
@@ -30,11 +26,14 @@ if (!global::System.IO.File.Exists(fatbinPath))
 throw new global::System.InvalidOperationException($"AOT kernel binary was not found at '{fatbinPath}'.");
 }
 
-byte[] binaryData = global::System.IO.File.ReadAllBytes(fatbinPath);
-s_hModule = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadModule(binaryData);
-return s_hModule.Value;
+fatbin = global::System.IO.File.ReadAllBytes(fatbinPath);
+return global::System.Threading.Interlocked.CompareExchange(ref s_fatbin, fatbin, null) ?? fatbin;
 }
-}
+
+/// <summary>
+/// Loads the fatbin module of this assembly into the current CUDA context if it is not loaded there yet.
+/// </summary>
+public static global::System.IntPtr GetOrLoadModule() => global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadModule(GetFatbin());
 
 /// <summary>
 /// Preloads the module and all function pointers for kernels in this assembly to eliminate lazy-loading latency.
@@ -546,14 +545,9 @@ __gsharp_id_2_r[__gsharp_add_i32(__gsharp_id_6_o,7)]=__gsharp_id_14_implicitFnAr
 }
 ";
 public static readonly string UserDefinedImplicitConversionsKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +UserDefinedImplicitConversionsKernel_Source;
-private static global::System.IntPtr? __gsharp_hfunc_UserDefinedImplicitConversionsKernel;
-/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
-public static void WarmupFunctionPointerUserDefinedImplicitConversionsKernel()
-{
-if (__gsharp_hfunc_UserDefinedImplicitConversionsKernel.HasValue) return;
-global::System.IntPtr __gsharp_hmodule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
-__gsharp_hfunc_UserDefinedImplicitConversionsKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(__gsharp_hmodule, "__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__LanguageConversionsAndMacrosDifferentialKernels__UserDefinedImplicitConversionsKernel");
-}
+private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_UserDefinedImplicitConversionsKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__LanguageConversionsAndMacrosDifferentialKernels__UserDefinedImplicitConversionsKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
+public static void WarmupFunctionPointerUserDefinedImplicitConversionsKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.LanguageConversionsAndMacrosDifferentialKernels.__gsharp_hfunc_UserDefinedImplicitConversionsKernel.Resolve();
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -579,8 +573,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Differential.LanguageConversionsAndMacrosDifferentialKernels.WarmupFunctionPointerUserDefinedImplicitConversionsKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_UserDefinedImplicitConversionsKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.LanguageConversionsAndMacrosDifferentialKernels.__gsharp_hfunc_UserDefinedImplicitConversionsKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "LanguageConversionsAndMacrosDifferentialKernels.UserDefinedImplicitConversionsKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 global::System.IntPtr __gsharp_d_1 = global::System.IntPtr.Zero;
@@ -710,8 +703,7 @@ public static unsafe void LaunchUserDefinedImplicitConversionsKernelPtr(global::
 {
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Differential.LanguageConversionsAndMacrosDifferentialKernels.WarmupFunctionPointerUserDefinedImplicitConversionsKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_UserDefinedImplicitConversionsKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.LanguageConversionsAndMacrosDifferentialKernels.__gsharp_hfunc_UserDefinedImplicitConversionsKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "LanguageConversionsAndMacrosDifferentialKernels.UserDefinedImplicitConversionsKernel");
 try
 {
@@ -818,14 +810,9 @@ __gsharp_id_2_r[__gsharp_add_i32(__gsharp_id_7_o,3)]=__gsharp_id_15_cLeft.__gsha
 }
 ";
 public static readonly string OperatorMacroArithmeticKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +OperatorMacroArithmeticKernel_Source;
-private static global::System.IntPtr? __gsharp_hfunc_OperatorMacroArithmeticKernel;
-/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
-public static void WarmupFunctionPointerOperatorMacroArithmeticKernel()
-{
-if (__gsharp_hfunc_OperatorMacroArithmeticKernel.HasValue) return;
-global::System.IntPtr __gsharp_hmodule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
-__gsharp_hfunc_OperatorMacroArithmeticKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(__gsharp_hmodule, "__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__LanguageConversionsAndMacrosDifferentialKernels__OperatorMacroArithmeticKernel");
-}
+private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_OperatorMacroArithmeticKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__LanguageConversionsAndMacrosDifferentialKernels__OperatorMacroArithmeticKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
+public static void WarmupFunctionPointerOperatorMacroArithmeticKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.LanguageConversionsAndMacrosDifferentialKernels.__gsharp_hfunc_OperatorMacroArithmeticKernel.Resolve();
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -851,8 +838,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Differential.LanguageConversionsAndMacrosDifferentialKernels.WarmupFunctionPointerOperatorMacroArithmeticKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_OperatorMacroArithmeticKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.LanguageConversionsAndMacrosDifferentialKernels.__gsharp_hfunc_OperatorMacroArithmeticKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "LanguageConversionsAndMacrosDifferentialKernels.OperatorMacroArithmeticKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 global::System.IntPtr __gsharp_d_1 = global::System.IntPtr.Zero;
@@ -982,8 +968,7 @@ public static unsafe void LaunchOperatorMacroArithmeticKernelPtr(global::System.
 {
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Differential.LanguageConversionsAndMacrosDifferentialKernels.WarmupFunctionPointerOperatorMacroArithmeticKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_OperatorMacroArithmeticKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.LanguageConversionsAndMacrosDifferentialKernels.__gsharp_hfunc_OperatorMacroArithmeticKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "LanguageConversionsAndMacrosDifferentialKernels.OperatorMacroArithmeticKernel");
 try
 {
@@ -1079,14 +1064,9 @@ __gsharp_id_2_r[__gsharp_add_i32(__gsharp_id_7_o,1)]=__gsharp_id_9_orderTrace;
 }
 ";
 public static readonly string OperatorMacroEvaluationOrderKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +OperatorMacroEvaluationOrderKernel_Source;
-private static global::System.IntPtr? __gsharp_hfunc_OperatorMacroEvaluationOrderKernel;
-/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
-public static void WarmupFunctionPointerOperatorMacroEvaluationOrderKernel()
-{
-if (__gsharp_hfunc_OperatorMacroEvaluationOrderKernel.HasValue) return;
-global::System.IntPtr __gsharp_hmodule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
-__gsharp_hfunc_OperatorMacroEvaluationOrderKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(__gsharp_hmodule, "__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__LanguageConversionsAndMacrosDifferentialKernels__OperatorMacroEvaluationOrderKernel");
-}
+private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_OperatorMacroEvaluationOrderKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__LanguageConversionsAndMacrosDifferentialKernels__OperatorMacroEvaluationOrderKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
+public static void WarmupFunctionPointerOperatorMacroEvaluationOrderKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.LanguageConversionsAndMacrosDifferentialKernels.__gsharp_hfunc_OperatorMacroEvaluationOrderKernel.Resolve();
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -1112,8 +1092,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Differential.LanguageConversionsAndMacrosDifferentialKernels.WarmupFunctionPointerOperatorMacroEvaluationOrderKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_OperatorMacroEvaluationOrderKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.LanguageConversionsAndMacrosDifferentialKernels.__gsharp_hfunc_OperatorMacroEvaluationOrderKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "LanguageConversionsAndMacrosDifferentialKernels.OperatorMacroEvaluationOrderKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 global::System.IntPtr __gsharp_d_1 = global::System.IntPtr.Zero;
@@ -1243,8 +1222,7 @@ public static unsafe void LaunchOperatorMacroEvaluationOrderKernelPtr(global::Sy
 {
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Differential.LanguageConversionsAndMacrosDifferentialKernels.WarmupFunctionPointerOperatorMacroEvaluationOrderKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_OperatorMacroEvaluationOrderKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.LanguageConversionsAndMacrosDifferentialKernels.__gsharp_hfunc_OperatorMacroEvaluationOrderKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "LanguageConversionsAndMacrosDifferentialKernels.OperatorMacroEvaluationOrderKernel");
 try
 {
@@ -1335,14 +1313,9 @@ __gsharp_id_2_r[__gsharp_add_i32(__gsharp_id_6_o,1)]=__gsharp_id_11_cShift.__gsh
 }
 ";
 public static readonly string OperatorMacroCastAndShiftKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +OperatorMacroCastAndShiftKernel_Source;
-private static global::System.IntPtr? __gsharp_hfunc_OperatorMacroCastAndShiftKernel;
-/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
-public static void WarmupFunctionPointerOperatorMacroCastAndShiftKernel()
-{
-if (__gsharp_hfunc_OperatorMacroCastAndShiftKernel.HasValue) return;
-global::System.IntPtr __gsharp_hmodule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
-__gsharp_hfunc_OperatorMacroCastAndShiftKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(__gsharp_hmodule, "__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__LanguageConversionsAndMacrosDifferentialKernels__OperatorMacroCastAndShiftKernel");
-}
+private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_OperatorMacroCastAndShiftKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__LanguageConversionsAndMacrosDifferentialKernels__OperatorMacroCastAndShiftKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
+public static void WarmupFunctionPointerOperatorMacroCastAndShiftKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.LanguageConversionsAndMacrosDifferentialKernels.__gsharp_hfunc_OperatorMacroCastAndShiftKernel.Resolve();
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -1368,8 +1341,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Differential.LanguageConversionsAndMacrosDifferentialKernels.WarmupFunctionPointerOperatorMacroCastAndShiftKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_OperatorMacroCastAndShiftKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.LanguageConversionsAndMacrosDifferentialKernels.__gsharp_hfunc_OperatorMacroCastAndShiftKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "LanguageConversionsAndMacrosDifferentialKernels.OperatorMacroCastAndShiftKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 global::System.IntPtr __gsharp_d_1 = global::System.IntPtr.Zero;
@@ -1499,8 +1471,7 @@ public static unsafe void LaunchOperatorMacroCastAndShiftKernelPtr(global::Syste
 {
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Differential.LanguageConversionsAndMacrosDifferentialKernels.WarmupFunctionPointerOperatorMacroCastAndShiftKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_OperatorMacroCastAndShiftKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.LanguageConversionsAndMacrosDifferentialKernels.__gsharp_hfunc_OperatorMacroCastAndShiftKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "LanguageConversionsAndMacrosDifferentialKernels.OperatorMacroCastAndShiftKernel");
 try
 {
@@ -1568,14 +1539,9 @@ __gsharp_id_2_r[__gsharp_id_3_tid]=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id
 }
 ";
 public static readonly string OperatorMacroInDeviceFunctionKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +OperatorMacroInDeviceFunctionKernel_Source;
-private static global::System.IntPtr? __gsharp_hfunc_OperatorMacroInDeviceFunctionKernel;
-/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
-public static void WarmupFunctionPointerOperatorMacroInDeviceFunctionKernel()
-{
-if (__gsharp_hfunc_OperatorMacroInDeviceFunctionKernel.HasValue) return;
-global::System.IntPtr __gsharp_hmodule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
-__gsharp_hfunc_OperatorMacroInDeviceFunctionKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(__gsharp_hmodule, "__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__LanguageConversionsAndMacrosDifferentialKernels__OperatorMacroInDeviceFunctionKernel");
-}
+private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_OperatorMacroInDeviceFunctionKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__LanguageConversionsAndMacrosDifferentialKernels__OperatorMacroInDeviceFunctionKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
+public static void WarmupFunctionPointerOperatorMacroInDeviceFunctionKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.LanguageConversionsAndMacrosDifferentialKernels.__gsharp_hfunc_OperatorMacroInDeviceFunctionKernel.Resolve();
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -1601,8 +1567,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Differential.LanguageConversionsAndMacrosDifferentialKernels.WarmupFunctionPointerOperatorMacroInDeviceFunctionKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_OperatorMacroInDeviceFunctionKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.LanguageConversionsAndMacrosDifferentialKernels.__gsharp_hfunc_OperatorMacroInDeviceFunctionKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "LanguageConversionsAndMacrosDifferentialKernels.OperatorMacroInDeviceFunctionKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 global::System.IntPtr __gsharp_d_1 = global::System.IntPtr.Zero;
@@ -1732,8 +1697,7 @@ public static unsafe void LaunchOperatorMacroInDeviceFunctionKernelPtr(global::S
 {
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Differential.LanguageConversionsAndMacrosDifferentialKernels.WarmupFunctionPointerOperatorMacroInDeviceFunctionKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_OperatorMacroInDeviceFunctionKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.LanguageConversionsAndMacrosDifferentialKernels.__gsharp_hfunc_OperatorMacroInDeviceFunctionKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "LanguageConversionsAndMacrosDifferentialKernels.OperatorMacroInDeviceFunctionKernel");
 try
 {
@@ -1801,14 +1765,9 @@ __gsharp_id_2_r[__gsharp_add_i32(__gsharp_id_14_o,4)]=__gsharp_id_13_shadowAcc;
 }
 ";
 public static readonly string OperatorMacroAcrossBarrierAndUsingStaticKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +OperatorMacroAcrossBarrierAndUsingStaticKernel_Source;
-private static global::System.IntPtr? __gsharp_hfunc_OperatorMacroAcrossBarrierAndUsingStaticKernel;
-/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
-public static void WarmupFunctionPointerOperatorMacroAcrossBarrierAndUsingStaticKernel()
-{
-if (__gsharp_hfunc_OperatorMacroAcrossBarrierAndUsingStaticKernel.HasValue) return;
-global::System.IntPtr __gsharp_hmodule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
-__gsharp_hfunc_OperatorMacroAcrossBarrierAndUsingStaticKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(__gsharp_hmodule, "__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__LanguageConversionsAndMacrosDifferentialKernels__OperatorMacroAcrossBarrierAndUsingStaticKernel");
-}
+private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_OperatorMacroAcrossBarrierAndUsingStaticKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__LanguageConversionsAndMacrosDifferentialKernels__OperatorMacroAcrossBarrierAndUsingStaticKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
+public static void WarmupFunctionPointerOperatorMacroAcrossBarrierAndUsingStaticKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.LanguageConversionsAndMacrosDifferentialKernels.__gsharp_hfunc_OperatorMacroAcrossBarrierAndUsingStaticKernel.Resolve();
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -1834,8 +1793,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Differential.LanguageConversionsAndMacrosDifferentialKernels.WarmupFunctionPointerOperatorMacroAcrossBarrierAndUsingStaticKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_OperatorMacroAcrossBarrierAndUsingStaticKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.LanguageConversionsAndMacrosDifferentialKernels.__gsharp_hfunc_OperatorMacroAcrossBarrierAndUsingStaticKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "LanguageConversionsAndMacrosDifferentialKernels.OperatorMacroAcrossBarrierAndUsingStaticKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 global::System.IntPtr __gsharp_d_1 = global::System.IntPtr.Zero;
@@ -1965,8 +1923,7 @@ public static unsafe void LaunchOperatorMacroAcrossBarrierAndUsingStaticKernelPt
 {
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Differential.LanguageConversionsAndMacrosDifferentialKernels.WarmupFunctionPointerOperatorMacroAcrossBarrierAndUsingStaticKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_OperatorMacroAcrossBarrierAndUsingStaticKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.LanguageConversionsAndMacrosDifferentialKernels.__gsharp_hfunc_OperatorMacroAcrossBarrierAndUsingStaticKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "LanguageConversionsAndMacrosDifferentialKernels.OperatorMacroAcrossBarrierAndUsingStaticKernel");
 try
 {

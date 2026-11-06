@@ -185,7 +185,6 @@ Launcher:
     # Managed host launch wrappers (#406): fixed locals, per-kernel member prefixes, and per-parameter local prefixes
     KernelParams: __gsharp_kernel_params
     FunctionHandle: __gsharp_hfunc
-    ModuleHandle: __gsharp_hmodule
     ArchSuffix: __gsharp_arch_suffix
     DllName: __gsharp_dll_name
     DllPath: __gsharp_dll_path

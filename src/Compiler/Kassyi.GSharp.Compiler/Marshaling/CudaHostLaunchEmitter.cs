@@ -8,9 +8,9 @@ internal static class CudaHostLaunchEmitter
     /// <summary>Emits the function pointer field, warmup method and launch wrappers of one kernel.</summary>
     public static void WriteKernelMembers(SourceWriter writer, in KernelEmission kernel, string assemblyName, bool isCheckedBuild = false)
     {
-        writer.AppendLine($"private static global::System.IntPtr? {KernelHostNames.GetFunctionPointerFieldName(kernel.MemberKey)};");
+        WriteFunctionField(writer, kernel, assemblyName);
         WrapperEmitter.WriteLayoutCheckedField(writer, kernel.Host.CudaLayoutGuards, kernel.MemberKey);
-        WriteWarmupFunctionPointerMethod(writer, kernel, assemblyName);
+        WriteWarmupFunctionPointerMethod(writer, kernel);
         WriteLaunchMethod(writer, kernel, false, isCheckedBuild);
         WriteLaunchMethod(writer, kernel, true, isCheckedBuild);
         if (kernel.IsOverloaded)
@@ -116,49 +116,54 @@ internal static class CudaHostLaunchEmitter
         writer.AppendLine();
     }
 
-    private static void WriteWarmupFunctionPointerMethod(SourceWriter writer, in KernelEmission kernel,
-        string assemblyName)
+    // private static readonly CudaKernelFunction <field> = new CudaKernelFunction("<kernel>", <module context>.GetFatbin);
+    private static void WriteFunctionField(SourceWriter writer, in KernelEmission kernel, string assemblyName)
     {
-        var key = kernel.MemberKey;
-        var field = KernelHostNames.GetFunctionPointerFieldName(key);
-        const string Module = GSharpInternalNames.Launcher.ModuleHandle;
+        const string FunctionType = "global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction";
+        var field = KernelHostNames.GetFunctionPointerFieldName(kernel.MemberKey);
         var moduleContextName = AotHostNames.GetModuleContextName(assemblyName);
-        writer.AppendLine(
-            "/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>");
-        writer.AppendLine($"public static void {KernelHostNames.GetWarmupMethodName(key)}()");
-        using (writer.Scope())
+        writer.Append($"private static readonly {FunctionType} {field} = new {FunctionType}");
+        using (writer.Parentheses())
         {
-            writer.AppendLine($"if ({field}.HasValue) return;");
-            writer.Append($"global::System.IntPtr {Module} = global::Kassyi.GSharp.Generated.");
-            writer.Append(moduleContextName);
-            writer.AppendLine(".GetOrLoadModule();");
-            writer.AppendLine(
-                $"{field} = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction({Module}, \"{kernel.Host.KernelName}\");");
-            if (!kernel.ErrorSites.IsDefaultOrEmpty)
-            {
-                writer.AppendLine("if (s_errorSites.Length > 0)");
-                using (writer.Scope())
-                {
-                    var safeAssemblyName = AotHostNames.ToSafeIdentifier(assemblyName);
-                    writer.AppendLine($"var baseDir = global::System.IO.Path.GetDirectoryName(typeof(global::Kassyi.GSharp.Generated.{moduleContextName}).Assembly.Location) ?? global::System.AppContext.BaseDirectory;");
-                    writer.AppendLine($"var fatbinPath = global::System.IO.Path.Combine(baseDir, \"Kassyi.GSharp.Kernels_{safeAssemblyName}.gfatbin\");");
-                    writer.AppendLine("if (global::System.IO.File.Exists(fatbinPath))");
-                    using (writer.Scope())
-                    {
-                        writer.AppendLine("global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.RegisterErrorSites(global::System.IO.File.ReadAllBytes(fatbinPath), s_errorSites);");
-                    }
-                }
-            }
+            writer.Append($"\"{kernel.Host.KernelName}\", ");
+            writer.Append($"global::Kassyi.GSharp.Generated.{moduleContextName}.GetFatbin");
         }
 
+        writer.AppendLine(";");
+    }
+
+    private static void WriteWarmupFunctionPointerMethod(SourceWriter writer, in KernelEmission kernel)
+    {
+        writer.Append("/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel ");
+        writer.AppendLine("in the current CUDA context.</summary>");
+        writer.Append($"public static void {KernelHostNames.GetWarmupMethodName(kernel.MemberKey)}() => ");
+        WriteResolveFunction(writer, kernel);
+        writer.AppendLine(";");
         writer.AppendLine();
+    }
+
+    // The function is resolved per launch: a CUfunction belongs to the context its module was loaded in (#1307). Both
+    // names are class-qualified, so a kernel parameter of the same name cannot shadow them.
+    // <class>.<field>.Resolve(<class>.s_errorSites)
+    private static void WriteResolveFunction(SourceWriter writer, in KernelEmission kernel)
+    {
+        var className = kernel.Host.ClassQualifiedName;
+        writer.Append($"{className}.{KernelHostNames.GetFunctionPointerFieldName(kernel.MemberKey)}.Resolve");
+        using (writer.Parentheses())
+        {
+            if (!kernel.ErrorSites.IsDefaultOrEmpty)
+            {
+                writer.Append($"{className}.s_errorSites");
+            }
+        }
     }
 
     private static void WriteCudaKernelCompilationCall(SourceWriter writer, in KernelEmission kernel)
     {
         const string Func = GSharpInternalNames.Launcher.FunctionHandle;
-        writer.AppendLine($"{KernelHostNames.GetQualifiedWarmupMethodName(kernel)}();");
-        writer.AppendLine($"global::System.IntPtr {Func} = {KernelHostNames.GetFunctionPointerFieldName(kernel.MemberKey)}!.Value;");
+        writer.Append($"global::System.IntPtr {Func} = ");
+        WriteResolveFunction(writer, kernel);
+        writer.AppendLine(";");
 
         // [WHY] sharedMemBytes above 48 KB needs the function's opt-in; a request the device cannot hold is rejected
         // with the kernel's name instead of the driver's bare CUDA_ERROR_INVALID_VALUE (#545)
@@ -186,19 +191,15 @@ internal static class CudaHostLaunchEmitter
         writer.AppendLine($$"""
             public static class {{moduleContextName}}
             {
-            private static global::System.IntPtr? s_hModule;
-            private static readonly object s_lock = new object();
+            private static byte[]? s_fatbin;
 
             /// <summary>
-            /// Loads the fatbin module for this assembly into the CUDA driver if it hasn't been loaded yet.
+            /// Reads the fatbin module of this assembly; the file is read once.
             /// </summary>
-            public static global::System.IntPtr GetOrLoadModule()
+            public static byte[] GetFatbin()
             {
-            if (s_hModule.HasValue) return s_hModule.Value;
-            lock (s_lock)
-            {
-            if (s_hModule.HasValue) return s_hModule.Value;
-
+            var fatbin = global::System.Threading.Volatile.Read(ref s_fatbin);
+            if (fatbin is not null) return fatbin;
             var baseDir = global::System.IO.Path.GetDirectoryName(typeof({{moduleContextName}}).Assembly.Location) ?? global::System.AppContext.BaseDirectory;
             var fatbinPath = global::System.IO.Path.Combine(baseDir, "Kassyi.GSharp.Kernels_{{safeAssemblyName}}.gfatbin");
             if (!global::System.IO.File.Exists(fatbinPath))
@@ -206,11 +207,14 @@ internal static class CudaHostLaunchEmitter
             throw new global::System.InvalidOperationException($"AOT kernel binary was not found at '{fatbinPath}'.");
             }
 
-            byte[] binaryData = global::System.IO.File.ReadAllBytes(fatbinPath);
-            s_hModule = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadModule(binaryData);
-            return s_hModule.Value;
+            fatbin = global::System.IO.File.ReadAllBytes(fatbinPath);
+            return global::System.Threading.Interlocked.CompareExchange(ref s_fatbin, fatbin, null) ?? fatbin;
             }
-            }
+
+            /// <summary>
+            /// Loads the fatbin module of this assembly into the current CUDA context if it is not loaded there yet.
+            /// </summary>
+            public static global::System.IntPtr GetOrLoadModule() => global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadModule(GetFatbin());
 
             /// <summary>
             /// Preloads the module and all function pointers for kernels in this assembly to eliminate lazy-loading latency.
