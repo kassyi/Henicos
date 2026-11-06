@@ -21,6 +21,51 @@ public class PiAlgorithmsTests
         Assert.Equal(2, largeOff.Length);
     }
 
+    // The chunks straddle the parallel threshold (10,000) of the series, where the sums run in Parallel.For.
+    [Theory]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(9_990, 24)]
+    [InlineData(10_000, 9)]
+    public void BbpAlgorithm_ExtractHexDigits_AroundParallelThreshold_MatchesMachinReference(int id, int count)
+    {
+        var expected = MachinPiHexFraction(id + count)[id..];
+
+        Assert.Equal(expected, BbpAlgorithm.ExtractHexDigits(id, count));
+    }
+
+    // Near int.MaxValue, k = id + 1 does not fit an int: the tail then summed no term and the digits came out as "0".
+    // Summing the head up to int.MaxValue takes minutes, so the tail is checked alone, against exact arithmetic; the
+    // terms below 1e-17 that the tail drops bound the tolerance.
+    [Theory]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(1, int.MaxValue)]
+    [InlineData(6, int.MaxValue)]
+    [InlineData(1, int.MaxValue + 7L)]
+    [InlineData(4, 10_000L)]
+    public void BbpAlgorithm_TailSeries_AtLargePositions_MatchesExactSum(int m, long id)
+    {
+        // mutant: BbpAlgorithm.cs TailSeries `var k = id + 1` -> `var k = (int)id + 1`
+        var actual = BbpAlgorithm.TailSeries(m, id, 0.0);
+
+        Assert.Equal(ExactTail(m, id), actual, 1e-16);
+        Assert.True(actual > 0.0);
+    }
+
+    // The head sum in long, at a position above the parallel threshold, against exact arithmetic.
+    [Theory]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.HappyPath)]
+    [InlineData(1, 10_007L)]
+    [InlineData(5, 12_345L)]
+    public void BbpAlgorithm_HeadSeries_AboveParallelThreshold_MatchesExactSum(int m, long id)
+    {
+        var actual = BbpAlgorithm.HeadSeries(m, id);
+
+        Assert.Equal(ExactHead(m, id), actual, 1e-9);
+    }
+
     [Theory]
     [InlineData(10, "31415926535")] // 10 digits after 3, making length 11 (3.1415926535)
     [InlineData(50, "314159265358979323846264338327950288419716939937510")]
@@ -87,6 +132,38 @@ public class PiAlgorithmsTests
         var fraction = (pi >> GuardBits) - (new BigInteger(3) << (hexDigits * 4));
         return fraction.ToString("X").TrimStart('0').PadLeft(hexDigits, '0');
     }
+
+    private const int ExactScaleBits = 128;
+
+    // frac(sum_(k > id) 16^(id - k) / (8k + m)) in fixed point with 128 bits; 40 terms reach below 2^-160.
+    private static double ExactTail(int m, long id)
+    {
+        var one = BigInteger.One << ExactScaleBits;
+        var sum = BigInteger.Zero;
+        for (var j = 1; j <= 40; j++)
+        {
+            sum += (one >> (4 * j)) / (8 * (new BigInteger(id) + j) + m);
+        }
+
+        return ToFraction(sum % one, one);
+    }
+
+    // frac(sum_(k = 0..id) (16^(id - k) mod (8k + m)) / (8k + m)) in fixed point with 128 bits.
+    private static double ExactHead(int m, long id)
+    {
+        var one = BigInteger.One << ExactScaleBits;
+        var sum = BigInteger.Zero;
+        for (var k = 0L; k <= id; k++)
+        {
+            var modulus = new BigInteger(8 * k + m);
+            sum += (BigInteger.ModPow(16, id - k, modulus) << ExactScaleBits) / modulus;
+        }
+
+        return ToFraction(sum % one, one);
+    }
+
+    private static double ToFraction(BigInteger numerator, BigInteger one) =>
+        (double)(numerator >> (ExactScaleBits - 64)) / Math.Pow(2, 64);
 
     // atan(1/x) * one = sum_k (-1)^k * one / ((2k + 1) * x^(2k + 1)), truncated term by term.
     private static BigInteger ArctanInverse(int x, BigInteger one)

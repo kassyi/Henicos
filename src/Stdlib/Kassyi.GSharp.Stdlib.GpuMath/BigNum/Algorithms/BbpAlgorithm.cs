@@ -33,7 +33,9 @@ public static class BbpAlgorithm
         }
 
         var sb = new StringBuilder(digitCount);
-        var currentOffset = id;
+
+        // In long: near int.MaxValue the offset of a later chunk and the bounds id + 1 do not fit an int.
+        long currentOffset = id;
         var remaining = digitCount;
 
         while (remaining > 0)
@@ -52,7 +54,7 @@ public static class BbpAlgorithm
     /// Extracts up to 8 hexadecimal digits starting directly after the specified offset.
     /// Uses parallel reduction when the offset is sufficiently large.
     /// </summary>
-    private static void AppendChunk(StringBuilder sb, int id, int count)
+    private static void AppendChunk(StringBuilder sb, long id, int count)
     {
         var s1 = Series(1, id);
         var s2 = Series(4, id);
@@ -77,7 +79,10 @@ public static class BbpAlgorithm
         sb.Append(hexChars[..count]);
     }
 
-    private static double Series(int m, int id)
+    private static double Series(int m, long id) => TailSeries(m, id, HeadSeries(m, id));
+
+    /// <summary>Returns the fraction of <c>sum_(k=0..id) (16^(id-k) mod (8k+m)) / (8k+m)</c>.</summary>
+    internal static double HeadSeries(int m, long id)
     {
         var s = 0.0;
 
@@ -85,7 +90,7 @@ public static class BbpAlgorithm
         if (id >= ParallelThreshold)
         {
             var lockObj = new object();
-            Parallel.For(0, id + 1, () => 0.0, (k, _, localSum) =>
+            Parallel.For(0L, id + 1, () => 0.0, (k, _, localSum) =>
                 {
                     localSum += ComputeSeriesTerm(k, m, id);
                     return localSum - Math.Floor(localSum);
@@ -108,6 +113,12 @@ public static class BbpAlgorithm
             }
         }
 
+        return s;
+    }
+
+    /// <summary>Adds the fraction of <c>sum_(k&gt;id) 16^(id-k) / (8k+m)</c> to <paramref name="s"/>.</summary>
+    internal static double TailSeries(int m, long id, double s)
+    {
         // Compute terms where k > id (Converges extremely fast; typically <= 25 terms)
         for (var k = id + 1; ; k++)
         {
@@ -126,10 +137,10 @@ public static class BbpAlgorithm
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static double ComputeSeriesTerm(int k, int m, int id)
+    private static double ComputeSeriesTerm(long k, int m, long id)
     {
         var ak = 8L * k + m;
-        long p = id - k;
+        var p = id - k;
         var t = ModExp16(p, ak);
         return (double)t / ak;
     }
