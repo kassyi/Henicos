@@ -9,6 +9,7 @@ public sealed class GccClangToolchain : INativeToolchain
 
     private readonly IProcessRunner _processRunner;
     private readonly string[] _compilerCandidates;
+    private readonly string _hostArchitecture;
     private string? _resolvedCompiler;
 
     /// <summary>
@@ -16,9 +17,15 @@ public sealed class GccClangToolchain : INativeToolchain
     /// </summary>
     /// <param name="processRunner">The process runner used to invoke external processes.</param>
     /// <param name="compilerExecutable">Optional explicit compiler executable name or path (defaults to probing <c>CXX</c>, <c>g++</c>, <c>clang++</c>).</param>
-    public GccClangToolchain(IProcessRunner processRunner, string? compilerExecutable = null)
+    /// <param name="hostArchitecture">
+    /// The architecture (<c>x64</c> or <c>arm64</c>) the compiler builds for; defaults to the architecture of the build
+    /// process.
+    /// </param>
+    public GccClangToolchain(IProcessRunner processRunner, string? compilerExecutable = null,
+        string? hostArchitecture = null)
     {
         _processRunner = processRunner;
+        _hostArchitecture = hostArchitecture ?? CompileCppToNativeTask.HostArchitecture;
         if (compilerExecutable is { Length: > 0 } && !string.IsNullOrWhiteSpace(compilerExecutable))
         {
             _compilerCandidates = [compilerExecutable];
@@ -44,6 +51,20 @@ public sealed class GccClangToolchain : INativeToolchain
         TaskLoggingHelper log,
         CancellationToken cancellationToken = default)
     {
+        // The compiler is invoked without a target option, so it builds for the host only. A library for another
+        // architecture would be a host image under that architecture's name, which fails only when it is loaded.
+        foreach (var architecture in architectures)
+        {
+            if (!string.Equals(architecture, _hostArchitecture, StringComparison.Ordinal))
+            {
+                log.LogError(
+                    $"The GCC/Clang toolchain cannot build native CPU kernels for {architecture}: it builds only for " +
+                    $"the host architecture ({_hostArchitecture}) and does not cross-compile. " +
+                    $"Remove GSharpMultiTarget, or build on an {architecture} machine.");
+                return ToolchainPreparationResult.Failed;
+            }
+        }
+
         foreach (var candidate in _compilerCandidates)
         {
             if (IsCompilerAvailable(candidate, cancellationToken))

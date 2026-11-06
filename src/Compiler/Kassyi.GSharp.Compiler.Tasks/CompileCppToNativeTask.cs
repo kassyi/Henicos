@@ -119,15 +119,9 @@ public class CompileCppToNativeTask : CompileKernelTaskBase
         return Volatile.Read(ref hasErrorsBox[0]) != 0 ? null : [.. items];
     }
 
-    private string[] GetTargetArchitectures()
-    {
-        if (GSharpMultiTarget)
-        {
-            return ["x64", "arm64"];
-        }
+    /// <summary>Gets the architecture name (<c>x64</c> or <c>arm64</c>) of the process that runs the build.</summary>
+    internal static string HostArchitecture =>
+        RuntimeInformation.ProcessArchitecture == Architecture.Arm64 ? "arm64" : "x64";
 
-        // Determine current host architecture
-        var arch = RuntimeInformation.ProcessArchitecture;
-        return arch == Architecture.Arm64 ? ["arm64"] : ["x64"];
-    }
+    private string[] GetTargetArchitectures() => GSharpMultiTarget ? ["x64", "arm64"] : [HostArchitecture];
 }
