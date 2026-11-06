@@ -208,7 +208,7 @@ public class CSharpCpuBigIntProviderTests : IDisposable
         _provider.InverseSqrtMega(_workspace, a, res, 0, 2, 0);
         Assert.False(_provider.IsZero(_workspace, res));
         
-        _provider.ReciprocalMega(_workspace, a, res, 0, 32, 0, 0, 32);
+        _provider.ReciprocalMega(_workspace, a, res, 0, 0, 32);
         Assert.False(_provider.IsZero(_workspace, res));
     }
     
@@ -221,7 +221,7 @@ public class CSharpCpuBigIntProviderTests : IDisposable
         using var res = new GpuBigUInt(_workspace, 8);
 
         Assert.Throws<DivideByZeroException>(() => _provider.InverseSqrtMega(_workspace, zero, res, 0, 2, 0));
-        Assert.Throws<DivideByZeroException>(() => _provider.ReciprocalMega(_workspace, zero, res, 0, 32, 0, 0, 32));
+        Assert.Throws<DivideByZeroException>(() => _provider.ReciprocalMega(_workspace, zero, res, 0, 0, 32));
     }
 
     // The CPU provider has the exact integer square root on the host: it writes floor(sqrt(a)) whatever the estimate,
@@ -402,7 +402,7 @@ public class CSharpCpuBigIntProviderTests : IDisposable
         // mutant: CSharpCpuBigIntProvider.cs:358 `/ x` -> `* x`, L359 `Write(...)` removed
         using (var res = CreateSentinelBuffer(8))
         {
-            _provider.ReciprocalMega(_workspace, operand, res, MarginWords, 0, 0, 0, TargetBits);
+            _provider.ReciprocalMega(_workspace, operand, res, MarginWords, 0, TargetBits);
             Assert.Equal((BigInteger.One << TargetBits) / x, ToBigInteger(res.ToHostArray()));
         }
     }
