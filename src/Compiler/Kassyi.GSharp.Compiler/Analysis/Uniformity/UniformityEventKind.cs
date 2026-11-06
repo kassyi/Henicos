@@ -6,6 +6,12 @@ internal enum UniformityEventKind
     /// <summary>A parameter receives its variance.</summary>
     Define,
 
+    /// <summary>
+    /// A parameter of a local function receives the variance of its argument, or the result of a local function call the
+    /// variance of the value its body returns.
+    /// </summary>
+    Bind,
+
     /// <summary>An operation writes locals, parameters or a flow capture.</summary>
     Write,
 

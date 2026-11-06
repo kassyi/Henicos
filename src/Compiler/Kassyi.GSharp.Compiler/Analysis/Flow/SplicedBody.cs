@@ -27,11 +27,15 @@ internal enum SplicedBodyKind
 /// <param name="Syntax">The lambda or the local function declaration.</param>
 /// <param name="Parameters">The parameters of the lambda or local function.</param>
 /// <param name="HasUniformIndex">Whether the last parameter is the index of a <c>Gpu.ForUnroll</c> body.</param>
+/// <param name="Call">The call that runs a <see cref="SplicedBodyKind.LocalFunctionCall"/> body.</param>
+/// <param name="CallGraph">The Roslyn graph of <paramref name="Call"/>.</param>
 internal readonly record struct SplicedBody(
     SplicedBodyKind Kind,
     SyntaxNode Syntax,
     ImmutableArray<IParameterSymbol> Parameters,
-    bool HasUniformIndex = false)
+    bool HasUniformIndex = false,
+    IInvocationOperation? Call = null,
+    Microsoft.CodeAnalysis.FlowAnalysis.ControlFlowGraph? CallGraph = null)
 {
     /// <summary>Whether the body may run at another time than where it is spliced, outside the state machine's splits.</summary>
     public bool IsOpaque => Kind != SplicedBodyKind.Macro;

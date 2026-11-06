@@ -159,4 +159,21 @@ public static partial class ParallelAggregateKernels
     {
         result[BlockIndex.X * BlockDimension.X + ThreadIndex.X] = data.AsStackEnumerable().Select(x => Square(x)).AsParallel().Sum();
     }
+
+    // A predicate that reads the lane a local function returns, or leaves in an out argument, runs in each thread
+    [GpuKernel]
+    public static void LocalFunctionLaneKernel(int[] data, int[] result)
+    {
+        static int Lane() => ThreadIndex.X;
+        static void GetLane(out int value)
+        {
+            value = ThreadIndex.X;
+        }
+
+        int gtid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        int lane = Lane();
+        result[gtid * 2] = data.AsStackEnumerable().Where(x => x < lane).AsParallel().Sum();
+        GetLane(out int outLane);
+        result[gtid * 2 + 1] = data.AsStackEnumerable().Where(x => x < outLane).AsParallel().Sum();
+    }
 }
