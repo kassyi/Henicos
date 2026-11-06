@@ -2,7 +2,7 @@ namespace Kassyi.GSharp.Tools.FuzzDiff;
 
 /// <summary>
 /// Command-line entry point for <c>tools/fuzz-diff</c>.
-/// Dispatches the <c>gen</c>, <c>reduce</c>, <c>dedup</c>, <c>promote</c>, and <c>compare</c> subcommands via an <see cref="IFuzzCommand"/> table.
+/// Dispatches the <c>gen</c>, <c>reduce</c>, <c>dedup</c>, <c>promote</c>, <c>compare</c>, and <c>run</c> subcommands via an <see cref="IFuzzCommand"/> table.
 /// </summary>
 public static class Program
 {
@@ -17,6 +17,7 @@ public static class Program
           dedup                    Compute the normalized AST fingerprint of a kernel source file.
           promote                  Emit clean Differential/ repro .cu.cs and DifferentialCase snippet into findings/<fingerprint>/.
           compare                  Compare the generated native and C# code of a base git ref and the working tree on generated kernels (no GPU).
+          run                      Run the differential fuzzer: generate, build and run batches on each path, reduce failures and record findings (see 'run --help').
 
         Options for 'gen':
           --fuzz-seed <seed>       64-bit integer seed (decimal or 0x hex) for AST generation (default: 1).
@@ -83,6 +84,7 @@ public static class Program
         DedupCommand.Instance,
         PromoteCommand.Instance,
         CompareCommand.Instance,
+        RunCommand.Instance,
     ];
 
     /// <summary>Gets the registered command table.</summary>
