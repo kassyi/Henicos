@@ -128,6 +128,48 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         for (int i = 0; i < input1.Length; i++) Assert.Equal(expectedMul[i], hostResult[i]);
     }
 
+    [Fact]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.Boundary)]
+    public void ZipSubtract_DifferenceReachesTheTopBit_TakesTheSignFromTheBorrow()
+    {
+        // One word per element: each difference reaches bit 31 of the element width or needs one more word, so the
+        // sign must come from the borrow of |a| - |b| and an opposite-sign difference needs the carry word of addition.
+        // mutant: the sign read from the top bit of the result instead of the borrow ([-2, 2, 1, ...])
+        BigInteger[] left = [0xFFFFFFFF, 1, 0, 0xFFFFFFFF, 3, 0x80000000];
+        BigInteger[] right = [1, 0xFFFFFFFF, 0xFFFFFFFF, -1, 5, 0x80000000];
+        using var array1 = CreateArray(left, numWords: 1);
+        using var array2 = CreateArray(right, numWords: 1);
+        using var expr = array1.AsVectorizedEnumerable().ZipSubtract(array2.AsVectorizedEnumerable());
+
+        var hostResult = ToHostArray(expr.Evaluate(_context));
+
+        BigInteger[] expected = [4294967294, -4294967294, -4294967295, 4294967296, -2, 0];
+        Assert.Equal(expected, hostResult);
+    }
+
+    [Fact]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.Boundary)]
+    public void SelectSubtract_DifferenceReachesTheTopBit_TakesTheSignFromTheBorrow()
+    {
+        // mutant: the scalar result width without the carry word (1 - -0xFFFFFFFF wraps to 0)
+        BigInteger[] input = [1, 0xFFFFFFFF, -1];
+        using var array = CreateArray(input, numWords: 1);
+        using var scalar = CreateScalar(0xFFFFFFFF, numWords: 1);
+        using var negativeScalar = CreateScalar(-0xFFFFFFFFL, numWords: 1);
+        using var expr = array.AsVectorizedEnumerable().SelectSubtract(scalar);
+        using var negativeExpr = array.AsVectorizedEnumerable().SelectSubtract(negativeScalar);
+
+        var hostResult = ToHostArray(expr.Evaluate(_context));
+        var negativeResult = ToHostArray(negativeExpr.Evaluate(_context));
+
+        BigInteger[] expected = [-4294967294, 0, -4294967296];
+        BigInteger[] expectedNegative = [4294967296, 8589934590, 4294967294];
+        Assert.Equal(expected, hostResult);
+        Assert.Equal(expectedNegative, negativeResult);
+    }
+
     public static IEnumerable<object[]> DivisionData()
     {
         // Happy Path (mixed signs, exact and non-exact division)
