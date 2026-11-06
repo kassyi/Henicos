@@ -163,6 +163,7 @@ public struct VectorDivModContext
     public bool IsModulo;
     public int PreShiftBits;
     public uint[] ZeroDivisor;
+    public uint[] Scratch;
 }
 
 public struct VectorFloatAddSubContext
@@ -181,6 +182,7 @@ public struct VectorFloatDivContext
     public VectorFloatBinaryOperationContext FloatOp;
     public int PreShiftBits;
     public uint[] ZeroDivisor;
+    public uint[] Scratch;
 }
 
 public struct VectorFloatCompareContext
@@ -623,7 +625,7 @@ public static void VectorZipModKernel(VectorDivModContext ctx);
 
 ## DeviceVectorDivModParallel(VectorDivModContext)
 
-Performs block-parallel restoring bitwise division or modulo (`ctx.IsModulo`) for one vector element per block, supporting an optional left pre-shift (`ctx.PreShiftBits`) of the dividend for floating-point significand division. An element whose divisor is zero gets a zero result, and its index is recorded in `ctx.ZeroDivisor[0]` as an atomic maximum of `~index`, so that the word, cleared to 0 before the launch, ends as the complement of the lowest such index; the host reads it and throws `DivideByZeroException`. A scalar launch, whose divisor the host has checked, passes no word.
+Performs block-parallel restoring bitwise division or modulo (`ctx.IsModulo`) for one vector element per block, supporting an optional left pre-shift (`ctx.PreShiftBits`) of the dividend for floating-point significand division. An element whose divisor is zero gets a zero result, and its index is recorded in `ctx.ZeroDivisor[0]` as an atomic maximum of `~index`, so that the word, cleared to 0 before the launch, ends as the complement of the lowest such index; the host reads it and throws `DivideByZeroException`. A scalar launch, whose divisor the host has checked, passes no word. The remainder and the quotient are kept in two shared buffers of `DivModSharedWords` (512) words; when the widest of the result and the operands has more words, they are kept instead in `ctx.Scratch`, which holds `2 * evalWords` words per block (the remainder, then the quotient) and which the host allocates only for such widths.
 
 ```csharp
 [GpuDeviceFunction]

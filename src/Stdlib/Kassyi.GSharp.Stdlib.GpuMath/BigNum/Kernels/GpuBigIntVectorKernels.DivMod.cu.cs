@@ -74,7 +74,8 @@ public static partial class GpuBigIntVectorKernels
             Op = core,
             IsModulo = false,
             PreShiftBits = ctx.PreShiftBits,
-            ZeroDivisor = ctx.ZeroDivisor
+            ZeroDivisor = ctx.ZeroDivisor,
+            Scratch = ctx.Scratch
         };
         DeviceVectorDivModParallel(divCtx);
         if (ThreadIndex.X == 0)
@@ -93,8 +94,8 @@ public static partial class GpuBigIntVectorKernels
         int batchIdx = BlockIndex.X;
         int laneId = tid & 31;
 
-        var sharedRem = new SharedMemory<uint>(512);
-        var sharedQuot = new SharedMemory<uint>(512);
+        var sharedRem = new SharedMemory<uint>(DivModSharedWords);
+        var sharedQuot = new SharedMemory<uint>(DivModSharedWords);
 
         if (tid >= 32)
         {
@@ -108,12 +109,15 @@ public static partial class GpuBigIntVectorKernels
 
         int maxInputWords = op.Left.NumWords > op.Right.NumWords ? op.Left.NumWords : op.Right.NumWords;
         int evalWords = op.Result.NumWords > maxInputWords ? op.Result.NumWords : maxInputWords;
-        if (evalWords > 512)
-        {
-            evalWords = 512;
-        }
 
-        InitializeDivModBuffersWarp(op.Result.Limbs, offsetResult, op.Result.NumWords, sharedRem, sharedQuot, evalWords, laneId);
+        // Wider than the shared buffers: the remainder and the quotient live in this block's 2 * evalWords words of
+        // the scratch the host passes; otherwise in shared memory (a base of -1)
+        int remBase = evalWords > DivModSharedWords ? batchIdx * 2 * evalWords : -1;
+        int quotBase = remBase < 0 ? -1 : remBase + evalWords;
+        var rem = new DivModWords { Scratch = ctx.Scratch, Base = remBase, Count = evalWords };
+        var quot = new DivModWords { Scratch = ctx.Scratch, Base = quotBase, Count = evalWords };
+
+        InitializeDivModBuffersWarp(op.Result.Limbs, offsetResult, op.Result.NumWords, sharedRem, sharedQuot, rem, quot, laneId);
 
         if (FindMaxNonZeroWordWarp(op.Right.Limbs, offsetB, op.Right.NumWords, laneId) < 0)
         {
@@ -144,23 +148,24 @@ public static partial class GpuBigIntVectorKernels
                 aBit = (op.Left.Limbs[offsetA + (srcBit >> 5)] >> (srcBit & 31)) & 1u;
             }
 
-            uint remOverflow = ShiftLeftOneBitWarp(sharedRem, evalWords, laneId, aBit);
-            uint noBorrow = SubtractDivisorWarp(op.Right.Limbs, offsetB, op.Right.NumWords, sharedRem, evalWords, laneId, false);
+            uint remOverflow = ShiftLeftOneBitWarp(sharedRem, rem, laneId, aBit);
+            uint noBorrow = SubtractDivisorWarp(op.Right.Limbs, offsetB, op.Right.NumWords, sharedRem, rem, laneId, false);
 
             if (remOverflow != 0u || noBorrow != 0u)
             {
-                SubtractDivisorWarp(op.Right.Limbs, offsetB, op.Right.NumWords, sharedRem, evalWords, laneId, true);
+                SubtractDivisorWarp(op.Right.Limbs, offsetB, op.Right.NumWords, sharedRem, rem, laneId, true);
 
                 int qWordIdx = bit >> 5;
                 int qBitIdx = bit & 31;
                 if (laneId == 0 && qWordIdx < evalWords)
                 {
-                    sharedQuot[qWordIdx] |= 1u << qBitIdx;
+                    uint quotWord = LoadDivModWord(sharedQuot, quot, qWordIdx);
+                    StoreDivModWord(sharedQuot, quot, qWordIdx, quotWord | (1u << qBitIdx));
                 }
             }
         }
 
-        CommitDivModResultWarp(ctx, sharedQuot, sharedRem, evalWords, batchIdx, offsetResult, laneId);
+        CommitDivModResultWarp(ctx, sharedQuot, sharedRem, quot, rem, batchIdx, offsetResult, laneId);
     }
 
     [GpuDeviceFunction]
@@ -171,16 +176,17 @@ public static partial class GpuBigIntVectorKernels
         int numWordsResult,
         SharedMemory<uint> sharedRem,
         SharedMemory<uint> sharedQuot,
-        int evalWords,
+        DivModWords rem,
+        DivModWords quot,
         int laneId)
     {
-        for (int offset = 0; offset < evalWords; offset += 32)
+        for (int offset = 0; offset < rem.Count; offset += 32)
         {
             int idx = offset + laneId;
-            if (idx < evalWords)
+            if (idx < rem.Count)
             {
-                sharedRem[idx] = 0u;
-                sharedQuot[idx] = 0u;
+                StoreDivModWord(sharedRem, rem, idx, 0u);
+                StoreDivModWord(sharedQuot, quot, idx, 0u);
             }
         }
 
@@ -228,17 +234,18 @@ public static partial class GpuBigIntVectorKernels
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static uint ShiftLeftOneBitWarp(
         SharedMemory<uint> sharedRem,
-        int evalWords,
+        DivModWords rem,
         int laneId,
         uint shiftInBit)
     {
+        int evalWords = rem.Count;
         uint chunkShiftIn = shiftInBit;
         for (int offset = 0; offset < evalWords; offset += 32)
         {
             int idx = offset + laneId;
             bool valid = idx < evalWords;
 
-            uint rVal = valid ? sharedRem[idx] : 0u;
+            uint rVal = valid ? LoadDivModWord(sharedRem, rem, idx) : 0u;
             uint topBit = rVal >> 31;
             uint prevTopBit = Warp.ShuffleUpSync(0xFFFFFFFFu, topBit, 1u);
             if (laneId == 0)
@@ -248,7 +255,7 @@ public static partial class GpuBigIntVectorKernels
 
             if (valid)
             {
-                sharedRem[idx] = (rVal << 1) | prevTopBit;
+                StoreDivModWord(sharedRem, rem, idx, (rVal << 1) | prevTopBit);
             }
 
             int lastLaneInChunk = (offset + 32 <= evalWords) ? 31 : ((evalWords - 1) & 31);
@@ -265,17 +272,18 @@ public static partial class GpuBigIntVectorKernels
         int offsetB,
         int numWordsB,
         SharedMemory<uint> sharedRem,
-        int evalWords,
+        DivModWords rem,
         int laneId,
         bool commit)
     {
+        int evalWords = rem.Count;
         uint warpCarryIn = 1u;
         for (int offset = 0; offset < evalWords; offset += 32)
         {
             int idx = offset + laneId;
             bool valid = idx < evalWords;
 
-            uint rVal = valid ? sharedRem[idx] : 0u;
+            uint rVal = valid ? LoadDivModWord(sharedRem, rem, idx) : 0u;
             uint bVal = (valid && idx < numWordsB) ? ~b[offsetB + idx] : 0xFFFFFFFFu;
 
             ulong sum = (ulong)rVal + bVal;
@@ -297,7 +305,7 @@ public static partial class GpuBigIntVectorKernels
 
                 if (valid)
                 {
-                    sharedRem[idx] = (uint)sum + carryIn;
+                    StoreDivModWord(sharedRem, rem, idx, (uint)sum + carryIn);
                 }
             }
 
@@ -314,14 +322,16 @@ public static partial class GpuBigIntVectorKernels
         VectorDivModContext ctx,
         SharedMemory<uint> sharedQuot,
         SharedMemory<uint> sharedRem,
-        int evalWords,
+        DivModWords quot,
+        DivModWords rem,
         int batchIdx,
         int offsetResult,
         int laneId)
     {
-        // Ensure sharedQuot writes from lane 0 are visible across the warp
-        uint syncDummy = Warp.ShuffleSync(0xFFFFFFFFu, sharedQuot[0], 0);
-        uint outAny = syncDummy & 0u;
+        // Lane 0 wrote the quotient bits; the other lanes read them below
+        Gpu.SyncWarp();
+        int evalWords = quot.Count;
+        uint outAny = 0u;
 
         var op = ctx.Op;
         for (int offset = 0; offset < op.Result.NumWords; offset += 32)
@@ -329,7 +339,9 @@ public static partial class GpuBigIntVectorKernels
             int idx = offset + laneId;
             if (idx < op.Result.NumWords)
             {
-                uint val = idx < evalWords ? (ctx.IsModulo ? sharedRem[idx] : sharedQuot[idx]) : 0u;
+                uint val = idx < evalWords
+                    ? (ctx.IsModulo ? LoadDivModWord(sharedRem, rem, idx) : LoadDivModWord(sharedQuot, quot, idx))
+                    : 0u;
                 op.Result.Limbs[offsetResult + idx] = val;
                 outAny |= val;
             }
@@ -347,6 +359,41 @@ public static partial class GpuBigIntVectorKernels
             uint sB = op.IsScalar ? op.ScalarSign : op.Right.Signs[batchIdx];
             uint rawSign = ctx.IsModulo ? sA : (sA ^ sB);
             op.Result.Signs[batchIdx] = outAny != 0u ? rawSign : 0u;
+        }
+    }
+
+    /// <summary>The words of each shared work buffer of the division; a wider element works in global scratch.</summary>
+    public const int DivModSharedWords = 512;
+
+    /// <summary>
+    /// A work buffer of the division (the remainder or the quotient): <see cref="Count"/> words in shared memory, or at
+    /// <see cref="Base"/> in <see cref="Scratch"/> when <see cref="Base"/> is not negative.
+    /// </summary>
+    public struct DivModWords
+    {
+        public uint[] Scratch;
+        public int Base;
+        public int Count;
+    }
+
+    [GpuDeviceFunction]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static uint LoadDivModWord(SharedMemory<uint> shared, DivModWords words, int idx)
+    {
+        return words.Base < 0 ? shared[idx] : words.Scratch[words.Base + idx];
+    }
+
+    [GpuDeviceFunction]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static void StoreDivModWord(SharedMemory<uint> shared, DivModWords words, int idx, uint value)
+    {
+        if (words.Base < 0)
+        {
+            shared[idx] = value;
+        }
+        else
+        {
+            words.Scratch[words.Base + idx] = value;
         }
     }
 }
