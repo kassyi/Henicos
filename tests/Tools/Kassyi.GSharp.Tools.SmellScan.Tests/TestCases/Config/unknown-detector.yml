@@ -1,0 +1,8 @@
+version: 1
+rules:
+  - id: first
+    detector: MethodLength
+    severity: warning
+  - id: second
+    detector: NoSuchDetector
+    severity: warning

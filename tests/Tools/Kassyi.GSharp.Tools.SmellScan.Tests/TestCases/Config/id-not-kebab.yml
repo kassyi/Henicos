@@ -1,0 +1,5 @@
+version: 1
+rules:
+  - id: LongMethod
+    detector: MethodLength
+    severity: warning

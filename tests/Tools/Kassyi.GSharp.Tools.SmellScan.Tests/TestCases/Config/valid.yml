@@ -1,0 +1,26 @@
+# a comment
+version: 1
+defaults:
+  exclude:
+    - "**/obj/**"
+    - "generated/**"
+rules:
+  - id: long-method
+    detector: MethodLength
+    severity: warning
+    parameters:
+      max_code_lines: 10
+    include: ["src/**", "lib/**"]
+    exclude: ["src/skip/**"]
+    overrides:
+      - files: ["src/**/*.cu.cs"]
+        parameters: { max_code_lines: 20 }
+      - files: ["src/big/**"]
+        parameters: { max_code_lines: 30 }
+      - files: ["src/**/*.cu.cs"]
+        parameters: { max_code_lines: 40 }
+    suggestion: "Extract Method."
+    help: "docs/long-method.md"
+  - id: switched-off
+    detector: NestingDepth
+    severity: off

@@ -1,0 +1,8 @@
+version: 1
+rules:
+  - id: first
+    detector: MethodLength
+    severity: warning
+    overrides:
+      - files: []
+        parameters: { max_code_lines: 5 }

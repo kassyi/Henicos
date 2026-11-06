@@ -1,0 +1,8 @@
+version: 1
+rules:
+  - id: same
+    detector: MethodLength
+    severity: warning
+  - id: same
+    detector: NestingDepth
+    severity: warning

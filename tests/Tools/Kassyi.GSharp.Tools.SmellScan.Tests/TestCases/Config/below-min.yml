@@ -1,0 +1,9 @@
+version: 1
+rules:
+  - id: first
+    detector: ParameterCount
+    severity: warning
+    overrides:
+      - files: ["**"]
+        parameters:
+          max_parameters: 0

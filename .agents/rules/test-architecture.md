@@ -170,7 +170,7 @@ public abstract class StateMachineTestBase
 | `tests/Compiler/` | G# end-to-end suites: `Kassyi.GSharp.Tests.Shared` (shared project), `.Cpu`, `.Cuda`, `.Integration`, `Kassyi.GSharp.DocTest` |
 | `tests/Shared/` | Test infrastructure: `Kassyi.GSharp.Tests.Infrastructure`, `Kassyi.GSharp.Tests.Generators` |
 | `tests/Stdlib/` | `Kassyi.GSharp.Stdlib.GpuMath.Tests` |
-| `tests/Tools/` | `Kassyi.GSharp.Tools.CollectEnv.Tests` (runs `tools/collect-env/collect-env.cs` as a process), `Kassyi.GSharp.Tools.FuzzDiff.Tests` (in-memory determinism, Roslyn/G# diagnostics, oracle guard, and mutant-catching tests for `tools/fuzz-diff/`) |
+| `tests/Tools/` | `Kassyi.GSharp.Tools.CollectEnv.Tests` (runs `tools/collect-env/collect-env.cs` as a process), `Kassyi.GSharp.Tools.FuzzDiff.Tests` (in-memory determinism, Roslyn/G# diagnostics, oracle guard, and mutant-catching tests for `tools/fuzz-diff/`), `Kassyi.GSharp.Tools.SmellScan.Tests` (detectors, configuration errors, scope rules, `#if` coverage and byte-exact report tests for `tools/smell-scan/`) |
 | `tests/ZeroAlloc/` | `Kassyi.ZeroAlloc.Linq.Tests` |
 | `tests/Apps/` | `Henicos.Benchmarks.Tests` |
 

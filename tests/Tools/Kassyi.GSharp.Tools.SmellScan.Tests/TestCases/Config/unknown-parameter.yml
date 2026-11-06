@@ -1,0 +1,8 @@
+version: 1
+rules:
+  - id: first
+    detector: MethodLength
+    severity: warning
+    parameters:
+      max_code_lines: 10
+      max_lines: 20

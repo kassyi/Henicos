@@ -1,0 +1,23 @@
+version: 1
+rules:
+  - id: long-method
+    detector: MethodLength
+    severity: warning
+    parameters:
+      max_code_lines: 3
+    suggestion: "Extract Method."
+  - id: long-parameter-list
+    detector: ParameterCount
+    severity: note
+    parameters:
+      max_parameters: 3
+    suggestion: "Introduce Parameter Object."
+  - id: deep-nesting
+    detector: NestingDepth
+    severity: error
+    parameters:
+      max_depth: 1
+    suggestion: "Use guard clauses."
+  - id: switched-off
+    detector: NestingDepth
+    severity: off

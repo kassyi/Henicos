@@ -1,0 +1,6 @@
+version: 1
+rules:
+  - id: first
+    detector: MethodLength
+    severity: warning
+    treshold: 3
