@@ -29,6 +29,9 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Win32;
+using static Collector;
+using static Privacy;
+using static ProcessProbe;
 
 string? outputPath = null;
 bool json = false;
@@ -69,7 +72,7 @@ for (int i = 0; i < args.Length; i++)
 ReportModel model = Collector.Collect();
 string text = json
     ? JsonSerializer.Serialize(model, ReportJsonContext.Default.ReportModel) + "\n"
-    : Collector.ToMarkdown(model);
+    : MarkdownReport.ToMarkdown(model);
 
 if (outputPath is null)
 {
@@ -80,12 +83,12 @@ if (outputPath is null)
 try
 {
     File.WriteAllText(outputPath, text, new UTF8Encoding(false));
-    Console.Out.WriteLine($"collect-env: wrote {Collector.Clean(Path.GetFullPath(outputPath))}");
+    Console.Out.WriteLine($"collect-env: wrote {Clean(Path.GetFullPath(outputPath))}");
     return 0;
 }
 catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
 {
-    Console.Error.WriteLine($"collect-env: cannot write '{outputPath}': {Collector.Clean(ex.Message)}");
+    Console.Error.WriteLine($"collect-env: cannot write '{outputPath}': {Clean(ex.Message)}");
     return 1;
 }
 
@@ -112,10 +115,10 @@ public sealed class ReportModel
 [JsonSerializable(typeof(ReportModel))]
 internal sealed partial class ReportJsonContext : JsonSerializerContext;
 
+/// <summary>Entry point of the report: the list of probe calls that fill <see cref="ReportModel"/>.</summary>
 internal static class Collector
 {
     public const string NotFound = "not found";
-    private const int TimeoutMilliseconds = 8000;
 
     public const string HelpText =
         """
@@ -132,68 +135,29 @@ internal static class Collector
 
         """;
 
-    private static readonly string s_userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-
     public static ReportModel Collect()
     {
         var model = new ReportModel();
         bool windows = OperatingSystem.IsWindows();
-        model.Os = windows ? WindowsOs() : LinuxOs();
-        model.Cpu = Clean($"{(windows ? WindowsCpu() : LinuxCpu())}, {Environment.ProcessorCount} logical cores");
-        model.Memory = Memory(windows);
-        model.Motherboard = windows ? WindowsBoard() : LinuxBoard();
-        CollectGpus(model);
-        model.CudaToolkit = CudaToolkit();
+        model.Os = windows ? HardwareProbe.WindowsOs() : HardwareProbe.LinuxOs();
+        model.Cpu = Clean($"{(windows ? HardwareProbe.WindowsCpu() : HardwareProbe.LinuxCpu())}, {Environment.ProcessorCount} logical cores");
+        model.Memory = HardwareProbe.Memory(windows);
+        model.Motherboard = windows ? HardwareProbe.WindowsBoard() : HardwareProbe.LinuxBoard();
+        GpuProbe.CollectGpus(model);
+        model.CudaToolkit = GpuProbe.CudaToolkit();
         model.CudaPath = IsSet("CUDA_PATH") ? "set" : "unset";
-        model.HostCpp = windows ? Msvc() : LinuxCompilers();
-        CollectDotnet(model);
-        model.GSharp = GSharpCheckout();
-        CollectEnvironmentVariables(model);
+        model.HostCpp = windows ? ToolchainProbe.Msvc() : ToolchainProbe.LinuxCompilers();
+        ToolchainProbe.CollectDotnet(model);
+        model.GSharp = CheckoutProbe.GSharpCheckout();
+        CheckoutProbe.CollectEnvironmentVariables(model);
         return model;
     }
+}
 
-    public static string ToMarkdown(ReportModel m)
-    {
-        var sb = new StringBuilder();
-        sb.Append("- OS: ").Append(m.Os).Append('\n');
-        sb.Append("- CPU / RAM: ").Append(m.Cpu).Append(", ").Append(m.Memory).Append('\n');
-        sb.Append("- Motherboard: ").Append(m.Motherboard).Append('\n');
-        if (m.Gpus.Count == 0)
-        {
-            sb.Append("- GPU: ").Append(NotFound).Append('\n');
-        }
-
-        for (int i = 0; i < m.Gpus.Count; i++)
-        {
-            sb.Append("- GPU ").Append(i.ToString(CultureInfo.InvariantCulture)).Append(": ").Append(m.Gpus[i]).Append('\n');
-        }
-
-        sb.Append("- CUDA Toolkit: ").Append(m.CudaToolkit).Append(" (CUDA_PATH ").Append(m.CudaPath).Append(")\n");
-        sb.Append("- Host C++: ").Append(m.HostCpp).Append('\n');
-        sb.Append("- .NET: SDK ").Append(m.DotnetSdk).Append(" (global.json: ").Append(m.GlobalJson).Append(")\n");
-        sb.Append("  - SDKs: ").Append(Join(m.DotnetSdks)).Append('\n');
-        sb.Append("  - Runtimes: ").Append(Join(m.DotnetRuntimes)).Append('\n');
-        if (m.GSharp is not null)
-        {
-            sb.Append("- G#: ").Append(m.GSharp).Append('\n');
-        }
-
-        sb.Append("- G# environment variables: ");
-        bool first = true;
-        foreach (KeyValuePair<string, string> pair in m.EnvironmentVariables)
-        {
-            if (!first)
-            {
-                sb.Append(", ");
-            }
-
-            first = false;
-            sb.Append(pair.Key).Append('=').Append(pair.Value);
-        }
-
-        sb.Append('\n');
-        return sb.ToString();
-    }
+/// <summary>The privacy guarantee of the report: no user name, host name or profile path.</summary>
+internal static class Privacy
+{
+    private static readonly string s_userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
 
     /// <summary>Removes what must not reach a public issue: profile paths, user name and host name.</summary>
     public static string Clean(string value)
@@ -224,12 +188,12 @@ internal static class Collector
     // Names shorter than 3 characters are left alone: replacing them would corrupt unrelated words.
     private static string ReplaceName(string value, string name, string placeholder) =>
         name.Length >= 3 ? value.Replace(name, placeholder, StringComparison.OrdinalIgnoreCase) : value;
+}
 
-    private static string Join(List<string> items) => items.Count == 0 ? NotFound : string.Join(", ", items);
-
-    private static bool IsSet(string name) => !string.IsNullOrEmpty(Environment.GetEnvironmentVariable(name));
-
-    // ---- child processes ----
+/// <summary>Runs child processes, reads files and environment variables, and keeps the reason of the last failure.</summary>
+internal static class ProcessProbe
+{
+    private const int TimeoutMilliseconds = 8000;
 
     // ENOENT on Linux and ERROR_FILE_NOT_FOUND on Windows: Process.Start found no such program.
     private const int FileNotFoundError = 2;
@@ -237,8 +201,10 @@ internal static class Collector
     // First stderr line of the last child process that failed (empty otherwise); the run is single-threaded.
     private static string s_lastError = string.Empty;
 
+    internal static string LastError => s_lastError;
+
     /// <summary>Runs a tool and returns its trimmed standard output, or null when it is missing, fails or times out.</summary>
-    private static string? Run(string fileName, string arguments, string? workingDirectory = null)
+    internal static string? Run(string fileName, string arguments, string? workingDirectory = null)
     {
         try
         {
@@ -301,16 +267,16 @@ internal static class Collector
     }
 
     /// <summary>Writes why a value is missing to standard error, so the report on standard output stays clean.</summary>
-    private static void Warn(string what, Exception ex) =>
+    internal static void Warn(string what, Exception ex) =>
         Console.Error.WriteLine(Clean($"collect-env: {what}: {ex.Message}"));
 
-    private static string FirstLine(string text)
+    internal static string FirstLine(string text)
     {
         int end = text.IndexOf('\n');
         return (end < 0 ? text : text.Substring(0, end)).Trim();
     }
 
-    private static List<string> Lines(string? text)
+    internal static List<string> Lines(string? text)
     {
         var lines = new List<string>();
         if (text is null)
@@ -330,8 +296,25 @@ internal static class Collector
         return lines;
     }
 
-    // ---- OS / hardware ----
+    internal static string? ReadFile(string path)
+    {
+        try
+        {
+            return File.Exists(path) ? File.ReadAllText(path) : null;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            Warn($"cannot read {path}", ex);
+            return null;
+        }
+    }
 
+    internal static bool IsSet(string name) => !string.IsNullOrEmpty(Environment.GetEnvironmentVariable(name));
+}
+
+/// <summary>Reads the OS, CPU, memory and motherboard.</summary>
+internal static class HardwareProbe
+{
     private static string? RegistryString(string subKey, string name)
     {
         if (!OperatingSystem.IsWindows())
@@ -358,7 +341,7 @@ internal static class Collector
         }
     }
 
-    private static string WindowsOs()
+    internal static string WindowsOs()
     {
         const string key = @"SOFTWARE\Microsoft\Windows NT\CurrentVersion";
         string name = RegistryString(key, "ProductName") ?? "Windows";
@@ -379,7 +362,7 @@ internal static class Collector
 
     private static string Architecture() => RuntimeInformation.OSArchitecture.ToString().ToLowerInvariant();
 
-    private static string LinuxOs()
+    internal static string LinuxOs()
     {
         string name = "Linux";
         foreach (string line in Lines(ReadFile("/etc/os-release")))
@@ -401,26 +384,13 @@ internal static class Collector
         return Clean($"{name}, kernel {kernel}{wsl}, {Architecture()}");
     }
 
-    private static string? ReadFile(string path)
-    {
-        try
-        {
-            return File.Exists(path) ? File.ReadAllText(path) : null;
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
-            Warn($"cannot read {path}", ex);
-            return null;
-        }
-    }
-
-    private static string WindowsCpu()
+    internal static string WindowsCpu()
     {
         string? name = RegistryString(@"HARDWARE\DESCRIPTION\System\CentralProcessor\0", "ProcessorNameString");
         return name is null ? NotFound : CollapseSpaces(name);
     }
 
-    private static string LinuxCpu()
+    internal static string LinuxCpu()
     {
         foreach (string line in Lines(ReadFile("/proc/cpuinfo")))
         {
@@ -440,7 +410,7 @@ internal static class Collector
     private static string CollapseSpaces(string text) =>
         string.Join(' ', text.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
 
-    private static string Memory(bool windows)
+    internal static string Memory(bool windows)
     {
         long bytes = 0;
         if (windows)
@@ -467,7 +437,7 @@ internal static class Collector
             : $"{Math.Round(bytes / (1024.0 * 1024 * 1024)).ToString("0", CultureInfo.InvariantCulture)} GB";
     }
 
-    private static string WindowsBoard()
+    internal static string WindowsBoard()
     {
         const string key = @"HARDWARE\DESCRIPTION\System\BIOS";
         return BoardText(
@@ -476,7 +446,7 @@ internal static class Collector
             RegistryString(key, "BIOSVersion"));
     }
 
-    private static string LinuxBoard()
+    internal static string LinuxBoard()
     {
         const string dir = "/sys/class/dmi/id/";
         return BoardText(
@@ -495,10 +465,12 @@ internal static class Collector
 
         return Clean($"{(board.Length == 0 ? NotFound : board)}, BIOS {bios ?? NotFound}");
     }
+}
 
-    // ---- GPU / CUDA ----
-
-    private static void CollectGpus(ReportModel model)
+/// <summary>Reads the GPUs from nvidia-smi and the CUDA Toolkit from nvcc.</summary>
+internal static class GpuProbe
+{
+    internal static void CollectGpus(ReportModel model)
     {
         string? query = Run("nvidia-smi", "--query-gpu=name,compute_cap,memory.total,driver_version --format=csv,noheader");
         string driverCuda = string.Empty;
@@ -550,7 +522,7 @@ internal static class Collector
         }
     }
 
-    private static string CudaToolkit()
+    internal static string CudaToolkit()
     {
         string exe = OperatingSystem.IsWindows() ? "nvcc.exe" : "nvcc";
         string? output = Run("nvcc", "--version");
@@ -589,10 +561,12 @@ internal static class Collector
 
         return Clean(FirstLine(output));
     }
+}
 
-    // ---- host C++ ----
-
-    private static string Msvc()
+/// <summary>Reads the host C++ compilers and the .NET SDKs and runtimes.</summary>
+internal static class ToolchainProbe
+{
+    internal static string Msvc()
     {
         string programFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
         string vswhere = Path.Combine(programFiles, "Microsoft Visual Studio", "Installer", "vswhere.exe");
@@ -614,7 +588,7 @@ internal static class Collector
         return toolset is null ? $"MSVC {NotFound}{vs}" : $"MSVC {toolset}{vs}";
     }
 
-    private static string LinuxCompilers()
+    internal static string LinuxCompilers()
     {
         string? gpp = Run("g++", "--version");
         string? clang = Run("clang++", "--version");
@@ -630,14 +604,14 @@ internal static class Collector
 
     // ---- .NET ----
 
-    private static void CollectDotnet(ReportModel model)
+    internal static void CollectDotnet(ReportModel model)
     {
-        string? slnx = FindUp("Henicos.slnx");
+        string? slnx = CheckoutProbe.FindUp("Henicos.slnx");
         string start = (slnx is null ? null : Path.GetDirectoryName(slnx)) ?? Directory.GetCurrentDirectory();
         string? version = Run("dotnet", "--version", start);
         model.DotnetSdk = version is null ? NotFound : FirstLine(version);
 
-        string? globalJson = FindUp("global.json");
+        string? globalJson = CheckoutProbe.FindUp("global.json");
         if (globalJson is not null)
         {
             model.GlobalJson = PinnedSdk(globalJson);
@@ -682,8 +656,12 @@ internal static class Collector
             return Clean($"unreadable ({ex.Message})");
         }
     }
+}
 
-    private static string? FindUp(string fileName)
+/// <summary>Reads the G# checkout and the G# environment variables.</summary>
+internal static class CheckoutProbe
+{
+    internal static string? FindUp(string fileName)
     {
         try
         {
@@ -707,9 +685,7 @@ internal static class Collector
         return null;
     }
 
-    // ---- checkout / environment variables ----
-
-    private static string? GSharpCheckout()
+    internal static string? GSharpCheckout()
     {
         string? slnx = FindUp("Henicos.slnx");
         if (slnx is null)
@@ -722,7 +698,7 @@ internal static class Collector
         if (commit is null)
         {
             // Inside a clone, so say why git failed (dubious ownership, a worktree whose .git file points to another OS, ...).
-            string reason = s_lastError.Length > 0 ? s_lastError : "no output";
+            string reason = LastError.Length > 0 ? LastError : "no output";
             return Clean($"git failed: {reason}");
         }
 
@@ -731,7 +707,7 @@ internal static class Collector
         return Clean($"commit {FirstLine(commit)} ({FirstLine(branch)}, {(porcelain is null ? "clean" : "dirty")})");
     }
 
-    private static void CollectEnvironmentVariables(ReportModel model)
+    internal static void CollectEnvironmentVariables(ReportModel model)
     {
         var names = new SortedSet<string>(StringComparer.Ordinal) { "GSHARP_TEST_NO_CUDA", "CUDA_VISIBLE_DEVICES" };
         foreach (System.Collections.DictionaryEntry entry in Environment.GetEnvironmentVariables())
@@ -748,4 +724,53 @@ internal static class Collector
             model.EnvironmentVariables[name] = string.IsNullOrEmpty(value) ? "(unset)" : Clean(value);
         }
     }
+}
+
+/// <summary>Formats the report as Markdown.</summary>
+internal static class MarkdownReport
+{
+    public static string ToMarkdown(ReportModel m)
+    {
+        var sb = new StringBuilder();
+        sb.Append("- OS: ").Append(m.Os).Append('\n');
+        sb.Append("- CPU / RAM: ").Append(m.Cpu).Append(", ").Append(m.Memory).Append('\n');
+        sb.Append("- Motherboard: ").Append(m.Motherboard).Append('\n');
+        if (m.Gpus.Count == 0)
+        {
+            sb.Append("- GPU: ").Append(NotFound).Append('\n');
+        }
+
+        for (int i = 0; i < m.Gpus.Count; i++)
+        {
+            sb.Append("- GPU ").Append(i.ToString(CultureInfo.InvariantCulture)).Append(": ").Append(m.Gpus[i]).Append('\n');
+        }
+
+        sb.Append("- CUDA Toolkit: ").Append(m.CudaToolkit).Append(" (CUDA_PATH ").Append(m.CudaPath).Append(")\n");
+        sb.Append("- Host C++: ").Append(m.HostCpp).Append('\n');
+        sb.Append("- .NET: SDK ").Append(m.DotnetSdk).Append(" (global.json: ").Append(m.GlobalJson).Append(")\n");
+        sb.Append("  - SDKs: ").Append(Join(m.DotnetSdks)).Append('\n');
+        sb.Append("  - Runtimes: ").Append(Join(m.DotnetRuntimes)).Append('\n');
+        if (m.GSharp is not null)
+        {
+            sb.Append("- G#: ").Append(m.GSharp).Append('\n');
+        }
+
+        sb.Append("- G# environment variables: ");
+        bool first = true;
+        foreach (KeyValuePair<string, string> pair in m.EnvironmentVariables)
+        {
+            if (!first)
+            {
+                sb.Append(", ");
+            }
+
+            first = false;
+            sb.Append(pair.Key).Append('=').Append(pair.Value);
+        }
+
+        sb.Append('\n');
+        return sb.ToString();
+    }
+
+    private static string Join(List<string> items) => items.Count == 0 ? NotFound : string.Join(", ", items);
 }
