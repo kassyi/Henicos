@@ -111,47 +111,14 @@ public sealed class MsvcToolchain : INativeToolchain
 
         log.LogMessage(MessageImportance.Normal, $"Compiling C++ source for {vcvarsArch}: {sourcePath}");
 
-        var clExePath = "cl.exe";
-        if (_resolvedEnvs.TryGetValue(vcvarsArch, out var env) ||
-            (env = GetVcvarsEnvironment(vcvarsArch, cancellationToken)) != null)
+        Dictionary<string, string>? env = null;
+        if (_resolvedEnvs.TryGetValue(vcvarsArch, out var resolved) ||
+            (resolved = GetVcvarsEnvironment(vcvarsArch, cancellationToken)) != null)
         {
-            if (env.TryGetValue("PATH", out var pathEnv))
-            {
-                var span = pathEnv.AsSpan();
-                while (span.Length > 0)
-                {
-                    var sepIdx = span.IndexOf(Path.PathSeparator);
-                    var segment = sepIdx >= 0 ? span.Slice(0, sepIdx) : span;
-                    var fullPath = Path.Combine(segment.ToString(), "cl.exe");
-                    if (File.Exists(fullPath))
-                    {
-                        clExePath = fullPath;
-                        break;
-                    }
-
-                    if (sepIdx < 0)
-                    {
-                        break;
-                    }
-
-                    span = span.Slice(sepIdx + 1);
-                }
-            }
+            env = resolved;
         }
 
-        var startInfo = new ProcessStartInfo
-        {
-            FileName = clExePath,
-            Arguments = clArgs
-        };
-
-        if (env != null)
-        {
-            foreach (var kvp in env)
-            {
-                startInfo.EnvironmentVariables[kvp.Key] = kvp.Value;
-            }
-        }
+        var startInfo = CreateClStartInfo(clArgs, env);
 
         try
         {
@@ -160,34 +127,11 @@ public sealed class MsvcToolchain : INativeToolchain
             if (result.ExitCode == 0 && File.Exists(outputPath))
             {
                 NvccOutputParser.LogCompilerWarnings(log, sourcePath, result.StandardOutput, result.StandardError);
-
-                // MSVC produces .obj, .lib, .exp. Clean them up to avoid clutter.
-                var libPath = Path.Combine(baseDir, baseName + ".lib");
-                var expPath = Path.Combine(baseDir, baseName + ".exp");
-
-                var srcDir = Path.GetDirectoryName(sourcePath) ?? "";
-                var srcObjPath = Path.Combine(srcDir, Path.GetFileNameWithoutExtension(sourcePath) + ".obj");
-                var cwdObjPath = Path.Combine(Environment.CurrentDirectory,
-                    Path.GetFileNameWithoutExtension(sourcePath) + ".obj");
-
-                var ilkPath = Path.Combine(baseDir, baseName + ".ilk");
-                CompileKernelTaskBase.CleanupFiles(log, objPath, libPath, expPath, ilkPath, vcPdbPath, srcObjPath, cwdObjPath);
-
+                CleanupBuildArtifacts(log, sourcePath, baseDir, baseName, objPath, vcPdbPath);
                 return true;
             }
 
-            log.LogError($"MSVC compilation failed with exit code {result.ExitCode}.");
-            if (!string.IsNullOrWhiteSpace(result.StandardOutput))
-            {
-                log.LogError(result.StandardOutput);
-            }
-
-            if (!string.IsNullOrWhiteSpace(result.StandardError))
-            {
-                log.LogError(result.StandardError);
-            }
-
-            RenamedIdentifierLogger.LogRenamedIdentifiers(log, result.StandardOutput, result.StandardError);
+            LogCompileFailure(log, result);
             return false;
         }
         catch (OperationCanceledException)
@@ -199,6 +143,92 @@ public sealed class MsvcToolchain : INativeToolchain
             log.LogError($"Failed to start cl.exe. Ensure MSVC is installed. Details: {ex.Message}");
             return false;
         }
+    }
+
+    private static ProcessStartInfo CreateClStartInfo(string clArgs, Dictionary<string, string>? env)
+    {
+        var startInfo = new ProcessStartInfo
+        {
+            FileName = FindClExe(env),
+            Arguments = clArgs
+        };
+
+        if (env != null)
+        {
+            foreach (var kvp in env)
+            {
+                startInfo.EnvironmentVariables[kvp.Key] = kvp.Value;
+            }
+        }
+
+        return startInfo;
+    }
+
+    // cl.exe from the PATH of the vcvarsall environment, else the bare name.
+    private static string FindClExe(Dictionary<string, string>? env)
+    {
+        if (env == null || !env.TryGetValue("PATH", out var pathEnv))
+        {
+            return "cl.exe";
+        }
+
+        var span = pathEnv.AsSpan();
+        while (span.Length > 0)
+        {
+            var sepIdx = span.IndexOf(Path.PathSeparator);
+            var segment = sepIdx >= 0 ? span.Slice(0, sepIdx) : span;
+            var fullPath = Path.Combine(segment.ToString(), "cl.exe");
+            if (File.Exists(fullPath))
+            {
+                return fullPath;
+            }
+
+            if (sepIdx < 0)
+            {
+                break;
+            }
+
+            span = span.Slice(sepIdx + 1);
+        }
+
+        return "cl.exe";
+    }
+
+    // MSVC produces .obj, .lib, .exp. Clean them up to avoid clutter.
+    private static void CleanupBuildArtifacts(
+        TaskLoggingHelper log,
+        string sourcePath,
+        string baseDir,
+        string baseName,
+        string objPath,
+        string vcPdbPath)
+    {
+        var libPath = Path.Combine(baseDir, baseName + ".lib");
+        var expPath = Path.Combine(baseDir, baseName + ".exp");
+
+        var srcDir = Path.GetDirectoryName(sourcePath) ?? "";
+        var srcObjPath = Path.Combine(srcDir, Path.GetFileNameWithoutExtension(sourcePath) + ".obj");
+        var cwdObjPath = Path.Combine(Environment.CurrentDirectory,
+            Path.GetFileNameWithoutExtension(sourcePath) + ".obj");
+
+        var ilkPath = Path.Combine(baseDir, baseName + ".ilk");
+        CompileKernelTaskBase.CleanupFiles(log, objPath, libPath, expPath, ilkPath, vcPdbPath, srcObjPath, cwdObjPath);
+    }
+
+    private static void LogCompileFailure(TaskLoggingHelper log, ProcessResult result)
+    {
+        log.LogError($"MSVC compilation failed with exit code {result.ExitCode}.");
+        if (!string.IsNullOrWhiteSpace(result.StandardOutput))
+        {
+            log.LogError(result.StandardOutput);
+        }
+
+        if (!string.IsNullOrWhiteSpace(result.StandardError))
+        {
+            log.LogError(result.StandardError);
+        }
+
+        RenamedIdentifierLogger.LogRenamedIdentifiers(log, result.StandardOutput, result.StandardError);
     }
 
     // Logged once per task run by CompileCppToNativeTask when 'undefined' is requested with this toolchain.
@@ -245,22 +275,42 @@ public sealed class MsvcToolchain : INativeToolchain
         string vcvarsArch,
         CancellationToken cancellationToken)
     {
-        // The vswhere query below is repeated by tools/collect-env/collect-env.cs (Msvc); keep both in sync.
-        string vswhere;
-        if (_vswherePathOverride is { Length: > 0 })
+        var vswhere = LocateVswhere();
+        if (vswhere == null)
         {
-            vswhere = _vswherePathOverride;
-        }
-        else
-        {
-            var programFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
-            vswhere = Path.Combine(programFiles, "Microsoft Visual Studio", "Installer", "vswhere.exe");
-            if (!File.Exists(vswhere))
-            {
-                return null;
-            }
+            return null;
         }
 
+        var installationPath = QueryInstallationPath(vswhere, cancellationToken);
+        if (string.IsNullOrEmpty(installationPath))
+        {
+            return null;
+        }
+
+        var vcvarsPath = Path.Combine(installationPath, "VC", "Auxiliary", "Build", "vcvarsall.bat");
+        if (!File.Exists(vcvarsPath))
+        {
+            return null;
+        }
+
+        return RunVcvars(vcvarsPath, vcvarsArch, cancellationToken);
+    }
+
+    private string? LocateVswhere()
+    {
+        if (_vswherePathOverride is { Length: > 0 })
+        {
+            return _vswherePathOverride;
+        }
+
+        var programFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
+        var vswhere = Path.Combine(programFiles, "Microsoft Visual Studio", "Installer", "vswhere.exe");
+        return File.Exists(vswhere) ? vswhere : null;
+    }
+
+    // The vswhere query below is repeated by tools/collect-env/collect-env.cs (Msvc); keep both in sync.
+    private string? QueryInstallationPath(string vswhere, CancellationToken cancellationToken)
+    {
         var vswhereStartInfo = new ProcessStartInfo
         {
             FileName = vswhere,
@@ -276,23 +326,15 @@ public sealed class MsvcToolchain : INativeToolchain
         };
 
         var vswhereResult = _processRunner.Run(vswhereStartInfo, cancellationToken);
-        if (vswhereResult.ExitCode != 0)
-        {
-            return null;
-        }
+        return vswhereResult.ExitCode == 0 ? vswhereResult.StandardOutput.AsSpan().Trim().ToString() : null;
+    }
 
-        var output = vswhereResult.StandardOutput.AsSpan().Trim().ToString();
-        if (string.IsNullOrEmpty(output))
-        {
-            return null;
-        }
-
-        var vcvarsPath = Path.Combine(output, "VC", "Auxiliary", "Build", "vcvarsall.bat");
-        if (!File.Exists(vcvarsPath))
-        {
-            return null;
-        }
-
+    // Runs vcvarsall.bat in cmd.exe and reads the environment it leaves (the output of `set`).
+    private Dictionary<string, string>? RunVcvars(
+        string vcvarsPath,
+        string vcvarsArch,
+        CancellationToken cancellationToken)
+    {
         var envStartInfo = new ProcessStartInfo
         {
             FileName = "cmd.exe",
@@ -307,14 +349,13 @@ public sealed class MsvcToolchain : INativeToolchain
         };
 
         var envResult = _processRunner.Run(envStartInfo, cancellationToken);
-        if (envResult.ExitCode != 0)
-        {
-            return null;
-        }
+        return envResult.ExitCode == 0 ? ParseEnvironment(envResult.StandardOutput) : null;
+    }
 
-        var envOutput = envResult.StandardOutput;
+    private static Dictionary<string, string> ParseEnvironment(string setOutput)
+    {
         var envVars = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        using var reader = new StringReader(envOutput);
+        using var reader = new StringReader(setOutput);
         while (reader.ReadLine() is { } line)
         {
             var eqIndex = line.IndexOf('=');
