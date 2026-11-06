@@ -41,17 +41,7 @@ public static class AstLoweringPipeline
         IMethodSymbol? owner, bool isDeviceFunction)
     {
         var bodyModel = ResolveBodyModel(body, semanticModel);
-
-        // [WHY] Annotate before wrapping an expression body: the annotations record spans of the original tree, which is
-        // how later passes find the symbols of the synthesized block.
-        var splitPoints = CollectSplitPoints(body, bodyModel);
-        var treeOrdinal = SemanticModelExtensions.GetSyntaxTreeOrdinal(bodyModel?.Compilation, body.SyntaxTree);
-        var annotatedBody = ToBlock(new SpanAnnotationRewriter(splitPoints, treeOrdinal).Visit(body) ?? body, returnsValue);
-        // [WHY] Before every other pass, which would otherwise lower Stryker's switches (barriers inside them included)
-        // into the state machine (#1191)
-        annotatedBody = MutantSwitchRemover.Remove(annotatedBody, bodyModel);
-        annotatedBody = PreLoweringExpander.Expand(annotatedBody, bodyModel);
-        annotatedBody = LabeledStatementSplitter.Split(annotatedBody);
+        var annotatedBody = PrepareBody(body, returnsValue, bodyModel);
 
         // [WHY] A kernel or a suspending device function is resumed with its original arguments on every state entry, so
         // every non-ref-struct by-value parameter of a split function lives in its frame (#879, #944, #992, #1000).
@@ -96,6 +86,22 @@ public static class AstLoweringPipeline
         }
 
         return new LoweredStateMachine(stateMachineBody, contextFields, lowerer.CallSites, copiedParameters);
+    }
+
+    // The body as one block that the passes can rewrite: annotated with its original spans and split points, without
+    // Stryker's switches, with the pre-lowering expansions applied and labeled statements split from their statements
+    private static BlockSyntax PrepareBody(CSharpSyntaxNode body, bool returnsValue, SemanticModel? bodyModel)
+    {
+        // [WHY] Annotate before wrapping an expression body: the annotations record spans of the original tree, which is
+        // how later passes find the symbols of the synthesized block.
+        var splitPoints = CollectSplitPoints(body, bodyModel);
+        var treeOrdinal = SemanticModelExtensions.GetSyntaxTreeOrdinal(bodyModel?.Compilation, body.SyntaxTree);
+        var annotatedBody = ToBlock(new SpanAnnotationRewriter(splitPoints, treeOrdinal).Visit(body) ?? body, returnsValue);
+        // [WHY] Before every other pass, which would otherwise lower Stryker's switches (barriers inside them included)
+        // into the state machine (#1191)
+        annotatedBody = MutantSwitchRemover.Remove(annotatedBody, bodyModel);
+        annotatedBody = PreLoweringExpander.Expand(annotatedBody, bodyModel);
+        return LabeledStatementSplitter.Split(annotatedBody);
     }
 
     private static SemanticModel? ResolveBodyModel(SyntaxNode body, SemanticModel? semanticModel) =>
