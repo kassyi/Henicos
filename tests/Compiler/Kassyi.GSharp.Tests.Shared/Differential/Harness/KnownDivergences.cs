@@ -1,217 +1,158 @@
 #nullable enable
+using System;
 using System.Collections.Generic;
+using System.IO;
+using Kassyi.GSharp.Compiler.NativeApi;
 
 namespace Kassyi.GSharp.Tests.Shared.Differential;
 
 /// <summary>
-/// The registry of <see cref="KnownDivergence"/> entries that <see cref="DifferentialRunner.Run"/> applies to every case.
-/// A matrix test that finds a new divergence files an issue (M1 or M2) and adds a line here; the PR that fixes it removes the line, since the entry then fails.
+/// The registry of <see cref="KnownDivergence"/> entries that <see cref="DifferentialRunner.Run"/> applies to every case,
+/// read once from <c>KnownDivergences.yaml</c> (an embedded resource next to this file).
+/// A matrix test that finds a new divergence files an issue (M1 or M2) and adds an entry there; the PR that fixes it removes the entry, since the entry then fails.
 /// </summary>
 public static class KnownDivergences
 {
-    // The cases of the entries below, named through nameof so that a renamed kernel cannot leave an entry behind
-    private const string HelperDynamicSharedMemoryZeroBytes =
-        $"{nameof(PendingBugsDifferentialKernels)}.{nameof(PendingBugsDifferentialKernels.HelperDynamicSharedMemoryZeroBytesKernel)}";
-    private const string HelperDynamicSharedMemoryGrowthAfterLaterDecl =
-        $"{nameof(PendingBugsDifferentialKernels)}.{nameof(PendingBugsDifferentialKernels.HelperDynamicSharedMemoryGrowthAfterLaterDeclKernel)}";
-    private const string HelperDynamicSharedMemoryNegativeCount =
-        $"{nameof(PendingBugsDifferentialKernels)}.{nameof(PendingBugsDifferentialKernels.HelperDynamicSharedMemoryNegativeCountKernel)}";
-    private const string GridStrideLoopUniformWarpShuffle =
-        $"{nameof(PendingBugsDifferentialKernels)}.{nameof(PendingBugsDifferentialKernels.GridStrideLoopUniformWarpShuffleKernel)}";
+    /// <summary>The manifest resource name of <c>KnownDivergences.yaml</c>.</summary>
+    internal const string ResourceName = "Kassyi.GSharp.Tests.Shared.Differential.KnownDivergences.yaml";
 
-    private const string NullableBlitScalarArg =
-        $"{nameof(MarshalingBoundaryDifferentialKernels)}.{nameof(MarshalingBoundaryDifferentialKernels.NullableBlitScalarArgKernel)}";
-    private const string NullableConvertPositions =
-        $"{nameof(MarshalingBoundaryDifferentialKernels)}.{nameof(MarshalingBoundaryDifferentialKernels.NullableConvertPositionsKernel)}";
-    private const string InlineArrayNullableVec2 =
-        $"{nameof(MarshalingBoundaryDifferentialKernels)}.{nameof(MarshalingBoundaryDifferentialKernels.InlineArrayNullableVec2Kernel)}";
-    private const string OverlappingSpanSlice =
-        $"{nameof(MarshalingAliasingDifferentialKernels)}.{nameof(MarshalingAliasingDifferentialKernels.OverlappingSpanSliceKernel)}";
-    private const string AliasedRefScalars =
-        $"{nameof(MarshalingAliasingDifferentialKernels)}.{nameof(MarshalingAliasingDifferentialKernels.AliasedRefScalarsKernel)}";
-    private const string CrossAliasInDeepArrayAndRwArray =
-        $"{nameof(MarshalingAliasingDifferentialKernels)}.{nameof(MarshalingAliasingDifferentialKernels.CrossAliasInDeepArrayAndRwArrayKernel)}";
-    private const string PtrLengthGuardedScale =
-        $"{nameof(MarshalingAliasingDifferentialKernels)}.{nameof(MarshalingAliasingDifferentialKernels.PtrLengthGuardedScaleKernel)}";
-    private const string InterlockedReturnExpression =
-        $"{nameof(AtomicsDifferentialKernels)}.{nameof(AtomicsDifferentialKernels.InterlockedReturnExpressionKernel)}";
+    private static readonly KnownDivergenceList s_list = Load();
 
-    private const string ArrayIndexBounds =
-        $"{nameof(BoundsAndMemoryDifferentialKernels)}.{nameof(BoundsAndMemoryDifferentialKernels.ArrayIndexBoundsKernel)}";
-    private const string SpanCanaryIndexBounds =
-        $"{nameof(BoundsAndMemoryDifferentialKernels)}.{nameof(BoundsAndMemoryDifferentialKernels.SpanCanaryIndexBoundsKernel)}";
-    private const string SpanSliceStart =
-        $"{nameof(BoundsAndMemoryDifferentialKernels)}.{nameof(BoundsAndMemoryDifferentialKernels.SpanSliceStartKernel)}";
-    private const string SpanSliceStartCount =
-        $"{nameof(BoundsAndMemoryDifferentialKernels)}.{nameof(BoundsAndMemoryDifferentialKernels.SpanSliceStartCountKernel)}";
-    private const string ArraySegmentBounds =
-        $"{nameof(BoundsAndMemoryDifferentialKernels)}.{nameof(BoundsAndMemoryDifferentialKernels.ArraySegmentBoundsKernel)}";
-    private const string MemoryBounds =
-        $"{nameof(BoundsAndMemoryDifferentialKernels)}.{nameof(BoundsAndMemoryDifferentialKernels.MemoryBoundsKernel)}";
-    private const string InlineArrayBounds =
-        $"{nameof(BoundsAndMemoryDifferentialKernels)}.{nameof(BoundsAndMemoryDifferentialKernels.InlineArrayBoundsKernel)}";
-    private const string BoundsCheckEliminationOffByOne =
-        $"{nameof(BoundsAndMemoryDifferentialKernels)}.{nameof(BoundsAndMemoryDifferentialKernels.BoundsCheckEliminationOffByOneKernel)}";
-    private const string BoundsCheckEliminationWrongSpan =
-        $"{nameof(BoundsAndMemoryDifferentialKernels)}.{nameof(BoundsAndMemoryDifferentialKernels.BoundsCheckEliminationWrongSpanKernel)}";
-    private const string BoundsCheckEliminationPostIncrement =
-        $"{nameof(BoundsAndMemoryDifferentialKernels)}.{nameof(BoundsAndMemoryDifferentialKernels.BoundsCheckEliminationPostIncrementKernel)}";
-    private const string BoundsCheckEliminationUpperOnly =
-        $"{nameof(BoundsAndMemoryDifferentialKernels)}.{nameof(BoundsAndMemoryDifferentialKernels.BoundsCheckEliminationUpperOnlyKernel)}";
-    private const string AllThreadsNullDereferenceTrap =
-        $"{nameof(BoundsAndMemoryDifferentialKernels)}.{nameof(BoundsAndMemoryDifferentialKernels.AllThreadsNullDereferenceTrapKernel)}";
+    /// <summary>Gets every registered entry, one per case, column and issue.</summary>
+    public static IReadOnlyList<KnownDivergence> All => s_list.Entries;
 
-    private const string Int32Divide =
-        $"{nameof(IntegerTrapAndCheckedDifferentialKernels)}.{nameof(IntegerTrapAndCheckedDifferentialKernels.Int32DivideKernel)}";
-    private const string Int32Remainder =
-        $"{nameof(IntegerTrapAndCheckedDifferentialKernels)}.{nameof(IntegerTrapAndCheckedDifferentialKernels.Int32RemainderKernel)}";
-    private const string UInt32Divide =
-        $"{nameof(IntegerTrapAndCheckedDifferentialKernels)}.{nameof(IntegerTrapAndCheckedDifferentialKernels.UInt32DivideKernel)}";
-    private const string UInt32Remainder =
-        $"{nameof(IntegerTrapAndCheckedDifferentialKernels)}.{nameof(IntegerTrapAndCheckedDifferentialKernels.UInt32RemainderKernel)}";
-    private const string Int64Divide =
-        $"{nameof(IntegerTrapAndCheckedDifferentialKernels)}.{nameof(IntegerTrapAndCheckedDifferentialKernels.Int64DivideKernel)}";
-    private const string UInt64Divide =
-        $"{nameof(IntegerTrapAndCheckedDifferentialKernels)}.{nameof(IntegerTrapAndCheckedDifferentialKernels.UInt64DivideKernel)}";
-    private const string Int16CompoundDivide =
-        $"{nameof(IntegerTrapAndCheckedDifferentialKernels)}.{nameof(IntegerTrapAndCheckedDifferentialKernels.Int16CompoundDivideKernel)}";
-    private const string SByteCompoundRemainder =
-        $"{nameof(IntegerTrapAndCheckedDifferentialKernels)}.{nameof(IntegerTrapAndCheckedDifferentialKernels.SByteCompoundRemainderKernel)}";
+    /// <summary>Gets the issues the entries name, with the titles the file records.</summary>
+    internal static IReadOnlyList<KnownDivergenceIssue> Issues => s_list.Issues;
 
-    private const string Int32MinValueDivide =
-        $"{nameof(IntegerTrapAndCheckedDifferentialKernels)}.{nameof(IntegerTrapAndCheckedDifferentialKernels.Int32MinValueDivideKernel)}";
-    private const string Int32MinValueRemainder =
-        $"{nameof(IntegerTrapAndCheckedDifferentialKernels)}.{nameof(IntegerTrapAndCheckedDifferentialKernels.Int32MinValueRemainderKernel)}";
-    private const string Int64MinValueDivide =
-        $"{nameof(IntegerTrapAndCheckedDifferentialKernels)}.{nameof(IntegerTrapAndCheckedDifferentialKernels.Int64MinValueDivideKernel)}";
-    private const string Int64MinValueRemainder =
-        $"{nameof(IntegerTrapAndCheckedDifferentialKernels)}.{nameof(IntegerTrapAndCheckedDifferentialKernels.Int64MinValueRemainderKernel)}";
+    private static KnownDivergenceList Load()
+    {
+        using var stream = typeof(KnownDivergences).Assembly.GetManifestResourceStream(ResourceName)
+            ?? throw new InvalidOperationException($"The embedded resource {ResourceName} is missing.");
+        using var reader = new StreamReader(stream);
+        return Parse(reader.ReadToEnd());
+    }
 
-    private const string MathAbsInt32 =
-        $"{nameof(IntegerTrapAndCheckedDifferentialKernels)}.{nameof(IntegerTrapAndCheckedDifferentialKernels.MathAbsInt32Kernel)}";
+    /// <summary>Parses the text of <c>KnownDivergences.yaml</c>.</summary>
+    /// <param name="yaml">The file text.</param>
+    /// <exception cref="InvalidDataException">The text does not follow the format the file header describes.</exception>
+    internal static KnownDivergenceList Parse(string yaml)
+    {
+        YamlNode root;
+        try
+        {
+            root = YamlSubsetParser.Parse(yaml);
+        }
+        catch (NativeApiReadException ex)
+        {
+            var error = ex.ToError();
+            throw new InvalidDataException($"KnownDivergences.yaml line {error.Line}: {error.Message}", ex);
+        }
 
-    private const string NullableInt32ValueAccess =
-        $"{nameof(BclExceptionDifferentialKernels)}.{nameof(BclExceptionDifferentialKernels.NullableInt32ValueAccessKernel)}";
-    private const string NullableStructValueAccess =
-        $"{nameof(BclExceptionDifferentialKernels)}.{nameof(BclExceptionDifferentialKernels.NullableStructValueAccessKernel)}";
-    private const string MathClampInt32 =
-        $"{nameof(BclExceptionDifferentialKernels)}.{nameof(BclExceptionDifferentialKernels.MathClampInt32Kernel)}";
-    private const string MathClampSingle =
-        $"{nameof(BclExceptionDifferentialKernels)}.{nameof(BclExceptionDifferentialKernels.MathClampSingleKernel)}";
-    private const string MathClampDouble =
-        $"{nameof(BclExceptionDifferentialKernels)}.{nameof(BclExceptionDifferentialKernels.MathClampDoubleKernel)}";
-    private const string ElementAtOrDefaultNegativeIndexSideEffect =
-        $"{nameof(BclExceptionDifferentialKernels)}.{nameof(BclExceptionDifferentialKernels.ElementAtOrDefaultNegativeIndexSideEffectKernel)}";
+        var issues = new List<KnownDivergenceIssue>();
+        var entries = new List<KnownDivergence>();
+        if (root is YamlScalar { IsNull: true })
+        {
+            return new KnownDivergenceList(issues, entries);
+        }
 
-    /// <summary>Gets every registered entry.</summary>
-    public static IReadOnlyList<KnownDivergence> All { get; } =
-    [
-        // new("IntegerMatrixKernels.Int32ArithmeticMatrixKernel", "a>>>b", DiffPath.Native | DiffPath.Cuda, Issue: 722),
+        foreach (var issueNode in ExpectSequence(root, "the document"))
+        {
+            var issueMapping = ExpectMapping(issueNode, "an issue block");
+            int issue = RequireInt32(issueMapping, "issue");
+            issues.Add(new KnownDivergenceIssue(issue, RequireScalar(issueMapping, "title"), issueMapping.Line));
+            var entryNodes = issueMapping.TryGetValue("entries", out var entriesNode)
+                ? ExpectSequence(entriesNode, "entries")
+                : throw Error(issueMapping, "The issue block has no 'entries'.");
+            foreach (var entryNode in entryNodes)
+            {
+                var entry = ExpectMapping(entryNode, "an entry");
+                string caseName = RequireScalar(entry, "case");
+                var paths = ParsePaths(entry);
+                var hosts = ParseHosts(entry);
+                foreach (string column in RequireScalarList(entry, "columns"))
+                {
+                    entries.Add(new KnownDivergence(caseName, column, paths, issue, hosts));
+                }
+            }
+        }
 
-        // dynamic SharedMemory<T>(count) inside non-suspending [GpuDeviceFunction] is not rewritten on Managed (#904)
-        new(HelperDynamicSharedMemoryZeroBytes, KnownDivergence.ExceptionColumn, DiffPath.Managed, Issue: 904),
-        new(HelperDynamicSharedMemoryGrowthAfterLaterDecl, KnownDivergence.ExceptionColumn, DiffPath.Managed, Issue: 904),
-        new(HelperDynamicSharedMemoryNegativeCount, KnownDivergence.ExceptionColumn, DiffPath.Managed, Issue: 904),
+        return new KnownDivergenceList(issues, entries);
+    }
 
-        // Warp.ShuffleDownSync directly inside Gpu.GridStrideLoop lambda is not split by StateMachineLowerer (#1091)
-        new(GridStrideLoopUniformWarpShuffle, "iter0_down1", DiffPath.Native, Issue: 1091),
-        new(GridStrideLoopUniformWarpShuffle, "iter1_down1", DiffPath.Native, Issue: 1091),
+    private static DiffPath ParsePaths(YamlMapping entry)
+    {
+        var paths = DiffPath.None;
+        foreach (string name in RequireScalarList(entry, "paths"))
+        {
+            paths |= name switch
+            {
+                "Managed" => DiffPath.Managed,
+                "Native" => DiffPath.Native,
+                "Cuda" => DiffPath.Cuda,
+                _ => throw Error(entry, $"Unknown path '{name}'; expected Managed, Native or Cuda."),
+            };
+        }
 
-        // Nullable<T> scalar / byref kernel arguments throw MarshalDirectiveException in CPU Native Launch (#961)
-        new(NullableBlitScalarArg, "v_has", DiffPath.Native, Issue: 961),
-        new(NullableBlitScalarArg, "v_val", DiffPath.Native, Issue: 961),
-        new(NullableBlitScalarArg, "rb_has", DiffPath.Native, Issue: 961),
-        new(NullableBlitScalarArg, "rb_val", DiffPath.Native, Issue: 961),
-        new(NullableBlitScalarArg, "rb", DiffPath.Native, Issue: 961),
-        new(NullableBlitScalarArg, "oc", DiffPath.Native, Issue: 961),
+        return paths;
+    }
 
-        // Nullable<Vector2> host 12B vs CUDA 16B layout mismatch (#961)
-        new(NullableConvertPositions, "v_x", DiffPath.Cuda, Issue: 961),
-        new(NullableConvertPositions, "v_y", DiffPath.Cuda, Issue: 961),
-        new(NullableConvertPositions, "rv_x", DiffPath.Cuda, Issue: 961),
-        new(NullableConvertPositions, "rv_y", DiffPath.Cuda, Issue: 961),
-        new(NullableConvertPositions, "h", DiffPath.Cuda, Issue: 961),
+    private static DiffHost ParseHosts(YamlMapping entry)
+    {
+        if (!entry.TryGetValue("hosts", out _))
+        {
+            return DiffHost.Any;
+        }
 
-        // [InlineArray(2)] of Nullable<Vector2> block-copied without per-element conversion on CUDA (#961)
-        new(InlineArrayNullableVec2, "item0_x", DiffPath.Cuda, Issue: 961),
-        new(InlineArrayNullableVec2, "item0_y", DiffPath.Cuda, Issue: 961),
-        new(InlineArrayNullableVec2, "item1_has", DiffPath.Cuda, Issue: 961),
-        new(InlineArrayNullableVec2, "item1_x", DiffPath.Cuda, Issue: 961),
-        new(InlineArrayNullableVec2, "item1_y", DiffPath.Cuda, Issue: 961),
-        new(InlineArrayNullableVec2, "h", DiffPath.Cuda, Issue: 961),
+        DiffHost hosts = 0;
+        foreach (string name in RequireScalarList(entry, "hosts"))
+        {
+            hosts |= name switch
+            {
+                "Windows" => DiffHost.Windows,
+                "Unix" => DiffHost.Unix,
+                _ => throw Error(entry, $"Unknown host '{name}'; expected Windows or Unix."),
+            };
+        }
 
-        // Partially overlapping Span<T> slices from same array do not share device memory on CUDA (#857)
-        new(OverlappingSpanSlice, "backing", DiffPath.Cuda, Issue: 857),
-        new(OverlappingSpanSlice, "observed", DiffPath.Cuda, Issue: 857),
+        return hosts;
+    }
 
-        // Aliased ref scalar parameters allocate separate device buffers and overwrite on DtoH copyback on CUDA
-        new(AliasedRefScalars, "sharedRef", DiffPath.Cuda, Issue: 1061),
-        new(AliasedRefScalars, "observed", DiffPath.Cuda, Issue: 1061),
+    private static IEnumerable<YamlNode> ExpectSequence(YamlNode node, string what) =>
+        node is YamlSequence sequence
+            ? sequence.Items
+            : throw Error(node, $"Expected a sequence for {what}.");
 
-        // [In] DeepStruct[] element array field cloned unconditionally on CPU even when aliasing writable int[] (#985)
-        new(CrossAliasInDeepArrayAndRwArray, "observed", DiffPath.Managed | DiffPath.Native, Issue: 985),
+    private static YamlMapping ExpectMapping(YamlNode node, string what) =>
+        node as YamlMapping ?? throw Error(node, $"Expected a mapping for {what}.");
 
-        // Launch{Kernel}Ptr with raw IntPtr passes Length = 0 in GSharpArrayProxy (#720)
-        new(PtrLengthGuardedScale, "data", DiffPath.Cuda, Issue: 720),
-        new(PtrLengthGuardedScale, "outLen", DiffPath.Cuda, Issue: 720),
+    private static string RequireScalar(YamlMapping mapping, string key) =>
+        mapping.TryGetScalar(key, out string? value) && value.Length > 0
+            ? value
+            : throw Error(mapping, $"Missing or empty '{key}'.");
 
-        // Span/Slice/ArraySegment/Memory/InlineArray bounds and BCE guards on native (#718)
-        new(SpanCanaryIndexBounds, KnownDivergence.ExceptionColumn, DiffPath.Native, Issue: 718),
-        new(ArraySegmentBounds, KnownDivergence.ExceptionColumn, DiffPath.Native, Issue: 718),
-        new(MemoryBounds, KnownDivergence.ExceptionColumn, DiffPath.Native, Issue: 718),
-        new(InlineArrayBounds, KnownDivergence.ExceptionColumn, DiffPath.Native, Issue: 718),
-        new(BoundsCheckEliminationOffByOne, KnownDivergence.ExceptionColumn, DiffPath.Native, Issue: 718),
-        new(BoundsCheckEliminationWrongSpan, KnownDivergence.ExceptionColumn, DiffPath.Native, Issue: 718),
-        new(BoundsCheckEliminationPostIncrement, KnownDivergence.ExceptionColumn, DiffPath.Native, Issue: 718),
-        new(BoundsCheckEliminationUpperOnly, KnownDivergence.ExceptionColumn, DiffPath.Native, Issue: 718),
+    private static int RequireInt32(YamlMapping mapping, string key) =>
+        mapping.TryGetInt32(key, out int value) && value > 0
+            ? value
+            : throw Error(mapping, $"'{key}' must be a positive issue number.");
 
-        // Array and span bounds, BCE guards, simultaneous traps, integer divide-by-zero, and Math.Abs(MinValue) on CUDA (#729)
-        new(ArrayIndexBounds, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
-        new(SpanCanaryIndexBounds, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
-        new(SpanSliceStart, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
-        new(SpanSliceStartCount, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
-        new(ArraySegmentBounds, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
-        new(MemoryBounds, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
-        new(InlineArrayBounds, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
-        new(BoundsCheckEliminationOffByOne, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
-        new(BoundsCheckEliminationWrongSpan, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
-        new(BoundsCheckEliminationPostIncrement, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
-        new(BoundsCheckEliminationUpperOnly, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
-        new(AllThreadsNullDereferenceTrap, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
-        new(Int32Divide, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
-        new(Int32Remainder, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
-        new(UInt32Divide, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
-        new(UInt32Remainder, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
-        new(Int64Divide, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
-        new(UInt64Divide, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
-        new(Int16CompoundDivide, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
-        new(SByteCompoundRemainder, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
-        new(MathAbsInt32, KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 729),
+    private static List<string> RequireScalarList(YamlMapping mapping, string key)
+    {
+        if (!mapping.TryGetValue(key, out var node) || node is not YamlSequence { Items.Count: > 0 } sequence)
+        {
+            throw Error(mapping, $"'{key}' must be a non-empty list.");
+        }
 
-        // Nullable<T>.Value and Math.Clamp traps on native and CUDA (#718)
-        new(NullableInt32ValueAccess, KnownDivergence.ExceptionColumn, DiffPath.Native | DiffPath.Cuda, Issue: 718),
-        new(NullableStructValueAccess, KnownDivergence.ExceptionColumn, DiffPath.Native | DiffPath.Cuda, Issue: 718),
-        new(MathClampInt32, KnownDivergence.ExceptionColumn, DiffPath.Native | DiffPath.Cuda, Issue: 718),
-        new(MathClampSingle, KnownDivergence.ExceptionColumn, DiffPath.Native | DiffPath.Cuda, Issue: 718),
-        new(MathClampDouble, KnownDivergence.ExceptionColumn, DiffPath.Native | DiffPath.Cuda, Issue: 718),
+        var values = new List<string>(sequence.Items.Count);
+        foreach (var item in sequence.Items)
+        {
+            values.Add(item is YamlScalar { IsNull: false, Value.Length: > 0 } scalar
+                ? scalar.Value
+                : throw Error(item, $"Every item of '{key}' must be a non-empty scalar."));
+        }
 
-        // Unchecked MinValue / -1 and MinValue % -1 Managed path throws OverflowException (#718)
-        new(Int32MinValueDivide, KnownDivergence.ExceptionColumn, DiffPath.Managed, Issue: 718),
-        new(Int32MinValueRemainder, KnownDivergence.ExceptionColumn, DiffPath.Managed, Issue: 718),
-        new(Int64MinValueDivide, KnownDivergence.ExceptionColumn, DiffPath.Managed, Issue: 718),
-        new(Int64MinValueRemainder, KnownDivergence.ExceptionColumn, DiffPath.Managed, Issue: 718),
+        return values;
+    }
 
-        // Math.Abs(MinValue) overflow trap (#947)
-        new(MathAbsInt32, KnownDivergence.ExceptionColumn, DiffPath.Native, Issue: 947),
-
-        // StackLinq ElementAtOrDefault(-1) side effects (#1060)
-        new(ElementAtOrDefaultNegativeIndexSideEffect, "select_neg_eval_count", DiffPath.Managed | DiffPath.Native | DiffPath.Cuda, Issue: 1060),
-        new(ElementAtOrDefaultNegativeIndexSideEffect, "where_neg_eval_count", DiffPath.Managed | DiffPath.Native | DiffPath.Cuda, Issue: 1060),
-
-        // Interlocked long overloads return unsigned long long in C++, and signed 32-bit add overflow UB in CUDA prelude (#1057, #1058)
-        new(InterlockedReturnExpression, "add64_lt_zero", DiffPath.Native | DiffPath.Cuda, Issue: 1057), // Interlocked.Add(ref long) returns unsigned long long in C++ (#1057)
-        new(InterlockedReturnExpression, "exch64_sar_sign", DiffPath.Native | DiffPath.Cuda, Issue: 1057), // Interlocked.Exchange(ref long) returns unsigned long long in C++ (#1057)
-        new(InterlockedReturnExpression, "cas64_lt_zero", DiffPath.Native | DiffPath.Cuda, Issue: 1057), // Interlocked.CompareExchange(ref long) returns unsigned long long in C++ (#1057)
-        new(InterlockedReturnExpression, "add32_wrap_min", DiffPath.Cuda, Issue: 1058), // __gsharp_atomicAdd(int*, int) performs signed int addition without unsigned cast, triggering C++ signed overflow UB under nvcc (#1058)
-    ];
+    private static InvalidDataException Error(YamlNode node, string message) =>
+        new($"KnownDivergences.yaml line {node.Line}: {message}");
 }
