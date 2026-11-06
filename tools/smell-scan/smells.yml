@@ -1,0 +1,55 @@
+# Rules of the smell scanner (tools/smell-scan).
+#
+# A rule names a detector (a C# class) and sets its parameters; the YAML holds no logic. Findings are triggers for
+# review, not verdicts: a long method can be right (a table, a formula written as in the paper).
+#
+# Globs match repository-relative paths with '/' separators ('*', '**', '?'; '{a,b}' alternatives do not work).
+# A file is tested in this order: defaults.exclude, the rule's exclude, the rule's include (empty means every file).
+# overrides replace parameters for matching files; they are applied top to bottom and the last match wins.
+# The code lines of a member are the lines that hold at least one token: blank lines, comment-only lines and
+# preprocessor directives are free. The whole declaration counts, attributes and signature included.
+# A file with #if directives is measured once for each set of symbols that makes a new branch active, and a member that
+# differs between them is reported once, with its largest measurement (the longest form that can be compiled).
+# The top-level statements of a file are measured as one unit.
+version: 1
+defaults:
+  exclude:
+    - "**/obj/**"
+    - "**/bin/**"
+    - "**/*.verified.cs"
+    - "**/*.received.cs"
+    # Roslyn input of the tests, not code that the repository builds
+    - "tests/**/TestCases/**"
+rules:
+  - id: long-method
+    detector: MethodLength
+    severity: warning
+    parameters:
+      max_code_lines: 60
+    include: ["src/**", "tools/**", "tests/**"]
+    overrides:
+      - files: ["src/**/*.cu.cs"]
+        parameters: { max_code_lines: 100 }
+      - files: ["tests/**"]
+        parameters: { max_code_lines: 80 }
+    suggestion: "Name the steps and extract them (Extract Method)."
+
+  - id: long-parameter-list
+    detector: ParameterCount
+    severity: warning
+    parameters:
+      max_parameters: 7
+    # Tests are not measured except their kernels, which take many buffers
+    include: ["src/**", "tools/**", "tests/**/*.cu.cs"]
+    overrides:
+      - files: ["**/*.cu.cs"]
+        parameters: { max_parameters: 10 }
+    suggestion: "Group the parameters that travel together into one type (Introduce Parameter Object)."
+
+  - id: deep-nesting
+    detector: NestingDepth
+    severity: warning
+    parameters:
+      max_depth: 3
+    include: ["src/**", "tools/**", "tests/**"]
+    suggestion: "Return early (Replace Nested Conditional with Guard Clauses) or extract the inner block (Extract Method)."
