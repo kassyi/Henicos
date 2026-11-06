@@ -287,6 +287,11 @@ The 0-based bit position to set to 1.
 _GpuBigUInt_<br>
 A newly allocated `GpuBigUInt` representing $2^{\text{bitIndex}}$.
 
+#### Exceptions
+
+`ArgumentOutOfRangeException`<br>
+Thrown when `bitIndex` is negative.
+
 ## Dispose()
 
 Releases the underlying GPU global device memory handle back to the workspace memory pool.

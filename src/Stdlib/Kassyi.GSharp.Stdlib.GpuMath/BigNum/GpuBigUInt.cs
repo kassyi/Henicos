@@ -373,8 +373,11 @@ public readonly partial struct GpuBigUInt : IGpuBigUIntExpression, IGpuBigNumber
     /// <param name="numWords">The total word capacity of the resulting big integer.</param>
     /// <param name="bitIndex">The 0-based bit position to set to 1.</param>
     /// <returns>A newly allocated <see cref="GpuBigUInt"/> representing $2^{\text{bitIndex}}$.</returns>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="bitIndex"/> is negative.</exception>
     public static GpuBigUInt CreatePowerOfTwo(GpuWorkspace workspace, int numWords, int bitIndex)
     {
+        // Checked before the allocation, so a rejected call leaks no buffer
+        ArgumentOutOfRangeException.ThrowIfNegative(bitIndex);
         var result = new GpuBigUInt(workspace, numWords);
         var wordIndex = bitIndex / 32;
         var bitOffset = bitIndex % 32;
