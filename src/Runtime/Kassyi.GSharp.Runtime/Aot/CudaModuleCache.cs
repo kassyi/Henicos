@@ -26,6 +26,14 @@ internal static class CudaModuleCache
 
     private static readonly ConcurrentDictionary<IntPtr, long> s_contextIds = new();
     private static long s_lastContextId;
+    private static long s_generation;
+
+    /// <summary>
+    /// Gets a number that changes whenever <see cref="Clear"/> forgets every module (<see cref="GpuKernelLoader.Shutdown"/>),
+    /// so that a function kept outside this class with an older number is resolved again instead of being launched from
+    /// an unloaded module.
+    /// </summary>
+    public static long Generation => Volatile.Read(ref s_generation);
 
     /// <summary>
     /// Gets a number that identifies the CUDA context a launch on this thread uses (the context of the innermost
@@ -150,9 +158,10 @@ internal static class CudaModuleCache
         }
     }
 
-    /// <summary>Forgets every module and function without unloading them.</summary>
+    /// <summary>Forgets every module and function without unloading them, and starts a new <see cref="Generation"/>.</summary>
     public static void Clear()
     {
+        Interlocked.Increment(ref s_generation);
         s_functions.Clear();
         s_modules.Clear();
     }

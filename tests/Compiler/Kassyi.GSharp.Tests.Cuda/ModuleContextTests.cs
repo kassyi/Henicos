@@ -99,6 +99,44 @@ public class ModuleContextTests
     [SkippableFact]
     [Category(TestCategory.Runtime)]
     [TestTarget(ExecutionTarget.GpuExecution)]
+    [Scenario(TestScenario.Boundary)]
+    public void Launch_AfterShutdown_LoadsTheModuleAgain()
+    {
+        Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
+        if (!IsolatedTestProcess.IsChild(nameof(Launch_AfterShutdown_LoadsTheModuleAgain)))
+        {
+            IsolatedTestProcess.Run(typeof(ModuleContextTests), nameof(Launch_AfterShutdown_LoadsTheModuleAgain));
+            return;
+        }
+
+        AssertAddKernelAdds(seed: 1);
+        GpuKernelLoader.Shutdown();
+        AssertAddKernelAdds(seed: 2);
+
+        // A second shutdown with nothing launched in between, then a launch in an isolated context
+        GpuKernelLoader.Shutdown();
+        GpuKernelLoader.Shutdown();
+        var isolated = CreateContext();
+        try
+        {
+            using (new GpuKernelLoader.CudaContextScope(isolated))
+            {
+                AssertAddKernelAdds(seed: 3);
+                GpuKernelLoader.Shutdown();
+                AssertAddKernelAdds(seed: 4);
+            }
+        }
+        finally
+        {
+            GpuKernelLoader.DestroyContext(isolated);
+        }
+
+        AssertAddKernelAdds(seed: 5);
+    }
+
+    [SkippableFact]
+    [Category(TestCategory.Runtime)]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.HappyPath)]
     public void GetOrLoadModule_LoadsTheModuleOncePerContext()
     {
