@@ -7,15 +7,22 @@ public readonly record struct FermatPrpVerificationResult
     public bool IsValid { get; init; }
 
     /// <summary>
-    /// Gets whether <see cref="IsValid"/> is <see langword="true"/> and <c>u_K * a^10 == u_E (mod N)</c>; always
+    /// Gets whether <see cref="IsValid"/> is <see langword="true"/> and <c>u_K * a^10 == u_E (mod N)</c>, that is
+    /// <c>a^(N-1) = 1 (mod N)</c>; always
     /// <see langword="false"/> when <see cref="IsValid"/> is <see langword="false"/>.
     /// </summary>
     public bool IsProbablePrime { get; init; }
 
-    /// <summary>Gets the low 64 bits of <c>u_K * a^10 mod N</c> when <see cref="IsValid"/> is <see langword="true"/>; otherwise 0.</summary>
+    /// <summary>
+    /// Gets the low 64 bits of <c>|u_K * a^10 mod N|</c> (the signed form <c>min(x, N - x)</c>, as the proof states its
+    /// residues) when <see cref="IsValid"/> is <see langword="true"/>; otherwise 0.
+    /// </summary>
     public ulong Residue64 { get; init; }
 
-    /// <summary>Gets the low 64 bits of <c>u_E mod N</c> when <see cref="IsValid"/> is <see langword="true"/>; otherwise 0.</summary>
+    /// <summary>
+    /// Gets the low 64 bits of <c>|u_E mod N|</c> (the signed form) when <see cref="IsValid"/> is <see langword="true"/>;
+    /// otherwise 0.
+    /// </summary>
     public ulong CheckResidue64 { get; init; }
 
     /// <summary>Gets the modular squarings performed during verification.</summary>

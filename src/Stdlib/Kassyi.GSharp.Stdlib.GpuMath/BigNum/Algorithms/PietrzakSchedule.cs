@@ -9,9 +9,9 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms;
 /// </summary>
 internal readonly struct PietrzakSchedule
 {
-    private static ReadOnlySpan<byte> MergeDomainTag => "gsharp-prp-merge-v1"u8;
+    private static ReadOnlySpan<byte> MergeDomainTag => "gsharp-prp-merge-v2"u8;
 
-    private static ReadOnlySpan<byte> RoundDomainTag => "gsharp-prp-round-v1"u8;
+    private static ReadOnlySpan<byte> RoundDomainTag => "gsharp-prp-round-v2"u8;
 
     public PietrzakSchedule(FermatPrpProofHeader header)
     {

@@ -76,7 +76,7 @@ internal static class FermatModulusHelper
     public static ulong Low64(ReadOnlySpan<uint> words) =>
         words.Length > 1 ? words[0] | ((ulong)words[1] << 32) : words[0];
 
-    private static uint[] ToWords(BigInteger value, int words)
+    public static uint[] ToWords(BigInteger value, int words)
     {
         var result = new uint[words];
         value.TryWriteBytes(MemoryMarshal.AsBytes(result.AsSpan()), out _, isUnsigned: true);
