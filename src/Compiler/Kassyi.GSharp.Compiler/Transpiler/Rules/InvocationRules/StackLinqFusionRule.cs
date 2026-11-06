@@ -34,6 +34,12 @@ public sealed class StackLinqFusionRule : IInvocationTranspilerRule
         { StackLinqOperator.Contains, new ContainsStrategy() }
     };
 
+    /// <summary>Whether <paramref name="op"/> has a stage strategy; every non-terminal operator needs one.</summary>
+    internal static bool HasIntermediateStrategy(StackLinqOperator op) => s_intermediateStrategies.ContainsKey(op);
+
+    /// <summary>Whether <paramref name="op"/> has a terminal strategy; every terminal operator needs one.</summary>
+    internal static bool HasTerminalStrategy(StackLinqOperator op) => s_terminalStrategies.ContainsKey(op);
+
     public bool TryTranspile(InvocationExpressionSyntax node, ref TranspileContext context, IMethodSymbol symbol)
     {
         if (!StackLinqChainExtractor.TryExtract(node, context.Query.SemanticModel, symbol, out var chain))

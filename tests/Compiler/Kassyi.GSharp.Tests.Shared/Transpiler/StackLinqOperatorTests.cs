@@ -1,3 +1,4 @@
+using Kassyi.GSharp.Compiler.Transpiler.Rules.InvocationRules;
 using Kassyi.GSharp.Compiler.Transpiler.Rules.InvocationRules.StackLinq;
 
 namespace Kassyi.GSharp.Tests.Shared.Transpiler;
@@ -66,6 +67,24 @@ public class StackLinqOperatorTests
         {
             Assert.True(StackLinqOperators.TryParse(op.ToString(), out var parsed), op.ToString());
             Assert.Equal(op, parsed);
+        }
+    }
+
+    [Fact]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_FusionRule_EveryOperator_HasStrategyOfItsKind()
+    {
+        // A new operator without a strategy fails the generator with an internal error when a chain uses it
+        foreach (var op in Enum.GetValues<StackLinqOperator>())
+        {
+            bool isTerminal = op.IsTerminal();
+            Assert.True(
+                isTerminal ? StackLinqFusionRule.HasTerminalStrategy(op) : StackLinqFusionRule.HasIntermediateStrategy(op),
+                op.ToString());
+            Assert.False(
+                isTerminal ? StackLinqFusionRule.HasIntermediateStrategy(op) : StackLinqFusionRule.HasTerminalStrategy(op),
+                op.ToString());
         }
     }
 }
