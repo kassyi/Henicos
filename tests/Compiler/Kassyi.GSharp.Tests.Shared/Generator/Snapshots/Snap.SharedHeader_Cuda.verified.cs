@@ -17,6 +17,8 @@ namespace cg = cooperative_groups;
 #define __gsharp_inf_d CUDART_INF
 
 // --- Standard Types ---
+// Shared by the CUDA prelude (Prelude.cu) and the native CPU prelude (Types.hpp), so that the two define these types
+// once and cannot differ. The CPU prelude defines __device__ and __host__ as empty (Platform.hpp).
 template <typename T>
 struct System_Nullable {
 bool HasValue;
