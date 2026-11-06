@@ -210,6 +210,11 @@ The word offset within this buffer from which to start clearing.
 `numWords` _int?_<br>
 The number of words to clear, or `null` to clear until the end of the buffer.
 
+#### Exceptions
+
+`ArgumentOutOfRangeException`<br>
+Thrown when `offsetWords` is negative or greater than `NumWords`, or `numWords` is negative or reaches past the end of the buffer. Nothing is written.
+
 ## ClearWord(int)
 
 Clears a single 32-bit limb word at the specified word index in GPU device memory.
@@ -222,6 +227,11 @@ public void ClearWord(int wordIndex);
 
 `wordIndex` _int_<br>
 The 0-based word index to clear.
+
+#### Exceptions
+
+`ArgumentOutOfRangeException`<br>
+Thrown when `wordIndex` is negative or not less than `NumWords`.
 
 ## CompareTo(GpuBigUInt)
 
@@ -262,6 +272,11 @@ The word offset within the source buffer.
 
 `numWords` _int?_<br>
 The number of words to copy, or `null` to copy as many words as fit.
+
+#### Exceptions
+
+`ArgumentOutOfRangeException`<br>
+Thrown when `destOffsetWords` or `srcOffsetWords` is negative or greater than the word count of its buffer, or `numWords` is negative or reaches past the end of the source or of this buffer. Nothing is written.
 
 ## CreatePowerOfTwo(GpuWorkspace, int, int)
 
