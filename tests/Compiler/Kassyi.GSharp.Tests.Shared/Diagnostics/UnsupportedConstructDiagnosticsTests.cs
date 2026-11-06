@@ -424,6 +424,30 @@ public class UnsupportedConstructDiagnosticsTests
                 "Operator macro '-' is under a user-defined conversion, which its expansion would drop; assign it to a variable first, as in 't = a + b;', and convert the variable"));
     }
 
+    // A user-defined && or || tests operator false or true of the left operand before it calls & or |, and skips the right
+    // operand when the test passes; an expansion of the operator macro alone would do neither (C# spec §12.15)
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.SadPath)]
+    public async Task Test_OperatorMacroThroughConditionalOperator_ReportsGsh0003(string dialect)
+    {
+        var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/OperatorMacroConditional.cu.cs", dialect);
+
+        Assert.Equal(
+            [(Analyzer, 40, 13, 40, 19), (Analyzer, 44, 14, 44, 20)],
+            diagnostics.Ranges(
+                GSharpDiagnostics.UnsupportedSyntax.Id,
+                "Operator macro '&' is called through '&&', which tests 'operator false' of the left operand first and evaluates the right operand only when the test fails; the expansion would call the operator macro alone, so write '&' when both operands may be evaluated, or branch on the left operand before the operator macro"));
+        Assert.Equal(
+            [(Analyzer, 42, 13, 42, 19)],
+            diagnostics.Ranges(
+                GSharpDiagnostics.UnsupportedSyntax.Id,
+                "Operator macro '|' is called through '||', which tests 'operator true' of the left operand first and evaluates the right operand only when the test fails; the expansion would call the operator macro alone, so write '|' when both operands may be evaluated, or branch on the left operand before the operator macro"));
+        // & and | alone expand (NonConditionalKernel), and nothing else in the file is reported
+        Assert.Equal(3, diagnostics.Length);
+    }
+
     // StructSizeDiagnostics: SharedMemory<double>(5000) is 40000 bytes; 4096 doubles (exactly 32768 bytes) and 10000
     // bytes are not reported. ComprehensiveSpecKernel: SharedMemory<int>(10000); the dynamic size is not checked.
     [Theory]

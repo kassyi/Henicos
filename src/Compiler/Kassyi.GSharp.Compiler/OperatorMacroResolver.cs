@@ -472,6 +472,11 @@ internal static class OperatorMacroResolver
     /// </summary>
     public static string? GetPositionFailure(ExpressionSyntax operatorExpression, SemanticModel semanticModel)
     {
+        if (GetConditionalFailure(operatorExpression) is { } conditional)
+        {
+            return conditional;
+        }
+
         var position = GetPosition(operatorExpression, semanticModel);
         if (position == Position.Expanded)
         {
@@ -484,6 +489,30 @@ internal static class OperatorMacroResolver
         return position == Position.UnderConversion
             ? $"Operator macro '{op}' is under a user-defined conversion, which its expansion would drop; assign it to a variable first, as in 't = a + b;', and convert the variable"
             : $"Operator macro '{op}' is expanded only as the right side of an assignment statement, or as an operand of an operator macro there; assign it to a variable first, as in 't = a + b;'";
+    }
+
+    // A user-defined && or || (C# spec §12.15) tests operator false or true of its left operand first and calls & or |
+    // only when the test fails: x && y is T.false(x) ? x : T.&(x, y), and y is not evaluated when the test passes. An
+    // operator macro expands to a call of its target, which would drop the test and always evaluate y, and the test is a
+    // user-defined operator of its own, which G# does not call. GetOperator gives no operator macro for these, so nothing
+    // expands them
+    private static string? GetConditionalFailure(ExpressionSyntax operatorExpression)
+    {
+        if (!operatorExpression.IsKind(SyntaxKind.LogicalAndExpression) &&
+            !operatorExpression.IsKind(SyntaxKind.LogicalOrExpression))
+        {
+            return null;
+        }
+
+        var (conditional, macro, test) = operatorExpression.IsKind(SyntaxKind.LogicalAndExpression)
+            ? ("&&", "&", "false")
+            : ("||", "|", "true");
+        return $"Operator macro '{macro}' is called through '{conditional}', " +
+               $"which tests 'operator {test}' of the left operand first " +
+               "and evaluates the right operand only when the test fails; " +
+               "the expansion would call the operator macro alone, " +
+               $"so write '{macro}' when both operands may be evaluated, " +
+               "or branch on the left operand before the operator macro";
     }
 
     private enum Position
@@ -552,7 +581,10 @@ internal static class OperatorMacroResolver
     private static (IMethodSymbol? Method, bool IsLifted, bool IsIncrementOrDecrement) GetOperator(
         ExpressionSyntax operatorCall, SemanticModel semanticModel)
     {
-        if (operatorCall is not (BinaryExpressionSyntax or PrefixUnaryExpressionSyntax or PostfixUnaryExpressionSyntax))
+        // A user-defined && or || is not a call of & or | alone (GetConditionalFailure)
+        if (operatorCall is not (BinaryExpressionSyntax or PrefixUnaryExpressionSyntax or PostfixUnaryExpressionSyntax) ||
+            operatorCall.IsKind(SyntaxKind.LogicalAndExpression) ||
+            operatorCall.IsKind(SyntaxKind.LogicalOrExpression))
         {
             return default;
         }
