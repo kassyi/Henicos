@@ -62,7 +62,7 @@ public sealed record DiffPathRunner(DiffPath Path, Action<Action> Run, Action? P
 }
 
 /// <summary>
-/// The paths of this test process (design D6: each process compares its own paths with the oracle). Tests.Cpu runs the
+/// The paths of this test process (each process compares its own paths with the oracle). Tests.Cpu runs the
 /// managed and the native path, Tests.Cuda the CUDA path.
 /// </summary>
 public static class DiffPaths

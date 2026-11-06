@@ -1,7 +1,7 @@
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 
 /// <summary>
-/// The number of elements of a vector expression after evaluation (design D3 4.1): a host value, or a device word with
+/// The number of elements of a vector expression after evaluation: a host value, or a device word with
 /// a host-side offset and limit, <c>count = clamp(*Base - Skip, 0, Limit)</c>.
 /// </summary>
 /// <remarks>

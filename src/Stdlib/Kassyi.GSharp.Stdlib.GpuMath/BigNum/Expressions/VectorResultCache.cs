@@ -3,7 +3,7 @@ using System.Runtime.ExceptionServices;
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 
 /// <summary>
-/// The result buffers a vector expression node keeps between evaluations (design 4.6).
+/// The result buffers a vector expression node keeps between evaluations.
 /// </summary>
 /// <remarks>
 /// <para>

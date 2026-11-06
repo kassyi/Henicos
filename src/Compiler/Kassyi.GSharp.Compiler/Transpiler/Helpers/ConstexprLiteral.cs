@@ -17,7 +17,7 @@ internal static class ConstexprLiteral
     /// <exception cref="ArgumentOutOfRangeException">
     /// <paramref name="type"/> is not a supported constexpr parameter type, or <paramref name="value"/> is NaN or infinity.
     /// </exception>
-    // ReSharper disable once UnusedMember.Global -- Consumed in A-10 Stage 2
+    // ReSharper disable once UnusedMember.Global -- Consumed once #491 (Discover [GpuConstexpr] candidate values from launch call sites) is done
     public static (string Cpp, string CSharp) Format(ITypeSymbol type, object value)
     {
         // char has a literal, but it is not a [GpuConstexpr] parameter type

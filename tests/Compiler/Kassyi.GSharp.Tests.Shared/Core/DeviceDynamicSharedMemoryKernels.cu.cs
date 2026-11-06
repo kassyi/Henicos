@@ -9,7 +9,7 @@ namespace Kassyi.GSharp.Tests.Shared.Core;
 /// </summary>
 public static partial class DeviceDynamicSharedMemoryKernels
 {
-    // D1 (R1): the helper reaches a barrier (lowered on the CPU dialects); its buffer must not overlap the caller's
+    // the helper reaches a barrier (lowered on the CPU dialects); its buffer must not overlap the caller's
     [GpuDeviceFunction]
     public static int SuspendingHelper(int n, int val)
     {
@@ -60,7 +60,7 @@ public static partial class DeviceDynamicSharedMemoryKernels
         output[tid] = outer[tid] + helperResult;
     }
 
-    // D2 (R2): the helper never reaches a barrier (not lowered on the CPU dialects)
+    // the helper never reaches a barrier (not lowered on the CPU dialects)
     [GpuDeviceFunction]
     public static int PlainHelper(int n, int val)
     {
@@ -104,7 +104,7 @@ public static partial class DeviceDynamicSharedMemoryKernels
         output[tid] = SuspendingPersistHelper(n, 0, false);
     }
 
-    // D4 (R4): the same dynamic declaration reached by two calls of a non-suspending helper
+    // the same dynamic declaration reached by two calls of a non-suspending helper
     [GpuDeviceFunction]
     public static int PlainPersistHelper(int n, int val, bool write)
     {
@@ -126,7 +126,7 @@ public static partial class DeviceDynamicSharedMemoryKernels
         output[tid] = PlainPersistHelper(n, 0, false);
     }
 
-    // D5 (R5): static-size shared memory in a non-suspending helper, read back by a second call
+    // static-size shared memory in a non-suspending helper, read back by a second call
     [GpuDeviceFunction]
     public static int StaticPersistHelper(int val, bool write)
     {
@@ -148,7 +148,7 @@ public static partial class DeviceDynamicSharedMemoryKernels
         output[tid] = StaticPersistHelper(0, false);
     }
 
-    // D6 (R6): the helper's declaration is first reached with a small count, then the caller declares its own buffer,
+    // the helper's declaration is first reached with a small count, then the caller declares its own buffer,
     // then the helper is reached again with a larger count; earlier elements of the grown buffer must also survive
     [GpuDeviceFunction]
     public static int GrowHelper(int count, int writeStart, int val)
@@ -206,7 +206,7 @@ public static partial class DeviceDynamicSharedMemoryKernels
         output[tid] = outer[tid] + r;
     }
 
-    // D9 (R7): a dynamic declaration in an inner block followed by a second one in the enclosing block; the second round
+    // a dynamic declaration in an inner block followed by a second one in the enclosing block; the second round
     // reads back the inner buffer after the outer one was written, so the two must not overlap
     [GpuKernel]
     public static void NestedScopeKernel(int[] output, int n)

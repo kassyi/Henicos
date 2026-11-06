@@ -1,7 +1,7 @@
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 
 /// <summary>
-/// The floating-point <c>Where</c> (design D3 4.4): the number of selected elements is computed on the device into a
+/// The floating-point <c>Where</c>: the number of selected elements is computed on the device into a
 /// word this node owns, as in <see cref="VectorWhereExpression"/>.
 /// </summary>
 internal sealed class FloatVectorWhereExpression(

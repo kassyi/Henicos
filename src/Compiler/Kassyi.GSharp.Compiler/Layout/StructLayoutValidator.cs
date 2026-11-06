@@ -38,7 +38,7 @@ public static class StructLayoutValidator
     }
 
     // [WHY] The device can express an explicit layout only as union groups (fields at the same offset) that do not
-    // overlap each other, each at an offset its alignment allows (design §3.3-4); a member must be a value the device
+    // overlap each other, each at an offset its alignment allows; a member must be a value the device
     // has a type for. A nested struct passes its own reason up.
     internal static UnsupportedLayout? FindUnsupportedLayout(INamedTypeSymbol structType, ITranspilerDialect dialect,
         TypeLayoutKind kind, int explicitSize, ImmutableArray<FieldLayout> deviceFields)

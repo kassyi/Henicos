@@ -13,7 +13,7 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 /// <remarks>
 /// Only for kernels without barriers, warp intrinsics, shared memory, operator macros or StackLinq floating-point sums:
 /// <c>Gpu.SyncThreads</c> returns at once while <see cref="ManagedGpuContext.IsActive"/> is set, so a barrier would
-/// silently lose its meaning (design D1; the test-convention analyzer HNT0008 of #975 will report it). The host thread is a new one because the context is
+/// silently lose its meaning (the test-convention analyzer HNT0008 of #975 will report it). The host thread is a new one because the context is
 /// <see cref="ThreadStaticAttribute"/>: left on an xUnit thread, it would stop other tests from seeing
 /// <see cref="GpuOnlyException"/>.
 /// </remarks>

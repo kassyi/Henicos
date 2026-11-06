@@ -11,7 +11,6 @@ internal static class DeviceDynamicSharedMemoryScenarios
 {
     public const int Length = 32;
 
-    // D1 (R1)
     public static void SuspendingHelperDoesNotOverlapCaller(Action<Action> run)
     {
         var output = new int[Length];
@@ -43,7 +42,6 @@ internal static class DeviceDynamicSharedMemoryScenarios
         }
     }
 
-    // D2 (R2)
     public static void PlainHelperDoesNotOverlapCaller(Action<Action> run)
     {
         var output = new int[Length];
@@ -71,7 +69,6 @@ internal static class DeviceDynamicSharedMemoryScenarios
         }
     }
 
-    // D4 (R4)
     public static void PlainHelperPersistsAcrossCalls(Action<Action> run)
     {
         var output = new int[Length];
@@ -85,7 +82,6 @@ internal static class DeviceDynamicSharedMemoryScenarios
         }
     }
 
-    // D5 (R5)
     public static void StaticHelperPersistsAcrossCalls(Action<Action> run)
     {
         var output = new int[Length];
@@ -98,7 +94,7 @@ internal static class DeviceDynamicSharedMemoryScenarios
         }
     }
 
-    // D6 (R6) on the CPU paths: the helper's region is not the last one when it grows, which CUDA traps (#544, C10)
+    // On the CPU paths: the helper's region is not the last one when it grows, which CUDA traps (#544, The CPU dialect ignores sharedMemBytes, caps shared memory at 64 KB and aborts the process on overflow)
     public static void GrowingHelperAfterCallerDeclarationThrows(Action<Action> run)
     {
         const int smallCount = 8;
@@ -125,7 +121,6 @@ internal static class DeviceDynamicSharedMemoryScenarios
         }
     }
 
-    // D9 (R7)
     public static void NestedScopeDeclarationsDoNotOverlap(Action<Action> run)
     {
         var output = new int[Length];

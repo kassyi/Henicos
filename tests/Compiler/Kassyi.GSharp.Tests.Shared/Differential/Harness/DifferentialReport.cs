@@ -84,7 +84,7 @@ public sealed record StaleDivergence(KnownDivergence Entry, DiffPath Path);
 
 /// <summary>
 /// The outcome of <see cref="DifferentialRunner.Evaluate"/>: every mismatching cell for every seed, the paths that threw,
-/// and the registry entries that no longer reproduce. <see cref="ToString"/> is the failure message (design §4.4).
+/// and the registry entries that no longer reproduce. <see cref="ToString"/> is the failure message.
 /// </summary>
 public sealed class DifferentialReport
 {

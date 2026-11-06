@@ -2,7 +2,7 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 
 /// <summary>
 /// The state of one capture that <c>CompileToGraph</c> runs on a workspace: the buffers freed during the capture, which
-/// later allocations of the same capture may take again, and the handles the capture read (design 4.5.2, 4.5.3).
+/// later allocations of the same capture may take again, and the handles the capture read.
 /// </summary>
 /// <remarks>
 /// Only the thread that began the capture (<see cref="ThreadId"/>) uses the session; the memory manager sends every other
