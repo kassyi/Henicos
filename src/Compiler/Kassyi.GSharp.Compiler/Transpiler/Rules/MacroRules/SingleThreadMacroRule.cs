@@ -7,7 +7,7 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Rules.MacroRules;
 /// <remarks>
 /// A <c>return</c> of the body leaves the body, as in C# (#693): when the body has one (not in a lambda or local function
 /// of the body), the label <c>__gsharp_st_end_&lt;n&gt;</c> follows the guard, and each such <c>return</c> becomes
-/// <c>goto __gsharp_st_end_&lt;n&gt;;</c> (<see cref="StatementTranspilers.TranspileReturnStatement"/>).
+/// <c>goto __gsharp_st_end_&lt;n&gt;;</c> (<see cref="ReturnStatementTranspilers.TranspileReturnStatement"/>).
 /// </remarks>
 internal sealed class SingleThreadMacroRule : IMacroTranspilerRule
 {

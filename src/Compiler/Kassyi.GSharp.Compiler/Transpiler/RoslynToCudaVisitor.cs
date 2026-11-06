@@ -315,22 +315,22 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
         => VisitStatementOrBlock(node.Block);
 
     public override void VisitForStatement(ForStatementSyntax node)
-        => StatementTranspilers.TranspileForStatement(node, ref Context);
+        => LoopStatementTranspilers.TranspileForStatement(node, ref Context);
 
     public override void VisitForEachStatement(ForEachStatementSyntax node)
-        => StatementTranspilers.TranspileForEachStatement(node, ref Context);
+        => LoopStatementTranspilers.TranspileForEachStatement(node, ref Context);
 
     public override void VisitWhileStatement(WhileStatementSyntax node)
-        => StatementTranspilers.TranspileWhileStatement(node, ref Context);
+        => LoopStatementTranspilers.TranspileWhileStatement(node, ref Context);
 
     public override void VisitDoStatement(DoStatementSyntax node)
-        => StatementTranspilers.TranspileDoStatement(node, ref Context);
+        => LoopStatementTranspilers.TranspileDoStatement(node, ref Context);
 
     public override void VisitSwitchStatement(SwitchStatementSyntax node)
-        => StatementTranspilers.TranspileSwitchStatement(node, ref Context);
+        => SwitchStatementTranspilers.TranspileSwitchStatement(node, ref Context);
 
     public override void VisitSwitchSection(SwitchSectionSyntax node)
-        => StatementTranspilers.TranspileSwitchSection(node, ref Context);
+        => SwitchStatementTranspilers.TranspileSwitchSection(node, ref Context);
 
     public override void VisitCaseSwitchLabel(CaseSwitchLabelSyntax node)
     {
@@ -348,21 +348,21 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
     }
 
     public override void VisitBreakStatement(BreakStatementSyntax node)
-        => StatementTranspilers.TranspileBreakStatement(node, ref Context);
+        => SwitchStatementTranspilers.TranspileBreakStatement(node, ref Context);
 
     public override void VisitContinueStatement(ContinueStatementSyntax node)
-        => StatementTranspilers.TranspileContinueStatement(node, ref Context);
+        => SwitchStatementTranspilers.TranspileContinueStatement(node, ref Context);
 
     public override void VisitGotoStatement(GotoStatementSyntax node)
-        => StatementTranspilers.TranspileGotoStatement(node, ref Context);
+        => SwitchStatementTranspilers.TranspileGotoStatement(node, ref Context);
 
     public override void VisitLabeledStatement(LabeledStatementSyntax node)
-        => StatementTranspilers.TranspileLabeledStatement(node, ref Context);
+        => SwitchStatementTranspilers.TranspileLabeledStatement(node, ref Context);
 
     public override void VisitEmptyStatement(EmptyStatementSyntax node) => Context.Emitter.Writer.AppendLine(";");
 
     public override void VisitReturnStatement(ReturnStatementSyntax node)
-        => StatementTranspilers.TranspileReturnStatement(node, ref Context);
+        => ReturnStatementTranspilers.TranspileReturnStatement(node, ref Context);
 
     public override void VisitLocalFunctionStatement(LocalFunctionStatementSyntax node)
         => StatementTranspilers.TranspileLocalFunctionStatement(node, ref Context);
