@@ -139,9 +139,13 @@ internal sealed class ElementSelectionStrategy(bool stopOnFirstMatch, bool trapO
 }
 
 /// <summary>
-/// Parameterized terminal strategy for <c>Max</c> and <c>Min</c>.
+/// Terminal strategy for <c>Max</c> and <c>Min</c>.
 /// </summary>
-internal sealed class ExtremaStrategy(string comparisonOperator) : IStackLinqTerminalStrategy
+/// <remarks>
+/// A <c>float</c> or <c>double</c> sequence places NaN as System.Linq does, whatever its position: <c>Max</c> skips NaN and
+/// gives NaN only when every element is NaN; <c>Min</c> gives the first NaN and reads no element after it.
+/// </remarks>
+internal sealed class ExtremaStrategy(bool isMax) : IStackLinqTerminalStrategy
 {
     public void EmitInitialValue(ref TranspileContext context, string resultVar, in LinqStage stage)
     {
@@ -150,21 +154,45 @@ internal sealed class ExtremaStrategy(string comparisonOperator) : IStackLinqTer
         context.Emitter.Writer.AppendLine($"bool {resultVar}_init = false;");
     }
 
+    // Max: if (!<res>_init[ || <is_nan>(<res>)]) { <res> = <v>; <res>_init = true; } else { if (<v> > <res>) { <res> = <v>; } }
+    // Min: if (!<res>_init) { <res> = <v>; <res>_init = true;[ if (<is_nan>(<res>)) { break; }] }
+    //      else { if (<v> < <res>) { <res> = <v>; }[ else if (<is_nan>(<v>)) { <res> = <v>; break; }] }
     public void Emit(ref TranspileContext context, in LinqStage stage, string resultVar, int valIndex)
     {
-        context.Emitter.Writer.AppendLine($"if (!{resultVar}_init)");
-        using (context.Emitter.Writer.Braces())
+        var isFloating = stage.Symbol.ReturnType.SpecialType is SpecialType.System_Single or SpecialType.System_Double;
+        var value = $"{StackLinqHelper.ValuePrefix}{valIndex}";
+        var isNaN = GSharpInternalNames.StackLinq.LinqIsNaN;
+        var writer = context.Emitter.Writer;
+
+        if (isMax && isFloating)
         {
-            context.Emitter.Writer.AppendLine($"{resultVar} = {StackLinqHelper.ValuePrefix}{valIndex};");
-            context.Emitter.Writer.AppendLine($"{resultVar}_init = true;");
+            writer.AppendLine($"if (!{resultVar}_init || {isNaN}({resultVar}))");
         }
-        context.Emitter.Writer.AppendLine("else");
-        using (context.Emitter.Writer.Braces())
+        else
         {
-            context.Emitter.Writer.AppendLine($"if ({StackLinqHelper.ValuePrefix}{valIndex} {comparisonOperator} {resultVar})");
-            using (context.Emitter.Writer.Braces())
+            writer.AppendLine($"if (!{resultVar}_init)");
+        }
+        using (writer.Braces())
+        {
+            writer.AppendLine($"{resultVar} = {value};");
+            writer.AppendLine($"{resultVar}_init = true;");
+            if (!isMax && isFloating)
             {
-                context.Emitter.Writer.AppendLine($"{resultVar} = {StackLinqHelper.ValuePrefix}{valIndex};");
+                writer.AppendLine($"if ({isNaN}({resultVar})) {{ break; }}");
+            }
+        }
+        writer.AppendLine("else");
+        using (writer.Braces())
+        {
+            var comparison = isMax ? ">" : "<";
+            writer.AppendLine($"if ({value} {comparison} {resultVar})");
+            using (writer.Braces())
+            {
+                writer.AppendLine($"{resultVar} = {value};");
+            }
+            if (!isMax && isFloating)
+            {
+                writer.AppendLine($"else if ({isNaN}({value})) {{ {resultVar} = {value}; break; }}");
             }
         }
     }

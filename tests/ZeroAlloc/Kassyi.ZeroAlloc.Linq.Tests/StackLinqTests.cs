@@ -490,6 +490,58 @@ public class StackLinqTests
         Assert.Throws<InvalidOperationException>(() => empty.AsStackEnumerable().Average());
     }
 
+    // System.Linq: Max skips NaN and gives NaN only when every element is NaN; Min gives NaN when any element is NaN.
+    // Neither depends on where the NaN is
+    public static TheoryData<double[]> NaNPlacements =>
+    [
+        [double.NaN, 1.0],
+        [1.0, double.NaN],
+        [double.NaN],
+        [double.NaN, double.NaN, double.NaN],
+        [double.NaN, 2.0, -1.0, double.NaN],
+        [2.0, double.NaN, -1.0],
+        [-1.0, 2.0, 0.5],
+    ];
+
+    [Theory]
+    [MemberData(nameof(NaNPlacements))]
+    public void Max_Min_Double_NaNAnywhere_MatchesSystemLinq(double[] data)
+    {
+        Assert.Equal(data.Max(), data.AsStackEnumerable().Max());
+        Assert.Equal(data.Min(), data.AsStackEnumerable().Min());
+        Assert.Equal(data.Max(), data.AsStackEnumerable().Select(static x => x).Max());
+        Assert.Equal(data.Min(), data.AsStackEnumerable().Select(static x => x).Min());
+    }
+
+    [Theory]
+    [MemberData(nameof(NaNPlacements))]
+    public void Max_Min_Float_NaNAnywhere_MatchesSystemLinq(double[] values)
+    {
+        var data = Array.ConvertAll(values, static x => (float)x);
+
+        Assert.Equal(data.Max(), data.AsStackEnumerable().Max());
+        Assert.Equal(data.Min(), data.AsStackEnumerable().Min());
+        Assert.Equal(data.Max(), data.AsStackEnumerable().Select(static x => x).Max());
+        Assert.Equal(data.Min(), data.AsStackEnumerable().Select(static x => x).Min());
+    }
+
+    // System.Linq stops at the first NaN of Min: the elements after it are not read
+    [Fact]
+    public void Min_Double_StopsReadingAtTheFirstNaN()
+    {
+        double[] data = [3.0, double.NaN, 1.0, 2.0];
+        var stackLinqReads = 0;
+        var systemLinqReads = 0;
+
+        var stackLinqMin = data.AsStackEnumerable().Select(x => { stackLinqReads++; return x; }).Min();
+        var systemLinqMin = data.Select(x => { systemLinqReads++; return x; }).Min();
+
+        Assert.True(double.IsNaN(stackLinqMin));
+        Assert.True(double.IsNaN(systemLinqMin));
+        Assert.Equal(2, systemLinqReads);
+        Assert.Equal(systemLinqReads, stackLinqReads);
+    }
+
     [Fact]
     public void ReadOnlySpan_And_Span_TakeLast_SkipLast_Coverage()
     {

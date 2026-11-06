@@ -2170,7 +2170,7 @@ int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
 {
 auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
-if (!__gsharp_fusion_res_init)
+if (!__gsharp_fusion_res_init || __gsharp_linq_is_nan(__gsharp_fusion_res))
 {__gsharp_fusion_res = __gsharp_val_0;
 __gsharp_fusion_res_init = true;
 }else
@@ -2193,10 +2193,12 @@ auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 if (!__gsharp_fusion_res_init)
 {__gsharp_fusion_res = __gsharp_val_0;
 __gsharp_fusion_res_init = true;
+if (__gsharp_linq_is_nan(__gsharp_fusion_res)) { break; }
 }else
 {if (__gsharp_val_0 < __gsharp_fusion_res)
 {__gsharp_fusion_res = __gsharp_val_0;
-}}}
+}else if (__gsharp_linq_is_nan(__gsharp_val_0)) { __gsharp_fusion_res = __gsharp_val_0; break; }
+}}
 if (!__gsharp_fusion_res_init)
 {__gsharp_trap(GSharpErrorCode::InvalidOperation, ""Sequence contains no elements"");
 }return __gsharp_fusion_res;
@@ -2245,7 +2247,7 @@ int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
 {
 auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
-if (!__gsharp_fusion_res_init)
+if (!__gsharp_fusion_res_init || __gsharp_linq_is_nan(__gsharp_fusion_res))
 {__gsharp_fusion_res = __gsharp_val_0;
 __gsharp_fusion_res_init = true;
 }else
@@ -2268,10 +2270,12 @@ auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 if (!__gsharp_fusion_res_init)
 {__gsharp_fusion_res = __gsharp_val_0;
 __gsharp_fusion_res_init = true;
+if (__gsharp_linq_is_nan(__gsharp_fusion_res)) { break; }
 }else
 {if (__gsharp_val_0 < __gsharp_fusion_res)
 {__gsharp_fusion_res = __gsharp_val_0;
-}}}
+}else if (__gsharp_linq_is_nan(__gsharp_val_0)) { __gsharp_fusion_res = __gsharp_val_0; break; }
+}}
 if (!__gsharp_fusion_res_init)
 {__gsharp_trap(GSharpErrorCode::InvalidOperation, ""Sequence contains no elements"");
 }return __gsharp_fusion_res;
