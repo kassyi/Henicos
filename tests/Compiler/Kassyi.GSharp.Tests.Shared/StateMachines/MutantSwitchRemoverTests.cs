@@ -18,23 +18,33 @@ namespace Kassyi.GSharp.Tests.Generators.StateMachines;
 [Category(TestCategory.Compiler)]
 public class MutantSwitchRemoverTests
 {
-    private const string TestCase = "MutantSwitchCases.cs";
+    private const string CasesFile = "MutantSwitchCases.cs";
+    private const string StrykerHelperFile = "StrykerMutantControl.cs";
+
+    // The cases as Stryker compiles them, with its helper class, and as a normal build compiles them, without it
+    private static readonly Lazy<Compilation> s_mutatedCompilation = new(() => CreateCompilation(withStrykerHelper: true));
+    private static readonly Lazy<Compilation> s_unmutatedCompilation = new(() => CreateCompilation(withStrykerHelper: false));
+
+    public static TheoryData<string> Shapes =>
+    [
+        "Expression",
+        "ChainedExpressions",
+        "NestedExpressions",
+        "Statement",
+        "ChainedStatements",
+        "EmbeddedStatement",
+        "BodyBlock",
+        "SingleStatementBlock",
+        "ChainedBlock",
+        "Lambda"
+    ];
 
     [Theory]
     [Scenario(TestScenario.HappyPath)]
-    [InlineData("Expression")]
-    [InlineData("ChainedExpressions")]
-    [InlineData("NestedExpressions")]
-    [InlineData("Statement")]
-    [InlineData("ChainedStatements")]
-    [InlineData("EmbeddedStatement")]
-    [InlineData("BodyBlock")]
-    [InlineData("SingleStatementBlock")]
-    [InlineData("ChainedBlock")]
-    [InlineData("Lambda")]
+    [MemberData(nameof(Shapes))]
     public void Remove_InstrumentedBody_ReturnsOriginalBody(string shape)
     {
-        var (model, methods) = GetMethods();
+        var (model, methods) = GetMethods(s_mutatedCompilation.Value);
         var instrumented = GetMethod(methods, shape + "_Instrumented").Body
                            ?? throw new InvalidOperationException($"{shape}_Instrumented has no block body.");
         var original = GetMethod(methods, shape + "_Original").Body
@@ -49,7 +59,7 @@ public class MutantSwitchRemoverTests
     [Scenario(TestScenario.HappyPath)]
     public void Remove_InstrumentedExpressionBody_ReturnsOriginalExpressionBody()
     {
-        var (model, methods) = GetMethods();
+        var (model, methods) = GetMethods(s_mutatedCompilation.Value);
         var instrumented = GetMethod(methods, "ExpressionBody_Instrumented").ExpressionBody
                            ?? throw new InvalidOperationException("ExpressionBody_Instrumented has no expression body.");
         var original = GetMethod(methods, "ExpressionBody_Original").ExpressionBody
@@ -65,7 +75,7 @@ public class MutantSwitchRemoverTests
     [Scenario(TestScenario.HappyPath)]
     public void Remove_InstrumentedBody_KeptBranchMapsToItsNodeInTheCompilation()
     {
-        var (model, methods) = GetMethods();
+        var (model, methods) = GetMethods(s_mutatedCompilation.Value);
         var instrumented = GetMethod(methods, "Expression_Instrumented").Body
                            ?? throw new InvalidOperationException("Expression_Instrumented has no block body.");
         var conditional = instrumented.DescendantNodes().OfType<ConditionalExpressionSyntax>().Single();
@@ -84,7 +94,7 @@ public class MutantSwitchRemoverTests
     [InlineData("ForeignSwitches")]
     public void Remove_BodyWithoutStrykerSwitch_ReturnsSameInstance(string methodName)
     {
-        var (model, methods) = GetMethods();
+        var (model, methods) = GetMethods(s_mutatedCompilation.Value);
         var body = GetMethod(methods, methodName).Body
                    ?? throw new InvalidOperationException($"{methodName} has no block body.");
 
@@ -95,7 +105,7 @@ public class MutantSwitchRemoverTests
     [Scenario(TestScenario.Boundary)]
     public void Remove_WithoutSemanticModel_ReturnsSameInstance()
     {
-        var (_, methods) = GetMethods();
+        var (_, methods) = GetMethods(s_mutatedCompilation.Value);
         var body = GetMethod(methods, "Expression_Instrumented").Body
                    ?? throw new InvalidOperationException("Expression_Instrumented has no block body.");
 
@@ -107,25 +117,28 @@ public class MutantSwitchRemoverTests
     [Scenario(TestScenario.Boundary)]
     public void Remove_CompilationWithoutStrykerHelper_ReturnsSameInstance()
     {
-        var source = RoslynTestUtility.ReadTestCase(Path.Combine("StateMachines", TestCase))
-            .Replace("namespace StrykerAbCdEfGhIjKlMnO", "namespace ContosoAbCdEfGhIjKlMnO", StringComparison.Ordinal)
-            .Replace("StrykerAbCdEfGhIjKlMnO.MutantControl", "ContosoAbCdEfGhIjKlMnO.MutantControl", StringComparison.Ordinal);
-        var compilation = RoslynTestUtility.CreateCompilation(source);
-        var tree = compilation.SyntaxTrees.Last();
-        var model = compilation.GetSemanticModel(tree);
-        var body = tree.GetRoot()
-                       .DescendantNodes()
-                       .OfType<MethodDeclarationSyntax>()
-                       .Single(static m => m.Identifier.ValueText == "Expression_Instrumented")
-                       .Body
+        var (model, methods) = GetMethods(s_unmutatedCompilation.Value);
+        var body = GetMethod(methods, "Expression_Instrumented").Body
                    ?? throw new InvalidOperationException("Expression_Instrumented has no block body.");
 
         Assert.Same(body, MutantSwitchRemover.Remove(body, model));
     }
 
-    private static (SemanticModel Model, MethodDeclarationSyntax[] Methods) GetMethods()
+    // The cases file is the last tree, so it is found the same way with and without the helper
+    private static Compilation CreateCompilation(bool withStrykerHelper)
     {
-        var (_, tree, model) = RoslynTestUtility.GetTestCaseContext(Path.Combine("StateMachines", TestCase));
+        var cases = RoslynTestUtility.ReadTestCase(Path.Combine("StateMachines", CasesFile));
+        return withStrykerHelper
+            ? RoslynTestUtility.CreateCompilation(
+                RoslynTestUtility.ReadTestCase(Path.Combine("StateMachines", StrykerHelperFile)),
+                cases)
+            : RoslynTestUtility.CreateCompilation(cases);
+    }
+
+    private static (SemanticModel Model, MethodDeclarationSyntax[] Methods) GetMethods(Compilation compilation)
+    {
+        var tree = compilation.SyntaxTrees.Last();
+        var model = compilation.GetSemanticModel(tree);
         var methods = tree.GetRoot()
             .DescendantNodes()
             .OfType<MethodDeclarationSyntax>()

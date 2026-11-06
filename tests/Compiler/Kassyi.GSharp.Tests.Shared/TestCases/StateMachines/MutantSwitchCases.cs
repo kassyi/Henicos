@@ -1,15 +1,9 @@
 // The inputs of MutantSwitchRemoverTests: each <Shape>_Instrumented method is written as Stryker.NET 5.0.0 writes a
 // mutated method (ConditionalInstrumentationEngine, IfInstrumentationEngine, MutationStore), and <Shape>_Original is the
-// method before Stryker mutated it
+// method before Stryker mutated it. The switches bind to Stryker's helper class only in a compilation that also holds
+// StrykerMutantControl.cs
 
-// The helper class Stryker adds to the compilation it mutates, in a namespace named Stryker and 15 random characters
-namespace StrykerAbCdEfGhIjKlMnO
-{
-    public static class MutantControl
-    {
-        public static bool IsActive(int id) => false;
-    }
-}
+using System;
 
 // An IsActive that is not Stryker's: a MutantControl in another namespace
 namespace Contoso
