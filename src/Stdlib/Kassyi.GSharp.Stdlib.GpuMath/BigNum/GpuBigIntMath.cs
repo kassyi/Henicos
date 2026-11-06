@@ -548,10 +548,8 @@ public static class GpuBigIntMath
     private static bool IsLessThanCore(GpuBigUInt leftOperand, GpuBigUInt rightOperand)
     {
         ThrowIfSizeMismatch(leftOperand, rightOperand);
-        using var temp = new GpuBigUInt(leftOperand.Workspace, leftOperand.NumWords);
-        Sub(leftOperand, rightOperand, temp);
-        var topWord = temp.GetTopWords(1)[0];
-        return (topWord & 0x80000000u) != 0;
+        // A word-wise compare: the top bit of the wrapping difference a - b equals a < b only while |a - b| < 2^(32n-1)
+        return leftOperand.CompareTo(rightOperand) < 0;
     }
 
     /// <summary>

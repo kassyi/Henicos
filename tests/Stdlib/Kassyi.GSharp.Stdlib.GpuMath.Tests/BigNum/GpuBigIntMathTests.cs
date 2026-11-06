@@ -114,6 +114,30 @@ public sealed class GpuBigIntMathTests : IDisposable
 
     [SkippableTheory]
     [Scenario(TestScenario.Boundary)]
+    [InlineData(1, 0x8000_0000ul, 0ul)]
+    [InlineData(1, 0ul, 0x8000_0001ul)]
+    [InlineData(1, 0xFFFF_FFFFul, 0ul)]
+    [InlineData(1, 0ul, 0xFFFF_FFFFul)]
+    [InlineData(1, 3ul, 5ul)]
+    [InlineData(1, 5ul, 3ul)]
+    [InlineData(1, 7ul, 7ul)]
+    [InlineData(2, 0x8000_0000_0000_0000ul, 1ul)]
+    [InlineData(2, 1ul, 0xFFFF_FFFF_0000_0000ul)]
+    [InlineData(2, 0x1_0000_0000ul, 0xFFFF_FFFFul)]
+    public void IsLessThan_AnyPairOfTheWidth_MatchesUnsignedComparison(int words, ulong leftValue, ulong rightValue)
+    {
+        // The answer is the unsigned order for every pair of the width, also when the operands differ by half the
+        // range or more, where the top bit of the wrapping difference a - b has the opposite value.
+        // mutant: GpuBigIntMath.cs IsLessThanCore `< 0` -> `<= 0` (7 < 7)
+        // mutant: GpuBigIntMath.cs IsLessThanCore back to the top bit of `Sub` (0x80000000 < 0, 0 < 0x80000001)
+        using var left = GpuBigUInt.FromBigInteger(_workspace, leftValue, words);
+        using var right = GpuBigUInt.FromBigInteger(_workspace, rightValue, words);
+
+        Assert.Equal(leftValue < rightValue, GpuBigIntMath.IsLessThan(left, right));
+    }
+
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
     [InlineData(40)]
     [InlineData(-40)]
     [InlineData(64)]
