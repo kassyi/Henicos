@@ -62,14 +62,14 @@ public class ReportOptionsTests
             ["--format", "sarif", "--changed", "origin/main", "--timing", "--root", "r"]);
         var metrics = CommandLineParser.Parse(["--report", "metrics", "--top", "5"]);
 
-        Assert.Equal(ReportFormat.Sarif, options.Format);
+        Assert.Equal([ReportFormat.Sarif], options.Formats);
         Assert.Equal("origin/main", options.Changed);
         Assert.True(options.Timing);
         Assert.Equal("r", options.Root);
         Assert.Equal(ReportMode.Metrics, metrics.Report);
         Assert.Equal(5, metrics.Top);
-        Assert.Equal(ReportFormat.Text, CommandLineParser.Parse(["--format", "text"]).Format);
-        Assert.Equal(ReportFormat.Json, CommandLineParser.Parse(["--format", "json"]).Format);
+        Assert.Equal([ReportFormat.Text], CommandLineParser.Parse(["--format", "text"]).Formats);
+        Assert.Equal([ReportFormat.Json], CommandLineParser.Parse(["--format", "json"]).Formats);
         Assert.Equal(ReportMode.Findings, CommandLineParser.Parse([]).Report);
     }
 
