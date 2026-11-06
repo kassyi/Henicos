@@ -6,6 +6,8 @@
     <!-- Generated wrappers embed each kernel's source as string literals; storing them in a data section
          keeps large suites under the 16 MB user-string heap limit (CS8103) -->
     <Features>$(Features);experimental-data-section-string-literals</Features>
+    <!-- Tests may use System.Linq as well as StackLinq: the root props then leave out BannedSymbols.Linq.txt -->
+    <GSharpAllowsSystemLinq>true</GSharpAllowsSystemLinq>
   </PropertyGroup>
 
   <!-- Caps the managed heap of the test host (bytes) when GSharpTestHeapHardLimit is set, as `just mutate` does: a mutant

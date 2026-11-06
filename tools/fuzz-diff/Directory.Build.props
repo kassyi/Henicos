@@ -1,5 +1,5 @@
 <Project>
-  <!-- Stops repository-root props so tools/fuzz-diff builds without linking compiler pre-build targets, while still enforcing root BannedSymbols.txt. -->
+  <!-- Stops repository-root props so tools/fuzz-diff builds without linking compiler pre-build targets, while still enforcing the root BannedSymbols.txt and BannedSymbols.Linq.txt. -->
   <PropertyGroup>
     <GSharpHostOs Condition="$([MSBuild]::IsOSPlatform('Windows'))">win</GSharpHostOs>
     <GSharpHostOs Condition="'$(GSharpHostOs)' == '' and $([MSBuild]::IsOSPlatform('Linux'))">linux</GSharpHostOs>
@@ -18,6 +18,7 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <AdditionalFiles Include="$(MSBuildThisFileDirectory)..\..\BannedSymbols.txt" Condition="Exists('$(MSBuildThisFileDirectory)..\..\BannedSymbols.txt')" />
+    <AdditionalFiles Include="$(MSBuildThisFileDirectory)..\..\BannedSymbols.Linq.txt" Condition="Exists('$(MSBuildThisFileDirectory)..\..\BannedSymbols.Linq.txt')" />
     <AdditionalFiles Include="$(MSBuildThisFileDirectory)BannedSymbols.txt" Condition="Exists('$(MSBuildThisFileDirectory)BannedSymbols.txt')" />
   </ItemGroup>
 </Project>

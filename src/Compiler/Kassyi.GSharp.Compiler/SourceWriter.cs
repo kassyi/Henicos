@@ -1,3 +1,6 @@
+// StringBuilder is banned in the code that emits source so that it goes through this writer; this is the one writer that owns one.
+#pragma warning disable RS0030
+
 namespace Kassyi.GSharp.Compiler;
 
 /// <summary>A zero-allocation writer that builds source text using a pooled thread-static <see cref="StringBuilder"/>.</summary>
