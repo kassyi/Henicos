@@ -373,11 +373,11 @@ doctest file_path assemblies="":
 # Mutation testing with Stryker.NET. phase: gpumath | compiler | compiler-cuda (the CUDA dialect snapshots only). since: a git ref to mutate only the files changed after it (empty = all files). Reports go to tmp/stryker/<phase>
 # The test host heap is capped at mutate_heap_limit (GSharpTestHeapHardLimit in bytes, see tests/Directory.Build.props; set it to override), so a mutant that allocates without bound fails instead of exhausting memory
 [windows]
-mutate phase="gpumath" since="" *args="":
+mutate phase="gpumath" since="" *args="": (_mutate-begin phase args) && (_mutate-end phase args)
     if (-not $env:GSharpTestHeapHardLimit) { $env:GSharpTestHeapHardLimit = '{{mutate_heap_limit}}' }; $root = (Get-Location).Path; $dir = switch ('{{phase}}') { 'gpumath' { 'tests/Stdlib/Kassyi.GSharp.Stdlib.GpuMath.Tests' } 'compiler' { 'tests/Compiler/Kassyi.GSharp.Tests.Cpu' } 'compiler-cuda' { 'tests/Compiler/Kassyi.GSharp.Tests.Cuda' } default { throw "phase must be gpumath, compiler or compiler-cuda" } }; try { dotnet tool restore; Set-Location $dir; $sinceArgs = @(); if ('{{since}}' -ne '') { $sinceArgs = @('--since:{{since}}') }; dotnet stryker -f stryker-config.json -L --skip-version-check -O "$root/tmp/stryker/{{phase}}" @sinceArgs {{args}}; $code = $LASTEXITCODE } finally { Set-Location $root }; exit $code
 
 [unix]
-mutate phase="gpumath" since="" *args="":
+mutate phase="gpumath" since="" *args="": (_mutate-begin phase args) && (_mutate-end phase args)
     #!/usr/bin/env bash
     set -eu
     root=$(pwd)
@@ -393,6 +393,13 @@ mutate phase="gpumath" since="" *args="":
     since=()
     if [ -n '{{since}}' ]; then since=(--since:'{{since}}'); fi
     dotnet stryker -f stryker-config.json -L --skip-version-check -O "$root/tmp/stryker/{{phase}}" "${since[@]}" {{args}}
+
+# Before and after a Stryker.NET run of just mutate: Stryker exits 0 after a fatal error, so the run fails when it wrote no report (not checked when args choose another directory with -O / --output)
+_mutate-begin phase *args="":
+    node scripts/human/stryker-run-check.js --begin --output "tmp/stryker/{{phase}}" -- {{args}}
+
+_mutate-end phase *args="":
+    node scripts/human/stryker-run-check.js --end --output "tmp/stryker/{{phase}}" -- {{args}}
 
 rebuild-and-test:
     dotnet build --no-incremental && just test

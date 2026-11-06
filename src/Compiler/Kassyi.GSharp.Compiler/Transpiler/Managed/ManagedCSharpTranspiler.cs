@@ -136,6 +136,11 @@ internal static class ManagedCSharpTranspiler
         var accessors = new ManagedAccessorSet(methodSymbol, semanticModel.Compilation);
         var rewriter = new ManagedExecutionRewriter(semanticModel, ManagedBodyKind.ManagedVersion, accessors);
 
+        // <node> without Stryker's switches when the compilation is mutated (#1191), rewritten for managed execution
+        T RewriteBody<T>(T node) where T : SyntaxNode =>
+            rewriter.Visit(MutantSwitchRemover.Remove(node, semanticModel)) as T
+            ?? throw new InvalidOperationException("Managed execution rewriting removed the device function body.");
+
         // <modifiers> static <return type> __gsharp_managed_<path><type parameters>(<parameters>) <constraints> <body>
         // The signature is the user's, with every name written in full (the generated file has none of the user's using
         // directives), without attributes (the version is not a device function) and without 'this'
@@ -149,14 +154,8 @@ internal static class ManagedCSharpTranspiler
             .WithTypeParameterList(GetManagedVersionTypeParameters(declaration.TypeParameterList))
             .WithParameterList(GetManagedVersionParameters(declaration.ParameterList, semanticModel))
             .WithConstraintClauses(GetManagedVersionConstraints(declaration.ConstraintClauses, semanticModel))
-            .WithBody(declaration.Body is { } body
-                ? rewriter.Visit(body) as BlockSyntax
-                  ?? throw new InvalidOperationException("Managed execution rewriting removed the device function body.")
-                : null)
-            .WithExpressionBody(declaration.ExpressionBody is { } expressionBody
-                ? rewriter.Visit(expressionBody) as ArrowExpressionClauseSyntax
-                  ?? throw new InvalidOperationException("Managed execution rewriting removed the device function body.")
-                : null)
+            .WithBody(declaration.Body is { } body ? RewriteBody(body) : null)
+            .WithExpressionBody(declaration.ExpressionBody is { } expressionBody ? RewriteBody(expressionBody) : null)
             .WithoutTrivia();
 
         using var writer = new SourceWriter();

@@ -100,55 +100,21 @@ internal static class IteratorInliner
         var annotatedForEach = compilation.ContainsSyntaxTree(forEachNode.SyntaxTree)
             ? LoweringAnnotations.AnnotateOriginalSpans(forEachNode, compilation)
             : forEachNode;
-        var annotatedParamList = LoweringAnnotations.AnnotateOriginalSpans(iteratorDecl.ParameterList, compilation);
-        var annotatedBody = LoweringAnnotations.AnnotateOriginalSpans(iteratorBody, compilation);
         var iteratorRegion = ++regionCounter;
-
-        // Stamp iteratorRegion onto the iterator parameter list and body together so parameter references inside the
-        // iterator body receive the same region as their parameter local declarations.
-        var stampedEnvelope = LoweringAnnotations.StampRegion(
-            iteratorDecl.WithParameterList(annotatedParamList).WithBody(annotatedBody),
-            iteratorRegion,
-            semanticModel);
-        var stampedParamList = stampedEnvelope.ParameterList;
-        var stampedBody = stampedEnvelope.Body ?? annotatedBody;
+        var (stampedParamList, stampedBody) = CopyIteratorBody(iteratorDecl, iteratorBody, iteratorRegion, semanticModel);
 
         var loopVariableType = ResolveLoopVariableType(annotatedForEach, iteratorDecl, compilation);
 
         var expansionStatements = ImmutableArray.CreateBuilder<StatementSyntax>();
-
-        var unwrappedExpression = IteratorTypeResolver.UnwrapParentheses(annotatedForEach.Expression);
-        if (unwrappedExpression is IdentifierNameSyntax localIdentifier)
-        {
-            var localSymbol = semanticModel.GetSymbol(localIdentifier)
-                              ?? semanticModel.GetDeclaredSymbol<ISymbol>(localIdentifier);
-            var localRegion = LoweringIdentity.GetRegion(localIdentifier);
-            var localCppName = CppNameResolver.Resolve(
-                localSymbol,
-                localIdentifier.Identifier.ValueText,
-                dialect,
-                localRegion).ToString();
-
-            for (var i = 0; i < stampedParamList.Parameters.Count; i++)
-            {
-                var paramSyntax = stampedParamList.Parameters[i];
-                var backingArgIdentifier = SyntaxFactory.IdentifierName($"{localCppName}_arg_{i}");
-                AddParameterLocalDeclaration(expansionStatements, paramSyntax, backingArgIdentifier);
-            }
-        }
-        else
-        {
-            var annotatedInvocation = unwrappedExpression as InvocationExpressionSyntax
-                                      ?? (compilation.ContainsSyntaxTree(sourceInvocation.SyntaxTree)
-                                          ? LoweringAnnotations.AnnotateOriginalSpans(sourceInvocation, compilation)
-                                          : sourceInvocation);
-            EmitDirectCallParameterLocals(
-                expansionStatements,
-                iteratorMethod.Parameters,
-                stampedParamList.Parameters,
-                annotatedInvocation.ArgumentList.Arguments,
-                ref argumentTempCounter);
-        }
+        AddParameterLocals(
+            expansionStatements,
+            annotatedForEach,
+            iteratorMethod,
+            stampedParamList,
+            sourceInvocation,
+            semanticModel,
+            ref argumentTempCounter,
+            dialect);
 
         var endLabel = $"{GSharpInternalNames.Iterator.EndLabelPrefix}{iteratorRegion}";
         var needsElementCast = IteratorTypeResolver.IsGenericIEnumerable(iteratorMethod.ReturnType, out var iteratorElementType) &&
@@ -172,6 +138,82 @@ internal static class IteratorInliner
         );
 
         return SyntaxFactory.Block(expansionBlock, endLabeledStmt);
+    }
+
+    /// <summary>
+    /// Copies the parameter list and body of the iterator out of the compilation: annotated with their original spans,
+    /// without Stryker's mutant switches, and stamped with <paramref name="iteratorRegion"/>.
+    /// </summary>
+    private static (ParameterListSyntax ParameterList, BlockSyntax Body) CopyIteratorBody(
+        MethodDeclarationSyntax iteratorDecl,
+        BlockSyntax iteratorBody,
+        int iteratorRegion,
+        SemanticModel semanticModel)
+    {
+        var compilation = semanticModel.Compilation;
+        var annotatedParamList = LoweringAnnotations.AnnotateOriginalSpans(iteratorDecl.ParameterList, compilation);
+        // The iterator body is copied into the consumer as the user wrote it, without Stryker's switches (#1191)
+        var annotatedBody = MutantSwitchRemover.Remove(
+            LoweringAnnotations.AnnotateOriginalSpans(iteratorBody, compilation),
+            semanticModel
+        );
+
+        // Stamp iteratorRegion onto the iterator parameter list and body together so parameter references inside the
+        // iterator body receive the same region as their parameter local declarations.
+        var stampedEnvelope = LoweringAnnotations.StampRegion(
+            iteratorDecl.WithParameterList(annotatedParamList).WithBody(annotatedBody),
+            iteratorRegion,
+            semanticModel);
+        return (stampedEnvelope.ParameterList, stampedEnvelope.Body ?? annotatedBody);
+    }
+
+    /// <summary>
+    /// Adds a local per iterator parameter, initialized from the backing arguments of the iterator local that
+    /// <paramref name="annotatedForEach"/> enumerates, or from the arguments of the iterator call it enumerates.
+    /// </summary>
+    private static void AddParameterLocals(
+        ImmutableArray<StatementSyntax>.Builder expansionStatements,
+        ForEachStatementSyntax annotatedForEach,
+        IMethodSymbol iteratorMethod,
+        ParameterListSyntax stampedParamList,
+        InvocationExpressionSyntax sourceInvocation,
+        SemanticModel semanticModel,
+        ref int argumentTempCounter,
+        ITranspilerDialect dialect)
+    {
+        var compilation = semanticModel.Compilation;
+        var unwrappedExpression = IteratorTypeResolver.UnwrapParentheses(annotatedForEach.Expression);
+        if (unwrappedExpression is IdentifierNameSyntax localIdentifier)
+        {
+            var localSymbol = semanticModel.GetSymbol(localIdentifier)
+                              ?? semanticModel.GetDeclaredSymbol<ISymbol>(localIdentifier);
+            var localRegion = LoweringIdentity.GetRegion(localIdentifier);
+            var localCppName = CppNameResolver.Resolve(
+                localSymbol,
+                localIdentifier.Identifier.ValueText,
+                dialect,
+                localRegion).ToString();
+
+            for (var i = 0; i < stampedParamList.Parameters.Count; i++)
+            {
+                var paramSyntax = stampedParamList.Parameters[i];
+                var backingArgIdentifier = SyntaxFactory.IdentifierName($"{localCppName}_arg_{i}");
+                AddParameterLocalDeclaration(expansionStatements, paramSyntax, backingArgIdentifier);
+            }
+
+            return;
+        }
+
+        var annotatedInvocation = unwrappedExpression as InvocationExpressionSyntax
+                                  ?? (compilation.ContainsSyntaxTree(sourceInvocation.SyntaxTree)
+                                      ? LoweringAnnotations.AnnotateOriginalSpans(sourceInvocation, compilation)
+                                      : sourceInvocation);
+        EmitDirectCallParameterLocals(
+            expansionStatements,
+            iteratorMethod.Parameters,
+            stampedParamList.Parameters,
+            annotatedInvocation.ArgumentList.Arguments,
+            ref argumentTempCounter);
     }
 
     private static TypeSyntax ResolveLoopVariableType(
