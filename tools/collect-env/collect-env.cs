@@ -140,7 +140,8 @@ internal static class Collector
         var model = new ReportModel();
         bool windows = OperatingSystem.IsWindows();
         model.Os = windows ? HardwareProbe.WindowsOs() : HardwareProbe.LinuxOs();
-        model.Cpu = Clean($"{(windows ? HardwareProbe.WindowsCpu() : HardwareProbe.LinuxCpu())}, {Environment.ProcessorCount} logical cores");
+        string cpu = windows ? HardwareProbe.WindowsCpu() : HardwareProbe.LinuxCpu();
+        model.Cpu = Clean($"{cpu}, {Environment.ProcessorCount} logical cores");
         model.Memory = HardwareProbe.Memory(windows);
         model.Motherboard = windows ? HardwareProbe.WindowsBoard() : HardwareProbe.LinuxBoard();
         GpuProbe.CollectGpus(model);
@@ -190,7 +191,9 @@ internal static class Privacy
         name.Length >= 3 ? value.Replace(name, placeholder, StringComparison.OrdinalIgnoreCase) : value;
 }
 
-/// <summary>Runs child processes, reads files and environment variables, and keeps the reason of the last failure.</summary>
+/// <summary>
+/// Runs child processes, reads files and environment variables, and keeps the reason of the last failure.
+/// </summary>
 internal static class ProcessProbe
 {
     private const int TimeoutMilliseconds = 8000;
