@@ -5,6 +5,7 @@ using Kassyi.GSharp.Compiler.Tasks;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using Kassyi.GSharp.Compiler.Tasks.Helpers;
 using Xunit;
 using Task = System.Threading.Tasks.Task;
@@ -722,6 +723,47 @@ public class CompileTasksTests
         Assert.False(task.Execute());
         Assert.Contains(ctx.BuildEngine.LoggedErrors, e => e.Contains("g++ compilation failed with exit code 1"));
         Assert.Contains(ctx.BuildEngine.LoggedErrors, e => e.Contains("unrecognized command-line option"));
+    }
+
+    [Theory]
+    [InlineData("x64", "arm64")]
+    [InlineData("arm64", "x64")]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.SadPath)]
+    public void Test_CompileCppToNativeTask_GccClangToolchain_MultiTarget_FailsForNonHostArchitecture(
+        string hostArchitecture, string otherArchitecture)
+    {
+        using var ctx = new CompileTaskTestContext();
+        ctx.CreateDummySource("kernel.cpp", "// source");
+
+        var toolchain = ctx.CreateGccClangToolchain("g++", hostArchitecture);
+        var task = ctx.CreateCppTask(["kernel.cpp"], toolchain);
+        task.GSharpMultiTarget = true;
+
+        Assert.False(task.Execute());
+        Assert.Empty(task.OutputDlls);
+        var error = Assert.Single(ctx.BuildEngine.LoggedErrors);
+        Assert.Contains($"cannot build native CPU kernels for {otherArchitecture}", error);
+        Assert.Contains($"host architecture ({hostArchitecture})", error);
+        Assert.DoesNotContain(ctx.Runner.Invocations, i => i.FileName == "g++");
+    }
+
+    [Fact]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_CompileCppToNativeTask_GccClangToolchain_HostArchitecture_Compiles()
+    {
+        using var ctx = new CompileTaskTestContext();
+        ctx.CreateDummySource("kernel.cpp", "// source");
+
+        var hostArchitecture = RuntimeInformation.ProcessArchitecture == Architecture.Arm64 ? "arm64" : "x64";
+        var toolchain = ctx.CreateGccClangToolchain("g++");
+        var task = ctx.CreateCppTask(["kernel.cpp"], toolchain);
+
+        Assert.True(task.Execute());
+        var output = Assert.Single(task.OutputDlls);
+        Assert.EndsWith($"_{hostArchitecture}.dll", output.ItemSpec);
+        Assert.Empty(ctx.BuildEngine.LoggedErrors);
     }
 
     [Fact]

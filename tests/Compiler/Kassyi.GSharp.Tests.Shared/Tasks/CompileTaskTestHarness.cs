@@ -98,8 +98,9 @@ internal sealed class CompileTaskTestContext : IDisposable
     public MsvcToolchain CreateMsvcToolchain(bool disableCache = true) =>
         new(Runner, disableCache, FakeVswherePath);
 
-    public GccClangToolchain CreateGccClangToolchain(string? compilerExecutable = "g++") =>
-        new(Runner, compilerExecutable);
+    public GccClangToolchain CreateGccClangToolchain(string? compilerExecutable = "g++",
+        string? hostArchitecture = null) =>
+        new(Runner, compilerExecutable, hostArchitecture);
 
     public CompileCudaToFatbinTask CreateCudaTask(
         string[] sourceFiles,
