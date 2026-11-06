@@ -1,12 +1,47 @@
 {
   "stryker-config": {
     "project": "Kassyi.GSharp.Compiler.csproj",
-    "test-projects": ["Kassyi.GSharp.Tests.Cuda.csproj"],
-    "mutate": ["!**/*.g.cs"],
+    "test-projects": [
+      "Kassyi.GSharp.Tests.Cuda.csproj"
+    ],
+    "mutate": [
+      "**/Dialects/**/*.cs",
+      "**/Aot/AotArtifactWriter.cs",
+      "**/Aot/NativeModuleAssembler.cs",
+      "**/Diagnostics/Kernel/Rules/ImportedDeviceCodeRule.cs",
+      "**/Diagnostics/Kernel/Rules/StructLayoutRule.cs",
+      "**/Diagnostics/Kernel/Rules/ValidationContext.cs",
+      "**/Diagnostics/Kernel/Rules/WarpActiveMaskDivergenceRule.cs",
+      "**/Diagnostics/Kernel/TranspilerFailureCheck.cs",
+      "**/GpuKernelGenerator.cs",
+      "**/Marshaling/AutoResultEmitter.cs",
+      "**/Marshaling/HostDialects.cs",
+      "**/Marshaling/KernelHostModel.cs",
+      "**/Marshaling/KernelLaunchEmitter.cs",
+      "**/Marshaling/KernelParameterShape.cs",
+      "**/Marshaling/StructArrayHelperEmitter.cs",
+      "**/Marshaling/StructMarshalMethodEmitter.cs",
+      "**/Marshaling/StructMarshalingEmitter.cs",
+      "**/Marshaling/StructUnmarshalMethodEmitter.cs",
+      "**/Marshaling/WrapperEmitter.cs",
+      "**/Models/GeneratorConfig.cs",
+      "**/NativeApi/CudaImportGenerator.cs",
+      "**/Transpiler/DynamicSharedMemoryEmitter.cs",
+      "**/Transpiler/MethodSignatureTranspiler.cs",
+      "**/Transpiler/MethodTranspiler.cs",
+      "**/Transpiler/Rules/DeclarationRules/LocalDeclarationStatementTranspilerRule.cs",
+      "**/Transpiler/Rules/InvocationRules/StackLinqFusionRule.cs",
+      "**/Transpiler/UsingTranspiler.cs",
+      "!**/*.g.cs"
+    ],
     "coverage-analysis": "perTest",
     "test-case-filter": "FullyQualifiedName~GeneratorSnapshotTests",
-    "concurrency": 6,
-    "reporters": ["json", "html", "cleartext"],
+    "concurrency": 10,
+    "reporters": [
+      "json",
+      "html",
+      "cleartext"
+    ],
     "verbosity": "info"
   }
 }

@@ -424,6 +424,10 @@ trusted-key-line key:
     printf '%s,fnv1a64:%s\n' "$k" "$(printf '%016x' "$h" | cut -c1-10)"
 
 
+# Run every long check in one go, about a day (benchmarks, fuzzer, sanitized tests, test-stability, coverage, mutation); see scripts/human/long-checks.js --help
+long-checks *args="":
+    node scripts/human/long-checks.js {{args}}
+
 # Compare the BenchmarkDotNet *-report-full.json reports of a base and a head run with a Mann-Whitney U test;
 # exits 1 on a significant slowdown (options: --threshold <percent>, --pvalue <p>, --json-out <file>)
 bench-compare base head *args="":
