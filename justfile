@@ -408,6 +408,10 @@ rebuild-and-test:
 gsharp-demangle log_path="-" symbols_path="":
     dotnet run --project src/Compiler/Kassyi.GSharp.Compiler.Generators -- demangle "{{log_path}}" "{{symbols_path}}"
 
+# Scan C# for size, nesting and error-handling smells with Roslyn (review triggers, not failures); e.g. `just smell-scan --changed origin/main --format text`, `just smell-scan --format json,sarif,markdown --out tmp/smell-baseline`
+smell-scan *args="":
+    node scripts/human/smell-scan.js {{args}}
+
 # Print the environment of a bug report (OS, GPU, CUDA, host C++, .NET) as Markdown; e.g. `just env-info --json`. Same source on Windows and Unix
 env-info *args="":
     dotnet run tools/collect-env/collect-env.cs -- {{args}}

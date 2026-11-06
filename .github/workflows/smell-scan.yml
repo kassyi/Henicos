@@ -1,0 +1,40 @@
+name: Smell scan
+
+# Warns about smell findings (long methods, deep nesting, large types, ...) that a pull request adds. It never fails the
+# run, not even when the scanner itself breaks (that becomes a warning): the findings are triggers for review, and a few
+# have good reasons to stay. It is a workflow of its own, without the
+# paths-ignore of the test workflow, so a change to docs/ or .agents/ alone is checked too; it builds only the scanner.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  scan:
+    name: New smells
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # The merge base with the target branch is read from the history
+          fetch-depth: 0
+          # The job pushes nothing, so the token need not stay in .git/config where the code of the pull request could read it
+          persist-credentials: false
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: List new smells as warnings
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: node scripts/human/smell-scan-new.js --base "origin/$BASE_REF" || echo "::warning title=smell-scan::the scan failed; the log of this step says why"
