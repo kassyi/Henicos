@@ -738,6 +738,39 @@ public class GpuBigFloatLinqAndVectorTests : IDisposable
         Assert.Throws<ArgumentException>(() => new GpuBigFloatArray(significands, exponents, signs));
     }
 
+    // e is read at offset 1 (Skip) and at offset 0 (Take): its second evaluation reuses the buffers of the first, so
+    // the node keeps the right result and evaluates the left one again.
+    // mutant: VectorOperandPair.Evaluate returning before the check ([0, 0, 0] and all false)
+    [Fact]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.Boundary)]
+    public void GpuBigFloatArray_SharedSubexpression_AtTwoOffsets_KeepsBothResults()
+    {
+        long[] values = [1, 2, 4, 8];
+        using var array = new GpuBigFloatArray(_context, values.Length, 4);
+        for (var i = 0; i < values.Length; i++)
+        {
+            using var element = CreateFloat(values[i]);
+            array.SetElement(i, element);
+        }
+
+        using var three = CreateFloat(3);
+        var e = array.AsVectorizedEnumerable().SelectMultiply(three);
+        using var difference = e.Skip(1).ZipSubtract(e.Take(3));
+        using var greater = e.Skip(1).IsGreaterThan(e.Take(3));
+
+        var result = difference.Evaluate(_context);
+        var flags = greater.Evaluate(_context);
+        var flagsHost = new uint[3];
+        _context.Provider.CopyDeviceToHost(flagsHost, flags.DevicePointer, 3);
+
+        AssertElement(result.GetElement(0), 3, 1, "element 0");
+        AssertElement(result.GetElement(1), 6, 1, "element 1");
+        AssertElement(result.GetElement(2), 12, 1, "element 2");
+        uint[] expectedFlags = [1, 1, 1];
+        Assert.Equal(expectedFlags, flagsHost);
+    }
+
     // SetElement replaces the whole element: a shorter value leaves no stale upper words, and it never writes
     // past the element into its neighbour.
     [Fact]

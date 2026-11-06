@@ -30,6 +30,18 @@ internal sealed class VectorResultCache : IDisposable
     private GpuBigUIntArray _exponents;
     private GpuBigUIntArray _scan;
 
+    // Advanced by every lend, so that a lease taken after an evaluation ends when the node lends again
+    private int _generation;
+
+    /// <summary>
+    /// Gets the lease of what the cache has lent so far. A node evaluated again (the same sub-expression read at another
+    /// offset) lends its buffers again and ends the lease of its earlier result, whose words it overwrites.
+    /// </summary>
+    public VectorLease Lease => new(this, _generation);
+
+    /// <summary>Returns whether the cache has lent nothing since <paramref name="generation"/>.</summary>
+    public bool IsCurrent(int generation) => _generation == generation;
+
     /// <summary>Lends <paramref name="count"/> elements of the cached values.</summary>
     public GpuBigUIntArrayView Values(GpuWorkspace workspace, int count, int wordsPerElement) =>
         Get(ref _values, workspace, count, wordsPerElement);
@@ -290,8 +302,9 @@ internal sealed class VectorResultCache : IDisposable
     // The unit of growth is one array: the new array is allocated before the old one is returned and replaces it in the
     // field at once. A failed allocation leaves that array as it was, and an array grown earlier in the same evaluation
     // stays in its field (the arrays have separate capacities), so nothing leaks and Dispose returns it.
-    private static GpuBigUIntArrayView Get(ref GpuBigUIntArray field, GpuWorkspace workspace, int count, int wordsPerElement)
+    private GpuBigUIntArrayView Get(ref GpuBigUIntArray field, GpuWorkspace workspace, int count, int wordsPerElement)
     {
+        _generation++;
         if (count == 0)
         {
             // An empty result borrows nothing (a zero-word allocation has no buffer)
