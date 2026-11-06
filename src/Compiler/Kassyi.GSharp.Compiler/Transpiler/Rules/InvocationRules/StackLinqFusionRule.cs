@@ -66,11 +66,9 @@ public sealed class StackLinqFusionRule : IInvocationTranspilerRule
     // can be in such a chain (ParallelAggregatePlanner).
     private static void EmitFusedLoop(in StackLinqChain chain, ParallelAggregateStrategy strategy, ref TranspileContext context)
     {
-        if (!s_terminalStrategies.TryGetValue(chain.Terminal, out var terminalStrategy))
-        {
-            return;
-        }
-
+        // Every terminal operator (IsTerminal) has a strategy, and only the last stage is a terminal: a terminal returns
+        // no StackLinq sequence for a further call
+        var terminalStrategy = s_terminalStrategies[chain.Terminal];
         var terminalStage = chain.Stages[^1];
         var folded = StackLinqChainExtractor.CountRangeStages(in chain, context.Query.SemanticModel);
         var writer = context.Emitter.Writer;
@@ -139,10 +137,9 @@ public sealed class StackLinqFusionRule : IInvocationTranspilerRule
                 for (var i = 0; i < chain.Stages.Length - 1; i++)
                 {
                     var stage = chain.Stages[i];
-                    if ((i >= folded || !stage.Operator.IsPositionStage()) &&
-                        s_intermediateStrategies.TryGetValue(stage.Operator, out var stageStrategy))
+                    if (i >= folded || !stage.Operator.IsPositionStage())
                     {
-                        stageStrategy.Emit(ref context, in stage, i, ref valIndex, ref openBraces);
+                        s_intermediateStrategies[stage.Operator].Emit(ref context, in stage, i, ref valIndex, ref openBraces);
                     }
                 }
 
@@ -195,10 +192,9 @@ public sealed class StackLinqFusionRule : IInvocationTranspilerRule
                 context.Emitter.Writer.AppendLine(";");
             }
 
-            if ((i >= folded || !stage.Operator.IsPositionStage()) &&
-                s_intermediateStrategies.TryGetValue(stage.Operator, out var strategy))
+            if (i >= folded || !stage.Operator.IsPositionStage())
             {
-                strategy.EmitInitialValue(ref context, in stage, i);
+                s_intermediateStrategies[stage.Operator].EmitInitialValue(ref context, in stage, i);
             }
         }
 
