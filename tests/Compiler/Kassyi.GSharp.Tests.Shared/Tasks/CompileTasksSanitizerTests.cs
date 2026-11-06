@@ -1,5 +1,4 @@
 #nullable enable
-using Microsoft.Build.Locator;
 using Xunit;
 
 namespace Kassyi.GSharp.Tests.Shared.Tasks;
@@ -9,17 +8,7 @@ public class CompileTasksSanitizerTests
 {
     static CompileTasksSanitizerTests()
     {
-        if (!MSBuildLocator.IsRegistered)
-        {
-            try
-            {
-                MSBuildLocator.RegisterDefaults();
-            }
-            catch (InvalidOperationException)
-            {
-                // Best-effort: ignore if already initialized or assemblies were pre-loaded
-            }
-        }
+        MSBuildLocatorSetup.EnsureRegistered();
     }
 
     [Theory]

@@ -231,7 +231,10 @@ internal static class Collector
 
     // ---- child processes ----
 
-    // First stderr line of the last child process that exited non-zero (empty otherwise); the run is single-threaded.
+    // ENOENT on Linux and ERROR_FILE_NOT_FOUND on Windows: Process.Start found no such program.
+    private const int FileNotFoundError = 2;
+
+    // First stderr line of the last child process that failed (empty otherwise); the run is single-threaded.
     private static string s_lastError = string.Empty;
 
     /// <summary>Runs a tool and returns its trimmed standard output, or null when it is missing, fails or times out.</summary>
@@ -286,11 +289,20 @@ internal static class Collector
         }
         catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException or IOException or AggregateException or NotSupportedException)
         {
-            // Missing tool or blocked start: the caller reports "not found".
-            Debug.WriteLine(ex.Message);
+            // A tool that is not installed is shown as "not found" in the report; any other failure says why on stderr.
+            s_lastError = Clean(ex.Message);
+            if (ex is not System.ComponentModel.Win32Exception { NativeErrorCode: FileNotFoundError })
+            {
+                Warn($"cannot run {fileName}", ex);
+            }
+
             return null;
         }
     }
+
+    /// <summary>Writes why a value is missing to standard error, so the report on standard output stays clean.</summary>
+    private static void Warn(string what, Exception ex) =>
+        Console.Error.WriteLine(Clean($"collect-env: {what}: {ex.Message}"));
 
     private static string FirstLine(string text)
     {
@@ -341,7 +353,7 @@ internal static class Collector
         }
         catch (Exception ex) when (ex is System.Security.SecurityException or UnauthorizedAccessException or IOException)
         {
-            Debug.WriteLine(ex.Message);
+            Warn($@"cannot read registry value HKLM\{subKey}\{name}", ex);
             return null;
         }
     }
@@ -397,7 +409,7 @@ internal static class Collector
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            Debug.WriteLine(ex.Message);
+            Warn($"cannot read {path}", ex);
             return null;
         }
     }
@@ -628,7 +640,7 @@ internal static class Collector
         string? globalJson = FindUp("global.json");
         if (globalJson is not null)
         {
-            model.GlobalJson = PinnedSdk(globalJson) ?? "present, no sdk.version";
+            model.GlobalJson = PinnedSdk(globalJson);
         }
 
         foreach (string line in Lines(Run("dotnet", "--list-sdks", start)))
@@ -649,7 +661,8 @@ internal static class Collector
         return bracket < 0 ? line : line.Substring(0, bracket);
     }
 
-    private static string? PinnedSdk(string globalJsonPath)
+    /// <summary>Returns the SDK version global.json pins, or why there is none.</summary>
+    private static string PinnedSdk(string globalJsonPath)
     {
         try
         {
@@ -659,15 +672,15 @@ internal static class Collector
                 && sdk.TryGetProperty("version", out JsonElement version)
                 && version.ValueKind == JsonValueKind.String)
             {
-                return version.GetString();
+                return version.GetString() ?? string.Empty;
             }
+
+            return "present, no sdk.version";
         }
         catch (Exception ex) when (ex is JsonException or IOException or UnauthorizedAccessException)
         {
-            Debug.WriteLine(ex.Message);
+            return Clean($"unreadable ({ex.Message})");
         }
-
-        return null;
     }
 
     private static string? FindUp(string fileName)
@@ -688,7 +701,7 @@ internal static class Collector
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            Debug.WriteLine(ex.Message);
+            Warn($"cannot search the parent directories for {fileName}", ex);
         }
 
         return null;

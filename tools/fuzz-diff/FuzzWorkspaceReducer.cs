@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
 using System.Text;
@@ -476,9 +477,9 @@ internal static class FuzzWorkspaceReducer
             {
                 proc.Kill(entireProcessTree: true);
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is InvalidOperationException or Win32Exception or AggregateException)
             {
-                // [WHY] the process may exit between the timeout and Kill; the caller already treats it as timed out
+                // [WHY] the process may exit between the timeout and Kill, or a child of it may refuse to stop; the caller already treats the run as timed out
                 Trace.WriteLine($"Could not kill {psi.FileName} after the timeout: {ex.Message}");
             }
 

@@ -1,7 +1,7 @@
 using System.Reflection;
-using Microsoft.Build.Locator;
 using Xunit;
 using Kassyi.GSharp.Compiler.Tasks;
+using Kassyi.GSharp.Tests.Shared.Tasks;
 
 namespace Kassyi.GSharp.Tests.Tasks;
 
@@ -10,17 +10,7 @@ public class NvccOutputParserTests
 {
     static NvccOutputParserTests()
     {
-        if (!MSBuildLocator.IsRegistered)
-        {
-            try
-            {
-                MSBuildLocator.RegisterDefaults();
-            }
-            catch (InvalidOperationException)
-            {
-                // ignore
-            }
-        }
+        MSBuildLocatorSetup.EnsureRegistered();
     }
 
     private static bool DetectRegisterSpill(string output, string error, out string errorMessage)
