@@ -74,19 +74,8 @@
     - case: IntegerTrapAndCheckedDifferentialKernels.Int64MinValueRemainderKernel
       paths: [Managed]
       columns: [$exception]
-
-- issue: 720
-  title: "[Bug]: Launch{Kernel}Ptr passes Length 0 to the kernel, so a kernel that reads Length silently sees 0"
-  entries:
-    - case: MarshalingAliasingDifferentialKernels.PtrLengthGuardedScaleKernel
-      paths: [Cuda]
-      columns: [data, outLen]
-
-- issue: 729
-  title: "[Feature]: Device error channel: record a code and source location before trap, and raise the same exception type as the CPU paths"
-  entries:
     # Array and span bounds, bounds-check elimination guards, simultaneous traps, integer division by zero and
-    # Math.Abs(MinValue) on CUDA
+    # Math.Abs(MinValue) on CUDA: they still diverge after the device error channel of #729 (closed)
     - case: BoundsAndMemoryDifferentialKernels.ArrayIndexBoundsKernel
       paths: [Cuda]
       columns: [$exception]
@@ -150,6 +139,13 @@
     - case: IntegerTrapAndCheckedDifferentialKernels.MathAbsInt32Kernel
       paths: [Cuda]
       columns: [$exception]
+
+- issue: 720
+  title: "[Bug]: Launch{Kernel}Ptr passes Length 0 to the kernel, so a kernel that reads Length silently sees 0"
+  entries:
+    - case: MarshalingAliasingDifferentialKernels.PtrLengthGuardedScaleKernel
+      paths: [Cuda]
+      columns: [data, outLen]
 
 - issue: 857
   title: "Overlapping slices of one array passed as two kernel parameters are copied to separate device regions"
