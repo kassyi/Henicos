@@ -432,6 +432,76 @@ public class StackLinqTests
         Assert.Empty(data.AsStackEnumerable().SkipWhile((_, _) => true).ToArray());
     }
 
+    // Once TakeWhile has ended, it stays ended, as System.Linq does: a later element that passes is not returned, and the
+    // predicate is not called again
+    [Fact]
+    public void TakeWhile_AfterTheFirstFalse_StaysFinished()
+    {
+        int[] data = [1, 5, 2];
+        var calls = 0;
+        var enumerator = data
+            .AsStackEnumerable()
+            .TakeWhile(x => { calls++; return x < 3; })
+            .Enumerator;
+
+        Assert.True(enumerator.TryGetNext(out var first));
+        Assert.Equal(1, first);
+        Assert.False(enumerator.TryGetNext(out _));
+        Assert.False(enumerator.TryGetNext(out _));
+        Assert.False(enumerator.TryGetNext(out _));
+        Assert.Equal(2, calls);
+    }
+
+    [Fact]
+    public void TakeWhile_Indexed_AfterTheFirstFalse_StaysFinished()
+    {
+        int[] data = [1, 5, 2];
+        var calls = 0;
+        var enumerator = data
+            .AsStackEnumerable()
+            .TakeWhile((x, _) => { calls++; return x < 3; })
+            .Enumerator;
+
+        Assert.True(enumerator.TryGetNext(out var first));
+        Assert.Equal(1, first);
+        Assert.False(enumerator.TryGetNext(out _));
+        Assert.False(enumerator.TryGetNext(out _));
+        Assert.False(enumerator.TryGetNext(out _));
+        Assert.Equal(2, calls);
+    }
+
+    [Fact]
+    public void TakeWhile_SourceExhausted_StaysFinished()
+    {
+        int[] data = [1, 2];
+        var enumerator = data
+            .AsStackEnumerable()
+            .TakeWhile(static x => x < 3)
+            .Enumerator;
+
+        Assert.True(enumerator.TryGetNext(out _));
+        Assert.True(enumerator.TryGetNext(out _));
+        Assert.False(enumerator.TryGetNext(out _));
+        Assert.False(enumerator.TryGetNext(out _));
+    }
+
+    // SelectMany asks its source again after it has reported the end
+    [Fact]
+    public void SelectMany_OverTakeWhile_AfterTheEnd_StaysFinished()
+    {
+        int[][] nested = [[1], [5], [2]];
+        var enumerator = nested
+            .AsStackEnumerable()
+            .TakeWhile(static inner => inner[0] < 3)
+            .SelectMany(static inner => inner.AsStackEnumerable())
+            .Enumerator;
+
+        Assert.True(enumerator.TryGetNext(out var first));
+        Assert.Equal(1, first);
+        Assert.False(enumerator.TryGetNext(out _));
+        Assert.False(enumerator.TryGetNext(out _));
+    }
+
     [Fact]
     public void Aggregate_ShouldMatchStandardLinq()
     {
