@@ -369,11 +369,11 @@ doctest file_path assemblies="":
 # e.g. `just mutate gpumath`, `just mutate compiler main`, `just mutate compiler "" -m "**/Layout/**/*.cs"`
 # Mutation testing with Stryker.NET. phase: gpumath | compiler | compiler-cuda (the CUDA dialect snapshots only). since: a git ref to mutate only the files changed after it (empty = all files). Reports go to tmp/stryker/<phase>
 [windows]
-mutate phase="gpumath" since="" *args="": (_mutate-begin phase) && (_mutate-end phase)
+mutate phase="gpumath" since="" *args="": (_mutate-begin phase args) && (_mutate-end phase args)
     $root = (Get-Location).Path; $dir = switch ('{{phase}}') { 'gpumath' { 'tests/Stdlib/Kassyi.GSharp.Stdlib.GpuMath.Tests' } 'compiler' { 'tests/Compiler/Kassyi.GSharp.Tests.Cpu' } 'compiler-cuda' { 'tests/Compiler/Kassyi.GSharp.Tests.Cuda' } default { throw "phase must be gpumath, compiler or compiler-cuda" } }; try { dotnet tool restore; Set-Location $dir; $sinceArgs = @(); if ('{{since}}' -ne '') { $sinceArgs = @('--since:{{since}}') }; dotnet stryker -f stryker-config.json -L --skip-version-check -O "$root/tmp/stryker/{{phase}}" @sinceArgs {{args}}; $code = $LASTEXITCODE } finally { Set-Location $root }; exit $code
 
 [unix]
-mutate phase="gpumath" since="" *args="": (_mutate-begin phase) && (_mutate-end phase)
+mutate phase="gpumath" since="" *args="": (_mutate-begin phase args) && (_mutate-end phase args)
     #!/usr/bin/env bash
     set -eu
     root=$(pwd)
@@ -389,12 +389,12 @@ mutate phase="gpumath" since="" *args="": (_mutate-begin phase) && (_mutate-end 
     if [ -n '{{since}}' ]; then since=(--since:'{{since}}'); fi
     dotnet stryker -f stryker-config.json -L --skip-version-check -O "$root/tmp/stryker/{{phase}}" "${since[@]}" {{args}}
 
-# Before and after a Stryker.NET run of just mutate: Stryker exits 0 after a fatal error, so the run fails when it wrote no report
-_mutate-begin phase:
-    node scripts/human/stryker-run-check.js --begin --output "tmp/stryker/{{phase}}"
+# Before and after a Stryker.NET run of just mutate: Stryker exits 0 after a fatal error, so the run fails when it wrote no report (not checked when args choose another directory with -O / --output)
+_mutate-begin phase *args="":
+    node scripts/human/stryker-run-check.js --begin --output "tmp/stryker/{{phase}}" -- {{args}}
 
-_mutate-end phase:
-    node scripts/human/stryker-run-check.js --end --output "tmp/stryker/{{phase}}"
+_mutate-end phase *args="":
+    node scripts/human/stryker-run-check.js --end --output "tmp/stryker/{{phase}}" -- {{args}}
 
 rebuild-and-test:
     dotnet build --no-incremental && just test
