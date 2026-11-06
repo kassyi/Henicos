@@ -4,9 +4,13 @@ using System.Collections;
 /// <summary>
 /// A zero-allocation or minimal-allocation stack for local variable overrides during macro transpilation.
 /// </summary>
+/// <remarks>
+/// An override pushed with a symbol replaces only the references to that symbol: a parameter of a nested lambda or local
+/// function that has the same name is another symbol and keeps its own value (#1266).
+/// </remarks>
 public sealed class OverrideScopeStack : IReadOnlyCollection<(string Name, OverrideValue Value)>
 {
-    private (string Name, OverrideValue Value)[] _items = new (string, OverrideValue)[16];
+    private (string Name, ISymbol? Symbol, OverrideValue Value)[] _items = new (string, ISymbol?, OverrideValue)[16];
     private int _count;
 
     /// <summary>
@@ -15,9 +19,10 @@ public sealed class OverrideScopeStack : IReadOnlyCollection<(string Name, Overr
     public int Count => _count;
 
     /// <summary>
-    /// Pushes an override value into the active scope and returns a token representing the current count.
+    /// Pushes an override value into the active scope and returns a token representing the current count. With
+    /// <paramref name="symbol"/>, the override applies only to references that resolve to it.
     /// </summary>
-    public int Push(string name, OverrideValue value)
+    public int Push(string name, OverrideValue value, ISymbol? symbol = null)
     {
         var cookie = _count;
         if (_count == _items.Length)
@@ -25,7 +30,7 @@ public sealed class OverrideScopeStack : IReadOnlyCollection<(string Name, Overr
             Array.Resize(ref _items, _items.Length * 2);
         }
 
-        _items[_count++] = (name, value);
+        _items[_count++] = (name, symbol?.OriginalDefinition, value);
         return cookie;
     }
 
@@ -54,15 +59,19 @@ public sealed class OverrideScopeStack : IReadOnlyCollection<(string Name, Overr
     }
 
     /// <summary>
-    /// Tries to resolve a local variable override by name, searching from innermost to outermost scope.
+    /// Tries to resolve the override of a reference named <paramref name="name"/> that resolves to
+    /// <paramref name="symbol"/>, searching from innermost to outermost scope. An override pushed with a symbol matches
+    /// only that symbol; a reference without a symbol matches by name.
     /// </summary>
-    public bool TryGet(string name, out OverrideValue value)
+    public bool TryGet(string name, ISymbol? symbol, out OverrideValue value)
     {
+        var original = symbol?.OriginalDefinition;
         for (var i = _count - 1; i >= 0; i--)
         {
-            if (_items[i].Name == name)
+            var item = _items[i];
+            if (item.Name == name && (item.Symbol is null || original is null || item.Symbol.IsEqualTo(original)))
             {
-                value = _items[i].Value;
+                value = item.Value;
                 return true;
             }
         }
@@ -78,7 +87,7 @@ public sealed class OverrideScopeStack : IReadOnlyCollection<(string Name, Overr
     {
         for (var i = 0; i < _count; i++)
         {
-            yield return _items[i];
+            yield return (_items[i].Name, _items[i].Value);
         }
     }
 
