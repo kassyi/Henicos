@@ -23,12 +23,10 @@ public class AotConfigurationTests
 
         var wrapperSource = generatedTrees.First(t => t.FilePath.Contains("MyKernel.g.cs")).ToString();
 
-        // We unified naming, so it should expect GetFunction with mangled name
-        Assert.Contains("GetFunction", wrapperSource);
-        Assert.Contains("__gsharp_k_AotTest__MyKernel__Run", wrapperSource);
-
-        // Check that it's using the file-based loading approach via ModuleContext
-        Assert.Contains("GetOrLoadModule()", wrapperSource);
+        // The launcher resolves the mangled kernel per context from the fatbin file of the module context
+        Assert.Contains("CudaKernelFunction(\"__gsharp_k_AotTest__MyKernel__Run\"", wrapperSource);
+        Assert.Contains(".GetFatbin);", wrapperSource);
+        Assert.Contains(".Resolve()", wrapperSource);
     }
 
     [Fact]

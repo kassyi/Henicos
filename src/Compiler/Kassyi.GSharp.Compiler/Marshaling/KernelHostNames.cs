@@ -108,7 +108,7 @@ internal static class KernelHostNames
     public static string GetQualifiedPointerLaunchName(in KernelEmission kernel) =>
         $"{kernel.Host.ClassQualifiedName}.{GetPointerLaunchName(kernel)}";
 
-    /// <summary>The static field caching the CUDA function pointer of a kernel, <c>__gsharp_hfunc_{key}</c>.</summary>
+    /// <summary>The static field that resolves the CUDA function of a kernel per context, <c>__gsharp_hfunc_{key}</c>.</summary>
     public static string GetFunctionPointerFieldName(string memberKey) =>
         GSharpInternalNames.Launcher.FunctionPointerFieldPrefix + memberKey;
 
@@ -118,10 +118,6 @@ internal static class KernelHostNames
 
     /// <summary>The method that preloads the CUDA module and resolves the function pointer, <c>WarmupFunctionPointer{key}</c>.</summary>
     public static string GetWarmupMethodName(string memberKey) => WarmupPrefix + memberKey;
-
-    /// <summary>The class-qualified <see cref="GetWarmupMethodName"/> call target, so a parameter of the same name cannot shadow it.</summary>
-    public static string GetQualifiedWarmupMethodName(in KernelEmission kernel) =>
-        $"{kernel.Host.ClassQualifiedName}.{GetWarmupMethodName(kernel.MemberKey)}";
 
     /// <summary>The private CPU P/Invoke delegate type of a kernel, <c>__gsharp_delegate_{key}</c>.</summary>
     public static string GetDelegateTypeName(in KernelEmission kernel) =>
