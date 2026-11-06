@@ -88,6 +88,32 @@ public class MutantSwitchRemoverTests
         Assert.Equal("a + b", kept.ToString());
     }
 
+    // Every node of the copy maps back to the user's tree (generator-invariants §2), every statement to a statement of
+    // the same kind, so the passes after the removal find its symbol and report it at its place
+    [Theory]
+    [Scenario(TestScenario.HappyPath)]
+    [MemberData(nameof(Shapes))]
+    public void Remove_InstrumentedBody_EveryNodeMapsToTheCompilation(string shape)
+    {
+        var (model, methods) = GetMethods(s_mutatedCompilation.Value);
+        var instrumented = GetMethod(methods, shape + "_Instrumented").Body
+                           ?? throw new InvalidOperationException($"{shape}_Instrumented has no block body.");
+
+        var removed = MutantSwitchRemover.Remove(instrumented, model);
+
+        Assert.NotSame(instrumented, removed);
+        Assert.All(removed.DescendantNodesAndSelf(), node =>
+        {
+            var original = model.GetOriginalNode(node);
+            Assert.True(original != null, $"{node.Kind()} '{node}' maps to no node of the compilation.");
+            // An argument shares its span with its expression, so only a statement's kind identifies its original
+            if (node is StatementSyntax)
+            {
+                Assert.Equal(node.Kind(), original.Kind());
+            }
+        });
+    }
+
     [Theory]
     [Scenario(TestScenario.Boundary)]
     [InlineData("NoSwitch")]
