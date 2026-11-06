@@ -74,6 +74,22 @@ public class GpuKernelAnalyzer : DiagnosticAnalyzer
             }
         }
 
+        // The generator transpiles the defining declaration of a partial method from its implementing declaration, which
+        // this analyzer visits on its own; a GPU function with no body anywhere has nothing to transpile
+        if (methodDeclaration.Body == null && methodDeclaration.ExpressionBody == null)
+        {
+            if (methodSymbol.PartialImplementationPart == null)
+            {
+                context.ReportDiagnostic(
+                    GSharpDiagnostics.UnsupportedSyntax,
+                    methodDeclaration.Identifier.GetLocation(),
+                    $"GPU function '{methodSymbol.Name}' without a body " +
+                    "(an extern method, or a partial method without an implementing declaration)");
+            }
+
+            return;
+        }
+
         var diagnostics = ImmutableArray.CreateBuilder<Diagnostic>();
 
         // Single-pass traversal of the AST to minimize time complexity and zero allocations
