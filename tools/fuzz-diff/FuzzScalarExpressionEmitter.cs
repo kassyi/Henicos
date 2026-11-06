@@ -181,81 +181,133 @@ public static class FuzzScalarExpressionEmitter
         }
     }
 
+    /// <summary>What the kinds of integral expression read: the state, the requested type and the depth limits.</summary>
+    private readonly record struct IntegralExpressionContext(
+        KernelGenerationState State,
+        FuzzTypeInfo TargetType,
+        int Depth,
+        int MaxDepth);
+
+    /// <summary>
+    /// One weighted kind of integral expression. The draw <c>roll</c> picks the first row, in table order, whose
+    /// <see cref="Weight"/> exceeds the roll left after the weights of the rows above and whose
+    /// <see cref="CanEmit"/> holds; a row whose condition fails passes the roll on to the next row, and a roll
+    /// beyond every row goes to the unweighted kinds. The result is already of the target type.
+    /// </summary>
+    private sealed record IntegralExpressionKind(
+        Func<FuzzSwarmConfig, int> Weight,
+        Func<IntegralExpressionContext, bool> CanEmit,
+        Func<IntegralExpressionContext, string> Emit);
+
+    private static readonly IntegralExpressionKind[] s_integralExpressionKinds =
+    [
+        new(static sw => sw.BitwiseWeight, static _ => true, EmitBitwiseExpression),
+        new(static sw => sw.DivisionWeight, static _ => true, EmitDivisionExpression),
+        new(static sw => sw.ShiftWeight, static _ => true, EmitShiftExpression),
+        new(static sw => sw.TernaryWeight, static _ => true, EmitTernaryExpression),
+        new(
+            static sw => sw.SwitchExprWeight,
+            static context => context.Depth <= 1,
+            static context => FuzzCompositeExpressionEmitter.GenerateSwitchExpression(context.State, context.TargetType, context.Depth + 1, context.MaxDepth)),
+    ];
+
     /// <summary>Generates an integral expression respecting Swarm weights and <see cref="KnownIssueFilter"/>.</summary>
     public static string GenerateIntegralExpression(KernelGenerationState state, FuzzTypeInfo targetType, int depth, int maxDepth)
     {
         var rng = state.Rng;
-        var promotedKind = FuzzTypeInfo.PromoteUnary(targetType.Kind);
-        var promotedType = FuzzTypeInfo.Get(promotedKind);
         var sw = state.Swarm;
+        var context = new IntegralExpressionContext(state, targetType, depth, maxDepth);
 
         int totalW = sw.BitwiseWeight + sw.DivisionWeight + sw.ShiftWeight + sw.TernaryWeight + sw.SwitchExprWeight + 20;
         int roll = rng.NextBelow(totalW);
-        string resultExpr;
 
-        if (roll < sw.BitwiseWeight)
+        foreach (var kind in s_integralExpressionKinds)
         {
-            string[] ops = ["+", "-", "*", "&", "|", "^"];
-            string op = ops[rng.NextBelow(ops.Length)];
-            var (left, right) = GeneratePossiblyInterferingPair(state, promotedType, depth + 1, maxDepth);
-            resultExpr = $"({left} {op} {right})";
-        }
-        else if ((roll -= sw.BitwiseWeight) < sw.DivisionWeight)
-        {
-            bool isModulo = rng.NextBool();
-            string left = state.IssueFilter.AvoidMsvcNegatedConstantDivision
-                ? GenerateLeafExpression(state, promotedType)
-                : GenerateExpression(state, promotedType, depth + 1, maxDepth);
-            string right = GenerateLeafExpression(state, promotedType);
-            resultExpr = BuildGuardedDivisionOrModulo(promotedKind, left, right, isModulo, leftIsSimpleLocal: IsSimpleIdentifier(left));
-        }
-        else if ((roll -= sw.DivisionWeight) < sw.ShiftWeight)
-        {
-            string shiftOp = rng.NextBelow(3) switch
+            int weight = kind.Weight(sw);
+            if (roll < weight && kind.CanEmit(context))
             {
-                0 => "<<",
-                1 => ">>",
-                _ => ">>>",
-            };
-            string left = GenerateExpression(state, promotedType, depth + 1, maxDepth);
-            string count = GenerateShiftCountExpression(state, depth + 1, maxDepth);
-            resultExpr = $"({left} {shiftOp} {count})";
-        }
-        else if ((roll -= sw.ShiftWeight) < sw.TernaryWeight)
-        {
-            string cond = GenerateExpression(state, FuzzTypeInfo.Get(FuzzScalarKind.Boolean), depth + 1, maxDepth);
-            var (whenTrue, whenFalse) = GeneratePossiblyInterferingPair(state, targetType, depth + 1, maxDepth);
-            return $"({cond} ? {EnsureType(whenTrue, targetType)} : {EnsureType(whenFalse, targetType)})";
-        }
-        else if ((roll -= sw.TernaryWeight) < sw.SwitchExprWeight && depth <= 1)
-        {
-            return FuzzCompositeExpressionEmitter.GenerateSwitchExpression(state, targetType, depth + 1, maxDepth);
-        }
-        else if (rng.NextBool())
-        {
-            string unaryOp = promotedType.IsSigned
-                ? (rng.NextBelow(3) switch { 0 => "+", 1 => "-", _ => "~" })
-                : (rng.NextBool() ? "+" : "~");
-            string operand = GenerateExpression(state, promotedType, depth + 1, maxDepth);
-            resultExpr = $"({unaryOp}{operand})";
-        }
-        else
-        {
-            var mutTarget = state.FindLocal(targetType.Kind);
-            bool canUseIncDecValue = !mutTarget.Type.IsNarrowIntegral || !state.IssueFilter.AvoidNarrowIncDecValue;
-            if (canUseIncDecValue && rng.NextBool())
-            {
-                string stepOp = rng.NextBool() ? "++" : "--";
-                resultExpr = rng.NextBool() ? $"({stepOp}{mutTarget.Name})" : $"({mutTarget.Name}{stepOp})";
-                return EnsureType(resultExpr, targetType);
+                return kind.Emit(context);
             }
 
-            string rhs = GenerateLeafExpression(state, targetType);
-            resultExpr = $"({mutTarget.Name} += {EnsureType(rhs, targetType)})";
-            return EnsureType(resultExpr, targetType);
+            roll -= weight;
         }
 
-        return EnsureType(resultExpr, targetType);
+        return rng.NextBool() ? EmitUnaryExpression(context) : EmitMutationExpression(context);
+    }
+
+    private static string EmitBitwiseExpression(IntegralExpressionContext context)
+    {
+        var (state, targetType, depth, maxDepth) = context;
+        var promotedType = FuzzTypeInfo.Get(FuzzTypeInfo.PromoteUnary(targetType.Kind));
+        string[] ops = ["+", "-", "*", "&", "|", "^"];
+        string op = ops[state.Rng.NextBelow(ops.Length)];
+        var (left, right) = GeneratePossiblyInterferingPair(state, promotedType, depth + 1, maxDepth);
+        return EnsureType($"({left} {op} {right})", targetType);
+    }
+
+    private static string EmitDivisionExpression(IntegralExpressionContext context)
+    {
+        var (state, targetType, depth, maxDepth) = context;
+        var promotedKind = FuzzTypeInfo.PromoteUnary(targetType.Kind);
+        var promotedType = FuzzTypeInfo.Get(promotedKind);
+        bool isModulo = state.Rng.NextBool();
+        string left = state.IssueFilter.AvoidMsvcNegatedConstantDivision
+            ? GenerateLeafExpression(state, promotedType)
+            : GenerateExpression(state, promotedType, depth + 1, maxDepth);
+        string right = GenerateLeafExpression(state, promotedType);
+        return EnsureType(BuildGuardedDivisionOrModulo(promotedKind, left, right, isModulo, leftIsSimpleLocal: IsSimpleIdentifier(left)), targetType);
+    }
+
+    private static string EmitShiftExpression(IntegralExpressionContext context)
+    {
+        var (state, targetType, depth, maxDepth) = context;
+        var promotedType = FuzzTypeInfo.Get(FuzzTypeInfo.PromoteUnary(targetType.Kind));
+        string shiftOp = state.Rng.NextBelow(3) switch
+        {
+            0 => "<<",
+            1 => ">>",
+            _ => ">>>",
+        };
+        string left = GenerateExpression(state, promotedType, depth + 1, maxDepth);
+        string count = GenerateShiftCountExpression(state, depth + 1, maxDepth);
+        return EnsureType($"({left} {shiftOp} {count})", targetType);
+    }
+
+    private static string EmitTernaryExpression(IntegralExpressionContext context)
+    {
+        var (state, targetType, depth, maxDepth) = context;
+        string cond = GenerateExpression(state, FuzzTypeInfo.Get(FuzzScalarKind.Boolean), depth + 1, maxDepth);
+        var (whenTrue, whenFalse) = GeneratePossiblyInterferingPair(state, targetType, depth + 1, maxDepth);
+        return $"({cond} ? {EnsureType(whenTrue, targetType)} : {EnsureType(whenFalse, targetType)})";
+    }
+
+    private static string EmitUnaryExpression(IntegralExpressionContext context)
+    {
+        var (state, targetType, depth, maxDepth) = context;
+        var rng = state.Rng;
+        var promotedType = FuzzTypeInfo.Get(FuzzTypeInfo.PromoteUnary(targetType.Kind));
+        string unaryOp = promotedType.IsSigned
+            ? (rng.NextBelow(3) switch { 0 => "+", 1 => "-", _ => "~" })
+            : (rng.NextBool() ? "+" : "~");
+        string operand = GenerateExpression(state, promotedType, depth + 1, maxDepth);
+        return EnsureType($"({unaryOp}{operand})", targetType);
+    }
+
+    private static string EmitMutationExpression(IntegralExpressionContext context)
+    {
+        var (state, targetType, _, _) = context;
+        var rng = state.Rng;
+        var mutTarget = state.FindLocal(targetType.Kind);
+        bool canUseIncDecValue = !mutTarget.Type.IsNarrowIntegral || !state.IssueFilter.AvoidNarrowIncDecValue;
+        if (canUseIncDecValue && rng.NextBool())
+        {
+            string stepOp = rng.NextBool() ? "++" : "--";
+            string stepExpr = rng.NextBool() ? $"({stepOp}{mutTarget.Name})" : $"({mutTarget.Name}{stepOp})";
+            return EnsureType(stepExpr, targetType);
+        }
+
+        string rhs = GenerateLeafExpression(state, targetType);
+        return EnsureType($"({mutTarget.Name} += {EnsureType(rhs, targetType)})", targetType);
     }
 
     /// <summary>Generates a pair of expressions that may interfere via a shared local variable mutation.</summary>
