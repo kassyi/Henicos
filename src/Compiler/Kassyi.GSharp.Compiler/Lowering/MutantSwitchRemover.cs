@@ -149,28 +149,22 @@ internal sealed class MutantSwitchRemover : CSharpSyntaxRewriter
     private static IMethodSymbol[] FindSwitchMethods(Compilation compilation)
     {
         var methods = ImmutableArray.CreateBuilder<IMethodSymbol>();
-        foreach (var helperNamespace in compilation.Assembly.GlobalNamespace.GetNamespaceMembers())
-        {
-            if (!helperNamespace.Name.StartsWith(HelperNamespacePrefix, StringComparison.Ordinal))
+        // GetNamespaceMembers is a lazy sequence, which StackLinq does not enumerate
+        ImmutableArray.CreateRange(compilation.Assembly.GlobalNamespace.GetNamespaceMembers())
+            .AsStackEnumerable()
+            .Where(static helperNamespace => helperNamespace.Name.StartsWith(HelperNamespacePrefix, StringComparison.Ordinal))
+            .SelectMany(static helperNamespace => helperNamespace.GetTypeMembers(HelperClassName)
+                .AsStackEnumerable()
+            ).SelectMany(static helperClass => helperClass.GetMembers(SwitchMethodName)
+                .AsStackEnumerable()
+            ).OfType<IMethodSymbol>()
+            .Where(static method => method is
             {
-                continue;
-            }
-
-            foreach (var helperClass in helperNamespace.GetTypeMembers(HelperClassName))
-            {
-                helperClass.GetMembers(SwitchMethodName)
-                    .AsStackEnumerable()
-                    .OfType<IMethodSymbol>()
-                    .Where(static method => method is
-                    {
-                        IsStatic: true,
-                        ReturnType.SpecialType: SpecialType.System_Boolean,
-                        Parameters: [{ Type.SpecialType: SpecialType.System_Int32 }]
-                    })
-                    .AddTo(methods);
-            }
-        }
-
+                IsStatic: true,
+                ReturnType.SpecialType: SpecialType.System_Boolean,
+                Parameters: [{ Type.SpecialType: SpecialType.System_Int32 }]
+            })
+            .AddTo(methods);
         return methods.ToArray();
     }
 }
