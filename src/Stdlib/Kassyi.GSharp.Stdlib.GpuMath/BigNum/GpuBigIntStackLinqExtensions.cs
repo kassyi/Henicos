@@ -228,15 +228,7 @@ public static class GpuBigIntStackLinqExtensions
             }
 
             var sumTree = StackLinqReductionCore.BuildBalancedTree(buffer.AsSpan(0, count), static (a, b) => a + b);
-            
-            var workspace = first.Value.Workspace;
-            var numWords = first.Value.NumWords;
-            var uintBuffer = new uint[numWords];
-            uintBuffer[0] = (uint)count;
-            var countBuffer = new GpuBigUInt(workspace, uintBuffer); 
-            var countExpr = (GpuBigIntExpr)new GpuBigInt(countBuffer, false);
-
-            return sumTree / countExpr;
+            return sumTree / CountExpression(first, count);
         }
         finally
         {
@@ -515,7 +507,7 @@ public static class GpuBigIntStackLinqExtensions
             left.Enumerator, right.Enumerator, static (a, b) => a % b));
 
     /// <summary>
-    /// Computes the sum of a sequence of <see cref="GpuBigInt"/> values.
+    /// Computes the sum of a sequence of <see cref="GpuBigInt"/> values, added from the left (<c>((x0 + x1) + x2) + ...</c>).
     /// </summary>
     /// <typeparam name="TEnumerator">The type of the source enumerator.</typeparam>
     /// <param name="source">A sequence of values that are used to calculate a sum.</param>
@@ -523,10 +515,12 @@ public static class GpuBigIntStackLinqExtensions
     public static GpuBigIntExpr Sum<TEnumerator>(
         this StackEnumerable<TEnumerator, GpuBigInt> source)
         where TEnumerator : struct, IStackEnumerator<GpuBigInt>, allows ref struct =>
-        source.AsParallel().Sum();
+        StackLinqReductionCore.FoldLeft<TEnumerator, GpuBigInt, GpuBigIntExpr>(
+            source.Enumerator, static x => x, static (a, b) => a + b, out _);
 
     /// <summary>
-    /// Computes the sum of a sequence of <see cref="GpuBigIntExpr"/> expressions.
+    /// Computes the sum of a sequence of <see cref="GpuBigIntExpr"/> expressions, added from the left
+    /// (<c>((x0 + x1) + x2) + ...</c>).
     /// </summary>
     /// <typeparam name="TEnumerator">The type of the source enumerator.</typeparam>
     /// <param name="source">A sequence of expressions that are used to calculate a sum.</param>
@@ -534,7 +528,8 @@ public static class GpuBigIntStackLinqExtensions
     public static GpuBigIntExpr Sum<TEnumerator>(
         this StackEnumerable<TEnumerator, GpuBigIntExpr> source)
         where TEnumerator : struct, IStackEnumerator<GpuBigIntExpr>, allows ref struct =>
-        source.AsParallel().Sum();
+        StackLinqReductionCore.FoldLeft<TEnumerator, GpuBigIntExpr, GpuBigIntExpr>(
+            source.Enumerator, static x => x, static (a, b) => a + b, out _);
 
     /// <summary>
     /// Computes the maximum of a sequence of <see cref="GpuBigInt"/> values.
@@ -581,41 +576,77 @@ public static class GpuBigIntStackLinqExtensions
         source.AsParallel().Min();
 
     /// <summary>
-    /// Applies an accumulator function over a sequence of <see cref="GpuBigInt"/> values.
+    /// Applies an accumulator function over a sequence of <see cref="GpuBigInt"/> values from the left, in the order of
+    /// <c>Enumerable.Aggregate</c>: <c>func(func(x0, x1), x2)</c>.
     /// </summary>
     /// <typeparam name="TEnumerator">The type of the source enumerator.</typeparam>
     /// <param name="source">A sequence of values to aggregate.</param>
-    /// <param name="func">An accumulator function to be invoked on each pair of expressions.</param>
+    /// <param name="func">An accumulator function to be invoked on the accumulated expression and the next element.</param>
     /// <returns>A deferred expression tree representing the aggregation.</returns>
     public static GpuBigIntExpr Aggregate<TEnumerator>(
         this StackEnumerable<TEnumerator, GpuBigInt> source,
         Func<GpuBigIntExpr, GpuBigIntExpr, GpuBigIntExpr> func)
-        where TEnumerator : struct, IStackEnumerator<GpuBigInt>, allows ref struct =>
-        source.AsParallel().Aggregate(func);
+        where TEnumerator : struct, IStackEnumerator<GpuBigInt>, allows ref struct
+    {
+        ArgumentNullException.ThrowIfNull(func);
+        return StackLinqReductionCore.FoldLeft<TEnumerator, GpuBigInt, GpuBigIntExpr>(
+            source.Enumerator, static x => x, func, out _);
+    }
 
     /// <summary>
-    /// Applies an accumulator function over a sequence of <see cref="GpuBigIntExpr"/> expressions.
+    /// Applies an accumulator function over a sequence of <see cref="GpuBigIntExpr"/> expressions from the left, in the order of
+    /// <c>Enumerable.Aggregate</c>: <c>func(func(x0, x1), x2)</c>.
     /// </summary>
     /// <typeparam name="TEnumerator">The type of the source enumerator.</typeparam>
     /// <param name="source">A sequence of expressions to aggregate.</param>
-    /// <param name="func">An accumulator function to be invoked on each pair of expressions.</param>
+    /// <param name="func">An accumulator function to be invoked on the accumulated expression and the next element.</param>
     /// <returns>A deferred expression tree representing the aggregation.</returns>
     public static GpuBigIntExpr Aggregate<TEnumerator>(
         this StackEnumerable<TEnumerator, GpuBigIntExpr> source,
         Func<GpuBigIntExpr, GpuBigIntExpr, GpuBigIntExpr> func)
-        where TEnumerator : struct, IStackEnumerator<GpuBigIntExpr>, allows ref struct =>
-        source.AsParallel().Aggregate(func);
+        where TEnumerator : struct, IStackEnumerator<GpuBigIntExpr>, allows ref struct
+    {
+        ArgumentNullException.ThrowIfNull(func);
+        return StackLinqReductionCore.FoldLeft<TEnumerator, GpuBigIntExpr, GpuBigIntExpr>(
+            source.Enumerator, static x => x, func, out _);
+    }
 
     /// <summary>
-    /// Computes the average of a sequence of <see cref="GpuBigInt"/> values.
+    /// Computes the average of a sequence of <see cref="GpuBigInt"/> values: the sum added from the left, divided by
+    /// the count.
     /// </summary>
     /// <typeparam name="TEnumerator">The type of the source enumerator.</typeparam>
     /// <param name="source">A sequence of values to calculate the average of.</param>
     /// <returns>A deferred expression tree representing the average.</returns>
     public static GpuBigIntExpr Average<TEnumerator>(
         this StackEnumerable<TEnumerator, GpuBigInt> source)
-        where TEnumerator : struct, IStackEnumerator<GpuBigInt>, allows ref struct =>
-        source.AsParallel().Average();
+        where TEnumerator : struct, IStackEnumerator<GpuBigInt>, allows ref struct
+    {
+        var enumerator = source.Enumerator;
+        if (!enumerator.TryGetNext(out var first))
+        {
+            throw new InvalidOperationException("Sequence contains no elements");
+        }
+
+        GpuBigIntExpr sum = first;
+        var count = 1;
+        while (enumerator.TryGetNext(out var value))
+        {
+            sum += value;
+            count++;
+        }
+
+        return sum / CountExpression(first, count);
+    }
+
+    // The divisor of an average: the element count as a non-negative leaf with the width and workspace of the first
+    // element.
+    private static GpuBigIntExpr CountExpression(GpuBigInt first, int count)
+    {
+        var words = new uint[first.Value.NumWords];
+        words[0] = (uint)count;
+        return new GpuBigInt(new GpuBigUInt(first.Value.Workspace, words), false);
+    }
 }
 
 /// <summary>

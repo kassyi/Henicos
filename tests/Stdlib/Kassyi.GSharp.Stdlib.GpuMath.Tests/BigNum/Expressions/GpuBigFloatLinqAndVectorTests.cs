@@ -288,6 +288,81 @@ public class GpuBigFloatLinqAndVectorTests : IDisposable
         Assert.Equal(20.0, ToDouble(filteredTakeRes.GetElement(1)), precision: 8);
     }
 
+    // A sum gets one word more than its wider operand, so 2^200 + 1 does not fit the two words of the first sum and the
+    // order of the additions of [2^200, 1, -2^200, 1] shows in the result. Without AsParallel() the reductions fold from the left as Enumerable.Aggregate does; the references are
+    // built here with the same operators in that order, and the balanced tree is built beside them to show that the
+    // inputs tell the two orders apart.
+    [Fact]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.HappyPath)]
+    public void StackEnumerable_SumAverageAggregate_WithoutAsParallel_FoldFromTheLeft()
+    {
+        using var big = CreateFloat(1, exponent: 200, numWords: 1);
+        using var one = CreateFloat(1, numWords: 1);
+        using var negativeBig = CreateFloat(-1, exponent: 200, numWords: 1);
+        using var lastOne = CreateFloat(1, numWords: 1);
+        using var four = CreateFloat(4, numWords: 1);
+        var array = new[] { big, one, negativeBig, lastOne };
+
+        using GpuBigFloat left01 = big + one;
+        using GpuBigFloat left012 = left01 + negativeBig;
+        using GpuBigFloat leftSum = left012 + lastOne;
+        using GpuBigFloat right23 = negativeBig + lastOne;
+        using GpuBigFloat treeSum = left01 + right23;
+        using GpuBigFloat leftAverage = leftSum / four;
+        Assert.NotEqual(0, leftSum.CompareTo(treeSum));
+
+        // mutant: GpuBigNumberStackLinqExtensions.cs sequential Sum -> source.AsParallel().Sum()
+        using var sum = array.AsStackEnumerable().Sum();
+        Assert.Equal(0, leftSum.CompareTo(sum));
+
+        // mutant: GpuBigNumberStackLinqExtensions.cs sequential Average -> source.AsParallel().Average()
+        using var average = array.AsStackEnumerable().Average();
+        Assert.Equal(0, leftAverage.CompareTo(average));
+
+        // mutant: GpuBigNumberStackLinqExtensions.cs Aggregate (GpuBigFloat) -> source.AsParallel().Aggregate(func)
+        using var aggregate = array.AsStackEnumerable().Aggregate(static (a, b) => a + b);
+        Assert.Equal(0, leftSum.CompareTo(aggregate));
+
+        // The marker keeps the tree.
+        using var parallelSum = array.AsStackEnumerable().AsParallel().Sum();
+        Assert.Equal(0, treeSum.CompareTo(parallelSum));
+    }
+
+    // [64, 8, 4, 2] with a / b: ((64 / 8) / 4) / 2 = 1 from the left, (64 / 8) / (4 / 2) = 4 as a balanced tree.
+    [Fact]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.HappyPath)]
+    public void GpuBigUFloat_Aggregate_WithoutAsParallel_FoldsFromTheLeft()
+    {
+        GpuBigUFloat[] array =
+        [
+            new(new GpuBigUInt(_context, [64u, 0u]), 0),
+            new(new GpuBigUInt(_context, [8u, 0u]), 0),
+            new(new GpuBigUInt(_context, [4u, 0u]), 0),
+            new(new GpuBigUInt(_context, [2u, 0u]), 0),
+        ];
+
+        try
+        {
+            // mutant: GpuBigNumberStackLinqExtensions.cs Aggregate (GpuBigUFloat) -> source.AsParallel().Aggregate(func)
+            using var quotient = array.AsStackEnumerable().Aggregate(static (a, b) => a / b);
+            using var expectedOne = new GpuBigUFloat(new GpuBigUInt(_context, [1u, 0u]), 0);
+            Assert.Equal(0, expectedOne.CompareTo(quotient));
+
+            using var treeQuotient = array.AsStackEnumerable().AsParallel().Aggregate(static (a, b) => a / b);
+            using var expectedFour = new GpuBigUFloat(new GpuBigUInt(_context, [4u, 0u]), 0);
+            Assert.Equal(0, expectedFour.CompareTo(treeQuotient));
+        }
+        finally
+        {
+            foreach (var value in array)
+            {
+                value.Dispose();
+            }
+        }
+    }
+
     [Fact]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.Boundary)]

@@ -437,7 +437,9 @@ Thrown when `predicate` is `null`.
 ## Remarks
 
 > [!NOTE]
-> All reduction operations (`Sum`, `Max`, `Min`, `Aggregate`, `Average`) construct balanced binary evaluation trees out of `GpuBigIntExpr` elements to optimize the reduction path depth. Instead of an $O(N)$ sequential chain, the resulting AST reduces evaluating depth to $O(\log N)$, allowing parallel device kernels to operate effectively over large enumerations.
+> The reductions of a `ParallelStackEnumerable` (after `AsParallel()`: `Sum`, `Max`, `Min`, `Aggregate`, `Average`) construct balanced binary evaluation trees out of `GpuBigIntExpr` elements to optimize the reduction path depth. Instead of an $O(N)$ sequential chain, the resulting AST reduces evaluating depth to $O(\log N)$, allowing parallel device kernels to operate effectively over large enumerations.
+>
+> Without `AsParallel()`, `Aggregate`, `Sum` and `Average` of a `StackEnumerable` combine the elements from the left, in the order of `Enumerable.Aggregate`: `func(func(func(x0, x1), x2), x3)`. The order is visible when the accumulator is not associative: `[10, 3, 2, 1]` with `(a, b) => a - b` gives `((10 - 3) - 2) - 1 = 4` without `AsParallel()` and `(10 - 3) - (2 - 1) = 6` with it. `AsParallel()` is the marker that allows the reordering. The same holds for the `GpuBigUInt`, `GpuBigFloat` and `GpuBigUFloat` reductions of `GpuBigNumberStackLinqExtensions`, where every floating-point addition rounds, so `Sum` and `Average` depend on the order as well. The left fold builds an expression tree as deep as the sequence is long.
 
 Because reduction operations return a [GpuBigIntExpr](GpuBigIntExpr.md), the entire reduction pipeline can be compiled directly into a native CUDA Graph:
 - **One-Liner Evaluation:** Chain `.EvaluateWithCudaGraph(workspace)` to capture, instantiate, execute, and destroy a CUDA Graph in a single statement.

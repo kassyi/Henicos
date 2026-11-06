@@ -434,6 +434,52 @@ public class GpuBigIntStackLinqExtensionsTests : IDisposable
         }
     }
 
+    // [10, 3, 2, 1] with a - b: the left fold of Enumerable.Aggregate gives ((10 - 3) - 2) - 1 = 4, the balanced tree
+    // of AsParallel() (10 - 3) - (2 - 1) = 6. [64, 8, 4, 2] with a / b: ((64 / 8) / 4) / 2 = 1 against
+    // (64 / 8) / (4 / 2) = 4.
+    [Fact]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.HappyPath)]
+    public void Aggregate_WithoutAsParallel_FoldsFromTheLeft()
+    {
+        var ints = CreateArray(10, 3, 2, 1);
+
+        // mutant: GpuBigIntStackLinqExtensions.cs sequential Aggregate (GpuBigInt) -> source.AsParallel().Aggregate(func)
+        Assert.Equal(new BigInteger(4), ToBigInt(ints.AsStackEnumerable().Aggregate(static (a, b) => a - b).Evaluate(_context)));
+
+        // mutant: GpuBigIntStackLinqExtensions.cs sequential Aggregate (GpuBigIntExpr) -> source.AsParallel().Aggregate(func)
+        Assert.Equal(
+            new BigInteger(4),
+            ToBigInt(ints.AsStackEnumerable().Select(ToExpr).Aggregate(static (a, b) => a - b).Evaluate(_context)));
+
+        // The marker keeps the tree.
+        Assert.Equal(
+            new BigInteger(6),
+            ToBigInt(ints.AsStackEnumerable().AsParallel().Aggregate(static (a, b) => a - b).Evaluate(_context)));
+
+        var uints = CreateUIntArray(64, 8, 4, 2);
+
+        // mutant: GpuBigNumberStackLinqExtensions.cs Aggregate (GpuBigUInt) -> source.AsParallel().Aggregate(func)
+        using (var quotient = uints.AsStackEnumerable().Aggregate(static (a, b) => Divide(a, b)))
+        {
+            Assert.Equal(BigInteger.One, quotient.ToBigInteger());
+        }
+
+        using (var treeQuotient = uints.AsStackEnumerable().AsParallel().Aggregate(static (a, b) => Divide(a, b)))
+        {
+            Assert.Equal(new BigInteger(4), treeQuotient.ToBigInteger());
+        }
+
+        foreach (var u in uints)
+        {
+            u.Dispose();
+        }
+    }
+
+    private static T Divide<T>(T left, T right)
+        where T : struct, IGpuBigNumber<T> =>
+        left / right;
+
     private static GpuBigIntExpr ToExpr(GpuBigInt value) => value;
 
     private GpuBigInt[] CreateArray(params long[] values)
