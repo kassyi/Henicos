@@ -372,10 +372,18 @@ internal static class StructTranspiler
                 WriteTailPadding(ref context, 0, end, layout);
             }
 
+            var compilation = context.Query.SemanticModel.Compilation;
+            var hasDefaultConstructor = false;
             foreach (var member in structSym.GetMembers())
             {
                 if (structSym.IsRefLikeType &&
-                    member is IMethodSymbol { MethodKind: MethodKind.Conversion, Name: "op_Implicit" } conv)
+                    member is IMethodSymbol { MethodKind: MethodKind.Conversion } conversion &&
+                    StructConversionEmitter.HasRefStructConversionBody(conversion, compilation))
+                {
+                    WriteRefStructConversionDeclaration(structSym, ref context, conversion, ref hasDefaultConstructor);
+                }
+                else if (structSym.IsRefLikeType &&
+                         member is IMethodSymbol { MethodKind: MethodKind.Conversion, Name: "op_Implicit" } conv)
                 {
                     WriteImplicitConversionOperator(structSym, ref context, conv);
                 }
@@ -828,6 +836,40 @@ internal static class StructTranspiler
         context.Emitter.Writer
             .AppendLine("#endif")
             .AppendLine();
+    }
+
+    // __device__ inline [explicit] S(<type> v); or __device__ inline [explicit] operator <type>() const;
+    // The member of a ref struct conversion with a body here; StructConversionEmitter.WriteRefStructConversionMembers
+    // defines it after the struct, calling the function emitted from the body. The member stays because an operator macro
+    // passes a ref struct to a parameter of the type it converts to, and back, through these C++ conversions.
+    private static void WriteRefStructConversionDeclaration(INamedTypeSymbol structSym, ref TranspileContext context,
+        IMethodSymbol conversion, ref bool hasDefaultConstructor)
+    {
+        var writer = context.Emitter.Writer;
+        var explicitKeyword = conversion.Name == WellKnownMemberNames.ExplicitConversionName ? "explicit " : "";
+        if (conversion.ReturnType.IsEqualTo(structSym))
+        {
+            // A constructor of its own takes away the implicit default constructor that S{} needs
+            if (!hasDefaultConstructor)
+            {
+                writer.Append("__device__ inline ").AppendFullyQualifiedCppName(structSym).AppendLine("() {}");
+                hasDefaultConstructor = true;
+            }
+
+            writer.Append($"__device__ inline {explicitKeyword}").AppendFullyQualifiedCppName(structSym);
+            using (writer.Parentheses())
+            {
+                context.Emitter.Dialect.AppendType(ref context, conversion.Parameters[0].Type);
+                writer.Append(" v");
+            }
+
+            writer.AppendLine(";");
+            return;
+        }
+
+        writer.Append($"__device__ inline {explicitKeyword}operator ");
+        context.Emitter.Dialect.AppendType(ref context, conversion.ReturnType);
+        writer.AppendLine("() const;");
     }
 
     private static void WriteImplicitConversionOperator(INamedTypeSymbol structSym, ref TranspileContext context,

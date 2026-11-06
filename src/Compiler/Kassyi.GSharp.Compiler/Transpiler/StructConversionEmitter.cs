@@ -51,14 +51,29 @@ internal static class StructConversionEmitter
         return false;
     }
 
+    /// <summary>
+    /// Whether <paramref name="conversion"/> is a conversion operator of a <c>ref struct</c> with a body in
+    /// <paramref name="compilation"/>. It is emitted as a device function like the conversion of any other struct, and the
+    /// C++ conversion members of the struct (a converting constructor, a conversion operator) call it
+    /// (<see cref="WriteStructConversionOperators"/>). A conversion from another assembly has no body here and keeps the
+    /// members that read or write the first field (<c>GpuBigIntRef</c>).
+    /// </summary>
+    public static bool HasRefStructConversionBody(IMethodSymbol conversion, Compilation compilation) =>
+        conversion is { MethodKind: MethodKind.Conversion, IsImplicitlyDeclared: false } &&
+        !conversion.HasAttribute(KnownAttributes.GpuOperatorMacro) &&
+        conversion.ContainingType is { IsRefLikeType: true } &&
+        TryGetConversionDeclaration(conversion, out var declaration) &&
+        compilation.ContainsSyntaxTree(declaration.SyntaxTree);
+
     public static void WriteStructConversionOperators(INamedTypeSymbol structSym, ref TranspileContext context)
     {
+        var compilation = context.Query.SemanticModel.Compilation;
         if (structSym.IsRefLikeType)
         {
+            WriteRefStructConversions(structSym, ref context);
             return;
         }
 
-        var compilation = context.Query.SemanticModel.Compilation;
         foreach (var member in structSym.GetMembers())
         {
             if (member is IMethodSymbol conversion &&
@@ -67,6 +82,46 @@ internal static class StructConversionEmitter
                 compilation.ContainsSyntaxTree(declaration.SyntaxTree))
             {
                 WriteStructConversionOperator(conversion, declaration, ref context);
+            }
+        }
+    }
+
+    // Each conversion with a body as a function, then the members that StructTranspiler declares in the struct:
+    // __device__ inline S::S(<type> v) { *this = <function>(v); }
+    // __device__ inline S::operator <type>() const { return <function>(*this); }
+    private static void WriteRefStructConversions(INamedTypeSymbol structSym, ref TranspileContext context)
+    {
+        var compilation = context.Query.SemanticModel.Compilation;
+        foreach (var member in structSym.GetMembers())
+        {
+            if (member is not IMethodSymbol conversion ||
+                !HasRefStructConversionBody(conversion, compilation) ||
+                !TryGetConversionDeclaration(conversion, out var declaration))
+            {
+                continue;
+            }
+
+            WriteStructConversionOperator(conversion, declaration, ref context);
+
+            var writer = context.Emitter.Writer;
+            var function = GlobalCppNames.GetFunctionName(conversion);
+            writer.Append("__device__ inline ").AppendFullyQualifiedCppName(structSym).Append("::");
+            if (conversion.ReturnType.IsEqualTo(structSym))
+            {
+                writer.AppendFullyQualifiedCppName(structSym);
+                using (writer.Parentheses())
+                {
+                    context.Emitter.Dialect.AppendType(ref context, conversion.Parameters[0].Type);
+                    writer.Append(" v");
+                }
+
+                writer.AppendLine($" {{ *this = {function}(v); }}");
+            }
+            else
+            {
+                writer.Append("operator ");
+                context.Emitter.Dialect.AppendType(ref context, conversion.ReturnType);
+                writer.AppendLine($"() const {{ return {function}(*this); }}");
             }
         }
     }
