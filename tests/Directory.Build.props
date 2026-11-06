@@ -8,6 +8,12 @@
     <Features>$(Features);experimental-data-section-string-literals</Features>
   </PropertyGroup>
 
+  <!-- Caps the managed heap of the test host (bytes) when GSharpTestHeapHardLimit is set, as `just mutate` does: a mutant
+       that allocates without bound then fails its tests with OutOfMemoryException instead of exhausting the machine -->
+  <ItemGroup Condition="'$(GSharpTestHeapHardLimit)' != ''">
+    <RuntimeHostConfigurationOption Include="System.GC.HeapHardLimit" Value="$(GSharpTestHeapHardLimit)" />
+  </ItemGroup>
+
   <ItemGroup>
     <!-- Restore implicit LINQ for test projects since it is removed globally -->
     <Using Include="System.Linq" />
