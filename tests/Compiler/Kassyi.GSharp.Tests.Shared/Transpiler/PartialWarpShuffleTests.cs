@@ -214,6 +214,55 @@ public class PartialWarpShuffleTests : TranspilerTestBase
         Assert.Equal([.. Enumerable.Repeat(4, 8), .. Enumerable.Repeat(12, 8), .. Enumerable.Repeat(20, 8), .. Enumerable.Repeat(28, 8)], result);
     }
 
+    // PTX shfl.sync uses only the low 5 bits of the lane offset and of the lane mask: 33 and 0xFFFFFFE1 shift by 1
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(false, 33u)]
+    [InlineData(true, 33u)]
+    [InlineData(false, 0xFFFFFFE1u)]
+    [InlineData(true, 0xFFFFFFE1u)]
+    public void Test_ShuffleDown_DeltaOf32OrMore_UsesItsLowFiveBits(bool forceManaged, uint delta)
+    {
+        var result = new int[32];
+
+        Run(forceManaged, () => PartialWarpShuffleKernels.LaunchShuffleDownKernel(result, delta, blockDimX: 32));
+
+        Assert.Equal(Enumerable.Range(0, 32).Select(static t => t < 31 ? t + 1 + 1 : t + 1), result);
+    }
+
+    // 33 shifts by 1 in a group of 32; 35 shifts by 3 in groups of 8, as delta 3 does
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(false, 33u, 32)]
+    [InlineData(true, 33u, 32)]
+    [InlineData(false, 35u, 8)]
+    [InlineData(true, 35u, 8)]
+    public void Test_ShuffleUp_DeltaOf32OrMore_UsesItsLowFiveBits(bool forceManaged, uint delta, int width)
+    {
+        var result = new int[32];
+
+        Run(forceManaged, () => PartialWarpShuffleKernels.LaunchShuffleUpWidthKernel(result, delta, width, blockDimX: 32));
+
+        int shift = (int)(delta & 31u);
+        Assert.Equal(Enumerable.Range(0, 32).Select(t => t % width < shift ? t + 1 : t - shift + 1), result);
+    }
+
+    // A lane mask of -1 is 31 and one of 40 is 8 on the GPU
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(false, -1)]
+    [InlineData(true, -1)]
+    [InlineData(false, 40)]
+    [InlineData(true, 40)]
+    public void Test_ShuffleXor_LaneMaskOf32OrMore_UsesItsLowFiveBits(bool forceManaged, int laneMask)
+    {
+        var result = new int[32];
+
+        Run(forceManaged, () => PartialWarpShuffleKernels.LaunchShuffleXorKernel(result, laneMask, blockDimX: 32));
+
+        Assert.Equal(Enumerable.Range(0, 32).Select(t => (t ^ (laneMask & 31)) + 1), result);
+    }
+
     private static IEnumerable<int> Lanes(int first, int count) => Enumerable.Range(first, count);
 
     // The managed path computes the same lanes as the native prelude (#789)

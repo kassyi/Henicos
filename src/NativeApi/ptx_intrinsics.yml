@@ -231,7 +231,7 @@ methods:
         description: The source value to shift.
       - name: delta
         type: uint
-        description: The positive lane index offset to shift down by.
+        description: The positive lane index offset to shift down by. Only its low 5 bits are used, as on the GPU (33 shifts by 1).
       - name: width
         type: int
         description: The sub-warp width in threads, 1, 2, 4, 8, 16 or 32 (default 32); any other width is undefined on CUDA, reported as GSH0095 when constant, and an InvalidOperationException on the CPU paths.
@@ -255,7 +255,7 @@ methods:
         description: The source value to shift.
       - name: delta
         type: uint
-        description: The positive lane index offset to shift up by.
+        description: The positive lane index offset to shift up by. Only its low 5 bits are used, as on the GPU (33 shifts by 1).
       - name: width
         type: int
         description: The sub-warp width in threads, 1, 2, 4, 8, 16 or 32 (default 32); any other width is undefined on CUDA, reported as GSH0095 when constant, and an InvalidOperationException on the CPU paths.
@@ -279,7 +279,7 @@ methods:
         description: The source value to exchange.
       - name: laneMask
         type: int
-        description: The bitmask used to XOR against the calling thread's lane ID.
+        description: The bitmask used to XOR against the calling thread's lane ID. Only its low 5 bits are used, as on the GPU (-1 acts as 31).
       - name: width
         type: int
         description: The sub-warp width in threads, 1, 2, 4, 8, 16 or 32 (default 32); any other width is undefined on CUDA, reported as GSH0095 when constant, and an InvalidOperationException on the CPU paths.
