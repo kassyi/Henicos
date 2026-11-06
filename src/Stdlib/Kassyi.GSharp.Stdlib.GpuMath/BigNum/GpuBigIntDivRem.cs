@@ -590,7 +590,7 @@ public static partial class GpuBigIntDivRem
             {
                 var r = string.Join(",", ctx.RemainderExtended.ToHostArray());
                 var b = string.Join(",", ctx.BPaddedExtended.ToHostArray());
-                throw new Exception($"DivRem underflow correction failed to converge. evalWords: {ctx.EvalWords}, RemExtended: {r}, BPadded: {b}");
+                throw new InvalidOperationException($"DivRem underflow correction failed to converge. evalWords: {ctx.EvalWords}, RemExtended: {r}, BPadded: {b}");
             }
 
             GpuBigIntMath.Sub(ctx.QuotientBuffer, one, tempQuot);
@@ -618,7 +618,7 @@ public static partial class GpuBigIntDivRem
             loopCount++;
             if (loopCount > 10000)
             {
-                throw new Exception("DivRem remainder correction failed to converge.");
+                throw new InvalidOperationException("DivRem remainder correction failed to converge.");
             }
 
             var rBits = GetActualBits(ctx.RemainderExtended);
