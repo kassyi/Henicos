@@ -18,5 +18,6 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <AdditionalFiles Include="$(MSBuildThisFileDirectory)..\..\BannedSymbols.txt" Condition="Exists('$(MSBuildThisFileDirectory)..\..\BannedSymbols.txt')" />
+    <AdditionalFiles Include="$(MSBuildThisFileDirectory)BannedSymbols.txt" Condition="Exists('$(MSBuildThisFileDirectory)BannedSymbols.txt')" />
   </ItemGroup>
 </Project>
