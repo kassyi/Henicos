@@ -160,14 +160,14 @@ public struct Emitter(
 
     public int CurrentSwitchId => ActiveSwitchIds.Count > 0 ? ActiveSwitchIds.Peek() : 0;
 
-    public int PushOverrideScope(string name, OverrideValue value) =>
-        LocalVariableOverrides.Push(name, value);
+    public int PushOverrideScope(string name, OverrideValue value, ISymbol? symbol = null) =>
+        LocalVariableOverrides.Push(name, value, symbol);
 
     public void PopOverrideScope(int cookie) =>
         LocalVariableOverrides.Pop(cookie);
 
-    public bool TryGetOverride(string name, out OverrideValue value) =>
-        LocalVariableOverrides.TryGet(name, out value);
+    public bool TryGetOverride(string name, ISymbol? symbol, out OverrideValue value) =>
+        LocalVariableOverrides.TryGet(name, symbol, out value);
 }
 
 public readonly struct Query(

@@ -51,7 +51,8 @@ internal sealed class ForUnrollMacroRule : IMacroTranspilerRule
             // A negative index is parenthesized ((-2)), and its labels spell the sign as a letter (_Unroll_m2)
             var iterationCookie = context.Emitter.PushOverrideScope(
                 macroScope.ParamName,
-                new OverrideValue(ConstexprLiteral.FormatCppConstant(intType, i))
+                new OverrideValue(ConstexprLiteral.FormatCppConstant(intType, i)),
+                macroScope.ParamSymbol
             );
             var oldSuffix = context.Emitter.LabelSuffix;
             context.Emitter.LabelSuffix = i < 0

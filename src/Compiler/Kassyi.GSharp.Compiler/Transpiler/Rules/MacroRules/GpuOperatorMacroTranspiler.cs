@@ -232,7 +232,7 @@ internal static class GpuOperatorMacroTranspiler
             writer.Append('&');
         }
 
-        if (context.Emitter.TryGetOverride(variable.Name, out var overrideValue))
+        if (context.Emitter.TryGetOverride(variable.Name, variable, out var overrideValue))
         {
             overrideValue.WriteTo(context.Visitor);
             return;

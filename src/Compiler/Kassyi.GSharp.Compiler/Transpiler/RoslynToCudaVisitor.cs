@@ -383,13 +383,12 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
 
     public override void VisitIdentifierName(IdentifierNameSyntax node)
     {
-        if (Context.Emitter.TryGetOverride(node.Identifier.Text, out var overrideValue))
+        var symbol = Context.Query.SemanticModel.GetSymbol(node);
+        if (Context.Emitter.TryGetOverride(node.Identifier.Text, symbol, out var overrideValue))
         {
             overrideValue.WriteTo(this);
             return;
         }
-
-        var symbol = Context.Query.SemanticModel.GetSymbol(node);
 
         // A Core intrinsic named without its type (using static Kassyi.GSharp.Core.Gpu) maps as Gpu.<name> does (#565);
         // so does a Math or MathF member (using static System.Math), which ProhibitedApiRule allows when it is mapped (#899)
