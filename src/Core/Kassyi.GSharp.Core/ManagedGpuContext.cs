@@ -384,10 +384,11 @@ public static partial class ManagedGpuContext
         CheckShuffleWidth(width, Name, location);
         var laneId = linearTid % 32;
         var logicalLane = laneId % width;
-        var srcLogicalLane = (long)logicalLane + delta;
+        // PTX shfl.sync uses only the low 5 bits of the lane offset
+        var srcLogicalLane = logicalLane + (int)(delta & 31u);
         return srcLogicalLane >= width
             ? val
-            : ReadShuffleLane<T>(linearTid, laneId - logicalLane + (int)srcLogicalLane, Name, location);
+            : ReadShuffleLane<T>(linearTid, laneId - logicalLane + srcLogicalLane, Name, location);
     }
 
     /// <summary>
@@ -413,9 +414,11 @@ public static partial class ManagedGpuContext
         CheckShuffleWidth(width, Name, location);
         var laneId = linearTid % 32;
         var logicalLane = laneId % width;
-        return logicalLane < delta
+        // PTX shfl.sync uses only the low 5 bits of the lane offset
+        var offset = (int)(delta & 31u);
+        return logicalLane < offset
             ? val
-            : ReadShuffleLane<T>(linearTid, laneId - (int)delta, Name, location);
+            : ReadShuffleLane<T>(linearTid, laneId - offset, Name, location);
     }
 
     /// <summary>
@@ -441,8 +444,9 @@ public static partial class ManagedGpuContext
         CheckShuffleWidth(width, Name, location);
         var laneId = (uint)(linearTid % 32);
         // CUDA lets a group of width lanes read its own group and the earlier ones; a later group gives the caller's own
-        // value (PTX shfl.bfly reads lane j when j <= maxLane, the last lane of the caller's group)
-        var srcLane = laneId ^ (uint)delta;
+        // value (PTX shfl.bfly reads lane j when j <= maxLane, the last lane of the caller's group). PTX uses only the low 5
+        // bits of the lane mask
+        var srcLane = laneId ^ ((uint)delta & 31u);
         return srcLane > (laneId | ((uint)width - 1u))
             ? val
             : ReadShuffleLane<T>(linearTid, (int)srcLane, Name, location);
