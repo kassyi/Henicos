@@ -1,0 +1,28 @@
+name: Work ID check
+
+# Warns about references to planning material that is not in the repository (lane labels, roadmap IDs, design
+# sections, plan stages, tmp/ paths). It never fails the run. It is a workflow of its own, without the paths-ignore of
+# the test workflow, so a change to docs/ or .agents/ alone is checked too; it needs no build, only Node.
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Work IDs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: List work IDs as warnings
+        run: node scripts/human/check-work-ids.js --github
