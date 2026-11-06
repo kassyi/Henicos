@@ -555,7 +555,7 @@
     "name": "SuspendingCallInUnsupportedContext",
     "id": "GSH0062",
     "title": "A call that suspends at a barrier is not supported in this context",
-    "messageFormat": "The device function '{0}' reaches Gpu.SyncThreads() or a warp shuffle, so it cannot be called {1}. The CPU state machine can resume such a call only in the statements of a kernel or device function body, including the operands of '&&', '||' and '?:'.",
+    "messageFormat": "'{0}' {2}, so it cannot be called {1}. The CPU state machine splits a kernel or device function at such a call only in the statements of its body, including the operands of '&&', '||' and '?:'.",
     "category": "GSharpTranspiler",
     "defaultSeverity": "Error",
     "isEnabledByDefault": true
