@@ -60,7 +60,7 @@ internal abstract class VectorBinaryScalarExpressionBase(
                 DispatchKernel(workspace, operands, (uint)evalCount);
             }
 
-            return new VectorEvaluation(output.Close(workspace), vecResult.Count);
+            return new VectorEvaluation(output.Close(workspace), vecResult.Count, _cache.Lease);
         }
         finally
         {

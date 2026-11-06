@@ -41,7 +41,7 @@ internal abstract class VectorUnaryExpressionBase(
             EvaluateElements(workspace, vecResult.Storage, output.Destination, elements);
         }
 
-        return new VectorEvaluation(output.Close(workspace, vecResult.Count), vecResult.Count);
+        return new VectorEvaluation(output.Close(workspace, vecResult.Count), vecResult.Count, _cache.Lease);
     }
 
     protected virtual void ValidateBeforeEvaluate()

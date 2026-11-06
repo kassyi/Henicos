@@ -65,29 +65,37 @@ internal readonly record struct DeviceElementCount(IntPtr Base, int Skip, int Li
 /// </summary>
 internal readonly ref struct VectorEvaluation
 {
-    public VectorEvaluation(GpuBigIntArrayView storage, DeviceElementCount count)
+    public VectorEvaluation(GpuBigIntArrayView storage, DeviceElementCount count, VectorLease lease = default)
     {
         Storage = storage;
         Count = count;
+        Lease = lease;
     }
 
     public GpuBigIntArrayView Storage { get; }
 
     public DeviceElementCount Count { get; }
+
+    /// <summary>Gets whether <see cref="Storage"/> still holds this result (see <see cref="VectorOperandPair"/>).</summary>
+    public VectorLease Lease { get; }
 }
 
 /// <summary>The same for a floating-point vector.</summary>
 internal readonly ref struct FloatVectorEvaluation
 {
-    public FloatVectorEvaluation(GpuBigFloatArrayView storage, DeviceElementCount count)
+    public FloatVectorEvaluation(GpuBigFloatArrayView storage, DeviceElementCount count, VectorLease lease = default)
     {
         Storage = storage;
         Count = count;
+        Lease = lease;
     }
 
     public GpuBigFloatArrayView Storage { get; }
 
     public DeviceElementCount Count { get; }
+
+    /// <inheritdoc cref="VectorEvaluation.Lease"/>
+    public VectorLease Lease { get; }
 
     /// <summary>The number of elements to run a host loop over: the count, read when it is on the device.</summary>
     public int Elements(GpuWorkspace workspace) => Count.IsStatic ? Storage.Length : Count.Read(workspace);

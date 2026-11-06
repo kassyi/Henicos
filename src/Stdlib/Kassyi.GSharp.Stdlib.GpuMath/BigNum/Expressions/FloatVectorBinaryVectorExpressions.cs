@@ -29,6 +29,9 @@ internal abstract class FloatVectorBinaryVectorExpressionBase(
     // The result buffers, lent until the next evaluation or Dispose; a caller's target is never kept (design 4.6)
     private readonly VectorResultCache _cache = new();
 
+    // Evaluates the operands so that a shared sub-expression read at two offsets keeps both results
+    private readonly FloatVectorOperandPair _operands = new();
+
     protected uint BlockDimX => (uint)Math.Min(1024, WordsPerElement);
 
     public int Capacity => left.Capacity;
@@ -52,8 +55,7 @@ internal abstract class FloatVectorBinaryVectorExpressionBase(
         var target = VectorResultCache.HasTarget(targetResult)
             ? VectorResultCache.TargetFloat(targetResult, evalCount, WordsPerElement)
             : default;
-        var leftResult = DeviceCounted.Evaluate(left, workspace, elementOffset, evalCount);
-        var rightResult = DeviceCounted.Evaluate(right, workspace, elementOffset, evalCount);
+        _operands.Evaluate(left, right, workspace, elementOffset, evalCount, out var leftResult, out var rightResult);
 
         if (leftResult.Storage.Length != rightResult.Storage.Length)
         {
@@ -74,7 +76,7 @@ internal abstract class FloatVectorBinaryVectorExpressionBase(
 
         // A host loop wrote only the elements; a kernel wrote the whole window
         var written = RunsOnHost ? count : DeviceElementCount.Static(evalCount);
-        return new FloatVectorEvaluation(output.Close(workspace, written), count);
+        return new FloatVectorEvaluation(output.Close(workspace, written), count, _cache.Lease);
     }
 
     /// <summary>
@@ -128,7 +130,14 @@ internal abstract class FloatVectorBinaryVectorExpressionBase(
         // A cache release that throws (a failed capture refuses the clear) does not skip the children
         try
         {
-            _cache.Dispose();
+            try
+            {
+                _cache.Dispose();
+            }
+            finally
+            {
+                _operands.Dispose();
+            }
         }
         finally
         {
