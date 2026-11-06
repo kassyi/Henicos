@@ -1,6 +1,9 @@
 set windows-shell := ["pwsh.exe", "-NoLogo", "-Command"]
 export DiffEngine_Disabled := "true"
 
+# Test host heap cap of `just mutate`, in bytes (8 GB)
+mutate_heap_limit := "8589934592"
+
 # Run normal tests excluding heavy stress and benchmark tests
 test *args="":
     dotnet test --filter "Category!=Stress&Category!=Benchmark" {{args}}
@@ -368,10 +371,10 @@ doctest file_path assemblies="":
 
 # e.g. `just mutate gpumath`, `just mutate compiler main`, `just mutate compiler "" -m "**/Layout/**/*.cs"`
 # Mutation testing with Stryker.NET. phase: gpumath | compiler | compiler-cuda (the CUDA dialect snapshots only). since: a git ref to mutate only the files changed after it (empty = all files). Reports go to tmp/stryker/<phase>
-# The test host heap is capped at 8 GB (GSharpTestHeapHardLimit in bytes, see tests/Directory.Build.props; set it to override), so a mutant that allocates without bound fails instead of exhausting memory
+# The test host heap is capped at mutate_heap_limit (GSharpTestHeapHardLimit in bytes, see tests/Directory.Build.props; set it to override), so a mutant that allocates without bound fails instead of exhausting memory
 [windows]
 mutate phase="gpumath" since="" *args="":
-    if (-not $env:GSharpTestHeapHardLimit) { $env:GSharpTestHeapHardLimit = '8589934592' }; $root = (Get-Location).Path; $dir = switch ('{{phase}}') { 'gpumath' { 'tests/Stdlib/Kassyi.GSharp.Stdlib.GpuMath.Tests' } 'compiler' { 'tests/Compiler/Kassyi.GSharp.Tests.Cpu' } 'compiler-cuda' { 'tests/Compiler/Kassyi.GSharp.Tests.Cuda' } default { throw "phase must be gpumath, compiler or compiler-cuda" } }; try { dotnet tool restore; Set-Location $dir; $sinceArgs = @(); if ('{{since}}' -ne '') { $sinceArgs = @('--since:{{since}}') }; dotnet stryker -f stryker-config.json -L --skip-version-check -O "$root/tmp/stryker/{{phase}}" @sinceArgs {{args}}; $code = $LASTEXITCODE } finally { Set-Location $root }; exit $code
+    if (-not $env:GSharpTestHeapHardLimit) { $env:GSharpTestHeapHardLimit = '{{mutate_heap_limit}}' }; $root = (Get-Location).Path; $dir = switch ('{{phase}}') { 'gpumath' { 'tests/Stdlib/Kassyi.GSharp.Stdlib.GpuMath.Tests' } 'compiler' { 'tests/Compiler/Kassyi.GSharp.Tests.Cpu' } 'compiler-cuda' { 'tests/Compiler/Kassyi.GSharp.Tests.Cuda' } default { throw "phase must be gpumath, compiler or compiler-cuda" } }; try { dotnet tool restore; Set-Location $dir; $sinceArgs = @(); if ('{{since}}' -ne '') { $sinceArgs = @('--since:{{since}}') }; dotnet stryker -f stryker-config.json -L --skip-version-check -O "$root/tmp/stryker/{{phase}}" @sinceArgs {{args}}; $code = $LASTEXITCODE } finally { Set-Location $root }; exit $code
 
 [unix]
 mutate phase="gpumath" since="" *args="":
@@ -384,7 +387,7 @@ mutate phase="gpumath" since="" *args="":
         compiler-cuda) dir=tests/Compiler/Kassyi.GSharp.Tests.Cuda ;;
         *) echo 'phase must be gpumath, compiler or compiler-cuda' >&2; exit 1 ;;
     esac
-    export GSharpTestHeapHardLimit="${GSharpTestHeapHardLimit:-8589934592}"
+    export GSharpTestHeapHardLimit="${GSharpTestHeapHardLimit:-{{mutate_heap_limit}}}"
     dotnet tool restore
     cd "$dir"
     since=()
