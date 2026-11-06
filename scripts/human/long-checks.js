@@ -28,18 +28,20 @@ const repoRoot = path.resolve(__dirname, '..', '..');
 const gpuLock = path.join(repoRoot, 'scripts', 'agent', 'gpu-lock.js');
 const benchmarksProject = path.join('src', 'Apps', 'Henicos.Benchmarks');
 
+// The comments give the measured time of each step, for reference only: one Windows 11 machine with an NVIDIA GPU,
+// default options, 2026-11. The whole set took about 22h20m.
 const allSteps = [
-  'bench-generator',
-  'bench-compute',
-  'bench-pi',
-  'fuzz',
-  'sanitized',
-  'sanitized-wsl',
-  'stability',
-  'coverage',
-  'mutate-compiler',
-  'mutate-gpumath',
-  'mutate-compiler-cuda',
+  'bench-generator', // 1m56s
+  'bench-compute', // 1m05s
+  'bench-pi', // 34s (1M digits)
+  'fuzz', // 2h00m (--fuzz-minutes 120)
+  'sanitized', // 3m10s to 6m35s, depending on the build
+  'sanitized-wsl', // 7m44s (stopped at the first UBSan report, #1058)
+  'stability', // 3h04m (--stability 3h)
+  'coverage', // 3m11s
+  'mutate-compiler', // 16h50m (measured at concurrency 6, now 10; about 830 mutants an hour)
+  'mutate-gpumath', // not measured: the run stops within minutes (#1191)
+  'mutate-compiler-cuda', // 1h15m (build 2m13s)
 ];
 
 // P:\a\b -> /mnt/p/a/b, for running the same checkout inside WSL.
