@@ -217,9 +217,7 @@ public static class GpuBigIntMath
                 $"Result buffer must have at least the sum of input buffer sizes for MultiplyNtt. a: {leftOperand.NumWords}, b: {rightOperand.NumWords}, result: {resultBuffer.NumWords} words.");
         }
 
-        if (resultBuffer.NumWords <= 512 &&
-            leftOperand.Workspace.Provider is GSharpKernelProvider &&
-            !GpuKernelLoader.IsCpuFallbackMode)
+        if (resultBuffer.NumWords <= 512 && !GpuKernelLoader.IsCpuFallbackMode)
         {
             GpuBigIntMulKernels.LaunchMultiplyNttKernelPtr(
                 resultBuffer.DevicePointer, resultBuffer.NumWords,
@@ -358,7 +356,7 @@ public static class GpuBigIntMath
     private static void ShiftAndResizeCore(GpuBigUInt source, int signedBitShift, GpuBigUInt resultBuffer)
     {
         var workspace = source.Workspace;
-        if (workspace.Provider is GSharpKernelProvider && !GpuKernelLoader.IsCpuFallbackMode)
+        if (!GpuKernelLoader.IsCpuFallbackMode)
         {
             var wordShift = signedBitShift / 32;
             var bitShift = signedBitShift % 32;

@@ -102,15 +102,8 @@ public static partial class GpuBigIntDivRem
         var currentBits = 63; // Initial guess has ~63 bits of precision
         var iterations = CalculateNewtonRaphsonIterationCount(currentBits, targetBits);
 
-        if (targetOperand.Workspace.Provider is { } provider)
-        {
-            provider.ReciprocalMega(targetOperand.Workspace, targetOperand, resultBuffer, marginWords, numBits,
-                marginBits, iterations, targetBits);
-        }
-        else
-        {
-            throw new NotSupportedException("The current provider does not support ReciprocalMega.");
-        }
+        targetOperand.Workspace.Provider.ReciprocalMega(targetOperand.Workspace, targetOperand, resultBuffer,
+            marginWords, numBits, marginBits, iterations, targetBits);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

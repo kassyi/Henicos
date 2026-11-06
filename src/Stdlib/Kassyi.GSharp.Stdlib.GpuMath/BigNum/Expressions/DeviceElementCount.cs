@@ -191,7 +191,7 @@ internal static class DeviceCounted
     /// <exception cref="NotSupportedException">The workspace uses the CPU fallback provider.</exception>
     public static void ThrowIfCpuFallback(GpuWorkspace workspace)
     {
-        if (workspace.Provider is not GSharpKernelProvider || GpuKernelLoader.IsCpuFallbackMode)
+        if (GpuKernelLoader.IsCpuFallbackMode)
         {
             throw new NotSupportedException(
                 "Vectorized GpuMath expressions require a GPU workspace and are not supported under the CPU fallback.");
