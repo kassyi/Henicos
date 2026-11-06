@@ -52,7 +52,8 @@ public static class CpuKernelLoader
             {
                 NativeLibrary.Free(pair.Value.Value);
             }
-            // smell-scan: ignore swallowed-exception -- the failure is reported through Logger.Warning; shutdown frees every other library instead of stopping at the first failure
+            // smell-scan: ignore swallowed-exception -- the failure is reported through Logger.Warning; shutdown frees
+            // every other library instead of stopping at the first failure
             catch (Exception ex)
             {
                 Logger.Warning(nameof(CpuKernelLoader), $"Failed to free native library '{pair.Key}' during shutdown: {ex.Message}");

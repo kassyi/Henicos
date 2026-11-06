@@ -153,11 +153,13 @@ public class ProcessRunner : IProcessRunner
                 process.Kill();
             }
         }
-        // smell-scan: ignore swallowed-exception -- the process exited or was disposed between the check and the kill, so there is nothing left to stop
+        // smell-scan: ignore swallowed-exception -- the process exited or was disposed between the check and the kill,
+        // so there is nothing left to stop
         catch (InvalidOperationException)
         {
         }
-        // smell-scan: ignore swallowed-exception -- access denied or already terminating; killing is best-effort and the caller observes the cancellation anyway
+        // smell-scan: ignore swallowed-exception -- access denied or already terminating; killing is best-effort and
+        // the caller observes the cancellation anyway
         catch (Win32Exception)
         {
         }

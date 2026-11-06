@@ -65,7 +65,8 @@ internal sealed class StreamGate : IDisposable
         {
             _gate.Open();
         }
-        // smell-scan: ignore swallowed-exception -- the timer fired concurrently with Dispose(), which already opens the gate before freeing memory
+        // smell-scan: ignore swallowed-exception -- the timer fired concurrently with Dispose(), which already opens
+        // the gate before freeing memory
         catch (ObjectDisposedException)
         {
         }

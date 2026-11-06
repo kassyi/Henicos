@@ -11,6 +11,11 @@ namespace Kassyi.GSharp.Tests.Shared.Tasks;
 
 public class ProcessRunnerTests
 {
+    static ProcessRunnerTests()
+    {
+        MSBuildLocatorSetup.EnsureRegistered();
+    }
+
     [Fact]
     [Category(TestCategory.Compiler)]
     public async Task Test_ProcessRunner_Echo_Success()

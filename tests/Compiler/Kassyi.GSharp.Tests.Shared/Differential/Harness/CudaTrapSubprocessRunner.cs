@@ -231,7 +231,8 @@ public static class CudaTrapSubprocessRunner
                 {
                     File.Delete(resultFilePath);
                 }
-                // smell-scan: ignore swallowed-exception -- the result is already read and the failure goes to Trace; a leftover temp file must not turn the case into a failure
+                // smell-scan: ignore swallowed-exception -- the result is already read and the failure goes to Trace; a
+                // leftover temp file must not turn the case into a failure
                 catch (IOException ex)
                 {
                     Trace.WriteLine($"Could not delete the CUDA trap result file {resultFilePath}: {ex.Message}");
@@ -253,7 +254,8 @@ public static class CudaTrapSubprocessRunner
             {
                 process.Kill(entireProcessTree: true);
             }
-            // smell-scan: ignore swallowed-exception -- the process terminated between the timeout check and Kill; the timeout is reported by the caller
+            // smell-scan: ignore swallowed-exception -- the process terminated between the timeout check and Kill; the
+            // timeout is reported by the caller
             catch (InvalidOperationException)
             {
             }
@@ -351,7 +353,8 @@ public static class CudaTrapSubprocessRunner
                     return created;
                 }
             }
-            // smell-scan: ignore swallowed-exception -- the exception type has no usable (string, Exception) constructor, so the code below wraps the message in a generic exception
+            // smell-scan: ignore swallowed-exception -- the exception type has no usable (string, Exception)
+            // constructor, so the code below wraps the message in a generic exception
             catch (Exception ex) when (ex is MissingMethodException or MemberAccessException or TargetInvocationException)
             {
             }

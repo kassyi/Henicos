@@ -119,7 +119,8 @@ public static class KernelResourceInspector
                     {
                         File.Delete(tempPath);
                     }
-                    // smell-scan: ignore swallowed-exception -- deleting the temporary cubin is best-effort cleanup; the inspection result is already parsed
+                    // smell-scan: ignore swallowed-exception -- deleting the temporary cubin is best-effort cleanup;
+                    // the inspection result is already parsed
                     catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
                     {
                     }
@@ -128,7 +129,8 @@ public static class KernelResourceInspector
 
             ParseSassOutput(output);
         }
-        // smell-scan: ignore swallowed-exception -- without cuobjdump the benchmark still runs, and the instruction count stays -1 to show it was not measured
+        // smell-scan: ignore swallowed-exception -- without cuobjdump the benchmark still runs, and the instruction
+        // count stays -1 to show it was not measured
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or Win32Exception or InvalidOperationException)
         {
         }

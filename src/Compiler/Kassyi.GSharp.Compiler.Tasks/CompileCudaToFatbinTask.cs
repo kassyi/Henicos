@@ -563,7 +563,8 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
                     suppressed.Add(fn);
                 }
             }
-            // smell-scan: ignore swallowed-exception -- the failure is written to the MSBuild log; an unreadable source only means its suppress comments are not seen
+            // smell-scan: ignore swallowed-exception -- the failure is written to the MSBuild log; an unreadable source
+            // only means its suppress comments are not seen
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
                 Log.LogMessage(MessageImportance.Low,

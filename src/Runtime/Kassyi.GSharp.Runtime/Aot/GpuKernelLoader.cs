@@ -266,7 +266,8 @@ public static unsafe class GpuKernelLoader
                 {
                     CudaDriverApi.cuModuleUnload(lazyModule.Value);
                 }
-                // smell-scan: ignore swallowed-exception -- the failure is reported through Logger.Warning; shutdown unloads every other module instead of stopping at the first failure
+                // smell-scan: ignore swallowed-exception -- the failure is reported through Logger.Warning; shutdown
+                // unloads every other module instead of stopping at the first failure
                 catch (Exception ex)
                 {
                     Logger.Warning(nameof(GpuKernelLoader), $"Failed to unload CUDA module during shutdown: {ex.Message}");
@@ -275,7 +276,8 @@ public static unsafe class GpuKernelLoader
 
             DeviceErrorSlot.FreeInCurrentContext();
         }
-        // smell-scan: ignore swallowed-exception -- the failure is reported through Logger.Warning; shutdown must not throw from a context that can no longer be made current
+        // smell-scan: ignore swallowed-exception -- the failure is reported through Logger.Warning; shutdown must not
+        // throw from a context that can no longer be made current
         catch (Exception ex)
         {
             Logger.Warning(nameof(GpuKernelLoader), $"Context initialization failed during shutdown: {ex.Message}");
