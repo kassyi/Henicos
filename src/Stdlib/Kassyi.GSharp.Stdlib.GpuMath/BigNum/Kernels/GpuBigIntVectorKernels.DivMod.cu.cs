@@ -73,7 +73,8 @@ public static partial class GpuBigIntVectorKernels
         {
             Op = core,
             IsModulo = false,
-            PreShiftBits = ctx.PreShiftBits
+            PreShiftBits = ctx.PreShiftBits,
+            ZeroDivisor = ctx.ZeroDivisor
         };
         DeviceVectorDivModParallel(divCtx);
         if (ThreadIndex.X == 0)
@@ -116,7 +117,13 @@ public static partial class GpuBigIntVectorKernels
 
         if (FindMaxNonZeroWordWarp(op.Right.Limbs, offsetB, op.Right.NumWords, laneId) < 0)
         {
-            if (laneId == 0) op.Result.Signs[batchIdx] = 0u;
+            // The host throws DivideByZeroException when this element is within the count; ~index keeps the lowest.
+            if (laneId == 0)
+            {
+                op.Result.Signs[batchIdx] = 0u;
+                Gpu.AtomicMax(ref ctx.ZeroDivisor[0], ~(uint)batchIdx);
+            }
+
             return;
         }
 

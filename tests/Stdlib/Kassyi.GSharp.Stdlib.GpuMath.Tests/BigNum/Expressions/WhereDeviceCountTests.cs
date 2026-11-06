@@ -205,6 +205,24 @@ public sealed class WhereDeviceCountTests : IDisposable
 
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]
+    public void ZipDivideInAGraph_IsNotSupported()
+    {
+        // ZipDivide reads its zero-divisor check back, which a capture cannot record: NotSupportedException with the
+        // reason, instead of a CUDA error; the workspace still works afterwards.
+        // mutant: ZeroDivisorCheck.Open without the capture check (a CUDA error from the read inside the capture)
+        var array = CreateArray([4, 9, 16, 25]);
+        var divisors = CreateArray([2, 3, 4, 5]);
+        var count = array.AsVectorizedEnumerable().Where(Flags([1, 0, 1, 1]))
+            .ZipDivide(divisors.AsVectorizedEnumerable())
+            .Count();
+
+        Assert.Throws<NotSupportedException>(() => count.CompileToGraph(_workspace));
+
+        Assert.Equal(new BigInteger(3), ReadScalar(array.AsVectorizedEnumerable().Where(Flags([1, 0, 1, 1])).Count()));
+    }
+
+    [SkippableFact]
+    [Scenario(TestScenario.SadPath)]
     public void HostLoopAfterWhere_InAGraph_ThrowsAndTheWorkspaceStillWorks()
     {
         // SelectSqrt runs a host loop over the elements, so it reads the device count; inside a capture that is the

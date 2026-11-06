@@ -44,6 +44,7 @@ public static class GpuBigFloatVectorLinqExtensions
         /// <typeparam name="TScalar">The scalar GPU big number type.</typeparam>
         /// <param name="scalar">The scalar divisor value.</param>
         /// <returns>A new vectorized expression representing the scalar division.</returns>
+        /// <remarks>The evaluation throws <see cref="DivideByZeroException"/> when the scalar is zero.</remarks>
         public IGpuBigFloatVectorExpression SelectDivide<TScalar>(TScalar scalar)
             where TScalar : struct, IGpuBigNumber<TScalar> =>
             new FloatVectorDivScalarExpression(source, GpuFloatOperand.From(scalar));
@@ -150,6 +151,11 @@ public static class GpuBigFloatVectorLinqExtensions
         /// </summary>
         /// <param name="right">The divisor vectorized expression.</param>
         /// <returns>A new vectorized expression representing the element-wise division.</returns>
+        /// <remarks>
+        /// The evaluation throws <see cref="DivideByZeroException"/> when the divisor of an element is zero. It reads that
+        /// check back from the device (one synchronization of the workspace stream), so evaluating it while the stream
+        /// captures a CUDA graph throws <see cref="NotSupportedException"/>.
+        /// </remarks>
         public IGpuBigFloatVectorExpression ZipDivide(IGpuBigFloatVectorExpression right) =>
             new FloatVectorDivVectorExpression(source, right);
 
