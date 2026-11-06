@@ -171,6 +171,18 @@ dotnet_analyzer_diagnostic.category-StyleCop.CSharp.NamingRules.severity = none
 dotnet_analyzer_diagnostic.category-StyleCop.CSharp.MaintainabilityRules.severity = none
 dotnet_analyzer_diagnostic.category-StyleCop.CSharp.LayoutRules.severity = none
 
+# Conventions the repository already has, switched on one rule at a time (a per-rule severity wins over the category).
+dotnet_diagnostic.SA1402.severity = warning
+dotnet_diagnostic.SA1401.severity = warning
+dotnet_diagnostic.SA1408.severity = warning
+dotnet_diagnostic.SA1503.severity = warning
+dotnet_diagnostic.SA1129.severity = warning
+dotnet_diagnostic.SA1142.severity = warning
+dotnet_diagnostic.SA1139.severity = warning
+dotnet_diagnostic.SA1404.severity = warning
+dotnet_diagnostic.SA1400.severity = warning
+dotnet_diagnostic.SA1414.severity = warning
+
 # Enable StyleCop Documentation Rules
 dotnet_analyzer_diagnostic.category-StyleCop.CSharp.DocumentationRules.severity = warning
 
@@ -239,6 +251,8 @@ dotnet_diagnostic.HNT0005.severity = error
 dotnet_diagnostic.HNT0006.severity = error
 dotnet_diagnostic.HNT0007.severity = error
 dotnet_diagnostic.HNT0008.severity = error
+# Banned APIs (BannedSymbols.txt) are reported in tests as well.
+dotnet_diagnostic.RS0030.severity = warning
 
 # ==============================================================================
 # G# Kernels (*.cu.cs) Constraints

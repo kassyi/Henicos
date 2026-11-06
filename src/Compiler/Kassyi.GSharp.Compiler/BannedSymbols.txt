@@ -51,3 +51,6 @@ T:System.Collections.Generic.List`1;Dynamic lists are prohibited in the compiler
 
 # 5. LINQ prohibition (Enforces Zero-Allocation / High Performance in Compiler)
 # Covered globally by root BannedSymbols.txt. Use zero-allocation 'Kassyi.ZeroAlloc.Linq' (StackLinq) via .AsStackEnumerable() or explicit loops.
+
+# 6. StringBuilder prohibition (generated code goes through SourceWriter)
+T:System.Text.StringBuilder;Emit code with SourceWriter; build a name with + or an interpolated string.

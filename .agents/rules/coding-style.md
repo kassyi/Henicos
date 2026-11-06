@@ -79,7 +79,8 @@ While .NET Framework Design Guidelines (FDG) generally avoid abbreviations, spec
 
 ### 2.4. Zero-Allocation & LINQ Policy (`RS0030` — `System.Linq` Banned / `StackLinq` Permitted)
 
-- **Banned `System.Linq`**: Standard `System.Linq` is strictly prohibited across the codebase due to heap allocations, enumerator boxing, and closure captures (`RS0030`).
+- **Banned `System.Linq`**: Standard `System.Linq` is strictly prohibited in product code due to heap allocations, enumerator boxing, and closure captures (`RS0030`, from `BannedSymbols.Linq.txt`).
+- **Tests are the exception**: test projects may use `System.Linq` and `StackLinq` alike; in tests, maintainability matters more than the allocation overhead. `tests/Directory.Build.props` sets `GSharpAllowsSystemLinq`, so the root props do not load `BannedSymbols.Linq.txt` for them. GPU kernels in test projects still follow the kernel rules below.
 - **Permitted & Encouraged `Kassyi.ZeroAlloc.Linq` (`StackLinq`)**:
   - Our in-house `StackLinq` (`using Kassyi.ZeroAlloc.Linq;`) is a `ref struct` / value-type zero-allocation LINQ engine. It is **explicitly allowed** across host code, compiler/runtime utilities, tests, and GPU kernels (where supported by `StackLinqTranspilerRule` / `StackLinqFusionRule`).
   - **Quick Example**:
