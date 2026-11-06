@@ -841,13 +841,10 @@ switch (__gsharp_ctx.__gsharp_state)
 case 0:
 {
 __gsharp_ctx.step = 0;
-{
 __gsharp_ctx.vOrder = 0;
 __gsharp_ctx.wOrder = 0;
 __gsharp_ctx.mOrder = 0;
 __gsharp_ctx.lOrder = 0;
-}
-
 __gsharp_ctx.__gsharp_arg_temp_0 = (__gsharp_ctx.vOrder = ++__gsharp_ctx.step) + 100;
 __gsharp_ctx.__gsharp_arg_temp_1 = ((__gsharp_ctx.wOrder = ++__gsharp_ctx.step) * 0) + 8;
 __gsharp_ctx.__gsharp_arg_temp_2 = (uint)((__gsharp_ctx.mOrder = ++__gsharp_ctx.step) * 0) | 0xFFFFFFFFu;
