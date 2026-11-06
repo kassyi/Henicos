@@ -101,7 +101,11 @@ internal static class IteratorInliner
             ? LoweringAnnotations.AnnotateOriginalSpans(forEachNode, compilation)
             : forEachNode;
         var annotatedParamList = LoweringAnnotations.AnnotateOriginalSpans(iteratorDecl.ParameterList, compilation);
-        var annotatedBody = LoweringAnnotations.AnnotateOriginalSpans(iteratorBody, compilation);
+        // The iterator body is copied into the consumer as the user wrote it, without Stryker's switches (#1191)
+        var annotatedBody = MutantSwitchRemover.Remove(
+            LoweringAnnotations.AnnotateOriginalSpans(iteratorBody, compilation),
+            semanticModel
+        );
         var iteratorRegion = ++regionCounter;
 
         // Stamp iteratorRegion onto the iterator parameter list and body together so parameter references inside the

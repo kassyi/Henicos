@@ -47,6 +47,9 @@ public static class AstLoweringPipeline
         var splitPoints = CollectSplitPoints(body, bodyModel);
         var treeOrdinal = SemanticModelExtensions.GetSyntaxTreeOrdinal(bodyModel?.Compilation, body.SyntaxTree);
         var annotatedBody = ToBlock(new SpanAnnotationRewriter(splitPoints, treeOrdinal).Visit(body) ?? body, returnsValue);
+        // [WHY] Before every other pass, which would otherwise lower Stryker's switches (barriers inside them included)
+        // into the state machine (#1191)
+        annotatedBody = MutantSwitchRemover.Remove(annotatedBody, bodyModel);
         annotatedBody = PreLoweringExpander.Expand(annotatedBody, bodyModel);
         annotatedBody = LabeledStatementSplitter.Split(annotatedBody);
 

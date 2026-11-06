@@ -149,12 +149,13 @@ internal static class ManagedCSharpTranspiler
             .WithTypeParameterList(GetManagedVersionTypeParameters(declaration.TypeParameterList))
             .WithParameterList(GetManagedVersionParameters(declaration.ParameterList, semanticModel))
             .WithConstraintClauses(GetManagedVersionConstraints(declaration.ConstraintClauses, semanticModel))
+            // A copy without Stryker's switches when the compilation is mutated (#1191), the user's body otherwise
             .WithBody(declaration.Body is { } body
-                ? rewriter.Visit(body) as BlockSyntax
+                ? rewriter.Visit(MutantSwitchRemover.Remove(body, semanticModel)) as BlockSyntax
                   ?? throw new InvalidOperationException("Managed execution rewriting removed the device function body.")
                 : null)
             .WithExpressionBody(declaration.ExpressionBody is { } expressionBody
-                ? rewriter.Visit(expressionBody) as ArrowExpressionClauseSyntax
+                ? rewriter.Visit(MutantSwitchRemover.Remove(expressionBody, semanticModel)) as ArrowExpressionClauseSyntax
                   ?? throw new InvalidOperationException("Managed execution rewriting removed the device function body.")
                 : null)
             .WithoutTrivia();
