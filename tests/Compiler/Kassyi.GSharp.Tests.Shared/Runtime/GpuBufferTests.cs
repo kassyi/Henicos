@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Kassyi.GSharp.Runtime;
 using Kassyi.GSharp.Runtime.Aot;
@@ -163,6 +164,53 @@ public class GpuBufferTests : TranspilerTestBase
         }
 
         Assert.Equal(allocatedBefore, PinnedStagingPool.AllocatedCount);
+    }
+
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.HappyPath)]
+    public void Constructor_OnThreadWithoutContext_AllocatesAndRestoresThread()
+    {
+        CudaCapability.EnsureGpuAvailable();
+
+        // A new OS thread has no current CUDA context and no active CudaContextScope.
+        Exception? failure = null;
+        var currentBefore = new IntPtr(-1);
+        var currentAfter = new IntPtr(-1);
+        var readBack = new float[256];
+        var thread = new Thread(() =>
+        {
+            try
+            {
+                CudaException.ThrowIfError(CudaDriverApi.cuCtxGetCurrent(out currentBefore));
+                using var buffer = new GpuBuffer<float>(readBack.Length);
+                CudaException.ThrowIfError(CudaDriverApi.cuCtxGetCurrent(out currentAfter));
+
+                var source = new float[readBack.Length];
+                for (var i = 0; i < source.Length; i++)
+                {
+                    source[i] = i * 0.5f;
+                }
+
+                buffer.CopyToDevice(source);
+                buffer.CopyToHost(readBack);
+            }
+            catch (Exception ex)
+            {
+                failure = ex;
+            }
+        });
+        thread.Start();
+        thread.Join();
+
+        Assert.Null(failure);
+        Assert.Equal(IntPtr.Zero, currentBefore);
+        Assert.Equal(IntPtr.Zero, currentAfter);
+        for (var i = 0; i < readBack.Length; i++)
+        {
+            Assert.Equal(i * 0.5f, readBack[i]);
+        }
     }
 
     [SkippableFact]
