@@ -2,11 +2,14 @@ using System.Collections.Immutable;
 
 namespace Kassyi.GSharp.Tools.SmellScan;
 
-/// <summary>A detector whose finding is "the number is larger than the threshold parameter".</summary>
+/// <summary>A detector whose finding is "the number is larger than the threshold of its metric".</summary>
 internal abstract class ThresholdSmellDetector : ISmellDetector
 {
     /// <inheritdoc />
     public abstract string Name { get; }
+
+    /// <inheritdoc />
+    public abstract string Description { get; }
 
     /// <inheritdoc />
     public DetectorTier Tier => DetectorTier.Syntax;
@@ -15,12 +18,12 @@ internal abstract class ThresholdSmellDetector : ISmellDetector
     public abstract ImmutableArray<DetectorParameter> Parameters { get; }
 
     /// <inheritdoc />
-    public abstract string ThresholdParameter { get; }
-
-    /// <inheritdoc />
     public abstract void Measure(DetectorContext context, MeasurementSink sink);
 
     /// <inheritdoc />
-    public bool Exceeds(Measurement measurement, RuleParameters parameters) =>
-        measurement.Value > parameters.Get(ThresholdParameter);
+    public abstract int ThresholdOf(Measurement measurement, RuleParameters parameters);
+
+    /// <inheritdoc />
+    public virtual bool Exceeds(Measurement measurement, RuleParameters parameters) =>
+        measurement.Value > ThresholdOf(measurement, parameters);
 }

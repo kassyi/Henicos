@@ -13,6 +13,37 @@ internal static class SourceFileSet
     /// <exception cref="InvalidOperationException">git could not list the files.</exception>
     public static FileSelection AllTracked(string root) => FromGit(root, []);
 
+    /// <summary>
+    /// Lists the <c>.cs</c> files that differ between <paramref name="baseRef"/> and <c>HEAD</c> of the checkout at
+    /// <paramref name="root"/>, measured from their common ancestor (<c>git diff base...HEAD</c>); deleted files are left out.
+    /// </summary>
+    /// <exception cref="UsageException"><paramref name="baseRef"/> is not a revision of the checkout.</exception>
+    public static FileSelection FromChanged(string root, string baseRef)
+    {
+        var range = baseRef + "...HEAD";
+        var output = GitRunner.TryRun(root, "diff", "--name-only", "-z", "--diff-filter=d", range, "--", "*.cs")
+            ?? throw new UsageException($"'git diff {range}' failed in '{root}'; is '{baseRef}' a revision?");
+        var files = new HashSet<string>(StringComparer.Ordinal);
+        for (var start = 0; start < output.Length;)
+        {
+            var end = output.IndexOf('\0', start);
+            if (end < 0)
+            {
+                end = output.Length;
+            }
+
+            var relative = Normalize(output[start..end]);
+            start = end + 1;
+            var isSource = relative.EndsWith(".cs", StringComparison.OrdinalIgnoreCase);
+            if (isSource && File.Exists(Path.Combine(root, relative)))
+            {
+                files.Add(relative);
+            }
+        }
+
+        return Build(files, []);
+    }
+
     /// <summary>Lists the <c>.cs</c> files at or below <paramref name="paths"/>, each relative to the current directory.</summary>
     public static FileSelection FromPaths(string root, IReadOnlyList<string> paths)
     {

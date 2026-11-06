@@ -162,6 +162,24 @@ internal static class JsonReportWriter
 
         json.WriteString("suggestion", finding.Suggestion);
         json.WriteString("fingerprint", finding.Fingerprint);
+        if (finding.RelatedLocations.Length > 0)
+        {
+            json.WriteStartArray("relatedLocations");
+            foreach (var related in finding.RelatedLocations)
+            {
+                json.WriteStartObject();
+                json.WriteString("path", related.Path);
+                json.WriteNumber("startLine", related.Range.StartLine);
+                json.WriteNumber("startColumn", related.Range.StartColumn);
+                json.WriteNumber("endLine", related.Range.EndLine);
+                json.WriteNumber("endColumn", related.Range.EndColumn);
+                json.WriteString("message", related.Message);
+                json.WriteEndObject();
+            }
+
+            json.WriteEndArray();
+        }
+
         json.WriteEndObject();
     }
 

@@ -35,7 +35,8 @@ internal static class SyntaxSymbolNamer
         MethodDeclarationSyntax method => ExplicitInterface(method.ExplicitInterfaceSpecifier)
             + method.Identifier.Text + TypeParameters(method.TypeParameterList) + Parameters(method.ParameterList),
         ConstructorDeclarationSyntax constructor => constructor.Identifier.Text + Parameters(constructor.ParameterList),
-        DestructorDeclarationSyntax destructor => "~" + destructor.Identifier.Text + Parameters(destructor.ParameterList),
+        DestructorDeclarationSyntax destructor => "~" + destructor.Identifier.Text
+            + Parameters(destructor.ParameterList),
         OperatorDeclarationSyntax op => "operator " + op.OperatorToken.Text + Parameters(op.ParameterList),
         ConversionOperatorDeclarationSyntax conversion => conversion.ImplicitOrExplicitKeyword.Text
             + " operator " + SyntaxText.Compact(conversion.Type) + Parameters(conversion.ParameterList),
@@ -55,6 +56,31 @@ internal static class SyntaxSymbolNamer
     /// <summary>Gets the name of the primary constructor of <paramref name="type"/>, written like an explicit one.</summary>
     public static string PrimaryConstructorName(TypeDeclarationSyntax type) =>
         Name(type) + "." + type.Identifier.Text + (type.ParameterList is null ? "()" : Parameters(type.ParameterList));
+
+    /// <summary>
+    /// Gets the name that the parts of a partial type share: the namespaces and types around it, each type with its number
+    /// of type parameters (a part may rename them), such as <c>Ns.Outer`1.Inner</c>.
+    /// </summary>
+    public static string PartialTypeKey(TypeDeclarationSyntax type)
+    {
+        var segments = new List<string>();
+        for (SyntaxNode? current = type; current is not null; current = current.Parent)
+        {
+            switch (current)
+            {
+                case BaseNamespaceDeclarationSyntax ns:
+                    segments.Add(SyntaxText.Compact(ns.Name));
+                    break;
+                case TypeDeclarationSyntax enclosing:
+                    var arity = enclosing.TypeParameterList?.Parameters.Count ?? 0;
+                    segments.Add(arity == 0 ? enclosing.Identifier.Text : enclosing.Identifier.Text + "`" + arity);
+                    break;
+            }
+        }
+
+        segments.Reverse();
+        return string.Join('.', segments);
+    }
 
     private static string TypeSegment(TypeDeclarationSyntax type)
     {

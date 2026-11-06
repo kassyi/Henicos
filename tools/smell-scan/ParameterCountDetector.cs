@@ -21,7 +21,10 @@ internal sealed class ParameterCountDetector : ThresholdSmellDetector
     public override string Name => "ParameterCount";
 
     /// <inheritdoc />
-    public override string ThresholdParameter => MaxParameters;
+    public override string Description => "A member with a long parameter list.";
+
+    /// <inheritdoc />
+    public override int ThresholdOf(Measurement measurement, RuleParameters parameters) => parameters.Get(MaxParameters);
 
     /// <inheritdoc />
     public override ImmutableArray<DetectorParameter> Parameters { get; } =

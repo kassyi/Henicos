@@ -6,7 +6,7 @@ namespace Kassyi.GSharp.Tools.SmellScan;
 internal static class CommandLineParser
 {
     /// <summary>Parses <paramref name="args"/>.</summary>
-    /// <exception cref="ArgumentException">An option is unknown or lacks its value.</exception>
+    /// <exception cref="UsageException">An option is unknown or lacks its value.</exception>
     public static CommandLineOptions Parse(string[] args)
     {
         var options = new CommandLineOptions();
@@ -31,12 +31,19 @@ internal static class CommandLineParser
                     options.Out = Value(args, ref i);
                     break;
                 case "--format":
-                    var format = Value(args, ref i);
-                    if (!string.Equals(format, "json", StringComparison.Ordinal))
-                    {
-                        throw new ArgumentException($"Unsupported format '{format}'; only 'json' is available.");
-                    }
-
+                    options.Format = Format(Value(args, ref i));
+                    break;
+                case "--changed":
+                    options.Changed = Value(args, ref i);
+                    break;
+                case "--report":
+                    options.Report = Report(Value(args, ref i));
+                    break;
+                case "--top":
+                    options.Top = Number(Value(args, ref i));
+                    break;
+                case "--timing":
+                    options.Timing = true;
                     break;
                 case "--parallelism":
                     options.Parallelism = Number(Value(args, ref i));
@@ -46,7 +53,7 @@ internal static class CommandLineParser
                 default:
                     if (argument.StartsWith("--", StringComparison.Ordinal))
                     {
-                        throw new ArgumentException($"Unknown option '{argument}'.");
+                        throw new UsageException($"Unknown option '{argument}'.");
                     }
 
                     options.Paths.Add(argument);
@@ -54,14 +61,49 @@ internal static class CommandLineParser
             }
         }
 
+        Validate(options);
         return options;
     }
+
+    private static void Validate(CommandLineOptions options)
+    {
+        var sources = (options.FilesFrom is null ? 0 : 1) + (options.Changed is null ? 0 : 1) + (options.Paths.Count > 0 ? 1 : 0);
+        if (sources > 1)
+        {
+            throw new UsageException("Give only one of paths, --files-from and --changed.");
+        }
+
+        if (options.Report == ReportMode.Metrics && options.Format is ReportFormat.Json or ReportFormat.Sarif)
+        {
+            throw new UsageException("A metrics listing is written as text only.");
+        }
+
+        if (options.Top is not null && options.Report != ReportMode.Metrics)
+        {
+            throw new UsageException("--top applies to --report metrics.");
+        }
+    }
+
+    private static ReportFormat Format(string name) => name switch
+    {
+        "json" => ReportFormat.Json,
+        "sarif" => ReportFormat.Sarif,
+        "text" => ReportFormat.Text,
+        _ => throw new UsageException($"Unsupported format '{name}'; use json, sarif or text."),
+    };
+
+    private static ReportMode Report(string name) => name switch
+    {
+        "findings" => ReportMode.Findings,
+        "metrics" => ReportMode.Metrics,
+        _ => throw new UsageException($"Unsupported report '{name}'; use findings or metrics."),
+    };
 
     private static string Value(string[] args, ref int index)
     {
         if (index + 1 >= args.Length)
         {
-            throw new ArgumentException($"Option '{args[index]}' needs a value.");
+            throw new UsageException($"Option '{args[index]}' needs a value.");
         }
 
         index++;
@@ -72,7 +114,7 @@ internal static class CommandLineParser
     {
         if (!int.TryParse(text, NumberStyles.Integer, CultureInfo.InvariantCulture, out var value) || value < 1)
         {
-            throw new ArgumentException($"'{text}' is not a positive integer.");
+            throw new UsageException($"'{text}' is not a positive integer.");
         }
 
         return value;

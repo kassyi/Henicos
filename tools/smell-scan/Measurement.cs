@@ -9,6 +9,10 @@ namespace Kassyi.GSharp.Tools.SmellScan;
 /// <param name="Value">The measured number.</param>
 /// <param name="PhysicalLines">The number of lines the node spans, for line-based metrics; otherwise 0.</param>
 /// <param name="UnitPosition">The position that identifies the measured unit in the file (see <see cref="UnitAnchor"/>).</param>
+/// <param name="Group">
+/// Names a unit that is spread over several files, such as a partial type; measurements of the same group in the same
+/// project are added up before they are judged. <see langword="null"/> for a unit that sits in one place.
+/// </param>
 internal sealed record Measurement(
     string Detector,
     string Metric,
@@ -17,4 +21,5 @@ internal sealed record Measurement(
     string Symbol,
     int Value,
     int PhysicalLines,
-    int UnitPosition);
+    int UnitPosition,
+    string? Group = null);

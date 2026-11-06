@@ -11,6 +11,11 @@ internal static class DetectorRegistry
         new MethodLengthDetector(),
         new ParameterCountDetector(),
         new NestingDepthDetector(),
+        new TypeSizeDetector(),
+        new LargeSwitchDetector(),
+        new LongStringLiteralDetector(),
+        new LongIfChainDetector(),
+        new SwallowedExceptionDetector(),
     ];
 
     /// <summary>Finds the detector called <paramref name="name"/>.</summary>

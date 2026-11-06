@@ -1,3 +1,5 @@
+using System.Collections.Immutable;
+
 namespace Kassyi.GSharp.Tools.SmellScan;
 
 /// <summary>Compares measurements with the threshold of a rule and turns the ones above it into findings.</summary>
@@ -10,15 +12,32 @@ internal static class ThresholdJudge
     public static List<Finding> Judge(SmellRule rule, RuleParameters parameters, IReadOnlyList<Measurement> measurements)
     {
         var findings = new List<Finding>();
-        var threshold = parameters.Get(rule.Detector.ThresholdParameter);
         foreach (var measurement in measurements)
         {
-            if (rule.Detector.Exceeds(measurement, parameters))
+            var finding = JudgeOne(rule, parameters, measurement, []);
+            if (finding is not null)
             {
-                findings.Add(new Finding(rule.Id, rule.Severity, measurement, threshold, rule.Suggestion, string.Empty));
+                findings.Add(finding);
             }
         }
 
         return findings;
     }
+
+    /// <summary>Judges one measurement; <paramref name="related"/> are the other places of a unit spread over several files.</summary>
+    public static Finding? JudgeOne(
+        SmellRule rule,
+        RuleParameters parameters,
+        Measurement measurement,
+        ImmutableArray<RelatedLocation> related) =>
+        rule.Detector.Exceeds(measurement, parameters)
+            ? new Finding(
+                rule.Id,
+                rule.Severity,
+                measurement,
+                rule.Detector.ThresholdOf(measurement, parameters),
+                rule.Suggestion,
+                string.Empty,
+                related)
+            : null;
 }

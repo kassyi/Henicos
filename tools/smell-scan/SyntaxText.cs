@@ -7,7 +7,7 @@ internal static class SyntaxText
 {
     /// <summary>
     /// Joins the tokens of <paramref name="node"/> without trivia, with one space only between two tokens that would
-    /// otherwise run together (<c>ref int</c>, but <c>Dictionary&lt;string,int&gt;</c>).
+    /// otherwise run together (<c>ref int</c>, <c>List&lt;int&gt; Items</c>, but <c>Dictionary&lt;string,int&gt;</c>).
     /// </summary>
     public static string Compact(SyntaxNode node)
     {
@@ -20,7 +20,7 @@ internal static class SyntaxText
                 continue;
             }
 
-            if (text.Length > 0 && IsWordCharacter(text[^1]) && IsWordCharacter(part[0]))
+            if (text.Length > 0 && NeedsSpace(text[^1], part[0]))
             {
                 text.Append(' ');
             }
@@ -30,6 +30,10 @@ internal static class SyntaxText
 
         return text.ToString();
     }
+
+    // A name that follows a closing type token is an element name of a tuple: List<int> Items, int[] Numbers, string? Name.
+    private static bool NeedsSpace(char previous, char next) =>
+        IsWordCharacter(next) && (IsWordCharacter(previous) || previous is '>' or ']' or '?');
 
     private static bool IsWordCharacter(char c) => char.IsLetterOrDigit(c) || c == '_' || c == '@';
 }

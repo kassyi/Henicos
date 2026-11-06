@@ -19,7 +19,10 @@ internal sealed class NestingDepthDetector : ThresholdSmellDetector
     public override string Name => "NestingDepth";
 
     /// <inheritdoc />
-    public override string ThresholdParameter => MaxDepth;
+    public override string Description => "A member with deeply nested control flow.";
+
+    /// <inheritdoc />
+    public override int ThresholdOf(Measurement measurement, RuleParameters parameters) => parameters.Get(MaxDepth);
 
     /// <inheritdoc />
     public override ImmutableArray<DetectorParameter> Parameters { get; } =

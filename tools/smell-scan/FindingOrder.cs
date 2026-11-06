@@ -49,6 +49,12 @@ internal sealed class FindingOrder : IComparer<Finding>
         }
 
         var byEnd = x.Measurement.Range.EndLine.CompareTo(y.Measurement.Range.EndLine);
-        return byEnd != 0 ? byEnd : x.Measurement.Range.EndColumn.CompareTo(y.Measurement.Range.EndColumn);
+        if (byEnd != 0)
+        {
+            return byEnd;
+        }
+
+        var byEndColumn = x.Measurement.Range.EndColumn.CompareTo(y.Measurement.Range.EndColumn);
+        return byEndColumn != 0 ? byEndColumn : string.CompareOrdinal(x.Measurement.Metric, y.Measurement.Metric);
     }
 }

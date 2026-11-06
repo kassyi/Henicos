@@ -18,7 +18,10 @@ internal sealed class MethodLengthDetector : ThresholdSmellDetector
     public override string Name => "MethodLength";
 
     /// <inheritdoc />
-    public override string ThresholdParameter => MaxCodeLines;
+    public override string Description => "A member that is long in code lines.";
+
+    /// <inheritdoc />
+    public override int ThresholdOf(Measurement measurement, RuleParameters parameters) => parameters.Get(MaxCodeLines);
 
     /// <inheritdoc />
     public override ImmutableArray<DetectorParameter> Parameters { get; } =

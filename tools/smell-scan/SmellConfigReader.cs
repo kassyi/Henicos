@@ -102,7 +102,9 @@ internal sealed class SmellConfigReader
 
         var detectorName = Scalar(map["detector"]);
         var detector = DetectorRegistry.Find(detectorName)
-            ?? throw Error(map["detector"], $"unknown detector '{detectorName}'; known detectors: {DetectorRegistry.NameList()}");
+            ?? throw Error(
+                map["detector"],
+                $"unknown detector '{detectorName}'; " + $"known detectors: {DetectorRegistry.NameList()}");
 
         var severityText = Scalar(map["severity"]);
         var severity = severityText switch
@@ -166,7 +168,10 @@ internal sealed class SmellConfigReader
         {
             var key = Scalar(pair.Key);
             var declared = FindParameter(detector, key)
-                ?? throw Error(pair.Key, $"detector '{detector.Name}' has no parameter '{key}'; it declares {ParameterNames(detector)}");
+                ?? throw Error(
+                    pair.Key,
+                    $"detector '{detector.Name}' has no parameter '{key}'; "
+                    + $"it declares {ParameterNames(detector)}");
             var value = Integer(pair.Value);
             if (value < declared.Min)
             {

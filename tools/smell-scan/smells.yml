@@ -11,6 +11,10 @@
 # A file with #if directives is measured once for each set of symbols that makes a new branch active, and a member that
 # differs between them is reported once, with its largest measurement (the longest form that can be compiled).
 # The top-level statements of a file are measured as one unit.
+#
+# The parts of a partial type in one project are added up and reported at the largest part. The thresholds and overrides
+# that apply to the whole type are those of the file of that part: if a type is split over a .cu.cs and a .cs file, the
+# larger part decides.
 version: 1
 defaults:
   exclude:
@@ -53,3 +57,61 @@ rules:
       max_depth: 3
     include: ["src/**", "tools/**", "tests/**"]
     suggestion: "Return early (Replace Nested Conditional with Guard Clauses) or extract the inner block (Extract Method)."
+
+  - id: large-type
+    detector: TypeSize
+    severity: warning
+    # max_members 0 turns the member check off. The parts of a partial type in one project are added up and the
+    # finding is reported at the largest part.
+    parameters:
+      max_code_lines: 400
+      max_members: 30
+    include: ["src/**", "tools/**", "tests/**"]
+    overrides:
+      - files: ["src/**/*.cu.cs"]
+        parameters: { max_code_lines: 600, max_members: 0 }
+      - files: ["tests/**"]
+        parameters: { max_code_lines: 800, max_members: 0 }
+    suggestion: "Split the type by responsibility into static classes or types of their own (Extract Class)."
+
+  - id: large-switch
+    detector: LargeSwitch
+    severity: warning
+    # A switch is a table, and not measured, when every section of a switch statement holds at most one statement once its
+    # blocks are opened and the jump that ends it (break, continue, goto, return, throw) is left out: one piece of work and
+    # the return is still a table entry. The bodies of if, loops and try are looked through; fall-through labels are free.
+    # In a switch expression every arm is a table entry unless it holds a lambda with a block body or a nested switch
+    # expression. How the source is laid out does not matter.
+    parameters:
+      max_cases: 6
+    include: ["src/**", "tools/**", "tests/**"]
+    suggestion: "Move the body of each case into a method of its own, or look the case up in a table (Extract Method)."
+
+  - id: long-string-literal
+    detector: LongStringLiteral
+    severity: warning
+    # The limit is max_line_length of .editorconfig. The lines of a multi-line raw string are left out unless
+    # include_multiline_raw_content is 1, because breaking such a line changes the string.
+    parameters:
+      max_columns: 120
+      include_multiline_raw_content: 0
+    include: ["src/**", "tools/**"]
+    suggestion: "Break the literal at a natural break into pieces joined with +, one per line."
+
+  - id: long-if-chain
+    detector: LongIfChain
+    severity: warning
+    parameters:
+      max_branches: 6
+    include: ["src/**", "tools/**", "tests/**"]
+    suggestion: "Replace the chain with a switch or a lookup, or extract each branch into a method (Decompose Conditional)."
+
+  - id: swallowed-exception
+    detector: SwallowedException
+    severity: warning
+    # Reports a catch of any exception type, with or without a when filter, whose handler is empty (nested empty blocks
+    # count as empty) or only writes a log line (Console, Debug, Trace, a logger, a Log* method, also through ?.). A handler
+    # that returns, branches, assigns, declares or calls anything else is not reported, which is narrower than the HNT0007
+    # analyzer of the tests: the Try pattern catch { return false; } of the sources is meant and is not a finding.
+    include: ["src/**", "tools/**", "tests/**"]
+    suggestion: "Rethrow, handle the failure or report it to the caller; a catch must not drop the exception."

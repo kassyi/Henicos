@@ -13,6 +13,8 @@ namespace Kassyi.GSharp.Tools.SmellScan;
 /// <param name="Findings">The findings in report order, with fingerprints.</param>
 /// <param name="Unmeasured">The files with conditional branches that no symbol set made active, by path.</param>
 /// <param name="ProjectByPath">The project directory of each file that has a finding.</param>
+/// <param name="Rules">The rules that ran, in ordinal order of their ids.</param>
+/// <param name="Metrics">The largest measurements of each rule, when the run was asked to list them; otherwise empty.</param>
 internal sealed record ScanReport(
     string? Commit,
     string ConfigPath,
@@ -23,4 +25,6 @@ internal sealed record ScanReport(
     ImmutableArray<string> RuleIds,
     ImmutableArray<Finding> Findings,
     ImmutableArray<UnmeasuredBranches> Unmeasured,
-    ImmutableDictionary<string, string> ProjectByPath);
+    ImmutableDictionary<string, string> ProjectByPath,
+    ImmutableArray<RuleInfo> Rules,
+    ImmutableArray<RuleMetric> Metrics);
