@@ -4,7 +4,7 @@
     "test-projects": ["Kassyi.GSharp.Tests.Cpu.csproj"],
     "mutate": ["!**/*.g.cs"],
     "coverage-analysis": "perTest",
-    "concurrency": 6,
+    "concurrency": 10,
     "reporters": ["json", "html", "cleartext"],
     "verbosity": "info"
   }
