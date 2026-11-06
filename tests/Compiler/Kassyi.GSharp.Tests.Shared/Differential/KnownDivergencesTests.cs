@@ -201,7 +201,6 @@ public class KnownDivergencesTests
     // Every DifferentialCase held by a static field of a type of the differential tests, by case name
     private static Dictionary<string, List<DifferentialCase>> CollectCases()
     {
-        var cases = new Dictionary<string, List<DifferentialCase>>(StringComparer.Ordinal);
         Type?[] types;
         try
         {
@@ -217,29 +216,13 @@ public class KnownDivergencesTests
         // Nested types are skipped by their metadata flags before Namespace is read: Namespace and IsNested load the
         // declaring type, which may be one of the MSBuild-dependent types above. The cases are fields of top-level
         // test classes.
-        foreach (var type in types)
-        {
-            if (type is null || !IsTopLevel(type) || type.Namespace != DifferentialNamespace || type.ContainsGenericParameters)
-            {
-                continue;
-            }
-
-            foreach (var field in type.GetFields(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly))
-            {
-                foreach (var definition in CasesIn(field))
-                {
-                    if (!cases.TryGetValue(definition.Name, out var list))
-                    {
-                        list = [];
-                        cases.Add(definition.Name, list);
-                    }
-
-                    list.Add(definition);
-                }
-            }
-        }
-
-        return cases;
+        return types
+            .OfType<Type>()
+            .Where(static t => IsTopLevel(t) && t.Namespace == DifferentialNamespace && !t.ContainsGenericParameters)
+            .SelectMany(static t => t.GetFields(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly))
+            .SelectMany(CasesIn)
+            .GroupBy(static c => c.Name, StringComparer.Ordinal)
+            .ToDictionary(static g => g.Key, static g => g.ToList(), StringComparer.Ordinal);
     }
 
     private static bool IsTopLevel(Type type) =>
@@ -262,32 +245,14 @@ public class KnownDivergencesTests
     }
 
     // The column names of the buffers the cases build, for every seed and launch shape they run
-    private static HashSet<string> ColumnsOf(List<DifferentialCase> definitions)
-    {
-        var columns = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var definition in definitions)
-        {
-            foreach (int seed in definition.Seeds ?? [0])
-            {
-                foreach (var shape in definition.GetShapesForSeed(seed))
-                {
-                    foreach (var buffer in definition.Inputs(new DiffRandom(seed), shape).All)
-                    {
-                        if (buffer.Columns is null)
-                        {
-                            columns.Add(buffer.Name);
-                        }
-                        else
-                        {
-                            columns.UnionWith(buffer.Columns);
-                        }
-                    }
-                }
-            }
-        }
-
-        return columns;
-    }
+    private static HashSet<string> ColumnsOf(List<DifferentialCase> definitions) =>
+        definitions
+            .SelectMany(static d => (d.Seeds ?? [0])
+                .SelectMany(seed => d.GetShapesForSeed(seed)
+                    .SelectMany(shape => d.Inputs(new DiffRandom(seed), shape).All)
+                )
+            ).SelectMany(static b => b.Columns ?? [b.Name])
+            .ToHashSet(StringComparer.Ordinal);
 
     // Runs a GraphQL query against the repository of the checkout and returns data.repository; skips without gh access
     private static JsonElement QueryGitHub(string query)
