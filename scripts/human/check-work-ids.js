@@ -195,19 +195,20 @@ function report(matches, reported, options) {
 
     const summaryPath = process.env.GITHUB_STEP_SUMMARY;
     if (summaryPath) {
-        const cell = text => text.replace(/\|/g, '\\|');
+        // Markdown table cell: escape the escape character first, then the column separator and code-span quotes
+        const cell = text => text.replace(/[\\|`]/g, c => '\\' + c);
         const lines = [
             '## Work IDs',
             '',
             options.changed === null
                 ? `${matches.length} reference(s) to planning material that is not in the repository.`
-                : `${reported.length} on lines added since \`${cell(options.changed)}\`, ${matches.length} in all.`,
+                : `${reported.length} on lines added since ${cell(options.changed)}, ${matches.length} in all.`,
             '',
         ];
         if (matches.length > 0) {
             lines.push('| File | Line | Kind | Text |', '| ----- | ----- | ----- | ----- |');
             for (const m of matches) {
-                lines.push(`| ${cell(m.file)} | ${m.line} | ${m.name} | \`${cell(m.found)}\` |`);
+                lines.push(`| ${cell(m.file)} | ${m.line} | ${m.name} | ${cell(m.found)} |`);
             }
             lines.push('');
         }
