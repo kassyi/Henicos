@@ -129,11 +129,11 @@ public const string DebugName_State = "global::System.Int32";
 [global::System.Runtime.InteropServices.FieldOffset(0)]
 public global::System.Int32 State;
 }
-public static unsafe void Marshal_DummyContext(ref global::TestNamespace.DummyContext host, ref AotContexts.Dummy native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_DummyContext(ref global::TestNamespace.DummyContext host, ref AotContexts.Dummy native, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
 {
 native = global::System.Runtime.CompilerServices.Unsafe.As<global::TestNamespace.DummyContext, AotContexts.Dummy>(ref host);
 }
-public static unsafe void Unmarshal_DummyContext(ref global::TestNamespace.DummyContext host, ref AotContexts.Dummy native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_DummyContext(ref global::TestNamespace.DummyContext host, ref AotContexts.Dummy native, global::System.IntPtr hStream = default)
 {
 host = global::System.Runtime.CompilerServices.Unsafe.As<AotContexts.Dummy, global::TestNamespace.DummyContext>(ref native);
 }

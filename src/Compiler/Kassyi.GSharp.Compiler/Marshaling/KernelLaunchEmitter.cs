@@ -241,7 +241,7 @@ internal static class KernelLaunchEmitter
         using (writer.Parentheses())
         {
             writer.Append(
-                $"ref {shape.Identifier}, ref {native}, false, {DeviceArraysFor(shape)}, hStream");
+                $"ref {shape.Identifier}, ref {native}, {DeviceArraysFor(shape)}, hStream");
         }
 
         writer.AppendLine(";");
@@ -607,7 +607,7 @@ internal static class KernelLaunchEmitter
         writer.Append(shape.UnmarshalMethodName);
         using (writer.Parentheses())
         {
-            writer.Append($"ref {shape.Identifier}, ref {native}, false, hStream");
+            writer.Append($"ref {shape.Identifier}, ref {native}, hStream");
         }
 
         writer.AppendLine(";");

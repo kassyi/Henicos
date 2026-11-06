@@ -210,11 +210,11 @@ public const string DebugName_Calls = "global::System.UInt32";
 [global::System.Runtime.InteropServices.FieldOffset(4)]
 public global::System.UInt32 Calls;
 }
-public static unsafe void Marshal_OperatorMacroContextState(ref global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextState host, ref AotContexts.OperatorMacroContextState native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_OperatorMacroContextState(ref global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextState host, ref AotContexts.OperatorMacroContextState native, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
 {
 native = global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextState, AotContexts.OperatorMacroContextState>(ref host);
 }
-public static unsafe void Unmarshal_OperatorMacroContextState(ref global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextState host, ref AotContexts.OperatorMacroContextState native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_OperatorMacroContextState(ref global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextState host, ref AotContexts.OperatorMacroContextState native, global::System.IntPtr hStream = default)
 {
 host = global::System.Runtime.CompilerServices.Unsafe.As<AotContexts.OperatorMacroContextState, global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextState>(ref native);
 }
