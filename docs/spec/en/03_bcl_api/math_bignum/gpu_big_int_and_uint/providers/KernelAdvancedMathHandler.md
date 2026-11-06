@@ -328,7 +328,7 @@ Thrown when cooperative kernel execution or stream synchronization fails.
 
 ## Remarks
 
-`KernelAdvancedMathHandler` caches precomputed forward and inverse NTT twiddle factor tables in device memory per transform length $m$ (`ConcurrentDictionary<int, Lazy<TwiddleCache>>`) to avoid redundant host-side root-of-unity generation across repeated multiplications.
+`KernelAdvancedMathHandler` caches precomputed forward and inverse NTT twiddle factor tables in device memory per CUDA context and transform length $m$ to avoid redundant host-side root-of-unity generation across repeated multiplications. Device memory belongs to the context it was allocated in, so a workspace with an isolated context (`useIsolatedContext: true`) gets its own tables, which are dropped when the workspace destroys its context; CPU fallback mode keeps host tables apart from the device ones. A failed upload is not cached, so the next call uploads again.
 
 ## Examples
 

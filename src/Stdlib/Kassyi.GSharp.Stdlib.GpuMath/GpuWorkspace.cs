@@ -73,8 +73,13 @@ public class GpuWorkspace : IGpuResourceScope
     }
 
     private int _disposed;
-    private readonly IntPtr _isolatedContext;
     private readonly List<IDisposable> _trackedResources = [];
+
+    /// <summary>
+    /// Gets the isolated context of this workspace (zero without one) and the number <c>CudaModuleCache</c> gives it, so
+    /// that the caches keyed by that number drop its entries when the workspace destroys the context.
+    /// </summary>
+    internal (IntPtr Handle, long Id) IsolatedContext { get; }
 
     /// <summary>
     /// Gets the memory manager for this context.
@@ -182,14 +187,20 @@ public class GpuWorkspace : IGpuResourceScope
         }
         else
         {
+            var isolatedContext = IntPtr.Zero;
             if (useIsolatedContext)
             {
                 CudaDriverApi.cuInit(0);
                 CudaDriverApi.cuDeviceGet(out var dev, 0);
-                CudaException.ThrowIfError(CudaDriverApi.cuCtxCreate_v2(out _isolatedContext, 0, dev));
+                CudaException.ThrowIfError(CudaDriverApi.cuCtxCreate_v2(out isolatedContext, 0, dev));
             }
 
-            scope = new GpuKernelLoader.CudaContextScope(_isolatedContext);
+            scope = new GpuKernelLoader.CudaContextScope(isolatedContext);
+            if (useIsolatedContext)
+            {
+                IsolatedContext = (isolatedContext, CudaModuleCache.CurrentContextId);
+            }
+
             CudaException.ThrowIfError(CudaDriverApi.cuStreamCreate(out var stream, 0)); // CU_STREAM_DEFAULT
             Stream = stream;
 
@@ -204,7 +215,7 @@ public class GpuWorkspace : IGpuResourceScope
             MemoryManager = new DefaultGpuMemoryManager(Provider, Stream);
             if (Stream != IntPtr.Zero)
             {
-                CorrectionStatus = new GpuCorrectionStatus(Provider, Stream, _isolatedContext);
+                CorrectionStatus = new GpuCorrectionStatus(Provider, Stream, IsolatedContext.Handle);
             }
         }
         finally
@@ -217,7 +228,7 @@ public class GpuWorkspace : IGpuResourceScope
     /// Activates the CUDA context associated with this workspace for the lifetime of the returned scope.
     /// </summary>
     /// <returns>An <see cref="IDisposable"/> token restoring the previous CUDA context upon disposal.</returns>
-    public IDisposable ActivateContext() => new GpuKernelLoader.CudaContextScope(_isolatedContext);
+    public IDisposable ActivateContext() => new GpuKernelLoader.CudaContextScope(IsolatedContext.Handle);
 
     /// <summary>
     /// Releases all device memory resources, temporary pooled buffers, and workspace handles held by this context.
@@ -246,7 +257,7 @@ public class GpuWorkspace : IGpuResourceScope
         {
             try
             {
-                contextScope = new GpuKernelLoader.CudaContextScope(_isolatedContext);
+                contextScope = new GpuKernelLoader.CudaContextScope(IsolatedContext.Handle);
             }
             catch (CudaException ex)
             {
@@ -399,9 +410,10 @@ public class GpuWorkspace : IGpuResourceScope
         {
             CudaDriverApi.cuStreamDestroy(Stream);
 
-            if (_isolatedContext != IntPtr.Zero)
+            if (IsolatedContext.Handle != IntPtr.Zero)
             {
-                GpuKernelLoader.DestroyContext(_isolatedContext);
+                GSharpKernelProvider.Instance.KernelAdvancedMath.ForgetContext(IsolatedContext.Id);
+                GpuKernelLoader.DestroyContext(IsolatedContext.Handle);
             }
         }
         catch (Exception ex)

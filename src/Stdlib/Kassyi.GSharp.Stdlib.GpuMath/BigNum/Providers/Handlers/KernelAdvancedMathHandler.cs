@@ -20,7 +20,10 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
     // failure.
     private const int SqrtCorrectionMaxSteps = 4;
 
-    private readonly ConcurrentDictionary<int, Lazy<TwiddleCache>> _twiddleCache = new();
+    // The twiddle factors of the 2-prime NTT per CUDA context and transform length. Device memory belongs to the context
+    // it was allocated in, and this handler serves every workspace, isolated contexts included, so the key holds the
+    // number of the context the upload allocates in (0 in CPU fallback mode, where the pointers are host addresses).
+    private readonly ConcurrentDictionary<(long ContextId, int Length), Lazy<TwiddleCache>> _twiddleCache = new();
 
     /// <inheritdoc />
     public void Mul(GpuWorkspace workspace, GpuBigUInt leftOperand, uint rightOperand,
@@ -653,12 +656,17 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
         return m;
     }
 
-    private TwiddleCache GetOrCreateTwiddleFactors(GpuWorkspace workspace, int m)
+    /// <summary>
+    /// Returns the twiddle factors of transform length <paramref name="m"/> in the context current for this thread,
+    /// uploading them through <paramref name="workspace"/> the first time; a failed upload is not kept.
+    /// </summary>
+    internal TwiddleCache GetOrCreateTwiddleFactors(GpuWorkspace workspace, int m)
     {
-        return _twiddleCache.GetOrAdd(m, key => new Lazy<TwiddleCache>(() =>
+        var key = (CudaModuleCache.CurrentContextId, m);
+        var lazy = _twiddleCache.GetOrAdd(key, k => new Lazy<TwiddleCache>(() =>
         {
-            var (dF1, dI1) = UploadTwiddles(workspace, NttPrimeArithmetic.Prime1, NttPrimeArithmetic.NttG1, key);
-            var (dF2, dI2) = UploadTwiddles(workspace, NttPrimeArithmetic.Prime2, NttPrimeArithmetic.NttG2, key);
+            var (dF1, dI1) = UploadTwiddles(workspace, NttPrimeArithmetic.Prime1, NttPrimeArithmetic.NttG1, k.Length);
+            var (dF2, dI2) = UploadTwiddles(workspace, NttPrimeArithmetic.Prime2, NttPrimeArithmetic.NttG2, k.Length);
             workspace.Provider.SynchronizeStream(workspace.Stream);
 
             return new TwiddleCache
@@ -668,7 +676,48 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
                 Inverse1 = dI1,
                 Inverse2 = dI2
             };
-        })).Value;
+        }));
+
+        try
+        {
+            return lazy.Value;
+        }
+        catch
+        {
+            // Lazy keeps the exception; drop it so that the next call uploads again
+            _twiddleCache.TryRemove(new KeyValuePair<(long, int), Lazy<TwiddleCache>>(key, lazy));
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Forgets the twiddle factors of the context numbered <paramref name="contextId"/>, which is being destroyed; its
+    /// device memory goes with the context.
+    /// </summary>
+    internal void ForgetContext(long contextId)
+    {
+        foreach (var key in _twiddleCache.Keys)
+        {
+            if (key.ContextId == contextId)
+            {
+                _twiddleCache.TryRemove(key, out _);
+            }
+        }
+    }
+
+    /// <summary>The number of transform lengths with twiddle factors kept for the context numbered <paramref name="contextId"/>.</summary>
+    internal int CountTwiddleFactors(long contextId)
+    {
+        var count = 0;
+        foreach (var key in _twiddleCache.Keys)
+        {
+            if (key.ContextId == contextId)
+            {
+                count++;
+            }
+        }
+
+        return count;
     }
 
     private static (IntPtr Forward, IntPtr Inverse) UploadTwiddles(
