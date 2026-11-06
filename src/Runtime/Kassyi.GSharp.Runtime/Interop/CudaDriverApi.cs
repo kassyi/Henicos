@@ -151,22 +151,33 @@ public struct CudaArrayDescriptor
     public uint NumChannels;
 }
 
-/// <summary>Represents a CUDA resource descriptor.</summary>
-[StructLayout(LayoutKind.Sequential)]
+/// <summary>Represents a CUDA resource descriptor (<c>CUDA_RESOURCE_DESC</c>).</summary>
+/// <remarks>
+/// The struct has the size and field offsets of <c>CUDA_RESOURCE_DESC</c>: the driver reads the whole 128-byte
+/// <c>res</c> union and <c>flags</c> behind it. The bytes of the union after <see cref="Res"/> stay zero.
+/// </remarks>
+[StructLayout(LayoutKind.Explicit, Size = 144)]
 public struct CudaResourceDescriptor
 {
     /// <summary>Resource type.</summary>
+    [FieldOffset(0)]
     public int ResType;
 
-    /// <summary>Resource handle or pointer.</summary>
+    /// <summary>Resource handle or pointer: the first member of the <c>res</c> union.</summary>
+    [FieldOffset(8)]
     public IntPtr Res;
 
-    /// <summary>Flags.</summary>
+    /// <summary>Flags (must be zero).</summary>
+    [FieldOffset(136)]
     public uint Flags;
 }
 
-/// <summary>Represents a CUDA texture descriptor.</summary>
-[StructLayout(LayoutKind.Sequential)]
+/// <summary>Represents a CUDA texture descriptor (<c>CUDA_TEXTURE_DESC</c>).</summary>
+/// <remarks>
+/// The struct has the size of <c>CUDA_TEXTURE_DESC</c>, whose reserved tail of 48 bytes after
+/// <see cref="BorderColor3"/> the driver reads; it stays zero.
+/// </remarks>
+[StructLayout(LayoutKind.Sequential, Size = 104)]
 public struct CudaTextureDescriptor
 {
     /// <summary>Address mode 0.</summary>
@@ -212,8 +223,12 @@ public struct CudaTextureDescriptor
     public float BorderColor3;
 }
 
-/// <summary>Represents a CUDA resource view descriptor.</summary>
-[StructLayout(LayoutKind.Sequential)]
+/// <summary>Represents a CUDA resource view descriptor (<c>CUDA_RESOURCE_VIEW_DESC</c>).</summary>
+/// <remarks>
+/// The struct has the size of <c>CUDA_RESOURCE_VIEW_DESC</c>, whose reserved tail of 64 bytes after
+/// <see cref="LastLayer"/> the driver reads; it stays zero.
+/// </remarks>
+[StructLayout(LayoutKind.Sequential, Size = 112)]
 public struct CudaResourceViewDescriptor
 {
     /// <summary>Resource view format.</summary>
@@ -239,9 +254,6 @@ public struct CudaResourceViewDescriptor
 
     /// <summary>Last layer index.</summary>
     public uint LastLayer;
-
-    /// <summary>Flags.</summary>
-    public uint Flags;
 }
 
 

@@ -174,24 +174,24 @@ public struct CudaArrayDescriptor
 
 ## CudaResourceDescriptor Struct
 
-Represents a CUDA resource descriptor.
+Represents a CUDA resource descriptor (`CUDA_RESOURCE_DESC`, 144 bytes). `Res` is the first member of the 128-byte `res` union; the rest of the union stays zero.
 
 ```csharp
-[StructLayout(LayoutKind.Sequential)]
+[StructLayout(LayoutKind.Explicit, Size = 144)]
 public struct CudaResourceDescriptor
 {
-    public int ResType;
-    public IntPtr Res;
-    public uint Flags;
+    [FieldOffset(0)] public int ResType;
+    [FieldOffset(8)] public IntPtr Res;
+    [FieldOffset(136)] public uint Flags;
 }
 ```
 
 ## CudaTextureDescriptor Struct
 
-Represents a CUDA texture descriptor.
+Represents a CUDA texture descriptor (`CUDA_TEXTURE_DESC`, 104 bytes). The 48 reserved bytes after `BorderColor3` stay zero.
 
 ```csharp
-[StructLayout(LayoutKind.Sequential)]
+[StructLayout(LayoutKind.Sequential, Size = 104)]
 public struct CudaTextureDescriptor
 {
     public int AddressMode0;
@@ -213,10 +213,10 @@ public struct CudaTextureDescriptor
 
 ## CudaResourceViewDescriptor Struct
 
-Represents a CUDA resource view descriptor.
+Represents a CUDA resource view descriptor (`CUDA_RESOURCE_VIEW_DESC`, 112 bytes). The 64 reserved bytes after `LastLayer` stay zero.
 
 ```csharp
-[StructLayout(LayoutKind.Sequential)]
+[StructLayout(LayoutKind.Sequential, Size = 112)]
 public struct CudaResourceViewDescriptor
 {
     public int Format;
@@ -227,7 +227,6 @@ public struct CudaResourceViewDescriptor
     public uint LastMipmapLevel;
     public uint FirstLayer;
     public uint LastLayer;
-    public uint Flags;
 }
 ```
 
