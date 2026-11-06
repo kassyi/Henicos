@@ -191,6 +191,13 @@ public static partial class GpuBigIntVectorKernels
         public VectorBinaryOperationContext Op;
         public bool IsModulo;
         public int PreShiftBits;
+
+        /// <summary>
+        /// One word that receives the complement of the lowest element index with a zero divisor (atomic max of
+        /// <c>~index</c>; 0 when no divisor is zero). A Zip node clears it before the launch and reads it after; a
+        /// scalar node, which rejects a zero divisor on the host, passes none.
+        /// </summary>
+        public uint[] ZeroDivisor;
     }
 
     public struct VectorFloatAddSubContext
@@ -208,6 +215,9 @@ public static partial class GpuBigIntVectorKernels
     {
         public VectorFloatBinaryOperationContext FloatOp;
         public int PreShiftBits;
+
+        /// <inheritdoc cref="VectorDivModContext.ZeroDivisor"/>
+        public uint[] ZeroDivisor;
     }
 
     public struct VectorFloatCompareContext

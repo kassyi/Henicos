@@ -738,6 +738,31 @@ public class GpuBigFloatLinqAndVectorTests : IDisposable
         Assert.Throws<ArgumentException>(() => new GpuBigFloatArray(significands, exponents, signs));
     }
 
+    // A zero divisor is an error, as the documentation of SelectDivide and ZipDivide states, never a quotient of 0.
+    // mutant: the host check of the scalar removed ([0, 0]); the kernel no longer records a zero element ([3, 0])
+    [Fact]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.SadPath)]
+    public void GpuBigFloatArray_Divide_ZeroDivisor_ThrowsDivideByZeroException()
+    {
+        using var dividends = new GpuBigFloatArray(_context, 2, 4);
+        using var divisors = new GpuBigFloatArray(_context, 2, 4);
+        using var three = CreateFloat(3);
+        using var five = CreateFloat(5);
+        using var one = CreateFloat(1);
+        using var zero = CreateFloat(0);
+        dividends.SetElement(0, three);
+        dividends.SetElement(1, five);
+        divisors.SetElement(0, one);
+        divisors.SetElement(1, zero);
+
+        using var byScalar = dividends.AsVectorizedEnumerable().SelectDivide(zero);
+        using var byVector = dividends.AsVectorizedEnumerable().ZipDivide(divisors.AsVectorizedEnumerable());
+
+        Assert.Throws<DivideByZeroException>(() => byScalar.Evaluate(_context));
+        Assert.Throws<DivideByZeroException>(() => byVector.Evaluate(_context));
+    }
+
     // SetElement replaces the whole element: a shorter value leaves no stale upper words, and it never writes
     // past the element into its neighbour.
     [Fact]

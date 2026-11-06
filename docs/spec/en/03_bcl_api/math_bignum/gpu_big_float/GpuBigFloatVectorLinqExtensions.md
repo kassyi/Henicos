@@ -279,7 +279,7 @@ public static IGpuBigFloatVectorExpression ZipMultiply(
 
 ## ZipDivide(IGpuBigFloatVectorExpression, IGpuBigFloatVectorExpression)
 
-Performs element-wise division of `left` by `right`. Output `WordsPerElement` is `Math.Max(left.WordsPerElement, right.WordsPerElement) + 1`. Throws `DivideByZeroException` during evaluation if any active divisor element in `right` is zero.
+Performs element-wise division of `left` by `right`. Output `WordsPerElement` is `Math.Max(left.WordsPerElement, right.WordsPerElement) + 1`. Throws `DivideByZeroException` during evaluation if any active divisor element in `right` is zero. The check is read back from the device (one synchronization of the workspace stream), so evaluating it while the stream captures a CUDA graph throws `NotSupportedException`.
 
 ```csharp
 public static IGpuBigFloatVectorExpression ZipDivide(

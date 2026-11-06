@@ -40,7 +40,10 @@ internal sealed class VectorResultCache : IDisposable
     /// <summary>Lends <paramref name="count"/> exponent words.</summary>
     public GpuBigUIntArrayView Exponents(GpuWorkspace workspace, int count) => Get(ref _exponents, workspace, count, 1);
 
-    /// <summary>Lends <paramref name="count"/> words of scratch (the prefix sum of a Where).</summary>
+    /// <summary>
+    /// Lends <paramref name="count"/> words of scratch: the prefix sum of a Where, the zero-divisor word of a division
+    /// (<see cref="ZeroDivisorCheck"/>).
+    /// </summary>
     public GpuBigUIntArrayView Scan(GpuWorkspace workspace, int count) => Get(ref _scan, workspace, count, 1);
 
     /// <summary>

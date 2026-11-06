@@ -209,6 +209,11 @@ internal sealed class FloatVectorDivScalarExpression(
         FloatVectorScalarOperands operands,
         uint gridDimX)
     {
+        if (new GpuBigUIntView(workspace, operands.Scalar.Significand).IsZero())
+        {
+            throw new DivideByZeroException();
+        }
+
         var ctx = new GpuBigIntVectorKernels.AotContexts.VectorFloatDiv
         {
             FloatOp = CreateScalarFloatOp(operands),
