@@ -4,7 +4,6 @@ using System.IO;
 using Kassyi.GSharp.Compiler.Tasks;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
-using Microsoft.Build.Locator;
 using System.Diagnostics;
 using Kassyi.GSharp.Compiler.Tasks.Helpers;
 using Xunit;
@@ -17,17 +16,7 @@ public class CompileTasksTests
 {
     static CompileTasksTests()
     {
-        if (!MSBuildLocator.IsRegistered)
-        {
-            try
-            {
-                MSBuildLocator.RegisterDefaults();
-            }
-            catch (InvalidOperationException)
-            {
-                // Best-effort: ignore if already initialized or assemblies were pre-loaded
-            }
-        }
+        MSBuildLocatorSetup.EnsureRegistered();
     }
 
 

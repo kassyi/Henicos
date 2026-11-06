@@ -176,6 +176,8 @@ public abstract class CompileKernelTaskBase : Microsoft.Build.Utilities.Task, IC
                     File.Delete(path);
                 }
             }
+            // smell-scan: ignore swallowed-exception -- the failure is written to the MSBuild log; a leftover temporary
+            // file must not fail the build
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
             {
                 log?.LogMessage(MessageImportance.Low,

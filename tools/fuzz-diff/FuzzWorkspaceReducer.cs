@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
 using System.Text;
@@ -390,9 +391,10 @@ internal static class FuzzWorkspaceReducer
 
                 MergeCandidateFailure(perKernelFailures, kName, paths, fKind, col);
             }
+            // smell-scan: ignore swallowed-exception -- the runner also prints lines that only look like JSON; they
+            // carry no candidate result
             catch (JsonException ex)
             {
-                // [WHY] the runner also prints lines that only look like JSON; they carry no candidate result
                 Trace.WriteLine($"Skipping a non-event output line: {ex.Message}");
             }
         }
@@ -476,9 +478,10 @@ internal static class FuzzWorkspaceReducer
             {
                 proc.Kill(entireProcessTree: true);
             }
-            catch (Exception ex)
+            // smell-scan: ignore swallowed-exception -- the process may exit between the timeout and Kill, or a child
+            // of it may refuse to stop; the caller already treats the run as timed out
+            catch (Exception ex) when (ex is InvalidOperationException or Win32Exception or AggregateException)
             {
-                // [WHY] the process may exit between the timeout and Kill; the caller already treats it as timed out
                 Trace.WriteLine($"Could not kill {psi.FileName} after the timeout: {ex.Message}");
             }
 
