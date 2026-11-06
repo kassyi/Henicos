@@ -6,6 +6,11 @@ but follow the same language and convention rules (§1, §3).
 
 ## 1. Language
 
+- **Write a script only when it fits a script**: logic that changes often, or a short one-shot helper used case by case
+  (such as the scripts of `.agents/skills/code-review/`). Do not reach for a script by default. When the tool needs
+  type safety, compile-time checks, Roslyn semantics or C# compatibility, write it in C# (a .NET project or file-based
+  app) and keep the script as a thin facade that runs it. Decide per tool, and say which side it is on and why when
+  you propose it.
 - **Node.js, built-ins only**: `.js` run as `node <path>`. Use only Node built-in modules (`fs`, `path`, `child_process`,
   ...); no npm packages, no `package.json`. Start with `#!/usr/bin/env node` and `'use strict';` (CommonJS).
 - **No `.sh` and no `.ps1`**. The one exception is `scripts/human/Install-DevTools.ps1`, which installs Node itself through
