@@ -323,7 +323,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
             var cudaDialect = new GSharpCudaDialect();
             var cppDialect = new StandardCppDialect();
 
-            var plan = MethodEmissionPlan.Create(methodDeclaration, context.SemanticModel, isKernel: true);
+            var (bodyDeclaration, bodyModel) = GetBodyDeclaration(methodDeclaration, methodSymbol, context.SemanticModel);
+            var plan = MethodEmissionPlan.Create(bodyDeclaration, bodyModel, isKernel: true);
 
             var cudaStructs = new StructSourceCollector();
             var cppStructs = new StructSourceCollector();
@@ -379,6 +380,20 @@ public class GpuKernelGenerator : IIncrementalGenerator
         }
     }
 
+    // The declaration whose body is transpiled, with its semantic model: the implementing declaration of a partial method
+    // when the attribute is on the defining declaration, which has no body; otherwise the attributed declaration itself
+    private static (MethodDeclarationSyntax Declaration, SemanticModel Model) GetBodyDeclaration(
+        MethodDeclarationSyntax declaration, IMethodSymbol symbol, SemanticModel model)
+    {
+        if (symbol.PartialImplementationPart is { } implementation &&
+            implementation.TryGetDeclaringSyntax<MethodDeclarationSyntax>(out var implementing))
+        {
+            return (implementing, model.Compilation.GetSemanticModel(implementing.SyntaxTree));
+        }
+
+        return (declaration, model);
+    }
+
     private static TranspiledDeviceMethodResult? TranspileDeviceMethod(GeneratorAttributeSyntaxContext context)
     {
         if (context.TargetNode is not MethodDeclarationSyntax methodDeclaration ||
@@ -394,7 +409,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
             var cudaDialect = new GSharpCudaDialect();
             var cppDialect = new StandardCppDialect();
 
-            var plan = MethodEmissionPlan.Create(methodDeclaration, context.SemanticModel, isKernel: false);
+            var (bodyDeclaration, bodyModel) = GetBodyDeclaration(methodDeclaration, methodSymbol, context.SemanticModel);
+            var plan = MethodEmissionPlan.Create(bodyDeclaration, bodyModel, isKernel: false);
 
             var cudaSignature = MethodTranspiler.GenerateCudaSignature(in plan, cudaFailures.Fail, cudaDialect);
             var cppSignature = MethodTranspiler.GenerateCudaSignature(in plan, cppFailures.Fail, cppDialect);
@@ -412,7 +428,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
             var frameName = "";
             var frameDependencies = ImmutableArray.CreateBuilder<string>();
             var managedCSharpSource = "";
-            if (plan.Kind == MethodEmissionKind.SuspendingDeviceFunction && methodDeclaration.GetBodyNode() is { } body)
+            if (plan.Kind == MethodEmissionKind.SuspendingDeviceFunction && bodyDeclaration.GetBodyNode() is { } body)
             {
                 frameName = GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.SuspendingCall.FrameTypePrefix, methodSymbol);
                 foreach (var callee in SuspensionAnalysis.GetSuspendingCallees(body,

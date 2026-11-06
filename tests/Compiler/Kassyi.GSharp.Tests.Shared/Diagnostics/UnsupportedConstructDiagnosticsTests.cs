@@ -407,6 +407,30 @@ public class UnsupportedConstructDiagnosticsTests
         Assert.Equal(7, diagnostics.Length);
     }
 
+    // A GPU function is transpiled from its body: an extern method and a partial method without an implementing
+    // declaration have none
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.SadPath)]
+    public async Task Test_GpuFunctionWithoutBody_ReportsGsh0003(string dialect)
+    {
+        var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/GpuFunctionWithoutBody.cu.cs", dialect);
+
+        Assert.Equal(
+            [(Analyzer, 10, 30, 10, 38)],
+            diagnostics.Ranges(
+                GSharpDiagnostics.UnsupportedSyntax.Id,
+                "GPU function 'External' without a body (an extern method, or a partial method without an implementing declaration)"));
+        Assert.Equal(
+            [(Analyzer, 15, 25, 15, 39)],
+            diagnostics.Ranges(
+                GSharpDiagnostics.UnsupportedSyntax.Id,
+                "GPU function 'NotImplemented' without a body"));
+        // The defining declaration of Implemented has its implementing declaration as the body
+        Assert.Equal(2, diagnostics.Length);
+    }
+
     // #759 item 6: the expansion passes the operator's own result on, so a user-defined conversion around it would be dropped;
     // an identity cast is transparent (OperatorMacroNestingTests)
     [Theory]
