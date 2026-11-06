@@ -88,6 +88,61 @@ public class FermatTrialFactoringTests
         Assert.Contains(expectedFactor, found);
     }
 
+    // startOdd = 1 makes thread 0 test k = 1, whose exponent reduction is exp % 0; the top of the range makes the
+    // candidates of the later threads wrap past 2^32 - 1 to 1, 3, 5, ... Every reported k must be an odd candidate of
+    // the launch in [3, 2^32 - 1] that divides N(exp) = 2^(2 exp + 1) - 2^exp + 11.
+    [SkippableTheory]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(1u, 5u)]
+    [InlineData(1u, 6u)]
+    [InlineData(0xFFFFFFF1u, 5u)]
+    [InlineData(0xFFFFFFF1u, 6u)]
+    public void SearchFactors32Kernel_CandidatesBelowThreeOrPastUInt32_AreNotTested(uint startOdd, uint exp)
+    {
+        CudaCapability.EnsureGpuAvailable();
+        using var scope = new GpuKernelLoader.CudaContextScope();
+
+        const int MaxResults = 64;
+        const int Threads = 32;
+        using var resultsBuffer = new GpuBuffer<uint>(MaxResults);
+        using var resultCountBuffer = new GpuBuffer<uint>(1);
+        uint[] count = [0u];
+        resultCountBuffer.CopyToDevice(count);
+
+        // mutant: FermatTrialFactoringKernels.cu.cs SearchFactors32Kernel `candidate < 3UL ||` removed (reports 1)
+        // mutant: FermatTrialFactoringKernels.cu.cs SearchFactors32Kernel `|| candidate > 0xFFFFFFFFUL` removed (exp = 6
+        // reports the wrapped candidate 3)
+        FermatTrialFactoringKernels.LaunchSearchFactors32KernelPtr(
+            startOdd: startOdd,
+            exp: exp,
+            results: resultsBuffer.DevicePointer,
+            resultCount: resultCountBuffer.DevicePointer,
+            maxResults: MaxResults,
+            gridDimX: 1,
+            blockDimX: Threads);
+        GpuKernelLoader.SynchronizeDevice();
+
+        resultCountBuffer.CopyToHost(count);
+        var found = new uint[MaxResults];
+        resultsBuffer.CopyToHost(found);
+
+        var n = (BigInteger.One << (int)(2 * exp + 1)) - (BigInteger.One << (int)exp) + 11;
+        var expected = new List<uint>();
+        for (var t = 0UL; t < Threads; t++)
+        {
+            var k = startOdd + 2UL * t;
+            if (k >= 3UL && k <= uint.MaxValue && (n % k).IsZero)
+            {
+                expected.Add((uint)k);
+            }
+        }
+
+        var reported = found[..(int)Math.Min(count[0], MaxResults)];
+        Array.Sort(reported);
+        Assert.Equal(expected, reported);
+    }
+
     [Fact]
     [Category(TestCategory.Stdlib)]
     [Scenario(TestScenario.HappyPath)]

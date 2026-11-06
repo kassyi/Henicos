@@ -94,7 +94,16 @@ public static partial class FermatTrialFactoringKernels
         int maxResults)
     {
         var threadId = (uint)(BlockIndex.X * BlockDimension.X + ThreadIndex.X);
-        var k32 = startOdd + (threadId * 2u);
+
+        // The candidates are the odd k from 3 to 2^32 - 1. k = 1 would reduce the exponent modulo k - 1 = 0, and a
+        // candidate past 2^32 - 1 would wrap to a small odd number outside the range, 1 included.
+        var candidate = (ulong)startOdd + (2UL * threadId);
+        if (candidate < 3UL || candidate > 0xFFFFFFFFUL)
+        {
+            return;
+        }
+
+        var k32 = (uint)candidate;
 
         if (!PassesQuadraticAndSmallPrimeSieve(k32))
         {
