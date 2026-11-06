@@ -114,6 +114,40 @@ public class StackLinqRangeTests : TranspilerTestBase
         Assert.Equal(s_data.Skip(3).Sum(), result[0]);
     }
 
+    // C# calls the selector for the elements a following Skip drops, so an error it raises there is raised; the same
+    // chains over elements that raise nothing give the C# sum. The native build checks neither an integer division by
+    // zero nor an index yet (#718 (Array and span bounds, integer division by zero, Nullable.Value, Math.Clamp and
+    // Math.Abs(MinValue) are not checked as in C#)), so there the generated snapshot shows that the selector runs for the
+    // skipped element (StackLinqRangeKernels snapshot: the Skip counts in the loop instead of narrowing the range)
+    [SkippableTheory]
+    [MemberData(nameof(Paths))]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.SadPath)]
+    public void Test_TrappingSelectThenSkip_RaisesTheErrorOfTheSkippedElement(bool managed)
+    {
+        Skip.If(IsCudaDialect, "A CUDA trap loses its code and spoils the context; the exception is checked on the CPU paths.");
+        int[] table = [7];
+        var result = new int[2];
+
+        if (managed)
+        {
+            Assert.Throws<DivideByZeroException>(() => Run(managed,
+                () => StackLinqRangeKernels.LaunchDividingSelectSkipKernel([0, 2], result, gridDimX: 1, blockDimX: 1)));
+            Assert.Throws<IndexOutOfRangeException>(() => Run(managed,
+                () => StackLinqRangeKernels.LaunchIndexingSelectSkipKernel([5, 0], table, result, gridDimX: 1, blockDimX: 1)));
+        }
+
+        int[] data = [5, 2, 1];
+        Run(managed, () => StackLinqRangeKernels.LaunchDividingSelectSkipKernel(data, result, gridDimX: 1, blockDimX: 1));
+        Assert.Equal(data.AsStackEnumerable().Select(static x => x / 2).Skip(1).Sum(), result[0]);
+        Assert.Equal(data.AsStackEnumerable().Select(static x => 10 / x).Skip(1).Sum(), result[1]);
+
+        int[] indices = [0, 0, 0];
+        Run(managed, () => StackLinqRangeKernels.LaunchIndexingSelectSkipKernel(indices, table, result, gridDimX: 1, blockDimX: 1));
+        Assert.Equal(14, result[0]);
+    }
+
     // Second review (M2): every three-stage chain, with seeded lengths 1 to 24 and arguments at the edges (-1, 0,
     // int.MinValue, int.MaxValue, the length), on 33 threads (a partial warp), sequential and AsParallel()
     [SkippableTheory]

@@ -109,6 +109,28 @@ public static partial class StackLinqRangeKernels
         }
     }
 
+    // C# calls the selector for the element the Skip drops, so 10 / 0 raises DivideByZeroException; a divisor that is a
+    // nonzero constant other than -1 cannot trap, and that Skip still narrows the range
+    [GpuKernel]
+    public static void DividingSelectSkipKernel(int[] data, int[] result)
+    {
+        if ((ThreadIndex.X | ThreadIndex.Y | ThreadIndex.Z | BlockIndex.X | BlockIndex.Y | BlockIndex.Z) == 0)
+        {
+            result[0] = data.AsStackEnumerable().Select(x => x / 2).Skip(1).Sum();
+            result[1] = data.AsStackEnumerable().Select(x => 10 / x).Skip(1).Sum();
+        }
+    }
+
+    // C# calls the selector for the element the Skip drops, so table[5] raises IndexOutOfRangeException
+    [GpuKernel]
+    public static void IndexingSelectSkipKernel(int[] data, int[] table, int[] result)
+    {
+        if ((ThreadIndex.X | ThreadIndex.Y | ThreadIndex.Z | BlockIndex.X | BlockIndex.Y | BlockIndex.Z) == 0)
+        {
+            result[0] = data.AsStackEnumerable().Select(x => table[x]).Skip(1).Sum();
+        }
+    }
+
     // Take(n) after a stage that runs in the loop stops once it has given n elements: C# calls the selector or the
     // predicate before it n times (or up to the n-th passing element), and not at all for Take(0)
     [GpuKernel]
