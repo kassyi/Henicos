@@ -57,23 +57,22 @@ internal sealed class GpuMacroArgumentRule : ISyntaxValidationRule<InvocationExp
 
     private void CheckForUnroll(InvocationExpressionSyntax invocation, GpuMacroCall call, ref ValidationContext context)
     {
-        var offset = call.ArgumentOffset;
         var args = invocation.ArgumentList.Arguments;
-        if (args.Count < offset + 2)
+        if (call.GetArgument(args, call.ValueOrdinal)?.Expression is { } start)
         {
-            return;
+            CheckConstant(start, "start", TypeConstants.GpuMacros.ForUnroll, ref context);
         }
 
-        CheckConstant(args[offset].Expression, "start", TypeConstants.GpuMacros.ForUnroll, ref context);
-        CheckConstant(args[offset + 1].Expression, "count", TypeConstants.GpuMacros.ForUnroll, ref context);
+        if (call.GetArgument(args, call.ValueOrdinal + 1)?.Expression is { } count)
+        {
+            CheckConstant(count, "count", TypeConstants.GpuMacros.ForUnroll, ref context);
+        }
     }
 
     private static void CheckLoopBody(InvocationExpressionSyntax invocation, GpuMacroCall call, string macroName,
         ref ValidationContext context)
     {
-        var args = invocation.ArgumentList.Arguments;
-        if (args.Count <= call.LambdaArgumentIndex ||
-            args[call.LambdaArgumentIndex].Expression is not LambdaExpressionSyntax body)
+        if (call.GetBody(invocation.ArgumentList.Arguments) is not { } body)
         {
             return;
         }

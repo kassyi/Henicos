@@ -37,6 +37,30 @@ internal static class ArgumentMatchingHelper
     }
 
     /// <summary>
+    /// The argument of a call that <paramref name="parameter"/> receives, or <c>null</c> when the call omits it. An
+    /// argument is matched by its name when it has one and by its position otherwise, so a call with reordered named
+    /// arguments finds the same argument as one with positional arguments.
+    /// </summary>
+    /// <remarks>A <c>params</c> parameter can receive several arguments; this finds the first.</remarks>
+    public static ArgumentSyntax? FindArgument(SeparatedSyntaxList<ArgumentSyntax> arguments, IParameterSymbol parameter)
+    {
+        if (parameter.ContainingSymbol is not IMethodSymbol callee)
+        {
+            return null;
+        }
+
+        for (var i = 0; i < arguments.Count; i++)
+        {
+            if (callee.FindParameter(arguments, i)?.Ordinal == parameter.Ordinal)
+            {
+                return arguments[i];
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
     /// Creates the fallback expression for an omitted optional parameter: literal, casted enum literal, or default.
     /// </summary>
     public static ExpressionSyntax CreateDefaultArgument(IParameterSymbol parameter)
