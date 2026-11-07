@@ -15,7 +15,9 @@ internal sealed class VectorOperandPair : IDisposable
     // A right result kept here while the left one is evaluated again; it lends nothing otherwise
     private readonly VectorResultCache _kept = new();
 
-    /// <summary>Evaluates <paramref name="left"/>, then <paramref name="right"/>, each with its result intact.</summary>
+    /// <summary>
+    /// Evaluates <paramref name="left"/>, then <paramref name="right"/>, each with its result intact.
+    /// </summary>
     public void Evaluate(
         IGpuBigIntVectorExpression left,
         IGpuBigIntVectorExpression right,
