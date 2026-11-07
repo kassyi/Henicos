@@ -2,8 +2,8 @@ namespace Kassyi.GSharp.Tests.Shared.Transpiler;
 
 /// <summary>
 /// <see cref="OverrideScopeStack"/> resolves the name pushed last, restores the earlier entries on <c>Pop</c>,
-/// enumerates in push order, grows past its initial capacity of 16, and applies an override pushed with a symbol only to
-/// that symbol.
+/// enumerates in push order, grows past its initial capacity of 16, and applies an override pushed with a symbol only
+/// to that symbol.
 /// </summary>
 [Category(TestCategory.Compiler)]
 [TestTarget(ExecutionTarget.CpuExecution)]
@@ -119,7 +119,7 @@ public class OverrideScopeStackTests
     [Scenario(TestScenario.SadPath)]
     public void TryGet_OverridePushedWithSymbol_MatchesOnlyThatSymbol()
     {
-        var tree = CSharpSyntaxTree.ParseText("class C { void M(int i) { int N(int i) => i; } }");
+        var tree = CSharpSyntaxTree.ParseText(RoslynTestUtility.ReadTestCase("Transpiler/ShadowedParameter.cs"));
         var compilation = CSharpCompilation.Create("OverrideScope", [tree]);
         var model = compilation.GetSemanticModel(tree);
         var parameters = tree.GetRoot()

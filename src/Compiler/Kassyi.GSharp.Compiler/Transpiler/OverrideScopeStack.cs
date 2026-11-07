@@ -5,8 +5,8 @@ using System.Collections;
 /// A zero-allocation or minimal-allocation stack for local variable overrides during macro transpilation.
 /// </summary>
 /// <remarks>
-/// An override pushed with a symbol replaces only the references to that symbol: a parameter of a nested lambda or local
-/// function that has the same name is another symbol and keeps its own value (#1266).
+/// An override pushed with a symbol replaces only the references to that symbol: a parameter of a nested lambda or
+/// local function that has the same name is another symbol and keeps its own value (#1266).
 /// </remarks>
 public sealed class OverrideScopeStack : IReadOnlyCollection<(string Name, OverrideValue Value)>
 {

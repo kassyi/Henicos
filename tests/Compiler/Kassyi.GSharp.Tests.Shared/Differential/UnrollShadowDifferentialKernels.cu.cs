@@ -5,9 +5,9 @@ using Kassyi.GSharp.Core;
 namespace Kassyi.GSharp.Tests.Shared.Differential;
 
 /// <summary>
-/// Differential kernels for a <c>Gpu.ForUnroll</c> body that declares a local function or lambda whose parameter has the
-/// name of the loop or context parameter: the nested parameter is its own variable, which the unrolled index or the
-/// context argument does not replace.
+/// Differential kernels for a <c>Gpu.ForUnroll</c> body that declares a local function or lambda whose parameter has
+/// the name of the loop or context parameter: the nested parameter is its own variable, which the unrolled index or
+/// the context argument does not replace.
 /// </summary>
 public static partial class UnrollShadowDifferentialKernels
 {

@@ -53,7 +53,8 @@ internal static class MacroTranspilerHelper
         out MacroScope scope)
     {
         scope = default;
-        if (GpuCodeConstraints.GetMacroLoopParameter(lambdaExpr, hasContext) is not { Identifier.Text.Length: > 0 } param)
+        if (GpuCodeConstraints.GetMacroLoopParameter(lambdaExpr, hasContext) is not
+            { Identifier.Text.Length: > 0 } param)
         {
             context.Reporter.Fail(GSharpDiagnostics.MacroLambdaRequiresParameter, invocation, macroName);
             return false;
