@@ -381,24 +381,45 @@ public sealed class ScalarFuzzGenerator
         Func<KernelGenerationState, ScalarLocalVariable, bool> CanEmit,
         Action<KernelGenerationState, ScalarLocalVariable> Emit);
 
+    private static readonly Func<KernelGenerationState, ScalarLocalVariable, bool> s_always = static (_, _) => true;
+
+    private static bool IsArithmeticTarget(KernelGenerationState state, ScalarLocalVariable target) =>
+        !target.Type.IsEnum && target.Type.Kind != FuzzScalarKind.Boolean;
+
     private static readonly StatementKind[] s_statementKinds =
     [
-        new(25, static (_, _) => true, EmitAssignmentStatement),
-        new(42, static (_, target) => !target.Type.IsEnum && target.Type.Kind != FuzzScalarKind.Boolean, EmitCompoundAssignmentStatement),
-        new(52, static (_, _) => true, static (state, _) => FuzzCompositeExpressionEmitter.EmitTupleDeconstructionStatement(state)),
-        new(62, static (_, _) => true, static (state, _) => FuzzCompositeExpressionEmitter.EmitNullableStatement(state)),
-        new(70, static (_, _) => true, static (state, _) => FuzzCompositeExpressionEmitter.EmitSpanStatement(state)),
-        new(78, static (_, _) => true, static (state, _) => FuzzCompositeExpressionEmitter.EmitRefTernaryStatement(state)),
+        new(25, s_always, EmitAssignmentStatement),
+        new(42, IsArithmeticTarget, EmitCompoundAssignmentStatement),
+        new(
+            52,
+            s_always,
+            static (state, _) => FuzzCompositeExpressionEmitter.EmitTupleDeconstructionStatement(state)),
+        new(
+            62,
+            s_always,
+            static (state, _) => FuzzCompositeExpressionEmitter.EmitNullableStatement(state)),
+        new(
+            70,
+            s_always,
+            static (state, _) => FuzzCompositeExpressionEmitter.EmitSpanStatement(state)),
+        new(
+            78,
+            s_always,
+            static (state, _) => FuzzCompositeExpressionEmitter.EmitRefTernaryStatement(state)),
         new(
             86,
             static (state, _) => state.Swarm.DeviceCallWeight > 1 && !state.InSwitchSection,
             static (state, _) => FuzzDeviceFunctionEmitter.EmitRandomDeviceFunctionCall(state)),
         new(
             92,
-            static (state, _) => state.ControlFlowDepth < 2 && (state.Swarm.ControlFlowWeight > 1 || state.Swarm.LoopWeight > 1),
+            static (state, _) => state.ControlFlowDepth < 2
+                && (state.Swarm.ControlFlowWeight > 1 || state.Swarm.LoopWeight > 1),
             static (state, _) => EmitControlFlowStatement(state)),
-        new(96, static (_, target) => !target.Type.IsEnum && target.Type.Kind != FuzzScalarKind.Boolean, EmitIncrementStatement),
-        new(int.MaxValue, static (state, _) => state.ControlFlowDepth == 0, static (state, _) => EmitNewLocalStatement(state)),
+        new(96, IsArithmeticTarget, EmitIncrementStatement),
+        new(
+            int.MaxValue,
+            static (state, _) => state.ControlFlowDepth == 0,
+            static (state, _) => EmitNewLocalStatement(state)),
     ];
 
     private static void EmitRandomStatement(KernelGenerationState state)

@@ -181,12 +181,21 @@ public static class FuzzScalarExpressionEmitter
         }
     }
 
-    /// <summary>What the kinds of integral expression read: the state, the requested type and the depth limits.</summary>
+    /// <summary>
+    /// What the kinds of integral expression read: the state, the requested type and the depth limits.
+    /// </summary>
     private readonly record struct IntegralExpressionContext(
         KernelGenerationState State,
         FuzzTypeInfo TargetType,
         int Depth,
-        int MaxDepth);
+        int MaxDepth)
+    {
+        /// <summary>Gets the kind the operands are promoted to before the operator applies.</summary>
+        public FuzzScalarKind PromotedKind => FuzzTypeInfo.PromoteUnary(TargetType.Kind);
+
+        /// <summary>Gets the type of <see cref="PromotedKind"/>.</summary>
+        public FuzzTypeInfo PromotedType => FuzzTypeInfo.Get(PromotedKind);
+    }
 
     /// <summary>
     /// One weighted kind of integral expression. The draw <c>roll</c> picks the first row, in table order, whose
@@ -199,16 +208,22 @@ public static class FuzzScalarExpressionEmitter
         Func<IntegralExpressionContext, bool> CanEmit,
         Func<IntegralExpressionContext, string> Emit);
 
+    private static readonly Func<IntegralExpressionContext, bool> s_always = static _ => true;
+
     private static readonly IntegralExpressionKind[] s_integralExpressionKinds =
     [
-        new(static sw => sw.BitwiseWeight, static _ => true, EmitBitwiseExpression),
-        new(static sw => sw.DivisionWeight, static _ => true, EmitDivisionExpression),
-        new(static sw => sw.ShiftWeight, static _ => true, EmitShiftExpression),
-        new(static sw => sw.TernaryWeight, static _ => true, EmitTernaryExpression),
+        new(static sw => sw.BitwiseWeight, s_always, EmitBitwiseExpression),
+        new(static sw => sw.DivisionWeight, s_always, EmitDivisionExpression),
+        new(static sw => sw.ShiftWeight, s_always, EmitShiftExpression),
+        new(static sw => sw.TernaryWeight, s_always, EmitTernaryExpression),
         new(
             static sw => sw.SwitchExprWeight,
             static context => context.Depth <= 1,
-            static context => FuzzCompositeExpressionEmitter.GenerateSwitchExpression(context.State, context.TargetType, context.Depth + 1, context.MaxDepth)),
+            static context => FuzzCompositeExpressionEmitter.GenerateSwitchExpression(
+                context.State,
+                context.TargetType,
+                context.Depth + 1,
+                context.MaxDepth)),
     ];
 
     /// <summary>Generates an integral expression respecting Swarm weights and <see cref="KnownIssueFilter"/>.</summary>
@@ -238,7 +253,7 @@ public static class FuzzScalarExpressionEmitter
     private static string EmitBitwiseExpression(IntegralExpressionContext context)
     {
         var (state, targetType, depth, maxDepth) = context;
-        var promotedType = FuzzTypeInfo.Get(FuzzTypeInfo.PromoteUnary(targetType.Kind));
+        var promotedType = context.PromotedType;
         string[] ops = ["+", "-", "*", "&", "|", "^"];
         string op = ops[state.Rng.NextBelow(ops.Length)];
         var (left, right) = GeneratePossiblyInterferingPair(state, promotedType, depth + 1, maxDepth);
@@ -248,20 +263,26 @@ public static class FuzzScalarExpressionEmitter
     private static string EmitDivisionExpression(IntegralExpressionContext context)
     {
         var (state, targetType, depth, maxDepth) = context;
-        var promotedKind = FuzzTypeInfo.PromoteUnary(targetType.Kind);
-        var promotedType = FuzzTypeInfo.Get(promotedKind);
+        var promotedKind = context.PromotedKind;
+        var promotedType = context.PromotedType;
         bool isModulo = state.Rng.NextBool();
         string left = state.IssueFilter.AvoidMsvcNegatedConstantDivision
             ? GenerateLeafExpression(state, promotedType)
             : GenerateExpression(state, promotedType, depth + 1, maxDepth);
         string right = GenerateLeafExpression(state, promotedType);
-        return EnsureType(BuildGuardedDivisionOrModulo(promotedKind, left, right, isModulo, leftIsSimpleLocal: IsSimpleIdentifier(left)), targetType);
+        string division = BuildGuardedDivisionOrModulo(
+            promotedKind,
+            left,
+            right,
+            isModulo,
+            leftIsSimpleLocal: IsSimpleIdentifier(left));
+        return EnsureType(division, targetType);
     }
 
     private static string EmitShiftExpression(IntegralExpressionContext context)
     {
         var (state, targetType, depth, maxDepth) = context;
-        var promotedType = FuzzTypeInfo.Get(FuzzTypeInfo.PromoteUnary(targetType.Kind));
+        var promotedType = context.PromotedType;
         string shiftOp = state.Rng.NextBelow(3) switch
         {
             0 => "<<",
@@ -285,7 +306,7 @@ public static class FuzzScalarExpressionEmitter
     {
         var (state, targetType, depth, maxDepth) = context;
         var rng = state.Rng;
-        var promotedType = FuzzTypeInfo.Get(FuzzTypeInfo.PromoteUnary(targetType.Kind));
+        var promotedType = context.PromotedType;
         string unaryOp = promotedType.IsSigned
             ? (rng.NextBelow(3) switch { 0 => "+", 1 => "-", _ => "~" })
             : (rng.NextBool() ? "+" : "~");
