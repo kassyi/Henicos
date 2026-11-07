@@ -326,23 +326,25 @@ internal sealed class ManagedAccessorSet(IMethodSymbol caller, Compilation compi
     // stub's class standing for those of the declaring types
     private static string GetRuntimeTypeName(INamedTypeSymbol type, int typeParameterCount)
     {
-        var name = new StringBuilder();
+        using var name = new SourceWriter();
         AppendNestedName(name, type);
         if (typeParameterCount > 0)
         {
-            name.Append('[');
-            for (var i = 0; i < typeParameterCount; i++)
+            using (name.Brackets())
             {
-                name.Append(i > 0 ? ",[!" : "[!").Append(i.ToString(CultureInfo.InvariantCulture)).Append(']');
+                for (var i = 0; i < typeParameterCount; i++)
+                {
+                    name.AppendIf(i > 0, ",");
+                    name.Append($"[!{i}]");
+                }
             }
-
-            name.Append(']');
         }
 
-        return name.Append(", ").Append(type.ContainingAssembly.Identity.Name).ToString();
+        name.Append($", {type.ContainingAssembly.Identity.Name}");
+        return name.ToString();
     }
 
-    private static void AppendNestedName(StringBuilder name, INamedTypeSymbol type)
+    private static void AppendNestedName(SourceWriter name, INamedTypeSymbol type)
     {
         if (type.ContainingType is { } outer)
         {
@@ -351,7 +353,7 @@ internal sealed class ManagedAccessorSet(IMethodSymbol caller, Compilation compi
         }
         else if (type.ContainingNamespace is { IsGlobalNamespace: false } ns)
         {
-            name.Append(ns.GetFullNamespaceName()).Append('.');
+            name.Append($"{ns.GetFullNamespaceName()}.");
         }
 
         name.Append(type.MetadataName);

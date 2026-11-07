@@ -31,7 +31,7 @@ namespace StructLayoutDiagnosticsTest
 
     public struct Plain { public int A; public float B; }
 
-    // D1 to D4 at the kernel parameter or local type; the last kernels report nothing
+    // Each of the first kernels reports at the kernel parameter or local type; the last kernels report nothing
     public static partial class StructLayoutDiagnosticsKernels
     {
         [GpuKernel]
