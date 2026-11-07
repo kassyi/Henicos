@@ -546,18 +546,15 @@ public static partial class GpuBigIntDivRem
         var evalWords = quotientBuffer.NumWords + n + 1;
 
         using var qbTrunc = new GpuBigUInt(rightOperand.Workspace, evalWords);
-        qbTrunc.Clear();
         qbTrunc.CopyFrom(qb, numWords: Math.Min(quotientBuffer.NumWords + n, evalWords));
 
         using var leftOperandExtended = new GpuBigUInt(rightOperand.Workspace, evalWords);
-        leftOperandExtended.Clear();
         leftOperandExtended.CopyFrom(leftOperand, numWords: Math.Min(nA, evalWords));
 
         using var remainderExtended = new GpuBigUInt(rightOperand.Workspace, evalWords);
         GpuBigIntMath.Sub(leftOperandExtended, qbTrunc, remainderExtended);
 
         using var bPaddedExtended = new GpuBigUInt(rightOperand.Workspace, evalWords);
-        bPaddedExtended.Clear();
         bPaddedExtended.CopyFrom(rightOperand, numWords: Math.Min(n, evalWords));
 
         // Zero-sync correction using single block kernel: the remainder and the quotient move by the same steps.
