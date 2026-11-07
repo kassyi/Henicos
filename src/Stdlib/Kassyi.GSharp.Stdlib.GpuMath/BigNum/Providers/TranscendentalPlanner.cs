@@ -57,8 +57,9 @@ internal readonly record struct ExpPlan(
 /// implementations take the same plan, which keeps them bit-identical.
 /// </para>
 /// <para>
-/// The error bounds are those of the design of #628, §10.1 (rounding error of the series in units of <c>2^-W</c>,
-/// with the input error <c>δ ≤ 2u</c>):
+/// The error bounds (rounding error of the series in units of <c>2^-W</c>, with the input error <c>δ ≤ 2u</c>;
+/// derivation:
+/// #1401 ([Docs]: Write the derivation of the big-float Log and Exp error bounds into the architecture docs)):
 /// <list type="bullet">
 ///   <item><description>atanh, Horner from the top: <c>F &lt; 1.79 + ε'_R</c>; Paterson–Stockmeyer:
 ///   <c>F &lt; m + 0.6 + ε'_R</c>. Log approximation: <c>B = ceil(F + 4.01)</c>, that is 7 and <c>m + 6</c>
@@ -80,9 +81,10 @@ internal static class TranscendentalPlanner
     /// The bound <c>B</c> of the Log approximation with the atanh series in Horner form:
     /// <c>ceil(1.79 + ε'_R + 4.01)</c> with <c>ε'_R ≤ 1</c>.
     /// </summary>
-    // Source of the bound: design #628 §10.1, re-derived (with the implementation's
-    // truncations) in the review of stages 1–4. A bound below the true error would let the rounding check of
-    // stage 5 accept a wrong truncation silently; the P5 tests cannot detect a bound that is too small.
+    // Source of the bound: the error analysis of the truncations of this series. The derivation will be in
+    // #1401 ([Docs]: Write the derivation of the big-float Log and Exp error bounds into the architecture docs).
+    // A bound below the true error would let the rounding check of the final truncation accept a wrong result
+    // silently; the precision tests cannot detect a bound that is too small.
     internal const int LogHornerErrorBound = 7;
 
     // Margin of the guard bits above the error bound; the rounding check fails with probability about 2^-15.
@@ -167,9 +169,10 @@ internal static class TranscendentalPlanner
     /// Returns the bound of the Log approximation with the atanh series in Paterson–Stockmeyer form,
     /// <c>ceil(m + 0.6 + ε'_R + 4.01) = m + 6</c> (<c>ε'_R ≤ 1</c>).
     /// </summary>
-    // Source of the bound: design #628 §10.1, re-derived (with the implementation's
-    // truncations) in the review of stages 1–4. A bound below the true error would let the rounding check of
-    // stage 5 accept a wrong truncation silently; the P5 tests cannot detect a bound that is too small.
+    // Source of the bound: the error analysis of the truncations of this series. The derivation will be in
+    // #1401 ([Docs]: Write the derivation of the big-float Log and Exp error bounds into the architecture docs).
+    // A bound below the true error would let the rounding check of the final truncation accept a wrong result
+    // silently; the precision tests cannot detect a bound that is too small.
     internal static int LogPatersonStockmeyerErrorBound(int blockSize) => checked(blockSize + 6);
 
     /// <summary>
@@ -426,9 +429,10 @@ internal static class TranscendentalPlanner
     /// Returns the bound of the Exp approximation in Paterson–Stockmeyer form, <c>ceil(5.83·2^s) − 1</c>
     /// (<c>E &lt; 2^s·(ε_R + 4.83) − 1</c> with <c>ε_R ≤ 1</c>).
     /// </summary>
-    // Source of the bound: design #628 §10.1, re-derived (with the implementation's
-    // truncations) in the review of stages 1–4. A bound below the true error would let the rounding check of
-    // stage 5 accept a wrong truncation silently; the P5 tests cannot detect a bound that is too small.
+    // Source of the bound: the error analysis of the truncations of this series. The derivation will be in
+    // #1401 ([Docs]: Write the derivation of the big-float Log and Exp error bounds into the architecture docs).
+    // A bound below the true error would let the rounding check of the final truncation accept a wrong result
+    // silently; the precision tests cannot detect a bound that is too small.
     internal static BigInteger ExpPatersonStockmeyerErrorBound(int halvings) =>
         (583 * (BigInteger.One << halvings) + 99) / 100 - 1;
 
@@ -464,7 +468,7 @@ internal static class TranscendentalPlanner
 
     /// <summary>
     /// Returns the guard words added for a retry of the rounding check: half the working precision, at least one word,
-    /// so that <c>W</c> grows by half (design §4.1). The check passes eventually: <c>ln x</c> and <c>e^x</c> of a
+    /// so that <c>W</c> grows by half. The check passes eventually: <c>ln x</c> and <c>e^x</c> of a
     /// dyadic argument other than 1 and 0 are irrational, so they are not a <c>p</c>-bit value.
     /// </summary>
     internal static int ZivRetryGuardWords(int workingBits) => Math.Max(1, workingBits / 64);

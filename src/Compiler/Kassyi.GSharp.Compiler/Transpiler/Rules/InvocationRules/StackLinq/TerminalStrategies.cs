@@ -142,8 +142,8 @@ internal sealed class ElementSelectionStrategy(bool stopOnFirstMatch, bool trapO
 /// Terminal strategy for <c>Max</c> and <c>Min</c>.
 /// </summary>
 /// <remarks>
-/// A <c>float</c> or <c>double</c> sequence places NaN as System.Linq does, whatever its position: <c>Max</c> skips NaN and
-/// gives NaN only when every element is NaN; <c>Min</c> gives the first NaN and reads no element after it.
+/// A <c>float</c> or <c>double</c> sequence places NaN as System.Linq does, whatever its position: <c>Max</c> skips
+/// NaN and gives NaN only when every element is NaN; <c>Min</c> gives the first NaN and reads no element after it.
 /// </remarks>
 internal sealed class ExtremaStrategy(bool isMax) : IStackLinqTerminalStrategy
 {
@@ -154,7 +154,8 @@ internal sealed class ExtremaStrategy(bool isMax) : IStackLinqTerminalStrategy
         context.Emitter.Writer.AppendLine($"bool {resultVar}_init = false;");
     }
 
-    // Max: if (!<res>_init[ || <is_nan>(<res>)]) { <res> = <v>; <res>_init = true; } else { if (<v> > <res>) { <res> = <v>; } }
+    // Max: if (!<res>_init[ || <is_nan>(<res>)]) { <res> = <v>; <res>_init = true; }
+    //      else { if (<v> > <res>) { <res> = <v>; } }
     // Min: if (!<res>_init) { <res> = <v>; <res>_init = true;[ if (<is_nan>(<res>)) { break; }] }
     //      else { if (<v> < <res>) { <res> = <v>; }[ else if (<is_nan>(<v>)) { <res> = <v>; break; }] }
     public void Emit(ref TranspileContext context, in LinqStage stage, string resultVar, int valIndex)

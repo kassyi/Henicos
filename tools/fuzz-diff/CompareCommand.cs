@@ -37,6 +37,20 @@ public sealed class CompareCommand : IFuzzCommand
     /// <summary>Exit code when a build or git command fails.</summary>
     public const int ExitInfrastructureFailure = 3;
 
+    /// <summary>The batch count when <c>--batches</c> is not given.</summary>
+    public const int DefaultBatches = 20;
+
+    /// <summary>The time limit of one reduction, in minutes, when <c>--reduce-minutes</c> is not given.</summary>
+    public const int DefaultReduceMinutes = 30;
+
+    private static readonly Dictionary<string, FuzzOptionSpec> s_options = FuzzOptionTable.Create(
+        new("--base", FuzzOptionTable.Value(ParseBase)),
+        new("--profile", FuzzOptionTable.Value(ParseProfile)),
+        new("--dialects", FuzzOptionTable.Value(ParseDialects)),
+        new("--reduce-minutes", FuzzOptionTable.Value(ParseReduceMinutes)),
+        new("--work-dir", FuzzOptionTable.Value(SetWorkDir)),
+        new("--repo-root", FuzzOptionTable.Value(SetRepoRoot)));
+
     /// <summary>Gets the singleton command instance.</summary>
     public static CompareCommand Instance { get; } = new();
 
@@ -57,6 +71,57 @@ public sealed class CompareCommand : IFuzzCommand
             return 0;
         }
 
+        return Execute(options);
+    }
+
+    /// <summary>Parses command-line arguments into a <see cref="CompareCommandOptions"/> record.</summary>
+    public static bool TryParseOptions(
+        ReadOnlySpan<string> args,
+        out CompareCommandOptions? options,
+        out bool showHelp,
+        out string? error)
+    {
+        options = null;
+        var values = new FuzzOptionValues();
+        if (!FuzzOptionTable.TryParse(args, s_options, values, out showHelp, out error) || showHelp)
+        {
+            return error is null;
+        }
+
+        if (string.IsNullOrWhiteSpace(values.CompareBase))
+        {
+            error = "--base <ref> is required.";
+            return false;
+        }
+
+        FuzzSwarmConfig.TryParseFocus(values.SwarmFocus, out var swarmFocus);
+        var generation = new FuzzOptions
+        {
+            FuzzSeed = values.FuzzSeed,
+            InputSeed = values.InputSeed,
+            BatchSize = values.BatchSize,
+            Profile = values.Profile.ToCode(),
+            AllowedIssues = new HashSet<int>(values.AllowedIssues),
+            SwarmFocus = swarmFocus,
+            Metamorphic = values.Metamorphic,
+        };
+
+        options = new CompareCommandOptions(
+            BaseRef: values.CompareBase,
+            Batches: values.Batches ?? DefaultBatches,
+            Generation: generation,
+            Dialects: values.Dialects,
+            ExpectChange: values.ExpectChange,
+            NoReduce: values.NoReduce,
+            ReduceMinutes: values.ReduceMinutes,
+            WorkDir: Path.GetFullPath(values.WorkDir ?? Path.Combine("tmp", "differential-fuzz")),
+            RepoRoot: Path.GetFullPath(values.RepoRoot ?? Directory.GetCurrentDirectory()));
+        return true;
+    }
+
+    /// <summary>Runs the comparison and returns the exit code; a build or git failure exits with 3.</summary>
+    public static int Execute(CompareCommandOptions options)
+    {
         try
         {
             return CodegenCompareRunner.Run(options);
@@ -68,137 +133,52 @@ public sealed class CompareCommand : IFuzzCommand
         }
     }
 
-    /// <summary>Parses command-line arguments into a <see cref="CompareCommandOptions"/> record.</summary>
-    public static bool TryParseOptions(
-        ReadOnlySpan<string> args,
-        out CompareCommandOptions? options,
-        out bool showHelp,
-        out string? error)
+    /// <summary>Returns the dialects compared when <c>--dialects</c> is not given: <c>Cpu</c>, <c>Cuda</c>.</summary>
+    internal static List<string> DefaultDialects() => ["Cpu", "Cuda"];
+
+    private static string? ParseBase(FuzzOptionValues values, string value)
     {
-        options = null;
-        showHelp = false;
-        error = null;
+        values.CompareBase = value;
+        return null;
+    }
 
-        string? baseRef = null;
-        int batches = 20;
-        ulong fuzzSeed = 1UL;
-        int? inputSeed = null;
-        int batchSize = 64;
-        string profile = "C";
-        var allowedIssues = new HashSet<int>();
-        var swarmFocus = FuzzSwarmFocus.Default;
-        bool metamorphic = false;
-        var dialects = new List<string> { "Cpu", "Cuda" };
-        bool expectChange = false;
-        bool noReduce = false;
-        int reduceMinutes = 30;
-        string workDir = Path.Combine("tmp", "differential-fuzz");
-        string repoRoot = Directory.GetCurrentDirectory();
+    // Unlike `run`, an unknown profile is read as C (KnownIssueFilter.NormalizeProfile).
+    private static string? ParseProfile(FuzzOptionValues values, string value)
+    {
+        values.Profile = FuzzProfileCodes.FromCode(KnownIssueFilter.NormalizeProfile(value));
+        return null;
+    }
 
-        for (int i = 0; i < args.Length; i++)
+    private static string? ParseDialects(FuzzOptionValues values, string value) =>
+        TryParseDialects(value, values.Dialects)
+            ? null
+            : $"Invalid --dialects '{value}'. Expected Cpu, Cuda or Cpu,Cuda.";
+
+    private static string? ParseReduceMinutes(FuzzOptionValues values, string value)
+    {
+        if (!TryParsePositive(value, out int minutes))
         {
-            string arg = args[i];
-            bool hasValue = i + 1 < args.Length;
-            switch (arg)
-            {
-                case "--help" or "-h":
-                    showHelp = true;
-                    return true;
-
-                case "--base" when hasValue:
-                    baseRef = args[++i];
-                    break;
-
-                case "--batches" when hasValue && TryParsePositive(args[++i], out batches):
-                    break;
-
-                case "--batch-size" when hasValue && TryParsePositive(args[++i], out batchSize) && batchSize <= 256:
-                    break;
-
-                case "--fuzz-seed" when hasValue && FuzzRandom.TryParseSeed(args[++i], out fuzzSeed):
-                    break;
-
-                case "--input-seed" when hasValue && int.TryParse(args[++i], NumberStyles.Integer, CultureInfo.InvariantCulture, out int seed):
-                    inputSeed = seed;
-                    break;
-
-                case "--profile" when hasValue:
-                    profile = KnownIssueFilter.NormalizeProfile(args[++i]);
-                    break;
-
-                case "--allow-issue" when hasValue &&
-                    int.TryParse(args[++i].AsSpan().TrimStart('#'), NumberStyles.Integer, CultureInfo.InvariantCulture, out int issue) &&
-                    issue > 0:
-                    allowedIssues.Add(issue);
-                    break;
-
-                case "--swarm-focus" when hasValue && FuzzSwarmConfig.TryParseFocus(args[++i], out swarmFocus):
-                    break;
-
-                case "--metamorphic":
-                    metamorphic = true;
-                    break;
-
-                case "--dialects" when hasValue && TryParseDialects(args[++i], dialects):
-                    break;
-
-                case "--expect-change":
-                    expectChange = true;
-                    break;
-
-                case "--no-reduce":
-                    noReduce = true;
-                    break;
-
-                case "--reduce-minutes" when hasValue && TryParsePositive(args[++i], out reduceMinutes):
-                    break;
-
-                case "--work-dir" when hasValue:
-                    workDir = args[++i];
-                    break;
-
-                case "--repo-root" when hasValue:
-                    repoRoot = args[++i];
-                    break;
-
-                default:
-                    error = $"Invalid or incomplete option '{arg}'.";
-                    return false;
-            }
+            return "--reduce-minutes requires a positive integer.";
         }
 
-        if (string.IsNullOrWhiteSpace(baseRef))
-        {
-            error = "--base <ref> is required.";
-            return false;
-        }
-
-        var generation = new FuzzOptions
-        {
-            FuzzSeed = fuzzSeed,
-            InputSeed = inputSeed,
-            BatchSize = batchSize,
-            Profile = profile,
-            AllowedIssues = allowedIssues,
-            SwarmFocus = swarmFocus,
-            Metamorphic = metamorphic,
-        };
-
-        options = new CompareCommandOptions(
-            baseRef,
-            batches,
-            generation,
-            dialects,
-            expectChange,
-            noReduce,
-            reduceMinutes,
-            Path.GetFullPath(workDir),
-            Path.GetFullPath(repoRoot));
-        return true;
+        values.ReduceMinutes = minutes;
+        return null;
     }
 
     private static bool TryParsePositive(string text, out int value) =>
         int.TryParse(text, NumberStyles.Integer, CultureInfo.InvariantCulture, out value) && value > 0;
+
+    private static string? SetWorkDir(FuzzOptionValues values, string value)
+    {
+        values.WorkDir = value;
+        return null;
+    }
+
+    private static string? SetRepoRoot(FuzzOptionValues values, string value)
+    {
+        values.RepoRoot = value;
+        return null;
+    }
 
     private static bool TryParseDialects(string text, List<string> dialects)
     {

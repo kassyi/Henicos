@@ -18,6 +18,8 @@ namespace cg = cooperative_groups;
 #define __gsharp_inf_d CUDART_INF
 
 // --- Standard Types ---
+// Shared by the CUDA prelude (Prelude.cu) and the native CPU prelude (Types.hpp), so that the two define these types
+// once and cannot differ. The CPU prelude defines __device__ and __host__ as empty (Platform.hpp).
 template <typename T>
 struct System_Nullable {
 bool HasValue;
@@ -26,7 +28,8 @@ __device__ inline System_Nullable() : HasValue(false), Value() {}
 __device__ inline System_Nullable(decltype(nullptr)) : HasValue(false), Value() {}
 __device__ inline System_Nullable(T val) : HasValue(true), Value(val) {}
 template <typename U>
-__device__ inline System_Nullable(const System_Nullable<U>& other) : HasValue(other.HasValue), Value(static_cast<T>(other.Value)) {}
+__device__ inline System_Nullable(const System_Nullable<U>& other)
+: HasValue(other.HasValue), Value(static_cast<T>(other.Value)) {}
 };
 
 // The scope of a C# using: disposes the resource when control leaves the enclosing block (end, return, break, continue,
@@ -1259,7 +1262,8 @@ __device__ __forceinline__ bool __gsharp_linq_equals(const T& a, const T& b) { r
 __device__ __forceinline__ bool __gsharp_linq_equals(float a, float b) { return a == b || (a != a && b != b); }
 __device__ __forceinline__ bool __gsharp_linq_equals(double a, double b) { return a == b || (a != a && b != b); }
 
-// Whether a Max / Min element is NaN, which System.Linq places independently of its position; false for every other type
+// Whether a Max / Min element is NaN, which System.Linq places independently of its position; false for every
+// other type
 template <typename T>
 __device__ __forceinline__ bool __gsharp_linq_is_nan(const T&) { return false; }
 __device__ __forceinline__ bool __gsharp_linq_is_nan(float a) { return a != a; }
