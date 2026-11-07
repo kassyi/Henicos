@@ -389,11 +389,11 @@ public const string DebugName_B = "global::System.Int32";
 [global::System.Runtime.InteropServices.FieldOffset(0)]
 public global::System.Int32 B;
 }
-public static unsafe void Marshal_SwapPair(ref global::Kassyi.GSharp.Tests.DeviceLibrary.SwapPair host, ref AotContexts.SwapPair native, bool isDevicePtr, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_SwapPair(ref global::Kassyi.GSharp.Tests.DeviceLibrary.SwapPair host, ref AotContexts.SwapPair native, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
 {
 native = global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.DeviceLibrary.SwapPair, AotContexts.SwapPair>(ref host);
 }
-public static unsafe void Unmarshal_SwapPair(ref global::Kassyi.GSharp.Tests.DeviceLibrary.SwapPair host, ref AotContexts.SwapPair native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_SwapPair(ref global::Kassyi.GSharp.Tests.DeviceLibrary.SwapPair host, ref AotContexts.SwapPair native, global::System.IntPtr hStream = default)
 {
 host = global::System.Runtime.CompilerServices.Unsafe.As<AotContexts.SwapPair, global::Kassyi.GSharp.Tests.DeviceLibrary.SwapPair>(ref native);
 }
@@ -407,11 +407,11 @@ public const string DebugName_Value = "global::System.Int32";
 [global::System.Runtime.InteropServices.FieldOffset(1)]
 public global::System.Int32 Value;
 }
-public static unsafe void Marshal_PackedPair(ref global::Kassyi.GSharp.Tests.DeviceLibrary.PackedPair host, ref AotContexts.PackedPair native, bool isDevicePtr, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_PackedPair(ref global::Kassyi.GSharp.Tests.DeviceLibrary.PackedPair host, ref AotContexts.PackedPair native, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
 {
 native = global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.DeviceLibrary.PackedPair, AotContexts.PackedPair>(ref host);
 }
-public static unsafe void Unmarshal_PackedPair(ref global::Kassyi.GSharp.Tests.DeviceLibrary.PackedPair host, ref AotContexts.PackedPair native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_PackedPair(ref global::Kassyi.GSharp.Tests.DeviceLibrary.PackedPair host, ref AotContexts.PackedPair native, global::System.IntPtr hStream = default)
 {
 host = global::System.Runtime.CompilerServices.Unsafe.As<AotContexts.PackedPair, global::Kassyi.GSharp.Tests.DeviceLibrary.PackedPair>(ref native);
 }

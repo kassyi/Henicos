@@ -1,0 +1,6 @@
+- issue: 12
+  title: T
+  entry:
+    - case: Kernels.FirstKernel
+      paths: [Native]
+      columns: [a]

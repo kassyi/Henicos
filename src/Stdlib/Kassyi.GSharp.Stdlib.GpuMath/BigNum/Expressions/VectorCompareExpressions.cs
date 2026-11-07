@@ -12,7 +12,7 @@ internal class VectorCompareScalarExpression(
 
     public bool TryGetLength(out int length) => vector.TryGetLength(out length);
 
-    // The flags of the capacity; the elements are the first Count of them, as for the input (design D3 4.3)
+    // The flags of the capacity; the elements are the first Count of them, as for the input
     public BoolVectorEvaluation EvaluateCore(GpuWorkspace workspace)
     {
         var vecResult = DeviceCounted.Evaluate(vector, workspace);

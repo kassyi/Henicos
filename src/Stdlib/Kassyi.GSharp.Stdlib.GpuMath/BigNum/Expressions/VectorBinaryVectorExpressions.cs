@@ -25,7 +25,7 @@ internal abstract class VectorBinaryVectorExpressionBase(
     public int Length => left.Length;
     public int WordsPerElement { get; } = wordsPerElement;
 
-    // The result buffers, lent until the next evaluation or Dispose; a caller's target is never kept (design 4.6)
+    // The result buffers, lent until the next evaluation or Dispose; a caller's target is never kept
     private readonly VectorResultCache _cache = new();
 
     // Evaluates the operands so that a shared sub-expression read at two offsets keeps both results
@@ -37,7 +37,7 @@ internal abstract class VectorBinaryVectorExpressionBase(
 
     public bool TryGetLength(out int length) => left.TryGetLength(out length);
 
-    // Evaluates the window of the capacity; the elements are the first Count of them (design D3 4.3)
+    // Evaluates the window of the capacity; the elements are the first Count of them
     public VectorEvaluation EvaluateCore(
         GpuWorkspace workspace,
         int elementOffset,
