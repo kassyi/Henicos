@@ -116,28 +116,58 @@ public sealed class GpuBigIntMathTests : IDisposable
         Assert.Equal((new BigInteger(Math.Abs(sum)), sum < 0), (result.ToBigInteger(), negative));
     }
 
+    // Pairs at both ends of the 1- and 2-word ranges; the first, second, fourth, eighth and ninth differ by half the
+    // range or more, where the top bit of the wrapping difference a - b has the opposite value.
+    public static TheoryData<int, ulong, ulong> IsLessThanPairs => new()
+    {
+        { 1, 0x8000_0000ul, 0ul },
+        { 1, 0ul, 0x8000_0001ul },
+        { 1, 0xFFFF_FFFFul, 0ul },
+        { 1, 0ul, 0xFFFF_FFFFul },
+        { 1, 3ul, 5ul },
+        { 1, 5ul, 3ul },
+        { 1, 7ul, 7ul },
+        { 2, 0x8000_0000_0000_0000ul, 1ul },
+        { 2, 1ul, 0xFFFF_FFFF_0000_0000ul },
+        { 2, 0x1_0000_0000ul, 0xFFFF_FFFFul }
+    };
+
     [SkippableTheory]
     [Scenario(TestScenario.Boundary)]
-    [InlineData(1, 0x8000_0000ul, 0ul)]
-    [InlineData(1, 0ul, 0x8000_0001ul)]
-    [InlineData(1, 0xFFFF_FFFFul, 0ul)]
-    [InlineData(1, 0ul, 0xFFFF_FFFFul)]
-    [InlineData(1, 3ul, 5ul)]
-    [InlineData(1, 5ul, 3ul)]
-    [InlineData(1, 7ul, 7ul)]
-    [InlineData(2, 0x8000_0000_0000_0000ul, 1ul)]
-    [InlineData(2, 1ul, 0xFFFF_FFFF_0000_0000ul)]
-    [InlineData(2, 0x1_0000_0000ul, 0xFFFF_FFFFul)]
+    [MemberData(nameof(IsLessThanPairs))]
     public void IsLessThan_AnyPairOfTheWidth_MatchesUnsignedComparison(int words, ulong leftValue, ulong rightValue)
     {
         // The answer is the unsigned order for every pair of the width, also when the operands differ by half the
-        // range or more, where the top bit of the wrapping difference a - b has the opposite value.
+        // range or more.
         // mutant: GpuBigIntMath.cs IsLessThanCore `< 0` -> `<= 0` (7 < 7)
         // mutant: GpuBigIntMath.cs IsLessThanCore back to the top bit of `Sub` (0x80000000 < 0, 0 < 0x80000001)
         using var left = GpuBigUInt.FromBigInteger(_workspace, leftValue, words);
         using var right = GpuBigUInt.FromBigInteger(_workspace, rightValue, words);
 
         Assert.Equal(leftValue < rightValue, GpuBigIntMath.IsLessThan(left, right));
+    }
+
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [MemberData(nameof(IsLessThanPairs))]
+    public void IsLessThan_CpuFallback_MatchesUnsignedComparison(int words, ulong leftValue, ulong rightValue)
+    {
+        // The CPU provider answers through BigInteger.CompareTo of the unsigned values; the same pairs as on CUDA.
+        // mutant: GpuBigIntMath.cs IsLessThanCore back to the top bit of `Sub` (0x80000000 < 0, 0 < 0x80000001)
+        // ForceCpuFallback is AsyncLocal, so the override cannot leak into other tests.
+        GpuKernelLoader.ForceCpuFallback = true;
+        try
+        {
+            using var workspace = new GpuWorkspace(64);
+            using var left = GpuBigUInt.FromBigInteger(workspace, leftValue, words);
+            using var right = GpuBigUInt.FromBigInteger(workspace, rightValue, words);
+
+            Assert.Equal(leftValue < rightValue, GpuBigIntMath.IsLessThan(left, right));
+        }
+        finally
+        {
+            GpuKernelLoader.ForceCpuFallback = false;
+        }
     }
 
     [SkippableTheory]
