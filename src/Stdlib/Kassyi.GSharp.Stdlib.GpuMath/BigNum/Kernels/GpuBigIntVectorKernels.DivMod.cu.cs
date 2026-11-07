@@ -118,10 +118,14 @@ public static partial class GpuBigIntVectorKernels
         if (FindMaxNonZeroWordWarp(op.Right.Limbs, offsetB, op.Right.NumWords, laneId) < 0)
         {
             // The host throws DivideByZeroException when this element is within the count; ~index keeps the lowest.
+            // A scalar launch passes no word (its host check rejects a zero divisor before the launch).
             if (laneId == 0)
             {
                 op.Result.Signs[batchIdx] = 0u;
-                Gpu.AtomicMax(ref ctx.ZeroDivisor[0], ~(uint)batchIdx);
+                if (ctx.ZeroDivisor != null)
+                {
+                    Gpu.AtomicMax(ref ctx.ZeroDivisor[0], ~(uint)batchIdx);
+                }
             }
 
             return;
