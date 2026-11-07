@@ -226,6 +226,26 @@ internal static class SpillSuppressionParser
     private static bool TryExtractDefinedFunctionName(string line, out string functionName)
     {
         functionName = "";
+        if (!TryFindIdentifierBeforeParenthesis(line, out var start, out var endExclusive))
+        {
+            return false;
+        }
+
+        var candidate = line[start..endExclusive];
+        if (IsKeywordBeforeParenthesis(candidate) || !HasReturnTypeBefore(line, start))
+        {
+            return false;
+        }
+
+        functionName = candidate;
+        return true;
+    }
+
+    // The identifier that ends right before the first '(' of the line, whitespace between them allowed.
+    private static bool TryFindIdentifierBeforeParenthesis(string line, out int start, out int endExclusive)
+    {
+        start = 0;
+        endExclusive = 0;
         var parenIdx = line.IndexOf('(');
         if (parenIdx <= 0)
         {
@@ -238,41 +258,30 @@ internal static class SpillSuppressionParser
             end--;
         }
 
-        if (end < 0)
+        var first = end;
+        while (first >= 0 && (char.IsLetterOrDigit(line[first]) || line[first] == '_'))
+        {
+            first--;
+        }
+
+        first++;
+        if (first > end)
         {
             return false;
         }
 
-        var start = end;
-        while (start >= 0 && (char.IsLetterOrDigit(line[start]) || line[start] == '_'))
-        {
-            start--;
-        }
-
-        start++;
-        if (start > end)
-        {
-            return false;
-        }
-
-        var endExclusive = end + 1;
-        var candidate = line[start..endExclusive];
-        if (candidate is "if" or "for" or "while" or "switch" or "return" or "sizeof" or "alignof" or "defined"
-            or "__declspec" or "__attribute__")
-        {
-            return false;
-        }
-
-        // Require a return type or qualifier before the function identifier
-        var prefix = line.AsSpan(0, start).Trim();
-        if (prefix.Length == 0)
-        {
-            return false;
-        }
-
-        functionName = candidate;
+        start = first;
+        endExclusive = end + 1;
         return true;
     }
+
+    private static bool IsKeywordBeforeParenthesis(string identifier) =>
+        identifier is "if" or "for" or "while" or "switch" or "return" or "sizeof" or "alignof" or "defined"
+            or "__declspec" or "__attribute__";
+
+    // A definition has a return type or qualifier before the function identifier; a call statement does not.
+    private static bool HasReturnTypeBefore(string line, int identifierStart) =>
+        line.AsSpan(0, identifierStart).Trim().Length > 0;
 
     private static void CollectGSharpCallees(string line, string currentFunction, HashSet<string> callees)
     {
