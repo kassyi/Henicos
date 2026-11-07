@@ -152,9 +152,9 @@ public static class GpuBigFloatVectorLinqExtensions
         /// <param name="right">The divisor vectorized expression.</param>
         /// <returns>A new vectorized expression representing the element-wise division.</returns>
         /// <remarks>
-        /// The evaluation throws <see cref="DivideByZeroException"/> when the divisor of an element is zero. It reads that
-        /// check back from the device (one synchronization of the workspace stream), so evaluating it while the stream
-        /// captures a CUDA graph throws <see cref="NotSupportedException"/>.
+        /// The evaluation throws <see cref="DivideByZeroException"/> when the divisor of an element is zero. It reads
+        /// that check back from the device (one synchronization of the workspace stream), so evaluating it while the
+        /// stream captures a CUDA graph throws <see cref="NotSupportedException"/>.
         /// </remarks>
         public IGpuBigFloatVectorExpression ZipDivide(IGpuBigFloatVectorExpression right) =>
             new FloatVectorDivVectorExpression(source, right);
