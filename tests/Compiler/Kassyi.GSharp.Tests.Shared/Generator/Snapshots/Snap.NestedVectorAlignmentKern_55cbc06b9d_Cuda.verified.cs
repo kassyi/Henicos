@@ -103,7 +103,7 @@ public const string DebugName_Field5_Double2 = "global::Kassyi.GSharp.Core.Doubl
 [global::System.Runtime.InteropServices.FieldOffset(48)]
 public fixed byte Field5_Double2[16];
 }
-public static unsafe void Marshal_GEN56_AlignmentTestStruct(ref global::Kassyi.GSharp.Tests.Runtime.GEN56_AlignmentTestStruct host, ref AotContexts.GEN56_AlignmentTestStruct native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_GEN56_AlignmentTestStruct(ref global::Kassyi.GSharp.Tests.Runtime.GEN56_AlignmentTestStruct host, ref AotContexts.GEN56_AlignmentTestStruct native, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
 {
 native = default;
 native.Field1_Byte = host.Field1_Byte;
@@ -121,7 +121,7 @@ fixed (byte* pField = native.Field5_Double2)
 *((global::Kassyi.GSharp.Core.Double2*)pField) = host.Field5_Double2;
 }
 }
-public static unsafe void Unmarshal_GEN56_AlignmentTestStruct(ref global::Kassyi.GSharp.Tests.Runtime.GEN56_AlignmentTestStruct host, ref AotContexts.GEN56_AlignmentTestStruct native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_GEN56_AlignmentTestStruct(ref global::Kassyi.GSharp.Tests.Runtime.GEN56_AlignmentTestStruct host, ref AotContexts.GEN56_AlignmentTestStruct native, global::System.IntPtr hStream = default)
 {
 host.Field1_Byte = native.Field1_Byte;
 fixed (byte* pField = native.Field2_Float2)
@@ -413,7 +413,7 @@ try
 {
 void** __gsharp_kernel_params = stackalloc void*[1];
 global::Kassyi.GSharp.Tests.Runtime.NestedVectorAlignmentKernels.AotContexts.GEN56_AlignmentTestStruct __gsharp_native_0 = default;
-global::Kassyi.GSharp.Tests.Runtime.NestedVectorAlignmentKernels.AotContexts.Marshal_GEN56_AlignmentTestStruct(ref data, ref __gsharp_native_0, false, null, hStream);
+global::Kassyi.GSharp.Tests.Runtime.NestedVectorAlignmentKernels.AotContexts.Marshal_GEN56_AlignmentTestStruct(ref data, ref __gsharp_native_0, null, hStream);
 // Marshal ref/out struct: data
 int __gsharp_size_0 = sizeof(global::Kassyi.GSharp.Tests.Runtime.NestedVectorAlignmentKernels.AotContexts.GEN56_AlignmentTestStruct);
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
@@ -433,7 +433,7 @@ global::System.IntPtr.Zero // Extra
 // Fast zero-allocation copy from device
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)(&__gsharp_native_0), __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
-global::Kassyi.GSharp.Tests.Runtime.NestedVectorAlignmentKernels.AotContexts.Unmarshal_GEN56_AlignmentTestStruct(ref data, ref __gsharp_native_0, false, hStream);
+global::Kassyi.GSharp.Tests.Runtime.NestedVectorAlignmentKernels.AotContexts.Unmarshal_GEN56_AlignmentTestStruct(ref data, ref __gsharp_native_0, hStream);
 }
 finally
 {
