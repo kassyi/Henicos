@@ -938,14 +938,28 @@ public static partial class GpuBigIntVectorKernels
             Gpu.SyncThreads();
         }
 
-        // With different signs, |A| + ~|B| + 1 carries out exactly when |A| >= |B|: a borrow means |B| is larger and
-        // the buffer holds |A| - |B| modulo the width, negated below. With the same sign, a carry out is the bit above
-        // the width: the sum is shifted down by one bit to take it.
-        bool borrowed = differentSigns && topCarry[0] == 0u;
-        bool carriedOut = !differentSigns && topCarry[0] != 0u;
+        FinishFloatAccumulate(step, differentSigns, topCarry[0], align.OutExp, signA);
+    }
+
+    // With different signs, |A| + ~|B| + 1 carries out exactly when |A| >= |B|: a borrow means |B| is larger and the
+    // buffer holds |A| - |B| modulo the width, negated here. With the same sign, a carry out is the bit above the
+    // width: the sum is shifted down by one bit to take it, and the exponent rises by one.
+    [GpuDeviceFunction]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void FinishFloatAccumulate(
+        FloatAccumulateStepContext step,
+        bool differentSigns,
+        uint topCarry,
+        int outExp,
+        uint signA)
+    {
+        int tid = ThreadIndex.X;
+        int numWords = step.Source.Slice.NumWords;
+        bool borrowed = differentSigns && topCarry == 0u;
+        bool carriedOut = !differentSigns && topCarry != 0u;
         if (tid == 0)
         {
-            step.ExpResult[step.BlockIdx] = (uint)(carriedOut ? align.OutExp + 1 : align.OutExp);
+            step.ExpResult[step.BlockIdx] = (uint)(carriedOut ? outExp + 1 : outExp);
             step.SignResult[step.BlockIdx] = borrowed ? step.Source.Sign : signA;
         }
 
