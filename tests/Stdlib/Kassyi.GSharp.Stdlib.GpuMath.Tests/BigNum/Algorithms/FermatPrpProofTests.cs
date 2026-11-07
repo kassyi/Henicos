@@ -25,8 +25,8 @@ using static FermatTestMath;
 /// <c>IsProbablePrime == false</c>.</description></item>
 /// <item><description><b>P-soundness-signflip</b>: odd 128-bit Fiat-Shamir challenges reject order-2 sign-flip forgeries
 /// (<c>v -&gt; N - v</c> on <c>u_E</c>, <c>u_K</c> or any <c>mu_t</c>) deterministically.</description></item>
-/// <item><description><b>P-signed-form</b>: every residue of an honest proof is <c>|x| = min(x, N - x)</c>; the forgery
-/// that negates <c>u_K</c> and <c>mu_0</c> together is tested in <see cref="FermatPrpProofSignedFormTests"/>.</description></item>
+/// <item><description><b>P-signed-form</b>: every residue of an honest proof is <c>|x| = min(x, N - x)</c>
+/// (forgeries through the sign: <see cref="FermatPrpProofSignedFormTests"/>).</description></item>
 /// <item><description><b>P-domain-guards</b>: 1-bit tampering, zero residues, non-canonical (<c>&gt;= N</c>) residues,
 /// mismatched metadata and non-coprime bases are rejected.</description></item>
 /// </list>
