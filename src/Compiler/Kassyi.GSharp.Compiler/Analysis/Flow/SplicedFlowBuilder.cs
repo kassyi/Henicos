@@ -467,7 +467,7 @@ internal sealed class SplicedFlowBuilder
         IFlowAnonymousFunctionOperation? body = null;
         foreach (var argument in invocation.Arguments)
         {
-            if (argument.Parameter?.Ordinal == macro.LambdaArgumentIndex && UnwrapLambda(argument.Value) is { } lambda)
+            if (argument.Parameter?.Ordinal == macro.BodyOrdinal && UnwrapLambda(argument.Value) is { } lambda)
             {
                 body = lambda;
                 continue;

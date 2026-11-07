@@ -42,9 +42,10 @@ public sealed class PreLoweringExpander(SemanticModel? semanticModel = null) : C
         }
 
         var args = invocation.ArgumentList.Arguments;
-        if (args.Count <= call.LambdaArgumentIndex ||
-            args[call.LambdaArgumentIndex].Expression is not LambdaExpressionSyntax lambdaExpr ||
-            !ContainsBarrier(lambdaExpr.Body))
+        if (call.GetBody(args) is not { } lambdaExpr ||
+            !ContainsBarrier(lambdaExpr.Body) ||
+            call.GetArgument(args, call.ValueOrdinal)?.Expression is not { } startArgument ||
+            call.GetArgument(args, call.ValueOrdinal + 1)?.Expression is not { } countArgument)
         {
             return base.VisitExpressionStatement(node);
         }
@@ -55,9 +56,8 @@ public sealed class PreLoweringExpander(SemanticModel? semanticModel = null) : C
             return base.VisitExpressionStatement(node);
         }
 
-        var offset = call.ArgumentOffset;
-        var startExpr = args[offset].Expression.WithoutTrivia();
-        var countExpr = args[offset + 1].Expression.WithoutTrivia();
+        var startExpr = startArgument.WithoutTrivia();
+        var countExpr = countArgument.WithoutTrivia();
         if (!TryBuildBoundExpression(startExpr, countExpr, out var boundExpr))
         {
             return base.VisitExpressionStatement(node);
@@ -65,10 +65,11 @@ public sealed class PreLoweringExpander(SemanticModel? semanticModel = null) : C
 
         ParameterSyntax? contextParam = null;
         ExpressionSyntax? contextArgExpr = null;
-        if (call.HasContext && lambdaExpr is ParenthesizedLambdaExpressionSyntax { ParameterList.Parameters.Count: 2 } parenLambda)
+        if (call.GetContext(args) is { } contextArgument &&
+            lambdaExpr is ParenthesizedLambdaExpressionSyntax { ParameterList.Parameters.Count: 2 } parenLambda)
         {
             contextParam = parenLambda.ParameterList.Parameters[0];
-            contextArgExpr = args[0].Expression.WithoutTrivia();
+            contextArgExpr = contextArgument.WithoutTrivia();
         }
 
         var id = _expansionCounter++;
@@ -412,8 +413,8 @@ public sealed class PreLoweringExpander(SemanticModel? semanticModel = null) : C
         var argCount = invocation.ArgumentList.Arguments.Count;
         call = argCount switch
         {
-            3 => new GpuMacroCall(GpuMacroKind.ForUnroll, hasContext: false, lambdaArgumentIndex: 2),
-            4 => new GpuMacroCall(GpuMacroKind.ForUnroll, hasContext: true, lambdaArgumentIndex: 3),
+            3 => new GpuMacroCall(GpuMacroKind.ForUnroll, bodyOrdinal: 2),
+            4 => new GpuMacroCall(GpuMacroKind.ForUnroll, hasContext: true, bodyOrdinal: 3),
             _ => default
         };
         return call.Kind == GpuMacroKind.ForUnroll;
