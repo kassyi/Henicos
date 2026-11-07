@@ -121,7 +121,22 @@ internal static class GpuOperatorMacroTranspiler
             return false;
         }
 
-        return AppendTestAndBranches(result, resultTemp, call, macro, plan, temps, assignment, ref context);
+        AppendTest(result, resultTemp, plan, temps, ref context);
+        var writer = context.Emitter.Writer;
+        writer.AppendLine("else");
+        using (writer.Scope())
+        {
+            if (call.Operands[2] is { } right &&
+                !TryDeclareNestedTemp(right, macro, assignment, ref context, out temps[2]))
+            {
+                return false;
+            }
+
+            AppendCall(call, temps, resultTemp, assignment, ref context);
+            writer.AppendLine(";");
+        }
+
+        return true;
     }
 
     // <T> __gsharp_seq_<n> = <left>; the left operand of a && or || into the temporary <temp>: an operator macro
@@ -144,11 +159,10 @@ internal static class GpuOperatorMacroTranspiler
         return true;
     }
 
-    // if(<test>(__gsharp_seq_1)) { <target>=__gsharp_seq_1; } else { <right temporaries> <target>(<result>, ...); }
-    // The test of the left operand in temps[1], the assignment of it when the test holds, and the call of the target
-    // with the right operand otherwise
-    private static bool AppendTestAndBranches(ExpressionSyntax? result, int resultTemp, in MacroCall call,
-        OperatorMacro macro, in ConditionalPlan plan, int[] temps, AssignmentExpressionSyntax assignment,
+    // if(<test>(__gsharp_seq_1)) { <target>=__gsharp_seq_1; }
+    // The test of the left operand in temps[1] and the assignment of it to the target (temps[0], the temporary
+    // <resultTemp> or <result>) when the test holds
+    private static void AppendTest(ExpressionSyntax? result, int resultTemp, in ConditionalPlan plan, int[] temps,
         ref TranspileContext context)
     {
         var writer = context.Emitter.Writer;
@@ -171,21 +185,6 @@ internal static class GpuOperatorMacroTranspiler
             EvaluationOrder.AppendTempName(writer, temps[1]);
             writer.AppendLine(";");
         }
-
-        writer.AppendLine("else");
-        using (writer.Scope())
-        {
-            if (call.Operands[2] is { } right &&
-                !TryDeclareNestedTemp(right, macro, assignment, ref context, out temps[2]))
-            {
-                return false;
-            }
-
-            AppendCall(call, temps, resultTemp, assignment, ref context);
-            writer.AppendLine(";");
-        }
-
-        return true;
     }
 
     // <T> __gsharp_seq_<n> = <operand>; the value of <operand> as the operator's operand type <type>

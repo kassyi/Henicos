@@ -407,14 +407,13 @@ internal static class OperatorMacroResolver
 
             var operandType = operatorMethod.Parameters[operandIndex].Type;
             var unwrapped = UnwrapExpression(operand, semanticModel);
-            var (innerMethod, innerLifted, innerIncrementOrDecrement, innerTest) =
-                GetOperator(unwrapped, semanticModel);
+            var (innerMethod, innerLifted, innerIncrement, innerTest) = GetOperator(unwrapped, semanticModel);
             if (GetMacroAttribute(innerMethod) is not { } innerAttr || innerMethod == null)
             {
                 continue;
             }
 
-            var inner = ResolveCall(unwrapped, innerMethod, innerAttr, innerLifted, innerIncrementOrDecrement,
+            var inner = ResolveCall(unwrapped, innerMethod, innerAttr, innerLifted, innerIncrement,
                 innerTest, semanticModel);
 
             // [WHY] The target writes its result into the storage of the assignment target: a temporary has storage
