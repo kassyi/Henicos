@@ -5,9 +5,9 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 
 /// <summary>
 /// Differential tests for <c>StackLinq</c> <see cref="float"/> and <see cref="double"/> <c>Sum</c> overloads (#730).
-/// Every path gives the result of System.Linq's Sum: the elements are added in sequence order, and a float sum adds them
-/// in a double accumulator, bitwise even on ill-conditioned sequences where SIMD lane summation or a float accumulator
-/// rounds differently.
+/// Every path gives the result of System.Linq's Sum: the elements are added in sequence order, and a float sum adds
+/// them in a double accumulator, bitwise even on ill-conditioned sequences where SIMD lane summation or a float
+/// accumulator rounds differently.
 /// </summary>
 public class StackLinqSumDifferentialTests
 {
@@ -65,7 +65,8 @@ public class StackLinqSumDifferentialTests
     {
         // Every form of StackLinq double Sum sums elements in index order from 0 to Length - 1, matching the GPU on
         // ill-conditioned inputs where SIMD vector reduction rounds away small terms (1.0 vs 0.0).
-        // mutant: StackLinqExtensions.Sum.cs double Sum sums a contiguous source with SumVectorized again (the managed columns fail)
+        // mutant: StackLinqExtensions.Sum.cs double Sum sums a contiguous source with SumVectorized again (the managed
+        // columns fail)
         Assert.NotEmpty(DiffPaths.Available);
         DifferentialRunner.Run(s_doubleSum);
     }

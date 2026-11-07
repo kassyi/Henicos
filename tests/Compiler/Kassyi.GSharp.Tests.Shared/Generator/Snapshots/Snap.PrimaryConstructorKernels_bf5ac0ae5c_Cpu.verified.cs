@@ -47,11 +47,11 @@ public const string DebugName_X = "global::System.Int32";
 [global::System.Runtime.InteropServices.FieldOffset(8)]
 public global::System.Int32 X;
 }
-public static unsafe void Marshal_PcCaptured(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcCaptured host, ref AotContexts.PcCaptured native, bool isDevicePtr, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_PcCaptured(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcCaptured host, ref AotContexts.PcCaptured native, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
 {
 native = global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Syntax.PcCaptured, AotContexts.PcCaptured>(ref host);
 }
-public static unsafe void Unmarshal_PcCaptured(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcCaptured host, ref AotContexts.PcCaptured native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_PcCaptured(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcCaptured host, ref AotContexts.PcCaptured native, global::System.IntPtr hStream = default)
 {
 host = global::System.Runtime.CompilerServices.Unsafe.As<AotContexts.PcCaptured, global::Kassyi.GSharp.Tests.Shared.Syntax.PcCaptured>(ref native);
 }
@@ -68,11 +68,11 @@ public const string DebugName_X = "global::System.Int32";
 [global::System.Runtime.InteropServices.FieldOffset(16)]
 public global::System.Int32 X;
 }
-public static unsafe void Marshal_PcCapturedMixed(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcCapturedMixed host, ref AotContexts.PcCapturedMixed native, bool isDevicePtr, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_PcCapturedMixed(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcCapturedMixed host, ref AotContexts.PcCapturedMixed native, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
 {
 native = global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Syntax.PcCapturedMixed, AotContexts.PcCapturedMixed>(ref host);
 }
-public static unsafe void Unmarshal_PcCapturedMixed(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcCapturedMixed host, ref AotContexts.PcCapturedMixed native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_PcCapturedMixed(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcCapturedMixed host, ref AotContexts.PcCapturedMixed native, global::System.IntPtr hStream = default)
 {
 host = global::System.Runtime.CompilerServices.Unsafe.As<AotContexts.PcCapturedMixed, global::Kassyi.GSharp.Tests.Shared.Syntax.PcCapturedMixed>(ref native);
 }
@@ -92,11 +92,11 @@ public const string DebugName_Last = "global::System.Int32";
 [global::System.Runtime.InteropServices.FieldOffset(20)]
 public global::System.Int32 Last;
 }
-public static unsafe void Marshal_PcCapturedAutoProperty(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcCapturedAutoProperty host, ref AotContexts.PcCapturedAutoProperty native, bool isDevicePtr, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_PcCapturedAutoProperty(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcCapturedAutoProperty host, ref AotContexts.PcCapturedAutoProperty native, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
 {
 native = global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Syntax.PcCapturedAutoProperty, AotContexts.PcCapturedAutoProperty>(ref host);
 }
-public static unsafe void Unmarshal_PcCapturedAutoProperty(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcCapturedAutoProperty host, ref AotContexts.PcCapturedAutoProperty native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_PcCapturedAutoProperty(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcCapturedAutoProperty host, ref AotContexts.PcCapturedAutoProperty native, global::System.IntPtr hStream = default)
 {
 host = global::System.Runtime.CompilerServices.Unsafe.As<AotContexts.PcCapturedAutoProperty, global::Kassyi.GSharp.Tests.Shared.Syntax.PcCapturedAutoProperty>(ref native);
 }
@@ -113,11 +113,11 @@ public const string DebugName_Flag = "global::System.Boolean";
 [global::System.Runtime.InteropServices.FieldOffset(12)]
 public global::System.Boolean Flag;
 }
-public static unsafe void Marshal_PcConverted(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcConverted host, ref AotContexts.PcConverted native, bool isDevicePtr, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_PcConverted(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcConverted host, ref AotContexts.PcConverted native, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
 {
 native = global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Syntax.PcConverted, AotContexts.PcConverted>(ref host);
 }
-public static unsafe void Unmarshal_PcConverted(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcConverted host, ref AotContexts.PcConverted native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_PcConverted(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcConverted host, ref AotContexts.PcConverted native, global::System.IntPtr hStream = default)
 {
 host = global::System.Runtime.CompilerServices.Unsafe.As<AotContexts.PcConverted, global::Kassyi.GSharp.Tests.Shared.Syntax.PcConverted>(ref native);
 }
@@ -131,11 +131,11 @@ public const string DebugName_Inner = "global::Kassyi.GSharp.Tests.Shared.Syntax
 [global::System.Runtime.InteropServices.FieldOffset(4)]
 public AotContexts.PcConverted Inner;
 }
-public static unsafe void Marshal_PcConvertedOuter(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcConvertedOuter host, ref AotContexts.PcConvertedOuter native, bool isDevicePtr, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_PcConvertedOuter(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcConvertedOuter host, ref AotContexts.PcConvertedOuter native, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
 {
 native = global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Syntax.PcConvertedOuter, AotContexts.PcConvertedOuter>(ref host);
 }
-public static unsafe void Unmarshal_PcConvertedOuter(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcConvertedOuter host, ref AotContexts.PcConvertedOuter native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_PcConvertedOuter(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcConvertedOuter host, ref AotContexts.PcConvertedOuter native, global::System.IntPtr hStream = default)
 {
 host = global::System.Runtime.CompilerServices.Unsafe.As<AotContexts.PcConvertedOuter, global::Kassyi.GSharp.Tests.Shared.Syntax.PcConvertedOuter>(ref native);
 }
@@ -149,11 +149,11 @@ public const string DebugName_Items = "global::Kassyi.GSharp.Tests.Shared.Syntax
 [global::System.Runtime.InteropServices.FieldOffset(4)]
 public AotContexts.PcConvertedPair Items;
 }
-public static unsafe void Marshal_PcConvertedPairHolder(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcConvertedPairHolder host, ref AotContexts.PcConvertedPairHolder native, bool isDevicePtr, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_PcConvertedPairHolder(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcConvertedPairHolder host, ref AotContexts.PcConvertedPairHolder native, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
 {
 native = global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Syntax.PcConvertedPairHolder, AotContexts.PcConvertedPairHolder>(ref host);
 }
-public static unsafe void Unmarshal_PcConvertedPairHolder(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcConvertedPairHolder host, ref AotContexts.PcConvertedPairHolder native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_PcConvertedPairHolder(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcConvertedPairHolder host, ref AotContexts.PcConvertedPairHolder native, global::System.IntPtr hStream = default)
 {
 host = global::System.Runtime.CompilerServices.Unsafe.As<AotContexts.PcConvertedPairHolder, global::Kassyi.GSharp.Tests.Shared.Syntax.PcConvertedPairHolder>(ref native);
 }
@@ -164,11 +164,11 @@ public const string DebugName__element0 = "global::Kassyi.GSharp.Tests.Shared.Sy
 [global::System.Runtime.InteropServices.FieldOffset(0)]
 public fixed byte _element0[32];
 }
-public static unsafe void Marshal_PcConvertedPair(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcConvertedPair host, ref AotContexts.PcConvertedPair native, bool isDevicePtr, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_PcConvertedPair(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcConvertedPair host, ref AotContexts.PcConvertedPair native, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
 {
 native = global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Syntax.PcConvertedPair, AotContexts.PcConvertedPair>(ref host);
 }
-public static unsafe void Unmarshal_PcConvertedPair(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcConvertedPair host, ref AotContexts.PcConvertedPair native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_PcConvertedPair(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcConvertedPair host, ref AotContexts.PcConvertedPair native, global::System.IntPtr hStream = default)
 {
 host = global::System.Runtime.CompilerServices.Unsafe.As<AotContexts.PcConvertedPair, global::Kassyi.GSharp.Tests.Shared.Syntax.PcConvertedPair>(ref native);
 }
@@ -182,11 +182,11 @@ public const string DebugName_V = "global::System.Numerics.Vector2";
 [global::System.Runtime.InteropServices.FieldOffset(4)]
 public fixed byte V[8];
 }
-public static unsafe void Marshal_PcSized(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcSized host, ref AotContexts.PcSized native, bool isDevicePtr, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_PcSized(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcSized host, ref AotContexts.PcSized native, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
 {
 native = global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Syntax.PcSized, AotContexts.PcSized>(ref host);
 }
-public static unsafe void Unmarshal_PcSized(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcSized host, ref AotContexts.PcSized native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_PcSized(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcSized host, ref AotContexts.PcSized native, global::System.IntPtr hStream = default)
 {
 host = global::System.Runtime.CompilerServices.Unsafe.As<AotContexts.PcSized, global::Kassyi.GSharp.Tests.Shared.Syntax.PcSized>(ref native);
 }
