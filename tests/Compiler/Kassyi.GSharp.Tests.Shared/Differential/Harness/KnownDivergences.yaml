@@ -109,9 +109,6 @@
     - case: BoundsAndMemoryDifferentialKernels.BoundsCheckEliminationUpperOnlyKernel
       paths: [Cuda]
       columns: [$exception]
-    - case: BoundsAndMemoryDifferentialKernels.AllThreadsNullDereferenceTrapKernel
-      paths: [Cuda]
-      columns: [$exception]
     - case: IntegerTrapAndCheckedDifferentialKernels.Int32DivideKernel
       paths: [Cuda]
       columns: [$exception]
@@ -235,3 +232,10 @@
     - case: PendingBugsDifferentialKernels.GridStrideLoopUniformWarpShuffleKernel
       paths: [Native]
       columns: [iter0_down1, iter1_down1]
+
+- issue: 1409
+  title: "[Bug]: Reading an element of a null array in a CUDA kernel fails the launch instead of throwing NullReferenceException"
+  entries:
+    - case: BoundsAndMemoryDifferentialKernels.AllThreadsNullDereferenceTrapKernel
+      paths: [Cuda]
+      columns: [$exception]
