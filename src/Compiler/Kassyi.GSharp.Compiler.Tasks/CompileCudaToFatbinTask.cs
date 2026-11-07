@@ -110,9 +110,10 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
             sourcePaths[i] = sources[i].GetMetadata("FullPath");
         }
 
-        var commandRecord = BuildCommandRecord(sourcePaths);
+        var commandRecord = NvccCommandRecord.Build(_nvccOptions, _nvccVersion, sourcePaths);
         var commandFilePath = outputFatbinPath + CommandFileExtension;
-        if (IsNewerThanSources(outputFatbinPath, sourcePaths) && IsCommandRecordCurrent(commandFilePath, commandRecord))
+        if (IsNewerThanSources(outputFatbinPath, sourcePaths) &&
+            NvccCommandRecord.IsCurrent(Log, commandFilePath, commandRecord))
         {
             Log.LogMessage(MessageImportance.Low,
                 $"Skipping compilation because '{outputFatbinPath}' is up-to-date.");
@@ -150,13 +151,14 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
             return false;
         }
 
-        if (!DeleteCommandRecord(commandFilePath) ||
+        if (!NvccCommandRecord.Delete(Log, commandFilePath) ||
             !CompileCombinedWithNvcc([bundleFilePath], outputFatbinPath, bundledPaths))
         {
             return false;
         }
 
-        return ArtifactHelper.ProcessArtifact(outputFatbinPath, Log) && WriteCommandRecord(commandFilePath, commandRecord);
+        return ArtifactHelper.ProcessArtifact(outputFatbinPath, Log) &&
+            NvccCommandRecord.Write(Log, commandFilePath, commandRecord);
     }
 
     // One #include per source, except an earlier bundle of the same name. The included paths are added to bundledPaths.
@@ -219,88 +221,6 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
         return item;
     }
 
-    // [WHY] Timestamps alone miss a change of the nvcc command: a new default or GSharpTargetArchitectures value, another
-    // nvcc, a new signing key, or a source added to a combined fatbin while older than the fatbin. Like MSBuild's
-    // CoreCompileInputs.cache, the record holds what decides the output except the output path:
-    // <options>\n<source>\n...signing-key <public key>\n<last line of nvcc --version>
-    // Not recorded (a change needs a rebuild by hand, as in a C++ build without dependency files): the
-    // NVCC_PREPEND_FLAGS / NVCC_APPEND_FLAGS environment variables, the version of the host C++ compiler, and the headers
-    // that the sources include.
-    private string BuildCommandRecord(IReadOnlyList<string> sourcePaths)
-    {
-        var record = new StringBuilder();
-        record.Append(_nvccOptions).Append('\n');
-        foreach (var sourcePath in sourcePaths)
-        {
-            record.Append(sourcePath).Append('\n');
-        }
-
-        record.Append("signing-key ").Append(ArtifactHelper.GetSigningKeyFingerprint()).Append('\n');
-        record.Append(_nvccVersion);
-        return record.ToString();
-    }
-
-    // Removes the record before nvcc runs: when nvcc, signing or the record write fails, no record of an earlier command
-    // can match the fatbin left behind, so the next build compiles again
-    private bool DeleteCommandRecord(string commandFilePath)
-    {
-        try
-        {
-            if (File.Exists(commandFilePath))
-            {
-                File.Delete(commandFilePath);
-            }
-
-            return true;
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
-            Log.LogError($"Failed to delete the nvcc command record '{commandFilePath}': {ex.Message}");
-            return false;
-        }
-    }
-
-    private bool IsCommandRecordCurrent(string commandFilePath, string commandRecord)
-    {
-        if (!File.Exists(commandFilePath))
-        {
-            Log.LogMessage(MessageImportance.Low, $"Recompiling because '{commandFilePath}' does not exist.");
-            return false;
-        }
-
-        try
-        {
-            if (string.Equals(File.ReadAllText(commandFilePath), commandRecord, StringComparison.Ordinal))
-            {
-                return true;
-            }
-
-            Log.LogMessage(MessageImportance.Normal,
-                $"Recompiling because the nvcc command differs from the one recorded in '{commandFilePath}'.");
-            return false;
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
-            Log.LogMessage(MessageImportance.Low,
-                $"Recompiling because '{commandFilePath}' could not be read: {ex.Message}");
-            return false;
-        }
-    }
-
-    private bool WriteCommandRecord(string commandFilePath, string commandRecord)
-    {
-        try
-        {
-            File.WriteAllText(commandFilePath, commandRecord);
-            return true;
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
-            Log.LogError($"Failed to write the nvcc command record '{commandFilePath}': {ex.Message}");
-            return false;
-        }
-    }
-
     private Dictionary<string, string>? _vcvarsEnv;
 
     protected override bool OnBeforeExecute()
@@ -325,7 +245,7 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
             return true;
         }
 
-        _nvccOptions = BuildNvccOptions(SplitSemicolon(TargetArchitectures));
+        _nvccOptions = NvccInvoker.BuildOptions(SplitSemicolon(TargetArchitectures), Toolchain.IsWindows);
         if (!Toolchain.IsWindows)
         {
             return true;
@@ -389,22 +309,23 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
             return [CreateOutputItem(outputFatbinPath, commandFilePath: null)];
         }
 
-        var commandRecord = BuildCommandRecord([sourcePath]);
+        var commandRecord = NvccCommandRecord.Build(_nvccOptions, _nvccVersion, [sourcePath]);
         var commandFilePath = outputFatbinPath + CommandFileExtension;
         if (File.Exists(sourcePath) && IsNewerThanSources(outputFatbinPath, [sourcePath]) &&
-            IsCommandRecordCurrent(commandFilePath, commandRecord))
+            NvccCommandRecord.IsCurrent(Log, commandFilePath, commandRecord))
         {
             Log.LogMessage(MessageImportance.Low,
                 $"Skipping compilation of '{sourcePath}' because '{outputFatbinPath}' is up-to-date.");
             return [CreateOutputItem(outputFatbinPath, commandFilePath)];
         }
 
-        if (!DeleteCommandRecord(commandFilePath) || !CompileWithNvcc(sourcePath, outputFatbinPath))
+        if (!NvccCommandRecord.Delete(Log, commandFilePath) || !CompileWithNvcc(sourcePath, outputFatbinPath))
         {
             return null;
         }
 
-        if (!ArtifactHelper.ProcessArtifact(outputFatbinPath, Log) || !WriteCommandRecord(commandFilePath, commandRecord))
+        if (!ArtifactHelper.ProcessArtifact(outputFatbinPath, Log) ||
+            !NvccCommandRecord.Write(Log, commandFilePath, commandRecord))
         {
             return null;
         }
@@ -414,10 +335,10 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
 
     private bool CompileWithNvcc(string sourcePath, string outputFatbinPath)
     {
-        var args = BuildNvccArguments([sourcePath], outputFatbinPath);
+        var args = NvccInvoker.BuildArguments(_nvccOptions, [sourcePath], outputFatbinPath);
         Log.LogMessage(MessageImportance.Normal, $"Compiling CUDA source: {sourcePath}");
 
-        if (!RunNvccProcess([sourcePath], args))
+        if (!RunNvcc([sourcePath], args))
         {
             return false;
         }
@@ -430,15 +351,18 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
         Log.LogError($"nvcc succeeded but output fatbin was not found at '{outputFatbinPath}'.");
         return false;
     }
+
+    private bool RunNvcc(IReadOnlyList<string> sourcePaths, string arguments) =>
+        NvccInvoker.Run(Log, ProcessRunner, NvccPath, _vcvarsEnv, sourcePaths, arguments, CancellationToken);
 
     private bool CompileCombinedWithNvcc(IReadOnlyList<string> sourcePaths, string outputFatbinPath,
         IReadOnlyList<string> originalSourcePaths)
     {
-        var args = BuildNvccArguments(sourcePaths, outputFatbinPath);
+        var args = NvccInvoker.BuildArguments(_nvccOptions, sourcePaths, outputFatbinPath);
         Log.LogMessage(MessageImportance.Normal,
             $"Compiling {originalSourcePaths.Count} CUDA sources into combined fatbin: {outputFatbinPath}");
 
-        if (!RunNvccProcess(originalSourcePaths, args))
+        if (!RunNvcc(originalSourcePaths, args))
         {
             return false;
         }
@@ -450,165 +374,6 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
 
         Log.LogError($"nvcc succeeded but output fatbin was not found at '{outputFatbinPath}'.");
         return false;
-    }
-
-    // Everything on the nvcc command line except the output and the sources.
-    private string BuildNvccOptions(string[] architectures)
-    {
-        var args = new StringBuilder();
-        args.Append("--fatbin ");
-        args.Append("-std=c++17 ");
-        // -diag-suppress 177 = Synthesized switch-case labels (__gsharp_switch_<n>_state_<case>) and prelude guard locals (__gsharp_sort_compare_scope) are unreferenced
-        // -diag-suppress 550 = Synthesized locals or shared memory buffers (__shared__ int __gsharp_id_<n>_b[...]) are assigned but never read
-        args.Append("-diag-suppress 177,550 ");
-        if (Toolchain.IsWindows)
-        {
-            // /Zc:preprocessor = conforming preprocessor; CCCL's _CCCL_PP_CAT cannot expand under cl.exe's traditional one
-            // (thrust headers fail with 'expected a "{"'). Silencing the CCCL #error instead leaves that failure in place.
-            // /wd4819 = Suppress the code page warning for non-ASCII characters in headers
-            args.Append("-Xcompiler \"/Zc:preprocessor /wd4819\" ");
-        }
-
-        args.Append("--ptxas-options=-v,--warn-on-spills ");
-        foreach (var arch in architectures)
-        {
-            var commaIdx = arch.IndexOf(',');
-            if (commaIdx > 0)
-            {
-                args.Append($"-gencode arch={arch[..commaIdx]},code={arch[(commaIdx + 1)..]} ");
-            }
-        }
-
-        return args.ToString();
-    }
-
-    private string BuildNvccArguments(IReadOnlyList<string> sourcePaths, string outputFatbinPath)
-    {
-        var args = new StringBuilder(_nvccOptions);
-        args.Append($"-o \"{outputFatbinPath}\" ");
-        for (var i = 0; i < sourcePaths.Count; i++)
-        {
-            if (i > 0)
-            {
-                args.Append(' ');
-            }
-
-            args.Append($"\"{sourcePaths[i]}\"");
-        }
-
-        return args.ToString();
-    }
-
-    private bool RunNvccProcess(IReadOnlyList<string> sourcePaths, string arguments)
-    {
-        try
-        {
-            var result = this.ProcessRunner.Run(CreateNvccStartInfo(arguments), CancellationToken);
-            var reportPath = sourcePaths.Count > 0 ? sourcePaths[0] : "";
-            var suppressedFunctions = CollectSuppressedSpillFunctions(sourcePaths);
-
-            if (NvccOutputParser.DetectRegisterSpill(
-                    result.StandardOutput, result.StandardError, out var errorMessage, suppressedFunctions))
-            {
-                Log.LogWarning(subcategory: null, warningCode: "GS0001", helpKeyword: null, file: reportPath,
-                    lineNumber: 0, columnNumber: 0, endLineNumber: 0, endColumnNumber: 0, message: errorMessage);
-            }
-
-            if (result.ExitCode == 0)
-            {
-                LogNvccSuccess(reportPath, result, suppressedFunctions);
-                return true;
-            }
-
-            LogNvccFailure(result);
-            return false;
-        }
-        catch (OperationCanceledException)
-        {
-            throw;
-        }
-        catch (Exception ex)
-        {
-            Log.LogError($"Failed to start nvcc at '{NvccPath}': {ex.Message}");
-            return false;
-        }
-    }
-
-    private ProcessStartInfo CreateNvccStartInfo(string arguments)
-    {
-        var startInfo = new ProcessStartInfo
-        {
-            FileName = NvccPath,
-            Arguments = arguments
-        };
-
-        if (_vcvarsEnv != null)
-        {
-            foreach (var kvp in _vcvarsEnv)
-            {
-                startInfo.EnvironmentVariables[kvp.Key] = kvp.Value;
-            }
-        }
-
-        return startInfo;
-    }
-
-    private void LogNvccSuccess(string reportPath, ProcessResult result, ISet<string> suppressedFunctions)
-    {
-        NvccOutputParser.LogCompilerWarnings(
-            Log, reportPath, result.StandardOutput, result.StandardError, suppressedFunctions);
-
-        if (!string.IsNullOrWhiteSpace(result.StandardError) &&
-            result.StandardError.IndexOf("ptxas info", StringComparison.OrdinalIgnoreCase) >= 0)
-        {
-            Log.LogMessage(MessageImportance.Low, result.StandardError);
-        }
-    }
-
-    private void LogNvccFailure(ProcessResult result)
-    {
-        Log.LogError($"nvcc compilation failed with exit code {result.ExitCode}.");
-        if (!string.IsNullOrWhiteSpace(result.StandardOutput))
-        {
-            Log.LogMessage(MessageImportance.High, result.StandardOutput);
-        }
-
-        if (!string.IsNullOrWhiteSpace(result.StandardError))
-        {
-            Log.LogError(result.StandardError);
-        }
-
-        RenamedIdentifierLogger.LogRenamedIdentifiers(Log, result.StandardOutput, result.StandardError);
-    }
-
-    private HashSet<string> CollectSuppressedSpillFunctions(IReadOnlyList<string> sourcePaths)
-    {
-        var suppressed = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var sourcePath in sourcePaths)
-        {
-            if (!File.Exists(sourcePath))
-            {
-                continue;
-            }
-
-            try
-            {
-                var content = File.ReadAllText(sourcePath);
-                foreach (var fn in NvccOutputParser.GetSuppressedSpillFunctions(content))
-                {
-                    suppressed.Add(fn);
-                }
-            }
-            // smell-scan: ignore swallowed-exception -- the failure is written to the MSBuild log; an unreadable source
-            // only means its suppress comments are not seen
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-            {
-                Log.LogMessage(MessageImportance.Low,
-                    $"Could not read '{sourcePath}' to look for '// gsharp:suppress GS0001': {ex.Message}");
-            }
-        }
-
-        return suppressed;
     }
 
     private static string GetLastLine(string text)
