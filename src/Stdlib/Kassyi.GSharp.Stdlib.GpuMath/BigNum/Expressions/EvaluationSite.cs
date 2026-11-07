@@ -3,8 +3,8 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 /// <summary>
 /// The public call that evaluates a signed expression
 /// (<see cref="GpuBigIntExpr.Evaluate(GpuWorkspace, string, string, int)"/>,
-/// <see cref="GpuBigIntExpr.CompileToGraph"/>, ...): the entry point, its caller and the root of the expression. Set for
-/// the current thread while the call runs, so that a checked operation can record where it was evaluated.
+/// <see cref="GpuBigIntExpr.CompileToGraph"/>, ...): the entry point, its caller and the root of the expression. Set
+/// for the current thread while the call runs, so that a checked operation can record where it was evaluated.
 /// </summary>
 internal sealed class EvaluationSite(
     string entryPoint,
