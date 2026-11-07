@@ -109,6 +109,92 @@ public class RunCommandTests
         Assert.Equal("--batches requires a value.", error);
     }
 
+    [Theory]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.HappyPath)]
+    [InlineData("native", FuzzProfile.Cpu)]
+    [InlineData("cuda", FuzzProfile.All)]
+    [InlineData("GPU", FuzzProfile.All)]
+    [InlineData(" managed ", FuzzProfile.Managed)]
+    public void TryParseOptions_ProfileAlias_SelectsItsProfile(string value, FuzzProfile expected)
+    {
+        bool parsed = RunCommand.TryParseOptions(["--profile", value], out var options, out _, out string? error);
+
+        // mutant: an alias of the old script (native, cuda, gpu) is dropped
+        Assert.True(parsed, error);
+        Assert.Equal(expected, options?.Profile);
+    }
+
+    [Theory]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.SadPath)]
+    [InlineData("seven")]
+    [InlineData("1.5")]
+    [InlineData("4294967296")]
+    public void TryParseOptions_InvalidInputSeed_ReportsAnError(string value)
+    {
+        bool parsed = RunCommand.TryParseOptions(["--input-seed", value], out var options, out _, out string? error);
+
+        // mutant: the input seed is not checked, or is parsed as a wider integer
+        Assert.False(parsed);
+        Assert.Null(options);
+        Assert.Equal("--input-seed requires an integer.", error);
+    }
+
+    [Theory]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.HappyPath)]
+    [InlineData("--help")]
+    [InlineData("-h")]
+    public void TryParseOptions_Help_StopsBeforeTheRemainingArguments(string help)
+    {
+        bool parsed = RunCommand.TryParseOptions(
+            ["--batches", "2", help, "--no-such-option"],
+            out var options,
+            out bool showHelp,
+            out string? error);
+
+        // mutant: --help is read as an unknown option, or the arguments after it are still parsed
+        Assert.True(parsed, error);
+        Assert.True(showHelp);
+        Assert.Null(options);
+    }
+
+    [Fact]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.HappyPath)]
+    public void ToCompareOptions_CompareBase_CarriesTheGenerationOptionsAndCompareDefaults()
+    {
+        RunCommand.TryParseOptions(
+            [
+                "--compare-base", "origin/main", "--profile", "managed", "--batch-size", "8", "--fuzz-seed", "5",
+                "--input-seed", "3", "--allow-issue", "984", "--swarm-focus", "tuple-deconstruct-complex",
+                "--metamorphic", "--expect-change", "--no-reduce", "--repo-root", s_repoRoot,
+            ],
+            out var options,
+            out _,
+            out _);
+        Assert.NotNull(options);
+
+        var compare = RunCommand.ToCompareOptions(options, "origin/main");
+
+        // mutant: a generation option or a flag is not passed on, or the default batch count changes
+        Assert.Equal(("origin/main", CompareCommand.DefaultBatches), (compare.BaseRef, compare.Batches));
+        var generation = compare.Generation;
+        Assert.Equal("M", generation.Profile);
+        Assert.Equal((8, 5UL, 3), (generation.BatchSize, generation.FuzzSeed, generation.InputSeed));
+        Assert.Equal([984], compare.Generation.AllowedIssues);
+        Assert.Equal(FuzzSwarmFocus.TupleDeconstructComplex, compare.Generation.SwarmFocus);
+        Assert.True(compare.Generation.Metamorphic && compare.ExpectChange && compare.NoReduce);
+        Assert.Equal(["Cpu", "Cuda"], compare.Dialects);
+        Assert.Equal(CompareCommand.DefaultReduceMinutes, compare.ReduceMinutes);
+        Assert.Equal((options.Paths.WorkDir, s_repoRoot), (compare.WorkDir, compare.RepoRoot));
+    }
+
     [Fact]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Unit)]
