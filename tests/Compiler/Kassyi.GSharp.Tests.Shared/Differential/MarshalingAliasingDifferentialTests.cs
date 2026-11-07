@@ -904,12 +904,12 @@ public sealed class MarshalingAliasingDifferentialTests
         });
     }
 
-    // --- Launch{Kernel}Ptr with ref Convert struct & Deep Struct NotSupportedException ---
+    // --- Launch{Kernel}Ptr with ref Convert struct ---
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_LaunchPtr_RefConvertStructAndDeepStructContract_MatchesExpected()
+    public void Test_LaunchPtr_RefConvertStruct_MatchesExpected()
     {
         const int n = 32;
         DifferentialRunner.Run(new DifferentialCase(
@@ -953,7 +953,7 @@ public sealed class MarshalingAliasingDifferentialTests
                 ref DiffVec2Padded accum = ref b.GetScalarRef<DiffVec2Padded>("accum");
                 MarshalingAliasingDifferentialKernels.AotContexts.DiffVec2Padded nativeAccum = default;
                 MarshalingAliasingDifferentialKernels.AotContexts.Marshal_DiffVec2Padded(
-                    ref accum, ref nativeAccum, isDevicePtr: true, deviceArrays: null, hStream: IntPtr.Zero);
+                    ref accum, ref nativeAccum, deviceArrays: null, hStream: IntPtr.Zero);
 
                 using var ctxScope = new GpuKernelLoader.CudaContextScope();
                 using GpuBuffer<int> dItems = new(n);
@@ -965,19 +965,10 @@ public sealed class MarshalingAliasingDifferentialTests
                 dItems.CopyToHost(items);
                 dAccum.CopyToHost(new Span<MarshalingAliasingDifferentialKernels.AotContexts.DiffVec2Padded>(ref nativeAccum));
                 MarshalingAliasingDifferentialKernels.AotContexts.Unmarshal_DiffVec2Padded(
-                    ref accum, ref nativeAccum, isDevicePtr: true, hStream: IntPtr.Zero);
+                    ref accum, ref nativeAccum, hStream: IntPtr.Zero);
             },
 #endif
         });
-
-#if GSHARP_CUDA
-        CudaCapability.EnsureGpuAvailable();
-        var deepBag = new DiffDeepBag { Data = [1, 2], Tag = 3 };
-        MarshalingAliasingDifferentialKernels.AotContexts.DiffDeepBag nativeBag = default;
-        Assert.Throws<NotSupportedException>(() =>
-            MarshalingAliasingDifferentialKernels.AotContexts.Marshal_DiffDeepBag(
-                ref deepBag, ref nativeBag, isDevicePtr: true, deviceArrays: null, hStream: IntPtr.Zero));
-#endif
     }
 
     // --- Non-nullable array passed null (ArgumentNullException) or empty (ArgumentException) ---
