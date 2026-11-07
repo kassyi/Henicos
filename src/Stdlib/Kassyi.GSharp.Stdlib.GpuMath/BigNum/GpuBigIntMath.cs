@@ -74,8 +74,9 @@ public static class GpuBigIntMath
     /// <param name="rightNegative"><see langword="true"/> if the right operand is negative; otherwise, <see langword="false"/>.</param>
     /// <param name="resultBuffer">The destination buffer receiving the resulting magnitude.</param>
     /// <returns>
-    /// <see langword="true"/> if the resulting sum is negative; otherwise, <see langword="false"/>. A zero sum is never
-    /// negative, so operands of equal magnitude and opposite signs return <see langword="false"/>.
+    /// <see langword="true"/> if the resulting sum is negative; otherwise, <see langword="false"/>. A zero magnitude must be passed as
+    /// non-negative; with that, a zero sum is never negative, so operands of equal magnitude and opposite signs return
+    /// <see langword="false"/>.
     /// </returns>
     public static bool AddSignedMagnitude(
         scoped GpuBigUIntView leftOperand,

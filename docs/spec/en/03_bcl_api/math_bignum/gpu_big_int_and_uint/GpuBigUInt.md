@@ -25,12 +25,12 @@ public readonly partial struct GpuBigUInt : IDisposable, IGpuBigUIntExpression, 
 
 | Name | Description |
 | --- | --- |
-| [GpuBigUInt(GpuWorkspace, int)](#gpubiguintgpuworkspace-int) | Allocates uninitialized GPU device memory for an integer of the specified limb length. |
+| [GpuBigUInt(GpuWorkspace, int)](#gpubiguintgpuworkspace-int) | Allocates zero-filled GPU device memory for an integer of the specified limb length. |
 | [GpuBigUInt(GpuWorkspace, uint[])](#gpubiguintgpuworkspace-uint) | Allocates GPU device memory and initializes it with the provided host array in little-endian limb order. |
 
 ## GpuBigUInt(GpuWorkspace, int)
 
-Allocates uninitialized GPU device memory for an integer of the specified limb length.
+Allocates zero-filled GPU device memory for an integer of the specified limb length.
 
 ```csharp
 public GpuBigUInt(GpuWorkspace workspace, int numWords);

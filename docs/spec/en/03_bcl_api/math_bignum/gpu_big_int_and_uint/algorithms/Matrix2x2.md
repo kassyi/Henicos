@@ -25,11 +25,11 @@ This matrix structure is used to accelerate the Half-GCD (HGCD), Lehmer's GCD, a
 
 | Name | Description |
 | --- | --- |
-| [GpuBigIntMatrix2x2(GpuWorkspace, Int32, Boolean)](#gpubigintmatrix2x2gpuworkspace-int32-boolean) | Initializes a new instance of the `GpuBigIntMatrix2x2` class with uninitialized memory for each matrix element. |
+| [GpuBigIntMatrix2x2(GpuWorkspace, Int32, Boolean)](#gpubigintmatrix2x2gpuworkspace-int32-boolean) | Initializes a new instance of the `GpuBigIntMatrix2x2` class with zero-filled memory for each matrix element. |
 
 ## GpuBigIntMatrix2x2(GpuWorkspace, Int32, Boolean)
 
-Initializes a new instance of the `GpuBigIntMatrix2x2` class with uninitialized memory for each matrix element.
+Initializes a new instance of the `GpuBigIntMatrix2x2` class with zero-filled memory for each matrix element.
 
 ```csharp
 public GpuBigIntMatrix2x2(GpuWorkspace workspace, int numWords, bool isOddStep);

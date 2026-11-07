@@ -446,7 +446,6 @@ public static partial class GpuBigIntDivRem
         qbTrunc.CopyFrom(qb, numWords: Math.Min(quotientBuffer.NumWords + n, evalWords));
 
         using var leftOperandExtended = new GpuBigUInt(rightOperand.Workspace, evalWords);
-        leftOperandExtended.Clear();
         leftOperandExtended.CopyFrom(leftOperand, numWords: Math.Min(nA, evalWords));
 
         using var remainderExtended = new GpuBigUInt(rightOperand.Workspace, evalWords);
@@ -458,7 +457,6 @@ public static partial class GpuBigIntDivRem
         if (underflow)
         {
             using var bPaddedExtended = new GpuBigUInt(rightOperand.Workspace, evalWords);
-            bPaddedExtended.Clear();
             bPaddedExtended.CopyFrom(rightOperand, numWords: Math.Min(n, evalWords));
 
             var correctionCtx = new BarrettCorrectionContext(
@@ -468,7 +466,6 @@ public static partial class GpuBigIntDivRem
         else
         {
             using var bPaddedExtended = new GpuBigUInt(rightOperand.Workspace, evalWords);
-            bPaddedExtended.Clear();
             bPaddedExtended.CopyFrom(rightOperand, numWords: Math.Min(rightOperand.NumWords, evalWords));
 
             var correctionCtx = new BarrettCorrectionContext(

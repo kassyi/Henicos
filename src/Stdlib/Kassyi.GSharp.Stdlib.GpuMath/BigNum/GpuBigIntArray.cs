@@ -26,10 +26,10 @@ public readonly struct GpuBigIntArray : IDisposable
     public int WordsPerElement => Values.WordsPerElement;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="GpuBigIntArray"/> struct allocating uninitialized GPU device memory.
+    /// Initializes a new instance of the <see cref="GpuBigIntArray"/> struct allocating zero-filled GPU device memory.
     /// </summary>
     /// <remarks>
-    /// Neither <see cref="Values"/> nor <see cref="Signs"/> is cleared. Vector operations, including the comparisons of
+    /// Both <see cref="Values"/> and <see cref="Signs"/> are zero-filled. Vector operations, including the comparisons of
     /// <see cref="Expressions.GpuBigIntVectorLinqExtensions"/>, read the sign word of each element, so write
     /// <see cref="Signs"/> together with <see cref="Values"/> when filling the array.
     /// </remarks>
