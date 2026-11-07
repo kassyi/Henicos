@@ -323,7 +323,11 @@ public class GpuKernelGenerator : IIncrementalGenerator
             var cudaDialect = new GSharpCudaDialect();
             var cppDialect = new StandardCppDialect();
 
-            var (bodyDeclaration, bodyModel) = GetBodyDeclaration(methodDeclaration, methodSymbol, context.SemanticModel);
+            var (bodyDeclaration, bodyModel) = GetBodyDeclaration(
+                methodDeclaration,
+                methodSymbol,
+                context.SemanticModel
+            );
             var plan = MethodEmissionPlan.Create(bodyDeclaration, bodyModel, isKernel: true);
 
             var cudaStructs = new StructSourceCollector();
@@ -380,8 +384,9 @@ public class GpuKernelGenerator : IIncrementalGenerator
         }
     }
 
-    // The declaration whose body is transpiled, with its semantic model: the implementing declaration of a partial method
-    // when the attribute is on the defining declaration, which has no body; otherwise the attributed declaration itself
+    // The declaration whose body is transpiled, with its semantic model: the implementing declaration of a partial
+    // method when the attribute is on the defining declaration, which has no body; otherwise the attributed
+    // declaration itself
     private static (MethodDeclarationSyntax Declaration, SemanticModel Model) GetBodyDeclaration(
         MethodDeclarationSyntax declaration, IMethodSymbol symbol, SemanticModel model)
     {
@@ -396,8 +401,10 @@ public class GpuKernelGenerator : IIncrementalGenerator
 
     private static TranspiledDeviceMethodResult? TranspileDeviceMethod(GeneratorAttributeSyntaxContext context)
     {
+        // A partial method without an implementing declaration has no body, and C# removes its calls
         if (context.TargetNode is not MethodDeclarationSyntax methodDeclaration ||
-            context.TargetSymbol is not IMethodSymbol methodSymbol)
+            context.TargetSymbol is not IMethodSymbol methodSymbol ||
+            methodSymbol.IsPartialWithoutImplementation())
         {
             return null;
         }
@@ -409,7 +416,11 @@ public class GpuKernelGenerator : IIncrementalGenerator
             var cudaDialect = new GSharpCudaDialect();
             var cppDialect = new StandardCppDialect();
 
-            var (bodyDeclaration, bodyModel) = GetBodyDeclaration(methodDeclaration, methodSymbol, context.SemanticModel);
+            var (bodyDeclaration, bodyModel) = GetBodyDeclaration(
+                methodDeclaration,
+                methodSymbol,
+                context.SemanticModel
+            );
             var plan = MethodEmissionPlan.Create(bodyDeclaration, bodyModel, isKernel: false);
 
             var cudaSignature = MethodTranspiler.GenerateCudaSignature(in plan, cudaFailures.Fail, cudaDialect);

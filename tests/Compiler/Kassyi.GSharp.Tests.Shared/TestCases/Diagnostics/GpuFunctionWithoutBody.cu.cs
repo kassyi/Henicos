@@ -10,9 +10,13 @@ public static partial class GpuFunctionWithoutBodyKernels
     public static extern int External(int x);
 #pragma warning restore CS0626
 
-    // GSH0003: C# drops the calls of a partial method without an implementing declaration, and the GPU function has no body
+    // No diagnostic: C# removes the calls of a partial method without an implementing declaration, and so does G#
     [GpuDeviceFunction]
     static partial void NotImplemented(int[] data);
+
+    // GSH0003: a kernel without an implementing declaration has no body to launch
+    [GpuKernel]
+    static partial void NotImplementedKernel(int[] data);
 
     // The implementing declaration below is the body: no diagnostic
     [GpuDeviceFunction]
