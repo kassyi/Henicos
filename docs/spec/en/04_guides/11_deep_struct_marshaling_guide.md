@@ -375,8 +375,8 @@ However, in high-throughput hot loops (e.g., 10,000 iterations per second), repe
    
 > [!WARNING]
 > **Device Pointer Mode Constraint**:
-> Calling `LaunchKernelPtr` with a struct that contains managed arrays (`T[]`) will throw a `NotSupportedException` at runtime:
-> *"Passing a struct with arrays is not supported when isDevicePtr is true."*
+> `LaunchKernelPtr` takes the native struct (`AotContexts.<Struct>`), whose array fields are device pointers, so a struct
+> that contains managed arrays (`T[]`) cannot be passed to it (the call does not compile).
 > If you require context structs in hot loops with pre-allocated buffers, define the struct fields as `IntPtr` or raw pointers (`uint*`), or use `GpuBuffer<T>`.
 
 ---

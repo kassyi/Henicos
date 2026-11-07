@@ -6,14 +6,14 @@ internal abstract class VectorUnaryExpressionBase(
     public int Length => vector.Length;
     public int WordsPerElement => vector.WordsPerElement;
 
-    // The result buffers, lent until the next evaluation or Dispose; a caller's target is never kept (design 4.6)
+    // The result buffers, lent until the next evaluation or Dispose; a caller's target is never kept
     private readonly VectorResultCache _cache = new();
 
     public int Capacity => vector.Capacity;
 
     public bool TryGetLength(out int length) => vector.TryGetLength(out length);
 
-    // Evaluates the window of the capacity; the elements are the first Count of them (design D3 4.3)
+    // Evaluates the window of the capacity; the elements are the first Count of them
     public VectorEvaluation EvaluateCore(
         GpuWorkspace workspace,
         int elementOffset,
