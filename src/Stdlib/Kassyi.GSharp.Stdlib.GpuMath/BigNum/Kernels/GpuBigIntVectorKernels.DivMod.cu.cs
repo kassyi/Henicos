@@ -381,7 +381,9 @@ public static partial class GpuBigIntVectorKernels
         }
     }
 
-    /// <summary>The words of each shared work buffer of the division; a wider element works in global scratch.</summary>
+    /// <summary>
+    /// The words of each shared work buffer of the division; a wider element works in global scratch.
+    /// </summary>
     public const int DivModSharedWords = 512;
 
     /// <summary>
