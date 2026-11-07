@@ -92,7 +92,7 @@ public class GeneratorOutputTests
             static s => s.HintName == "GSharpModuleContext_UnknownAssembly.g.cs");
         var wrapper = GetSource(result, "FirstKernels.g.cs");
         Assert.Contains(
-            $"global::Kassyi.GSharp.Generated.GSharpModuleContext_{compilation.Assembly.Name}.GetOrLoadModule();",
+            $"global::Kassyi.GSharp.Generated.GSharpModuleContext_{compilation.Assembly.Name}.GetFatbin);",
             wrapper,
             StringComparison.Ordinal);
     }
