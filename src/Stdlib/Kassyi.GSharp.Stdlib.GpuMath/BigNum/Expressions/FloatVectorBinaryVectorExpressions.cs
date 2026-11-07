@@ -2,11 +2,16 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 
 internal readonly ref struct FloatVectorZipOperands
 {
-    public FloatVectorZipOperands(GpuBigFloatArrayView left, GpuBigFloatArrayView right, GpuBigFloatArrayView destination)
+    public FloatVectorZipOperands(
+        GpuBigFloatArrayView left,
+        GpuBigFloatArrayView right,
+        GpuBigFloatArrayView destination,
+        GpuBigUIntArrayView zeroDivisor)
     {
         Left = left;
         Right = right;
         Destination = destination;
+        ZeroDivisor = zeroDivisor;
     }
 
     public GpuBigFloatArrayView Left { get; }
@@ -14,6 +19,9 @@ internal readonly ref struct FloatVectorZipOperands
     public GpuBigFloatArrayView Right { get; }
 
     public GpuBigFloatArrayView Destination { get; }
+
+    /// <summary>Gets the word of <see cref="ZeroDivisorCheck"/> for a division, or the default view.</summary>
+    public GpuBigUIntArrayView ZeroDivisor { get; }
 }
 
 internal abstract class FloatVectorBinaryVectorExpressionBase(
@@ -30,6 +38,9 @@ internal abstract class FloatVectorBinaryVectorExpressionBase(
     private readonly VectorResultCache _cache = new();
 
     protected uint BlockDimX => (uint)Math.Min(1024, WordsPerElement);
+
+    /// <summary>Gets whether the kernel reports a zero divisor element (<see cref="ZeroDivisorCheck"/>).</summary>
+    protected virtual bool ChecksZeroDivisor => false;
 
     public int Capacity => left.Capacity;
 
@@ -64,12 +75,18 @@ internal abstract class FloatVectorBinaryVectorExpressionBase(
         // A target that shares words with an input is written from the cache after the launch (#864)
         var output = VectorOutput.Open(_cache, workspace, evalCount, WordsPerElement, target, leftResult.Storage,
             rightResult.Storage);
-        var operands = new FloatVectorZipOperands(leftResult.Storage, rightResult.Storage, output.Destination);
         var elements = RunsOnHost && !count.IsStatic ? count.Read(workspace) : evalCount;
         // An empty vector launches nothing: a grid of 0 blocks is an invalid launch.
         if (elements > 0)
         {
+            var zeroDivisor = ChecksZeroDivisor ? ZeroDivisorCheck.Open(workspace, _cache) : default;
+            var operands = new FloatVectorZipOperands(leftResult.Storage, rightResult.Storage, output.Destination,
+                zeroDivisor);
             DispatchKernel(workspace, operands, (uint)elements);
+            if (ChecksZeroDivisor)
+            {
+                ZeroDivisorCheck.ThrowIfFound(workspace, zeroDivisor, count);
+            }
         }
 
         // A host loop wrote only the elements; a kernel wrote the whole window
@@ -220,6 +237,8 @@ internal sealed class FloatVectorDivVectorExpression(
         right,
         Math.Max(left.WordsPerElement, right.WordsPerElement) + 1)
 {
+    protected override bool ChecksZeroDivisor => true;
+
     protected override void DispatchKernel(
         GpuWorkspace workspace,
         FloatVectorZipOperands operands,
@@ -228,7 +247,8 @@ internal sealed class FloatVectorDivVectorExpression(
         var ctx = new GpuBigIntVectorKernels.AotContexts.VectorFloatDiv
         {
             FloatOp = CreateZipFloatOp(operands),
-            PreShiftBits = DefaultDivShiftBits
+            PreShiftBits = DefaultDivShiftBits,
+            ZeroDivisor = operands.ZeroDivisor.DevicePointer
         };
         GpuBigIntVectorKernels.LaunchVectorFloatZipDivKernelPtr(
             ctx, gridDimX, 1, 1, 32, 1, 1, 0, workspace.Stream);
