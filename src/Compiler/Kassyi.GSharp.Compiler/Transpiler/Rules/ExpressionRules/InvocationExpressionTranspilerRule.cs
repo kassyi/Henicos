@@ -200,9 +200,10 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
         }
     }
 
-    // The arguments in the order of the parameters, each the argument that C# binds to the parameter: the one that names
-    // it, or the one at its position (a positional argument may follow a named one in its own position, F(a: 1, 5)).
-    // A params parameter takes every argument it binds; an omitted optional parameter takes its default value
+    // The arguments in the order of the parameters, each the argument that C# binds to the parameter: the one that
+    // names it, or the one at its position (a positional argument may follow a named one in its own position,
+    // F(a: 1, 5)). A params parameter takes every argument it binds; an omitted optional parameter takes its default
+    // value
     private static void TranspileArguments(
         IMethodSymbol callee,
         SeparatedSyntaxList<ArgumentSyntax> arguments,
@@ -223,7 +224,8 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
                 }
 
                 context.Emitter.Writer.AppendIf(hasArgument, ",");
-                // The argument itself, or the temporary it was evaluated into (an in or ref readonly parameter by address)
+                // The argument itself, or the temporary it was evaluated into (an in or ref readonly parameter by
+                // address)
                 sequence.AppendArgument(arguments[j], parameter, ref context, convertArguments);
                 hasArgument = true;
             }

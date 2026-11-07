@@ -3,8 +3,9 @@
 namespace Kassyi.GSharp.Tests.Shared.Differential;
 
 /// <summary>
-/// Differential tests for a named argument in its own position followed by a positional argument: every argument reaches
-/// the parameter C# binds it to on every path, and an omitted <c>[Optional]</c> parameter receives <c>default</c> (#1263).
+/// Differential tests for a named argument in its own position followed by a positional argument: every argument
+/// reaches the parameter C# binds it to on every path, and an omitted <c>[Optional]</c> parameter receives
+/// <c>default</c> (#1263).
 /// </summary>
 [TestTarget(ExecutionTarget.GpuExecution)]
 [Category(TestCategory.Differential)]
@@ -14,7 +15,8 @@ public class NamedThenPositionalDifferentialTests
     private const int Rows = 128;
 
     private static readonly DifferentialCase s_namedThenPositional = new(
-        $"{nameof(NamedThenPositionalDifferentialKernels)}.{nameof(NamedThenPositionalDifferentialKernels.NamedThenPositionalKernel)}")
+        nameof(NamedThenPositionalDifferentialKernels) + "." +
+        nameof(NamedThenPositionalDifferentialKernels.NamedThenPositionalKernel))
     {
         Shape = LaunchShape.ForRows(Rows, blockX: 64),
         Inputs = static (rng, rows) =>
@@ -39,7 +41,8 @@ public class NamedThenPositionalDifferentialTests
 
     // The oracle cannot run barriers; the reference is SubAcrossBarrier(x, y)
     private static readonly DifferentialCase s_suspendingCall = new(
-        $"{nameof(NamedThenPositionalDifferentialKernels)}.{nameof(NamedThenPositionalDifferentialKernels.NamedThenPositionalSuspendingCallKernel)}")
+        nameof(NamedThenPositionalDifferentialKernels) + "." +
+        nameof(NamedThenPositionalDifferentialKernels.NamedThenPositionalSuspendingCallKernel))
     {
         Shape = LaunchShape.ForRows(Rows, blockX: 64),
         Inputs = static (rng, rows) =>
