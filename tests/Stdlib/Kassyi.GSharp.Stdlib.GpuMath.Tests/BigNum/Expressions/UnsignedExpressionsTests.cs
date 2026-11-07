@@ -248,10 +248,11 @@ public class UnsignedExpressionsTests : IDisposable
     [InlineData("Leaf")]
     public void Evaluate_TargetNarrowerThanTheExpression_ThrowsAndLeavesTheWordsAfterIt(string root)
     {
-        // A 1-word target at the start of a guard buffer: the 4-word expression (8 words for Mul) is rejected before
-        // anything is written, as the signed nodes reject a target of another width, and the guard words keep their value.
-        // mutant: GpuBigUIntExpressionExtensions.Evaluate `targetResult.NumWords < expr.NumWords` check removed (Add, Mul,
-        // Not, ShiftLeft write 4 or 8 words through the 1-word target; Leaf truncates)
+        // A 1-word target at the start of a guard buffer: the 4-word expression is rejected before anything is written,
+        // as the signed nodes reject a target of another width, and the guard words keep their value. A product keeps
+        // the width of its operands (modulo 2^(32 * 4)), so Mul is 4 words too.
+        // mutant: GpuBigUIntExpressionExtensions.Evaluate `targetResult.NumWords < expr.NumWords` check removed
+        // (Add, Mul, Not, ShiftLeft write 4 words through the 1-word target; Leaf truncates)
         // mutant: the check `<` -> `<=` (every equal-width target in this class throws)
         const uint Guard = 0xDEAD_BEEFu;
         using var a = Create(_context, 1, 4);
@@ -290,5 +291,48 @@ public class UnsignedExpressionsTests : IDisposable
         ((GpuBigUIntExpr)a + b).Node.Evaluate(_context, target);
 
         Assert.Equal(new BigInteger(3), target.ToBigInteger());
+    }
+
+    [SkippableTheory]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.SadPath)]
+    [InlineData("Add")]
+    [InlineData("Mul")]
+    [InlineData("Not")]
+    [InlineData("ShiftLeft")]
+    public void Visitor_TargetNarrowerThanTheRoot_ThrowsAndLeavesTheWordsAfterIt(string root)
+    {
+        // The public visitor takes a target without going through Evaluate; the root rejects a narrower one before its
+        // kernel writes the full width through it. (A leaf root writes nothing through the visitor's target.)
+        // mutant: BigIntExpressionVisitor.GetResultBuffer width check removed
+        //   (4 words written through the 1-word target)
+        const uint Guard = 0xDEAD_BEEFu;
+        using var a = Create(_context, 1, 4);
+        using var b = Create(_context, 2, 4);
+        using var guardBuffer = new GpuBigUInt(_context, Enumerable.Repeat(Guard, 9).ToArray());
+        GpuBigUIntView whole = guardBuffer;
+        var target = whole.Slice(0, 1).AsBorrowedBigUInt();
+        GpuBigUIntExpr ea = a;
+        GpuBigUIntExpr eb = b;
+        var expression = root switch
+        {
+            "Add" => ea + eb,
+            "Mul" => ea * eb,
+            "Not" => ~ea,
+            "ShiftLeft" => ea << 3,
+            _ => throw new ArgumentOutOfRangeException(nameof(root), root, "Unknown root."),
+        };
+
+        var error = Assert.Throws<ArgumentException>(() => EvaluateThroughVisitor(expression, target));
+
+        Assert.Equal("targetResult", error.ParamName);
+        Assert.Equal(Enumerable.Repeat(Guard, 9).ToArray(), guardBuffer.ToHostArray());
+    }
+
+    private void EvaluateThroughVisitor(GpuBigUIntExpr expression, GpuBigUInt target)
+    {
+        var context = GpuWorkspaceArithmetic.CreateContext(_context);
+        var visitor = new BigIntExpressionVisitor(context, new ScopedBigIntMemory(target.Handle.Borrow()));
+        using var result = expression.Node.Accept(ref visitor);
     }
 }

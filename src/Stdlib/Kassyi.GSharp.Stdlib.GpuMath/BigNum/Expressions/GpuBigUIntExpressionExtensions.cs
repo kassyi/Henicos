@@ -14,7 +14,9 @@ public static class GpuBigUIntExpressionExtensions
     /// It may be one of the expression's operands (<c>x.Value = x / y</c>): the root then computes into a temporary
     /// and copies the result into it.</param>
     /// <returns>A <see cref="GpuBigUInt"/> containing the evaluated unsigned large integer.</returns>
-    /// <exception cref="ArgumentException"><paramref name="targetResult"/> has fewer words than the expression.</exception>
+    /// <exception cref="ArgumentException">
+    /// <paramref name="targetResult"/> has fewer words than the expression.
+    /// </exception>
     public static GpuBigUInt Evaluate(this IGpuBigUIntExpression expr, GpuWorkspace workspace,
         GpuBigUInt? targetResult = null)
     {
