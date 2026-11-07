@@ -2,7 +2,7 @@
 namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum.Expressions;
 
 /// <summary>
-/// Ownership of the buffers a CUDA graph uses (design 4.5.1-4.5.3): the graph owns its result and the buffers freed
+/// Ownership of the buffers a CUDA graph uses: the graph owns its result and the buffers freed
 /// while it was captured, owns the expression it was compiled from, and refuses to run after an operand it reads was
 /// freed.
 /// </summary>
