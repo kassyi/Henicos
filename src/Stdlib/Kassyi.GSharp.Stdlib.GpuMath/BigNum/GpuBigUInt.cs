@@ -45,6 +45,9 @@ public readonly partial struct GpuBigUInt : IGpuBigUIntExpression, IGpuBigNumber
     public long EffectiveScale => GetBitLength();
 
     /// <inheritdoc/>
+    static bool IGpuBigNumber<GpuBigUInt>.AdditionIsExact => true;
+
+    /// <inheritdoc/>
     public static GpuBigUInt Create([TakesOwnership] GpuBigUInt magnitude, int exponent, bool isNegative)
     {
         if (exponent != 0)

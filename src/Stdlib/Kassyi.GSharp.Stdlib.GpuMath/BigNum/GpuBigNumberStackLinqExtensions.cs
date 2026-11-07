@@ -208,20 +208,23 @@ public static class GpuBigNumberStackLinqExtensions
             SelectDivide(T scalar) =>
             source.Select(x => x / scalar);
 
+        // An exact addition gives the same value in any order, so the integer types keep the balanced tree; a left fold
+        // would only make the chain as long as the sequence. A rounded addition follows the order written.
         /// <summary>
-        /// Computes the sum of a sequence of <typeparamref name="T"/> values. The floating-point types add from the left
-        /// (<c>((x0 + x1) + x2) + ...</c>, each addition rounded); the integer types add exactly, in a balanced tree.
+        /// Computes the sum of a sequence of <typeparamref name="T"/> values. The floating-point types add from the
+        /// left (<c>((x0 + x1) + x2) + ...</c>, each addition rounded); the integer types add exactly, in a balanced
+        /// tree.
         /// </summary>
         /// <returns>A new <typeparamref name="T"/> containing the sum.</returns>
         public T Sum() =>
-            AdditionRounds<T>()
-                ? StackLinqReductionCore.FoldLeft<TEnumerator, T, T>(
+            T.AdditionIsExact
+                ? source.AsParallel().Sum()
+                : StackLinqReductionCore.FoldLeft<TEnumerator, T, T>(
                     source.Enumerator,
                     static x => Clone(x),
                     AddOwned,
                     out _
-                )
-                : source.AsParallel().Sum();
+                );
 
         /// <summary>
         /// Computes the maximum of a sequence of <typeparamref name="T"/> values.
@@ -244,7 +247,7 @@ public static class GpuBigNumberStackLinqExtensions
         /// <returns>A new <typeparamref name="T"/> containing the average.</returns>
         public T Average()
         {
-            if (!AdditionRounds<T>())
+            if (T.AdditionIsExact)
             {
                 return source.AsParallel().Average();
             }
@@ -340,8 +343,8 @@ public static class GpuBigNumberStackLinqExtensions
             left.Enumerator, right.Enumerator, static (a, b) => a / b));
 
     /// <summary>
-    /// Applies an accumulator function over a sequence of <see cref="GpuBigFloat"/> values from the left, in the order of
-    /// <c>Enumerable.Aggregate</c>: <c>func(func(x0, x1), x2)</c>.
+    /// Applies an accumulator function over a sequence of <see cref="GpuBigFloat"/> values from the left, in the order
+    /// of <c>Enumerable.Aggregate</c>: <c>func(func(x0, x1), x2)</c>.
     /// </summary>
     /// <typeparam name="TEnumerator">The type of the source enumerator.</typeparam>
     /// <param name="source">The sequence of elements to aggregate.</param>
@@ -354,8 +357,8 @@ public static class GpuBigNumberStackLinqExtensions
         AggregateFromLeft(source.Enumerator, func);
 
     /// <summary>
-    /// Applies an accumulator function over a sequence of <see cref="GpuBigUFloat"/> values from the left, in the order of
-    /// <c>Enumerable.Aggregate</c>: <c>func(func(x0, x1), x2)</c>.
+    /// Applies an accumulator function over a sequence of <see cref="GpuBigUFloat"/> values from the left, in the order
+    /// of <c>Enumerable.Aggregate</c>: <c>func(func(x0, x1), x2)</c>.
     /// </summary>
     /// <typeparam name="TEnumerator">The type of the source enumerator.</typeparam>
     /// <param name="source">The sequence of elements to aggregate.</param>
@@ -368,8 +371,8 @@ public static class GpuBigNumberStackLinqExtensions
         AggregateFromLeft(source.Enumerator, func);
 
     /// <summary>
-    /// Applies an accumulator function over a sequence of <see cref="GpuBigUInt"/> values from the left, in the order of
-    /// <c>Enumerable.Aggregate</c>: <c>func(func(x0, x1), x2)</c>.
+    /// Applies an accumulator function over a sequence of <see cref="GpuBigUInt"/> values from the left, in the order
+    /// of <c>Enumerable.Aggregate</c>: <c>func(func(x0, x1), x2)</c>.
     /// </summary>
     /// <typeparam name="TEnumerator">The type of the source enumerator.</typeparam>
     /// <param name="source">The sequence of elements to aggregate.</param>
@@ -524,14 +527,6 @@ public static class GpuBigNumberStackLinqExtensions
         where TRightEnumerator : struct, IStackEnumerator<GpuBigUInt>, allows ref struct =>
         new(new ZipStackEnumerator<TLeftEnumerator, TRightEnumerator, GpuBigUInt, GpuBigUInt, GpuBigUInt>(
             left.Enumerator, right.Enumerator, static (a, b) => (a % b).Node.Evaluate(a.Workspace)));
-
-    // Whether the order of the additions can change a sum of T: the floating-point types round every addition, so
-    // their sequential Sum / Average fold from the left as written. Integer addition is exact (associative and
-    // commutative), so the integer types keep the balanced tree: the order cannot change the result, and a left fold
-    // would only make the chain as long as the sequence.
-    private static bool AdditionRounds<T>()
-        where T : struct, IGpuBigNumber<T> =>
-        typeof(T) == typeof(GpuBigFloat) || typeof(T) == typeof(GpuBigUFloat);
 
     private static T AggregateFromLeft<TEnumerator, T>(TEnumerator enumerator, Func<T, T, T> func)
         where TEnumerator : struct, IStackEnumerator<T>, allows ref struct
