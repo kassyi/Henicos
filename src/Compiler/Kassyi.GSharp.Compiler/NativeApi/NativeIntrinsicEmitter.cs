@@ -285,7 +285,6 @@ internal static class NativeIntrinsicEmitter
         }
     }
 
-#pragma warning disable RS0030 // Replaces whole identifiers in a template: text processing, not emitted code
     /// <summary>
     /// Replaces each whole-identifier occurrence of <paramref name="placeholder"/>, so that <c>T</c> becomes the
     /// element type in <c>ref T</c> and <c>Fragment&lt;TShape, T&gt;</c> but leaves <c>TShape</c> alone.
@@ -297,7 +296,7 @@ internal static class NativeIntrinsicEmitter
             return template;
         }
 
-        var sb = new StringBuilder(template.Length + replacement.Length);
+        using var replaced = new SourceWriter();
         var copied = 0;
         var index = template.IndexOf(placeholder, StringComparison.Ordinal);
         while (index >= 0)
@@ -308,14 +307,14 @@ internal static class NativeIntrinsicEmitter
                 (end == template.Length || !SyntaxFacts.IsIdentifierPartCharacter(template[end]));
             if (isWholeIdentifier)
             {
-                sb.Append(template, copied, index - copied).Append(replacement);
+                replaced.Append(template, copied, index - copied).Append(replacement);
                 copied = end;
             }
 
             index = template.IndexOf(placeholder, end, StringComparison.Ordinal);
         }
 
-        return sb.Append(template, copied, template.Length - copied).ToString();
+        replaced.Append(template, copied, template.Length - copied);
+        return replaced.ToString();
     }
-#pragma warning restore RS0030
 }

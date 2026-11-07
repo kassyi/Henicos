@@ -281,7 +281,7 @@ internal sealed class YamlSubsetParser
         return node;
     }
 
-#pragma warning disable RS0030 // Decodes a YAML scalar character by character: text processing, not emitted code
+#pragma warning disable RS0030 // Input parsing: decodes a YAML scalar character by character
     private YamlScalar ParseBlockScalar(string rest, int cursor, int ownerIndent, int lineNumber)
     {
         var folded = rest[cursor] == '>';
@@ -511,7 +511,7 @@ internal sealed class YamlSubsetParser
         return new YamlScalar(lineNumber, value);
     }
 
-#pragma warning disable RS0030 // Decodes a YAML scalar character by character: text processing, not emitted code
+#pragma warning disable RS0030 // Input parsing: decodes a YAML scalar character by character
     private string ParseQuoted(string text, ref int position, int lineNumber)
     {
         var quote = text[position];

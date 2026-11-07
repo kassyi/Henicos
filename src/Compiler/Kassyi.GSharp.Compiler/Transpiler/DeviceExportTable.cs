@@ -189,7 +189,7 @@ internal sealed class DeviceExportTable
             return id;
         }
 
-        using var builder = new SourceWriter();
+        using var definitionId = new SourceWriter();
         var depth = 0;
         var arity = 0;
         foreach (var c in id)
@@ -204,7 +204,7 @@ internal sealed class DeviceExportTable
                     depth--;
                     if (depth == 0)
                     {
-                        builder.Append($"`{arity}");
+                        definitionId.Append($"`{arity}");
                     }
 
                     break;
@@ -214,14 +214,14 @@ internal sealed class DeviceExportTable
                 default:
                     if (depth == 0)
                     {
-                        builder.Append(c);
+                        definitionId.Append(c);
                     }
 
                     break;
             }
         }
 
-        return builder.ToString();
+        return definitionId.ToString();
     }
 
     /// <summary>

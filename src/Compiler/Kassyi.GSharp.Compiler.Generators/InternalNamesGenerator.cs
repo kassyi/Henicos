@@ -156,7 +156,7 @@ public static class InternalNamesGenerator
         {
             foreach (var group in groups)
             {
-                writer.Line($"/// <summary>{EscapeXml(group.Summary)}</summary>");
+                writer.Line($"/// <summary>{XmlDocEscaping.Escape(group.Summary)}</summary>");
                 writer.Line($"internal static partial class {group.Name}");
                 using (writer.Scope())
                 {
@@ -187,36 +187,6 @@ public static class InternalNamesGenerator
         }
 
         return writer.ToString();
-    }
-
-    private static string EscapeXml(string text)
-    {
-        if (text.AsSpan().IndexOfAny("&<>") < 0)
-        {
-            return text;
-        }
-
-        using var escaped = new SourceWriter();
-        foreach (var c in text)
-        {
-            switch (c)
-            {
-                case '&':
-                    escaped.Append("&amp;");
-                    break;
-                case '<':
-                    escaped.Append("&lt;");
-                    break;
-                case '>':
-                    escaped.Append("&gt;");
-                    break;
-                default:
-                    escaped.Append(c);
-                    break;
-            }
-        }
-
-        return escaped.ToString();
     }
 
     private static InvalidOperationException Fail(string message) => new($"InternalNames.yml: {message}");

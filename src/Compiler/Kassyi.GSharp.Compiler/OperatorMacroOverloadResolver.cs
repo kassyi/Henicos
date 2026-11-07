@@ -40,7 +40,7 @@ internal static class OperatorMacroOverloadResolver
             }
 
             reasons.AppendIf(reasons.Length > 0, "; ");
-            reasons.Append($"{FormatSignature(method)}: {reason}");
+            reasons.Append($"{method.FormatSignature()}: {reason}");
         }
 
         if (applicable.Count == 0)
@@ -88,7 +88,7 @@ internal static class OperatorMacroOverloadResolver
                 names.Append(last);
             }
 
-            last = FormatSignature(applicable[i].Method);
+            last = applicable[i].Method.FormatSignature();
         }
 
         failure = $"is ambiguous between {names.ToString()} and {last}";
@@ -296,9 +296,6 @@ internal static class OperatorMacroOverloadResolver
 
         return text.ToString();
     }
-
-    // Shift(ref OverloadCtx, uint[], uint[], int)
-    private static string FormatSignature(IMethodSymbol method) => method.FormatSignature();
 
     internal static string FormatRefKind(RefKind refKind) => refKind.FormatRefKind();
 

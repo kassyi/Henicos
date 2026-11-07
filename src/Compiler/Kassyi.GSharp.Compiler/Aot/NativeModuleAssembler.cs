@@ -19,12 +19,12 @@ internal static class NativeModuleAssembler
     /// </summary>
     public static string AssembleDeviceSource(IReadOnlyList<TranspiledDeviceMethodResult> deviceMethods, bool isCuda)
     {
-        using var deviceSourceBuilder = new SourceWriter();
+        using var deviceSource = new SourceWriter();
 
         // Pass 1: Forward declarations
         foreach (var method in deviceMethods)
         {
-            deviceSourceBuilder.AppendLine(method.GetSignature(isCuda));
+            deviceSource.AppendLine(method.GetSignature(isCuda));
         }
 
         // Pass 2: Method bodies. A frame embeds the frames of its calls by value, so callees come first (CPU dialects).
@@ -43,7 +43,7 @@ internal static class NativeModuleAssembler
             appendBody(i);
         }
 
-        return deviceSourceBuilder.ToString();
+        return deviceSource.ToString();
 
         void appendBody(int index)
         {
@@ -65,7 +65,7 @@ internal static class NativeModuleAssembler
                 }
             }
 
-            deviceSourceBuilder.AppendLine(method.GetBody(isCuda));
+            deviceSource.AppendLine(method.GetBody(isCuda));
         }
     }
 
@@ -129,12 +129,13 @@ internal static class NativeModuleAssembler
     public static string AssembleBody(HashSet<string> requiredIncludes, string preludeSource, string deviceSource,
         string kernelsSource)
     {
-        using var includesBuilder = new SourceWriter();
+        using var body = new SourceWriter();
         foreach (var inc in requiredIncludes)
         {
-            includesBuilder.AppendLine($"#include {inc}");
+            body.AppendLine($"#include {inc}");
         }
 
-        return includesBuilder.ToString() + preludeSource + deviceSource + kernelsSource;
+        body.Append(preludeSource).Append(deviceSource).Append(kernelsSource);
+        return body.ToString();
     }
 }
