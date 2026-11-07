@@ -101,11 +101,11 @@ public const string DebugName_Flag1 = "global::System.Boolean";
 [global::System.Runtime.InteropServices.FieldOffset(8)]
 public global::System.Boolean Flag1;
 }
-public static unsafe void Marshal_DiffBoolPack(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffBoolPack host, ref AotContexts.DiffBoolPack native, bool isDevicePtr, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_DiffBoolPack(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffBoolPack host, ref AotContexts.DiffBoolPack native, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
 {
 native = global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Differential.DiffBoolPack, AotContexts.DiffBoolPack>(ref host);
 }
-public static unsafe void Unmarshal_DiffBoolPack(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffBoolPack host, ref AotContexts.DiffBoolPack native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_DiffBoolPack(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffBoolPack host, ref AotContexts.DiffBoolPack native, global::System.IntPtr hStream = default)
 {
 host = global::System.Runtime.CompilerServices.Unsafe.As<AotContexts.DiffBoolPack, global::Kassyi.GSharp.Tests.Shared.Differential.DiffBoolPack>(ref native);
 }
@@ -122,11 +122,11 @@ public const string DebugName_C1 = "global::System.Char";
 [global::System.Runtime.InteropServices.FieldOffset(8)]
 public global::System.Char C1;
 }
-public static unsafe void Marshal_DiffCharPack(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffCharPack host, ref AotContexts.DiffCharPack native, bool isDevicePtr, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_DiffCharPack(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffCharPack host, ref AotContexts.DiffCharPack native, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
 {
 native = global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Differential.DiffCharPack, AotContexts.DiffCharPack>(ref host);
 }
-public static unsafe void Unmarshal_DiffCharPack(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffCharPack host, ref AotContexts.DiffCharPack native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_DiffCharPack(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffCharPack host, ref AotContexts.DiffCharPack native, global::System.IntPtr hStream = default)
 {
 host = global::System.Runtime.CompilerServices.Unsafe.As<AotContexts.DiffCharPack, global::Kassyi.GSharp.Tests.Shared.Differential.DiffCharPack>(ref native);
 }
@@ -146,11 +146,11 @@ public const string DebugName_BoolOpt = "global::System.Nullable<global::System.
 [global::System.Runtime.InteropServices.FieldOffset(14)]
 public fixed byte BoolOpt[2];
 }
-public static unsafe void Marshal_DiffNullableBlitHolder(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffNullableBlitHolder host, ref AotContexts.DiffNullableBlitHolder native, bool isDevicePtr, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_DiffNullableBlitHolder(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffNullableBlitHolder host, ref AotContexts.DiffNullableBlitHolder native, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
 {
 native = global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Differential.DiffNullableBlitHolder, AotContexts.DiffNullableBlitHolder>(ref host);
 }
-public static unsafe void Unmarshal_DiffNullableBlitHolder(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffNullableBlitHolder host, ref AotContexts.DiffNullableBlitHolder native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_DiffNullableBlitHolder(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffNullableBlitHolder host, ref AotContexts.DiffNullableBlitHolder native, global::System.IntPtr hStream = default)
 {
 host = global::System.Runtime.CompilerServices.Unsafe.As<AotContexts.DiffNullableBlitHolder, global::Kassyi.GSharp.Tests.Shared.Differential.DiffNullableBlitHolder>(ref native);
 }
@@ -167,11 +167,11 @@ public const string DebugName_Tag = "global::System.Int32";
 [global::System.Runtime.InteropServices.FieldOffset(24)]
 public global::System.Int32 Tag;
 }
-public static unsafe void Marshal_DiffNullableVec2Holder(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffNullableVec2Holder host, ref AotContexts.DiffNullableVec2Holder native, bool isDevicePtr, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_DiffNullableVec2Holder(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffNullableVec2Holder host, ref AotContexts.DiffNullableVec2Holder native, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
 {
 native = global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Differential.DiffNullableVec2Holder, AotContexts.DiffNullableVec2Holder>(ref host);
 }
-public static unsafe void Unmarshal_DiffNullableVec2Holder(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffNullableVec2Holder host, ref AotContexts.DiffNullableVec2Holder native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_DiffNullableVec2Holder(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffNullableVec2Holder host, ref AotContexts.DiffNullableVec2Holder native, global::System.IntPtr hStream = default)
 {
 host = global::System.Runtime.CompilerServices.Unsafe.As<AotContexts.DiffNullableVec2Holder, global::Kassyi.GSharp.Tests.Shared.Differential.DiffNullableVec2Holder>(ref native);
 }
@@ -188,11 +188,11 @@ public const string DebugName_Tail = "global::System.Int32";
 [global::System.Runtime.InteropServices.FieldOffset(16)]
 public global::System.Int32 Tail;
 }
-public static unsafe void Marshal_DiffExplicitGapped(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffExplicitGapped host, ref AotContexts.DiffExplicitGapped native, bool isDevicePtr, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_DiffExplicitGapped(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffExplicitGapped host, ref AotContexts.DiffExplicitGapped native, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
 {
 native = global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Differential.DiffExplicitGapped, AotContexts.DiffExplicitGapped>(ref host);
 }
-public static unsafe void Unmarshal_DiffExplicitGapped(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffExplicitGapped host, ref AotContexts.DiffExplicitGapped native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_DiffExplicitGapped(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffExplicitGapped host, ref AotContexts.DiffExplicitGapped native, global::System.IntPtr hStream = default)
 {
 host = global::System.Runtime.CompilerServices.Unsafe.As<AotContexts.DiffExplicitGapped, global::Kassyi.GSharp.Tests.Shared.Differential.DiffExplicitGapped>(ref native);
 }
@@ -209,11 +209,11 @@ public const string DebugName_Tag = "global::System.Int32";
 [global::System.Runtime.InteropServices.FieldOffset(8)]
 public global::System.Int32 Tag;
 }
-public static unsafe void Marshal_DiffFloatUintUnion(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffFloatUintUnion host, ref AotContexts.DiffFloatUintUnion native, bool isDevicePtr, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_DiffFloatUintUnion(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffFloatUintUnion host, ref AotContexts.DiffFloatUintUnion native, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
 {
 native = global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Differential.DiffFloatUintUnion, AotContexts.DiffFloatUintUnion>(ref host);
 }
-public static unsafe void Unmarshal_DiffFloatUintUnion(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffFloatUintUnion host, ref AotContexts.DiffFloatUintUnion native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_DiffFloatUintUnion(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffFloatUintUnion host, ref AotContexts.DiffFloatUintUnion native, global::System.IntPtr hStream = default)
 {
 host = global::System.Runtime.CompilerServices.Unsafe.As<AotContexts.DiffFloatUintUnion, global::Kassyi.GSharp.Tests.Shared.Differential.DiffFloatUintUnion>(ref native);
 }
@@ -227,11 +227,11 @@ public const string DebugName_RawArm = "global::System.Int64";
 [global::System.Runtime.InteropServices.FieldOffset(0)]
 public global::System.Int64 RawArm;
 }
-public static unsafe void Marshal_DiffConvertExplicitUnion(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffConvertExplicitUnion host, ref AotContexts.DiffConvertExplicitUnion native, bool isDevicePtr, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_DiffConvertExplicitUnion(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffConvertExplicitUnion host, ref AotContexts.DiffConvertExplicitUnion native, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
 {
 native = global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Differential.DiffConvertExplicitUnion, AotContexts.DiffConvertExplicitUnion>(ref host);
 }
-public static unsafe void Unmarshal_DiffConvertExplicitUnion(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffConvertExplicitUnion host, ref AotContexts.DiffConvertExplicitUnion native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_DiffConvertExplicitUnion(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffConvertExplicitUnion host, ref AotContexts.DiffConvertExplicitUnion native, global::System.IntPtr hStream = default)
 {
 host = global::System.Runtime.CompilerServices.Unsafe.As<AotContexts.DiffConvertExplicitUnion, global::Kassyi.GSharp.Tests.Shared.Differential.DiffConvertExplicitUnion>(ref native);
 }
@@ -245,11 +245,11 @@ public const string DebugName_V = "global::System.Numerics.Vector2";
 [global::System.Runtime.InteropServices.FieldOffset(4)]
 public fixed byte V[8];
 }
-public static unsafe void Marshal_DiffVec2Padded(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffVec2Padded host, ref AotContexts.DiffVec2Padded native, bool isDevicePtr, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_DiffVec2Padded(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffVec2Padded host, ref AotContexts.DiffVec2Padded native, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
 {
 native = global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Differential.DiffVec2Padded, AotContexts.DiffVec2Padded>(ref host);
 }
-public static unsafe void Unmarshal_DiffVec2Padded(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffVec2Padded host, ref AotContexts.DiffVec2Padded native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_DiffVec2Padded(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffVec2Padded host, ref AotContexts.DiffVec2Padded native, global::System.IntPtr hStream = default)
 {
 host = global::System.Runtime.CompilerServices.Unsafe.As<AotContexts.DiffVec2Padded, global::Kassyi.GSharp.Tests.Shared.Differential.DiffVec2Padded>(ref native);
 }
@@ -272,7 +272,7 @@ public const string DebugName_C = "global::System.Char";
 [global::System.Runtime.InteropServices.FieldOffset(20)]
 public global::System.Char C;
 }
-public static unsafe void Marshal_DiffAutoMixed(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffAutoMixed host, ref AotContexts.DiffAutoMixed native, bool isDevicePtr, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_DiffAutoMixed(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffAutoMixed host, ref AotContexts.DiffAutoMixed native, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
 {
 native = default;
 native.B1 = host.B1;
@@ -281,7 +281,7 @@ native.Flag = host.Flag;
 native.S = host.S;
 native.C = host.C;
 }
-public static unsafe void Unmarshal_DiffAutoMixed(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffAutoMixed host, ref AotContexts.DiffAutoMixed native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_DiffAutoMixed(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffAutoMixed host, ref AotContexts.DiffAutoMixed native, global::System.IntPtr hStream = default)
 {
 host.B1 = native.B1;
 host.L = native.L;
@@ -299,16 +299,16 @@ public const string DebugName_Inner = "global::Kassyi.GSharp.Tests.Shared.Differ
 [global::System.Runtime.InteropServices.FieldOffset(8)]
 public AotContexts.DiffAutoMixed Inner;
 }
-public static unsafe void Marshal_DiffAutoNested(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffAutoNested host, ref AotContexts.DiffAutoNested native, bool isDevicePtr, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_DiffAutoNested(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffAutoNested host, ref AotContexts.DiffAutoNested native, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
 {
 native = default;
 native.Header = host.Header;
-Marshal_DiffAutoMixed(ref host.Inner, ref native.Inner, isDevicePtr, allocatedPtrs, hStream);
+Marshal_DiffAutoMixed(ref host.Inner, ref native.Inner, allocatedPtrs, hStream);
 }
-public static unsafe void Unmarshal_DiffAutoNested(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffAutoNested host, ref AotContexts.DiffAutoNested native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_DiffAutoNested(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffAutoNested host, ref AotContexts.DiffAutoNested native, global::System.IntPtr hStream = default)
 {
 host.Header = native.Header;
-Unmarshal_DiffAutoMixed(ref host.Inner, ref native.Inner, isDevicePtr, hStream);
+Unmarshal_DiffAutoMixed(ref host.Inner, ref native.Inner, hStream);
 }
 [global::System.Runtime.InteropServices.StructLayout(global::System.Runtime.InteropServices.LayoutKind.Explicit, Size = 36)]
 public unsafe partial struct DiffInlineVec2Padded3
@@ -317,11 +317,11 @@ public const string DebugName__e0 = "global::Kassyi.GSharp.Tests.Shared.Differen
 [global::System.Runtime.InteropServices.FieldOffset(0)]
 public fixed byte _e0[36];
 }
-public static unsafe void Marshal_DiffInlineVec2Padded3(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffInlineVec2Padded3 host, ref AotContexts.DiffInlineVec2Padded3 native, bool isDevicePtr, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_DiffInlineVec2Padded3(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffInlineVec2Padded3 host, ref AotContexts.DiffInlineVec2Padded3 native, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
 {
 native = global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Differential.DiffInlineVec2Padded3, AotContexts.DiffInlineVec2Padded3>(ref host);
 }
-public static unsafe void Unmarshal_DiffInlineVec2Padded3(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffInlineVec2Padded3 host, ref AotContexts.DiffInlineVec2Padded3 native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_DiffInlineVec2Padded3(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffInlineVec2Padded3 host, ref AotContexts.DiffInlineVec2Padded3 native, global::System.IntPtr hStream = default)
 {
 host = global::System.Runtime.CompilerServices.Unsafe.As<AotContexts.DiffInlineVec2Padded3, global::Kassyi.GSharp.Tests.Shared.Differential.DiffInlineVec2Padded3>(ref native);
 }
@@ -341,11 +341,11 @@ public const string DebugName_Vecs = "global::Kassyi.GSharp.Tests.Shared.Differe
 [global::System.Runtime.InteropServices.FieldOffset(16)]
 public AotContexts.DiffInlineVec2Padded3 Vecs;
 }
-public static unsafe void Marshal_DiffInlineOuterPacket(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffInlineOuterPacket host, ref AotContexts.DiffInlineOuterPacket native, bool isDevicePtr, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_DiffInlineOuterPacket(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffInlineOuterPacket host, ref AotContexts.DiffInlineOuterPacket native, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
 {
 native = global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Differential.DiffInlineOuterPacket, AotContexts.DiffInlineOuterPacket>(ref host);
 }
-public static unsafe void Unmarshal_DiffInlineOuterPacket(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffInlineOuterPacket host, ref AotContexts.DiffInlineOuterPacket native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_DiffInlineOuterPacket(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffInlineOuterPacket host, ref AotContexts.DiffInlineOuterPacket native, global::System.IntPtr hStream = default)
 {
 host = global::System.Runtime.CompilerServices.Unsafe.As<AotContexts.DiffInlineOuterPacket, global::Kassyi.GSharp.Tests.Shared.Differential.DiffInlineOuterPacket>(ref native);
 }
@@ -356,11 +356,11 @@ public const string DebugName__e0 = "global::System.Boolean";
 [global::System.Runtime.InteropServices.FieldOffset(0)]
 public fixed byte _e0[3];
 }
-public static unsafe void Marshal_DiffInlineBool3(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffInlineBool3 host, ref AotContexts.DiffInlineBool3 native, bool isDevicePtr, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_DiffInlineBool3(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffInlineBool3 host, ref AotContexts.DiffInlineBool3 native, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
 {
 native = global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Differential.DiffInlineBool3, AotContexts.DiffInlineBool3>(ref host);
 }
-public static unsafe void Unmarshal_DiffInlineBool3(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffInlineBool3 host, ref AotContexts.DiffInlineBool3 native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_DiffInlineBool3(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffInlineBool3 host, ref AotContexts.DiffInlineBool3 native, global::System.IntPtr hStream = default)
 {
 host = global::System.Runtime.CompilerServices.Unsafe.As<AotContexts.DiffInlineBool3, global::Kassyi.GSharp.Tests.Shared.Differential.DiffInlineBool3>(ref native);
 }
@@ -371,11 +371,11 @@ public const string DebugName__e0 = "global::System.Char";
 [global::System.Runtime.InteropServices.FieldOffset(0)]
 public fixed byte _e0[6];
 }
-public static unsafe void Marshal_DiffInlineChar3(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffInlineChar3 host, ref AotContexts.DiffInlineChar3 native, bool isDevicePtr, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_DiffInlineChar3(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffInlineChar3 host, ref AotContexts.DiffInlineChar3 native, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
 {
 native = global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Differential.DiffInlineChar3, AotContexts.DiffInlineChar3>(ref host);
 }
-public static unsafe void Unmarshal_DiffInlineChar3(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffInlineChar3 host, ref AotContexts.DiffInlineChar3 native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_DiffInlineChar3(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffInlineChar3 host, ref AotContexts.DiffInlineChar3 native, global::System.IntPtr hStream = default)
 {
 host = global::System.Runtime.CompilerServices.Unsafe.As<AotContexts.DiffInlineChar3, global::Kassyi.GSharp.Tests.Shared.Differential.DiffInlineChar3>(ref native);
 }
@@ -392,11 +392,11 @@ public const string DebugName_Bytes = "global::System.Byte";
 [global::System.Runtime.InteropServices.FieldOffset(20)]
 public fixed byte Bytes[4];
 }
-public static unsafe void Marshal_FixedBufferPacket(ref global::Kassyi.GSharp.Tests.Shared.Differential.FixedBufferPacket host, ref AotContexts.FixedBufferPacket native, bool isDevicePtr, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_FixedBufferPacket(ref global::Kassyi.GSharp.Tests.Shared.Differential.FixedBufferPacket host, ref AotContexts.FixedBufferPacket native, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
 {
 native = global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Differential.FixedBufferPacket, AotContexts.FixedBufferPacket>(ref host);
 }
-public static unsafe void Unmarshal_FixedBufferPacket(ref global::Kassyi.GSharp.Tests.Shared.Differential.FixedBufferPacket host, ref AotContexts.FixedBufferPacket native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_FixedBufferPacket(ref global::Kassyi.GSharp.Tests.Shared.Differential.FixedBufferPacket host, ref AotContexts.FixedBufferPacket native, global::System.IntPtr hStream = default)
 {
 host = global::System.Runtime.CompilerServices.Unsafe.As<AotContexts.FixedBufferPacket, global::Kassyi.GSharp.Tests.Shared.Differential.FixedBufferPacket>(ref native);
 }
@@ -410,11 +410,11 @@ public const string DebugName_Items = "global::Kassyi.GSharp.Tests.Shared.Differ
 [global::System.Runtime.InteropServices.FieldOffset(4)]
 public AotContexts.DiffInlineNullableVec2 Items;
 }
-public static unsafe void Marshal_DiffInlineNullableVec2Holder(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffInlineNullableVec2Holder host, ref AotContexts.DiffInlineNullableVec2Holder native, bool isDevicePtr, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_DiffInlineNullableVec2Holder(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffInlineNullableVec2Holder host, ref AotContexts.DiffInlineNullableVec2Holder native, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
 {
 native = global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Differential.DiffInlineNullableVec2Holder, AotContexts.DiffInlineNullableVec2Holder>(ref host);
 }
-public static unsafe void Unmarshal_DiffInlineNullableVec2Holder(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffInlineNullableVec2Holder host, ref AotContexts.DiffInlineNullableVec2Holder native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_DiffInlineNullableVec2Holder(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffInlineNullableVec2Holder host, ref AotContexts.DiffInlineNullableVec2Holder native, global::System.IntPtr hStream = default)
 {
 host = global::System.Runtime.CompilerServices.Unsafe.As<AotContexts.DiffInlineNullableVec2Holder, global::Kassyi.GSharp.Tests.Shared.Differential.DiffInlineNullableVec2Holder>(ref native);
 }
@@ -425,11 +425,11 @@ public const string DebugName__e0 = "global::System.Nullable<global::System.Nume
 [global::System.Runtime.InteropServices.FieldOffset(0)]
 public fixed byte _e0[24];
 }
-public static unsafe void Marshal_DiffInlineNullableVec2(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffInlineNullableVec2 host, ref AotContexts.DiffInlineNullableVec2 native, bool isDevicePtr, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_DiffInlineNullableVec2(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffInlineNullableVec2 host, ref AotContexts.DiffInlineNullableVec2 native, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
 {
 native = global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Differential.DiffInlineNullableVec2, AotContexts.DiffInlineNullableVec2>(ref host);
 }
-public static unsafe void Unmarshal_DiffInlineNullableVec2(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffInlineNullableVec2 host, ref AotContexts.DiffInlineNullableVec2 native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_DiffInlineNullableVec2(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffInlineNullableVec2 host, ref AotContexts.DiffInlineNullableVec2 native, global::System.IntPtr hStream = default)
 {
 host = global::System.Runtime.CompilerServices.Unsafe.As<AotContexts.DiffInlineNullableVec2, global::Kassyi.GSharp.Tests.Shared.Differential.DiffInlineNullableVec2>(ref native);
 }
@@ -455,11 +455,11 @@ public const string DebugName_V4 = "global::System.Numerics.Vector4";
 [global::System.Runtime.InteropServices.FieldOffset(32)]
 public fixed byte V4[16];
 }
-public static unsafe void Marshal_DiffVecAlignTorture(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffVecAlignTorture host, ref AotContexts.DiffVecAlignTorture native, bool isDevicePtr, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_DiffVecAlignTorture(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffVecAlignTorture host, ref AotContexts.DiffVecAlignTorture native, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
 {
 native = global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Differential.DiffVecAlignTorture, AotContexts.DiffVecAlignTorture>(ref host);
 }
-public static unsafe void Unmarshal_DiffVecAlignTorture(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffVecAlignTorture host, ref AotContexts.DiffVecAlignTorture native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_DiffVecAlignTorture(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffVecAlignTorture host, ref AotContexts.DiffVecAlignTorture native, global::System.IntPtr hStream = default)
 {
 host = global::System.Runtime.CompilerServices.Unsafe.As<AotContexts.DiffVecAlignTorture, global::Kassyi.GSharp.Tests.Shared.Differential.DiffVecAlignTorture>(ref native);
 }
@@ -479,11 +479,11 @@ public const string DebugName_Second = "global::Kassyi.GSharp.Tests.Shared.Diffe
 [global::System.Runtime.InteropServices.FieldOffset(20)]
 public AotContexts.InnerPair Second;
 }
-public static unsafe void Marshal_OuterPacket(ref global::Kassyi.GSharp.Tests.Shared.Differential.OuterPacket host, ref AotContexts.OuterPacket native, bool isDevicePtr, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_OuterPacket(ref global::Kassyi.GSharp.Tests.Shared.Differential.OuterPacket host, ref AotContexts.OuterPacket native, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
 {
 native = global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Differential.OuterPacket, AotContexts.OuterPacket>(ref host);
 }
-public static unsafe void Unmarshal_OuterPacket(ref global::Kassyi.GSharp.Tests.Shared.Differential.OuterPacket host, ref AotContexts.OuterPacket native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_OuterPacket(ref global::Kassyi.GSharp.Tests.Shared.Differential.OuterPacket host, ref AotContexts.OuterPacket native, global::System.IntPtr hStream = default)
 {
 host = global::System.Runtime.CompilerServices.Unsafe.As<AotContexts.OuterPacket, global::Kassyi.GSharp.Tests.Shared.Differential.OuterPacket>(ref native);
 }
@@ -497,11 +497,11 @@ public const string DebugName_Right = "global::System.Single";
 [global::System.Runtime.InteropServices.FieldOffset(4)]
 public global::System.Single Right;
 }
-public static unsafe void Marshal_InnerPair(ref global::Kassyi.GSharp.Tests.Shared.Differential.InnerPair host, ref AotContexts.InnerPair native, bool isDevicePtr, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_InnerPair(ref global::Kassyi.GSharp.Tests.Shared.Differential.InnerPair host, ref AotContexts.InnerPair native, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
 {
 native = global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Differential.InnerPair, AotContexts.InnerPair>(ref host);
 }
-public static unsafe void Unmarshal_InnerPair(ref global::Kassyi.GSharp.Tests.Shared.Differential.InnerPair host, ref AotContexts.InnerPair native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_InnerPair(ref global::Kassyi.GSharp.Tests.Shared.Differential.InnerPair host, ref AotContexts.InnerPair native, global::System.IntPtr hStream = default)
 {
 host = global::System.Runtime.CompilerServices.Unsafe.As<AotContexts.InnerPair, global::Kassyi.GSharp.Tests.Shared.Differential.InnerPair>(ref native);
 }
@@ -524,11 +524,11 @@ public const string DebugName_UnionItem = "global::Kassyi.GSharp.Tests.DeviceLib
 [global::System.Runtime.InteropServices.FieldOffset(32)]
 public AotContexts.IntFloatUnion UnionItem;
 }
-public static unsafe void Marshal_DiffExternalNestedHolder(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffExternalNestedHolder host, ref AotContexts.DiffExternalNestedHolder native, bool isDevicePtr, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_DiffExternalNestedHolder(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffExternalNestedHolder host, ref AotContexts.DiffExternalNestedHolder native, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
 {
 native = global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Differential.DiffExternalNestedHolder, AotContexts.DiffExternalNestedHolder>(ref host);
 }
-public static unsafe void Unmarshal_DiffExternalNestedHolder(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffExternalNestedHolder host, ref AotContexts.DiffExternalNestedHolder native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_DiffExternalNestedHolder(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffExternalNestedHolder host, ref AotContexts.DiffExternalNestedHolder native, global::System.IntPtr hStream = default)
 {
 host = global::System.Runtime.CompilerServices.Unsafe.As<AotContexts.DiffExternalNestedHolder, global::Kassyi.GSharp.Tests.Shared.Differential.DiffExternalNestedHolder>(ref native);
 }
@@ -542,11 +542,11 @@ public const string DebugName_Value = "global::System.Int32";
 [global::System.Runtime.InteropServices.FieldOffset(1)]
 public global::System.Int32 Value;
 }
-public static unsafe void Marshal_PackedPair(ref global::Kassyi.GSharp.Tests.DeviceLibrary.PackedPair host, ref AotContexts.PackedPair native, bool isDevicePtr, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_PackedPair(ref global::Kassyi.GSharp.Tests.DeviceLibrary.PackedPair host, ref AotContexts.PackedPair native, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
 {
 native = global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.DeviceLibrary.PackedPair, AotContexts.PackedPair>(ref host);
 }
-public static unsafe void Unmarshal_PackedPair(ref global::Kassyi.GSharp.Tests.DeviceLibrary.PackedPair host, ref AotContexts.PackedPair native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_PackedPair(ref global::Kassyi.GSharp.Tests.DeviceLibrary.PackedPair host, ref AotContexts.PackedPair native, global::System.IntPtr hStream = default)
 {
 host = global::System.Runtime.CompilerServices.Unsafe.As<AotContexts.PackedPair, global::Kassyi.GSharp.Tests.DeviceLibrary.PackedPair>(ref native);
 }
@@ -557,11 +557,11 @@ public const string DebugName_A = "global::System.Int32";
 [global::System.Runtime.InteropServices.FieldOffset(0)]
 public global::System.Int32 A;
 }
-public static unsafe void Marshal_Sized(ref global::Kassyi.GSharp.Tests.DeviceLibrary.Sized host, ref AotContexts.Sized native, bool isDevicePtr, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_Sized(ref global::Kassyi.GSharp.Tests.DeviceLibrary.Sized host, ref AotContexts.Sized native, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
 {
 native = global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.DeviceLibrary.Sized, AotContexts.Sized>(ref host);
 }
-public static unsafe void Unmarshal_Sized(ref global::Kassyi.GSharp.Tests.DeviceLibrary.Sized host, ref AotContexts.Sized native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_Sized(ref global::Kassyi.GSharp.Tests.DeviceLibrary.Sized host, ref AotContexts.Sized native, global::System.IntPtr hStream = default)
 {
 host = global::System.Runtime.CompilerServices.Unsafe.As<AotContexts.Sized, global::Kassyi.GSharp.Tests.DeviceLibrary.Sized>(ref native);
 }
@@ -575,11 +575,11 @@ public const string DebugName_B = "global::System.Int32";
 [global::System.Runtime.InteropServices.FieldOffset(0)]
 public global::System.Int32 B;
 }
-public static unsafe void Marshal_SwapPair(ref global::Kassyi.GSharp.Tests.DeviceLibrary.SwapPair host, ref AotContexts.SwapPair native, bool isDevicePtr, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_SwapPair(ref global::Kassyi.GSharp.Tests.DeviceLibrary.SwapPair host, ref AotContexts.SwapPair native, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
 {
 native = global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.DeviceLibrary.SwapPair, AotContexts.SwapPair>(ref host);
 }
-public static unsafe void Unmarshal_SwapPair(ref global::Kassyi.GSharp.Tests.DeviceLibrary.SwapPair host, ref AotContexts.SwapPair native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_SwapPair(ref global::Kassyi.GSharp.Tests.DeviceLibrary.SwapPair host, ref AotContexts.SwapPair native, global::System.IntPtr hStream = default)
 {
 host = global::System.Runtime.CompilerServices.Unsafe.As<AotContexts.SwapPair, global::Kassyi.GSharp.Tests.DeviceLibrary.SwapPair>(ref native);
 }
@@ -596,11 +596,11 @@ public const string DebugName_Tag = "global::System.Int32";
 [global::System.Runtime.InteropServices.FieldOffset(4)]
 public global::System.Int32 Tag;
 }
-public static unsafe void Marshal_IntFloatUnion(ref global::Kassyi.GSharp.Tests.DeviceLibrary.IntFloatUnion host, ref AotContexts.IntFloatUnion native, bool isDevicePtr, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_IntFloatUnion(ref global::Kassyi.GSharp.Tests.DeviceLibrary.IntFloatUnion host, ref AotContexts.IntFloatUnion native, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
 {
 native = global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.DeviceLibrary.IntFloatUnion, AotContexts.IntFloatUnion>(ref host);
 }
-public static unsafe void Unmarshal_IntFloatUnion(ref global::Kassyi.GSharp.Tests.DeviceLibrary.IntFloatUnion host, ref AotContexts.IntFloatUnion native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_IntFloatUnion(ref global::Kassyi.GSharp.Tests.DeviceLibrary.IntFloatUnion host, ref AotContexts.IntFloatUnion native, global::System.IntPtr hStream = default)
 {
 host = global::System.Runtime.CompilerServices.Unsafe.As<AotContexts.IntFloatUnion, global::Kassyi.GSharp.Tests.DeviceLibrary.IntFloatUnion>(ref native);
 }
@@ -3413,18 +3413,18 @@ byte[]? __gsharp_auto_result_shadow = null;
 int __gsharp_auto_result_size = checked(__gsharp_auto_result.Length * sizeof(global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.DiffAutoMixed));
 try
 {
-global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.Marshal_DiffAutoMixed(ref val, ref __gsharp_native_0, false, __gsharp_allocated_ptrs_0, hStream);
-global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.Marshal_DiffAutoMixed(ref inVal, ref __gsharp_native_1, false, __gsharp_allocated_ptrs_1, hStream);
-global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.Marshal_DiffAutoMixed(ref refVal, ref __gsharp_native_2, false, __gsharp_allocated_ptrs_2, hStream);
-global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.Marshal_DiffAutoMixed(ref outVal, ref __gsharp_native_3, false, __gsharp_allocated_ptrs_3, hStream);
+global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.Marshal_DiffAutoMixed(ref val, ref __gsharp_native_0, __gsharp_allocated_ptrs_0, hStream);
+global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.Marshal_DiffAutoMixed(ref inVal, ref __gsharp_native_1, __gsharp_allocated_ptrs_1, hStream);
+global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.Marshal_DiffAutoMixed(ref refVal, ref __gsharp_native_2, __gsharp_allocated_ptrs_2, hStream);
+global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.Marshal_DiffAutoMixed(ref outVal, ref __gsharp_native_3, __gsharp_allocated_ptrs_3, hStream);
 __gsharp_shadow_4 = global::System.Buffers.ArrayPool<byte>.Shared.Rent(__gsharp_size_4);
 var __gsharp_native_4 = global::System.Runtime.InteropServices.MemoryMarshal.Cast<byte, global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.DiffAutoMixed>(__gsharp_shadow_4.AsSpan(0, __gsharp_size_4));
 global::System.Span<global::Kassyi.GSharp.Tests.Shared.Differential.DiffAutoMixed> __gsharp_host_4 = arr;
 for (int __gsharp_index_4 = 0; __gsharp_index_4 < __gsharp_native_4.Length; __gsharp_index_4++)
 {
-global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.Marshal_DiffAutoMixed(ref __gsharp_host_4[__gsharp_index_4], ref __gsharp_native_4[__gsharp_index_4], false, __gsharp_allocated_ptrs_4, hStream);
+global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.Marshal_DiffAutoMixed(ref __gsharp_host_4[__gsharp_index_4], ref __gsharp_native_4[__gsharp_index_4], __gsharp_allocated_ptrs_4, hStream);
 }
-global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.Marshal_DiffAutoNested(ref nested, ref __gsharp_native_5, false, __gsharp_allocated_ptrs_5, hStream);
+global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.Marshal_DiffAutoNested(ref nested, ref __gsharp_native_5, __gsharp_allocated_ptrs_5, hStream);
 __gsharp_auto_result_shadow = global::System.Buffers.ArrayPool<byte>.Shared.Rent(__gsharp_auto_result_size);
 var __gsharp_auto_result_native = global::System.Runtime.InteropServices.MemoryMarshal.Cast<byte, global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.DiffAutoMixed>(__gsharp_auto_result_shadow.AsSpan(0, __gsharp_auto_result_size));
 __gsharp_auto_result_native.Clear();
@@ -3435,18 +3435,18 @@ fixed (global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDiffere
 __gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, &__gsharp_native_0, &__gsharp_native_1, &__gsharp_native_2, &__gsharp_native_3, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_4, Length = arr.Length }, &__gsharp_native_5, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_6, Length = probe.Length }, p___gsharp_auto_result);
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
 }
-global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.Unmarshal_DiffAutoMixed(ref val, ref __gsharp_native_0, false, hStream);
-global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.Unmarshal_DiffAutoMixed(ref inVal, ref __gsharp_native_1, false, hStream);
-global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.Unmarshal_DiffAutoMixed(ref refVal, ref __gsharp_native_2, false, hStream);
-global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.Unmarshal_DiffAutoMixed(ref outVal, ref __gsharp_native_3, false, hStream);
+global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.Unmarshal_DiffAutoMixed(ref val, ref __gsharp_native_0, hStream);
+global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.Unmarshal_DiffAutoMixed(ref inVal, ref __gsharp_native_1, hStream);
+global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.Unmarshal_DiffAutoMixed(ref refVal, ref __gsharp_native_2, hStream);
+global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.Unmarshal_DiffAutoMixed(ref outVal, ref __gsharp_native_3, hStream);
 for (int __gsharp_index_4 = 0; __gsharp_index_4 < __gsharp_native_4.Length; __gsharp_index_4++)
 {
-global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.Unmarshal_DiffAutoMixed(ref __gsharp_host_4[__gsharp_index_4], ref __gsharp_native_4[__gsharp_index_4], false, hStream);
+global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.Unmarshal_DiffAutoMixed(ref __gsharp_host_4[__gsharp_index_4], ref __gsharp_native_4[__gsharp_index_4], hStream);
 }
-global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.Unmarshal_DiffAutoNested(ref nested, ref __gsharp_native_5, false, hStream);
+global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.Unmarshal_DiffAutoNested(ref nested, ref __gsharp_native_5, hStream);
 for (int __gsharp_auto_result_index = 0; __gsharp_auto_result_index < __gsharp_auto_result_native.Length; __gsharp_auto_result_index++)
 {
-global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.Unmarshal_DiffAutoMixed(ref __gsharp_auto_result[__gsharp_auto_result_index], ref __gsharp_auto_result_native[__gsharp_auto_result_index], false, hStream);
+global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.Unmarshal_DiffAutoMixed(ref __gsharp_auto_result[__gsharp_auto_result_index], ref __gsharp_auto_result_native[__gsharp_auto_result_index], hStream);
 }
 }
 finally

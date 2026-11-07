@@ -93,11 +93,11 @@ public const string DebugName_B = "global::System.Single";
 [global::System.Runtime.InteropServices.FieldOffset(4)]
 public global::System.Single B;
 }
-public static unsafe void Marshal_MyCustomStruct(ref global::Kassyi.GSharp.Tests.Shared.TestCases.MyCustomStruct host, ref AotContexts.MyCustomStruct native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_MyCustomStruct(ref global::Kassyi.GSharp.Tests.Shared.TestCases.MyCustomStruct host, ref AotContexts.MyCustomStruct native, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
 {
 native = global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.TestCases.MyCustomStruct, AotContexts.MyCustomStruct>(ref host);
 }
-public static unsafe void Unmarshal_MyCustomStruct(ref global::Kassyi.GSharp.Tests.Shared.TestCases.MyCustomStruct host, ref AotContexts.MyCustomStruct native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_MyCustomStruct(ref global::Kassyi.GSharp.Tests.Shared.TestCases.MyCustomStruct host, ref AotContexts.MyCustomStruct native, global::System.IntPtr hStream = default)
 {
 host = global::System.Runtime.CompilerServices.Unsafe.As<AotContexts.MyCustomStruct, global::Kassyi.GSharp.Tests.Shared.TestCases.MyCustomStruct>(ref native);
 }
@@ -201,7 +201,7 @@ __gsharp_proxy_2[0] = __gsharp_d_2;
 }
 __gsharp_kernel_params[2] = __gsharp_proxy_2;
 global::Kassyi.GSharp.Tests.Shared.TestCases.WrapperOptimizationKernels.AotContexts.MyCustomStruct __gsharp_native_3 = default;
-global::Kassyi.GSharp.Tests.Shared.TestCases.WrapperOptimizationKernels.AotContexts.Marshal_MyCustomStruct(ref structRef, ref __gsharp_native_3, false, null, hStream);
+global::Kassyi.GSharp.Tests.Shared.TestCases.WrapperOptimizationKernels.AotContexts.Marshal_MyCustomStruct(ref structRef, ref __gsharp_native_3, null, hStream);
 // Marshal ref/out struct: structRef
 int __gsharp_size_3 = sizeof(global::Kassyi.GSharp.Tests.Shared.TestCases.WrapperOptimizationKernels.AotContexts.MyCustomStruct);
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out __gsharp_d_3, (global::System.IntPtr)__gsharp_size_3, hStream));
@@ -245,7 +245,7 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 // Fast zero-allocation copy from device
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)(&__gsharp_native_3), __gsharp_d_3, (global::System.IntPtr)__gsharp_size_3, hStream));
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
-global::Kassyi.GSharp.Tests.Shared.TestCases.WrapperOptimizationKernels.AotContexts.Unmarshal_MyCustomStruct(ref structRef, ref __gsharp_native_3, false, hStream);
+global::Kassyi.GSharp.Tests.Shared.TestCases.WrapperOptimizationKernels.AotContexts.Unmarshal_MyCustomStruct(ref structRef, ref __gsharp_native_3, hStream);
 }
 finally
 {

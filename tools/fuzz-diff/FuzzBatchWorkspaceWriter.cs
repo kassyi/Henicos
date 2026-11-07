@@ -2,6 +2,17 @@ using System.Text;
 
 namespace Kassyi.GSharp.Tools.FuzzDiff;
 
+/// <summary>A batch project and the files its Debug build writes.</summary>
+/// <param name="ProjectPath">The <c>.csproj</c> file.</param>
+/// <param name="OutputDll">The assembly the build writes, which <c>dotnet exec</c> runs.</param>
+/// <param name="AssetsFile">The <c>project.assets.json</c> of the restore; the build skips a restore it finds.</param>
+public sealed record FuzzBatchProject(string ProjectPath, string OutputDll, string AssetsFile);
+
+/// <summary>The two batch projects of a workspace.</summary>
+/// <param name="Cpu">The project that runs the managed and native paths.</param>
+/// <param name="Cuda">The project that runs the CUDA path.</param>
+public sealed record FuzzBatchProjects(FuzzBatchProject Cpu, FuzzBatchProject Cuda);
+
 /// <summary>
 /// Writes the generated batch source files and standalone temporary project scaffolds (<c>FuzzBatch.Cpu.csproj</c> and <c>FuzzBatch.Cuda.csproj</c>).
 /// </summary>
@@ -9,11 +20,19 @@ public static class FuzzBatchWorkspaceWriter
 {
     private static readonly UTF8Encoding s_utf8NoBom = new(encoderShouldEmitUTF8Identifier: false);
 
+    /// <summary>The configuration the batch projects are built in.</summary>
+    public const string Configuration = "Debug";
+
     /// <summary>
     /// Writes <c>FuzzBatchKernels.cu.cs</c>, <c>FuzzBatchCases.cs</c>, and (when <paramref name="repoRoot"/> is supplied)
-    /// the standalone temporary project files in the parent workspace directory.
+    /// the standalone temporary project files in the parent workspace directory, and returns the batch projects of
+    /// that directory.
     /// </summary>
-    public static void WriteBatch(GeneratedBatch batch, string outDir, string? repoRoot = null, string? cudaArch = null)
+    public static FuzzBatchProjects WriteBatch(
+        GeneratedBatch batch,
+        string outDir,
+        string? repoRoot = null,
+        string? cudaArch = null)
     {
         ArgumentNullException.ThrowIfNull(batch);
         ArgumentException.ThrowIfNullOrWhiteSpace(outDir);
@@ -27,14 +46,24 @@ public static class FuzzBatchWorkspaceWriter
         File.WriteAllText(kernelsPath, batch.KernelsSource, s_utf8NoBom);
         File.WriteAllText(casesPath, batch.CasesSource, s_utf8NoBom);
 
+        string workDir = Path.GetFileName(fullOutDir).Equals("Generated", StringComparison.OrdinalIgnoreCase)
+            ? (Path.GetDirectoryName(fullOutDir) ?? fullOutDir)
+            : fullOutDir;
         if (!string.IsNullOrWhiteSpace(repoRoot))
         {
-            string workDir = Path.GetFileName(fullOutDir).Equals("Generated", StringComparison.OrdinalIgnoreCase)
-                ? (Path.GetDirectoryName(fullOutDir) ?? fullOutDir)
-                : fullOutDir;
             WriteProjectScaffolds(workDir, fullOutDir, Path.GetFullPath(repoRoot), cudaArch);
         }
+
+        return new FuzzBatchProjects(Project(workDir, "FuzzBatch.Cpu"), Project(workDir, "FuzzBatch.Cuda"));
     }
+
+    // The output and intermediate directories come from BuildDirectoryBuildProps (bin/<os>/<project>/,
+    // obj/<os>/<project>/), the target framework from BuildProjectXml.
+    private static FuzzBatchProject Project(string workDir, string name) =>
+        new(
+            ProjectPath: Path.Combine(workDir, name + ".csproj"),
+            OutputDll: Path.Combine(workDir, "bin", FuzzHostOs.Name, name, Configuration, "net10.0", name + ".dll"),
+            AssetsFile: Path.Combine(workDir, "obj", FuzzHostOs.Name, name, "project.assets.json"));
 
     /// <summary>
     /// Writes <c>Directory.Build.props</c>, <c>FuzzBatchHarnessStubs.cs</c>, <c>FuzzBatch.Cpu.csproj</c>, and <c>FuzzBatch.Cuda.csproj</c>
