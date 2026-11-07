@@ -17,19 +17,23 @@ public class RunCommandTests
     [Scenario(TestScenario.HappyPath)]
     public void TryParseOptions_NoArguments_UsesTheDocumentedDefaults()
     {
-        bool parsed = RunCommand.TryParseOptions(["--repo-root", s_repoRoot], out var options, out bool showHelp, out _);
+        bool parsed = RunCommand.TryParseOptions(
+            ["--repo-root", s_repoRoot],
+            out var options,
+            out bool showHelp,
+            out _);
 
         // mutant: the default profile, minutes or batch size changes
         Assert.True(parsed);
         Assert.False(showHelp);
         Assert.NotNull(options);
-        Assert.Equal("C", options.Profile);
-        Assert.Equal(5, options.Minutes);
-        Assert.Null(options.Batches);
-        Assert.Equal(64, options.BatchSize);
-        Assert.Equal(1UL, options.FuzzSeed);
-        Assert.Equal(Path.Combine(s_repoRoot, "tmp", "differential-fuzz"), options.WorkDir);
-        Assert.Equal(Path.Combine(s_repoRoot, "tmp", "differential-fuzz", "Generated"), options.OutDir);
+        Assert.Equal(FuzzProfile.Cpu, options.Profile);
+        Assert.Equal(5, options.Limits.Minutes);
+        Assert.Null(options.Limits.Batches);
+        Assert.Equal(64, options.Generation.BatchSize);
+        Assert.Equal(1UL, options.Generation.FuzzSeed);
+        Assert.Equal(Path.Combine(s_repoRoot, "tmp", "differential-fuzz"), options.Paths.WorkDir);
+        Assert.Equal(Path.Combine(s_repoRoot, "tmp", "differential-fuzz", "Generated"), options.Paths.OutDir);
     }
 
     [Fact]
@@ -43,30 +47,32 @@ public class RunCommandTests
                 "--profile=all", "--minutes", "0.5", "--batches=3", "--batch-size", "8", "--fuzz-seed", "0x2A",
                 "--input-seed=4", "--allow-issue", "#1101", "--allow-issue=1101", "--allow-issue", "984",
                 "--swarm-focus", "coalesce-assign-value", "--metamorphic", "--compare-base", "origin/main",
-                "--expect-change", "--work-dir", "w", "--out-dir=o", "--no-reduce", "--no-gpu-lock", "--repo-root", s_repoRoot,
+                "--expect-change", "--work-dir", "w", "--out-dir=o", "--no-reduce", "--no-gpu-lock",
+                "--repo-root", s_repoRoot,
             ],
             out var options,
             out _,
             out string? error);
 
-        // mutant: a spelling is not accepted, a repeated --allow-issue is kept twice, or a relative directory ignores --repo-root
+        // mutant: a spelling is not accepted, a repeated --allow-issue is kept twice, or a relative directory ignores
+        // --repo-root
         Assert.True(parsed, error);
         Assert.NotNull(options);
-        Assert.Equal("G", options.Profile);
-        Assert.Equal(0.5, options.Minutes);
-        Assert.Equal(3, options.Batches);
-        Assert.Equal(8, options.BatchSize);
-        Assert.Equal(0x2AUL, options.FuzzSeed);
-        Assert.Equal(4, options.InputSeed);
-        Assert.Equal([1101, 984], options.AllowedIssues);
-        Assert.Equal("coalesce-assign-value", options.SwarmFocus);
-        Assert.True(options.Metamorphic);
+        Assert.Equal(FuzzProfile.All, options.Profile);
+        Assert.Equal(0.5, options.Limits.Minutes);
+        Assert.Equal(3, options.Limits.Batches);
+        Assert.Equal(8, options.Generation.BatchSize);
+        Assert.Equal(0x2AUL, options.Generation.FuzzSeed);
+        Assert.Equal(4, options.Generation.InputSeed);
+        Assert.Equal([1101, 984], options.Generation.AllowedIssues);
+        Assert.Equal("coalesce-assign-value", options.Generation.SwarmFocus);
+        Assert.True(options.Generation.Metamorphic);
         Assert.Equal("origin/main", options.CompareBase);
         Assert.True(options.ExpectChange);
         Assert.True(options.NoReduce);
         Assert.True(options.NoGpuLock);
-        Assert.Equal(Path.Combine(s_repoRoot, "w"), options.WorkDir);
-        Assert.Equal(Path.Combine(s_repoRoot, "o"), options.OutDir);
+        Assert.Equal(Path.Combine(s_repoRoot, "w"), options.Paths.WorkDir);
+        Assert.Equal(Path.Combine(s_repoRoot, "o"), options.Paths.OutDir);
     }
 
     [Theory]
@@ -109,7 +115,8 @@ public class RunCommandTests
     [Scenario(TestScenario.Boundary)]
     public void ParseJsonLines_MixedConsoleOutput_KeepsOnlyJsonObjects()
     {
-        var events = FuzzRunProcess.ParseJsonLines("building...\r\n{\"status\":\"failed\",\"kernel\":\"K1\"}\n{not json}\n[1,2]\n  {\"status\":\"ok\"}  \n");
+        var events = FuzzRunProcess.ParseJsonLines(
+            "building...\r\n{\"status\":\"failed\",\"kernel\":\"K1\"}\n{not json}\n[1,2]\n  {\"status\":\"ok\"}  \n");
 
         // mutant: a line that starts and ends with a brace but is not JSON throws, or an array is read as an event
         Assert.Equal(2, events.Count);

@@ -12,7 +12,7 @@ internal readonly record struct FuzzStageFailure(string Stage, JsonObject Detail
 /// <param name="KernelsSource">The text of <c>FuzzBatchKernels.cu.cs</c>.</param>
 /// <param name="CasesSource">The text of <c>FuzzBatchCases.cs</c>.</param>
 /// <param name="StageFailures">The builds and runs that failed as a whole (compile error, hang, crash).</param>
-/// <param name="KernelFailures">The per-kernel failures, with the failing paths of the CPU and CUDA runs merged.</param>
+/// <param name="KernelFailures">The per-kernel failures, with the failing paths of both runs merged.</param>
 internal sealed record FuzzBatchResult(
     string KernelsSource,
     string CasesSource,
@@ -34,10 +34,15 @@ internal sealed class FuzzBatchExecutor(RunCommandOptions options, string? cudaA
     /// </summary>
     internal const int GpuLockWaitMinutes = 10;
 
-    /// <summary>Gets the arguments of a Debug <c>dotnet build</c> that uses the restored assets when <paramref name="restoredAssets"/> is set.</summary>
+    /// <summary>
+    /// Gets the arguments of a Debug <c>dotnet build</c>; <c>--no-restore</c> when <paramref name="restoredAssets"/>.
+    /// </summary>
     internal static List<string> BuildArguments(string project, bool restoredAssets, params string[] extra)
     {
-        var args = new List<string> { "build", project, "-c", "Debug", "-m:1", "-nodeReuse:false" };
+        var args = new List<string>
+        {
+            "build", project, "-c", FuzzBatchWorkspaceWriter.Configuration, "-m:1", "-nodeReuse:false",
+        };
         args.AddRange(extra);
         if (restoredAssets)
         {
@@ -50,39 +55,43 @@ internal sealed class FuzzBatchExecutor(RunCommandOptions options, string? cudaA
     /// <summary>Generates, builds and runs the batch with the fuzz seed <paramref name="seedHex"/>.</summary>
     internal FuzzBatchResult RunSingleBatch(int batchIndex, string seedHex)
     {
-        Generate(seedHex);
-        string kernelsSource = File.ReadAllText(Path.Combine(options.OutDir, "FuzzBatchKernels.cu.cs"));
-        string casesSource = File.ReadAllText(Path.Combine(options.OutDir, "FuzzBatchCases.cs"));
+        var projects = Generate(seedHex);
+        string kernelsSource = File.ReadAllText(Path.Combine(options.Paths.OutDir, "FuzzBatchKernels.cu.cs"));
+        string casesSource = File.ReadAllText(Path.Combine(options.Paths.OutDir, "FuzzBatchCases.cs"));
 
         var stageFailures = new List<FuzzStageFailure>();
-        var cpuEvents = RunCpu(batchIndex, seedHex, stageFailures);
-        var cudaEvents = options.Profile == "G" ? RunCuda(batchIndex, seedHex, stageFailures) : [];
+        var cpuEvents = RunStage(CpuStage(projects.Cpu), batchIndex, seedHex, stageFailures);
+        var cudaEvents = options.Profile == FuzzProfile.All
+            ? RunStage(CudaStage(projects.Cuda), batchIndex, seedHex, stageFailures)
+            : [];
 
-        return new FuzzBatchResult(kernelsSource, casesSource, stageFailures, FuzzFailureMerger.Merge(cpuEvents, cudaEvents));
+        var kernelFailures = FuzzFailureMerger.Merge(cpuEvents, cudaEvents);
+        return new FuzzBatchResult(kernelsSource, casesSource, stageFailures, kernelFailures);
     }
 
-    private void Generate(string seedHex)
+    private FuzzBatchProjects Generate(string seedHex)
     {
         if (!FuzzRandom.TryParseSeed(seedHex, out ulong seed))
         {
             throw new FuzzRunAbortException($"Invalid batch seed {seedHex}.");
         }
 
-        FuzzSwarmConfig.TryParseFocus(options.SwarmFocus, out var swarmFocus);
+        var generation = options.Generation;
+        FuzzSwarmConfig.TryParseFocus(generation.SwarmFocus, out var swarmFocus);
         var fuzzOptions = new FuzzOptions
         {
             FuzzSeed = seed,
-            InputSeed = options.InputSeed,
-            BatchSize = options.BatchSize,
-            Profile = options.Profile,
-            AllowedIssues = new HashSet<int>(options.AllowedIssues),
+            InputSeed = generation.InputSeed,
+            BatchSize = generation.BatchSize,
+            Profile = options.Profile.ToCode(),
+            AllowedIssues = new HashSet<int>(generation.AllowedIssues),
             SwarmFocus = swarmFocus,
-            Metamorphic = options.Metamorphic,
+            Metamorphic = generation.Metamorphic,
         };
         try
         {
             var batch = new ScalarFuzzGenerator(fuzzOptions).GenerateBatch();
-            FuzzBatchWorkspaceWriter.WriteBatch(batch, options.OutDir, options.RepoRoot, cudaArch);
+            return FuzzBatchWorkspaceWriter.WriteBatch(batch, options.Paths.OutDir, options.Paths.RepoRoot, cudaArch);
         }
         catch (Exception ex) when (ex is IOException or InvalidOperationException or ArgumentException)
         {
@@ -90,112 +99,122 @@ internal sealed class FuzzBatchExecutor(RunCommandOptions options, string? cudaA
         }
     }
 
-    private List<JsonObject> RunCpu(int batchIndex, string seedHex, List<FuzzStageFailure> stageFailures)
+    private BatchStage CpuStage(FuzzBatchProject project)
     {
-        string project = Path.Combine(options.WorkDir, "FuzzBatch.Cpu.csproj");
-        string dll = Path.Combine(options.WorkDir, "bin", FuzzHostOs.Name, "FuzzBatch.Cpu", "Debug", "net10.0", "FuzzBatch.Cpu.dll");
-        string assets = Path.Combine(options.WorkDir, "obj", FuzzHostOs.Name, "FuzzBatch.Cpu", "project.assets.json");
-        string skipCpuCpp = options.Profile == "M" ? "true" : "false";
-        var buildArgs = BuildArguments(project, File.Exists(assets), "--no-dependencies", $"-p:GSharpSkipCpuCompilation={skipCpuCpp}");
-
-        var build = FuzzRunProcess.Run("dotnet", buildArgs, options.RepoRoot, BuildTimeoutMs);
-        if (build.Status != 0)
-        {
-            string status = build.TimedOut ? "hang" : "compile_error";
-            stageFailures.Add(new FuzzStageFailure(
-                build.TimedOut ? "cpu_build_hang" : "cpu_build",
-                StageDetails(status, "Cpu", [options.Profile == "M" ? "Managed" : "Native"], seedHex, build)));
-            Console.Out.WriteLine($"[fuzz-diff] Batch {batchIndex + 1} ({seedHex}): CPU build {(build.TimedOut ? "timed out" : "failed")}! Recorded to findings.");
-            return [];
-        }
-
-        var runArgs = new List<string> { "exec", dll };
-        if (options.Profile == "M")
+        bool managedOnly = options.Profile == FuzzProfile.Managed;
+        string firstPath = managedOnly ? "Managed" : "Native";
+        var runArgs = new List<string> { "exec", project.OutputDll };
+        if (managedOnly)
         {
             runArgs.Add("--managed-only");
         }
 
         AddInputSeed(runArgs);
+        return new BatchStage(
+            Name: "cpu",
+            Dialect: "Cpu",
+            Label: "CPU",
+            Project: project,
+            ExtraBuildArguments:
+            [
+                "--no-dependencies",
+                $"-p:GSharpSkipCpuCompilation={(managedOnly ? "true" : "false")}",
+            ],
+            BuildFailurePaths: [firstPath],
+            HangPaths: managedOnly ? ["Managed"] : ["Managed", "Native"],
+            CrashPaths: [firstPath],
+            Run: () => FuzzRunProcess.Run("dotnet", runArgs, options.Paths.RepoRoot, RunTimeoutMs));
+    }
 
-        var run = FuzzRunProcess.Run("dotnet", runArgs, options.RepoRoot, RunTimeoutMs);
+    private BatchStage CudaStage(FuzzBatchProject project) =>
+        new(
+            Name: "cuda",
+            Dialect: "Cuda",
+            Label: "CUDA",
+            Project: project,
+            ExtraBuildArguments: ["--no-dependencies"],
+            BuildFailurePaths: ["Cuda"],
+            HangPaths: ["Cuda"],
+            CrashPaths: ["Cuda"],
+            Run: () => RunCuda(project));
+
+    // Builds the stage's project, runs it and records a build failure or hang, a run hang or a crash (a non-zero exit
+    // with no events). Returns the events the run printed, or none when the build failed or the run was skipped.
+    private List<JsonObject> RunStage(
+        BatchStage stage,
+        int batchIndex,
+        string seedHex,
+        List<FuzzStageFailure> stageFailures)
+    {
+        var project = stage.Project;
+        var buildArgs = BuildArguments(project.ProjectPath, File.Exists(project.AssetsFile), stage.ExtraBuildArguments);
+        var build = FuzzRunProcess.Run("dotnet", buildArgs, options.Paths.RepoRoot, BuildTimeoutMs);
+        if (build.Status != 0)
+        {
+            string status = build.TimedOut ? "hang" : "compile_error";
+            string name = build.TimedOut ? $"{stage.Name}_build_hang" : $"{stage.Name}_build";
+            var details = StageDetails(stage, status, stage.BuildFailurePaths, seedHex, build);
+            stageFailures.Add(new FuzzStageFailure(name, details));
+            Console.Out.WriteLine(
+                $"[fuzz-diff] Batch {batchIndex + 1} ({seedHex}): {stage.Label} build " +
+                $"{(build.TimedOut ? "timed out" : "failed")}! Recorded to findings.");
+            return [];
+        }
+
+        if (stage.Run() is not FuzzProcessResult run)
+        {
+            Console.Out.WriteLine(
+                $"[fuzz-diff] Batch {batchIndex + 1} ({seedHex}): {stage.Label} stage skipped (GPU busy).");
+            return [];
+        }
+
         var events = FuzzRunProcess.ParseJsonLines(run.Stdout);
         if (run.TimedOut)
         {
-            stageFailures.Add(new FuzzStageFailure(
-                "cpu_hang",
-                StageDetails("hang", "Cpu", options.Profile == "M" ? ["Managed"] : ["Managed", "Native"], seedHex, run, "timeoutMs", RunTimeoutMs)));
+            var timeout = new JsonObject { ["timeoutMs"] = RunTimeoutMs };
+            var details = StageDetails(stage, "hang", stage.HangPaths, seedHex, run, timeout);
+            stageFailures.Add(new FuzzStageFailure($"{stage.Name}_hang", details));
         }
         else if (run.Status != 0 && events.Count == 0)
         {
-            stageFailures.Add(new FuzzStageFailure(
-                "cpu_crash",
-                StageDetails("crash", "Cpu", [options.Profile == "M" ? "Managed" : "Native"], seedHex, run, "exitCode", run.Status)));
+            var exitCode = new JsonObject { ["exitCode"] = run.Status };
+            var details = StageDetails(stage, "crash", stage.CrashPaths, seedHex, run, exitCode);
+            stageFailures.Add(new FuzzStageFailure($"{stage.Name}_crash", details));
         }
 
         return events;
     }
 
-    private List<JsonObject> RunCuda(int batchIndex, string seedHex, List<FuzzStageFailure> stageFailures)
+    // Runs the CUDA batch, under scripts/agent/gpu-lock.js unless the lock is skipped or already held. Returns null
+    // when the lock wait timed out: the GPU was busy, which is no finding.
+    private FuzzProcessResult? RunCuda(FuzzBatchProject project)
     {
-        string project = Path.Combine(options.WorkDir, "FuzzBatch.Cuda.csproj");
-        string dll = Path.Combine(options.WorkDir, "bin", FuzzHostOs.Name, "FuzzBatch.Cuda", "Debug", "net10.0", "FuzzBatch.Cuda.dll");
-        string assets = Path.Combine(options.WorkDir, "obj", FuzzHostOs.Name, "FuzzBatch.Cuda", "project.assets.json");
-        var buildArgs = BuildArguments(project, File.Exists(assets), "--no-dependencies");
-
-        var build = FuzzRunProcess.Run("dotnet", buildArgs, options.RepoRoot, BuildTimeoutMs);
-        if (build.Status != 0)
+        string repoRoot = options.Paths.RepoRoot;
+        bool useLock = !options.NoGpuLock && !FuzzRunProcess.IsAlreadyInsideGpuLock(repoRoot);
+        if (!useLock)
         {
-            string status = build.TimedOut ? "hang" : "compile_error";
-            stageFailures.Add(new FuzzStageFailure(
-                build.TimedOut ? "cuda_build_hang" : "cuda_build",
-                StageDetails(status, "Cuda", ["Cuda"], seedHex, build)));
-            Console.Out.WriteLine($"[fuzz-diff] Batch {batchIndex + 1} ({seedHex}): CUDA build {(build.TimedOut ? "timed out" : "failed")}! Recorded to findings.");
-            return [];
-        }
-
-        bool useLock = !options.NoGpuLock && !FuzzRunProcess.IsAlreadyInsideGpuLock(options.RepoRoot);
-        FuzzProcessResult run;
-        if (useLock)
-        {
-            string lockScript = Path.Combine(options.RepoRoot, "scripts", "agent", "gpu-lock.js");
-            string inputSeedArg = options.InputSeed is int inputSeed ? $" --input-seed {inputSeed.ToString(CultureInfo.InvariantCulture)}" : string.Empty;
-            string[] lockArgs =
-            [
-                lockScript,
-                "--timeout-minutes", GpuLockWaitMinutes.ToString(CultureInfo.InvariantCulture),
-                "--", $"dotnet exec \"{dll}\"{inputSeedArg}",
-            ];
-            int timeoutMs = (GpuLockWaitMinutes * 60_000) + RunTimeoutMs;
-            run = FuzzRunProcess.Run("node", lockArgs, options.RepoRoot, timeoutMs);
-            if (FuzzRunProcess.IsGpuLockWaitTimeout(run))
-            {
-                Console.Out.WriteLine($"[fuzz-diff] Batch {batchIndex + 1} ({seedHex}): CUDA stage skipped (GPU busy).");
-                return [];
-            }
-        }
-        else
-        {
-            var runArgs = new List<string> { "exec", dll };
+            var runArgs = new List<string> { "exec", project.OutputDll };
             AddInputSeed(runArgs);
-            run = FuzzRunProcess.Run("dotnet", runArgs, options.RepoRoot, RunTimeoutMs);
+            return FuzzRunProcess.Run("dotnet", runArgs, repoRoot, RunTimeoutMs);
         }
 
-        var events = FuzzRunProcess.ParseJsonLines(run.Stdout);
-        if (run.TimedOut)
-        {
-            stageFailures.Add(new FuzzStageFailure("cuda_hang", StageDetails("hang", "Cuda", ["Cuda"], seedHex, run, "timeoutMs", RunTimeoutMs)));
-        }
-        else if (run.Status != 0 && events.Count == 0)
-        {
-            stageFailures.Add(new FuzzStageFailure("cuda_crash", StageDetails("crash", "Cuda", ["Cuda"], seedHex, run, "exitCode", run.Status)));
-        }
-
-        return events;
+        string lockScript = Path.Combine(repoRoot, "scripts", "agent", "gpu-lock.js");
+        string inputSeedArg = options.Generation.InputSeed is int inputSeed
+            ? $" --input-seed {inputSeed.ToString(CultureInfo.InvariantCulture)}"
+            : string.Empty;
+        string[] lockArgs =
+        [
+            lockScript,
+            "--timeout-minutes", GpuLockWaitMinutes.ToString(CultureInfo.InvariantCulture),
+            "--", $"dotnet exec \"{project.OutputDll}\"{inputSeedArg}",
+        ];
+        var run = FuzzRunProcess.Run("node", lockArgs, repoRoot, (GpuLockWaitMinutes * 60_000) + RunTimeoutMs);
+        return FuzzRunProcess.IsGpuLockWaitTimeout(run) ? null : run;
     }
 
     private void AddInputSeed(List<string> args)
     {
-        if (options.InputSeed is int inputSeed)
+        if (options.Generation.InputSeed is int inputSeed)
         {
             args.Add("--input-seed");
             args.Add(inputSeed.ToString(CultureInfo.InvariantCulture));
@@ -203,7 +222,13 @@ internal sealed class FuzzBatchExecutor(RunCommandOptions options, string? cudaA
     }
 
     // status, failureKind, dialect, failingPaths, batchFuzzSeed, then the extra fields and the process output.
-    private static JsonObject StageDetails(string status, string dialect, string[] failingPaths, string seedHex, FuzzProcessResult result, string? extraName = null, int extraValue = 0)
+    private static JsonObject StageDetails(
+        BatchStage stage,
+        string status,
+        string[] failingPaths,
+        string seedHex,
+        FuzzProcessResult result,
+        JsonObject? extra = null)
     {
         var paths = new JsonArray();
         foreach (string path in failingPaths)
@@ -215,49 +240,73 @@ internal sealed class FuzzBatchExecutor(RunCommandOptions options, string? cudaA
         {
             ["status"] = status,
             ["failureKind"] = status,
-            ["dialect"] = dialect,
+            ["dialect"] = stage.Dialect,
             ["failingPaths"] = paths,
             ["batchFuzzSeed"] = seedHex,
         };
-        if (extraName is not null)
+        foreach (var (name, value) in extra ?? [])
         {
-            details[extraName] = extraValue;
+            details[name] = value?.DeepClone();
         }
 
         details["stdout"] = result.Stdout;
         details["stderr"] = result.Stderr;
         return details;
     }
+
+    /// <summary>What differs between the CPU and the CUDA stage of a batch.</summary>
+    /// <param name="Name">The prefix of the stage failure names (<c>cpu</c>, <c>cuda</c>).</param>
+    /// <param name="Dialect">The <c>dialect</c> of <c>finding.json</c>.</param>
+    /// <param name="Label">The stage name in console messages.</param>
+    /// <param name="Project">The batch project the stage builds and runs.</param>
+    /// <param name="ExtraBuildArguments">The <c>dotnet build</c> arguments after the common ones.</param>
+    /// <param name="BuildFailurePaths">The failing paths of a build failure or build hang.</param>
+    /// <param name="HangPaths">The failing paths of a run that timed out.</param>
+    /// <param name="CrashPaths">The failing paths of a run that exited with an error and printed no event.</param>
+    /// <param name="Run">Runs the built batch; <see langword="null"/> when the run was skipped.</param>
+    private sealed record BatchStage(
+        string Name,
+        string Dialect,
+        string Label,
+        FuzzBatchProject Project,
+        string[] ExtraBuildArguments,
+        string[] BuildFailurePaths,
+        string[] HangPaths,
+        string[] CrashPaths,
+        Func<FuzzProcessResult?> Run);
 }
 
-/// <summary>Merges the failures that the CPU run and the CUDA run report for the same kernel into one failure.</summary>
-internal static class FuzzFailureMerger
+/// <summary>Merges the failures that the CPU and the CUDA run report for the same kernel into one failure.</summary>
+internal sealed class FuzzFailureMerger
 {
+    private readonly List<FuzzStageFailure> _batchFailures = [];
+    private readonly List<string> _kernelOrder = [];
+    private readonly Dictionary<string, (string Stage, JsonObject Event)> _byKernel = new(StringComparer.Ordinal);
+
     /// <summary>Merges per kernel; a failure without a kernel name is kept as a batch failure of its stage.</summary>
-    internal static List<FuzzStageFailure> Merge(IReadOnlyList<JsonObject> cpuEvents, IReadOnlyList<JsonObject> cudaEvents)
+    internal static List<FuzzStageFailure> Merge(
+        IReadOnlyList<JsonObject> cpuEvents,
+        IReadOnlyList<JsonObject> cudaEvents)
     {
-        var batchFailures = new List<FuzzStageFailure>();
-        var kernelOrder = new List<string>();
-        var byKernel = new Dictionary<string, (string Stage, JsonObject Event)>(StringComparer.Ordinal);
-
-        Ingest(cpuEvents, "cpu", batchFailures, kernelOrder, byKernel);
-        Ingest(cudaEvents, "cuda", batchFailures, kernelOrder, byKernel);
-
-        foreach (string kernel in kernelOrder)
-        {
-            var (stage, ev) = byKernel[kernel];
-            batchFailures.Add(new FuzzStageFailure(stage, ev));
-        }
-
-        return batchFailures;
+        var merger = new FuzzFailureMerger();
+        merger.Ingest(cpuEvents, "cpu");
+        merger.Ingest(cudaEvents, "cuda");
+        return merger.Result();
     }
 
-    private static void Ingest(
-        IReadOnlyList<JsonObject> events,
-        string stagePrefix,
-        List<FuzzStageFailure> batchFailures,
-        List<string> kernelOrder,
-        Dictionary<string, (string Stage, JsonObject Event)> byKernel)
+    private List<FuzzStageFailure> Result()
+    {
+        var failures = new List<FuzzStageFailure>(_batchFailures);
+        foreach (string kernel in _kernelOrder)
+        {
+            var (stage, ev) = _byKernel[kernel];
+            failures.Add(new FuzzStageFailure(stage, ev));
+        }
+
+        return failures;
+    }
+
+    private void Ingest(IReadOnlyList<JsonObject> events, string stagePrefix)
     {
         foreach (var ev in events)
         {
@@ -270,16 +319,18 @@ internal static class FuzzFailureMerger
             string? kernel = FuzzRunProcess.GetString(ev, "kernel");
             if (string.IsNullOrEmpty(kernel))
             {
-                batchFailures.Add(new FuzzStageFailure($"{stagePrefix}_batch", ev));
+                _batchFailures.Add(new FuzzStageFailure($"{stagePrefix}_batch", ev));
                 continue;
             }
 
-            if (!byKernel.TryGetValue(kernel, out var existing))
+            if (!_byKernel.TryGetValue(kernel, out var existing))
             {
                 var copy = (JsonObject)ev.DeepClone();
-                copy["failingPaths"] = ev["failingPaths"] is JsonArray paths ? (JsonArray)paths.DeepClone() : new JsonArray();
-                byKernel[kernel] = ($"{stagePrefix}_{kernel}", copy);
-                kernelOrder.Add(kernel);
+                copy["failingPaths"] = ev["failingPaths"] is JsonArray paths
+                    ? (JsonArray)paths.DeepClone()
+                    : new JsonArray();
+                _byKernel[kernel] = ($"{stagePrefix}_{kernel}", copy);
+                _kernelOrder.Add(kernel);
                 continue;
             }
 
@@ -294,7 +345,7 @@ internal static class FuzzFailureMerger
             }
 
             existing.Event["failingPaths"] = sorted;
-            byKernel[kernel] = (stagePrefix == "cuda" ? $"cuda_{kernel}" : existing.Stage, existing.Event);
+            _byKernel[kernel] = (stagePrefix == "cuda" ? $"cuda_{kernel}" : existing.Stage, existing.Event);
         }
     }
 
@@ -307,7 +358,10 @@ internal static class FuzzFailureMerger
 
         foreach (var item in array)
         {
-            if (item is JsonValue value && value.TryGetValue(out string? text) && text is not null && !into.Contains(text))
+            if (item is JsonValue value &&
+                value.TryGetValue(out string? text) &&
+                text is not null &&
+                !into.Contains(text))
             {
                 into.Add(text);
             }
