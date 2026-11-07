@@ -31,8 +31,7 @@ public static partial class DeviceDynamicSharedMemoryKernels
         output[tid] = outer[tid] + helperResult;
     }
 
-    // One helper reached from two kernels; the first declares no buffer of its own, the second declares a buffer
-    // and calls the helper after a barrier
+    // One helper reached from two kernels; one declares no buffer, the other declares one and calls it after a barrier
     [GpuDeviceFunction]
     public static int TwoKernelHelper(int n, int val)
     {
