@@ -39,9 +39,13 @@ fuzz-compare base="origin/main" batches="20" *args="":
 # count can take the time: `test-stability 5h15m` for 5 hours 15 minutes, `test-stability 10000` for 10000 times
 # Run tests multiple times to detect flaky tests; see scripts/human/test-stability.js --help
 test-stability count="10" continue_on_error="false" shuffle="true" seed="" *args="":
-    node scripts/human/test-stability.js --count "{{count}}" {{ if continue_on_error == "true" { "--continue-on-error" } else { "" } }} {{ if shuffle == "true" { "" } else { "--no-shuffle" } }} {{ if seed == "" { "" } else { "--seed " + seed } }} {{ if args == "" { "" } else { "-- " + args } }}
+    node scripts/human/test-stability.js --count "{{count}}" \
+        {{ if continue_on_error == "true" { "--continue-on-error" } else { "" } }} \
+        {{ if shuffle == "true" { "" } else { "--no-shuffle" } }} \
+        {{ if seed == "" { "" } else { "--seed " + seed } }} \
+        {{ if args == "" { "" } else { "-- " + args } }}
 
-# Run the tests of one TestCategory (Compiler, Runtime, Stress, Benchmark, Unit, Syntax, Alignment, Stdlib, Differential)
+# Run the tests of one TestCategory (values: the TestCategory enum), e.g. `just test-category Stress`
 test-category category *args="":
     dotnet test --filter "Category={{category}}" {{args}}
 

@@ -7,7 +7,7 @@
 | Command | Scope |
 | ----- | ----- |
 | `just test` | All normal tests (excluding Stress) |
-| `just test-category <Category> [args]` | The tests of one `TestCategory` (`Category=<Category>`): `Compiler`, `Runtime`, `Stress`, `Benchmark`, `Unit`, `Syntax`, `Alignment`, `Stdlib` or `Differential` (e.g. `just test-category Stress`) |
+| `just test-category <Category> [args]` | One `TestCategory` enum value, e.g. `just test-category Stress` |
 | `just test-differential-cpu` | Differential tests on Tests.Cpu: each kernel on the managed and native paths against the sequential C# oracle (`Category=Differential`, no GPU) |
 | `just test-differential-cuda` | The same differential tests on Tests.Cuda against CUDA (uses the GPU; run through `gpu-lock.js`). Long runs: `just test-stability` (`scripts/human/test-stability.js`), whose `TEST_SEED` adds one input seed per iteration |
 | `just fuzz-diff [profile] [minutes] *args` | Differential kernel fuzzer (`profile`: `M`/`managed`, `C`/`cpu` [default], or `G`/`all`; extra arguments such as `--allow-issue <n>` and `--swarm-focus <mode>` are passed to `fuzz-differential.js`; wraps GPU execution in `gpu-lock.js`) |
