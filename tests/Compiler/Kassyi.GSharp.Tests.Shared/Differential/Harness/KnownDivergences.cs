@@ -7,9 +7,10 @@ using Kassyi.GSharp.Compiler.NativeApi;
 namespace Kassyi.GSharp.Tests.Shared.Differential;
 
 /// <summary>
-/// The registry of <see cref="KnownDivergence"/> entries that <see cref="DifferentialRunner.Run"/> applies to every case,
-/// read once from <c>KnownDivergences.yaml</c> (an embedded resource next to this file).
-/// A matrix test that finds a new divergence files an issue (M1 or M2) and adds an entry there; the PR that fixes it removes the entry, since the entry then fails.
+/// The registry of <see cref="KnownDivergence"/> entries that <see cref="DifferentialRunner.Run"/> applies to every
+/// case, read once from <c>KnownDivergences.yaml</c> (an embedded resource next to this file).
+/// A matrix test that finds a new divergence files an issue (M1 or M2) and adds an entry there; the PR that fixes it
+/// removes the entry, since the entry then fails.
 /// </summary>
 public static class KnownDivergences
 {
@@ -34,7 +35,9 @@ public static class KnownDivergences
 
     /// <summary>Parses the text of <c>KnownDivergences.yaml</c>.</summary>
     /// <param name="yaml">The file text.</param>
-    /// <exception cref="InvalidDataException">The text does not follow the format the file header describes.</exception>
+    /// <exception cref="InvalidDataException">
+    /// The text does not follow the format the file header describes.
+    /// </exception>
     internal static KnownDivergenceList Parse(string yaml)
     {
         YamlNode root;
@@ -48,6 +51,7 @@ public static class KnownDivergences
             throw new InvalidDataException($"KnownDivergences.yaml line {error.Line}: {error.Message}", ex);
         }
 
+        string[] lines = yaml.Split('\n');
         var issues = new List<KnownDivergenceIssue>();
         var entries = new List<KnownDivergence>();
         if (root is YamlScalar { IsNull: true })
@@ -58,6 +62,7 @@ public static class KnownDivergences
         foreach (var issueNode in ExpectSequence(root, "the document"))
         {
             var issueMapping = ExpectMapping(issueNode, "an issue block");
+            RejectUnknownKeys(lines, issueMapping, "an issue block", "issue", "title", "entries");
             int issue = RequireInt32(issueMapping, "issue");
             issues.Add(new KnownDivergenceIssue(issue, RequireScalar(issueMapping, "title"), issueMapping.Line));
             var entryNodes = issueMapping.TryGetValue("entries", out var entriesNode)
@@ -66,6 +71,7 @@ public static class KnownDivergences
             foreach (var entryNode in entryNodes)
             {
                 var entry = ExpectMapping(entryNode, "an entry");
+                RejectUnknownKeys(lines, entry, "an entry", "case", "paths", "columns", "hosts");
                 string caseName = RequireScalar(entry, "case");
                 var paths = ParsePaths(entry);
                 var hosts = ParseHosts(entry);
@@ -124,6 +130,42 @@ public static class KnownDivergences
 
     private static YamlMapping ExpectMapping(YamlNode node, string what) =>
         node as YamlMapping ?? throw Error(node, $"Expected a mapping for {what}.");
+
+    // A misspelled key (host for hosts) would otherwise be ignored and widen the entry, so every other key is an error
+    private static void RejectUnknownKeys(string[] lines, YamlMapping mapping, string what, params string[] known)
+    {
+        foreach (var entry in mapping.Entries)
+        {
+            if (Array.IndexOf(known, entry.Key) < 0)
+            {
+                throw new InvalidDataException(
+                    $"KnownDivergences.yaml line {KeyLine(lines, entry.Value, entry.Key)}: " +
+                    $"Unknown key '{entry.Key}' in {what}; expected {string.Join(", ", known)}."
+                );
+            }
+        }
+    }
+
+    // The parser records the line of a value, not of its key; a block value starts below its key, so the key line is
+    // the nearest line at or above the value that begins with "key:" (or "- key:")
+    private static int KeyLine(string[] lines, YamlNode value, string key)
+    {
+        for (int line = Math.Min(value.Line, lines.Length); line >= 1; line--)
+        {
+            string content = lines[line - 1].TrimStart();
+            if (content.StartsWith("- ", StringComparison.Ordinal))
+            {
+                content = content.Substring(2).TrimStart();
+            }
+
+            if (content.StartsWith(key + ":", StringComparison.Ordinal))
+            {
+                return line;
+            }
+        }
+
+        return value.Line;
+    }
 
     private static string RequireScalar(YamlMapping mapping, string key) =>
         mapping.TryGetScalar(key, out string? value) && value.Length > 0
