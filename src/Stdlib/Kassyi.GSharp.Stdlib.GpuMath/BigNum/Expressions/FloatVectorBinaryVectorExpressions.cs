@@ -26,7 +26,7 @@ internal abstract class FloatVectorBinaryVectorExpressionBase(
     public int Length => left.Length;
     public int WordsPerElement { get; } = wordsPerElement;
 
-    // The result buffers, lent until the next evaluation or Dispose; a caller's target is never kept (design 4.6)
+    // The result buffers, lent until the next evaluation or Dispose; a caller's target is never kept
     private readonly VectorResultCache _cache = new();
 
     protected uint BlockDimX => (uint)Math.Min(1024, WordsPerElement);
@@ -35,7 +35,7 @@ internal abstract class FloatVectorBinaryVectorExpressionBase(
 
     public bool TryGetLength(out int length) => left.TryGetLength(out length);
 
-    // Evaluates the window of the capacity; the elements are the first Count of them (design D3 4.3)
+    // Evaluates the window of the capacity; the elements are the first Count of them
     public FloatVectorEvaluation EvaluateCore(
         GpuWorkspace workspace,
         int elementOffset,

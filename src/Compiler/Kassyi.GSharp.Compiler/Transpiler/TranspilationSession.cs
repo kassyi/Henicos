@@ -18,8 +18,6 @@ internal readonly ref struct TranspilationSession
         }
     }
 
-    public bool HasError => ErrorMessage != null;
-
     private TranspilationSession(RoslynToCudaVisitor? visitor, IMethodSymbol? methodSymbol, string? errorMessage)
     {
         _visitor = visitor;
