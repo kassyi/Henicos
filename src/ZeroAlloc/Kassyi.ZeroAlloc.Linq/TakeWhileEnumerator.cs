@@ -14,6 +14,10 @@ public ref struct TakeWhileEnumerator<TEnumerator, TSource> : IStackEnumerator<T
     private TEnumerator _source;
     private readonly Func<TSource, bool> _predicate;
 
+    // Set by the first element that fails the predicate or by the end of the source: TakeWhile then stays finished, as
+    // System.Linq does, even when it is asked again
+    private bool _done;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="TakeWhileEnumerator{TEnumerator, TSource}"/> struct.
     /// </summary>
@@ -38,14 +42,12 @@ public ref struct TakeWhileEnumerator<TEnumerator, TSource> : IStackEnumerator<T
     /// </returns>
     public bool TryGetNext([MaybeNullWhen(false)] out TSource current)
     {
-        if (_source.TryGetNext(out current))
+        if (!_done && _source.TryGetNext(out current) && _predicate(current))
         {
-            if (_predicate(current))
-            {
-                return true;
-            }
+            return true;
         }
 
+        _done = true;
         current = default;
         return false;
     }
