@@ -841,7 +841,7 @@ public static partial class GpuBigIntVectorKernels
 
         SharedMemory<uint> sharedCarry = new SharedMemory<uint>(32);
         SharedMemory<ulong> sharedMax = new SharedMemory<ulong>(32);
-        SharedMemory<uint> needsNegate = new SharedMemory<uint>(1);
+        SharedMemory<uint> topCarry = new SharedMemory<uint>(1);
 
         var srcSlice = step.Source.Slice;
         int numWords = srcSlice.NumWords;
@@ -928,29 +928,49 @@ public static partial class GpuBigIntVectorKernels
                 step.Dest[step.DestOffset + idx] = (uint)sum + carryIn;
             }
 
+            // The carry out of the top word, taken from its own thread: the lanes past the element add zeros and
+            // would stop a carry before it leaves the block.
+            if (idx == numWords - 1)
+            {
+                topCarry[0] = g | (p & carryIn);
+            }
+
             Gpu.SyncThreads();
         }
 
+        // With different signs, |A| + ~|B| + 1 carries out exactly when |A| >= |B|: a borrow means |B| is larger and
+        // the buffer holds |A| - |B| modulo the width, negated below. With the same sign, a carry out is the bit above
+        // the width: the sum is shifted down by one bit to take it.
+        bool borrowed = differentSigns && topCarry[0] == 0u;
+        bool carriedOut = !differentSigns && topCarry[0] != 0u;
         if (tid == 0)
         {
-            step.ExpResult[step.BlockIdx] = (uint)align.OutExp;
-            if (!differentSigns)
-            {
-                step.SignResult[step.BlockIdx] = signA;
-                needsNegate[0] = 0u;
-            }
-            else
-            {
-                uint topWord = step.Dest[step.DestOffset + numWords - 1];
-                bool isNegTc = (topWord & 0x80000000u) != 0u;
-                step.SignResult[step.BlockIdx] = isNegTc ? step.Source.Sign : signA;
-                needsNegate[0] = isNegTc ? 1u : 0u;
-            }
+            step.ExpResult[step.BlockIdx] = (uint)(carriedOut ? align.OutExp + 1 : align.OutExp);
+            step.SignResult[step.BlockIdx] = borrowed ? step.Source.Sign : signA;
         }
 
         Gpu.SyncThreads();
 
-        if (needsNegate[0] == 1u)
+        if (carriedOut)
+        {
+            ShiftElementInPlaceBlockParallel(
+                new MutableElementSliceContext
+                {
+                    Buffer = step.Dest,
+                    BaseOffset = step.DestOffset,
+                    NumWords = numWords,
+                    BitOffset = -1
+                });
+
+            if (tid == 0)
+            {
+                step.Dest[step.DestOffset + numWords - 1] |= 0x80000000u;
+            }
+
+            Gpu.SyncThreads();
+        }
+
+        if (borrowed)
         {
             NegateElementInPlaceBlockParallel(
                 new MutableElementSliceContext
