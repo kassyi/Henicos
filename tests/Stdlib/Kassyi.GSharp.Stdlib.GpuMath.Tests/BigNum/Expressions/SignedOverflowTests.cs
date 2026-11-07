@@ -241,6 +241,23 @@ public sealed class SignedOverflowTests : IDisposable
     }
 
     [SkippableFact]
+    [Scenario(TestScenario.SadPath)]
+    public async Task EvaluateWithCudaGraph_OverflowInTheWarmUp_ThrowsGpuOverflowExceptionItself()
+    {
+        // A one-shot graph evaluation exposes no compilation, so an overflow of its warm-up is thrown as it is, as
+        // documented, and not wrapped like a failed CompileToGraph.
+        // mutant: GpuBigIntExpr.WarmUp wraps every failure in InvalidOperationException (both calls throw that)
+        var expression = (GpuBigIntExpr)Create(Max, 1) + Create(1, 1);
+
+        var overflow = Assert.Throws<GpuOverflowException>(() => expression.EvaluateWithCudaGraph(_workspace));
+        var asyncOverflow = await Assert.ThrowsAsync<GpuOverflowException>(
+            async () => await expression.EvaluateWithCudaGraphAsync(_workspace));
+
+        Assert.Equal("EvaluateWithCudaGraph", Assert.Single(overflow.Origins).EntryPoint);
+        Assert.Equal("EvaluateWithCudaGraphAsync", Assert.Single(asyncOverflow.Origins).EntryPoint);
+    }
+
+    [SkippableFact]
     [Scenario(TestScenario.Boundary)]
     public void Dispose_WithAnUnreportedOverflow_DoesNotThrow()
     {

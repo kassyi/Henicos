@@ -198,7 +198,7 @@ public readonly struct GpuBigIntExpr : IDisposable
     public GpuBigIntExecutableGraph CompileToGraph(GpuWorkspace workspace, GpuBigUInt? targetResult = null,
         [CallerMemberName] string callerMemberName = "", [CallerFilePath] string callerFilePath = "",
         [CallerLineNumber] int callerLineNumber = 0) =>
-        Compile(workspace, targetResult, ownsExpression: true,
+        Compile(workspace, targetResult, ownsExpression: true, wrapsWarmUpOverflow: true,
             new EvaluationSite(nameof(CompileToGraph), Node, callerMemberName, callerFilePath, callerLineNumber));
 
     /// <summary>
@@ -222,7 +222,7 @@ public readonly struct GpuBigIntExpr : IDisposable
         [CallerMemberName] string callerMemberName = "", [CallerFilePath] string callerFilePath = "",
         [CallerLineNumber] int callerLineNumber = 0)
     {
-        var executableGraph = Compile(workspace, targetResult, ownsExpression: false,
+        var executableGraph = Compile(workspace, targetResult, ownsExpression: false, wrapsWarmUpOverflow: false,
             new EvaluationSite(nameof(EvaluateWithCudaGraph), Node, callerMemberName, callerFilePath,
                 callerLineNumber));
         try
@@ -275,7 +275,7 @@ public readonly struct GpuBigIntExpr : IDisposable
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        var executableGraph = Compile(workspace, targetResult, ownsExpression: false,
+        var executableGraph = Compile(workspace, targetResult, ownsExpression: false, wrapsWarmUpOverflow: false,
             new EvaluationSite(nameof(EvaluateWithCudaGraphAsync), Node, callerMemberName, callerFilePath,
                 callerLineNumber));
         try
@@ -293,23 +293,24 @@ public readonly struct GpuBigIntExpr : IDisposable
 
     // Warm-up, capture and instantiation. ownsExpression: CompileToGraph hands the expression to the graph for its whole
     // life; EvaluateWithCudaGraph lends it only while its internal graph exists (O15). The checked operations recorded
-    // in the graph report the public call as their origin.
+    // in the graph report the public call as their origin. wrapsWarmUpOverflow: CompileToGraph reports an overflow of
+    // the warm-up as a failed compilation; the one-shot evaluations expose no compilation and throw the overflow itself.
     private GpuBigIntExecutableGraph Compile(GpuWorkspace workspace, GpuBigUInt? targetResult, bool ownsExpression,
-        EvaluationSite site)
+        bool wrapsWarmUpOverflow, EvaluationSite site)
     {
         GraphOwnership.ThrowIfOwned(Node);
         using (site.Enter())
         {
-            return CompileInScope(workspace, targetResult, ownsExpression, site);
+            return CompileInScope(workspace, targetResult, ownsExpression, wrapsWarmUpOverflow, site);
         }
     }
 
     private GpuBigIntExecutableGraph CompileInScope(GpuWorkspace workspace, GpuBigUInt? targetResult,
-        bool ownsExpression, EvaluationSite site)
+        bool ownsExpression, bool wrapsWarmUpOverflow, EvaluationSite site)
     {
         // 1. Warm-up execution to trigger all lazy memory allocations and JIT compilation
         // before graph capture begins, otherwise cuMemAlloc invalidates the stream.
-        WarmUp(workspace, targetResult);
+        WarmUp(workspace, targetResult, wrapsWarmUpOverflow);
 
         // 2. Capture the graph; the frees of the capture are deferred, so the graph keeps the buffers it uses. The
         // expression belongs to the graph from here on; every failure below gives it back.
@@ -399,7 +400,7 @@ public readonly struct GpuBigIntExpr : IDisposable
             new GraphExpression(Node, ownsExpression, recorded));
     }
 
-    private void WarmUp(GpuWorkspace workspace, GpuBigUInt? targetResult)
+    private void WarmUp(GpuWorkspace workspace, GpuBigUInt? targetResult, bool wrapsOverflow)
     {
         try
         {
@@ -414,7 +415,7 @@ public readonly struct GpuBigIntExpr : IDisposable
             // An overflow of the warm-up surfaces here, before the capture, instead of at the first launch of the graph
             workspace.Provider.SynchronizeStream(workspace.Stream);
         }
-        catch (Exception ex)
+        catch (Exception ex) when (wrapsOverflow || ex is not GpuOverflowException)
         {
             throw new InvalidOperationException("Failed during warmup execution for CUDA Graph capture.", ex);
         }
