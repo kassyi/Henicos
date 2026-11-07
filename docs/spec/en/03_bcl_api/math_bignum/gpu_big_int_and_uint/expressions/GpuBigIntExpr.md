@@ -155,6 +155,11 @@ An optional pre-allocated buffer for the final result magnitude.
 _GpuBigInt_<br>
 The result. Without `targetResult` the caller owns it and disposes it; with `targetResult` it is a borrowed value of that buffer. The expression stays usable afterwards: the internal graph holds it only while it runs.
 
+#### Exceptions
+
+`GpuOverflowException`<br>
+An operation of the expression overflowed ([Overflow](#overflow)). The warm-up before the capture waits for the GPU, so the overflow is thrown there, as it is (unlike `CompileToGraph`, which wraps it in `InvalidOperationException`).
+
 ## EvaluateWithCudaGraphAsync(GpuWorkspace, GpuBigUInt?, CancellationToken)
 
 Evaluates this expression tree through a CUDA Graph like [EvaluateWithCudaGraph](#evaluatewithcudagraphgpuworkspace-gpubiguint), but waits for the graph without blocking the calling thread.
@@ -182,7 +187,7 @@ A new `GpuBigInt` instance wrapping the evaluated result.
 #### Exceptions
 
 `GpuOverflowException`<br>
-An operation of the expression overflowed ([Overflow](#overflow)).
+An operation of the expression overflowed ([Overflow](#overflow)). As for `EvaluateWithCudaGraph`, an overflow of the warm-up is thrown as it is, not wrapped.
 
 `OperationCanceledException`<br>
 `cancellationToken` was canceled. A result buffer allocated by this method is released in stream order behind the graph; a supplied `targetResult` is left to the caller and receives the result once the graph completes.

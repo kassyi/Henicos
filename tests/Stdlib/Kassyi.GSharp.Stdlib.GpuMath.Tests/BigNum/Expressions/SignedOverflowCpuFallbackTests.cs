@@ -5,7 +5,9 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum.Expressions;
 /// The overflow check of the signed <see cref="GpuBigIntExpr"/> sums in CPU fallback mode, which has no device status
 /// words: the evaluation itself throws the same <see cref="GpuOverflowException"/>.
 /// </summary>
-/// <remarks><see cref="GpuKernelLoader.ForceCpuFallback"/> is AsyncLocal, so each test sets and restores it itself.</remarks>
+/// <remarks>
+/// <see cref="GpuKernelLoader.ForceCpuFallback"/> is AsyncLocal, so each test sets and restores it itself.
+/// </remarks>
 [Category(TestCategory.Stdlib)]
 [TestTarget(ExecutionTarget.CpuExecution)]
 [Collection(TestCollections.DeviceExclusive)]

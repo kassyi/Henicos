@@ -7,14 +7,14 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 /// </summary>
 /// <remarks>
 /// On the GPU the check adds no synchronization: the kernel flags the overflow in the workspace's device status words
-/// (<see cref="GpuDeviceStatus"/>), and the next read of the workspace stream throws. Without status words (CPU fallback
-/// mode, the null stream) the carry is checked on the host right after the operation.
+/// (<see cref="GpuDeviceStatus"/>), and the next read of the workspace stream throws. Without status words (CPU
+/// fallback mode, the null stream) the carry is checked on the host right after the operation.
 /// </remarks>
 internal static class SignedMagnitude
 {
     /// <summary>
-    /// <c>result = a + b</c> on the width of the operands, reporting an overflow of <paramref name="node"/> when the exact
-    /// sum needs another word.
+    /// <c>result = a + b</c> on the width of the operands, reporting an overflow of <paramref name="node"/> when the
+    /// exact sum needs another word.
     /// </summary>
     /// <param name="a">The first magnitude.</param>
     /// <param name="b">The second magnitude.</param>
@@ -23,7 +23,9 @@ internal static class SignedMagnitude
     /// <param name="operation">The operator of <paramref name="node"/>.</param>
     /// <param name="operatorStackTrace">The stack trace of the operator, when captured.</param>
     /// <exception cref="ArgumentException">The three magnitudes do not have the same number of words.</exception>
-    /// <exception cref="GpuOverflowException">The sum overflowed (CPU fallback mode only; on the GPU, at the next read).</exception>
+    /// <exception cref="GpuOverflowException">
+    /// The sum overflowed (CPU fallback mode only; on the GPU, at the next read).
+    /// </exception>
     public static void AddChecked(GpuBigUInt a, GpuBigUInt b, GpuBigUInt result, IGpuBigIntExpression node,
         string operation, StackTrace? operatorStackTrace)
     {

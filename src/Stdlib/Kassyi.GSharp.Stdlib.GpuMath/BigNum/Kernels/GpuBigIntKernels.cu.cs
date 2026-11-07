@@ -9,7 +9,9 @@ public static partial class GpuBigIntKernels
     /// <summary>The device status word that counts the overflows (it only grows).</summary>
     public const int OverflowCountWord = 2;
 
-    /// <summary>The first device status word of the overflow ring: pairs of (origin id, count before the increment).</summary>
+    /// <summary>
+    /// The first device status word of the overflow ring: pairs of (origin id, count before the increment).
+    /// </summary>
     public const int OverflowRingWord = 4;
 
     /// <summary>The number of entries in the overflow ring (a power of two).</summary>
@@ -264,8 +266,8 @@ public static partial class GpuBigIntKernels
     }
 
     /// <summary>
-    /// <c>dResult = dA + dB</c> on <paramref name="numWords"/> words, like <see cref="ParallelAddKernel"/>, and records an
-    /// overflow in the device status words when the exact sum needs another word (see <see cref="ReportOverflow"/>).
+    /// <c>dResult = dA + dB</c> on <paramref name="numWords"/> words, like <see cref="ParallelAddKernel"/>, and records
+    /// an overflow in the device status words when the exact sum needs another word (see <see cref="ReportOverflow"/>).
     /// Launched with one block.
     /// </summary>
     [GpuKernel]

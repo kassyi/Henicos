@@ -76,7 +76,7 @@ public interface IGpuGraphProvider
 | [ModInverse(GpuWorkspace, GpuBigUInt, GpuBigUInt, GpuBigUInt)](#modinversegpuworkspace-gpubiguint-gpubiguint-gpubiguint) | Computes the modular multiplicative inverse (`value^-1 mod modulus`) on the GPU. |
 | [Mul(GpuWorkspace, GpuBigUInt, GpuBigUInt, GpuBigUInt)](#mulgpuworkspace-gpubiguint-gpubiguint-gpubiguint) | Multiplies two arbitrary-precision unsigned integers using GPU NTT or Comba/Karatsuba algorithms. |
 | [Mul(GpuWorkspace, GpuBigUInt, UInt32, GpuBigUInt)](#mulgpuworkspace-gpubiguint-uint32-gpubiguint) | Multiplies an arbitrary-precision integer by a 32-bit unsigned scalar on the GPU. |
-| [ReciprocalMega(GpuWorkspace, GpuBigUInt, GpuBigUInt, Int32, Int32, Int32, Int32, Int32)](#reciprocalmegagpuworkspace-gpubiguint-gpubiguint-int32-int32-int32-int32-int32) | Executes a high-precision reciprocal division algorithm using Newton-Raphson kernels on the GPU. |
+| [ReciprocalMega(GpuWorkspace, GpuBigUInt, GpuBigUInt, Int32, Int32, Int32)](#reciprocalmegagpuworkspace-gpubiguint-gpubiguint-int32-int32-int32) | Executes a high-precision reciprocal division algorithm using Newton-Raphson kernels on the GPU. |
 | [SqrtFloorCorrection(GpuWorkspace, GpuBigUInt, GpuBigUInt, GpuBigUInt, GpuBigUInt, GpuBigUInt)](#sqrtfloorcorrectiongpuworkspace-gpubiguint-gpubiguint-gpubiguint-gpubiguint-gpubiguint) | Corrects an integer square root estimate to $\lfloor\sqrt{a}\rfloor$. |
 
 ### IGpuGraphProvider Methods
@@ -770,7 +770,7 @@ The target precision in bits.
 `iterations` _Int32_<br>
 The number of Newton-Raphson refinement iterations.
 
-## ReciprocalMega(GpuWorkspace, GpuBigUInt, GpuBigUInt, Int32, Int32, Int32, Int32, Int32)
+## ReciprocalMega(GpuWorkspace, GpuBigUInt, GpuBigUInt, Int32, Int32, Int32)
 
 Executes a high-precision reciprocal division algorithm using Newton-Raphson approximation kernels on the GPU.
 
@@ -780,8 +780,6 @@ void ReciprocalMega(
     GpuBigUInt targetOperand,
     GpuBigUInt resultBuffer,
     int marginWords,
-    int numBits,
-    int marginBits,
     int iterations,
     int targetBits);
 ```
@@ -799,12 +797,6 @@ The destination buffer for the reciprocal result.
 
 `marginWords` _Int32_<br>
 The margin limbs allocated for internal scratch precision.
-
-`numBits` _Int32_<br>
-The base bit precision.
-
-`marginBits` _Int32_<br>
-Additional precision guard bits.
 
 `iterations` _Int32_<br>
 The number of Newton-Raphson iterations.

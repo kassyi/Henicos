@@ -47,13 +47,14 @@ internal sealed class OverflowSite(
 
 /// <summary>
 /// The host side of the overflow origins of one workspace: a checked kernel receives the id of its operation, writes it
-/// into the device status words when it overflows, and the read that reports the overflow finds the operation by the id.
+/// into the device status words when it overflows, and the read that reports the overflow finds the operation by the
+/// id.
 /// </summary>
 /// <remarks>
 /// <para>
-/// The ids of direct evaluations live in a ring of <see cref="Capacity"/> entries, so an overflow reported after that many
-/// later checked operations has lost its origin (reported as unknown). The ids recorded in a captured CUDA graph are
-/// replayed for the whole life of the graph, so the graph pins them (<see cref="Pin"/>) until it is destroyed.
+/// The ids of direct evaluations live in a ring of <see cref="Capacity"/> entries, so an overflow reported after that
+/// many later checked operations has lost its origin (reported as unknown). The ids recorded in a captured CUDA graph
+/// are replayed for the whole life of the graph, so the graph pins them (<see cref="Pin"/>) until it is destroyed.
 /// </para>
 /// <para>Thread-safe: ids come from an atomic counter, and the pinned table is locked.</para>
 /// </remarks>

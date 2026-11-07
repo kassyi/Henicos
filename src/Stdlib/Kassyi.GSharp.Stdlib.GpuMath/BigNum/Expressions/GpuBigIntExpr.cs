@@ -147,7 +147,9 @@ public readonly struct GpuBigIntExpr : IDisposable
     /// </summary>
     /// <param name="destination">The pre-allocated GPU buffer to store the evaluated magnitude. It may be the magnitude of
     /// an operand (<c>(a / b).Evaluate(a.Value)</c>): the root then computes into a temporary and copies the result.</param>
-    /// <param name="callerMemberName">Filled in by the compiler: the calling member, named in a <see cref="GpuOverflowException"/>.</param>
+    /// <param name="callerMemberName">
+    /// Filled in by the compiler: the calling member, named in a <see cref="GpuOverflowException"/>.
+    /// </param>
     /// <param name="callerFilePath">Filled in by the compiler: the calling source file.</param>
     /// <param name="callerLineNumber">Filled in by the compiler: the calling line.</param>
     /// <returns>A new <see cref="GpuBigInt"/> instance wrapping the destination buffer with the evaluated sign.</returns>
@@ -168,7 +170,9 @@ public readonly struct GpuBigIntExpr : IDisposable
     /// Evaluates this signed expression into a newly rented temporary GPU buffer.
     /// </summary>
     /// <param name="workspace">The GPU workspace used for temporary buffer allocation.</param>
-    /// <param name="callerMemberName">Filled in by the compiler: the calling member, named in a <see cref="GpuOverflowException"/>.</param>
+    /// <param name="callerMemberName">
+    /// Filled in by the compiler: the calling member, named in a <see cref="GpuOverflowException"/>.
+    /// </param>
     /// <param name="callerFilePath">Filled in by the compiler: the calling source file.</param>
     /// <param name="callerLineNumber">Filled in by the compiler: the calling line.</param>
     /// <returns>A new <see cref="GpuBigInt"/> instance wrapping the temporary buffer with the evaluated sign.</returns>
@@ -191,7 +195,9 @@ public readonly struct GpuBigIntExpr : IDisposable
     /// </summary>
     /// <param name="workspace">The GPU workspace.</param>
     /// <param name="targetResult">An optional pre-allocated buffer for the final result.</param>
-    /// <param name="callerMemberName">Filled in by the compiler: the calling member, named in a <see cref="GpuOverflowException"/>.</param>
+    /// <param name="callerMemberName">
+    /// Filled in by the compiler: the calling member, named in a <see cref="GpuOverflowException"/>.
+    /// </param>
     /// <param name="callerFilePath">Filled in by the compiler: the calling source file.</param>
     /// <param name="callerLineNumber">Filled in by the compiler: the calling line.</param>
     /// <returns>An executable graph instance that can be launched repeatedly.</returns>
@@ -210,7 +216,7 @@ public readonly struct GpuBigIntExpr : IDisposable
     public GpuBigIntExecutableGraph CompileToGraph(GpuWorkspace workspace, GpuBigUInt? targetResult = null,
         [CallerMemberName] string callerMemberName = "", [CallerFilePath] string callerFilePath = "",
         [CallerLineNumber] int callerLineNumber = 0) =>
-        Compile(workspace, targetResult, ownsExpression: true,
+        Compile(workspace, targetResult, ownsExpression: true, wrapsWarmUpOverflow: true,
             new EvaluationSite(nameof(CompileToGraph), Node, callerMemberName, callerFilePath, callerLineNumber));
 
     /// <summary>
@@ -218,7 +224,9 @@ public readonly struct GpuBigIntExpr : IDisposable
     /// </summary>
     /// <param name="workspace">The GPU workspace.</param>
     /// <param name="targetResult">An optional pre-allocated buffer for the final result.</param>
-    /// <param name="callerMemberName">Filled in by the compiler: the calling member, named in a <see cref="GpuOverflowException"/>.</param>
+    /// <param name="callerMemberName">
+    /// Filled in by the compiler: the calling member, named in a <see cref="GpuOverflowException"/>.
+    /// </param>
     /// <param name="callerFilePath">Filled in by the compiler: the calling source file.</param>
     /// <param name="callerLineNumber">Filled in by the compiler: the calling line.</param>
     /// <returns>
@@ -234,7 +242,7 @@ public readonly struct GpuBigIntExpr : IDisposable
         [CallerMemberName] string callerMemberName = "", [CallerFilePath] string callerFilePath = "",
         [CallerLineNumber] int callerLineNumber = 0)
     {
-        var executableGraph = Compile(workspace, targetResult, ownsExpression: false,
+        var executableGraph = Compile(workspace, targetResult, ownsExpression: false, wrapsWarmUpOverflow: false,
             new EvaluationSite(nameof(EvaluateWithCudaGraph), Node, callerMemberName, callerFilePath,
                 callerLineNumber));
         try
@@ -257,7 +265,9 @@ public readonly struct GpuBigIntExpr : IDisposable
     /// <param name="cancellationToken">
     /// A token that stops waiting for the graph. The graph itself still runs to completion.
     /// </param>
-    /// <param name="callerMemberName">Filled in by the compiler: the calling member, named in a <see cref="GpuOverflowException"/>.</param>
+    /// <param name="callerMemberName">
+    /// Filled in by the compiler: the calling member, named in a <see cref="GpuOverflowException"/>.
+    /// </param>
     /// <param name="callerFilePath">Filled in by the compiler: the calling source file.</param>
     /// <param name="callerLineNumber">Filled in by the compiler: the calling line.</param>
     /// <returns>
@@ -287,7 +297,7 @@ public readonly struct GpuBigIntExpr : IDisposable
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        var executableGraph = Compile(workspace, targetResult, ownsExpression: false,
+        var executableGraph = Compile(workspace, targetResult, ownsExpression: false, wrapsWarmUpOverflow: false,
             new EvaluationSite(nameof(EvaluateWithCudaGraphAsync), Node, callerMemberName, callerFilePath,
                 callerLineNumber));
         try
@@ -305,23 +315,24 @@ public readonly struct GpuBigIntExpr : IDisposable
 
     // Warm-up, capture and instantiation. ownsExpression: CompileToGraph hands the expression to the graph for its whole
     // life; EvaluateWithCudaGraph lends it only while its internal graph exists (O15). The checked operations recorded
-    // in the graph report the public call as their origin.
+    // in the graph report the public call as their origin. wrapsWarmUpOverflow: CompileToGraph reports an overflow of
+    // the warm-up as a failed compilation; the one-shot evaluations expose no compilation and throw the overflow as is.
     private GpuBigIntExecutableGraph Compile(GpuWorkspace workspace, GpuBigUInt? targetResult, bool ownsExpression,
-        EvaluationSite site)
+        bool wrapsWarmUpOverflow, EvaluationSite site)
     {
         GraphOwnership.ThrowIfOwned(Node);
         using (site.Enter())
         {
-            return CompileInScope(workspace, targetResult, ownsExpression, site);
+            return CompileInScope(workspace, targetResult, ownsExpression, wrapsWarmUpOverflow, site);
         }
     }
 
     private GpuBigIntExecutableGraph CompileInScope(GpuWorkspace workspace, GpuBigUInt? targetResult,
-        bool ownsExpression, EvaluationSite site)
+        bool ownsExpression, bool wrapsWarmUpOverflow, EvaluationSite site)
     {
         // 1. Warm-up execution to trigger all lazy memory allocations and JIT compilation
         // before graph capture begins, otherwise cuMemAlloc invalidates the stream.
-        WarmUp(workspace, targetResult);
+        WarmUp(workspace, targetResult, wrapsWarmUpOverflow);
 
         // 2. Capture the graph; the frees of the capture are deferred, so the graph keeps the buffers it uses. The
         // expression belongs to the graph from here on; every failure below gives it back.
@@ -411,7 +422,7 @@ public readonly struct GpuBigIntExpr : IDisposable
             new GraphExpression(Node, ownsExpression, recorded));
     }
 
-    private void WarmUp(GpuWorkspace workspace, GpuBigUInt? targetResult)
+    private void WarmUp(GpuWorkspace workspace, GpuBigUInt? targetResult, bool wrapsOverflow)
     {
         try
         {
@@ -426,7 +437,7 @@ public readonly struct GpuBigIntExpr : IDisposable
             // An overflow of the warm-up surfaces here, before the capture, instead of at the first launch of the graph
             workspace.Provider.SynchronizeStream(workspace.Stream);
         }
-        catch (Exception ex)
+        catch (Exception ex) when (wrapsOverflow || ex is not GpuOverflowException)
         {
             throw new InvalidOperationException("Failed during warmup execution for CUDA Graph capture.", ex);
         }
@@ -528,7 +539,7 @@ public readonly struct GpuBigIntExpr : IDisposable
 }
 
 /// <summary>
-/// Records which expression nodes a live CUDA graph owns (design 4.5.3-1).
+/// Records which expression nodes a live CUDA graph owns.
 /// </summary>
 /// <remarks>
 /// A graph replays the buffers its expression's nodes hold, so the expression must not be evaluated, compiled again or
@@ -810,8 +821,8 @@ public readonly struct GpuBigIntExecutableGraph : IDisposable
 }
 
 /// <summary>
-/// The expression a <see cref="GpuBigIntExecutableGraph"/> was compiled from: its root, whether the graph owns it for its
-/// whole life, and the checked operations whose origin ids the graph replays.
+/// The expression a <see cref="GpuBigIntExecutableGraph"/> was compiled from: its root, whether the graph owns it for
+/// its whole life, and the checked operations whose origin ids the graph replays.
 /// </summary>
 internal sealed record GraphExpression(
     IGpuBigIntExpression Node,

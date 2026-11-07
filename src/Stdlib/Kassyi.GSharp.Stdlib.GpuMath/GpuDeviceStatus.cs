@@ -6,16 +6,16 @@ namespace Kassyi.GSharp.Stdlib.GpuMath;
 
 /// <summary>
 /// Carries the failures of on-device corrections and the overflows of signed expressions to the host without adding a
-/// synchronization: <see cref="DeviceWords"/> device words per <see cref="GpuWorkspace"/>, read together with the reads that
-/// GpuMath already makes on the workspace stream.
+/// synchronization: <see cref="DeviceWords"/> device words per <see cref="GpuWorkspace"/>, read together with the reads
+/// that GpuMath already makes on the workspace stream.
 /// </summary>
 /// <remarks>
 /// <para>
 /// <b>Layout:</b> word 0 counts the correction failures and word 1 keeps the code of the last one; word
 /// <see cref="GpuBigIntKernels.OverflowCountWord"/> counts the overflows, and the
-/// <see cref="GpuBigIntKernels.OverflowRingEntries"/> pairs from word <see cref="GpuBigIntKernels.OverflowRingWord"/> hold
-/// the origin id and the sequence number of the latest overflows (<see cref="GpuBigIntKernels.ReportOverflow"/>). Word 3
-/// is reserved. The origin ids are registered on the host by <see cref="Origins"/>.
+/// <see cref="GpuBigIntKernels.OverflowRingEntries"/> pairs from word <see cref="GpuBigIntKernels.OverflowRingWord"/>
+/// hold the origin id and the sequence number of the latest overflows (<see cref="GpuBigIntKernels.ReportOverflow"/>).
+/// Word 3 is reserved. The origin ids are registered on the host by <see cref="Origins"/>.
 /// </para>
 /// <para>
 /// <b>Writers:</b> the final corrections of <c>ReduceZeroSync</c> (<c>BarrettCorrectionKernel</c>), <c>ReciprocalMega</c>,
@@ -26,10 +26,11 @@ namespace Kassyi.GSharp.Stdlib.GpuMath;
 /// it. The host marks the status pending (<see cref="MarkPending"/>) right after launching such a kernel or a graph.
 /// </para>
 /// <para>
-/// <b>Overflows:</b> a checked sum (<see cref="GpuBigIntKernels.CheckedParallelAddKernel"/>) whose exact value needs another
-/// word adds 1 to the overflow count and records its origin. The host marks the status pending after the launch, and the
-/// next read throws <see cref="GpuOverflowException"/> for every overflow counted since the previous report. A read that
-/// finds both a correction failure and an overflow throws <see cref="AggregateException"/> with both.
+/// <b>Overflows:</b> a checked sum (<see cref="GpuBigIntKernels.CheckedParallelAddKernel"/>) whose exact value needs
+/// another word adds 1 to the overflow count and records its origin. The host marks the status pending after the
+/// launch, and the next read throws <see cref="GpuOverflowException"/> for every overflow counted since the previous
+/// report. A read that finds both a correction failure and an overflow throws <see cref="AggregateException"/> with
+/// both.
 /// </para>
 /// <para>
 /// <b>Readers:</b> <see cref="GSharpKernelProvider.CopyDeviceToHost"/>, <see cref="GSharpKernelProvider.ReadWord"/>,
@@ -52,10 +53,10 @@ namespace Kassyi.GSharp.Stdlib.GpuMath;
 /// <b>Not reported at the next read:</b> reads on the legacy null stream (<c>stream</c> = <see cref="IntPtr.Zero"/>); waits
 /// that bypass GpuMath (<c>cuStreamSynchronize</c> or <c>cuMemcpyDtoH</c> called directly, for example by a caller that
 /// synchronizes the stream itself and then reads <see cref="GpuBigUInt.DevicePointer"/>), which leave the status pending for
-/// the next GpuMath read; and CPU fallback mode, which has no device words (a checked sum there throws at once). A graph captured on one workspace and replayed
-/// on another stream (or with <c>cuGraphLaunch</c> directly) counts into the capturing workspace's words without marking
-/// it pending, so its failure is reported only after that workspace launches a correction or a graph again and then
-/// reads.
+/// the next GpuMath read; and CPU fallback mode, which has no device words (a checked sum there throws at once). A
+/// graph captured on one workspace and replayed on another stream (or with <c>cuGraphLaunch</c> directly) counts into
+/// the capturing workspace's words without marking it pending, so its failure is reported only after that workspace
+/// launches a correction or a graph again and then reads.
 /// </para>
 /// <para>
 /// <b>Slots:</b> the page-locked slots come from pages allocated once per process and never freed, because
@@ -133,15 +134,15 @@ internal sealed class GpuDeviceStatus : IDisposable
     public static GpuDeviceStatus? BeginRead(IntPtr stream) => Find(stream)?.BeginRead();
 
     /// <summary>
-    /// Records that a correction kernel, a checked kernel or a graph was launched on the stream; the next read checks the
-    /// words. Called after the launch.
+    /// Records that a correction kernel, a checked kernel or a graph was launched on the stream; the next read checks
+    /// the words. Called after the launch.
     /// </summary>
     public void MarkPending() => Volatile.Write(ref _pending, 1);
 
     /// <summary>
-    /// When a correction or a checked kernel may have run since the previous check, enqueues the asynchronous copy of the device words into
-    /// the page-locked slot. The caller must wait for the stream (its own read does) and then call <see cref="EndRead"/>,
-    /// or call <see cref="AbandonRead"/> when it ends without that wait.
+    /// When a correction or a checked kernel may have run since the previous check, enqueues the asynchronous copy of
+    /// the device words into the page-locked slot. The caller must wait for the stream (its own read does) and then
+    /// call <see cref="EndRead"/>, or call <see cref="AbandonRead"/> when it ends without that wait.
     /// </summary>
     /// <returns>This status when there is a copy to check, or <see langword="null"/> when there is nothing to check.</returns>
     public GpuDeviceStatus? BeginRead()
@@ -266,8 +267,8 @@ internal sealed class GpuDeviceStatus : IDisposable
         status.EndRead();
     }
 
-    // The failures counted since the previous report, claimed with a compare-and-exchange so that exactly one read reports
-    // them; null when there is none.
+    // The failures counted since the previous report, claimed with a compare-and-exchange so that exactly one read
+    // reports them; null when there is none.
     private InvalidOperationException? ClaimCorrectionFailures(int count, uint code)
     {
         while (true)
@@ -290,8 +291,8 @@ internal sealed class GpuDeviceStatus : IDisposable
             "The failure is reported at the first read of the workspace stream after the call.");
     }
 
-    // The overflows counted since the previous report, oldest first, claimed like the correction failures. The counts are
-    // compared through their unsigned difference, so the count may wrap.
+    // The overflows counted since the previous report, oldest first, claimed like the correction failures. The counts
+    // are compared through their unsigned difference, so the count may wrap.
     private GpuOverflowException? ClaimOverflows(uint count, ReadOnlySpan<uint> ring)
     {
         uint reported;
@@ -442,7 +443,9 @@ internal sealed class GpuDeviceStatus : IDisposable
         }
     }
 
-    /// <summary>Page-locked slots of <see cref="DeviceWords"/> words carved from pages that live for the whole process.</summary>
+    /// <summary>
+    /// Page-locked slots of <see cref="DeviceWords"/> words carved from pages that live for the whole process.
+    /// </summary>
     private static unsafe class PinnedSlots
     {
         private const int SlotsPerPage = 512;

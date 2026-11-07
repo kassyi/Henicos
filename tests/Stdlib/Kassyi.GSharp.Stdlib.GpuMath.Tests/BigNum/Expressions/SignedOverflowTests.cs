@@ -3,8 +3,8 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum.Expressions;
 
 /// <summary>
 /// The overflow check of the signed <see cref="GpuBigIntExpr"/> operations whose magnitudes are added: the result keeps
-/// the width of the operands, the GPU flags a carry out of the top word without waiting, and the next synchronization of
-/// the workspace stream throws <see cref="GpuOverflowException"/> naming the operation and the evaluation call.
+/// the width of the operands, the GPU flags a carry out of the top word without waiting, and the next synchronization
+/// of the workspace stream throws <see cref="GpuOverflowException"/> naming the operation and the evaluation call.
 /// </summary>
 /// <remarks>
 /// Every test uses its own workspace, so the overflow count starts at 0. The line of an evaluation is taken on the same
@@ -39,7 +39,9 @@ public sealed class SignedOverflowTests : IDisposable
         _scope.Dispose();
     }
 
-    /// <summary>The magnitudes are added: <c>(+a) + (+b)</c>, <c>(-a) - (+b)</c>, <c>(-a) + (-b)</c>, <c>(+a) - (-b)</c>.</summary>
+    /// <summary>
+    /// The magnitudes are added: <c>(+a) + (+b)</c>, <c>(-a) - (+b)</c>, <c>(-a) + (-b)</c>, <c>(+a) - (-b)</c>.
+    /// </summary>
     public static TheoryData<string, long, long> CarryOutOfTheTopWord() => new()
     {
         { "+", Max, 1 },
@@ -53,8 +55,8 @@ public sealed class SignedOverflowTests : IDisposable
     [MemberData(nameof(CarryOutOfTheTopWord))]
     public void MagnitudesAdded_CarryOut_ThrowsAtTheNextRead(string op, long a, long b)
     {
-        // 0xFFFFFFFF + 1 in 1 word gave 0 (and -0xFFFFFFFF - 1 gave -0) with no error. Evaluate itself does not wait for
-        // the GPU, so it returns; the read of the value throws, naming the operator and the Evaluate line.
+        // 0xFFFFFFFF + 1 in 1 word gave 0 (and -0xFFFFFFFF - 1 gave -0) with no error. Evaluate itself does not wait
+        // for the GPU, so it returns; the read of the value throws, naming the operator and the Evaluate line.
         // mutant: SignedMagnitude.AddChecked without status.MarkPending() (the read does not copy the status words)
         // mutant: CheckedParallelAddKernel without ReportOverflow (the count stays 0)
         var expression = Apply(op, Create(a, 1), Create(b, 1));
@@ -68,7 +70,8 @@ public sealed class SignedOverflowTests : IDisposable
             Assert.Contains($"{nameof(SignedOverflowTests)}.cs:line {line}", exception.Message);
             var origin = Assert.Single(exception.Origins);
             Assert.Equal(
-                (op, 1, $"x0 {op} x1", $"[x0 {op} x1]", "Evaluate", nameof(MagnitudesAdded_CarryOut_ThrowsAtTheNextRead), line),
+                (op, 1, $"x0 {op} x1", $"[x0 {op} x1]", "Evaluate",
+                    nameof(MagnitudesAdded_CarryOut_ThrowsAtTheNextRead), line),
                 (origin.Operation, origin.ResultWords, origin.Subexpression, origin.Expression, origin.EntryPoint,
                     origin.CallerMemberName, origin.CallerLineNumber));
             Assert.EndsWith($"{nameof(SignedOverflowTests)}.cs", origin.CallerFilePath);
@@ -98,10 +101,11 @@ public sealed class SignedOverflowTests : IDisposable
     public void Sum_ExactWhenItFits_ThrowsWhenItNeedsAnotherWord(int words, BigInteger a, BigInteger b, bool overflows)
     {
         // The carry is taken from the top word, also when it lies in the second chunk of the 1024-thread block (1025
-        // words) and when the block has threads past the top word (33 words). A carry that stays inside the width is exact.
+        // words) and when the block has threads past the top word (33 words). A carry that stays inside the width is
+        // exact.
         // mutant: CheckedParallelAddKernel `if (carry != 0)` -> `if (carry == 0)` (every row flips)
-        // mutant: DeviceAddSubAlignedParallelWithCarry `idx == numWords - 1` -> `idx == numWords - 2` (the 1-word rows and
-        //         the top-bit rows stop overflowing)
+        // mutant: DeviceAddSubAlignedParallelWithCarry `idx == numWords - 1` -> `idx == numWords - 2` (the 1-word rows
+        //         and the top-bit rows stop overflowing)
         using var result = ((GpuBigIntExpr)Create(a, words) + Create(b, words)).Evaluate(_workspace);
 
         if (overflows)
@@ -150,7 +154,8 @@ public sealed class SignedOverflowTests : IDisposable
     {
         // The graph replays the origin id recorded in the capture, so an overflow of a later launch names the
         // CompileToGraph line; a launch that fits after it does not throw again, and ExecuteAsync faults like Execute.
-        // mutant: GraphHandles without Origins.Pin (the ring of a later evaluation loses the origin; see the loop below)
+        // mutant: GraphHandles without Origins.Pin (the ring of a later evaluation loses the origin; see the loop
+        // below)
         // mutant: GpuDeviceStatus.ClaimOverflows reports the full count instead of the new overflows (the fitting
         //         launch throws)
         var x = Create(1, 1);
@@ -216,7 +221,8 @@ public sealed class SignedOverflowTests : IDisposable
             using var result = ((GpuBigIntExpr)Create(Max, 1) + Create(1, 1)).Evaluate(_workspace);
         }
 
-        var exception = Assert.Throws<GpuOverflowException>(() => _workspace.Provider.SynchronizeStream(_workspace.Stream));
+        var exception = Assert.Throws<GpuOverflowException>(
+            () => _workspace.Provider.SynchronizeStream(_workspace.Stream));
 
         Assert.Equal(8, exception.Origins.Count);
         Assert.All(exception.Origins, static o => Assert.True(o.IsKnown));
@@ -238,6 +244,23 @@ public sealed class SignedOverflowTests : IDisposable
 
         var overflow = Assert.IsType<GpuOverflowException>(exception.InnerException);
         Assert.Equal("CompileToGraph", Assert.Single(overflow.Origins).EntryPoint);
+    }
+
+    [SkippableFact]
+    [Scenario(TestScenario.SadPath)]
+    public async Task EvaluateWithCudaGraph_OverflowInTheWarmUp_ThrowsGpuOverflowExceptionItself()
+    {
+        // A one-shot graph evaluation exposes no compilation, so an overflow of its warm-up is thrown as it is, as
+        // documented, and not wrapped like a failed CompileToGraph.
+        // mutant: GpuBigIntExpr.WarmUp wraps every failure in InvalidOperationException (both calls throw that)
+        var expression = (GpuBigIntExpr)Create(Max, 1) + Create(1, 1);
+
+        var overflow = Assert.Throws<GpuOverflowException>(() => expression.EvaluateWithCudaGraph(_workspace));
+        var asyncOverflow = await Assert.ThrowsAsync<GpuOverflowException>(
+            async () => await expression.EvaluateWithCudaGraphAsync(_workspace));
+
+        Assert.Equal("EvaluateWithCudaGraph", Assert.Single(overflow.Origins).EntryPoint);
+        Assert.Equal("EvaluateWithCudaGraphAsync", Assert.Single(asyncOverflow.Origins).EntryPoint);
     }
 
     [SkippableFact]
@@ -312,7 +335,8 @@ public sealed class SignedOverflowTests : IDisposable
 
     private GpuBigInt Create(BigInteger value, int words)
     {
-        var created = new GpuBigInt(GpuBigUInt.FromBigInteger(_workspace, BigInteger.Abs(value), words), value.Sign < 0);
+        var magnitude = GpuBigUInt.FromBigInteger(_workspace, BigInteger.Abs(value), words);
+        var created = new GpuBigInt(magnitude, value.Sign < 0);
         _values.Add(created);
         return created;
     }
