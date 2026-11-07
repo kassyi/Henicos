@@ -14,7 +14,8 @@ public class MacroNamedArgumentDifferentialTests
     private const int Rows = 128;
 
     private static readonly DifferentialCase s_forUnroll = new(
-        $"{nameof(MacroNamedArgumentDifferentialKernels)}.{nameof(MacroNamedArgumentDifferentialKernels.ForUnrollNamedArgumentsKernel)}")
+        nameof(MacroNamedArgumentDifferentialKernels) + "." +
+        nameof(MacroNamedArgumentDifferentialKernels.ForUnrollNamedArgumentsKernel))
     {
         Shape = LaunchShape.ForRows(Rows, blockX: 64),
         Inputs = static (rng, rows) =>
@@ -38,7 +39,8 @@ public class MacroNamedArgumentDifferentialTests
     };
 
     private static readonly DifferentialCase s_gridStrideLoop = new(
-        $"{nameof(MacroNamedArgumentDifferentialKernels)}.{nameof(MacroNamedArgumentDifferentialKernels.GridStrideLoopNamedArgumentsKernel)}")
+        nameof(MacroNamedArgumentDifferentialKernels) + "." +
+        nameof(MacroNamedArgumentDifferentialKernels.GridStrideLoopNamedArgumentsKernel))
     {
         // Fewer threads than elements, so each thread runs several iterations
         Shape = LaunchShape.ForRows(Rows / 4, blockX: 32),
@@ -71,7 +73,8 @@ public class MacroNamedArgumentDifferentialTests
 
     // The oracle cannot run barriers; the reference is the loop with start 1, count 3 and start 2, count 2
     private static readonly DifferentialCase s_forUnrollWithBarrier = new(
-        $"{nameof(MacroNamedArgumentDifferentialKernels)}.{nameof(MacroNamedArgumentDifferentialKernels.ForUnrollNamedArgumentsWithBarrierKernel)}")
+        nameof(MacroNamedArgumentDifferentialKernels) + "." +
+        nameof(MacroNamedArgumentDifferentialKernels.ForUnrollNamedArgumentsWithBarrierKernel))
     {
         Shape = LaunchShape.ForRows(Rows, blockX: 64),
         Inputs = static (rng, rows) =>

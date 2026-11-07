@@ -42,7 +42,8 @@ internal static class ArgumentMatchingHelper
     /// arguments finds the same argument as one with positional arguments.
     /// </summary>
     /// <remarks>A <c>params</c> parameter can receive several arguments; this finds the first.</remarks>
-    public static ArgumentSyntax? FindArgument(SeparatedSyntaxList<ArgumentSyntax> arguments, IParameterSymbol parameter)
+    public static ArgumentSyntax? FindArgument(SeparatedSyntaxList<ArgumentSyntax> arguments,
+        IParameterSymbol parameter)
     {
         if (parameter.ContainingSymbol is not IMethodSymbol callee)
         {

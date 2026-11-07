@@ -32,7 +32,9 @@ internal readonly struct GpuMacroCall(
     /// <summary>Whether the overload takes <c>ref TContext ctx</c> before its other arguments (ForUnroll / GridStrideLoop).</summary>
     public bool HasContext { get; } = hasContext;
 
-    /// <summary>The ordinal of the first parameter after the context parameter (<c>start</c> or <c>maxBounds</c>).</summary>
+    /// <summary>
+    /// The ordinal of the first parameter after the context parameter (<c>start</c> or <c>maxBounds</c>).
+    /// </summary>
     public int ValueOrdinal => HasContext ? 1 : 0;
 
     /// <summary>The ordinal of the body parameter; meaningful only when <see cref="HasBody"/> is set.</summary>
@@ -64,7 +66,9 @@ internal readonly struct GpuMacroCall(
     public LambdaExpressionSyntax? GetBody(SeparatedSyntaxList<ArgumentSyntax> arguments) =>
         HasBody ? GetArgument(arguments, BodyOrdinal)?.Expression as LambdaExpressionSyntax : null;
 
-    /// <summary>The context argument (<c>ref ctx</c>) of the call, or <c>null</c> for an overload without one.</summary>
+    /// <summary>
+    /// The context argument (<c>ref ctx</c>) of the call, or <c>null</c> for an overload without one.
+    /// </summary>
     public ExpressionSyntax? GetContext(SeparatedSyntaxList<ArgumentSyntax> arguments) =>
         HasContext ? GetArgument(arguments, 0)?.Expression : null;
 }
@@ -86,7 +90,9 @@ internal static class GpuMacroClassifier
         var containingType = symbol.ContainingType;
         if (containingType is { Name: TypeConstants.GpuMacros.Hint, ContainingType.Name: TypeConstants.GpuType })
         {
-            return symbol.Name == TypeConstants.GpuMacros.Unroll ? new GpuMacroCall(GpuMacroKind.HintUnroll, symbol) : default;
+            return symbol.Name == TypeConstants.GpuMacros.Unroll
+                ? new GpuMacroCall(GpuMacroKind.HintUnroll, symbol)
+                : default;
         }
 
         if (containingType?.Name != TypeConstants.GpuType)

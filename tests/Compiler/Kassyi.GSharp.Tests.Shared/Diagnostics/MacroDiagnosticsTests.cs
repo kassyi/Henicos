@@ -147,7 +147,8 @@ public class MacroDiagnosticsTests
                 "reference to the Gpu.GridStrideLoop loop variable 'i'"));
     }
 
-    // Named arguments in another order than the parameters: each check reads the argument its parameter receives (#1260)
+    // Named arguments in another order than the parameters: each check reads the argument its parameter receives
+    // (#1260)
     [Theory]
     [InlineData("Cpu")]
     [InlineData("Cuda")]
@@ -156,7 +157,9 @@ public class MacroDiagnosticsTests
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/MacroNamedArguments.cu.cs", dialect);
 
-        Assert.Equal([(Analyzer, 13, 30, 13, 31)], diagnostics.Ranges(GSharpDiagnostics.MacroArgumentMustBeConstant.Id));
+        Assert.Equal(
+            [(Analyzer, 13, 30, 13, 31)],
+            diagnostics.Ranges(GSharpDiagnostics.MacroArgumentMustBeConstant.Id));
         Assert.Equal(
             [(Analyzer, 22, 25, 22, 32)],
             diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "return in a Gpu.ForUnroll body"));

@@ -33,7 +33,8 @@ internal sealed class ForUnrollMacroRule : IMacroTranspilerRule
             return false;
         }
 
-        if (!MacroTranspilerHelper.TryBeginMacroScope(invocation, lambdaExpr, call, args, ref context, TypeConstants.GpuMacros.ForUnroll, out var macroScope))
+        if (!MacroTranspilerHelper.TryBeginMacroScope(invocation, lambdaExpr, call, args, ref context,
+                TypeConstants.GpuMacros.ForUnroll, out var macroScope))
         {
             return false;
         }
