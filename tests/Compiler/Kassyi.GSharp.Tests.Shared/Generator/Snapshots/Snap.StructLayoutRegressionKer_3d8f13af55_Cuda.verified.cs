@@ -123,7 +123,7 @@ public const string DebugName_W = "global::System.Numerics.Vector4";
 [global::System.Runtime.InteropServices.FieldOffset(32)]
 public fixed byte W[16];
 }
-public static unsafe void Marshal_LayoutReproVecHolder(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproVecHolder host, ref AotContexts.LayoutReproVecHolder native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_LayoutReproVecHolder(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproVecHolder host, ref AotContexts.LayoutReproVecHolder native, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
 {
 native = default;
 native.A = host.A;
@@ -137,7 +137,7 @@ fixed (byte* pField = native.W)
 *((global::System.Numerics.Vector4*)pField) = host.W;
 }
 }
-public static unsafe void Unmarshal_LayoutReproVecHolder(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproVecHolder host, ref AotContexts.LayoutReproVecHolder native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_LayoutReproVecHolder(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproVecHolder host, ref AotContexts.LayoutReproVecHolder native, global::System.IntPtr hStream = default)
 {
 host.A = native.A;
 fixed (byte* pField = native.V)
@@ -166,7 +166,7 @@ public const string DebugName_W = "global::Kassyi.GSharp.Core.Float4";
 [global::System.Runtime.InteropServices.FieldOffset(32)]
 public fixed byte W[16];
 }
-public static unsafe void Marshal_LayoutReproCoreHolder(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproCoreHolder host, ref AotContexts.LayoutReproCoreHolder native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_LayoutReproCoreHolder(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproCoreHolder host, ref AotContexts.LayoutReproCoreHolder native, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
 {
 native = default;
 native.A = host.A;
@@ -180,7 +180,7 @@ fixed (byte* pField = native.W)
 *((global::Kassyi.GSharp.Core.Float4*)pField) = host.W;
 }
 }
-public static unsafe void Unmarshal_LayoutReproCoreHolder(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproCoreHolder host, ref AotContexts.LayoutReproCoreHolder native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_LayoutReproCoreHolder(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproCoreHolder host, ref AotContexts.LayoutReproCoreHolder native, global::System.IntPtr hStream = default)
 {
 host.A = native.A;
 fixed (byte* pField = native.V)
@@ -206,17 +206,17 @@ public const string DebugName_C = "global::System.Int32";
 [global::System.Runtime.InteropServices.FieldOffset(40)]
 public global::System.Int32 C;
 }
-public static unsafe void Marshal_LayoutReproInlineOuter(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproInlineOuter host, ref AotContexts.LayoutReproInlineOuter native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_LayoutReproInlineOuter(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproInlineOuter host, ref AotContexts.LayoutReproInlineOuter native, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
 {
 native = default;
 native.Tag = host.Tag;
-Marshal_LayoutReproElems(ref host.Items, ref native.Items, isDevicePtr, deviceArrays, hStream);
+Marshal_LayoutReproElems(ref host.Items, ref native.Items, deviceArrays, hStream);
 native.C = host.C;
 }
-public static unsafe void Unmarshal_LayoutReproInlineOuter(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproInlineOuter host, ref AotContexts.LayoutReproInlineOuter native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_LayoutReproInlineOuter(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproInlineOuter host, ref AotContexts.LayoutReproInlineOuter native, global::System.IntPtr hStream = default)
 {
 host.Tag = native.Tag;
-Unmarshal_LayoutReproElems(ref host.Items, ref native.Items, isDevicePtr, hStream);
+Unmarshal_LayoutReproElems(ref host.Items, ref native.Items, hStream);
 host.C = native.C;
 }
 [global::System.Runtime.InteropServices.StructLayout(global::System.Runtime.InteropServices.LayoutKind.Explicit, Size = 32)]
@@ -226,24 +226,24 @@ public const string DebugName__element0 = "global::Kassyi.GSharp.Tests.Shared.Co
 [global::System.Runtime.InteropServices.FieldOffset(0)]
 public fixed byte _element0[32];
 }
-public static unsafe void Marshal_LayoutReproElems(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproElems host, ref AotContexts.LayoutReproElems native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_LayoutReproElems(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproElems host, ref AotContexts.LayoutReproElems native, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
 {
 native = default;
 fixed (byte* pField = native._element0)
 {
 for (int k = 0; k < 2; k++)
 {
-Marshal_LayoutReproElem(ref host[k], ref ((AotContexts.LayoutReproElem*)pField)[k], isDevicePtr, deviceArrays, hStream);
+Marshal_LayoutReproElem(ref host[k], ref ((AotContexts.LayoutReproElem*)pField)[k], deviceArrays, hStream);
 }
 }
 }
-public static unsafe void Unmarshal_LayoutReproElems(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproElems host, ref AotContexts.LayoutReproElems native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_LayoutReproElems(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproElems host, ref AotContexts.LayoutReproElems native, global::System.IntPtr hStream = default)
 {
 fixed (byte* pField = native._element0)
 {
 for (int k = 0; k < 2; k++)
 {
-Unmarshal_LayoutReproElem(ref host[k], ref ((AotContexts.LayoutReproElem*)pField)[k], isDevicePtr, hStream);
+Unmarshal_LayoutReproElem(ref host[k], ref ((AotContexts.LayoutReproElem*)pField)[k], hStream);
 }
 }
 }
@@ -257,7 +257,7 @@ public const string DebugName_V = "global::Kassyi.GSharp.Core.Float2";
 [global::System.Runtime.InteropServices.FieldOffset(8)]
 public fixed byte V[8];
 }
-public static unsafe void Marshal_LayoutReproElem(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproElem host, ref AotContexts.LayoutReproElem native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_LayoutReproElem(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproElem host, ref AotContexts.LayoutReproElem native, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
 {
 native = default;
 native.A = host.A;
@@ -266,7 +266,7 @@ fixed (byte* pField = native.V)
 *((global::Kassyi.GSharp.Core.Float2*)pField) = host.V;
 }
 }
-public static unsafe void Unmarshal_LayoutReproElem(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproElem host, ref AotContexts.LayoutReproElem native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_LayoutReproElem(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproElem host, ref AotContexts.LayoutReproElem native, global::System.IntPtr hStream = default)
 {
 host.A = native.A;
 fixed (byte* pField = native.V)
@@ -284,17 +284,11 @@ public const string DebugName_Data = "global::System.Int32[]";
 [global::System.Runtime.InteropServices.FieldOffset(8)]
 public global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy Data;
 }
-public static unsafe void Marshal_LayoutReproBag(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproBag host, ref AotContexts.LayoutReproBag native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_LayoutReproBag(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproBag host, ref AotContexts.LayoutReproBag native, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
 {
 native = default;
 native.N = host.N;
 if (host.Data != null)
-{
-if (isDevicePtr)
-{
-throw new global::System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
 {
 int size = checked(host.Data.Length * sizeof(global::System.Int32));
 if (size > 0)
@@ -325,11 +319,10 @@ native.Data.Data = global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyA
 native.Data.Length = host.Data.Length;
 }
 }
-}
-public static unsafe void Unmarshal_LayoutReproBag(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproBag host, ref AotContexts.LayoutReproBag native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_LayoutReproBag(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproBag host, ref AotContexts.LayoutReproBag native, global::System.IntPtr hStream = default)
 {
 host.N = native.N;
-if (host.Data != null && !isDevicePtr && native.Data.Data != global::System.IntPtr.Zero)
+if (host.Data != null && native.Data.Data != global::System.IntPtr.Zero)
 {
 int size = checked(host.Data.Length * sizeof(global::System.Int32));
 if (size > 0)
@@ -356,17 +349,11 @@ public const string DebugName_Elems = "global::Kassyi.GSharp.Tests.Shared.Core.L
 [global::System.Runtime.InteropServices.FieldOffset(8)]
 public global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy Elems;
 }
-public static unsafe void Marshal_LayoutReproElemHolder(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproElemHolder host, ref AotContexts.LayoutReproElemHolder native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_LayoutReproElemHolder(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproElemHolder host, ref AotContexts.LayoutReproElemHolder native, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
 {
 native = default;
 native.N = host.N;
 if (host.Elems != null)
-{
-if (isDevicePtr)
-{
-throw new global::System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
 {
 int size = checked(host.Elems.Length * sizeof(AotContexts.LayoutReproInnerBag));
 if (size > 0)
@@ -382,7 +369,7 @@ deviceArrays?.Add(host.Elems, native.Elems.Data);
 var tempArray = new AotContexts.LayoutReproInnerBag[host.Elems.Length];
 for (int i = 0; i < host.Elems.Length; i++)
 {
-Marshal_LayoutReproInnerBag(ref host.Elems[i], ref tempArray[i], false, deviceArrays, hStream);
+Marshal_LayoutReproInnerBag(ref host.Elems[i], ref tempArray[i], deviceArrays, hStream);
 }
 var handle = global::System.Runtime.InteropServices.GCHandle.Alloc(tempArray, global::System.Runtime.InteropServices.GCHandleType.Pinned);
 try
@@ -402,11 +389,10 @@ native.Elems.Data = global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.Empty
 native.Elems.Length = host.Elems.Length;
 }
 }
-}
-public static unsafe void Unmarshal_LayoutReproElemHolder(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproElemHolder host, ref AotContexts.LayoutReproElemHolder native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_LayoutReproElemHolder(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproElemHolder host, ref AotContexts.LayoutReproElemHolder native, global::System.IntPtr hStream = default)
 {
 host.N = native.N;
-if (host.Elems != null && !isDevicePtr && native.Elems.Data != global::System.IntPtr.Zero)
+if (host.Elems != null && native.Elems.Data != global::System.IntPtr.Zero)
 {
 int size = checked(host.Elems.Length * sizeof(AotContexts.LayoutReproInnerBag));
 if (size > 0)
@@ -423,7 +409,7 @@ handle.Free();
 }
 for (int i = 0; i < host.Elems.Length; i++)
 {
-Unmarshal_LayoutReproInnerBag(ref host.Elems[i], ref tempArray[i], false, hStream);
+Unmarshal_LayoutReproInnerBag(ref host.Elems[i], ref tempArray[i], hStream);
 }
 }
 }
@@ -438,17 +424,11 @@ public const string DebugName_Items = "global::System.Int32[]";
 [global::System.Runtime.InteropServices.FieldOffset(8)]
 public global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy Items;
 }
-public static unsafe void Marshal_LayoutReproInnerBag(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproInnerBag host, ref AotContexts.LayoutReproInnerBag native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_LayoutReproInnerBag(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproInnerBag host, ref AotContexts.LayoutReproInnerBag native, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
 {
 native = default;
 native.Tag = host.Tag;
 if (host.Items != null)
-{
-if (isDevicePtr)
-{
-throw new global::System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
 {
 int size = checked(host.Items.Length * sizeof(global::System.Int32));
 if (size > 0)
@@ -479,11 +459,10 @@ native.Items.Data = global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.Empty
 native.Items.Length = host.Items.Length;
 }
 }
-}
-public static unsafe void Unmarshal_LayoutReproInnerBag(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproInnerBag host, ref AotContexts.LayoutReproInnerBag native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_LayoutReproInnerBag(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproInnerBag host, ref AotContexts.LayoutReproInnerBag native, global::System.IntPtr hStream = default)
 {
 host.Tag = native.Tag;
-if (host.Items != null && !isDevicePtr && native.Items.Data != global::System.IntPtr.Zero)
+if (host.Items != null && native.Items.Data != global::System.IntPtr.Zero)
 {
 int size = checked(host.Items.Length * sizeof(global::System.Int32));
 if (size > 0)
@@ -510,16 +489,10 @@ public const string DebugName_B = "global::System.Int32[]";
 [global::System.Runtime.InteropServices.FieldOffset(16)]
 public global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy B;
 }
-public static unsafe void Marshal_LayoutReproPair(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproPair host, ref AotContexts.LayoutReproPair native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_LayoutReproPair(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproPair host, ref AotContexts.LayoutReproPair native, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
 {
 native = default;
 if (host.A != null)
-{
-if (isDevicePtr)
-{
-throw new global::System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
 {
 int size = checked(host.A.Length * sizeof(global::System.Int32));
 if (size > 0)
@@ -549,14 +522,7 @@ native.A.Data = global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyArra
 }
 native.A.Length = host.A.Length;
 }
-}
 if (host.B != null)
-{
-if (isDevicePtr)
-{
-throw new global::System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
 {
 int size = checked(host.B.Length * sizeof(global::System.Int32));
 if (size > 0)
@@ -587,10 +553,9 @@ native.B.Data = global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyArra
 native.B.Length = host.B.Length;
 }
 }
-}
-public static unsafe void Unmarshal_LayoutReproPair(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproPair host, ref AotContexts.LayoutReproPair native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_LayoutReproPair(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproPair host, ref AotContexts.LayoutReproPair native, global::System.IntPtr hStream = default)
 {
-if (host.A != null && !isDevicePtr && native.A.Data != global::System.IntPtr.Zero)
+if (host.A != null && native.A.Data != global::System.IntPtr.Zero)
 {
 int size = checked(host.A.Length * sizeof(global::System.Int32));
 if (size > 0)
@@ -606,7 +571,7 @@ handle.Free();
 }
 }
 }
-if (host.B != null && !isDevicePtr && native.B.Data != global::System.IntPtr.Zero)
+if (host.B != null && native.B.Data != global::System.IntPtr.Zero)
 {
 int size = checked(host.B.Length * sizeof(global::System.Int32));
 if (size > 0)
@@ -636,11 +601,11 @@ public const string DebugName_X = "global::System.Int32";
 [global::System.Runtime.InteropServices.FieldOffset(4)]
 public global::System.Int32 X;
 }
-public static unsafe void Marshal_LayoutReproTwoBools(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproTwoBools host, ref AotContexts.LayoutReproTwoBools native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_LayoutReproTwoBools(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproTwoBools host, ref AotContexts.LayoutReproTwoBools native, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
 {
 native = global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproTwoBools, AotContexts.LayoutReproTwoBools>(ref host);
 }
-public static unsafe void Unmarshal_LayoutReproTwoBools(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproTwoBools host, ref AotContexts.LayoutReproTwoBools native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_LayoutReproTwoBools(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproTwoBools host, ref AotContexts.LayoutReproTwoBools native, global::System.IntPtr hStream = default)
 {
 host = global::System.Runtime.CompilerServices.Unsafe.As<AotContexts.LayoutReproTwoBools, global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproTwoBools>(ref native);
 }
@@ -654,11 +619,11 @@ public const string DebugName_X = "global::System.Int32";
 [global::System.Runtime.InteropServices.FieldOffset(4)]
 public global::System.Int32 X;
 }
-public static unsafe void Marshal_LayoutReproCharInt(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproCharInt host, ref AotContexts.LayoutReproCharInt native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_LayoutReproCharInt(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproCharInt host, ref AotContexts.LayoutReproCharInt native, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
 {
 native = global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproCharInt, AotContexts.LayoutReproCharInt>(ref host);
 }
-public static unsafe void Unmarshal_LayoutReproCharInt(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproCharInt host, ref AotContexts.LayoutReproCharInt native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_LayoutReproCharInt(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproCharInt host, ref AotContexts.LayoutReproCharInt native, global::System.IntPtr hStream = default)
 {
 host = global::System.Runtime.CompilerServices.Unsafe.As<AotContexts.LayoutReproCharInt, global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproCharInt>(ref native);
 }
@@ -672,11 +637,11 @@ public const string DebugName_Tag = "global::System.Int32";
 [global::System.Runtime.InteropServices.FieldOffset(8)]
 public global::System.Int32 Tag;
 }
-public static unsafe void Marshal_LayoutReproBox(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproBox<global::System.Double> host, ref AotContexts.LayoutReproBox native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_LayoutReproBox(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproBox<global::System.Double> host, ref AotContexts.LayoutReproBox native, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
 {
 native = global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproBox<global::System.Double>, AotContexts.LayoutReproBox>(ref host);
 }
-public static unsafe void Unmarshal_LayoutReproBox(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproBox<global::System.Double> host, ref AotContexts.LayoutReproBox native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_LayoutReproBox(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproBox<global::System.Double> host, ref AotContexts.LayoutReproBox native, global::System.IntPtr hStream = default)
 {
 host = global::System.Runtime.CompilerServices.Unsafe.As<AotContexts.LayoutReproBox, global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproBox<global::System.Double>>(ref native);
 }
@@ -690,11 +655,11 @@ public const string DebugName_X = "global::System.Int32";
 [global::System.Runtime.InteropServices.FieldOffset(8)]
 public global::System.Int32 X;
 }
-public static unsafe void Marshal_LayoutReproNullableInt(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproNullableInt host, ref AotContexts.LayoutReproNullableInt native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_LayoutReproNullableInt(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproNullableInt host, ref AotContexts.LayoutReproNullableInt native, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
 {
 native = global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproNullableInt, AotContexts.LayoutReproNullableInt>(ref host);
 }
-public static unsafe void Unmarshal_LayoutReproNullableInt(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproNullableInt host, ref AotContexts.LayoutReproNullableInt native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_LayoutReproNullableInt(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproNullableInt host, ref AotContexts.LayoutReproNullableInt native, global::System.IntPtr hStream = default)
 {
 host = global::System.Runtime.CompilerServices.Unsafe.As<AotContexts.LayoutReproNullableInt, global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproNullableInt>(ref native);
 }
@@ -711,11 +676,11 @@ public const string DebugName_F = "global::System.Boolean";
 [global::System.Runtime.InteropServices.FieldOffset(5)]
 public global::System.Boolean F;
 }
-public static unsafe void Marshal_LayoutReproPacked(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproPacked host, ref AotContexts.LayoutReproPacked native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_LayoutReproPacked(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproPacked host, ref AotContexts.LayoutReproPacked native, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
 {
 native = global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproPacked, AotContexts.LayoutReproPacked>(ref host);
 }
-public static unsafe void Unmarshal_LayoutReproPacked(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproPacked host, ref AotContexts.LayoutReproPacked native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_LayoutReproPacked(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproPacked host, ref AotContexts.LayoutReproPacked native, global::System.IntPtr hStream = default)
 {
 host = global::System.Runtime.CompilerServices.Unsafe.As<AotContexts.LayoutReproPacked, global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproPacked>(ref native);
 }
@@ -732,11 +697,11 @@ public const string DebugName_Y = "global::System.Int32";
 [global::System.Runtime.InteropServices.FieldOffset(12)]
 public global::System.Int32 Y;
 }
-public static unsafe void Marshal_LayoutReproNested(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproNested host, ref AotContexts.LayoutReproNested native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_LayoutReproNested(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproNested host, ref AotContexts.LayoutReproNested native, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
 {
 native = global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproNested, AotContexts.LayoutReproNested>(ref host);
 }
-public static unsafe void Unmarshal_LayoutReproNested(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproNested host, ref AotContexts.LayoutReproNested native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_LayoutReproNested(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproNested host, ref AotContexts.LayoutReproNested native, global::System.IntPtr hStream = default)
 {
 host = global::System.Runtime.CompilerServices.Unsafe.As<AotContexts.LayoutReproNested, global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproNested>(ref native);
 }
@@ -750,11 +715,11 @@ public const string DebugName_F = "global::System.Single";
 [global::System.Runtime.InteropServices.FieldOffset(0)]
 public global::System.Single F;
 }
-public static unsafe void Marshal_LayoutReproIntFloatUnion(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproIntFloatUnion host, ref AotContexts.LayoutReproIntFloatUnion native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_LayoutReproIntFloatUnion(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproIntFloatUnion host, ref AotContexts.LayoutReproIntFloatUnion native, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
 {
 native = global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproIntFloatUnion, AotContexts.LayoutReproIntFloatUnion>(ref host);
 }
-public static unsafe void Unmarshal_LayoutReproIntFloatUnion(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproIntFloatUnion host, ref AotContexts.LayoutReproIntFloatUnion native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_LayoutReproIntFloatUnion(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproIntFloatUnion host, ref AotContexts.LayoutReproIntFloatUnion native, global::System.IntPtr hStream = default)
 {
 host = global::System.Runtime.CompilerServices.Unsafe.As<AotContexts.LayoutReproIntFloatUnion, global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproIntFloatUnion>(ref native);
 }
@@ -771,14 +736,14 @@ public const string DebugName_C = "global::System.Byte";
 [global::System.Runtime.InteropServices.FieldOffset(16)]
 public global::System.Byte C;
 }
-public static unsafe void Marshal_LayoutReproAutoLayout(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproAutoLayout host, ref AotContexts.LayoutReproAutoLayout native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_LayoutReproAutoLayout(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproAutoLayout host, ref AotContexts.LayoutReproAutoLayout native, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
 {
 native = default;
 native.A = host.A;
 native.B = host.B;
 native.C = host.C;
 }
-public static unsafe void Unmarshal_LayoutReproAutoLayout(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproAutoLayout host, ref AotContexts.LayoutReproAutoLayout native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_LayoutReproAutoLayout(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproAutoLayout host, ref AotContexts.LayoutReproAutoLayout native, global::System.IntPtr hStream = default)
 {
 host.A = native.A;
 host.B = native.B;
@@ -791,14 +756,14 @@ public const string DebugName_P = "global::Kassyi.GSharp.Tests.Shared.Core.Layou
 [global::System.Runtime.InteropServices.FieldOffset(0)]
 public AotContexts.LayoutReproArrPair P;
 }
-public static unsafe void Marshal_LayoutReproArrOuter(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproArrOuter host, ref AotContexts.LayoutReproArrOuter native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_LayoutReproArrOuter(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproArrOuter host, ref AotContexts.LayoutReproArrOuter native, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
 {
 native = default;
-Marshal_LayoutReproArrPair(ref host.P, ref native.P, isDevicePtr, deviceArrays, hStream);
+Marshal_LayoutReproArrPair(ref host.P, ref native.P, deviceArrays, hStream);
 }
-public static unsafe void Unmarshal_LayoutReproArrOuter(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproArrOuter host, ref AotContexts.LayoutReproArrOuter native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_LayoutReproArrOuter(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproArrOuter host, ref AotContexts.LayoutReproArrOuter native, global::System.IntPtr hStream = default)
 {
-Unmarshal_LayoutReproArrPair(ref host.P, ref native.P, isDevicePtr, hStream);
+Unmarshal_LayoutReproArrPair(ref host.P, ref native.P, hStream);
 }
 [global::System.Runtime.InteropServices.StructLayout(global::System.Runtime.InteropServices.LayoutKind.Explicit, Size = 32)]
 public unsafe partial struct LayoutReproArrPair
@@ -807,24 +772,24 @@ public const string DebugName__element0 = "global::Kassyi.GSharp.Tests.Shared.Co
 [global::System.Runtime.InteropServices.FieldOffset(0)]
 public fixed byte _element0[32];
 }
-public static unsafe void Marshal_LayoutReproArrPair(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproArrPair host, ref AotContexts.LayoutReproArrPair native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_LayoutReproArrPair(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproArrPair host, ref AotContexts.LayoutReproArrPair native, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
 {
 native = default;
 fixed (byte* pField = native._element0)
 {
 for (int k = 0; k < 2; k++)
 {
-Marshal_LayoutReproWithArr(ref host[k], ref ((AotContexts.LayoutReproWithArr*)pField)[k], isDevicePtr, deviceArrays, hStream);
+Marshal_LayoutReproWithArr(ref host[k], ref ((AotContexts.LayoutReproWithArr*)pField)[k], deviceArrays, hStream);
 }
 }
 }
-public static unsafe void Unmarshal_LayoutReproArrPair(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproArrPair host, ref AotContexts.LayoutReproArrPair native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_LayoutReproArrPair(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproArrPair host, ref AotContexts.LayoutReproArrPair native, global::System.IntPtr hStream = default)
 {
 fixed (byte* pField = native._element0)
 {
 for (int k = 0; k < 2; k++)
 {
-Unmarshal_LayoutReproWithArr(ref host[k], ref ((AotContexts.LayoutReproWithArr*)pField)[k], isDevicePtr, hStream);
+Unmarshal_LayoutReproWithArr(ref host[k], ref ((AotContexts.LayoutReproWithArr*)pField)[k], hStream);
 }
 }
 }
@@ -835,16 +800,10 @@ public const string DebugName_Data = "global::System.Int32[]";
 [global::System.Runtime.InteropServices.FieldOffset(0)]
 public global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy Data;
 }
-public static unsafe void Marshal_LayoutReproWithArr(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproWithArr host, ref AotContexts.LayoutReproWithArr native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_LayoutReproWithArr(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproWithArr host, ref AotContexts.LayoutReproWithArr native, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
 {
 native = default;
 if (host.Data != null)
-{
-if (isDevicePtr)
-{
-throw new global::System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
 {
 int size = checked(host.Data.Length * sizeof(global::System.Int32));
 if (size > 0)
@@ -875,10 +834,9 @@ native.Data.Data = global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyA
 native.Data.Length = host.Data.Length;
 }
 }
-}
-public static unsafe void Unmarshal_LayoutReproWithArr(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproWithArr host, ref AotContexts.LayoutReproWithArr native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_LayoutReproWithArr(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproWithArr host, ref AotContexts.LayoutReproWithArr native, global::System.IntPtr hStream = default)
 {
-if (host.Data != null && !isDevicePtr && native.Data.Data != global::System.IntPtr.Zero)
+if (host.Data != null && native.Data.Data != global::System.IntPtr.Zero)
 {
 int size = checked(host.Data.Length * sizeof(global::System.Int32));
 if (size > 0)
@@ -978,7 +936,7 @@ var __gsharp_native_0 = global::System.Runtime.InteropServices.MemoryMarshal.Cas
 global::System.Span<global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproVecHolder> __gsharp_host_0 = h;
 for (int __gsharp_index_0 = 0; __gsharp_index_0 < __gsharp_native_0.Length; __gsharp_index_0++)
 {
-global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.Marshal_LayoutReproVecHolder(ref __gsharp_host_0[__gsharp_index_0], ref __gsharp_native_0[__gsharp_index_0], false, null, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.Marshal_LayoutReproVecHolder(ref __gsharp_host_0[__gsharp_index_0], ref __gsharp_native_0[__gsharp_index_0], null, hStream);
 }
 fixed (byte* __gsharp_p_0 = __gsharp_shadow_0)
 {
@@ -1033,7 +991,7 @@ var __gsharp_native_0 = global::System.Runtime.InteropServices.MemoryMarshal.Cas
 global::System.Span<global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproVecHolder> __gsharp_host_0 = h;
 for (int __gsharp_index_0 = 0; __gsharp_index_0 < __gsharp_native_0.Length; __gsharp_index_0++)
 {
-global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.Unmarshal_LayoutReproVecHolder(ref __gsharp_host_0[__gsharp_index_0], ref __gsharp_native_0[__gsharp_index_0], false, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.Unmarshal_LayoutReproVecHolder(ref __gsharp_host_0[__gsharp_index_0], ref __gsharp_native_0[__gsharp_index_0], hStream);
 }
 }
 // Copy back array: o
@@ -1206,7 +1164,7 @@ var __gsharp_native_0 = global::System.Runtime.InteropServices.MemoryMarshal.Cas
 global::System.Span<global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproCoreHolder> __gsharp_host_0 = h;
 for (int __gsharp_index_0 = 0; __gsharp_index_0 < __gsharp_native_0.Length; __gsharp_index_0++)
 {
-global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.Marshal_LayoutReproCoreHolder(ref __gsharp_host_0[__gsharp_index_0], ref __gsharp_native_0[__gsharp_index_0], false, null, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.Marshal_LayoutReproCoreHolder(ref __gsharp_host_0[__gsharp_index_0], ref __gsharp_native_0[__gsharp_index_0], null, hStream);
 }
 fixed (byte* __gsharp_p_0 = __gsharp_shadow_0)
 {
@@ -1261,7 +1219,7 @@ var __gsharp_native_0 = global::System.Runtime.InteropServices.MemoryMarshal.Cas
 global::System.Span<global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproCoreHolder> __gsharp_host_0 = h;
 for (int __gsharp_index_0 = 0; __gsharp_index_0 < __gsharp_native_0.Length; __gsharp_index_0++)
 {
-global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.Unmarshal_LayoutReproCoreHolder(ref __gsharp_host_0[__gsharp_index_0], ref __gsharp_native_0[__gsharp_index_0], false, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.Unmarshal_LayoutReproCoreHolder(ref __gsharp_host_0[__gsharp_index_0], ref __gsharp_native_0[__gsharp_index_0], hStream);
 }
 }
 // Copy back array: o
@@ -1432,7 +1390,7 @@ try
 {
 void** __gsharp_kernel_params = stackalloc void*[2];
 global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.LayoutReproInlineOuter __gsharp_native_0 = default;
-global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.Marshal_LayoutReproInlineOuter(ref x, ref __gsharp_native_0, false, null, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.Marshal_LayoutReproInlineOuter(ref x, ref __gsharp_native_0, null, hStream);
 // Marshal ref/out struct: x
 int __gsharp_size_0 = sizeof(global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.LayoutReproInlineOuter);
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
@@ -1469,7 +1427,7 @@ global::System.IntPtr.Zero // Extra
 // Fast zero-allocation copy from device
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)(&__gsharp_native_0), __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
-global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.Unmarshal_LayoutReproInlineOuter(ref x, ref __gsharp_native_0, false, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.Unmarshal_LayoutReproInlineOuter(ref x, ref __gsharp_native_0, hStream);
 // Copy back array: o
 if (__gsharp_size_1 > 0 && __gsharp_d_1 != global::System.IntPtr.Zero)
 {
@@ -1575,7 +1533,7 @@ try
 {
 void** __gsharp_kernel_params = stackalloc void*[2];
 global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.LayoutReproBag __gsharp_native_0 = default;
-global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.Marshal_LayoutReproBag(ref b, ref __gsharp_native_0, false, __gsharp_device_arrays, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.Marshal_LayoutReproBag(ref b, ref __gsharp_native_0, __gsharp_device_arrays, hStream);
 // Marshal scalar struct: b
 __gsharp_kernel_params[0] = &__gsharp_native_0;
 // Marshal array: o
@@ -1608,7 +1566,7 @@ hStream, // Stream
 __gsharp_kernel_params,
 global::System.IntPtr.Zero // Extra
 ));
-global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.Unmarshal_LayoutReproBag(ref b, ref __gsharp_native_0, false, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.Unmarshal_LayoutReproBag(ref b, ref __gsharp_native_0, hStream);
 // Copy back array: o
 if (__gsharp_size_1 > 0 && __gsharp_d_1 != global::System.IntPtr.Zero && __gsharp_device_arrays.TryClaimCopyBack(o))
 {
@@ -1716,7 +1674,7 @@ try
 {
 void** __gsharp_kernel_params = stackalloc void*[2];
 global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.LayoutReproBag __gsharp_native_0 = default;
-global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.Marshal_LayoutReproBag(ref b, ref __gsharp_native_0, false, __gsharp_device_arrays, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.Marshal_LayoutReproBag(ref b, ref __gsharp_native_0, __gsharp_device_arrays, hStream);
 // Marshal ref/out struct: b
 int __gsharp_size_0 = sizeof(global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.LayoutReproBag);
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
@@ -1757,7 +1715,7 @@ global::System.IntPtr.Zero // Extra
 // Fast zero-allocation copy from device
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)(&__gsharp_native_0), __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
-global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.Unmarshal_LayoutReproBag(ref b, ref __gsharp_native_0, false, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.Unmarshal_LayoutReproBag(ref b, ref __gsharp_native_0, hStream);
 // Copy back array: o
 if (__gsharp_size_1 > 0 && __gsharp_d_1 != global::System.IntPtr.Zero && __gsharp_device_arrays.TryClaimCopyBack(o))
 {
@@ -1862,7 +1820,7 @@ try
 {
 void** __gsharp_kernel_params = stackalloc void*[2];
 global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.LayoutReproBag __gsharp_native_0 = default;
-global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.Marshal_LayoutReproBag(ref b, ref __gsharp_native_0, false, __gsharp_device_arrays, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.Marshal_LayoutReproBag(ref b, ref __gsharp_native_0, __gsharp_device_arrays, hStream);
 // Marshal scalar struct: b
 __gsharp_kernel_params[0] = &__gsharp_native_0;
 // Marshal array: o
@@ -1895,7 +1853,7 @@ hStream, // Stream
 __gsharp_kernel_params,
 global::System.IntPtr.Zero // Extra
 ));
-global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.Unmarshal_LayoutReproBag(ref b, ref __gsharp_native_0, false, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.Unmarshal_LayoutReproBag(ref b, ref __gsharp_native_0, hStream);
 // Copy back array: o
 if (__gsharp_size_1 > 0 && __gsharp_d_1 != global::System.IntPtr.Zero && __gsharp_device_arrays.TryClaimCopyBack(o))
 {
@@ -2005,7 +1963,7 @@ try
 {
 void** __gsharp_kernel_params = stackalloc void*[1];
 global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.LayoutReproElemHolder __gsharp_native_0 = default;
-global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.Marshal_LayoutReproElemHolder(ref h, ref __gsharp_native_0, false, __gsharp_device_arrays, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.Marshal_LayoutReproElemHolder(ref h, ref __gsharp_native_0, __gsharp_device_arrays, hStream);
 // Marshal scalar struct: h
 __gsharp_kernel_params[0] = &__gsharp_native_0;
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
@@ -2017,7 +1975,7 @@ hStream, // Stream
 __gsharp_kernel_params,
 global::System.IntPtr.Zero // Extra
 ));
-global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.Unmarshal_LayoutReproElemHolder(ref h, ref __gsharp_native_0, false, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.Unmarshal_LayoutReproElemHolder(ref h, ref __gsharp_native_0, hStream);
 }
 finally
 {
@@ -2137,7 +2095,7 @@ var __gsharp_native_0 = global::System.Runtime.InteropServices.MemoryMarshal.Cas
 global::System.Span<global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproElemHolder> __gsharp_host_0 = hs;
 for (int __gsharp_index_0 = 0; __gsharp_index_0 < __gsharp_native_0.Length; __gsharp_index_0++)
 {
-global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.Marshal_LayoutReproElemHolder(ref __gsharp_host_0[__gsharp_index_0], ref __gsharp_native_0[__gsharp_index_0], false, __gsharp_device_arrays, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.Marshal_LayoutReproElemHolder(ref __gsharp_host_0[__gsharp_index_0], ref __gsharp_native_0[__gsharp_index_0], __gsharp_device_arrays, hStream);
 }
 fixed (byte* __gsharp_p_0 = __gsharp_shadow_0)
 {
@@ -2173,7 +2131,7 @@ var __gsharp_native_0 = global::System.Runtime.InteropServices.MemoryMarshal.Cas
 global::System.Span<global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproElemHolder> __gsharp_host_0 = hs;
 for (int __gsharp_index_0 = 0; __gsharp_index_0 < __gsharp_native_0.Length; __gsharp_index_0++)
 {
-global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.Unmarshal_LayoutReproElemHolder(ref __gsharp_host_0[__gsharp_index_0], ref __gsharp_native_0[__gsharp_index_0], false, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.Unmarshal_LayoutReproElemHolder(ref __gsharp_host_0[__gsharp_index_0], ref __gsharp_native_0[__gsharp_index_0], hStream);
 }
 }
 }
@@ -2270,7 +2228,7 @@ try
 {
 void** __gsharp_kernel_params = stackalloc void*[2];
 global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.LayoutReproBag __gsharp_native_0 = default;
-global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.Marshal_LayoutReproBag(ref b, ref __gsharp_native_0, false, __gsharp_device_arrays, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.Marshal_LayoutReproBag(ref b, ref __gsharp_native_0, __gsharp_device_arrays, hStream);
 // Marshal scalar struct: b
 __gsharp_kernel_params[0] = &__gsharp_native_0;
 // Marshal array: o
@@ -2303,7 +2261,7 @@ hStream, // Stream
 __gsharp_kernel_params,
 global::System.IntPtr.Zero // Extra
 ));
-global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.Unmarshal_LayoutReproBag(ref b, ref __gsharp_native_0, false, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.Unmarshal_LayoutReproBag(ref b, ref __gsharp_native_0, hStream);
 // Copy back array: o
 if (__gsharp_size_1 > 0 && __gsharp_d_1 != global::System.IntPtr.Zero && __gsharp_device_arrays.TryClaimCopyBack(o))
 {
@@ -2400,7 +2358,7 @@ try
 {
 void** __gsharp_kernel_params = stackalloc void*[1];
 global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.LayoutReproPair __gsharp_native_0 = default;
-global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.Marshal_LayoutReproPair(ref p, ref __gsharp_native_0, false, __gsharp_device_arrays, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.Marshal_LayoutReproPair(ref p, ref __gsharp_native_0, __gsharp_device_arrays, hStream);
 // Marshal scalar struct: p
 __gsharp_kernel_params[0] = &__gsharp_native_0;
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
@@ -2412,7 +2370,7 @@ hStream, // Stream
 __gsharp_kernel_params,
 global::System.IntPtr.Zero // Extra
 ));
-global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.Unmarshal_LayoutReproPair(ref p, ref __gsharp_native_0, false, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.Unmarshal_LayoutReproPair(ref p, ref __gsharp_native_0, hStream);
 }
 finally
 {
@@ -2526,7 +2484,7 @@ var __gsharp_native_0 = global::System.Runtime.InteropServices.MemoryMarshal.Cas
 global::System.Span<global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproBag> __gsharp_host_0 = b;
 for (int __gsharp_index_0 = 0; __gsharp_index_0 < __gsharp_native_0.Length; __gsharp_index_0++)
 {
-global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.Marshal_LayoutReproBag(ref __gsharp_host_0[__gsharp_index_0], ref __gsharp_native_0[__gsharp_index_0], false, __gsharp_device_arrays, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.Marshal_LayoutReproBag(ref __gsharp_host_0[__gsharp_index_0], ref __gsharp_native_0[__gsharp_index_0], __gsharp_device_arrays, hStream);
 }
 fixed (byte* __gsharp_p_0 = __gsharp_shadow_0)
 {
@@ -2583,7 +2541,7 @@ var __gsharp_native_0 = global::System.Runtime.InteropServices.MemoryMarshal.Cas
 global::System.Span<global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproBag> __gsharp_host_0 = b;
 for (int __gsharp_index_0 = 0; __gsharp_index_0 < __gsharp_native_0.Length; __gsharp_index_0++)
 {
-global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.Unmarshal_LayoutReproBag(ref __gsharp_host_0[__gsharp_index_0], ref __gsharp_native_0[__gsharp_index_0], false, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.Unmarshal_LayoutReproBag(ref __gsharp_host_0[__gsharp_index_0], ref __gsharp_native_0[__gsharp_index_0], hStream);
 }
 }
 // Copy back array: o
@@ -4362,7 +4320,7 @@ var __gsharp_native_0 = global::System.Runtime.InteropServices.MemoryMarshal.Cas
 global::System.Span<global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproAutoLayout> __gsharp_host_0 = a;
 for (int __gsharp_index_0 = 0; __gsharp_index_0 < __gsharp_native_0.Length; __gsharp_index_0++)
 {
-global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.Marshal_LayoutReproAutoLayout(ref __gsharp_host_0[__gsharp_index_0], ref __gsharp_native_0[__gsharp_index_0], false, null, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.Marshal_LayoutReproAutoLayout(ref __gsharp_host_0[__gsharp_index_0], ref __gsharp_native_0[__gsharp_index_0], null, hStream);
 }
 fixed (byte* __gsharp_p_0 = __gsharp_shadow_0)
 {
@@ -4417,7 +4375,7 @@ var __gsharp_native_0 = global::System.Runtime.InteropServices.MemoryMarshal.Cas
 global::System.Span<global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproAutoLayout> __gsharp_host_0 = a;
 for (int __gsharp_index_0 = 0; __gsharp_index_0 < __gsharp_native_0.Length; __gsharp_index_0++)
 {
-global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.Unmarshal_LayoutReproAutoLayout(ref __gsharp_host_0[__gsharp_index_0], ref __gsharp_native_0[__gsharp_index_0], false, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.Unmarshal_LayoutReproAutoLayout(ref __gsharp_host_0[__gsharp_index_0], ref __gsharp_native_0[__gsharp_index_0], hStream);
 }
 }
 // Copy back array: o
@@ -4564,7 +4522,7 @@ var __gsharp_native_0 = global::System.Runtime.InteropServices.MemoryMarshal.Cas
 global::System.Span<global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproAutoLayout> __gsharp_host_0 = a;
 for (int __gsharp_index_0 = 0; __gsharp_index_0 < __gsharp_native_0.Length; __gsharp_index_0++)
 {
-global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.Unmarshal_LayoutReproAutoLayout(ref __gsharp_host_0[__gsharp_index_0], ref __gsharp_native_0[__gsharp_index_0], false, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.Unmarshal_LayoutReproAutoLayout(ref __gsharp_host_0[__gsharp_index_0], ref __gsharp_native_0[__gsharp_index_0], hStream);
 }
 }
 }
@@ -4691,7 +4649,7 @@ try
 {
 void** __gsharp_kernel_params = stackalloc void*[2];
 global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.LayoutReproArrOuter __gsharp_native_0 = default;
-global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.Marshal_LayoutReproArrOuter(ref x, ref __gsharp_native_0, false, __gsharp_device_arrays, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.Marshal_LayoutReproArrOuter(ref x, ref __gsharp_native_0, __gsharp_device_arrays, hStream);
 // Marshal ref/out struct: x
 int __gsharp_size_0 = sizeof(global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.LayoutReproArrOuter);
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
@@ -4732,7 +4690,7 @@ global::System.IntPtr.Zero // Extra
 // Fast zero-allocation copy from device
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)(&__gsharp_native_0), __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
-global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.Unmarshal_LayoutReproArrOuter(ref x, ref __gsharp_native_0, false, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.Unmarshal_LayoutReproArrOuter(ref x, ref __gsharp_native_0, hStream);
 // Copy back array: o
 if (__gsharp_size_1 > 0 && __gsharp_d_1 != global::System.IntPtr.Zero && __gsharp_device_arrays.TryClaimCopyBack(o))
 {

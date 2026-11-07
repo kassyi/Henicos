@@ -85,7 +85,7 @@ public static partial class GpuBigIntVectorKernels
 
     /// <summary>
     /// The number of elements of a vector, on the device: without <see cref="Base"/> it is <see cref="Limit"/>; with it,
-    /// <c>clamp(Base[0] - Skip, 0, Limit)</c> (design D3 4.1; <c>Base</c> is the count word a <c>Where</c> writes, and
+    /// <c>clamp(Base[0] - Skip, 0, Limit)</c> (<c>Base</c> is the count word a <c>Where</c> writes, and
     /// <c>Skip</c> / <c>Limit</c> fold the <c>Skip</c> and <c>Take</c> after it).
     /// </summary>
     public struct ElementCountContext
@@ -195,7 +195,7 @@ public static partial class GpuBigIntVectorKernels
         /// <summary>
         /// One word that receives the complement of the lowest element index with a zero divisor (atomic max of
         /// <c>~index</c>; 0 when no divisor is zero). A Zip node clears it before the launch and reads it after; a
-        /// scalar node, which rejects a zero divisor on the host, passes none.
+        /// scalar node, which rejects a zero divisor on the host, passes none, and the kernel then writes nothing.
         /// </summary>
         public uint[] ZeroDivisor;
 

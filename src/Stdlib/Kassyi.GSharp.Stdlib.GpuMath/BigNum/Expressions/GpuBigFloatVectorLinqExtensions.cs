@@ -152,9 +152,9 @@ public static class GpuBigFloatVectorLinqExtensions
         /// <param name="right">The divisor vectorized expression.</param>
         /// <returns>A new vectorized expression representing the element-wise division.</returns>
         /// <remarks>
-        /// The evaluation throws <see cref="DivideByZeroException"/> when the divisor of an element is zero. It reads that
-        /// check back from the device (one synchronization of the workspace stream), so evaluating it while the stream
-        /// captures a CUDA graph throws <see cref="NotSupportedException"/>.
+        /// The evaluation throws <see cref="DivideByZeroException"/> when the divisor of an element is zero. It reads
+        /// that check back from the device (one synchronization of the workspace stream), so evaluating it while the
+        /// stream captures a CUDA graph throws <see cref="NotSupportedException"/>.
         /// </remarks>
         public IGpuBigFloatVectorExpression ZipDivide(IGpuBigFloatVectorExpression right) =>
             new FloatVectorDivVectorExpression(source, right);
@@ -450,7 +450,7 @@ public static class GpuBigFloatVectorLinqExtensions
             DeviceCounted.ThrowIfCpuFallback(workspace);
 
             // EvaluateTo returns no count, so a vector whose length is known only on the device (after Where) has no
-            // place to say how much of the destination it wrote (design D3 4.1.3)
+            // place to say how much of the destination it wrote
             if (!source.TryGetLength(out var length))
             {
                 throw new InvalidOperationException(

@@ -29,7 +29,9 @@ internal static class ZeroDivisorCheck
     }
 
     /// <summary>Reads the word after the launch: one synchronization of the workspace stream.</summary>
-    /// <exception cref="DivideByZeroException">The divisor of one of the first <paramref name="count"/> elements is zero.</exception>
+    /// <exception cref="DivideByZeroException">
+    /// The divisor of one of the first <paramref name="count"/> elements is zero.
+    /// </exception>
     public static void ThrowIfFound(GpuWorkspace workspace, GpuBigUIntArrayView word, DeviceElementCount count)
     {
         var mark = workspace.Provider.ReadWord(word.DevicePointer, 0, workspace.Stream);

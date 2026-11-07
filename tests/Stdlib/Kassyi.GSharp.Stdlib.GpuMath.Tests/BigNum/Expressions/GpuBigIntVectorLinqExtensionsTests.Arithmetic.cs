@@ -276,21 +276,32 @@ public partial class GpuBigIntVectorLinqExtensionsTests
     public void ZipDivide_ZeroDivisorPastTheWhereCount_IsNotAnElement()
     {
         // The Where keeps 3 of 4 dividends; the divisor of the window's 4th element is zero but belongs to no element.
-        // A zero divisor inside the count still throws.
-        // mutant: ThrowIfFound comparing with the capacity instead of the count (throws for the first expression)
+        // mutant: ThrowIfFound comparing with the capacity instead of the count (throws)
         using var zero = CreateScalar(0);
         using var dividends = CreateArray(new BigInteger[] { 5, -1, 7, 9 });
         using var tailZero = CreateArray(new BigInteger[] { 1, 2, 3, 0 });
-        using var innerZero = CreateArray(new BigInteger[] { 1, 0, 3, 4 });
         var v = dividends.AsVectorizedEnumerable();
         using var past = v.Where(v.IsGreaterThan(zero)).ZipDivide(tailZero.AsVectorizedEnumerable());
-        var w = dividends.AsVectorizedEnumerable();
-        using var inside = w.Where(w.IsGreaterThan(zero)).ZipDivide(innerZero.AsVectorizedEnumerable());
 
         var quotients = ToHostArray(past.Evaluate(_context));
 
         BigInteger[] expected = [5, 3, 3];
         Assert.Equal(expected, quotients);
+    }
+
+    [Fact]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.SadPath)]
+    public void ZipDivide_ZeroDivisorWithinTheWhereCount_ThrowsDivideByZeroException()
+    {
+        // The Where keeps 3 of 4 dividends; the divisor of the window's 2nd element is zero and belongs to an element.
+        // mutant: no zero divisor check after the launch (no exception)
+        using var zero = CreateScalar(0);
+        using var dividends = CreateArray(new BigInteger[] { 5, -1, 7, 9 });
+        using var innerZero = CreateArray(new BigInteger[] { 1, 0, 3, 4 });
+        var v = dividends.AsVectorizedEnumerable();
+        using var inside = v.Where(v.IsGreaterThan(zero)).ZipDivide(innerZero.AsVectorizedEnumerable());
+
         Assert.Throws<DivideByZeroException>(() => inside.Evaluate(_context));
     }
 
