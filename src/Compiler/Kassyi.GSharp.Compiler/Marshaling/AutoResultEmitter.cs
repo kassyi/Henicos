@@ -255,7 +255,7 @@ internal static class AutoResultEmitter
             $".Cast<byte, {GetShadowPath(transfer)}>({Shadow}.AsSpan(0, {Size}));");
 
     // for (int __gsharp_auto_result_index = 0; ...; __gsharp_auto_result_index++)
-    // { Unmarshal_<E>(ref __gsharp_auto_result[i], ref __gsharp_auto_result_native[i], false, hStream); }
+    // { Unmarshal_<E>(ref __gsharp_auto_result[i], ref __gsharp_auto_result_native[i], hStream); }
     private static void WriteUnmarshalLoop(SourceWriter writer, in ParameterTransfer transfer)
     {
         const string Index = GSharpInternalNames.ReturnValue.BufferIndex;
@@ -263,7 +263,7 @@ internal static class AutoResultEmitter
         using (writer.Scope())
         {
             writer.AppendLine(
-                $"{transfer.ConvertedElementUnmarshalMethodName}(ref {Buffer}[{Index}], ref {Native}[{Index}], false, hStream);");
+                $"{transfer.ConvertedElementUnmarshalMethodName}(ref {Buffer}[{Index}], ref {Native}[{Index}], hStream);");
         }
     }
 

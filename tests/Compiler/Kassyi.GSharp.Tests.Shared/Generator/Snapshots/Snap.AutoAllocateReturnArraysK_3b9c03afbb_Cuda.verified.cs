@@ -109,7 +109,7 @@ public const string DebugName_W = "global::System.Numerics.Vector4";
 [global::System.Runtime.InteropServices.FieldOffset(32)]
 public fixed byte W[16];
 }
-public static unsafe void Marshal_AutoAllocateReturnArraysKernels_VectorResult(ref global::Kassyi.GSharp.Tests.Shared.Runtime.AutoAllocateReturnArraysKernels.VectorResult host, ref AotContexts.VectorResult native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_AutoAllocateReturnArraysKernels_VectorResult(ref global::Kassyi.GSharp.Tests.Shared.Runtime.AutoAllocateReturnArraysKernels.VectorResult host, ref AotContexts.VectorResult native, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
 {
 native = default;
 native.A = host.A;
@@ -123,7 +123,7 @@ fixed (byte* pField = native.W)
 *((global::System.Numerics.Vector4*)pField) = host.W;
 }
 }
-public static unsafe void Unmarshal_AutoAllocateReturnArraysKernels_VectorResult(ref global::Kassyi.GSharp.Tests.Shared.Runtime.AutoAllocateReturnArraysKernels.VectorResult host, ref AotContexts.VectorResult native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_AutoAllocateReturnArraysKernels_VectorResult(ref global::Kassyi.GSharp.Tests.Shared.Runtime.AutoAllocateReturnArraysKernels.VectorResult host, ref AotContexts.VectorResult native, global::System.IntPtr hStream = default)
 {
 host.A = native.A;
 fixed (byte* pField = native.V)
@@ -149,14 +149,14 @@ public const string DebugName_C = "global::System.Byte";
 [global::System.Runtime.InteropServices.FieldOffset(16)]
 public global::System.Byte C;
 }
-public static unsafe void Marshal_AutoAllocateReturnArraysKernels_AutoLayoutResult(ref global::Kassyi.GSharp.Tests.Shared.Runtime.AutoAllocateReturnArraysKernels.AutoLayoutResult host, ref AotContexts.AutoLayoutResult native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_AutoAllocateReturnArraysKernels_AutoLayoutResult(ref global::Kassyi.GSharp.Tests.Shared.Runtime.AutoAllocateReturnArraysKernels.AutoLayoutResult host, ref AotContexts.AutoLayoutResult native, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
 {
 native = default;
 native.A = host.A;
 native.B = host.B;
 native.C = host.C;
 }
-public static unsafe void Unmarshal_AutoAllocateReturnArraysKernels_AutoLayoutResult(ref global::Kassyi.GSharp.Tests.Shared.Runtime.AutoAllocateReturnArraysKernels.AutoLayoutResult host, ref AotContexts.AutoLayoutResult native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_AutoAllocateReturnArraysKernels_AutoLayoutResult(ref global::Kassyi.GSharp.Tests.Shared.Runtime.AutoAllocateReturnArraysKernels.AutoLayoutResult host, ref AotContexts.AutoLayoutResult native, global::System.IntPtr hStream = default)
 {
 host.A = native.A;
 host.B = native.B;
@@ -627,7 +627,7 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 var __gsharp_auto_result_native = global::System.Runtime.InteropServices.MemoryMarshal.Cast<byte, global::Kassyi.GSharp.Tests.Shared.Runtime.AutoAllocateReturnArraysKernels.AotContexts.VectorResult>(__gsharp_auto_result_shadow.AsSpan(0, __gsharp_auto_result_size));
 for (int __gsharp_auto_result_index = 0; __gsharp_auto_result_index < __gsharp_auto_result_native.Length; __gsharp_auto_result_index++)
 {
-global::Kassyi.GSharp.Tests.Shared.Runtime.AutoAllocateReturnArraysKernels.AotContexts.Unmarshal_AutoAllocateReturnArraysKernels_VectorResult(ref __gsharp_auto_result[__gsharp_auto_result_index], ref __gsharp_auto_result_native[__gsharp_auto_result_index], false, hStream);
+global::Kassyi.GSharp.Tests.Shared.Runtime.AutoAllocateReturnArraysKernels.AotContexts.Unmarshal_AutoAllocateReturnArraysKernels_VectorResult(ref __gsharp_auto_result[__gsharp_auto_result_index], ref __gsharp_auto_result_native[__gsharp_auto_result_index], hStream);
 }
 }
 finally
@@ -693,7 +693,7 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 var __gsharp_auto_result_native = global::System.Runtime.InteropServices.MemoryMarshal.Cast<byte, global::Kassyi.GSharp.Tests.Shared.Runtime.AutoAllocateReturnArraysKernels.AotContexts.VectorResult>(__gsharp_auto_result_shadow.AsSpan(0, __gsharp_auto_result_size));
 for (int __gsharp_auto_result_index = 0; __gsharp_auto_result_index < __gsharp_auto_result_native.Length; __gsharp_auto_result_index++)
 {
-global::Kassyi.GSharp.Tests.Shared.Runtime.AutoAllocateReturnArraysKernels.AotContexts.Unmarshal_AutoAllocateReturnArraysKernels_VectorResult(ref __gsharp_auto_result[__gsharp_auto_result_index], ref __gsharp_auto_result_native[__gsharp_auto_result_index], false, hStream);
+global::Kassyi.GSharp.Tests.Shared.Runtime.AutoAllocateReturnArraysKernels.AotContexts.Unmarshal_AutoAllocateReturnArraysKernels_VectorResult(ref __gsharp_auto_result[__gsharp_auto_result_index], ref __gsharp_auto_result_native[__gsharp_auto_result_index], hStream);
 }
 }
 finally
@@ -792,7 +792,7 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 var __gsharp_auto_result_native = global::System.Runtime.InteropServices.MemoryMarshal.Cast<byte, global::Kassyi.GSharp.Tests.Shared.Runtime.AutoAllocateReturnArraysKernels.AotContexts.AutoLayoutResult>(__gsharp_auto_result_shadow.AsSpan(0, __gsharp_auto_result_size));
 for (int __gsharp_auto_result_index = 0; __gsharp_auto_result_index < __gsharp_auto_result_native.Length; __gsharp_auto_result_index++)
 {
-global::Kassyi.GSharp.Tests.Shared.Runtime.AutoAllocateReturnArraysKernels.AotContexts.Unmarshal_AutoAllocateReturnArraysKernels_AutoLayoutResult(ref __gsharp_auto_result[__gsharp_auto_result_index], ref __gsharp_auto_result_native[__gsharp_auto_result_index], false, hStream);
+global::Kassyi.GSharp.Tests.Shared.Runtime.AutoAllocateReturnArraysKernels.AotContexts.Unmarshal_AutoAllocateReturnArraysKernels_AutoLayoutResult(ref __gsharp_auto_result[__gsharp_auto_result_index], ref __gsharp_auto_result_native[__gsharp_auto_result_index], hStream);
 }
 }
 finally
@@ -856,7 +856,7 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 var __gsharp_auto_result_native = global::System.Runtime.InteropServices.MemoryMarshal.Cast<byte, global::Kassyi.GSharp.Tests.Shared.Runtime.AutoAllocateReturnArraysKernels.AotContexts.AutoLayoutResult>(__gsharp_auto_result_shadow.AsSpan(0, __gsharp_auto_result_size));
 for (int __gsharp_auto_result_index = 0; __gsharp_auto_result_index < __gsharp_auto_result_native.Length; __gsharp_auto_result_index++)
 {
-global::Kassyi.GSharp.Tests.Shared.Runtime.AutoAllocateReturnArraysKernels.AotContexts.Unmarshal_AutoAllocateReturnArraysKernels_AutoLayoutResult(ref __gsharp_auto_result[__gsharp_auto_result_index], ref __gsharp_auto_result_native[__gsharp_auto_result_index], false, hStream);
+global::Kassyi.GSharp.Tests.Shared.Runtime.AutoAllocateReturnArraysKernels.AotContexts.Unmarshal_AutoAllocateReturnArraysKernels_AutoLayoutResult(ref __gsharp_auto_result[__gsharp_auto_result_index], ref __gsharp_auto_result_native[__gsharp_auto_result_index], hStream);
 }
 }
 finally
