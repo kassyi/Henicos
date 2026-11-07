@@ -94,11 +94,11 @@ public const string DebugName_Value = "global::System.Int32";
 [global::System.Runtime.InteropServices.FieldOffset(0)]
 public global::System.Int32 Value;
 }
-public static unsafe void Marshal_ArrayFreeCounter(ref global::Kassyi.GSharp.Tests.Shared.Syntax.ArrayFreeCounter host, ref AotContexts.ArrayFreeCounter native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_ArrayFreeCounter(ref global::Kassyi.GSharp.Tests.Shared.Syntax.ArrayFreeCounter host, ref AotContexts.ArrayFreeCounter native, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
 {
 native = global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Syntax.ArrayFreeCounter, AotContexts.ArrayFreeCounter>(ref host);
 }
-public static unsafe void Unmarshal_ArrayFreeCounter(ref global::Kassyi.GSharp.Tests.Shared.Syntax.ArrayFreeCounter host, ref AotContexts.ArrayFreeCounter native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_ArrayFreeCounter(ref global::Kassyi.GSharp.Tests.Shared.Syntax.ArrayFreeCounter host, ref AotContexts.ArrayFreeCounter native, global::System.IntPtr hStream = default)
 {
 host = global::System.Runtime.CompilerServices.Unsafe.As<AotContexts.ArrayFreeCounter, global::Kassyi.GSharp.Tests.Shared.Syntax.ArrayFreeCounter>(ref native);
 }
@@ -607,7 +607,7 @@ try
 {
 void** __gsharp_kernel_params = stackalloc void*[3];
 global::Kassyi.GSharp.Tests.Shared.Syntax.WrapperAllocationKernels.AotContexts.ArrayFreeCounter __gsharp_native_0 = default;
-global::Kassyi.GSharp.Tests.Shared.Syntax.WrapperAllocationKernels.AotContexts.Marshal_ArrayFreeCounter(ref counter, ref __gsharp_native_0, false, null, hStream);
+global::Kassyi.GSharp.Tests.Shared.Syntax.WrapperAllocationKernels.AotContexts.Marshal_ArrayFreeCounter(ref counter, ref __gsharp_native_0, null, hStream);
 // Marshal ref/out struct: counter
 int __gsharp_size_0 = sizeof(global::Kassyi.GSharp.Tests.Shared.Syntax.WrapperAllocationKernels.AotContexts.ArrayFreeCounter);
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
@@ -668,7 +668,7 @@ global::System.IntPtr.Zero // Extra
 // Fast zero-allocation copy from device
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)(&__gsharp_native_0), __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
-global::Kassyi.GSharp.Tests.Shared.Syntax.WrapperAllocationKernels.AotContexts.Unmarshal_ArrayFreeCounter(ref counter, ref __gsharp_native_0, false, hStream);
+global::Kassyi.GSharp.Tests.Shared.Syntax.WrapperAllocationKernels.AotContexts.Unmarshal_ArrayFreeCounter(ref counter, ref __gsharp_native_0, hStream);
 // Copy back array: a
 if (__gsharp_size_1 > 0 && __gsharp_d_1 != global::System.IntPtr.Zero)
 {
@@ -792,7 +792,7 @@ try
 {
 void** __gsharp_kernel_params = stackalloc void*[1];
 global::Kassyi.GSharp.Tests.Shared.Syntax.WrapperAllocationKernels.AotContexts.ArrayFreeCounter __gsharp_native_0 = default;
-global::Kassyi.GSharp.Tests.Shared.Syntax.WrapperAllocationKernels.AotContexts.Marshal_ArrayFreeCounter(ref counter, ref __gsharp_native_0, false, null, hStream);
+global::Kassyi.GSharp.Tests.Shared.Syntax.WrapperAllocationKernels.AotContexts.Marshal_ArrayFreeCounter(ref counter, ref __gsharp_native_0, null, hStream);
 // Marshal ref/out struct: counter
 int __gsharp_size_0 = sizeof(global::Kassyi.GSharp.Tests.Shared.Syntax.WrapperAllocationKernels.AotContexts.ArrayFreeCounter);
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
@@ -812,7 +812,7 @@ global::System.IntPtr.Zero // Extra
 // Fast zero-allocation copy from device
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)(&__gsharp_native_0), __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
-global::Kassyi.GSharp.Tests.Shared.Syntax.WrapperAllocationKernels.AotContexts.Unmarshal_ArrayFreeCounter(ref counter, ref __gsharp_native_0, false, hStream);
+global::Kassyi.GSharp.Tests.Shared.Syntax.WrapperAllocationKernels.AotContexts.Unmarshal_ArrayFreeCounter(ref counter, ref __gsharp_native_0, hStream);
 }
 finally
 {

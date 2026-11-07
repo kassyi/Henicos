@@ -82,5 +82,5 @@ gitGraph
     - タスクのステータスを更新し、メモ欄に変更内容を記入します。
     - 以下のUIを起動して進捗状況（ステータスやメモ）を更新し、変更をオートセーブで保存します。
         ```bash
-        just roadmap
+        npm --prefix tools/roadmap-ui run dev
         ```
