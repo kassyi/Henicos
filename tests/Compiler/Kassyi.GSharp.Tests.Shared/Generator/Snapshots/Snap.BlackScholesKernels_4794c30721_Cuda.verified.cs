@@ -135,16 +135,10 @@ public const string DebugName_N = "global::System.Int32";
 [global::System.Runtime.InteropServices.FieldOffset(88)]
 public global::System.Int32 N;
 }
-public static unsafe void Marshal_BlackScholesKernels_BlackScholesContext(ref global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.BlackScholesContext host, ref AotContexts.BlackScholes native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_BlackScholesKernels_BlackScholesContext(ref global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.BlackScholesContext host, ref AotContexts.BlackScholes native, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
 {
 native = default;
 if (host.S != null)
-{
-if (isDevicePtr)
-{
-throw new global::System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
 {
 int size = checked(host.S.Length * sizeof(global::System.Single));
 if (size > 0)
@@ -174,14 +168,7 @@ native.S.Data = global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyArra
 }
 native.S.Length = host.S.Length;
 }
-}
 if (host.X != null)
-{
-if (isDevicePtr)
-{
-throw new global::System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
 {
 int size = checked(host.X.Length * sizeof(global::System.Single));
 if (size > 0)
@@ -211,14 +198,7 @@ native.X.Data = global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyArra
 }
 native.X.Length = host.X.Length;
 }
-}
 if (host.T != null)
-{
-if (isDevicePtr)
-{
-throw new global::System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
 {
 int size = checked(host.T.Length * sizeof(global::System.Single));
 if (size > 0)
@@ -248,16 +228,9 @@ native.T.Data = global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyArra
 }
 native.T.Length = host.T.Length;
 }
-}
 native.R = host.R;
 native.V = host.V;
 if (host.CallResult != null)
-{
-if (isDevicePtr)
-{
-throw new global::System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
 {
 int size = checked(host.CallResult.Length * sizeof(global::System.Single));
 if (size > 0)
@@ -287,14 +260,7 @@ native.CallResult.Data = global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.
 }
 native.CallResult.Length = host.CallResult.Length;
 }
-}
 if (host.PutResult != null)
-{
-if (isDevicePtr)
-{
-throw new global::System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
 {
 int size = checked(host.PutResult.Length * sizeof(global::System.Single));
 if (size > 0)
@@ -324,12 +290,11 @@ native.PutResult.Data = global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.E
 }
 native.PutResult.Length = host.PutResult.Length;
 }
-}
 native.N = host.N;
 }
-public static unsafe void Unmarshal_BlackScholesKernels_BlackScholesContext(ref global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.BlackScholesContext host, ref AotContexts.BlackScholes native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_BlackScholesKernels_BlackScholesContext(ref global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.BlackScholesContext host, ref AotContexts.BlackScholes native, global::System.IntPtr hStream = default)
 {
-if (host.S != null && !isDevicePtr && native.S.Data != global::System.IntPtr.Zero)
+if (host.S != null && native.S.Data != global::System.IntPtr.Zero)
 {
 int size = checked(host.S.Length * sizeof(global::System.Single));
 if (size > 0)
@@ -345,7 +310,7 @@ handle.Free();
 }
 }
 }
-if (host.X != null && !isDevicePtr && native.X.Data != global::System.IntPtr.Zero)
+if (host.X != null && native.X.Data != global::System.IntPtr.Zero)
 {
 int size = checked(host.X.Length * sizeof(global::System.Single));
 if (size > 0)
@@ -361,7 +326,7 @@ handle.Free();
 }
 }
 }
-if (host.T != null && !isDevicePtr && native.T.Data != global::System.IntPtr.Zero)
+if (host.T != null && native.T.Data != global::System.IntPtr.Zero)
 {
 int size = checked(host.T.Length * sizeof(global::System.Single));
 if (size > 0)
@@ -379,7 +344,7 @@ handle.Free();
 }
 host.R = native.R;
 host.V = native.V;
-if (host.CallResult != null && !isDevicePtr && native.CallResult.Data != global::System.IntPtr.Zero)
+if (host.CallResult != null && native.CallResult.Data != global::System.IntPtr.Zero)
 {
 int size = checked(host.CallResult.Length * sizeof(global::System.Single));
 if (size > 0)
@@ -395,7 +360,7 @@ handle.Free();
 }
 }
 }
-if (host.PutResult != null && !isDevicePtr && native.PutResult.Data != global::System.IntPtr.Zero)
+if (host.PutResult != null && native.PutResult.Data != global::System.IntPtr.Zero)
 {
 int size = checked(host.PutResult.Length * sizeof(global::System.Single));
 if (size > 0)
@@ -482,7 +447,7 @@ try
 {
 void** __gsharp_kernel_params = stackalloc void*[1];
 global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.AotContexts.BlackScholes __gsharp_native_0 = default;
-global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.AotContexts.Marshal_BlackScholesKernels_BlackScholesContext(ref ctx, ref __gsharp_native_0, false, __gsharp_device_arrays, hStream);
+global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.AotContexts.Marshal_BlackScholesKernels_BlackScholesContext(ref ctx, ref __gsharp_native_0, __gsharp_device_arrays, hStream);
 // Marshal scalar struct: ctx
 __gsharp_kernel_params[0] = &__gsharp_native_0;
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
@@ -494,7 +459,7 @@ hStream, // Stream
 __gsharp_kernel_params,
 global::System.IntPtr.Zero // Extra
 ));
-global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.AotContexts.Unmarshal_BlackScholesKernels_BlackScholesContext(ref ctx, ref __gsharp_native_0, false, hStream);
+global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.AotContexts.Unmarshal_BlackScholesKernels_BlackScholesContext(ref ctx, ref __gsharp_native_0, hStream);
 }
 finally
 {
