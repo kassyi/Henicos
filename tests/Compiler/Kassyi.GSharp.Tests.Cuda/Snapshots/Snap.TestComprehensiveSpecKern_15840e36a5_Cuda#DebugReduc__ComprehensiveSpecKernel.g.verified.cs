@@ -310,15 +310,10 @@ return;
 }
 ";
 public static readonly string ProcessPhysics_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ProcessPhysics_Source;
-private static global::System.IntPtr? __gsharp_hfunc_ProcessPhysics;
+private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ProcessPhysics = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_DebugReduc__ComprehensiveSpecKernel__ProcessPhysics", global::Kassyi.GSharp.Generated.GSharpModuleContext_MegaTestCompilationBase.GetFatbin);
 private static bool __gsharp_layout_checked_ProcessPhysics;
-/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
-public static void WarmupFunctionPointerProcessPhysics()
-{
-if (__gsharp_hfunc_ProcessPhysics.HasValue) return;
-global::System.IntPtr __gsharp_hmodule = global::Kassyi.GSharp.Generated.GSharpModuleContext_MegaTestCompilationBase.GetOrLoadModule();
-__gsharp_hfunc_ProcessPhysics = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(__gsharp_hmodule, "__gsharp_k_DebugReduc__ComprehensiveSpecKernel__ProcessPhysics");
-}
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
+public static void WarmupFunctionPointerProcessPhysics() => global::DebugReduc.ComprehensiveSpecKernel.__gsharp_hfunc_ProcessPhysics.Resolve();
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -359,8 +354,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::DebugReduc.ComprehensiveSpecKernel.WarmupFunctionPointerProcessPhysics();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_ProcessPhysics!.Value;
+global::System.IntPtr __gsharp_hfunc = global::DebugReduc.ComprehensiveSpecKernel.__gsharp_hfunc_ProcessPhysics.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "ComprehensiveSpecKernel.ProcessPhysics");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 global::System.IntPtr __gsharp_d_1 = global::System.IntPtr.Zero;
@@ -453,8 +447,7 @@ public static unsafe void LaunchProcessPhysicsPtr(global::System.IntPtr particle
 {
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::DebugReduc.ComprehensiveSpecKernel.WarmupFunctionPointerProcessPhysics();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_ProcessPhysics!.Value;
+global::System.IntPtr __gsharp_hfunc = global::DebugReduc.ComprehensiveSpecKernel.__gsharp_hfunc_ProcessPhysics.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "ComprehensiveSpecKernel.ProcessPhysics");
 try
 {
@@ -498,14 +491,9 @@ cg::this_grid().sync();
 }
 ";
 public static readonly string CooperativePhysicsProcess_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +CooperativePhysicsProcess_Source;
-private static global::System.IntPtr? __gsharp_hfunc_CooperativePhysicsProcess;
-/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
-public static void WarmupFunctionPointerCooperativePhysicsProcess()
-{
-if (__gsharp_hfunc_CooperativePhysicsProcess.HasValue) return;
-global::System.IntPtr __gsharp_hmodule = global::Kassyi.GSharp.Generated.GSharpModuleContext_MegaTestCompilationBase.GetOrLoadModule();
-__gsharp_hfunc_CooperativePhysicsProcess = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(__gsharp_hmodule, "__gsharp_k_DebugReduc__ComprehensiveSpecKernel__CooperativePhysicsProcess");
-}
+private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_CooperativePhysicsProcess = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_DebugReduc__ComprehensiveSpecKernel__CooperativePhysicsProcess", global::Kassyi.GSharp.Generated.GSharpModuleContext_MegaTestCompilationBase.GetFatbin);
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
+public static void WarmupFunctionPointerCooperativePhysicsProcess() => global::DebugReduc.ComprehensiveSpecKernel.__gsharp_hfunc_CooperativePhysicsProcess.Resolve();
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -519,8 +507,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::DebugReduc.ComprehensiveSpecKernel.WarmupFunctionPointerCooperativePhysicsProcess();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_CooperativePhysicsProcess!.Value;
+global::System.IntPtr __gsharp_hfunc = global::DebugReduc.ComprehensiveSpecKernel.__gsharp_hfunc_CooperativePhysicsProcess.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "ComprehensiveSpecKernel.CooperativePhysicsProcess");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 try
@@ -575,8 +562,7 @@ public static unsafe void LaunchCooperativePhysicsProcessPtr(global::System.IntP
 {
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::DebugReduc.ComprehensiveSpecKernel.WarmupFunctionPointerCooperativePhysicsProcess();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_CooperativePhysicsProcess!.Value;
+global::System.IntPtr __gsharp_hfunc = global::DebugReduc.ComprehensiveSpecKernel.__gsharp_hfunc_CooperativePhysicsProcess.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "ComprehensiveSpecKernel.CooperativePhysicsProcess");
 try
 {
