@@ -62,11 +62,11 @@ public sealed class GSharpKernelProvider : IGpuExecutionProvider
 
     /// <inheritdoc />
     /// <exception cref="InvalidOperationException">An on-device correction on the stream did not converge since the
-    /// previous read (see <see cref="GpuCorrectionStatus"/>).</exception>
+    /// previous read (see <see cref="GpuDeviceStatus"/>).</exception>
     public void CopyDeviceToHost(uint[] hostData, IntPtr devicePointer, int numWords, IntPtr stream = 0)
     {
         // The copy waits for the stream only when it moves data, so only then can it carry the status words.
-        var status = numWords > 0 ? GpuCorrectionStatus.BeginRead(stream) : null;
+        var status = numWords > 0 ? GpuDeviceStatus.BeginRead(stream) : null;
         try
         {
             MemoryProvider.CopyDeviceToHost(hostData, devicePointer, numWords, stream);
@@ -83,7 +83,7 @@ public sealed class GSharpKernelProvider : IGpuExecutionProvider
 
     /// <inheritdoc />
     /// <exception cref="InvalidOperationException">The returned task completes with it when an on-device correction on
-    /// the stream did not converge since the previous read (see <see cref="GpuCorrectionStatus"/>).</exception>
+    /// the stream did not converge since the previous read (see <see cref="GpuDeviceStatus"/>).</exception>
     public ValueTask CopyDeviceToHostAsync(Memory<uint> hostData, IntPtr devicePointer, int numWords, IntPtr stream,
         CancellationToken cancellationToken = default)
     {
@@ -93,7 +93,7 @@ public sealed class GSharpKernelProvider : IGpuExecutionProvider
             return ValueTask.FromCanceled(cancellationToken);
         }
 
-        var status = numWords > 0 ? GpuCorrectionStatus.BeginRead(stream) : null;
+        var status = numWords > 0 ? GpuDeviceStatus.BeginRead(stream) : null;
         ValueTask read;
         try
         {
@@ -114,10 +114,10 @@ public sealed class GSharpKernelProvider : IGpuExecutionProvider
 
     /// <inheritdoc />
     /// <exception cref="InvalidOperationException">An on-device correction on the stream did not converge since the
-    /// previous read (see <see cref="GpuCorrectionStatus"/>).</exception>
+    /// previous read (see <see cref="GpuDeviceStatus"/>).</exception>
     public uint ReadWord(IntPtr devicePointer, int wordOffset = 0, IntPtr stream = 0)
     {
-        var status = GpuCorrectionStatus.BeginRead(stream);
+        var status = GpuDeviceStatus.BeginRead(stream);
         uint word;
         try
         {
@@ -139,10 +139,10 @@ public sealed class GSharpKernelProvider : IGpuExecutionProvider
 
     /// <inheritdoc />
     /// <exception cref="InvalidOperationException">An on-device correction on the stream did not converge since the
-    /// previous read (see <see cref="GpuCorrectionStatus"/>).</exception>
+    /// previous read (see <see cref="GpuDeviceStatus"/>).</exception>
     public void SynchronizeStream(IntPtr stream)
     {
-        var status = GpuCorrectionStatus.BeginRead(stream);
+        var status = GpuDeviceStatus.BeginRead(stream);
         try
         {
             MemoryProvider.SynchronizeStream(stream);
@@ -158,7 +158,7 @@ public sealed class GSharpKernelProvider : IGpuExecutionProvider
 
     /// <inheritdoc />
     /// <exception cref="InvalidOperationException">The returned task completes with it when an on-device correction on
-    /// the stream did not converge since the previous read (see <see cref="GpuCorrectionStatus"/>).</exception>
+    /// the stream did not converge since the previous read (see <see cref="GpuDeviceStatus"/>).</exception>
     public ValueTask SynchronizeStreamAsync(IntPtr stream, CancellationToken cancellationToken = default)
     {
         if (cancellationToken.IsCancellationRequested)
@@ -167,7 +167,7 @@ public sealed class GSharpKernelProvider : IGpuExecutionProvider
             return ValueTask.FromCanceled(cancellationToken);
         }
 
-        var status = GpuCorrectionStatus.BeginRead(stream);
+        var status = GpuDeviceStatus.BeginRead(stream);
         ValueTask read;
         try
         {
@@ -315,7 +315,7 @@ public sealed class GSharpKernelProvider : IGpuExecutionProvider
 
         // A graph may contain a correction kernel, so the next read checks the correction status. Marked after the
         // launch, so that a read on another thread cannot consume the request before the kernel is on the stream.
-        GpuCorrectionStatus.Find(stream)?.MarkPending();
+        GpuDeviceStatus.Find(stream)?.MarkPending();
     }
 
     /// <inheritdoc />

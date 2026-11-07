@@ -68,6 +68,9 @@ public void Execute();
 `ObjectDisposedException`<br>
 The graph has been disposed, or an operand or the `targetResult` the graph reads has been disposed. The graph records raw device pointers, so it refuses to launch instead of using memory that may belong to another owner.
 
+`GpuOverflowException`<br>
+An operation of the graph overflowed in this launch, or an earlier operation on the workspace stream did (see [GpuBigIntExpr, Overflow](GpuBigIntExpr.md#overflow)). The origin is the `CompileToGraph` call.
+
 ## ExecuteAsync(CancellationToken)
 
 Launches the executable graph on the GPU stream (`cuGraphLaunch`) and waits for completion without blocking the calling thread.
@@ -84,7 +87,7 @@ A token that stops waiting. An already canceled token prevents the launch; a lat
 #### Returns
 
 _ValueTask_<br>
-A task that completes when the graph has finished. Repeated launches do not allocate in steady state.
+A task that completes when the graph has finished. Repeated launches do not allocate in steady state. It faults with `GpuOverflowException` when an operation of the graph overflowed, as [Execute()](#execute) throws.
 
 #### Exceptions
 

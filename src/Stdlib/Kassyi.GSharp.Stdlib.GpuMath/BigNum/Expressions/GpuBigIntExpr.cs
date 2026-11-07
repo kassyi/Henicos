@@ -66,8 +66,17 @@ public readonly struct GpuBigIntExpr : IDisposable
     /// <param name="left">The left signed expression operand.</param>
     /// <param name="right">The right signed expression operand.</param>
     /// <returns>A new <see cref="GpuBigIntExpr"/> representing the addition AST node.</returns>
+    /// <remarks>
+    /// The result has the width of the operands. When the exact sum does not fit in it, the evaluation throws
+    /// <see cref="GpuOverflowException"/> at the next synchronization of the workspace stream (at once in CPU fallback
+    /// mode).
+    /// </remarks>
+    [MethodImpl(MethodImplOptions.NoInlining)] // keeps the frame that the operator stack trace skips
     public static GpuBigIntExpr operator +(GpuBigIntExpr left, GpuBigIntExpr right)
-        => new(new SignedAddExpression(left.Node, right.Node));
+        => new(new SignedAddExpression(left.Node, right.Node)
+        {
+            OperatorStackTrace = GpuOverflowReport.CaptureOperatorStackTrace()
+        });
 
     /// <summary>
     /// Constructs a lazy subtraction expression with deferred sign resolution between two signed big integer expressions.
@@ -75,8 +84,17 @@ public readonly struct GpuBigIntExpr : IDisposable
     /// <param name="left">The minuend signed expression operand.</param>
     /// <param name="right">The subtrahend signed expression operand.</param>
     /// <returns>A new <see cref="GpuBigIntExpr"/> representing the subtraction AST node.</returns>
+    /// <remarks>
+    /// The result has the width of the operands. When the exact difference does not fit in it, the evaluation throws
+    /// <see cref="GpuOverflowException"/> at the next synchronization of the workspace stream (at once in CPU fallback
+    /// mode).
+    /// </remarks>
+    [MethodImpl(MethodImplOptions.NoInlining)] // keeps the frame that the operator stack trace skips
     public static GpuBigIntExpr operator -(GpuBigIntExpr left, GpuBigIntExpr right)
-        => new(new SignedSubExpression(left.Node, right.Node));
+        => new(new SignedSubExpression(left.Node, right.Node)
+        {
+            OperatorStackTrace = GpuOverflowReport.CaptureOperatorStackTrace()
+        });
 
     /// <summary>
     /// Constructs a lazy negation expression for the specified signed big integer expression.
@@ -117,24 +135,42 @@ public readonly struct GpuBigIntExpr : IDisposable
     /// </summary>
     /// <param name="destination">The pre-allocated GPU buffer to store the evaluated magnitude. It may be the magnitude of
     /// an operand (<c>(a / b).Evaluate(a.Value)</c>): the root then computes into a temporary and copies the result.</param>
+    /// <param name="callerMemberName">Filled in by the compiler: the calling member, named in a <see cref="GpuOverflowException"/>.</param>
+    /// <param name="callerFilePath">Filled in by the compiler: the calling source file.</param>
+    /// <param name="callerLineNumber">Filled in by the compiler: the calling line.</param>
     /// <returns>A new <see cref="GpuBigInt"/> instance wrapping the destination buffer with the evaluated sign.</returns>
     /// <exception cref="InvalidOperationException">The expression has been compiled into a CUDA graph that is alive.</exception>
-    public GpuBigInt Evaluate(GpuBigUInt destination)
+    public GpuBigInt Evaluate(GpuBigUInt destination,
+        [CallerMemberName] string callerMemberName = "", [CallerFilePath] string callerFilePath = "",
+        [CallerLineNumber] int callerLineNumber = 0)
     {
         GraphOwnership.ThrowIfOwned(Node);
-        return Node.Evaluate(destination.Workspace, destination);
+        var site = new EvaluationSite(nameof(Evaluate), Node, callerMemberName, callerFilePath, callerLineNumber);
+        using (site.Enter())
+        {
+            return Node.Evaluate(destination.Workspace, destination);
+        }
     }
 
     /// <summary>
     /// Evaluates this signed expression into a newly rented temporary GPU buffer.
     /// </summary>
     /// <param name="workspace">The GPU workspace used for temporary buffer allocation.</param>
+    /// <param name="callerMemberName">Filled in by the compiler: the calling member, named in a <see cref="GpuOverflowException"/>.</param>
+    /// <param name="callerFilePath">Filled in by the compiler: the calling source file.</param>
+    /// <param name="callerLineNumber">Filled in by the compiler: the calling line.</param>
     /// <returns>A new <see cref="GpuBigInt"/> instance wrapping the temporary buffer with the evaluated sign.</returns>
     /// <exception cref="InvalidOperationException">The expression has been compiled into a CUDA graph that is alive.</exception>
-    public GpuBigInt Evaluate(GpuWorkspace workspace)
+    public GpuBigInt Evaluate(GpuWorkspace workspace,
+        [CallerMemberName] string callerMemberName = "", [CallerFilePath] string callerFilePath = "",
+        [CallerLineNumber] int callerLineNumber = 0)
     {
         GraphOwnership.ThrowIfOwned(Node);
-        return Node.Evaluate(workspace);
+        var site = new EvaluationSite(nameof(Evaluate), Node, callerMemberName, callerFilePath, callerLineNumber);
+        using (site.Enter())
+        {
+            return Node.Evaluate(workspace);
+        }
     }
 
     /// <summary>
@@ -143,6 +179,9 @@ public readonly struct GpuBigIntExpr : IDisposable
     /// </summary>
     /// <param name="workspace">The GPU workspace.</param>
     /// <param name="targetResult">An optional pre-allocated buffer for the final result.</param>
+    /// <param name="callerMemberName">Filled in by the compiler: the calling member, named in a <see cref="GpuOverflowException"/>.</param>
+    /// <param name="callerFilePath">Filled in by the compiler: the calling source file.</param>
+    /// <param name="callerLineNumber">Filled in by the compiler: the calling line.</param>
     /// <returns>An executable graph instance that can be launched repeatedly.</returns>
     /// <remarks>
     /// The graph takes the expression: until the graph is disposed, evaluating or compiling this expression (or a copy
@@ -154,16 +193,22 @@ public readonly struct GpuBigIntExpr : IDisposable
     /// </remarks>
     /// <exception cref="InvalidOperationException">
     /// The expression, or any of its sub-expressions, is part of another CUDA graph that is currently alive, or
-    /// the warm-up evaluation failed.
+    /// the warm-up evaluation failed (an overflow of the warm-up is its <see cref="Exception.InnerException"/>).
     /// </exception>
-    public GpuBigIntExecutableGraph CompileToGraph(GpuWorkspace workspace, GpuBigUInt? targetResult = null) =>
-        Compile(workspace, targetResult, ownsExpression: true);
+    public GpuBigIntExecutableGraph CompileToGraph(GpuWorkspace workspace, GpuBigUInt? targetResult = null,
+        [CallerMemberName] string callerMemberName = "", [CallerFilePath] string callerFilePath = "",
+        [CallerLineNumber] int callerLineNumber = 0) =>
+        Compile(workspace, targetResult, ownsExpression: true,
+            new EvaluationSite(nameof(CompileToGraph), Node, callerMemberName, callerFilePath, callerLineNumber));
 
     /// <summary>
     /// Evaluates this expression tree by dynamically compiling it into a CUDA Graph, launching it, and destroying it immediately.
     /// </summary>
     /// <param name="workspace">The GPU workspace.</param>
     /// <param name="targetResult">An optional pre-allocated buffer for the final result.</param>
+    /// <param name="callerMemberName">Filled in by the compiler: the calling member, named in a <see cref="GpuOverflowException"/>.</param>
+    /// <param name="callerFilePath">Filled in by the compiler: the calling source file.</param>
+    /// <param name="callerLineNumber">Filled in by the compiler: the calling line.</param>
     /// <returns>
     /// The result. Without <paramref name="targetResult"/> the caller owns it and disposes it; with
     /// <paramref name="targetResult"/> it is a borrowed value of that buffer.
@@ -172,9 +217,14 @@ public readonly struct GpuBigIntExpr : IDisposable
     /// The expression stays usable afterwards: the internal graph holds it only while it runs (O15).
     /// </remarks>
     /// <exception cref="InvalidOperationException">The expression has been compiled into a CUDA graph that is alive.</exception>
-    public GpuBigInt EvaluateWithCudaGraph(GpuWorkspace workspace, GpuBigUInt? targetResult = null)
+    /// <exception cref="GpuOverflowException">An operation of the expression overflowed.</exception>
+    public GpuBigInt EvaluateWithCudaGraph(GpuWorkspace workspace, GpuBigUInt? targetResult = null,
+        [CallerMemberName] string callerMemberName = "", [CallerFilePath] string callerFilePath = "",
+        [CallerLineNumber] int callerLineNumber = 0)
     {
-        var executableGraph = Compile(workspace, targetResult, ownsExpression: false);
+        var executableGraph = Compile(workspace, targetResult, ownsExpression: false,
+            new EvaluationSite(nameof(EvaluateWithCudaGraph), Node, callerMemberName, callerFilePath,
+                callerLineNumber));
         try
         {
             executableGraph.Execute();
@@ -195,11 +245,15 @@ public readonly struct GpuBigIntExpr : IDisposable
     /// <param name="cancellationToken">
     /// A token that stops waiting for the graph. The graph itself still runs to completion.
     /// </param>
+    /// <param name="callerMemberName">Filled in by the compiler: the calling member, named in a <see cref="GpuOverflowException"/>.</param>
+    /// <param name="callerFilePath">Filled in by the compiler: the calling source file.</param>
+    /// <param name="callerLineNumber">Filled in by the compiler: the calling line.</param>
     /// <returns>
     /// The result. Without <paramref name="targetResult"/> the caller owns it and disposes it; with
     /// <paramref name="targetResult"/> it is a borrowed value of that buffer.
     /// </returns>
     /// <exception cref="OperationCanceledException"><paramref name="cancellationToken"/> was canceled.</exception>
+    /// <exception cref="GpuOverflowException">An operation of the expression overflowed.</exception>
     /// <remarks>
     /// <para>
     /// Only the final wait is asynchronous. Compilation (a warm-up evaluation, capture and instantiation) runs
@@ -215,11 +269,15 @@ public readonly struct GpuBigIntExpr : IDisposable
     /// </para>
     /// </remarks>
     public async ValueTask<GpuBigInt> EvaluateWithCudaGraphAsync(GpuWorkspace workspace,
-        GpuBigUInt? targetResult = null, CancellationToken cancellationToken = default)
+        GpuBigUInt? targetResult = null, CancellationToken cancellationToken = default,
+        [CallerMemberName] string callerMemberName = "", [CallerFilePath] string callerFilePath = "",
+        [CallerLineNumber] int callerLineNumber = 0)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        var executableGraph = Compile(workspace, targetResult, ownsExpression: false);
+        var executableGraph = Compile(workspace, targetResult, ownsExpression: false,
+            new EvaluationSite(nameof(EvaluateWithCudaGraphAsync), Node, callerMemberName, callerFilePath,
+                callerLineNumber));
         try
         {
             await executableGraph.ExecuteAsync(cancellationToken).ConfigureAwait(false);
@@ -234,27 +292,24 @@ public readonly struct GpuBigIntExpr : IDisposable
     }
 
     // Warm-up, capture and instantiation. ownsExpression: CompileToGraph hands the expression to the graph for its whole
-    // life; EvaluateWithCudaGraph lends it only while its internal graph exists (O15).
-    private GpuBigIntExecutableGraph Compile(GpuWorkspace workspace, GpuBigUInt? targetResult, bool ownsExpression)
+    // life; EvaluateWithCudaGraph lends it only while its internal graph exists (O15). The checked operations recorded
+    // in the graph report the public call as their origin.
+    private GpuBigIntExecutableGraph Compile(GpuWorkspace workspace, GpuBigUInt? targetResult, bool ownsExpression,
+        EvaluationSite site)
     {
         GraphOwnership.ThrowIfOwned(Node);
+        using (site.Enter())
+        {
+            return CompileInScope(workspace, targetResult, ownsExpression, site);
+        }
+    }
 
+    private GpuBigIntExecutableGraph CompileInScope(GpuWorkspace workspace, GpuBigUInt? targetResult,
+        bool ownsExpression, EvaluationSite site)
+    {
         // 1. Warm-up execution to trigger all lazy memory allocations and JIT compilation
         // before graph capture begins, otherwise cuMemAlloc invalidates the stream.
-        try
-        {
-            // A result allocated by the warm-up goes back to the pool, where the capture finds it again; a result in
-            // the caller's target stays
-            var warmupResult = Node.Evaluate(workspace, targetResult);
-            if (!targetResult.HasValue)
-            {
-                warmupResult.Dispose();
-            }
-        }
-        catch (Exception ex)
-        {
-            throw new InvalidOperationException("Failed during warmup execution for CUDA Graph capture.", ex);
-        }
+        WarmUp(workspace, targetResult);
 
         // 2. Capture the graph; the frees of the capture are deferred, so the graph keeps the buffers it uses. The
         // expression belongs to the graph from here on; every failure below gives it back.
@@ -283,6 +338,8 @@ public readonly struct GpuBigIntExpr : IDisposable
         }
 
         GpuBigInt result;
+        IReadOnlyList<OverflowSite> recorded;
+        site.BeginCapture();
         try
         {
             result = Node.Evaluate(workspace, targetResult);
@@ -299,6 +356,10 @@ public readonly struct GpuBigIntExpr : IDisposable
             }
 
             throw;
+        }
+        finally
+        {
+            recorded = site.EndCapture();
         }
 
         // The graph owns a result it allocated; a target stays with the caller, so the graph only borrows it
@@ -334,7 +395,29 @@ public readonly struct GpuBigIntExpr : IDisposable
             throw;
         }
 
-        return new GpuBigIntExecutableGraph(workspace, graph, graphExec, result, owned, captured, Node, ownsExpression);
+        return new GpuBigIntExecutableGraph(workspace, graph, graphExec, result, owned, captured,
+            new GraphExpression(Node, ownsExpression, recorded));
+    }
+
+    private void WarmUp(GpuWorkspace workspace, GpuBigUInt? targetResult)
+    {
+        try
+        {
+            // A result allocated by the warm-up goes back to the pool, where the capture finds it again; a result in
+            // the caller's target stays
+            var warmupResult = Node.Evaluate(workspace, targetResult);
+            if (!targetResult.HasValue)
+            {
+                warmupResult.Dispose();
+            }
+
+            // An overflow of the warm-up surfaces here, before the capture, instead of at the first launch of the graph
+            workspace.Provider.SynchronizeStream(workspace.Stream);
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException("Failed during warmup execution for CUDA Graph capture.", ex);
+        }
     }
 
     // A capture ended but no executable graph came of it: destroy the partial graph, return the deferred buffers and an
@@ -565,15 +648,18 @@ public readonly struct GpuBigIntExecutableGraph : IDisposable
     public GpuBigIntView Result => _handles is { } handles ? handles.Result : default;
 
     internal GpuBigIntExecutableGraph(GpuWorkspace workspace, IntPtr graph, IntPtr graphExec, GpuBigInt result,
-        bool ownsResult, CapturedResources captured, IGpuBigIntExpression node, bool ownsExpression)
+        bool ownsResult, CapturedResources captured, GraphExpression expression)
     {
-        _handles = new GraphHandles(workspace, graph, graphExec, result, ownsResult, captured, node, ownsExpression);
+        _handles = new GraphHandles(workspace, graph, graphExec, result, ownsResult, captured, expression);
     }
 
     /// <summary>
     /// Launches the executable graph on the GPU and waits for completion.
     /// </summary>
     /// <exception cref="ObjectDisposedException">The graph, an operand or the target has been disposed.</exception>
+    /// <exception cref="GpuOverflowException">
+    /// An operation of the graph overflowed in this launch (or one before it on the workspace stream).
+    /// </exception>
     public void Execute()
     {
         var handles = GetLiveHandles();
@@ -589,7 +675,10 @@ public readonly struct GpuBigIntExecutableGraph : IDisposable
     /// A token that stops waiting. An already canceled token prevents the launch; a later cancellation leaves the graph
     /// running to completion (see <see cref="Result"/>).
     /// </param>
-    /// <returns>A <see cref="ValueTask"/> that completes when the graph has finished.</returns>
+    /// <returns>
+    /// A <see cref="ValueTask"/> that completes when the graph has finished; it faults with
+    /// <see cref="GpuOverflowException"/> when an operation of the graph overflowed.
+    /// </returns>
     /// <exception cref="ObjectDisposedException">The graph, an operand or the target has been disposed.</exception>
     /// <remarks>Does not allocate in steady state.</remarks>
     public ValueTask ExecuteAsync(CancellationToken cancellationToken = default)
@@ -626,13 +715,12 @@ public readonly struct GpuBigIntExecutableGraph : IDisposable
         private readonly IntPtr _graph;
         private readonly GpuBigInt _result;
         private readonly CapturedResources _captured;
-        private readonly IGpuBigIntExpression _node;
-        private readonly bool _ownsExpression;
+        private readonly GraphExpression _expression;
         private int _ownsResult;
         private int _destroyed;
 
         public GraphHandles(GpuWorkspace workspace, IntPtr graph, IntPtr graphExec, GpuBigInt result, bool ownsResult,
-            CapturedResources captured, IGpuBigIntExpression node, bool ownsExpression)
+            CapturedResources captured, GraphExpression expression)
         {
             Workspace = workspace;
             _graph = graph;
@@ -640,8 +728,10 @@ public readonly struct GpuBigIntExecutableGraph : IDisposable
             _result = result;
             _ownsResult = ownsResult ? 1 : 0;
             _captured = captured;
-            _node = node;
-            _ownsExpression = ownsExpression;
+            _expression = expression;
+
+            // Every launch replays the origin ids recorded in the capture, so they stay findable while the graph lives
+            workspace.DeviceStatus?.Origins.Pin(expression.RecordedOrigins);
         }
 
         public GpuWorkspace Workspace { get; }
@@ -695,8 +785,9 @@ public readonly struct GpuBigIntExecutableGraph : IDisposable
                     }
 
                     manager.ReturnDeferred(_captured.Buffers);
-                    GraphOwnership.Release(_node);
-                    if (_ownsExpression && _node is IDisposable disposable)
+                    Workspace.DeviceStatus?.Origins.Unpin(_expression.RecordedOrigins);
+                    GraphOwnership.Release(_expression.Node);
+                    if (_expression.OwnsExpression && _expression.Node is IDisposable disposable)
                     {
                         disposable.Dispose();
                     }
@@ -705,3 +796,12 @@ public readonly struct GpuBigIntExecutableGraph : IDisposable
         }
     }
 }
+
+/// <summary>
+/// The expression a <see cref="GpuBigIntExecutableGraph"/> was compiled from: its root, whether the graph owns it for its
+/// whole life, and the checked operations whose origin ids the graph replays.
+/// </summary>
+internal sealed record GraphExpression(
+    IGpuBigIntExpression Node,
+    bool OwnsExpression,
+    IReadOnlyList<OverflowSite> RecordedOrigins);

@@ -132,6 +132,36 @@ Common failure scenarios include:
 - `CUDA_ERROR_NO_DEVICE` (100): No CUDA-capable GPU detected on the host system.
 - `CUDA_ERROR_LAUNCH_FAILED` (700): An asynchronous device hardware exception occurred during kernel execution (e.g., out-of-bounds pointer dereference, misaligned memory access).
 
+### GpuOverflowException
+
+- **Namespace:** `Kassyi.GSharp.Stdlib.GpuMath`
+- **Inherits from:** `System.OverflowException`
+
+Thrown when the exact result of a signed `GpuBigIntExpr` operation does not fit in the width of its result (see [GpuBigIntExpr, Overflow](math_bignum/gpu_big_int_and_uint/expressions/GpuBigIntExpr.md#overflow)). The GPU flags the overflow without waiting, so the exception is thrown at the next synchronization of the workspace stream, after the evaluation has returned; in CPU fallback mode the evaluation itself throws.
+
+| Member | Description |
+| :- | :- |
+| `Origins` | The overflows reported by this exception, oldest first: `Operation`, `ResultWords`, `Subexpression`, `Expression` (the whole expression with the overflowing operation in brackets), `EntryPoint`, `CallerMemberName`, `CallerFilePath`, `CallerLineNumber`, `OperatorStackTrace`. `IsKnown` is `false` when the record of the origin was overwritten by later operations. |
+| `OverwrittenOrigins` | Overflows counted in the report whose origins the GPU no longer kept (it keeps the latest eight per workspace). |
+
+The message describes the first overflow. The overflow count of a workspace only grows, so each overflow is reported once; disposing a workspace with an overflow nobody read does not throw.
+
+By default the origin is the evaluation call. To find the line that applied the operator, set the switch `Kassyi.GSharp.GpuMath.CaptureOperatorStackTraces` before the expression is built:
+
+```csharp
+AppContext.SetSwitch("Kassyi.GSharp.GpuMath.CaptureOperatorStackTraces", true);
+```
+
+or in the project file:
+
+```xml
+<ItemGroup>
+  <RuntimeHostConfigurationOption Include="Kassyi.GSharp.GpuMath.CaptureOperatorStackTraces" Value="true" />
+</ItemGroup>
+```
+
+Each `+` and `-` of a `GpuBigIntExpr` then records the stack trace of its line (a few microseconds per operator), the origin carries it in `OperatorStackTrace`, and the stack trace of the exception starts with that of the first origin.
+
 ### NvrtcException
 
 - **Namespace:** `Kassyi.GSharp.Runtime.Interop`

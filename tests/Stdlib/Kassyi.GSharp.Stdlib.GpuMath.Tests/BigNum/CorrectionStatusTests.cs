@@ -57,7 +57,7 @@ public class CorrectionStatusTests : IDisposable
         // The unconverged correction is reported at the next read, naming the operation.
         // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntDivRemKernels.cu.cs:252 `Gpu.AtomicAdd(ref status[0], 1u);` -> `status[1] = failureCode;` (not counted)
         // input: this test and every ReciprocalMega test
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.cs:437 `rightOperand.Workspace.CorrectionStatus?.MarkPending();` -> removed
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.cs:437 `rightOperand.Workspace.DeviceStatus?.MarkPending();` -> removed
         // input: this test (no read checks the word)
         // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Providers/GSharpKernelProvider.cs:81 `status?.EndRead();` (CopyDeviceToHost) -> removed
         // input: this test, ReciprocalMega and InverseSqrtMega tests that read with ToBigInteger
@@ -65,7 +65,7 @@ public class CorrectionStatusTests : IDisposable
         Assert.Contains("ReduceZeroSync", exception.Message);
 
         // The status was reset: the same workspace reduces correctly with an exact reciprocal.
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/GpuCorrectionStatus.cs:186 `if (count <= reported)` -> `if (count <= 0)` (every positive count reported again)
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/GpuDeviceStatus.cs:186 `if (count <= reported)` -> `if (count <= 0)` (every positive count reported again)
         // input: this test, every read kind, InverseSqrtMega (the read after the exception throws again)
         using var reciprocal = new GpuBigUInt(workspace, ToWords((BigInteger.One << TargetBits) / b, RecipWords));
         GpuBigIntDivRem.ReduceZeroSync(gpuA, gpuB, reciprocal, TargetBits, DividendWords, gpuQ, gpuR);
@@ -108,7 +108,7 @@ public class CorrectionStatusTests : IDisposable
 
             workspace.Provider.LaunchGraph(graphExec, workspace.Stream);
 
-            // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Providers/GSharpKernelProvider.cs:313 `GpuCorrectionStatus.Find(stream)?.MarkPending();` (LaunchGraph) -> removed
+            // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Providers/GSharpKernelProvider.cs:313 `GpuDeviceStatus.Find(stream)?.MarkPending();` (LaunchGraph) -> removed
             // input: this test
             var exception = Assert.Throws<InvalidOperationException>(() => gpuR.ToBigInteger());
             Assert.Contains("ReduceZeroSync", exception.Message);
@@ -155,9 +155,9 @@ public class CorrectionStatusTests : IDisposable
         // input: KernelResult
         // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Providers/GSharpKernelProvider.cs:156 `status?.EndRead();` (SynchronizeStream) -> removed
         // input: SynchronizeStream
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/GpuCorrectionStatus.cs:349 `owner.EndRead();` (asynchronous reads) -> removed
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/GpuDeviceStatus.cs:349 `owner.EndRead();` (asynchronous reads) -> removed
         // input: SynchronizeStreamAsync, CopyDeviceToHostAsync
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Providers/Handlers/KernelAdvancedMathHandler.cs:377 `workspace.CorrectionStatus?.MarkPending();` (ReciprocalMega) -> removed
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Providers/Handlers/KernelAdvancedMathHandler.cs:377 `workspace.DeviceStatus?.MarkPending();` (ReciprocalMega) -> removed
         // input: every read kind
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
         {
@@ -238,7 +238,7 @@ public class CorrectionStatusTests : IDisposable
 
         // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntSqrtKernels.cu.cs:195 `Gpu.AtomicAdd(ref status[0], 1u);` -> `status[1] = failureCode;` (not counted)
         // input: both offsets
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Providers/Handlers/KernelAdvancedMathHandler.cs:243 `workspace.CorrectionStatus?.MarkPending();` (InverseSqrtMega) -> removed
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Providers/Handlers/KernelAdvancedMathHandler.cs:243 `workspace.DeviceStatus?.MarkPending();` (InverseSqrtMega) -> removed
         // input: both offsets
         var exception = Assert.Throws<InvalidOperationException>(() => gpuX.ToBigInteger());
         Assert.Contains("InverseSqrt", exception.Message);
@@ -269,7 +269,7 @@ public class CorrectionStatusTests : IDisposable
         RunReciprocalMega(other, otherB, otherX, iterations: 0);
         RunReciprocalMega(failing, gpuB, gpuX, iterations: 0);
 
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/GpuCorrectionStatus.cs:88 `s_byStream[stream] = this;` and :107 `TryGetValue(stream, ...)` -> the fixed key `(IntPtr)1`
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/GpuDeviceStatus.cs:88 `s_byStream[stream] = this;` and :107 `TryGetValue(stream, ...)` -> the fixed key `(IntPtr)1`
         // input: this test (the failing stream finds the other status, whose read copies its own clean word)
         Assert.Equal(floorY, otherX.ToBigInteger());
         var exception = Assert.Throws<InvalidOperationException>(() => gpuX.ToBigInteger());
@@ -515,7 +515,7 @@ public class CorrectionStatusTests : IDisposable
             _ = workspace.Provider.CopyDeviceToHostAsync(tooShort, gpuX.DevicePointer, 4, workspace.Stream);
         });
 
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/GpuCorrectionStatus.cs:168 `MarkPending();` (in AbandonRead) -> removed
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/GpuDeviceStatus.cs:168 `MarkPending();` (in AbandonRead) -> removed
         // input: this test
         // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Providers/GSharpKernelProvider.cs:104 `status?.AbandonRead();` (CopyDeviceToHostAsync) -> removed
         // input: this test
@@ -589,7 +589,7 @@ public class CorrectionStatusTests : IDisposable
             workspace.Provider.DestroyGraph(graph, IntPtr.Zero);
         }
 
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/GpuCorrectionStatus.cs:138 `return null;` (stream being captured) -> removed
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/GpuDeviceStatus.cs:138 `return null;` (stream being captured) -> removed
         // input: this test (the copy goes into the graph and the request is consumed)
         var exception = Assert.Throws<InvalidOperationException>(() => gpuX.ToBigInteger());
         Assert.Contains("Reciprocal", exception.Message);
@@ -613,7 +613,7 @@ public class CorrectionStatusTests : IDisposable
         using var gpuRecip = new GpuBigUInt(workspace, ToWords((BigInteger.One << TargetBits) / modulus, TargetBits / 32 + 1));
         using var gpuExp = new GpuBigUInt(workspace, [3u]);
         using var gpuResult = new GpuBigUInt(workspace, NumWords);
-        var status = workspace.CorrectionStatus ?? throw new InvalidOperationException("The workspace has no status.");
+        var status = workspace.DeviceStatus ?? throw new InvalidOperationException("The workspace has no status.");
         var handler = new KernelAdvancedMathHandler();
 
         // Warm-up: the first call builds the twiddle cache, whose upload waits on the stream (another reader). After it,
@@ -666,13 +666,13 @@ public class CorrectionStatusTests : IDisposable
         using var workspace = new GpuWorkspace(256, GpuExecutionEngine.GSharpAot);
         using var gpuB = new GpuBigUInt(workspace, ToWords(b, ReciprocalWords));
         using var gpuX = new GpuBigUInt(workspace, ToWords(floorY + FarOffset, ReciprocalTargetBits / 32));
-        var status = workspace.CorrectionStatus ?? throw new InvalidOperationException("The workspace has no status.");
+        var status = workspace.DeviceStatus ?? throw new InvalidOperationException("The workspace has no status.");
 
         RunReciprocalMega(workspace, gpuB, gpuX, iterations: 0);
         await Assert.ThrowsAsync<InvalidOperationException>(async () =>
             await workspace.Provider.SynchronizeStreamAsync(workspace.Stream));
 
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/GpuCorrectionStatus.cs:295 `_core.Reset();` -> removed
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/GpuDeviceStatus.cs:295 `_core.Reset();` -> removed
         // input: this test (the clean read replays the first exception; the late completion crashes the test host)
         status.MarkPending();
         await workspace.Provider.SynchronizeStreamAsync(workspace.Stream);
@@ -694,14 +694,14 @@ public class CorrectionStatusTests : IDisposable
     public void CheckedAsyncReads_RepeatedOnOneWorkspace_DoNotAllocateInSteadyState()
     {
         using var workspace = new GpuWorkspace(64, GpuExecutionEngine.GSharpAot);
-        var status = workspace.CorrectionStatus ?? throw new InvalidOperationException("The workspace has no status.");
+        var status = workspace.DeviceStatus ?? throw new InvalidOperationException("The workspace has no status.");
         for (var i = 0; i < 64; i++)
         {
             status.MarkPending();
             SpinUntilConsumed(workspace.Provider.SynchronizeStreamAsync(workspace.Stream));
         }
 
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/GpuCorrectionStatus.cs:327 `Volatile.Write(ref _busy, 0);` -> removed (every later read takes the allocating path)
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/GpuDeviceStatus.cs:327 `Volatile.Write(ref _busy, 0);` -> removed (every later read takes the allocating path)
         // input: this test
         var allocatedPerWindow = new long[3];
         for (var window = 0; window < allocatedPerWindow.Length; window++)
@@ -749,7 +749,7 @@ public class CorrectionStatusTests : IDisposable
             gate.Open();
         }
 
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/GpuCorrectionStatus.cs:342 `owner.AbandonRead();` (canceled read) -> removed
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/GpuDeviceStatus.cs:342 `owner.AbandonRead();` (canceled read) -> removed
         // input: this test
         var exception = Assert.Throws<InvalidOperationException>(() => gpuX.ToBigInteger());
         Assert.Contains("Reciprocal", exception.Message);
@@ -768,7 +768,7 @@ public class CorrectionStatusTests : IDisposable
         using var workspace = new GpuWorkspace(256, GpuExecutionEngine.GSharpAot);
         using var gpuB = new GpuBigUInt(workspace, ToWords(b, ReciprocalWords));
         using var gpuX = new GpuBigUInt(workspace, ToWords(floorY + FarOffset, ReciprocalTargetBits / 32));
-        var status = workspace.CorrectionStatus ?? throw new InvalidOperationException("The workspace has no status.");
+        var status = workspace.DeviceStatus ?? throw new InvalidOperationException("The workspace has no status.");
 
         RunReciprocalMega(workspace, gpuB, gpuX, iterations: 0);
         Task first;
@@ -784,7 +784,7 @@ public class CorrectionStatusTests : IDisposable
 
         var outcomes = await Task.WhenAll(Outcome(first), Outcome(second));
 
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/GpuCorrectionStatus.cs:186 `if (count <= reported)` -> `if (count <= 0)`
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/GpuDeviceStatus.cs:186 `if (count <= reported)` -> `if (count <= 0)`
         // input: this test (both reads and the later read report the same failure)
         Assert.Equal(1, outcomes.Count(failed => failed));
         status.MarkPending();
@@ -819,7 +819,7 @@ public class CorrectionStatusTests : IDisposable
         var floorY = (BigInteger.One << ReciprocalTargetBits) / b;
         var farGuess = ToWords(floorY + FarOffset, ReciprocalTargetBits / 32);
         using var workspace = new GpuWorkspace(256, GpuExecutionEngine.GSharpAot);
-        var status = workspace.CorrectionStatus ?? throw new InvalidOperationException("The workspace has no status.");
+        var status = workspace.DeviceStatus ?? throw new InvalidOperationException("The workspace has no status.");
         var reports = 0;
 
         // One handler per thread, warmed up with a converging guess: its twiddle cache is built here, so the loop below
@@ -926,7 +926,7 @@ public class CorrectionStatusTests : IDisposable
     public async Task Dispose_WithAsyncReadInFlight_ReleasesSlotAfterTheRead()
     {
         using var workspace = new GpuWorkspace(64, GpuExecutionEngine.GSharpAot);
-        var status = workspace.CorrectionStatus ?? throw new InvalidOperationException("The workspace has no status.");
+        var status = workspace.DeviceStatus ?? throw new InvalidOperationException("The workspace has no status.");
         status.MarkPending();
         ValueTask read;
         using (var gate = new CudaStreamGate())
@@ -935,7 +935,7 @@ public class CorrectionStatusTests : IDisposable
             read = workspace.Provider.SynchronizeStreamAsync(workspace.Stream);
             status.Dispose();
 
-            // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/GpuCorrectionStatus.cs:260 `Volatile.Read(ref _readsInFlight) != 0 ||` -> removed (released at Dispose)
+            // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/GpuDeviceStatus.cs:260 `Volatile.Read(ref _readsInFlight) != 0 ||` -> removed (released at Dispose)
             // input: this test
             Assert.False(status.SlotReleased);
             gate.Open();
@@ -954,7 +954,7 @@ public class CorrectionStatusTests : IDisposable
     public void Dispose_AfterAbandonedRead_DiscardsSlot()
     {
         var workspace = new GpuWorkspace(64, GpuExecutionEngine.GSharpAot);
-        var status = workspace.CorrectionStatus ?? throw new InvalidOperationException("The workspace has no status.");
+        var status = workspace.DeviceStatus ?? throw new InvalidOperationException("The workspace has no status.");
         using (var value = new GpuBigUInt(workspace, 4))
         {
             status.MarkPending();
@@ -964,13 +964,13 @@ public class CorrectionStatusTests : IDisposable
             });
         }
 
-        var discardedBefore = GpuCorrectionStatus.DiscardedSlots;
+        var discardedBefore = GpuDeviceStatus.DiscardedSlots;
         workspace.Dispose();
 
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/GpuCorrectionStatus.cs:266 `if (Volatile.Read(ref _slotAbandoned) == 0)` -> `if (true)` (an abandoned slot is reused)
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/GpuDeviceStatus.cs:266 `if (Volatile.Read(ref _slotAbandoned) == 0)` -> `if (true)` (an abandoned slot is reused)
         // input: this test
         Assert.True(status.SlotReleased);
-        Assert.Equal(discardedBefore + 1, GpuCorrectionStatus.DiscardedSlots);
+        Assert.Equal(discardedBefore + 1, GpuDeviceStatus.DiscardedSlots);
     }
 
     private static void SpinUntilConsumed(ValueTask pending)

@@ -5,11 +5,18 @@ using Kassyi.GSharp.Runtime;
 namespace Kassyi.GSharp.Stdlib.GpuMath;
 
 /// <summary>
-/// Carries the failures of on-device corrections to the host without adding a synchronization: two device words per
-/// <see cref="GpuWorkspace"/> (a failure count and the code of the last failure), read together with the reads that GpuMath
-/// already makes on the workspace stream.
+/// Carries the failures of on-device corrections and the overflows of signed expressions to the host without adding a
+/// synchronization: <see cref="DeviceWords"/> device words per <see cref="GpuWorkspace"/>, read together with the reads that
+/// GpuMath already makes on the workspace stream.
 /// </summary>
 /// <remarks>
+/// <para>
+/// <b>Layout:</b> word 0 counts the correction failures and word 1 keeps the code of the last one; word
+/// <see cref="GpuBigIntKernels.OverflowCountWord"/> counts the overflows, and the
+/// <see cref="GpuBigIntKernels.OverflowRingEntries"/> pairs from word <see cref="GpuBigIntKernels.OverflowRingWord"/> hold
+/// the origin id and the sequence number of the latest overflows (<see cref="GpuBigIntKernels.ReportOverflow"/>). Word 3
+/// is reserved. The origin ids are registered on the host by <see cref="Origins"/>.
+/// </para>
 /// <para>
 /// <b>Writers:</b> the final corrections of <c>ReduceZeroSync</c> (<c>BarrettCorrectionKernel</c>), <c>ReciprocalMega</c>,
 /// <c>InverseSqrtMega</c> and <c>SqrtFloor</c> (<c>SqrtFloorCorrectionKernel</c>) add 1 to the count with an atomic add and
@@ -19,11 +26,17 @@ namespace Kassyi.GSharp.Stdlib.GpuMath;
 /// it. The host marks the status pending (<see cref="MarkPending"/>) right after launching such a kernel or a graph.
 /// </para>
 /// <para>
+/// <b>Overflows:</b> a checked sum (<see cref="GpuBigIntKernels.CheckedParallelAddKernel"/>) whose exact value needs another
+/// word adds 1 to the overflow count and records its origin. The host marks the status pending after the launch, and the
+/// next read throws <see cref="GpuOverflowException"/> for every overflow counted since the previous report. A read that
+/// finds both a correction failure and an overflow throws <see cref="AggregateException"/> with both.
+/// </para>
+/// <para>
 /// <b>Readers:</b> <see cref="GSharpKernelProvider.CopyDeviceToHost"/>, <see cref="GSharpKernelProvider.ReadWord"/>,
 /// <see cref="GSharpKernelProvider.SynchronizeStream"/> and their asynchronous forms, the kernel-result read of
 /// <see cref="KernelBasicMathHandler"/> (bit lengths, comparisons) and the chunk wait of the ModPow mega kernel. When the
 /// status is pending and the stream is not being captured, <see cref="BeginRead()"/> enqueues an asynchronous copy of
-/// the two words into a page-locked slot; the reader calls <see cref="EndRead"/> after its own wait. A count above the
+/// the words into a page-locked slot; the reader calls <see cref="EndRead"/> after its own wait. A count above the
 /// largest count already reported is thrown as <see cref="InvalidOperationException"/> once (the largest count is updated
 /// with a compare-and-exchange); for the asynchronous forms the returned <see cref="ValueTask"/> completes with it. Reads
 /// while nothing is pending cost nothing. A read that ends without its wait (an exception or a cancellation) marks the
@@ -39,7 +52,7 @@ namespace Kassyi.GSharp.Stdlib.GpuMath;
 /// <b>Not reported at the next read:</b> reads on the legacy null stream (<c>stream</c> = <see cref="IntPtr.Zero"/>); waits
 /// that bypass GpuMath (<c>cuStreamSynchronize</c> or <c>cuMemcpyDtoH</c> called directly, for example by a caller that
 /// synchronizes the stream itself and then reads <see cref="GpuBigUInt.DevicePointer"/>), which leave the status pending for
-/// the next GpuMath read; and CPU fallback mode, which has no device words. A graph captured on one workspace and replayed
+/// the next GpuMath read; and CPU fallback mode, which has no device words (a checked sum there throws at once). A graph captured on one workspace and replayed
 /// on another stream (or with <c>cuGraphLaunch</c> directly) counts into the capturing workspace's words without marking
 /// it pending, so its failure is reported only after that workspace launches a correction or a graph again and then
 /// reads.
@@ -51,12 +64,15 @@ namespace Kassyi.GSharp.Stdlib.GpuMath;
 /// that happens only after a failed or cancelled read, so the number of such slots does not grow in normal use.
 /// </para>
 /// </remarks>
-internal sealed class GpuCorrectionStatus : IDisposable
+internal sealed class GpuDeviceStatus : IDisposable
 {
-    /// <summary>The number of device words: the failure count and the code of the last failure.</summary>
-    public const int DeviceWords = 2;
+    /// <summary>
+    /// The number of device words: the correction failure count and the code of the last failure, the overflow count, a
+    /// reserved word and the overflow ring.
+    /// </summary>
+    public const int DeviceWords = GpuBigIntKernels.OverflowRingWord + (2 * (int)GpuBigIntKernels.OverflowRingEntries);
 
-    private static readonly ConcurrentDictionary<IntPtr, GpuCorrectionStatus> s_byStream = new();
+    private static readonly ConcurrentDictionary<IntPtr, GpuDeviceStatus> s_byStream = new();
     private static int s_discardedSlots;
 
     private readonly IGpuExecutionProvider _provider;
@@ -66,6 +82,7 @@ internal sealed class GpuCorrectionStatus : IDisposable
     private readonly AsyncCheck _asyncCheck;
     private int _pending;
     private int _reported;
+    private uint _reportedOverflows;
     private int _readsInFlight;
     private int _slotAbandoned;
     private int _slotReleased;
@@ -77,7 +94,7 @@ internal sealed class GpuCorrectionStatus : IDisposable
     /// <param name="provider">The provider that allocates and frees the device words.</param>
     /// <param name="stream">The workspace stream; it must not be the null stream.</param>
     /// <param name="context">The workspace's isolated context, or <see cref="IntPtr.Zero"/> for the shared one.</param>
-    public GpuCorrectionStatus(IGpuExecutionProvider provider, IntPtr stream, IntPtr context)
+    public GpuDeviceStatus(IGpuExecutionProvider provider, IntPtr stream, IntPtr context)
     {
         _provider = provider;
         _stream = stream;
@@ -89,8 +106,11 @@ internal sealed class GpuCorrectionStatus : IDisposable
         s_byStream[stream] = this;
     }
 
-    /// <summary>Gets the device address of the status words passed to the correction kernels.</summary>
+    /// <summary>Gets the device address of the status words passed to the correction and checked kernels.</summary>
     public IntPtr DevicePointer { get; }
+
+    /// <summary>Gets the registry of the origins that the checked kernels of this workspace record.</summary>
+    public GpuOverflowOriginRegistry Origins { get; } = new();
 
     /// <summary>Gets the largest failure count reported so far (for tests).</summary>
     internal int ReportedFailures => Volatile.Read(ref _reported);
@@ -104,27 +124,27 @@ internal sealed class GpuCorrectionStatus : IDisposable
     /// <summary>Finds the status registered for a workspace stream.</summary>
     /// <param name="stream">The stream of a read or a launch.</param>
     /// <returns>The status, or <see langword="null"/> for the null stream or a stream without a workspace.</returns>
-    public static GpuCorrectionStatus? Find(IntPtr stream) =>
+    public static GpuDeviceStatus? Find(IntPtr stream) =>
         stream != IntPtr.Zero && s_byStream.TryGetValue(stream, out var status) ? status : null;
 
     /// <summary>Begins a check on the status of a workspace stream; see <see cref="BeginRead()"/>.</summary>
     /// <param name="stream">The stream of a read.</param>
     /// <returns>The status to check after the read's wait, or <see langword="null"/> when there is nothing to check.</returns>
-    public static GpuCorrectionStatus? BeginRead(IntPtr stream) => Find(stream)?.BeginRead();
+    public static GpuDeviceStatus? BeginRead(IntPtr stream) => Find(stream)?.BeginRead();
 
     /// <summary>
-    /// Records that a correction kernel or a graph was launched on the stream; the next read checks the words. Called
-    /// after the launch.
+    /// Records that a correction kernel, a checked kernel or a graph was launched on the stream; the next read checks the
+    /// words. Called after the launch.
     /// </summary>
     public void MarkPending() => Volatile.Write(ref _pending, 1);
 
     /// <summary>
-    /// When a correction may have run since the previous check, enqueues the asynchronous copy of the device words into
+    /// When a correction or a checked kernel may have run since the previous check, enqueues the asynchronous copy of the device words into
     /// the page-locked slot. The caller must wait for the stream (its own read does) and then call <see cref="EndRead"/>,
     /// or call <see cref="AbandonRead"/> when it ends without that wait.
     /// </summary>
     /// <returns>This status when there is a copy to check, or <see langword="null"/> when there is nothing to check.</returns>
-    public GpuCorrectionStatus? BeginRead()
+    public GpuDeviceStatus? BeginRead()
     {
         if (Volatile.Read(ref _pending) == 0)
         {
@@ -171,33 +191,40 @@ internal sealed class GpuCorrectionStatus : IDisposable
     }
 
     /// <summary>
-    /// Ends a read begun with <see cref="BeginRead()"/> after its wait, and throws when the copied count is above the
-    /// largest count reported so far.
+    /// Ends a read begun with <see cref="BeginRead()"/> after its wait, and throws when the copied counts are above the
+    /// largest counts reported so far.
     /// </summary>
     /// <exception cref="InvalidOperationException">A correction did not converge since the previous report.</exception>
+    /// <exception cref="GpuOverflowException">A checked operation overflowed since the previous report.</exception>
+    /// <exception cref="AggregateException">Both happened since the previous report.</exception>
     public unsafe void EndRead()
     {
-        var count = (int)Volatile.Read(ref *(uint*)_slot);
-        var code = Volatile.Read(ref *((uint*)_slot + 1));
+        var words = (uint*)_slot;
+        var count = (int)Volatile.Read(ref words[0]);
+        var code = Volatile.Read(ref words[1]);
+        var overflows = Volatile.Read(ref words[GpuBigIntKernels.OverflowCountWord]);
+        Span<uint> ring = stackalloc uint[2 * (int)GpuBigIntKernels.OverflowRingEntries];
+        new ReadOnlySpan<uint>(words + GpuBigIntKernels.OverflowRingWord, ring.Length).CopyTo(ring);
         FinishRead();
 
-        while (true)
+        var correction = ClaimCorrectionFailures(count, code);
+        var overflow = ClaimOverflows(overflows, ring);
+        if (correction is not null && overflow is not null)
         {
-            var reported = Volatile.Read(ref _reported);
-            if (count <= reported)
-            {
-                return;
-            }
-
-            if (Interlocked.CompareExchange(ref _reported, count, reported) == reported)
-            {
-                break;
-            }
+            throw new AggregateException(
+                "An on-device correction did not converge and a checked operation overflowed since the previous read.",
+                correction, overflow);
         }
 
-        throw new InvalidOperationException(
-            $"The on-device correction of {Describe(code)} did not converge within its step limit, so the result of that call is wrong " +
-            $"({count} failure(s) on this workspace so far). The failure is reported at the first read of the workspace stream after the call.");
+        if (correction is not null)
+        {
+            throw correction;
+        }
+
+        if (overflow is not null)
+        {
+            throw overflow;
+        }
     }
 
     /// <summary>
@@ -217,14 +244,14 @@ internal sealed class GpuCorrectionStatus : IDisposable
             return;
         }
 
-        s_byStream.TryRemove(new KeyValuePair<IntPtr, GpuCorrectionStatus>(_stream, this));
+        s_byStream.TryRemove(new KeyValuePair<IntPtr, GpuDeviceStatus>(_stream, this));
         _provider.FreeMemory(DevicePointer, _stream);
         TryReleaseSlot();
     }
 
     // Used while another asynchronous read of the same workspace holds the reusable source.
     [AsyncMethodBuilder(typeof(PoolingAsyncValueTaskMethodBuilder))]
-    private static async ValueTask EndReadAfterSlow(ValueTask read, GpuCorrectionStatus status)
+    private static async ValueTask EndReadAfterSlow(ValueTask read, GpuDeviceStatus status)
     {
         try
         {
@@ -237,6 +264,62 @@ internal sealed class GpuCorrectionStatus : IDisposable
         }
 
         status.EndRead();
+    }
+
+    // The failures counted since the previous report, claimed with a compare-and-exchange so that exactly one read reports
+    // them; null when there is none.
+    private InvalidOperationException? ClaimCorrectionFailures(int count, uint code)
+    {
+        while (true)
+        {
+            var reported = Volatile.Read(ref _reported);
+            if (count <= reported)
+            {
+                return null;
+            }
+
+            if (Interlocked.CompareExchange(ref _reported, count, reported) == reported)
+            {
+                break;
+            }
+        }
+
+        return new InvalidOperationException(
+            $"The on-device correction of {Describe(code)} did not converge within its step limit, " +
+            $"so the result of that call is wrong ({count} failure(s) on this workspace so far). " +
+            "The failure is reported at the first read of the workspace stream after the call.");
+    }
+
+    // The overflows counted since the previous report, oldest first, claimed like the correction failures. The counts are
+    // compared through their unsigned difference, so the count may wrap.
+    private GpuOverflowException? ClaimOverflows(uint count, ReadOnlySpan<uint> ring)
+    {
+        uint reported;
+        while (true)
+        {
+            reported = Volatile.Read(ref _reportedOverflows);
+            if ((int)unchecked(count - reported) <= 0)
+            {
+                return null;
+            }
+
+            if (Interlocked.CompareExchange(ref _reportedOverflows, count, reported) == reported)
+            {
+                break;
+            }
+        }
+
+        // The ring keeps the latest entries; an entry whose sequence number differs was overwritten.
+        var total = unchecked(count - reported);
+        var kept = Math.Min(total, GpuBigIntKernels.OverflowRingEntries);
+        var origins = new List<GpuOverflowOrigin>((int)kept);
+        for (var sequence = unchecked(count - kept); sequence != count; sequence = unchecked(sequence + 1))
+        {
+            var entry = 2 * (int)(sequence & (GpuBigIntKernels.OverflowRingEntries - 1));
+            origins.Add(ring[entry + 1] == sequence ? Origins.Find(ring[entry]) : GpuOverflowOrigin.Unknown);
+        }
+
+        return GpuOverflowReport.Create(origins, (int)(total - kept), detectedAtOnce: false);
     }
 
     private static string Describe(uint code) => code switch
@@ -279,7 +362,7 @@ internal sealed class GpuCorrectionStatus : IDisposable
     /// A reusable <see cref="IValueTaskSource"/> that awaits one read and then checks the slot. It is held from
     /// <see cref="TryStart"/> until the caller consumes the result of the completed operation.
     /// </summary>
-    private sealed class AsyncCheck(GpuCorrectionStatus owner) : IValueTaskSource
+    private sealed class AsyncCheck(GpuDeviceStatus owner) : IValueTaskSource
     {
         private ManualResetValueTaskSourceCore<bool> _core;
         private ConfiguredValueTaskAwaitable.ConfiguredValueTaskAwaiter _read;
@@ -351,14 +434,15 @@ internal sealed class GpuCorrectionStatus : IDisposable
                 owner.EndRead();
                 _core.SetResult(true);
             }
-            catch (InvalidOperationException ex)
+            catch (Exception ex)
             {
+                // The report of EndRead: a correction failure, an overflow or both.
                 _core.SetException(ex);
             }
         }
     }
 
-    /// <summary>Page-locked 8-byte slots carved from pages that live for the whole process.</summary>
+    /// <summary>Page-locked slots of <see cref="DeviceWords"/> words carved from pages that live for the whole process.</summary>
     private static unsafe class PinnedSlots
     {
         private const int SlotsPerPage = 512;

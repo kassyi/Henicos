@@ -259,12 +259,12 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
         var ctx = BuildSqrtContext(targetOperand, resultBuffer, constant3, n, marginWords, actualBits, marginBits,
             iterations, buffers, xSquared, axSquared, diff, nextXUnshifted, nextXShifted, carryBuffer);
         // The status words of the workspace whose stream runs the kernel, which its reads check.
-        ctx.CorrectionStatus = workspace.CorrectionStatusPointer;
+        ctx.CorrectionStatus = workspace.DeviceStatusPointer;
 
         GpuBigIntSqrtKernels.LaunchInverseSqrtNewtonRaphsonMegaKernelPtr(
             ctx,
             gridDimX: gridDim, blockDimX: BlockDim, sharedMemBytes: sharedMemBytes, hStream: workspace.Stream);
-        workspace.CorrectionStatus?.MarkPending();
+        workspace.DeviceStatus?.MarkPending();
     }
 
     /// <inheritdoc />
@@ -283,9 +283,9 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
         // One block: the correction runs on block 0 with block-wide barriers, without a host synchronization.
         GpuBigIntSqrtKernels.LaunchSqrtFloorCorrectionKernelPtr(operand.DevicePointer, rootSquared.DevicePointer,
             root.DevicePointer, slack.DevicePointer, trial.DevicePointer, operand.NumWords, root.NumWords,
-            SqrtCorrectionMaxSteps, workspace.CorrectionStatusPointer, gridDimX: 1, blockDimX: 1024,
+            SqrtCorrectionMaxSteps, workspace.DeviceStatusPointer, gridDimX: 1, blockDimX: 1024,
             hStream: workspace.Stream);
-        workspace.CorrectionStatus?.MarkPending();
+        workspace.DeviceStatus?.MarkPending();
     }
 
     /// <inheritdoc />
@@ -350,13 +350,13 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
         var ctx = BuildReciprocalContext(targetOperand, resultBuffer, constant, n, marginWords, targetBits,
             iterations, buffers, currentProduct, diff, nextIter, carryBuffer);
         // The status words of the workspace whose stream runs the kernel, which its reads check.
-        ctx.CorrectionStatus = workspace.CorrectionStatusPointer;
+        ctx.CorrectionStatus = workspace.DeviceStatusPointer;
 
         GpuBigIntDivRemKernels.LaunchReciprocalNewtonRaphsonMegaKernelPtr(
             ctx,
             gridDimX: gridDim, blockDimX: BlockDim, sharedMemBytes: sharedMemBytes,
             hStream: workspace.Stream);
-        workspace.CorrectionStatus?.MarkPending();
+        workspace.DeviceStatus?.MarkPending();
     }
 
     /// <summary>
@@ -479,7 +479,7 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
                 hStream: workspace.Stream);
 
             // Sync after each chunk to let the TDR watchdog reset; the wait also carries the correction status words.
-            var status = workspace.CorrectionStatus?.BeginRead();
+            var status = workspace.DeviceStatus?.BeginRead();
             try
             {
                 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(workspace.Stream));
