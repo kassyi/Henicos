@@ -15,7 +15,7 @@ switch(__gsharp_id_0_value)
 case 0: return 1;
 case 1: return 2;
 }
-__gsharp_trap_abort(GSharpErrorCode::InvalidOperation, ""Non-exhaustive switch expression failed to match its input at SwitchExpressionKernels.cs(65,50)"");
+__gsharp_trap_abort(GSharpErrorCode::SwitchExpression, ""Non-exhaustive switch expression failed to match its input at SwitchExpressionKernels.cs(65,50)"");
 }());
 }
 
@@ -866,7 +866,7 @@ switch(__gsharp_id_0_input[__gsharp_id_2_tid])
 case 0: return 10;
 case 1: return 20;
 }
-__gsharp_trap_abort(GSharpErrorCode::InvalidOperation, 904882063u);
+__gsharp_trap_abort(GSharpErrorCode::SwitchExpression, 904882063u);
 }()),__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__SwitchExpressionKernels__NoDiscardArm(__gsharp_id_0_input[__gsharp_id_2_tid]));
 __gsharp_state=-1;
 return;

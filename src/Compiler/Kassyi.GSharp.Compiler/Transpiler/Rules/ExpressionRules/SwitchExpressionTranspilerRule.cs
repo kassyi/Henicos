@@ -7,11 +7,9 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules;
 /// <para><b>Thread Safety:</b> This rule is stateless and thread-safe.</para>
 /// <para><b>Execution Target:</b> Host-only (Roslyn compiler environment).</para>
 /// <para>
-/// C# throws <see cref="System.Runtime.CompilerServices.SwitchExpressionException"/> (an
-/// <see cref="InvalidOperationException"/>) when no arm matches. Without a discard arm the lambda ends with a trap that
-/// reports <c>InvalidOperation</c> with the place of the switch expression and does not return, so no path of the lambda
-/// runs off its end:
-/// <c>([&amp;]() { switch (&lt;input&gt;) { case &lt;value&gt;: return &lt;arm&gt;; } __gsharp_trap_abort(GSharpErrorCode::InvalidOperation, &lt;site&gt;); })()</c>.
+/// C# throws <c>SwitchExpressionException</c> when no arm matches. Without a discard arm the lambda ends with a trap
+/// that reports <c>SwitchExpression</c>, which the host throws as that exception, with the place of the switch
+/// expression; the trap does not return, so no path of the lambda runs off its end (<see cref="AppendNoMatchTrap"/>).
 /// </para>
 /// </remarks>
 public sealed class SwitchExpressionTranspilerRule : SyntaxNodeTranspilerRuleBase<SwitchExpressionSyntax>
@@ -82,8 +80,8 @@ public sealed class SwitchExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
         }
     }
 
-    // The trap after the switch: none when a discard arm matches every input; otherwise a site of the kernel's error site
-    // table, or (in a device function, which has no table) a message that names the place
+    // The trap after the switch: none when a discard arm matches every input; otherwise a site of the kernel's error
+    // site table, or (in a device function, which has no table) a message that names the place
     private static NoMatchTrap? PlanNoMatchTrap(SwitchExpressionSyntax node, ref TranspileContext context)
     {
         var hasDiscardArm = node.Arms
@@ -105,11 +103,13 @@ public sealed class SwitchExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
         return new NoMatchTrap(0u, $"Non-exhaustive switch expression failed to match its input at {place}");
     }
 
-    // __gsharp_trap_abort(GSharpErrorCode::InvalidOperation, <site>u); or __gsharp_trap_abort(GSharpErrorCode::InvalidOperation, "<message>");
+    // ([&]() { switch (<input>) { case <value>: return <arm>; } <trap> })(), the trap being
+    // __gsharp_trap_abort(GSharpErrorCode::SwitchExpression, <site>u); or
+    // __gsharp_trap_abort(GSharpErrorCode::SwitchExpression, "<message>");
     private static void AppendNoMatchTrap(NoMatchTrap trap, ref TranspileContext context)
     {
         var writer = context.Emitter.Writer;
-        writer.Append($"{GSharpInternalNames.Prelude.TrapAbort}(GSharpErrorCode::InvalidOperation, ");
+        writer.Append($"{GSharpInternalNames.Prelude.TrapAbort}(GSharpErrorCode::SwitchExpression, ");
         if (trap.SiteId != 0u)
         {
             writer.Append($"{trap.SiteId}u");

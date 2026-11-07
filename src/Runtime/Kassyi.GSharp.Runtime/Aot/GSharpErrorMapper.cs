@@ -33,7 +33,13 @@ public enum GSharpErrorCode
     Overflow = 8,
 
     /// <summary>Corresponds to <see cref="InvalidOperationException"/> for detected shared-memory data races.</summary>
-    DataRace = 9
+    DataRace = 9,
+
+    /// <summary>
+    /// Corresponds to <see cref="System.Runtime.CompilerServices.SwitchExpressionException"/>: no arm of a switch
+    /// expression matched its input.
+    /// </summary>
+    SwitchExpression = 10
 }
 
 /// <summary>
@@ -319,6 +325,7 @@ public static class GSharpErrorMapper
             GSharpErrorCode.DivideByZero => "Attempted to divide by zero.",
             GSharpErrorCode.Overflow => "Arithmetic operation resulted in an overflow.",
             GSharpErrorCode.DataRace => "Shared memory data race detected.",
+            GSharpErrorCode.SwitchExpression => "Non-exhaustive switch expression failed to match its input.",
             _ => "A G# runtime error occurred."
         };
 
@@ -464,6 +471,8 @@ public static class GSharpErrorMapper
             GSharpErrorCode.DivideByZero => new DivideByZeroException(message, innerException),
             GSharpErrorCode.Overflow => new OverflowException(message, innerException),
             GSharpErrorCode.DataRace => new InvalidOperationException(message, innerException),
+            GSharpErrorCode.SwitchExpression =>
+                new System.Runtime.CompilerServices.SwitchExpressionException(message, innerException),
             _ => new InvalidOperationException(message, innerException)
         };
 }

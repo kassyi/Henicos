@@ -29,7 +29,8 @@ public sealed class DeviceErrorChannelTests
             { GSharpErrorCode.NullReference, typeof(NullReferenceException) },
             { GSharpErrorCode.DivideByZero, typeof(DivideByZeroException) },
             { GSharpErrorCode.Overflow, typeof(OverflowException) },
-            { GSharpErrorCode.DataRace, typeof(InvalidOperationException) }
+            { GSharpErrorCode.DataRace, typeof(InvalidOperationException) },
+            { GSharpErrorCode.SwitchExpression, typeof(SwitchExpressionException) }
         };
 
     [Theory]
@@ -497,11 +498,12 @@ public sealed class DeviceErrorChannelTests
             CpuKernelLoader.ForceManagedExecution = false;
         }
 
-        var ex = Assert.Throws<InvalidOperationException>(() =>
+        // The native build throws the exception C# defines, as the managed path does
+        var ex = Assert.Throws<SwitchExpressionException>(() =>
             DeviceErrorChannelKernels.LaunchSwitchExpressionNoMatchKernel(keys, result, blockDimX: 2));
 
         Assert.Contains("Non-exhaustive switch expression failed to match its input.", ex.Message);
-        Assert.Equal(nameof(GSharpErrorCode.InvalidOperation), ex.Data["GSharp.ErrorCode"]);
+        Assert.Equal(nameof(GSharpErrorCode.SwitchExpression), ex.Data["GSharp.ErrorCode"]);
         Assert.Equal("SwitchExpressionNoMatchKernel", ex.Data["GSharp.MemberName"]);
         Assert.Equal("DeviceErrorChannelKernels.cu.cs(97,21)", ex.Data["GSharp.SourceLocation"]);
         Assert.Equal("(1,0,0)", ex.Data["GSharp.ThreadIndex"]);
@@ -515,13 +517,18 @@ public sealed class DeviceErrorChannelTests
         int[] keys = [2];
         int[] result = [0];
 
-        var ex = Assert.Throws<InvalidOperationException>(() =>
-            DeviceErrorChannelKernels.LaunchSwitchExpressionNoMatchInDeviceFunctionKernel(keys, result, blockDimX: 1));
+        var ex = Assert.Throws<SwitchExpressionException>(() =>
+            DeviceErrorChannelKernels.LaunchSwitchExpressionNoMatchInDeviceFunctionKernel(
+                keys,
+                result,
+                blockDimX: 1
+            )
+        );
 
         Assert.Contains(
             "Non-exhaustive switch expression failed to match its input at DeviceErrorChannelKernels.cu.cs(108,44)",
             ex.Message);
-        Assert.Equal(nameof(GSharpErrorCode.InvalidOperation), ex.Data["GSharp.ErrorCode"]);
+        Assert.Equal(nameof(GSharpErrorCode.SwitchExpression), ex.Data["GSharp.ErrorCode"]);
     }
 #else
     [SkippableFact]
@@ -772,11 +779,11 @@ public sealed class DeviceErrorChannelTests
             int[] keys = [1, 2];
             int[] result = new int[keys.Length];
 
-            var ex = Assert.Throws<InvalidOperationException>(() =>
+            var ex = Assert.Throws<SwitchExpressionException>(() =>
                 DeviceErrorChannelKernels.LaunchSwitchExpressionNoMatchKernel(keys, result, blockDimX: 2));
 
             Assert.Contains("Non-exhaustive switch expression failed to match its input.", ex.Message);
-            Assert.Equal(nameof(GSharpErrorCode.InvalidOperation), ex.Data["GSharp.ErrorCode"]);
+            Assert.Equal(nameof(GSharpErrorCode.SwitchExpression), ex.Data["GSharp.ErrorCode"]);
             Assert.Equal("SwitchExpressionNoMatchKernel", ex.Data["GSharp.MemberName"]);
             Assert.Equal("DeviceErrorChannelKernels.cu.cs(97,21)", ex.Data["GSharp.SourceLocation"]);
             Assert.Equal("(1,0,0)", ex.Data["GSharp.ThreadIndex"]);
@@ -785,7 +792,8 @@ public sealed class DeviceErrorChannelTests
             return;
         }
 
-        RunTrapTestInIsolatedProcess(nameof(Test_Cuda_SubprocessTrap_SwitchExpressionWithoutMatchingArm_CarriesSourceLocation));
+        RunTrapTestInIsolatedProcess(
+            nameof(Test_Cuda_SubprocessTrap_SwitchExpressionWithoutMatchingArm_CarriesSourceLocation));
     }
 
     [SkippableFact]
@@ -800,16 +808,22 @@ public sealed class DeviceErrorChannelTests
             int[] keys = [2];
             int[] result = [0];
 
-            var ex = Assert.Throws<InvalidOperationException>(() =>
-                DeviceErrorChannelKernels.LaunchSwitchExpressionNoMatchInDeviceFunctionKernel(keys, result, blockDimX: 1));
+            var ex = Assert.Throws<SwitchExpressionException>(() =>
+                DeviceErrorChannelKernels.LaunchSwitchExpressionNoMatchInDeviceFunctionKernel(
+                    keys,
+                    result,
+                    blockDimX: 1
+                )
+            );
 
-            Assert.Equal(nameof(GSharpErrorCode.InvalidOperation), ex.Data["GSharp.ErrorCode"]);
+            Assert.Equal(nameof(GSharpErrorCode.SwitchExpression), ex.Data["GSharp.ErrorCode"]);
             var cudaInner = Assert.IsType<CudaException>(ex.InnerException);
             Assert.True(cudaInner.Result is CUresult.CudaErrorIllegalInstruction or CUresult.CudaErrorLaunchFailed);
             return;
         }
 
-        RunTrapTestInIsolatedProcess(nameof(Test_Cuda_SubprocessTrap_SwitchExpressionWithoutMatchingArmInDeviceFunction_Throws));
+        RunTrapTestInIsolatedProcess(
+            nameof(Test_Cuda_SubprocessTrap_SwitchExpressionWithoutMatchingArmInDeviceFunction_Throws));
     }
 
     private static void RunTrapTestInIsolatedProcess(string testMethodName)
