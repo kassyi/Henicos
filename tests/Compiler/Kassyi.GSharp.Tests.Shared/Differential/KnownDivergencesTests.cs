@@ -190,7 +190,7 @@ public class KnownDivergencesTests
     [InlineData("EntryEmptyColumns.yaml", "line 4: 'columns' must be a non-empty list")]
     [InlineData("EntryWithoutColumns.yaml", "line 4: 'columns' must be a non-empty list")]
     [InlineData("EntryWithoutPaths.yaml", "line 4: 'paths' must be a non-empty list")]
-    [InlineData("EntryUnknownKey.yaml", "line 7: Unknown key 'host' in an entry")]
+    [InlineData("EntryUnknownKey.yaml", "line 4: Unknown key 'host' in the entry that starts here")]
     public void Test_KnownDivergencesParse_RejectsAnEntryOutsideTheFormat(string file, string expectedMessage)
     {
         string yaml = RoslynTestUtility.ReadTestCase(TestCaseFolder + file);
@@ -209,7 +209,7 @@ public class KnownDivergencesTests
     [InlineData("IssueWithoutEntries.yaml", "line 1: The issue block has no 'entries'")]
     [InlineData("IssueNotInSequence.yaml", "line 1: Expected a sequence for the document")]
     [InlineData("IssueSyntaxError.yaml", "line 3:")]
-    [InlineData("IssueUnknownKey.yaml", "line 3: Unknown key 'entry' in an issue block")]
+    [InlineData("IssueUnknownKey.yaml", "line 1: Unknown key 'entry' in the issue block that starts here")]
     public void Test_KnownDivergencesParse_RejectsAnIssueBlockOutsideTheFormat(string file, string expectedMessage)
     {
         string yaml = RoslynTestUtility.ReadTestCase(TestCaseFolder + file);
