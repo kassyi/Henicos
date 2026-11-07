@@ -2,8 +2,9 @@
 namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum.Expressions;
 
 /// <summary>
-/// The integer <c>Where</c> with its element count on the device (#633, Where keeps the source length, and empty integer Max returns 0): everything after
-/// <c>v.Where(m)</c> equals System.Linq's <c>Where</c> over the same values.
+/// The integer <c>Where</c> with its element count on the device
+/// (#633 (Where keeps the source length, and empty integer Max returns 0)): everything after <c>v.Where(m)</c>
+/// equals System.Linq's <c>Where</c> over the same values.
 /// </summary>
 [Category(TestCategory.Unit)]
 [TestTarget(ExecutionTarget.GpuExecution)]

@@ -697,8 +697,9 @@ internal static class GpuBigFloatTranscendentals
     // The rounding check of Ziv on the device approximation (see BigFloatTranscendentalMath.TryTruncate). The buffer
     // holds A normalized to fill it: W / 32 words for Log, one more low word for Exp and Pow. The guard words are the
     // W / 32 - n words below the top n; only they are read back (one wait), and on success the top n words are copied
-    // to the result on the stream. The bound B is the planner's (derived from the error analysis of the truncations of each series), for Pow plus the argument error D: a B below the true error would make this check accept a wrong
-    // truncation silently.
+    // to the result on the stream. The bound B is the planner's (derived from the error analysis of the
+    // truncations of each series), for Pow plus the argument error D: a B below the true error would make this check
+    // accept a wrong truncation silently.
     private static bool TryTruncate(
         GpuWorkspace workspace, in DeviceApproximation approximation, BigInteger errorBound, GpuBigUInt result,
         out long exponent)

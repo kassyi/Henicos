@@ -3,7 +3,7 @@
 Architectural constraints enforced by the GSharp generator pipeline. Abide by these when modifying transpiler/generator logic. For anything not listed, consult `docs/spec/` before assuming.
 
 ## 1. `[GpuConstexpr]` Parameters
-`[GpuConstexpr]` parameters will become per-entry-point `constexpr` locals once #491 (Discover [GpuConstexpr] candidate values from launch call sites) is done; until then they are passed as ordinary runtime arguments. Filter with `p.IsConstexprParameter()` (`SymbolExtensions`), not `HasAttribute(KnownAttributes.GpuConstexpr)` spelled out.
+`[GpuConstexpr]` parameters will become per-entry-point `constexpr` locals once #411 ([Bug]: [Constant] parameters and the macros launch argument are not implemented) is done; until then they are passed as ordinary runtime arguments. Filter with `p.IsConstexprParameter()` (`SymbolExtensions`), not `HasAttribute(KnownAttributes.GpuConstexpr)` spelled out.
 
 ## 2. No Silent Failures (Strict Diagnostics)
 Unsupported C# syntax (`new`, `string`, LINQ, recursion, ...) must not be ignored, emitted as empty strings, or thrown as raw exceptions. Report via `context.ReportDiagnostic` with the matching `GSharpDiagnostics` (e.g. `GSH0001`, `GSH0003`). How to define and report one from an analyzer, the transpiler or a kernel validation rule: [helpers.md §5](../skills/gsharp-transpiler-guidelines/references/helpers.md#5-diagnostics).

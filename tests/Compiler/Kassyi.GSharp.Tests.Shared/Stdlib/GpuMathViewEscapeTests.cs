@@ -5,7 +5,8 @@ namespace Kassyi.GSharp.Tests.Shared.Stdlib;
 
 /// <summary>
 /// The GpuMath views (<c>GpuBigUIntView</c> and the other <see langword="ref struct"/> views) cannot leave the call that
-/// obtained them: C# itself rejects storing, capturing, boxing and disposing them (#630, Disposing element views and targetResult expressions frees the owner's device memory).
+/// obtained them: C# itself rejects storing, capturing, boxing and disposing them
+/// (#630 (Disposing element views and targetResult expressions frees the owner's device memory)).
 /// </summary>
 /// <remarks>
 /// The inputs are C# that does not compile, so they are test-case files compiled here against the GpuMath assembly of

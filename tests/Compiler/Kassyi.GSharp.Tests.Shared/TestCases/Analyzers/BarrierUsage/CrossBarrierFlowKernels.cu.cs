@@ -5,7 +5,8 @@ using Kassyi.ZeroAlloc.Linq;
 namespace Kassyi.GSharp.Tests.Shared.TestCases.Analyzers.BarrierUsage;
 
 // GSH0039 / GSH0041 follow the flow of control: a local is reported when it is used on some path after a point where
-// the CPU dialects split the state machine, not when a use only comes later in the text (#668, A ref struct local that crosses a Gpu.SyncGrid gap is not diagnosed)
+// the CPU dialects split the state machine, not when a use only comes later in the text
+// (#668 (A ref struct local that crosses a Gpu.SyncGrid gap is not diagnosed))
 [SkipSnapshotConsistency("Analyzer case")]
 public static partial class CrossBarrierFlowKernels
 {

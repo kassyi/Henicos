@@ -20,8 +20,10 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum;
 /// <para>
 /// P5: the approximation before rounding (<c>W</c> bits for Log, <c>e^x</c> at <c>W + 32</c> bits for Exp) lies within
 /// its planned bound <c>B</c> of the exact value, in units of its last bit at <c>W</c> bits. The bounds are those of
-/// the error analysis of #628 (Big-float Log and Exp lose accuracy for large arguments (no argument reduction)) (atanh Horner <c>B = 7</c>, atanh Paterson–Stockmeyer <c>B = m + 6</c>, exp Paterson–Stockmeyer
-/// <c>B = ceil(5.83·2^s) − 1</c>). With 32 guard bits P1 rarely sees an error of a few units; P5 does.
+/// the error analysis (atanh Horner <c>B = 7</c>, atanh Paterson–Stockmeyer <c>B = m + 6</c>, exp Paterson–Stockmeyer
+/// <c>B = ceil(5.83·2^s) − 1</c>); the derivation will be in
+/// #1401 ([Docs]: Write the derivation of the big-float Log and Exp error bounds into the architecture docs).
+/// With 32 guard bits P1 rarely sees an error of a few units; P5 does.
 /// </para>
 /// </remarks>
 [TestTarget(ExecutionTarget.GpuExecution)]

@@ -6,7 +6,9 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum;
 /// </summary>
 /// <remarks>
 /// <para>
-/// The bounds come from the error analysis of #628 (Big-float Log and Exp lose accuracy for large arguments (no argument reduction)): the atanh series
+/// The bounds come from the error analysis of the truncations of each series (the derivation will be in
+/// #1401 ([Docs]: Write the derivation of the big-float Log and Exp error bounds into the architecture docs)).
+/// The atanh series
 /// <c>T = Σ_{k&lt;N} z^k / (2k+1)</c> stops when its remainder <c>ε'_R = z^N / ((2N+1)(1 − z)u)</c> is at most one unit
 /// <c>u = 2^-W</c>, where <c>z = y²</c> is bounded by <c>1/25</c> (<c>|y| ≤ 1/5</c> for <c>m ∈ [3/4, 3/2)</c>) and,
 /// near 1, by <c>2^(-2c) / 3</c> (<c>|u| &lt; 2^-c</c> and <c>|y| ≤ |u| / 1.75</c>). The exp polynomial stops when

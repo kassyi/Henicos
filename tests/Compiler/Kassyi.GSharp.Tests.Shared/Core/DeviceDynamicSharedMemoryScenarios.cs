@@ -24,7 +24,7 @@ internal static class DeviceDynamicSharedMemoryScenarios
         }
     }
 
-    // D8
+    // One helper reached from two kernels
     public static void HelperReachedFromTwoKernels(Action<Action> run)
     {
         var helperOnly = new int[Length];
@@ -55,7 +55,7 @@ internal static class DeviceDynamicSharedMemoryScenarios
         }
     }
 
-    // D3 (R4s)
+    // The same dynamic declaration reached by two calls of a suspending helper
     public static void SuspendingHelperPersistsAcrossCalls(Action<Action> run)
     {
         var output = new int[Length];
@@ -94,7 +94,8 @@ internal static class DeviceDynamicSharedMemoryScenarios
         }
     }
 
-    // On the CPU paths: the helper's region is not the last one when it grows, which CUDA traps (#544, The CPU dialect ignores sharedMemBytes, caps shared memory at 64 KB and aborts the process on overflow)
+    // On the CPU paths: the helper's region is not the last one when it grows, which CUDA traps
+    // (#544 (The CPU dialect ignores sharedMemBytes, caps shared memory at 64 KB and aborts the process on overflow))
     public static void GrowingHelperAfterCallerDeclarationThrows(Action<Action> run)
     {
         const int smallCount = 8;
@@ -107,7 +108,7 @@ internal static class DeviceDynamicSharedMemoryScenarios
         Assert.Contains("G#: a shared memory declaration grew after a later declaration", exception.Message);
     }
 
-    // D7
+    // A recursive helper shares one buffer with its recursion levels
     public static void RecursiveHelperSharesOneBufferAndDoesNotOverlapCaller(Action<Action> run)
     {
         var output = new int[Length];
@@ -134,7 +135,7 @@ internal static class DeviceDynamicSharedMemoryScenarios
         }
     }
 
-    // D10: on CUDA the kernel's 12 bytes end at 12; the helper's region starts at 16 and grows in place to 32 bytes
+    // On CUDA the kernel's 12 bytes end at 12; the helper's region starts at 16 and grows in place to 32 bytes
     public static void ZeroCountDeclarationGrowsInPlace(Action<Action> run)
     {
         const int smallCount = 3;
@@ -151,7 +152,7 @@ internal static class DeviceDynamicSharedMemoryScenarios
         }
     }
 
-    // D11
+    // A helper behind a function without a declaration of its own
     public static void HelperBehindFunctionWithoutDeclaration(Action<Action> run)
     {
         var output = new int[Length];
@@ -165,7 +166,7 @@ internal static class DeviceDynamicSharedMemoryScenarios
         }
     }
 
-    // D12
+    // A helper without parameters
     public static void HelperWithoutParameters(Action<Action> run)
     {
         var output = new int[Length];
@@ -179,7 +180,7 @@ internal static class DeviceDynamicSharedMemoryScenarios
         }
     }
 
-    // D13
+    // Helpers called from a local function and from a lambda
     public static void HelpersCalledFromLocalFunctionAndLambda(Action<Action> run)
     {
         var output = new int[Length];

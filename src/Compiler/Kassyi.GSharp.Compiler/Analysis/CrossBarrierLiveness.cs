@@ -2,7 +2,8 @@ namespace Kassyi.GSharp.Compiler.Analysis;
 
 /// <summary>
 /// Finds the locals that are live right after a point where the CPU dialects split the state machine of a kernel or
-/// device function, on the spliced flow graph of its body (GSH0039, GSH0041, GSH0072; #668 (A ref struct local that crosses a Gpu.SyncGrid gap is not diagnosed)).
+/// device function, on the spliced flow graph of its body (GSH0039, GSH0041, GSH0072;
+/// #668 (A ref struct local that crosses a Gpu.SyncGrid gap is not diagnosed)).
 /// </summary>
 /// <remarks>
 /// <para>
