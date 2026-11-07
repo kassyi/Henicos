@@ -1099,17 +1099,11 @@ public const string DebugName_Exponent = "global::Kassyi.GSharp.Stdlib.GpuMath.B
 [global::System.Runtime.InteropServices.FieldOffset(672)]
 public AotContexts.ExponentSlice Exponent;
 }
-public static unsafe void Marshal_ModPowNttContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.ModPowNttContext host, ref AotContexts.ModPowNtt native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_ModPowNttContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.ModPowNttContext host, ref AotContexts.ModPowNtt native, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
 {
 native = default;
-Marshal_NewtonRaphsonContext(ref host.Core, ref native.Core, isDevicePtr, deviceArrays, hStream);
+Marshal_NewtonRaphsonContext(ref host.Core, ref native.Core, deviceArrays, hStream);
 if (host.ReciprocalMod != null)
-{
-if (isDevicePtr)
-{
-throw new global::System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
 {
 int size = checked(host.ReciprocalMod.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -1139,13 +1133,12 @@ native.ReciprocalMod.Data = global::Kassyi.GSharp.Runtime.Interop.GSharpArrayPro
 }
 native.ReciprocalMod.Length = host.ReciprocalMod.Length;
 }
+Marshal_ExponentSliceContext(ref host.Exponent, ref native.Exponent, deviceArrays, hStream);
 }
-Marshal_ExponentSliceContext(ref host.Exponent, ref native.Exponent, isDevicePtr, deviceArrays, hStream);
-}
-public static unsafe void Unmarshal_ModPowNttContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.ModPowNttContext host, ref AotContexts.ModPowNtt native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_ModPowNttContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.ModPowNttContext host, ref AotContexts.ModPowNtt native, global::System.IntPtr hStream = default)
 {
-Unmarshal_NewtonRaphsonContext(ref host.Core, ref native.Core, isDevicePtr, hStream);
-if (host.ReciprocalMod != null && !isDevicePtr && native.ReciprocalMod.Data != global::System.IntPtr.Zero)
+Unmarshal_NewtonRaphsonContext(ref host.Core, ref native.Core, hStream);
+if (host.ReciprocalMod != null && native.ReciprocalMod.Data != global::System.IntPtr.Zero)
 {
 int size = checked(host.ReciprocalMod.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -1161,7 +1154,7 @@ handle.Free();
 }
 }
 }
-Unmarshal_ExponentSliceContext(ref host.Exponent, ref native.Exponent, isDevicePtr, hStream);
+Unmarshal_ExponentSliceContext(ref host.Exponent, ref native.Exponent, hStream);
 }
 [global::System.Runtime.InteropServices.StructLayout(global::System.Runtime.InteropServices.LayoutKind.Explicit, Size = 656)]
 public unsafe partial struct NewtonRaphson
@@ -1185,20 +1178,14 @@ public const string DebugName_CorrectionStatus = "global::System.UInt32[]";
 [global::System.Runtime.InteropServices.FieldOffset(640)]
 public global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy CorrectionStatus;
 }
-public static unsafe void Marshal_NewtonRaphsonContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.NewtonRaphsonContext host, ref AotContexts.NewtonRaphson native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_NewtonRaphsonContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.NewtonRaphsonContext host, ref AotContexts.NewtonRaphson native, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
 {
 native = default;
-Marshal_OperandContext(ref host.Operands, ref native.Operands, isDevicePtr, deviceArrays, hStream);
-Marshal_DimensionContext(ref host.Dimensions, ref native.Dimensions, isDevicePtr, deviceArrays, hStream);
-Marshal_Ntt(ref host.Ntt, ref native.Ntt, isDevicePtr, deviceArrays, hStream);
-Marshal_WorkspaceStateContext(ref host.Workspace, ref native.Workspace, isDevicePtr, deviceArrays, hStream);
+Marshal_OperandContext(ref host.Operands, ref native.Operands, deviceArrays, hStream);
+Marshal_DimensionContext(ref host.Dimensions, ref native.Dimensions, deviceArrays, hStream);
+Marshal_Ntt(ref host.Ntt, ref native.Ntt, deviceArrays, hStream);
+Marshal_WorkspaceStateContext(ref host.Workspace, ref native.Workspace, deviceArrays, hStream);
 if (host.CarryBuffer != null)
-{
-if (isDevicePtr)
-{
-throw new global::System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
 {
 int size = checked(host.CarryBuffer.Length * sizeof(global::System.Int64));
 if (size > 0)
@@ -1228,14 +1215,7 @@ native.CarryBuffer.Data = global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy
 }
 native.CarryBuffer.Length = host.CarryBuffer.Length;
 }
-}
 if (host.CorrectionStatus != null)
-{
-if (isDevicePtr)
-{
-throw new global::System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
 {
 int size = checked(host.CorrectionStatus.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -1266,14 +1246,13 @@ native.CorrectionStatus.Data = global::Kassyi.GSharp.Runtime.Interop.GSharpArray
 native.CorrectionStatus.Length = host.CorrectionStatus.Length;
 }
 }
-}
-public static unsafe void Unmarshal_NewtonRaphsonContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.NewtonRaphsonContext host, ref AotContexts.NewtonRaphson native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_NewtonRaphsonContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.NewtonRaphsonContext host, ref AotContexts.NewtonRaphson native, global::System.IntPtr hStream = default)
 {
-Unmarshal_OperandContext(ref host.Operands, ref native.Operands, isDevicePtr, hStream);
-Unmarshal_DimensionContext(ref host.Dimensions, ref native.Dimensions, isDevicePtr, hStream);
-Unmarshal_Ntt(ref host.Ntt, ref native.Ntt, isDevicePtr, hStream);
-Unmarshal_WorkspaceStateContext(ref host.Workspace, ref native.Workspace, isDevicePtr, hStream);
-if (host.CarryBuffer != null && !isDevicePtr && native.CarryBuffer.Data != global::System.IntPtr.Zero)
+Unmarshal_OperandContext(ref host.Operands, ref native.Operands, hStream);
+Unmarshal_DimensionContext(ref host.Dimensions, ref native.Dimensions, hStream);
+Unmarshal_Ntt(ref host.Ntt, ref native.Ntt, hStream);
+Unmarshal_WorkspaceStateContext(ref host.Workspace, ref native.Workspace, hStream);
+if (host.CarryBuffer != null && native.CarryBuffer.Data != global::System.IntPtr.Zero)
 {
 int size = checked(host.CarryBuffer.Length * sizeof(global::System.Int64));
 if (size > 0)
@@ -1289,7 +1268,7 @@ handle.Free();
 }
 }
 }
-if (host.CorrectionStatus != null && !isDevicePtr && native.CorrectionStatus.Data != global::System.IntPtr.Zero)
+if (host.CorrectionStatus != null && native.CorrectionStatus.Data != global::System.IntPtr.Zero)
 {
 int size = checked(host.CorrectionStatus.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -1331,16 +1310,10 @@ public const string DebugName_CarryBuffer = "global::System.Int64[]";
 [global::System.Runtime.InteropServices.FieldOffset(96)]
 public global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy CarryBuffer;
 }
-public static unsafe void Marshal_OperandContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.OperandContext host, ref AotContexts.Operand native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_OperandContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.OperandContext host, ref AotContexts.Operand native, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
 {
 native = default;
 if (host.LeftOperand != null)
-{
-if (isDevicePtr)
-{
-throw new global::System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
 {
 int size = checked(host.LeftOperand.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -1370,14 +1343,7 @@ native.LeftOperand.Data = global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy
 }
 native.LeftOperand.Length = host.LeftOperand.Length;
 }
-}
 if (host.RightOperand != null)
-{
-if (isDevicePtr)
-{
-throw new global::System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
 {
 int size = checked(host.RightOperand.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -1407,14 +1373,7 @@ native.RightOperand.Data = global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProx
 }
 native.RightOperand.Length = host.RightOperand.Length;
 }
-}
 if (host.TargetOperand != null)
-{
-if (isDevicePtr)
-{
-throw new global::System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
 {
 int size = checked(host.TargetOperand.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -1444,14 +1403,7 @@ native.TargetOperand.Data = global::Kassyi.GSharp.Runtime.Interop.GSharpArrayPro
 }
 native.TargetOperand.Length = host.TargetOperand.Length;
 }
-}
 if (host.ResultBuffer != null)
-{
-if (isDevicePtr)
-{
-throw new global::System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
 {
 int size = checked(host.ResultBuffer.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -1481,14 +1433,7 @@ native.ResultBuffer.Data = global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProx
 }
 native.ResultBuffer.Length = host.ResultBuffer.Length;
 }
-}
 if (host.Constant != null)
-{
-if (isDevicePtr)
-{
-throw new global::System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
 {
 int size = checked(host.Constant.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -1518,14 +1463,7 @@ native.Constant.Data = global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.Em
 }
 native.Constant.Length = host.Constant.Length;
 }
-}
 if (host.Constant3 != null)
-{
-if (isDevicePtr)
-{
-throw new global::System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
 {
 int size = checked(host.Constant3.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -1555,14 +1493,7 @@ native.Constant3.Data = global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.E
 }
 native.Constant3.Length = host.Constant3.Length;
 }
-}
 if (host.CarryBuffer != null)
-{
-if (isDevicePtr)
-{
-throw new global::System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
 {
 int size = checked(host.CarryBuffer.Length * sizeof(global::System.Int64));
 if (size > 0)
@@ -1593,10 +1524,9 @@ native.CarryBuffer.Data = global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy
 native.CarryBuffer.Length = host.CarryBuffer.Length;
 }
 }
-}
-public static unsafe void Unmarshal_OperandContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.OperandContext host, ref AotContexts.Operand native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_OperandContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.OperandContext host, ref AotContexts.Operand native, global::System.IntPtr hStream = default)
 {
-if (host.LeftOperand != null && !isDevicePtr && native.LeftOperand.Data != global::System.IntPtr.Zero)
+if (host.LeftOperand != null && native.LeftOperand.Data != global::System.IntPtr.Zero)
 {
 int size = checked(host.LeftOperand.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -1612,7 +1542,7 @@ handle.Free();
 }
 }
 }
-if (host.RightOperand != null && !isDevicePtr && native.RightOperand.Data != global::System.IntPtr.Zero)
+if (host.RightOperand != null && native.RightOperand.Data != global::System.IntPtr.Zero)
 {
 int size = checked(host.RightOperand.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -1628,7 +1558,7 @@ handle.Free();
 }
 }
 }
-if (host.TargetOperand != null && !isDevicePtr && native.TargetOperand.Data != global::System.IntPtr.Zero)
+if (host.TargetOperand != null && native.TargetOperand.Data != global::System.IntPtr.Zero)
 {
 int size = checked(host.TargetOperand.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -1644,7 +1574,7 @@ handle.Free();
 }
 }
 }
-if (host.ResultBuffer != null && !isDevicePtr && native.ResultBuffer.Data != global::System.IntPtr.Zero)
+if (host.ResultBuffer != null && native.ResultBuffer.Data != global::System.IntPtr.Zero)
 {
 int size = checked(host.ResultBuffer.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -1660,7 +1590,7 @@ handle.Free();
 }
 }
 }
-if (host.Constant != null && !isDevicePtr && native.Constant.Data != global::System.IntPtr.Zero)
+if (host.Constant != null && native.Constant.Data != global::System.IntPtr.Zero)
 {
 int size = checked(host.Constant.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -1676,7 +1606,7 @@ handle.Free();
 }
 }
 }
-if (host.Constant3 != null && !isDevicePtr && native.Constant3.Data != global::System.IntPtr.Zero)
+if (host.Constant3 != null && native.Constant3.Data != global::System.IntPtr.Zero)
 {
 int size = checked(host.Constant3.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -1692,7 +1622,7 @@ handle.Free();
 }
 }
 }
-if (host.CarryBuffer != null && !isDevicePtr && native.CarryBuffer.Data != global::System.IntPtr.Zero)
+if (host.CarryBuffer != null && native.CarryBuffer.Data != global::System.IntPtr.Zero)
 {
 int size = checked(host.CarryBuffer.Length * sizeof(global::System.Int64));
 if (size > 0)
@@ -1743,11 +1673,11 @@ public const string DebugName_NumBits = "global::System.Int32";
 [global::System.Runtime.InteropServices.FieldOffset(36)]
 public global::System.Int32 NumBits;
 }
-public static unsafe void Marshal_DimensionContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.DimensionContext host, ref AotContexts.Dimension native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_DimensionContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.DimensionContext host, ref AotContexts.Dimension native, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
 {
 native = global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.DimensionContext, AotContexts.Dimension>(ref host);
 }
-public static unsafe void Unmarshal_DimensionContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.DimensionContext host, ref AotContexts.Dimension native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_DimensionContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.DimensionContext host, ref AotContexts.Dimension native, global::System.IntPtr hStream = default)
 {
 host = global::System.Runtime.CompilerServices.Unsafe.As<AotContexts.Dimension, global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.DimensionContext>(ref native);
 }
@@ -1764,18 +1694,18 @@ public const string DebugName_TwiddleFactors = "global::Kassyi.GSharp.Stdlib.Gpu
 [global::System.Runtime.InteropServices.FieldOffset(152)]
 public AotContexts.TwiddleFactor TwiddleFactors;
 }
-public static unsafe void Marshal_Ntt(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.Ntt host, ref AotContexts.Ntt native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_Ntt(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.Ntt host, ref AotContexts.Ntt native, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
 {
 native = default;
 native.TransformLength = host.TransformLength;
-Marshal_BufferContext(ref host.Buffers, ref native.Buffers, isDevicePtr, deviceArrays, hStream);
-Marshal_TwiddleFactorContext(ref host.TwiddleFactors, ref native.TwiddleFactors, isDevicePtr, deviceArrays, hStream);
+Marshal_BufferContext(ref host.Buffers, ref native.Buffers, deviceArrays, hStream);
+Marshal_TwiddleFactorContext(ref host.TwiddleFactors, ref native.TwiddleFactors, deviceArrays, hStream);
 }
-public static unsafe void Unmarshal_Ntt(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.Ntt host, ref AotContexts.Ntt native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_Ntt(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.Ntt host, ref AotContexts.Ntt native, global::System.IntPtr hStream = default)
 {
 host.TransformLength = native.TransformLength;
-Unmarshal_BufferContext(ref host.Buffers, ref native.Buffers, isDevicePtr, hStream);
-Unmarshal_TwiddleFactorContext(ref host.TwiddleFactors, ref native.TwiddleFactors, isDevicePtr, hStream);
+Unmarshal_BufferContext(ref host.Buffers, ref native.Buffers, hStream);
+Unmarshal_TwiddleFactorContext(ref host.TwiddleFactors, ref native.TwiddleFactors, hStream);
 }
 [global::System.Runtime.InteropServices.StructLayout(global::System.Runtime.InteropServices.LayoutKind.Explicit, Size = 144)]
 public unsafe partial struct Buffer
@@ -1808,16 +1738,10 @@ public const string DebugName_CarryBuffer = "global::System.Int64[]";
 [global::System.Runtime.InteropServices.FieldOffset(128)]
 public global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy CarryBuffer;
 }
-public static unsafe void Marshal_BufferContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.BufferContext host, ref AotContexts.Buffer native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_BufferContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.BufferContext host, ref AotContexts.Buffer native, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
 {
 native = default;
 if (host.Buffer1 != null)
-{
-if (isDevicePtr)
-{
-throw new global::System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
 {
 int size = checked(host.Buffer1.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -1847,14 +1771,7 @@ native.Buffer1.Data = global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.Emp
 }
 native.Buffer1.Length = host.Buffer1.Length;
 }
-}
 if (host.Buffer2 != null)
-{
-if (isDevicePtr)
-{
-throw new global::System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
 {
 int size = checked(host.Buffer2.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -1884,14 +1801,7 @@ native.Buffer2.Data = global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.Emp
 }
 native.Buffer2.Length = host.Buffer2.Length;
 }
-}
 if (host.Buffer3 != null)
-{
-if (isDevicePtr)
-{
-throw new global::System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
 {
 int size = checked(host.Buffer3.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -1921,14 +1831,7 @@ native.Buffer3.Data = global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.Emp
 }
 native.Buffer3.Length = host.Buffer3.Length;
 }
-}
 if (host.ValueT != null)
-{
-if (isDevicePtr)
-{
-throw new global::System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
 {
 int size = checked(host.ValueT.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -1958,14 +1861,7 @@ native.ValueT.Data = global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.Empt
 }
 native.ValueT.Length = host.ValueT.Length;
 }
-}
 if (host.Quotient != null)
-{
-if (isDevicePtr)
-{
-throw new global::System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
 {
 int size = checked(host.Quotient.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -1995,14 +1891,7 @@ native.Quotient.Data = global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.Em
 }
 native.Quotient.Length = host.Quotient.Length;
 }
-}
 if (host.Remainder != null)
-{
-if (isDevicePtr)
-{
-throw new global::System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
 {
 int size = checked(host.Remainder.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -2032,14 +1921,7 @@ native.Remainder.Data = global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.E
 }
 native.Remainder.Length = host.Remainder.Length;
 }
-}
 if (host.RemainderMask != null)
-{
-if (isDevicePtr)
-{
-throw new global::System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
 {
 int size = checked(host.RemainderMask.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -2069,14 +1951,7 @@ native.RemainderMask.Data = global::Kassyi.GSharp.Runtime.Interop.GSharpArrayPro
 }
 native.RemainderMask.Length = host.RemainderMask.Length;
 }
-}
 if (host.TemporaryBuffer != null)
-{
-if (isDevicePtr)
-{
-throw new global::System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
 {
 int size = checked(host.TemporaryBuffer.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -2106,14 +1981,7 @@ native.TemporaryBuffer.Data = global::Kassyi.GSharp.Runtime.Interop.GSharpArrayP
 }
 native.TemporaryBuffer.Length = host.TemporaryBuffer.Length;
 }
-}
 if (host.CarryBuffer != null)
-{
-if (isDevicePtr)
-{
-throw new global::System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
 {
 int size = checked(host.CarryBuffer.Length * sizeof(global::System.Int64));
 if (size > 0)
@@ -2144,10 +2012,9 @@ native.CarryBuffer.Data = global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy
 native.CarryBuffer.Length = host.CarryBuffer.Length;
 }
 }
-}
-public static unsafe void Unmarshal_BufferContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.BufferContext host, ref AotContexts.Buffer native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_BufferContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.BufferContext host, ref AotContexts.Buffer native, global::System.IntPtr hStream = default)
 {
-if (host.Buffer1 != null && !isDevicePtr && native.Buffer1.Data != global::System.IntPtr.Zero)
+if (host.Buffer1 != null && native.Buffer1.Data != global::System.IntPtr.Zero)
 {
 int size = checked(host.Buffer1.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -2163,7 +2030,7 @@ handle.Free();
 }
 }
 }
-if (host.Buffer2 != null && !isDevicePtr && native.Buffer2.Data != global::System.IntPtr.Zero)
+if (host.Buffer2 != null && native.Buffer2.Data != global::System.IntPtr.Zero)
 {
 int size = checked(host.Buffer2.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -2179,7 +2046,7 @@ handle.Free();
 }
 }
 }
-if (host.Buffer3 != null && !isDevicePtr && native.Buffer3.Data != global::System.IntPtr.Zero)
+if (host.Buffer3 != null && native.Buffer3.Data != global::System.IntPtr.Zero)
 {
 int size = checked(host.Buffer3.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -2195,7 +2062,7 @@ handle.Free();
 }
 }
 }
-if (host.ValueT != null && !isDevicePtr && native.ValueT.Data != global::System.IntPtr.Zero)
+if (host.ValueT != null && native.ValueT.Data != global::System.IntPtr.Zero)
 {
 int size = checked(host.ValueT.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -2211,7 +2078,7 @@ handle.Free();
 }
 }
 }
-if (host.Quotient != null && !isDevicePtr && native.Quotient.Data != global::System.IntPtr.Zero)
+if (host.Quotient != null && native.Quotient.Data != global::System.IntPtr.Zero)
 {
 int size = checked(host.Quotient.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -2227,7 +2094,7 @@ handle.Free();
 }
 }
 }
-if (host.Remainder != null && !isDevicePtr && native.Remainder.Data != global::System.IntPtr.Zero)
+if (host.Remainder != null && native.Remainder.Data != global::System.IntPtr.Zero)
 {
 int size = checked(host.Remainder.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -2243,7 +2110,7 @@ handle.Free();
 }
 }
 }
-if (host.RemainderMask != null && !isDevicePtr && native.RemainderMask.Data != global::System.IntPtr.Zero)
+if (host.RemainderMask != null && native.RemainderMask.Data != global::System.IntPtr.Zero)
 {
 int size = checked(host.RemainderMask.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -2259,7 +2126,7 @@ handle.Free();
 }
 }
 }
-if (host.TemporaryBuffer != null && !isDevicePtr && native.TemporaryBuffer.Data != global::System.IntPtr.Zero)
+if (host.TemporaryBuffer != null && native.TemporaryBuffer.Data != global::System.IntPtr.Zero)
 {
 int size = checked(host.TemporaryBuffer.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -2275,7 +2142,7 @@ handle.Free();
 }
 }
 }
-if (host.CarryBuffer != null && !isDevicePtr && native.CarryBuffer.Data != global::System.IntPtr.Zero)
+if (host.CarryBuffer != null && native.CarryBuffer.Data != global::System.IntPtr.Zero)
 {
 int size = checked(host.CarryBuffer.Length * sizeof(global::System.Int64));
 if (size > 0)
@@ -2308,16 +2175,10 @@ public const string DebugName_Inverse2 = "global::System.UInt32[]";
 [global::System.Runtime.InteropServices.FieldOffset(48)]
 public global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy Inverse2;
 }
-public static unsafe void Marshal_TwiddleFactorContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.TwiddleFactorContext host, ref AotContexts.TwiddleFactor native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_TwiddleFactorContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.TwiddleFactorContext host, ref AotContexts.TwiddleFactor native, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
 {
 native = default;
 if (host.Forward1 != null)
-{
-if (isDevicePtr)
-{
-throw new global::System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
 {
 int size = checked(host.Forward1.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -2347,14 +2208,7 @@ native.Forward1.Data = global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.Em
 }
 native.Forward1.Length = host.Forward1.Length;
 }
-}
 if (host.Forward2 != null)
-{
-if (isDevicePtr)
-{
-throw new global::System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
 {
 int size = checked(host.Forward2.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -2384,14 +2238,7 @@ native.Forward2.Data = global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.Em
 }
 native.Forward2.Length = host.Forward2.Length;
 }
-}
 if (host.Inverse1 != null)
-{
-if (isDevicePtr)
-{
-throw new global::System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
 {
 int size = checked(host.Inverse1.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -2421,14 +2268,7 @@ native.Inverse1.Data = global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.Em
 }
 native.Inverse1.Length = host.Inverse1.Length;
 }
-}
 if (host.Inverse2 != null)
-{
-if (isDevicePtr)
-{
-throw new global::System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
 {
 int size = checked(host.Inverse2.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -2459,10 +2299,9 @@ native.Inverse2.Data = global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.Em
 native.Inverse2.Length = host.Inverse2.Length;
 }
 }
-}
-public static unsafe void Unmarshal_TwiddleFactorContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.TwiddleFactorContext host, ref AotContexts.TwiddleFactor native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_TwiddleFactorContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.TwiddleFactorContext host, ref AotContexts.TwiddleFactor native, global::System.IntPtr hStream = default)
 {
-if (host.Forward1 != null && !isDevicePtr && native.Forward1.Data != global::System.IntPtr.Zero)
+if (host.Forward1 != null && native.Forward1.Data != global::System.IntPtr.Zero)
 {
 int size = checked(host.Forward1.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -2478,7 +2317,7 @@ handle.Free();
 }
 }
 }
-if (host.Forward2 != null && !isDevicePtr && native.Forward2.Data != global::System.IntPtr.Zero)
+if (host.Forward2 != null && native.Forward2.Data != global::System.IntPtr.Zero)
 {
 int size = checked(host.Forward2.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -2494,7 +2333,7 @@ handle.Free();
 }
 }
 }
-if (host.Inverse1 != null && !isDevicePtr && native.Inverse1.Data != global::System.IntPtr.Zero)
+if (host.Inverse1 != null && native.Inverse1.Data != global::System.IntPtr.Zero)
 {
 int size = checked(host.Inverse1.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -2510,7 +2349,7 @@ handle.Free();
 }
 }
 }
-if (host.Inverse2 != null && !isDevicePtr && native.Inverse2.Data != global::System.IntPtr.Zero)
+if (host.Inverse2 != null && native.Inverse2.Data != global::System.IntPtr.Zero)
 {
 int size = checked(host.Inverse2.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -2537,16 +2376,16 @@ public const string DebugName_NttScratch = "global::Kassyi.GSharp.Stdlib.GpuMath
 [global::System.Runtime.InteropServices.FieldOffset(128)]
 public AotContexts.NttConvolutionScratch NttScratch;
 }
-public static unsafe void Marshal_WorkspaceStateContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.WorkspaceStateContext host, ref AotContexts.WorkspaceState native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_WorkspaceStateContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.WorkspaceStateContext host, ref AotContexts.WorkspaceState native, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
 {
 native = default;
-Marshal_IterationScratchContext(ref host.Iteration, ref native.Iteration, isDevicePtr, deviceArrays, hStream);
-Marshal_NttConvolutionScratchContext(ref host.NttScratch, ref native.NttScratch, isDevicePtr, deviceArrays, hStream);
+Marshal_IterationScratchContext(ref host.Iteration, ref native.Iteration, deviceArrays, hStream);
+Marshal_NttConvolutionScratchContext(ref host.NttScratch, ref native.NttScratch, deviceArrays, hStream);
 }
-public static unsafe void Unmarshal_WorkspaceStateContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.WorkspaceStateContext host, ref AotContexts.WorkspaceState native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_WorkspaceStateContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.WorkspaceStateContext host, ref AotContexts.WorkspaceState native, global::System.IntPtr hStream = default)
 {
-Unmarshal_IterationScratchContext(ref host.Iteration, ref native.Iteration, isDevicePtr, hStream);
-Unmarshal_NttConvolutionScratchContext(ref host.NttScratch, ref native.NttScratch, isDevicePtr, hStream);
+Unmarshal_IterationScratchContext(ref host.Iteration, ref native.Iteration, hStream);
+Unmarshal_NttConvolutionScratchContext(ref host.NttScratch, ref native.NttScratch, hStream);
 }
 [global::System.Runtime.InteropServices.StructLayout(global::System.Runtime.InteropServices.LayoutKind.Explicit, Size = 128)]
 public unsafe partial struct IterationScratch
@@ -2576,16 +2415,10 @@ public const string DebugName_ModulusExpanded = "global::System.UInt32[]";
 [global::System.Runtime.InteropServices.FieldOffset(112)]
 public global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy ModulusExpanded;
 }
-public static unsafe void Marshal_IterationScratchContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.IterationScratchContext host, ref AotContexts.IterationScratch native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_IterationScratchContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.IterationScratchContext host, ref AotContexts.IterationScratch native, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
 {
 native = default;
 if (host.XSquared != null)
-{
-if (isDevicePtr)
-{
-throw new global::System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
 {
 int size = checked(host.XSquared.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -2615,14 +2448,7 @@ native.XSquared.Data = global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.Em
 }
 native.XSquared.Length = host.XSquared.Length;
 }
-}
 if (host.AxSquared != null)
-{
-if (isDevicePtr)
-{
-throw new global::System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
 {
 int size = checked(host.AxSquared.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -2652,14 +2478,7 @@ native.AxSquared.Data = global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.E
 }
 native.AxSquared.Length = host.AxSquared.Length;
 }
-}
 if (host.CurrentProduct != null)
-{
-if (isDevicePtr)
-{
-throw new global::System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
 {
 int size = checked(host.CurrentProduct.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -2689,14 +2508,7 @@ native.CurrentProduct.Data = global::Kassyi.GSharp.Runtime.Interop.GSharpArrayPr
 }
 native.CurrentProduct.Length = host.CurrentProduct.Length;
 }
-}
 if (host.Diff != null)
-{
-if (isDevicePtr)
-{
-throw new global::System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
 {
 int size = checked(host.Diff.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -2726,14 +2538,7 @@ native.Diff.Data = global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyA
 }
 native.Diff.Length = host.Diff.Length;
 }
-}
 if (host.NextXUnshifted != null)
-{
-if (isDevicePtr)
-{
-throw new global::System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
 {
 int size = checked(host.NextXUnshifted.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -2763,14 +2568,7 @@ native.NextXUnshifted.Data = global::Kassyi.GSharp.Runtime.Interop.GSharpArrayPr
 }
 native.NextXUnshifted.Length = host.NextXUnshifted.Length;
 }
-}
 if (host.NextXShifted != null)
-{
-if (isDevicePtr)
-{
-throw new global::System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
 {
 int size = checked(host.NextXShifted.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -2800,14 +2598,7 @@ native.NextXShifted.Data = global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProx
 }
 native.NextXShifted.Length = host.NextXShifted.Length;
 }
-}
 if (host.NextIter != null)
-{
-if (isDevicePtr)
-{
-throw new global::System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
 {
 int size = checked(host.NextIter.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -2837,14 +2628,7 @@ native.NextIter.Data = global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.Em
 }
 native.NextIter.Length = host.NextIter.Length;
 }
-}
 if (host.ModulusExpanded != null)
-{
-if (isDevicePtr)
-{
-throw new global::System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
 {
 int size = checked(host.ModulusExpanded.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -2875,10 +2659,9 @@ native.ModulusExpanded.Data = global::Kassyi.GSharp.Runtime.Interop.GSharpArrayP
 native.ModulusExpanded.Length = host.ModulusExpanded.Length;
 }
 }
-}
-public static unsafe void Unmarshal_IterationScratchContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.IterationScratchContext host, ref AotContexts.IterationScratch native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_IterationScratchContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.IterationScratchContext host, ref AotContexts.IterationScratch native, global::System.IntPtr hStream = default)
 {
-if (host.XSquared != null && !isDevicePtr && native.XSquared.Data != global::System.IntPtr.Zero)
+if (host.XSquared != null && native.XSquared.Data != global::System.IntPtr.Zero)
 {
 int size = checked(host.XSquared.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -2894,7 +2677,7 @@ handle.Free();
 }
 }
 }
-if (host.AxSquared != null && !isDevicePtr && native.AxSquared.Data != global::System.IntPtr.Zero)
+if (host.AxSquared != null && native.AxSquared.Data != global::System.IntPtr.Zero)
 {
 int size = checked(host.AxSquared.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -2910,7 +2693,7 @@ handle.Free();
 }
 }
 }
-if (host.CurrentProduct != null && !isDevicePtr && native.CurrentProduct.Data != global::System.IntPtr.Zero)
+if (host.CurrentProduct != null && native.CurrentProduct.Data != global::System.IntPtr.Zero)
 {
 int size = checked(host.CurrentProduct.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -2926,7 +2709,7 @@ handle.Free();
 }
 }
 }
-if (host.Diff != null && !isDevicePtr && native.Diff.Data != global::System.IntPtr.Zero)
+if (host.Diff != null && native.Diff.Data != global::System.IntPtr.Zero)
 {
 int size = checked(host.Diff.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -2942,7 +2725,7 @@ handle.Free();
 }
 }
 }
-if (host.NextXUnshifted != null && !isDevicePtr && native.NextXUnshifted.Data != global::System.IntPtr.Zero)
+if (host.NextXUnshifted != null && native.NextXUnshifted.Data != global::System.IntPtr.Zero)
 {
 int size = checked(host.NextXUnshifted.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -2958,7 +2741,7 @@ handle.Free();
 }
 }
 }
-if (host.NextXShifted != null && !isDevicePtr && native.NextXShifted.Data != global::System.IntPtr.Zero)
+if (host.NextXShifted != null && native.NextXShifted.Data != global::System.IntPtr.Zero)
 {
 int size = checked(host.NextXShifted.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -2974,7 +2757,7 @@ handle.Free();
 }
 }
 }
-if (host.NextIter != null && !isDevicePtr && native.NextIter.Data != global::System.IntPtr.Zero)
+if (host.NextIter != null && native.NextIter.Data != global::System.IntPtr.Zero)
 {
 int size = checked(host.NextIter.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -2990,7 +2773,7 @@ handle.Free();
 }
 }
 }
-if (host.ModulusExpanded != null && !isDevicePtr && native.ModulusExpanded.Data != global::System.IntPtr.Zero)
+if (host.ModulusExpanded != null && native.ModulusExpanded.Data != global::System.IntPtr.Zero)
 {
 int size = checked(host.ModulusExpanded.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -3035,16 +2818,10 @@ public const string DebugName_BlockCarries = "global::System.UInt32[]";
 [global::System.Runtime.InteropServices.FieldOffset(112)]
 public global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy BlockCarries;
 }
-public static unsafe void Marshal_NttConvolutionScratchContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.NttConvolutionScratchContext host, ref AotContexts.NttConvolutionScratch native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_NttConvolutionScratchContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.NttConvolutionScratchContext host, ref AotContexts.NttConvolutionScratch native, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
 {
 native = default;
 if (host.NttBuf1A != null)
-{
-if (isDevicePtr)
-{
-throw new global::System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
 {
 int size = checked(host.NttBuf1A.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -3074,14 +2851,7 @@ native.NttBuf1A.Data = global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.Em
 }
 native.NttBuf1A.Length = host.NttBuf1A.Length;
 }
-}
 if (host.NttBuf2A != null)
-{
-if (isDevicePtr)
-{
-throw new global::System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
 {
 int size = checked(host.NttBuf2A.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -3111,14 +2881,7 @@ native.NttBuf2A.Data = global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.Em
 }
 native.NttBuf2A.Length = host.NttBuf2A.Length;
 }
-}
 if (host.NttBuf1B != null)
-{
-if (isDevicePtr)
-{
-throw new global::System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
 {
 int size = checked(host.NttBuf1B.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -3148,14 +2911,7 @@ native.NttBuf1B.Data = global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.Em
 }
 native.NttBuf1B.Length = host.NttBuf1B.Length;
 }
-}
 if (host.NttBuf2B != null)
-{
-if (isDevicePtr)
-{
-throw new global::System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
 {
 int size = checked(host.NttBuf2B.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -3185,14 +2941,7 @@ native.NttBuf2B.Data = global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.Em
 }
 native.NttBuf2B.Length = host.NttBuf2B.Length;
 }
-}
 if (host.TmpBuf != null)
-{
-if (isDevicePtr)
-{
-throw new global::System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
 {
 int size = checked(host.TmpBuf.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -3222,14 +2971,7 @@ native.TmpBuf.Data = global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.Empt
 }
 native.TmpBuf.Length = host.TmpBuf.Length;
 }
-}
 if (host.UncarriedLow != null)
-{
-if (isDevicePtr)
-{
-throw new global::System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
 {
 int size = checked(host.UncarriedLow.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -3259,14 +3001,7 @@ native.UncarriedLow.Data = global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProx
 }
 native.UncarriedLow.Length = host.UncarriedLow.Length;
 }
-}
 if (host.UncarriedHigh != null)
-{
-if (isDevicePtr)
-{
-throw new global::System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
 {
 int size = checked(host.UncarriedHigh.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -3296,14 +3031,7 @@ native.UncarriedHigh.Data = global::Kassyi.GSharp.Runtime.Interop.GSharpArrayPro
 }
 native.UncarriedHigh.Length = host.UncarriedHigh.Length;
 }
-}
 if (host.BlockCarries != null)
-{
-if (isDevicePtr)
-{
-throw new global::System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
 {
 int size = checked(host.BlockCarries.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -3334,10 +3062,9 @@ native.BlockCarries.Data = global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProx
 native.BlockCarries.Length = host.BlockCarries.Length;
 }
 }
-}
-public static unsafe void Unmarshal_NttConvolutionScratchContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.NttConvolutionScratchContext host, ref AotContexts.NttConvolutionScratch native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_NttConvolutionScratchContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.NttConvolutionScratchContext host, ref AotContexts.NttConvolutionScratch native, global::System.IntPtr hStream = default)
 {
-if (host.NttBuf1A != null && !isDevicePtr && native.NttBuf1A.Data != global::System.IntPtr.Zero)
+if (host.NttBuf1A != null && native.NttBuf1A.Data != global::System.IntPtr.Zero)
 {
 int size = checked(host.NttBuf1A.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -3353,7 +3080,7 @@ handle.Free();
 }
 }
 }
-if (host.NttBuf2A != null && !isDevicePtr && native.NttBuf2A.Data != global::System.IntPtr.Zero)
+if (host.NttBuf2A != null && native.NttBuf2A.Data != global::System.IntPtr.Zero)
 {
 int size = checked(host.NttBuf2A.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -3369,7 +3096,7 @@ handle.Free();
 }
 }
 }
-if (host.NttBuf1B != null && !isDevicePtr && native.NttBuf1B.Data != global::System.IntPtr.Zero)
+if (host.NttBuf1B != null && native.NttBuf1B.Data != global::System.IntPtr.Zero)
 {
 int size = checked(host.NttBuf1B.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -3385,7 +3112,7 @@ handle.Free();
 }
 }
 }
-if (host.NttBuf2B != null && !isDevicePtr && native.NttBuf2B.Data != global::System.IntPtr.Zero)
+if (host.NttBuf2B != null && native.NttBuf2B.Data != global::System.IntPtr.Zero)
 {
 int size = checked(host.NttBuf2B.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -3401,7 +3128,7 @@ handle.Free();
 }
 }
 }
-if (host.TmpBuf != null && !isDevicePtr && native.TmpBuf.Data != global::System.IntPtr.Zero)
+if (host.TmpBuf != null && native.TmpBuf.Data != global::System.IntPtr.Zero)
 {
 int size = checked(host.TmpBuf.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -3417,7 +3144,7 @@ handle.Free();
 }
 }
 }
-if (host.UncarriedLow != null && !isDevicePtr && native.UncarriedLow.Data != global::System.IntPtr.Zero)
+if (host.UncarriedLow != null && native.UncarriedLow.Data != global::System.IntPtr.Zero)
 {
 int size = checked(host.UncarriedLow.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -3433,7 +3160,7 @@ handle.Free();
 }
 }
 }
-if (host.UncarriedHigh != null && !isDevicePtr && native.UncarriedHigh.Data != global::System.IntPtr.Zero)
+if (host.UncarriedHigh != null && native.UncarriedHigh.Data != global::System.IntPtr.Zero)
 {
 int size = checked(host.UncarriedHigh.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -3449,7 +3176,7 @@ handle.Free();
 }
 }
 }
-if (host.BlockCarries != null && !isDevicePtr && native.BlockCarries.Data != global::System.IntPtr.Zero)
+if (host.BlockCarries != null && native.BlockCarries.Data != global::System.IntPtr.Zero)
 {
 int size = checked(host.BlockCarries.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -3482,16 +3209,10 @@ public const string DebugName_EndWord = "global::System.Int32";
 [global::System.Runtime.InteropServices.FieldOffset(24)]
 public global::System.Int32 EndWord;
 }
-public static unsafe void Marshal_ExponentSliceContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.ExponentSliceContext host, ref AotContexts.ExponentSlice native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_ExponentSliceContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.ExponentSliceContext host, ref AotContexts.ExponentSlice native, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
 {
 native = default;
 if (host.Words != null)
-{
-if (isDevicePtr)
-{
-throw new global::System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
 {
 int size = checked(host.Words.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -3521,14 +3242,13 @@ native.Words.Data = global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.Empty
 }
 native.Words.Length = host.Words.Length;
 }
-}
 native.TotalWords = host.TotalWords;
 native.StartWord = host.StartWord;
 native.EndWord = host.EndWord;
 }
-public static unsafe void Unmarshal_ExponentSliceContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.ExponentSliceContext host, ref AotContexts.ExponentSlice native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_ExponentSliceContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.ExponentSliceContext host, ref AotContexts.ExponentSlice native, global::System.IntPtr hStream = default)
 {
-if (host.Words != null && !isDevicePtr && native.Words.Data != global::System.IntPtr.Zero)
+if (host.Words != null && native.Words.Data != global::System.IntPtr.Zero)
 {
 int size = checked(host.Words.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -4052,7 +3772,7 @@ try
 {
 void** __gsharp_kernel_params = stackalloc void*[1];
 global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntDivRemKernels.AotContexts.ModPowNtt __gsharp_native_0 = default;
-global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntDivRemKernels.AotContexts.Marshal_ModPowNttContext(ref ctx, ref __gsharp_native_0, false, __gsharp_device_arrays, hStream);
+global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntDivRemKernels.AotContexts.Marshal_ModPowNttContext(ref ctx, ref __gsharp_native_0, __gsharp_device_arrays, hStream);
 // Marshal scalar struct: ctx
 __gsharp_kernel_params[0] = &__gsharp_native_0;
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchCooperativeKernel(
@@ -4063,7 +3783,7 @@ sharedMemBytes, // Shared mem
 hStream, // Stream
 __gsharp_kernel_params
 ));
-global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntDivRemKernels.AotContexts.Unmarshal_ModPowNttContext(ref ctx, ref __gsharp_native_0, false, hStream);
+global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntDivRemKernels.AotContexts.Unmarshal_ModPowNttContext(ref ctx, ref __gsharp_native_0, hStream);
 }
 finally
 {

@@ -867,8 +867,8 @@ public class GpuBigIntDivRemTests : IDisposable
         using var gpuB = new GpuBigUInt(workspace, ToWords(b, NumWords));
         using var gpuX = new GpuBigUInt(workspace, ToWords(floorY + offset, ResultWords));
 
-        new KernelAdvancedMathHandler().ReciprocalMega(workspace, gpuB, gpuX, marginWords: 0,
-            numBits: NumWords * 32, marginBits: 0, iterations: 0, targetBits: TargetBits);
+        new KernelAdvancedMathHandler().ReciprocalMega(workspace, gpuB, gpuX, marginWords: 0, iterations: 0,
+            targetBits: TargetBits);
 
         AssertExactReciprocal(b, TargetBits, gpuX.ToBigInteger());
     }

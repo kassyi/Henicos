@@ -67,10 +67,11 @@ internal static class OperatorMacroContext
 
     private static string FormatNames(ImmutableArray<ISymbol>.Builder candidates)
     {
-        var names = new StringBuilder();
+        using var names = new SourceWriter();
         foreach (var candidate in candidates)
         {
-            names.Append(names.Length > 0 ? ", '" : "'").Append(candidate.Name).Append('\'');
+            names.AppendIf(names.Length > 0, ", ");
+            names.Append($"'{candidate.Name}'");
         }
 
         return names.ToString();

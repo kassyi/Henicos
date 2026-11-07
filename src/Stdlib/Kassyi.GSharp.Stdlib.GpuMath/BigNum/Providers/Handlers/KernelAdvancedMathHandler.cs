@@ -154,13 +154,10 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
         using var x1 = workspace.RentTemp(numWords);
         using var x2 = workspace.RentTemp(numWords);
         using var statusBuf = workspace.RentTemp(1);
-        statusBuf.Clear();
 
         workspace.Provider.CopyDeviceToDevice(u.DevicePointer, value.DevicePointer, numWords, workspace.Stream);
         workspace.Provider.CopyDeviceToDevice(v.DevicePointer, modulus.DevicePointer, numWords, workspace.Stream);
 
-        x1.Clear();
-        x2.Clear();
         workspace.Provider.WriteWord(x1.DevicePointer, 0, 1, workspace.Stream);
 
         // Max iterations for binary GCD is up to 4 * bits
@@ -188,7 +185,7 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
             case 2:
                 throw new ArithmeticException("ModInverse failed: The two numbers are not coprime (GCD is not 1).");
             case 0:
-                throw new Exception("ModInverse failed: Macro kernel did not converge within max iterations.");
+                throw new InvalidOperationException("ModInverse failed: Macro kernel did not converge within max iterations.");
             default:
                 workspace.Provider.CopyDeviceToDevice(resultBuffer.DevicePointer, x1.DevicePointer, numWords,
                     workspace.Stream);
@@ -205,7 +202,6 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
 
         var constant3Words = 3 * n + 2 * marginWords;
         using var constant3 = new GpuBigUInt(workspace, constant3Words);
-        constant3.Clear();
         var hostConstant3 = ArrayPool<uint>.Shared.Rent(constant3Words);
         try
         {
@@ -294,14 +290,13 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
 
     /// <inheritdoc />
     public void ReciprocalMega(GpuWorkspace workspace, GpuBigUInt targetOperand, GpuBigUInt resultBuffer,
-        int marginWords, int numBits, int marginBits, int iterations, int targetBits)
+        int marginWords, int iterations, int targetBits)
     {
         var n = targetOperand.NumWords;
         var resultWords = (targetBits + 31) / 32;
 
         var constantWords = n + 2 * resultWords; // Prevent OOB access during ExecuteSub
         using var constant = new GpuBigUInt(workspace, constantWords);
-        constant.Clear();
         var hostConstant = ArrayPool<uint>.Shared.Rent(constantWords);
         try
         {
@@ -318,11 +313,8 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
         }
 
         using var currentProduct = new GpuBigUInt(workspace, n + resultWords);
-        currentProduct.Clear();
         using var diff = new GpuBigUInt(workspace, n + resultWords);
-        diff.Clear();
         using var nextIter = new GpuBigUInt(workspace, n + 2 * resultWords);
-        nextIter.Clear();
 
         var maxOutWords = n + 2 * resultWords;
         var requiredLen = maxOutWords;
@@ -355,8 +347,8 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
         const uint SharedMemBytesTranspose = 4224 + 256; // 33 * 32 * 4 + static shared memory
         var sharedMemBytes = Math.Max(sharedMemBytesNtt, SharedMemBytesTranspose);
 
-        var ctx = BuildReciprocalContext(targetOperand, resultBuffer, constant, n, marginWords, targetBits,
-            iterations, buffers, currentProduct, diff, nextIter, carryBuffer);
+        var ctx = BuildReciprocalContext(targetOperand, resultBuffer, constant, n, targetBits, iterations, buffers,
+            currentProduct, diff, nextIter, carryBuffer);
         // The status words of the workspace whose stream runs the kernel, which its reads check.
         ctx.CorrectionStatus = workspace.CorrectionStatusPointer;
 
@@ -573,7 +565,7 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
 
     private static GpuBigIntDivRemKernels.AotContexts.NewtonRaphson BuildReciprocalContext(
         GpuBigUInt targetOperand, GpuBigUInt resultBuffer, GpuBigUInt constant,
-        int n, int marginWords, int targetBits, int iterations,
+        int n, int targetBits, int iterations,
         in NttWorkspaceBuffers buffers, GpuBigUInt currentProduct, GpuBigUInt diff,
         GpuBigUInt nextIter, GpuBigUInt carryBuffer)
     {
@@ -588,9 +580,6 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
             Dimensions = new GpuBigIntDivRemKernels.AotContexts.Dimension
             {
                 NumberOfWords = n,
-                MarginWords = marginWords,
-                NumBits = n * 32,
-                MarginBits = marginWords * 32,
                 TargetBits = targetBits,
                 Iterations = iterations
             },

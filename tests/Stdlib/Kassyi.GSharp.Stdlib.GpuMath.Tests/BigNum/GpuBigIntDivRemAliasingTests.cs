@@ -169,7 +169,7 @@ public sealed class GpuBigIntDivRemAliasingTests : IDisposable
     [Scenario(TestScenario.SadPath)]
     public void DivRem_QuotientAndRemainderOverlap_IsRejected()
     {
-        // Two results in one place have no meaning (design 4.2.1): ArgumentException naming the remainder buffer, for the
+        // Two results in one place have no meaning: ArgumentException naming the remainder buffer, for the
         // same buffer and for a buffer that overlaps part of it.
         // mutant: the quotient / remainder overlap check removed
         // mutant: Overlaps compares one side only (the partial overlap below starts after the quotient)
@@ -192,7 +192,7 @@ public sealed class GpuBigIntDivRemAliasingTests : IDisposable
     public void Reduce_OutputOverlapsAnInput_IsRejected()
     {
         // Reduce and ReduceZeroSync are the building blocks under DivRem and ModPow; they do not copy, so an output that
-        // overlaps an input is an ArgumentException instead of a wrong value (design 4.2.3).
+        // overlaps an input is an ArgumentException instead of a wrong value.
         // mutant: the Reduce overlap check removed
         using var a = GpuBigUInt.FromBigInteger(_workspace, 1000, Words);
         using var b = GpuBigUInt.FromBigInteger(_workspace, 7, Words);

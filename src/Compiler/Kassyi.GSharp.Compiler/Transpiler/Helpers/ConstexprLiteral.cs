@@ -17,7 +17,8 @@ internal static class ConstexprLiteral
     /// <exception cref="ArgumentOutOfRangeException">
     /// <paramref name="type"/> is not a supported constexpr parameter type, or <paramref name="value"/> is NaN or infinity.
     /// </exception>
-    // ReSharper disable once UnusedMember.Global -- Consumed in A-10 Stage 2
+    // Consumed once #411 ([Bug]: [Constant] parameters and the macros launch argument are not implemented) is done
+    // ReSharper disable once UnusedMember.Global
     public static (string Cpp, string CSharp) Format(ITypeSymbol type, object value)
     {
         // char has a literal, but it is not a [GpuConstexpr] parameter type

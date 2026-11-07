@@ -592,42 +592,43 @@ public sealed class MarshalingAliasingDifferentialTests
     }
 
     // --- Cross-aliasing between [In] DeepStruct[] element field and writable int[] (#985) ---
+    private static readonly DifferentialCase s_crossAliasInDeepArrayAndRwArray = new(
+        $"{nameof(MarshalingAliasingDifferentialKernels)}." +
+        $"{nameof(MarshalingAliasingDifferentialKernels.CrossAliasInDeepArrayAndRwArrayKernel)}")
+    {
+        Shape = LaunchShapes.SingleThread(),
+        Seeds = [0],
+        Inputs = static (_, _) =>
+        {
+            int[] shared = [42, 43];
+            return new DiffBuffers()
+                .InDeep("inBags", [new DiffDeepBag { Data = shared, Tag = 7 }], CloneDeepBag, CompareDeepBag)
+                .In("rwArr", shared, OutputPolicy.Exact)
+                .Out<int>("observed", 2, OutputPolicy.Exact);
+        },
+        Oracle = static (b, _) =>
+        {
+            DiffDeepBag[] inBags = b.Get<DiffDeepBag>("inBags");
+            int[] rwArr = b.Get<int>("rwArr");
+            int[] observed = b.Get<int>("observed");
+            MarshalingAliasingDifferentialKernels.CrossAliasInDeepArrayAndRwArrayKernel(inBags, rwArr, observed);
+        },
+        Launch = static (b, s) =>
+        {
+            DiffDeepBag[] inBags = b.Get<DiffDeepBag>("inBags");
+            int[] rwArr = b.Get<int>("rwArr");
+            int[] observed = b.Get<int>("observed");
+            MarshalingAliasingDifferentialKernels.LaunchCrossAliasInDeepArrayAndRwArrayKernel(
+                inBags, rwArr, observed, gridDimX: s.GridX, blockDimX: s.BlockX);
+        },
+    };
+
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Aliasing_CrossAliasInDeepArrayAndRwArray_MatchesSequentialOracle()
-    {
-        DifferentialRunner.Run(new DifferentialCase(
-            $"{nameof(MarshalingAliasingDifferentialKernels)}.{nameof(MarshalingAliasingDifferentialKernels.CrossAliasInDeepArrayAndRwArrayKernel)}")
-        {
-            Shape = LaunchShapes.SingleThread(),
-            Seeds = [0],
-            Inputs = static (_, _) =>
-            {
-                int[] shared = [42, 43];
-                return new DiffBuffers()
-                    .InDeep("inBags", [new DiffDeepBag { Data = shared, Tag = 7 }], CloneDeepBag, CompareDeepBag)
-                    .In("rwArr", shared, OutputPolicy.Exact)
-                    .Out<int>("observed", 2, OutputPolicy.Exact);
-            },
-            Oracle = static (b, _) =>
-            {
-                DiffDeepBag[] inBags = b.Get<DiffDeepBag>("inBags");
-                int[] rwArr = b.Get<int>("rwArr");
-                int[] observed = b.Get<int>("observed");
-                MarshalingAliasingDifferentialKernels.CrossAliasInDeepArrayAndRwArrayKernel(inBags, rwArr, observed);
-            },
-            Launch = static (b, s) =>
-            {
-                DiffDeepBag[] inBags = b.Get<DiffDeepBag>("inBags");
-                int[] rwArr = b.Get<int>("rwArr");
-                int[] observed = b.Get<int>("observed");
-                MarshalingAliasingDifferentialKernels.LaunchCrossAliasInDeepArrayAndRwArrayKernel(
-                    inBags, rwArr, observed, gridDimX: s.GridX, blockDimX: s.BlockX);
-            },
-        });
-    }
+    public void Test_Aliasing_CrossAliasInDeepArrayAndRwArray_MatchesSequentialOracle() =>
+        DifferentialRunner.Run(s_crossAliasInDeepArrayAndRwArray);
 
     // --- [In] array mutation isolation ---
     [SkippableFact]
@@ -780,53 +781,55 @@ public sealed class MarshalingAliasingDifferentialTests
         DifferentialRunner.Run(s_outArrayPartialWrite);
 
     // --- Launch{Kernel}Ptr non-overloaded IntPtr with Length guard (#720) ---
+    private const int PtrLengthGuardedScaleCount = 64;
+
+    private static readonly DifferentialCase s_ptrLengthGuardedScale = new(
+        $"{nameof(MarshalingAliasingDifferentialKernels)}." +
+        $"{nameof(MarshalingAliasingDifferentialKernels.PtrLengthGuardedScaleKernel)}")
+    {
+        Shape = LaunchShapes.Linear(PtrLengthGuardedScaleCount, blockX: 32),
+        Seeds = [0],
+        Inputs = static (_, _) =>
+        {
+            int[] data = new int[PtrLengthGuardedScaleCount];
+            for (int i = 0; i < PtrLengthGuardedScaleCount; i++)
+            {
+                data[i] = i + 1;
+            }
+
+            return new DiffBuffers()
+                .In("data", data, OutputPolicy.Exact)
+                .Out<int>("outLen", 1, OutputPolicy.Exact);
+        },
+        Oracle = static (b, _) =>
+        {
+            int[] data = b.Get<int>("data");
+            int[] outLen = b.Get<int>("outLen");
+            MarshalingAliasingDifferentialKernels.PtrLengthGuardedScaleKernel(data, 3, outLen);
+        },
+        Launch = static (b, s) =>
+        {
+            int[] data = b.Get<int>("data");
+            int[] outLen = b.Get<int>("outLen");
+#if GSHARP_CUDA
+            using var scope = b.PinOrUpload();
+            IntPtr pData = scope.PinOrUpload<int>("data");
+            IntPtr pLen = scope.PinOrUpload<int>("outLen");
+            MarshalingAliasingDifferentialKernels.LaunchPtrLengthGuardedScaleKernelPtr(
+                pData, 3, pLen, gridDimX: s.GridX, blockDimX: s.BlockX);
+#else
+            MarshalingAliasingDifferentialKernels.LaunchPtrLengthGuardedScaleKernel(
+                data, 3, outLen, gridDimX: s.GridX, blockDimX: s.BlockX);
+#endif
+        },
+    };
+
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_LaunchPtr_NonOverloadedIntPtrWithLengthGuard_MatchesSequentialOracle()
-    {
-        const int n = 64;
-        DifferentialRunner.Run(new DifferentialCase(
-            $"{nameof(MarshalingAliasingDifferentialKernels)}.{nameof(MarshalingAliasingDifferentialKernels.PtrLengthGuardedScaleKernel)}")
-        {
-            Shape = LaunchShapes.Linear(n, blockX: 32),
-            Seeds = [0],
-            Inputs = static (_, _) =>
-            {
-                int[] data = new int[n];
-                for (int i = 0; i < n; i++)
-                {
-                    data[i] = i + 1;
-                }
-
-                return new DiffBuffers()
-                    .In("data", data, OutputPolicy.Exact)
-                    .Out<int>("outLen", 1, OutputPolicy.Exact);
-            },
-            Oracle = static (b, _) =>
-            {
-                int[] data = b.Get<int>("data");
-                int[] outLen = b.Get<int>("outLen");
-                MarshalingAliasingDifferentialKernels.PtrLengthGuardedScaleKernel(data, 3, outLen);
-            },
-            Launch = static (b, s) =>
-            {
-                int[] data = b.Get<int>("data");
-                int[] outLen = b.Get<int>("outLen");
-#if GSHARP_CUDA
-                using var scope = b.PinOrUpload();
-                IntPtr pData = scope.PinOrUpload<int>("data");
-                IntPtr pLen = scope.PinOrUpload<int>("outLen");
-                MarshalingAliasingDifferentialKernels.LaunchPtrLengthGuardedScaleKernelPtr(
-                    pData, 3, pLen, gridDimX: s.GridX, blockDimX: s.BlockX);
-#else
-                MarshalingAliasingDifferentialKernels.LaunchPtrLengthGuardedScaleKernel(
-                    data, 3, outLen, gridDimX: s.GridX, blockDimX: s.BlockX);
-#endif
-            },
-        });
-    }
+    public void Test_LaunchPtr_NonOverloadedIntPtrWithLengthGuard_MatchesSequentialOracle() =>
+        DifferentialRunner.Run(s_ptrLengthGuardedScale);
 
     // --- Launch{Kernel}Ptr with overloaded GpuBuffer<T> signature ---
     [SkippableFact]
@@ -904,12 +907,12 @@ public sealed class MarshalingAliasingDifferentialTests
         });
     }
 
-    // --- Launch{Kernel}Ptr with ref Convert struct & Deep Struct NotSupportedException ---
+    // --- Launch{Kernel}Ptr with ref Convert struct ---
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_LaunchPtr_RefConvertStructAndDeepStructContract_MatchesExpected()
+    public void Test_LaunchPtr_RefConvertStruct_MatchesExpected()
     {
         const int n = 32;
         DifferentialRunner.Run(new DifferentialCase(
@@ -953,7 +956,7 @@ public sealed class MarshalingAliasingDifferentialTests
                 ref DiffVec2Padded accum = ref b.GetScalarRef<DiffVec2Padded>("accum");
                 MarshalingAliasingDifferentialKernels.AotContexts.DiffVec2Padded nativeAccum = default;
                 MarshalingAliasingDifferentialKernels.AotContexts.Marshal_DiffVec2Padded(
-                    ref accum, ref nativeAccum, isDevicePtr: true, deviceArrays: null, hStream: IntPtr.Zero);
+                    ref accum, ref nativeAccum, deviceArrays: null, hStream: IntPtr.Zero);
 
                 using var ctxScope = new GpuKernelLoader.CudaContextScope();
                 using GpuBuffer<int> dItems = new(n);
@@ -965,19 +968,10 @@ public sealed class MarshalingAliasingDifferentialTests
                 dItems.CopyToHost(items);
                 dAccum.CopyToHost(new Span<MarshalingAliasingDifferentialKernels.AotContexts.DiffVec2Padded>(ref nativeAccum));
                 MarshalingAliasingDifferentialKernels.AotContexts.Unmarshal_DiffVec2Padded(
-                    ref accum, ref nativeAccum, isDevicePtr: true, hStream: IntPtr.Zero);
+                    ref accum, ref nativeAccum, hStream: IntPtr.Zero);
             },
 #endif
         });
-
-#if GSHARP_CUDA
-        CudaCapability.EnsureGpuAvailable();
-        var deepBag = new DiffDeepBag { Data = [1, 2], Tag = 3 };
-        MarshalingAliasingDifferentialKernels.AotContexts.DiffDeepBag nativeBag = default;
-        Assert.Throws<NotSupportedException>(() =>
-            MarshalingAliasingDifferentialKernels.AotContexts.Marshal_DiffDeepBag(
-                ref deepBag, ref nativeBag, isDevicePtr: true, deviceArrays: null, hStream: IntPtr.Zero));
-#endif
     }
 
     // --- Non-nullable array passed null (ArgumentNullException) or empty (ArgumentException) ---

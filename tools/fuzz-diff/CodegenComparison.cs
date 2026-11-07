@@ -197,6 +197,7 @@ internal static class CodegenComparison
             $"{difference.Dialect}|{difference.Output}|{before}[{removed}|{added}]{after}");
     }
 
+#pragma warning disable RS0030 // Comparison: masks generated text character by character before comparing it
     /// <summary>Replaces each run of ASCII digits with <c>#</c>.</summary>
     internal static string MaskDigits(string text)
     {
@@ -258,6 +259,7 @@ internal static class CodegenComparison
 
         return builder.ToString();
     }
+#pragma warning restore RS0030
 
     private static void CompareNative(
         string dialect,

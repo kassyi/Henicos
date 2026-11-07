@@ -3,7 +3,7 @@ title: "GpuBigIntContext and Algorithm Context Structs (G#)"
 site: "G# Documentation"
 published: "2026-10-16T00:00:00.000Z"
 language: "en"
-description: "Context parameter structs for BigInt GPU kernels, Newton-Raphson mega-kernels, NTT, and RNS operations."
+description: "Context parameter structs for BigInt GPU kernels, Newton-Raphson mega-kernels, and NTT operations."
 ---
 
 ## GpuBigIntContext and Algorithm Context Structs
@@ -13,7 +13,7 @@ description: "Context parameter structs for BigInt GPU kernels, Newton-Raphson m
 **Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms`  
 **Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
-Context parameter structures for basic `GpuBigInt` GPU kernels, `MacroTranspiler` expansions, Newton-Raphson mega-kernels (`NewtonRaphsonContext`, `ModPowNttContext`), and Residue Number System (RNS) modular reductions.
+Context parameter structures for basic `GpuBigInt` GPU kernels, `MacroTranspiler` expansions, and Newton-Raphson mega-kernels (`NewtonRaphsonContext`, `ModPowNttContext`).
 
 > [!NOTE]
 > `BigIntKernelContext` was streamlined to `GpuBigIntContext` (with top-level `OperandContext`, `BufferContext`, `DimensionContext`, `TwiddleFactorContext`, and `WorkspaceStateContext` structs in `Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms`).
@@ -27,9 +27,6 @@ public struct DimensionContext
 public struct WorkspaceStateContext
 public struct NewtonRaphsonContext
 public struct ModPowNttContext
-public struct RnsConstantsContext
-public struct RnsBigInt
-public struct RnsMontgomeryContext
 ```
 
 ## Structs
@@ -44,9 +41,6 @@ public struct RnsMontgomeryContext
 | [WorkspaceStateContext](#workspacestatecontext-struct) | Encapsulates the complete workspace scratch memory state for Newton-Raphson mega-kernels. |
 | [NewtonRaphsonContext](#newtonraphsoncontext-struct) | Context parameters for the Newton-Raphson Sqrt and Reciprocal (`DivRem`) MegaKernels. |
 | [ModPowNttContext](#modpownttcontext-struct) | Encapsulates parameters and scratch state for NTT-based modular exponentiation. |
-| [RnsConstantsContext](#rnsconstantscontext-struct) | Precomputed constants for RNS (Residue Number System) operations. |
-| [RnsBigInt](#rnsbigint-struct) | Represents a multi-precision integer decomposed into Residue Number System spaces. |
-| [RnsMontgomeryContext](#rnsmontgomerycontext-struct) | Encapsulates dynamic constants dependent on the modulus $N$ for Montgomery reduction. |
 
 ## GpuBigIntContext Struct
 
@@ -168,57 +162,6 @@ public struct ModPowNttContext
     public NewtonRaphsonContext Core;
     [GpuReadOnly] public uint[] ReciprocalMod;
     public ExponentSliceContext Exponent;
-}
-```
-
-## RnsConstantsContext Struct
-
-Precomputed constants for RNS (Residue Number System) operations.
-
-```csharp
-public struct RnsConstantsContext
-{
-    [GpuReadOnly] public uint[] ModuliB1;
-    [GpuReadOnly] public uint[] ModuliB2;
-    public uint ModSk;
-    [GpuReadOnly] public uint[] GammaB1;
-    [GpuReadOnly] public uint[] GammaB2;
-    [GpuReadOnly] public uint[] M1OverMiModMsk;
-    public uint M1InvModMsk;
-    [GpuReadOnly] public uint[] M2OverMjModMsk;
-    public uint M2InvModMsk;
-    [GpuReadOnly] public uint[] M1OverMiModMj;
-    [GpuReadOnly] public uint[] M2OverMjModMi;
-    [GpuReadOnly] public uint[] M1ModMj;
-    [GpuReadOnly] public uint[] M2ModMi;
-    public int KSize;
-}
-```
-
-## RnsBigInt Struct
-
-Represents a multi-precision integer decomposed into Residue Number System spaces.
-
-```csharp
-public struct RnsBigInt
-{
-    public uint[] B1;
-    public uint[] B2;
-    public uint Sk;
-}
-```
-
-## RnsMontgomeryContext Struct
-
-Encapsulates dynamic constants dependent on the modulus $N$ for Montgomery reduction.
-
-```csharp
-public struct RnsMontgomeryContext
-{
-    [GpuReadOnly] public uint[] NRnsB2;
-    public uint NSk;
-    [GpuReadOnly] public uint[] NegNInvB1;
-    [GpuReadOnly] public uint[] RInvB2;
 }
 ```
 

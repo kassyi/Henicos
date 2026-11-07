@@ -21,6 +21,7 @@ on:
 
 permissions:
   contents: read
+  issues: read
 
 # A new run for the same pull request or branch cancels the one still running.
 concurrency:
@@ -98,6 +99,7 @@ jobs:
       - name: Run Static Compilation & Syntax Tests
         env:
           GSHARP_TEST_NO_CUDA: "1"
+          GH_TOKEN: ${{ github.token }}
         run: dotnet test ${{ matrix.target }} --filter "Category!=GpuExecution&FullyQualifiedName!~Kassyi.GSharp.Tests.Integration." --no-build -c Release --logger trx --results-directory "${{ env.TEST_RESULTS_DIR }}"
 
       - name: Run CPU Native Toolchain Execution Tests

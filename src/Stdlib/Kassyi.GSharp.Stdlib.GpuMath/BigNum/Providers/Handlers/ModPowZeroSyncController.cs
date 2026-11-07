@@ -11,19 +11,13 @@ internal static class ModPowZeroSyncController
     {
         var n = baseVal.NumWords;
         var expWords = exp.NumWords;
-        using var mod2N = new GpuBigUInt(baseVal.Workspace, 2 * n);
-        mod2N.Clear();
-        mod2N.CopyFrom(mod, numWords: n);
-
         using var tempResult = new GpuBigUInt(baseVal.Workspace, 2 * n);
-        tempResult.Clear();
         // tempResult = 1 mod mod, written on the device (0 for modulus 1) so that exponent 0 returns a reduced value.
         GpuBigIntDivRemKernels.LaunchInitializeOneModuloKernelPtr(
             tempResult.DevicePointer, mod.DevicePointer, n,
             gridDimX: 1, blockDimX: 1, hStream: baseVal.Workspace.Stream);
 
         using var tempBase = new GpuBigUInt(baseVal.Workspace, 2 * n);
-        tempBase.Clear();
         tempBase.CopyFrom(baseVal, numWords: n);
 
         var modActualBits = GpuBigIntDivRem.GetActualBits(mod);
@@ -43,7 +37,6 @@ internal static class ModPowZeroSyncController
         var targetWords = (targetBits + 31) / 32 + 1;
 
         using var reciprocalNorm = new GpuBigUInt(baseVal.Workspace, targetWords);
-        reciprocalNorm.Clear();
         GpuBigIntDivRem.Reciprocal(bNorm, reciprocalNorm, targetBits, marginWords);
 
         using var reciprocalOfMod = new GpuBigUInt(baseVal.Workspace, targetWords);
@@ -53,7 +46,6 @@ internal static class ModPowZeroSyncController
         using var tempBaseQ = new GpuBigUInt(baseVal.Workspace, 4 * n);
         using var tempBaseR = new GpuBigUInt(baseVal.Workspace, 4 * n);
         using var extendedTempBase = new GpuBigUInt(baseVal.Workspace, 4 * n);
-        extendedTempBase.Clear();
         extendedTempBase.CopyFrom(tempBase, numWords: 2 * n);
         GpuBigIntDivRem.ReduceZeroSync(extendedTempBase, mod, reciprocalOfMod, targetBits, aActualWords, tempBaseQ, tempBaseR);
         tempBase.CopyFrom(tempBaseR, numWords: 2 * n);
