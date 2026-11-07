@@ -219,8 +219,8 @@ public readonly partial struct GpuBigUInt : IGpuBigUIntExpression, IGpuBigNumber
     /// <param name="offsetWords">The word offset within this buffer from which to start clearing.</param>
     /// <param name="numWords">The number of words to clear, or <see langword="null"/> to clear until the end of the buffer.</param>
     /// <exception cref="ArgumentOutOfRangeException">
-    /// <paramref name="offsetWords"/> is negative or greater than <see cref="NumWords"/>, or <paramref name="numWords"/> is
-    /// negative or reaches past the end of the buffer.
+    /// <paramref name="offsetWords"/> is negative or greater than <see cref="NumWords"/>, or
+    /// <paramref name="numWords"/> is negative or reaches past the end of the buffer.
     /// </exception>
     public void Clear(int offsetWords = 0, int? numWords = null)
     {
@@ -253,8 +253,8 @@ public readonly partial struct GpuBigUInt : IGpuBigUIntExpression, IGpuBigNumber
     /// <param name="srcOffsetWords">The word offset within the source buffer.</param>
     /// <param name="numWords">The number of words to copy, or <see langword="null"/> to copy as many words as fit.</param>
     /// <exception cref="ArgumentOutOfRangeException">
-    /// An offset is negative or greater than the word count of its buffer, or <paramref name="numWords"/> is negative or
-    /// reaches past the end of the source or of this buffer.
+    /// An offset is negative or greater than the word count of its buffer, or <paramref name="numWords"/> is negative
+    /// or reaches past the end of the source or of this buffer.
     /// </exception>
     public void CopyFrom(scoped GpuBigUIntView source, int destOffsetWords = 0, int srcOffsetWords = 0,
         int? numWords = null)
@@ -374,7 +374,9 @@ public readonly partial struct GpuBigUInt : IGpuBigUIntExpression, IGpuBigNumber
     /// Clears a single 32-bit limb word at the specified word index in GPU device memory.
     /// </summary>
     /// <param name="wordIndex">The 0-based word index to clear.</param>
-    /// <exception cref="ArgumentOutOfRangeException"><paramref name="wordIndex"/> is negative or not less than <see cref="NumWords"/>.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// <paramref name="wordIndex"/> is negative or not less than <see cref="NumWords"/>.
+    /// </exception>
     public void ClearWord(int wordIndex)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(wordIndex);
