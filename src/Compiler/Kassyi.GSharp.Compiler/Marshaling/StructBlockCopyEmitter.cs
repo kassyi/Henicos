@@ -121,12 +121,12 @@ internal static class StructBlockCopyEmitter
             if (toNative)
             {
                 writer.AppendMarshalMethodName(member.Type);
-                writer.AppendLine($"(ref host[k], ref (({shadow}*)pField)[k], isDevicePtr, {StructArrayHelperEmitter.ArraysParameter(dialect)}, hStream);");
+                writer.AppendLine($"(ref host[k], ref (({shadow}*)pField)[k], {StructArrayHelperEmitter.ArraysParameter(dialect)}, hStream);");
             }
             else
             {
                 writer.AppendUnmarshalMethodName(member.Type);
-                writer.AppendLine($"(ref host[k], ref (({shadow}*)pField)[k], isDevicePtr, hStream);");
+                writer.AppendLine($"(ref host[k], ref (({shadow}*)pField)[k], hStream);");
             }
         }
     }
