@@ -104,7 +104,7 @@ public static class TransferClassifier
             return TransferClass.Convert;
         }
 
-        // [WHY] Only sizes and offsets decide (design §3.3): with the same stride and offsets the bytes are the same,
+        // [WHY] Only sizes and offsets decide: with the same stride and offsets the bytes are the same,
         // and the device alignment (Float2 / Vector4 ...) is met by the allocation and the stride, not by the host
         if (deviceLayout.Size != hostLayout.Size || deviceFields.Length != hostLayout.Fields.Length)
         {

@@ -29,9 +29,9 @@ internal static class ModInverseHostLoopController
         using var t = workspace.RentTemp(numWords);
         using var rem = workspace.RentTemp(numWords);
         using var tx = workspace.RentTemp(numWords * 2);
+        // RentTemp hands out zero-filled buffers: the upper words of modulus2X stay zero and v starts at 0.
         using var modulus2X = workspace.RentTemp(numWords * 2);
 
-        modulus2X.Clear();
         workspace.Provider.CopyDeviceToDevice(modulus2X.DevicePointer, modulus.DevicePointer, numWords,
             workspace.Stream);
 
@@ -42,10 +42,7 @@ internal static class ModInverseHostLoopController
         workspace.Provider.CopyDeviceToDevice(i.DevicePointer, modulus.DevicePointer, numWords, workspace.Stream);
         workspace.Provider.CopyDeviceToDevice(a.DevicePointer, value.DevicePointer, numWords, workspace.Stream);
 
-        v.Clear();
-        d.Clear();
         using var one = workspace.RentTemp(numWords);
-        one.Clear();
         workspace.Provider.WriteWord(one.DevicePointer, 0, 1, workspace.Stream);
         workspace.Provider.CopyDeviceToDevice(d.DevicePointer, one.DevicePointer, numWords, workspace.Stream);
 
