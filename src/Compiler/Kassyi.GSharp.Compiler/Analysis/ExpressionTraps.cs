@@ -12,8 +12,8 @@ namespace Kassyi.GSharp.Compiler.Analysis;
 /// <remarks>
 /// [WHY] A rewrite that skips the evaluation of an expression (a fused StackLinq Skip that narrows the range instead of
 /// calling the selector for the elements it drops) is valid only when the expression neither writes
-/// (<see cref="ExpressionEffects"/>) nor traps: C# raises the error, so the native, managed and checked CUDA builds must
-/// raise it too.
+/// (<see cref="ExpressionEffects"/>) nor traps: C# raises the error, so the native, managed and checked CUDA builds
+/// must raise it too.
 /// </remarks>
 internal static class ExpressionTraps
 {
@@ -45,7 +45,8 @@ internal static class ExpressionTraps
         ILiteralOperation or ILocalReferenceOperation or IParameterReferenceOperation or IFieldReferenceOperation or
             IDefaultValueOperation or IParenthesizedOperation or IConditionalOperation or IArgumentOperation => true,
         IPropertyReferenceOperation { Property: var property } => !property.IsIndexer && IsStoredOrIntrinsic(property),
-        IBinaryOperation binary => binary is { OperatorMethod: null, IsChecked: false } && !MayDivideByZeroOrOverflow(binary),
+        IBinaryOperation binary =>
+            binary is { OperatorMethod: null, IsChecked: false } && !MayDivideByZeroOrOverflow(binary),
         IUnaryOperation unary => unary is { OperatorMethod: null, IsChecked: false },
         IConversionOperation conversion => conversion is { OperatorMethod: null, IsChecked: false },
         IInvocationOperation invocation => IsFloatingPointMath(invocation.TargetMethod),

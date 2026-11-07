@@ -117,8 +117,12 @@ public class StackLinqRangeTests : TranspilerTestBase
     // C# calls the selector for the elements a following Skip drops, so an error it raises there is raised; the same
     // chains over elements that raise nothing give the C# sum. The native build checks neither an integer division by
     // zero nor an index yet (#718 (Array and span bounds, integer division by zero, Nullable.Value, Math.Clamp and
-    // Math.Abs(MinValue) are not checked as in C#)), so there the generated snapshot shows that the selector runs for the
-    // skipped element (StackLinqRangeKernels snapshot: the Skip counts in the loop instead of narrowing the range)
+    // Math.Abs(MinValue) are not checked as in C#)), so there the generated snapshot shows that the selector runs for
+    // the skipped element (StackLinqRangeKernels snapshot: the Skip counts in the loop instead of narrowing the range).
+    // This is not the regression test of the fold: the managed path runs the host StackLinq, which always called the
+    // selector, so the throws held before the fix too. The fold is guarded by
+    // ExpressionTrapsTests.Test_CountRangeStages_StopsAfterATrappingSelector and the snapshot. This test checks that
+    // the CPU paths still give the C# sums, and becomes the native check of the error once #718 lands.
     [SkippableTheory]
     [MemberData(nameof(Paths))]
     [TestTarget(ExecutionTarget.CpuExecution)]
@@ -126,25 +130,50 @@ public class StackLinqRangeTests : TranspilerTestBase
     [Scenario(TestScenario.SadPath)]
     public void Test_TrappingSelectThenSkip_RaisesTheErrorOfTheSkippedElement(bool managed)
     {
-        Skip.If(IsCudaDialect, "A CUDA trap loses its code and spoils the context; the exception is checked on the CPU paths.");
+        Skip.If(
+            IsCudaDialect,
+            "A CUDA trap loses its code and spoils the context; the exception is checked on the CPU paths."
+        );
         int[] table = [7];
         var result = new int[2];
 
         if (managed)
         {
-            Assert.Throws<DivideByZeroException>(() => Run(managed,
-                () => StackLinqRangeKernels.LaunchDividingSelectSkipKernel([0, 2], result, gridDimX: 1, blockDimX: 1)));
-            Assert.Throws<IndexOutOfRangeException>(() => Run(managed,
-                () => StackLinqRangeKernels.LaunchIndexingSelectSkipKernel([5, 0], table, result, gridDimX: 1, blockDimX: 1)));
+            Assert.Throws<DivideByZeroException>(() => Run(
+                managed,
+                () => StackLinqRangeKernels.LaunchDividingSelectSkipKernel([0, 2], result, gridDimX: 1, blockDimX: 1)
+            ));
+            Assert.Throws<IndexOutOfRangeException>(() => Run(
+                managed,
+                () => StackLinqRangeKernels.LaunchIndexingSelectSkipKernel(
+                    [5, 0],
+                    table,
+                    result,
+                    gridDimX: 1,
+                    blockDimX: 1
+                )
+            ));
         }
 
         int[] data = [5, 2, 1];
-        Run(managed, () => StackLinqRangeKernels.LaunchDividingSelectSkipKernel(data, result, gridDimX: 1, blockDimX: 1));
+        Run(
+            managed,
+            () => StackLinqRangeKernels.LaunchDividingSelectSkipKernel(data, result, gridDimX: 1, blockDimX: 1)
+        );
         Assert.Equal(data.AsStackEnumerable().Select(static x => x / 2).Skip(1).Sum(), result[0]);
         Assert.Equal(data.AsStackEnumerable().Select(static x => 10 / x).Skip(1).Sum(), result[1]);
 
         int[] indices = [0, 0, 0];
-        Run(managed, () => StackLinqRangeKernels.LaunchIndexingSelectSkipKernel(indices, table, result, gridDimX: 1, blockDimX: 1));
+        Run(
+            managed,
+            () => StackLinqRangeKernels.LaunchIndexingSelectSkipKernel(
+                indices,
+                table,
+                result,
+                gridDimX: 1,
+                blockDimX: 1
+            )
+        );
         Assert.Equal(14, result[0]);
     }
 
