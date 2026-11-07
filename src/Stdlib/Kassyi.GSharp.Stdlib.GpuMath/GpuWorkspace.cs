@@ -85,16 +85,16 @@ public class GpuWorkspace : IGpuResourceScope
     }
 
     /// <summary>
-    /// Gets the device words through which unconverged on-device corrections are reported, or <see langword="null"/> in
-    /// CPU fallback mode.
+    /// Gets the device words through which unconverged on-device corrections and signed overflows are reported, or
+    /// <see langword="null"/> in CPU fallback mode.
     /// </summary>
-    internal GpuCorrectionStatus? CorrectionStatus
+    internal GpuDeviceStatus? DeviceStatus
     {
         get;
     }
 
-    /// <summary>Gets the device address of <see cref="CorrectionStatus"/>, or <see cref="IntPtr.Zero"/> without one.</summary>
-    internal IntPtr CorrectionStatusPointer => CorrectionStatus?.DevicePointer ?? IntPtr.Zero;
+    /// <summary>Gets the device address of <see cref="DeviceStatus"/>, or <see cref="IntPtr.Zero"/> without one.</summary>
+    internal IntPtr DeviceStatusPointer => DeviceStatus?.DevicePointer ?? IntPtr.Zero;
 
     /// <summary>
     /// Gets or sets the bit length threshold for algorithm selection in poly-algorithms like ModPow.
@@ -204,7 +204,7 @@ public class GpuWorkspace : IGpuResourceScope
             MemoryManager = new DefaultGpuMemoryManager(Provider, Stream);
             if (Stream != IntPtr.Zero)
             {
-                CorrectionStatus = new GpuCorrectionStatus(Provider, Stream, _isolatedContext);
+                DeviceStatus = new GpuDeviceStatus(Provider, Stream, _isolatedContext);
             }
         }
         finally
@@ -278,9 +278,9 @@ public class GpuWorkspace : IGpuResourceScope
                 // Stream-ordered release of the device words; the page-locked slot goes back to the process-wide pool
                 // once no read copies into it.
                 // Written out here (not '?.' in a helper) so that the ownership analyzer (GSH0022) sees the call.
-                if (CorrectionStatus != null)
+                if (DeviceStatus != null)
                 {
-                    CorrectionStatus.Dispose();
+                    DeviceStatus.Dispose();
                 }
             }
             catch (Exception ex)

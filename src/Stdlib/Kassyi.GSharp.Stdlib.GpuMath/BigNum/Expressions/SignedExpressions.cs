@@ -42,6 +42,12 @@ internal abstract class SignedBinaryExpression(IGpuBigIntExpression left, IGpuBi
     internal IGpuBigIntExpression Left { get; } = left ?? throw new ArgumentNullException(nameof(left));
     internal IGpuBigIntExpression Right { get; } = right ?? throw new ArgumentNullException(nameof(right));
 
+    /// <summary>
+    /// Gets the stack trace of the line that applied the operator, captured only for the checked operators when
+    /// <see cref="GpuOverflowReport.CaptureOperatorStackTracesSwitch"/> is set.
+    /// </summary>
+    internal StackTrace? OperatorStackTrace { get; init; }
+
     public void Dispose()
     {
         try
@@ -166,7 +172,8 @@ internal class SignedAddExpression(IGpuBigIntExpression left, IGpuBigIntExpressi
     {
         if (a.IsNegative == b.IsNegative)
         {
-            GpuBigIntMath.Add(a.Value, b.Value, resultBuffer);
+            // |a| + |b| keeps the width of the operands; a carry out of the top word is an overflow
+            SignedMagnitude.AddChecked(a.Value, b.Value, resultBuffer, this, "+", OperatorStackTrace);
             return new GpuBigInt(resultBuffer, a.IsNegative);
         }
 
@@ -189,7 +196,8 @@ internal class SignedSubExpression(IGpuBigIntExpression left, IGpuBigIntExpressi
     {
         if (a.IsNegative != b.IsNegative)
         {
-            GpuBigIntMath.Add(a.Value, b.Value, resultBuffer);
+            // |a| + |b| keeps the width of the operands; a carry out of the top word is an overflow
+            SignedMagnitude.AddChecked(a.Value, b.Value, resultBuffer, this, "-", OperatorStackTrace);
             return new GpuBigInt(resultBuffer, a.IsNegative);
         }
 

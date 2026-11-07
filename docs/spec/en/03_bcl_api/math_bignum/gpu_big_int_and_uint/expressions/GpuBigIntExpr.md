@@ -50,7 +50,7 @@ public IGpuBigIntExpression Node { get; }
 Compiles this expression tree into an executable CUDA Graph, eliminating launch overhead for repeated executions. The caller is responsible for disposing the returned graph.
 
 ```csharp
-public GpuBigIntExecutableGraph CompileToGraph(GpuWorkspace workspace, GpuBigUInt? targetResult = null);
+public GpuBigIntExecutableGraph CompileToGraph(GpuWorkspace workspace, GpuBigUInt? targetResult = null, [CallerMemberName] string callerMemberName = "", [CallerFilePath] string callerFilePath = "", [CallerLineNumber] int callerLineNumber = 0);
 ```
 
 #### Parameters
@@ -66,7 +66,22 @@ An optional pre-allocated buffer for the final result magnitude.
 _GpuBigIntExecutableGraph_<br>
 An executable graph instance that can be launched repeatedly with zero CPU-side scheduling overhead.
 
-#### Remarks
+#### Overflow
+
+A signed result keeps the width of its operands: `a + b` on 1-word operands has a 1-word result. When the signs make `+` or `-` an addition of the magnitudes (`(+a) + (+b)`, `(-a) - (+b)`, ...) and the exact magnitude needs another word, the operation does not wrap: the GPU flags it in the workspace's status words without waiting, and the next synchronization of the workspace stream throws [GpuOverflowException](../../../01_diagnostics_and_exceptions.md#gpuoverflowexception) (a subclass of `OverflowException`). That synchronization is any read GpuMath makes on the stream: reading the value (`ToBigInteger`, `ToHostArray`), a comparison, `GpuBigIntExecutableGraph.Execute`, and so on. An evaluation whose operations fit adds no synchronization, so evaluations of same-sign sums still run inside a captured CUDA graph.
+
+```csharp
+using var ws = new GpuWorkspace(64);
+using var x = new GpuBigInt(GpuBigUInt.FromBigInteger(ws, uint.MaxValue, 1), false);
+using var one = new GpuBigInt(GpuBigUInt.FromBigInteger(ws, 1, 1), false);
+
+using var sum = ((GpuBigIntExpr)x + one).Evaluate(ws); // returns: the GPU has not been waited for
+sum.Value.ToBigInteger(); // throws GpuOverflowException: `+` result does not fit in 1 word(s): `x0 + x1` ...
+```
+
+The exception names the operator, the expression with the overflowing operation in brackets (`[x0 + x1] - x2`), and the call that evaluated it (`Evaluate`, `CompileToGraph`, `EvaluateWithCudaGraph`, `EvaluateWithCudaGraphAsync`) by member, file and line. A compiled graph reports its `CompileToGraph` call at every launch. One exception reports every overflow counted on the workspace since the previous report, oldest first. In CPU fallback mode the evaluation itself throws.
+
+## Remarks
 
 The graph takes the expression: until the graph is disposed, evaluating or compiling this expression (or a copy of it) throws `InvalidOperationException`, because every launch reuses the buffers the expression's nodes hold. The graph owns its result buffer (unless `targetResult` is given) and the buffers freed during the capture, and returns them when it is disposed; its `Result` is valid only while the graph is alive. The operands and `targetResult` stay with the caller; a launch after one of them was freed throws `ObjectDisposedException`.
 
@@ -75,20 +90,23 @@ If the capture fails, the capture is ended and every buffer it took is returned 
 #### Exceptions
 
 `InvalidOperationException`<br>
-Thrown if warm-up evaluation fails prior to beginning CUDA Graph capture, or if the expression is already owned by a graph that is alive.
+Thrown if warm-up evaluation fails prior to beginning CUDA Graph capture, or if the expression is already owned by a graph that is alive. The warm-up waits for the GPU before the capture, so an overflow of the expression ([Overflow](#overflow)) fails the compilation with the `GpuOverflowException` as the inner exception.
 
 ## Evaluate(GpuBigUInt)
 
 Evaluates this signed expression into the provided destination buffer.
 
 ```csharp
-public GpuBigInt Evaluate(GpuBigUInt destination);
+public GpuBigInt Evaluate(GpuBigUInt destination, [CallerMemberName] string callerMemberName = "", [CallerFilePath] string callerFilePath = "", [CallerLineNumber] int callerLineNumber = 0);
 ```
 
 #### Parameters
 
 `destination` _GpuBigUInt_<br>
 The pre-allocated GPU buffer to store the evaluated magnitude. It may be the magnitude of an operand (`(a / b).Evaluate(a.Value)`): the root then computes into a temporary and copies the result.
+
+`callerMemberName`, `callerFilePath`, `callerLineNumber`<br>
+Filled in by the compiler with the calling member, file and line; a [GpuOverflowException](../../../01_diagnostics_and_exceptions.md#gpuoverflowexception) names them as the origin of an overflow. Do not pass them.
 
 #### Returns
 
@@ -100,13 +118,16 @@ A new `GpuBigInt` instance wrapping the destination buffer with the evaluated si
 Evaluates this signed expression into a newly rented temporary GPU buffer.
 
 ```csharp
-public GpuBigInt Evaluate(GpuWorkspace workspace);
+public GpuBigInt Evaluate(GpuWorkspace workspace, [CallerMemberName] string callerMemberName = "", [CallerFilePath] string callerFilePath = "", [CallerLineNumber] int callerLineNumber = 0);
 ```
 
 #### Parameters
 
 `workspace` _GpuWorkspace_<br>
 The GPU workspace used for temporary buffer allocation.
+
+`callerMemberName`, `callerFilePath`, `callerLineNumber`<br>
+Filled in by the compiler with the calling member, file and line; a [GpuOverflowException](../../../01_diagnostics_and_exceptions.md#gpuoverflowexception) names them as the origin of an overflow. Do not pass them.
 
 #### Returns
 
@@ -118,7 +139,7 @@ A new `GpuBigInt` instance wrapping the temporary buffer with the evaluated sign
 Evaluates this expression tree by dynamically compiling it into a CUDA Graph, launching it, and destroying it immediately.
 
 ```csharp
-public GpuBigInt EvaluateWithCudaGraph(GpuWorkspace workspace, GpuBigUInt? targetResult = null);
+public GpuBigInt EvaluateWithCudaGraph(GpuWorkspace workspace, GpuBigUInt? targetResult = null, [CallerMemberName] string callerMemberName = "", [CallerFilePath] string callerFilePath = "", [CallerLineNumber] int callerLineNumber = 0);
 ```
 
 #### Parameters
@@ -139,7 +160,7 @@ The result. Without `targetResult` the caller owns it and disposes it; with `tar
 Evaluates this expression tree through a CUDA Graph like [EvaluateWithCudaGraph](#evaluatewithcudagraphgpuworkspace-gpubiguint), but waits for the graph without blocking the calling thread.
 
 ```csharp
-public async ValueTask<GpuBigInt> EvaluateWithCudaGraphAsync(GpuWorkspace workspace, GpuBigUInt? targetResult = null, CancellationToken cancellationToken = default);
+public async ValueTask<GpuBigInt> EvaluateWithCudaGraphAsync(GpuWorkspace workspace, GpuBigUInt? targetResult = null, CancellationToken cancellationToken = default, [CallerMemberName] string callerMemberName = "", [CallerFilePath] string callerFilePath = "", [CallerLineNumber] int callerLineNumber = 0);
 ```
 
 #### Parameters
@@ -159,6 +180,9 @@ _ValueTask&lt;GpuBigInt&gt;_<br>
 A new `GpuBigInt` instance wrapping the evaluated result.
 
 #### Exceptions
+
+`GpuOverflowException`<br>
+An operation of the expression overflowed ([Overflow](#overflow)).
 
 `OperationCanceledException`<br>
 `cancellationToken` was canceled. A result buffer allocated by this method is released in stream order behind the graph; a supplied `targetResult` is left to the caller and receives the result once the graph completes.
@@ -215,8 +239,8 @@ A new `GpuBigIntExpr` representing the Min AST node.
 | `implicit operator GpuBigIntExpr(GpuBigInt)` | Implicitly wraps a `GpuBigInt` as a signed expression leaf node. |
 | `operator *(GpuBigIntExpr, GpuBigIntExpr)` | Constructs a lazy multiplication expression. |
 | `operator /(GpuBigIntExpr, GpuBigIntExpr)` | Constructs a lazy division expression. |
-| `operator +(GpuBigIntExpr, GpuBigIntExpr)` | Constructs a lazy addition expression with deferred sign resolution. |
-| `operator -(GpuBigIntExpr, GpuBigIntExpr)` | Constructs a lazy subtraction expression with deferred sign resolution. |
+| `operator +(GpuBigIntExpr, GpuBigIntExpr)` | Constructs a lazy addition expression with deferred sign resolution. The result has the width of the operands; a sum that does not fit is reported as an overflow ([Overflow](#overflow)). |
+| `operator -(GpuBigIntExpr, GpuBigIntExpr)` | Constructs a lazy subtraction expression with deferred sign resolution. The result has the width of the operands; a difference that does not fit is reported as an overflow ([Overflow](#overflow)). |
 | `operator -(GpuBigIntExpr)` | Constructs a lazy negation expression. |
 | `operator ~(GpuBigIntExpr)` | Constructs a lazy bitwise NOT expression. |
 

@@ -6,6 +6,15 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels;
 [ExcludeFromCodeCoverage]
 public static partial class GpuBigIntKernels
 {
+    /// <summary>The device status word that counts the overflows (it only grows).</summary>
+    public const int OverflowCountWord = 2;
+
+    /// <summary>The first device status word of the overflow ring: pairs of (origin id, count before the increment).</summary>
+    public const int OverflowRingWord = 4;
+
+    /// <summary>The number of entries in the overflow ring (a power of two).</summary>
+    public const uint OverflowRingEntries = 8;
+
     /// <summary>
     /// Represents the carry generation and propagation bits for prefix sum operations.
     /// </summary>
@@ -104,6 +113,32 @@ public static partial class GpuBigIntKernels
         int sign = 1,
         bool syncThreads = true)
     {
+        DeviceAddSubAlignedParallelWithCarry(larger, largerWords, smaller, smallerWords, result, numWords, wordShift,
+            bitShift, sign, syncThreads);
+    }
+
+    /// <summary>
+    /// <see cref="DeviceAddSubAlignedParallel"/> that also returns the carry out of the top word
+    /// (<c>result[numWords - 1]</c>).
+    /// </summary>
+    /// <returns>
+    /// The carry out of the top word (0 or 1) in the thread that wrote that word; 0 in every other thread. For a sum,
+    /// 1 means the exact sum needs another word.
+    /// </returns>
+    [GpuDeviceFunction]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static uint DeviceAddSubAlignedParallelWithCarry(
+        [GpuReadOnly] uint[] larger,
+        int largerWords,
+        [GpuReadOnly] uint[] smaller,
+        int smallerWords,
+        uint[] result,
+        int numWords,
+        int wordShift,
+        int bitShift,
+        int sign,
+        bool syncThreads)
+    {
         var tid = ThreadIndex.X;
         var bDim = BlockDimension.X;
         var laneId = tid % 32;
@@ -117,10 +152,11 @@ public static partial class GpuBigIntKernels
             {
                 Gpu.SyncThreads();
             }
-            return;
+            return 0u;
         }
 
         var blockCarryIn = sign == 1 ? 0u : 1u;
+        var topCarry = 0u;
 
         for (int offset = 0; offset < numWords; offset += bDim)
         {
@@ -189,6 +225,12 @@ public static partial class GpuBigIntKernels
                 result[idx] = (uint)sum + carryIn;
             }
 
+            if (idx == numWords - 1)
+            {
+                // The carry out of this word: generated here, or carried in and propagated through it.
+                topCarry = ApplyCarry(new CarryState(g, p), carryIn);
+            }
+
             blockCarryIn = ApplyCarry(UnpackCarryState(sharedCarry[((bDim + 31) / 32) - 1]), blockCarryIn);
 
             Gpu.SyncThreads();
@@ -198,6 +240,8 @@ public static partial class GpuBigIntKernels
         {
             Gpu.SyncThreads();
         }
+
+        return topCarry;
     }
 
     [GpuDeviceFunction]
@@ -217,6 +261,39 @@ public static partial class GpuBigIntKernels
     public static void ParallelAddKernel([GpuReadOnly] uint[] dA, [GpuReadOnly] uint[] dB, uint[] dResult, int numWords)
     {
         DeviceAddSubParallel(dA, dB, dResult, numWords, syncThreads: false);
+    }
+
+    /// <summary>
+    /// <c>dResult = dA + dB</c> on <paramref name="numWords"/> words, like <see cref="ParallelAddKernel"/>, and records an
+    /// overflow in the device status words when the exact sum needs another word (see <see cref="ReportOverflow"/>).
+    /// Launched with one block.
+    /// </summary>
+    [GpuKernel]
+    public static void CheckedParallelAddKernel([GpuReadOnly] uint[] dA, [GpuReadOnly] uint[] dB, uint[] dResult,
+        int numWords, uint[] status, uint origin)
+    {
+        var carry = DeviceAddSubAlignedParallelWithCarry(dA, numWords, dB, numWords, dResult, numWords, 0, 0, 1, false);
+        if (carry != 0)
+        {
+            ReportOverflow(status, origin);
+        }
+    }
+
+    /// <summary>
+    /// Records one overflow in the device status words: adds 1 to <c>status[OverflowCountWord]</c> and writes
+    /// <paramref name="origin"/> and the count before the increment into the ring entry that count selects. Called by
+    /// the one thread that saw the overflow.
+    /// </summary>
+    /// <param name="status">The device status words of the workspace.</param>
+    /// <param name="origin">The host id of the operation (0 when unknown).</param>
+    [GpuDeviceFunction]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void ReportOverflow(uint[] status, uint origin)
+    {
+        var sequence = Gpu.AtomicAdd(ref status[OverflowCountWord], 1u);
+        var entry = OverflowRingWord + (2 * (int)(sequence & (OverflowRingEntries - 1)));
+        status[entry] = origin;
+        status[entry + 1] = sequence;
     }
 
     [GpuKernel]

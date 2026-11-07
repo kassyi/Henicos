@@ -29,8 +29,8 @@ public sealed class KernelBasicMathHandler : IGpuBasicMathProvider
 
         launchKernel(resultBuf.DevicePointer);
 
-        // This wait also carries the correction status words (GpuCorrectionStatus).
-        var status = workspace.CorrectionStatus?.BeginRead();
+        // This wait also carries the correction status words (GpuDeviceStatus).
+        var status = workspace.DeviceStatus?.BeginRead();
 
         T result;
         try
@@ -241,10 +241,7 @@ public sealed class KernelBasicMathHandler : IGpuBasicMathProvider
     public void Add(GpuWorkspace workspace, GpuBigUInt leftOperand, GpuBigUInt rightOperand,
         GpuBigUInt resultBuffer)
     {
-        // DeviceAddSubParallel requires single block execution for warp-scan carry propagation
-        var blockSize = (uint)Math.Min(Math.Max(leftOperand.NumWords, 32), 1024);
-        // Round up to nearest warp
-        blockSize = (blockSize + 31) / 32 * 32;
+        var blockSize = SingleBlockSize(leftOperand.NumWords);
 
         GpuBigIntKernels.LaunchParallelAddKernelPtr(
             leftOperand.DevicePointer, rightOperand.DevicePointer, resultBuffer.DevicePointer,
@@ -257,10 +254,7 @@ public sealed class KernelBasicMathHandler : IGpuBasicMathProvider
     public void Sub(GpuWorkspace workspace, GpuBigUInt leftOperand, GpuBigUInt rightOperand,
         GpuBigUInt resultBuffer)
     {
-        // DeviceAddSubParallel requires single block execution for warp-scan carry propagation
-        var blockSize = (uint)Math.Min(Math.Max(leftOperand.NumWords, 32), 1024);
-        // Round up to nearest warp
-        blockSize = (blockSize + 31) / 32 * 32;
+        var blockSize = SingleBlockSize(leftOperand.NumWords);
 
         GpuBigIntKernels.LaunchParallelSubKernelPtr(
             leftOperand.DevicePointer, rightOperand.DevicePointer, resultBuffer.DevicePointer,
@@ -268,6 +262,18 @@ public sealed class KernelBasicMathHandler : IGpuBasicMathProvider
             gridDimX: 1, blockDimX: blockSize, hStream: workspace.Stream);
     }
 
+
+    /// <summary>
+    /// The block size of the single-block add and subtract kernels (<c>DeviceAddSubParallel</c>), which propagate the
+    /// carry with a warp scan: one thread per word up to 1024, rounded up to whole warps.
+    /// </summary>
+    /// <param name="numWords">The number of words of the operands.</param>
+    /// <returns>The number of threads of the one block.</returns>
+    internal static uint SingleBlockSize(int numWords)
+    {
+        var blockSize = (uint)Math.Min(Math.Max(numWords, 32), 1024);
+        return (blockSize + 31) / 32 * 32;
+    }
 
     /// <inheritdoc/>
     public void BitwiseAnd(GpuWorkspace workspace, GpuBigUInt leftOperand, GpuBigUInt rightOperand,
