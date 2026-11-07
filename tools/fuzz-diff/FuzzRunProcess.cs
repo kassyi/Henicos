@@ -124,9 +124,10 @@ internal static class FuzzRunProcess
                     events.Add(node);
                 }
             }
+            // smell-scan: ignore swallowed-exception -- a console line that only looks like JSON is not an event; the
+            // loop goes on with the next line
             catch (JsonException ex)
             {
-                // A console line that only looks like JSON is not an event.
                 Trace.WriteLine($"Skipped a console line that is not JSON: {ex.Message}");
             }
         }
