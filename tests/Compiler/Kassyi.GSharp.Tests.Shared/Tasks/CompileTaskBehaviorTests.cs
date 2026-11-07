@@ -111,7 +111,7 @@ public class CompileTaskBehaviorTests
         var task = ctx.CreateTask(kind, [sourceName]);
 
         Assert.False(task.Execute());
-        Assert.Contains(ctx.BuildEngine.LoggedErrors, e => e.Contains("vcvarsall"));
+        Assert.Contains(ctx.BuildEngine.LoggedErrors, e => e.Contains("Could not locate vcvarsall.bat"));
     }
 
     [Theory]
