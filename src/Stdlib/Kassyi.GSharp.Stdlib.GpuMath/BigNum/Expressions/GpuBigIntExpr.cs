@@ -135,7 +135,9 @@ public readonly struct GpuBigIntExpr : IDisposable
     /// </summary>
     /// <param name="destination">The pre-allocated GPU buffer to store the evaluated magnitude. It may be the magnitude of
     /// an operand (<c>(a / b).Evaluate(a.Value)</c>): the root then computes into a temporary and copies the result.</param>
-    /// <param name="callerMemberName">Filled in by the compiler: the calling member, named in a <see cref="GpuOverflowException"/>.</param>
+    /// <param name="callerMemberName">
+    /// Filled in by the compiler: the calling member, named in a <see cref="GpuOverflowException"/>.
+    /// </param>
     /// <param name="callerFilePath">Filled in by the compiler: the calling source file.</param>
     /// <param name="callerLineNumber">Filled in by the compiler: the calling line.</param>
     /// <returns>A new <see cref="GpuBigInt"/> instance wrapping the destination buffer with the evaluated sign.</returns>
@@ -156,7 +158,9 @@ public readonly struct GpuBigIntExpr : IDisposable
     /// Evaluates this signed expression into a newly rented temporary GPU buffer.
     /// </summary>
     /// <param name="workspace">The GPU workspace used for temporary buffer allocation.</param>
-    /// <param name="callerMemberName">Filled in by the compiler: the calling member, named in a <see cref="GpuOverflowException"/>.</param>
+    /// <param name="callerMemberName">
+    /// Filled in by the compiler: the calling member, named in a <see cref="GpuOverflowException"/>.
+    /// </param>
     /// <param name="callerFilePath">Filled in by the compiler: the calling source file.</param>
     /// <param name="callerLineNumber">Filled in by the compiler: the calling line.</param>
     /// <returns>A new <see cref="GpuBigInt"/> instance wrapping the temporary buffer with the evaluated sign.</returns>
@@ -179,7 +183,9 @@ public readonly struct GpuBigIntExpr : IDisposable
     /// </summary>
     /// <param name="workspace">The GPU workspace.</param>
     /// <param name="targetResult">An optional pre-allocated buffer for the final result.</param>
-    /// <param name="callerMemberName">Filled in by the compiler: the calling member, named in a <see cref="GpuOverflowException"/>.</param>
+    /// <param name="callerMemberName">
+    /// Filled in by the compiler: the calling member, named in a <see cref="GpuOverflowException"/>.
+    /// </param>
     /// <param name="callerFilePath">Filled in by the compiler: the calling source file.</param>
     /// <param name="callerLineNumber">Filled in by the compiler: the calling line.</param>
     /// <returns>An executable graph instance that can be launched repeatedly.</returns>
@@ -206,7 +212,9 @@ public readonly struct GpuBigIntExpr : IDisposable
     /// </summary>
     /// <param name="workspace">The GPU workspace.</param>
     /// <param name="targetResult">An optional pre-allocated buffer for the final result.</param>
-    /// <param name="callerMemberName">Filled in by the compiler: the calling member, named in a <see cref="GpuOverflowException"/>.</param>
+    /// <param name="callerMemberName">
+    /// Filled in by the compiler: the calling member, named in a <see cref="GpuOverflowException"/>.
+    /// </param>
     /// <param name="callerFilePath">Filled in by the compiler: the calling source file.</param>
     /// <param name="callerLineNumber">Filled in by the compiler: the calling line.</param>
     /// <returns>
@@ -245,7 +253,9 @@ public readonly struct GpuBigIntExpr : IDisposable
     /// <param name="cancellationToken">
     /// A token that stops waiting for the graph. The graph itself still runs to completion.
     /// </param>
-    /// <param name="callerMemberName">Filled in by the compiler: the calling member, named in a <see cref="GpuOverflowException"/>.</param>
+    /// <param name="callerMemberName">
+    /// Filled in by the compiler: the calling member, named in a <see cref="GpuOverflowException"/>.
+    /// </param>
     /// <param name="callerFilePath">Filled in by the compiler: the calling source file.</param>
     /// <param name="callerLineNumber">Filled in by the compiler: the calling line.</param>
     /// <returns>
@@ -294,7 +304,7 @@ public readonly struct GpuBigIntExpr : IDisposable
     // Warm-up, capture and instantiation. ownsExpression: CompileToGraph hands the expression to the graph for its whole
     // life; EvaluateWithCudaGraph lends it only while its internal graph exists (O15). The checked operations recorded
     // in the graph report the public call as their origin. wrapsWarmUpOverflow: CompileToGraph reports an overflow of
-    // the warm-up as a failed compilation; the one-shot evaluations expose no compilation and throw the overflow itself.
+    // the warm-up as a failed compilation; the one-shot evaluations expose no compilation and throw the overflow as is.
     private GpuBigIntExecutableGraph Compile(GpuWorkspace workspace, GpuBigUInt? targetResult, bool ownsExpression,
         bool wrapsWarmUpOverflow, EvaluationSite site)
     {
@@ -799,8 +809,8 @@ public readonly struct GpuBigIntExecutableGraph : IDisposable
 }
 
 /// <summary>
-/// The expression a <see cref="GpuBigIntExecutableGraph"/> was compiled from: its root, whether the graph owns it for its
-/// whole life, and the checked operations whose origin ids the graph replays.
+/// The expression a <see cref="GpuBigIntExecutableGraph"/> was compiled from: its root, whether the graph owns it for
+/// its whole life, and the checked operations whose origin ids the graph replays.
 /// </summary>
 internal sealed record GraphExpression(
     IGpuBigIntExpression Node,

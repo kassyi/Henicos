@@ -93,7 +93,9 @@ public class GpuWorkspace : IGpuResourceScope
         get;
     }
 
-    /// <summary>Gets the device address of <see cref="DeviceStatus"/>, or <see cref="IntPtr.Zero"/> without one.</summary>
+    /// <summary>
+    /// Gets the device address of <see cref="DeviceStatus"/>, or <see cref="IntPtr.Zero"/> without one.
+    /// </summary>
     internal IntPtr DeviceStatusPointer => DeviceStatus?.DevicePointer ?? IntPtr.Zero;
 
     /// <summary>

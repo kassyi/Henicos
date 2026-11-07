@@ -4,8 +4,8 @@ using System.Text;
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 
 /// <summary>
-/// Builds the <see cref="GpuOverflowException"/> of the checked signed operations, and captures the operator stack traces
-/// when the <see cref="CaptureOperatorStackTracesSwitch"/> switch is set.
+/// Builds the <see cref="GpuOverflowException"/> of the checked signed operations, and captures the operator stack
+/// traces when the <see cref="CaptureOperatorStackTracesSwitch"/> switch is set.
 /// </summary>
 /// <remarks>
 /// Building a report reads the expression trees and formats text; it runs only when an overflow is thrown, so it is not
@@ -14,15 +14,15 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 internal static class GpuOverflowReport
 {
     /// <summary>
-    /// The <see cref="AppContext"/> switch that makes each checked operator record the stack trace of the line that applied
-    /// it, so that the exception points at that line.
+    /// The <see cref="AppContext"/> switch that makes each checked operator record the stack trace of the line that
+    /// applied it, so that the exception points at that line.
     /// </summary>
     public const string CaptureOperatorStackTracesSwitch = "Kassyi.GSharp.GpuMath.CaptureOperatorStackTraces";
 
     /// <summary>
-    /// Returns the stack trace of the caller of the operator that calls this method, or <see langword="null"/> unless the
-    /// <see cref="CaptureOperatorStackTracesSwitch"/> switch is set. The operator must not be inlined, so that the frame
-    /// to skip exists.
+    /// Returns the stack trace of the caller of the operator that calls this method, or <see langword="null"/> unless
+    /// the <see cref="CaptureOperatorStackTracesSwitch"/> switch is set. The operator must not be inlined, so that the
+    /// frame to skip exists.
     /// </summary>
     /// <returns>The stack trace starting at the line that applied the operator.</returns>
     [MethodImpl(MethodImplOptions.NoInlining)]

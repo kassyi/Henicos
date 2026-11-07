@@ -1,16 +1,17 @@
 namespace Kassyi.GSharp.Stdlib.GpuMath;
 
 /// <summary>
-/// The exception that is thrown when the exact result of a signed GPU big integer operation does not fit in the width of
-/// its result.
+/// The exception that is thrown when the exact result of a signed GPU big integer operation does not fit in the width
+/// of its result.
 /// </summary>
 /// <remarks>
 /// <para>
-/// A signed <see cref="BigNum.Expressions.GpuBigIntExpr"/> keeps the width of its operands: <c>a + b</c> on 1-word operands
-/// has a 1-word result. When the exact value needs more words, the operation is flagged on the GPU without waiting for it,
-/// and the flag is thrown as this exception at the next synchronization of the workspace stream: the read of a value
-/// (<c>ToBigInteger</c>, <c>ToHostArray</c>), a comparison, <c>GpuBigIntExecutableGraph.Execute</c>, and so on. The
-/// evaluation that overflowed has already returned by then, so <see cref="Origins"/> says where it was evaluated.
+/// A signed <see cref="BigNum.Expressions.GpuBigIntExpr"/> keeps the width of its operands: <c>a + b</c> on 1-word
+/// operands has a 1-word result. When the exact value needs more words, the operation is flagged on the GPU without
+/// waiting for it, and the flag is thrown as this exception at the next synchronization of the workspace stream: the
+/// read of a value (<c>ToBigInteger</c>, <c>ToHostArray</c>), a comparison, <c>GpuBigIntExecutableGraph.Execute</c>,
+/// and so on. The evaluation that overflowed has already returned by then, so <see cref="Origins"/> says where it was
+/// evaluated.
 /// </para>
 /// <para>
 /// One exception reports every overflow counted on the workspace since the previous report, in the order the GPU ran
@@ -20,8 +21,8 @@ namespace Kassyi.GSharp.Stdlib.GpuMath;
 /// By default an origin names the evaluation call (<c>Evaluate</c>, <c>CompileToGraph</c>, ...) by member, file and
 /// line. When the <c>Kassyi.GSharp.GpuMath.CaptureOperatorStackTraces</c> switch is set
 /// (<c>AppContext.SetSwitch</c> or the <c>RuntimeHostConfigurationOption</c> item in the project file) before the
-/// expression is built, each checked operator also records the stack trace of the line that applied it, and the stack trace
-/// of this exception starts with that of the first origin. The capture costs a few microseconds per operator.
+/// expression is built, each checked operator also records the stack trace of the line that applied it, and the stack
+/// trace of this exception starts with that of the first origin. The capture costs a few microseconds per operator.
 /// </para>
 /// </remarks>
 public sealed class GpuOverflowException : OverflowException
@@ -41,7 +42,8 @@ public sealed class GpuOverflowException : OverflowException
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="GpuOverflowException"/> class with a message and an inner exception.
+    /// Initializes a new instance of the <see cref="GpuOverflowException"/> class with a message and an inner
+    /// exception.
     /// </summary>
     /// <param name="message">The message that describes the error.</param>
     /// <param name="innerException">The exception that caused this one.</param>
@@ -66,13 +68,15 @@ public sealed class GpuOverflowException : OverflowException
     /// </remarks>
     public IReadOnlyList<GpuOverflowOrigin> Origins { get; }
 
-    /// <summary>Gets the number of overflows reported by this exception whose origins were overwritten on the GPU.</summary>
+    /// <summary>
+    /// Gets the number of overflows reported by this exception whose origins were overwritten on the GPU.
+    /// </summary>
     public int OverwrittenOrigins { get; }
 }
 
 /// <summary>
-/// Describes one overflowing operation of a <see cref="GpuOverflowException"/>: the operator, the expression it belongs to
-/// and the call that evaluated it.
+/// Describes one overflowing operation of a <see cref="GpuOverflowException"/>: the operator, the expression it belongs
+/// to and the call that evaluated it.
 /// </summary>
 public sealed class GpuOverflowOrigin
 {
@@ -98,14 +102,15 @@ public sealed class GpuOverflowOrigin
     public string? Subexpression { get; internal init; }
 
     /// <summary>
-    /// Gets the whole evaluated expression as text, with the overflowing operation in brackets (<c>[x0 + x1] - x2</c>), or
-    /// <see langword="null"/> when the operation was not evaluated through a <c>GpuBigIntExpr</c> entry point.
+    /// Gets the whole evaluated expression as text, with the overflowing operation in brackets (<c>[x0 + x1] - x2</c>),
+    /// or <see langword="null"/> when the operation was not evaluated through a <c>GpuBigIntExpr</c> entry point.
     /// </summary>
     public string? Expression { get; internal init; }
 
     /// <summary>
     /// Gets the entry point that evaluated the expression (<c>Evaluate</c>, <c>CompileToGraph</c>,
-    /// <c>EvaluateWithCudaGraph</c>, <c>EvaluateWithCudaGraphAsync</c>), or <see langword="null"/> when it is not known.
+    /// <c>EvaluateWithCudaGraph</c>, <c>EvaluateWithCudaGraphAsync</c>), or <see langword="null"/> when it is not
+    /// known.
     /// </summary>
     /// <remarks>For a compiled graph, every replay reports the <c>CompileToGraph</c> call.</remarks>
     public string? EntryPoint { get; internal init; }

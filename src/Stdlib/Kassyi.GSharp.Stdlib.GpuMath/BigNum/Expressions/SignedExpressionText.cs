@@ -23,7 +23,9 @@ internal static class SignedExpressionText
     /// <summary>Writes <paramref name="node"/> and the whole expression with <paramref name="node"/> marked.</summary>
     /// <param name="root">The evaluated expression.</param>
     /// <param name="node">The overflowing operation inside <paramref name="root"/>.</param>
-    /// <returns>The operation (<c>x0 + x1</c>) and the expression (<c>[x0 + x1] - x2</c>), with the same operand names.</returns>
+    /// <returns>
+    /// The operation (<c>x0 + x1</c>) and the expression (<c>[x0 + x1] - x2</c>), with the same operand names.
+    /// </returns>
     public static (string Subexpression, string Expression) Describe(IGpuBigIntExpression root,
         IGpuBigIntExpression node)
     {
