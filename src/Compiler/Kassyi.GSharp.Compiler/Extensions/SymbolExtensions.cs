@@ -389,17 +389,19 @@ internal static class SymbolExtensions
     /// </summary>
     public static string FormatSignature(this IMethodSymbol method)
     {
-        var text = new StringBuilder();
-        text.Append(method.Name).Append('(');
-        for (var i = 0; i < method.Parameters.Length; i++)
+        using var text = new SourceWriter();
+        text.Append(method.Name);
+        using (text.Parentheses())
         {
-            var parameter = method.Parameters[i];
-            text.Append(i > 0 ? ", " : string.Empty)
-                .Append(parameter.RefKind.FormatRefKind())
-                .Append(IteratorTypeResolver.FormatType(parameter.Type));
+            for (var i = 0; i < method.Parameters.Length; i++)
+            {
+                var parameter = method.Parameters[i];
+                text.AppendIf(i > 0, ", ");
+                text.Append($"{parameter.RefKind.FormatRefKind()}{IteratorTypeResolver.FormatType(parameter.Type)}");
+            }
         }
 
-        return text.Append(')').ToString();
+        return text.ToString();
     }
 
     /// <summary>The modifier of a parameter with <paramref name="refKind"/> in message text, with a trailing space (<c>ref </c>).</summary>

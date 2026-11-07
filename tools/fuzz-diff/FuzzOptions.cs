@@ -20,6 +20,9 @@ public enum FuzzSwarmFocus
 /// </summary>
 public sealed record FuzzOptions
 {
+    /// <summary>The default of <see cref="MetamorphicVariantsPerKernel"/>.</summary>
+    public const int DefaultMetamorphicVariantsPerKernel = 2;
+
     /// <summary>Gets the 64-bit master fuzz seed determining the AST structure and operator weights.</summary>
     public ulong FuzzSeed { get; init; } = 1UL;
 
@@ -60,7 +63,7 @@ public sealed record FuzzOptions
     public bool Metamorphic { get; init; }
 
     /// <summary>Gets the number of metamorphic variants emitted per base kernel when <see cref="Metamorphic"/> is <see langword="true"/>.</summary>
-    public int MetamorphicVariantsPerKernel { get; init; } = 2;
+    public int MetamorphicVariantsPerKernel { get; init; } = DefaultMetamorphicVariantsPerKernel;
 }
 
 /// <summary>

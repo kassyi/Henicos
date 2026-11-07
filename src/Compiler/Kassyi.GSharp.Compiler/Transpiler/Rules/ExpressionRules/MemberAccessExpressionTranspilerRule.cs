@@ -18,26 +18,9 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
             return;
         }
 
-        if (symbol is IPropertySymbol spanProperty)
+        if (symbol is IPropertySymbol spanProperty && TryTranspileSpanProperty(node, spanProperty, ref context))
         {
-            switch (SpanWriteClassifier.ClassifyProperty(spanProperty))
-            {
-                case SpanPropertyKind.Empty:
-                    context.Emitter.Dialect.AppendType(ref context, spanProperty.Type);
-                    context.Emitter.Writer.Append("{}");
-                    return;
-                case SpanPropertyKind.IsEmpty:
-                    StackArrayLocals.AppendView(node.Expression, ref context);
-                    context.Emitter.Writer.Append(".IsEmpty()");
-                    return;
-                case SpanPropertyKind.Unsupported:
-                    context.Reporter.Fail(
-                        GSharpDiagnostics.UnsupportedSyntax,
-                        node,
-                        SpanWriteClassifier.FormatUnsupportedProperty(spanProperty));
-                    context.Visitor.AppendUnsupportedPlaceholder(node);
-                    return;
-            }
+            return;
         }
 
         if (symbol != null && TryTranspileIntrinsic(symbol, ref context))
@@ -52,51 +35,92 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
         }
 
         var memberExprSymbol = context.Query.SemanticModel.GetSymbol(node.Expression);
-        if (TryTranspileEnumAccess(memberExprSymbol, node, ref context))
-        {
-            return;
-        }
-
-        if (memberExprSymbol is ITypeSymbol)
-        {
-            // A device function carries its containing type in its own global name; other static members drop it.
-            if (symbol is IMethodSymbol method && CppNameResolver.IsEmittedDeviceFunction(method, context.Emitter.Dialect))
-            {
-                DynamicSharedMemoryEmitter.FailIfReferencedWithoutCall(node, method, ref context);
-                context.Emitter.Writer.AppendCppName(CppNameResolver.Resolve(method, method.Name, context.Emitter.Dialect));
-                return;
-            }
-
-            if (symbol != null &&
-                GpuCodeConstraints.IsHostStaticMemberReference(node, symbol, context.Query.SemanticModel, context.Emitter.Dialect))
-            {
-                context.Reporter.Fail(
-                    GSharpDiagnostics.StaticMemberAccessNotSupported,
-                    node,
-                    symbol.ContainingType?.Name ?? string.Empty,
-                    symbol.Name);
-            }
-
-            context.Emitter.Writer.Append(node.Name.Identifier.Text);
-            return;
-        }
-
-        if (TryTranspileReducedExtensionMethodGroup(node, symbol, ref context))
-        {
-            return;
-        }
-
-        if (TryTranspileStackArrayLength(node, ref context))
-        {
-            return;
-        }
-
-        if (TryTranspileSpecialArrayMembers(node, ref context))
+        if (TryTranspileEnumAccess(memberExprSymbol, node, ref context) ||
+            TryTranspileTypeQualifiedAccess(memberExprSymbol, symbol, node, ref context) ||
+            TryTranspileReducedExtensionMethodGroup(node, symbol, ref context) ||
+            StackArrayLengthAccess.TryTranspile(node, ref context) ||
+            TryTranspileSpecialArrayMembers(node, ref context))
         {
             return;
         }
 
         TranspileMemberAccess(node, symbol, ref context);
+    }
+
+    // Span<T>.Empty, Span<T>.IsEmpty and the Span / ReadOnlySpan properties that G# does not support.
+    private static bool TryTranspileSpanProperty(
+        MemberAccessExpressionSyntax node,
+        IPropertySymbol property,
+        ref TranspileContext context)
+    {
+        switch (SpanWriteClassifier.ClassifyProperty(property))
+        {
+            case SpanPropertyKind.Empty:
+                context.Emitter.Dialect.AppendType(ref context, property.Type);
+                context.Emitter.Writer.Append("{}");
+                return true;
+            case SpanPropertyKind.IsEmpty:
+                StackArrayLocals.AppendView(node.Expression, ref context);
+                context.Emitter.Writer.Append(".IsEmpty()");
+                return true;
+            case SpanPropertyKind.Unsupported:
+                context.Reporter.Fail(
+                    GSharpDiagnostics.UnsupportedSyntax,
+                    node,
+                    SpanWriteClassifier.FormatUnsupportedProperty(property)
+                );
+                context.Visitor.AppendUnsupportedPlaceholder(node);
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    // A member reached through a type name (Type.Member).
+    private static bool TryTranspileTypeQualifiedAccess(
+        ISymbol? memberExprSymbol,
+        ISymbol? symbol,
+        MemberAccessExpressionSyntax node,
+        ref TranspileContext context)
+    {
+        if (memberExprSymbol is not ITypeSymbol)
+        {
+            return false;
+        }
+
+        // A device function carries its containing type in its own global name; other static members drop it.
+        if (symbol is IMethodSymbol method && CppNameResolver.IsEmittedDeviceFunction(method, context.Emitter.Dialect))
+        {
+            DynamicSharedMemoryEmitter.FailIfReferencedWithoutCall(node, method, ref context);
+            context.Emitter.Writer.AppendCppName(CppNameResolver.Resolve(method, method.Name, context.Emitter.Dialect));
+            return true;
+        }
+
+        FailIfHostStaticMember(node, symbol, ref context);
+        context.Emitter.Writer.Append(node.Name.Identifier.Text);
+        return true;
+    }
+
+    private static void FailIfHostStaticMember(
+        MemberAccessExpressionSyntax node,
+        ISymbol? symbol,
+        ref TranspileContext context)
+    {
+        if (symbol != null &&
+            GpuCodeConstraints.IsHostStaticMemberReference(
+                node,
+                symbol,
+                context.Query.SemanticModel,
+                context.Emitter.Dialect
+            ))
+        {
+            context.Reporter.Fail(
+                GSharpDiagnostics.StaticMemberAccessNotSupported,
+                node,
+                symbol.ContainingType?.Name ?? string.Empty,
+                symbol.Name
+            );
+        }
     }
 
     // [WHY] A reduced extension method group (x.M) evaluates and binds its receiver when the delegate is formed, so
@@ -106,13 +130,8 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
         ISymbol? symbol,
         ref TranspileContext context)
     {
-        if (node.Parent is InvocationExpressionSyntax parentInvocation && parentInvocation.Expression == node)
-        {
-            return false;
-        }
-
-        if ((symbol ?? context.Query.SemanticModel.GetSymbol(node.Name)) is not IMethodSymbol { ReducedFrom: { } extension } method ||
-            !CppNameResolver.IsEmittedDeviceFunction(extension, context.Emitter.Dialect))
+        if (!TryGetReducedExtensionMethodGroup(node, symbol, context.Query.SemanticModel, context.Emitter.Dialect,
+                out var method, out var extension))
         {
             return false;
         }
@@ -126,6 +145,34 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
         return true;
     }
 
+    // An uninvoked x.M whose M is an extension method that G# emits as a device function.
+    private static bool TryGetReducedExtensionMethodGroup(
+        MemberAccessExpressionSyntax node,
+        ISymbol? symbol,
+        SemanticModel semanticModel,
+        ITranspilerDialect dialect,
+        [NotNullWhen(true)] out IMethodSymbol? method,
+        [NotNullWhen(true)] out IMethodSymbol? extension)
+    {
+        method = null;
+        extension = null;
+        if (node.Parent is InvocationExpressionSyntax parentInvocation && parentInvocation.Expression == node)
+        {
+            return false;
+        }
+
+        var candidate = symbol ?? semanticModel.GetSymbol(node.Name);
+        if (candidate is not IMethodSymbol { ReducedFrom: { } reducedFrom } reduced ||
+            !CppNameResolver.IsEmittedDeviceFunction(reducedFrom, dialect))
+        {
+            return false;
+        }
+
+        method = reduced;
+        extension = reducedFrom;
+        return true;
+    }
+
     // [<receiver param> = (<receiver>)](<parameters>) { return <extension>(<receiver param>, <parameters>); }
     private static void WriteBoundExtensionLambda(
         ExpressionSyntax receiver,
@@ -134,6 +181,18 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
         ref TranspileContext context)
     {
         StructTranspiler.RegisterUsedStructIfApplicable(method.ReturnType, ref context);
+        WriteReceiverCapture(receiver, extension, ref context);
+        WriteLambdaParameters(method, ref context);
+        context.Emitter.Writer.Append(' ');
+        WriteForwardingBody(method, extension, ref context);
+    }
+
+    // [<receiver param> = (<receiver>)]
+    private static void WriteReceiverCapture(
+        ExpressionSyntax receiver,
+        IMethodSymbol extension,
+        ref TranspileContext context)
+    {
         using (context.Emitter.Writer.Brackets())
         {
             CppNameResolver.AppendSymbolName(extension.Parameters[0], ref context);
@@ -143,7 +202,11 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
                 StackArrayLocals.AppendView(receiver, ref context);
             }
         }
+    }
 
+    // (<type> <parameter>, <type>* <ref parameter>)
+    private static void WriteLambdaParameters(IMethodSymbol method, ref TranspileContext context)
+    {
         using (context.Emitter.Writer.Parentheses())
         {
             for (var i = 0; i < method.Parameters.Length; i++)
@@ -158,8 +221,14 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
                 CppNameResolver.AppendSymbolName(parameter, ref context);
             }
         }
+    }
 
-        context.Emitter.Writer.Append(' ');
+    // { return <extension>(<receiver param>, <parameters>); }
+    private static void WriteForwardingBody(
+        IMethodSymbol method,
+        IMethodSymbol extension,
+        ref TranspileContext context)
+    {
         using (context.Emitter.Writer.InlineScope("{ ", " }"))
         {
             context.Emitter.Writer.AppendIf(!extension.ReturnsVoid, "return ");
@@ -178,26 +247,26 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
         }
     }
 
+    // memory.Span on System.Memory<T> / System.ReadOnlyMemory<T>: the memory is already a span in C++.
     private static bool TryTranspileSpecialArrayMembers(MemberAccessExpressionSyntax node, ref TranspileContext context)
     {
-        var memberName = node.Name.Identifier.Text;
-        var operandType = context.Query.SemanticModel.GetTypeSymbol(node.Expression);
-
-        if (operandType == null)
+        if (!IsMemorySpanAccess(node, context.Query.SemanticModel))
         {
             return false;
         }
 
-        if (memberName == "Span" &&
-            operandType is INamedTypeSymbol { Name: "Memory" or "ReadOnlyMemory", ContainingNamespace.IsGlobalNamespace: false } nsSymbol &&
-            nsSymbol.ContainingNamespace.IsSystemNamespace())
-        {
-            context.Visitor.Visit(node.Expression);
-            return true;
-        }
-
-        return false;
+        context.Visitor.Visit(node.Expression);
+        return true;
     }
+
+    private static bool IsMemorySpanAccess(MemberAccessExpressionSyntax node, SemanticModel semanticModel) =>
+        node.Name.Identifier.Text == "Span" &&
+        semanticModel.GetTypeSymbol(node.Expression) is INamedTypeSymbol
+        {
+            Name: "Memory" or "ReadOnlyMemory",
+            ContainingNamespace.IsGlobalNamespace: false
+        } memoryType &&
+        memoryType.ContainingNamespace.IsSystemNamespace();
 
     /// <summary>
     /// Writes the native name that the dialect maps <paramref name="symbol"/> to (<c>[CudaIntrinsic]</c>, an intrinsic
@@ -250,106 +319,136 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
         return false;
     }
 
+    // <receiver>.<member> or <receiver>-><member>
     private static void TranspileMemberAccess(MemberAccessExpressionSyntax node, ISymbol? memberSymbol,
         ref TranspileContext context)
     {
-        // A member of System.Array (Length, Rank, ...) throws NullReferenceException on a null array in C# (#706). A
-        // stack array has no members in C++; its span members are called on a view of it (s.Slice(1))
+        var member = PlanMemberName(node, memberSymbol, context.Query.SemanticModel, context.Emitter.Dialect);
+        AppendMemberReceiver(node, memberSymbol, ref context);
+        context.Emitter.Writer.Append(node.IsKind(SyntaxKind.PointerMemberAccessExpression) ? "->" : ".");
+        WriteMemberName(node, member, ref context);
+    }
+
+    // A member of System.Array (Length, Rank, ...) throws NullReferenceException on a null array in C# (#706). A stack
+    // array has no members in C++; its span members are called on a view of it (s.Slice(1))
+    private static void AppendMemberReceiver(MemberAccessExpressionSyntax node, ISymbol? memberSymbol,
+        ref TranspileContext context)
+    {
         if (!ArrayNullCheck.TryAppendMemberReceiver(node, memberSymbol, ref context))
         {
             StackArrayLocals.AppendView(node.Expression, ref context);
         }
-
-        context.Emitter.Writer.Append(node.IsKind(SyntaxKind.PointerMemberAccessExpression) ? "->" : ".");
-
-        // [WHY] Members of structs that G# emits are resolved before the dialect mapping, which would otherwise rewrite
-        // a user field named Length or Count as if it were an array length.
-        // The name is resolved first because the access symbol of an invoked delegate is its Invoke method, and lowering
-        // synthesizes context accesses (ctx->local) whose member carries the hoisted local's original span.
-        memberSymbol = context.Query.SemanticModel.GetSymbol(node.Name) ??
-                       context.Query.SemanticModel.GetDeclaredSymbol<ISymbol>(node.Name) ??
-                       memberSymbol;
-        var memberName = CppNameResolver.Resolve(memberSymbol, node.Name.Identifier.ValueText, context.Emitter.Dialect);
-        if (memberName.Kind != CppNameKind.Verbatim)
-        {
-            context.Emitter.Writer.AppendCppName(memberName);
-            ComputedPropertyGetterCall.AppendCallIfGetter(node, memberSymbol, ref context);
-            return;
-        }
-
-        if (memberName.Name == "Length" &&
-            node.Expression.HasAnnotations(LoweringAnnotations.ForEachArraySourceAnnotationKind))
-        {
-            context.Emitter.Writer.Append("length");
-            return;
-        }
-
-        var typeSymbol = context.Query.SemanticModel.GetTypeSymbol(node.Expression);
-        if (typeSymbol != null && context.Emitter.Dialect.TryMapMemberAccess(typeSymbol, memberName.Name, out var mappedName, out var isMethodCall) && mappedName != null)
-        {
-            if (isMethodCall)
-            {
-                context.Emitter.Writer.Append(mappedName).Append("()");
-            }
-            else
-            {
-                context.Emitter.Writer.Append(mappedName);
-            }
-        }
-        else
-        {
-            context.Emitter.Writer.AppendCppName(memberName);
-        }
     }
 
-    private static bool TryTranspileStackArrayLength(MemberAccessExpressionSyntax node, ref TranspileContext context)
+    /// <summary>How the member name after the receiver is written.</summary>
+    private enum MemberNameShape : byte
     {
-        if (node.Name.Identifier.Text != "Length")
+        /// <summary>
+        /// A name that <see cref="CppNameResolver"/> renames, followed by the getter call of a computed property.
+        /// </summary>
+        Resolved,
+
+        /// <summary><c>length</c> of the array that a lowered <c>foreach</c> iterates.</summary>
+        ForEachArrayLength,
+
+        /// <summary>The member name that the dialect maps the member to.</summary>
+        DialectMember,
+
+        /// <summary>The method that the dialect maps the member to, called with no arguments.</summary>
+        DialectMethodCall,
+
+        /// <summary>The C# name, unchanged.</summary>
+        Verbatim
+    }
+
+    /// <param name="Shape">The form of the output.</param>
+    /// <param name="CppName">
+    /// The resolved name (<see cref="MemberNameShape.Resolved"/>, <see cref="MemberNameShape.Verbatim"/>).
+    /// </param>
+    /// <param name="MappedName">
+    /// The dialect spelling (<see cref="MemberNameShape.DialectMember"/>,
+    /// <see cref="MemberNameShape.DialectMethodCall"/>).
+    /// </param>
+    /// <param name="Symbol">The member symbol, for the getter call of <see cref="MemberNameShape.Resolved"/>.</param>
+    private readonly record struct MemberNamePlan(
+        MemberNameShape Shape,
+        CppName CppName,
+        string MappedName,
+        ISymbol? Symbol)
+    {
+        public static MemberNamePlan Resolved(CppName name, ISymbol? symbol) =>
+            new(MemberNameShape.Resolved, name, string.Empty, symbol);
+
+        public static MemberNamePlan ForEachArrayLength(CppName name) =>
+            new(MemberNameShape.ForEachArrayLength, name, string.Empty, null);
+
+        public static MemberNamePlan Dialect(CppName name, string mappedName, bool isMethodCall) =>
+            new(
+                isMethodCall ? MemberNameShape.DialectMethodCall : MemberNameShape.DialectMember,
+                name,
+                mappedName,
+                null
+            );
+
+        public static MemberNamePlan Verbatim(CppName name) =>
+            new(MemberNameShape.Verbatim, name, string.Empty, null);
+    }
+
+    private static MemberNamePlan PlanMemberName(MemberAccessExpressionSyntax node, ISymbol? memberSymbol,
+        SemanticModel semanticModel, ITranspilerDialect dialect)
+    {
+        // [WHY] Members of structs that G# emits are resolved before the dialect mapping, which would otherwise rewrite
+        // a user field named Length or Count as if it were an array length.
+        // The name is resolved first because the access symbol of an invoked delegate is its Invoke method, and
+        // lowering synthesizes context accesses (ctx->local) whose member carries the hoisted local's original span.
+        var symbol = semanticModel.GetSymbol(node.Name) ??
+                     semanticModel.GetDeclaredSymbol<ISymbol>(node.Name) ??
+                     memberSymbol;
+        var name = CppNameResolver.Resolve(symbol, node.Name.Identifier.ValueText, dialect);
+        if (name.Kind != CppNameKind.Verbatim)
         {
-            return false;
+            return MemberNamePlan.Resolved(name, symbol);
         }
 
-        var symbol = context.Query.SemanticModel.GetSymbol(node.Expression);
-        if (symbol is ILocalSymbol localSym)
+        if (name.Name == "Length" &&
+            node.Expression.HasAnnotations(LoweringAnnotations.ForEachArraySourceAnnotationKind))
         {
-            if (!localSym.TryGetDeclaringSyntax<VariableDeclaratorSyntax>(out var decl))
-            {
-                return false;
-            }
-
-            if (decl.Initializer == null)
-            {
-                return false;
-            }
-
-            if (!InitializationSyntaxExtractor.TryGetArrayInitialization(decl.Initializer.Value, out var count, out var sizeExpr,
-                    out _))
-            {
-                return false;
-            }
-
-            if (count.HasValue)
-            {
-                context.Emitter.Writer.Append(count.Value);
-                return true;
-            }
-
-            // A constant size is written as its value, as the declaration writes it: a const local it names is not
-            // declared again when the state machine resumes
-            if (sizeExpr != null &&
-                context.Query.SemanticModel.GetSafeConstantValue(sizeExpr) is { HasValue: true, Value: int size })
-            {
-                context.Emitter.Writer.Append(size);
-                return true;
-            }
-
-            if (sizeExpr != null)
-            {
-                context.Visitor.Visit(sizeExpr);
-                return true;
-            }
+            return MemberNamePlan.ForEachArrayLength(name);
         }
 
-        return false;
+        if (semanticModel.GetTypeSymbol(node.Expression) is { } typeSymbol &&
+            dialect.TryMapMemberAccess(typeSymbol, name.Name, out var mappedName, out var isMethodCall) &&
+            mappedName != null)
+        {
+            return MemberNamePlan.Dialect(name, mappedName, isMethodCall);
+        }
+
+        return MemberNamePlan.Verbatim(name);
+    }
+
+    private static void WriteMemberName(MemberAccessExpressionSyntax node, in MemberNamePlan member,
+        ref TranspileContext context)
+    {
+        switch (member.Shape)
+        {
+            case MemberNameShape.Resolved:
+                context.Emitter.Writer.AppendCppName(member.CppName);
+                ComputedPropertyGetterCall.AppendCallIfGetter(node, member.Symbol, ref context);
+                break;
+            case MemberNameShape.ForEachArrayLength:
+                context.Emitter.Writer.Append("length");
+                break;
+            case MemberNameShape.DialectMember:
+                context.Emitter.Writer.Append(member.MappedName);
+                break;
+            case MemberNameShape.DialectMethodCall:
+                context.Emitter.Writer.Append(member.MappedName).Append("()");
+                break;
+            case MemberNameShape.Verbatim:
+                context.Emitter.Writer.AppendCppName(member.CppName);
+                break;
+            default:
+                throw new InvalidOperationException($"Unknown member name shape {member.Shape}.");
+        }
     }
 }

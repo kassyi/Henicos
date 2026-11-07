@@ -14,7 +14,7 @@ internal class GpuBigIntVectorLeafExpression(GpuBigIntArray array) : IGpuBigIntV
         DeviceCounted.ThrowIfCpuFallback(workspace);
         var count = elementCount ?? (Length - elementOffset);
 
-        // The user's array is lent as a view, never handed out as an owner (design 4.6)
+        // The user's array is lent as a view, never handed out as an owner
         var slice = array.Slice(elementOffset, count);
         if (!VectorResultCache.HasTarget(targetResult))
         {
