@@ -98,7 +98,7 @@ public class GpuWorkspace : IGpuResourceScope
 
     /// <summary>
     /// Gets or sets the bit length threshold for algorithm selection in poly-algorithms like ModPow.
-    /// Values smaller than the threshold will use intermediate-scale algorithms (e.g., Host-Loop or RNS),
+    /// Values smaller than the threshold will use intermediate-scale algorithms (e.g., Host-Loop),
     /// while values greater than or equal to the threshold will dispatch to giant-scale MegaKernels (e.g., NTT).
     /// Default is 1024 bits.
     /// </summary>
