@@ -237,4 +237,58 @@ public class UnsignedExpressionsTests : IDisposable
         var res = ToBigInt(gpuRes);
         Assert.Equal(new BigInteger(expectedSqrt), res);
     }
+
+    [SkippableTheory]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.SadPath)]
+    [InlineData("Add")]
+    [InlineData("Mul")]
+    [InlineData("Not")]
+    [InlineData("ShiftLeft")]
+    [InlineData("Leaf")]
+    public void Evaluate_TargetNarrowerThanTheExpression_ThrowsAndLeavesTheWordsAfterIt(string root)
+    {
+        // A 1-word target at the start of a guard buffer: the 4-word expression (8 words for Mul) is rejected before
+        // anything is written, as the signed nodes reject a target of another width, and the guard words keep their value.
+        // mutant: GpuBigUIntExpressionExtensions.Evaluate `targetResult.NumWords < expr.NumWords` check removed (Add, Mul,
+        // Not, ShiftLeft write 4 or 8 words through the 1-word target; Leaf truncates)
+        // mutant: the check `<` -> `<=` (every equal-width target in this class throws)
+        const uint Guard = 0xDEAD_BEEFu;
+        using var a = Create(_context, 1, 4);
+        using var b = Create(_context, 2, 4);
+        using var guardBuffer = new GpuBigUInt(_context, Enumerable.Repeat(Guard, 9).ToArray());
+        GpuBigUIntView whole = guardBuffer;
+        var target = whole.Slice(0, 1).AsBorrowedBigUInt();
+        GpuBigUIntExpr ea = a;
+        GpuBigUIntExpr eb = b;
+        var expression = root switch
+        {
+            "Add" => ea + eb,
+            "Mul" => ea * eb,
+            "Not" => ~ea,
+            "ShiftLeft" => ea << 3,
+            "Leaf" => ea,
+            _ => throw new ArgumentOutOfRangeException(nameof(root), root, "Unknown root."),
+        };
+
+        var error = Assert.Throws<ArgumentException>(() => expression.Node.Evaluate(_context, target));
+
+        Assert.Equal("targetResult", error.ParamName);
+        Assert.Equal(Enumerable.Repeat(Guard, 9).ToArray(), guardBuffer.ToHostArray());
+    }
+
+    [SkippableFact]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.Boundary)]
+    public void Evaluate_TargetOfTheExpressionWidth_HoldsTheResult()
+    {
+        // The same width as the expression is accepted (the check rejects only a narrower target).
+        using var a = Create(_context, 1, 4);
+        using var b = Create(_context, 2, 4);
+        using var target = new GpuBigUInt(_context, 4);
+
+        ((GpuBigUIntExpr)a + b).Node.Evaluate(_context, target);
+
+        Assert.Equal(new BigInteger(3), target.ToBigInteger());
+    }
 }
