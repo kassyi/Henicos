@@ -515,8 +515,8 @@ internal sealed class SplicedFlowBuilder
         SpliceGraph(body, graph.GetAnonymousFunctionControlFlowGraphInScope(function), gaps: null, isLoop: false);
     }
 
-    // A local function where it is called (with the call) or converted to a delegate, once on each path (a recursive call
-    // adds nothing)
+    // A local function where it is called (with the call) or converted to a delegate, once on each path (a recursive
+    // call adds nothing)
     private void SpliceLocalFunction(IMethodSymbol function, ControlFlowGraph graph, SplicedBodyKind kind,
         IInvocationOperation? call = null)
     {
@@ -526,7 +526,13 @@ internal sealed class SplicedFlowBuilder
             return;
         }
 
-        var body = new SplicedBody(kind, syntax, function.Parameters, Call: call, CallGraph: call != null ? graph : null);
+        var body = new SplicedBody(
+            kind,
+            syntax,
+            function.Parameters,
+            Call: call,
+            CallGraph: call != null ? graph : null
+        );
         SpliceGraph(body, graph.GetLocalFunctionControlFlowGraphInScope(function), gaps: null, isLoop: false);
         _localFunctionsInProgress.Remove(function);
     }

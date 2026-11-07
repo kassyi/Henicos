@@ -73,10 +73,10 @@ public class InterproceduralUniformityAnalyzerTests : TranspilerTestBase
 
         var exit = GSharpDiagnostics.BarrierAfterDivergentExit.Id;
 
-        // 15 / 33 / 52: a lane that a local function returns, or leaves in an out or ref argument. 75: a constant that it
-        // returns under a thread-variant branch. 90: a thread-variant local it reads. 104: a thread-variant argument it
-        // returns (its barrier at 106, as later barriers follow). Each is reported as the control at 134 that reads the lane
-        // directly; nothing at 109 and 120, where it returns or copies a uniform argument
+        // 15 / 33 / 52: a lane that a local function returns, or leaves in an out or ref argument. 75: a constant that
+        // it returns under a thread-variant branch. 90: a thread-variant local it reads. 104: a thread-variant argument
+        // it returns (its barrier at 106, as later barriers follow). Each is reported as the control at 134 that reads
+        // the lane directly; nothing at 109 and 120, where it returns or copies a uniform argument
         Assert.Equal(
             [
                 (exit, 15, 13, 15, 22),

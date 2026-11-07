@@ -314,8 +314,8 @@ public class ParallelAggregateTests : TranspilerTestBase
         Assert.All(result, value => Assert.Equal(WrappingSum(data.Select(static x => x * x).ToArray()), value));
     }
 
-    // A lane that a local function returns or leaves in an out argument is thread-variant, so the predicate that reads it
-    // runs in each thread; the shared form gave every thread the total of thread 0, which is 0
+    // A lane that a local function returns or leaves in an out argument is thread-variant, so the predicate that reads
+    // it runs in each thread; the shared form gave every thread the total of thread 0, which is 0
     [SkippableTheory]
     [MemberData(nameof(Paths))]
     [TestTarget(ExecutionTarget.GpuExecution)]
@@ -326,7 +326,8 @@ public class ParallelAggregateTests : TranspilerTestBase
         var data = Enumerable.Range(0, 64).ToArray();
         var result = new int[2 * 64 * 2];
 
-        Run(managed, () => ParallelAggregateKernels.LaunchLocalFunctionLaneKernel(data, result, gridDimX: 2, blockDimX: 64));
+        Run(managed,
+            () => ParallelAggregateKernels.LaunchLocalFunctionLaneKernel(data, result, gridDimX: 2, blockDimX: 64));
 
         // mutant: UniformityValueReader.EvaluateCall without the result of a local function call
         for (var gtid = 0; gtid < 2 * 64; gtid++)

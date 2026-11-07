@@ -384,7 +384,8 @@ internal sealed class UniformitySolver(UniformityState state)
 
     // The parameter of a spliced body holds what the call leaves in its argument; a call whose body is not spliced (a
     // recursive call) may leave anything
-    private void WriteLocalFunctionArguments(IInvocationOperation invocation, ThreadVariance[] current, SyntaxNode? opaque)
+    private void WriteLocalFunctionArguments(IInvocationOperation invocation, ThreadVariance[] current,
+        SyntaxNode? opaque)
     {
         var recorder = state.Recorder;
         var spliced = recorder.TryGetResult(invocation.Syntax, out _);
@@ -399,7 +400,8 @@ internal sealed class UniformitySolver(UniformityState state)
             var written = spliced && recorder.TryGetValue(parameters[parameter.Ordinal], out var index)
                 ? current[index]
                 : ThreadVariance.Block;
-            var target = argument.Value is IDeclarationExpressionOperation declared ? declared.Expression : argument.Value;
+            var target =
+                argument.Value is IDeclarationExpressionOperation declared ? declared.Expression : argument.Value;
             Assign(target, written, strong: parameter.RefKind == RefKind.Out, current, opaque);
         }
     }

@@ -7,8 +7,8 @@ internal enum UniformityEventKind
     Define,
 
     /// <summary>
-    /// A parameter of a local function receives the variance of its argument, or the result of a local function call the
-    /// variance of the value its body returns.
+    /// A parameter of a local function receives the variance of its argument, or the result of a local function call
+    /// the variance of the value its body returns.
     /// </summary>
     Bind,
 

@@ -53,7 +53,9 @@ internal sealed class UniformityRecorder(IMethodSymbol method, ArgumentMasks mas
     /// <summary>The value index of a local or parameter, when the graph writes it.</summary>
     public bool TryGetValue(ISymbol symbol, out int index) => _symbols.TryGetValue(symbol, out index);
 
-    /// <summary>The value index of the result of a local function call, when its body is spliced where it is called.</summary>
+    /// <summary>
+    /// The value index of the result of a local function call, when its body is spliced where it is called.
+    /// </summary>
     public bool TryGetResult(SyntaxNode call, out int index) => _results.TryGetValue(call, out index);
 
     /// <summary>The value index of a flow capture, when the graph writes it.</summary>
@@ -182,8 +184,8 @@ internal sealed class UniformityRecorder(IMethodSymbol method, ArgumentMasks mas
         }
     }
 
-    // The parameters of a lambda or local function are thread-variant, except the index of a ForUnroll body and those of
-    // a local function that receive an argument of the call it runs for
+    // The parameters of a lambda or local function are thread-variant, except the index of a ForUnroll body and those
+    // of a local function that receive an argument of the call it runs for
     public void OnBodyEntered(SplicedBody body, int node)
     {
         var parameters = body.Parameters;
@@ -229,13 +231,15 @@ internal sealed class UniformityRecorder(IMethodSymbol method, ArgumentMasks mas
         Nodes[node].Events.Add(new UniformityEvent(UniformityEventKind.Bind, value, graph, Opaque, result));
     }
 
-    // A by-value or ref parameter starts with the variance of its argument; an out parameter is written before it is read
+    // A by-value or ref parameter starts with the variance of its argument; an out parameter is written before it is
+    // read
     private void BindArguments(IInvocationOperation call, ControlFlowGraph callGraph,
         ImmutableArray<IParameterSymbol> parameters, int node)
     {
         foreach (var argument in call.Arguments)
         {
-            if (argument.Parameter is not { RefKind: not RefKind.Out, Ordinal: var ordinal } || ordinal >= parameters.Length)
+            if (argument.Parameter is not { RefKind: not RefKind.Out, Ordinal: var ordinal } ||
+                ordinal >= parameters.Length)
             {
                 continue;
             }
