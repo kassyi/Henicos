@@ -219,6 +219,8 @@ internal sealed class FloatVectorDivScalarExpression(
             FloatOp = CreateScalarFloatOp(operands),
             PreShiftBits = DefaultDivShiftBits
         };
+        using var scratch = DivModScratch.Rent(workspace, ctx.FloatOp.Core, gridDimX);
+        ctx.Scratch = scratch?.DevicePointer ?? IntPtr.Zero;
         GpuBigIntVectorKernels.LaunchVectorFloatDivScalarKernelPtr(
             ctx, gridDimX, 1, 1, 32, 1, 1, 0, workspace.Stream);
     }

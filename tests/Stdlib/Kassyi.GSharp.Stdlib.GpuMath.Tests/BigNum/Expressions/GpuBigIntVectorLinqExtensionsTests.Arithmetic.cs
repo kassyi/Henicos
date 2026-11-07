@@ -305,6 +305,45 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         Assert.Throws<DivideByZeroException>(() => inside.Evaluate(_context));
     }
 
+    [Theory]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(512)]
+    [InlineData(513)]
+    [InlineData(600)]
+    public void Division_ElementsWiderThanTheSharedBuffers_UseEveryWord(int words)
+    {
+        // 512 words fill the kernel's shared buffers exactly; 513 and 600 words pass them, and the division works in
+        // global scratch instead of the low 512 words of each operand.
+        // mutant: evalWords clamped to DivModSharedWords again (600 words: quotient 12345 instead of 2^19168 + 12345)
+        // mutant: the kernel working in scratch for `evalWords >= DivModSharedWords` while the host rents it only
+        // above (512 words: the kernel indexes a null scratch)
+        var top = BigInteger.One << (32 * (words - 1));
+        var divisor = (BigInteger.One << (32 * (words - 50))) + 7;
+        BigInteger[] dividends = [top, top + 12345, -(top + 12345), top * 3 + 1];
+        BigInteger[] divisors = [top, 1, divisor, -divisor];
+        using var left = CreateArray(dividends, words);
+        using var right = CreateArray(divisors, words);
+        using var scalar = CreateScalar(divisor, words);
+        using var quotients = left.AsVectorizedEnumerable().ZipDivide(right.AsVectorizedEnumerable());
+        using var remainders = left.AsVectorizedEnumerable().ZipModulo(right.AsVectorizedEnumerable());
+        using var scalarQuotients = left.AsVectorizedEnumerable().SelectDivide(scalar);
+        using var scalarRemainders = left.AsVectorizedEnumerable().SelectModulo(scalar);
+
+        var q = ToHostArray(quotients.Evaluate(_context));
+        var r = ToHostArray(remainders.Evaluate(_context));
+        var sq = ToHostArray(scalarQuotients.Evaluate(_context));
+        var sr = ToHostArray(scalarRemainders.Evaluate(_context));
+
+        for (var i = 0; i < dividends.Length; i++)
+        {
+            Assert.Equal(BigInteger.Divide(dividends[i], divisors[i]), q[i]);
+            Assert.Equal(BigInteger.Remainder(dividends[i], divisors[i]), r[i]);
+            Assert.Equal(BigInteger.Divide(dividends[i], divisor), sq[i]);
+            Assert.Equal(BigInteger.Remainder(dividends[i], divisor), sr[i]);
+        }
+    }
+
     [Fact]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.HappyPath)]

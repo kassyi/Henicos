@@ -232,8 +232,12 @@ public static unsafe class GpuKernelLoader
 
 #pragma warning disable IDE0051 // Justification: Public API for library
     /// <summary>
-    /// Unloads all cached GPU modules and clears the module cache.
+    /// Unloads all cached GPU modules and clears the module cache. A later launch loads its module again.
     /// </summary>
+    /// <remarks>
+    /// Do not call it while another thread launches a kernel or loads a module: such a launch can still use a function
+    /// of a module that is being unloaded.
+    /// </remarks>
     // ReSharper disable once UnusedMember.Global -- Public API exposed for runtime consumers
     public static void Shutdown()
     {

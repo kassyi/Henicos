@@ -250,6 +250,8 @@ internal sealed class FloatVectorDivVectorExpression(
             PreShiftBits = DefaultDivShiftBits,
             ZeroDivisor = operands.ZeroDivisor.DevicePointer
         };
+        using var scratch = DivModScratch.Rent(workspace, ctx.FloatOp.Core, gridDimX);
+        ctx.Scratch = scratch?.DevicePointer ?? IntPtr.Zero;
         GpuBigIntVectorKernels.LaunchVectorFloatZipDivKernelPtr(
             ctx, gridDimX, 1, 1, 32, 1, 1, 0, workspace.Stream);
     }
