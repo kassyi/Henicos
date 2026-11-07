@@ -53,10 +53,10 @@ internal static class StructConversionEmitter
 
     /// <summary>
     /// Whether <paramref name="conversion"/> is a conversion operator of a <c>ref struct</c> with a body in
-    /// <paramref name="compilation"/>. It is emitted as a device function like the conversion of any other struct, and the
-    /// C++ conversion members of the struct (a converting constructor, a conversion operator) call it
-    /// (<see cref="WriteStructConversionOperators"/>). A conversion from another assembly has no body here and keeps the
-    /// members that read or write the first field (<c>GpuBigIntRef</c>).
+    /// <paramref name="compilation"/>. It is emitted as a device function like the conversion of any other struct, and
+    /// the C++ conversion members of the struct (a converting constructor, a conversion operator) call it
+    /// (<see cref="WriteStructConversionOperators"/>). A conversion from another assembly has no body here and keeps
+    /// the members that read or write the first field (<c>GpuBigIntRef</c>).
     /// </summary>
     public static bool HasRefStructConversionBody(IMethodSymbol conversion, Compilation compilation) =>
         conversion is { MethodKind: MethodKind.Conversion, IsImplicitlyDeclared: false } &&

@@ -40,6 +40,44 @@ public class RefStructConversionTests : TranspilerTestBase
             Assert.Equal([8, -13], converted);
         });
 
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_RefStructToRefStructConversion_RunsItsBody() =>
+        OnEveryPath(static () =>
+        {
+            int[] input = [3, -4];
+            int[] pads = new int[input.Length];
+            int[] converted = new int[input.Length];
+            int[] back = new int[input.Length];
+
+            RefStructConversionKernels.LaunchRefStructToRefStructConversionKernel(
+                input,
+                pads,
+                converted,
+                back,
+                blockDimX: 2
+            );
+
+            // ZetaRef(AlphaRef) stores Pad = 9 and W = V * 5; AlphaRef(ZetaRef) returns W - Pad
+            Assert.Equal([9, 9], pads);
+            Assert.Equal([15, -20], converted);
+            Assert.Equal([6, -29], back);
+        });
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_RefStructWithBodyAndMacroConversions_RunsTheBody() =>
+        OnEveryPath(static () =>
+        {
+            int[] input = [3, -4];
+            int[] fields = new int[input.Length];
+
+            RefStructConversionKernels.LaunchMixedRefStructConversionKernel(input, fields, blockDimX: 2);
+
+            // MixedRef(int) stores x * 2
+            Assert.Equal([6, -8], fields);
+        });
+
     // The native build of the dialect, and on the CPU the managed path as well
     private static void OnEveryPath(Action check)
     {
