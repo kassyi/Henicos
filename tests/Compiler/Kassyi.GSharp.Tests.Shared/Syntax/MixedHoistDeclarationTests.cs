@@ -40,6 +40,18 @@ public class MixedHoistDeclarationTests : TranspilerTestBase
         }
     }
 
+    internal static void AssertLabeledHoistedBeforeLocal()
+    {
+        var o = new int[BlockSize];
+        var p = new int[BlockSize];
+        MixedHoistDeclarationKernels.LaunchLabeledHoistedBeforeLocalKernel(o, p, 1, blockDimX: BlockSize);
+        for (int t = 0; t < BlockSize; t++)
+        {
+            Assert.Equal(t + 1, p[t]);
+            Assert.Equal(7, o[t]);
+        }
+    }
+
     internal static void AssertSideEffectOrder()
     {
         var o = new int[BlockSize];

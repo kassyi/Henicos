@@ -230,6 +230,22 @@ public class ContextHoister(
         return visited.WithStatements(SpliceStatements(visited.Statements));
     }
 
+    // [WHY] C# allows a label on a declaration (`L: int a = x, b = a + 1;`). The label moves to the first piece of a
+    // split declaration, so that the enclosing statement list splices the pieces like those of an unlabeled one.
+    // <label>: <first piece> <other pieces>
+    public override SyntaxNode? VisitLabeledStatement(LabeledStatementSyntax node)
+    {
+        var visited = (LabeledStatementSyntax?)base.VisitLabeledStatement(node)
+                      ?? throw new InvalidOperationException("Hoisting removed a labeled statement.");
+        if (visited.Statement is not BlockSyntax block || !block.HasAnnotation(s_spliceAnnotation))
+        {
+            return visited;
+        }
+
+        var statements = block.Statements;
+        return block.WithStatements(statements.Replace(statements[0], visited.WithStatement(statements[0])));
+    }
+
     public override SyntaxNode? VisitSwitchSection(SwitchSectionSyntax node)
     {
         var visited = (SwitchSectionSyntax?)base.VisitSwitchSection(node)
@@ -262,7 +278,11 @@ public class ContextHoister(
 
         if (hoistedCount < variables.Count)
         {
-            var statements = SplitDeclaration(declaration, ImmutableArray.CreateRange(variables), SyntaxFactory.LocalDeclarationStatement);
+            var statements = SplitDeclaration(
+                declaration,
+                ImmutableArray.CreateRange(variables),
+                SyntaxFactory.LocalDeclarationStatement
+            );
             return SyntaxFactory.Block(statements.Add(visited.WithDeclaration(null)));
         }
 

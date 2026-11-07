@@ -2,8 +2,8 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Shared.TestCases.StateMachines;
 
-// Without a semantic model the hoister keys declarations by name, so the 'a' of the for statement moves into the context
-// with the 'a' of the block, which lives across a barrier; 'b' stays a local and reads 'a'.
+// Without a semantic model the hoister keys declarations by name, so the 'a' of the for statement moves into the
+// context with the 'a' of the block, which lives across a barrier; 'b' stays a local and reads 'a'.
 public static class MixedHoistForDemo
 {
     [GpuKernel]

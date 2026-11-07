@@ -63,4 +63,24 @@ public static partial class MixedHoistDeclarationKernels
         a = 5;
         c = 6;
     }
+
+    // The split declaration is the statement of a label, so its pieces replace the labeled statement as well
+    [GpuKernel]
+    public static void LabeledHoistedBeforeLocalKernel(int[] o, int[] p, int rounds)
+    {
+        int tid = ThreadIndex.X;
+        for (int r = 0; r < rounds; r++)
+        {
+            Gpu.SyncThreads();
+            if (r > 100) goto Done;
+        }
+
+        goto Decl;
+    Decl:
+        int a = tid, b = a + 1;
+        p[tid] = b;
+    Done:
+        a = 7;
+        o[tid] = a;
+    }
 }

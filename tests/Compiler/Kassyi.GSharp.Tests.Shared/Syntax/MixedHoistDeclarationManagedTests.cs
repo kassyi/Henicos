@@ -40,5 +40,10 @@ public class MixedHoistDeclarationManagedTests : IDisposable
     [Scenario(TestScenario.Boundary)]
     public void Test_Managed_AlternatingHoistKernel_DeclaratorsRunInSourceOrder() =>
         MixedHoistDeclarationTests.AssertAlternatingHoist();
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_Managed_LabeledHoistedBeforeLocalKernel_LaterDeclaratorReadsHoistedValue() =>
+        MixedHoistDeclarationTests.AssertLabeledHoistedBeforeLocal();
 }
 #endif
