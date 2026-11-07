@@ -134,6 +134,11 @@ Gets a deferred expression representing this instance, or evaluates and assigns 
 public GpuBigUIntExpr Value { get; set; }
 ```
 
+#### Exceptions
+
+`ArgumentException`<br>
+Thrown by the setter when the assigned expression has more words than this instance (`small.Value = wide`). Nothing is written; an expression of the same width or narrower is accepted.
+
 ## Workspace
 
 Gets the `GpuWorkspace` associated with this GPU integer instance.
@@ -210,6 +215,11 @@ The word offset within this buffer from which to start clearing.
 `numWords` _int?_<br>
 The number of words to clear, or `null` to clear until the end of the buffer.
 
+#### Exceptions
+
+`ArgumentOutOfRangeException`<br>
+Thrown when `offsetWords` is negative or greater than `NumWords`, or `numWords` is negative or reaches past the end of the buffer. Nothing is written.
+
 ## ClearWord(int)
 
 Clears a single 32-bit limb word at the specified word index in GPU device memory.
@@ -222,6 +232,11 @@ public void ClearWord(int wordIndex);
 
 `wordIndex` _int_<br>
 The 0-based word index to clear.
+
+#### Exceptions
+
+`ArgumentOutOfRangeException`<br>
+Thrown when `wordIndex` is negative or not less than `NumWords`.
 
 ## CompareTo(GpuBigUInt)
 
@@ -263,6 +278,11 @@ The word offset within the source buffer.
 `numWords` _int?_<br>
 The number of words to copy, or `null` to copy as many words as fit.
 
+#### Exceptions
+
+`ArgumentOutOfRangeException`<br>
+Thrown when `destOffsetWords` or `srcOffsetWords` is negative or greater than the word count of its buffer, or `numWords` is negative or reaches past the end of the source or of this buffer. Nothing is written.
+
 ## CreatePowerOfTwo(GpuWorkspace, int, int)
 
 Creates a new `GpuBigUInt` initialized to $2^{\text{bitIndex}}$ ($1 \ll \text{bitIndex}$).
@@ -286,6 +306,11 @@ The 0-based bit position to set to 1.
 
 _GpuBigUInt_<br>
 A newly allocated `GpuBigUInt` representing $2^{\text{bitIndex}}$.
+
+#### Exceptions
+
+`ArgumentOutOfRangeException`<br>
+Thrown when `bitIndex` is negative, or at least `32 * numWords`, where $2^{\text{bitIndex}}$ does not fit `numWords` words.
 
 ## Dispose()
 

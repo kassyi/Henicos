@@ -238,9 +238,9 @@ public class GpuUIntBigIntegerCoreTests : IDisposable
         element.Clear(1, 2);
         Assert.Equal(new uint[] { 1u, 2u, 3u, 4u, 5u, 0u, 0u, 8u, 9u, 10u, 11u, 12u }, ReadArray(array));
 
-        // An offset past the end leaves nothing to clear and does not throw.
-        // mutant: GpuBigUInt.cs:220 `return` removed (ArrayPool.Rent of a negative length throws)
-        element.Clear(offsetWords: 5);
+        // An offset at the end leaves nothing to clear and does not throw.
+        // mutant: GpuBigUInt.Clear `if (wordsToClear == 0) return` removed (a zero-length device copy)
+        element.Clear(offsetWords: 4);
         Assert.Equal(new uint[] { 1u, 2u, 3u, 4u, 5u, 0u, 0u, 8u, 9u, 10u, 11u, 12u }, ReadArray(array));
 
         // Clear() zeroes the whole element and nothing else.
@@ -291,6 +291,65 @@ public class GpuUIntBigIntegerCoreTests : IDisposable
         using var array = CreateFilledArray();
         array.GetElement(1).ClearWord(1);
         Assert.Equal(new uint[] { 1u, 2u, 3u, 4u, 5u, 0u, 7u, 8u, 9u, 10u, 11u, 12u }, ReadArray(array));
+    }
+
+    /// <summary>A write on one element of an array, with an 8-word source for <c>CopyFrom</c>.</summary>
+    public delegate void ElementWrite(GpuBigUIntView element, GpuBigUInt source);
+
+    /// <summary>
+    /// Calls on element 1 of the 3 x 4-word array whose range does not lie within the element, and the parameter
+    /// each one names.
+    /// </summary>
+    public static TheoryData<string, ElementWrite, string> OutOfRangeWrites() => new()
+    {
+        { "Clear(numWords: 5)", static (e, _) => e.Clear(numWords: 5), "numWords" },
+        { "Clear(offsetWords: 2, numWords: 3)", static (e, _) => e.Clear(offsetWords: 2, numWords: 3), "numWords" },
+        { "Clear(offsetWords: 5)", static (e, _) => e.Clear(offsetWords: 5), "offsetWords" },
+        { "Clear(offsetWords: -1)", static (e, _) => e.Clear(offsetWords: -1), "offsetWords" },
+        { "Clear(numWords: -1)", static (e, _) => e.Clear(numWords: -1), "numWords" },
+        { "CopyFrom(numWords: 5)", static (e, s) => e.CopyFrom(s, numWords: 5), "numWords" },
+        {
+            "CopyFrom(destOffsetWords: 2, numWords: 4)",
+            static (e, s) => e.CopyFrom(s, destOffsetWords: 2, numWords: 4),
+            "numWords"
+        },
+        { "CopyFrom(destOffsetWords: -1)", static (e, s) => e.CopyFrom(s, destOffsetWords: -1), "destOffsetWords" },
+        { "CopyFrom(destOffsetWords: 5)", static (e, s) => e.CopyFrom(s, destOffsetWords: 5), "destOffsetWords" },
+        { "CopyFrom(srcOffsetWords: -1)", static (e, s) => e.CopyFrom(s, srcOffsetWords: -1), "srcOffsetWords" },
+        { "CopyFrom(srcOffsetWords: 9)", static (e, s) => e.CopyFrom(s, srcOffsetWords: 9), "srcOffsetWords" },
+        {
+            "CopyFrom(srcOffsetWords: 6, numWords: 3)",
+            static (e, s) => e.CopyFrom(s, srcOffsetWords: 6, numWords: 3),
+            "numWords"
+        },
+        { "CopyFrom(numWords: -1)", static (e, s) => e.CopyFrom(s, numWords: -1), "numWords" },
+        { "ClearWord(4)", static (e, _) => e.ClearWord(4), "wordIndex" },
+        { "ClearWord(5)", static (e, _) => e.ClearWord(5), "wordIndex" },
+        { "ClearWord(-1)", static (e, _) => e.ClearWord(-1), "wordIndex" },
+    };
+
+    [SkippableTheory]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.SadPath)]
+    [MemberData(nameof(OutOfRangeWrites))]
+    public void Writes_OutsideTheElement_ThrowAndLeaveTheArrayUnchanged(
+        string call,
+        ElementWrite write,
+        string paramName)
+    {
+        // A range outside the element is rejected before any device write, so the neighbouring elements of the
+        // array keep their words. The source has 8 words, so a count that fits the source but not the element is
+        // caught by the element's bound.
+        // mutant: GpuBigUInt.Clear / CopyFrom / ClearWord, any one range check removed (that row writes and does
+        // not throw)
+        // mutant: GpuBigUInt.ThrowIfOffsetOutOfRange `ThrowIfGreaterThan` -> `ThrowIfGreaterThanOrEqual`
+        // (Clear(offsetWords: 4) in Clear_RangeAndPastEnd)
+        using var array = CreateFilledArray();
+        using var source = new GpuBigUInt(_context, [101u, 102u, 103u, 104u, 105u, 106u, 107u, 108u]);
+
+        var error = Assert.Throws<ArgumentOutOfRangeException>(() => write(array.GetElement(1), source));
+        Assert.Equal((call, paramName), (call, error.ParamName));
+        Assert.Equal(s_arrayData, ReadArray(array));
     }
 
     [SkippableFact]
