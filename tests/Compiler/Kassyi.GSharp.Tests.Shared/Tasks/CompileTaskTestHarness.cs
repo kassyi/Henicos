@@ -48,6 +48,14 @@ internal class MockBuildEngine : IBuildEngine
     }
 }
 
+public enum CompileTaskKind
+{
+    Cuda,
+    CudaCombined,
+    Cpp,
+    KernelTaskBase
+}
+
 internal sealed class CompileTaskTestContext : IDisposable
 {
     public string TempDir { get; }
@@ -136,14 +144,26 @@ internal sealed class CompileTaskTestContext : IDisposable
         };
     }
 
-    public CompileKernelTaskBase CreateTask(
-        bool isCpp,
-        string[] sourceFiles,
-        string? combinedFatbinName = null,
-        INativeToolchain? toolchain = null)
+    public CompileKernelTaskBase CreateTask(CompileTaskKind kind, string[] sourceFiles)
     {
-        if (isCpp) return CreateCppTask(sourceFiles, toolchain);
-        return CreateCudaTask(sourceFiles, combinedFatbinName, toolchain);
+        switch (kind)
+        {
+            case CompileTaskKind.Cuda:
+                return CreateConfiguredCudaTask(sourceFiles, combinedName: "");
+            case CompileTaskKind.CudaCombined:
+                return CreateConfiguredCudaTask(sourceFiles, combinedName: "combined_fatbin");
+            case CompileTaskKind.Cpp:
+                return CreateCppTask(sourceFiles);
+            default:
+                return new TestCompileKernelTask();
+        }
+    }
+
+    private CompileCudaToFatbinTask CreateConfiguredCudaTask(string[] sourceFiles, string combinedName)
+    {
+        var task = CreateCudaTask(sourceFiles, combinedName);
+        task.TargetArchitectures = "sm_86";
+        return task;
     }
 
     public void Dispose()

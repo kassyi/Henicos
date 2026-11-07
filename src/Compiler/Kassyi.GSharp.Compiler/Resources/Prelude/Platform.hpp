@@ -21,6 +21,7 @@
 #define __gsharp_inf_d (std::numeric_limits<double>::infinity())
 
 #define __device__
+#define __host__
 #define __global__
 #if defined(_MSC_VER)
 #define __forceinline__ __forceinline
