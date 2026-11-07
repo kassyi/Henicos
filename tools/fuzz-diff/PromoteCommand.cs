@@ -181,6 +181,31 @@ public sealed class PromoteCommand : IFuzzCommand
         return true;
     }
 
+    /// <summary>
+    /// Returns the arguments that <see cref="TryParseOptions"/> reads back into <paramref name="options"/>;
+    /// <c>--kernel</c> is left out when <see cref="PromoteCommandOptions.KernelName"/> is <see langword="null"/>.
+    /// </summary>
+    internal static List<string> ToArguments(PromoteCommandOptions options)
+    {
+        var args = new List<string>
+        {
+            "--source", options.SourcePath,
+            "--fuzz-seed", FuzzRandom.FormatSeed(options.FuzzSeed),
+            "--input-seed", options.InputSeed.ToString(CultureInfo.InvariantCulture),
+            "--failing-paths", options.FailingPaths,
+            "--failure-kind", options.FailureKind,
+            "--column", options.Column,
+            "--findings-dir", options.FindingsDir,
+        };
+        if (options.KernelName is not null)
+        {
+            args.Add("--kernel");
+            args.Add(options.KernelName);
+        }
+
+        return args;
+    }
+
     /// <summary>Executes the <c>promote</c> subcommand using the parsed <paramref name="options"/>.</summary>
     public static int Execute(PromoteCommandOptions options)
     {
