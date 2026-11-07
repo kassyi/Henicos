@@ -4,7 +4,7 @@ using System.Globalization;
 namespace Kassyi.GSharp.Tests.Shared.Differential;
 
 /// <summary>
-/// The seeds of a differential test (design D3): 0 to 8, fixed in code, plus one seed derived from <c>TEST_SEED</c> when
+/// The seeds of a differential test: 0 to 8, fixed in code, plus one seed derived from <c>TEST_SEED</c> when
 /// it is set. <c>just test-stability</c> sets <c>TEST_SEED</c> per iteration, so a long run tries new inputs, and
 /// <c>just test-stability 1 seed=&lt;N&gt;</c> repeats an iteration. Without <c>TEST_SEED</c> the fixed seeds alone decide
 /// the result (property-test-design §6).
