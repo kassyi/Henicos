@@ -85,7 +85,7 @@ $$B = (-1)^{S_B} \cdot M_B \cdot 2^{E_B}$$
 
 ---
 
-## 2.3 Normalization & IEEE 754 Compliant Rounding
+## 2.3 Normalization & Rounding
 
 ### 2.3.1 Normalization Process
 
@@ -98,22 +98,9 @@ Following an arithmetic operation, the resulting significand $M_{\text{raw}}$ ma
    If subtraction results in leading zeros, compute Leading Zero Count $\text{LZC}(M_{\text{raw}})$, shift $M_{\text{raw}}$ left by $\text{LZC}$, and decrement $E$:
    $$M_{\text{norm}} = M_{\text{raw}} \ll \text{LZC}, \quad E_{\text{norm}} = E_{\text{common}} - \text{LZC}$$
 
-### 2.3.2 IEEE 754 Rounding Modes (`GpuBigFloatRoundingMode`)
+### 2.3.2 Rounding
 
-The module supports IEEE 754 compliant rounding modes defined in `GpuBigFloatRoundingMode`:
-
-#### Round to Nearest, Ties to Even (`RoundToNearestEven`)
-Evaluated using Guard Bit ($G$), Round Bit ($R$), and Sticky Bit ($S$):
-- **$G$ (Guard Bit)**: First bit shifted out beyond target precision.
-- **$R$ (Round Bit)**: Second bit shifted out.
-- **$S$ (Sticky Bit)**: Bitwise OR of all remaining shifted-out bits.
-
-**Rounding Decision Rules**:
-- If $G = 0$: Round down (truncate).
-- If $G = 1$ and ($R = 1$ or $S = 1$): Round up (add 1 to LSB of significand).
-- If $G = 1$ and $R = 0$ and $S = 0$ (Exact Tie):
-  - If LSB of normalized significand is `1` (Odd): Round up to nearest even.
-  - If LSB of normalized significand is `0` (Even): Round down.
+There is one rounding, toward zero, and no rounding mode. A result keeps $p = 32n$ bits for the $n$ words of its significand and the discarded low bits are dropped, so a value that fits in $p$ bits is exact. See [Rounding](../03_bcl_api/math_bignum/gpu_big_float/00_index.md#rounding) for the operations it covers and the exponent overflow rule.
 
 ---
 

@@ -18,8 +18,8 @@ internal static class StructMarshalMethodEmitter
             writer.AppendAotStructPath(s);
             // CUDA records one device region per host array (DeviceArrayRegions, #707); the CPU records GCHandles
             writer.Append(dialect.IsCuda
-                ? $" native, bool isDevicePtr, {StructMarshalingEmitter.DeviceArrayRegionsType}? {StructMarshalingEmitter.CudaArraysParameter}, global::System.IntPtr hStream = default"
-                : $" native, bool isDevicePtr, global::System.Collections.Generic.List<global::System.IntPtr>? {StructMarshalingEmitter.CpuArraysParameter}, global::System.IntPtr hStream = default");
+                ? $" native, {StructMarshalingEmitter.DeviceArrayRegionsType}? {StructMarshalingEmitter.CudaArraysParameter}, global::System.IntPtr hStream = default"
+                : $" native, global::System.Collections.Generic.List<global::System.IntPtr>? {StructMarshalingEmitter.CpuArraysParameter}, global::System.IntPtr hStream = default");
         }
 
         writer.AppendLine();
@@ -76,7 +76,7 @@ internal static class StructMarshalMethodEmitter
             writer.AppendMarshalMethodName(member.Type);
             using (writer.Parentheses())
             {
-                writer.Append($"ref host.{member.Name.ToCSharpIdentifier()}, ref native.{member.Name.ToCSharpIdentifier()}, isDevicePtr, {StructArrayHelperEmitter.ArraysParameter(dialect)}, hStream");
+                writer.Append($"ref host.{member.Name.ToCSharpIdentifier()}, ref native.{member.Name.ToCSharpIdentifier()}, {StructArrayHelperEmitter.ArraysParameter(dialect)}, hStream");
             }
 
             writer.AppendLine(";");
@@ -114,41 +114,30 @@ internal static class StructMarshalMethodEmitter
         writer.AppendLine($"if ({host} != null)");
         using (writer.Scope())
         {
-            writer.AppendLine("if (isDevicePtr)");
+            StructBlockCopyEmitter.WriteArrayElementSize(writer, host, elementType);
+
+            writer.AppendLine("if (size > 0)");
             using (writer.Scope())
             {
-                writer.AppendLine(
-                    "throw new global::System.NotSupportedException(\"Passing a struct with arrays is not supported when isDevicePtr is true.\");");
-            }
-
-            writer.AppendLine("else");
-            using (writer.Scope())
-            {
-                StructBlockCopyEmitter.WriteArrayElementSize(writer, host, elementType);
-
-                writer.AppendLine("if (size > 0)");
-                using (writer.Scope())
-                {
-                    WriteSharedRegionLookup(writer, host, native);
-                    writer.AppendLine("else");
-                    using (writer.Scope())
-                    {
-                        WriteDeviceArrayCopy(writer, host, native, elementType);
-                    }
-                }
-
-                // [WHY] An empty array is not null (#706): cuMemAlloc rejects zero bytes, so it gets a non-null address
-                // that is never dereferenced, as Rust's NonNull::dangling() for an empty slice. It is not an allocation,
-                // so it never enters the table of the launch (which frees what it holds); Unmarshal_ copies nothing back
-                // for it (size 0)
+                WriteSharedRegionLookup(writer, host, native);
                 writer.AppendLine("else");
                 using (writer.Scope())
                 {
-                    writer.AppendLine($"{native}.Data = {ArrayProxy}.EmptyArrayData;");
+                    WriteDeviceArrayCopy(writer, host, native, elementType);
                 }
-
-                writer.AppendLine($"{native}.Length = {host}.Length;");
             }
+
+            // [WHY] An empty array is not null (#706): cuMemAlloc rejects zero bytes, so it gets a non-null address
+            // that is never dereferenced, as Rust's NonNull::dangling() for an empty slice. It is not an allocation,
+            // so it never enters the table of the launch (which frees what it holds); Unmarshal_ copies nothing back
+            // for it (size 0)
+            writer.AppendLine("else");
+            using (writer.Scope())
+            {
+                writer.AppendLine($"{native}.Data = {ArrayProxy}.EmptyArrayData;");
+            }
+
+            writer.AppendLine($"{native}.Length = {host}.Length;");
         }
     }
 
@@ -190,7 +179,7 @@ internal static class StructMarshalMethodEmitter
         {
             writer.AppendMarshalMethodName(elementType);
             writer.AppendLine(
-                $"(ref {host}[i], ref tempArray[i], false, {StructMarshalingEmitter.CudaArraysParameter}, hStream);");
+                $"(ref {host}[i], ref tempArray[i], {StructMarshalingEmitter.CudaArraysParameter}, hStream);");
         }
 
         StructBlockCopyEmitter.WritePinnedCopy(writer, "tempArray", $"{native}.Data", toDevice: true);
@@ -220,7 +209,7 @@ internal static class StructMarshalMethodEmitter
                 using (writer.Scope())
                 {
                     writer.AppendMarshalMethodName(elementType);
-                    writer.AppendLine($"(ref {host}[i], ref shadow[i], false, {StructMarshalingEmitter.CpuArraysParameter}, hStream);");
+                    writer.AppendLine($"(ref {host}[i], ref shadow[i], {StructMarshalingEmitter.CpuArraysParameter}, hStream);");
                 }
 
                 pinned = "shadow";
@@ -236,6 +225,6 @@ internal static class StructMarshalMethodEmitter
 
     // The kernel wrote the pinned host array itself, so only a shadow array of converted elements is copied back:
     // if (<host> != null && <native>.Data != IntPtr.Zero) { var shadow = (<element shadow>*)<native>.Data;
-    // for (...) Unmarshal_<element>(ref <host>[i], ref shadow[i], false, hStream); }
+    // for (...) Unmarshal_<element>(ref <host>[i], ref shadow[i], hStream); }
     // The shadow stays pinned until the launcher's finally block, after the unmarshaling.
 }

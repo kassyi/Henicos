@@ -221,9 +221,8 @@ var ctx = new AdvancedContext { Data = new float[100] };
 // ✅ Allowed: The host-array launcher automatically performs deep struct marshaling
 MyKernels.LaunchProcess(ref ctx);
 
-// ❌ Prohibited: The Ptr overload expects pre-allocated device pointers.
-// A struct containing a managed array (T[]) cannot be mapped safely here.
-// Throws NotSupportedException: "Passing a struct with arrays is not supported when isDevicePtr is true."
+// ❌ Does not compile: the Ptr overload takes the native struct (AotContexts.AdvancedContext)
+// whose array fields are pre-allocated device pointers, not a struct containing a managed array (T[]).
 MyKernels.LaunchProcessPtr(ctx);
 ```
 

@@ -29,6 +29,7 @@ public const string Source = @"#include <cmath>
 #define __gsharp_inf_d (std::numeric_limits<double>::infinity())
 
 #define __device__
+#define __host__
 #define __global__
 #if defined(_MSC_VER)
 #define __forceinline__ __forceinline
@@ -74,15 +75,18 @@ struct float4 { float x, y, z, w; };
 struct uint3 { uint32_t x, y, z; };
 struct dim3 { uint32_t x, y, z; };
 
+// Shared by the CUDA prelude (Prelude.cu) and the native CPU prelude (Types.hpp), so that the two define these types
+// once and cannot differ. The CPU prelude defines __device__ and __host__ as empty (Platform.hpp).
 template <typename T>
 struct System_Nullable {
 bool HasValue;
 T Value;
-System_Nullable() : HasValue(false), Value() {}
-System_Nullable(decltype(nullptr)) : HasValue(false), Value() {}
-System_Nullable(T val) : HasValue(true), Value(val) {}
+__device__ inline System_Nullable() : HasValue(false), Value() {}
+__device__ inline System_Nullable(decltype(nullptr)) : HasValue(false), Value() {}
+__device__ inline System_Nullable(T val) : HasValue(true), Value(val) {}
 template <typename U>
-System_Nullable(const System_Nullable<U>& other) : HasValue(other.HasValue), Value(static_cast<T>(other.Value)) {}
+__device__ inline System_Nullable(const System_Nullable<U>& other)
+: HasValue(other.HasValue), Value(static_cast<T>(other.Value)) {}
 };
 
 // The scope of a C# using: disposes the resource when control leaves the enclosing block (end, return, break, continue,
@@ -90,10 +94,10 @@ System_Nullable(const System_Nullable<U>& other) : HasValue(other.HasValue), Val
 template <typename T>
 struct __gsharp_using_scope {
 T& resource;
-inline ~__gsharp_using_scope() { resource.__gsharp_dispose(); }
+__device__ inline ~__gsharp_using_scope() { resource.__gsharp_dispose(); }
 };
 
-template <class T> inline const T* __gsharp_temp_address(const T& v) { return &v; }
+template <class T> __device__ __host__ inline const T* __gsharp_temp_address(const T& v) { return &v; }
 
 enum class GSharpErrorCode : int32_t {
 None = 0,
