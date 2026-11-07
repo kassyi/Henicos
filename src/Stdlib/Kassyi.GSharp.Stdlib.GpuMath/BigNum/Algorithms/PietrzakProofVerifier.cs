@@ -1,6 +1,10 @@
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms;
 
-/// <summary>Verifies dual-segment batched <see cref="FermatPrpProof"/> instances.</summary>
+/// <summary>
+/// Verifies dual-segment batched <see cref="FermatPrpProof"/> instances in the signed form <c>|x|</c>
+/// (<see cref="SignedResidueForm"/>): a residue above <c>(N - 1) / 2</c> is rejected, and every claim is reduced to
+/// <c>|x|</c> before it is hashed or compared.
+/// </summary>
 internal static class PietrzakProofVerifier
 {
     public static FermatPrpVerificationResult Verify(FermatPrpProof proof)
@@ -15,13 +19,13 @@ internal static class PietrzakProofVerifier
         }
 
         using var modulus = FermatModulusHelper.CreateModulus(header.E, GpuKernelLoader.IsCpuFallbackMode);
-        if (ValidateResidues(proof, modulus) is { } residueError)
+        var math = new PietrzakArithmetic(modulus);
+        if (ValidateResidues(proof, modulus, math) is { } residueError)
         {
             return FermatPrpVerificationResult.Invalid(0, stopwatch.Elapsed, residueError);
         }
 
         var schedule = new PietrzakSchedule(header);
-        var math = new PietrzakArithmetic(modulus);
         var uE = proof.ResidueE.Span;
         var uK = proof.ResidueK.Span;
 
@@ -31,8 +35,8 @@ internal static class PietrzakProofVerifier
 
         var alpha = schedule.DeriveMergeChallenge(uE, uK);
         var claim = new PietrzakClaim(
-            math.MulPow128(b0, alpha, a0),
-            math.MulPow128(uK, alpha, uE));
+            math.Abs(math.MulPow128(b0, alpha, a0)),
+            math.Abs(math.MulPow128(uK, alpha, uE)));
 
         for (var round = 0; round < schedule.ProofPower; round++)
         {
@@ -41,7 +45,7 @@ internal static class PietrzakProofVerifier
             claim = math.FoldClaim(claim, challenge, witness);
         }
 
-        var finalX = math.SquareFrom(claim.X, schedule.StepSize);
+        var finalX = math.Abs(math.SquareFrom(claim.X, schedule.StepSize));
         if (IsZero(finalX) || IsZero(claim.Y) || !finalX.AsSpan().SequenceEqual(claim.Y))
         {
             return FermatPrpVerificationResult.Invalid(
@@ -96,32 +100,36 @@ internal static class PietrzakProofVerifier
         return null;
     }
 
-    private static string? ValidateResidues(FermatPrpProof proof, ISquaringModulus modulus)
+    private static string? ValidateResidues(FermatPrpProof proof, ISquaringModulus modulus, in PietrzakArithmetic math)
     {
         var words = proof.ResidueWords;
-        if (!IsNonZeroCanonicalResidue(proof.ResidueE.Span, words, modulus))
+        if (!IsNonZeroSignedResidue(proof.ResidueE.Span, words, modulus, math))
         {
-            return "ResidueE must be a non-zero canonical residue below N.";
+            return "ResidueE must be a non-zero residue in the signed form, at most (N - 1) / 2.";
         }
 
-        if (!IsNonZeroCanonicalResidue(proof.ResidueK.Span, words, modulus))
+        if (!IsNonZeroSignedResidue(proof.ResidueK.Span, words, modulus, math))
         {
-            return "ResidueK must be a non-zero canonical residue below N.";
+            return "ResidueK must be a non-zero residue in the signed form, at most (N - 1) / 2.";
         }
 
         for (var t = 0; t < proof.ProofPower; t++)
         {
-            if (!IsNonZeroCanonicalResidue(proof.Witnesses[t].Span, words, modulus))
+            if (!IsNonZeroSignedResidue(proof.Witnesses[t].Span, words, modulus, math))
             {
-                return $"Witness mu_{t} must be a non-zero canonical residue below N.";
+                return $"Witness mu_{t} must be a non-zero residue in the signed form, at most (N - 1) / 2.";
             }
         }
 
         return null;
     }
 
-    private static bool IsNonZeroCanonicalResidue(ReadOnlySpan<uint> words, int expectedWords, ISquaringModulus modulus) =>
-        words.Length == expectedWords && !IsZero(words) && modulus.IsBelowModulus(words);
+    private static bool IsNonZeroSignedResidue(
+        ReadOnlySpan<uint> words,
+        int expectedWords,
+        ISquaringModulus modulus,
+        in PietrzakArithmetic math) =>
+        words.Length == expectedWords && !IsZero(words) && modulus.IsBelowModulus(words) && math.IsSigned(words);
 
     private static bool IsZero(ReadOnlySpan<uint> words)
     {

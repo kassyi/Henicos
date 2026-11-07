@@ -25,6 +25,9 @@ using static FermatTestMath;
 /// <c>IsProbablePrime == false</c>.</description></item>
 /// <item><description><b>P-soundness-signflip</b>: odd 128-bit Fiat-Shamir challenges reject order-2 sign-flip forgeries
 /// (<c>v -&gt; N - v</c> on <c>u_E</c>, <c>u_K</c> or any <c>mu_t</c>) deterministically.</description></item>
+/// <item><description><b>P-signed-form</b>: every residue of an honest proof is <c>|x| = min(x, N - x)</c>, and a proof that
+/// negates <c>u_K</c> and <c>mu_0</c> together (which keeps every halving check true in the full group) is
+/// rejected.</description></item>
 /// <item><description><b>P-domain-guards</b>: 1-bit tampering, zero residues, non-canonical (<c>&gt;= N</c>) residues,
 /// mismatched metadata and non-coprime bases are rejected.</description></item>
 /// </list>
@@ -72,8 +75,13 @@ public class FermatPrpProofTests
         Assert.NotNull(proof);
         Assert.Equal(new FermatPrpProofHeader(e, @base, proofPower, runner.ResidueWords), proof.Header);
         Assert.Equal(proofPower, proof.Witnesses.Count);
-        Assert.Equal(Squarings(e, @base, e), FromWords(proof.ResidueE.Span));
-        Assert.Equal(Squarings(e, @base, 2L * e + 1), FromWords(proof.ResidueK.Span));
+        var n = ModulusOf(e);
+        Assert.Equal(Signed(Squarings(e, @base, e), n), FromWords(proof.ResidueE.Span));
+        Assert.Equal(Signed(Squarings(e, @base, 2L * e + 1), n), FromWords(proof.ResidueK.Span));
+        for (var t = 0; t < proof.Witnesses.Count; t++)
+        {
+            Assert.True(FromWords(proof.Witnesses[t].Span) <= n / 2, $"Witness mu_{t} is not in the signed form.");
+        }
 
         var endIteration = (2L * e + 1 + runner.BlockSize - 1) / runner.BlockSize * runner.BlockSize;
         Assert.Equal(Squarings(e, @base, endIteration), FromWords(runner.GetState()));
@@ -89,8 +97,8 @@ public class FermatPrpProofTests
         Assert.Null(verification.FailureReason);
         Assert.Equal(expected.IsProbablePrime, runResult.IsProbablePrime);
         Assert.Equal(expected.IsProbablePrime, verification.IsProbablePrime);
-        Assert.Equal(expected.Residue64, verification.Residue64);
-        Assert.Equal(expected.CheckResidue64, verification.CheckResidue64);
+        Assert.Equal(Low64(Signed(Squarings(e, @base, 2L * e + 1) * BigInteger.Pow(@base, 10) % n, n)), verification.Residue64);
+        Assert.Equal(Low64(Signed(Squarings(e, @base, e), n)), verification.CheckResidue64);
         Assert.Equal(expectedVerifySquarings, verification.Squarings);
     }
 
@@ -111,11 +119,12 @@ public class FermatPrpProofTests
             var verification = FermatAlgorithm.VerifyProof(proof);
             var expected = PrpReference(E, 3);
 
+            var n = ModulusOf(E);
             Assert.True(verification.IsValid, verification.FailureReason);
             Assert.Equal(expected.IsProbablePrime, result.IsProbablePrime);
             Assert.Equal(expected.IsProbablePrime, verification.IsProbablePrime);
-            Assert.Equal(expected.Residue64, verification.Residue64);
-            Assert.Equal(expected.CheckResidue64, verification.CheckResidue64);
+            Assert.Equal(Low64(Signed(Squarings(E, 3, 2L * E + 1) * BigInteger.Pow(3, 10) % n, n)), verification.Residue64);
+            Assert.Equal(Low64(Signed(Squarings(E, 3, E), n)), verification.CheckResidue64);
         }
         finally
         {
@@ -413,6 +422,34 @@ public class FermatPrpProofTests
         }
     }
 
+    // E = 5 (N = 2027, prime) and k = 1 is the reproduction of the issue; the other cases add deeper trees, where the
+    // later witnesses follow the challenges of the forged values, and a composite N.
+    [Theory]
+    [Scenario(TestScenario.SadPath)]
+    [InlineData(5, 1)]
+    [InlineData(29, 2)]
+    [InlineData(31, 2)]
+    [InlineData(31, 3)]
+    public void VerifyProof_EndpointAndFirstWitnessNegatedTogether_IsRejected(int e, int proofPower)
+    {
+        using var runner = new FermatAlgorithm(e, 3, new FermatPrpOptions { ProofPower = proofPower });
+        runner.Run();
+        var honest = runner.LastProof;
+        Assert.NotNull(honest);
+        var honestVerification = FermatAlgorithm.VerifyProof(honest);
+        Assert.True(honestVerification.IsValid, honestVerification.FailureReason);
+        Assert.Equal(PrpReference(e, 3).IsProbablePrime, honestVerification.IsProbablePrime);
+
+        var forged = ForgeNegatedEndpoint(honest);
+
+        // mutant: PietrzakProofVerifier.cs IsNonZeroSignedResidue `&& math.IsSigned(words)` removed (k = 1 is accepted)
+        var verification = FermatAlgorithm.VerifyProof(forged);
+
+        Assert.False(verification.IsValid, $"Forged proof accepted at E = {e}, k = {proofPower}.");
+        Assert.False(verification.IsProbablePrime);
+        Assert.Contains("signed form", verification.FailureReason);
+    }
+
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]
     public void OptionsAndVerifyProof_InvalidParametersZeroResiduesAndSmallDivisors_AreHandledSafely()
@@ -549,6 +586,53 @@ public class FermatPrpProofTests
 
         CudaCapability.EnsureGpuAvailable();
         return new GpuKernelLoader.CudaContextScope();
+    }
+
+    /// <summary>Returns <c>|x| = min(x, N - x)</c>.</summary>
+    private static BigInteger Signed(BigInteger value, BigInteger modulus) => BigInteger.Min(value, modulus - value);
+
+    /// <summary>
+    /// Forges a proof of <c>-u_K</c>: negates <c>u_K</c> and the first witness <c>mu_0</c>, and computes the later witnesses
+    /// honestly for the challenges the verifier derives from the forged values. In the full group <c>Z_N^*</c> the sign
+    /// cancels (the challenges are odd and <c>X^(2^d)</c> is a square), so every halving check holds.
+    /// </summary>
+    private static FermatPrpProof ForgeNegatedEndpoint(FermatPrpProof honest)
+    {
+        var header = honest.Header;
+        var words = header.ResidueWords;
+        var n = ModulusOf(header.E);
+        var leafCount = 1 << header.ProofPower;
+        var stepSize = header.E / leafCount;
+        var remainder = header.E - leafCount * stepSize;
+
+        var uE = FromWords(honest.ResidueE.Span);
+        var forgedUk = n - FromWords(honest.ResidueK.Span);
+        var schedule = new PietrzakSchedule(header);
+        var alpha = (BigInteger)schedule.DeriveMergeChallenge(honest.ResidueE.Span, ToWords(forgedUk, words));
+
+        var a0 = BigInteger.ModPow(header.Base, BigInteger.One << remainder, n);
+        var b0 = BigInteger.ModPow(uE, BigInteger.One << (1 + remainder), n);
+        var x = BigInteger.ModPow(b0, alpha, n) * a0 % n;
+        var y = BigInteger.ModPow(forgedUk, alpha, n) * uE % n;
+        var length = stepSize * leafCount;
+        var witnesses = new ReadOnlyMemory<uint>[header.ProofPower];
+        for (var round = 0; round < header.ProofPower; round++)
+        {
+            length /= 2;
+            var mu = BigInteger.ModPow(x, BigInteger.One << length, n);
+            if (round == 0)
+            {
+                mu = n - mu;
+            }
+
+            witnesses[round] = ToWords(mu, words);
+            var claim = new PietrzakClaim(ToWords(x, words), ToWords(y, words));
+            var challenge = (BigInteger)schedule.DeriveRoundChallenge(round, claim, witnesses[round].Span);
+            x = BigInteger.ModPow(x, challenge, n) * mu % n;
+            y = BigInteger.ModPow(mu, challenge, n) * y % n;
+        }
+
+        return new FermatPrpProof(header, honest.ResidueE, ToWords(forgedUk, words), witnesses);
     }
 
     private static ReadOnlyMemory<uint>[] CloneWitnesses(IReadOnlyList<ReadOnlyMemory<uint>> witnesses)
