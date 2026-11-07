@@ -66,13 +66,12 @@ public class AotContextCoverageTests
                     }
                 }
 
-                var isDevicePtr = false;
                 var regions = new DeviceArrayRegions();
                 IntPtr hStream = IntPtr.Zero;
 
-                object[] args = parameters.Length == 5
-                    ? [hostObj, nativeObj, isDevicePtr, regions, hStream]
-                    : [hostObj, nativeObj, isDevicePtr, hStream];
+                object[] args = parameters.Length == 4
+                    ? [hostObj, nativeObj, regions, hStream]
+                    : [hostObj, nativeObj, hStream];
 
                 try
                 {

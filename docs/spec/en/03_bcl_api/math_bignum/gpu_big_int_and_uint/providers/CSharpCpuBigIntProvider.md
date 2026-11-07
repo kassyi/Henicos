@@ -66,7 +66,7 @@ public static readonly CSharpCpuBigIntProvider Instance;
 | [Mul(GpuWorkspace, GpuBigUInt, GpuBigUInt, GpuBigUInt)](#mulgpuworkspace-gpubiguint-gpubiguint-gpubiguint) | Computes unsigned multi-word multiplication on the CPU. |
 | [Mul(GpuWorkspace, GpuBigUInt, UInt32, GpuBigUInt)](#mulgpuworkspace-gpubiguint-uint32-gpubiguint) | Computes unsigned scalar multiplication on the CPU. |
 | [ReadWord(IntPtr, Int32, IntPtr)](#readwordintptr-int32-intptr) | Reads a single 32-bit word at `wordOffset` from unmanaged host memory. |
-| [ReciprocalMega(GpuWorkspace, GpuBigUInt, GpuBigUInt, Int32, Int32, Int32, Int32, Int32)](#reciprocalmegagpuworkspace-gpubiguint-gpubiguint-int32-int32-int32-int32-int32) | Computes fixed-point reciprocal ($2^{\text{targetBits}} / x$) on the CPU. |
+| [ReciprocalMega(GpuWorkspace, GpuBigUInt, GpuBigUInt, Int32, Int32, Int32)](#reciprocalmegagpuworkspace-gpubiguint-gpubiguint-int32-int32-int32) | Computes fixed-point reciprocal ($2^{\text{targetBits}} / x$) on the CPU. |
 | [SqrtFloorCorrection(GpuWorkspace, GpuBigUInt, GpuBigUInt, GpuBigUInt, GpuBigUInt, GpuBigUInt)](#sqrtfloorcorrectiongpuworkspace-gpubiguint-gpubiguint-gpubiguint-gpubiguint-gpubiguint) | Writes $\lfloor\sqrt{a}\rfloor$ computed on the CPU (the estimate is not needed). |
 | [ShiftLeft(GpuWorkspace, GpuBigUInt, Int32, GpuBigUInt)](#shiftleftgpuworkspace-gpubiguint-int32-gpubiguint) | Computes left bit-shift on the CPU. |
 | [ShiftRight(GpuWorkspace, GpuBigUInt, Int32, GpuBigUInt)](#shiftrightgpuworkspace-gpubiguint-int32-gpubiguint) | Computes right bit-shift on the CPU. |
@@ -749,7 +749,7 @@ The number of refinement iterations.
 `DivideByZeroException`<br>
 Thrown when `targetOperand` is zero.
 
-## ReciprocalMega(GpuWorkspace, GpuBigUInt, GpuBigUInt, Int32, Int32, Int32, Int32, Int32)
+## ReciprocalMega(GpuWorkspace, GpuBigUInt, GpuBigUInt, Int32, Int32, Int32)
 
 Computes fixed-point reciprocal ($2^{\text{targetBits}} / x$) on the CPU.
 
@@ -759,8 +759,6 @@ public void ReciprocalMega(
     GpuBigUInt targetOperand,
     GpuBigUInt resultBuffer,
     int marginWords,
-    int numBits,
-    int marginBits,
     int iterations,
     int targetBits);
 ```
@@ -778,12 +776,6 @@ The destination buffer.
 
 `marginWords` _Int32_<br>
 The margin limbs allocated for scratch precision.
-
-`numBits` _Int32_<br>
-The base bit precision.
-
-`marginBits` _Int32_<br>
-Additional precision guard bits.
 
 `iterations` _Int32_<br>
 The number of refinement iterations.

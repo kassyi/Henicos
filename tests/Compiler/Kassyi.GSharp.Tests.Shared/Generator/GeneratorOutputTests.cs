@@ -36,7 +36,7 @@ public class GeneratorOutputTests
         Assert.DoesNotContain("__o", wrapper, StringComparison.Ordinal);
     }
 
-    // An alias of the attribute marks a kernel as well as its spelled-out name (A-53)
+    // An alias of the attribute marks a kernel as well as its spelled-out name
     [Theory]
     [Scenario(TestScenario.Boundary)]
     [InlineData("Cuda", "UsingAliasKernels")]

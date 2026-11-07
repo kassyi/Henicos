@@ -1,0 +1,241 @@
+# Known divergences of the differential harness, read once by KnownDivergences.All.
+#
+# An entry lets the listed columns of a case differ from the oracle on the listed paths; the rest of the case is still
+# compared. A listed column must still differ on every listed path that the process runs: once it matches for every
+# seed, the test fails and asks for the entry to be removed. A matrix test that finds a new divergence files an issue
+# (M1 or M2) and adds an entry under it; the pull request that fixes the issue removes its entries.
+#
+# One block per issue:
+#   issue:   the issue number
+#   title:   the issue title, exactly as on GitHub
+#   entries: one per case and set of paths
+#     case:    the DifferentialCase name, Class.KernelMethod, of a static readonly DifferentialCase field
+#     paths:   Managed, Native, Cuda
+#     columns: the column names (DiffBuffer.ColumnNameOf), or $exception for an exception mismatch
+#     hosts:   optional, Windows or Unix; default: both
+#
+# KnownDivergencesTests checks that every case and column exists, and, where the gh CLI can reach GitHub, that every
+# issue is open and has this title.
+
+- issue: 718
+  title: "[Bug]: Array and span bounds, integer division by zero, Nullable.Value, Math.Clamp and Math.Abs(MinValue) are not checked as in C#"
+  entries:
+    # Span, Slice, ArraySegment, Memory and InlineArray bounds and the bounds-check elimination guards on native
+    - case: BoundsAndMemoryDifferentialKernels.SpanCanaryIndexBoundsKernel
+      paths: [Native]
+      columns: [$exception]
+    - case: BoundsAndMemoryDifferentialKernels.ArraySegmentBoundsKernel
+      paths: [Native]
+      columns: [$exception]
+    - case: BoundsAndMemoryDifferentialKernels.MemoryBoundsKernel
+      paths: [Native]
+      columns: [$exception]
+    - case: BoundsAndMemoryDifferentialKernels.InlineArrayBoundsKernel
+      paths: [Native]
+      columns: [$exception]
+    - case: BoundsAndMemoryDifferentialKernels.BoundsCheckEliminationOffByOneKernel
+      paths: [Native]
+      columns: [$exception]
+    - case: BoundsAndMemoryDifferentialKernels.BoundsCheckEliminationWrongSpanKernel
+      paths: [Native]
+      columns: [$exception]
+    - case: BoundsAndMemoryDifferentialKernels.BoundsCheckEliminationPostIncrementKernel
+      paths: [Native]
+      columns: [$exception]
+    - case: BoundsAndMemoryDifferentialKernels.BoundsCheckEliminationUpperOnlyKernel
+      paths: [Native]
+      columns: [$exception]
+    # Nullable<T>.Value and Math.Clamp traps on native and CUDA
+    - case: BclExceptionDifferentialKernels.NullableInt32ValueAccessKernel
+      paths: [Native, Cuda]
+      columns: [$exception]
+    - case: BclExceptionDifferentialKernels.NullableStructValueAccessKernel
+      paths: [Native, Cuda]
+      columns: [$exception]
+    - case: BclExceptionDifferentialKernels.MathClampInt32Kernel
+      paths: [Native, Cuda]
+      columns: [$exception]
+    - case: BclExceptionDifferentialKernels.MathClampSingleKernel
+      paths: [Native, Cuda]
+      columns: [$exception]
+    - case: BclExceptionDifferentialKernels.MathClampDoubleKernel
+      paths: [Native, Cuda]
+      columns: [$exception]
+    # Unchecked MinValue / -1 and MinValue % -1: the managed path throws OverflowException
+    - case: IntegerTrapAndCheckedDifferentialKernels.Int32MinValueDivideKernel
+      paths: [Managed]
+      columns: [$exception]
+    - case: IntegerTrapAndCheckedDifferentialKernels.Int32MinValueRemainderKernel
+      paths: [Managed]
+      columns: [$exception]
+    - case: IntegerTrapAndCheckedDifferentialKernels.Int64MinValueDivideKernel
+      paths: [Managed]
+      columns: [$exception]
+    - case: IntegerTrapAndCheckedDifferentialKernels.Int64MinValueRemainderKernel
+      paths: [Managed]
+      columns: [$exception]
+    # Array and span bounds, bounds-check elimination guards, simultaneous traps, integer division by zero and
+    # Math.Abs(MinValue) on CUDA: they still diverge after the device error channel of #729 (closed)
+    - case: BoundsAndMemoryDifferentialKernels.ArrayIndexBoundsKernel
+      paths: [Cuda]
+      columns: [$exception]
+    - case: BoundsAndMemoryDifferentialKernels.SpanCanaryIndexBoundsKernel
+      paths: [Cuda]
+      columns: [$exception]
+    - case: BoundsAndMemoryDifferentialKernels.SpanSliceStartKernel
+      paths: [Cuda]
+      columns: [$exception]
+    - case: BoundsAndMemoryDifferentialKernels.SpanSliceStartCountKernel
+      paths: [Cuda]
+      columns: [$exception]
+    - case: BoundsAndMemoryDifferentialKernels.ArraySegmentBoundsKernel
+      paths: [Cuda]
+      columns: [$exception]
+    - case: BoundsAndMemoryDifferentialKernels.MemoryBoundsKernel
+      paths: [Cuda]
+      columns: [$exception]
+    - case: BoundsAndMemoryDifferentialKernels.InlineArrayBoundsKernel
+      paths: [Cuda]
+      columns: [$exception]
+    - case: BoundsAndMemoryDifferentialKernels.BoundsCheckEliminationOffByOneKernel
+      paths: [Cuda]
+      columns: [$exception]
+    - case: BoundsAndMemoryDifferentialKernels.BoundsCheckEliminationWrongSpanKernel
+      paths: [Cuda]
+      columns: [$exception]
+    - case: BoundsAndMemoryDifferentialKernels.BoundsCheckEliminationPostIncrementKernel
+      paths: [Cuda]
+      columns: [$exception]
+    - case: BoundsAndMemoryDifferentialKernels.BoundsCheckEliminationUpperOnlyKernel
+      paths: [Cuda]
+      columns: [$exception]
+    - case: IntegerTrapAndCheckedDifferentialKernels.Int32DivideKernel
+      paths: [Cuda]
+      columns: [$exception]
+    - case: IntegerTrapAndCheckedDifferentialKernels.Int32RemainderKernel
+      paths: [Cuda]
+      columns: [$exception]
+    - case: IntegerTrapAndCheckedDifferentialKernels.UInt32DivideKernel
+      paths: [Cuda]
+      columns: [$exception]
+    - case: IntegerTrapAndCheckedDifferentialKernels.UInt32RemainderKernel
+      paths: [Cuda]
+      columns: [$exception]
+    - case: IntegerTrapAndCheckedDifferentialKernels.Int64DivideKernel
+      paths: [Cuda]
+      columns: [$exception]
+    - case: IntegerTrapAndCheckedDifferentialKernels.UInt64DivideKernel
+      paths: [Cuda]
+      columns: [$exception]
+    - case: IntegerTrapAndCheckedDifferentialKernels.Int16CompoundDivideKernel
+      paths: [Cuda]
+      columns: [$exception]
+    - case: IntegerTrapAndCheckedDifferentialKernels.SByteCompoundRemainderKernel
+      paths: [Cuda]
+      columns: [$exception]
+    - case: IntegerTrapAndCheckedDifferentialKernels.MathAbsInt32Kernel
+      paths: [Cuda]
+      columns: [$exception]
+
+- issue: 720
+  title: "[Bug]: Launch{Kernel}Ptr passes Length 0 to the kernel, so a kernel that reads Length silently sees 0"
+  entries:
+    - case: MarshalingAliasingDifferentialKernels.PtrLengthGuardedScaleKernel
+      paths: [Cuda]
+      columns: [data, outLen]
+
+- issue: 857
+  title: "Overlapping slices of one array passed as two kernel parameters are copied to separate device regions"
+  entries:
+    - case: MarshalingAliasingDifferentialKernels.OverlappingSpanSliceKernel
+      paths: [Cuda]
+      columns: [backing, observed]
+
+- issue: 904
+  title: "[Bug]: GSH0063 warns about SharedMemory<T> declarations on one line instead of giving them distinct keys on the managed path"
+  entries:
+    # Dynamic SharedMemory<T>(count) inside a non-suspending [GpuDeviceFunction] is not rewritten on the managed path
+    - case: PendingBugsDifferentialKernels.HelperDynamicSharedMemoryZeroBytesKernel
+      paths: [Managed]
+      columns: [$exception]
+    - case: PendingBugsDifferentialKernels.HelperDynamicSharedMemoryGrowthAfterLaterDeclKernel
+      paths: [Managed]
+      columns: [$exception]
+    - case: PendingBugsDifferentialKernels.HelperDynamicSharedMemoryNegativeCountKernel
+      paths: [Managed]
+      columns: [$exception]
+
+- issue: 947
+  title: "Math.Abs of the minimum signed value is undefined on native CPU and CUDA but throws in C#"
+  entries:
+    - case: IntegerTrapAndCheckedDifferentialKernels.MathAbsInt32Kernel
+      paths: [Native]
+      columns: [$exception]
+
+- issue: 961
+  title: "[Bug]: A Nullable<T> whose host and device layouts differ is copied with the host layout on every path (return value, array, argument, struct field)"
+  entries:
+    # Nullable<T> scalar and by-ref kernel arguments throw MarshalDirectiveException on the native CPU launch
+    - case: MarshalingBoundaryDifferentialKernels.NullableBlitScalarArgKernel
+      paths: [Native]
+      columns: [v_has, v_val, rb_has, rb_val, rb, oc]
+    # Nullable<Vector2>: 12 bytes on the host, 16 bytes on CUDA
+    - case: MarshalingBoundaryDifferentialKernels.NullableConvertPositionsKernel
+      paths: [Cuda]
+      columns: [v_x, v_y, rv_x, rv_y, h]
+    # [InlineArray(2)] of Nullable<Vector2> is block-copied without a per-element conversion on CUDA
+    - case: MarshalingBoundaryDifferentialKernels.InlineArrayNullableVec2Kernel
+      paths: [Cuda]
+      columns: [item0_x, item0_y, item1_has, item1_x, item1_y, h]
+
+- issue: 985
+  title: "[Bug]: CPU copies an array shared by two [In] holders separately"
+  entries:
+    # An [In] DeepStruct[] element array field is cloned on the CPU even when it aliases a writable int[]
+    - case: MarshalingAliasingDifferentialKernels.CrossAliasInDeepArrayAndRwArrayKernel
+      paths: [Managed, Native]
+      columns: [observed]
+
+- issue: 1057
+  title: "[Bug]: Interlocked long overloads return unsigned long long in the generated C++, so signed uses of the result are wrong"
+  entries:
+    # Interlocked.Add, Exchange and CompareExchange(ref long) return unsigned long long in C++
+    - case: AtomicsDifferentialKernels.InterlockedReturnExpressionKernel
+      paths: [Native, Cuda]
+      columns: [add64_lt_zero, exch64_sar_sign, cas64_lt_zero]
+
+- issue: 1058
+  title: "[Bug]: __gsharp_atomicAdd(int*, int) adds in signed int, so a wrapping Interlocked.Add is undefined behavior on CUDA"
+  entries:
+    - case: AtomicsDifferentialKernels.InterlockedReturnExpressionKernel
+      paths: [Cuda]
+      columns: [add32_wrap_min]
+
+- issue: 1060
+  title: "[Bug]: StackLinq ElementAtOrDefault with a negative index enumerates the source and runs upstream side effects"
+  entries:
+    - case: BclExceptionDifferentialKernels.ElementAtOrDefaultNegativeIndexSideEffectKernel
+      paths: [Managed, Native, Cuda]
+      columns: [select_neg_eval_count, where_neg_eval_count]
+
+- issue: 1061
+  title: "[Bug]: One variable passed to two ref parameters gets two device copies on CUDA"
+  entries:
+    - case: MarshalingAliasingDifferentialKernels.AliasedRefScalarsKernel
+      paths: [Cuda]
+      columns: [sharedRef, observed]
+
+- issue: 1091
+  title: "[Bug]: A warp shuffle in a Gpu.GridStrideLoop body is not split on the CPU paths: native returns the lane's own value, managed throws"
+  entries:
+    # Warp.ShuffleDownSync directly inside a Gpu.GridStrideLoop lambda is not split by StateMachineLowerer
+    - case: PendingBugsDifferentialKernels.GridStrideLoopUniformWarpShuffleKernel
+      paths: [Native]
+      columns: [iter0_down1, iter1_down1]
+
+- issue: 1409
+  title: "[Bug]: Reading an element of a null array in a CUDA kernel fails the launch instead of throwing NullReferenceException"
+  entries:
+    - case: BoundsAndMemoryDifferentialKernels.AllThreadsNullDereferenceTrapKernel
+      paths: [Cuda]
+      columns: [$exception]

@@ -192,7 +192,7 @@ public class GpuBigIntSqrtTests
         return data;
     }
 
-    // The estimate of SqrtFloor (design §4.3.1), recomputed on the host with BigInteger from the margin and the shift
+    // The estimate of SqrtFloor, recomputed on the host with BigInteger from the margin and the shift
     // that the product uses: x = floor(2^B / sqrt(A_top)) = isqrt(floor(2^(2B) / A_top)) and r' = floor(A_top·x / 2^s).
     // P1: r' is floor(sqrt(A)) or one less, so the device correction needs at most one step.
     // P2: the error of the approximation, sqrt(A) - A_top·x / 2^s, lies in [0, 2^-16 + 2^-32), the bound the design

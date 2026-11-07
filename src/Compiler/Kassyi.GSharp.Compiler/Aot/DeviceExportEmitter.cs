@@ -138,7 +138,7 @@ internal static class DeviceExportEmitter
     public static string KeepUnrecorded(ImmutableArray<StructSourcePart>.Builder parts, Compilation compilation,
         bool isCuda, ImmutableArray<string>.Builder names)
     {
-        var text = new StringBuilder();
+        using var text = new SourceWriter();
         foreach (var part in parts)
         {
             if (IsUnrecordedStruct(part.Type, compilation, isCuda))
@@ -180,7 +180,7 @@ internal static class DeviceExportEmitter
         AddUnrecorded(unrecorded, collector.Definitions, compilation, isCuda);
         AddUnrecorded(unrecorded, collector.Discovered, compilation, isCuda);
 
-        var definition = new StringBuilder();
+        using var definition = new SourceWriter();
         var includes = new HashSet<string>(StringComparer.Ordinal);
         var kept = ImmutableArray.CreateBuilder<string>();
         var failed = own.Failed;
@@ -212,7 +212,7 @@ internal static class DeviceExportEmitter
 
     // An unrecorded struct after the unrecorded structs that its own text names
     private static void KeepUnrecordedDependency(string name, Dictionary<string, StructSourcePart> unrecorded,
-        StringBuilder definition, HashSet<string> includes, ImmutableArray<string>.Builder kept, ref bool failed)
+        SourceWriter definition, HashSet<string> includes, ImmutableArray<string>.Builder kept, ref bool failed)
     {
         if (!unrecorded.TryGetValue(name, out var part) || kept.Contains(name))
         {

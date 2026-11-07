@@ -890,8 +890,8 @@ public class CorrectionStatusTests : IDisposable
 
     private static void RunReciprocalMega(KernelAdvancedMathHandler handler, GpuWorkspace workspace, GpuBigUInt divisor,
         GpuBigUInt guess) =>
-        handler.ReciprocalMega(workspace, divisor, guess, marginWords: 0, numBits: ReciprocalWords * 32, marginBits: 0,
-            iterations: 0, targetBits: ReciprocalTargetBits);
+        handler.ReciprocalMega(workspace, divisor, guess, marginWords: 0, iterations: 0,
+            targetBits: ReciprocalTargetBits);
 
     // The last pass at the step limit only checks: an x 1001 steps away ends exactly 1000 steps closer, not corrected.
     [SkippableTheory]
@@ -987,7 +987,7 @@ public class CorrectionStatusTests : IDisposable
 
     private static void RunReciprocalMega(GpuWorkspace workspace, GpuBigUInt divisor, GpuBigUInt guess, int iterations) =>
         new KernelAdvancedMathHandler().ReciprocalMega(workspace, divisor, guess, marginWords: 0,
-            numBits: ReciprocalWords * 32, marginBits: 0, iterations: iterations, targetBits: ReciprocalTargetBits);
+            iterations: iterations, targetBits: ReciprocalTargetBits);
 
     // Test-local integer square root; it checks its own result.
     private static BigInteger FloorSqrt(BigInteger value)

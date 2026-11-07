@@ -197,18 +197,14 @@ public static partial class DiagnosticGenerator
             return s;
         }
 
-        var sb = new StringBuilder(s.Length + 4);
+        using var escaped = new SourceWriter();
         foreach (var c in s)
         {
-            if (c == '"')
-            {
-                sb.Append('\\');
-            }
-
-            sb.Append(c);
+            escaped.AppendIf(c == '"', "\\");
+            escaped.Append(c);
         }
 
-        return sb.ToString();
+        return escaped.ToString();
     }
 
     private static bool IsValidId(string id)

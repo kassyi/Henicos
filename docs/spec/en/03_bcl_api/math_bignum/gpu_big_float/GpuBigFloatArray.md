@@ -23,11 +23,11 @@ public readonly struct GpuBigFloatArray : IDisposable
 
 | Name | Description |
 | --- | --- |
-| [GpuBigFloatArray(GpuWorkspace, int, int)](#gpubigfloatarraygpuworkspace-int-int) | Initializes a new instance of the `GpuBigFloatArray` struct allocating uninitialized GPU device memory. |
+| [GpuBigFloatArray(GpuWorkspace, int, int)](#gpubigfloatarraygpuworkspace-int-int) | Initializes a new instance of the `GpuBigFloatArray` struct allocating zero-filled GPU device memory. |
 
 ## GpuBigFloatArray(GpuWorkspace, int, int)
 
-Initializes a new instance of the `GpuBigFloatArray` struct allocating uninitialized GPU device memory for the significands, the exponents and the signs. None of the buffers is cleared; write an element with `SetElement` before reading it.
+Initializes a new instance of the `GpuBigFloatArray` struct allocating zero-filled GPU device memory for the significands, the exponents and the signs. Write an element with `SetElement` before reading it.
 
 ```csharp
 public GpuBigFloatArray(GpuWorkspace workspace, int length, int wordsPerElement);

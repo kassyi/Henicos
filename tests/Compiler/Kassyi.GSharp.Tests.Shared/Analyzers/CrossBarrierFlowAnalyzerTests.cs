@@ -4,7 +4,8 @@ namespace Kassyi.GSharp.Tests.Shared.Analyzers;
 /// <summary>
 /// GSH0039 / GSH0041 follow the control flow graph: a local is reported when it is live right after a point where the
 /// CPU dialects split the state machine (a barrier, a warp shuffle, a grid sync, a gap of a Gpu.SyncGrid body, a call
-/// that suspends), on any path including the back edge of a loop (A-21, #668).
+/// that suspends), on any path including the back edge of a loop
+/// (#668 (A ref struct local that crosses a Gpu.SyncGrid gap is not diagnosed)).
 /// </summary>
 [Category(TestCategory.Compiler)]
 public class CrossBarrierFlowAnalyzerTests : TranspilerTestBase

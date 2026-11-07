@@ -3,7 +3,7 @@
     Henicos (G#) 開発環境に必要なCLIツール・ランタイムを一括セットアップするPowerShellスクリプト。
 
 .DESCRIPTION
-    リポジトリ開発 (`justfile`, `dotnet`, `watchexec` 等) および
+    リポジトリ開発 (`justfile`, `dotnet` 等) および
     ガイドライン (`gemini.md`) で規定された各種高速CLIツール (`fd`, `rg`, `jq`, `yq`, `sd`, `sg`, `uv` 等) を
     winget (Windows Package Manager) 経由で自律的に検出し、未導入のパッケージをインストールします。
 
@@ -86,13 +86,6 @@ $tools = @(
         Command     = "just"
         Category    = "Core"
         Description = "タスクランナー (justfile 実行用)"
-    },
-    [PSCustomObject]@{
-        Id          = "watchexec.watchexec"
-        Name        = "Watchexec"
-        Command     = "watchexec"
-        Category    = "Core"
-        Description = "ファイル変更監視・自動テスト (just watch)"
     },
     [PSCustomObject]@{
         Id          = "OpenJS.NodeJS.LTS"
