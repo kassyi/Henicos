@@ -187,11 +187,17 @@ internal sealed class UniformityValueReader(UniformityState state)
         state.Recorder.TryGetValue(parameter, out var index) ? current[index] :
         parameter.ContainingSymbol.IsEqualTo(state.Method) ? ThreadVariance.Uniform : ThreadVariance.Block;
 
-    // A device function returns what its summary says for the variance of its arguments; an intrinsic that returns a
-    // thread-variant value is thread-variant; any other call is as variant as its operands
+    // A device function returns what its summary says for the variance of its arguments; a local function what its body,
+    // spliced at the call, returned (anything for a call whose body is not spliced, a recursive one); an intrinsic that
+    // returns a thread-variant value is thread-variant; any other call is as variant as its operands
     private ThreadVariance EvaluateCall(IInvocationOperation invocation, ControlFlowGraph graph, ThreadVariance[] current)
     {
         var method = invocation.TargetMethod;
+        if (method.MethodKind == MethodKind.LocalFunction)
+        {
+            return state.Recorder.TryGetResult(invocation.Syntax, out var result) ? current[result] : ThreadVariance.Block;
+        }
+
         if (TryGetDeviceFunction(method, out var callee, out var declaration))
         {
             return GetCallVariance(callee, declaration, invocation, graph, current).Return;

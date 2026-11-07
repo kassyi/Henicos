@@ -11,8 +11,9 @@ namespace Kassyi.GSharp.Compiler.Analysis;
 /// <remarks>
 /// A spliced lambda or local function body is opaque (<see cref="SplicedBody.IsOpaque"/>): its parameters are
 /// thread-variant, as its callers are not followed, and its events carry the body, as an assignment in it to a local
-/// declared outside it only adds to the variance. The index of a <c>Gpu.ForUnroll</c> body counts the same in every
-/// thread.
+/// declared outside it only adds to the variance. A local function body spliced where it is called runs with that call:
+/// its parameters get the variance of the arguments, and the value it returns becomes the result of the call. The index
+/// of a <c>Gpu.ForUnroll</c> body counts the same in every thread.
 /// </remarks>
 /// <param name="method">The analyzed method.</param>
 /// <param name="masks">Which parameters of <paramref name="method"/> receive a thread-variant argument.</param>
@@ -20,6 +21,12 @@ internal sealed class UniformityRecorder(IMethodSymbol method, ArgumentMasks mas
 {
     private readonly Dictionary<ISymbol, int> _symbols = new(SymbolEqualityComparer.Default);
     private readonly Dictionary<(ControlFlowGraph Graph, CaptureId Id), int> _captures = new();
+
+    // The result of each local function call whose body is spliced where it is called
+    private readonly Dictionary<SyntaxNode, int> _results = new();
+
+    // The bodies being built, innermost last
+    private readonly List<SplicedBody> _bodies = [];
 
     // The bodies of the lambdas and local functions being built that may run at any time
     private readonly ImmutableArray<SyntaxNode>.Builder _opaque = ImmutableArray.CreateBuilder<SyntaxNode>();
@@ -40,11 +47,14 @@ internal sealed class UniformityRecorder(IMethodSymbol method, ArgumentMasks mas
     /// <summary>The memory that the threads share, whose values follow the locals, parameters and flow captures.</summary>
     public MemoryUniformity Memory => _memory ??= new MemoryUniformity(this);
 
-    /// <summary>The number of values: locals, parameters, flow captures and memory.</summary>
-    public int ValueCount => _symbols.Count + _captures.Count + Memory.Count;
+    /// <summary>The number of values: locals, parameters, flow captures, local function results and memory.</summary>
+    public int ValueCount => _symbols.Count + _captures.Count + _results.Count + Memory.Count;
 
     /// <summary>The value index of a local or parameter, when the graph writes it.</summary>
     public bool TryGetValue(ISymbol symbol, out int index) => _symbols.TryGetValue(symbol, out index);
+
+    /// <summary>The value index of the result of a local function call, when its body is spliced where it is called.</summary>
+    public bool TryGetResult(SyntaxNode call, out int index) => _results.TryGetValue(call, out index);
 
     /// <summary>The value index of a flow capture, when the graph writes it.</summary>
     public bool TryGetCapture(ControlFlowGraph graph, CaptureId id, out int index) =>
@@ -172,7 +182,8 @@ internal sealed class UniformityRecorder(IMethodSymbol method, ArgumentMasks mas
         }
     }
 
-    // The parameters of a lambda or local function are thread-variant, except the index of a ForUnroll body
+    // The parameters of a lambda or local function are thread-variant, except the index of a ForUnroll body and those of
+    // a local function that receive an argument of the call it runs for
     public void OnBodyEntered(SplicedBody body, int node)
     {
         var parameters = body.Parameters;
@@ -182,17 +193,55 @@ internal sealed class UniformityRecorder(IMethodSymbol method, ArgumentMasks mas
             Define(parameters[i], isIndex ? ThreadVariance.Uniform : ThreadVariance.Block, node);
         }
 
+        if (body is { Call: { } call, CallGraph: { } callGraph })
+        {
+            BindArguments(call, callGraph, parameters, node);
+            ResultOf(call.Syntax);
+        }
+
         if (body.IsOpaque)
         {
             _opaque.Add(body.Syntax);
         }
+
+        _bodies.Add(body);
     }
 
     public void OnBodyExited(SplicedBody body, int node)
     {
+        _bodies.RemoveAt(_bodies.Count - 1);
         if (body.IsOpaque)
         {
             _opaque.RemoveAt(_opaque.Count - 1);
+        }
+    }
+
+    // return <value> of a local function body spliced where it is called: the result of that call
+    public void OnBodyReturn(IOperation value, ControlFlowGraph graph, int node)
+    {
+        if (_bodies.Count == 0 || _bodies[_bodies.Count - 1] is not { Call: { } call })
+        {
+            return;
+        }
+
+        var result = ResultOf(call.Syntax);
+        AddWritten(result, node);
+        Nodes[node].Events.Add(new UniformityEvent(UniformityEventKind.Bind, value, graph, Opaque, result));
+    }
+
+    // A by-value or ref parameter starts with the variance of its argument; an out parameter is written before it is read
+    private void BindArguments(IInvocationOperation call, ControlFlowGraph callGraph,
+        ImmutableArray<IParameterSymbol> parameters, int node)
+    {
+        foreach (var argument in call.Arguments)
+        {
+            if (argument.Parameter is not { RefKind: not RefKind.Out, Ordinal: var ordinal } || ordinal >= parameters.Length)
+            {
+                continue;
+            }
+
+            Nodes[node].Events.Add(new UniformityEvent(UniformityEventKind.Bind, argument.Value, callGraph, null,
+                ValueOf(parameters[ordinal])));
         }
     }
 
@@ -267,6 +316,17 @@ internal sealed class UniformityRecorder(IMethodSymbol method, ArgumentMasks mas
         {
             Nodes[node].Written.Add(value);
         }
+    }
+
+    private int ResultOf(SyntaxNode call)
+    {
+        if (!_results.TryGetValue(call, out var index))
+        {
+            index = ValueCount;
+            _results.Add(call, index);
+        }
+
+        return index;
     }
 
     private int ValueOf(ISymbol symbol)

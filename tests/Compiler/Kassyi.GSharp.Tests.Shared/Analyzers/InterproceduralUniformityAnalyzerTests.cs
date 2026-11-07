@@ -65,6 +65,31 @@ public class InterproceduralUniformityAnalyzerTests : TranspilerTestBase
         Assert.All(warnings, static d => Assert.Equal(DiagnosticSeverity.Warning, d.Severity));
     }
 
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public async Task Test_LocalFunctionResults_FollowTheirBody()
+    {
+        var actual = await RunAsync("Analyzers/BarrierUsage/LocalFunctionVarianceKernels.cu.cs");
+
+        var exit = GSharpDiagnostics.BarrierAfterDivergentExit.Id;
+
+        // 15 / 33 / 52: a lane that a local function returns, or leaves in an out or ref argument. 75: a constant that it
+        // returns under a thread-variant branch. 90: a thread-variant local it reads. 104: a thread-variant argument it
+        // returns (its barrier at 106, as later barriers follow). Each is reported as the control at 134 that reads the lane
+        // directly; nothing at 109 and 120, where it returns or copies a uniform argument
+        Assert.Equal(
+            [
+                (exit, 15, 13, 15, 22),
+                (exit, 33, 13, 33, 22),
+                (exit, 52, 13, 52, 22),
+                (exit, 75, 13, 75, 24),
+                (exit, 90, 13, 90, 24),
+                (GSharpDiagnostics.LaunchDependentDivergentBarrier.Id, 106, 13, 106, 30),
+                (exit, 134, 13, 134, 22)
+            ],
+            actual);
+    }
+
     private static async Task<IReadOnlyList<(string Id, int StartLine, int StartCol, int EndLine, int EndCol)>> RunAsync(
         string relativeTestCasePath)
     {

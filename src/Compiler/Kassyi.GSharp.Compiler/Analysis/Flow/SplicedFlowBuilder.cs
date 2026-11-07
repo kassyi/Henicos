@@ -88,7 +88,8 @@ internal sealed class SplicedFlowBuilder
         return result;
     }
 
-    // The operations of a block, then its branch value: the condition of a branch, or the value the method returns
+    // The operations of a block, then its branch value: the condition of a branch, or the value the method or a spliced
+    // body returns
     private void BuildBlock(BasicBlock block, ControlFlowGraph graph, bool isRoot)
     {
         foreach (var operation in block.Operations)
@@ -107,10 +108,17 @@ internal sealed class SplicedFlowBuilder
             _current.Condition = value;
             _current.Graph = graph;
         }
-        else if (isRoot && block.FallThroughSuccessor?.Semantics == ControlFlowBranchSemantics.Return)
+        else if (block.FallThroughSuccessor?.Semantics == ControlFlowBranchSemantics.Return && isRoot)
         {
             _current.ReturnValue = value;
             _current.Graph = graph;
+        }
+        else if (block.FallThroughSuccessor?.Semantics == ControlFlowBranchSemantics.Return)
+        {
+            foreach (var recorder in _recorders)
+            {
+                recorder.OnBodyReturn(value, graph, _current.Index);
+            }
         }
     }
 
@@ -405,7 +413,7 @@ internal sealed class SplicedFlowBuilder
 
         if (method.MethodKind == MethodKind.LocalFunction)
         {
-            SpliceLocalFunction(method.OriginalDefinition, graph, SplicedBodyKind.LocalFunctionCall);
+            SpliceLocalFunction(method.OriginalDefinition, graph, SplicedBodyKind.LocalFunctionCall, invocation);
         }
 
         foreach (var recorder in _recorders)
@@ -507,8 +515,10 @@ internal sealed class SplicedFlowBuilder
         SpliceGraph(body, graph.GetAnonymousFunctionControlFlowGraphInScope(function), gaps: null, isLoop: false);
     }
 
-    // A local function where it is called or converted to a delegate, once on each path (a recursive call adds nothing)
-    private void SpliceLocalFunction(IMethodSymbol function, ControlFlowGraph graph, SplicedBodyKind kind)
+    // A local function where it is called (with the call) or converted to a delegate, once on each path (a recursive call
+    // adds nothing)
+    private void SpliceLocalFunction(IMethodSymbol function, ControlFlowGraph graph, SplicedBodyKind kind,
+        IInvocationOperation? call = null)
     {
         if (!function.TryGetDeclaringSyntax(out LocalFunctionStatementSyntax? syntax) ||
             !_localFunctionsInProgress.Add(function))
@@ -516,7 +526,7 @@ internal sealed class SplicedFlowBuilder
             return;
         }
 
-        var body = new SplicedBody(kind, syntax, function.Parameters);
+        var body = new SplicedBody(kind, syntax, function.Parameters, Call: call, CallGraph: call != null ? graph : null);
         SpliceGraph(body, graph.GetLocalFunctionControlFlowGraphInScope(function), gaps: null, isLoop: false);
         _localFunctionsInProgress.Remove(function);
     }

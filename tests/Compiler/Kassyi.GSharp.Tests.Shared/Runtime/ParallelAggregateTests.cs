@@ -314,6 +314,30 @@ public class ParallelAggregateTests : TranspilerTestBase
         Assert.All(result, value => Assert.Equal(WrappingSum(data.Select(static x => x * x).ToArray()), value));
     }
 
+    // A lane that a local function returns or leaves in an out argument is thread-variant, so the predicate that reads it
+    // runs in each thread; the shared form gave every thread the total of thread 0, which is 0
+    [SkippableTheory]
+    [MemberData(nameof(Paths))]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_LocalFunctionLane_EachThreadReceivesItsOwnSum(bool managed)
+    {
+        var data = Enumerable.Range(0, 64).ToArray();
+        var result = new int[2 * 64 * 2];
+
+        Run(managed, () => ParallelAggregateKernels.LaunchLocalFunctionLaneKernel(data, result, gridDimX: 2, blockDimX: 64));
+
+        // mutant: UniformityValueReader.EvaluateCall without the result of a local function call
+        for (var gtid = 0; gtid < 2 * 64; gtid++)
+        {
+            var tid = gtid % 64;
+            var expected = tid * (tid - 1) / 2;
+            Assert.Equal(expected, result[gtid * 2]);
+            Assert.Equal(expected, result[gtid * 2 + 1]);
+        }
+    }
+
     private void Run(bool managed, Action launch)
     {
         Skip.If(managed && IsCudaDialect, "The managed path runs on the CPU test assembly.");

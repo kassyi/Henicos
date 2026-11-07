@@ -50,6 +50,9 @@ internal sealed class UniformitySolver(UniformityState state)
                         ? ThreadVariance.Uniform
                         : flowEvent.Variance;
                     break;
+                case { Kind: UniformityEventKind.Bind, Operation: { } bound, Graph: { } boundGraph }:
+                    current[flowEvent.Value] = state.Reader.Evaluate(bound, boundGraph, current);
+                    break;
                 case { Kind: UniformityEventKind.Write, Operation: { } operation, Graph: { } graph }:
                     ApplyWrite(operation, graph, current, flowEvent.Opaque);
                     break;
@@ -379,6 +382,28 @@ internal sealed class UniformitySolver(UniformityState state)
         }
     }
 
+    // The parameter of a spliced body holds what the call leaves in its argument; a call whose body is not spliced (a
+    // recursive call) may leave anything
+    private void WriteLocalFunctionArguments(IInvocationOperation invocation, ThreadVariance[] current, SyntaxNode? opaque)
+    {
+        var recorder = state.Recorder;
+        var spliced = recorder.TryGetResult(invocation.Syntax, out _);
+        var parameters = invocation.TargetMethod.OriginalDefinition.Parameters;
+        foreach (var argument in invocation.Arguments)
+        {
+            if (argument.Parameter is not { RefKind: RefKind.Ref or RefKind.Out } parameter)
+            {
+                continue;
+            }
+
+            var written = spliced && recorder.TryGetValue(parameters[parameter.Ordinal], out var index)
+                ? current[index]
+                : ThreadVariance.Block;
+            var target = argument.Value is IDeclarationExpressionOperation declared ? declared.Expression : argument.Value;
+            Assign(target, written, strong: parameter.RefKind == RefKind.Out, current, opaque);
+        }
+    }
+
     private void AssignAll(IOperation target, ThreadVariance variance, ThreadVariance[] current, SyntaxNode? opaque)
     {
         target = target is IDeclarationExpressionOperation declaration ? declaration.Expression : target;
@@ -397,10 +422,16 @@ internal sealed class UniformitySolver(UniformityState state)
 
     // M(ref x), M(out y): what the callee writes through them, thread-variant when its summary says so (a device
     // function), when the intrinsic returns a thread-variant value (an atomic), or when any argument is (any other
-    // method); an out argument is always written
+    // method); what a local function body spliced at the call left in its parameters; an out argument is always written
     private void WriteArguments(IInvocationOperation invocation, ControlFlowGraph graph, ThreadVariance[] current,
         SyntaxNode? opaque)
     {
+        if (invocation.TargetMethod.MethodKind == MethodKind.LocalFunction)
+        {
+            WriteLocalFunctionArguments(invocation, current, opaque);
+            return;
+        }
+
         var reader = state.Reader;
         var written = reader.TryGetDeviceFunction(invocation.TargetMethod, out var callee, out var declaration)
             ? reader.GetCallVariance(callee, declaration, invocation, graph, current).ByReference
