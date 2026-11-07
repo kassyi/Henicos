@@ -174,7 +174,8 @@ public struct CudaArrayDescriptor
 
 ## CudaResourceDescriptor Struct
 
-Represents a CUDA resource descriptor (`CUDA_RESOURCE_DESC`, 144 bytes). `Res` is the first member of the 128-byte `res` union; the rest of the union stays zero.
+Represents a CUDA resource descriptor (`CUDA_RESOURCE_DESC`, 144 bytes).
+`Res` is the first member of the 128-byte `res` union; the rest of the union stays zero.
 
 ```csharp
 [StructLayout(LayoutKind.Explicit, Size = 144)]
@@ -188,7 +189,8 @@ public struct CudaResourceDescriptor
 
 ## CudaTextureDescriptor Struct
 
-Represents a CUDA texture descriptor (`CUDA_TEXTURE_DESC`, 104 bytes). The 48 reserved bytes after `BorderColor3` stay zero.
+Represents a CUDA texture descriptor (`CUDA_TEXTURE_DESC`, 104 bytes).
+The 48 reserved bytes after `BorderColor3` stay zero.
 
 ```csharp
 [StructLayout(LayoutKind.Sequential, Size = 104)]
@@ -213,7 +215,8 @@ public struct CudaTextureDescriptor
 
 ## CudaResourceViewDescriptor Struct
 
-Represents a CUDA resource view descriptor (`CUDA_RESOURCE_VIEW_DESC`, 112 bytes). The 64 reserved bytes after `LastLayer` stay zero.
+Represents a CUDA resource view descriptor (`CUDA_RESOURCE_VIEW_DESC`, 112 bytes).
+The 64 reserved bytes after `LastLayer` stay zero.
 
 ```csharp
 [StructLayout(LayoutKind.Sequential, Size = 112)]
