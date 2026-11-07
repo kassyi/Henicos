@@ -39,7 +39,8 @@ public class GpuBigUIntMiscTests
     {
         // A negative bit index has no power of two: -1 would shift by 31 (C# masks the count) and -33 would write the
         // word before the buffer.
-        // mutant: GpuBigUInt.CreatePowerOfTwo `ThrowIfNegative(bitIndex)` removed (-1 returns 2^31, -33 throws CudaException)
+        // mutant: GpuBigUInt.CreatePowerOfTwo `ThrowIfNegative(bitIndex)` removed
+        //   (-1 returns 2^31, -33 throws CudaException)
         CudaCapability.EnsureGpuAvailable();
         using var scope = new GpuKernelLoader.CudaContextScope();
         using var context = new GpuWorkspace(64, GpuExecutionEngine.GSharpAot);
@@ -55,10 +56,9 @@ public class GpuBigUIntMiscTests
     [InlineData(31)]
     [InlineData(32)]
     [InlineData(63)]
-    [InlineData(64)]
     public void CreatePowerOfTwo_BitIndexFromZero_IsTwoToThePowerWithinTheWidth(int bitIndex)
     {
-        // 2^bitIndex for a bit inside the 2 words, and zero for a bit past them.
+        // 2^bitIndex for every bit inside the 2 words.
         // mutant: GpuBigUInt.CreatePowerOfTwo `ThrowIfNegative` -> `ThrowIfNegativeOrZero` (bitIndex 0)
         CudaCapability.EnsureGpuAvailable();
         using var scope = new GpuKernelLoader.CudaContextScope();
@@ -66,7 +66,27 @@ public class GpuBigUIntMiscTests
 
         using var power = GpuBigUInt.CreatePowerOfTwo(context, 2, bitIndex);
 
-        var expected = bitIndex < 64 ? BigInteger.One << bitIndex : BigInteger.Zero;
-        Assert.Equal(expected, power.ToBigInteger());
+        Assert.Equal(BigInteger.One << bitIndex, power.ToBigInteger());
+    }
+
+    [SkippableTheory]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Scenario(TestScenario.SadPath)]
+    [InlineData(1, 32)]
+    [InlineData(2, 64)]
+    [InlineData(2, 95)]
+    [InlineData(2, int.MaxValue)]
+    public void CreatePowerOfTwo_BitIndexPastTheWidth_Throws(int numWords, int bitIndex)
+    {
+        // 2^bitIndex does not fit numWords words, so there is no value to return (it used to return 0).
+        // mutant: GpuBigUInt.CreatePowerOfTwo width check removed (returns 0)
+        // mutant: GpuBigUInt.CreatePowerOfTwo `ThrowIfGreaterThanOrEqual` -> `ThrowIfGreaterThan` (32 in 1 word)
+        CudaCapability.EnsureGpuAvailable();
+        using var scope = new GpuKernelLoader.CudaContextScope();
+        using var context = new GpuWorkspace(64, GpuExecutionEngine.GSharpAot);
+
+        var error = Assert.Throws<ArgumentOutOfRangeException>(
+            () => GpuBigUInt.CreatePowerOfTwo(context, numWords, bitIndex));
+        Assert.Equal("bitIndex", error.ParamName);
     }
 }

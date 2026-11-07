@@ -290,7 +290,7 @@ A newly allocated `GpuBigUInt` representing $2^{\text{bitIndex}}$.
 #### Exceptions
 
 `ArgumentOutOfRangeException`<br>
-Thrown when `bitIndex` is negative.
+Thrown when `bitIndex` is negative, or at least `32 * numWords`, where $2^{\text{bitIndex}}$ does not fit `numWords` words.
 
 ## Dispose()
 
