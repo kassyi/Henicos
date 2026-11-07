@@ -66,13 +66,18 @@ internal static class StructConversionEmitter
                 TryGetConversionDeclaration(conversion, out var declaration) &&
                 compilation.ContainsSyntaxTree(declaration.SyntaxTree))
             {
-                WriteStructConversionOperator(conversion, declaration, ref context);
+                WriteOperatorFunction(conversion, declaration, ref context);
             }
         }
     }
 
-    public static void WriteStructConversionOperator(IMethodSymbol conversion,
-        ConversionOperatorDeclarationSyntax declaration, ref TranspileContext context)
+    /// <summary>
+    /// Writes the user-defined operator <paramref name="method"/> of a struct (a conversion, or the <c>operator true</c>
+    /// or <c>operator false</c> of <see cref="StructTruthOperatorEmitter"/>) as a value-returning device function named
+    /// by <see cref="GlobalCppNames.GetFunctionName"/>, with the body of <paramref name="declaration"/>.
+    /// </summary>
+    public static void WriteOperatorFunction(IMethodSymbol method, BaseMethodDeclarationSyntax declaration,
+        ref TranspileContext context)
     {
         var query = context.Query;
         var reporter = context.Reporter;
@@ -87,8 +92,8 @@ internal static class StructConversionEmitter
         try
         {
             context.Emitter.Writer.Append("__device__ inline ");
-            context.Emitter.Dialect.AppendType(ref context, conversion.ReturnType);
-            context.Emitter.Writer.Append(' ').Append(GlobalCppNames.GetFunctionName(conversion));
+            context.Emitter.Dialect.AppendType(ref context, method.ReturnType);
+            context.Emitter.Writer.Append(' ').Append(GlobalCppNames.GetFunctionName(method));
             context.Visitor.Visit(declaration.ParameterList);
             context.Emitter.Writer.Append(' ');
 

@@ -401,6 +401,7 @@ internal static class StructTranspiler
         WriteStructStaticAsserts(structSym, isInlineArray: false, ref context);
         WriteStructConstructors(structSym, ref context);
         StructConversionEmitter.WriteStructConversionOperators(structSym, ref context);
+        StructTruthOperatorEmitter.WriteTruthOperators(structSym, ref context);
         context.Emitter.Writer
             .AppendLine("#endif")
             .AppendLine();

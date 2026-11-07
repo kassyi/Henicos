@@ -97,6 +97,39 @@ internal static class OperatorMacroResolver
         return effects;
     }
 
+    /// <summary>
+    /// How a <c>&amp;&amp;</c> or <c>||</c> over an operator macro (<paramref name="macro"/>, with its
+    /// <see cref="OperatorMacro.Test"/>) is expanded: <c>x &amp;&amp; y</c> is <c>T.false(x) ? x : T.&amp;(x, y)</c>
+    /// and <c>x || y</c> is <c>T.true(x) ? x : T.|(x, y)</c> (C# spec §12.14.3), so the left operand is evaluated once
+    /// into a temporary, tested, and either assigned to the result or passed to the target, whose call (with the right
+    /// operand) runs only when the test fails.
+    /// </summary>
+    /// <remarks>
+    /// C# evaluates the target of the assignment before the left operand. The target is evaluated into a reference
+    /// first when it interferes with an operand (<paramref name="effects"/>, from <see cref="GetOperandEffects"/>): the
+    /// left one is evaluated before the target is used, and C++ leaves the order of the call's arguments open.
+    /// </remarks>
+    internal static ConditionalPlan PlanConditional(in MacroCall call, OperatorMacro macro, ExpressionEffects[] effects)
+    {
+        var test = macro.Test ?? throw new InvalidOperationException("The operator macro is not a && or ||.");
+        var spillsTarget = call.Operands[0] != null && !effects[0].IsEmpty &&
+                           (effects[0].InterferesWith(effects[1]) || effects[0].InterferesWith(effects[2]));
+        return new ConditionalPlan(test, IsPassedByReference(test.Parameters[0]), spillsTarget);
+    }
+
+    /// <summary>The expansion of a <c>&amp;&amp;</c> or <c>||</c> over an operator macro (<see cref="PlanConditional"/>).</summary>
+    internal readonly struct ConditionalPlan(IMethodSymbol test, bool passesTestByReference, bool spillsTarget)
+    {
+        /// <summary>The <c>operator false</c> or <c>operator true</c> that tests the left operand.</summary>
+        public IMethodSymbol Test { get; } = test;
+
+        /// <summary>Whether the test takes the left operand by reference (<c>in</c>).</summary>
+        public bool PassesTestByReference { get; } = passesTestByReference;
+
+        /// <summary>Whether the target is evaluated into a reference before the left operand.</summary>
+        public bool SpillsTarget { get; } = spillsTarget;
+    }
+
     // What computing <inner> reads and writes: its operands, and the calls of its target and of the operator macros nested
     // in it (ExpressionEffects.OfCall, with the context variable passed by reference)
     private static ExpressionEffects GetNestedEffects(OperatorMacro inner, AssignmentExpressionSyntax assignment,
@@ -115,6 +148,11 @@ internal static class OperatorMacroResolver
             }
 
             effects = effects.Union(ExpressionEffects.OfCall(target, contextVariable, model));
+        }
+
+        if (macro.Test is { } test)
+        {
+            effects = effects.Union(ExpressionEffects.OfCall(test, null, model));
         }
 
         if (macro.Nested.IsDefaultOrEmpty)
@@ -160,7 +198,7 @@ internal static class OperatorMacroResolver
     {
         macro = default;
         var operatorCall = UnwrapExpression(assignment.Right, semanticModel);
-        var (operatorMethod, isLifted, isIncrementOrDecrement) = GetOperator(operatorCall, semanticModel);
+        var (operatorMethod, isLifted, isIncrementOrDecrement, test) = GetOperator(operatorCall, semanticModel);
         if (!assignment.IsKind(SyntaxKind.SimpleAssignmentExpression))
         {
             // c += a + b would become Add(c, a, b), which computes c = a + b; c += a has no call to become
@@ -180,7 +218,8 @@ internal static class OperatorMacroResolver
             return false;
         }
 
-        macro = ResolveCall(operatorCall, operatorMethod, macroAttr, isLifted, isIncrementOrDecrement, semanticModel);
+        macro = ResolveCall(operatorCall, operatorMethod, macroAttr, isLifted, isIncrementOrDecrement, test,
+            semanticModel);
         if (macro.TargetMethod is not { } method)
         {
             return true;
@@ -326,10 +365,12 @@ internal static class OperatorMacroResolver
         symbol is ILocalSymbol { DeclaringSyntaxReferences: [var reference] } &&
         reference.GetSyntax() is VariableDeclaratorSyntax { Initializer: not null } or ForEachStatementSyntax;
 
-    // The target that <operatorCall> (an operator macro <operatorMethod>) maps to, and the operator macros among its
-    // operands, each computed into a temporary; or why it cannot be expanded
+    // The target that <operatorCall> (an operator macro <operatorMethod>, or a && or || over one that tests its left
+    // operand with <test>) maps to, and the operator macros among its operands, each computed into a temporary; or why
+    // it cannot be expanded
     private static OperatorMacro ResolveCall(ExpressionSyntax operatorCall, IMethodSymbol operatorMethod,
-        AttributeData macroAttr, bool isLifted, bool isIncrementOrDecrement, SemanticModel semanticModel)
+        AttributeData macroAttr, bool isLifted, bool isIncrementOrDecrement, IMethodSymbol? test,
+        SemanticModel semanticModel)
     {
         if (isIncrementOrDecrement || isLifted)
         {
@@ -364,14 +405,14 @@ internal static class OperatorMacroResolver
 
             var operandType = operatorMethod.Parameters[operandIndex].Type;
             var unwrapped = UnwrapExpression(operand, semanticModel);
-            var (innerMethod, innerLifted, innerIncrementOrDecrement) = GetOperator(unwrapped, semanticModel);
+            var (innerMethod, innerLifted, innerIncrementOrDecrement, innerTest) = GetOperator(unwrapped, semanticModel);
             if (GetMacroAttribute(innerMethod) is not { } innerAttr || innerMethod == null)
             {
                 continue;
             }
 
             var inner = ResolveCall(unwrapped, innerMethod, innerAttr, innerLifted, innerIncrementOrDecrement,
-                semanticModel);
+                innerTest, semanticModel);
 
             // [WHY] The target writes its result into the storage of the assignment target: a temporary has storage
             // only when the result is a value passed by reference. The temporary is passed as it is: a conversion to
@@ -396,7 +437,7 @@ internal static class OperatorMacroResolver
         }
 
         return new OperatorMacro(operatorCall, method, hasContext, null, target, operatorMethod.ReturnType,
-            nested?.ToImmutable() ?? default);
+            nested?.ToImmutable() ?? default) { Test = test };
     }
 
     private static string NoTemporary(ExpressionSyntax unwrapped, OperatorMacro inner, IParameterSymbol innerResult) =>
@@ -446,6 +487,13 @@ internal static class OperatorMacroResolver
         /// <summary>The operands (as written) that are operator macros themselves, computed into temporaries first.</summary>
         public ImmutableArray<NestedOperatorMacro> Nested { get; } = nested;
 
+        /// <summary>
+        /// The <c>operator false</c> (of <c>&amp;&amp;</c>) or <c>operator true</c> (of <c>||</c>) that the operator
+        /// tests its left operand with before it calls <see cref="TargetMethod"/>, or <see langword="null"/> when the
+        /// operator is not a conditional one (<see cref="PlanConditional"/>).
+        /// </summary>
+        public IMethodSymbol? Test { get; init; }
+
         /// <summary>The inner operator macro that <paramref name="operand"/> is, if any.</summary>
         public bool TryGetNested(ExpressionSyntax? operand, out OperatorMacro inner)
         {
@@ -472,11 +520,6 @@ internal static class OperatorMacroResolver
     /// </summary>
     public static string? GetPositionFailure(ExpressionSyntax operatorExpression, SemanticModel semanticModel)
     {
-        if (GetConditionalFailure(operatorExpression) is { } conditional)
-        {
-            return conditional;
-        }
-
         var position = GetPosition(operatorExpression, semanticModel);
         if (position == Position.Expanded)
         {
@@ -489,30 +532,6 @@ internal static class OperatorMacroResolver
         return position == Position.UnderConversion
             ? $"Operator macro '{op}' is under a user-defined conversion, which its expansion would drop; assign it to a variable first, as in 't = a + b;', and convert the variable"
             : $"Operator macro '{op}' is expanded only as the right side of an assignment statement, or as an operand of an operator macro there; assign it to a variable first, as in 't = a + b;'";
-    }
-
-    // A user-defined && or || (C# spec §12.15) tests operator false or true of its left operand first and calls & or |
-    // only when the test fails: x && y is T.false(x) ? x : T.&(x, y), and y is not evaluated when the test passes. An
-    // operator macro expands to a call of its target, which would drop the test and always evaluate y, and the test is a
-    // user-defined operator of its own, which G# does not call. GetOperator gives no operator macro for these, so nothing
-    // expands them
-    private static string? GetConditionalFailure(ExpressionSyntax operatorExpression)
-    {
-        if (!operatorExpression.IsKind(SyntaxKind.LogicalAndExpression) &&
-            !operatorExpression.IsKind(SyntaxKind.LogicalOrExpression))
-        {
-            return null;
-        }
-
-        var (conditional, macro, test) = operatorExpression.IsKind(SyntaxKind.LogicalAndExpression)
-            ? ("&&", "&", "false")
-            : ("||", "|", "true");
-        return $"Operator macro '{macro}' is called through '{conditional}', " +
-               $"which tests 'operator {test}' of the left operand first " +
-               "and evaluates the right operand only when the test fails; " +
-               "the expansion would call the operator macro alone, " +
-               $"so write '{macro}' when both operands may be evaluated, " +
-               "or branch on the left operand before the operator macro";
     }
 
     private enum Position
@@ -577,14 +596,12 @@ internal static class OperatorMacroResolver
         semanticModel.GetSafeOperation(cast) is not IConversionOperation { Conversion.IsUserDefined: true };
 
     // The user-defined operator that a binary, unary, increment or decrement expression calls, whether it is lifted to
-    // nullable operands, and whether it is an increment or decrement
-    private static (IMethodSymbol? Method, bool IsLifted, bool IsIncrementOrDecrement) GetOperator(
+    // nullable operands, whether it is an increment or decrement, and for a user-defined && or || the operator false or
+    // true that tests its left operand (Roslyn gives the & or | as the operator method)
+    private static (IMethodSymbol? Method, bool IsLifted, bool IsIncrementOrDecrement, IMethodSymbol? Test) GetOperator(
         ExpressionSyntax operatorCall, SemanticModel semanticModel)
     {
-        // A user-defined && or || is not a call of & or | alone (GetConditionalFailure)
-        if (operatorCall is not (BinaryExpressionSyntax or PrefixUnaryExpressionSyntax or PostfixUnaryExpressionSyntax) ||
-            operatorCall.IsKind(SyntaxKind.LogicalAndExpression) ||
-            operatorCall.IsKind(SyntaxKind.LogicalOrExpression))
+        if (operatorCall is not (BinaryExpressionSyntax or PrefixUnaryExpressionSyntax or PostfixUnaryExpressionSyntax))
         {
             return default;
         }
@@ -597,12 +614,35 @@ internal static class OperatorMacroResolver
 
         return operation switch
         {
-            IBinaryOperation binary => (binary.OperatorMethod, binary.IsLifted, false),
-            IUnaryOperation unary => (unary.OperatorMethod, unary.IsLifted, false),
+            IBinaryOperation { OperatorKind: BinaryOperatorKind.ConditionalAnd or BinaryOperatorKind.ConditionalOr } binary =>
+                (binary.OperatorMethod, binary.IsLifted, false, FindTest(binary)),
+            IBinaryOperation binary => (binary.OperatorMethod, binary.IsLifted, false, null),
+            IUnaryOperation unary => (unary.OperatorMethod, unary.IsLifted, false, null),
             IIncrementOrDecrementOperation incrementOrDecrement =>
-                (incrementOrDecrement.OperatorMethod, incrementOrDecrement.IsLifted, true),
+                (incrementOrDecrement.OperatorMethod, incrementOrDecrement.IsLifted, true, null),
             _ => default
         };
+    }
+
+    // T.false of x && y and T.true of x || y, T being the type that declares the & or | (C# spec §12.14.3): the
+    // operator of T that takes T
+    private static IMethodSymbol? FindTest(IBinaryOperation conditional)
+    {
+        if (conditional.OperatorMethod is not { ContainingType: { } type, ReturnType: var operandType })
+        {
+            return null;
+        }
+
+        var name = conditional.OperatorKind == BinaryOperatorKind.ConditionalAnd
+            ? WellKnownMemberNames.FalseOperatorName
+            : WellKnownMemberNames.TrueOperatorName;
+        return type.GetMembers(name)
+            .AsStackEnumerable()
+            .OfType<IMethodSymbol>()
+            .FirstOrDefault(operandType, static (test, t) =>
+                test is { MethodKind: MethodKind.UserDefinedOperator, Parameters: [var parameter] } &&
+                parameter.Type.IsEqualTo(t)
+            );
     }
 
     // The [GpuOperatorMacro] of G# on <operatorMethod>, with its two arguments, or null

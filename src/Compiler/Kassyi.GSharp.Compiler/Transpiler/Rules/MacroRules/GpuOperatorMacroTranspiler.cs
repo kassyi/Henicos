@@ -28,9 +28,10 @@ internal static class GpuOperatorMacroTranspiler
             return false;
         }
 
-        if (!macro.Nested.IsDefaultOrEmpty)
+        if (!macro.Nested.IsDefaultOrEmpty || macro.Test != null)
         {
-            // An operator macro among the operands is computed into a temporary first: a block of statements
+            // An operator macro among the operands is computed into a temporary first, and a && or || tests its left
+            // operand first: a block of statements
             using (context.Emitter.Writer.Scope())
             {
                 return AppendExpansion(assignment.Left, -1, macro, assignment, ref context);
@@ -71,6 +72,11 @@ internal static class GpuOperatorMacroTranspiler
     private static bool AppendExpansion(ExpressionSyntax? result, int resultTemp, OperatorMacro macro,
         AssignmentExpressionSyntax assignment, ref TranspileContext context)
     {
+        if (macro.Test != null)
+        {
+            return AppendConditional(result, resultTemp, macro, assignment, ref context);
+        }
+
         if (!TryPrepareCall(result, macro, assignment, ref context, out var call))
         {
             return false;
@@ -86,6 +92,102 @@ internal static class GpuOperatorMacroTranspiler
         AppendCall(call, temps, resultTemp, assignment, ref context);
         context.Emitter.Writer.AppendLine(";");
         return true;
+    }
+
+    // [auto&& __gsharp_seq_0 = <target>;] <T> __gsharp_seq_1 = <left>; if(<test>(__gsharp_seq_1)) { <target>=__gsharp_seq_1; } else { <right temporaries> <target>(<result>, __gsharp_seq_1, <right>); }
+    // A && or || over <macro> (OperatorMacroResolver.PlanConditional): the left operand is evaluated once and tested,
+    // and the target is called with the right operand only when the test fails. <result> or the temporary <resultTemp>
+    // receives the left operand or the target's result
+    private static bool AppendConditional(ExpressionSyntax? result, int resultTemp, OperatorMacro macro,
+        AssignmentExpressionSyntax assignment, ref TranspileContext context)
+    {
+        if (!TryPrepareCall(result, macro, assignment, ref context, out var call))
+        {
+            return false;
+        }
+
+        var plan = PlanConditional(call, macro, GetOperandEffects(call, macro, assignment, context.Query.SemanticModel));
+        var writer = context.Emitter.Writer;
+        int[] temps = [-1, -1, -1, -1];
+        if (plan.SpillsTarget && result != null)
+        {
+            temps[0] = EvaluationOrder.DeclareTemp(ref context, result, reference: true);
+        }
+
+        // The left operand: an operator macro computed into its temporary, or its value
+        var left = call.Operands[1] ?? throw new InvalidOperationException("A && or || has a left operand.");
+        if (!TryDeclareNestedTemp(left, macro, assignment, ref context, out temps[1]))
+        {
+            return false;
+        }
+
+        if (temps[1] < 0)
+        {
+            var operandType = macro.ResultType ?? throw new InvalidOperationException("An operator macro has a type.");
+            temps[1] = DeclareValue(left, operandType, ref context);
+        }
+
+        writer.Append("if");
+        using (writer.Parentheses())
+        {
+            writer.Append(GlobalCppNames.GetFunctionName(plan.Test));
+            using (writer.Parentheses())
+            {
+                writer.AppendIf(plan.PassesTestByReference, "&");
+                EvaluationOrder.AppendTempName(writer, temps[1]);
+            }
+        }
+
+        writer.AppendLine();
+        using (writer.Scope())
+        {
+            AppendTarget(result, temps[0], resultTemp, ref context);
+            writer.Append("=");
+            EvaluationOrder.AppendTempName(writer, temps[1]);
+            writer.AppendLine(";");
+        }
+
+        writer.AppendLine("else");
+        using (writer.Scope())
+        {
+            if (call.Operands[2] is { } right && !TryDeclareNestedTemp(right, macro, assignment, ref context, out temps[2]))
+            {
+                return false;
+            }
+
+            AppendCall(call, temps, resultTemp, assignment, ref context);
+            writer.AppendLine(";");
+        }
+
+        return true;
+    }
+
+    // <T> __gsharp_seq_<n> = <operand>; the value of <operand> as the operator's operand type <type>
+    private static int DeclareValue(ExpressionSyntax operand, ITypeSymbol type, ref TranspileContext context)
+    {
+        var writer = context.Emitter.Writer;
+        context.Emitter.Dialect.AppendType(ref context, type);
+        var temp = context.Emitter.SequenceTempCounter++;
+        writer.Append(' ');
+        EvaluationOrder.AppendTempName(writer, temp);
+        writer.Append(" = ");
+        context.Visitor.Visit(operand);
+        writer.AppendLine(";");
+        return temp;
+    }
+
+    // The target that receives the result: its reference <targetTemp>, the temporary <resultTemp> of an inner operator
+    // macro (<result> is null), or <result> itself
+    private static void AppendTarget(ExpressionSyntax? result, int targetTemp, int resultTemp,
+        ref TranspileContext context)
+    {
+        if (result is null || targetTemp >= 0)
+        {
+            EvaluationOrder.AppendTempName(context.Emitter.Writer, result is null ? resultTemp : targetTemp);
+            return;
+        }
+
+        context.Visitor.Visit(result);
     }
 
     // The call of <macro> (OperatorMacroResolver.TryPrepareCall); a context variable that cannot be found fails the
@@ -113,7 +215,6 @@ internal static class GpuOperatorMacroTranspiler
     private static bool DeclareOperandTemps(in MacroCall call, OperatorMacro macro, ExpressionEffects[] effects, int last,
         AssignmentExpressionSyntax assignment, ref TranspileContext context, out int[] temps)
     {
-        var writer = context.Emitter.Writer;
         temps = new int[call.Operands.Length];
         for (var i = 0; i < temps.Length; i++)
         {
@@ -123,25 +224,38 @@ internal static class GpuOperatorMacroTranspiler
                 continue;
             }
 
-            if (macro.TryGetNested(operand, out var inner) && inner.ResultType is { } innerType)
+            if (!TryDeclareNestedTemp(operand, macro, assignment, ref context, out temps[i]))
             {
-                temps[i] = context.Emitter.SequenceTempCounter++;
-                context.Emitter.Dialect.AppendType(ref context, innerType);
-                writer.Append(' ');
-                EvaluationOrder.AppendTempName(writer, temps[i]);
-                writer.AppendLine("{};");
-                if (!AppendExpansion(null, temps[i], inner, assignment, ref context))
-                {
-                    return false;
-                }
+                return false;
             }
-            else if (i <= last && !effects[i].IsEmpty)
+
+            if (temps[i] < 0 && i <= last && !effects[i].IsEmpty)
             {
                 temps[i] = EvaluationOrder.DeclareTemp(ref context, operand, IsPassedByReference(parameter));
             }
         }
 
         return true;
+    }
+
+    // <T> __gsharp_seq_<n>{}; and the expansion of the operator macro that <operand> is, which computes it into that
+    // temporary <temp>; -1 when the operand is not an operator macro
+    private static bool TryDeclareNestedTemp(ExpressionSyntax operand, OperatorMacro macro,
+        AssignmentExpressionSyntax assignment, ref TranspileContext context, out int temp)
+    {
+        temp = -1;
+        if (!macro.TryGetNested(operand, out var inner) || inner.ResultType is not { } innerType)
+        {
+            return true;
+        }
+
+        var writer = context.Emitter.Writer;
+        temp = context.Emitter.SequenceTempCounter++;
+        context.Emitter.Dialect.AppendType(ref context, innerType);
+        writer.Append(' ');
+        EvaluationOrder.AppendTempName(writer, temp);
+        writer.AppendLine("{};");
+        return AppendExpansion(null, temp, inner, assignment, ref context);
     }
 
     // <target>(<context>, <result>, <operands>): each operand in place, its temporary, or for the result the temporary
