@@ -28,6 +28,12 @@ internal sealed class FuzzBatchExecutor(RunCommandOptions options, string? cudaA
     internal const int BuildTimeoutMs = 240_000;
     internal const int RunTimeoutMs = 120_000;
 
+    /// <summary>
+    /// How long the CUDA run waits for the shared GPU lock before the CUDA stage of the batch is skipped. The run
+    /// itself still has <see cref="RunTimeoutMs"/> once it holds the lock.
+    /// </summary>
+    internal const int GpuLockWaitMinutes = 10;
+
     /// <summary>Gets the arguments of a Debug <c>dotnet build</c> that uses the restored assets when <paramref name="restoredAssets"/> is set.</summary>
     internal static List<string> BuildArguments(string project, bool restoredAssets, params string[] extra)
     {
@@ -153,7 +159,19 @@ internal sealed class FuzzBatchExecutor(RunCommandOptions options, string? cudaA
         {
             string lockScript = Path.Combine(options.RepoRoot, "scripts", "agent", "gpu-lock.js");
             string inputSeedArg = options.InputSeed is int inputSeed ? $" --input-seed {inputSeed.ToString(CultureInfo.InvariantCulture)}" : string.Empty;
-            run = FuzzRunProcess.Run("node", [lockScript, "--", $"dotnet exec \"{dll}\"{inputSeedArg}"], options.RepoRoot, RunTimeoutMs);
+            string[] lockArgs =
+            [
+                lockScript,
+                "--timeout-minutes", GpuLockWaitMinutes.ToString(CultureInfo.InvariantCulture),
+                "--", $"dotnet exec \"{dll}\"{inputSeedArg}",
+            ];
+            int timeoutMs = (GpuLockWaitMinutes * 60_000) + RunTimeoutMs;
+            run = FuzzRunProcess.Run("node", lockArgs, options.RepoRoot, timeoutMs);
+            if (FuzzRunProcess.IsGpuLockWaitTimeout(run))
+            {
+                Console.Out.WriteLine($"[fuzz-diff] Batch {batchIndex + 1} ({seedHex}): CUDA stage skipped (GPU busy).");
+                return [];
+            }
         }
         else
         {

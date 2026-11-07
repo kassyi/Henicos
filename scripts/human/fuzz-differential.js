@@ -8,15 +8,11 @@
  * run with --help for the options. Usage: node scripts/human/fuzz-differential.js [options]
  */
 
-const fs = require('fs');
 const path = require('path');
 const { spawnSync } = require('child_process');
 
 const repoRoot = path.resolve(__dirname, '..', '..');
-const hostOs = process.platform === 'win32' ? 'win' : process.platform === 'linux' ? 'linux' : process.platform === 'darwin' ? 'osx' : 'unix';
 const toolProject = path.join(repoRoot, 'tools', 'fuzz-diff', 'Kassyi.GSharp.Tools.FuzzDiff.csproj');
-const toolDll = path.join(repoRoot, 'tools', 'fuzz-diff', 'bin', hostOs, 'Debug', 'net10.0', 'Kassyi.GSharp.Tools.FuzzDiff.dll');
-const env = { ...process.env, DiffEngine_Disabled: 'true', CI: 'true', DOTNET_NOLOGO: '1' };
 
 function fail(message, code = 1) {
   process.stderr.write(`fuzz-differential: ${message}\n`);
@@ -25,8 +21,12 @@ function fail(message, code = 1) {
 
 function buildTool() {
   const args = ['build', toolProject, '-c', 'Debug', '-m:1', '-nodeReuse:false'];
-  if (fs.existsSync(path.join(path.dirname(toolProject), 'obj', hostOs, 'project.assets.json'))) args.push('--no-restore');
-  const build = spawnSync('dotnet', args, { cwd: repoRoot, env, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, timeout: 240_000 });
+  const build = spawnSync('dotnet', args, {
+    cwd: repoRoot,
+    encoding: 'utf8',
+    maxBuffer: 64 * 1024 * 1024,
+    timeout: 240_000,
+  });
   if (build.status !== 0) {
     process.stderr.write(`${build.stdout || ''}\n${build.stderr || ''}\n`);
     fail('Failed to build tools/fuzz-diff.');
@@ -43,10 +43,15 @@ if (!isHelp) {
 }
 buildTool();
 
-// The ids of this process and its parent let the tool recognize a GPU lock that scripts/agent/gpu-lock.js took for this run.
-const result = spawnSync('dotnet', ['exec', toolDll, 'run', '--repo-root', repoRoot, ...argv], {
+// `dotnet run` starts the tool under the dotnet host, so the tool's parent is not this script. The ids of this
+// process and its parent let the tool recognize a GPU lock that scripts/agent/gpu-lock.js took for this run.
+const runArgs = [
+  'run', '--project', toolProject, '-c', 'Debug', '--no-build', '--',
+  'run', '--repo-root', repoRoot, ...argv,
+];
+const result = spawnSync('dotnet', runArgs, {
   cwd: repoRoot,
-  env: { ...env, FUZZ_DIFF_LAUNCHER_PIDS: `${process.pid},${process.ppid}` },
+  env: { ...process.env, FUZZ_DIFF_LAUNCHER_PIDS: `${process.pid},${process.ppid}` },
   stdio: 'inherit',
 });
 if (result.error) fail(`Failed to start fuzz-diff run: ${result.error.message}`);

@@ -28,12 +28,13 @@ internal sealed class FuzzRunTotals
 /// </summary>
 internal sealed class FuzzRunner(RunCommandOptions options)
 {
-    private static readonly string[] s_prerequisiteDlls =
+    // The projects the batch projects reference with --no-dependencies, so they are built first.
+    private static readonly string[] s_prerequisiteProjects =
     [
-        "src/Core/Kassyi.GSharp.Core/Kassyi.GSharp.Core.csproj|src/Core/Kassyi.GSharp.Core/bin/{os}/Debug/net10.0/Kassyi.GSharp.Core.dll",
-        "src/Runtime/Kassyi.GSharp.Runtime/Kassyi.GSharp.Runtime.csproj|src/Runtime/Kassyi.GSharp.Runtime/bin/{os}/Debug/net10.0/Kassyi.GSharp.Runtime.dll",
-        "src/Compiler/Kassyi.GSharp.Compiler/Kassyi.GSharp.Compiler.csproj|src/Compiler/Kassyi.GSharp.Compiler/bin/{os}/Debug/netstandard2.0/Kassyi.GSharp.Compiler.dll",
-        "src/Compiler/Kassyi.GSharp.Compiler.Tasks/Kassyi.GSharp.Compiler.Tasks.csproj|src/Compiler/Kassyi.GSharp.Compiler.Tasks/bin/{os}/Debug/netstandard2.0/Kassyi.GSharp.Compiler.Tasks.dll",
+        "src/Core/Kassyi.GSharp.Core/Kassyi.GSharp.Core.csproj",
+        "src/Runtime/Kassyi.GSharp.Runtime/Kassyi.GSharp.Runtime.csproj",
+        "src/Compiler/Kassyi.GSharp.Compiler/Kassyi.GSharp.Compiler.csproj",
+        "src/Compiler/Kassyi.GSharp.Compiler.Tasks/Kassyi.GSharp.Compiler.Tasks.csproj",
     ];
 
     private readonly FuzzRunTotals _totals = new();
@@ -41,7 +42,7 @@ internal sealed class FuzzRunner(RunCommandOptions options)
     /// <summary>Runs the fuzzer and returns the exit code.</summary>
     internal int Run()
     {
-        EnsurePrerequisitesBuilt();
+        BuildPrerequisites();
 
         string? cudaArch = options.Profile == "G" ? FuzzRunProcess.DetectHostCudaArch(options.RepoRoot) : null;
         if (cudaArch is not null)
@@ -200,21 +201,17 @@ internal sealed class FuzzRunner(RunCommandOptions options)
         return false;
     }
 
-    // Core, Runtime, the compiler and its MSBuild tasks are built only when their DLL is missing; the batch projects
-    // reference the built DLLs with --no-dependencies.
-    private void EnsurePrerequisitesBuilt()
+    // Core, Runtime, the compiler and its MSBuild tasks are built on every run, so that the batches never test a
+    // stale compiler; an up-to-date build takes a few seconds. The batch projects reference the built DLLs with
+    // --no-dependencies.
+    private void BuildPrerequisites()
     {
-        foreach (string item in s_prerequisiteDlls)
+        foreach (string relativePath in s_prerequisiteProjects)
         {
-            string[] parts = item.Split('|');
-            string dll = Path.Combine(options.RepoRoot, parts[1].Replace("{os}", FuzzHostOs.Name, StringComparison.Ordinal));
-            if (File.Exists(dll))
-            {
-                continue;
-            }
-
-            string project = Path.Combine(options.RepoRoot, parts[0]);
-            var result = FuzzRunProcess.Run("dotnet", FuzzBatchExecutor.BuildArguments(project, restoredAssets: HasAssets(project)), options.RepoRoot, FuzzBatchExecutor.BuildTimeoutMs);
+            string project = Path.Combine(options.RepoRoot, relativePath);
+            var arguments = FuzzBatchExecutor.BuildArguments(project, restoredAssets: false);
+            int timeoutMs = FuzzBatchExecutor.BuildTimeoutMs;
+            var result = FuzzRunProcess.Run("dotnet", arguments, options.RepoRoot, timeoutMs);
             if (result.Status != 0)
             {
                 Console.Error.WriteLine(result.Stdout);
@@ -223,7 +220,4 @@ internal sealed class FuzzRunner(RunCommandOptions options)
             }
         }
     }
-
-    private static bool HasAssets(string projectPath) =>
-        File.Exists(Path.Combine(Path.GetDirectoryName(projectPath) ?? string.Empty, "obj", FuzzHostOs.Name, "project.assets.json"));
 }
