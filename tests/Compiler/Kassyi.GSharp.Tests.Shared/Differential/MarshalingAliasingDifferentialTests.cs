@@ -592,9 +592,9 @@ public sealed class MarshalingAliasingDifferentialTests
     }
 
     // --- Cross-aliasing between [In] DeepStruct[] element field and writable int[] (#985) ---
-    // A static field, so that the KnownDivergences tests can check the columns its entries name.
     private static readonly DifferentialCase s_crossAliasInDeepArrayAndRwArray = new(
-        $"{nameof(MarshalingAliasingDifferentialKernels)}.{nameof(MarshalingAliasingDifferentialKernels.CrossAliasInDeepArrayAndRwArrayKernel)}")
+        $"{nameof(MarshalingAliasingDifferentialKernels)}." +
+        $"{nameof(MarshalingAliasingDifferentialKernels.CrossAliasInDeepArrayAndRwArrayKernel)}")
     {
         Shape = LaunchShapes.SingleThread(),
         Seeds = [0],
@@ -781,17 +781,18 @@ public sealed class MarshalingAliasingDifferentialTests
         DifferentialRunner.Run(s_outArrayPartialWrite);
 
     // --- Launch{Kernel}Ptr non-overloaded IntPtr with Length guard (#720) ---
-    // A static field, so that the KnownDivergences tests can check the columns its entries name.
+    private const int PtrLengthGuardedScaleCount = 64;
+
     private static readonly DifferentialCase s_ptrLengthGuardedScale = new(
-        $"{nameof(MarshalingAliasingDifferentialKernels)}.{nameof(MarshalingAliasingDifferentialKernels.PtrLengthGuardedScaleKernel)}")
+        $"{nameof(MarshalingAliasingDifferentialKernels)}." +
+        $"{nameof(MarshalingAliasingDifferentialKernels.PtrLengthGuardedScaleKernel)}")
     {
-        Shape = LaunchShapes.Linear(64, blockX: 32),
+        Shape = LaunchShapes.Linear(PtrLengthGuardedScaleCount, blockX: 32),
         Seeds = [0],
         Inputs = static (_, _) =>
         {
-            const int n = 64;
-            int[] data = new int[n];
-            for (int i = 0; i < n; i++)
+            int[] data = new int[PtrLengthGuardedScaleCount];
+            for (int i = 0; i < PtrLengthGuardedScaleCount; i++)
             {
                 data[i] = i + 1;
             }

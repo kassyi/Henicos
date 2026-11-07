@@ -11,6 +11,9 @@
     <EmbeddedResource Include="$(MSBuildThisFileDirectory)Transpiler\GpuMacroTranspilerRuleKernels.cu.cs" />
     <EmbeddedResource Include="$(MSBuildThisFileDirectory)Transpiler\MacroTranspilerKernels.cu.cs" />
     <EmbeddedResource Include="$(MSBuildThisFileDirectory)Transpiler\MemoryExtensionsTranspilerRuleKernels.cu.cs" />
-    <EmbeddedResource Include="$(MSBuildThisFileDirectory)Differential\Harness\KnownDivergences.yaml" LogicalName="Kassyi.GSharp.Tests.Shared.Differential.KnownDivergences.yaml" />
+    <EmbeddedResource
+      Include="$(MSBuildThisFileDirectory)Differential\Harness\KnownDivergences.yaml"
+      LogicalName="Kassyi.GSharp.Tests.Shared.Differential.KnownDivergences.yaml"
+    />
   </ItemGroup>
 </Project>
