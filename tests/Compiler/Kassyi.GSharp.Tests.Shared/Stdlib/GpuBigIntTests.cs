@@ -252,9 +252,12 @@ public class GpuBigIntegerTests
         var evalNeg = negExpr.Evaluate(destNeg);
         Assert.True(evalNeg.IsNegative);
 
+        // ~x == -x - 1, as for BigInteger: ~0 is -1 (the inverted magnitude with the sign kept gave +(2^128 - 1))
         using var destNot = new GpuBigUInt(context, 4);
         var evalNot = notExpr.Evaluate(destNot);
-        Assert.False(evalNot.IsNegative);
+        Assert.True(evalNot.IsNegative);
+        using var one = GpuBigUInt.FromBigInteger(context, 1, 4);
+        Assert.Equal(0, evalNot.Value.CompareTo(one));
     }
 
     [SkippableFact]
