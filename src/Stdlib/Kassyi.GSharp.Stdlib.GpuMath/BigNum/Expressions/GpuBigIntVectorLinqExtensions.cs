@@ -150,6 +150,11 @@ public static class GpuBigIntVectorLinqExtensions
     /// <param name="left">The dividend vectorized expression.</param>
     /// <param name="right">The divisor vectorized expression.</param>
     /// <returns>A new vectorized expression representing the element-wise division.</returns>
+    /// <remarks>
+    /// The evaluation throws <see cref="DivideByZeroException"/> when the divisor of an element is zero. It reads that
+    /// check back from the device (one synchronization of the workspace stream), so evaluating it while the stream
+    /// captures a CUDA graph throws <see cref="NotSupportedException"/>.
+    /// </remarks>
     public static IGpuBigIntVectorExpression ZipDivide(
         this IGpuBigIntVectorExpression left,
         IGpuBigIntVectorExpression right) =>
@@ -161,6 +166,11 @@ public static class GpuBigIntVectorLinqExtensions
     /// <param name="left">The dividend vectorized expression.</param>
     /// <param name="right">The divisor vectorized expression.</param>
     /// <returns>A new vectorized expression representing the element-wise modulo operation.</returns>
+    /// <remarks>
+    /// The evaluation throws <see cref="DivideByZeroException"/> when the divisor of an element is zero. It reads that
+    /// check back from the device (one synchronization of the workspace stream), so evaluating it while the stream
+    /// captures a CUDA graph throws <see cref="NotSupportedException"/>.
+    /// </remarks>
     public static IGpuBigIntVectorExpression ZipModulo(
         this IGpuBigIntVectorExpression left,
         IGpuBigIntVectorExpression right) =>
