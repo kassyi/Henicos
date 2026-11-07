@@ -205,6 +205,20 @@ internal static class EvaluationOrderScenarios
         Assert.Equal(1, result[4]);
     }
 
+    public static void HiddenWrites(Action<Action> run)
+    {
+        var log = new int[1];
+        var result = new int[4];
+
+        run(() => EvaluationOrderKernels.LaunchHiddenWritesKernel(log, result, 5, 9, blockDimX: 1));
+
+        // Sub(cell.X, BumpThroughExtension(ref cell)) reads 0 before cell.Inc() adds 1; Sub(p, BumpP()) reads p = 5
+        // before the local function increments it; Sub(q, bumpQ()) reads q = 9 before the lambda does; Sub(log[0],
+        // new EoTick(log).V) reads 0 before the chained constructor stores 7
+        Assert.Equal([0, 5, 9, -7], result);
+        Assert.Equal(7, log[0]);
+    }
+
     public static void NoSpillBinary(Action<Action> run)
     {
         uint[] input = [0x12345678u];
