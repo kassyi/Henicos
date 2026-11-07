@@ -96,8 +96,8 @@ public class HostSyncReductionTests
 
     private static void Reciprocal(GpuWorkspace workspace, KernelAdvancedMathHandler advancedMath, GpuBigUInt target,
         GpuBigUInt result) =>
-        advancedMath.ReciprocalMega(workspace, target, result, marginWords: 2, numBits: KBits, marginBits: 0,
-            iterations: Iterations, targetBits: 2 * KBits);
+        advancedMath.ReciprocalMega(workspace, target, result, marginWords: 2, iterations: Iterations,
+            targetBits: 2 * KBits);
 
     private static void AssertReciprocal(BigInteger divisor, BigInteger actual)
     {

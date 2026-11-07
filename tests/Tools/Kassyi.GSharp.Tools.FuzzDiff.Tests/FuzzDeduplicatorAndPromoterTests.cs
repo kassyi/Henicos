@@ -191,7 +191,8 @@ public class FuzzDeduplicatorAndPromoterTests
     [Scenario(TestScenario.HappyPath)]
     public void FuzzCommands_CommandTableAndOptionParsing_SeparatesOptionsFromExecution()
     {
-        Assert.Equal(5, Program.Commands.Count);
+        Assert.Equal(6, Program.Commands.Count);
+        Assert.Contains(Program.Commands, static c => c.Name == "run");
         Assert.Contains(Program.Commands, static c => c.Name == "compare");
 
         bool parsedGen = GenCommand.TryParseOptions(

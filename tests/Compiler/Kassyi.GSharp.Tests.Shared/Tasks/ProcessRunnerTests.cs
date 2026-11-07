@@ -5,6 +5,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Kassyi.GSharp.Compiler.Tasks.Helpers;
+using Microsoft.Build.Framework;
 using Xunit;
 
 namespace Kassyi.GSharp.Tests.Shared.Tasks;
@@ -135,6 +136,47 @@ public class ProcessRunnerTests
         });
 
         Assert.All(exitCodes, code => Assert.Equal(0, code));
+    }
+
+    [Fact]
+    [Category(TestCategory.Compiler)]
+    public async Task Test_ProcessRunner_CancellationRequested_BeforeStart()
+    {
+        var runner = new ProcessRunner();
+        var startInfo = new ProcessStartInfo("dummy_executable_that_will_not_be_run.exe");
+        using var cts = new CancellationTokenSource();
+        cts.Cancel(); // Cancel before start
+
+        await Assert.ThrowsAsync<TaskCanceledException>(() => runner.RunAsync(startInfo, cts.Token));
+    }
+
+    [Fact]
+    [Category(TestCategory.Compiler)]
+    public async Task Test_ProcessRunner_ProcessStartFailed()
+    {
+        var runner = new ProcessRunner();
+        // Use a definitely non-existent executable to force Start() to fail
+        var startInfo = new ProcessStartInfo("this_executable_should_not_exist_xyz123.exe");
+
+        await Assert.ThrowsAsync<System.ComponentModel.Win32Exception>(() => runner.RunAsync(startInfo));
+    }
+
+    [Fact]
+    [Category(TestCategory.Compiler)]
+    public async Task Test_ProcessRunner_Cancellation_KillsProcess()
+    {
+        var runner = new ProcessRunner();
+
+        // An actual executable process is required to test the post-start kill callback across OSes.
+        var startInfo = Kassyi.GSharp.Tests.Shared.Helpers.ShellCommand.Sleep(10);
+        using var cts = new CancellationTokenSource();
+
+        var task = runner.RunAsync(startInfo, cts.Token);
+
+        // Cancel immediately to trigger the cancellation token registration callback.
+        cts.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => task);
     }
 
     private static ProcessResult RunWithTimeout(ProcessStartInfo startInfo)
