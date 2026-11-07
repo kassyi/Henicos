@@ -32,9 +32,9 @@ internal static class CudaModuleCache
     private static long s_generation;
 
     /// <summary>
-    /// Gets a number that changes whenever <see cref="Clear"/> forgets every module (<see cref="GpuKernelLoader.Shutdown"/>),
-    /// so that a function kept outside this class with an older number is resolved again instead of being launched from
-    /// an unloaded module.
+    /// Gets a number that changes whenever <see cref="Clear"/> forgets every module
+    /// (<see cref="GpuKernelLoader.Shutdown"/>), so that a function kept outside this class with an older number is
+    /// resolved again instead of being launched from an unloaded module.
     /// </summary>
     public static long Generation => Volatile.Read(ref s_generation);
 
@@ -166,7 +166,9 @@ internal static class CudaModuleCache
         }
     }
 
-    /// <summary>Forgets every module and function without unloading them, and starts a new <see cref="Generation"/>.</summary>
+    /// <summary>
+    /// Forgets every module and function without unloading them, and starts a new <see cref="Generation"/>.
+    /// </summary>
     public static void Clear()
     {
         Interlocked.Increment(ref s_generation);
