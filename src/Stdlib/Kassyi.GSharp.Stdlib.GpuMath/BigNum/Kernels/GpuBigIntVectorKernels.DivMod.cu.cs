@@ -117,7 +117,15 @@ public static partial class GpuBigIntVectorKernels
         var rem = new DivModWords { Scratch = ctx.Scratch, Base = remBase, Count = evalWords };
         var quot = new DivModWords { Scratch = ctx.Scratch, Base = quotBase, Count = evalWords };
 
-        InitializeDivModBuffersWarp(op.Result.Limbs, offsetResult, op.Result.NumWords, sharedRem, sharedQuot, rem, quot, laneId);
+        InitializeDivModBuffersWarp(
+            op.Result.Limbs,
+            offsetResult,
+            op.Result.NumWords,
+            sharedRem,
+            sharedQuot,
+            rem,
+            quot,
+            laneId);
 
         if (FindMaxNonZeroWordWarp(op.Right.Limbs, offsetB, op.Right.NumWords, laneId) < 0)
         {
@@ -153,7 +161,14 @@ public static partial class GpuBigIntVectorKernels
             }
 
             uint remOverflow = ShiftLeftOneBitWarp(sharedRem, rem, laneId, aBit);
-            uint noBorrow = SubtractDivisorWarp(op.Right.Limbs, offsetB, op.Right.NumWords, sharedRem, rem, laneId, false);
+            uint noBorrow = SubtractDivisorWarp(
+                op.Right.Limbs,
+                offsetB,
+                op.Right.NumWords,
+                sharedRem,
+                rem,
+                laneId,
+                false);
 
             if (remOverflow != 0u || noBorrow != 0u)
             {
@@ -370,8 +385,8 @@ public static partial class GpuBigIntVectorKernels
     public const int DivModSharedWords = 512;
 
     /// <summary>
-    /// A work buffer of the division (the remainder or the quotient): <see cref="Count"/> words in shared memory, or at
-    /// <see cref="Base"/> in <see cref="Scratch"/> when <see cref="Base"/> is not negative.
+    /// A work buffer of the division (the remainder or the quotient): <see cref="Count"/> words in shared memory, or
+    /// at <see cref="Base"/> in <see cref="Scratch"/> when <see cref="Base"/> is not negative.
     /// </summary>
     public struct DivModWords
     {

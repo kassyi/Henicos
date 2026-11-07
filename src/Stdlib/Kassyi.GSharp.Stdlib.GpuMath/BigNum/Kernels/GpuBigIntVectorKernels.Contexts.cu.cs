@@ -200,8 +200,8 @@ public static partial class GpuBigIntVectorKernels
         public uint[] ZeroDivisor;
 
         /// <summary>
-        /// The work buffers of elements wider than <see cref="DivModSharedWords"/>: <c>2 * evalWords</c> words per block
-        /// (the remainder, then the quotient), from <c>DivModScratch</c>; none for narrower elements.
+        /// The work buffers of elements wider than <see cref="DivModSharedWords"/>: <c>2 * evalWords</c> words per
+        /// block (the remainder, then the quotient), from <c>DivModScratch</c>; none for narrower elements.
         /// </summary>
         public uint[] Scratch;
     }

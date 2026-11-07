@@ -305,17 +305,21 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         Assert.Throws<DivideByZeroException>(() => inside.Evaluate(_context));
     }
 
-    [Fact]
+    [Theory]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.Boundary)]
-    public void Division_ElementsWiderThanTheSharedBuffers_UseEveryWord()
+    [InlineData(512)]
+    [InlineData(513)]
+    [InlineData(600)]
+    public void Division_ElementsWiderThanTheSharedBuffers_UseEveryWord(int words)
     {
-        // 600 words per element, past the 512 words of the kernel's shared buffers: the division works in global
-        // scratch instead of the low 512 words of each operand.
-        // mutant: evalWords clamped to DivModSharedWords again (quotient 12345 instead of 2^19168 + 12345)
-        const int words = 600;
-        var top = BigInteger.One << (32 * 599);
-        var divisor = (BigInteger.One << (32 * 550)) + 7;
+        // 512 words fill the kernel's shared buffers exactly; 513 and 600 words pass them, and the division works in
+        // global scratch instead of the low 512 words of each operand.
+        // mutant: evalWords clamped to DivModSharedWords again (600 words: quotient 12345 instead of 2^19168 + 12345)
+        // mutant: the kernel working in scratch for `evalWords >= DivModSharedWords` while the host rents it only
+        // above (512 words: the kernel indexes a null scratch)
+        var top = BigInteger.One << (32 * (words - 1));
+        var divisor = (BigInteger.One << (32 * (words - 50))) + 7;
         BigInteger[] dividends = [top, top + 12345, -(top + 12345), top * 3 + 1];
         BigInteger[] divisors = [top, 1, divisor, -divisor];
         using var left = CreateArray(dividends, words);
