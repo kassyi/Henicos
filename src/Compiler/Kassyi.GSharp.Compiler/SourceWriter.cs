@@ -57,6 +57,17 @@ public readonly struct SourceWriter : IDisposable, IEquatable<SourceWriter>
         return ref this;
     }
 
+    /// <summary>
+    /// Appends <paramref name="count"/> characters of <paramref name="value"/> from <paramref name="startIndex"/>,
+    /// without a substring.
+    /// </summary>
+    [UnscopedRef]
+    public ref readonly SourceWriter Append(string value, int startIndex, int count)
+    {
+        Builder.Append(value, startIndex, count);
+        return ref this;
+    }
+
     [UnscopedRef]
     public ref readonly SourceWriter Append(char value)
     {
