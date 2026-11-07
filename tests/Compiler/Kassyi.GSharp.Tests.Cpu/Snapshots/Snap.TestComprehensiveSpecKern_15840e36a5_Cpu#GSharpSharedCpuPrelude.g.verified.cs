@@ -1284,7 +1284,8 @@ uint32_t srcLogicalLane = logicalLane + (delta & 31u);
 if (srcLogicalLane >= (uint32_t)width) {
 return val;
 }
-return __gsharp_warp_shuffle_read_lane(__gsharp_ctx, val, tid, laneId - logicalLane + srcLogicalLane, name, location);
+uint32_t srcLaneId = laneId - logicalLane + srcLogicalLane;
+return __gsharp_warp_shuffle_read_lane(__gsharp_ctx, val, tid, srcLaneId, name, location);
 }
 
 template<typename TContext, typename T>
@@ -1317,8 +1318,8 @@ return val;
 uint32_t tid = __gsharp_warp_linear_tid();
 uint32_t laneId = tid % 32u;
 // CUDA lets a group of width lanes read its own group and the earlier ones; a later group gives the caller's own value
-// (PTX shfl.bfly reads lane j when j <= maxLane, the last lane of the caller's group). PTX uses only the low 5 bits of
-// the lane mask
+// (PTX shfl.bfly reads lane j when j <= maxLane, the last lane of the caller's group). PTX uses only the low 5 bits
+// of the lane mask
 uint32_t srcLane = laneId ^ (laneMask & 31u);
 if (srcLane > (laneId | ((uint32_t)width - 1u))) {
 return val;

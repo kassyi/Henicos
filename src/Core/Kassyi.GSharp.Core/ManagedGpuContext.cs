@@ -444,8 +444,8 @@ public static partial class ManagedGpuContext
         CheckShuffleWidth(width, Name, location);
         var laneId = (uint)(linearTid % 32);
         // CUDA lets a group of width lanes read its own group and the earlier ones; a later group gives the caller's own
-        // value (PTX shfl.bfly reads lane j when j <= maxLane, the last lane of the caller's group). PTX uses only the low 5
-        // bits of the lane mask
+        // value (PTX shfl.bfly reads lane j when j <= maxLane, the last lane of the caller's group). PTX uses only the
+        // low 5 bits of the lane mask
         var srcLane = laneId ^ ((uint)delta & 31u);
         return srcLane > (laneId | ((uint)width - 1u))
             ? val

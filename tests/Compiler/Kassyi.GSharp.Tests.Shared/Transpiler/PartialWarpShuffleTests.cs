@@ -241,7 +241,10 @@ public class PartialWarpShuffleTests : TranspilerTestBase
     {
         var result = new int[32];
 
-        Run(forceManaged, () => PartialWarpShuffleKernels.LaunchShuffleUpWidthKernel(result, delta, width, blockDimX: 32));
+        Run(
+            forceManaged,
+            () => PartialWarpShuffleKernels.LaunchShuffleUpWidthKernel(result, delta, width, blockDimX: 32)
+        );
 
         int shift = (int)(delta & 31u);
         Assert.Equal(Enumerable.Range(0, 32).Select(t => t % width < shift ? t + 1 : t - shift + 1), result);
