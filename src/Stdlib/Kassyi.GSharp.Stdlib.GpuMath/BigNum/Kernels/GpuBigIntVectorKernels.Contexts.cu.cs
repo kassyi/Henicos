@@ -85,7 +85,7 @@ public static partial class GpuBigIntVectorKernels
 
     /// <summary>
     /// The number of elements of a vector, on the device: without <see cref="Base"/> it is <see cref="Limit"/>; with it,
-    /// <c>clamp(Base[0] - Skip, 0, Limit)</c> (design D3 4.1; <c>Base</c> is the count word a <c>Where</c> writes, and
+    /// <c>clamp(Base[0] - Skip, 0, Limit)</c> (<c>Base</c> is the count word a <c>Where</c> writes, and
     /// <c>Skip</c> / <c>Limit</c> fold the <c>Skip</c> and <c>Take</c> after it).
     /// </summary>
     public struct ElementCountContext

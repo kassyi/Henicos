@@ -1,7 +1,7 @@
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 
 /// <summary>
-/// Keeps the elements whose predicate is true (design D3 4.4). The number of selected elements is computed on the
+/// Keeps the elements whose predicate is true. The number of selected elements is computed on the
 /// device into a word this node owns, so neither the selection nor its consumers (Count, Sum, Skip, ...) synchronize
 /// with the host; only the public <c>Evaluate</c> reads it, to return exactly the selected elements.
 /// </summary>
