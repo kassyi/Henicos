@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using System.Text;
 
 namespace Kassyi.GSharp.Compiler.Marshaling;
 
@@ -59,37 +58,33 @@ internal static class KernelHostNames
 
     private static string BuildLaunchOptionNames()
     {
-        var sb = new StringBuilder();
+        using var names = new SourceWriter();
         for (var i = 0; i < LaunchOptions.Length; i++)
         {
-            if (i > 0)
-            {
-                sb.Append(", ");
-            }
-
-            sb.Append(LaunchOptions[i].Name);
+            names.AppendIf(i > 0, ", ");
+            names.Append(LaunchOptions[i].Name);
         }
 
-        return sb.ToString();
+        return names.ToString();
     }
 
     private static string BuildLaunchOptionParameters()
     {
-        var sb = new StringBuilder();
+        using var parameters = new SourceWriter();
         for (var i = 0; i < LaunchOptions.Length; i++)
         {
             if (i > 0)
             {
                 // [WHY] The wrappers have always been written "uint blockDimY = 1,uint blockDimZ = 1"; existing output is
                 // not respaced (transpiler-emission section 3), so the missing space is kept, keyed by name
-                sb.Append(LaunchOptions[i].Name == "blockDimZ" ? "," : ", ");
+                parameters.Append(LaunchOptions[i].Name == "blockDimZ" ? "," : ", ");
             }
 
             var opt = LaunchOptions[i];
-            sb.Append(opt.Type).Append(' ').Append(opt.Name).Append(" = ").Append(opt.DefaultValue);
+            parameters.Append($"{opt.Type} {opt.Name} = {opt.DefaultValue}");
         }
 
-        return sb.ToString();
+        return parameters.ToString();
     }
 
     /// <summary>The kernel in a run-time error of the CPU paths: <c>Type.Method</c>.</summary>

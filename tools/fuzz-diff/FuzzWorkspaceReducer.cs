@@ -116,7 +116,7 @@ internal static class FuzzWorkspaceReducer
         var psi = OperatingSystem.IsWindows()
             ? new ProcessStartInfo("cmd.exe", $"/d /s /c \"{command}\"")
             : CreateUnixShellStartInfo(command);
-        int code = RunProcessWithStartInfo(psi, out _, out _, out bool timedOut, timeoutMs: 120_000);
+        int code = FuzzRunProcess.RunWithStartInfo(psi, out _, out _, out bool timedOut, timeoutMs: 120_000);
         return !timedOut && code == 0;
     }
 
@@ -450,53 +450,12 @@ internal static class FuzzWorkspaceReducer
         out string stderr,
         out bool timedOut,
         int timeoutMs = 120_000) =>
-        RunProcessWithStartInfo(new ProcessStartInfo(fileName, arguments), out stdout, out stderr, out timedOut, timeoutMs);
-
-    internal static int RunProcessWithStartInfo(
-        ProcessStartInfo psi,
-        out string stdout,
-        out string stderr,
-        out bool timedOut,
-        int timeoutMs = 120_000)
-    {
-        psi.RedirectStandardOutput = true;
-        psi.RedirectStandardError = true;
-        psi.UseShellExecute = false;
-        psi.CreateNoWindow = true;
-        psi.Environment["DiffEngine_Disabled"] = "true";
-        psi.Environment["CI"] = "true";
-        psi.Environment["DOTNET_NOLOGO"] = "1";
-
-        using var proc = Process.Start(psi) ?? throw new InvalidOperationException($"Failed to start {psi.FileName}.");
-        var stdoutTask = proc.StandardOutput.ReadToEndAsync();
-        var stderrTask = proc.StandardError.ReadToEndAsync();
-
-        if (!proc.WaitForExit(timeoutMs))
-        {
-            timedOut = true;
-            try
-            {
-                proc.Kill(entireProcessTree: true);
-            }
-            // smell-scan: ignore swallowed-exception -- the process may exit between the timeout and Kill, or a child
-            // of it may refuse to stop; the caller already treats the run as timed out
-            catch (Exception ex) when (ex is InvalidOperationException or Win32Exception or AggregateException)
-            {
-                Trace.WriteLine($"Could not kill {psi.FileName} after the timeout: {ex.Message}");
-            }
-
-            proc.WaitForExit(5_000);
-            stdout = stdoutTask.IsCompletedSuccessfully ? stdoutTask.Result : string.Empty;
-            stderr = stderrTask.IsCompletedSuccessfully ? stderrTask.Result : string.Empty;
-            return 124;
-        }
-
-        proc.WaitForExit();
-        timedOut = false;
-        stdout = stdoutTask.GetAwaiter().GetResult();
-        stderr = stderrTask.GetAwaiter().GetResult();
-        return proc.ExitCode;
-    }
+        FuzzRunProcess.RunWithStartInfo(
+            new ProcessStartInfo(fileName, arguments),
+            out stdout,
+            out stderr,
+            out timedOut,
+            timeoutMs);
 
     private static string? DetectHostCudaArchForReducer()
     {
