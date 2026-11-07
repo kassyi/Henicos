@@ -94,7 +94,6 @@ public GpuBigUFloat UFloat { get; }
 | Name | Description |
 | --- | --- |
 | [Add(GpuBigFloat)](#addgpubigfloat) | Adds another `GpuBigFloat` to this instance. |
-| [AlignRadixPoint(GpuBigFloat)](#alignradixpointgpubigfloat) | Aligns the radix points (exponents) of this instance and another floating-point number, extracting IEEE 754 rounding bits. |
 | [CompareTo(GpuBigFloat)](#comparetogpubigfloat) | Compares this instance to another `GpuBigFloat` and returns an integer indicating their relative order. |
 | [Dispose()](#dispose) | Releases the GPU global device memory resources allocated for the underlying significand. |
 | [DivideByUInt32(UInt32)](#dividebyuint32uint32) | Divides the floating-point number by a 32-bit unsigned integer scalar, returning the quotient and 32-bit remainder. |
@@ -102,7 +101,6 @@ public GpuBigUFloat UFloat { get; }
 | [Equals(Object?)](#equalsobject) | Determines whether the specified object is equal to the current instance. |
 | [GetHashCode()](#gethashcode) | Returns the hash code of the significand buffer, the exponent and the sign, consistent with `Equals(GpuBigFloat)`. |
 | [Normalize(Int32, Boolean)](#normalizeint32-boolean) | Normalizes the floating-point value such that the most significant bit of the significand is aligned. |
-| [Round(GpuBigFloatRoundingMode, Boolean, Boolean, Boolean)](#roundgpubigfloatroundingmode-boolean-boolean-boolean) | Rounds the floating-point value to the target significand precision using the specified rounding mode and discarded bit flags. |
 | [Subtract(GpuBigFloat)](#subtractgpubigfloat) | Subtracts another `GpuBigFloat` from this instance. |
 
 ## Methods Detail
@@ -113,14 +111,6 @@ Adds another `GpuBigFloat` to this instance.
 
 ```csharp
 public GpuBigFloat Add(GpuBigFloat other);
-```
-
-### AlignRadixPoint(GpuBigFloat)
-
-Aligns the radix points (exponents) of this instance and another floating-point number, extracting IEEE 754 rounding bits.
-
-```csharp
-public (GpuBigFloat AlignedThis, GpuBigFloat AlignedOther, bool Guard, bool Round, bool StickyThis, bool StickyOther) AlignRadixPoint(GpuBigFloat other);
 ```
 
 ### CompareTo(GpuBigFloat)
@@ -204,14 +194,6 @@ The number of leading zero bits in the significand.
 _[GpuBigFloat](GpuBigFloat.md)_<br>
 The normalized `GpuBigFloat` instance.
 
-### Round(GpuBigFloatRoundingMode, Boolean, Boolean, Boolean)
-
-Rounds the floating-point value to the target significand precision using the specified rounding mode and discarded bit flags.
-
-```csharp
-public GpuBigFloat Round(GpuBigFloatRoundingMode mode, bool guardBit, bool roundBit, bool stickyBit);
-```
-
 ### Subtract(GpuBigFloat)
 
 Subtracts another `GpuBigFloat` from this instance.
@@ -283,6 +265,5 @@ For more information on the separation of Signed and Unsigned components to prev
 
 - [Standard Math Library (Stdlib.Math)](../00_index.md)
 - [GpuBigUFloat Struct (G#)](GpuBigUFloat.md)
-- [GpuBigFloatRoundingMode Enum (G#)](GpuBigFloatRoundingMode.md)
 - [FloatExpressions (BinaryExpr & GpuBigFloatExpressionVisitor)](../gpu_big_int_and_uint/expressions/FloatExpressions.md)
 - [GpuBigFloat Operators (G#)](Operators.md)
