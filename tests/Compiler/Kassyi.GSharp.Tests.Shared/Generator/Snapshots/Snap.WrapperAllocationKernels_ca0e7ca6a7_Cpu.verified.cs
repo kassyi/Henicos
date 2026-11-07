@@ -41,11 +41,11 @@ public const string DebugName_Value = "global::System.Int32";
 [global::System.Runtime.InteropServices.FieldOffset(0)]
 public global::System.Int32 Value;
 }
-public static unsafe void Marshal_ArrayFreeCounter(ref global::Kassyi.GSharp.Tests.Shared.Syntax.ArrayFreeCounter host, ref AotContexts.ArrayFreeCounter native, bool isDevicePtr, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_ArrayFreeCounter(ref global::Kassyi.GSharp.Tests.Shared.Syntax.ArrayFreeCounter host, ref AotContexts.ArrayFreeCounter native, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
 {
 native = global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Syntax.ArrayFreeCounter, AotContexts.ArrayFreeCounter>(ref host);
 }
-public static unsafe void Unmarshal_ArrayFreeCounter(ref global::Kassyi.GSharp.Tests.Shared.Syntax.ArrayFreeCounter host, ref AotContexts.ArrayFreeCounter native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_ArrayFreeCounter(ref global::Kassyi.GSharp.Tests.Shared.Syntax.ArrayFreeCounter host, ref AotContexts.ArrayFreeCounter native, global::System.IntPtr hStream = default)
 {
 host = global::System.Runtime.CompilerServices.Unsafe.As<AotContexts.ArrayFreeCounter, global::Kassyi.GSharp.Tests.Shared.Syntax.ArrayFreeCounter>(ref native);
 }

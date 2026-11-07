@@ -276,11 +276,11 @@ public const string DebugName_Value = "global::System.Int32";
 [global::System.Runtime.InteropServices.FieldOffset(4)]
 public global::System.Int32 Value;
 }
-public static unsafe void Marshal_RefTestStruct(ref global::Kassyi.GSharp.Tests.Shared.Syntax.RefTestStruct host, ref AotContexts.RefTestStruct native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_RefTestStruct(ref global::Kassyi.GSharp.Tests.Shared.Syntax.RefTestStruct host, ref AotContexts.RefTestStruct native, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
 {
 native = global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Syntax.RefTestStruct, AotContexts.RefTestStruct>(ref host);
 }
-public static unsafe void Unmarshal_RefTestStruct(ref global::Kassyi.GSharp.Tests.Shared.Syntax.RefTestStruct host, ref AotContexts.RefTestStruct native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_RefTestStruct(ref global::Kassyi.GSharp.Tests.Shared.Syntax.RefTestStruct host, ref AotContexts.RefTestStruct native, global::System.IntPtr hStream = default)
 {
 host = global::System.Runtime.CompilerServices.Unsafe.As<AotContexts.RefTestStruct, global::Kassyi.GSharp.Tests.Shared.Syntax.RefTestStruct>(ref native);
 }
