@@ -238,7 +238,7 @@ Prelude:
     Unsupported: { Value: __gsharp_unsupported, Prelude: ErrorChannel.hpp }
     Trap: { Value: __gsharp_trap, Prelude: ErrorChannel.hpp }
     # A failure after which the kernel step cannot go on: reports, then throws __gsharp_step_abort, which the native
-    # launcher catches around each block
+    # launcher catches around each block; the CUDA prelude defines it as well, where the trap stops the kernel
     TrapAbort: { Value: __gsharp_trap_abort, Prelude: ErrorChannel.hpp }
     StepAbort: { Value: __gsharp_step_abort, Prelude: ErrorChannel.hpp }
     # The array that a C# array read (Length, an element, foreach) goes through: a null array fails with

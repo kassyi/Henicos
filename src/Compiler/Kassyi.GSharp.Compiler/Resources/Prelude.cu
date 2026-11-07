@@ -110,6 +110,18 @@ __device__ __forceinline__ void __gsharp_trap(GSharpErrorCode code, unsigned int
     __gsharp_trap_site(code, site_id);
 }
 
+// A failure after which the thread cannot go on (no arm of a switch expression matches): the trap stops the kernel, so
+// the call never returns and a form that must yield a value needs none after it (ErrorChannel.hpp ends the step instead)
+[[noreturn]] __device__ __forceinline__ void __gsharp_trap_abort(GSharpErrorCode code, const char* message) {
+    __gsharp_trap_site(code, __gsharp_builtin_message_id(message));
+    __builtin_unreachable();
+}
+
+[[noreturn]] __device__ __forceinline__ void __gsharp_trap_abort(GSharpErrorCode code, unsigned int site_id) {
+    __gsharp_trap_site(code, site_id);
+    __builtin_unreachable();
+}
+
 template <GSharpErrorCode ErrorCode>
 __device__ inline const char* __gsharp_range_message() {
     if (ErrorCode == GSharpErrorCode::IndexOutOfRange) {

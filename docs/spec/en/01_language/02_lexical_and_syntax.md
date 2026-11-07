@@ -104,6 +104,8 @@ public static void CategorizeValuesKernel(int[] input, float[] output)
 }
 ```
 
+When no arm matches the input, C# throws `SwitchExpressionException`. The managed path throws it as well; the native CPU and CUDA builds stop with a run-time error that the host throws as `InvalidOperationException` (the base class of `SwitchExpressionException`), with the message of `SwitchExpressionException` and the place of the switch expression (on CUDA only for a switch expression in the kernel itself, not in a device function it calls). A switch expression with a discard arm (`_`) matches every input and has no such check.
+
 ### 2.5.2 Local Functions and Lambdas
 
 > [!IMPORTANT]

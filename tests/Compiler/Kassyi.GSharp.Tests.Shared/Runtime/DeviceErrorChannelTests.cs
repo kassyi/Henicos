@@ -452,6 +452,77 @@ public sealed class DeviceErrorChannelTests
         Assert.Equal("(0,0,0)", ex.Data["GSharp.ThreadIndex"]);
         Assert.Equal("(0,0,0)", ex.Data["GSharp.BlockIndex"]);
     }
+
+    [Fact]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_CpuManagedAndNative_SwitchExpressionMatchedArms_ReturnArmValues()
+    {
+        int[] keys = [1, 0];
+        int[] managed = new int[keys.Length];
+        int[] native = new int[keys.Length];
+
+        CpuKernelLoader.ForceManagedExecution = true;
+        try
+        {
+            DeviceErrorChannelKernels.LaunchSwitchExpressionNoMatchKernel(keys, managed, blockDimX: 2);
+        }
+        finally
+        {
+            CpuKernelLoader.ForceManagedExecution = false;
+        }
+
+        DeviceErrorChannelKernels.LaunchSwitchExpressionNoMatchKernel(keys, native, blockDimX: 2);
+
+        Assert.Equal([20, 10], managed);
+        Assert.Equal([20, 10], native);
+    }
+
+    [Fact]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.SadPath)]
+    public void Test_CpuManagedAndNative_SwitchExpressionWithoutMatchingArm_ThrowsWithSourceLocation()
+    {
+        int[] keys = [1, 2];
+        int[] result = new int[keys.Length];
+
+        CpuKernelLoader.ForceManagedExecution = true;
+        try
+        {
+            Assert.Throws<SwitchExpressionException>(() =>
+                DeviceErrorChannelKernels.LaunchSwitchExpressionNoMatchKernel(keys, result, blockDimX: 2));
+        }
+        finally
+        {
+            CpuKernelLoader.ForceManagedExecution = false;
+        }
+
+        var ex = Assert.Throws<InvalidOperationException>(() =>
+            DeviceErrorChannelKernels.LaunchSwitchExpressionNoMatchKernel(keys, result, blockDimX: 2));
+
+        Assert.Contains("Non-exhaustive switch expression failed to match its input.", ex.Message);
+        Assert.Equal(nameof(GSharpErrorCode.InvalidOperation), ex.Data["GSharp.ErrorCode"]);
+        Assert.Equal("SwitchExpressionNoMatchKernel", ex.Data["GSharp.MemberName"]);
+        Assert.Equal("DeviceErrorChannelKernels.cu.cs(97,21)", ex.Data["GSharp.SourceLocation"]);
+        Assert.Equal("(1,0,0)", ex.Data["GSharp.ThreadIndex"]);
+    }
+
+    [Fact]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.SadPath)]
+    public void Test_CpuNative_SwitchExpressionWithoutMatchingArmInDeviceFunction_ThrowsWithSourcePlace()
+    {
+        int[] keys = [2];
+        int[] result = [0];
+
+        var ex = Assert.Throws<InvalidOperationException>(() =>
+            DeviceErrorChannelKernels.LaunchSwitchExpressionNoMatchInDeviceFunctionKernel(keys, result, blockDimX: 1));
+
+        Assert.Contains(
+            "Non-exhaustive switch expression failed to match its input at DeviceErrorChannelKernels.cu.cs(108,44)",
+            ex.Message);
+        Assert.Equal(nameof(GSharpErrorCode.InvalidOperation), ex.Data["GSharp.ErrorCode"]);
+    }
 #else
     [SkippableFact]
     [Category(TestCategory.Runtime)]
@@ -672,6 +743,73 @@ public sealed class DeviceErrorChannelTests
         }
 
         RunTrapTestInIsolatedProcess(nameof(Test_Cuda_SubprocessTrap_StackLinqMax_EmptySequence_CarriesSourceLocationAndMemberName));
+    }
+
+    [SkippableFact]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_Cuda_SwitchExpressionMatchedArms_ReturnArmValues()
+    {
+        Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
+
+        int[] keys = [1, 0];
+        int[] result = new int[keys.Length];
+
+        DeviceErrorChannelKernels.LaunchSwitchExpressionNoMatchKernel(keys, result, blockDimX: 2);
+
+        Assert.Equal([20, 10], result);
+    }
+
+    [SkippableFact]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.SadPath)]
+    public void Test_Cuda_SubprocessTrap_SwitchExpressionWithoutMatchingArm_CarriesSourceLocation()
+    {
+        Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
+
+        if (Environment.GetEnvironmentVariable(TrapTestVariable) == "1")
+        {
+            int[] keys = [1, 2];
+            int[] result = new int[keys.Length];
+
+            var ex = Assert.Throws<InvalidOperationException>(() =>
+                DeviceErrorChannelKernels.LaunchSwitchExpressionNoMatchKernel(keys, result, blockDimX: 2));
+
+            Assert.Contains("Non-exhaustive switch expression failed to match its input.", ex.Message);
+            Assert.Equal(nameof(GSharpErrorCode.InvalidOperation), ex.Data["GSharp.ErrorCode"]);
+            Assert.Equal("SwitchExpressionNoMatchKernel", ex.Data["GSharp.MemberName"]);
+            Assert.Equal("DeviceErrorChannelKernels.cu.cs(97,21)", ex.Data["GSharp.SourceLocation"]);
+            Assert.Equal("(1,0,0)", ex.Data["GSharp.ThreadIndex"]);
+            var cudaInner = Assert.IsType<CudaException>(ex.InnerException);
+            Assert.True(cudaInner.Result is CUresult.CudaErrorIllegalInstruction or CUresult.CudaErrorLaunchFailed);
+            return;
+        }
+
+        RunTrapTestInIsolatedProcess(nameof(Test_Cuda_SubprocessTrap_SwitchExpressionWithoutMatchingArm_CarriesSourceLocation));
+    }
+
+    [SkippableFact]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.SadPath)]
+    public void Test_Cuda_SubprocessTrap_SwitchExpressionWithoutMatchingArmInDeviceFunction_Throws()
+    {
+        Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
+
+        if (Environment.GetEnvironmentVariable(TrapTestVariable) == "1")
+        {
+            int[] keys = [2];
+            int[] result = [0];
+
+            var ex = Assert.Throws<InvalidOperationException>(() =>
+                DeviceErrorChannelKernels.LaunchSwitchExpressionNoMatchInDeviceFunctionKernel(keys, result, blockDimX: 1));
+
+            Assert.Equal(nameof(GSharpErrorCode.InvalidOperation), ex.Data["GSharp.ErrorCode"]);
+            var cudaInner = Assert.IsType<CudaException>(ex.InnerException);
+            Assert.True(cudaInner.Result is CUresult.CudaErrorIllegalInstruction or CUresult.CudaErrorLaunchFailed);
+            return;
+        }
+
+        RunTrapTestInIsolatedProcess(nameof(Test_Cuda_SubprocessTrap_SwitchExpressionWithoutMatchingArmInDeviceFunction_Throws));
     }
 
     private static void RunTrapTestInIsolatedProcess(string testMethodName)
