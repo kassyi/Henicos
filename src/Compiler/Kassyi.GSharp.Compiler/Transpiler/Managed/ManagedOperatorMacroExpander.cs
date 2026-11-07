@@ -49,6 +49,14 @@ internal static class ManagedOperatorMacroExpander
         Func<IMethodSymbol, ExpressionSyntax> spellCallee, ManagedAccessorSet accessors)
     {
         var expansion = new Expansion(assignment, semanticModel, visitor, spellCallee, accessors);
+        if (macro.Test != null)
+        {
+            // { <left operand> if (<test>) { ... } else { ... } }
+            return expansion.AddConditional(assignment.Left, null, macro)
+                ? SyntaxFactory.Block(expansion.Statements.ToImmutable())
+                : null;
+        }
+
         if (expansion.CreateCall(assignment.Left, null, macro) is not { } call)
         {
             return null;
@@ -71,7 +79,171 @@ internal static class ManagedOperatorMacroExpander
     {
         private int _nextTemp;
 
-        public ImmutableArray<StatementSyntax>.Builder Statements { get; } = ImmutableArray.CreateBuilder<StatementSyntax>();
+        public ImmutableArray<StatementSyntax>.Builder Statements { get; private set; } =
+            ImmutableArray.CreateBuilder<StatementSyntax>();
+
+        // [ref <T> <t0> = ref <target>;] <T> <t1> = <left>; if (<test>(<t1>)) { <target> = <t1>; } else { <right temporaries> <target method>(<result>, <t1>, <right>); }
+        // A && or || over <macro> (OperatorMacroResolver.PlanConditional), as GpuOperatorMacroTranspiler writes it: the
+        // left operand is evaluated once and tested, and the target is called with the right operand only when the test
+        // fails. <result> or the temporary <resultTemp> receives the left operand or the target's result
+        public bool AddConditional(ExpressionSyntax? result, string? resultTemp, OperatorMacro macro)
+        {
+            if (!TryPrepareCall(result, macro, assignment, semanticModel, out var call, out _) ||
+                call.Parameters[0] is not { } resultParameter ||
+                call.Operands[1] is not { } left)
+            {
+                return false;
+            }
+
+            var plan = PlanConditional(call, macro, GetOperandEffects(call, macro, assignment, semanticModel));
+            var resultArgument = PrepareTarget(result, resultTemp, resultParameter, plan, macro, out var target);
+
+            // The left operand: an operator macro computed into its temporary, or its value as the operand type
+            var leftTemp = macro.TryGetNested(left, out var innerLeft)
+                ? ComputeNested(innerLeft)
+                : DeclareValue(left, macro.ResultType);
+            if (resultArgument is null || leftTemp is null ||
+                CreateTargetCall(call, macro, resultArgument, leftTemp) is not { } otherwise)
+            {
+                return false;
+            }
+
+            // <test accessor>([in] <left temporary>)
+            var test = SyntaxFactory.InvocationExpression(
+                accessors.Spell(plan.Test, plan.Test.Name),
+                SyntaxFactory.ArgumentList(
+                    SyntaxFactory.SingletonSeparatedList(WithModifier(Temp(leftTemp), plan.Test.Parameters[0].RefKind))
+                )
+            );
+
+            // <target> = <left temporary>;
+            var assignLeft = SyntaxFactory.ExpressionStatement(
+                SyntaxFactory.AssignmentExpression(SyntaxKind.SimpleAssignmentExpression, target, Temp(leftTemp))
+            );
+
+            // if (<test>) { <target> = <left temporary>; } else { <call> }
+            Statements.Add(
+                SyntaxFactory.IfStatement(
+                    test,
+                    SyntaxFactory.Block(assignLeft),
+                    SyntaxFactory.ElseClause(otherwise)
+                )
+            );
+            return true;
+        }
+
+        // The argument of the result of a && or || and the <target> that receives the left operand: the temporary
+        // <resultTemp> (<result> is null), a reference to <result> evaluated now (the plan spills it), or <result>
+        private ArgumentSyntax? PrepareTarget(ExpressionSyntax? result, string? resultTemp, IParameterSymbol parameter,
+            in ConditionalPlan plan, OperatorMacro macro, out ExpressionSyntax target)
+        {
+            if (result is null)
+            {
+                target = Temp(resultTemp);
+                return CreateArgument(target, parameter, isVariable: true, type: null);
+            }
+
+            if (plan.SpillsTarget && TryCreateReference(result) is { } reference)
+            {
+                // ref <target type> <temp> = ref <target>;
+                var temp = NextTemp();
+                Statements.Add(DeclareLocal(semanticModel.GetTypeSymbol(result), temp,
+                    SyntaxFactory.RefExpression(reference), RefKind.Ref));
+                target = Temp(temp);
+                return CreateArgument(target, parameter, isVariable: true, type: null);
+            }
+
+            target = Visit(result);
+            return CreateOperand(result, parameter, macro, null, spill: false);
+        }
+
+        // { <right temporaries> <target method>(<context>, <result>, <left temporary>, <right>); }: the call of the
+        // target when the test of a && or || fails, after the statements that compute an operator macro among the right
+        // operands; null when an operand cannot be expanded
+        private BlockSyntax? CreateTargetCall(in MacroCall call, OperatorMacro macro, ArgumentSyntax resultArgument,
+            string leftTemp)
+        {
+            var outer = Statements;
+            Statements = ImmutableArray.CreateBuilder<StatementSyntax>();
+            try
+            {
+                var arguments = ImmutableArray.CreateBuilder<ArgumentSyntax>(call.Operands.Length + 1);
+                if (call.ContextVariable is { } contextVariable)
+                {
+                    arguments.Add(CreateContextArgument(contextVariable, call.Target.Parameters[0]));
+                }
+
+                for (var i = 0; i < call.Operands.Length; i++)
+                {
+                    if (call.Parameters[i] is not { } parameter)
+                    {
+                        continue;
+                    }
+
+                    var argument = i switch
+                    {
+                        0 => resultArgument,
+                        1 => CreateArgument(Temp(leftTemp), parameter, isVariable: true, type: null),
+                        _ => CreateOperand(call.Operands[i], parameter, macro, null, spill: false)
+                    };
+                    if (argument is null)
+                    {
+                        return null;
+                    }
+
+                    arguments.Add(argument);
+                }
+
+                // <target method>(<arguments>);
+                Statements.Add(
+                    SyntaxFactory.ExpressionStatement(
+                        SyntaxFactory.InvocationExpression(
+                            spellCallee(call.Target),
+                            SyntaxFactory.ArgumentList(SyntaxFactory.SeparatedList(arguments.ToImmutable()))
+                        )
+                    )
+                );
+                return SyntaxFactory.Block(Statements.ToImmutable());
+            }
+            finally
+            {
+                Statements = outer;
+            }
+        }
+
+        // <type> <temp> = <operand>; the value of <operand> as the operator's operand type
+        private string DeclareValue(ExpressionSyntax operand, ITypeSymbol? type)
+        {
+            var temp = NextTemp();
+            Statements.Add(DeclareLocal(type, temp, Visit(operand)));
+            return temp;
+        }
+
+        // <inner result type> <temp> = default; and the statements that compute the operator macro <inner> into it; the
+        // temporary, or null when <inner> cannot be expanded
+        private string? ComputeNested(OperatorMacro inner)
+        {
+            if (inner.ResultType is not { } innerType)
+            {
+                return null;
+            }
+
+            var temp = NextTemp();
+            Statements.Add(DeclareLocal(innerType, temp, SyntaxFactory.LiteralExpression(
+                SyntaxKind.DefaultLiteralExpression)));
+            if (inner.Test != null)
+            {
+                return AddConditional(null, temp, inner) ? temp : null;
+            }
+
+            if (CreateCall(null, temp, inner) is not { } innerCall)
+            {
+                return null;
+            }
+
+            Statements.Add(SyntaxFactory.ExpressionStatement(innerCall));
+            return temp;
+        }
 
         // <target>(<context>, <result>, <operands>), after the statements that compute its inner operator macros and
         // the operands before them; the result is the temporary <resultTemp> when <result> is null
@@ -132,19 +304,11 @@ internal static class ManagedOperatorMacroExpander
                 return CreateArgument(Temp(resultTemp), parameter, isVariable: true, type: null);
             }
 
-            if (macro.TryGetNested(operand, out var inner) && inner.ResultType is { } innerType)
+            if (macro.TryGetNested(operand, out var inner))
             {
-                var temp = NextTemp();
-                // <inner result type> <temp> = default;
-                Statements.Add(DeclareLocal(innerType, temp, SyntaxFactory.LiteralExpression(
-                    SyntaxKind.DefaultLiteralExpression)));
-                if (CreateCall(null, temp, inner) is not { } innerCall)
-                {
-                    return null;
-                }
-
-                Statements.Add(SyntaxFactory.ExpressionStatement(innerCall));
-                return CreateArgument(Temp(temp), parameter, isVariable: true, type: null);
+                return ComputeNested(inner) is { } temp
+                    ? CreateArgument(Temp(temp), parameter, isVariable: true, type: null)
+                    : null;
             }
 
             var type = semanticModel.GetTypeSymbol(operand);
