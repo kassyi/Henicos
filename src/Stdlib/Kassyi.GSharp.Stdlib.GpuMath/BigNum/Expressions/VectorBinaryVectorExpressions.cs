@@ -2,11 +2,16 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 
 internal readonly ref struct VectorZipOperands
 {
-    public VectorZipOperands(GpuBigIntArrayView left, GpuBigIntArrayView right, GpuBigIntArrayView destination)
+    public VectorZipOperands(
+        GpuBigIntArrayView left,
+        GpuBigIntArrayView right,
+        GpuBigIntArrayView destination,
+        GpuBigUIntArrayView zeroDivisor)
     {
         Left = left;
         Right = right;
         Destination = destination;
+        ZeroDivisor = zeroDivisor;
     }
 
     public GpuBigIntArrayView Left { get; }
@@ -14,6 +19,9 @@ internal readonly ref struct VectorZipOperands
     public GpuBigIntArrayView Right { get; }
 
     public GpuBigIntArrayView Destination { get; }
+
+    /// <summary>Gets the word of <see cref="ZeroDivisorCheck"/> for a division, or the default view.</summary>
+    public GpuBigUIntArrayView ZeroDivisor { get; }
 }
 
 internal abstract class VectorBinaryVectorExpressionBase(
@@ -29,6 +37,9 @@ internal abstract class VectorBinaryVectorExpressionBase(
     private readonly VectorResultCache _cache = new();
 
     protected uint BlockDimX => (uint)Math.Min(1024, WordsPerElement);
+
+    /// <summary>Gets whether the kernel reports a zero divisor element (<see cref="ZeroDivisorCheck"/>).</summary>
+    protected virtual bool ChecksZeroDivisor => false;
 
     public int Capacity => left.Capacity;
 
@@ -64,11 +75,17 @@ internal abstract class VectorBinaryVectorExpressionBase(
         // A target that shares words with an input is written from the cache after the launch (#864)
         var output = VectorOutput.Open(_cache, workspace, evalCount, WordsPerElement, targetValues, leftResult.Storage,
             rightResult.Storage);
-        var operands = new VectorZipOperands(leftResult.Storage, rightResult.Storage, output.Destination);
         // An empty vector launches nothing: a grid of 0 blocks is an invalid launch.
         if (evalCount > 0)
         {
+            var zeroDivisor = ChecksZeroDivisor ? ZeroDivisorCheck.Open(workspace, _cache) : default;
+            var operands = new VectorZipOperands(leftResult.Storage, rightResult.Storage, output.Destination,
+                zeroDivisor);
             DispatchKernel(workspace, operands, (uint)evalCount);
+            if (ChecksZeroDivisor)
+            {
+                ZeroDivisorCheck.ThrowIfFound(workspace, zeroDivisor, count);
+            }
         }
 
         return new VectorEvaluation(output.Close(workspace), count);
@@ -193,6 +210,8 @@ internal sealed class VectorDivVectorExpression(
         Math.Max(left.WordsPerElement, right.WordsPerElement),
         checkConstructorLength: true)
 {
+    protected override bool ChecksZeroDivisor => true;
+
     protected override void DispatchKernel(
         GpuWorkspace workspace,
         VectorZipOperands operands,
@@ -201,7 +220,8 @@ internal sealed class VectorDivVectorExpression(
         var ctx = new GpuBigIntVectorKernels.AotContexts.VectorDivMod
         {
             Op = CreateZipOp(operands),
-            IsModulo = false
+            IsModulo = false,
+            ZeroDivisor = operands.ZeroDivisor.DevicePointer
         };
         GpuBigIntVectorKernels.LaunchVectorZipDivKernelPtr(
             ctx, gridDimX, 1, 1, 32, 1, 1, 0, workspace.Stream);
@@ -217,6 +237,8 @@ internal sealed class VectorModVectorExpression(
         Math.Max(left.WordsPerElement, right.WordsPerElement),
         checkConstructorLength: true)
 {
+    protected override bool ChecksZeroDivisor => true;
+
     protected override void DispatchKernel(
         GpuWorkspace workspace,
         VectorZipOperands operands,
@@ -225,7 +247,8 @@ internal sealed class VectorModVectorExpression(
         var ctx = new GpuBigIntVectorKernels.AotContexts.VectorDivMod
         {
             Op = CreateZipOp(operands),
-            IsModulo = true
+            IsModulo = true,
+            ZeroDivisor = operands.ZeroDivisor.DevicePointer
         };
         GpuBigIntVectorKernels.LaunchVectorZipModKernelPtr(
             ctx, gridDimX, 1, 1, 32, 1, 1, 0, workspace.Stream);
