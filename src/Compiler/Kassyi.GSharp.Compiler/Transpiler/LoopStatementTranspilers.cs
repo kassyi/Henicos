@@ -46,7 +46,8 @@ internal static class LoopStatementTranspilers
     }
 
     /// <summary>
-    /// Transpiles a foreach statement: an iterator source is expanded inline, anything else becomes a C++ range-based for loop.
+    /// Transpiles a foreach statement: an iterator source is expanded inline,
+    /// anything else becomes a C++ range-based for loop.
     /// </summary>
     public static void TranspileForEachStatement(ForEachStatementSyntax node, ref TranspileContext context)
     {
@@ -73,8 +74,12 @@ internal static class LoopStatementTranspilers
     }
 
     // Inlines the body of the iterator method the loop reads from, in place of the loop.
-    private static void TranspileIteratorForEach(ForEachStatementSyntax node, InvocationExpressionSyntax sourceInvocation,
-        IMethodSymbol iteratorMethod, ref TranspileContext context)
+    private static void TranspileIteratorForEach(
+        ForEachStatementSyntax node,
+        InvocationExpressionSyntax sourceInvocation,
+        IMethodSymbol iteratorMethod,
+        ref TranspileContext context
+    )
     {
         if (IteratorTypeResolver.IsRecursiveIterator(iteratorMethod, context.Query.SemanticModel.Compilation))
         {
@@ -117,7 +122,9 @@ internal static class LoopStatementTranspilers
         // A loop variable that converts each element with a .NET conversion helper (#995) takes the raw element first:
         // for (auto __gsharp_foreach_e_<n> : <source>) { int x = __gsharp_to_i32(__gsharp_foreach_e_<n>); <body> }
         var model = context.Query.SemanticModel;
-        var sourceElementType = model.GetTypeSymbol(node.Expression).TryGetArrayLikeElementType(out var element) ? element : null;
+        var sourceElementType = model.GetTypeSymbol(node.Expression).TryGetArrayLikeElementType(out var element)
+            ? element
+            : null;
         var targetType = ForEachElementConversion.GetTarget(node, sourceElementType, model);
         var conversionHelper = IntegerSemantics.GetConversionHelper(sourceElementType, targetType, out var needsCast);
         var rawElement = conversionHelper != null ? context.Emitter.ForEachElementCounter++ : -1;

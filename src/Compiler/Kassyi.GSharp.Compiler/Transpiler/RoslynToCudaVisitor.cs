@@ -348,16 +348,16 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
     }
 
     public override void VisitBreakStatement(BreakStatementSyntax node)
-        => SwitchStatementTranspilers.TranspileBreakStatement(node, ref Context);
+        => JumpStatementTranspilers.TranspileBreakStatement(node, ref Context);
 
     public override void VisitContinueStatement(ContinueStatementSyntax node)
-        => SwitchStatementTranspilers.TranspileContinueStatement(node, ref Context);
+        => JumpStatementTranspilers.TranspileContinueStatement(node, ref Context);
 
     public override void VisitGotoStatement(GotoStatementSyntax node)
-        => SwitchStatementTranspilers.TranspileGotoStatement(node, ref Context);
+        => JumpStatementTranspilers.TranspileGotoStatement(node, ref Context);
 
     public override void VisitLabeledStatement(LabeledStatementSyntax node)
-        => SwitchStatementTranspilers.TranspileLabeledStatement(node, ref Context);
+        => JumpStatementTranspilers.TranspileLabeledStatement(node, ref Context);
 
     public override void VisitEmptyStatement(EmptyStatementSyntax node) => Context.Emitter.Writer.AppendLine(";");
 
