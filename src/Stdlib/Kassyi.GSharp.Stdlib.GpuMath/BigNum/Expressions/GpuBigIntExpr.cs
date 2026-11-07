@@ -105,12 +105,24 @@ public readonly struct GpuBigIntExpr : IDisposable
         => new(new SignedNegateExpression(left.Node));
 
     /// <summary>
-    /// Constructs a lazy bitwise NOT expression for the specified signed big integer expression.
+    /// Constructs a lazy bitwise NOT expression for the specified signed big integer expression: <c>~x == -x - 1</c>, as
+    /// for <see cref="BigInteger"/>.
     /// </summary>
     /// <param name="left">The signed expression operand.</param>
     /// <returns>A new <see cref="GpuBigIntExpr"/> representing the bitwise NOT AST node.</returns>
+    /// <remarks>
+    /// The result has the width of the operand. For a non-negative <c>x</c> whose magnitude is all ones, <c>-x - 1</c>
+    /// does not fit, and the evaluation throws <see cref="GpuOverflowException"/> at the next synchronization of the
+    /// workspace stream. For a negative <c>x</c> the evaluation reads whether the magnitude is zero (<c>~(-0)</c> is
+    /// <c>-1</c>), so it waits for the GPU once, and inside a CUDA graph capture it throws
+    /// <see cref="NotSupportedException"/>.
+    /// </remarks>
+    [MethodImpl(MethodImplOptions.NoInlining)] // keeps the frame that the operator stack trace skips
     public static GpuBigIntExpr operator ~(GpuBigIntExpr left)
-        => new(new SignedBitwiseNotExpression(left.Node));
+        => new(new SignedBitwiseNotExpression(left.Node)
+        {
+            OperatorStackTrace = GpuOverflowReport.CaptureOperatorStackTrace()
+        });
 
     /// <summary>
     /// Constructs a lazy expression that resolves to the maximum of two signed big integer expressions.

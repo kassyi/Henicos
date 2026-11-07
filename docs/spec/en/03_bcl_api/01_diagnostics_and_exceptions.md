@@ -160,7 +160,7 @@ or in the project file:
 </ItemGroup>
 ```
 
-Each `+` and `-` of a `GpuBigIntExpr` then records the stack trace of its line (a few microseconds per operator), the origin carries it in `OperatorStackTrace`, and the stack trace of the exception starts with that of the first origin.
+Each `+`, `-` and `~` of a `GpuBigIntExpr` then records the stack trace of its line (a few microseconds per operator), the origin carries it in `OperatorStackTrace`, and the stack trace of the exception starts with that of the first origin.
 
 ### NvrtcException
 

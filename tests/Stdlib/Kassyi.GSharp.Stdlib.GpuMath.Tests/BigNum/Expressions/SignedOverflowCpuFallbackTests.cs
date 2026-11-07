@@ -36,6 +36,34 @@ public sealed class SignedOverflowCpuFallbackTests
     }
 
     [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void BitwiseNot_AllOnesMagnitude_TheEvaluationThrows()
+    {
+        // ~0xFFFFFFFF is -0x100000000, which needs another word.
+        // mutant: SignedMagnitude.IncrementChecked without ThrowIfWrapped on the host path
+        var (thrown, value) = RunInFallback(workspace =>
+        {
+            using var x = Create(workspace, uint.MaxValue);
+            using var y = Create(workspace, 5);
+            BigInteger notFive = 0;
+            var error = Record.Exception(() =>
+            {
+                using (var fits = (~(GpuBigIntExpr)y).Evaluate(workspace))
+                {
+                    notFive = fits.Value.ToBigInteger(fits.IsNegative);
+                }
+
+                (~(GpuBigIntExpr)x).Evaluate(workspace).Dispose();
+            });
+            return (error, notFive);
+        });
+
+        Assert.Equal(new BigInteger(-6), value);
+        var overflow = Assert.IsType<GpuOverflowException>(thrown);
+        Assert.Equal(("~", "[~x0]"), (overflow.Origins[0].Operation, overflow.Origins[0].Expression));
+    }
+
+    [Fact]
     [Scenario(TestScenario.Boundary)]
     public void Sum_ThatFits_IsExact()
     {

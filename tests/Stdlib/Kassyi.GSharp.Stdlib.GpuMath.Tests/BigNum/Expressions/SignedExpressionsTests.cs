@@ -146,28 +146,90 @@ public class SignedExpressionsTests : IDisposable
         Assert.Equal(new BigInteger(-a), res);
     }
 
-    [Theory]
-    [InlineData(10)]
-    [InlineData(-10)]
-    [InlineData(0)]
-    public void BitwiseNot_Tests(long a)
+    [SkippableTheory]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.HappyPath)]
+    [InlineData(0, 1)]
+    [InlineData(5, 1)]
+    [InlineData(-5, 1)]
+    [InlineData(10, 1)]
+    [InlineData(-10, 1)]
+    [InlineData(-1, 1)]
+    [InlineData(4294967294, 1)]
+    [InlineData(-4294967295, 1)]
+    [InlineData(5, 3)]
+    [InlineData(-5, 3)]
+    [InlineData(4294967295, 2)]
+    [InlineData(-4294967296, 2)]
+    public void BitwiseNot_IsMinusXMinusOne_AsBigInteger(long a, int words)
     {
-        
-        
+        // ~x == -x - 1 as for BigInteger and C# int, the same value for every word count (it inverted the magnitude and
+        // kept the sign: ~(+5) in 1 word gave +4294967290). ~(-1) is +0, not -0, so the sign is checked too.
+        // mutant: SignedBitwiseNotExpression non-negative branch `new GpuBigInt(resultBuffer, true)` -> `false`
+        // mutant: SignedBitwiseNotExpression `GpuBigIntMath.Sub(magnitude, 1u, ...)` result sign `false` -> `true`
+        var gpuA = Create(_context, a, words);
 
-        var gpuA = Create(_context, a, 1);
+        using var gpuRes = (~(GpuBigIntExpr)gpuA).Evaluate(_context);
 
-        var expr = ~((GpuBigIntExpr)gpuA);
-        using var gpuRes = expr.Evaluate(_context);
-        
-        // GPU Math BitwiseNot negates the underlying magnitude directly.
-        // It does not change the sign flag.
-        var targetBits = (~new BigInteger(Math.Abs(a))) & 0xFFFFFFFF;
-        
-        var res = ToBigInt(gpuRes);
-        var resAbs = Math.Abs((long)res);
-        Assert.Equal((long)targetBits, resAbs);
-        Assert.Equal(a < 0, gpuRes.IsNegative);
+        var expected = ~new BigInteger(a);
+        Assert.Equal((expected, expected < 0), (ToBigInt(gpuRes), gpuRes.IsNegative));
+    }
+
+    [SkippableFact]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.Boundary)]
+    public void BitwiseNot_NegativeZero_IsMinusOne()
+    {
+        // A negative zero (left by a product or a negation of zero) has the value 0, so ~(-0) is -1 like ~0, not
+        // |0| - 1, which would wrap to +4294967295.
+        // mutant: SignedBitwiseNotExpression without the `magnitude.IsZero()` branch
+        var negativeZero = new GpuBigInt(Create(_context, 0, 1).Value, true);
+
+        using var gpuRes = (~(GpuBigIntExpr)negativeZero).Evaluate(_context);
+
+        Assert.Equal((BigInteger.MinusOne, true), (ToBigInt(gpuRes), gpuRes.IsNegative));
+    }
+
+    [SkippableTheory]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(1)]
+    [InlineData(33)]
+    [InlineData(1025)]
+    public void BitwiseNot_AllOnesMagnitude_Overflows(int words)
+    {
+        // ~(2^(32 n) - 1) is -2^(32 n), which needs another word: the width of the operand is kept, so the next read
+        // throws instead of returning -0.
+        // mutant: CheckedScalarAddKernel `if (carry != 0)` -> `if (carry == 0)`
+        // mutant: DeviceScalarAddSubParallelWithCarry `idx == numWords - 1` -> `idx == numWords - 2`
+        var gpuA = Create(_context, (BigInteger.One << (32 * words)) - 1, words);
+
+        using var gpuRes = (~(GpuBigIntExpr)gpuA).Evaluate(_context);
+
+        var exception = Assert.Throws<GpuOverflowException>(() => gpuRes.Value.ToBigInteger());
+        Assert.Equal(("~", "~x0"), (exception.Origins[0].Operation, exception.Origins[0].Subexpression));
+    }
+
+    [SkippableFact]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.SadPath)]
+    public void BitwiseNot_InCapturedGraph_NonNegativeRuns_NegativeIsNotSupported()
+    {
+        // ~x of x >= 0 adds no host read, so it runs in a CUDA graph; for x < 0 the sign of the result depends on whether
+        // |x| is zero, which a graph cannot read, so the capture fails explicitly instead of with a CUDA error.
+        // mutant: SignedBitwiseNotExpression without the IsCapturing check (CudaException from the capture)
+        var positive = Create(_context, 5, 1);
+        using (var graph = (~(GpuBigIntExpr)positive).CompileToGraph(_context))
+        {
+            graph.Execute();
+            Assert.Equal((new BigInteger(6), true), (graph.Result.Value.ToBigInteger(), graph.Result.IsNegative));
+        }
+
+        var negative = Create(_context, -5, 1);
+        var expression = ~(GpuBigIntExpr)negative;
+        Assert.Throws<NotSupportedException>(() => expression.CompileToGraph(_context));
+        using var direct = expression.Evaluate(_context);
+        Assert.Equal(new BigInteger(4), ToBigInt(direct));
     }
 
     [Theory]

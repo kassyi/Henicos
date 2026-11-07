@@ -19,6 +19,22 @@ public static partial class GpuBigIntScalarKernels
         Device_ScalarAddSubParallel(dA, s, dResult, numWords, -1, true);
     }
 
+    /// <summary>
+    /// <c>dResult = dA + s</c> on <paramref name="numWords"/> words, like <see cref="ScalarAddKernel"/>, and records an
+    /// overflow in the device status words when the exact sum needs another word
+    /// (<see cref="GpuBigIntKernels.ReportOverflow"/>). Launched with one block.
+    /// </summary>
+    [GpuKernel]
+    public static void CheckedScalarAddKernel([GpuReadOnly] uint[] dA, uint s, uint[] dResult, int numWords,
+        uint[] status, uint origin)
+    {
+        var carry = DeviceScalarAddSubParallelWithCarry(dA, s, dResult, numWords, 1, false);
+        if (carry != 0)
+        {
+            GpuBigIntKernels.ReportOverflow(status, origin);
+        }
+    }
+
     [GpuDeviceFunction]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void Device_ScalarAddSubParallel(
@@ -29,6 +45,27 @@ public static partial class GpuBigIntScalarKernels
         int sign,
         bool syncThreads = true)
     {
+        DeviceScalarAddSubParallelWithCarry(a, s, result, numWords, sign, syncThreads);
+    }
+
+    /// <summary>
+    /// <see cref="Device_ScalarAddSubParallel"/> that also returns the carry out of the top word
+    /// (<c>result[numWords - 1]</c>).
+    /// </summary>
+    /// <returns>
+    /// The carry out of the top word (0 or 1) in the thread that wrote that word; 0 in every other thread. For a sum,
+    /// 1 means the exact sum needs another word.
+    /// </returns>
+    [GpuDeviceFunction]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static uint DeviceScalarAddSubParallelWithCarry(
+        [GpuReadOnly] uint[] a,
+        uint s,
+        uint[] result,
+        int numWords,
+        int sign,
+        bool syncThreads)
+    {
         int tid = ThreadIndex.X;
         int bDim = BlockDimension.X;
         int laneId = tid % 32;
@@ -37,6 +74,7 @@ public static partial class GpuBigIntScalarKernels
         SharedMemory<uint> sharedCarry = new SharedMemory<uint>(32);
 
         uint blockCarryIn = sign == 1 ? 0u : 1u;
+        uint topCarry = 0u;
 
         for (int offset = 0; offset < numWords; offset += bDim)
         {
@@ -99,6 +137,12 @@ public static partial class GpuBigIntScalarKernels
                 result[idx] = (uint)sum + carryIn;
             }
 
+            if (idx == numWords - 1)
+            {
+                // The carry out of this word: generated here, or carried in and propagated through it.
+                topCarry = GpuBigIntKernels.ApplyCarry(new GpuBigIntKernels.CarryState(g, p), carryIn);
+            }
+
             blockCarryIn = GpuBigIntKernels.ApplyCarry(GpuBigIntKernels.UnpackCarryState(sharedCarry[((bDim + 31) / 32) - 1]), blockCarryIn);
 
             Gpu.SyncThreads();
@@ -108,6 +152,8 @@ public static partial class GpuBigIntScalarKernels
         {
             Gpu.SyncThreads();
         }
+
+        return topCarry;
     }
 
     [GpuKernel]
