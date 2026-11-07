@@ -124,11 +124,13 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
     }
 
     // GSH0062: the state machine splits only the statements of a kernel or device function body, and the operands that
-    // ConditionalEvaluationRewriter turns into statements. A call that suspends anywhere else cannot be resumed.
+    // ConditionalEvaluationRewriter turns into statements. A call that suspends anywhere else cannot be resumed, and a
+    // warp shuffle anywhere else is not a split point, so a lane would read another lane's value before that lane wrote
+    // it, or the shuffle would run where C# does not evaluate it (#1274).
     private static void AnalyzeSuspendingCallContext(SyntaxNodeAnalysisContext context,
         InvocationExpressionSyntax invocation)
     {
-        var unsupportedContext = FindUnsupportedContext(invocation, context.SemanticModel);
+        var unsupportedContext = FindUnsupportedContext(invocation, context.SemanticModel, isWarpShuffle: false);
         var byReferenceArgument = FindNonVariableByReferenceArgument(invocation, context.SemanticModel);
         if (unsupportedContext == null && byReferenceArgument == null)
         {
@@ -136,8 +138,24 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
         }
 
         if (context.SemanticModel.GetSymbol(invocation) is not IMethodSymbol callee ||
-            !SuspensionAnalysis.IsSuspendingFunction(callee, context.SemanticModel.Compilation) ||
             !IsInGpuMethod(context.ContainingSymbol))
+        {
+            return;
+        }
+
+        // [WHY] A shuffle takes its arguments by value, so only where it stands matters
+        if (SyncIntrinsicClassifier.Classify(callee).Kind == SyncIntrinsicKind.WarpShuffle)
+        {
+            if (FindUnsupportedContext(invocation, context.SemanticModel, isWarpShuffle: true) is { } shuffleContext)
+            {
+                context.ReportDiagnostic(GSharpDiagnostics.SuspendingCallInUnsupportedContext,
+                    invocation.GetLocation(), callee.Name, shuffleContext, WarpShuffleCallee);
+            }
+
+            return;
+        }
+
+        if (!SuspensionAnalysis.IsSuspendingFunction(callee, context.SemanticModel.Compilation))
         {
             return;
         }
@@ -145,7 +163,7 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
         if (unsupportedContext != null)
         {
             context.ReportDiagnostic(GSharpDiagnostics.SuspendingCallInUnsupportedContext, invocation.GetLocation(),
-                callee.Name, unsupportedContext);
+                callee.Name, unsupportedContext, SuspendingDeviceFunctionCallee);
         }
 
         if (byReferenceArgument != null)
@@ -153,11 +171,22 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
             // [WHY] The callee is called again on every resume, which would compute the reference again
             context.ReportDiagnostic(GSharpDiagnostics.SuspendingCallInUnsupportedContext,
                 byReferenceArgument.GetLocation(),
-                callee.Name, "with a by-reference argument that is not a local, parameter, field or array element");
+                callee.Name, "with a by-reference argument that is not a local, parameter, field or array element",
+                SuspendingDeviceFunctionCallee);
         }
     }
 
-    private static string? FindUnsupportedContext(InvocationExpressionSyntax invocation, SemanticModel semanticModel)
+    // The callee kinds of GSH0062, the third argument of its message
+    private const string SuspendingDeviceFunctionCallee =
+        "is a device function that reaches Gpu.SyncThreads() or a warp shuffle";
+
+    private const string WarpShuffleCallee = "is a warp shuffle";
+
+    // isWarpShuffle: a Gpu.GridStrideLoop body is left out for a warp shuffle. The CPU paths do not split it either, but
+    // the Stdlib reduces with shuffles there; that body is #1091 (A warp shuffle in a Gpu.GridStrideLoop body is not
+    // split on the CPU paths: native returns the lane's own value, managed throws).
+    private static string? FindUnsupportedContext(InvocationExpressionSyntax invocation, SemanticModel semanticModel,
+        bool isWarpShuffle)
     {
         SyntaxNode child = invocation;
         for (var ancestor = invocation.Parent;
@@ -169,6 +198,9 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
                 // The transpiler inlines the body (CUDA), and the lowering inlines a SyncGrid body and turns ForUnroll into a
                 // loop (CPU dialects, managed)
                 case AnonymousFunctionExpressionSyntax when IsInlinedMacroBody(ancestor, semanticModel):
+                    break;
+                case AnonymousFunctionExpressionSyntax when isWarpShuffle &&
+                    GpuMacroClassifier.ClassifyBody(ancestor, semanticModel).Kind == GpuMacroKind.GridStrideLoop:
                     break;
                 case AnonymousFunctionExpressionSyntax:
                     return "in a lambda or anonymous method";
