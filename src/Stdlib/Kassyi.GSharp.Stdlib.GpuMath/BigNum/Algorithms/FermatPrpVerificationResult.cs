@@ -20,8 +20,8 @@ public readonly record struct FermatPrpVerificationResult
     public ulong Residue64 { get; init; }
 
     /// <summary>
-    /// Gets the low 64 bits of <c>|u_E mod N|</c> (the signed form) when <see cref="IsValid"/> is <see langword="true"/>;
-    /// otherwise 0.
+    /// Gets the low 64 bits of <c>|u_E mod N|</c> (the signed form) when <see cref="IsValid"/> is
+    /// <see langword="true"/>; otherwise 0.
     /// </summary>
     public ulong CheckResidue64 { get; init; }
 

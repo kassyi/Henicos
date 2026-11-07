@@ -63,11 +63,10 @@ internal struct PietrzakArithmetic(ISquaringModulus modulus)
             Abs(MulPow128(witness, challenge, claim.Y)));
 
     /// <summary>
-    /// Compares <c>|u_K * a^10|</c> with <c>u_E</c>. The signed form leaves the sign of <c>a^(N-1)</c> open, which loses
-    /// nothing: <c>a^(N-1) = -1 (mod N)</c> would need every prime factor <c>p</c> of <c>N</c> to have
+    /// Compares <c>|u_K * a^10|</c> with <c>u_E</c>. The signed form leaves the sign of <c>a^(N-1)</c> open, which
+    /// loses nothing: <c>a^(N-1) = -1 (mod N)</c> would need every prime factor <c>p</c> of <c>N</c> to have
     /// <c>p = 1 (mod 4)</c>, but <c>N = 3 (mod 4)</c> for <c>E &gt;= 2</c>, and <c>N(1) = 17</c> is prime.
     /// </summary>
-
     public PietrzakEndpointVerdict ComputeEndpointVerdict(FermatPrpProof proof)
     {
         var uE = proof.ResidueE.Span;
