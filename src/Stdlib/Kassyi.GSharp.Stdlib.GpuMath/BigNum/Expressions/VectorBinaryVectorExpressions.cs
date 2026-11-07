@@ -223,6 +223,8 @@ internal sealed class VectorDivVectorExpression(
             IsModulo = false,
             ZeroDivisor = operands.ZeroDivisor.DevicePointer
         };
+        using var scratch = DivModScratch.Rent(workspace, ctx.Op, gridDimX);
+        ctx.Scratch = scratch?.DevicePointer ?? IntPtr.Zero;
         GpuBigIntVectorKernels.LaunchVectorZipDivKernelPtr(
             ctx, gridDimX, 1, 1, 32, 1, 1, 0, workspace.Stream);
     }
@@ -250,6 +252,8 @@ internal sealed class VectorModVectorExpression(
             IsModulo = true,
             ZeroDivisor = operands.ZeroDivisor.DevicePointer
         };
+        using var scratch = DivModScratch.Rent(workspace, ctx.Op, gridDimX);
+        ctx.Scratch = scratch?.DevicePointer ?? IntPtr.Zero;
         GpuBigIntVectorKernels.LaunchVectorZipModKernelPtr(
             ctx, gridDimX, 1, 1, 32, 1, 1, 0, workspace.Stream);
     }
