@@ -95,16 +95,10 @@ public const string DebugName_B = "global::System.Int32[]";
 [global::System.Runtime.InteropServices.FieldOffset(16)]
 public global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy B;
 }
-public static unsafe void Marshal_SharedArrayPair(ref global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayPair host, ref AotContexts.SharedArrayPair native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_SharedArrayPair(ref global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayPair host, ref AotContexts.SharedArrayPair native, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
 {
 native = default;
 if (host.A != null)
-{
-if (isDevicePtr)
-{
-throw new global::System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
 {
 int size = checked(host.A.Length * sizeof(global::System.Int32));
 if (size > 0)
@@ -134,14 +128,7 @@ native.A.Data = global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyArra
 }
 native.A.Length = host.A.Length;
 }
-}
 if (host.B != null)
-{
-if (isDevicePtr)
-{
-throw new global::System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
 {
 int size = checked(host.B.Length * sizeof(global::System.Int32));
 if (size > 0)
@@ -172,10 +159,9 @@ native.B.Data = global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyArra
 native.B.Length = host.B.Length;
 }
 }
-}
-public static unsafe void Unmarshal_SharedArrayPair(ref global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayPair host, ref AotContexts.SharedArrayPair native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_SharedArrayPair(ref global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayPair host, ref AotContexts.SharedArrayPair native, global::System.IntPtr hStream = default)
 {
-if (host.A != null && !isDevicePtr && native.A.Data != global::System.IntPtr.Zero)
+if (host.A != null && native.A.Data != global::System.IntPtr.Zero)
 {
 int size = checked(host.A.Length * sizeof(global::System.Int32));
 if (size > 0)
@@ -191,7 +177,7 @@ handle.Free();
 }
 }
 }
-if (host.B != null && !isDevicePtr && native.B.Data != global::System.IntPtr.Zero)
+if (host.B != null && native.B.Data != global::System.IntPtr.Zero)
 {
 int size = checked(host.B.Length * sizeof(global::System.Int32));
 if (size > 0)
@@ -215,16 +201,10 @@ public const string DebugName_Data = "global::System.Int32[]";
 [global::System.Runtime.InteropServices.FieldOffset(0)]
 public global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy Data;
 }
-public static unsafe void Marshal_SharedArrayHolder(ref global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayHolder host, ref AotContexts.SharedArrayHolder native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_SharedArrayHolder(ref global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayHolder host, ref AotContexts.SharedArrayHolder native, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
 {
 native = default;
 if (host.Data != null)
-{
-if (isDevicePtr)
-{
-throw new global::System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
 {
 int size = checked(host.Data.Length * sizeof(global::System.Int32));
 if (size > 0)
@@ -255,10 +235,9 @@ native.Data.Data = global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyA
 native.Data.Length = host.Data.Length;
 }
 }
-}
-public static unsafe void Unmarshal_SharedArrayHolder(ref global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayHolder host, ref AotContexts.SharedArrayHolder native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_SharedArrayHolder(ref global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayHolder host, ref AotContexts.SharedArrayHolder native, global::System.IntPtr hStream = default)
 {
-if (host.Data != null && !isDevicePtr && native.Data.Data != global::System.IntPtr.Zero)
+if (host.Data != null && native.Data.Data != global::System.IntPtr.Zero)
 {
 int size = checked(host.Data.Length * sizeof(global::System.Int32));
 if (size > 0)
@@ -285,17 +264,11 @@ public const string DebugName_Data = "global::System.Int32[]";
 [global::System.Runtime.InteropServices.FieldOffset(8)]
 public global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy Data;
 }
-public static unsafe void Marshal_ConvertBag(ref global::Kassyi.GSharp.Tests.Shared.Core.ConvertBag host, ref AotContexts.ConvertBag native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_ConvertBag(ref global::Kassyi.GSharp.Tests.Shared.Core.ConvertBag host, ref AotContexts.ConvertBag native, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
 {
 native = default;
 native.N = host.N;
 if (host.Data != null)
-{
-if (isDevicePtr)
-{
-throw new global::System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
 {
 int size = checked(host.Data.Length * sizeof(global::System.Int32));
 if (size > 0)
@@ -326,11 +299,10 @@ native.Data.Data = global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyA
 native.Data.Length = host.Data.Length;
 }
 }
-}
-public static unsafe void Unmarshal_ConvertBag(ref global::Kassyi.GSharp.Tests.Shared.Core.ConvertBag host, ref AotContexts.ConvertBag native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_ConvertBag(ref global::Kassyi.GSharp.Tests.Shared.Core.ConvertBag host, ref AotContexts.ConvertBag native, global::System.IntPtr hStream = default)
 {
 host.N = native.N;
-if (host.Data != null && !isDevicePtr && native.Data.Data != global::System.IntPtr.Zero)
+if (host.Data != null && native.Data.Data != global::System.IntPtr.Zero)
 {
 int size = checked(host.Data.Length * sizeof(global::System.Int32));
 if (size > 0)
@@ -394,7 +366,7 @@ try
 {
 void** __gsharp_kernel_params = stackalloc void*[1];
 global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayFieldKernels.AotContexts.SharedArrayPair __gsharp_native_0 = default;
-global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayFieldKernels.AotContexts.Marshal_SharedArrayPair(ref p, ref __gsharp_native_0, false, __gsharp_device_arrays, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayFieldKernels.AotContexts.Marshal_SharedArrayPair(ref p, ref __gsharp_native_0, __gsharp_device_arrays, hStream);
 // Marshal scalar struct: p
 __gsharp_kernel_params[0] = &__gsharp_native_0;
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
@@ -406,7 +378,7 @@ hStream, // Stream
 __gsharp_kernel_params,
 global::System.IntPtr.Zero // Extra
 ));
-global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayFieldKernels.AotContexts.Unmarshal_SharedArrayPair(ref p, ref __gsharp_native_0, false, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayFieldKernels.AotContexts.Unmarshal_SharedArrayPair(ref p, ref __gsharp_native_0, hStream);
 }
 finally
 {
@@ -489,11 +461,11 @@ try
 {
 void** __gsharp_kernel_params = stackalloc void*[2];
 global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayFieldKernels.AotContexts.SharedArrayHolder __gsharp_native_0 = default;
-global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayFieldKernels.AotContexts.Marshal_SharedArrayHolder(ref first, ref __gsharp_native_0, false, __gsharp_device_arrays, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayFieldKernels.AotContexts.Marshal_SharedArrayHolder(ref first, ref __gsharp_native_0, __gsharp_device_arrays, hStream);
 // Marshal scalar struct: first
 __gsharp_kernel_params[0] = &__gsharp_native_0;
 global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayFieldKernels.AotContexts.SharedArrayHolder __gsharp_native_1 = default;
-global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayFieldKernels.AotContexts.Marshal_SharedArrayHolder(ref second, ref __gsharp_native_1, false, __gsharp_device_arrays, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayFieldKernels.AotContexts.Marshal_SharedArrayHolder(ref second, ref __gsharp_native_1, __gsharp_device_arrays, hStream);
 // Marshal scalar struct: second
 __gsharp_kernel_params[1] = &__gsharp_native_1;
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
@@ -505,8 +477,8 @@ hStream, // Stream
 __gsharp_kernel_params,
 global::System.IntPtr.Zero // Extra
 ));
-global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayFieldKernels.AotContexts.Unmarshal_SharedArrayHolder(ref first, ref __gsharp_native_0, false, hStream);
-global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayFieldKernels.AotContexts.Unmarshal_SharedArrayHolder(ref second, ref __gsharp_native_1, false, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayFieldKernels.AotContexts.Unmarshal_SharedArrayHolder(ref first, ref __gsharp_native_0, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayFieldKernels.AotContexts.Unmarshal_SharedArrayHolder(ref second, ref __gsharp_native_1, hStream);
 }
 finally
 {
@@ -617,7 +589,7 @@ var __gsharp_native_0 = global::System.Runtime.InteropServices.MemoryMarshal.Cas
 global::System.Span<global::Kassyi.GSharp.Tests.Shared.Core.ConvertBag> __gsharp_host_0 = bags;
 for (int __gsharp_index_0 = 0; __gsharp_index_0 < __gsharp_native_0.Length; __gsharp_index_0++)
 {
-global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayFieldKernels.AotContexts.Marshal_ConvertBag(ref __gsharp_host_0[__gsharp_index_0], ref __gsharp_native_0[__gsharp_index_0], false, __gsharp_device_arrays, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayFieldKernels.AotContexts.Marshal_ConvertBag(ref __gsharp_host_0[__gsharp_index_0], ref __gsharp_native_0[__gsharp_index_0], __gsharp_device_arrays, hStream);
 }
 fixed (byte* __gsharp_p_0 = __gsharp_shadow_0)
 {
@@ -653,7 +625,7 @@ var __gsharp_native_0 = global::System.Runtime.InteropServices.MemoryMarshal.Cas
 global::System.Span<global::Kassyi.GSharp.Tests.Shared.Core.ConvertBag> __gsharp_host_0 = bags;
 for (int __gsharp_index_0 = 0; __gsharp_index_0 < __gsharp_native_0.Length; __gsharp_index_0++)
 {
-global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayFieldKernels.AotContexts.Unmarshal_ConvertBag(ref __gsharp_host_0[__gsharp_index_0], ref __gsharp_native_0[__gsharp_index_0], false, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayFieldKernels.AotContexts.Unmarshal_ConvertBag(ref __gsharp_host_0[__gsharp_index_0], ref __gsharp_native_0[__gsharp_index_0], hStream);
 }
 }
 }

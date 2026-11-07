@@ -86,7 +86,7 @@ public class GpuBigIntMatrix2x2 : IDisposable
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="GpuBigIntMatrix2x2"/> class with uninitialized memory for each matrix element.
+    /// Initializes a new instance of the <see cref="GpuBigIntMatrix2x2"/> class with zero-filled memory for each matrix element.
     /// </summary>
     /// <param name="workspace">The parent GPU execution context. Cannot be <see langword="null"/>.</param>
     /// <param name="numWords">The number of 32-bit limbs (words) to allocate for each matrix element. Must be greater than zero.</param>
