@@ -11,15 +11,16 @@ internal static class NvccInvoker
         var args = new StringBuilder();
         args.Append("--fatbin ");
         args.Append("-std=c++17 ");
-        // -diag-suppress 177 = Synthesized switch-case labels (__gsharp_switch_<n>_state_<case>) and prelude guard locals
-        // (__gsharp_sort_compare_scope) are unreferenced
+        // -diag-suppress 177 = Synthesized switch-case labels (__gsharp_switch_<n>_state_<case>) and prelude guard
+        // locals (__gsharp_sort_compare_scope) are unreferenced
         // -diag-suppress 550 = Synthesized locals or shared memory buffers (__shared__ int __gsharp_id_<n>_b[...]) are
         // assigned but never read
         args.Append("-diag-suppress 177,550 ");
         if (isWindows)
         {
-            // /Zc:preprocessor = conforming preprocessor; CCCL's _CCCL_PP_CAT cannot expand under cl.exe's traditional one
-            // (thrust headers fail with 'expected a "{"'). Silencing the CCCL #error instead leaves that failure in place.
+            // /Zc:preprocessor = conforming preprocessor; CCCL's _CCCL_PP_CAT cannot expand under cl.exe's
+            // traditional one (thrust headers fail with 'expected a "{"'). Silencing the CCCL #error instead leaves
+            // that failure in place.
             // /wd4819 = Suppress the code page warning for non-ASCII characters in headers
             args.Append("-Xcompiler \"/Zc:preprocessor /wd4819\" ");
         }

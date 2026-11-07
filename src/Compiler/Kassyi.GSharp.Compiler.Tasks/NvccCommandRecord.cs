@@ -8,13 +8,13 @@ namespace Kassyi.GSharp.Compiler.Tasks;
 /// </summary>
 internal static class NvccCommandRecord
 {
-    // [WHY] Timestamps alone miss a change of the nvcc command: a new default or GSharpTargetArchitectures value, another
-    // nvcc, a new signing key, or a source added to a combined fatbin while older than the fatbin. Like MSBuild's
-    // CoreCompileInputs.cache, the record holds what decides the output except the output path:
+    // [WHY] Timestamps alone miss a change of the nvcc command: a new default or GSharpTargetArchitectures value,
+    // another nvcc, a new signing key, or a source added to a combined fatbin while older than the fatbin. Like
+    // MSBuild's CoreCompileInputs.cache, the record holds what decides the output except the output path:
     // <options>\n<source>\n...signing-key <public key>\n<last line of nvcc --version>
     // Not recorded (a change needs a rebuild by hand, as in a C++ build without dependency files): the
-    // NVCC_PREPEND_FLAGS / NVCC_APPEND_FLAGS environment variables, the version of the host C++ compiler, and the headers
-    // that the sources include.
+    // NVCC_PREPEND_FLAGS / NVCC_APPEND_FLAGS environment variables, the version of the host C++ compiler, and the
+    // headers that the sources include.
     public static string Build(string nvccOptions, string nvccVersion, IReadOnlyList<string> sourcePaths)
     {
         var record = new StringBuilder();
@@ -29,8 +29,8 @@ internal static class NvccCommandRecord
         return record.ToString();
     }
 
-    // Removes the record before nvcc runs: when nvcc, signing or the record write fails, no record of an earlier command
-    // can match the fatbin left behind, so the next build compiles again
+    // Removes the record before nvcc runs: when nvcc, signing or the record write fails, no record of an earlier
+    // command can match the fatbin left behind, so the next build compiles again
     public static bool Delete(TaskLoggingHelper log, string commandFilePath)
     {
         try
