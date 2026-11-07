@@ -1,17 +1,12 @@
 #nullable enable
-using System.Collections;
-using System.IO;
 using Kassyi.GSharp.Compiler.Tasks;
-using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
-using System.Diagnostics;
-using Kassyi.GSharp.Compiler.Tasks.Helpers;
 using Xunit;
-using Task = System.Threading.Tasks.Task;
 
 namespace Kassyi.GSharp.Tests.Shared.Tasks;
 
 [Collection(TestCollections.GlobalStateSequential)]
+[Category(TestCategory.Compiler)]
 public class CompileKernelTaskBaseTests
 {
     static CompileKernelTaskBaseTests()
@@ -19,9 +14,7 @@ public class CompileKernelTaskBaseTests
         MSBuildLocatorSetup.EnsureRegistered();
     }
 
-
     [Fact]
-    [Category(TestCategory.Compiler)]
     public void Test_CompileKernelTaskBase_ProcessSourceReturnsNull_Fails()
     {
         using var ctx = new CompileTaskTestContext();
@@ -35,7 +28,6 @@ public class CompileKernelTaskBaseTests
     }
 
     [Fact]
-    [Category(TestCategory.Compiler)]
     public void Test_CompileKernelTaskBase_SafeDeleteFiles_IgnoresExceptions()
     {
         var task = new TestCompileKernelTask();
@@ -47,8 +39,7 @@ public class CompileKernelTaskBaseTests
     }
 
     [Fact]
-    [Category(TestCategory.Compiler)]
-    public void Test_CompileKernelTaskBase_VcvarsCache_And_MissingVswhere()
+    public void Test_CompileKernelTaskBase_GetVcvarsEnvironment_CachesAMissingResult()
     {
         using var ctx = new CompileTaskTestContext();
         ctx.Runner.OverrideVswhere = true;
@@ -71,25 +62,35 @@ public class CompileKernelTaskBaseTests
         Assert.Single(ctx.Runner.Invocations);
     }
 
-    [Theory]
-    [InlineData("   ", 0)] // empty vswhere
-    [InlineData("missing_bat_dir", 0)] // vcvarsall.bat not found
-    [InlineData(null, 1)] // cmd.exe failed
-    [Category(TestCategory.Compiler)]
-    public void Test_CompileKernelTaskBase_GetVcvarsEnvironment_FailureCases(string? vswhereOutput, int cmdExitCode)
+    [Fact]
+    public void Test_CompileKernelTaskBase_GetVcvarsEnvironment_EmptyVswhereOutput()
     {
         using var ctx = new CompileTaskTestContext();
-        if (vswhereOutput == "missing_bat_dir")
-        {
-            ctx.Runner.VswhereOutput = ctx.TempDir;
-        }
-        else if (vswhereOutput != null)
-        {
-            ctx.Runner.VswhereOutput = vswhereOutput;
-        }
+        ctx.Runner.VswhereOutput = "   ";
 
-        ctx.Runner.CmdExitCode = cmdExitCode;
+        AssertNoVcvarsEnvironment(ctx);
+    }
 
+    [Fact]
+    public void Test_CompileKernelTaskBase_GetVcvarsEnvironment_VcvarsallMissing()
+    {
+        using var ctx = new CompileTaskTestContext();
+        ctx.Runner.VswhereOutput = ctx.TempDir;
+
+        AssertNoVcvarsEnvironment(ctx);
+    }
+
+    [Fact]
+    public void Test_CompileKernelTaskBase_GetVcvarsEnvironment_CmdFails()
+    {
+        using var ctx = new CompileTaskTestContext();
+        ctx.Runner.CmdExitCode = 1;
+
+        AssertNoVcvarsEnvironment(ctx);
+    }
+
+    private static void AssertNoVcvarsEnvironment(CompileTaskTestContext ctx)
+    {
         var task = new TestCompileKernelTask
         {
             ProcessRunner = ctx.Runner,

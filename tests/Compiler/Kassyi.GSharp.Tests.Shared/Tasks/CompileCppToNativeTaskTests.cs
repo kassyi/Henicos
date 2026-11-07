@@ -1,17 +1,11 @@
 #nullable enable
-using System.Collections;
-using System.IO;
 using Kassyi.GSharp.Compiler.Tasks;
-using Microsoft.Build.Framework;
-using Microsoft.Build.Utilities;
-using System.Diagnostics;
-using Kassyi.GSharp.Compiler.Tasks.Helpers;
 using Xunit;
-using Task = System.Threading.Tasks.Task;
 
 namespace Kassyi.GSharp.Tests.Shared.Tasks;
 
 [Collection(TestCollections.GlobalStateSequential)]
+[Category(TestCategory.Compiler)]
 public class CompileCppToNativeTaskTests
 {
     static CompileCppToNativeTaskTests()
@@ -19,9 +13,7 @@ public class CompileCppToNativeTaskTests
         MSBuildLocatorSetup.EnsureRegistered();
     }
 
-
     [Fact]
-    [Category(TestCategory.Compiler)]
     public void Test_CompileCppToNativeTask_GSharpMultiTarget_CompilesForTwoArchitectures()
     {
         using var ctx = new CompileTaskTestContext();
@@ -39,22 +31,6 @@ public class CompileCppToNativeTaskTests
     }
 
     [Fact]
-    [Category(TestCategory.Compiler)]
-    public void Test_CompileCppToNativeTask_VswhereFails_LogsErrorAndReturnsFalse()
-    {
-        using var ctx = new CompileTaskTestContext();
-        ctx.CreateDummySource("kernel.cpp", "// source");
-        ctx.Runner.OverrideVswhere = true;
-
-        var task = ctx.CreateCppTask(["kernel.cpp"]);
-        task.MockCompilation = false;
-
-        Assert.False(task.Execute());
-        Assert.Contains(ctx.BuildEngine.LoggedErrors, e => e.Contains("Could not locate vcvarsall.bat"));
-    }
-
-    [Fact]
-    [Category(TestCategory.Compiler)]
     public void Test_CompileCppToNativeTask_ClExePathResolvedFromPath()
     {
         using var ctx = new CompileTaskTestContext();
@@ -64,7 +40,8 @@ public class CompileCppToNativeTaskTests
         Directory.CreateDirectory(dummyClDir);
         File.WriteAllText(Path.Combine(dummyClDir, "cl.exe"), "");
 
-        ctx.Runner.CmdStandardOutput = $"INCLUDE=C:\\dummy\r\nLIB=C:\\dummy\r\nPATH={dummyClDir}{Path.PathSeparator}C:\\Windows\\System32";
+        ctx.Runner.CmdStandardOutput =
+            $"INCLUDE=C:\\dummy\r\nLIB=C:\\dummy\r\nPATH={dummyClDir}{Path.PathSeparator}C:\\Windows\\System32";
 
         var task = ctx.CreateCppTask(["kernel.cpp"]);
         task.MockCompilation = false;
@@ -78,7 +55,6 @@ public class CompileCppToNativeTaskTests
     [Theory]
     [InlineData("g++")]
     [InlineData("clang++")]
-    [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.HappyPath)]
     public void Test_CompileCppToNativeTask_GccClangToolchain_CompilesSharedLibrary(string compiler)
     {
@@ -100,7 +76,6 @@ public class CompileCppToNativeTaskTests
     }
 
     [Fact]
-    [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.Boundary)]
     public void Test_CompileCppToNativeTask_GccClangToolchain_WhenCompilerMissing_SkipsWithWarningAndSucceeds()
     {
@@ -119,7 +94,6 @@ public class CompileCppToNativeTaskTests
     }
 
     [Fact]
-    [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.SadPath)]
     public void Test_CompileCppToNativeTask_GccClangToolchain_CompilationFails_LogsErrorAndReturnsFalse()
     {

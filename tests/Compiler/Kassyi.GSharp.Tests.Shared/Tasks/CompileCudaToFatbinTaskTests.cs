@@ -1,17 +1,13 @@
 #nullable enable
-using System.Collections;
-using System.IO;
 using Kassyi.GSharp.Compiler.Tasks;
-using Microsoft.Build.Framework;
-using Microsoft.Build.Utilities;
-using System.Diagnostics;
 using Kassyi.GSharp.Compiler.Tasks.Helpers;
+using System.Diagnostics;
 using Xunit;
-using Task = System.Threading.Tasks.Task;
 
 namespace Kassyi.GSharp.Tests.Shared.Tasks;
 
 [Collection(TestCollections.GlobalStateSequential)]
+[Category(TestCategory.Compiler)]
 public class CompileCudaToFatbinTaskTests
 {
     static CompileCudaToFatbinTaskTests()
@@ -19,9 +15,7 @@ public class CompileCudaToFatbinTaskTests
         MSBuildLocatorSetup.EnsureRegistered();
     }
 
-
     [Fact]
-    [Category(TestCategory.Compiler)]
     public void Test_CompileCudaToFatbinTask_WhenNoCudaEnv_SkipsAndSucceeds()
     {
         using var ctx = new CompileTaskTestContext();
@@ -33,7 +27,6 @@ public class CompileCudaToFatbinTaskTests
     }
 
     [Fact]
-    [Category(TestCategory.Compiler)]
     public void Test_CompileCudaToFatbinTask_WhenNvccMissing_SkipsGracefully()
     {
         using var ctx = new CompileTaskTestContext();
@@ -48,7 +41,6 @@ public class CompileCudaToFatbinTaskTests
     }
 
     [Fact]
-    [Category(TestCategory.Compiler)]
     public void Test_CompileCudaToFatbinTask_CombinedFatbinName_Specified_ShouldBundleSources()
     {
         using var ctx = new CompileTaskTestContext();
@@ -70,7 +62,6 @@ public class CompileCudaToFatbinTaskTests
     [InlineData(new[] { "kernel1.cu", "kernel2.cu" }, "sm_86", "combined_fatbin")]
     [InlineData(new[] { "kernel.cu" }, "sm_86,compute_86;sm_89,compute_89", "combined_fatbin")]
     [InlineData(new[] { "combined_fatbin_bundle.cu", "kernel2.cu" }, "sm_86", "combined_fatbin")]
-    [Category(TestCategory.Compiler)]
     public void Test_CompileCudaToFatbinTask_CombinedFatbinName_SuccessCases(string[] sources, string targetArch,
         string combinedName)
     {
@@ -91,7 +82,6 @@ public class CompileCudaToFatbinTaskTests
     [InlineData("combined_fatbin", false)] // Combined, NotUpToDate
     [InlineData("", true)] // Individual, UpToDate
     [InlineData("", false)] // Individual, NotUpToDate
-    [Category(TestCategory.Compiler)]
     public void Test_CompileCudaToFatbinTask_TimestampCheck(string? combinedName, bool isUpToDate)
     {
         using var ctx = new CompileTaskTestContext();
@@ -126,7 +116,6 @@ public class CompileCudaToFatbinTaskTests
     }
 
     [Fact]
-    [Category(TestCategory.Compiler)]
     public void Test_CompileCudaToFatbinTask_OnBeforeExecute_Fails()
     {
         using var ctx = new CompileTaskTestContext();
@@ -136,7 +125,6 @@ public class CompileCudaToFatbinTaskTests
     }
 
     [Fact]
-    [Category(TestCategory.Compiler)]
     public void Test_CompileCudaToFatbinTask_DetectRegisterSpillSuppressGs0001()
     {
         using var ctx = new CompileTaskTestContext();
@@ -150,7 +138,6 @@ public class CompileCudaToFatbinTaskTests
     }
 
     [Fact]
-    [Category(TestCategory.Compiler)]
     public void Test_CompileCudaToFatbinTask_CombinedFatbinName_CreateOutputDirectory()
     {
         using var ctx = new CompileTaskTestContext();
@@ -167,13 +154,13 @@ public class CompileCudaToFatbinTaskTests
     }
 
     [Fact]
-    [Category(TestCategory.Compiler)]
     public void Test_CompileCudaToFatbinTask_CombinedFatbinName_BundleFile_WriteFailure()
     {
         using var ctx = new CompileTaskTestContext();
         ctx.CreateDummySource("kernel.cu");
 
-        // Create a directory with the exact name of the bundle file, so File.WriteAllText throws an IOException / UnauthorizedAccessException
+        // A directory with the exact name of the bundle file makes File.WriteAllText throw
+        // an IOException / UnauthorizedAccessException
         Directory.CreateDirectory(Path.Combine(ctx.TempDir, "combined_fatbin_bundle.cu"));
 
         var task = ctx.CreateCudaTask(["kernel.cu"]);
@@ -184,7 +171,6 @@ public class CompileCudaToFatbinTaskTests
     [Theory]
     [InlineData("combined_fatbin")]
     [InlineData(null)]
-    [Category(TestCategory.Compiler)]
     public void Test_CompileCudaToFatbinTask_OutputMissing_LogsError(string? combinedName)
     {
         using var ctx = new CompileTaskTestContext();
@@ -198,7 +184,6 @@ public class CompileCudaToFatbinTaskTests
     }
 
     [Fact]
-    [Category(TestCategory.Compiler)]
     public void Test_CompileCudaToFatbinTask_CombinedFatbinName_MissingSourceFile_NotUpToDate()
     {
         using var ctx = new CompileTaskTestContext();
@@ -214,7 +199,6 @@ public class CompileCudaToFatbinTaskTests
     }
 
     [Fact]
-    [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.HappyPath)]
     public void Test_CompileCudaToFatbinTask_GccClangToolchain_SkipsVcvarsAndMsvcFlags()
     {
@@ -231,13 +215,10 @@ public class CompileCudaToFatbinTaskTests
         Assert.DoesNotContain(ctx.Runner.Invocations,
             i => i.FileName.EndsWith("vswhere.exe", StringComparison.OrdinalIgnoreCase));
         Assert.Contains(ctx.Runner.Invocations,
-            i => i.FileName.Contains("nvcc") &&
-                 i.Arguments.Contains("--fatbin") &&
-                 !i.Arguments.Contains("/wd4819"));
+            i => IsNvccFatbinRun(i) && !i.Arguments.Contains("/wd4819"));
     }
 
     [Fact]
-    [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.HappyPath)]
     public void Test_CompileCudaToFatbinTask_MsvcToolchain_PassesConformingPreprocessor()
     {
@@ -257,7 +238,6 @@ public class CompileCudaToFatbinTaskTests
     [Theory]
     [InlineData("")]
     [InlineData("combined_fatbin")]
-    [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.HappyPath)]
     public void Test_CompileCudaToFatbinTask_SameCommand_SecondBuildSkipsNvcc(string combinedName)
     {
@@ -280,7 +260,6 @@ public class CompileCudaToFatbinTaskTests
     [Theory]
     [InlineData("")]
     [InlineData("combined_fatbin")]
-    [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.HappyPath)]
     public void Test_CompileCudaToFatbinTask_ArchitecturesChanged_RerunsNvcc(string combinedName)
     {
@@ -294,13 +273,13 @@ public class CompileCudaToFatbinTaskTests
         Assert.True(second.Execute());
 
         Assert.Equal(2, CountNvccCompilations(ctx));
-        Assert.Contains("code=sm_89", File.ReadAllText(Assert.Single(second.OutputFatbins).GetMetadata("NvccCommandFile")));
+        var commandFile = Assert.Single(second.OutputFatbins).GetMetadata("NvccCommandFile");
+        Assert.Contains("code=sm_89", File.ReadAllText(commandFile));
     }
 
     [Theory]
     [InlineData("")]
     [InlineData("combined_fatbin")]
-    [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.Boundary)]
     public void Test_CompileCudaToFatbinTask_CommandRecordMissing_RerunsNvcc(string combinedName)
     {
@@ -319,7 +298,6 @@ public class CompileCudaToFatbinTaskTests
     }
 
     [Fact]
-    [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.Boundary)]
     public void Test_CompileCudaToFatbinTask_NvccVersionChanged_RerunsNvcc()
     {
@@ -339,7 +317,6 @@ public class CompileCudaToFatbinTaskTests
     }
 
     [Fact]
-    [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.Boundary)]
     public void Test_CompileCudaToFatbinTask_CombinedSourceAdded_RerunsNvcc()
     {
@@ -357,7 +334,6 @@ public class CompileCudaToFatbinTaskTests
     [Theory]
     [InlineData("")]
     [InlineData("combined_fatbin")]
-    [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.HappyPath)]
     public void Test_CompileCudaToFatbinTask_SourceEdited_RerunsNvcc(string combinedName)
     {
@@ -376,7 +352,6 @@ public class CompileCudaToFatbinTaskTests
     [Theory]
     [InlineData("")]
     [InlineData("combined_fatbin")]
-    [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.SadPath)]
     public void Test_CompileCudaToFatbinTask_SigningFailsAfterNvcc_NextBuildRerunsNvcc(string combinedName)
     {
@@ -404,7 +379,6 @@ public class CompileCudaToFatbinTaskTests
     [Theory]
     [InlineData("")]
     [InlineData("combined_fatbin")]
-    [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.SadPath)]
     public void Test_CompileCudaToFatbinTask_NvccFails_RemovesTheOldRecord(string combinedName)
     {
@@ -424,7 +398,6 @@ public class CompileCudaToFatbinTaskTests
 
     // Changing the signing key re-signs the fatbin: the record holds the public key of the key in use
     [Fact]
-    [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.Boundary)]
     public void Test_CompileCudaToFatbinTask_SigningKeyChanged_RerunsNvcc()
     {
@@ -444,7 +417,6 @@ public class CompileCudaToFatbinTaskTests
     [Theory]
     [InlineData("")]
     [InlineData("combined_fatbin")]
-    [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.HappyPath)]
     public void Test_CompileCudaToFatbinTask_DefaultArchitectures_EmitSass86AndPtx86(string combinedName)
     {
@@ -454,19 +426,19 @@ public class CompileCudaToFatbinTaskTests
         var task = ctx.CreateCudaTask(["kernel1.cu"], combinedName);
         Assert.True(task.Execute());
 
-        var nvcc = Assert.Single(ctx.Runner.Invocations, i => i.FileName.Contains("nvcc") && i.Arguments.Contains("--fatbin"));
+        var nvcc = Assert.Single(ctx.Runner.Invocations, IsNvccFatbinRun);
         Assert.Contains("-gencode arch=compute_86,code=sm_86 ", nvcc.Arguments);
         Assert.Contains("-gencode arch=compute_86,code=compute_86 ", nvcc.Arguments);
     }
 
     [Fact]
-    [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_CompileCudaToFatbin_ExitCodeZeroWithWarnings_LogsMsBuildWarnings()
+    public void Test_CompileCudaToFatbinTask_ExitCodeZeroWithWarnings_LogsMsBuildWarnings()
     {
         using var ctx = new CompileTaskTestContext();
         CreateOldSource(ctx);
-        ctx.Runner.NextStandardOutput = @"C:\temp\kernel1.cu(102): warning #550-D: variable ""dummy"" was set but never used";
+        ctx.Runner.NextStandardOutput =
+            @"C:\temp\kernel1.cu(102): warning #550-D: variable ""dummy"" was set but never used";
 
         var task = ctx.CreateCudaTask(["kernel1.cu"], combinedName: "");
         Assert.True(task.Execute());
@@ -480,5 +452,8 @@ public class CompileCudaToFatbinTaskTests
     }
 
     private static int CountNvccCompilations(CompileTaskTestContext ctx) =>
-        ctx.Runner.Invocations.Count(i => i.FileName.Contains("nvcc") && i.Arguments.Contains("--fatbin"));
+        ctx.Runner.Invocations.Count(IsNvccFatbinRun);
+
+    private static bool IsNvccFatbinRun(ProcessStartInfo i) =>
+        i.FileName.Contains("nvcc") && i.Arguments.Contains("--fatbin");
 }

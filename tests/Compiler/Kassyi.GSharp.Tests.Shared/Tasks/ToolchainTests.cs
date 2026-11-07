@@ -1,17 +1,12 @@
 #nullable enable
-using System.Collections;
-using System.IO;
 using Kassyi.GSharp.Compiler.Tasks;
-using Microsoft.Build.Framework;
-using Microsoft.Build.Utilities;
-using System.Diagnostics;
-using Kassyi.GSharp.Compiler.Tasks.Helpers;
 using Xunit;
-using Task = System.Threading.Tasks.Task;
 
 namespace Kassyi.GSharp.Tests.Shared.Tasks;
 
 [Collection(TestCollections.GlobalStateSequential)]
+[Category(TestCategory.Compiler)]
+[Scenario(TestScenario.SadPath)]
 public class ToolchainTests
 {
     static ToolchainTests()
@@ -19,10 +14,7 @@ public class ToolchainTests
         MSBuildLocatorSetup.EnsureRegistered();
     }
 
-
     [Fact]
-    [Category(TestCategory.Compiler)]
-    [Scenario(TestScenario.SadPath)]
     public void Test_MsvcToolchain_ExitCodeZeroWithC4068_LogsMsBuildWarning()
     {
         using var ctx = new CompileTaskTestContext();
@@ -35,8 +27,6 @@ public class ToolchainTests
     }
 
     [Fact]
-    [Category(TestCategory.Compiler)]
-    [Scenario(TestScenario.SadPath)]
     public void Test_GccClangToolchain_ExitCodeZeroWithWarning_LogsMsBuildWarning()
     {
         using var ctx = new CompileTaskTestContext();

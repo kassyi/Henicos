@@ -1,17 +1,12 @@
 #nullable enable
-using System.Collections;
-using System.IO;
 using Kassyi.GSharp.Compiler.Tasks;
 using Microsoft.Build.Framework;
-using Microsoft.Build.Utilities;
-using System.Diagnostics;
-using Kassyi.GSharp.Compiler.Tasks.Helpers;
 using Xunit;
-using Task = System.Threading.Tasks.Task;
 
 namespace Kassyi.GSharp.Tests.Shared.Tasks;
 
 [Collection(TestCollections.GlobalStateSequential)]
+[Category(TestCategory.Compiler)]
 public class CompileTaskBehaviorTests
 {
     static CompileTaskBehaviorTests()
@@ -19,79 +14,58 @@ public class CompileTaskBehaviorTests
         MSBuildLocatorSetup.EnsureRegistered();
     }
 
-
     [Theory]
-    [InlineData(false, "kernel.cu", "nvcc", "-fatbin")]
-    [InlineData(true, "kernel.cpp", "cl.exe", "/bigobj")]
-    [Category(TestCategory.Compiler)]
-    public void Test_CompileTask_RealCompilation_CallsCompiler(bool isCpp, string sourceName, string expectedExe,
+    [InlineData(CompileTaskKind.Cuda, "kernel.cu", "nvcc", "-fatbin")]
+    [InlineData(CompileTaskKind.Cpp, "kernel.cpp", "cl.exe", "/bigobj")]
+    public void Test_CompileTask_RealCompilation_CallsCompiler(
+        CompileTaskKind kind,
+        string sourceName,
+        string expectedExe,
         string? expectedArg)
     {
         using var ctx = new CompileTaskTestContext();
         ctx.SetEnv("GSHARP_TEST_NO_CUDA", null);
         ctx.CreateDummySource(sourceName, "// source");
 
-        var task = ctx.CreateTask(isCpp, [sourceName]);
-        if (task is CompileCudaToFatbinTask cudaTask)
-        {
-            cudaTask.TargetArchitectures = "sm_86";
-        }
+        var task = ctx.CreateTask(kind, [sourceName]);
 
         Assert.True(task.Execute());
-        if (isCpp)
-        {
-            Assert.NotEmpty(((CompileCppToNativeTask)task).OutputDlls);
-        }
-        else
-        {
-            Assert.NotEmpty(((CompileCudaToFatbinTask)task).OutputFatbins);
-        }
+        Assert.NotEmpty(OutputsOf(task));
 
         Assert.Contains(ctx.Runner.Invocations,
             i => i.FileName.Contains(expectedExe) && (expectedArg == null || i.Arguments.Contains(expectedArg)));
     }
 
     [Theory]
-    [InlineData(0)] // Cuda Individual
-    [InlineData(1)] // Cuda Combined
-    [InlineData(2)] // Cpp
-    [InlineData(3)] // KernelTaskBase
-    [Category(TestCategory.Compiler)]
-    public void Test_CompileTask_EmptySources_ReturnsTrue(int taskKind)
+    [InlineData(CompileTaskKind.Cuda)]
+    [InlineData(CompileTaskKind.CudaCombined)]
+    [InlineData(CompileTaskKind.Cpp)]
+    [InlineData(CompileTaskKind.KernelTaskBase)]
+    public void Test_CompileTask_EmptySources_ReturnsTrue(CompileTaskKind kind)
     {
         using var ctx = new CompileTaskTestContext();
-        CompileKernelTaskBase task = taskKind switch
-        {
-            0 => ctx.CreateCudaTask([], combinedName: ""),
-            1 => ctx.CreateCudaTask([], combinedName: "combined.fatbin"),
-            2 => ctx.CreateCppTask([]),
-            _ => new TestCompileKernelTask()
-        };
+        var task = ctx.CreateTask(kind, []);
 
         Assert.True(task.Execute());
-        if (task is CompileCudaToFatbinTask cuda) Assert.Empty(cuda.OutputFatbins);
-        if (task is CompileCppToNativeTask cpp) Assert.Empty(cpp.OutputDlls);
+        Assert.Empty(OutputsOf(task));
     }
 
     [Theory]
-    [InlineData(false, "kernel.cu")]
-    [InlineData(true, "kernel.cpp")]
-    [Category(TestCategory.Compiler)]
-    public void Test_CompileTask_AlwaysRecompiles_And_IgnoresCache(bool isCpp, string sourceName)
+    [InlineData(CompileTaskKind.Cuda, "kernel.cu")]
+    [InlineData(CompileTaskKind.Cpp, "kernel.cpp")]
+    public void Test_CompileTask_AlwaysRecompiles_And_IgnoresCache(CompileTaskKind kind, string sourceName)
     {
         using var ctx = new CompileTaskTestContext();
         var sourcePath = ctx.CreateDummySource(sourceName, "// source");
         var baseTime = new DateTime(2025, 1, 1, 12, 0, 0, DateTimeKind.Utc);
         File.SetLastWriteTimeUtc(sourcePath, baseTime);
 
-        var task = ctx.CreateTask(isCpp, [sourceName], combinedFatbinName: null);
+        var task = ctx.CreateTask(kind, [sourceName]);
         task.MockCompilation = true;
 
         // 1. Initial compilation generates the output artifact
         Assert.True(task.Execute());
-        var outputItem = isCpp
-            ? Assert.Single(((CompileCppToNativeTask)task).OutputDlls).ItemSpec
-            : Assert.Single(((CompileCudaToFatbinTask)task).OutputFatbins).ItemSpec;
+        var outputItem = Assert.Single(OutputsOf(task)).ItemSpec;
         Assert.True(File.Exists(outputItem));
 
         // Write custom sentinel
@@ -104,12 +78,13 @@ public class CompileTaskBehaviorTests
     }
 
     [Theory]
-    [InlineData(false, "kernel.cu", "Mock NVCC Error", "")]
-    [InlineData(true, "kernel.cpp", "Mock CL Error", "")]
-    [InlineData(false, "kernel.cu", "nvcc compilation failed with exit code 1", "combined_fatbin")]
-    [Category(TestCategory.Compiler)]
-    public void Test_CompileTask_ProcessFails_LogsErrorAndReturnsFalse(bool isCpp, string sourceName,
-        string errorMessage, string? combinedName)
+    [InlineData(CompileTaskKind.Cuda, "kernel.cu", "Mock NVCC Error")]
+    [InlineData(CompileTaskKind.Cpp, "kernel.cpp", "Mock CL Error")]
+    [InlineData(CompileTaskKind.CudaCombined, "kernel.cu", "nvcc compilation failed with exit code 1")]
+    public void Test_CompileTask_ProcessFails_LogsErrorAndReturnsFalse(
+        CompileTaskKind kind,
+        string sourceName,
+        string errorMessage)
     {
         using var ctx = new CompileTaskTestContext();
         ctx.CreateDummySource(sourceName, "// source");
@@ -117,61 +92,54 @@ public class CompileTaskBehaviorTests
         ctx.Runner.NextStandardError = errorMessage;
         ctx.Runner.NextStandardOutput = errorMessage;
 
-        var task = ctx.CreateTask(isCpp, [sourceName], combinedFatbinName: combinedName);
+        var task = ctx.CreateTask(kind, [sourceName]);
 
         Assert.False(task.Execute());
         Assert.Contains(ctx.BuildEngine.LoggedErrors, e => e.Contains(errorMessage));
     }
 
     [Theory]
-    [InlineData(false, "dummy.cu")]
-    [InlineData(true, "dummy.cpp")]
-    [Category(TestCategory.Compiler)]
-    public void Test_CompileTask_NoVswhere(bool isCpp, string sourceName)
+    [InlineData(CompileTaskKind.Cuda, "dummy.cu")]
+    [InlineData(CompileTaskKind.Cpp, "dummy.cpp")]
+    public void Test_CompileTask_NoVswhere(CompileTaskKind kind, string sourceName)
     {
         using var ctx = new CompileTaskTestContext();
         ctx.SetEnv("GSHARP_TEST_NO_CUDA", null);
         ctx.CreateDummySource(sourceName, "dummy");
         ctx.Runner.OverrideVswhere = true;
 
-        var task = ctx.CreateTask(isCpp, [sourceName], combinedFatbinName: "");
+        var task = ctx.CreateTask(kind, [sourceName]);
 
         Assert.False(task.Execute());
         Assert.Contains(ctx.BuildEngine.LoggedErrors, e => e.Contains("vcvarsall"));
     }
 
     [Theory]
-    [InlineData(false, "kernel1.cu", "nvcc")]
-    [InlineData(true, "kernel1.cpp", "cl.exe")]
-    [Category(TestCategory.Compiler)]
-    public void Test_CompileTask_RunProcess_ThrowsException(bool isCpp, string sourceName, string expectedExe)
+    [InlineData(CompileTaskKind.Cuda, "kernel1.cu", "nvcc")]
+    [InlineData(CompileTaskKind.Cpp, "kernel1.cpp", "cl.exe")]
+    public void Test_CompileTask_RunProcess_ThrowsException(CompileTaskKind kind, string sourceName, string expectedExe)
     {
         using var ctx = new CompileTaskTestContext();
         ctx.CreateDummySource(sourceName, "dummy1");
         ctx.Runner.NextException = new System.Exception("Simulated process start failure");
 
-        var task = ctx.CreateTask(isCpp, [sourceName], combinedFatbinName: "");
+        var task = ctx.CreateTask(kind, [sourceName]);
 
         Assert.False(task.Execute());
         Assert.Contains(ctx.BuildEngine.LoggedErrors, e => e.Contains($"Failed to start {expectedExe}"));
     }
 
     [Theory]
-    [InlineData(false, "kernel.cu", null)]
-    [InlineData(false, "kernel.cu", "combined_fatbin")]
-    [InlineData(true, "kernel.cpp", null)]
-    [Category(TestCategory.Compiler)]
-    public void Test_CompileTask_PropagatesCancellationToken_ToProcessRunner(bool isCpp, string sourceName, string? combinedName)
+    [InlineData(CompileTaskKind.Cuda, "kernel.cu")]
+    [InlineData(CompileTaskKind.CudaCombined, "kernel.cu")]
+    [InlineData(CompileTaskKind.Cpp, "kernel.cpp")]
+    public void Test_CompileTask_PropagatesCancellationToken_ToProcessRunner(CompileTaskKind kind, string sourceName)
     {
         using var ctx = new CompileTaskTestContext();
         ctx.SetEnv("GSHARP_TEST_NO_CUDA", null);
         ctx.CreateDummySource(sourceName, "// source");
 
-        var task = ctx.CreateTask(isCpp, [sourceName], combinedFatbinName: combinedName);
-        if (task is CompileCudaToFatbinTask cudaTask)
-        {
-            cudaTask.TargetArchitectures = "sm_86";
-        }
+        var task = ctx.CreateTask(kind, [sourceName]);
 
         Assert.True(task.Execute());
         Assert.NotEmpty(ctx.Runner.ObservedTokens);
@@ -179,45 +147,39 @@ public class CompileTaskBehaviorTests
     }
 
     [Theory]
-    [InlineData(false, "kernel.cu", null)]
-    [InlineData(false, "kernel.cu", "combined_fatbin")]
-    [InlineData(true, "kernel.cpp", null)]
-    [Category(TestCategory.Compiler)]
-    public void Test_CompileTask_CancelBeforeExecute_ReturnsFalseAndLogsWarning(bool isCpp, string sourceName, string? combinedName)
+    [InlineData(CompileTaskKind.Cuda, "kernel.cu")]
+    [InlineData(CompileTaskKind.CudaCombined, "kernel.cu")]
+    [InlineData(CompileTaskKind.Cpp, "kernel.cpp")]
+    public void Test_CompileTask_CancelBeforeExecute_ReturnsFalseAndLogsWarning(CompileTaskKind kind, string sourceName)
     {
         using var ctx = new CompileTaskTestContext();
         ctx.SetEnv("GSHARP_TEST_NO_CUDA", null);
         ctx.CreateDummySource(sourceName, "// source");
 
-        var task = ctx.CreateTask(isCpp, [sourceName], combinedFatbinName: combinedName);
-        if (task is CompileCudaToFatbinTask cudaTask)
-        {
-            cudaTask.TargetArchitectures = "sm_86";
-        }
+        var task = ctx.CreateTask(kind, [sourceName]);
 
         task.Cancel();
 
         Assert.False(task.Execute());
         Assert.Empty(ctx.BuildEngine.LoggedErrors);
-        Assert.Contains(ctx.BuildEngine.LoggedWarnings, w => w.Contains("canceled", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(
+            ctx.BuildEngine.LoggedWarnings,
+            w => w.Contains("canceled", StringComparison.OrdinalIgnoreCase));
     }
 
     [Theory]
-    [InlineData(false, "kernel.cu", null)]
-    [InlineData(false, "kernel.cu", "combined_fatbin")]
-    [InlineData(true, "kernel.cpp", null)]
-    [Category(TestCategory.Compiler)]
-    public void Test_CompileTask_CancelDuringProcessRun_ReturnsFalseAndLogsWarning(bool isCpp, string sourceName, string? combinedName)
+    [InlineData(CompileTaskKind.Cuda, "kernel.cu")]
+    [InlineData(CompileTaskKind.CudaCombined, "kernel.cu")]
+    [InlineData(CompileTaskKind.Cpp, "kernel.cpp")]
+    public void Test_CompileTask_CancelDuringProcessRun_ReturnsFalseAndLogsWarning(
+        CompileTaskKind kind,
+        string sourceName)
     {
         using var ctx = new CompileTaskTestContext();
         ctx.SetEnv("GSHARP_TEST_NO_CUDA", null);
         ctx.CreateDummySource(sourceName, "// source");
 
-        var task = ctx.CreateTask(isCpp, [sourceName], combinedFatbinName: combinedName);
-        if (task is CompileCudaToFatbinTask cudaTask)
-        {
-            cudaTask.TargetArchitectures = "sm_86";
-        }
+        var task = ctx.CreateTask(kind, [sourceName]);
 
         ctx.Runner.OnRun = (startInfo, token) =>
         {
@@ -229,6 +191,15 @@ public class CompileTaskBehaviorTests
 
         Assert.False(task.Execute());
         Assert.Empty(ctx.BuildEngine.LoggedErrors);
-        Assert.Contains(ctx.BuildEngine.LoggedWarnings, w => w.Contains("canceled", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(
+            ctx.BuildEngine.LoggedWarnings,
+            w => w.Contains("canceled", StringComparison.OrdinalIgnoreCase));
     }
+
+    private static ITaskItem[] OutputsOf(CompileKernelTaskBase task) => task switch
+    {
+        CompileCppToNativeTask cpp => cpp.OutputDlls,
+        CompileCudaToFatbinTask cuda => cuda.OutputFatbins,
+        _ => []
+    };
 }
