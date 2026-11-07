@@ -70,32 +70,6 @@ Console.WriteLine($"Result Size: {result.Value.NumWords} words.");
 
 The standard `*` operator automatically falls back to NTT if the operand sizes cross a specific heuristic threshold (e.g., > 10,000 words). However, you can use `NttMultiply` to force the NTT code path explicitly.
 
-## NttCpuReference Class
-
-**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms`
-
-A pure CPU reference implementation combining the 3-Prime NTT (Number Theoretic Transform) and Garner's CRT algorithm for large integer multiplication. It is used for host-side validation against the GPU results.
-
-```csharp
-public static class NttCpuReference
-{
-    public const uint P1 = 2130706433;
-    public const uint P2 = 1224736769;
-    public const uint P3 = 754974721;
-    public const uint G1 = 3;
-    public const uint G2 = 3;
-    public const uint G3 = 11;
-
-    public static uint ModPow(uint baseValue, uint exponent, uint modulus);
-    public static uint ModInverse(uint value, uint modulus);
-    public static uint ModAdd(uint operandA, uint operandB, uint modulus);
-    public static uint ModSub(uint operandA, uint operandB, uint modulus);
-    public static uint ModMul(uint operandA, uint operandB, uint modulus);
-    public static void Ntt(uint[] values, uint modulus, uint primitiveRoot, bool isInverse);
-    public static uint[] Multiply(uint[] operandA, uint[] operandB);
-}
-```
-
 ## See also
 
 ### Language Specification

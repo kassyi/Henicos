@@ -1,0 +1,10 @@
+- issue: 12
+  title: "A title: with a colon"
+  entries:
+    - case: Kernels.FirstKernel
+      paths: [Managed, Cuda]
+      columns: [a, $exception]
+    - case: Kernels.SecondKernel
+      paths: [Native]
+      columns: [b]
+      hosts: [Windows]

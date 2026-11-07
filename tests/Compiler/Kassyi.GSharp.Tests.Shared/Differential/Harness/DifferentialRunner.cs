@@ -7,7 +7,7 @@ using Xunit;
 namespace Kassyi.GSharp.Tests.Shared.Differential;
 
 /// <summary>
-/// Runs a <see cref="DifferentialCase"/> on every path of this process and compares each with the oracle (design §4.3).
+/// Runs a <see cref="DifferentialCase"/> on every path of this process and compares each with the oracle.
 /// For each seed and launch shape: build the inputs, run the oracle in three thread orders and require the same output,
 /// run every path on its own copy of the inputs, and compare every buffer cell by cell.
 /// </summary>
@@ -535,7 +535,7 @@ public static class DifferentialRunner
         catch (Exception ex)
         {
             throw new DifferentialHarnessException(
-                $"{testCase.Name}: the {what} threw for seed {seed}; keep inputs that C# rejects out of the generator (design §2.5)",
+                $"{testCase.Name}: the {what} threw for seed {seed}; keep inputs that C# rejects out of the generator",
                 ex
             );
         }

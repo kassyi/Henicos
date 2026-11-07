@@ -302,7 +302,7 @@ public class TypeLayoutCalculatorTests
 
         // InlineArray with Float2 directly (Float2 size=8, align=8 on CUDA vs size=8, align=4 on Host): the stride
         // and the offsets are the same, so the bytes are the same and only the alignment differs -> Identical
-        // (design §3.3)
+        //
         var inlineFloat2Cuda = TypeLayoutCalculator.GetStructLayout(GetStructSymbol(nameof(InlineThreeFloat2)), s_cudaDialect);
         var inlineFloat2Cpu = TypeLayoutCalculator.GetStructLayout(GetStructSymbol(nameof(InlineThreeFloat2)), s_cpuDialect);
         Assert.True(inlineFloat2Cuda.Host.IsKnown);

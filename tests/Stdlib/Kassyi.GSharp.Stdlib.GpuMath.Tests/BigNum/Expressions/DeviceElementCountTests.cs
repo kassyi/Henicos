@@ -2,7 +2,7 @@
 namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum.Expressions;
 
 /// <summary>
-/// Consumers of a vector whose number of elements is known only on the device (design D3 4.1-4.3, test plan 6.4): the
+/// Consumers of a vector whose number of elements is known only on the device: the
 /// storage holds the capacity C, a device word holds the count n, and every consumer looks at the first n elements only.
 /// </summary>
 /// <remarks>
@@ -192,7 +192,7 @@ public sealed class DeviceElementCountTests : IDisposable
     [MemberData(nameof(SkipTakeCases))]
     public void SkipTake_ComposeOnTheDeviceCount(int skip, int take)
     {
-        // (C, n) = (20, 7): Skip / Take compose on the descriptor (design 4.1), also past n and twice.
+        // (C, n) = (20, 7): Skip / Take compose on the descriptor, also past n and twice.
         // mutant: ResolveElementCount without the Skip; TakeFirst with Math.Max instead of Math.Min
         var values = Values(7, false);
         var expected = values.Skip(skip).Take(take).Skip(1).Take(take).ToArray();

@@ -162,7 +162,7 @@ public static class YamlDialectGenerator
     private static string FormatCapabilityFlags(string capabilities)
     {
         const string EnumType = "Kassyi.GSharp.Compiler.Transpiler.Dialects.DialectCapabilities";
-        var expression = new StringBuilder();
+        using var expression = new SourceWriter();
         var start = 0;
         for (var i = 0; i <= capabilities.Length; i++)
         {
@@ -178,12 +178,8 @@ public static class YamlDialectGenerator
                 continue;
             }
 
-            if (expression.Length > 0)
-            {
-                expression.Append(" | ");
-            }
-
-            expression.Append(EnumType).Append('.').Append(name);
+            expression.AppendIf(expression.Length > 0, " | ");
+            expression.Append($"{EnumType}.{name.ToString()}");
         }
 
         return expression.Length > 0 ? expression.ToString() : EnumType + ".None";

@@ -28,7 +28,7 @@ public readonly struct GpuBigUIntArray : IDisposable
 
 ## GpuBigUIntArray(GpuWorkspace, int, int)
 
-Initializes a new instance of the `GpuBigUIntArray` struct allocating uninitialized contiguous GPU device memory from the specified workspace memory pool.
+Initializes a new instance of the `GpuBigUIntArray` struct allocating zero-filled contiguous GPU device memory from the specified workspace memory pool.
 
 ```csharp
 public GpuBigUIntArray(GpuWorkspace workspace, int length, int wordsPerElement);

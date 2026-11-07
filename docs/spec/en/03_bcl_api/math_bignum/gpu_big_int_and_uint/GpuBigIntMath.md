@@ -121,7 +121,7 @@ The destination buffer receiving the resulting magnitude.
 #### Returns
 
 _bool_<br>
-`true` if the resulting sum is negative; otherwise, `false`.
+`true` if the resulting sum is negative; otherwise, `false`. A zero magnitude must be passed as non-negative; with that, a zero sum is never negative, so operands of equal magnitude and opposite signs return `false`.
 
 ## Sub(GpuBigUIntView, GpuBigUIntView, GpuBigUIntView)
 
