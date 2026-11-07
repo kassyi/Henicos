@@ -3,7 +3,7 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum.Expressions;
 
 /// <summary>
 /// A leaf whose number of elements is a word in device memory: the storage holds the capacity, and only the
-/// first <c>countWord[0]</c> elements are elements (design D3 6.4, allowed by T1). It lets the consumers of a device
+/// first <c>countWord[0]</c> elements are elements. It lets the consumers of a device
 /// count be tested before <c>Where</c> produces one.
 /// </summary>
 internal sealed class DeviceCountedLeafExpression(GpuBigIntArray storage, GpuBigUInt countWord)

@@ -77,7 +77,7 @@ internal abstract class VectorReductionExpressionBase : IGpuBigIntExpression, ID
     }
 
     // Everything that refuses the evaluation before a launch: a target of another width, a capture (the sign, the
-    // emptiness and the overflow are read back from the header, which a capture cannot record; design D3 4.8), and
+    // emptiness and the overflow are read back from the header, which a capture cannot record), and
     // Max / Min of a static empty vector, which has no passes and no value to return
     private void ThrowIfCannotEvaluate(GpuWorkspace workspace, GpuBigUInt? targetResult)
     {

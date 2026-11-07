@@ -104,7 +104,7 @@ internal static class BigFloatTranscendentalMath
     /// </para>
     /// <para>
     /// For <c>e ≠ 0</c> the sum <c>|e|·L ± 2|y|T</c> is formed with <c>W + 2</c> fraction bits and normalized to
-    /// <c>W</c> bits. The bound counts each truncation once (design §4.3.1).
+    /// <c>W</c> bits. The bound counts each truncation once.
     /// </para>
     /// </remarks>
     internal static TranscendentalApproximation LogApproximation(
@@ -254,9 +254,9 @@ internal static class BigFloatTranscendentalMath
     /// <c>x = k·ln 2 + r</c> with <c>k = floor(x / ln 2) − 1</c> from a double approximation, so <c>r ∈ (0.69, 1.39)</c>
     /// for either sign of <c>x</c>. <c>r</c> is formed with ln 2 at <c>Lw</c> fraction bits (<c>W − s + bits(|k|) + 2</c>
     /// rounded up to a word) and truncated once to <c>W − s</c> fraction bits, which is <c>R = r / 2^s</c> with <c>W</c>
-    /// fraction bits. <c>|R·2^-W − r/2^s| &lt; 1.5·2^-W</c> (design §4.4.1), on either side: truncating <c>x</c> lowers
+    /// fraction bits. <c>|R·2^-W − r/2^s| &lt; 1.5·2^-W</c>, on either side: truncating <c>x</c> lowers
     /// <c>R</c> for <c>x &gt; 0</c> and raises it for <c>x &lt; 0</c>, truncating <c>L</c> does the opposite, so
-    /// <c>R·2^-W</c> may exceed <c>r/2^s</c>. The bound of §10.1 uses the size of that error, and <c>ρ ≤ 1.39·2^-s</c>
+    /// <c>R·2^-W</c> may exceed <c>r/2^s</c>. The error bound uses the size of that error, and <c>ρ ≤ 1.39·2^-s</c>
     /// still holds with the excess (<c>r &lt; 1.3863·(1 + 2^-19)</c>). The Taylor polynomial of degree <c>N</c> runs in
     /// Paterson–Stockmeyer form with Smith's division order, the sum is squared <c>s</c> times, and
     /// <c>e^x = e^r · 2^k</c>.
@@ -669,7 +669,7 @@ internal static class BigFloatTranscendentalMath
     private static (BigInteger Significand, int Exponent) LargestBelowOne(int resultBits) =>
         ((BigInteger.One << resultBits) - 1, -resultBits);
 
-    // Σ_{j<=N} R^j / j! in Paterson–Stockmeyer form with Smith's division order (§10.1): powers R_0 = 2^W .. R_m;
+    // Σ_{j<=N} R^j / j! in Paterson–Stockmeyer form with Smith's division order: powers R_0 = 2^W .. R_m;
     // the top block [a, N] starts from R_(N-a); for i from its top down to 1: acc = floor(acc / (a + i)) + R_(i-1);
     // every lower block [a, a + m) starts from acc = floor(acc · R_m / 2^W) and runs i = m down to 1 the same way.
     private static BigInteger ExpSeriesPatersonStockmeyer(BigInteger r, int terms, int blockSize, int workingBits)
@@ -728,7 +728,7 @@ internal static class BigFloatTranscendentalMath
         return h;
     }
 
-    // Σ_{k<N} Z^k / (2k+1) in Paterson–Stockmeyer form (§10.1): powers Z_0 = 2^W .. Z_m; blocks of m terms from the
+    // Σ_{k<N} Z^k / (2k+1) in Paterson–Stockmeyer form: powers Z_0 = 2^W .. Z_m; blocks of m terms from the
     // top, H = floor(H · Z_m / 2^W) + Σ_{i<m} floor(Z_i / (2(a + i) + 1)) for the block starting at term a.
     private static BigInteger AtanhSeriesPatersonStockmeyer(BigInteger z, int terms, int blockSize, int workingBits)
     {
@@ -779,12 +779,13 @@ internal static class BigFloatTranscendentalMath
         return Math.Abs(e) * ln2 >> (ln2Bits - fractionBits);
     }
 
-    // The rounding check of Ziv (design §4.1). A_W is the approximation at W bits, g = W - p and G = A_W mod 2^g, all in
+    // The rounding check of Ziv. A_W is the approximation at W bits, g = W - p and G = A_W mod 2^g, all in
     // units of the last bit of A_W. The exact value lies within B units of A. Exp drops the 32 low bits of A, so A lies
     // in [A_W, A_W + 1): the interval reaches up to A_W + 1 + B, almost one unit more above A_W, and the integer check
     // G + B < 2^g, that is G + B + 1 <= 2^g, covers that unit; B <= G covers the lower end (A >= A_W). When both hold,
-    // every value in the interval truncates to A_W >> g, so that is RZ_p of the exact value. The bound B is the planner's (design §10.1, re-derived in the review of stages
-    // 1–4): a B below the true error would make this check accept a wrong truncation silently.
+    // every value in the interval truncates to A_W >> g, so that is RZ_p of the exact value.
+    // The bound B is the planner's (derived from the error analysis of the truncations of each series): a B below the
+    // true error would make this check accept a wrong truncation silently.
     private static bool TryTruncate(
         in TranscendentalApproximation approximation, int resultBits, out BigInteger truncated, out long exponent)
     {

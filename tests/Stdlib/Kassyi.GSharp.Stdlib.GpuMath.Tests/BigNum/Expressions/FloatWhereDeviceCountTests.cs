@@ -2,8 +2,9 @@
 namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum.Expressions;
 
 /// <summary>
-/// The float <c>Where</c> with its element count on the device (#633, design D3 test plan 6.6): Count, Sum, Max, Min,
-/// Average, Skip / Take and the host loops after <c>Where</c> equal System.Linq over the same values.
+/// The float <c>Where</c> with its element count on the device
+/// (#633 (Where keeps the source length, and empty integer Max returns 0)): Count, Sum, Max, Min, Average,
+/// Skip / Take and the host loops after <c>Where</c> equal System.Linq over the same values.
 /// </summary>
 /// <remarks>
 /// The inputs are small integers, so the sums and averages are exact in a 4-word significand and are compared exactly.
@@ -145,7 +146,7 @@ public sealed class FloatWhereDeviceCountTests : IDisposable
     public void LengthAndEvaluateTo_AfterWhere()
     {
         // Length is known only on the device (decision V1); EvaluateTo returns no count, so it refuses a filtered
-        // vector and leaves the destination as it was (design 4.1.3)
+        // vector and leaves the destination as it was
         var array = CreateArray([-3, -1, 5]);
         using var filtered = array.AsVectorizedEnumerable().Where(array.AsVectorizedEnumerable().IsLessThan(Float(0)));
         using var destination = new GpuBigFloatArray(_workspace, 3, Words);

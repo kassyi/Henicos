@@ -23,7 +23,7 @@ public enum OutputPolicyKind
 }
 
 /// <summary>
-/// How the cells of a buffer are compared with the oracle (design §2.4).
+/// How the cells of a buffer are compared with the oracle.
 /// </summary>
 public sealed class OutputPolicy
 {
