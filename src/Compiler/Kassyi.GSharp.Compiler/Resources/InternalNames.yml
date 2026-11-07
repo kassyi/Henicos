@@ -133,8 +133,8 @@ Using:
     The disposal of a C# using in device code. A struct that has a Dispose method declares it as a member under its own
     name; the guard of each using calls it when its scope ends.
   Names:
-    ScopeGuard: { Value: __gsharp_using_scope, Prelude: Types.hpp }
-    Dispose: { Value: __gsharp_dispose, Prelude: Types.hpp }
+    ScopeGuard: { Value: __gsharp_using_scope, Prelude: StandardTypes.hpp }
+    Dispose: { Value: __gsharp_dispose, Prelude: StandardTypes.hpp }
     GuardPrefix: __gsharp_using_guard_
     ResourcePrefix: __gsharp_using_resource_
 
@@ -294,7 +294,7 @@ Prelude:
     LeadingZeroCountFor64: { Value: __gsharp_lzc_64, Prelude: MathAndBitOps.hpp }
     TrailingZeroCountFor32: { Value: __gsharp_tzc_32, Prelude: MathAndBitOps.hpp }
     TrailingZeroCountFor64: { Value: __gsharp_tzc_64, Prelude: MathAndBitOps.hpp }
-    TempAddress: { Value: __gsharp_temp_address, Prelude: Types.hpp }
+    TempAddress: { Value: __gsharp_temp_address, Prelude: StandardTypes.hpp }
     # A stack array viewed as a span (StackArrayLocals.AppendView). Declared by Types.hpp and by the CUDA prelude.
     StackAllocSpan: { Value: __gsharp_stackalloc_span, Prelude: Types.hpp }
     # The zero fill of a stackalloc outside a declaration (StackAllocEmitter). Declared by Types.hpp and by the CUDA prelude.

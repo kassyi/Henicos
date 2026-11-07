@@ -355,7 +355,7 @@ public sealed class CSharpCpuBigIntProvider : IGpuExecutionProvider
 
     /// <inheritdoc/>
     public void ReciprocalMega(GpuWorkspace workspace, GpuBigUInt targetOperand, GpuBigUInt resultBuffer,
-        int marginWords, int numBits, int marginBits, int iterations, int targetBits)
+        int marginWords, int iterations, int targetBits)
     {
         var x = Read(targetOperand.DevicePointer, targetOperand.NumWords);
         if (x.IsZero)

@@ -19,7 +19,7 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Helpers;
 /// <para>
 /// [WHY] The emission stage rather than lowering: CUDA does not go through lowering, an expression in a loop condition or
 /// an operand of <c>&amp;&amp;</c> cannot be moved to a statement before it, and the C# tree (analysis, diagnostics,
-/// managed output) stays as written. See <c>tmp/p3-lanes/608-evaluation-order.md</c>.
+/// managed output) stays as written. See #608 (Device calls evaluate arguments in an unspecified order).
 /// </para>
 /// </remarks>
 internal static class EvaluationOrder
