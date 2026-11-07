@@ -238,7 +238,7 @@ public static class GpuBigNumberStackLinqExtensions
             source.AsParallel().Min();
 
         /// <summary>
-        /// Computes the average of a sequence of <typeparamref name="T"/> values: the sum, added as <see cref="Sum"/>
+        /// Computes the average of a sequence of <typeparamref name="T"/> values: the sum, added as <c>Sum()</c>
         /// adds it, divided by the count.
         /// </summary>
         /// <returns>A new <typeparamref name="T"/> containing the average.</returns>
