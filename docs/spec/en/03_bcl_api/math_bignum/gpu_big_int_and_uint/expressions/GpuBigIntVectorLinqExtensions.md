@@ -81,6 +81,8 @@ Two separately built `Where` results cannot be combined element-wise, because th
 
 Applies a scalar addition, subtraction, or multiplication to each element of a vectorized expression using a grid-stride parallel kernel.
 
+Output `WordsPerElement` is `Math.Max(source.WordsPerElement, scalar.NumWords) + 1` for `SelectAdd` and `SelectSubtract`, so the sum or difference never wraps, and `source.WordsPerElement + scalar.NumWords` for `SelectMultiply`.
+
 ```csharp
 public static IGpuBigIntVectorExpression SelectAdd(this IGpuBigIntVectorExpression source, GpuBigInt scalar);
 public static IGpuBigIntVectorExpression SelectSubtract(this IGpuBigIntVectorExpression source, GpuBigInt scalar);
@@ -90,6 +92,8 @@ public static IGpuBigIntVectorExpression SelectMultiply(this IGpuBigIntVectorExp
 ## ZipAdd / ZipSubtract / ZipMultiply
 
 Performs element-wise addition, subtraction, or multiplication across two vectorized expressions of equal length.
+
+Output `WordsPerElement` is `Math.Max(left.WordsPerElement, right.WordsPerElement) + 1` for `ZipAdd` and `ZipSubtract`, so the sum or difference never wraps, and `left.WordsPerElement + right.WordsPerElement` for `ZipMultiply`.
 
 ```csharp
 public static IGpuBigIntVectorExpression ZipAdd(this IGpuBigIntVectorExpression left, IGpuBigIntVectorExpression right);
