@@ -24,7 +24,7 @@ Every design, compiler change and new diagnostic follows it. The full user-facin
 ## 3. Undefined behavior (treated like `1 / 0`)
 
 - A form that is certain at compile time is a compile error; the message shows the explicit form that does what the user meant.
-- A form known only at run time is a run-time error, with the source location, on the native CPU build, the managed path and the checked CUDA build. The release CUDA build does not check.
+- A form known only at run time is a run-time error, with the source location, on the native CPU build, the managed path and the checked CUDA build. The release CUDA build does not check. A check that costs nothing on the path that passes it stays in the release CUDA build, because removing it would leave undefined behavior in the output. An example is the trap after the last arm of a switch expression, which is reached only when no arm matches.
 - A form the analysis can only suspect is not a compile error (never reject correct code).
 - A result a CPU path happens to produce is never treated as correct. When the CPU and GPU results differ, suspect undefined behavior on the GPU first.
 
