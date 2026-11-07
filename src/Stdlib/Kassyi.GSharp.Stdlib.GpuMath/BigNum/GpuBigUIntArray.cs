@@ -52,7 +52,7 @@ public readonly struct GpuBigUIntArray : IDisposable
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="GpuBigUIntArray"/> struct allocating uninitialized GPU device memory.
+    /// Initializes a new instance of the <see cref="GpuBigUIntArray"/> struct allocating zero-filled GPU device memory.
     /// </summary>
     /// <param name="workspace">The GPU workspace managing memory allocations.</param>
     /// <param name="length">The number of elements in the array.</param>

@@ -133,7 +133,7 @@ internal static class DeviceImportAssembler
         functions.Sort(static (a, b) => string.CompareOrdinal(a.Id, b.Id));
         structs.Sort(static (a, b) => string.CompareOrdinal(a.Id, b.Id));
 
-        var source = new StringBuilder();
+        using var source = new SourceWriter();
         foreach (var record in functions)
         {
             source.AppendLine(isCuda ? record.CudaSignature : record.CppSignature);
@@ -319,7 +319,7 @@ internal static class DeviceImportAssembler
 
     // On the CPU dialects a frame embeds the frames of its calls by value, so a callee's body comes before its caller's
     // (as NativeModuleAssembler.AssembleDeviceSource orders the own functions)
-    private static void AppendFunctionBodies(StringBuilder source, ImmutableArray<DeviceExportRecord>.Builder functions,
+    private static void AppendFunctionBodies(SourceWriter source, ImmutableArray<DeviceExportRecord>.Builder functions,
         bool isCuda)
     {
         var byFrame = new Dictionary<string, int>(StringComparer.Ordinal);

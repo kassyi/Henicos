@@ -16,7 +16,7 @@ internal static class StructUnmarshalMethodEmitter
             writer.AppendFullyQualifiedCsharpName(s);
             writer.Append(hasMirror ? $" {StructMarshalingEmitter.MirroredHostParameter}, ref " : " host, ref ");
             writer.AppendAotStructPath(s);
-            writer.Append(" native, bool isDevicePtr, global::System.IntPtr hStream = default");
+            writer.Append(" native, global::System.IntPtr hStream = default");
         }
 
         writer.AppendLine();
@@ -65,7 +65,7 @@ internal static class StructUnmarshalMethodEmitter
             writer.AppendUnmarshalMethodName(member.Type);
             using (writer.Parentheses())
             {
-                writer.Append($"ref host.{member.Name.ToCSharpIdentifier()}, ref native.{member.Name.ToCSharpIdentifier()}, isDevicePtr, hStream");
+                writer.Append($"ref host.{member.Name.ToCSharpIdentifier()}, ref native.{member.Name.ToCSharpIdentifier()}, hStream");
             }
 
             writer.AppendLine(";");
@@ -99,7 +99,7 @@ internal static class StructUnmarshalMethodEmitter
         }
 
         writer.AppendLine(
-            $"if ({host} != null && !isDevicePtr && {native}.Data != global::System.IntPtr.Zero)");
+            $"if ({host} != null && {native}.Data != global::System.IntPtr.Zero)");
         using (writer.Scope())
         {
             StructBlockCopyEmitter.WriteArrayElementSize(writer, host, elementType);
@@ -119,7 +119,7 @@ internal static class StructUnmarshalMethodEmitter
                     using (writer.Scope())
                     {
                         writer.AppendUnmarshalMethodName(elementType);
-                        writer.AppendLine($"(ref {host}[i], ref tempArray[i], false, hStream);");
+                        writer.AppendLine($"(ref {host}[i], ref tempArray[i], hStream);");
                     }
                 }
                 else
@@ -154,7 +154,7 @@ internal static class StructUnmarshalMethodEmitter
             using (writer.Scope())
             {
                 writer.AppendUnmarshalMethodName(elementType);
-                writer.AppendLine($"(ref {host}[i], ref shadow[i], false, hStream);");
+                writer.AppendLine($"(ref {host}[i], ref shadow[i], hStream);");
             }
         }
     }

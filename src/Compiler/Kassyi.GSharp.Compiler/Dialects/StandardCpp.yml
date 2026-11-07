@@ -50,7 +50,6 @@ Intrinsics:
   System.MathF.Abs(float): "fabsf"
   System.MathF.Max(float, float): "__gsharp_max_f32"
   System.MathF.Min(float, float): "__gsharp_min_f32"
-  System.MathF.Clamp(float, float, float): "__gsharp_clamp"
   float.Max(float, float): "__gsharp_max_f32"
   float.Min(float, float): "__gsharp_min_f32"
   float.MaxNumber(float, float): "__gsharp_max_number_f32"

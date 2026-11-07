@@ -97,11 +97,15 @@ public sealed class GpuBigIntMathTests : IDisposable
     [InlineData(-5, 3)]
     [InlineData(3, -5)]
     [InlineData(-3, 5)]
+    [InlineData(5, -5)]
+    [InlineData(-5, 5)]
+    [InlineData(0, 0)]
     public void AddSignedMagnitude_SignTable_MatchesBigIntegerSum(int leftValue, int rightValue)
     {
-        // The magnitude and the returned sign are those of the BigInteger sum. Equal magnitudes with opposite signs
-        // are left out: the sign of a zero sum is #651.
-        // mutant: GpuBigIntMath.cs:82 `return rightNegative` -> `return !rightNegative` / `leftNegative` (3 + -5, -3 + 5)
+        // The magnitude and the returned sign are those of the BigInteger sum. BigInteger has no negative zero, so a
+        // zero sum (equal magnitudes with opposite signs, -5 + 5) must return false.
+        // mutant: GpuBigIntMath.cs:114 `return rightNegative` -> `return !rightNegative` / `leftNegative` (3 + -5, -3 + 5)
+        // mutant: GpuBigIntMath.cs:110 `return comparison > 0 && leftNegative` -> `return leftNegative` (-5 + 5)
         using var left = new GpuBigUInt(_workspace, Words(2, (uint)Math.Abs(leftValue)));
         using var right = new GpuBigUInt(_workspace, Words(2, (uint)Math.Abs(rightValue)));
         using var result = new GpuBigUInt(_workspace, 2);

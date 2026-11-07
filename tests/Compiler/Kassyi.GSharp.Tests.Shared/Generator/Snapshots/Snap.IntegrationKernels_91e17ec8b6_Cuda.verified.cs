@@ -115,11 +115,11 @@ public const string DebugName_BoolVal = "global::System.Boolean";
 [global::System.Runtime.InteropServices.FieldOffset(8)]
 public global::System.Boolean BoolVal;
 }
-public static unsafe void Marshal_Tier1CustomStruct(ref global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1CustomStruct host, ref AotContexts.Tier1CustomStruct native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_Tier1CustomStruct(ref global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1CustomStruct host, ref AotContexts.Tier1CustomStruct native, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
 {
 native = global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1CustomStruct, AotContexts.Tier1CustomStruct>(ref host);
 }
-public static unsafe void Unmarshal_Tier1CustomStruct(ref global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1CustomStruct host, ref AotContexts.Tier1CustomStruct native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_Tier1CustomStruct(ref global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1CustomStruct host, ref AotContexts.Tier1CustomStruct native, global::System.IntPtr hStream = default)
 {
 host = global::System.Runtime.CompilerServices.Unsafe.As<AotContexts.Tier1CustomStruct, global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1CustomStruct>(ref native);
 }

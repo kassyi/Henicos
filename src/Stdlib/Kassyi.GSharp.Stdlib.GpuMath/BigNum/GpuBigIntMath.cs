@@ -73,7 +73,11 @@ public static class GpuBigIntMath
     /// <param name="rightOperand">The magnitude of the right operand.</param>
     /// <param name="rightNegative"><see langword="true"/> if the right operand is negative; otherwise, <see langword="false"/>.</param>
     /// <param name="resultBuffer">The destination buffer receiving the resulting magnitude.</param>
-    /// <returns><see langword="true"/> if the resulting sum is negative; otherwise, <see langword="false"/>.</returns>
+    /// <returns>
+    /// <see langword="true"/> if the resulting sum is negative; otherwise, <see langword="false"/>. A zero magnitude must be passed as
+    /// non-negative; with that, a zero sum is never negative, so operands of equal magnitude and opposite signs return
+    /// <see langword="false"/>.
+    /// </returns>
     public static bool AddSignedMagnitude(
         scoped GpuBigUIntView leftOperand,
         bool leftNegative,
@@ -103,7 +107,8 @@ public static class GpuBigIntMath
         if (comparison >= 0)
         {
             Sub(leftOperand, rightOperand, resultBuffer);
-            return leftNegative;
+            // Equal magnitudes cancel to zero, which is not negative (no negative zero, as in GpuBigInt.Create)
+            return comparison > 0 && leftNegative;
         }
 
         Sub(rightOperand, leftOperand, resultBuffer);
@@ -217,9 +222,7 @@ public static class GpuBigIntMath
                 $"Result buffer must have at least the sum of input buffer sizes for MultiplyNtt. a: {leftOperand.NumWords}, b: {rightOperand.NumWords}, result: {resultBuffer.NumWords} words.");
         }
 
-        if (resultBuffer.NumWords <= 512 &&
-            leftOperand.Workspace.Provider is GSharpKernelProvider &&
-            !GpuKernelLoader.IsCpuFallbackMode)
+        if (resultBuffer.NumWords <= 512 && !GpuKernelLoader.IsCpuFallbackMode)
         {
             GpuBigIntMulKernels.LaunchMultiplyNttKernelPtr(
                 resultBuffer.DevicePointer, resultBuffer.NumWords,
@@ -285,6 +288,7 @@ public static class GpuBigIntMath
     /// <param name="resultBuffer">The destination buffer in GPU device memory receiving the modular inverse.</param>
     /// <exception cref="ArgumentException">Thrown when buffer word lengths do not match.</exception>
     /// <exception cref="ArithmeticException">Thrown when the modular inverse does not exist ($\gcd(\text{value}, \text{modulus}) \neq 1$).</exception>
+    /// <exception cref="InvalidOperationException">Thrown when the GPU binary GCD did not converge within its iteration limit (an internal error).</exception>
     public static void ModInverse(
         scoped GpuBigUIntView value,
         scoped GpuBigUIntView modulus,
@@ -358,7 +362,7 @@ public static class GpuBigIntMath
     private static void ShiftAndResizeCore(GpuBigUInt source, int signedBitShift, GpuBigUInt resultBuffer)
     {
         var workspace = source.Workspace;
-        if (workspace.Provider is GSharpKernelProvider && !GpuKernelLoader.IsCpuFallbackMode)
+        if (!GpuKernelLoader.IsCpuFallbackMode)
         {
             var wordShift = signedBitShift / 32;
             var bitShift = signedBitShift % 32;

@@ -14,7 +14,7 @@ using Xunit;
 namespace Kassyi.GSharp.Tests.Shared.Differential;
 
 /// <summary>
-/// Tests of the differential harness itself (design §4.5, §7 PR 1). Each check names, above it, the one-line change of
+/// Tests of the differential harness itself. Each check names, above it, the one-line change of
 /// the harness (mutant) that makes it fail, as property-test-design §5 asks. The unit tests run fake paths that compute
 /// on the host, so they need neither a GPU nor a native build; the last test runs a real kernel on the paths of the
 /// process.
@@ -515,7 +515,7 @@ public class HarnessTests
         Assert.Equal([false, true], cell.Paths.Select(static p => p.Differs));
         Assert.Equal(5, report.Mismatches[1].Seed);
 
-        // The message names the seed, the cell, the inputs and the values with their bits (design §4.4)
+        // The message names the seed, the cell, the inputs and the values with their bits
         // mutant: DifferentialReport.cs ToString `if (cell.Inputs.Length > 0)` -> `if (false)`
         string message = report.ToString();
         Assert.Contains("Differential mismatch in HarnessTests.FakeAddKernel (oracle: sequential C#)", message);

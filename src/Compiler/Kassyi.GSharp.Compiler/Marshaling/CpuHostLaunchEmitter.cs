@@ -219,7 +219,7 @@ internal static class CpuHostLaunchEmitter
         {
             case { IsCpuConvertedStruct: true, MarshalMethodName: { } marshal }:
                 writer.AppendLine(
-                    $"{marshal}(ref {shape.Identifier}, ref {KernelHostNames.GetLocal(LauncherLocal.Native, shape)}, false, {KernelHostNames.GetLocal(LauncherLocal.AllocatedPointers, shape)}, hStream);");
+                    $"{marshal}(ref {shape.Identifier}, ref {KernelHostNames.GetLocal(LauncherLocal.Native, shape)}, {KernelHostNames.GetLocal(LauncherLocal.AllocatedPointers, shape)}, hStream);");
                 break;
             case { IsCpuConvertedArray: true } when sharing.HasShadowSource(index):
                 var sharedShadow = KernelHostNames.GetLocal(LauncherLocal.SharedShadow, shape);
@@ -278,8 +278,8 @@ internal static class CpuHostLaunchEmitter
         writer.AppendLine("null;");
     }
 
-    // Unmarshal_<S>(ref <name>, ref __gsharp_native_<ord>, false, hStream);                                     (converted struct)
-    // for (...) Unmarshal_<E>(ref __gsharp_host_<ord>[i], ref __gsharp_native_<ord>[i], false, hStream);  (converted array, copied back)
+    // Unmarshal_<S>(ref <name>, ref __gsharp_native_<ord>, hStream);                                     (converted struct)
+    // for (...) Unmarshal_<E>(ref __gsharp_host_<ord>[i], ref __gsharp_native_<ord>[i], hStream);  (converted array, copied back)
     // The array goes through the spans that the marshaling declared in the same try block.
     // [WHY] A struct by value is unmarshaled as well: its own fields go back only to Launch's copy, but an array field
     // whose elements are converted shares the caller's array, whose elements must get the kernel's writes
@@ -288,7 +288,7 @@ internal static class CpuHostLaunchEmitter
         switch (shape)
         {
             case { IsCpuConvertedStruct: true, UnmarshalMethodName: { } unmarshal }:
-                writer.AppendLine($"{unmarshal}(ref {shape.Identifier}, ref {KernelHostNames.GetLocal(LauncherLocal.Native, shape)}, false, hStream);");
+                writer.AppendLine($"{unmarshal}(ref {shape.Identifier}, ref {KernelHostNames.GetLocal(LauncherLocal.Native, shape)}, hStream);");
                 break;
             case { IsCpuConvertedArray: true, CopyOut: true, IsReadOnlyContainer: false }:
                 ConvertedArrayEmitter.WriteElementUnmarshalLoop(writer, shape, shape.Cpu);
