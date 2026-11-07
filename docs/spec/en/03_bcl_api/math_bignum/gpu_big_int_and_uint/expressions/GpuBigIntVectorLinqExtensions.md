@@ -110,6 +110,8 @@ public static IGpuBigIntVectorExpression ZipModulo(this IGpuBigIntVectorExpressi
 
 A zero divisor throws `DivideByZeroException` during evaluation, as C# integer division does: a zero scalar before any element is computed, a zero element of `right` after the launch. `ZipDivide` and `ZipModulo` read that check back from the device (one synchronization of the workspace stream), so evaluating them while the stream captures a CUDA graph throws `NotSupportedException`.
 
+When the widest of the operands and the result has more than 512 words, each evaluation allocates `2 * width` words of temporary device memory per element (4 bytes each: about 480 MB for 100,000 elements of 600 words) and releases it after the launch.
+
 ## Skip / Take
 
 Slices a vectorized sequence by bypassing `count` leading elements (`Skip`) or taking `count` contiguous elements from the start (`Take`). Throws `ArgumentNullException` if `source` is `null`.

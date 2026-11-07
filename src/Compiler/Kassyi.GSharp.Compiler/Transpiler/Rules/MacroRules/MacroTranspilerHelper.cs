@@ -46,14 +46,14 @@ internal static class MacroTranspilerHelper
     public static bool TryBeginMacroScope(
         InvocationExpressionSyntax invocation,
         LambdaExpressionSyntax lambdaExpr,
-        bool hasContext,
+        GpuMacroCall call,
         SeparatedSyntaxList<ArgumentSyntax> args,
         ref TranspileContext context,
         string macroName,
         out MacroScope scope)
     {
         scope = default;
-        if (GpuCodeConstraints.GetMacroLoopParameter(lambdaExpr, hasContext) is not
+        if (GpuCodeConstraints.GetMacroLoopParameter(lambdaExpr, call.HasContext) is not
             { Identifier.Text.Length: > 0 } param)
         {
             context.Reporter.Fail(GSharpDiagnostics.MacroLambdaRequiresParameter, invocation, macroName);
@@ -62,10 +62,11 @@ internal static class MacroTranspilerHelper
 
         ParameterSyntax? contextParam = null;
         ExpressionSyntax? contextArgExpr = null;
-        if (hasContext && lambdaExpr is ParenthesizedLambdaExpressionSyntax parenLambda)
+        if (call.GetContext(args) is { } contextArgument &&
+            lambdaExpr is ParenthesizedLambdaExpressionSyntax parenLambda)
         {
             contextParam = parenLambda.ParameterList.Parameters[0];
-            contextArgExpr = args[0].Expression;
+            contextArgExpr = contextArgument;
         }
 
         scope = new MacroScope(ref context, param, contextParam, contextArgExpr);
