@@ -237,7 +237,8 @@ public sealed class DifferentialReport
         {
             text.AppendLine(
                 $"  known divergence {stale.Entry} no longer differs on {Name(stale.Path)} for any seed: " +
-                $"remove it from {nameof(KnownDivergences)} (or narrow its paths) and close #{stale.Entry.Issue} if it is fixed"
+                $"remove it from {nameof(KnownDivergences)}.yaml (or narrow its paths) " +
+                $"and close #{stale.Entry.Issue} if it is fixed"
             );
         }
 
