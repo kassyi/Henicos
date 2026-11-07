@@ -2,7 +2,7 @@
 namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum.Expressions;
 
 /// <summary>
-/// Lifetime of the result buffers of vector expressions (design 4.6): a node caches its result and lends it until the
+/// Lifetime of the result buffers of vector expressions: a node caches its result and lends it until the
 /// next evaluation or its disposal, grows the cache when a longer evaluation needs it, and never owns or frees a target
 /// the caller passes (#630-2, #630-3, #635-1).
 /// </summary>
@@ -434,7 +434,7 @@ public sealed class ExpressionLifetimeTests : IDisposable
     [Scenario(TestScenario.Boundary)]
     public void Leaf_Result_DoesNotOwnTheArray()
     {
-        // The leaf lends the user's array: the result owns nothing (Minor 2, design 4.6).
+        // The leaf lends the user's array: the result owns nothing .
         // mutant: the leaf returns the user's array itself (it owns its buffers)
         using var array = CreateArray([1, 2]);
         using var expression = array.AsVectorizedEnumerable();

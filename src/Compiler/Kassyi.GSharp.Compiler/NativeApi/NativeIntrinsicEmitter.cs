@@ -296,7 +296,7 @@ internal static class NativeIntrinsicEmitter
             return template;
         }
 
-        var sb = new StringBuilder(template.Length + replacement.Length);
+        using var replaced = new SourceWriter();
         var copied = 0;
         var index = template.IndexOf(placeholder, StringComparison.Ordinal);
         while (index >= 0)
@@ -307,13 +307,14 @@ internal static class NativeIntrinsicEmitter
                 (end == template.Length || !SyntaxFacts.IsIdentifierPartCharacter(template[end]));
             if (isWholeIdentifier)
             {
-                sb.Append(template, copied, index - copied).Append(replacement);
+                replaced.Append(template, copied, index - copied).Append(replacement);
                 copied = end;
             }
 
             index = template.IndexOf(placeholder, end, StringComparison.Ordinal);
         }
 
-        return sb.Append(template, copied, template.Length - copied).ToString();
+        replaced.Append(template, copied, template.Length - copied);
+        return replaced.ToString();
     }
 }
