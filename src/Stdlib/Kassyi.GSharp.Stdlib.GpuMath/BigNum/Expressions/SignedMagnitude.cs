@@ -53,8 +53,8 @@ internal static class SignedMagnitude
     }
 
     /// <summary>
-    /// <c>result = a + 1</c> on the width of <paramref name="a"/>, reporting an overflow of <paramref name="node"/> when
-    /// <paramref name="a"/> is all ones.
+    /// <c>result = a + 1</c> on the width of <paramref name="a"/>, reporting an overflow of <paramref name="node"/>
+    /// when <paramref name="a"/> is all ones.
     /// </summary>
     /// <param name="a">The magnitude.</param>
     /// <param name="result">The result; it must not overlap <paramref name="a"/>.</param>
@@ -62,7 +62,9 @@ internal static class SignedMagnitude
     /// <param name="operation">The operator of <paramref name="node"/>.</param>
     /// <param name="operatorStackTrace">The stack trace of the operator, when captured.</param>
     /// <exception cref="ArgumentException">The magnitudes do not have the same number of words.</exception>
-    /// <exception cref="GpuOverflowException">The sum overflowed (CPU fallback mode only; on the GPU, at the next read).</exception>
+    /// <exception cref="GpuOverflowException">
+    /// The sum overflowed (CPU fallback mode only; on the GPU, at the next read).
+    /// </exception>
     public static void IncrementChecked(GpuBigUInt a, GpuBigUInt result, IGpuBigIntExpression node, string operation,
         StackTrace? operatorStackTrace)
     {

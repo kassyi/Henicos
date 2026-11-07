@@ -215,8 +215,8 @@ public class SignedExpressionsTests : IDisposable
     [Scenario(TestScenario.SadPath)]
     public void BitwiseNot_InCapturedGraph_NonNegativeRuns_NegativeIsNotSupported()
     {
-        // ~x of x >= 0 adds no host read, so it runs in a CUDA graph; for x < 0 the sign of the result depends on whether
-        // |x| is zero, which a graph cannot read, so the capture fails explicitly instead of with a CUDA error.
+        // ~x of x >= 0 adds no host read, so it runs in a CUDA graph; for x < 0 the sign of the result depends on
+        // whether |x| is zero, which a graph cannot read, so the capture fails explicitly instead of with a CUDA error.
         // mutant: SignedBitwiseNotExpression without the IsCapturing check (CudaException from the capture)
         var positive = Create(_context, 5, 1);
         using (var graph = (~(GpuBigIntExpr)positive).CompileToGraph(_context))

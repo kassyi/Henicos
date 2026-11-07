@@ -149,8 +149,8 @@ public sealed class ExpressionDisposalTests : IDisposable
 
         var leftVec = _array1.AsVectorizedEnumerable().SelectAdd(_scalar);
         var rightVec = _array2.AsVectorizedEnumerable().SelectAdd(_scalar);
-        // Both terms are negative (~c == -c - 1), so the sum adds magnitudes and needs no host comparison in the capture;
-        // the double negation keeps a negation node in the tree
+        // Both terms are negative (~c == -c - 1), so the sum adds magnitudes and needs no host comparison in the
+        // capture; the double negation keeps a negation node in the tree
         var compound = -(leftVec.Where(leftVec.IsGreaterThan(_zero)).Count()) +
                        (~(-(-(rightVec.Where(rightVec.IsGreaterThan(_zero)).Count()))));
 

@@ -105,8 +105,8 @@ public readonly struct GpuBigIntExpr : IDisposable
         => new(new SignedNegateExpression(left.Node));
 
     /// <summary>
-    /// Constructs a lazy bitwise NOT expression for the specified signed big integer expression: <c>~x == -x - 1</c>, as
-    /// for <see cref="BigInteger"/>.
+    /// Constructs a lazy bitwise NOT expression for the specified signed big integer expression: <c>~x == -x - 1</c>,
+    /// as for <see cref="BigInteger"/>.
     /// </summary>
     /// <param name="left">The signed expression operand.</param>
     /// <returns>A new <see cref="GpuBigIntExpr"/> representing the bitwise NOT AST node.</returns>
