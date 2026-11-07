@@ -1231,14 +1231,9 @@ return __gsharp_fusion_res;
 }
 ";
 public static readonly string DividingSelectSkipKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +DividingSelectSkipKernel_Source;
-private static global::System.IntPtr? __gsharp_hfunc_DividingSelectSkipKernel;
-/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
-public static void WarmupFunctionPointerDividingSelectSkipKernel()
-{
-if (__gsharp_hfunc_DividingSelectSkipKernel.HasValue) return;
-global::System.IntPtr __gsharp_hmodule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
-__gsharp_hfunc_DividingSelectSkipKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(__gsharp_hmodule, "__gsharp_k_Kassyi__GSharp__Tests__Shared__Runtime__StackLinqRangeKernels__DividingSelectSkipKernel");
-}
+private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_DividingSelectSkipKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Runtime__StackLinqRangeKernels__DividingSelectSkipKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
+public static void WarmupFunctionPointerDividingSelectSkipKernel() => global::Kassyi.GSharp.Tests.Shared.Runtime.StackLinqRangeKernels.__gsharp_hfunc_DividingSelectSkipKernel.Resolve();
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -1258,8 +1253,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Runtime.StackLinqRangeKernels.WarmupFunctionPointerDividingSelectSkipKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_DividingSelectSkipKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Runtime.StackLinqRangeKernels.__gsharp_hfunc_DividingSelectSkipKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "StackLinqRangeKernels.DividingSelectSkipKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 global::System.IntPtr __gsharp_d_1 = global::System.IntPtr.Zero;
@@ -1350,8 +1344,7 @@ public static unsafe void LaunchDividingSelectSkipKernelPtr(global::System.IntPt
 {
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Runtime.StackLinqRangeKernels.WarmupFunctionPointerDividingSelectSkipKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_DividingSelectSkipKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Runtime.StackLinqRangeKernels.__gsharp_hfunc_DividingSelectSkipKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "StackLinqRangeKernels.DividingSelectSkipKernel");
 try
 {
@@ -1412,14 +1405,9 @@ return __gsharp_fusion_res;
 }
 ";
 public static readonly string IndexingSelectSkipKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +IndexingSelectSkipKernel_Source;
-private static global::System.IntPtr? __gsharp_hfunc_IndexingSelectSkipKernel;
-/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
-public static void WarmupFunctionPointerIndexingSelectSkipKernel()
-{
-if (__gsharp_hfunc_IndexingSelectSkipKernel.HasValue) return;
-global::System.IntPtr __gsharp_hmodule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
-__gsharp_hfunc_IndexingSelectSkipKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(__gsharp_hmodule, "__gsharp_k_Kassyi__GSharp__Tests__Shared__Runtime__StackLinqRangeKernels__IndexingSelectSkipKernel");
-}
+private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_IndexingSelectSkipKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Runtime__StackLinqRangeKernels__IndexingSelectSkipKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
+public static void WarmupFunctionPointerIndexingSelectSkipKernel() => global::Kassyi.GSharp.Tests.Shared.Runtime.StackLinqRangeKernels.__gsharp_hfunc_IndexingSelectSkipKernel.Resolve();
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -1445,8 +1433,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Runtime.StackLinqRangeKernels.WarmupFunctionPointerIndexingSelectSkipKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_IndexingSelectSkipKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Runtime.StackLinqRangeKernels.__gsharp_hfunc_IndexingSelectSkipKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "StackLinqRangeKernels.IndexingSelectSkipKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 global::System.IntPtr __gsharp_d_1 = global::System.IntPtr.Zero;
@@ -1576,8 +1563,7 @@ public static unsafe void LaunchIndexingSelectSkipKernelPtr(global::System.IntPt
 {
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Runtime.StackLinqRangeKernels.WarmupFunctionPointerIndexingSelectSkipKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_IndexingSelectSkipKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Runtime.StackLinqRangeKernels.__gsharp_hfunc_IndexingSelectSkipKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "StackLinqRangeKernels.IndexingSelectSkipKernel");
 try
 {
