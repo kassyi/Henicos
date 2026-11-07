@@ -78,7 +78,7 @@ public const string DebugName_X = "global::System.Int32";
 [global::System.Runtime.InteropServices.FieldOffset(16)]
 public global::System.Int32 X;
 }
-public static unsafe void Marshal_NullArrayHolder(ref global::Kassyi.GSharp.Tests.Shared.Core.NullArrayHolder host, ref AotContexts.NullArrayHolder native, bool isDevicePtr, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_NullArrayHolder(ref global::Kassyi.GSharp.Tests.Shared.Core.NullArrayHolder host, ref AotContexts.NullArrayHolder native, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
 {
 native = default;
 if (host.Data != null)
@@ -91,7 +91,7 @@ native.Data.Length = host.Data.Length;
 }
 native.X = host.X;
 }
-public static unsafe void Unmarshal_NullArrayHolder(ref global::Kassyi.GSharp.Tests.Shared.Core.NullArrayHolder host, ref AotContexts.NullArrayHolder native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_NullArrayHolder(ref global::Kassyi.GSharp.Tests.Shared.Core.NullArrayHolder host, ref AotContexts.NullArrayHolder native, global::System.IntPtr hStream = default)
 {
 host.X = native.X;
 }
@@ -131,7 +131,7 @@ public const string DebugName_B = "global::System.Int32[]";
 [global::System.Runtime.InteropServices.FieldOffset(16)]
 public global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy B;
 }
-public static unsafe void Marshal_NullArrayPair(ref global::Kassyi.GSharp.Tests.Shared.Core.NullArrayPair host, ref AotContexts.NullArrayPair native, bool isDevicePtr, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_NullArrayPair(ref global::Kassyi.GSharp.Tests.Shared.Core.NullArrayPair host, ref AotContexts.NullArrayPair native, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
 {
 native = default;
 if (host.A != null)
@@ -151,7 +151,7 @@ native.B.Data = handle.AddrOfPinnedObject();
 native.B.Length = host.B.Length;
 }
 }
-public static unsafe void Unmarshal_NullArrayPair(ref global::Kassyi.GSharp.Tests.Shared.Core.NullArrayPair host, ref AotContexts.NullArrayPair native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_NullArrayPair(ref global::Kassyi.GSharp.Tests.Shared.Core.NullArrayPair host, ref AotContexts.NullArrayPair native, global::System.IntPtr hStream = default)
 {
 }
 public static void CopyArrays_NullArrayPair(ref global::Kassyi.GSharp.Tests.Shared.Core.NullArrayPair host)
@@ -438,13 +438,13 @@ global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.NullAr
 var __gsharp_allocated_ptrs_0 = new global::System.Collections.Generic.List<global::System.IntPtr>();
 try
 {
-global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.Marshal_NullArrayHolder(ref h, ref __gsharp_native_0, false, __gsharp_allocated_ptrs_0, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.Marshal_NullArrayHolder(ref h, ref __gsharp_native_0, __gsharp_allocated_ptrs_0, hStream);
 fixed (global::System.Int32* __gsharp_p_1 = o)
 {
 __gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, &__gsharp_native_0, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_1, Length = o.Length });
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
 }
-global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.Unmarshal_NullArrayHolder(ref h, ref __gsharp_native_0, false, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.Unmarshal_NullArrayHolder(ref h, ref __gsharp_native_0, hStream);
 }
 finally
 {
@@ -700,13 +700,13 @@ global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.NullAr
 var __gsharp_allocated_ptrs_0 = new global::System.Collections.Generic.List<global::System.IntPtr>();
 try
 {
-global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.Marshal_NullArrayHolder(ref h, ref __gsharp_native_0, false, __gsharp_allocated_ptrs_0, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.Marshal_NullArrayHolder(ref h, ref __gsharp_native_0, __gsharp_allocated_ptrs_0, hStream);
 fixed (global::System.Int32* __gsharp_p_1 = o)
 {
 __gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, &__gsharp_native_0, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_1, Length = o.Length });
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
 }
-global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.Unmarshal_NullArrayHolder(ref h, ref __gsharp_native_0, false, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.Unmarshal_NullArrayHolder(ref h, ref __gsharp_native_0, hStream);
 }
 finally
 {
@@ -964,13 +964,13 @@ global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.NullAr
 var __gsharp_allocated_ptrs_0 = new global::System.Collections.Generic.List<global::System.IntPtr>();
 try
 {
-global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.Marshal_NullArrayHolder(ref h, ref __gsharp_native_0, false, __gsharp_allocated_ptrs_0, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.Marshal_NullArrayHolder(ref h, ref __gsharp_native_0, __gsharp_allocated_ptrs_0, hStream);
 fixed (global::System.Int32* __gsharp_p_1 = o)
 {
 __gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, &__gsharp_native_0, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_1, Length = o.Length });
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
 }
-global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.Unmarshal_NullArrayHolder(ref h, ref __gsharp_native_0, false, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.Unmarshal_NullArrayHolder(ref h, ref __gsharp_native_0, hStream);
 }
 finally
 {
@@ -1233,13 +1233,13 @@ global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.NullAr
 var __gsharp_allocated_ptrs_0 = new global::System.Collections.Generic.List<global::System.IntPtr>();
 try
 {
-global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.Marshal_NullArrayHolder(ref h, ref __gsharp_native_0, false, __gsharp_allocated_ptrs_0, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.Marshal_NullArrayHolder(ref h, ref __gsharp_native_0, __gsharp_allocated_ptrs_0, hStream);
 fixed (global::System.Int32* __gsharp_p_1 = o)
 {
 __gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, &__gsharp_native_0, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_1, Length = o.Length });
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
 }
-global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.Unmarshal_NullArrayHolder(ref h, ref __gsharp_native_0, false, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.Unmarshal_NullArrayHolder(ref h, ref __gsharp_native_0, hStream);
 }
 finally
 {
@@ -1497,13 +1497,13 @@ global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.NullAr
 var __gsharp_allocated_ptrs_0 = new global::System.Collections.Generic.List<global::System.IntPtr>();
 try
 {
-global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.Marshal_NullArrayHolder(ref h, ref __gsharp_native_0, false, __gsharp_allocated_ptrs_0, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.Marshal_NullArrayHolder(ref h, ref __gsharp_native_0, __gsharp_allocated_ptrs_0, hStream);
 fixed (global::System.Int32* __gsharp_p_1 = o)
 {
 __gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, &__gsharp_native_0, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_1, Length = o.Length });
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
 }
-global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.Unmarshal_NullArrayHolder(ref h, ref __gsharp_native_0, false, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.Unmarshal_NullArrayHolder(ref h, ref __gsharp_native_0, hStream);
 }
 finally
 {
@@ -2013,13 +2013,13 @@ global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.NullAr
 var __gsharp_allocated_ptrs_0 = new global::System.Collections.Generic.List<global::System.IntPtr>();
 try
 {
-global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.Marshal_NullArrayHolder(ref h, ref __gsharp_native_0, false, __gsharp_allocated_ptrs_0, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.Marshal_NullArrayHolder(ref h, ref __gsharp_native_0, __gsharp_allocated_ptrs_0, hStream);
 fixed (global::System.Int32* __gsharp_p_1 = o)
 {
 __gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, &__gsharp_native_0, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_1, Length = o.Length });
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
 }
-global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.Unmarshal_NullArrayHolder(ref h, ref __gsharp_native_0, false, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.Unmarshal_NullArrayHolder(ref h, ref __gsharp_native_0, hStream);
 }
 finally
 {
@@ -2277,13 +2277,13 @@ global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.NullAr
 var __gsharp_allocated_ptrs_0 = new global::System.Collections.Generic.List<global::System.IntPtr>();
 try
 {
-global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.Marshal_NullArrayHolder(ref h, ref __gsharp_native_0, false, __gsharp_allocated_ptrs_0, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.Marshal_NullArrayHolder(ref h, ref __gsharp_native_0, __gsharp_allocated_ptrs_0, hStream);
 fixed (global::System.Int32* __gsharp_p_1 = o)
 {
 __gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, &__gsharp_native_0, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_1, Length = o.Length });
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
 }
-global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.Unmarshal_NullArrayHolder(ref h, ref __gsharp_native_0, false, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.Unmarshal_NullArrayHolder(ref h, ref __gsharp_native_0, hStream);
 }
 finally
 {
@@ -2550,13 +2550,13 @@ global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.NullAr
 var __gsharp_allocated_ptrs_0 = new global::System.Collections.Generic.List<global::System.IntPtr>();
 try
 {
-global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.Marshal_NullArrayHolder(ref h, ref __gsharp_native_0, false, __gsharp_allocated_ptrs_0, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.Marshal_NullArrayHolder(ref h, ref __gsharp_native_0, __gsharp_allocated_ptrs_0, hStream);
 fixed (global::System.Int32* __gsharp_p_1 = o)
 {
 __gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, &__gsharp_native_0, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_1, Length = o.Length });
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
 }
-global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.Unmarshal_NullArrayHolder(ref h, ref __gsharp_native_0, false, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.Unmarshal_NullArrayHolder(ref h, ref __gsharp_native_0, hStream);
 }
 finally
 {
@@ -3068,7 +3068,7 @@ var __gsharp_native_0 = global::System.Runtime.InteropServices.MemoryMarshal.Cas
 global::System.Span<global::Kassyi.GSharp.Tests.Shared.Core.NullArrayHolder> __gsharp_host_0 = holders;
 for (int __gsharp_index_0 = 0; __gsharp_index_0 < __gsharp_native_0.Length; __gsharp_index_0++)
 {
-global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.Marshal_NullArrayHolder(ref __gsharp_host_0[__gsharp_index_0], ref __gsharp_native_0[__gsharp_index_0], false, __gsharp_allocated_ptrs_0, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.Marshal_NullArrayHolder(ref __gsharp_host_0[__gsharp_index_0], ref __gsharp_native_0[__gsharp_index_0], __gsharp_allocated_ptrs_0, hStream);
 }
 fixed (byte* __gsharp_p_0 = __gsharp_shadow_0)
 fixed (global::System.Int32* __gsharp_p_1 = o)
@@ -3078,7 +3078,7 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dl
 }
 for (int __gsharp_index_0 = 0; __gsharp_index_0 < __gsharp_native_0.Length; __gsharp_index_0++)
 {
-global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.Unmarshal_NullArrayHolder(ref __gsharp_host_0[__gsharp_index_0], ref __gsharp_native_0[__gsharp_index_0], false, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.Unmarshal_NullArrayHolder(ref __gsharp_host_0[__gsharp_index_0], ref __gsharp_native_0[__gsharp_index_0], hStream);
 }
 }
 finally
@@ -3340,13 +3340,13 @@ global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.NullAr
 var __gsharp_allocated_ptrs_0 = new global::System.Collections.Generic.List<global::System.IntPtr>();
 try
 {
-global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.Marshal_NullArrayPair(ref p, ref __gsharp_native_0, false, __gsharp_allocated_ptrs_0, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.Marshal_NullArrayPair(ref p, ref __gsharp_native_0, __gsharp_allocated_ptrs_0, hStream);
 fixed (global::System.Int32* __gsharp_p_1 = o)
 {
 __gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, &__gsharp_native_0, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_1, Length = o.Length });
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
 }
-global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.Unmarshal_NullArrayPair(ref p, ref __gsharp_native_0, false, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.Unmarshal_NullArrayPair(ref p, ref __gsharp_native_0, hStream);
 }
 finally
 {
@@ -3680,13 +3680,13 @@ global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.NullAr
 var __gsharp_allocated_ptrs_0 = new global::System.Collections.Generic.List<global::System.IntPtr>();
 try
 {
-global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.Marshal_NullArrayHolder(ref h, ref __gsharp_native_0, false, __gsharp_allocated_ptrs_0, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.Marshal_NullArrayHolder(ref h, ref __gsharp_native_0, __gsharp_allocated_ptrs_0, hStream);
 fixed (global::System.Int32* __gsharp_p_1 = o)
 {
 __gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, &__gsharp_native_0, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_1, Length = o.Length });
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
 }
-global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.Unmarshal_NullArrayHolder(ref h, ref __gsharp_native_0, false, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.Unmarshal_NullArrayHolder(ref h, ref __gsharp_native_0, hStream);
 }
 finally
 {
@@ -3942,13 +3942,13 @@ global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.NullAr
 var __gsharp_allocated_ptrs_0 = new global::System.Collections.Generic.List<global::System.IntPtr>();
 try
 {
-global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.Marshal_NullArrayHolder(ref h, ref __gsharp_native_0, false, __gsharp_allocated_ptrs_0, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.Marshal_NullArrayHolder(ref h, ref __gsharp_native_0, __gsharp_allocated_ptrs_0, hStream);
 fixed (global::System.Int32* __gsharp_p_1 = o)
 {
 __gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, &__gsharp_native_0, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_1, Length = o.Length });
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
 }
-global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.Unmarshal_NullArrayHolder(ref h, ref __gsharp_native_0, false, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.Unmarshal_NullArrayHolder(ref h, ref __gsharp_native_0, hStream);
 }
 finally
 {
@@ -4204,13 +4204,13 @@ global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.NullAr
 var __gsharp_allocated_ptrs_0 = new global::System.Collections.Generic.List<global::System.IntPtr>();
 try
 {
-global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.Marshal_NullArrayHolder(ref h, ref __gsharp_native_0, false, __gsharp_allocated_ptrs_0, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.Marshal_NullArrayHolder(ref h, ref __gsharp_native_0, __gsharp_allocated_ptrs_0, hStream);
 fixed (global::System.Int32* __gsharp_p_1 = o)
 {
 __gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, &__gsharp_native_0, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_1, Length = o.Length });
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
 }
-global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.Unmarshal_NullArrayHolder(ref h, ref __gsharp_native_0, false, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.Unmarshal_NullArrayHolder(ref h, ref __gsharp_native_0, hStream);
 }
 finally
 {
@@ -4504,14 +4504,14 @@ global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.NullAr
 var __gsharp_allocated_ptrs_0 = new global::System.Collections.Generic.List<global::System.IntPtr>();
 try
 {
-global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.Marshal_NullArrayHolder(ref h, ref __gsharp_native_0, false, __gsharp_allocated_ptrs_0, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.Marshal_NullArrayHolder(ref h, ref __gsharp_native_0, __gsharp_allocated_ptrs_0, hStream);
 fixed (global::System.Int32* __gsharp_p_1 = values)
 fixed (global::System.Int32* __gsharp_p_2 = o)
 {
 __gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, &__gsharp_native_0, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_1, Length = values.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_2, Length = o.Length });
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
 }
-global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.Unmarshal_NullArrayHolder(ref h, ref __gsharp_native_0, false, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.Unmarshal_NullArrayHolder(ref h, ref __gsharp_native_0, hStream);
 }
 finally
 {
@@ -4774,14 +4774,14 @@ global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.NullAr
 var __gsharp_allocated_ptrs_0 = new global::System.Collections.Generic.List<global::System.IntPtr>();
 try
 {
-global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.Marshal_NullArrayHolder(ref h, ref __gsharp_native_0, false, __gsharp_allocated_ptrs_0, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.Marshal_NullArrayHolder(ref h, ref __gsharp_native_0, __gsharp_allocated_ptrs_0, hStream);
 fixed (global::System.Int32* __gsharp_p_1 = o)
 fixed (global::System.Int32* __gsharp_p_2 = bias)
 {
 __gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, &__gsharp_native_0, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_1, Length = o.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_2, Length = (bias?.Length ?? 0), Flags = bias is null ? global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.NullReadsAsEmpty : 0 });
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
 }
-global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.Unmarshal_NullArrayHolder(ref h, ref __gsharp_native_0, false, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.Unmarshal_NullArrayHolder(ref h, ref __gsharp_native_0, hStream);
 }
 finally
 {
@@ -5313,15 +5313,15 @@ global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.NullAr
 var __gsharp_allocated_ptrs_1 = new global::System.Collections.Generic.List<global::System.IntPtr>();
 try
 {
-global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.Marshal_NullArrayHolder(ref h, ref __gsharp_native_0, false, __gsharp_allocated_ptrs_0, hStream);
-global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.Marshal_NullArrayHolder(ref g, ref __gsharp_native_1, false, __gsharp_allocated_ptrs_1, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.Marshal_NullArrayHolder(ref h, ref __gsharp_native_0, __gsharp_allocated_ptrs_0, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.Marshal_NullArrayHolder(ref g, ref __gsharp_native_1, __gsharp_allocated_ptrs_1, hStream);
 fixed (global::System.Int32* __gsharp_p_2 = o)
 {
 __gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, &__gsharp_native_0, &__gsharp_native_1, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_2, Length = o.Length });
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
 }
-global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.Unmarshal_NullArrayHolder(ref h, ref __gsharp_native_0, false, hStream);
-global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.Unmarshal_NullArrayHolder(ref g, ref __gsharp_native_1, false, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.Unmarshal_NullArrayHolder(ref h, ref __gsharp_native_0, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.AotContexts.Unmarshal_NullArrayHolder(ref g, ref __gsharp_native_1, hStream);
 }
 finally
 {

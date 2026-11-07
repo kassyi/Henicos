@@ -154,13 +154,10 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
         using var x1 = workspace.RentTemp(numWords);
         using var x2 = workspace.RentTemp(numWords);
         using var statusBuf = workspace.RentTemp(1);
-        statusBuf.Clear();
 
         workspace.Provider.CopyDeviceToDevice(u.DevicePointer, value.DevicePointer, numWords, workspace.Stream);
         workspace.Provider.CopyDeviceToDevice(v.DevicePointer, modulus.DevicePointer, numWords, workspace.Stream);
 
-        x1.Clear();
-        x2.Clear();
         workspace.Provider.WriteWord(x1.DevicePointer, 0, 1, workspace.Stream);
 
         // Max iterations for binary GCD is up to 4 * bits
@@ -188,7 +185,7 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
             case 2:
                 throw new ArithmeticException("ModInverse failed: The two numbers are not coprime (GCD is not 1).");
             case 0:
-                throw new Exception("ModInverse failed: Macro kernel did not converge within max iterations.");
+                throw new InvalidOperationException("ModInverse failed: Macro kernel did not converge within max iterations.");
             default:
                 workspace.Provider.CopyDeviceToDevice(resultBuffer.DevicePointer, x1.DevicePointer, numWords,
                     workspace.Stream);
@@ -205,7 +202,6 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
 
         var constant3Words = 3 * n + 2 * marginWords;
         using var constant3 = new GpuBigUInt(workspace, constant3Words);
-        constant3.Clear();
         var hostConstant3 = ArrayPool<uint>.Shared.Rent(constant3Words);
         try
         {
@@ -301,7 +297,6 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
 
         var constantWords = n + 2 * resultWords; // Prevent OOB access during ExecuteSub
         using var constant = new GpuBigUInt(workspace, constantWords);
-        constant.Clear();
         var hostConstant = ArrayPool<uint>.Shared.Rent(constantWords);
         try
         {
@@ -318,11 +313,8 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
         }
 
         using var currentProduct = new GpuBigUInt(workspace, n + resultWords);
-        currentProduct.Clear();
         using var diff = new GpuBigUInt(workspace, n + resultWords);
-        diff.Clear();
         using var nextIter = new GpuBigUInt(workspace, n + 2 * resultWords);
-        nextIter.Clear();
 
         var maxOutWords = n + 2 * resultWords;
         var requiredLen = maxOutWords;

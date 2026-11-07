@@ -446,7 +446,6 @@ public static partial class GpuBigIntDivRem
         qbTrunc.CopyFrom(qb, numWords: Math.Min(quotientBuffer.NumWords + n, evalWords));
 
         using var leftOperandExtended = new GpuBigUInt(rightOperand.Workspace, evalWords);
-        leftOperandExtended.Clear();
         leftOperandExtended.CopyFrom(leftOperand, numWords: Math.Min(nA, evalWords));
 
         using var remainderExtended = new GpuBigUInt(rightOperand.Workspace, evalWords);
@@ -458,7 +457,6 @@ public static partial class GpuBigIntDivRem
         if (underflow)
         {
             using var bPaddedExtended = new GpuBigUInt(rightOperand.Workspace, evalWords);
-            bPaddedExtended.Clear();
             bPaddedExtended.CopyFrom(rightOperand, numWords: Math.Min(n, evalWords));
 
             var correctionCtx = new BarrettCorrectionContext(
@@ -468,7 +466,6 @@ public static partial class GpuBigIntDivRem
         else
         {
             using var bPaddedExtended = new GpuBigUInt(rightOperand.Workspace, evalWords);
-            bPaddedExtended.Clear();
             bPaddedExtended.CopyFrom(rightOperand, numWords: Math.Min(rightOperand.NumWords, evalWords));
 
             var correctionCtx = new BarrettCorrectionContext(
@@ -549,18 +546,15 @@ public static partial class GpuBigIntDivRem
         var evalWords = quotientBuffer.NumWords + n + 1;
 
         using var qbTrunc = new GpuBigUInt(rightOperand.Workspace, evalWords);
-        qbTrunc.Clear();
         qbTrunc.CopyFrom(qb, numWords: Math.Min(quotientBuffer.NumWords + n, evalWords));
 
         using var leftOperandExtended = new GpuBigUInt(rightOperand.Workspace, evalWords);
-        leftOperandExtended.Clear();
         leftOperandExtended.CopyFrom(leftOperand, numWords: Math.Min(nA, evalWords));
 
         using var remainderExtended = new GpuBigUInt(rightOperand.Workspace, evalWords);
         GpuBigIntMath.Sub(leftOperandExtended, qbTrunc, remainderExtended);
 
         using var bPaddedExtended = new GpuBigUInt(rightOperand.Workspace, evalWords);
-        bPaddedExtended.Clear();
         bPaddedExtended.CopyFrom(rightOperand, numWords: Math.Min(n, evalWords));
 
         // Zero-sync correction using single block kernel: the remainder and the quotient move by the same steps.
@@ -590,7 +584,7 @@ public static partial class GpuBigIntDivRem
             {
                 var r = string.Join(",", ctx.RemainderExtended.ToHostArray());
                 var b = string.Join(",", ctx.BPaddedExtended.ToHostArray());
-                throw new Exception($"DivRem underflow correction failed to converge. evalWords: {ctx.EvalWords}, RemExtended: {r}, BPadded: {b}");
+                throw new InvalidOperationException($"DivRem underflow correction failed to converge. evalWords: {ctx.EvalWords}, RemExtended: {r}, BPadded: {b}");
             }
 
             GpuBigIntMath.Sub(ctx.QuotientBuffer, one, tempQuot);
@@ -618,7 +612,7 @@ public static partial class GpuBigIntDivRem
             loopCount++;
             if (loopCount > 10000)
             {
-                throw new Exception("DivRem remainder correction failed to converge.");
+                throw new InvalidOperationException("DivRem remainder correction failed to converge.");
             }
 
             var rBits = GetActualBits(ctx.RemainderExtended);

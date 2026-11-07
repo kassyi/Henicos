@@ -62,11 +62,11 @@ internal static class ConvertedArrayEmitter
 
             writer.AppendLine(
                 $"{transfer.ConvertedElementMarshalMethodName}(ref {hostElement}, " +
-                $"ref {native}[{index}], false, {allocations}, hStream);");
+                $"ref {native}[{index}], {allocations}, hStream);");
         }
     }
 
-    // for (...) { Unmarshal_<E>(ref __gsharp_host_<ord>[__gsharp_index_<ord>], ref __gsharp_native_<ord>[__gsharp_index_<ord>], false, hStream); },
+    // for (...) { Unmarshal_<E>(ref __gsharp_host_<ord>[__gsharp_index_<ord>], ref __gsharp_native_<ord>[__gsharp_index_<ord>], hStream); },
     // through the spans of WriteShadowAndHostSpans
     internal static void WriteElementUnmarshalLoop(SourceWriter writer, in KernelParameterShape shape,
         in ParameterTransfer transfer)
@@ -79,7 +79,7 @@ internal static class ConvertedArrayEmitter
         {
             writer.AppendLine(
                 $"{transfer.ConvertedElementUnmarshalMethodName}(ref {host}[{index}], " +
-                $"ref {native}[{index}], false, hStream);");
+                $"ref {native}[{index}], hStream);");
         }
     }
 

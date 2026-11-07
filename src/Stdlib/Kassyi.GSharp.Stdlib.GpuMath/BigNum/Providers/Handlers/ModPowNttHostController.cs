@@ -31,7 +31,6 @@ internal static class ModPowNttHostController
         var targetWords = (targetBits + 31) / 32;
 
         using var reciprocalNorm = new GpuBigUInt(workspace, targetWords);
-        reciprocalNorm.Clear();
         GpuBigIntDivRem.Reciprocal(bNorm, reciprocalNorm, targetBits, marginWords);
 
         using var reciprocalOfB = new GpuBigUInt(workspace, targetWords);

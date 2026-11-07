@@ -135,16 +135,10 @@ public const string DebugName_Data = "global::System.Int32[]";
 [global::System.Runtime.InteropServices.FieldOffset(0)]
 public global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy Data;
 }
-public static unsafe void Marshal_KernelParameterHolder(ref global::Kassyi.GSharp.Tests.Shared.Syntax.KernelParameterHolder host, ref AotContexts.KernelParameterHolder native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_KernelParameterHolder(ref global::Kassyi.GSharp.Tests.Shared.Syntax.KernelParameterHolder host, ref AotContexts.KernelParameterHolder native, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
 {
 native = default;
 if (host.Data != null)
-{
-if (isDevicePtr)
-{
-throw new global::System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
-}
-else
 {
 int size = checked(host.Data.Length * sizeof(global::System.Int32));
 if (size > 0)
@@ -175,10 +169,9 @@ native.Data.Data = global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyA
 native.Data.Length = host.Data.Length;
 }
 }
-}
-public static unsafe void Unmarshal_KernelParameterHolder(ref global::Kassyi.GSharp.Tests.Shared.Syntax.KernelParameterHolder host, ref AotContexts.KernelParameterHolder native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_KernelParameterHolder(ref global::Kassyi.GSharp.Tests.Shared.Syntax.KernelParameterHolder host, ref AotContexts.KernelParameterHolder native, global::System.IntPtr hStream = default)
 {
-if (host.Data != null && !isDevicePtr && native.Data.Data != global::System.IntPtr.Zero)
+if (host.Data != null && native.Data.Data != global::System.IntPtr.Zero)
 {
 int size = checked(host.Data.Length * sizeof(global::System.Int32));
 if (size > 0)
@@ -205,11 +198,11 @@ public const string DebugName_Y = "global::System.Int32";
 [global::System.Runtime.InteropServices.FieldOffset(4)]
 public global::System.Int32 Y;
 }
-public static unsafe void Marshal_KernelParameterPoint(ref global::Kassyi.GSharp.Tests.Shared.Syntax.KernelParameterPoint host, ref AotContexts.KernelParameterPoint native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_KernelParameterPoint(ref global::Kassyi.GSharp.Tests.Shared.Syntax.KernelParameterPoint host, ref AotContexts.KernelParameterPoint native, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
 {
 native = global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Syntax.KernelParameterPoint, AotContexts.KernelParameterPoint>(ref host);
 }
-public static unsafe void Unmarshal_KernelParameterPoint(ref global::Kassyi.GSharp.Tests.Shared.Syntax.KernelParameterPoint host, ref AotContexts.KernelParameterPoint native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_KernelParameterPoint(ref global::Kassyi.GSharp.Tests.Shared.Syntax.KernelParameterPoint host, ref AotContexts.KernelParameterPoint native, global::System.IntPtr hStream = default)
 {
 host = global::System.Runtime.CompilerServices.Unsafe.As<AotContexts.KernelParameterPoint, global::Kassyi.GSharp.Tests.Shared.Syntax.KernelParameterPoint>(ref native);
 }
@@ -813,7 +806,7 @@ try
 {
 void** __gsharp_kernel_params = stackalloc void*[3];
 global::Kassyi.GSharp.Tests.Shared.Syntax.KernelValueParameterKernels.AotContexts.KernelParameterHolder __gsharp_native_0 = default;
-global::Kassyi.GSharp.Tests.Shared.Syntax.KernelValueParameterKernels.AotContexts.Marshal_KernelParameterHolder(ref holder, ref __gsharp_native_0, false, __gsharp_device_arrays, hStream);
+global::Kassyi.GSharp.Tests.Shared.Syntax.KernelValueParameterKernels.AotContexts.Marshal_KernelParameterHolder(ref holder, ref __gsharp_native_0, __gsharp_device_arrays, hStream);
 // Marshal scalar struct: holder
 __gsharp_kernel_params[0] = &__gsharp_native_0;
 // Marshal array: values
@@ -867,7 +860,7 @@ hStream, // Stream
 __gsharp_kernel_params,
 global::System.IntPtr.Zero // Extra
 ));
-global::Kassyi.GSharp.Tests.Shared.Syntax.KernelValueParameterKernels.AotContexts.Unmarshal_KernelParameterHolder(ref holder, ref __gsharp_native_0, false, hStream);
+global::Kassyi.GSharp.Tests.Shared.Syntax.KernelValueParameterKernels.AotContexts.Unmarshal_KernelParameterHolder(ref holder, ref __gsharp_native_0, hStream);
 // Copy back array: values
 if (__gsharp_size_1 > 0 && __gsharp_d_1 != global::System.IntPtr.Zero && __gsharp_device_arrays.TryClaimCopyBack(values))
 {
