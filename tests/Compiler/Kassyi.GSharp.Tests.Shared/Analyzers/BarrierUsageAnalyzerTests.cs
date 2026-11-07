@@ -255,9 +255,9 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
     // paths: native returns the lane's own value, managed throws)
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_WarpShuffleInUnsplitContext_ReportsGSH0062()
+    public async Task Test_WarpShuffleInUnsplitContext_ReportsGSH0062ForTheCpuDialect()
     {
-        var actual = await RunAsync("Analyzers/BarrierUsage/WarpShuffleInUnsplitContextKernels.cu.cs");
+        var actual = await RunAsync("Analyzers/BarrierUsage/WarpShuffleInUnsplitContextKernels.cu.cs", "Cpu");
 
         Assert.Equal(
             [
@@ -272,9 +272,19 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
 
         var diagnostics = await RoslynTestUtility
             .TestAnalyzer("Analyzers/BarrierUsage/WarpShuffleInUnsplitContextKernels.cu.cs", s_analyzer)
+            .WithDialect("Cpu")
             .GetDiagnosticsAsync();
         Assert.All(diagnostics, static d => Assert.Contains("' is a warp shuffle, so it cannot be called ",
             d.GetMessage(CultureInfo.InvariantCulture), StringComparison.Ordinal));
+    }
+
+    // CUDA runs a warp shuffle where it stands, so a project built only for CUDA has no CPU path to split and accepts
+    // every shuffle of the same kernels
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public async Task Test_WarpShuffleInUnsplitContext_IsAcceptedForTheCudaDialect()
+    {
+        Assert.Empty(await RunAsync("Analyzers/BarrierUsage/WarpShuffleInUnsplitContextKernels.cu.cs", "Cuda"));
     }
 
     // A reference into the result of a call cannot be kept across a resume, also through a member access, parentheses or
@@ -342,9 +352,12 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
     }
 
     private static async Task<IReadOnlyList<(string Id, int StartLine, int StartCol, int EndLine, int EndCol)>> RunAsync(
-        string relativeTestCasePath)
+        string relativeTestCasePath, string dialect = "Cuda")
     {
-        var diagnostics = await RoslynTestUtility.TestAnalyzer(relativeTestCasePath, s_analyzer).GetDiagnosticsAsync();
+        var diagnostics = await RoslynTestUtility
+            .TestAnalyzer(relativeTestCasePath, s_analyzer)
+            .WithDialect(dialect)
+            .GetDiagnosticsAsync();
 
         return diagnostics
             .Select(static d => ReportedDiagnostic.From(DiagnosticOrigin.Analyzer, d))

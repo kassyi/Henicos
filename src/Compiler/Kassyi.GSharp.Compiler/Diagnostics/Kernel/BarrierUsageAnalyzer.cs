@@ -143,9 +143,15 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        // [WHY] A shuffle takes its arguments by value, so only where it stands matters
+        // [WHY] A shuffle takes its arguments by value, so only where it stands matters. CUDA runs the shuffle where it
+        // stands, so a project built only for CUDA, which has no CPU path, accepts it there.
         if (SyncIntrinsicClassifier.Classify(callee).Kind == SyncIntrinsicKind.WarpShuffle)
         {
+            if (!BuildsCpuPaths(context.Options))
+            {
+                return;
+            }
+
             if (FindUnsupportedContext(invocation, context.SemanticModel, isWarpShuffle: true) is { } shuffleContext)
             {
                 context.ReportDiagnostic(GSharpDiagnostics.SuspendingCallInUnsupportedContext,
@@ -176,15 +182,19 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
         }
     }
 
+    // Whether the project builds the native C++ and managed paths: every dialect but CUDA
+    private static bool BuildsCpuPaths(AnalyzerOptions options) =>
+        !TranspilerDialects.IsCuda(TranspilerDialects.GetName(options.AnalyzerConfigOptionsProvider.GlobalOptions));
+
     // The callee kinds of GSH0062, the third argument of its message
     private const string SuspendingDeviceFunctionCallee =
         "is a device function that reaches Gpu.SyncThreads() or a warp shuffle";
 
     private const string WarpShuffleCallee = "is a warp shuffle";
 
-    // isWarpShuffle: a Gpu.GridStrideLoop body is left out for a warp shuffle. The CPU paths do not split it either, but
-    // the Stdlib reduces with shuffles there; that body is #1091 (A warp shuffle in a Gpu.GridStrideLoop body is not
-    // split on the CPU paths: native returns the lane's own value, managed throws).
+    // isWarpShuffle: a Gpu.GridStrideLoop body is left out for a warp shuffle. The CPU paths do not split it either,
+    // but the Stdlib reduces with shuffles there; that body is #1091 (A warp shuffle in a Gpu.GridStrideLoop body is
+    // not split on the CPU paths: native returns the lane's own value, managed throws), which removes this exception.
     private static string? FindUnsupportedContext(InvocationExpressionSyntax invocation, SemanticModel semanticModel,
         bool isWarpShuffle)
     {
