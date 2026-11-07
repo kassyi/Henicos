@@ -110,7 +110,7 @@ public readonly partial struct GpuBigUInt : IGpuBigUIntExpression, IGpuBigNumber
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="GpuBigUInt"/> struct allocating uninitialized GPU device memory.
+    /// Initializes a new instance of the <see cref="GpuBigUInt"/> struct allocating zero-filled GPU device memory.
     /// </summary>
     /// <param name="workspace">The GPU workspace managing memory allocations and kernel dispatch.</param>
     /// <param name="numWords">The number of 32-bit words to allocate.</param>
