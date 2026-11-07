@@ -5,27 +5,7 @@ struct float4 { float x, y, z, w; };
 struct uint3 { uint32_t x, y, z; };
 struct dim3 { uint32_t x, y, z; };
 
-template <typename T>
-struct System_Nullable {
-    bool HasValue;
-    T Value;
-    System_Nullable() : HasValue(false), Value() {}
-    System_Nullable(decltype(nullptr)) : HasValue(false), Value() {}
-    System_Nullable(T val) : HasValue(true), Value(val) {}
-    template <typename U>
-    System_Nullable(const System_Nullable<U>& other) : HasValue(other.HasValue), Value(static_cast<T>(other.Value)) {}
-};
-
-// The scope of a C# using: disposes the resource when control leaves the enclosing block (end, return, break, continue,
-// goto). Guards of one block are destroyed in reverse order, as C# disposes nested usings.
-template <typename T>
-struct __gsharp_using_scope {
-    T& resource;
-    inline ~__gsharp_using_scope() { resource.__gsharp_dispose(); }
-};
-
-template <class T> inline const T* __gsharp_temp_address(const T& v) { return &v; }
-
+#include "Prelude/StandardTypes.hpp"
 enum class GSharpErrorCode : int32_t {
     None = 0,
     NotSupported = 1,

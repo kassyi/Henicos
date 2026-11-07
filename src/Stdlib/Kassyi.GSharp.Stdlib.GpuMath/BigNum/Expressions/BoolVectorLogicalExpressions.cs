@@ -133,7 +133,7 @@ internal class VectorNotExpression([TakesOwnership] IGpuBoolVectorExpression sou
 }
 
 /// <summary>
-/// Any / All over the first Count flags of a vector: the kernels read the count on the device (design D3 4.3), so the
+/// Any / All over the first Count flags of a vector: the kernels read the count on the device, so the
 /// flags after it do not take part, and an empty vector gives false / true, as System.Linq.
 /// </summary>
 internal static class BoolVectorQuantifier
