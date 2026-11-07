@@ -289,9 +289,10 @@ public class GpuBigFloatLinqAndVectorTests : IDisposable
     }
 
     // A sum gets one word more than its wider operand, so 2^200 + 1 does not fit the two words of the first sum and the
-    // order of the additions of [2^200, 1, -2^200, 1] shows in the result. Without AsParallel() the reductions fold from the left as Enumerable.Aggregate does; the references are
-    // built here with the same operators in that order, and the balanced tree is built beside them to show that the
-    // inputs tell the two orders apart.
+    // order of the additions of [2^200, 1, -2^200, 1] shows in the result. Floating-point additions round, so without
+    // AsParallel() the reductions fold from the left as Enumerable.Aggregate does; the references are built here with
+    // the same operators in that order, and the balanced tree is built beside them to show that the inputs tell the
+    // two orders apart.
     [Fact]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.HappyPath)]
