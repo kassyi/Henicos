@@ -20,9 +20,10 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
     // failure.
     private const int SqrtCorrectionMaxSteps = 4;
 
-    // The twiddle factors of the 2-prime NTT per CUDA context and transform length. Device memory belongs to the context
-    // it was allocated in, and this handler serves every workspace, isolated contexts included, so the key holds the
-    // number of the context the upload allocates in (0 in CPU fallback mode, where the pointers are host addresses).
+    // The twiddle factors of the 2-prime NTT per CUDA context and transform length. Device memory belongs to the
+    // context it was allocated in, and this handler serves every workspace, isolated contexts included, so the key
+    // holds the number of the context the upload allocates in (0 in CPU fallback mode, where the pointers are host
+    // addresses).
     private readonly ConcurrentDictionary<(long ContextId, int Length), Lazy<TwiddleCache>> _twiddleCache = new();
 
     /// <inheritdoc />
@@ -694,7 +695,10 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
         }
     }
 
-    /// <summary>The number of transform lengths with twiddle factors kept for the context numbered <paramref name="contextId"/>.</summary>
+    /// <summary>
+    /// The number of transform lengths with twiddle factors kept for the context numbered
+    /// <paramref name="contextId"/>.
+    /// </summary>
     internal int CountTwiddleFactors(long contextId)
     {
         var count = 0;

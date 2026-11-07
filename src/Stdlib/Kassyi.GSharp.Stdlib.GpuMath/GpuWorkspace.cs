@@ -76,8 +76,8 @@ public class GpuWorkspace : IGpuResourceScope
     private readonly List<IDisposable> _trackedResources = [];
 
     /// <summary>
-    /// Gets the isolated context of this workspace (zero without one) and the number <c>CudaModuleCache</c> gives it, so
-    /// that the caches keyed by that number drop its entries when the workspace destroys the context.
+    /// Gets the isolated context of this workspace (zero without one) and the number <c>CudaModuleCache</c> gives it,
+    /// so that the caches keyed by that number drop its entries when the workspace destroys the context.
     /// </summary>
     internal (IntPtr Handle, long Id) IsolatedContext { get; }
 

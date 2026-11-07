@@ -9,8 +9,8 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum;
 /// </summary>
 /// <remarks>
 /// Properties: (1) q * b + r == a and 0 &lt;= r &lt; b for a division in the shared context after one in a disposed
-/// isolated workspace; (2) the cache hands out different factors per context and per execution mode and the same factors
-/// within one; (3) disposing an isolated workspace drops its factors; (4) a failed upload is not kept.
+/// isolated workspace; (2) the cache hands out different factors per context and per execution mode and the same
+/// factors within one; (3) disposing an isolated workspace drops its factors; (4) a failed upload is not kept.
 /// </remarks>
 [Collection(TestCollections.DeviceExclusive)]
 public class TwiddleCacheContextTests
