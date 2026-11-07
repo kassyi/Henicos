@@ -13,7 +13,13 @@ public class UnsignedLiteralTests : TranspilerTestBase
         int[] comparisons = new int[a.Length];
         long[] widened = new long[a.Length];
 
-        UnsignedLiteralKernels.LaunchUnsuffixedUIntLiteralKernel(a, quotients, comparisons, widened, blockDimX: (uint)a.Length);
+        UnsignedLiteralKernels.LaunchUnsuffixedUIntLiteralKernel(
+            a,
+            quotients,
+            comparisons,
+            widened,
+            blockDimX: (uint)a.Length
+        );
 
         // 2000000000 + 3000000000 wraps to 705032704; a signed 64-bit sum would give 2500000000 after the division
         Assert.Equal([352516352u, 426258176u, 852516352u], quotients);
