@@ -433,7 +433,7 @@ public readonly struct GpuBigIntExpr : IDisposable
 }
 
 /// <summary>
-/// Records which expression nodes a live CUDA graph owns (design 4.5.3-1).
+/// Records which expression nodes a live CUDA graph owns.
 /// </summary>
 /// <remarks>
 /// A graph replays the buffers its expression's nodes hold, so the expression must not be evaluated, compiled again or

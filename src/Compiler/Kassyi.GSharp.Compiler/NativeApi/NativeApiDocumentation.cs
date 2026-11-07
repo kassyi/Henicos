@@ -62,38 +62,5 @@ internal static class NativeApiDocumentation
     /// <summary>
     /// Escapes XML special characters and keeps multi-line text inside the <c>///</c> comment.
     /// </summary>
-    private static string EscapeXml(string text)
-    {
-        if (text.IndexOf('&') < 0 && text.IndexOf('<') < 0 && text.IndexOf('>') < 0 && text.IndexOf('\n') < 0)
-        {
-            return text;
-        }
-
-        var sb = new StringBuilder(text.Length + 16);
-        foreach (var c in text)
-        {
-            switch (c)
-            {
-                case '&':
-                    sb.Append("&amp;");
-                    break;
-                case '<':
-                    sb.Append("&lt;");
-                    break;
-                case '>':
-                    sb.Append("&gt;");
-                    break;
-                case '\n':
-                    sb.Append("\n/// ");
-                    break;
-                case '\r':
-                    break;
-                default:
-                    sb.Append(c);
-                    break;
-            }
-        }
-
-        return sb.ToString();
-    }
+    private static string EscapeXml(string text) => XmlDocEscaping.Escape(text, lineBreak: "\n/// ");
 }

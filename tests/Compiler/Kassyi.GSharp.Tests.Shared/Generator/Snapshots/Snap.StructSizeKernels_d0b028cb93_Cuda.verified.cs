@@ -93,12 +93,12 @@ public const string DebugName_A = "global::System.Int32";
 [global::System.Runtime.InteropServices.FieldOffset(0)]
 public global::System.Int32 A;
 }
-public static unsafe void Marshal_StructSizeOddInt(ref global::Kassyi.GSharp.Tests.Shared.Core.StructSizeOddInt host, ref AotContexts.StructSizeOddInt native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_StructSizeOddInt(ref global::Kassyi.GSharp.Tests.Shared.Core.StructSizeOddInt host, ref AotContexts.StructSizeOddInt native, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
 {
 native = default;
 native.A = host.A;
 }
-public static unsafe void Unmarshal_StructSizeOddInt(ref global::Kassyi.GSharp.Tests.Shared.Core.StructSizeOddInt host, ref AotContexts.StructSizeOddInt native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_StructSizeOddInt(ref global::Kassyi.GSharp.Tests.Shared.Core.StructSizeOddInt host, ref AotContexts.StructSizeOddInt native, global::System.IntPtr hStream = default)
 {
 host.A = native.A;
 }
@@ -109,11 +109,11 @@ public const string DebugName_A = "global::System.Int32";
 [global::System.Runtime.InteropServices.FieldOffset(0)]
 public global::System.Int32 A;
 }
-public static unsafe void Marshal_StructSizePaddedInt(ref global::Kassyi.GSharp.Tests.Shared.Core.StructSizePaddedInt host, ref AotContexts.StructSizePaddedInt native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_StructSizePaddedInt(ref global::Kassyi.GSharp.Tests.Shared.Core.StructSizePaddedInt host, ref AotContexts.StructSizePaddedInt native, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
 {
 native = global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Core.StructSizePaddedInt, AotContexts.StructSizePaddedInt>(ref host);
 }
-public static unsafe void Unmarshal_StructSizePaddedInt(ref global::Kassyi.GSharp.Tests.Shared.Core.StructSizePaddedInt host, ref AotContexts.StructSizePaddedInt native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_StructSizePaddedInt(ref global::Kassyi.GSharp.Tests.Shared.Core.StructSizePaddedInt host, ref AotContexts.StructSizePaddedInt native, global::System.IntPtr hStream = default)
 {
 host = global::System.Runtime.CompilerServices.Unsafe.As<AotContexts.StructSizePaddedInt, global::Kassyi.GSharp.Tests.Shared.Core.StructSizePaddedInt>(ref native);
 }
@@ -378,7 +378,7 @@ var __gsharp_native_0 = global::System.Runtime.InteropServices.MemoryMarshal.Cas
 global::System.Span<global::Kassyi.GSharp.Tests.Shared.Core.StructSizeOddInt> __gsharp_host_0 = data;
 for (int __gsharp_index_0 = 0; __gsharp_index_0 < __gsharp_native_0.Length; __gsharp_index_0++)
 {
-global::Kassyi.GSharp.Tests.Shared.Core.StructSizeKernels.AotContexts.Marshal_StructSizeOddInt(ref __gsharp_host_0[__gsharp_index_0], ref __gsharp_native_0[__gsharp_index_0], false, null, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.StructSizeKernels.AotContexts.Marshal_StructSizeOddInt(ref __gsharp_host_0[__gsharp_index_0], ref __gsharp_native_0[__gsharp_index_0], null, hStream);
 }
 fixed (byte* __gsharp_p_0 = __gsharp_shadow_0)
 {
@@ -433,7 +433,7 @@ var __gsharp_native_0 = global::System.Runtime.InteropServices.MemoryMarshal.Cas
 global::System.Span<global::Kassyi.GSharp.Tests.Shared.Core.StructSizeOddInt> __gsharp_host_0 = data;
 for (int __gsharp_index_0 = 0; __gsharp_index_0 < __gsharp_native_0.Length; __gsharp_index_0++)
 {
-global::Kassyi.GSharp.Tests.Shared.Core.StructSizeKernels.AotContexts.Unmarshal_StructSizeOddInt(ref __gsharp_host_0[__gsharp_index_0], ref __gsharp_native_0[__gsharp_index_0], false, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.StructSizeKernels.AotContexts.Unmarshal_StructSizeOddInt(ref __gsharp_host_0[__gsharp_index_0], ref __gsharp_native_0[__gsharp_index_0], hStream);
 }
 }
 // Copy back array: o

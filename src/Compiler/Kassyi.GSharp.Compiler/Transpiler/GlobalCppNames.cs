@@ -439,11 +439,7 @@ internal static class GlobalCppNames
             headLength--;
         }
 
-        var shortened = new StringBuilder(ShortenThreshold)
-            .Append(full, 0, headLength)
-            .Append(HashMarker)
-            .Append(HashHelper.ComputeFnv1A64ShortHash(full))
-            .ToString();
+        var shortened = full[..headLength] + HashMarker + HashHelper.ComputeFnv1A64ShortHash(full);
 
         var recorded = s_shortenedNames.GetOrAdd(shortened, full);
         if (!string.Equals(recorded, full, StringComparison.Ordinal))

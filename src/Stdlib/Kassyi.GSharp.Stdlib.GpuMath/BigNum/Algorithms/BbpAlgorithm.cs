@@ -61,10 +61,6 @@ public static class BbpAlgorithm
 
         var pid = 4.0 * s1 - 2.0 * s2 - s3 - s4;
         pid -= Math.Floor(pid);
-        if (pid < 0.0)
-        {
-            pid += 1.0;
-        }
 
         Span<char> hexChars = stackalloc char[SafeChunkSize];
         for (var i = 0; i < count; i++)

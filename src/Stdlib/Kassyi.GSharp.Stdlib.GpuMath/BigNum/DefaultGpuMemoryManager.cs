@@ -22,7 +22,7 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 /// </para>
 /// <para>
 /// <b>CUDA graphs:</b> a buffer freed while the workspace stream is captured stays out of the shared pool, because the
-/// graph keeps using it on every launch (design 4.5.2). Inside a capture started by <c>CompileToGraph</c>
+/// graph keeps using it on every launch. Inside a capture started by <c>CompileToGraph</c>
 /// (<see cref="BeginDeferral"/>) it goes to the capture's own free list, from which later allocations of the same
 /// capture take it in stream order; the buffers left there belong to the graph and come back to the pool when it is
 /// disposed (<see cref="ReturnDeferred"/>). A buffer freed during a capture that the user started on the workspace
@@ -40,7 +40,7 @@ internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider, In
     private readonly ConcurrentDictionary<IntPtr, GpuBigIntDeviceBuffer> _activeAllocations = new();
     private int _disposed;
 
-    // Buffers freed during a capture and not yet returned: held by a graph, or parked until Dispose (design 4.5.2)
+    // Buffers freed during a capture and not yet returned: held by a graph, or parked until Dispose
     private readonly ConcurrentDictionary<GpuBigIntDeviceBuffer, byte> _deferred = new();
     // The capture CompileToGraph is running on this workspace, if any
     private CaptureDeferral? _activeDeferral;

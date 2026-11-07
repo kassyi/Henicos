@@ -47,14 +47,8 @@ public static partial class GpuBigIntDivRem
 
         var iterations = CalculateNewtonRaphsonIterationCount(currentBits, targetBits);
 
-        if (targetOperand.Workspace.Provider is { } provider)
-        {
-            provider.InverseSqrtMega(targetOperand.Workspace, targetOperand, resultBuffer, marginWords, actualBits, iterations);
-        }
-        else
-        {
-            throw new NotSupportedException("The current provider does not support InverseSqrtMega.");
-        }
+        targetOperand.Workspace.Provider.InverseSqrtMega(
+            targetOperand.Workspace, targetOperand, resultBuffer, marginWords, actualBits, iterations);
     }
 
     /// <summary>

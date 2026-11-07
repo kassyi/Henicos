@@ -183,4 +183,22 @@ public sealed class GpuMemoryPoolTests : IDisposable
 
         Skip.If(reused == 0, "The driver never handed back the freed address, so the zero fill was not observed.");
     }
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void PooledBuffer_IsZeroedWhenRentedAgain()
+    {
+        // A buffer that held data reads as zero when the pool hands it out again. The ModInverse, ModPow, reciprocal
+        // and inverse square root handlers rely on this and do not clear the buffers they allocate.
+        // mutant: DefaultGpuMemoryManager.Free `provider.ClearMemoryAsync(buffer.Pointer, buffer.TotalWords, stream)` removed
+        var dirty = new GpuBigUInt(_workspace, Enumerable.Repeat(uint.MaxValue, PoolWords).ToArray());
+        var pointer = dirty.DevicePointer;
+        dirty.Dispose();
+
+        using var again = _workspace.RentTemp(PoolWords);
+
+        // The same buffer, so the pool path (not a fresh driver allocation) produced it.
+        Assert.Equal(pointer, again.DevicePointer);
+        Assert.Equal(new uint[PoolWords], again.ToHostArray());
+    }
 }

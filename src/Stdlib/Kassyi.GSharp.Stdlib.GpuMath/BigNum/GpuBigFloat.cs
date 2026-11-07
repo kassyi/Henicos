@@ -116,14 +116,6 @@ public readonly struct GpuBigFloat : IGpuBigNumber<GpuBigFloat>
     public static BinaryExpr<GpuBigFloat, DivOp> operator /(GpuBigFloat left, GpuBigFloat right) => new(left, right);
 
     /// <summary>
-    /// Aligns the radix points (exponents) of this instance and another floating-point number, extracting IEEE 754 rounding bits.
-    /// </summary>
-    /// <param name="other">The other floating-point instance to align with.</param>
-    /// <returns>A tuple containing the aligned values and IEEE 754 guard, round, and sticky bits.</returns>
-    public (GpuBigFloat AlignedThis, GpuBigFloat AlignedOther, bool Guard, bool Round, bool StickyThis, bool StickyOther
-        ) AlignRadixPoint(GpuBigFloat other) => throw new NotImplementedException();
-
-    /// <summary>
     /// Normalizes the floating-point value such that the most significant bit of the significand is aligned.
     /// </summary>
     /// <param name="leadingZeros">The number of leading zero bits in the significand.</param>
@@ -142,17 +134,6 @@ public readonly struct GpuBigFloat : IGpuBigNumber<GpuBigFloat>
         var (uQuotient, remainder) = UFloat.DivideByUInt32(divisor);
         return (new GpuBigFloat(uQuotient, IsNegative), remainder);
     }
-
-    /// <summary>
-    /// Rounds the floating-point value to the target significand precision using the specified rounding mode and discarded bit flags.
-    /// </summary>
-    /// <param name="mode">The IEEE 754 rounding mode to apply.</param>
-    /// <param name="guardBit">The first discarded bit beyond the target precision.</param>
-    /// <param name="roundBit">The second discarded bit beyond the target precision.</param>
-    /// <param name="stickyBit"><see langword="true"/> if any remaining discarded bits beyond <paramref name="roundBit"/> were non-zero.</param>
-    /// <returns>The rounded <see cref="GpuBigFloat"/> instance.</returns>
-    public GpuBigFloat Round(GpuBigFloatRoundingMode mode, bool guardBit, bool roundBit, bool stickyBit) =>
-        throw new NotImplementedException();
 
     /// <summary>
     /// Adds another <see cref="GpuBigFloat"/> to this instance.
