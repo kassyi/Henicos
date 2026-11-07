@@ -437,7 +437,9 @@ Thrown when `predicate` is `null`.
 ## Remarks
 
 > [!NOTE]
-> All reduction operations (`Sum`, `Max`, `Min`, `Aggregate`, `Average`) construct balanced binary evaluation trees out of `GpuBigIntExpr` elements to optimize the reduction path depth. Instead of an $O(N)$ sequential chain, the resulting AST reduces evaluating depth to $O(\log N)$, allowing parallel device kernels to operate effectively over large enumerations.
+> The reductions of a `ParallelStackEnumerable` (after `AsParallel()`: `Sum`, `Max`, `Min`, `Aggregate`, `Average`) construct balanced binary evaluation trees out of `GpuBigIntExpr` elements to optimize the reduction path depth. Instead of an $O(N)$ sequential chain, the resulting AST reduces evaluating depth to $O(\log N)$, allowing parallel device kernels to operate effectively over large enumerations.
+>
+> Without `AsParallel()`, `Sum`, `Max`, `Min` and `Average` of a `StackEnumerable` build the same balanced tree: integer addition is exact, so the order of the additions cannot change the result. `Aggregate` takes a user function, whose result can depend on the order, so without `AsParallel()` it combines the elements from the left, in the order of `Enumerable.Aggregate`: `func(func(func(x0, x1), x2), x3)`. `[10, 3, 2, 1]` with `(a, b) => a - b` gives `((10 - 3) - 2) - 1 = 4` without `AsParallel()` and `(10 - 3) - (2 - 1) = 6` with it. `AsParallel()` is the marker that allows the reordering. The same holds for the `Aggregate` of `GpuBigUInt`, `GpuBigFloat` and `GpuBigUFloat` in `GpuBigNumberStackLinqExtensions`; their `Sum` and `Average` also fold from the left for `GpuBigFloat` and `GpuBigUFloat`, where every addition rounds, and keep the tree for `GpuBigUInt`. A left fold builds an expression tree as deep as the sequence is long.
 
 Because reduction operations return a [GpuBigIntExpr](GpuBigIntExpr.md), the entire reduction pipeline can be compiled directly into a native CUDA Graph:
 - **One-Liner Evaluation:** Chain `.EvaluateWithCudaGraph(workspace)` to capture, instantiate, execute, and destroy a CUDA Graph in a single statement.

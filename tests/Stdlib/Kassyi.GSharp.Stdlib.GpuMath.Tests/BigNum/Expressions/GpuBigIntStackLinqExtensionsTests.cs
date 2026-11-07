@@ -434,6 +434,107 @@ public class GpuBigIntStackLinqExtensionsTests : IDisposable
         }
     }
 
+    // [10, 3, 2, 1] with a - b: the left fold of Enumerable.Aggregate gives ((10 - 3) - 2) - 1 = 4, the balanced tree
+    // of AsParallel() (10 - 3) - (2 - 1) = 6. [64, 8, 4, 2] with a / b: ((64 / 8) / 4) / 2 = 1 against
+    // (64 / 8) / (4 / 2) = 4.
+    [Fact]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.HappyPath)]
+    public void Aggregate_WithoutAsParallel_FoldsFromTheLeft()
+    {
+        var ints = CreateArray(10, 3, 2, 1);
+
+        // mutant: GpuBigIntStackLinqExtensions.cs sequential Aggregate (GpuBigInt) -> source.AsParallel().Aggregate(func)
+        Assert.Equal(new BigInteger(4), ToBigInt(ints.AsStackEnumerable().Aggregate(static (a, b) => a - b).Evaluate(_context)));
+
+        // mutant: GpuBigIntStackLinqExtensions.cs sequential Aggregate (GpuBigIntExpr) -> source.AsParallel().Aggregate(func)
+        Assert.Equal(
+            new BigInteger(4),
+            ToBigInt(ints.AsStackEnumerable().Select(ToExpr).Aggregate(static (a, b) => a - b).Evaluate(_context)));
+
+        // The marker keeps the tree.
+        Assert.Equal(
+            new BigInteger(6),
+            ToBigInt(ints.AsStackEnumerable().AsParallel().Aggregate(static (a, b) => a - b).Evaluate(_context)));
+
+        var uints = CreateUIntArray(64, 8, 4, 2);
+
+        // mutant: GpuBigNumberStackLinqExtensions.cs Aggregate (GpuBigUInt) -> source.AsParallel().Aggregate(func)
+        using (var quotient = uints.AsStackEnumerable().Aggregate(static (a, b) => Divide(a, b)))
+        {
+            Assert.Equal(BigInteger.One, quotient.ToBigInteger());
+        }
+
+        using (var treeQuotient = uints.AsStackEnumerable().AsParallel().Aggregate(static (a, b) => Divide(a, b)))
+        {
+            Assert.Equal(new BigInteger(4), treeQuotient.ToBigInteger());
+        }
+
+        foreach (var u in uints)
+        {
+            u.Dispose();
+        }
+    }
+
+    // Integer addition is exact, so Sum and Average without AsParallel() keep the balanced tree: the value equals the
+    // BigInteger sum in any order, and the tree of eight elements is three additions deep where a left fold is seven.
+    [Fact]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.HappyPath)]
+    public void SumAverage_ExactIntegers_WithoutAsParallel_KeepTheBalancedTree()
+    {
+        long[] values = [1_000_000_007, -3, 2_147_483_647, 5, -1_000_000_000_000, 11, 13, 17];
+        var expectedSum = BigInteger.Zero;
+        foreach (var value in values)
+        {
+            expectedSum += value;
+        }
+
+        var ints = CreateArray(values);
+
+        var sum = ints.AsStackEnumerable().Sum();
+        Assert.Equal(expectedSum, ToBigInt(sum.Evaluate(_context)));
+
+        // mutant: GpuBigIntStackLinqExtensions.cs sequential Sum (GpuBigInt) -> left fold
+        Assert.Equal(3, AdditionDepth(sum.Node));
+
+        // mutant: GpuBigIntStackLinqExtensions.cs sequential Sum (GpuBigIntExpr) -> left fold
+        var exprSum = ints.AsStackEnumerable().Select(ToExpr).Sum();
+        Assert.Equal(expectedSum, ToBigInt(exprSum.Evaluate(_context)));
+        Assert.Equal(3, AdditionDepth(exprSum.Node));
+
+        var positives = CreateArray(10, 20, 30, 41);
+        Assert.Equal(new BigInteger(25), ToBigInt(positives.AsStackEnumerable().Average().Evaluate(_context)));
+
+        uint[] unsignedValues = [uint.MaxValue, uint.MaxValue, 7, uint.MaxValue];
+        var expectedUnsignedSum = (BigInteger)uint.MaxValue * 3 + 7;
+        var uints = CreateUIntArray(unsignedValues);
+        using (var unsignedSum = uints.AsStackEnumerable().Sum())
+        {
+            Assert.Equal(expectedUnsignedSum, unsignedSum.ToBigInteger());
+        }
+
+        using (var unsignedAverage = uints.AsStackEnumerable().Average())
+        {
+            Assert.Equal(expectedUnsignedSum / unsignedValues.Length, unsignedAverage.ToBigInteger());
+        }
+
+        foreach (var u in uints)
+        {
+            u.Dispose();
+        }
+    }
+
+    // The number of additions on the longest path from the root to a leaf.
+    private static int AdditionDepth(IGpuBigIntExpression node) =>
+        node is SignedBinaryExpression binary
+            ? 1 + Math.Max(AdditionDepth(binary.Left), AdditionDepth(binary.Right))
+            : 0;
+
+    private static T Divide<T>(T left, T right)
+        where T : struct, IGpuBigNumber<T> =>
+        left / right;
+
     private static GpuBigIntExpr ToExpr(GpuBigInt value) => value;
 
     private GpuBigInt[] CreateArray(params long[] values)
