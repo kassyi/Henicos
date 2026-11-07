@@ -98,8 +98,6 @@ public class GpuBigIntNttReciprocalTests
         // Margin and bit counts as per standard NR integers
         int iterations = 10;
         
-        // This is a complex internal API, ensure we supply correctly
-        // (marginWords, iterations, targetBits)
         var advancedMath = new KernelAdvancedMathHandler();
         advancedMath.ReciprocalMega(
             workspace, targetOperand, resultBuffer,

@@ -284,7 +284,8 @@ public sealed class GSharpKernelProvider : IGpuExecutionProvider
     /// <inheritdoc />
     public void ReciprocalMega(GpuWorkspace workspace, GpuBigUInt targetOperand, GpuBigUInt resultBuffer,
         int marginWords, int iterations, int targetBits) =>
-        AdvancedMathProvider.ReciprocalMega(workspace, targetOperand, resultBuffer, marginWords, iterations, targetBits);
+        AdvancedMathProvider.ReciprocalMega(workspace, targetOperand, resultBuffer,
+            marginWords, iterations, targetBits);
 
     /// <inheritdoc />
     public void Gcd(GpuWorkspace workspace, GpuBigUInt leftOperand, GpuBigUInt rightOperand,
