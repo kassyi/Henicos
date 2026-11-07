@@ -94,23 +94,13 @@ public static partial class GpuBigIntDivRem
     private static void ReciprocalCore(GpuBigUInt targetOperand, GpuBigUInt resultBuffer, int targetBits,
         int marginWords = 0)
     {
-        var n = targetOperand.NumWords;
-        var numBits = n * 32;
-        var marginBits = marginWords * 32;
         ComputeInitialGuess(targetOperand, resultBuffer, targetBits, isSquareRoot: false);
 
         var currentBits = 63; // Initial guess has ~63 bits of precision
         var iterations = CalculateNewtonRaphsonIterationCount(currentBits, targetBits);
 
-        if (targetOperand.Workspace.Provider is { } provider)
-        {
-            provider.ReciprocalMega(targetOperand.Workspace, targetOperand, resultBuffer, marginWords, numBits,
-                marginBits, iterations, targetBits);
-        }
-        else
-        {
-            throw new NotSupportedException("The current provider does not support ReciprocalMega.");
-        }
+        targetOperand.Workspace.Provider.ReciprocalMega(targetOperand.Workspace, targetOperand, resultBuffer,
+            marginWords, iterations, targetBits);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

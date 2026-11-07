@@ -11,10 +11,6 @@ internal static class ModPowZeroSyncController
     {
         var n = baseVal.NumWords;
         var expWords = exp.NumWords;
-        using var mod2N = new GpuBigUInt(baseVal.Workspace, 2 * n);
-        mod2N.Clear();
-        mod2N.CopyFrom(mod, numWords: n);
-
         using var tempResult = new GpuBigUInt(baseVal.Workspace, 2 * n);
         // tempResult = 1 mod mod, written on the device (0 for modulus 1) so that exponent 0 returns a reduced value.
         GpuBigIntDivRemKernels.LaunchInitializeOneModuloKernelPtr(
