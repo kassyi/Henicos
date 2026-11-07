@@ -32,6 +32,9 @@ public class ContextHoister(
     private readonly HashSet<DeclarationKey> _hoistedVariables = [];
     private readonly HashSet<string> _copiedParameters = [];
 
+    // Marks the block of the statements that a split declaration became, which SpliceStatements removes again
+    private static readonly SyntaxAnnotation s_spliceAnnotation = new("GSharpHoistedDeclarationSplice");
+
     /// <summary>
     /// Whether the block of the last <see cref="Hoist"/> has a split point. Without one the block is returned as it is, so
     /// neither its locals nor its copied parameters are moved into the context.
@@ -191,64 +194,54 @@ public class ContextHoister(
                lastReference > splitLabelStarts[index];
     }
 
+    // [WHY] The declarators run in the order written, so a hoisted declarator's assignment stays in front of a later
+    // declarator that reads it (#1257): the declaration is cut into declarations of the remaining declarators and
+    // assignments of the hoisted ones, in the source order. The pieces replace the declaration in the enclosing
+    // statement list (SpliceStatements), since a block around them would end the scope of the remaining declarators.
     public override SyntaxNode? VisitLocalDeclarationStatement(LocalDeclarationStatementSyntax node)
     {
-        var remainingVariables = ImmutableArray.CreateBuilder<VariableDeclaratorSyntax>();
-        var assignments = ImmutableArray.CreateBuilder<ExpressionStatementSyntax>();
-
-        foreach (var variable in node.Declaration.Variables)
+        var variables = node.Declaration.Variables;
+        var visitedVariables = ImmutableArray.CreateBuilder<VariableDeclaratorSyntax>(variables.Count);
+        foreach (var variable in variables)
         {
-            if (_hoistedVariables.Contains(LoweringIdentity.ForDeclaration(variable, semanticModel)))
-            {
-                // [WHY] Hoisted variables reside in the context struct, so initializations must become explicit member assignments.
-                // A SharedMemory<T> declaration too, in a kernel as in a device function: the allocation runs where the
-                // declaration is, so its count is evaluated there and a dynamic one is checked against sharedMemBytes (#544)
-                if (variable.Initializer == null)
-                {
-                    continue;
-                }
-
-                var assignment = SyntaxFactory.AssignmentExpression(
-                    SyntaxKind.SimpleAssignmentExpression,
-                    CreateContextAccess(variable.Identifier, variable),
-                    (ExpressionSyntax)Visit(variable.Initializer.Value)
-                );
-                assignments.Add(SyntaxFactory.ExpressionStatement(assignment));
-            }
-            else if (base.VisitVariableDeclarator(variable) is VariableDeclaratorSyntax visitedVar)
-            {
-                remainingVariables.Add(visitedVar);
-            }
+            visitedVariables.Add(
+                (VariableDeclaratorSyntax?)base.VisitVariableDeclarator(variable)
+                ?? throw new InvalidOperationException("Hoisting removed a variable declarator.")
+            );
         }
 
-        if (remainingVariables.Count == 0)
+        var statements = SplitDeclaration(
+            node.Declaration,
+            visitedVariables.MoveToImmutable(),
+            node.WithDeclaration
+        );
+        return statements.Length switch
         {
-            return assignments.Count switch
-            {
-                0 => null,
-                1 => assignments[0],
-                _ => SyntaxFactory.Block(assignments)
-            };
-        }
+            0 => null,
+            1 => statements[0],
+            _ => SyntaxFactory.Block(statements).WithAdditionalAnnotations(s_spliceAnnotation)
+        };
+    }
 
-        var newDeclaration = node.Declaration.WithVariables(SyntaxFactory.SeparatedList(remainingVariables));
-        var newLocalDecl = node.WithDeclaration(newDeclaration);
+    public override SyntaxNode? VisitBlock(BlockSyntax node)
+    {
+        var visited = (BlockSyntax?)base.VisitBlock(node)
+                      ?? throw new InvalidOperationException("Hoisting removed a block.");
+        return visited.WithStatements(SpliceStatements(visited.Statements));
+    }
 
-        if (assignments.Count == 0)
-        {
-            return newLocalDecl;
-        }
-
-        // [WHY] Wraps separated assignments and remaining declarations in a block to preserve C# syntax validity.
-        var statements = ImmutableArray.CreateBuilder<StatementSyntax>();
-        statements.Add(newLocalDecl);
-        statements.AddRange(assignments);
-        return SyntaxFactory.Block(statements);
+    public override SyntaxNode? VisitSwitchSection(SwitchSectionSyntax node)
+    {
+        var visited = (SwitchSectionSyntax?)base.VisitSwitchSection(node)
+                      ?? throw new InvalidOperationException("Hoisting removed a switch section.");
+        return visited.WithStatements(SpliceStatements(visited.Statements));
     }
 
     // [WHY] A loop without a barrier stays a for statement. When its variable is hoisted, the declaration would
-    // initialize a local that no access reads, so the initializers assign the context field instead.
+    // initialize a local that no access reads, so the initializers assign the context field instead. When some
+    // declarators stay locals, all of them run in front of the loop in the order written, as in a declaration (#1257).
     // for (__gsharp_ctx-><variable> = <initializer>, ...; <condition>; <incrementors>) <body>
+    // { <type> <remaining>; __gsharp_ctx-><variable> = <initializer>; ... for (; <condition>; <incrementors>) <body> }
     public override SyntaxNode? VisitForStatement(ForStatementSyntax node)
     {
         var visited = (ForStatementSyntax?)base.VisitForStatement(node)
@@ -258,42 +251,116 @@ public class ContextHoister(
             return visited;
         }
 
-        var initializers = SyntaxFactory.SeparatedList<ExpressionSyntax>();
-        var remainingVariables = SyntaxFactory.SeparatedList<VariableDeclaratorSyntax>();
-        foreach (var variable in declaration.Variables)
-        {
-            if (!_hoistedVariables.Contains(LoweringIdentity.ForDeclaration(variable, semanticModel)))
-            {
-                remainingVariables = remainingVariables.Add(variable);
-            }
-            else if (variable.Initializer is { } initializer)
-            {
-                initializers = initializers.Add(SyntaxFactory.AssignmentExpression(
-                    SyntaxKind.SimpleAssignmentExpression,
-                    CreateContextAccess(variable.Identifier, variable),
-                    initializer.Value
-                ));
-            }
-        }
-
-        if (remainingVariables.Count == declaration.Variables.Count)
+        var variables = declaration.Variables;
+        var hoistedCount = variables
+            .AsStackEnumerable()
+            .Count(this, static (variable, hoister) => hoister.IsHoistedDeclarator(variable));
+        if (hoistedCount == 0)
         {
             return visited;
         }
 
-        var loop = visited
-            .WithDeclaration(null)
-            .WithInitializers(initializers);
-        if (remainingVariables.Count == 0)
+        if (hoistedCount < variables.Count)
         {
-            return loop;
+            var statements = SplitDeclaration(declaration, ImmutableArray.CreateRange(variables), SyntaxFactory.LocalDeclarationStatement);
+            return SyntaxFactory.Block(statements.Add(visited.WithDeclaration(null)));
         }
 
-        // { <type> <remaining variables>; <loop> }
-        return SyntaxFactory.Block(
-            SyntaxFactory.LocalDeclarationStatement(declaration.WithVariables(remainingVariables)),
-            loop
+        var initializers = SyntaxFactory.SeparatedList<ExpressionSyntax>();
+        foreach (var variable in variables)
+        {
+            if (variable.Initializer is { } initializer)
+            {
+                initializers = initializers.Add(AssignContextField(variable, initializer.Value));
+            }
+        }
+
+        return visited
+            .WithDeclaration(null)
+            .WithInitializers(initializers);
+    }
+
+    private bool IsHoistedDeclarator(VariableDeclaratorSyntax variable) =>
+        _hoistedVariables.Contains(LoweringIdentity.ForDeclaration(variable, semanticModel));
+
+    // The declarators of declaration in the order written: each run of declarators that stay locals becomes one
+    // declaration, each hoisted declarator with an initializer an assignment of its context field. visitedVariables are
+    // the declarators with their initializers already rewritten, in the order of declaration.Variables.
+    private ImmutableArray<StatementSyntax> SplitDeclaration(
+        VariableDeclarationSyntax declaration,
+        ImmutableArray<VariableDeclaratorSyntax> visitedVariables,
+        Func<VariableDeclarationSyntax, StatementSyntax> createDeclaration)
+    {
+        var statements = ImmutableArray.CreateBuilder<StatementSyntax>();
+        var remaining = ImmutableArray.CreateBuilder<VariableDeclaratorSyntax>();
+        foreach (var variable in visitedVariables)
+        {
+            if (!IsHoistedDeclarator(variable))
+            {
+                remaining.Add(variable);
+                continue;
+            }
+
+            FlushRemaining();
+
+            // [WHY] Hoisted variables reside in the context struct, so initializations must become explicit member
+            // assignments. A SharedMemory<T> declaration too, in a kernel as in a device function: the allocation runs
+            // where the declaration is, so its count is evaluated there and a dynamic one is checked against
+            // sharedMemBytes (#544)
+            if (variable.Initializer is { } initializer)
+            {
+                statements.Add(SyntaxFactory.ExpressionStatement(AssignContextField(variable, initializer.Value)));
+            }
+        }
+
+        FlushRemaining();
+        return statements.ToImmutable();
+
+        void FlushRemaining()
+        {
+            if (remaining.Count == 0)
+            {
+                return;
+            }
+
+            statements.Add(createDeclaration(declaration.WithVariables(SyntaxFactory.SeparatedList(remaining))));
+            remaining.Clear();
+        }
+    }
+
+    // __gsharp_ctx-><variable> = <value>
+    private static AssignmentExpressionSyntax AssignContextField(VariableDeclaratorSyntax variable,
+        ExpressionSyntax value) =>
+        SyntaxFactory.AssignmentExpression(
+            SyntaxKind.SimpleAssignmentExpression,
+            CreateContextAccess(variable.Identifier, variable),
+            value
         );
+
+    // Replaces each block that VisitLocalDeclarationStatement made of a split declaration by its statements
+    private static SyntaxList<StatementSyntax> SpliceStatements(SyntaxList<StatementSyntax> statements)
+    {
+        if (!statements
+                .AsStackEnumerable()
+                .Any(static statement => statement.HasAnnotation(s_spliceAnnotation)))
+        {
+            return statements;
+        }
+
+        var spliced = ImmutableArray.CreateBuilder<StatementSyntax>(statements.Count + 4);
+        foreach (var statement in statements)
+        {
+            if (statement is BlockSyntax block && block.HasAnnotation(s_spliceAnnotation))
+            {
+                spliced.AddRange(block.Statements);
+            }
+            else
+            {
+                spliced.Add(statement);
+            }
+        }
+
+        return SyntaxFactory.List(spliced);
     }
 
     public override SyntaxNode? VisitIdentifierName(IdentifierNameSyntax node)
