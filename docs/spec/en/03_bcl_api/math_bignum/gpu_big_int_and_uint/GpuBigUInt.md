@@ -134,6 +134,11 @@ Gets a deferred expression representing this instance, or evaluates and assigns 
 public GpuBigUIntExpr Value { get; set; }
 ```
 
+#### Exceptions
+
+`ArgumentException`<br>
+Thrown by the setter when the assigned expression has more words than this instance (`small.Value = wide`). Nothing is written; an expression of the same width or narrower is accepted.
+
 ## Workspace
 
 Gets the `GpuWorkspace` associated with this GPU integer instance.
