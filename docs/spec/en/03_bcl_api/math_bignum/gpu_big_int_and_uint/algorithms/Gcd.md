@@ -79,19 +79,6 @@ Console.WriteLine($"GCD Result Size: {result.NumWords} words.");
 
 This method implements Lehmer's GCD algorithm. It relies heavily on 64-bit multi-word arithmetic on the GPU. Because this operation requires substantial temporary memory for intermediate divisions, it uses the `GpuWorkspace` memory pool instead of `cudaMalloc`.
 
-## HalfGcdCpuReference Class
-
-**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms`
-
-A CPU reference implementation of Lehmer's / Half-GCD algorithm is provided for host-side validation or testing prior to GPU execution.
-
-```csharp
-public static class HalfGcdCpuReference
-{
-    public static BigInteger Gcd(BigInteger a, BigInteger b);
-}
-```
-
 ## See also
 
 ### BCL API > Math Bignum

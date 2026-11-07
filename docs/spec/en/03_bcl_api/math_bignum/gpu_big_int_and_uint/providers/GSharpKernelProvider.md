@@ -67,7 +67,7 @@ public static readonly GSharpKernelProvider Instance;
 | [Mul(GpuWorkspace, GpuBigUInt, GpuBigUInt, GpuBigUInt)](#mulgpuworkspace-gpubiguint-gpubiguint-gpubiguint) | Computes multi-word NTT multiplication on the GPU. |
 | [Mul(GpuWorkspace, GpuBigUInt, UInt32, GpuBigUInt)](#mulgpuworkspace-gpubiguint-uint32-gpubiguint) | Computes scalar multiplication on the GPU. |
 | [InverseSqrtMega(GpuWorkspace, GpuBigUInt, GpuBigUInt, Int32, Int32, Int32)](#inversesqrtmegagpuworkspace-gpubiguint-gpubiguint-int32-int32-int32) | Executes the cooperative Newton-Raphson inverse square root mega-kernel on the GPU. |
-| [ReciprocalMega(GpuWorkspace, GpuBigUInt, GpuBigUInt, Int32, Int32, Int32, Int32, Int32)](#reciprocalmegagpuworkspace-gpubiguint-gpubiguint-int32-int32-int32-int32-int32) | Executes the cooperative Newton-Raphson reciprocal mega-kernel on the GPU. |
+| [ReciprocalMega(GpuWorkspace, GpuBigUInt, GpuBigUInt, Int32, Int32, Int32)](#reciprocalmegagpuworkspace-gpubiguint-gpubiguint-int32-int32-int32) | Executes the cooperative Newton-Raphson reciprocal mega-kernel on the GPU. |
 | [SqrtFloorCorrection(GpuWorkspace, GpuBigUInt, GpuBigUInt, GpuBigUInt, GpuBigUInt, GpuBigUInt)](#sqrtfloorcorrectiongpuworkspace-gpubiguint-gpubiguint-gpubiguint-gpubiguint-gpubiguint) | Corrects an integer square root estimate to $\lfloor\sqrt{a}\rfloor$ on the device (`SqrtFloorCorrectionKernel`). |
 | [Gcd(GpuWorkspace, GpuBigUInt, GpuBigUInt, GpuBigUInt)](#gcdgpuworkspace-gpubiguint-gpubiguint-gpubiguint) | Computes the Greatest Common Divisor on the GPU using Lehmer's GCD algorithm. |
 | [ModInverse(GpuWorkspace, GpuBigUInt, GpuBigUInt, GpuBigUInt)](#modinversegpuworkspace-gpubiguint-gpubiguint-gpubiguint) | Computes the modular multiplicative inverse on the GPU using Extended Binary GCD or host-orchestrated Euclidean fallback. |
@@ -803,7 +803,7 @@ The target precision in bits.
 `iterations` _Int32_<br>
 The number of Newton-Raphson refinement iterations.
 
-## ReciprocalMega(GpuWorkspace, GpuBigUInt, GpuBigUInt, Int32, Int32, Int32, Int32, Int32)
+## ReciprocalMega(GpuWorkspace, GpuBigUInt, GpuBigUInt, Int32, Int32, Int32)
 
 Executes the cooperative Newton-Raphson reciprocal mega-kernel on the GPU.
 
@@ -813,8 +813,6 @@ public void ReciprocalMega(
     GpuBigUInt targetOperand,
     GpuBigUInt resultBuffer,
     int marginWords,
-    int numBits,
-    int marginBits,
     int iterations,
     int targetBits);
 ```
@@ -832,12 +830,6 @@ The destination buffer for the reciprocal result.
 
 `marginWords` _Int32_<br>
 The margin limbs allocated for internal scratch precision.
-
-`numBits` _Int32_<br>
-The base bit precision.
-
-`marginBits` _Int32_<br>
-Additional precision guard bits.
 
 `iterations` _Int32_<br>
 The number of Newton-Raphson iterations.

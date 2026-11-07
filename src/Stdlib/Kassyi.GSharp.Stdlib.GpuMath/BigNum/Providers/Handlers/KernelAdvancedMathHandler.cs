@@ -290,7 +290,7 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
 
     /// <inheritdoc />
     public void ReciprocalMega(GpuWorkspace workspace, GpuBigUInt targetOperand, GpuBigUInt resultBuffer,
-        int marginWords, int numBits, int marginBits, int iterations, int targetBits)
+        int marginWords, int iterations, int targetBits)
     {
         var n = targetOperand.NumWords;
         var resultWords = (targetBits + 31) / 32;
@@ -347,8 +347,8 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
         const uint SharedMemBytesTranspose = 4224 + 256; // 33 * 32 * 4 + static shared memory
         var sharedMemBytes = Math.Max(sharedMemBytesNtt, SharedMemBytesTranspose);
 
-        var ctx = BuildReciprocalContext(targetOperand, resultBuffer, constant, n, marginWords, targetBits,
-            iterations, buffers, currentProduct, diff, nextIter, carryBuffer);
+        var ctx = BuildReciprocalContext(targetOperand, resultBuffer, constant, n, targetBits, iterations, buffers,
+            currentProduct, diff, nextIter, carryBuffer);
         // The status words of the workspace whose stream runs the kernel, which its reads check.
         ctx.CorrectionStatus = workspace.CorrectionStatusPointer;
 
@@ -565,7 +565,7 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
 
     private static GpuBigIntDivRemKernels.AotContexts.NewtonRaphson BuildReciprocalContext(
         GpuBigUInt targetOperand, GpuBigUInt resultBuffer, GpuBigUInt constant,
-        int n, int marginWords, int targetBits, int iterations,
+        int n, int targetBits, int iterations,
         in NttWorkspaceBuffers buffers, GpuBigUInt currentProduct, GpuBigUInt diff,
         GpuBigUInt nextIter, GpuBigUInt carryBuffer)
     {
@@ -580,9 +580,6 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
             Dimensions = new GpuBigIntDivRemKernels.AotContexts.Dimension
             {
                 NumberOfWords = n,
-                MarginWords = marginWords,
-                NumBits = n * 32,
-                MarginBits = marginWords * 32,
                 TargetBits = targetBits,
                 Iterations = iterations
             },
