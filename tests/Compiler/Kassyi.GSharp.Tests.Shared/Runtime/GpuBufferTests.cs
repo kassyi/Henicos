@@ -16,7 +16,8 @@ public class GpuBufferTests : TranspilerTestBase
 
     // One element past 2 GiB of 4 KiB blocks: the byte count no longer fits int, the element count does
     private const int LargeBlockCount = (int)((1L << 31) / PageBlock.ByteSize) + 1;
-    private const long LargeMinimumAvailableMemory = 8L << 30;
+    // The 2 GiB host copy and the 2 GiB buffer (device or fallback host memory), plus a margin
+    private const long LargeRequiredFreeMemory = 5L << 30;
     private static readonly TimeSpan CompletionTimeout = TimeSpan.FromSeconds(10);
 
     public GpuBufferTests()
@@ -254,9 +255,17 @@ public class GpuBufferTests : TranspilerTestBase
         }
     }
 
-    private static void SkipUnlessLargeMemoryAvailable() =>
-        Skip.If(GC.GetGCMemoryInfo().TotalAvailableMemoryBytes < LargeMinimumAvailableMemory,
-            "A copy of 2 GiB or more needs about 4 GiB of free memory.");
+    private static void SkipUnlessLargeMemoryAvailable()
+    {
+        // The GC measures the memory load at each collection; collect so the value is current.
+        GC.Collect();
+        var info = GC.GetGCMemoryInfo();
+        var freeBytes = info.TotalAvailableMemoryBytes - info.MemoryLoadBytes;
+        Skip.If(
+            freeBytes < LargeRequiredFreeMemory,
+            $"A copy of 2 GiB or more needs about 5 GiB of free memory; {freeBytes >> 20} MiB is free."
+        );
+    }
 
     private static unsafe void AssertLargeRoundTrip(GpuBuffer<PageBlock> buffer)
     {
