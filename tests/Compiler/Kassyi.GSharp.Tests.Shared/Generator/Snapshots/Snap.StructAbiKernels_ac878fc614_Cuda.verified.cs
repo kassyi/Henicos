@@ -110,11 +110,11 @@ public const string DebugName_C = "global::System.Int32";
 [global::System.Runtime.InteropServices.FieldOffset(9)]
 public global::System.Int32 C;
 }
-public static unsafe void Marshal_AbiPackedStruct(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiPackedStruct host, ref AotContexts.AbiPackedStruct native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_AbiPackedStruct(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiPackedStruct host, ref AotContexts.AbiPackedStruct native, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
 {
 native = global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Core.AbiPackedStruct, AotContexts.AbiPackedStruct>(ref host);
 }
-public static unsafe void Unmarshal_AbiPackedStruct(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiPackedStruct host, ref AotContexts.AbiPackedStruct native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_AbiPackedStruct(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiPackedStruct host, ref AotContexts.AbiPackedStruct native, global::System.IntPtr hStream = default)
 {
 host = global::System.Runtime.CompilerServices.Unsafe.As<AotContexts.AbiPackedStruct, global::Kassyi.GSharp.Tests.Shared.Core.AbiPackedStruct>(ref native);
 }
@@ -131,11 +131,11 @@ public const string DebugName_C = "global::System.Int32";
 [global::System.Runtime.InteropServices.FieldOffset(20)]
 public global::System.Int32 C;
 }
-public static unsafe void Marshal_AbiInlineArrayStruct(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiInlineArrayStruct host, ref AotContexts.AbiInlineArrayStruct native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_AbiInlineArrayStruct(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiInlineArrayStruct host, ref AotContexts.AbiInlineArrayStruct native, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
 {
 native = global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Core.AbiInlineArrayStruct, AotContexts.AbiInlineArrayStruct>(ref host);
 }
-public static unsafe void Unmarshal_AbiInlineArrayStruct(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiInlineArrayStruct host, ref AotContexts.AbiInlineArrayStruct native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_AbiInlineArrayStruct(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiInlineArrayStruct host, ref AotContexts.AbiInlineArrayStruct native, global::System.IntPtr hStream = default)
 {
 host = global::System.Runtime.CompilerServices.Unsafe.As<AotContexts.AbiInlineArrayStruct, global::Kassyi.GSharp.Tests.Shared.Core.AbiInlineArrayStruct>(ref native);
 }
@@ -146,11 +146,11 @@ public const string DebugName_Element = "global::System.Int32";
 [global::System.Runtime.InteropServices.FieldOffset(0)]
 public fixed byte Element[16];
 }
-public static unsafe void Marshal_AbiFourInts(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiFourInts host, ref AotContexts.AbiFourInts native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_AbiFourInts(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiFourInts host, ref AotContexts.AbiFourInts native, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
 {
 native = global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Core.AbiFourInts, AotContexts.AbiFourInts>(ref host);
 }
-public static unsafe void Unmarshal_AbiFourInts(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiFourInts host, ref AotContexts.AbiFourInts native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_AbiFourInts(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiFourInts host, ref AotContexts.AbiFourInts native, global::System.IntPtr hStream = default)
 {
 host = global::System.Runtime.CompilerServices.Unsafe.As<AotContexts.AbiFourInts, global::Kassyi.GSharp.Tests.Shared.Core.AbiFourInts>(ref native);
 }
@@ -167,11 +167,11 @@ public const string DebugName_C = "global::System.Int32";
 [global::System.Runtime.InteropServices.FieldOffset(16)]
 public global::System.Int32 C;
 }
-public static unsafe void Marshal_AbiCoreFieldStruct(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiCoreFieldStruct host, ref AotContexts.AbiCoreFieldStruct native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_AbiCoreFieldStruct(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiCoreFieldStruct host, ref AotContexts.AbiCoreFieldStruct native, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
 {
 native = global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Core.AbiCoreFieldStruct, AotContexts.AbiCoreFieldStruct>(ref host);
 }
-public static unsafe void Unmarshal_AbiCoreFieldStruct(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiCoreFieldStruct host, ref AotContexts.AbiCoreFieldStruct native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_AbiCoreFieldStruct(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiCoreFieldStruct host, ref AotContexts.AbiCoreFieldStruct native, global::System.IntPtr hStream = default)
 {
 host = global::System.Runtime.CompilerServices.Unsafe.As<AotContexts.AbiCoreFieldStruct, global::Kassyi.GSharp.Tests.Shared.Core.AbiCoreFieldStruct>(ref native);
 }
@@ -188,11 +188,11 @@ public const string DebugName_C = "global::System.Int32";
 [global::System.Runtime.InteropServices.FieldOffset(20)]
 public global::System.Int32 C;
 }
-public static unsafe void Marshal_AbiPrivateInlineArrayStruct(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiPrivateInlineArrayStruct host, ref AotContexts.AbiPrivateInlineArrayStruct native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_AbiPrivateInlineArrayStruct(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiPrivateInlineArrayStruct host, ref AotContexts.AbiPrivateInlineArrayStruct native, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
 {
 native = global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Core.AbiPrivateInlineArrayStruct, AotContexts.AbiPrivateInlineArrayStruct>(ref host);
 }
-public static unsafe void Unmarshal_AbiPrivateInlineArrayStruct(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiPrivateInlineArrayStruct host, ref AotContexts.AbiPrivateInlineArrayStruct native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_AbiPrivateInlineArrayStruct(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiPrivateInlineArrayStruct host, ref AotContexts.AbiPrivateInlineArrayStruct native, global::System.IntPtr hStream = default)
 {
 host = global::System.Runtime.CompilerServices.Unsafe.As<AotContexts.AbiPrivateInlineArrayStruct, global::Kassyi.GSharp.Tests.Shared.Core.AbiPrivateInlineArrayStruct>(ref native);
 }
@@ -203,11 +203,11 @@ public const string DebugName__element0 = "global::System.Int32";
 [global::System.Runtime.InteropServices.FieldOffset(0)]
 public fixed byte _element0[16];
 }
-public static unsafe void Marshal_AbiPrivateFourInts(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiPrivateFourInts host, ref AotContexts.AbiPrivateFourInts native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_AbiPrivateFourInts(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiPrivateFourInts host, ref AotContexts.AbiPrivateFourInts native, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
 {
 native = global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Core.AbiPrivateFourInts, AotContexts.AbiPrivateFourInts>(ref host);
 }
-public static unsafe void Unmarshal_AbiPrivateFourInts(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiPrivateFourInts host, ref AotContexts.AbiPrivateFourInts native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_AbiPrivateFourInts(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiPrivateFourInts host, ref AotContexts.AbiPrivateFourInts native, global::System.IntPtr hStream = default)
 {
 host = global::System.Runtime.CompilerServices.Unsafe.As<AotContexts.AbiPrivateFourInts, global::Kassyi.GSharp.Tests.Shared.Core.AbiPrivateFourInts>(ref native);
 }
@@ -224,11 +224,11 @@ public const string DebugName_C = "global::System.Int32";
 [global::System.Runtime.InteropServices.FieldOffset(20)]
 public global::System.Int32 C;
 }
-public static unsafe void Marshal_AbiFixedBufferStruct(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiFixedBufferStruct host, ref AotContexts.AbiFixedBufferStruct native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_AbiFixedBufferStruct(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiFixedBufferStruct host, ref AotContexts.AbiFixedBufferStruct native, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
 {
 native = global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Core.AbiFixedBufferStruct, AotContexts.AbiFixedBufferStruct>(ref host);
 }
-public static unsafe void Unmarshal_AbiFixedBufferStruct(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiFixedBufferStruct host, ref AotContexts.AbiFixedBufferStruct native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_AbiFixedBufferStruct(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiFixedBufferStruct host, ref AotContexts.AbiFixedBufferStruct native, global::System.IntPtr hStream = default)
 {
 host = global::System.Runtime.CompilerServices.Unsafe.As<AotContexts.AbiFixedBufferStruct, global::Kassyi.GSharp.Tests.Shared.Core.AbiFixedBufferStruct>(ref native);
 }
@@ -245,11 +245,11 @@ public const string DebugName_C = "global::System.Int32";
 [global::System.Runtime.InteropServices.FieldOffset(16)]
 public global::System.Int32 C;
 }
-public static unsafe void Marshal_AbiAutoPropertyStruct(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiAutoPropertyStruct host, ref AotContexts.AbiAutoPropertyStruct native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_AbiAutoPropertyStruct(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiAutoPropertyStruct host, ref AotContexts.AbiAutoPropertyStruct native, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
 {
 native = global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Core.AbiAutoPropertyStruct, AotContexts.AbiAutoPropertyStruct>(ref host);
 }
-public static unsafe void Unmarshal_AbiAutoPropertyStruct(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiAutoPropertyStruct host, ref AotContexts.AbiAutoPropertyStruct native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_AbiAutoPropertyStruct(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiAutoPropertyStruct host, ref AotContexts.AbiAutoPropertyStruct native, global::System.IntPtr hStream = default)
 {
 host = global::System.Runtime.CompilerServices.Unsafe.As<AotContexts.AbiAutoPropertyStruct, global::Kassyi.GSharp.Tests.Shared.Core.AbiAutoPropertyStruct>(ref native);
 }
@@ -263,11 +263,11 @@ public const string DebugName_C = "global::System.Int32";
 [global::System.Runtime.InteropServices.FieldOffset(4)]
 public global::System.Int32 C;
 }
-public static unsafe void Marshal_AbiComputedPropertyStruct(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiComputedPropertyStruct host, ref AotContexts.AbiComputedPropertyStruct native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_AbiComputedPropertyStruct(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiComputedPropertyStruct host, ref AotContexts.AbiComputedPropertyStruct native, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
 {
 native = global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Core.AbiComputedPropertyStruct, AotContexts.AbiComputedPropertyStruct>(ref host);
 }
-public static unsafe void Unmarshal_AbiComputedPropertyStruct(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiComputedPropertyStruct host, ref AotContexts.AbiComputedPropertyStruct native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_AbiComputedPropertyStruct(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiComputedPropertyStruct host, ref AotContexts.AbiComputedPropertyStruct native, global::System.IntPtr hStream = default)
 {
 host = global::System.Runtime.CompilerServices.Unsafe.As<AotContexts.AbiComputedPropertyStruct, global::Kassyi.GSharp.Tests.Shared.Core.AbiComputedPropertyStruct>(ref native);
 }
@@ -451,7 +451,7 @@ try
 {
 void** __gsharp_kernel_params = stackalloc void*[1];
 global::Kassyi.GSharp.Tests.Shared.Core.StructAbiKernels.AotContexts.AbiPackedStruct __gsharp_native_0 = default;
-global::Kassyi.GSharp.Tests.Shared.Core.StructAbiKernels.AotContexts.Marshal_AbiPackedStruct(ref data, ref __gsharp_native_0, false, null, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.StructAbiKernels.AotContexts.Marshal_AbiPackedStruct(ref data, ref __gsharp_native_0, null, hStream);
 // Marshal ref/out struct: data
 int __gsharp_size_0 = sizeof(global::Kassyi.GSharp.Tests.Shared.Core.StructAbiKernels.AotContexts.AbiPackedStruct);
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
@@ -471,7 +471,7 @@ global::System.IntPtr.Zero // Extra
 // Fast zero-allocation copy from device
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)(&__gsharp_native_0), __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
-global::Kassyi.GSharp.Tests.Shared.Core.StructAbiKernels.AotContexts.Unmarshal_AbiPackedStruct(ref data, ref __gsharp_native_0, false, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.StructAbiKernels.AotContexts.Unmarshal_AbiPackedStruct(ref data, ref __gsharp_native_0, hStream);
 }
 finally
 {
@@ -729,7 +729,7 @@ try
 {
 void** __gsharp_kernel_params = stackalloc void*[1];
 global::Kassyi.GSharp.Tests.Shared.Core.StructAbiKernels.AotContexts.AbiInlineArrayStruct __gsharp_native_0 = default;
-global::Kassyi.GSharp.Tests.Shared.Core.StructAbiKernels.AotContexts.Marshal_AbiInlineArrayStruct(ref data, ref __gsharp_native_0, false, null, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.StructAbiKernels.AotContexts.Marshal_AbiInlineArrayStruct(ref data, ref __gsharp_native_0, null, hStream);
 // Marshal ref/out struct: data
 int __gsharp_size_0 = sizeof(global::Kassyi.GSharp.Tests.Shared.Core.StructAbiKernels.AotContexts.AbiInlineArrayStruct);
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
@@ -749,7 +749,7 @@ global::System.IntPtr.Zero // Extra
 // Fast zero-allocation copy from device
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)(&__gsharp_native_0), __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
-global::Kassyi.GSharp.Tests.Shared.Core.StructAbiKernels.AotContexts.Unmarshal_AbiInlineArrayStruct(ref data, ref __gsharp_native_0, false, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.StructAbiKernels.AotContexts.Unmarshal_AbiInlineArrayStruct(ref data, ref __gsharp_native_0, hStream);
 }
 finally
 {
@@ -992,7 +992,7 @@ try
 {
 void** __gsharp_kernel_params = stackalloc void*[1];
 global::Kassyi.GSharp.Tests.Shared.Core.StructAbiKernels.AotContexts.AbiCoreFieldStruct __gsharp_native_0 = default;
-global::Kassyi.GSharp.Tests.Shared.Core.StructAbiKernels.AotContexts.Marshal_AbiCoreFieldStruct(ref data, ref __gsharp_native_0, false, null, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.StructAbiKernels.AotContexts.Marshal_AbiCoreFieldStruct(ref data, ref __gsharp_native_0, null, hStream);
 // Marshal ref/out struct: data
 int __gsharp_size_0 = sizeof(global::Kassyi.GSharp.Tests.Shared.Core.StructAbiKernels.AotContexts.AbiCoreFieldStruct);
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
@@ -1012,7 +1012,7 @@ global::System.IntPtr.Zero // Extra
 // Fast zero-allocation copy from device
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)(&__gsharp_native_0), __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
-global::Kassyi.GSharp.Tests.Shared.Core.StructAbiKernels.AotContexts.Unmarshal_AbiCoreFieldStruct(ref data, ref __gsharp_native_0, false, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.StructAbiKernels.AotContexts.Unmarshal_AbiCoreFieldStruct(ref data, ref __gsharp_native_0, hStream);
 }
 finally
 {
@@ -1270,7 +1270,7 @@ try
 {
 void** __gsharp_kernel_params = stackalloc void*[1];
 global::Kassyi.GSharp.Tests.Shared.Core.StructAbiKernels.AotContexts.AbiPrivateInlineArrayStruct __gsharp_native_0 = default;
-global::Kassyi.GSharp.Tests.Shared.Core.StructAbiKernels.AotContexts.Marshal_AbiPrivateInlineArrayStruct(ref data, ref __gsharp_native_0, false, null, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.StructAbiKernels.AotContexts.Marshal_AbiPrivateInlineArrayStruct(ref data, ref __gsharp_native_0, null, hStream);
 // Marshal ref/out struct: data
 int __gsharp_size_0 = sizeof(global::Kassyi.GSharp.Tests.Shared.Core.StructAbiKernels.AotContexts.AbiPrivateInlineArrayStruct);
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
@@ -1290,7 +1290,7 @@ global::System.IntPtr.Zero // Extra
 // Fast zero-allocation copy from device
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)(&__gsharp_native_0), __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
-global::Kassyi.GSharp.Tests.Shared.Core.StructAbiKernels.AotContexts.Unmarshal_AbiPrivateInlineArrayStruct(ref data, ref __gsharp_native_0, false, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.StructAbiKernels.AotContexts.Unmarshal_AbiPrivateInlineArrayStruct(ref data, ref __gsharp_native_0, hStream);
 }
 finally
 {
@@ -1502,7 +1502,7 @@ try
 {
 void** __gsharp_kernel_params = stackalloc void*[1];
 global::Kassyi.GSharp.Tests.Shared.Core.StructAbiKernels.AotContexts.AbiFixedBufferStruct __gsharp_native_0 = default;
-global::Kassyi.GSharp.Tests.Shared.Core.StructAbiKernels.AotContexts.Marshal_AbiFixedBufferStruct(ref data, ref __gsharp_native_0, false, null, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.StructAbiKernels.AotContexts.Marshal_AbiFixedBufferStruct(ref data, ref __gsharp_native_0, null, hStream);
 // Marshal ref/out struct: data
 int __gsharp_size_0 = sizeof(global::Kassyi.GSharp.Tests.Shared.Core.StructAbiKernels.AotContexts.AbiFixedBufferStruct);
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
@@ -1522,7 +1522,7 @@ global::System.IntPtr.Zero // Extra
 // Fast zero-allocation copy from device
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)(&__gsharp_native_0), __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
-global::Kassyi.GSharp.Tests.Shared.Core.StructAbiKernels.AotContexts.Unmarshal_AbiFixedBufferStruct(ref data, ref __gsharp_native_0, false, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.StructAbiKernels.AotContexts.Unmarshal_AbiFixedBufferStruct(ref data, ref __gsharp_native_0, hStream);
 }
 finally
 {
@@ -1735,7 +1735,7 @@ try
 {
 void** __gsharp_kernel_params = stackalloc void*[1];
 global::Kassyi.GSharp.Tests.Shared.Core.StructAbiKernels.AotContexts.AbiAutoPropertyStruct __gsharp_native_0 = default;
-global::Kassyi.GSharp.Tests.Shared.Core.StructAbiKernels.AotContexts.Marshal_AbiAutoPropertyStruct(ref data, ref __gsharp_native_0, false, null, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.StructAbiKernels.AotContexts.Marshal_AbiAutoPropertyStruct(ref data, ref __gsharp_native_0, null, hStream);
 // Marshal ref/out struct: data
 int __gsharp_size_0 = sizeof(global::Kassyi.GSharp.Tests.Shared.Core.StructAbiKernels.AotContexts.AbiAutoPropertyStruct);
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
@@ -1755,7 +1755,7 @@ global::System.IntPtr.Zero // Extra
 // Fast zero-allocation copy from device
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)(&__gsharp_native_0), __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
-global::Kassyi.GSharp.Tests.Shared.Core.StructAbiKernels.AotContexts.Unmarshal_AbiAutoPropertyStruct(ref data, ref __gsharp_native_0, false, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.StructAbiKernels.AotContexts.Unmarshal_AbiAutoPropertyStruct(ref data, ref __gsharp_native_0, hStream);
 }
 finally
 {
@@ -1986,7 +1986,7 @@ try
 {
 void** __gsharp_kernel_params = stackalloc void*[1];
 global::Kassyi.GSharp.Tests.Shared.Core.StructAbiKernels.AotContexts.AbiComputedPropertyStruct __gsharp_native_0 = default;
-global::Kassyi.GSharp.Tests.Shared.Core.StructAbiKernels.AotContexts.Marshal_AbiComputedPropertyStruct(ref data, ref __gsharp_native_0, false, null, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.StructAbiKernels.AotContexts.Marshal_AbiComputedPropertyStruct(ref data, ref __gsharp_native_0, null, hStream);
 // Marshal ref/out struct: data
 int __gsharp_size_0 = sizeof(global::Kassyi.GSharp.Tests.Shared.Core.StructAbiKernels.AotContexts.AbiComputedPropertyStruct);
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
@@ -2006,7 +2006,7 @@ global::System.IntPtr.Zero // Extra
 // Fast zero-allocation copy from device
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)(&__gsharp_native_0), __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
-global::Kassyi.GSharp.Tests.Shared.Core.StructAbiKernels.AotContexts.Unmarshal_AbiComputedPropertyStruct(ref data, ref __gsharp_native_0, false, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.StructAbiKernels.AotContexts.Unmarshal_AbiComputedPropertyStruct(ref data, ref __gsharp_native_0, hStream);
 }
 finally
 {
@@ -2248,7 +2248,7 @@ try
 {
 void** __gsharp_kernel_params = stackalloc void*[2];
 global::Kassyi.GSharp.Tests.Shared.Core.StructAbiKernels.AotContexts.AbiComputedPropertyStruct __gsharp_native_0 = default;
-global::Kassyi.GSharp.Tests.Shared.Core.StructAbiKernels.AotContexts.Marshal_AbiComputedPropertyStruct(ref data, ref __gsharp_native_0, false, null, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.StructAbiKernels.AotContexts.Marshal_AbiComputedPropertyStruct(ref data, ref __gsharp_native_0, null, hStream);
 // Marshal ref/out struct: data
 int __gsharp_size_0 = sizeof(global::Kassyi.GSharp.Tests.Shared.Core.StructAbiKernels.AotContexts.AbiComputedPropertyStruct);
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
@@ -2285,7 +2285,7 @@ global::System.IntPtr.Zero // Extra
 // Fast zero-allocation copy from device
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)(&__gsharp_native_0), __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
-global::Kassyi.GSharp.Tests.Shared.Core.StructAbiKernels.AotContexts.Unmarshal_AbiComputedPropertyStruct(ref data, ref __gsharp_native_0, false, hStream);
+global::Kassyi.GSharp.Tests.Shared.Core.StructAbiKernels.AotContexts.Unmarshal_AbiComputedPropertyStruct(ref data, ref __gsharp_native_0, hStream);
 // Copy back array: result
 if (__gsharp_size_1 > 0 && __gsharp_d_1 != global::System.IntPtr.Zero)
 {

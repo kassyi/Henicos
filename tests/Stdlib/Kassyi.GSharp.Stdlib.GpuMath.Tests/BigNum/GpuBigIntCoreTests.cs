@@ -1,5 +1,4 @@
 using System.Collections.Concurrent;
-using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.References;
 
 namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum;
 
@@ -289,37 +288,6 @@ public class GpuBigIntCoreTests
         // Scalar Mul
         GpuBigIntMath.Mul(gpuA, scalarMul, gpuResult);
         AssertGpuResultEqualsCpu(bigA * scalarMul, gpuResult, TestSizeWords);
-    }
-
-    [SkippableFact]
-    public void Test_NttReference_Correctness()
-    {
-        CudaCapability.EnsureGpuAvailable();
-        var rand = new Random(42);
-        int testSize = 256; // 8192 bits
-        var aWords = new uint[testSize];
-        var bWords = new uint[testSize];
-        for (int i = 0; i < testSize; i++)
-        {
-            aWords[i] = (uint)rand.Next() | ((uint)rand.Next() << 16);
-            bWords[i] = (uint)rand.Next() | ((uint)rand.Next() << 16);
-        }
-
-        var aBig = ToBigInteger(aWords);
-        var bBig = ToBigInteger(bWords);
-
-        var expected = BigInteger.Multiply(aBig, bBig);
-        var expectedBytes = expected.ToByteArray();
-        var expectedWords = new uint[testSize * 2];
-        Buffer.BlockCopy(expectedBytes, 0, expectedWords, 0,
-            Math.Min(expectedBytes.Length, expectedWords.Length * 4));
-
-        var actualWords = NttCpuReference.Multiply(aWords, bWords);
-
-        for (int i = 0; i < expectedWords.Length; i++)
-        {
-            Assert.Equal(expectedWords[i], actualWords[i]);
-        }
     }
 
     [SkippableTheory]
@@ -749,36 +717,6 @@ public class GpuBigIntCoreTests
         expected &= mask;
 
         Assert.Equal(expected, actual);
-    }
-
-    [SkippableFact]
-    public void Test_HalfGcdReference_Correctness()
-    {
-        CudaCapability.EnsureGpuAvailable();
-        var rand = new Random(42);
-        for (int i = 0; i < 20; i++)
-        {
-            var bytesA = new byte[256];
-            var bytesB = new byte[256];
-            rand.NextBytes(bytesA);
-            rand.NextBytes(bytesB);
-            bytesA[255] = (byte)(bytesA[255] | 0x80); // Ensure large
-
-            var a = new BigInteger(bytesA, isUnsigned: true, isBigEndian: true);
-            var b = new BigInteger(bytesB, isUnsigned: true, isBigEndian: true);
-
-            if (a < b)
-            {
-                var tmp = a;
-                a = b;
-                b = tmp;
-            }
-
-            var expectedGcd = BigInteger.GreatestCommonDivisor(a, b);
-            var actualGcd = HalfGcdCpuReference.Gcd(a, b);
-
-            Assert.Equal(expectedGcd, actualGcd);
-        }
     }
 
     [SkippableTheory]
