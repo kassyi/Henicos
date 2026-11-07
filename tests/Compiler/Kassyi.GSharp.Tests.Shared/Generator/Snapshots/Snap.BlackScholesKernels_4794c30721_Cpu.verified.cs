@@ -86,7 +86,7 @@ public const string DebugName_N = "global::System.Int32";
 [global::System.Runtime.InteropServices.FieldOffset(88)]
 public global::System.Int32 N;
 }
-public static unsafe void Marshal_BlackScholesKernels_BlackScholesContext(ref global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.BlackScholesContext host, ref AotContexts.BlackScholes native, bool isDevicePtr, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_BlackScholesKernels_BlackScholesContext(ref global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.BlackScholesContext host, ref AotContexts.BlackScholes native, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
 {
 native = default;
 if (host.S != null)
@@ -133,7 +133,7 @@ native.PutResult.Length = host.PutResult.Length;
 }
 native.N = host.N;
 }
-public static unsafe void Unmarshal_BlackScholesKernels_BlackScholesContext(ref global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.BlackScholesContext host, ref AotContexts.BlackScholes native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_BlackScholesKernels_BlackScholesContext(ref global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.BlackScholesContext host, ref AotContexts.BlackScholes native, global::System.IntPtr hStream = default)
 {
 host.R = native.R;
 host.V = native.V;
@@ -478,10 +478,10 @@ global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.AotContexts.Bla
 var __gsharp_allocated_ptrs_0 = new global::System.Collections.Generic.List<global::System.IntPtr>();
 try
 {
-global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.AotContexts.Marshal_BlackScholesKernels_BlackScholesContext(ref ctx, ref __gsharp_native_0, false, __gsharp_allocated_ptrs_0, hStream);
+global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.AotContexts.Marshal_BlackScholesKernels_BlackScholesContext(ref ctx, ref __gsharp_native_0, __gsharp_allocated_ptrs_0, hStream);
 __gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, &__gsharp_native_0);
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
-global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.AotContexts.Unmarshal_BlackScholesKernels_BlackScholesContext(ref ctx, ref __gsharp_native_0, false, hStream);
+global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.AotContexts.Unmarshal_BlackScholesKernels_BlackScholesContext(ref ctx, ref __gsharp_native_0, hStream);
 }
 finally
 {

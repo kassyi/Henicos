@@ -111,11 +111,11 @@ public const string DebugName_X = "global::System.Int32";
 [global::System.Runtime.InteropServices.FieldOffset(8)]
 public global::System.Int32 X;
 }
-public static unsafe void Marshal_PcCaptured(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcCaptured host, ref AotContexts.PcCaptured native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_PcCaptured(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcCaptured host, ref AotContexts.PcCaptured native, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
 {
 native = global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Syntax.PcCaptured, AotContexts.PcCaptured>(ref host);
 }
-public static unsafe void Unmarshal_PcCaptured(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcCaptured host, ref AotContexts.PcCaptured native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_PcCaptured(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcCaptured host, ref AotContexts.PcCaptured native, global::System.IntPtr hStream = default)
 {
 host = global::System.Runtime.CompilerServices.Unsafe.As<AotContexts.PcCaptured, global::Kassyi.GSharp.Tests.Shared.Syntax.PcCaptured>(ref native);
 }
@@ -132,11 +132,11 @@ public const string DebugName_X = "global::System.Int32";
 [global::System.Runtime.InteropServices.FieldOffset(16)]
 public global::System.Int32 X;
 }
-public static unsafe void Marshal_PcCapturedMixed(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcCapturedMixed host, ref AotContexts.PcCapturedMixed native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_PcCapturedMixed(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcCapturedMixed host, ref AotContexts.PcCapturedMixed native, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
 {
 native = global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Syntax.PcCapturedMixed, AotContexts.PcCapturedMixed>(ref host);
 }
-public static unsafe void Unmarshal_PcCapturedMixed(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcCapturedMixed host, ref AotContexts.PcCapturedMixed native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_PcCapturedMixed(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcCapturedMixed host, ref AotContexts.PcCapturedMixed native, global::System.IntPtr hStream = default)
 {
 host = global::System.Runtime.CompilerServices.Unsafe.As<AotContexts.PcCapturedMixed, global::Kassyi.GSharp.Tests.Shared.Syntax.PcCapturedMixed>(ref native);
 }
@@ -156,11 +156,11 @@ public const string DebugName_Last = "global::System.Int32";
 [global::System.Runtime.InteropServices.FieldOffset(20)]
 public global::System.Int32 Last;
 }
-public static unsafe void Marshal_PcCapturedAutoProperty(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcCapturedAutoProperty host, ref AotContexts.PcCapturedAutoProperty native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_PcCapturedAutoProperty(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcCapturedAutoProperty host, ref AotContexts.PcCapturedAutoProperty native, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
 {
 native = global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Syntax.PcCapturedAutoProperty, AotContexts.PcCapturedAutoProperty>(ref host);
 }
-public static unsafe void Unmarshal_PcCapturedAutoProperty(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcCapturedAutoProperty host, ref AotContexts.PcCapturedAutoProperty native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_PcCapturedAutoProperty(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcCapturedAutoProperty host, ref AotContexts.PcCapturedAutoProperty native, global::System.IntPtr hStream = default)
 {
 host = global::System.Runtime.CompilerServices.Unsafe.As<AotContexts.PcCapturedAutoProperty, global::Kassyi.GSharp.Tests.Shared.Syntax.PcCapturedAutoProperty>(ref native);
 }
@@ -193,7 +193,7 @@ global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Run
 }
 }
 }
-public static unsafe void Marshal_PcConverted(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcConverted hostValue, ref AotContexts.PcConverted native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_PcConverted(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcConverted hostValue, ref AotContexts.PcConverted native, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
 {
 native = default;
 if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Syntax.PcConverted>() != global::System.Runtime.CompilerServices.Unsafe.SizeOf<AotContexts.PcConverted.__gsharp_host_mirror>()) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Syntax.PcConverted", global::System.Runtime.CompilerServices.Unsafe.SizeOf<AotContexts.PcConverted.__gsharp_host_mirror>(), global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Syntax.PcConverted>());
@@ -206,7 +206,7 @@ fixed (byte* pField = native.V)
 }
 native.Flag = host.Flag;
 }
-public static unsafe void Unmarshal_PcConverted(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcConverted hostValue, ref AotContexts.PcConverted native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_PcConverted(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcConverted hostValue, ref AotContexts.PcConverted native, global::System.IntPtr hStream = default)
 {
 if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Syntax.PcConverted>() != global::System.Runtime.CompilerServices.Unsafe.SizeOf<AotContexts.PcConverted.__gsharp_host_mirror>()) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Syntax.PcConverted", global::System.Runtime.CompilerServices.Unsafe.SizeOf<AotContexts.PcConverted.__gsharp_host_mirror>(), global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Syntax.PcConverted>());
 if (!AotContexts.PcConverted.__gsharp_host_mirror.FieldOffsetsMatch) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Kassyi.GSharp.Tests.Shared.Syntax.PcConverted");
@@ -228,16 +228,16 @@ public const string DebugName_Inner = "global::Kassyi.GSharp.Tests.Shared.Syntax
 [global::System.Runtime.InteropServices.FieldOffset(8)]
 public AotContexts.PcConverted Inner;
 }
-public static unsafe void Marshal_PcConvertedOuter(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcConvertedOuter host, ref AotContexts.PcConvertedOuter native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_PcConvertedOuter(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcConvertedOuter host, ref AotContexts.PcConvertedOuter native, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
 {
 native = default;
 native.Before = host.Before;
-Marshal_PcConverted(ref host.Inner, ref native.Inner, isDevicePtr, deviceArrays, hStream);
+Marshal_PcConverted(ref host.Inner, ref native.Inner, deviceArrays, hStream);
 }
-public static unsafe void Unmarshal_PcConvertedOuter(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcConvertedOuter host, ref AotContexts.PcConvertedOuter native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_PcConvertedOuter(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcConvertedOuter host, ref AotContexts.PcConvertedOuter native, global::System.IntPtr hStream = default)
 {
 host.Before = native.Before;
-Unmarshal_PcConverted(ref host.Inner, ref native.Inner, isDevicePtr, hStream);
+Unmarshal_PcConverted(ref host.Inner, ref native.Inner, hStream);
 }
 [global::System.Runtime.InteropServices.StructLayout(global::System.Runtime.InteropServices.LayoutKind.Explicit, Size = 56)]
 public unsafe partial struct PcConvertedPairHolder
@@ -249,16 +249,16 @@ public const string DebugName_Items = "global::Kassyi.GSharp.Tests.Shared.Syntax
 [global::System.Runtime.InteropServices.FieldOffset(8)]
 public AotContexts.PcConvertedPair Items;
 }
-public static unsafe void Marshal_PcConvertedPairHolder(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcConvertedPairHolder host, ref AotContexts.PcConvertedPairHolder native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_PcConvertedPairHolder(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcConvertedPairHolder host, ref AotContexts.PcConvertedPairHolder native, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
 {
 native = default;
 native.Tag = host.Tag;
-Marshal_PcConvertedPair(ref host.Items, ref native.Items, isDevicePtr, deviceArrays, hStream);
+Marshal_PcConvertedPair(ref host.Items, ref native.Items, deviceArrays, hStream);
 }
-public static unsafe void Unmarshal_PcConvertedPairHolder(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcConvertedPairHolder host, ref AotContexts.PcConvertedPairHolder native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_PcConvertedPairHolder(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcConvertedPairHolder host, ref AotContexts.PcConvertedPairHolder native, global::System.IntPtr hStream = default)
 {
 host.Tag = native.Tag;
-Unmarshal_PcConvertedPair(ref host.Items, ref native.Items, isDevicePtr, hStream);
+Unmarshal_PcConvertedPair(ref host.Items, ref native.Items, hStream);
 }
 [global::System.Runtime.InteropServices.StructLayout(global::System.Runtime.InteropServices.LayoutKind.Explicit, Size = 48)]
 public unsafe partial struct PcConvertedPair
@@ -267,24 +267,24 @@ public const string DebugName__element0 = "global::Kassyi.GSharp.Tests.Shared.Sy
 [global::System.Runtime.InteropServices.FieldOffset(0)]
 public fixed byte _element0[48];
 }
-public static unsafe void Marshal_PcConvertedPair(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcConvertedPair host, ref AotContexts.PcConvertedPair native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_PcConvertedPair(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcConvertedPair host, ref AotContexts.PcConvertedPair native, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
 {
 native = default;
 fixed (byte* pField = native._element0)
 {
 for (int k = 0; k < 2; k++)
 {
-Marshal_PcConverted(ref host[k], ref ((AotContexts.PcConverted*)pField)[k], isDevicePtr, deviceArrays, hStream);
+Marshal_PcConverted(ref host[k], ref ((AotContexts.PcConverted*)pField)[k], deviceArrays, hStream);
 }
 }
 }
-public static unsafe void Unmarshal_PcConvertedPair(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcConvertedPair host, ref AotContexts.PcConvertedPair native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_PcConvertedPair(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcConvertedPair host, ref AotContexts.PcConvertedPair native, global::System.IntPtr hStream = default)
 {
 fixed (byte* pField = native._element0)
 {
 for (int k = 0; k < 2; k++)
 {
-Unmarshal_PcConverted(ref host[k], ref ((AotContexts.PcConverted*)pField)[k], isDevicePtr, hStream);
+Unmarshal_PcConverted(ref host[k], ref ((AotContexts.PcConverted*)pField)[k], hStream);
 }
 }
 }
@@ -312,7 +312,7 @@ global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Run
 }
 }
 }
-public static unsafe void Marshal_PcSized(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcSized hostValue, ref AotContexts.PcSized native, bool isDevicePtr, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_PcSized(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcSized hostValue, ref AotContexts.PcSized native, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
 {
 native = default;
 if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Syntax.PcSized>() != global::System.Runtime.CompilerServices.Unsafe.SizeOf<AotContexts.PcSized.__gsharp_host_mirror>()) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Syntax.PcSized", global::System.Runtime.CompilerServices.Unsafe.SizeOf<AotContexts.PcSized.__gsharp_host_mirror>(), global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Syntax.PcSized>());
@@ -324,7 +324,7 @@ fixed (byte* pField = native.V)
 *((global::System.Numerics.Vector2*)pField) = host.V;
 }
 }
-public static unsafe void Unmarshal_PcSized(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcSized hostValue, ref AotContexts.PcSized native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_PcSized(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PcSized hostValue, ref AotContexts.PcSized native, global::System.IntPtr hStream = default)
 {
 if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Syntax.PcSized>() != global::System.Runtime.CompilerServices.Unsafe.SizeOf<AotContexts.PcSized.__gsharp_host_mirror>()) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Syntax.PcSized", global::System.Runtime.CompilerServices.Unsafe.SizeOf<AotContexts.PcSized.__gsharp_host_mirror>(), global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Syntax.PcSized>());
 if (!AotContexts.PcSized.__gsharp_host_mirror.FieldOffsetsMatch) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Kassyi.GSharp.Tests.Shared.Syntax.PcSized");
@@ -830,7 +830,7 @@ try
 {
 void** __gsharp_kernel_params = stackalloc void*[2];
 global::Kassyi.GSharp.Tests.Shared.Syntax.PrimaryConstructorKernels.AotContexts.PcCaptured __gsharp_native_0 = default;
-global::Kassyi.GSharp.Tests.Shared.Syntax.PrimaryConstructorKernels.AotContexts.Marshal_PcCaptured(ref data, ref __gsharp_native_0, false, null, hStream);
+global::Kassyi.GSharp.Tests.Shared.Syntax.PrimaryConstructorKernels.AotContexts.Marshal_PcCaptured(ref data, ref __gsharp_native_0, null, hStream);
 // Marshal ref/out struct: data
 int __gsharp_size_0 = sizeof(global::Kassyi.GSharp.Tests.Shared.Syntax.PrimaryConstructorKernels.AotContexts.PcCaptured);
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
@@ -867,7 +867,7 @@ global::System.IntPtr.Zero // Extra
 // Fast zero-allocation copy from device
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)(&__gsharp_native_0), __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
-global::Kassyi.GSharp.Tests.Shared.Syntax.PrimaryConstructorKernels.AotContexts.Unmarshal_PcCaptured(ref data, ref __gsharp_native_0, false, hStream);
+global::Kassyi.GSharp.Tests.Shared.Syntax.PrimaryConstructorKernels.AotContexts.Unmarshal_PcCaptured(ref data, ref __gsharp_native_0, hStream);
 // Copy back array: output
 if (__gsharp_size_1 > 0 && __gsharp_d_1 != global::System.IntPtr.Zero)
 {
@@ -999,7 +999,7 @@ try
 {
 void** __gsharp_kernel_params = stackalloc void*[2];
 global::Kassyi.GSharp.Tests.Shared.Syntax.PrimaryConstructorKernels.AotContexts.PcCapturedMixed __gsharp_native_0 = default;
-global::Kassyi.GSharp.Tests.Shared.Syntax.PrimaryConstructorKernels.AotContexts.Marshal_PcCapturedMixed(ref data, ref __gsharp_native_0, false, null, hStream);
+global::Kassyi.GSharp.Tests.Shared.Syntax.PrimaryConstructorKernels.AotContexts.Marshal_PcCapturedMixed(ref data, ref __gsharp_native_0, null, hStream);
 // Marshal ref/out struct: data
 int __gsharp_size_0 = sizeof(global::Kassyi.GSharp.Tests.Shared.Syntax.PrimaryConstructorKernels.AotContexts.PcCapturedMixed);
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
@@ -1036,7 +1036,7 @@ global::System.IntPtr.Zero // Extra
 // Fast zero-allocation copy from device
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)(&__gsharp_native_0), __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
-global::Kassyi.GSharp.Tests.Shared.Syntax.PrimaryConstructorKernels.AotContexts.Unmarshal_PcCapturedMixed(ref data, ref __gsharp_native_0, false, hStream);
+global::Kassyi.GSharp.Tests.Shared.Syntax.PrimaryConstructorKernels.AotContexts.Unmarshal_PcCapturedMixed(ref data, ref __gsharp_native_0, hStream);
 // Copy back array: layout
 if (__gsharp_size_1 > 0 && __gsharp_d_1 != global::System.IntPtr.Zero)
 {
@@ -1175,7 +1175,7 @@ try
 {
 void** __gsharp_kernel_params = stackalloc void*[2];
 global::Kassyi.GSharp.Tests.Shared.Syntax.PrimaryConstructorKernels.AotContexts.PcCapturedAutoProperty __gsharp_native_0 = default;
-global::Kassyi.GSharp.Tests.Shared.Syntax.PrimaryConstructorKernels.AotContexts.Marshal_PcCapturedAutoProperty(ref data, ref __gsharp_native_0, false, null, hStream);
+global::Kassyi.GSharp.Tests.Shared.Syntax.PrimaryConstructorKernels.AotContexts.Marshal_PcCapturedAutoProperty(ref data, ref __gsharp_native_0, null, hStream);
 // Marshal ref/out struct: data
 int __gsharp_size_0 = sizeof(global::Kassyi.GSharp.Tests.Shared.Syntax.PrimaryConstructorKernels.AotContexts.PcCapturedAutoProperty);
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
@@ -1212,7 +1212,7 @@ global::System.IntPtr.Zero // Extra
 // Fast zero-allocation copy from device
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)(&__gsharp_native_0), __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
-global::Kassyi.GSharp.Tests.Shared.Syntax.PrimaryConstructorKernels.AotContexts.Unmarshal_PcCapturedAutoProperty(ref data, ref __gsharp_native_0, false, hStream);
+global::Kassyi.GSharp.Tests.Shared.Syntax.PrimaryConstructorKernels.AotContexts.Unmarshal_PcCapturedAutoProperty(ref data, ref __gsharp_native_0, hStream);
 // Copy back array: output
 if (__gsharp_size_1 > 0 && __gsharp_d_1 != global::System.IntPtr.Zero)
 {
@@ -1335,7 +1335,7 @@ try
 {
 void** __gsharp_kernel_params = stackalloc void*[2];
 global::Kassyi.GSharp.Tests.Shared.Syntax.PrimaryConstructorKernels.AotContexts.PcConverted __gsharp_native_0 = default;
-global::Kassyi.GSharp.Tests.Shared.Syntax.PrimaryConstructorKernels.AotContexts.Marshal_PcConverted(ref data, ref __gsharp_native_0, false, null, hStream);
+global::Kassyi.GSharp.Tests.Shared.Syntax.PrimaryConstructorKernels.AotContexts.Marshal_PcConverted(ref data, ref __gsharp_native_0, null, hStream);
 // Marshal ref/out struct: data
 int __gsharp_size_0 = sizeof(global::Kassyi.GSharp.Tests.Shared.Syntax.PrimaryConstructorKernels.AotContexts.PcConverted);
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
@@ -1372,7 +1372,7 @@ global::System.IntPtr.Zero // Extra
 // Fast zero-allocation copy from device
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)(&__gsharp_native_0), __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
-global::Kassyi.GSharp.Tests.Shared.Syntax.PrimaryConstructorKernels.AotContexts.Unmarshal_PcConverted(ref data, ref __gsharp_native_0, false, hStream);
+global::Kassyi.GSharp.Tests.Shared.Syntax.PrimaryConstructorKernels.AotContexts.Unmarshal_PcConverted(ref data, ref __gsharp_native_0, hStream);
 // Copy back array: output
 if (__gsharp_size_1 > 0 && __gsharp_d_1 != global::System.IntPtr.Zero)
 {
@@ -1508,7 +1508,7 @@ try
 {
 void** __gsharp_kernel_params = stackalloc void*[2];
 global::Kassyi.GSharp.Tests.Shared.Syntax.PrimaryConstructorKernels.AotContexts.PcConvertedOuter __gsharp_native_0 = default;
-global::Kassyi.GSharp.Tests.Shared.Syntax.PrimaryConstructorKernels.AotContexts.Marshal_PcConvertedOuter(ref data, ref __gsharp_native_0, false, null, hStream);
+global::Kassyi.GSharp.Tests.Shared.Syntax.PrimaryConstructorKernels.AotContexts.Marshal_PcConvertedOuter(ref data, ref __gsharp_native_0, null, hStream);
 // Marshal ref/out struct: data
 int __gsharp_size_0 = sizeof(global::Kassyi.GSharp.Tests.Shared.Syntax.PrimaryConstructorKernels.AotContexts.PcConvertedOuter);
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
@@ -1545,7 +1545,7 @@ global::System.IntPtr.Zero // Extra
 // Fast zero-allocation copy from device
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)(&__gsharp_native_0), __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
-global::Kassyi.GSharp.Tests.Shared.Syntax.PrimaryConstructorKernels.AotContexts.Unmarshal_PcConvertedOuter(ref data, ref __gsharp_native_0, false, hStream);
+global::Kassyi.GSharp.Tests.Shared.Syntax.PrimaryConstructorKernels.AotContexts.Unmarshal_PcConvertedOuter(ref data, ref __gsharp_native_0, hStream);
 // Copy back array: output
 if (__gsharp_size_1 > 0 && __gsharp_d_1 != global::System.IntPtr.Zero)
 {
@@ -1691,7 +1691,7 @@ var __gsharp_native_0 = global::System.Runtime.InteropServices.MemoryMarshal.Cas
 global::System.Span<global::Kassyi.GSharp.Tests.Shared.Syntax.PcConverted> __gsharp_host_0 = items;
 for (int __gsharp_index_0 = 0; __gsharp_index_0 < __gsharp_native_0.Length; __gsharp_index_0++)
 {
-global::Kassyi.GSharp.Tests.Shared.Syntax.PrimaryConstructorKernels.AotContexts.Marshal_PcConverted(ref __gsharp_host_0[__gsharp_index_0], ref __gsharp_native_0[__gsharp_index_0], false, null, hStream);
+global::Kassyi.GSharp.Tests.Shared.Syntax.PrimaryConstructorKernels.AotContexts.Marshal_PcConverted(ref __gsharp_host_0[__gsharp_index_0], ref __gsharp_native_0[__gsharp_index_0], null, hStream);
 }
 fixed (byte* __gsharp_p_0 = __gsharp_shadow_0)
 {
@@ -1746,7 +1746,7 @@ var __gsharp_native_0 = global::System.Runtime.InteropServices.MemoryMarshal.Cas
 global::System.Span<global::Kassyi.GSharp.Tests.Shared.Syntax.PcConverted> __gsharp_host_0 = items;
 for (int __gsharp_index_0 = 0; __gsharp_index_0 < __gsharp_native_0.Length; __gsharp_index_0++)
 {
-global::Kassyi.GSharp.Tests.Shared.Syntax.PrimaryConstructorKernels.AotContexts.Unmarshal_PcConverted(ref __gsharp_host_0[__gsharp_index_0], ref __gsharp_native_0[__gsharp_index_0], false, hStream);
+global::Kassyi.GSharp.Tests.Shared.Syntax.PrimaryConstructorKernels.AotContexts.Unmarshal_PcConverted(ref __gsharp_host_0[__gsharp_index_0], ref __gsharp_native_0[__gsharp_index_0], hStream);
 }
 }
 // Copy back array: output
@@ -1910,7 +1910,7 @@ try
 {
 void** __gsharp_kernel_params = stackalloc void*[2];
 global::Kassyi.GSharp.Tests.Shared.Syntax.PrimaryConstructorKernels.AotContexts.PcConvertedPairHolder __gsharp_native_0 = default;
-global::Kassyi.GSharp.Tests.Shared.Syntax.PrimaryConstructorKernels.AotContexts.Marshal_PcConvertedPairHolder(ref data, ref __gsharp_native_0, false, null, hStream);
+global::Kassyi.GSharp.Tests.Shared.Syntax.PrimaryConstructorKernels.AotContexts.Marshal_PcConvertedPairHolder(ref data, ref __gsharp_native_0, null, hStream);
 // Marshal ref/out struct: data
 int __gsharp_size_0 = sizeof(global::Kassyi.GSharp.Tests.Shared.Syntax.PrimaryConstructorKernels.AotContexts.PcConvertedPairHolder);
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
@@ -1947,7 +1947,7 @@ global::System.IntPtr.Zero // Extra
 // Fast zero-allocation copy from device
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)(&__gsharp_native_0), __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
-global::Kassyi.GSharp.Tests.Shared.Syntax.PrimaryConstructorKernels.AotContexts.Unmarshal_PcConvertedPairHolder(ref data, ref __gsharp_native_0, false, hStream);
+global::Kassyi.GSharp.Tests.Shared.Syntax.PrimaryConstructorKernels.AotContexts.Unmarshal_PcConvertedPairHolder(ref data, ref __gsharp_native_0, hStream);
 // Copy back array: output
 if (__gsharp_size_1 > 0 && __gsharp_d_1 != global::System.IntPtr.Zero)
 {
@@ -2068,7 +2068,7 @@ try
 {
 void** __gsharp_kernel_params = stackalloc void*[2];
 global::Kassyi.GSharp.Tests.Shared.Syntax.PrimaryConstructorKernels.AotContexts.PcSized __gsharp_native_0 = default;
-global::Kassyi.GSharp.Tests.Shared.Syntax.PrimaryConstructorKernels.AotContexts.Marshal_PcSized(ref data, ref __gsharp_native_0, false, null, hStream);
+global::Kassyi.GSharp.Tests.Shared.Syntax.PrimaryConstructorKernels.AotContexts.Marshal_PcSized(ref data, ref __gsharp_native_0, null, hStream);
 // Marshal ref/out struct: data
 int __gsharp_size_0 = sizeof(global::Kassyi.GSharp.Tests.Shared.Syntax.PrimaryConstructorKernels.AotContexts.PcSized);
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
@@ -2105,7 +2105,7 @@ global::System.IntPtr.Zero // Extra
 // Fast zero-allocation copy from device
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)(&__gsharp_native_0), __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
-global::Kassyi.GSharp.Tests.Shared.Syntax.PrimaryConstructorKernels.AotContexts.Unmarshal_PcSized(ref data, ref __gsharp_native_0, false, hStream);
+global::Kassyi.GSharp.Tests.Shared.Syntax.PrimaryConstructorKernels.AotContexts.Unmarshal_PcSized(ref data, ref __gsharp_native_0, hStream);
 // Copy back array: output
 if (__gsharp_size_1 > 0 && __gsharp_d_1 != global::System.IntPtr.Zero)
 {

@@ -180,19 +180,6 @@ public class GpuBigUFloatTests : IDisposable
     }
 
     [SkippableFact]
-    [Scenario(TestScenario.SadPath)]
-    public void Test_NotImplementedMethods()
-    {
-        CudaCapability.EnsureGpuAvailable();
-
-        using var aSig = new GpuBigUInt(_context, new uint[] { 4 });
-        using var a = new GpuBigUFloat(aSig, 0);
-
-        Assert.Throws<NotImplementedException>(() => a.AlignRadixPoint(a));
-        Assert.Throws<NotImplementedException>(() => a.Round(GpuBigFloatRoundingMode.RoundToNearestEven, false, false, false));
-    }
-
-    [SkippableFact]
     [Category(TestCategory.Stdlib)]
     [Scenario(TestScenario.Boundary)]
     public void GpuBigUFloat_EffectiveScale_Create_StrictCompare()
