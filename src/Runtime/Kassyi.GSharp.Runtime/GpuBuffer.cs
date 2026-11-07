@@ -114,33 +114,39 @@ public sealed class GpuBuffer<T> : IDisposable where T : unmanaged
             return;
         }
 
-        if (_isCpuFallback)
+        // The byte count of a buffer of 2 GiB or more does not fit int, so it is computed in nint and the source is
+        // walked through a pointer instead of a byte span.
+        var byteCount = (nint)source.Length * sizeof(T);
+        fixed (T* ptr = source)
         {
-            var copySize = checked((ulong)(source.Length * sizeof(T)));
-            fixed (T* ptr = source)
+            if (_isCpuFallback)
             {
-                Buffer.MemoryCopy(ptr, (void*)_devicePointer, (ulong)_byteSize, copySize);
+                Buffer.MemoryCopy(ptr, (void*)_devicePointer, _byteSize, byteCount);
+                return;
             }
 
-            return;
+            using var scope = new ContextScope(_owningContext);
+            UploadThroughStaging((byte*)ptr, byteCount, GetOrCreateTransferStream());
         }
+    }
 
-        using var scope = new ContextScope(_owningContext);
-        var stream = GetOrCreateTransferStream();
-        var remaining = MemoryMarshal.AsBytes(source);
+    private unsafe void UploadThroughStaging(byte* source, nint byteCount, IntPtr stream)
+    {
         var staging = PinnedStagingPool.Rent();
         try
         {
             var destination = _devicePointer;
-            while (!remaining.IsEmpty)
+            var remaining = byteCount;
+            while (remaining > 0)
             {
-                var chunkBytes = Math.Min(PinnedStagingBuffer.Size, remaining.Length);
-                remaining[..chunkBytes].CopyTo(staging.GetSpan(chunkBytes));
+                var chunkBytes = (int)Math.Min(PinnedStagingBuffer.Size, remaining);
+                new ReadOnlySpan<byte>(source, chunkBytes).CopyTo(staging.GetSpan(chunkBytes));
                 CudaException.ThrowIfError(
                     CudaDriverApi.cuMemcpyHtoDAsync_v2(destination, staging.Pointer, chunkBytes, stream));
                 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(stream));
                 destination += chunkBytes;
-                remaining = remaining[chunkBytes..];
+                source += chunkBytes;
+                remaining -= chunkBytes;
             }
         }
         finally
@@ -185,17 +191,18 @@ public sealed class GpuBuffer<T> : IDisposable where T : unmanaged
             return;
         }
 
-        var copySize = checked((ulong)(destination.Length * sizeof(T)));
+        // Computed in nint: the byte count of a buffer of 2 GiB or more does not fit int.
+        var byteCount = (nint)destination.Length * sizeof(T);
         fixed (T* ptr = destination)
         {
             if (_isCpuFallback)
             {
-                Buffer.MemoryCopy((void*)_devicePointer, ptr, copySize, copySize);
+                Buffer.MemoryCopy((void*)_devicePointer, ptr, byteCount, byteCount);
                 return;
             }
 
             using var scope = new ContextScope(_owningContext);
-            CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2((IntPtr)ptr, _devicePointer, (nint)copySize));
+            CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2((IntPtr)ptr, _devicePointer, byteCount));
         }
     }
 
