@@ -123,8 +123,8 @@ public static partial class StackLinqExtensions
     /// <param name="source">A parallel sequence of <see cref="float"/> values to calculate the sum of.</param>
     /// <returns>The sum of the values in the sequence.</returns>
     /// <remarks>
-    /// As the sequential <c>Sum</c> and as PLINQ, the elements are added in a <see cref="double"/> accumulator, which is
-    /// rounded to <see cref="float"/> once at the end; <c>AsParallel()</c> does not trade that accuracy for speed.
+    /// As the sequential <c>Sum</c> and as PLINQ, the elements are added in a <see cref="double"/> accumulator, which
+    /// is rounded to <see cref="float"/> once at the end; <c>AsParallel()</c> does not trade that accuracy for speed.
     /// </remarks>
     public static float Sum<TEnumerator>(
         this ParallelStackEnumerable<TEnumerator, float> source)
