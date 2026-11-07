@@ -1,3 +1,7 @@
+using ChildList = System.Collections.Immutable.ImmutableArray<
+    (Microsoft.CodeAnalysis.CSharp.Syntax.ExpressionSyntax Child,
+     Kassyi.GSharp.Compiler.Diagnostics.Kernel.Rules.StackArrays.Carry Carry)>.Builder;
+
 namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel.Rules.StackArrays;
 
 /// <summary>How a child expression carries the reference of its parent's value.</summary>
@@ -26,7 +30,7 @@ internal enum Carry
 internal sealed class StorageGatherer(SemanticModel model, Dictionary<ISymbol, ImmutableArray<Storage>.Builder> held)
 {
     private readonly Dictionary<ITypeSymbol, bool> _carriers = new(SymbolEqualityComparer.Default);
-    private readonly Stack<ImmutableArray<(ExpressionSyntax Child, Carry Carry)>.Builder> _childLists = new();
+    private readonly Stack<ChildList> _childLists = new();
 
     public ImmutableArray<Storage> StorageOf(ExpressionSyntax value)
     {
@@ -54,7 +58,9 @@ internal sealed class StorageGatherer(SemanticModel model, Dictionary<ISymbol, I
             return;
         }
 
-        var children = _childLists.Count > 0 ? _childLists.Pop() : ImmutableArray.CreateBuilder<(ExpressionSyntax Child, Carry Carry)>();
+        var children = _childLists.Count > 0
+            ? _childLists.Pop()
+            : ImmutableArray.CreateBuilder<(ExpressionSyntax Child, Carry Carry)>();
         try
         {
             AddChildren(value, children);
@@ -91,88 +97,103 @@ internal sealed class StorageGatherer(SemanticModel model, Dictionary<ISymbol, I
     }
 
     // One row per syntax kind: the children that may carry the reference of the node's value, and how
-    private static void AddChildren(ExpressionSyntax node, ImmutableArray<(ExpressionSyntax Child, Carry Carry)>.Builder children)
+    private static void AddChildren(ExpressionSyntax node, ChildList children)
     {
         switch (node)
         {
+            // The reference passes through unchanged
             case ParenthesizedExpressionSyntax parenthesized:
                 children.Add((parenthesized.Expression, Carry.Through));
                 break;
-            case CastExpressionSyntax cast:
-                children.Add((cast.Expression, Carry.Through));
-                break;
+            case CastExpressionSyntax cast: children.Add((cast.Expression, Carry.Through)); break;
             case CheckedExpressionSyntax checkedExpression:
                 children.Add((checkedExpression.Expression, Carry.Through));
                 break;
-            case MemberAccessExpressionSyntax member:
-                children.Add((member.Expression, Carry.Through));
-                break;
-            case ConditionalExpressionSyntax conditional:
-                children.Add((conditional.WhenTrue, Carry.Through));
-                children.Add((conditional.WhenFalse, Carry.Through));
-                break;
-            case BinaryExpressionSyntax binary:
-                children.Add((binary.Left, Carry.Value));
-                children.Add((binary.Right, Carry.Value));
-                break;
-            case PrefixUnaryExpressionSyntax prefix:
-                children.Add((prefix.Operand, prefix.IsKind(SyntaxKind.AddressOfExpression) ? Carry.Address : Carry.Value));
-                break;
-            case PostfixUnaryExpressionSyntax postfix:
-                children.Add((postfix.Operand, Carry.Value));
-                break;
-            case RefExpressionSyntax refExpression:
-                children.Add((refExpression.Expression, Carry.Address));
-                break;
-            case ElementAccessExpressionSyntax element:
-                children.Add((element.Expression, Carry.Value));
-                break;
+            case MemberAccessExpressionSyntax member: children.Add((member.Expression, Carry.Through)); break;
+            // The value of the operand may hold the reference
+            case BinaryExpressionSyntax binary: AddBinaryChildren(binary, children); break;
+            case PostfixUnaryExpressionSyntax postfix: children.Add((postfix.Operand, Carry.Value)); break;
+            case ElementAccessExpressionSyntax element: children.Add((element.Expression, Carry.Value)); break;
             case ConditionalAccessExpressionSyntax conditionalAccess:
                 children.Add((conditionalAccess.Expression, Carry.Value));
                 break;
-            case AssignmentExpressionSyntax assignment:
-                children.Add((assignment.Right, Carry.Value));
-                break;
-            case InvocationExpressionSyntax invocation:
-                if (invocation.Expression is MemberAccessExpressionSyntax method)
-                {
-                    children.Add((method.Expression, Carry.Value));
-                }
+            case AssignmentExpressionSyntax assignment: children.Add((assignment.Right, Carry.Value)); break;
+            // The address of the operand may be held
+            case RefExpressionSyntax refExpression: children.Add((refExpression.Expression, Carry.Address)); break;
+            // The value of the operand, or its address for &x
+            case PrefixUnaryExpressionSyntax prefix: AddPrefixChildren(prefix, children); break;
+            // Composite forms
+            case ConditionalExpressionSyntax conditional: AddConditionalChildren(conditional, children); break;
+            case InvocationExpressionSyntax invocation: AddCallChildren(invocation, children); break;
+            case BaseObjectCreationExpressionSyntax creation: AddCreationChildren(creation, children); break;
+            case WithExpressionSyntax with: AddWithChildren(with, children); break;
+            case TupleExpressionSyntax tuple: AddTupleChildren(tuple, children); break;
+            case SwitchExpressionSyntax switchExpression: AddSwitchArmChildren(switchExpression, children); break;
+        }
+    }
 
-                AddArguments(invocation.ArgumentList, children);
-                break;
-            case BaseObjectCreationExpressionSyntax creation:
-                if (creation.ArgumentList is { } creationArguments)
-                {
-                    AddArguments(creationArguments, children);
-                }
+    private static void AddConditionalChildren(ConditionalExpressionSyntax conditional, ChildList children)
+    {
+        children.Add((conditional.WhenTrue, Carry.Through));
+        children.Add((conditional.WhenFalse, Carry.Through));
+    }
 
-                AddInitializer(creation.Initializer, children);
-                break;
-            case WithExpressionSyntax with:
-                children.Add((with.Expression, Carry.Value));
-                AddInitializer(with.Initializer, children);
-                break;
-            case TupleExpressionSyntax tuple:
-                foreach (var argument in tuple.Arguments)
-                {
-                    children.Add((argument.Expression, Carry.Value));
-                }
+    private static void AddBinaryChildren(BinaryExpressionSyntax binary, ChildList children)
+    {
+        children.Add((binary.Left, Carry.Value));
+        children.Add((binary.Right, Carry.Value));
+    }
 
-                break;
-            case SwitchExpressionSyntax switchExpression:
-                foreach (var arm in switchExpression.Arms)
-                {
-                    children.Add((arm.Expression, Carry.Value));
-                }
+    private static void AddPrefixChildren(PrefixUnaryExpressionSyntax prefix, ChildList children)
+    {
+        children.Add((prefix.Operand, prefix.IsKind(SyntaxKind.AddressOfExpression) ? Carry.Address : Carry.Value));
+    }
 
-                break;
+    private static void AddCallChildren(InvocationExpressionSyntax invocation, ChildList children)
+    {
+        if (invocation.Expression is MemberAccessExpressionSyntax method)
+        {
+            children.Add((method.Expression, Carry.Value));
+        }
+
+        AddArguments(invocation.ArgumentList, children);
+    }
+
+    private static void AddCreationChildren(BaseObjectCreationExpressionSyntax creation, ChildList children)
+    {
+        if (creation.ArgumentList is { } creationArguments)
+        {
+            AddArguments(creationArguments, children);
+        }
+
+        AddInitializer(creation.Initializer, children);
+    }
+
+    private static void AddWithChildren(WithExpressionSyntax with, ChildList children)
+    {
+        children.Add((with.Expression, Carry.Value));
+        AddInitializer(with.Initializer, children);
+    }
+
+    private static void AddTupleChildren(TupleExpressionSyntax tuple, ChildList children)
+    {
+        foreach (var argument in tuple.Arguments)
+        {
+            children.Add((argument.Expression, Carry.Value));
+        }
+    }
+
+    private static void AddSwitchArmChildren(SwitchExpressionSyntax switchExpression, ChildList children)
+    {
+        foreach (var arm in switchExpression.Arms)
+        {
+            children.Add((arm.Expression, Carry.Value));
         }
     }
 
     // The arguments of a call or a constructor: what the callee may return. A ref or in argument passes the variable
     // itself, whose address the callee may return (fixed (int* p = &x) return p;)
-    private static void AddArguments(ArgumentListSyntax arguments, ImmutableArray<(ExpressionSyntax Child, Carry Carry)>.Builder children)
+    private static void AddArguments(ArgumentListSyntax arguments, ChildList children)
     {
         foreach (var argument in arguments.Arguments)
         {
@@ -182,8 +203,7 @@ internal sealed class StorageGatherer(SemanticModel model, Dictionary<ISymbol, I
     }
 
     // The members of an object initializer (X = a) or a collection initializer element
-    private static void AddInitializer(InitializerExpressionSyntax? initializer,
-        ImmutableArray<(ExpressionSyntax Child, Carry Carry)>.Builder children)
+    private static void AddInitializer(InitializerExpressionSyntax? initializer, ChildList children)
     {
         if (initializer == null)
         {

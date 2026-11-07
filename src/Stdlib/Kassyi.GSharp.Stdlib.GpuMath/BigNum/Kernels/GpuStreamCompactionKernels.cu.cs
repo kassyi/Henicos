@@ -20,7 +20,7 @@ public static partial class GpuStreamCompactionKernels
     }
 
     /// <summary>
-    /// The number of elements described by <paramref name="count"/> (design D3 4.1): its limit without a count word,
+    /// The number of elements described by <paramref name="count"/>: its limit without a count word,
     /// otherwise <c>clamp(Base[0] - Skip, 0, Limit)</c>.
     /// </summary>
     [GpuDeviceFunction, GpuInline]

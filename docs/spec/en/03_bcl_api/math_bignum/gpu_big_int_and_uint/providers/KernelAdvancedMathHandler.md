@@ -28,7 +28,7 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
 | [Gcd(GpuWorkspace, GpuBigUInt, GpuBigUInt, GpuBigUInt)](#gcdgpuworkspace-gpubiguint-gpubiguint-gpubiguint) | Computes the Greatest Common Divisor using `GpuBigIntGcdKernels.ExecuteLehmerGcdMacroKernel` and `GpuBigIntDivRem.Mod` fallback steps. |
 | [ModInverse(GpuWorkspace, GpuBigUInt, GpuBigUInt, GpuBigUInt)](#modinversegpuworkspace-gpubiguint-gpubiguint-gpubiguint) | Computes the modular multiplicative inverse via `GpuBigIntGcdKernels.ExecuteExtendedBinaryGcdMacroKernel` (for odd moduli) or `ModInverseHostLoopController` (for even moduli). |
 | [InverseSqrtMega(GpuWorkspace, GpuBigUInt, GpuBigUInt, Int32, Int32, Int32)](#inversesqrtmegagpuworkspace-gpubiguint-gpubiguint-int32-int32-int32) | Launches `GpuBigIntSqrtKernels.InverseSqrtNewtonRaphsonMegaKernel` to compute the fixed-point inverse square root on the GPU. |
-| [ReciprocalMega(GpuWorkspace, GpuBigUInt, GpuBigUInt, Int32, Int32, Int32, Int32, Int32)](#reciprocalmegagpuworkspace-gpubiguint-gpubiguint-int32-int32-int32-int32-int32) | Launches `GpuBigIntDivRemKernels.ReciprocalNewtonRaphsonMegaKernel` to compute the fixed-point reciprocal on the GPU. |
+| [ReciprocalMega(GpuWorkspace, GpuBigUInt, GpuBigUInt, Int32, Int32, Int32)](#reciprocalmegagpuworkspace-gpubiguint-gpubiguint-int32-int32-int32) | Launches `GpuBigIntDivRemKernels.ReciprocalNewtonRaphsonMegaKernel` to compute the fixed-point reciprocal on the GPU. |
 | [SqrtFloorCorrection(GpuWorkspace, GpuBigUInt, GpuBigUInt, GpuBigUInt, GpuBigUInt, GpuBigUInt)](#sqrtfloorcorrectiongpuworkspace-gpubiguint-gpubiguint-gpubiguint-gpubiguint-gpubiguint) | Launches `GpuBigIntSqrtKernels.SqrtFloorCorrectionKernel` to correct an integer square root estimate to $\lfloor\sqrt{a}\rfloor$ on the GPU. |
 | [ExecuteModPowNttMegaKernel(GpuWorkspace, GpuBigUInt, GpuBigUInt, GpuBigUInt, GpuBigUInt, GpuBigUInt, Int32, Int32, UInt32, UInt32)](#executemodpownttmegakernelgpuworkspace-gpubiguint-gpubiguint-gpubiguint-gpubiguint-gpubiguint-int32-int32-uint32-uint32) | Executes chunked `GpuBigIntDivRemKernels.ModPowNttMegaKernel` launches with per-chunk stream synchronization to prevent TDR watchdog timeouts. |
 
@@ -185,7 +185,7 @@ The number of Newton-Raphson refinement iterations to execute inside the mega-ke
 `CudaException`<br>
 Thrown when cooperative kernel launch or NTT scratch allocation fails.
 
-## ReciprocalMega(GpuWorkspace, GpuBigUInt, GpuBigUInt, Int32, Int32, Int32, Int32, Int32)
+## ReciprocalMega(GpuWorkspace, GpuBigUInt, GpuBigUInt, Int32, Int32, Int32)
 
 Launches `GpuBigIntDivRemKernels.ReciprocalNewtonRaphsonMegaKernel` to compute the fixed-point reciprocal on the GPU using cooperative grid-wide synchronization and NTT polynomial multiplication.
 
@@ -195,8 +195,6 @@ public void ReciprocalMega(
     GpuBigUInt targetOperand,
     GpuBigUInt resultBuffer,
     int marginWords,
-    int numBits,
-    int marginBits,
     int iterations,
     int targetBits);
 ```
@@ -214,12 +212,6 @@ The destination buffer initialized with the seed approximation and receiving the
 
 `marginWords` _Int32_<br>
 The total word capacity including guard words (`n`).
-
-`numBits` _Int32_<br>
-The bit length of the divisor (`dBits`).
-
-`marginBits` _Int32_<br>
-The extra guard bits added to avoid truncation drift during Newton-Raphson iterations.
 
 `iterations` _Int32_<br>
 The number of Newton-Raphson refinement iterations to execute inside the mega-kernel.
