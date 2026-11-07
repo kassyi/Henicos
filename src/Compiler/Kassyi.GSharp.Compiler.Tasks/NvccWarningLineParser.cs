@@ -2,75 +2,101 @@ using System.Text;
 
 namespace Kassyi.GSharp.Compiler.Tasks;
 
-/// <summary>Parses one nvcc, ptxas, MSVC or GCC / Clang warning line into its file, location, code and message.</summary>
+/// <summary>
+/// Parses one nvcc, ptxas, MSVC or GCC / Clang warning line into its file, location, code and message.
+/// </summary>
 internal static class NvccWarningLineParser
 {
+    // Tries the formats in order; the first whose marker is in the line decides, except that a failed EDG / MSVC or
+    // GCC / Clang match with a space before the colon falls through to the tight form.
     internal static bool TryParseWarningLine(string line, out NativeCompilerWarning warning)
     {
-        warning = default;
-
-        // 1. ptxas warning : <msg>
         if (line.StartsWith("ptxas warning", StringComparison.OrdinalIgnoreCase))
         {
-            var colonIdx = line.IndexOf(':');
-            var colonNext = colonIdx + 1;
-            var msg = colonIdx >= 0 ? line.AsSpan(colonNext).Trim().ToString() : line;
-            warning = new NativeCompilerWarning(null, 0, 0, "PTXAS", $"{line}", line);
-            return msg.Length > 0;
+            return TryParsePtxasWarning(line, out warning);
         }
 
-        // 2. EDG / MSVC format with (line) or (line,col): <file>(<line>[,<col>]): warning <code>: <msg>
+        return TryParseParenOrSpacedColonWarning(line, out warning) || TryParseTightColonWarning(line, out warning);
+    }
+
+    // ptxas warning : <msg>
+    private static bool TryParsePtxasWarning(string line, out NativeCompilerWarning warning)
+    {
+        var colonIdx = line.IndexOf(':');
+        var hasMessage = colonIdx < 0 || line.AsSpan(colonIdx + 1).Trim().Length > 0;
+        warning = new NativeCompilerWarning(null, 0, 0, "PTXAS", line, line);
+        return hasMessage;
+    }
+
+    // EDG / MSVC: <file>(<line>[,<col>]): warning <code>: <msg>
+    // GCC / Clang: <file>:<line>:<col>: warning: <msg> (written with a space before the colon of "warning")
+    private static bool TryParseParenOrSpacedColonWarning(string line, out NativeCompilerWarning warning)
+    {
+        warning = default;
         var warnMarkerIdx = line.IndexOf(": warning ", StringComparison.OrdinalIgnoreCase);
-        if (warnMarkerIdx > 0)
+        if (warnMarkerIdx <= 0)
         {
-            var locationPart = line.AsSpan(0, warnMarkerIdx).Trim().ToString();
-            var restStart = warnMarkerIdx + ": warning ".Length;
-            var rest = line.AsSpan(restStart).Trim().ToString();
-
-            if (TryParseParenLocation(locationPart, out var file, out var lineNum, out var colNum))
-            {
-                var colonIdx = rest.IndexOf(':');
-                if (colonIdx > 0)
-                {
-                    var rawCode = rest.AsSpan(0, colonIdx).Trim().ToString();
-                    var code = rawCode.StartsWith("#", StringComparison.Ordinal) ? rawCode[1..] : rawCode;
-                    var msgStart = colonIdx + 1;
-                    var msgText = rest.AsSpan(msgStart).Trim().ToString();
-                    warning = new NativeCompilerWarning(file, lineNum, colNum, code, $"warning {rawCode}: {msgText}", line);
-                    return true;
-                }
-
-                warning = new NativeCompilerWarning(file, lineNum, colNum, null, $"warning: {rest}", line);
-                return true;
-            }
-
-            // 3. GCC / Clang format: <file>:<line>:<col>: warning: <msg>
-            if (TryParseColonLocation(locationPart, out var gccFile, out var gccLine, out var gccCol))
-            {
-                var msg = rest.StartsWith(":", StringComparison.Ordinal) ? rest.AsSpan(1).Trim().ToString() : rest;
-                warning = new NativeCompilerWarning(gccFile, gccLine, gccCol, null, $"warning: {msg}", line);
-                return true;
-            }
+            return false;
         }
 
-        // 4. GCC / Clang format where ": warning:" has no space before colon: <file>:<line>:<col>: warning: <msg>
-        var gccMarkerIdx = line.IndexOf(": warning:", StringComparison.OrdinalIgnoreCase);
-        if (gccMarkerIdx > 0)
-        {
-            var locationPart = line.AsSpan(0, gccMarkerIdx).Trim().ToString();
-            var msgStart = gccMarkerIdx + ": warning:".Length;
-            var msg = line.AsSpan(msgStart).Trim().ToString();
-            if (TryParseColonLocation(locationPart, out var gccFile, out var gccLine, out var gccCol))
-            {
-                warning = new NativeCompilerWarning(gccFile, gccLine, gccCol, null, $"warning: {msg}", line);
-                return true;
-            }
+        var locationPart = line.AsSpan(0, warnMarkerIdx).Trim().ToString();
+        var restStart = warnMarkerIdx + ": warning ".Length;
+        var rest = line.AsSpan(restStart).Trim().ToString();
 
-            warning = new NativeCompilerWarning(locationPart, 0, 0, null, $"warning: {msg}", line);
+        if (TryParseParenLocation(locationPart, out var file, out var lineNum, out var colNum))
+        {
+            warning = CreateParenWarning(file, lineNum, colNum, rest, line);
+            return true;
+        }
+
+        if (TryParseColonLocation(locationPart, out var gccFile, out var gccLine, out var gccCol))
+        {
+            var msg = rest.StartsWith(":", StringComparison.Ordinal) ? rest.AsSpan(1).Trim().ToString() : rest;
+            warning = new NativeCompilerWarning(gccFile, gccLine, gccCol, null, $"warning: {msg}", line);
             return true;
         }
 
         return false;
+    }
+
+    // rest is "<code>: <msg>", or a bare message when it has no colon.
+    private static NativeCompilerWarning CreateParenWarning(
+        string file,
+        int lineNum,
+        int colNum,
+        string rest,
+        string line)
+    {
+        var colonIdx = rest.IndexOf(':');
+        if (colonIdx <= 0)
+        {
+            return new NativeCompilerWarning(file, lineNum, colNum, null, $"warning: {rest}", line);
+        }
+
+        var rawCode = rest.AsSpan(0, colonIdx).Trim().ToString();
+        var code = rawCode.StartsWith("#", StringComparison.Ordinal) ? rawCode[1..] : rawCode;
+        var msgStart = colonIdx + 1;
+        var msgText = rest.AsSpan(msgStart).Trim().ToString();
+        return new NativeCompilerWarning(file, lineNum, colNum, code, $"warning {rawCode}: {msgText}", line);
+    }
+
+    // GCC / Clang where ": warning:" has no space before the colon: <file>:<line>:<col>: warning: <msg>
+    private static bool TryParseTightColonWarning(string line, out NativeCompilerWarning warning)
+    {
+        warning = default;
+        var gccMarkerIdx = line.IndexOf(": warning:", StringComparison.OrdinalIgnoreCase);
+        if (gccMarkerIdx <= 0)
+        {
+            return false;
+        }
+
+        var locationPart = line.AsSpan(0, gccMarkerIdx).Trim().ToString();
+        var msgStart = gccMarkerIdx + ": warning:".Length;
+        var msg = line.AsSpan(msgStart).Trim().ToString();
+        warning = TryParseColonLocation(locationPart, out var gccFile, out var gccLine, out var gccCol)
+            ? new NativeCompilerWarning(gccFile, gccLine, gccCol, null, $"warning: {msg}", line)
+            : new NativeCompilerWarning(locationPart, 0, 0, null, $"warning: {msg}", line);
+        return true;
     }
 
     private static bool TryParseParenLocation(string locationPart, out string file, out int lineNum, out int colNum)

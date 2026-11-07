@@ -4,9 +4,6 @@ namespace Kassyi.GSharp.Compiler.Tasks;
 
 internal static class NvccOutputParser
 {
-    public static ISet<string> GetSuppressedSpillFunctions(string cuContent) =>
-        SpillSuppressionParser.GetSuppressedSpillFunctions(cuContent);
-
     private static bool HasSpill(string line)
     {
         const string Target = "bytes spill";
@@ -72,7 +69,8 @@ internal static class NvccOutputParser
         }
 
         sb.Append(
-            "Please reduce register pressure (e.g. by avoiding excessive inlining or large stack allocations in GPU kernels).");
+            "Please reduce register pressure (e.g. by avoiding excessive inlining or large stack allocations in " +
+            "GPU kernels).");
 
         errorMessage = sb.ToString();
         return true;

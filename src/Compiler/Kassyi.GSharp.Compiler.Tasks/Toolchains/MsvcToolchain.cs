@@ -103,22 +103,12 @@ public sealed class MsvcToolchain : INativeToolchain
     {
         var vcvarsArch = ToVcvarsArchitecture(architecture);
 
-        var baseDir = Path.GetDirectoryName(outputPath) ?? "";
-        var baseName = Path.GetFileNameWithoutExtension(outputPath);
-        var objPath = Path.Combine(baseDir, baseName + ".obj");
-        var vcPdbPath = Path.Combine(baseDir, baseName + ".vc.pdb");
-        var clArgs = BuildClArguments(sourcePath, objPath, outputPath, vcPdbPath, sanitizers);
+        var paths = ClBuildPaths.For(outputPath);
+        var clArgs = BuildClArguments(sourcePath, paths.ObjPath, outputPath, paths.VcPdbPath, sanitizers);
 
         log.LogMessage(MessageImportance.Normal, $"Compiling C++ source for {vcvarsArch}: {sourcePath}");
 
-        Dictionary<string, string>? env = null;
-        if (_resolvedEnvs.TryGetValue(vcvarsArch, out var resolved) ||
-            (resolved = GetVcvarsEnvironment(vcvarsArch, cancellationToken)) != null)
-        {
-            env = resolved;
-        }
-
-        var startInfo = CreateClStartInfo(clArgs, env);
+        var startInfo = CreateClStartInfo(clArgs, ResolveCompileEnvironment(vcvarsArch, cancellationToken));
 
         try
         {
@@ -127,7 +117,7 @@ public sealed class MsvcToolchain : INativeToolchain
             if (result.ExitCode == 0 && File.Exists(outputPath))
             {
                 NvccOutputParser.LogCompilerWarnings(log, sourcePath, result.StandardOutput, result.StandardError);
-                CleanupBuildArtifacts(log, sourcePath, baseDir, baseName, objPath, vcPdbPath);
+                CleanupBuildArtifacts(log, sourcePath, paths.BaseDir, paths.BaseName, paths.ObjPath, paths.VcPdbPath);
                 return true;
             }
 
@@ -143,6 +133,35 @@ public sealed class MsvcToolchain : INativeToolchain
             log.LogError($"Failed to start cl.exe. Ensure MSVC is installed. Details: {ex.Message}");
             return false;
         }
+    }
+
+    // The intermediate files that cl.exe writes next to the output library.
+    private readonly record struct ClBuildPaths(string BaseDir, string BaseName, string ObjPath, string VcPdbPath)
+    {
+        public static ClBuildPaths For(string outputPath)
+        {
+            var baseDir = Path.GetDirectoryName(outputPath) ?? "";
+            var baseName = Path.GetFileNameWithoutExtension(outputPath);
+            return new ClBuildPaths(
+                baseDir,
+                baseName,
+                Path.Combine(baseDir, baseName + ".obj"),
+                Path.Combine(baseDir, baseName + ".vc.pdb"));
+        }
+    }
+
+    // The resolved vcvarsall environment of the architecture, or null when it cannot be resolved.
+    private Dictionary<string, string>? ResolveCompileEnvironment(
+        string vcvarsArch,
+        CancellationToken cancellationToken)
+    {
+        if (_resolvedEnvs.TryGetValue(vcvarsArch, out var resolved) ||
+            (resolved = GetVcvarsEnvironment(vcvarsArch, cancellationToken)) != null)
+        {
+            return resolved;
+        }
+
+        return null;
     }
 
     private static ProcessStartInfo CreateClStartInfo(string clArgs, Dictionary<string, string>? env)
@@ -314,8 +333,8 @@ public sealed class MsvcToolchain : INativeToolchain
         var vswhereStartInfo = new ProcessStartInfo
         {
             FileName = vswhere,
-            Arguments =
-                "-latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath",
+            Arguments = "-latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 " +
+                "-property installationPath",
             UseShellExecute = false,
             RedirectStandardOutput = true,
             CreateNoWindow = true,

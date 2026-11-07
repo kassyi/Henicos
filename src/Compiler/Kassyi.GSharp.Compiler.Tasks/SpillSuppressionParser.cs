@@ -1,6 +1,8 @@
 namespace Kassyi.GSharp.Compiler.Tasks;
 
-/// <summary>Finds the functions that a <c>// gsharp:suppress GS0001</c> comment excludes from the register spill warning.</summary>
+/// <summary>
+/// Finds the functions that a <c>// gsharp:suppress GS0001</c> comment excludes from the register spill warning.
+/// </summary>
 internal static class SpillSuppressionParser
 {
     private const string SuppressGs0001Marker = "// gsharp:suppress GS0001";
@@ -52,35 +54,23 @@ internal static class SpillSuppressionParser
                 continue;
             }
 
-            if (line.IndexOf(SuppressGs0001Marker, StringComparison.Ordinal) >= 0)
+            if (IsSuppressMarker(line))
             {
                 sawMarker = true;
                 pendingSuppress = true;
                 continue;
             }
 
-            if (braceDepth == 0 && TryExtractDefinedFunctionName(line, out var fnName) &&
-                !line.TrimEnd().EndsWith(";", StringComparison.Ordinal))
+            if (braceDepth == 0)
             {
-                currentFunction = fnName;
-                RegisterFunction(currentFunction, calleesByFunction);
-                if (pendingSuppress)
-                {
-                    suppressed.Add(currentFunction);
-                    pendingSuppress = false;
-                }
+                StartFunction(line, ref currentFunction, ref pendingSuppress, suppressed, calleesByFunction);
             }
-            else if (pendingSuppress && TryExtractDefinedFunctionName(line, out var markedFn))
+            else
             {
-                suppressed.Add(markedFn);
-                pendingSuppress = false;
+                MarkSuppressedFunction(line, ref pendingSuppress, suppressed);
             }
 
-            if (currentFunction.Length > 0 && calleesByFunction.TryGetValue(currentFunction, out var callees))
-            {
-                CollectGSharpCallees(line, currentFunction, callees);
-            }
-
+            CollectCalleesOfCurrentFunction(line, currentFunction, calleesByFunction);
             if (AdvanceBraces(line, ref braceDepth))
             {
                 currentFunction = "";
@@ -88,6 +78,55 @@ internal static class SpillSuppressionParser
         }
 
         return sawMarker;
+    }
+
+    private static bool IsSuppressMarker(string line) =>
+        line.IndexOf(SuppressGs0001Marker, StringComparison.Ordinal) >= 0;
+
+    // At depth 0 a line that defines a function (not a declaration ending in ';') makes it the current function and
+    // takes over a pending marker; any other line may still be the signature a pending marker names.
+    private static void StartFunction(
+        string line,
+        ref string currentFunction,
+        ref bool pendingSuppress,
+        HashSet<string> suppressed,
+        Dictionary<string, HashSet<string>> calleesByFunction)
+    {
+        if (TryExtractDefinedFunctionName(line, out var fnName) &&
+            !line.TrimEnd().EndsWith(";", StringComparison.Ordinal))
+        {
+            currentFunction = fnName;
+            RegisterFunction(currentFunction, calleesByFunction);
+            if (pendingSuppress)
+            {
+                suppressed.Add(currentFunction);
+                pendingSuppress = false;
+            }
+        }
+        else
+        {
+            MarkSuppressedFunction(line, ref pendingSuppress, suppressed);
+        }
+    }
+
+    private static void MarkSuppressedFunction(string line, ref bool pendingSuppress, HashSet<string> suppressed)
+    {
+        if (pendingSuppress && TryExtractDefinedFunctionName(line, out var markedFn))
+        {
+            suppressed.Add(markedFn);
+            pendingSuppress = false;
+        }
+    }
+
+    private static void CollectCalleesOfCurrentFunction(
+        string line,
+        string currentFunction,
+        Dictionary<string, HashSet<string>> calleesByFunction)
+    {
+        if (currentFunction.Length > 0 && calleesByFunction.TryGetValue(currentFunction, out var callees))
+        {
+            CollectGSharpCallees(line, currentFunction, callees);
+        }
     }
 
     private static void RegisterFunction(string function, Dictionary<string, HashSet<string>> calleesByFunction)
@@ -218,7 +257,8 @@ internal static class SpillSuppressionParser
 
         var endExclusive = end + 1;
         var candidate = line[start..endExclusive];
-        if (candidate is "if" or "for" or "while" or "switch" or "return" or "sizeof" or "alignof" or "defined" or "__declspec" or "__attribute__")
+        if (candidate is "if" or "for" or "while" or "switch" or "return" or "sizeof" or "alignof" or "defined"
+            or "__declspec" or "__attribute__")
         {
             return false;
         }
@@ -253,7 +293,8 @@ internal static class SpillSuppressionParser
             }
 
             var callee = line[found..end];
-            // A call either is the same function inside its body (after the signature line) or another function followed by '(' or '<'
+            // A call either is the same function inside its body (after the signature line) or another function
+            // followed by '(' or '<'
             if (end < line.Length && (line[end] == '(' || line[end] == '<'))
             {
                 if (!string.Equals(callee, currentFunction, StringComparison.Ordinal) ||
