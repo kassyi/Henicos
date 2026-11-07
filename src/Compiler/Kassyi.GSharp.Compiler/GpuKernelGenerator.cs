@@ -925,7 +925,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
             }
         }
 
-        var allKernelsSource = new StringBuilder();
+        using var allKernelsSource = new SourceWriter();
         foreach (var method in kernelMethods)
         {
             allKernelsSource.AppendLine(method.GetSource(isCuda));
