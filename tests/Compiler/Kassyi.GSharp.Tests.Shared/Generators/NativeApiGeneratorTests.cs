@@ -282,9 +282,13 @@ public class NativeApiGeneratorTests
     [InlineData("string", "reference types")]
     [InlineData("\"string[]\"", "reference types")]
     [InlineData("global::System.Object", "reference types")]
-    [InlineData("ref int", "'ref', 'out', 'in' and 'params'")]
-    [InlineData("out int", "'ref', 'out', 'in' and 'params'")]
-    [InlineData("in int", "'ref', 'out', 'in' and 'params'")]
+    [InlineData("String", "reference types")]
+    [InlineData("Object", "reference types")]
+    [InlineData("System.Array", "reference types")]
+    [InlineData("ref int", "'ref', 'out', 'in', 'scoped' and 'params'")]
+    [InlineData("out int", "'ref', 'out', 'in', 'scoped' and 'params'")]
+    [InlineData("in int", "'ref', 'out', 'in', 'scoped' and 'params'")]
+    [InlineData("scoped ref int", "'ref', 'out', 'in', 'scoped' and 'params'")]
     public void Test_ModuleDefinition_ParameterTheLauncherCannotPass_ReportsSchemaDiagnostic(string type, string reason)
     {
         var yaml = $$"""

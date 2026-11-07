@@ -7,8 +7,8 @@ namespace Kassyi.GSharp.Compiler.NativeApi;
 /// A module launcher passes a kernel argument by the address of a local copy, and stages a one-dimensional array
 /// through <c>GpuBuffer&lt;T&gt;</c>. A reference type would reach the kernel as the host address of the reference,
 /// and a <c>ref</c> or <c>out</c> argument would never be written back, so the types outside that set are rejected.
-/// The check reads the type as written; a class named by the user cannot be told from a struct without the
-/// compilation.
+/// The check reads the type as written; a class named by the user (or a BCL class other than <c>String</c>,
+/// <c>Object</c> and <c>Array</c>) cannot be told from a struct without the compilation.
 /// </remarks>
 internal static class ModuleKernelParameterTypes
 {
@@ -22,9 +22,9 @@ internal static class ModuleKernelParameterTypes
     public static string? GetUnsupportedReason(string type)
     {
         var space = type.IndexOf(' ');
-        if (space > 0 && type.Substring(0, space) is "ref" or "out" or "in" or "params")
+        if (space > 0 && type.Substring(0, space) is "ref" or "out" or "in" or "params" or "scoped")
         {
-            return "'ref', 'out', 'in' and 'params' parameters are not supported; " +
+            return "'ref', 'out', 'in', 'scoped' and 'params' parameters are not supported; " +
                    "the launcher passes a copy and never writes the kernel's value back. " +
                    "Pass a one-element array instead.";
         }
@@ -52,7 +52,9 @@ internal static class ModuleKernelParameterTypes
             elementType = elementType.Substring(GlobalPrefix.Length);
         }
 
-        return elementType is "string" or "object" or "dynamic" or "System.String" or "System.Object"
+        // [WHY] The launcher file starts with 'using System;', so the names without 'System.' are the same types
+        return elementType is "string" or "object" or "dynamic" or "String" or "Object" or "Array" or "System.String"
+            or "System.Object" or "System.Array"
             ? "reference types are not supported; " +
               "a kernel takes unmanaged values, pointers and one-dimensional arrays of unmanaged elements."
             : null;
