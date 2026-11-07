@@ -24,9 +24,10 @@ internal enum DeviceFunctionEffect
 /// call is checked for the variable it writes. A write to a local or by-value parameter of the function (lambdas and
 /// local functions inside it included) is invisible to the caller; a write through a <c>ref</c> / <c>out</c> parameter
 /// (or to a field of the receiver of a struct member, or to the receiver of a <c>this ref</c> extension) is
-/// <see cref="DeviceFunctionEffect.RefParameters"/>; anything else, a local or by-value parameter that a lambda or local
-/// function captures from the function around it included, is <see cref="DeviceFunctionEffect.Memory"/>. A constructor
-/// that chains with <c>: this(...)</c> also does what the constructor it calls does. A function in a call cycle is <see cref="DeviceFunctionEffect.Memory"/>.
+/// <see cref="DeviceFunctionEffect.RefParameters"/>; anything else, a local or by-value parameter that a lambda or
+/// local function captures from the function around it included, is <see cref="DeviceFunctionEffect.Memory"/>. A
+/// constructor that chains with <c>: this(...)</c> also does what the constructor it calls does. A function in a call
+/// cycle is <see cref="DeviceFunctionEffect.Memory"/>.
 /// </para>
 /// <para>
 /// A function without a body (YAML mapped, <c>[CudaIntrinsic]</c>, metadata) is classified by its declaration: the
