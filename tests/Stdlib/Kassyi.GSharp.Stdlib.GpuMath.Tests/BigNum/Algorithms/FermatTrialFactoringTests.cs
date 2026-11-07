@@ -111,8 +111,8 @@ public class FermatTrialFactoringTests
         resultCountBuffer.CopyToDevice(count);
 
         // mutant: FermatTrialFactoringKernels.cu.cs SearchFactors32Kernel `candidate < 3UL ||` removed (reports 1)
-        // mutant: FermatTrialFactoringKernels.cu.cs SearchFactors32Kernel `|| candidate > 0xFFFFFFFFUL` removed (exp = 6
-        // reports the wrapped candidate 3)
+        // mutant: FermatTrialFactoringKernels.cu.cs SearchFactors32Kernel `|| candidate > 0xFFFFFFFFUL` removed
+        // (exp = 6 reports the wrapped candidate 3)
         FermatTrialFactoringKernels.LaunchSearchFactors32KernelPtr(
             startOdd: startOdd,
             exp: exp,
