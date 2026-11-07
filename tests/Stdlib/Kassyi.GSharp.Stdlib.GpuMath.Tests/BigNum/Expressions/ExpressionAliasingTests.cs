@@ -276,8 +276,8 @@ public sealed class ExpressionAliasingTests : IDisposable
             SignedOp.Div => a0 / b0,
             SignedOp.Mod => a0 % b0,
             SignedOp.Negate => -a0,
-            // Not inverts the magnitude words and keeps the sign
-            _ => negativeA ? -((BigInteger.One << (Words * 32)) - 1 - _a) : (BigInteger.One << (Words * 32)) - 1 - _a
+            // ~x == -x - 1, as for BigInteger
+            _ => ~a0
         };
         var message = $"{op} a<0 {negativeA} into {(target.DevicePointer == bMagnitude.DevicePointer ? "b" : "a")}, seed {Seed}";
         Assert.True(expected == result.Value.ToBigInteger(result.IsNegative), message);

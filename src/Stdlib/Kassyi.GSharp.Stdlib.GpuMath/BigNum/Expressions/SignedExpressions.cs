@@ -264,6 +264,12 @@ internal abstract class SignedUnaryExpression(IGpuBigIntExpression target) : IGp
     internal IGpuBigIntExpression Target { get; } = target ?? throw new ArgumentNullException(nameof(target));
     public virtual int NumWords => Target.NumWords;
 
+    /// <summary>
+    /// Gets the stack trace of the line that applied the operator, captured only for the checked operators when
+    /// <see cref="GpuOverflowReport.CaptureOperatorStackTracesSwitch"/> is set.
+    /// </summary>
+    internal StackTrace? OperatorStackTrace { get; init; }
+
     public void Dispose() => (Target as IDisposable)?.Dispose();
 
     public GpuBigInt Evaluate(GpuWorkspace workspace, GpuBigUInt? targetResult = null)
@@ -317,12 +323,36 @@ internal abstract class SignedUnaryExpression(IGpuBigIntExpression target) : IGp
     protected abstract GpuBigInt Execute(GpuBigInt targetEval, GpuBigUInt resultBuffer);
 }
 
+// ~x == -x - 1, as for BigInteger and C# int: the value does not depend on the word count
 internal class SignedBitwiseNotExpression(IGpuBigIntExpression target) : SignedUnaryExpression(target)
 {
     protected override GpuBigInt Execute(GpuBigInt targetEval, GpuBigUInt resultBuffer)
     {
-        GpuBigIntMath.BitwiseNot(targetEval.Value, resultBuffer);
-        return new GpuBigInt(resultBuffer, targetEval.IsNegative);
+        var magnitude = targetEval.Value;
+        if (!targetEval.IsNegative)
+        {
+            // ~m == -(m + 1); m + 1 overflows the width only when m is all ones
+            SignedMagnitude.IncrementChecked(magnitude, resultBuffer, this, "~", OperatorStackTrace);
+            return new GpuBigInt(resultBuffer, true);
+        }
+
+        // ~(-m) == m - 1, except for a negative zero: ~(-0) == ~0 == -1. The sign of the result then depends on whether
+        // m is zero, which only the device knows, so it is read back; a CUDA graph cannot record that read.
+        if (DeviceCounted.IsCapturing(magnitude.Workspace))
+        {
+            throw new NotSupportedException(
+                "~x of a negative x reads whether |x| is zero on the host (~(-0) is -1), which a CUDA graph cannot " +
+                "record; evaluate it outside the graph, or use -x - 1.");
+        }
+
+        if (magnitude.IsZero())
+        {
+            GpuBigIntMath.Add(magnitude, 1u, resultBuffer);
+            return new GpuBigInt(resultBuffer, true);
+        }
+
+        GpuBigIntMath.Sub(magnitude, 1u, resultBuffer);
+        return new GpuBigInt(resultBuffer, false);
     }
 }
 

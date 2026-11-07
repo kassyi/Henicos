@@ -50,6 +50,41 @@ internal static class SignedMagnitude
         status.MarkPending();
     }
 
+    /// <summary>
+    /// <c>result = a + 1</c> on the width of <paramref name="a"/>, reporting an overflow of <paramref name="node"/> when
+    /// <paramref name="a"/> is all ones.
+    /// </summary>
+    /// <param name="a">The magnitude.</param>
+    /// <param name="result">The result; it must not overlap <paramref name="a"/>.</param>
+    /// <param name="node">The node whose result this is, for the report.</param>
+    /// <param name="operation">The operator of <paramref name="node"/>.</param>
+    /// <param name="operatorStackTrace">The stack trace of the operator, when captured.</param>
+    /// <exception cref="ArgumentException">The magnitudes do not have the same number of words.</exception>
+    /// <exception cref="GpuOverflowException">The sum overflowed (CPU fallback mode only; on the GPU, at the next read).</exception>
+    public static void IncrementChecked(GpuBigUInt a, GpuBigUInt result, IGpuBigIntExpression node, string operation,
+        StackTrace? operatorStackTrace)
+    {
+        var workspace = a.Workspace;
+        if (workspace.DeviceStatus is not { } status || workspace.Provider is not GSharpKernelProvider ||
+            GpuKernelLoader.IsCpuFallbackMode)
+        {
+            GpuBigIntMath.Add(a, 1u, result);
+            ThrowIfWrapped(a, result, node, operation, operatorStackTrace);
+            return;
+        }
+
+        if (result.NumWords != a.NumWords)
+        {
+            throw new ArgumentException("The operand and the result must have the same number of words.");
+        }
+
+        var origin = status.Origins.Register(node, operation, result.NumWords, operatorStackTrace);
+        GpuBigIntScalarKernels.LaunchCheckedScalarAddKernelPtr(
+            a.DevicePointer, 1u, result.DevicePointer, a.NumWords, status.DevicePointer, origin,
+            gridDimX: 1, blockDimX: KernelBasicMathHandler.SingleBlockSize(a.NumWords), hStream: workspace.Stream);
+        status.MarkPending();
+    }
+
     // The host check: a sum taken modulo 2^(32 n) wrapped exactly when it is smaller than an operand
     private static void ThrowIfWrapped(GpuBigUInt operand, GpuBigUInt result, IGpuBigIntExpression node,
         string operation, StackTrace? operatorStackTrace)

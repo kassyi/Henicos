@@ -68,7 +68,7 @@ An executable graph instance that can be launched repeatedly with zero CPU-side 
 
 #### Overflow
 
-A signed result keeps the width of its operands: `a + b` on 1-word operands has a 1-word result. When the signs make `+` or `-` an addition of the magnitudes (`(+a) + (+b)`, `(-a) - (+b)`, ...) and the exact magnitude needs another word, the operation does not wrap: the GPU flags it in the workspace's status words without waiting, and the next synchronization of the workspace stream throws [GpuOverflowException](../../../01_diagnostics_and_exceptions.md#gpuoverflowexception) (a subclass of `OverflowException`). That synchronization is any read GpuMath makes on the stream: reading the value (`ToBigInteger`, `ToHostArray`), a comparison, `GpuBigIntExecutableGraph.Execute`, and so on. An evaluation whose operations fit adds no synchronization, so evaluations of same-sign sums still run inside a captured CUDA graph.
+A signed result keeps the width of its operands: `a + b` on 1-word operands has a 1-word result. When the signs make `+` or `-` an addition of the magnitudes (`(+a) + (+b)`, `(-a) - (+b)`, ...), or `~x` of a non-negative `x` adds 1 to the magnitude, and the exact magnitude needs another word, the operation does not wrap: the GPU flags it in the workspace's status words without waiting, and the next synchronization of the workspace stream throws [GpuOverflowException](../../../01_diagnostics_and_exceptions.md#gpuoverflowexception) (a subclass of `OverflowException`). That synchronization is any read GpuMath makes on the stream: reading the value (`ToBigInteger`, `ToHostArray`), a comparison, `GpuBigIntExecutableGraph.Execute`, and so on. An evaluation whose operations fit adds no synchronization, so same-sign sums and `~` of non-negative values still run inside a captured CUDA graph.
 
 ```csharp
 using var ws = new GpuWorkspace(64);
@@ -242,7 +242,7 @@ A new `GpuBigIntExpr` representing the Min AST node.
 | `operator +(GpuBigIntExpr, GpuBigIntExpr)` | Constructs a lazy addition expression with deferred sign resolution. The result has the width of the operands; a sum that does not fit is reported as an overflow ([Overflow](#overflow)). |
 | `operator -(GpuBigIntExpr, GpuBigIntExpr)` | Constructs a lazy subtraction expression with deferred sign resolution. The result has the width of the operands; a difference that does not fit is reported as an overflow ([Overflow](#overflow)). |
 | `operator -(GpuBigIntExpr)` | Constructs a lazy negation expression. |
-| `operator ~(GpuBigIntExpr)` | Constructs a lazy bitwise NOT expression. |
+| `operator ~(GpuBigIntExpr)` | Constructs a lazy bitwise NOT expression: `~x == -x - 1`, as for `BigInteger` and C# `int`, independent of the word count. `~x` of a non-negative `x` whose magnitude is all ones does not fit and is reported as an overflow ([Overflow](#overflow)). For a negative `x` the evaluation reads whether the magnitude is zero (`~(-0)` is `-1`), so it waits for the GPU once, and inside a CUDA graph capture it throws `NotSupportedException`. |
 
 ## Remarks
 
