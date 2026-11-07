@@ -41,7 +41,7 @@ The 32-bit active thread mask. Typically `0xFFFFFFFF` for all 32 threads, or `Gp
 The variable to exchange.
 
 `laneMask` <i>int</i><br>
-The XOR mask applied to the current lane ID.
+The XOR mask applied to the current lane ID. Only its low 5 bits are used, as on the GPU (-1 acts as 31).
 
 `width` <i>int</i><br>
 The logical warp width: 1, 2, 4, 8, 16 or 32 (default is 32). Any other width is undefined on CUDA: a constant one is reported as [GSH0095](../diagnostics/GSH0095.md), and the CPU paths throw `InvalidOperationException` for one known only at run time.
@@ -73,7 +73,7 @@ The 32-bit active thread mask. Typically `0xFFFFFFFF` for all 32 threads, or `Gp
 The variable to exchange.
 
 `laneMask` <i>int</i><br>
-The XOR mask applied to the current lane ID.
+The XOR mask applied to the current lane ID. Only its low 5 bits are used, as on the GPU (-1 acts as 31).
 
 `width` <i>int</i><br>
 The logical warp width: 1, 2, 4, 8, 16 or 32 (default is 32). Any other width is undefined on CUDA: a constant one is reported as [GSH0095](../diagnostics/GSH0095.md), and the CPU paths throw `InvalidOperationException` for one known only at run time.
@@ -106,7 +106,7 @@ The 32-bit active thread mask. Typically `0xFFFFFFFF` for all 32 threads, or `Gp
 The variable to exchange.
 
 `laneMask` <i>int</i><br>
-The XOR mask applied to the current lane ID.
+The XOR mask applied to the current lane ID. Only its low 5 bits are used, as on the GPU (-1 acts as 31).
 
 `width` <i>int</i><br>
 The logical warp width: 1, 2, 4, 8, 16 or 32 (default is 32). Any other width is undefined on CUDA: a constant one is reported as [GSH0095](../diagnostics/GSH0095.md), and the CPU paths throw `InvalidOperationException` for one known only at run time.
