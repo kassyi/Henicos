@@ -252,6 +252,46 @@ public sealed class ReduceCommand : IFuzzCommand
         return true;
     }
 
+    /// <summary>
+    /// Returns the arguments that <see cref="TryParseOptions"/> reads back into <paramref name="options"/>; an
+    /// option whose value is <see langword="null"/> or <see langword="false"/> is left out.
+    /// </summary>
+    internal static List<string> ToArguments(ReduceCommandOptions options)
+    {
+        var args = new List<string>();
+        AddIfSet(args, "--source", options.SourcePath);
+        args.Add("--fuzz-seed");
+        args.Add(FuzzRandom.FormatSeed(options.FuzzSeed));
+        AddIfSet(args, "--kernel", options.KernelName);
+        args.Add("--input-seed");
+        args.Add(options.InputSeed.ToString(CultureInfo.InvariantCulture));
+        args.AddRange(["--profile", options.Profile, "--work-dir", options.WorkDir]);
+        AddIfSet(args, "--repo-root", options.RepoRoot);
+        AddIfSet(args, "--test-cmd", options.TestCmd);
+        args.AddRange(
+        [
+            "--failing-paths", options.FailingPaths,
+            "--failure-kind", options.FailureKind,
+            "--column", options.Column,
+        ]);
+        AddIfSet(args, "--out", options.OutPath);
+        if (options.NoGpuLock)
+        {
+            args.Add("--no-gpu-lock");
+        }
+
+        return args;
+    }
+
+    private static void AddIfSet(List<string> args, string name, string? value)
+    {
+        if (value is not null)
+        {
+            args.Add(name);
+            args.Add(value);
+        }
+    }
+
     /// <summary>Executes the <c>reduce</c> subcommand using the parsed <paramref name="options"/>.</summary>
     public static int Execute(ReduceCommandOptions options)
     {

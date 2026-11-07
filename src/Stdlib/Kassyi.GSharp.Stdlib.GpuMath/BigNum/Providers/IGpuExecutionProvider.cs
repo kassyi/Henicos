@@ -376,8 +376,6 @@ public interface IGpuAdvancedMathProvider
     /// <param name="targetOperand">The target divisor operand.</param>
     /// <param name="resultBuffer">The destination buffer for the reciprocal result.</param>
     /// <param name="marginWords">The margin limbs allocated for internal scratch precision.</param>
-    /// <param name="numBits">The base bit precision.</param>
-    /// <param name="marginBits">Additional precision guard bits.</param>
     /// <param name="iterations">The number of Newton-Raphson iterations.</param>
     /// <param name="targetBits">The final desired precision in bits.</param>
     /// <remarks>
@@ -386,7 +384,7 @@ public interface IGpuAdvancedMathProvider
     /// correction does not converge, the next read of the stream throws <see cref="InvalidOperationException"/>.
     /// </remarks>
     void ReciprocalMega(GpuWorkspace workspace, GpuBigUInt targetOperand, GpuBigUInt resultBuffer, int marginWords,
-        int numBits, int marginBits, int iterations, int targetBits);
+        int iterations, int targetBits);
 
     /// <summary>
     /// Computes the greatest common divisor (GCD) of two arbitrary-precision integers using Lehmer / Binary GCD kernels on the GPU.

@@ -51,7 +51,12 @@ internal static class CompareTools
             psi.ArgumentList.Add(argument);
         }
 
-        int exitCode = FuzzWorkspaceReducer.RunProcessWithStartInfo(psi, out string stdout, out string stderr, out bool timedOut, timeoutMs);
+        int exitCode = FuzzRunProcess.RunWithStartInfo(
+            psi,
+            out string stdout,
+            out string stderr,
+            out bool timedOut,
+            timeoutMs);
         output = timedOut
             ? $"{fileName} timed out after {timeoutMs / 1000} s.{Environment.NewLine}{stdout}{Environment.NewLine}{stderr}"
             : $"{stdout}{Environment.NewLine}{stderr}";
