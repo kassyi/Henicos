@@ -34,8 +34,8 @@ internal sealed class VectorResultCache : IDisposable
     private int _generation;
 
     /// <summary>
-    /// Gets the lease of what the cache has lent so far. A node evaluated again (the same sub-expression read at another
-    /// offset) lends its buffers again and ends the lease of its earlier result, whose words it overwrites.
+    /// Gets the lease of what the cache has lent so far. A node evaluated again (the same sub-expression read at
+    /// another offset) lends its buffers again and ends the lease of its earlier result, whose words it overwrites.
     /// </summary>
     public VectorLease Lease => new(this, _generation);
 

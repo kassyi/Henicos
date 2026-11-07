@@ -76,7 +76,9 @@ internal readonly ref struct VectorEvaluation
 
     public DeviceElementCount Count { get; }
 
-    /// <summary>Gets whether <see cref="Storage"/> still holds this result (see <see cref="VectorOperandPair"/>).</summary>
+    /// <summary>
+    /// Gets whether <see cref="Storage"/> still holds this result (see <see cref="VectorOperandPair"/>).
+    /// </summary>
     public VectorLease Lease { get; }
 }
 

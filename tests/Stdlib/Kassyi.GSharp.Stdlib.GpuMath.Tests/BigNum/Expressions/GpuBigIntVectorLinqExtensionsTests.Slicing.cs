@@ -78,6 +78,27 @@ public partial class GpuBigIntVectorLinqExtensionsTests
 
     [Fact]
     [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.Boundary)]
+    public void SharedSubexpression_InTheSourceAndThePredicateOfWhere_KeepsBothResults()
+    {
+        // The source reads e at offset 1 and the predicate at offset 0: source [6, 12, 24], predicate
+        // [3, 6, 12] > 5 = [F, T, T], so the selection is [12, 24].
+        // mutant: VectorWhereExpression.EvaluateCore evaluating the source before the predicate ([6, 12]: the
+        // predicate's evaluation of e overwrites the source values)
+        using var array = CreateArray(new BigInteger[] { 1, 2, 4, 8 });
+        using var scalar = CreateScalar(3);
+        using var five = CreateScalar(5);
+        var e = array.AsVectorizedEnumerable().SelectMultiply(scalar);
+        using var selected = e.Skip(1).Where(e.Take(3).IsGreaterThan(five));
+
+        var values = ToHostArray(selected.Evaluate(_context));
+
+        BigInteger[] expected = [12, 24];
+        Assert.Equal(expected, values);
+    }
+
+    [Fact]
+    [Category(TestCategory.Unit)]
     [Scenario(TestScenario.HappyPath)]
     public void SharedSubexpression_AtOneOffset_IsReadOnBothSides()
     {
