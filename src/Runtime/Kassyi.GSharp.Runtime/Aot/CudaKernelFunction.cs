@@ -14,8 +14,9 @@ namespace Kassyi.GSharp.Runtime.Aot;
 /// <see cref="GpuKernelLoader"/>, which loads the module once per context.
 /// </para>
 /// <para>
-/// The last function resolved is kept with the identity of its context, so a launch in the same context compares two
-/// numbers and makes no driver call or dictionary lookup.
+/// The last function resolved is kept with the number of its context. A launch in the same context looks up the
+/// number of the current context (<see cref="CudaModuleCache.CurrentContextId"/>, one dictionary lookup) and compares
+/// it; it makes no driver call and does not look up the module or function caches.
 /// </para>
 /// </remarks>
 /// <param name="kernelName">The entry point of the kernel in the module.</param>
@@ -25,13 +26,16 @@ public sealed class CudaKernelFunction(string kernelName, Func<byte[]> fatbin)
 {
     private Resolved? _last;
 
-    /// <summary>Returns the function in the context current for a launch on this thread, loading its module there if needed.</summary>
+    /// <summary>
+    /// Returns the function in the context current for a launch on this thread, loading its module there if needed.
+    /// </summary>
     public IntPtr Resolve() => Resolve([]);
 
     /// <summary>
     /// Returns the function in the context current for a launch on this thread, loading its module there if needed, and
     /// registers <paramref name="errorSites"/> for the module when it resolves the function.
     /// </summary>
+    /// <param name="errorSites">The device error sites of the module, registered when the function is resolved.</param>
     public IntPtr Resolve(ReadOnlySpan<GSharpErrorSite> errorSites)
     {
         var context = CudaModuleCache.CurrentContextId;

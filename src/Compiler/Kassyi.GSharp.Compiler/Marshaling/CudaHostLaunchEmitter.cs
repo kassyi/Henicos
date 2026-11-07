@@ -116,7 +116,7 @@ internal static class CudaHostLaunchEmitter
         writer.AppendLine();
     }
 
-    // private static readonly CudaKernelFunction <field> = new CudaKernelFunction("<kernel>", <module context>.GetFatbin);
+    // private static readonly CudaKernelFunction <field> = new CudaKernelFunction("<kernel>", <context>.GetFatbin);
     private static void WriteFunctionField(SourceWriter writer, in KernelEmission kernel, string assemblyName)
     {
         const string FunctionType = "global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction";

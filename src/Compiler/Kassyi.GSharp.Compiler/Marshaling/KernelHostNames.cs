@@ -103,7 +103,9 @@ internal static class KernelHostNames
     public static string GetQualifiedPointerLaunchName(in KernelEmission kernel) =>
         $"{kernel.Host.ClassQualifiedName}.{GetPointerLaunchName(kernel)}";
 
-    /// <summary>The static field that resolves the CUDA function of a kernel per context, <c>__gsharp_hfunc_{key}</c>.</summary>
+    /// <summary>
+    /// The static field that resolves the CUDA function of a kernel per context, <c>__gsharp_hfunc_{key}</c>.
+    /// </summary>
     public static string GetFunctionPointerFieldName(string memberKey) =>
         GSharpInternalNames.Launcher.FunctionPointerFieldPrefix + memberKey;
 
