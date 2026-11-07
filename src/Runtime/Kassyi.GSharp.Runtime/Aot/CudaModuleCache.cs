@@ -10,8 +10,8 @@ namespace Kassyi.GSharp.Runtime.Aot;
 /// <b>[WHY]:</b> A module and its functions belong to the context they were loaded in. A handle used in another context
 /// fails with <c>CUDA_ERROR_INVALID_HANDLE</c>, and one whose context was destroyed can crash the process inside
 /// <c>cuLaunchKernel</c>. Every entry is therefore keyed by the context that a launch on the calling thread uses
-/// (<see cref="GpuKernelLoader.CudaContextScope.DefaultTarget"/>), and <see cref="ForgetContext"/> drops the entries of a
-/// context before it is destroyed, because the driver may give its handle to a later context.
+/// (<see cref="GpuKernelLoader.CudaContextScope.DefaultTarget"/>), and <see cref="ForgetContext"/> drops the entries of
+/// a context before it is destroyed, because the driver may give its handle to a later context.
 /// </para>
 /// <para>
 /// <see cref="CurrentContextId"/> numbers the contexts so that a cache outside this class (a launcher's last function,
@@ -20,9 +20,12 @@ namespace Kassyi.GSharp.Runtime.Aot;
 /// </remarks>
 internal static class CudaModuleCache
 {
-    private static readonly ConcurrentDictionary<(IntPtr Context, AotSignatureValidator.Hash256 Hash), Lazy<IntPtr>> s_modules = new();
+    private static readonly ConcurrentDictionary<(IntPtr Context, AotSignatureValidator.Hash256 Hash), Lazy<IntPtr>>
+        s_modules = new();
 
-    private static readonly ConcurrentDictionary<(IntPtr Context, AotSignatureValidator.Hash256 Hash, string KernelName), IntPtr> s_functions = new();
+    private static readonly
+        ConcurrentDictionary<(IntPtr Context, AotSignatureValidator.Hash256 Hash, string KernelName), IntPtr>
+        s_functions = new();
 
     private static readonly ConcurrentDictionary<IntPtr, long> s_contextIds = new();
     private static long s_lastContextId;
@@ -37,12 +40,12 @@ internal static class CudaModuleCache
 
     /// <summary>
     /// Gets a number that identifies the CUDA context a launch on this thread uses (the context of the innermost
-    /// <see cref="GpuKernelLoader.CudaContextScope"/>, otherwise <see cref="GpuKernelLoader.GlobalContext"/>), or 0 in CPU
-    /// fallback mode.
+    /// <see cref="GpuKernelLoader.CudaContextScope"/>, otherwise <see cref="GpuKernelLoader.GlobalContext"/>), or 0 in
+    /// CPU fallback mode.
     /// </summary>
     /// <remarks>
-    /// The number is never reused: a context created after <see cref="GpuKernelLoader.DestroyContext"/> gets a new number
-    /// even when the driver gives it the handle of the destroyed one.
+    /// The number is never reused: a context created after <see cref="GpuKernelLoader.DestroyContext"/> gets a new
+    /// number even when the driver gives it the handle of the destroyed one.
     /// </remarks>
     public static long CurrentContextId
     {
@@ -58,7 +61,10 @@ internal static class CudaModuleCache
         }
     }
 
-    /// <summary>Returns the function <paramref name="kernelName"/> of the fatbin in the current context, loading the module there once.</summary>
+    /// <summary>
+    /// Returns the function <paramref name="kernelName"/> of the fatbin in the current context, loading the module
+    /// there once.
+    /// </summary>
     public static IntPtr GetOrLoadFunction(ReadOnlySpan<byte> aotFatbin, string kernelName)
     {
         var hash = ReadSignatureHash(aotFatbin);
@@ -108,8 +114,8 @@ internal static class CudaModuleCache
     }
 
     /// <summary>
-    /// Drops the modules, functions and number of <paramref name="context"/>, which is about to be destroyed; its modules
-    /// go with it.
+    /// Drops the modules, functions and number of <paramref name="context"/>, which is about to be destroyed; its
+    /// modules go with it.
     /// </summary>
     public static void ForgetContext(IntPtr context)
     {
@@ -134,7 +140,9 @@ internal static class CudaModuleCache
         DynamicSharedMemoryOptIn.Clear();
     }
 
-    /// <summary>Unloads every loaded module in its own context; a failure is logged and the others are still unloaded.</summary>
+    /// <summary>
+    /// Unloads every loaded module in its own context; a failure is logged and the others are still unloaded.
+    /// </summary>
     public static void UnloadAll()
     {
         foreach (var (key, lazyModule) in s_modules)
@@ -193,7 +201,13 @@ internal static class CudaModuleCache
 
                 // Do NOT pass JIT options (like ERROR_LOG_BUFFER) when loading an AOT Fatbin,
                 // as it causes CUDA_ERROR_INVALID_VALUE when the driver simply loads a matching CUBIN without JITing.
-                var loadResult = CudaDriverApi.cuModuleLoadDataEx(out var module, (IntPtr)pAlignedBinary, 0, null, null);
+                var loadResult = CudaDriverApi.cuModuleLoadDataEx(
+                    out var module,
+                    (IntPtr)pAlignedBinary,
+                    0,
+                    null,
+                    null
+                );
                 if (loadResult != CUresult.CudaSuccess)
                 {
                     var (major, minor) = GpuKernelLoader.DeviceComputeCapability;

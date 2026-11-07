@@ -31,24 +31,16 @@ internal static class ModPowNttHostController
         var targetWords = (targetBits + 31) / 32;
 
         using var reciprocalNorm = new GpuBigUInt(workspace, targetWords);
-        reciprocalNorm.Clear();
         GpuBigIntDivRem.Reciprocal(bNorm, reciprocalNorm, targetBits, marginWords);
 
         using var reciprocalOfB = new GpuBigUInt(workspace, targetWords);
         GpuBigIntMath.ShiftLeft(reciprocalNorm, lz, reciprocalOfB);
 
         // 2. Square and Multiply MegaKernel (Zero-Sync GPU Offloading) - Chunked for TDR avoidance
-        if (workspace.Provider is GSharpKernelProvider kernelProvider)
-        {
-            kernelProvider.KernelAdvancedMath.ExecuteModPowNttMegaKernel(
-                workspace,
-                baseVal, resultBuffer, mod, reciprocalOfB, exp,
-                n, targetBits,
-                gridDim: 1, blockDim: 256);
-        }
-        else
-        {
-            throw new NotSupportedException("ModPowNttMegaKernel is only supported on KernelAdvancedMathHandler.");
-        }
+        GSharpKernelProvider.Instance.KernelAdvancedMath.ExecuteModPowNttMegaKernel(
+            workspace,
+            baseVal, resultBuffer, mod, reciprocalOfB, exp,
+            n, targetBits,
+            gridDim: 1, blockDim: 256);
     }
 }

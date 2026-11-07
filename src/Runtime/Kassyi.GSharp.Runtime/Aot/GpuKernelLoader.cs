@@ -315,8 +315,8 @@ public static unsafe class GpuKernelLoader
         CudaModuleCache.GetOrLoadFunction(aotFatbin, kernelName);
 
     /// <summary>
-    /// Loads a fatbin module into the CUDA context current for a launch on this thread, once per context, and returns the
-    /// module handle, which is valid only in that context.
+    /// Loads a fatbin module into the CUDA context current for a launch on this thread, once per context, and returns
+    /// the module handle, which is valid only in that context.
     /// </summary>
     /// <param name="binaryData">The raw byte array containing the Fatbin module binary.</param>
     /// <returns>A native handle (<see cref="IntPtr"/>) to the loaded CUDA module (<c>CUmodule</c>).</returns>
