@@ -82,7 +82,8 @@ internal static class ManagedOperatorMacroExpander
         public ImmutableArray<StatementSyntax>.Builder Statements { get; private set; } =
             ImmutableArray.CreateBuilder<StatementSyntax>();
 
-        // [ref <T> <t0> = ref <target>;] <T> <t1> = <left>; if (<test>(<t1>)) { <target> = <t1>; } else { <right temporaries> <target method>(<result>, <t1>, <right>); }
+        // [ref <T> <t0> = ref <target>;] <T> <t1> = <left>;
+        // if (<test>(<t1>)) { <target> = <t1>; } else { <right temporaries> <target method>(<result>, <t1>, <right>); }
         // A && or || over <macro> (OperatorMacroResolver.PlanConditional), as GpuOperatorMacroTranspiler writes it: the
         // left operand is evaluated once and tested, and the target is called with the right operand only when the test
         // fails. <result> or the temporary <resultTemp> receives the left operand or the target's result
@@ -167,31 +168,9 @@ internal static class ManagedOperatorMacroExpander
             Statements = ImmutableArray.CreateBuilder<StatementSyntax>();
             try
             {
-                var arguments = ImmutableArray.CreateBuilder<ArgumentSyntax>(call.Operands.Length + 1);
-                if (call.ContextVariable is { } contextVariable)
+                if (CreateTargetArguments(call, macro, resultArgument, leftTemp) is not { } arguments)
                 {
-                    arguments.Add(CreateContextArgument(contextVariable, call.Target.Parameters[0]));
-                }
-
-                for (var i = 0; i < call.Operands.Length; i++)
-                {
-                    if (call.Parameters[i] is not { } parameter)
-                    {
-                        continue;
-                    }
-
-                    var argument = i switch
-                    {
-                        0 => resultArgument,
-                        1 => CreateArgument(Temp(leftTemp), parameter, isVariable: true, type: null),
-                        _ => CreateOperand(call.Operands[i], parameter, macro, null, spill: false)
-                    };
-                    if (argument is null)
-                    {
-                        return null;
-                    }
-
-                    arguments.Add(argument);
+                    return null;
                 }
 
                 // <target method>(<arguments>);
@@ -199,7 +178,7 @@ internal static class ManagedOperatorMacroExpander
                     SyntaxFactory.ExpressionStatement(
                         SyntaxFactory.InvocationExpression(
                             spellCallee(call.Target),
-                            SyntaxFactory.ArgumentList(SyntaxFactory.SeparatedList(arguments.ToImmutable()))
+                            SyntaxFactory.ArgumentList(SyntaxFactory.SeparatedList(arguments))
                         )
                     )
                 );
@@ -209,6 +188,41 @@ internal static class ManagedOperatorMacroExpander
             {
                 Statements = outer;
             }
+        }
+
+        // <context>, <result>, <left temporary>, <right>: the arguments of the target of a && or || in parameter order;
+        // null when an operand cannot be expanded
+        private ImmutableArray<ArgumentSyntax>? CreateTargetArguments(in MacroCall call, OperatorMacro macro,
+            ArgumentSyntax resultArgument, string leftTemp)
+        {
+            var arguments = ImmutableArray.CreateBuilder<ArgumentSyntax>(call.Operands.Length + 1);
+            if (call.ContextVariable is { } contextVariable)
+            {
+                arguments.Add(CreateContextArgument(contextVariable, call.Target.Parameters[0]));
+            }
+
+            for (var i = 0; i < call.Operands.Length; i++)
+            {
+                if (call.Parameters[i] is not { } parameter)
+                {
+                    continue;
+                }
+
+                var argument = i switch
+                {
+                    0 => resultArgument,
+                    1 => CreateArgument(Temp(leftTemp), parameter, isVariable: true, type: null),
+                    _ => CreateOperand(call.Operands[i], parameter, macro, null, spill: false)
+                };
+                if (argument is null)
+                {
+                    return null;
+                }
+
+                arguments.Add(argument);
+            }
+
+            return arguments.ToImmutable();
         }
 
         // <type> <temp> = <operand>; the value of <operand> as the operator's operand type

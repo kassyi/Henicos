@@ -117,7 +117,9 @@ internal static class OperatorMacroResolver
         return new ConditionalPlan(test, IsPassedByReference(test.Parameters[0]), spillsTarget);
     }
 
-    /// <summary>The expansion of a <c>&amp;&amp;</c> or <c>||</c> over an operator macro (<see cref="PlanConditional"/>).</summary>
+    /// <summary>
+    /// The expansion of a <c>&amp;&amp;</c> or <c>||</c> over an operator macro (<see cref="PlanConditional"/>).
+    /// </summary>
     internal readonly struct ConditionalPlan(IMethodSymbol test, bool passesTestByReference, bool spillsTarget)
     {
         /// <summary>The <c>operator false</c> or <c>operator true</c> that tests the left operand.</summary>
@@ -405,7 +407,8 @@ internal static class OperatorMacroResolver
 
             var operandType = operatorMethod.Parameters[operandIndex].Type;
             var unwrapped = UnwrapExpression(operand, semanticModel);
-            var (innerMethod, innerLifted, innerIncrementOrDecrement, innerTest) = GetOperator(unwrapped, semanticModel);
+            var (innerMethod, innerLifted, innerIncrementOrDecrement, innerTest) =
+                GetOperator(unwrapped, semanticModel);
             if (GetMacroAttribute(innerMethod) is not { } innerAttr || innerMethod == null)
             {
                 continue;
@@ -614,7 +617,10 @@ internal static class OperatorMacroResolver
 
         return operation switch
         {
-            IBinaryOperation { OperatorKind: BinaryOperatorKind.ConditionalAnd or BinaryOperatorKind.ConditionalOr } binary =>
+            IBinaryOperation
+                {
+                    OperatorKind: BinaryOperatorKind.ConditionalAnd or BinaryOperatorKind.ConditionalOr
+                } binary =>
                 (binary.OperatorMethod, binary.IsLifted, false, FindTest(binary)),
             IBinaryOperation binary => (binary.OperatorMethod, binary.IsLifted, false, null),
             IUnaryOperation unary => (unary.OperatorMethod, unary.IsLifted, false, null),

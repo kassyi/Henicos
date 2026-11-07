@@ -72,9 +72,10 @@ internal static class StructConversionEmitter
     }
 
     /// <summary>
-    /// Writes the user-defined operator <paramref name="method"/> of a struct (a conversion, or the <c>operator true</c>
-    /// or <c>operator false</c> of <see cref="StructTruthOperatorEmitter"/>) as a value-returning device function named
-    /// by <see cref="GlobalCppNames.GetFunctionName"/>, with the body of <paramref name="declaration"/>.
+    /// Writes the user-defined operator <paramref name="method"/> of a struct (a conversion, or the
+    /// <c>operator true</c> or <c>operator false</c> of <see cref="StructTruthOperatorEmitter"/>) as a value-returning
+    /// device function named by <see cref="GlobalCppNames.GetFunctionName"/>, with the body of
+    /// <paramref name="declaration"/>.
     /// </summary>
     public static void WriteOperatorFunction(IMethodSymbol method, BaseMethodDeclarationSyntax declaration,
         ref TranspileContext context)

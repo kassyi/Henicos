@@ -6,14 +6,17 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 /// of the struct calls to test its left operand (<see cref="OperatorMacroResolver.PlanConditional"/>).
 /// </summary>
 /// <remarks>
-/// [WHY] Only the operators that such a <c>&amp;&amp;</c> or <c>||</c> can call are emitted: <c>operator false</c> when
-/// the struct maps <c>&amp;</c> to an operator macro, <c>operator true</c> when it maps <c>|</c>. Nothing else calls them
-/// on the device, and a struct's definition is written wherever the struct is used, so emitting every truth operator
-/// would transpile bodies that no kernel runs.
+/// [WHY] Only the operators that such a <c>&amp;&amp;</c> or <c>||</c> can call are emitted: <c>operator false</c>
+/// when the struct maps <c>&amp;</c> to an operator macro, <c>operator true</c> when it maps <c>|</c>. Nothing else
+/// calls them on the device, and a struct's definition is written wherever the struct is used, so emitting every truth
+/// operator would transpile bodies that no kernel runs. A <c>ref struct</c> is no exception: unlike its conversions,
+/// which stay inline C++ members for buffer forwarding, its truth operators are plain value-returning functions.
 /// </remarks>
 internal static class StructTruthOperatorEmitter
 {
-    /// <summary>Whether <paramref name="method"/> is a user-defined <c>operator true</c> or <c>operator false</c>.</summary>
+    /// <summary>
+    /// Whether <paramref name="method"/> is a user-defined <c>operator true</c> or <c>operator false</c>.
+    /// </summary>
     public static bool IsTruthOperator(IMethodSymbol? method) =>
         method is
         {
@@ -23,26 +26,23 @@ internal static class StructTruthOperatorEmitter
 
     /// <summary>
     /// Whether <paramref name="method"/> is an <c>operator true</c> or <c>operator false</c> emitted as a device
-    /// function: one of a struct emitted for the device (not a <c>ref struct</c>) that maps the matching <c>|</c> or
-    /// <c>&amp;</c> to an operator macro, with a body, or recorded by the assembly that declares it
+    /// function: one of a struct emitted for the device (a <c>ref struct</c> included) that maps the matching
+    /// <c>|</c> or <c>&amp;</c> to an operator macro, with a body, or recorded by the assembly that declares it
     /// (<see cref="DeviceExportTable"/>).
     /// </summary>
     public static bool IsEmittedTruthOperator(IMethodSymbol? method, Compilation compilation) =>
         IsTruthOperator(method) &&
-        method is { ContainingType: { IsRefLikeType: false } containingType } &&
+        method is { ContainingType: { } containingType } &&
         GlobalCppNames.IsEmittedUserType(containingType) &&
         MapsConditionalOperator(containingType, method.Name) &&
         (TryGetDeclaration(method, out _) ||
          (DeviceExportTable.IsOutside(method, compilation) && DeviceExportTable.TryFind(method, out _)));
 
-    /// <summary>Writes the truth operators of <paramref name="structSym"/> that <see cref="IsEmittedTruthOperator"/> emits.</summary>
+    /// <summary>
+    /// Writes the truth operators of <paramref name="structSym"/> that <see cref="IsEmittedTruthOperator"/> emits.
+    /// </summary>
     public static void WriteTruthOperators(INamedTypeSymbol structSym, ref TranspileContext context)
     {
-        if (structSym.IsRefLikeType)
-        {
-            return;
-        }
-
         var compilation = context.Query.SemanticModel.Compilation;
         foreach (var member in structSym.GetMembers())
         {
@@ -56,7 +56,8 @@ internal static class StructTruthOperatorEmitter
         }
     }
 
-    // Whether <type> maps the operator that && (for operator false) or || (for operator true) calls to an operator macro
+    // Whether <type> maps the operator that && (for operator false) or || (for operator true) calls to an operator
+    // macro
     private static bool MapsConditionalOperator(INamedTypeSymbol type, string truthOperatorName) =>
         type.GetMembers(truthOperatorName == WellKnownMemberNames.FalseOperatorName
                 ? WellKnownMemberNames.BitwiseAndOperatorName

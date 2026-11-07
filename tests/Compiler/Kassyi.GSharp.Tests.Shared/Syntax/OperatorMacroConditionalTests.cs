@@ -40,6 +40,11 @@ public class OperatorMacroConditionalTests : TranspilerTestBase
     // values[2 * i] is the result, values[2 * i + 1] keeps 0
     internal static readonly int[] TargetExpected = [-1, 0, 15, 0];
 
+    internal static readonly int[] RefStructInput = [-1, 5, 0, 5, 1, 5];
+
+    // Per thread: a && b, then a || b
+    internal static readonly int[] RefStructExpected = [-1, -95, 5, 5, 15, 1];
+
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
     public void Test_ConditionalAnd_TestsOperatorFalseBeforeTheOperatorMacro()
@@ -95,5 +100,16 @@ public class OperatorMacroConditionalTests : TranspilerTestBase
 
         Assert.Equal(TargetExpected, new[] { values[0].Value, values[1].Value, values[2].Value, values[3].Value });
         Assert.Equal([1, 1], index);
+    }
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_ConditionalOperatorsOnRefStruct_TestTheLeftOperand()
+    {
+        var result = new int[RefStructExpected.Length];
+
+        OperatorMacroConditionalKernels.LaunchRefStructKernel(RefStructInput, result, blockDimX: 3);
+
+        Assert.Equal(RefStructExpected, result);
     }
 }

@@ -20,8 +20,8 @@ public class OperatorMacroConditionalManagedTests : TranspilerTestBase
     {
         var result = new int[OperatorMacroConditionalTests.AndExpected.Length];
 
-        ManagedKernelRun.Run(() =>
-            OperatorMacroConditionalKernels.LaunchAndKernel(OperatorMacroConditionalTests.AndInput, result, blockDimX: 3));
+        ManagedKernelRun.Run(() => OperatorMacroConditionalKernels.LaunchAndKernel(
+            OperatorMacroConditionalTests.AndInput, result, blockDimX: 3));
 
         Assert.Equal(OperatorMacroConditionalTests.AndExpected, result);
     }
@@ -32,8 +32,8 @@ public class OperatorMacroConditionalManagedTests : TranspilerTestBase
     {
         var result = new int[OperatorMacroConditionalTests.OrExpected.Length];
 
-        ManagedKernelRun.Run(() =>
-            OperatorMacroConditionalKernels.LaunchOrKernel(OperatorMacroConditionalTests.OrInput, result, blockDimX: 3));
+        ManagedKernelRun.Run(() => OperatorMacroConditionalKernels.LaunchOrKernel(
+            OperatorMacroConditionalTests.OrInput, result, blockDimX: 3));
 
         Assert.Equal(OperatorMacroConditionalTests.OrExpected, result);
     }
@@ -75,6 +75,18 @@ public class OperatorMacroConditionalManagedTests : TranspilerTestBase
         Assert.Equal(OperatorMacroConditionalTests.TargetExpected,
             new[] { values[0].Value, values[1].Value, values[2].Value, values[3].Value });
         Assert.Equal([1, 1], index);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_Managed_ConditionalOperatorsOnRefStruct_TestTheLeftOperand()
+    {
+        var result = new int[OperatorMacroConditionalTests.RefStructExpected.Length];
+
+        ManagedKernelRun.Run(() => OperatorMacroConditionalKernels.LaunchRefStructKernel(
+            OperatorMacroConditionalTests.RefStructInput, result, blockDimX: 3));
+
+        Assert.Equal(OperatorMacroConditionalTests.RefStructExpected, result);
     }
 }
 #endif

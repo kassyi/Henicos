@@ -94,7 +94,9 @@ internal static class GpuOperatorMacroTranspiler
         return true;
     }
 
-    // [auto&& __gsharp_seq_0 = <target>;] <T> __gsharp_seq_1 = <left>; if(<test>(__gsharp_seq_1)) { <target>=__gsharp_seq_1; } else { <right temporaries> <target>(<result>, __gsharp_seq_1, <right>); }
+    // [auto&& __gsharp_seq_0 = <target>;] <T> __gsharp_seq_1 = <left>;
+    // if(<test>(__gsharp_seq_1)) { <target>=__gsharp_seq_1; }
+    // else { <right temporaries> <target>(<result>, __gsharp_seq_1, <right>); }
     // A && or || over <macro> (OperatorMacroResolver.PlanConditional): the left operand is evaluated once and tested,
     // and the target is called with the right operand only when the test fails. <result> or the temporary <resultTemp>
     // receives the left operand or the target's result
@@ -106,27 +108,50 @@ internal static class GpuOperatorMacroTranspiler
             return false;
         }
 
-        var plan = PlanConditional(call, macro, GetOperandEffects(call, macro, assignment, context.Query.SemanticModel));
-        var writer = context.Emitter.Writer;
+        var effects = GetOperandEffects(call, macro, assignment, context.Query.SemanticModel);
+        var plan = PlanConditional(call, macro, effects);
         int[] temps = [-1, -1, -1, -1];
         if (plan.SpillsTarget && result != null)
         {
             temps[0] = EvaluationOrder.DeclareTemp(ref context, result, reference: true);
         }
 
-        // The left operand: an operator macro computed into its temporary, or its value
-        var left = call.Operands[1] ?? throw new InvalidOperationException("A && or || has a left operand.");
-        if (!TryDeclareNestedTemp(left, macro, assignment, ref context, out temps[1]))
+        if (!TryDeclareLeftOperand(call, macro, assignment, ref context, out temps[1]))
         {
             return false;
         }
 
-        if (temps[1] < 0)
+        return AppendTestAndBranches(result, resultTemp, call, macro, plan, temps, assignment, ref context);
+    }
+
+    // <T> __gsharp_seq_<n> = <left>; the left operand of a && or || into the temporary <temp>: an operator macro
+    // computed into its own temporary, or the value of the operand
+    private static bool TryDeclareLeftOperand(in MacroCall call, OperatorMacro macro,
+        AssignmentExpressionSyntax assignment, ref TranspileContext context, out int temp)
+    {
+        var left = call.Operands[1] ?? throw new InvalidOperationException("A && or || has a left operand.");
+        if (!TryDeclareNestedTemp(left, macro, assignment, ref context, out temp))
         {
-            var operandType = macro.ResultType ?? throw new InvalidOperationException("An operator macro has a type.");
-            temps[1] = DeclareValue(left, operandType, ref context);
+            return false;
         }
 
+        if (temp < 0)
+        {
+            var operandType = macro.ResultType ?? throw new InvalidOperationException("An operator macro has a type.");
+            temp = DeclareValue(left, operandType, ref context);
+        }
+
+        return true;
+    }
+
+    // if(<test>(__gsharp_seq_1)) { <target>=__gsharp_seq_1; } else { <right temporaries> <target>(<result>, ...); }
+    // The test of the left operand in temps[1], the assignment of it when the test holds, and the call of the target
+    // with the right operand otherwise
+    private static bool AppendTestAndBranches(ExpressionSyntax? result, int resultTemp, in MacroCall call,
+        OperatorMacro macro, in ConditionalPlan plan, int[] temps, AssignmentExpressionSyntax assignment,
+        ref TranspileContext context)
+    {
+        var writer = context.Emitter.Writer;
         writer.Append("if");
         using (writer.Parentheses())
         {
@@ -150,7 +175,8 @@ internal static class GpuOperatorMacroTranspiler
         writer.AppendLine("else");
         using (writer.Scope())
         {
-            if (call.Operands[2] is { } right && !TryDeclareNestedTemp(right, macro, assignment, ref context, out temps[2]))
+            if (call.Operands[2] is { } right &&
+                !TryDeclareNestedTemp(right, macro, assignment, ref context, out temps[2]))
             {
                 return false;
             }

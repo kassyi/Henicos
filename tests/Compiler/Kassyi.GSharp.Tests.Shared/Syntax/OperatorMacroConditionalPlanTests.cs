@@ -11,8 +11,9 @@ namespace Kassyi.GSharp.Tests.Shared.Syntax;
 
 /// <summary>
 /// The expansion plan of <c>&amp;&amp;</c> and <c>||</c> over operator macros
-/// (<see cref="OperatorMacroResolver.PlanConditional"/>), on the kernels of <see cref="OperatorMacroConditionalKernels"/>:
-/// which truth operator tests the left operand, and whether the target is evaluated before it.
+/// (<see cref="OperatorMacroResolver.PlanConditional"/>), on the kernels of
+/// <see cref="OperatorMacroConditionalKernels"/>: which truth operator tests the left operand, and whether the target
+/// is evaluated before it.
 /// </summary>
 [TestTarget(ExecutionTarget.CpuExecution)]
 [Category(TestCategory.Compiler)]
@@ -59,7 +60,9 @@ public class OperatorMacroConditionalPlanTests
     {
         var (assignment, model) = FindAssignments(kernel).First();
         Assert.True(OperatorMacroResolver.TryResolve(assignment, model, out var macro));
-        Assert.True(OperatorMacroResolver.TryPrepareCall(assignment.Left, macro, assignment, model, out var call, out _));
+        Assert.True(
+            OperatorMacroResolver.TryPrepareCall(assignment.Left, macro, assignment, model, out var call, out _)
+        );
         var effects = OperatorMacroResolver.GetOperandEffects(call, macro, assignment, model);
         return OperatorMacroResolver.PlanConditional(call, macro, effects);
     }
@@ -68,7 +71,10 @@ public class OperatorMacroConditionalPlanTests
     private static (AssignmentExpressionSyntax Assignment, SemanticModel Model)[] FindAssignments(string kernel,
         [CallerFilePath] string callerFilePath = "")
     {
-        var kernelFile = Path.Combine(Path.GetDirectoryName(callerFilePath) ?? "", "OperatorMacroConditionalKernels.cu.cs");
+        var kernelFile = Path.Combine(
+            Path.GetDirectoryName(callerFilePath) ?? "",
+            "OperatorMacroConditionalKernels.cu.cs"
+        );
         var (_, tree, model) = RoslynTestUtility.GetKernelContext(kernelFile);
         var method = tree.GetRoot()
             .DescendantNodes()

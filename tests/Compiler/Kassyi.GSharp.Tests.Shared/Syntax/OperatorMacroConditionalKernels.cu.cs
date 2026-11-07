@@ -25,6 +25,24 @@ public struct TruthValue
     public static bool operator false(TruthValue value) => value.Value < 0;
 }
 
+/// <summary>The operators of <see cref="TruthValue"/> on a <c>ref struct</c>.</summary>
+public ref struct TruthRef
+{
+    public int Value;
+
+    public TruthRef(int value) => Value = value;
+
+    [GpuOperatorMacro(typeof(OperatorMacroConditionalKernels), nameof(OperatorMacroConditionalKernels.AndRef))]
+    public static TruthRef operator &(TruthRef left, TruthRef right) => throw new GpuOnlyException();
+
+    [GpuOperatorMacro(typeof(OperatorMacroConditionalKernels), nameof(OperatorMacroConditionalKernels.OrRef))]
+    public static TruthRef operator |(TruthRef left, TruthRef right) => throw new GpuOnlyException();
+
+    public static bool operator true(TruthRef value) => value.Value > 0;
+
+    public static bool operator false(TruthRef value) => value.Value < 0;
+}
+
 /// <summary>
 /// <c>&amp;&amp;</c> and <c>||</c> over operator macros: <c>a &amp;&amp; b</c> is <c>T.false(a) ? a : T.&amp;(a, b)</c>
 /// and <c>a || b</c> is <c>T.true(a) ? a : T.|(a, b)</c>, with <c>a</c> evaluated once and <c>b</c> only when the test
@@ -135,5 +153,32 @@ public static partial class OperatorMacroConditionalKernels
     {
         index[i] = 1;
         return new TruthValue(value);
+    }
+
+    [GpuDeviceFunction]
+    public static void AndRef(ref TruthRef result, TruthRef left, TruthRef right)
+    {
+        result.Value = left.Value * 10 + right.Value;
+    }
+
+    [GpuDeviceFunction]
+    public static void OrRef(ref TruthRef result, TruthRef left, TruthRef right)
+    {
+        result.Value = left.Value * 100 + right.Value;
+    }
+
+    // The operators of a ref struct: per thread, result[2 * i] is a && b and result[2 * i + 1] is a || b
+    [GpuKernel]
+    public static void RefStructKernel(int[] input, int[] result)
+    {
+        int i = ThreadIndex.X;
+        TruthRef a = new TruthRef(input[2 * i]);
+        TruthRef b = new TruthRef(input[2 * i + 1]);
+        TruthRef c = default;
+        c = a && b;
+        result[2 * i] = c.Value;
+        TruthRef d = default;
+        d = a || b;
+        result[2 * i + 1] = d.Value;
     }
 }
