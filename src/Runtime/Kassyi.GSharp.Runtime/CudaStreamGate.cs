@@ -40,7 +40,8 @@ public sealed unsafe class CudaStreamGate : IDisposable
     private IntPtr _hostPointer;
     private IntPtr _devicePointer;
     private uint _generation;
-    private volatile bool _isOpen;
+    // Written with Volatile.Write and read by IsOpen with Volatile.Read; Close reads it under _sync.
+    private bool _isOpen;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="CudaStreamGate"/> class in the closed state.
@@ -93,7 +94,7 @@ public sealed unsafe class CudaStreamGate : IDisposable
     /// <summary>
     /// Gets a value indicating whether the gate is currently open.
     /// </summary>
-    public bool IsOpen => _isOpen;
+    public bool IsOpen => Volatile.Read(ref _isOpen);
 
     // The value the device compares against the current generation; read by the write-order regression test.
     internal uint DeviceFlag => Volatile.Read(ref *(uint*)_hostPointer);
@@ -160,7 +161,7 @@ public sealed unsafe class CudaStreamGate : IDisposable
 
             // IsOpen first: once the flag is stored the device can run and a host callback can observe the open
             // gate, so IsOpen must already read true by then.
-            _isOpen = true;
+            Volatile.Write(ref _isOpen, true);
             Volatile.Write(ref *(uint*)_hostPointer, _generation);
         }
     }
@@ -183,7 +184,7 @@ public sealed unsafe class CudaStreamGate : IDisposable
             }
 
             _generation++;
-            _isOpen = false;
+            Volatile.Write(ref _isOpen, false);
         }
     }
 
@@ -207,7 +208,7 @@ public sealed unsafe class CudaStreamGate : IDisposable
             // Unblock any streams still waiting on the current generation before calling cuMemFreeHost,
             // which implicitly synchronizes the device and would otherwise deadlock against a closed gate.
             // IsOpen is set before the store for the same reason as in Open.
-            _isOpen = true;
+            Volatile.Write(ref _isOpen, true);
             Volatile.Write(ref *(uint*)hostPointer, _generation);
         }
 
