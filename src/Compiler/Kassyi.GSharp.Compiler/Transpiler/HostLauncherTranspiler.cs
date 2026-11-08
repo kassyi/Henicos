@@ -54,7 +54,8 @@ internal static class HostLauncherTranspiler
             ref context);
     }
 
-    // extern "C" __declspec(dllexport) void <launch export>(<launch dimensions>, <sharedMemBytes>, <blocks>, <kernel parameters>[, <result>* __restrict__ __gsharp_auto_result])
+    // extern "C" __declspec(dllexport) void <launch export>(<launch dimensions>, <sharedMemBytes>, <blocks>,
+    //     <kernel parameters>[, <result>* __restrict__ __gsharp_auto_result])
     private static void WriteLauncherSignature(in MethodEmissionPlan plan, IMethodSymbol methodSymbol,
         ITypeSymbol?[] structArguments, ref TranspileContext context)
     {
@@ -65,12 +66,14 @@ internal static class HostLauncherTranspiler
             .Append(GlobalCppNames.GetKernelDerivedName(LaunchExportPrefix, methodSymbol))
             .Append('(');
 
-        // Launch dimensions, and the number of blocks that the managed wrapper counted in 64 bits (LaunchLimits.CheckLaunch):
-        // the CPU paths run every grid that the GPU runs, where a 32-bit product of the dimensions wraps (#805)
+        // Launch dimensions, and the number of blocks that the managed wrapper counted in 64 bits
+        // (LaunchLimits.CheckLaunch): the CPU paths run every grid that the GPU runs, where a 32-bit product of the
+        // dimensions wraps (#805)
         context.Emitter.Writer.Append(
             $"uint32_t {GridDimX}, uint32_t {GridDimY}, uint32_t {GridDimZ}, ");
         context.Emitter.Writer.Append(
-            $"uint32_t {BlockDimX}, uint32_t {BlockDimY}, uint32_t {BlockDimZ}, uint32_t {SharedMemBytes}, int64_t {TotalBlocks}");
+            $"uint32_t {BlockDimX}, uint32_t {BlockDimY}, uint32_t {BlockDimZ}, uint32_t {SharedMemBytes}, ");
+        context.Emitter.Writer.Append($"int64_t {TotalBlocks}");
 
         WriteLauncherParameters(structArguments, method.ParameterList.Parameters, ref context);
 
@@ -233,7 +236,8 @@ internal static class HostLauncherTranspiler
         {
             context.Emitter.Writer.AppendLine(
                 $"std::vector<{contextName}> {GridContexts}((size_t){TotalBlocks} * {ThreadsPerBlock});");
-            context.Emitter.Writer.AppendLine($"std::vector<{SharedMemoryArena}> {BlockArenas}((size_t){TotalBlocks});");
+            context.Emitter.Writer.AppendLine(
+                $"std::vector<{SharedMemoryArena}> {BlockArenas}((size_t){TotalBlocks});");
             context.Emitter.Writer.AppendLine($"std::vector<uint8_t> {BlockStatus}((size_t){TotalBlocks});");
             context.Emitter.Writer.AppendLine(
                 $"for (int64_t {BlockLoopIndex} = 0; {BlockLoopIndex} < {TotalBlocks}; {BlockLoopIndex}++)");

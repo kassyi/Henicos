@@ -9,8 +9,9 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 
 /// <summary>
 /// The launch dimensions against the limits that every GPU enforces (#799): a launch beyond them throws
-/// <see cref="ArgumentOutOfRangeException"/> before any thread runs, on CUDA and on both CPU paths, native and managed, and
-/// a launch at them runs every thread. The counting of large grids is covered by <c>LaunchLimitsTests</c>.
+/// <see cref="ArgumentOutOfRangeException"/> before any thread runs, on CUDA and on both CPU paths, native and
+/// managed, and a launch at them runs every thread. The counting of large grids is covered by
+/// <c>LaunchLimitsTests</c>.
 /// </summary>
 [Category(TestCategory.Compiler)]
 [TestTarget(ExecutionTarget.GpuExecution)]

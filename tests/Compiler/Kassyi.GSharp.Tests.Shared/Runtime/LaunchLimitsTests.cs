@@ -93,7 +93,8 @@ public class LaunchLimitsTests
 
         Assert.Equal((int)(blocks * threadsPerBlock),
             LaunchLimits.GetManagedContextCount(blocks, blockX, blockY, blockZ, Kernel));
-        Assert.Equal(12 * (int)threadsPerBlock, LaunchLimits.GetManagedContextCount(12, blockX, blockY, blockZ, Kernel));
+        Assert.Equal(12 * (int)threadsPerBlock,
+            LaunchLimits.GetManagedContextCount(12, blockX, blockY, blockZ, Kernel));
     }
 
     [Theory]

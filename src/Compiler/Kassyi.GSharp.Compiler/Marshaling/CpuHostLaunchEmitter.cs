@@ -56,8 +56,8 @@ internal static class CpuHostLaunchEmitter
         writer.Append(KernelHostNames.GetDelegateTypeName(kernel));
         using (writer.Parentheses())
         {
-            writer.Append(
-                $"uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, uint sharedMemBytes, long {GridBlockCount}");
+            writer.Append("uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, ");
+            writer.Append($"uint sharedMemBytes, long {GridBlockCount}");
             foreach (var p in kernel.Host.Parameters)
             {
                 writer.Append(", ");
@@ -369,7 +369,8 @@ internal static class CpuHostLaunchEmitter
         {
             // The native launcher places the dynamic shared memory declarations in sharedMemBytes (#544) and runs the
             // number of blocks that the launch check counted in 64 bits (#805)
-            writer.Append($"gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, {GridBlockCount}");
+            writer.Append("gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, ");
+            writer.Append($"sharedMemBytes, {GridBlockCount}");
 
             foreach (var shape in kernel.Parameters)
             {

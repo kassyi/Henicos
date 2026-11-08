@@ -21,8 +21,8 @@ public static class LaunchDimension
     /// <param name="totalThreads">The total number of threads to dispatch.</param>
     /// <param name="threadsPerBlock">The number of threads per block. Defaults to <see cref="DefaultThreadsPerBlock"/>.</param>
     /// <returns>
-    /// A tuple containing the grid dimension and block dimension; <c>(0, 0)</c> when <paramref name="totalThreads"/> is 0,
-    /// which means there is nothing to launch: a launch with a zero dimension throws
+    /// A tuple containing the grid dimension and block dimension; <c>(0, 0)</c> when <paramref name="totalThreads"/>
+    /// is 0, which means there is nothing to launch: a launch with a zero dimension throws
     /// <see cref="ArgumentOutOfRangeException"/> on every path, as on the GPU.
     /// </returns>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="totalThreads"/> is negative, or <paramref name="threadsPerBlock"/> is non-positive or exceeds <see cref="MaxThreadsPerBlock"/>.</exception>

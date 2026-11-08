@@ -3,11 +3,13 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Shared.Differential;
 
-/// <summary>Kernels for <see cref="LaunchLimitDifferentialTests"/>: launches at and beyond the limits of every GPU (#799).</summary>
+/// <summary>
+/// Kernels for <see cref="LaunchLimitDifferentialTests"/>: launches at and beyond the limits of every GPU (#799).
+/// </summary>
 public static partial class LaunchLimitDifferentialKernels
 {
-    // Every thread writes 1 + its linear rank in the launch (x fastest, blocks in the same order), so a thread that does
-    // not run, or runs twice at the wrong place, shows in the output
+    // Every thread writes 1 + its linear rank in the launch (x fastest, blocks in the same order), so a thread that
+    // does not run, or runs at the wrong place, shows in the output
     [GpuKernel]
     public static void WriteLinearRankKernel(int[] output)
     {
