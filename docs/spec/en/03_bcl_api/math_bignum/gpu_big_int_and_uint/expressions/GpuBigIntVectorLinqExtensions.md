@@ -97,6 +97,21 @@ public static IGpuBigIntVectorExpression ZipSubtract(this IGpuBigIntVectorExpres
 public static IGpuBigIntVectorExpression ZipMultiply(this IGpuBigIntVectorExpression left, IGpuBigIntVectorExpression right);
 ```
 
+## SelectDivide / SelectModulo / ZipDivide / ZipModulo
+
+Divides each element by a scalar or by the matching element of a second vector, truncating toward zero as C# does; the remainder takes the sign of the dividend. Output `WordsPerElement` is the larger width of the two operands.
+
+```csharp
+public static IGpuBigIntVectorExpression SelectDivide(this IGpuBigIntVectorExpression source, GpuBigInt scalar);
+public static IGpuBigIntVectorExpression SelectModulo(this IGpuBigIntVectorExpression source, GpuBigInt scalar);
+public static IGpuBigIntVectorExpression ZipDivide(this IGpuBigIntVectorExpression left, IGpuBigIntVectorExpression right);
+public static IGpuBigIntVectorExpression ZipModulo(this IGpuBigIntVectorExpression left, IGpuBigIntVectorExpression right);
+```
+
+A zero divisor throws `DivideByZeroException` during evaluation, as C# integer division does: a zero scalar before any element is computed, a zero element of `right` after the launch. `ZipDivide` and `ZipModulo` read that check back from the device (one synchronization of the workspace stream), so evaluating them while the stream captures a CUDA graph throws `NotSupportedException`.
+
+When the widest of the operands and the result has more than 512 words, each evaluation allocates `2 * width` words of temporary device memory per element (4 bytes each: about 480 MB for 100,000 elements of 600 words) and releases it after the launch.
+
 ## Skip / Take
 
 Slices a vectorized sequence by bypassing `count` leading elements (`Skip`) or taking `count` contiguous elements from the start (`Take`). Throws `ArgumentNullException` if `source` is `null`.

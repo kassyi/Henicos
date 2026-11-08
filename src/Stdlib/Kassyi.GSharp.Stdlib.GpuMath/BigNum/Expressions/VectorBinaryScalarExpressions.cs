@@ -192,6 +192,8 @@ internal sealed class VectorDivScalarExpression(
             Op = CreateScalarOp(operands),
             IsModulo = false
         };
+        using var scratch = DivModScratch.Rent(workspace, ctx.Op, gridDimX);
+        ctx.Scratch = scratch?.DevicePointer ?? IntPtr.Zero;
         GpuBigIntVectorKernels.LaunchVectorDivScalarKernelPtr(
             ctx, gridDimX, 1, 1, 32, 1, 1, 0, workspace.Stream);
     }
@@ -217,6 +219,8 @@ internal sealed class VectorModScalarExpression(
             Op = CreateScalarOp(operands),
             IsModulo = true
         };
+        using var scratch = DivModScratch.Rent(workspace, ctx.Op, gridDimX);
+        ctx.Scratch = scratch?.DevicePointer ?? IntPtr.Zero;
         GpuBigIntVectorKernels.LaunchVectorModScalarKernelPtr(
             ctx, gridDimX, 1, 1, 32, 1, 1, 0, workspace.Stream);
     }

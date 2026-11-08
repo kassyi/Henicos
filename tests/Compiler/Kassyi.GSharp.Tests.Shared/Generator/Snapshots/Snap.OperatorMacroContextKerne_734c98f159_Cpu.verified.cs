@@ -69,12 +69,8 @@ struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextVa
 {
 GSharpArray<unsigned int> __gsharp_mb_Data;
 __device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue() {}
-__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue(GSharpArray<unsigned int> v) {
-this->__gsharp_mb_Data = v;
-}
-__device__ inline operator GSharpArray<unsigned int>() const {
-return this->__gsharp_mb_Data;
-}
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue(GSharpArray<unsigned int> v);
+__device__ inline operator GSharpArray<unsigned int>() const;
 }
 ;
 static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue)==16,""Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextValue: size"");
@@ -85,6 +81,14 @@ __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue __g
 __gsharp_self.__gsharp_mb_Data=__gsharp_id_0_data;
 return __gsharp_self;
 }
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue__op_uImplicit_o0(GSharpArray<unsigned int> __gsharp_id_0_data) {
+return __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue(__gsharp_id_0_data);
+}
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue::__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue(GSharpArray<unsigned int> v) { *this = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue__op_uImplicit_o0(v); }
+__device__ inline GSharpArray<unsigned int> __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue__op_uImplicit_o1(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue __gsharp_id_0_value) {
+return __gsharp_id_0_value.__gsharp_mb_Data;
+}
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue::operator GSharpArray<unsigned int>() const { return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue__op_uImplicit_o1(*this); }
 #endif
 inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextKernels__AddTwice(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextState* __gsharp_id_0_state, GSharpArray<unsigned int> __gsharp_id_1_left, GSharpArray<unsigned int> __gsharp_id_2_right, GSharpArray<unsigned int> __gsharp_id_3_result){
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue __gsharp_id_4_a = __gsharp_id_1_left;
@@ -187,12 +191,8 @@ struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextVa
 {
 GSharpArray<unsigned int> __gsharp_mb_Data;
 __device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue() {}
-__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue(GSharpArray<unsigned int> v) {
-this->__gsharp_mb_Data = v;
-}
-__device__ inline operator GSharpArray<unsigned int>() const {
-return this->__gsharp_mb_Data;
-}
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue(GSharpArray<unsigned int> v);
+__device__ inline operator GSharpArray<unsigned int>() const;
 }
 ;
 static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue)==16,""Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextValue: size"");
@@ -203,6 +203,14 @@ __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue __g
 __gsharp_self.__gsharp_mb_Data=__gsharp_id_0_data;
 return __gsharp_self;
 }
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue__op_uImplicit_o0(GSharpArray<unsigned int> __gsharp_id_0_data) {
+return __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue(__gsharp_id_0_data);
+}
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue::__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue(GSharpArray<unsigned int> v) { *this = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue__op_uImplicit_o0(v); }
+__device__ inline GSharpArray<unsigned int> __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue__op_uImplicit_o1(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue __gsharp_id_0_value) {
+return __gsharp_id_0_value.__gsharp_mb_Data;
+}
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue::operator GSharpArray<unsigned int>() const { return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue__op_uImplicit_o1(*this); }
 #endif
 struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextKernels__ParameterContextKernel {
 int __gsharp_state = 0;
@@ -501,12 +509,8 @@ struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextVa
 {
 GSharpArray<unsigned int> __gsharp_mb_Data;
 __device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue() {}
-__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue(GSharpArray<unsigned int> v) {
-this->__gsharp_mb_Data = v;
-}
-__device__ inline operator GSharpArray<unsigned int>() const {
-return this->__gsharp_mb_Data;
-}
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue(GSharpArray<unsigned int> v);
+__device__ inline operator GSharpArray<unsigned int>() const;
 }
 ;
 static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue)==16,""Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextValue: size"");
@@ -517,6 +521,14 @@ __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue __g
 __gsharp_self.__gsharp_mb_Data=__gsharp_id_0_data;
 return __gsharp_self;
 }
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue__op_uImplicit_o0(GSharpArray<unsigned int> __gsharp_id_0_data) {
+return __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue(__gsharp_id_0_data);
+}
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue::__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue(GSharpArray<unsigned int> v) { *this = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue__op_uImplicit_o0(v); }
+__device__ inline GSharpArray<unsigned int> __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue__op_uImplicit_o1(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue __gsharp_id_0_value) {
+return __gsharp_id_0_value.__gsharp_mb_Data;
+}
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue::operator GSharpArray<unsigned int>() const { return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue__op_uImplicit_o1(*this); }
 #endif
 struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextKernels__ValueContextKernel {
 int __gsharp_state = 0;
@@ -1082,12 +1094,8 @@ struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextVa
 {
 GSharpArray<unsigned int> __gsharp_mb_Data;
 __device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue() {}
-__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue(GSharpArray<unsigned int> v) {
-this->__gsharp_mb_Data = v;
-}
-__device__ inline operator GSharpArray<unsigned int>() const {
-return this->__gsharp_mb_Data;
-}
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue(GSharpArray<unsigned int> v);
+__device__ inline operator GSharpArray<unsigned int>() const;
 }
 ;
 static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue)==16,""Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextValue: size"");
@@ -1098,6 +1106,14 @@ __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue __g
 __gsharp_self.__gsharp_mb_Data=__gsharp_id_0_data;
 return __gsharp_self;
 }
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue__op_uImplicit_o0(GSharpArray<unsigned int> __gsharp_id_0_data) {
+return __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue(__gsharp_id_0_data);
+}
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue::__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue(GSharpArray<unsigned int> v) { *this = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue__op_uImplicit_o0(v); }
+__device__ inline GSharpArray<unsigned int> __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue__op_uImplicit_o1(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue __gsharp_id_0_value) {
+return __gsharp_id_0_value.__gsharp_mb_Data;
+}
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue::operator GSharpArray<unsigned int>() const { return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue__op_uImplicit_o1(*this); }
 #endif
 struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextKernels__HoistedContextKernel {
 int __gsharp_state = 0;
