@@ -279,7 +279,7 @@ internal static class NativeApiYamlReader
             var builder = ImmutableArray.CreateBuilder<ParameterDefinition>(parameters.Items.Count);
             foreach (var item in parameters.Items)
             {
-                builder.Add(ReadParameter(item));
+                builder.Add(ReadParameter(item, bindingKind, method.Name));
             }
 
             method.Parameters = builder.MoveToImmutable();
@@ -377,7 +377,7 @@ internal static class NativeApiYamlReader
         return typeParameter;
     }
 
-    private static ParameterDefinition ReadParameter(YamlNode node)
+    private static ParameterDefinition ReadParameter(YamlNode node, NativeApiBindingKind bindingKind, string methodName)
     {
         if (node is not YamlMapping mapping)
         {
@@ -393,6 +393,14 @@ internal static class NativeApiYamlReader
         };
 
         ValidateIdentifier(mapping, "name", parameter.Name);
+        if (bindingKind == NativeApiBindingKind.Module &&
+            ModuleKernelParameterTypes.GetUnsupportedReason(parameter.Type.Trim()) is { } reason)
+        {
+            throw Schema(LineOf(mapping, "type"),
+                $"Parameter '{parameter.Name}' of kernel method '{methodName}' has type '{parameter.Type.Trim()}', " +
+                $"which a module launcher cannot pass: {reason}");
+        }
+
         return parameter;
     }
 
