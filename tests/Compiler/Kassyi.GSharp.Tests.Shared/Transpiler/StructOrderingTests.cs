@@ -1,7 +1,7 @@
 #pragma warning disable CS0649
 namespace Kassyi.GSharp.Tests.Shared.Transpiler;
 
-public class StructTranspilerEdgeCasesTests : TranspilerTestBase
+public class StructOrderingTests : TranspilerTestBase
 {
     // Resolves within this file only: the shared compilation may contain other types with the same name.
     private static INamedTypeSymbol GetLocalTypeSymbol(string name, [CallerFilePath] string callerFilePath = "")

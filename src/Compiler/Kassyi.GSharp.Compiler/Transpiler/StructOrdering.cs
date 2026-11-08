@@ -72,68 +72,76 @@ internal static class StructOrdering
         IEnumerable<INamedTypeSymbol> usedStructs)
     {
         // [WHY] CUDA C++ requires full struct definitions in dependency order before value-type usage as fields.
-        var result = ImmutableArray.CreateBuilder<INamedTypeSymbol>();
         var structSet = usedStructs as ISet<INamedTypeSymbol> ??
                         new HashSet<INamedTypeSymbol>(usedStructs, SymbolEqualityComparer.Default);
-        var visited = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
-        var visiting = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
-
+        var state = new SortState(structSet);
         foreach (var s in structSet)
         {
-            visit(s);
+            Visit(s, state);
         }
 
-        return result.ToImmutable();
+        return state.Result.ToImmutable();
+    }
 
-        void visit(INamedTypeSymbol s)
+    // Adds s to the result after every registered struct it depends on (depth-first post-order)
+    private static void Visit(INamedTypeSymbol s, SortState state)
+    {
+        if (state.Visited.Contains(s) || !state.Visiting.Add(s))
         {
-            if (visited.Contains(s) || !visiting.Add(s))
-            {
-                return;
-            }
-
-            foreach (var typeArgument in s.TypeArguments)
-            {
-                visitDependency(typeArgument, s);
-            }
-
-            foreach (var member in StructAbiMembers.Get(s))
-            {
-                visitDependency(member.Type, s);
-            }
-
-            // The other type of a conversion comes first: the conversion functions after the struct use its value, and
-            // a ref struct also names it in the conversion members it declares
-            foreach (var member in s.GetMembers())
-            {
-                if (member is not IMethodSymbol
-                    {
-                        MethodKind: MethodKind.Conversion, IsImplicitlyDeclared: false
-                    } conversion)
-                {
-                    continue;
-                }
-
-                visitDependency(conversion.ReturnType, s);
-                foreach (var parameter in conversion.Parameters)
-                {
-                    visitDependency(parameter.Type, s);
-                }
-            }
-
-            visiting.Remove(s);
-            visited.Add(s);
-            result.Add(s);
+            return;
         }
 
-        // [WHY] The owner itself is skipped: visiting it again while it is being visited would return at once anyway.
-        void visitDependency(ITypeSymbol type, INamedTypeSymbol owner)
+        foreach (var typeArgument in s.TypeArguments)
         {
-            if (TryGetUserStruct(type, out var dep) && !dep.IsEqualTo(owner) && structSet.Contains(dep))
+            VisitDependency(typeArgument, s, state);
+        }
+
+        foreach (var member in StructAbiMembers.Get(s))
+        {
+            VisitDependency(member.Type, s, state);
+        }
+
+        // The other type of a conversion comes first: the conversion functions after the struct use its value, and
+        // a ref struct also names it in the conversion members it declares
+        foreach (var member in s.GetMembers())
+        {
+            if (member is not IMethodSymbol
+                {
+                    MethodKind: MethodKind.Conversion, IsImplicitlyDeclared: false
+                } conversion)
             {
-                visit(dep);
+                continue;
+            }
+
+            VisitDependency(conversion.ReturnType, s, state);
+            foreach (var parameter in conversion.Parameters)
+            {
+                VisitDependency(parameter.Type, s, state);
             }
         }
+
+        state.Visiting.Remove(s);
+        state.Visited.Add(s);
+        state.Result.Add(s);
+    }
+
+    // [WHY] The owner itself is skipped: visiting it again while it is being visited would return at once anyway.
+    private static void VisitDependency(ITypeSymbol type, INamedTypeSymbol owner, SortState state)
+    {
+        if (TryGetUserStruct(type, out var dep) && !dep.IsEqualTo(owner) && state.StructSet.Contains(dep))
+        {
+            Visit(dep, state);
+        }
+    }
+
+    // The structs to sort, the structs done and on the current path, and the sorted result
+    private sealed class SortState(ISet<INamedTypeSymbol> structSet)
+    {
+        public ISet<INamedTypeSymbol> StructSet { get; } = structSet;
+        public HashSet<INamedTypeSymbol> Visited { get; } = new(SymbolEqualityComparer.Default);
+        public HashSet<INamedTypeSymbol> Visiting { get; } = new(SymbolEqualityComparer.Default);
+        public ImmutableArray<INamedTypeSymbol>.Builder Result { get; } =
+            ImmutableArray.CreateBuilder<INamedTypeSymbol>();
     }
 
     private static bool TryGetUserStruct(ITypeSymbol? typeSymbol, [NotNullWhen(true)] out INamedTypeSymbol? namedStruct)

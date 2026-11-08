@@ -157,11 +157,7 @@ internal static class StructConstructorEmitter
     private static void WriteStructConstructorCore(INamedTypeSymbol structSym, IMethodSymbol constructor,
         ParameterListSyntax parameterList, ConstructorDeclarationSyntax? declaration, ref TranspileContext context)
     {
-        var query = context.Query;
-        var reporter = context.Reporter;
-        var model = query.SemanticModel.Compilation.GetSemanticModel(parameterList.SyntaxTree);
-        context.Query = new Query(model, query.BclIntrinsicMap, query.UsedStructs);
-        context.Reporter = reporter.WithSemanticModel(model);
+        var saved = SemanticModelSwitch.Enter(ref context, parameterList.SyntaxTree);
         var previousCtorType = context.Emitter.StructConstructorType;
         var previousCallableDepth = context.Emitter.CallableDepth;
         context.Emitter.StructConstructorType = structSym;
@@ -178,7 +174,7 @@ internal static class StructConstructorEmitter
             using (context.Emitter.Writer.Scope())
             {
                 context.Emitter.Dialect.AppendType(ref context, structSym);
-                WriteSelfInitialization(structSym, constructor, declaration, model, ref context);
+                WriteSelfInitialization(structSym, constructor, declaration, saved.Model, ref context);
                 WriteConstructorBody(declaration, ref context);
                 context.Emitter.Writer.AppendLine($"return {GSharpInternalNames.Lowering.ConstructorSelf};");
             }
@@ -187,8 +183,7 @@ internal static class StructConstructorEmitter
         {
             context.Emitter.StructConstructorType = previousCtorType;
             context.Emitter.CallableDepth = previousCallableDepth;
-            context.Query = query;
-            context.Reporter = reporter;
+            saved.Restore(ref context);
         }
     }
 
@@ -265,12 +260,7 @@ internal static class StructConstructorEmitter
     private static void WriteMemberInitializer(StructAbiMember member, EqualsValueClauseSyntax initializer,
         ref TranspileContext context)
     {
-        var query = context.Query;
-        var reporter = context.Reporter;
-        var model = query.SemanticModel.Compilation.GetSemanticModel(initializer.SyntaxTree);
-        context.Query = new Query(model, query.BclIntrinsicMap, query.UsedStructs);
-        context.Reporter = reporter.WithSemanticModel(model);
-
+        var saved = SemanticModelSwitch.Enter(ref context, initializer.SyntaxTree);
         try
         {
             context.Emitter.Writer.Append($"{GSharpInternalNames.Lowering.ConstructorSelf}.")
@@ -281,8 +271,7 @@ internal static class StructConstructorEmitter
         }
         finally
         {
-            context.Query = query;
-            context.Reporter = reporter;
+            saved.Restore(ref context);
         }
     }
 

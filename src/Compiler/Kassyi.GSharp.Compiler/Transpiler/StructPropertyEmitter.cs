@@ -71,20 +71,14 @@ internal static class StructPropertyEmitter
     {
         // [WHY] The struct may be declared in another file than the kernel, so its body is bound with a model of its
         // own tree.
-        var query = context.Query;
-        var reporter = context.Reporter;
-        var model = query.SemanticModel.Compilation.GetSemanticModel(syntaxTree);
-        context.Query = new Query(model, query.BclIntrinsicMap, query.UsedStructs);
-        context.Reporter = reporter.WithSemanticModel(model);
-
+        var saved = SemanticModelSwitch.Enter(ref context, syntaxTree);
         try
         {
             LambdaTranspilerHelper.TranspileLambdaBody(ref context, block, expression, isVoidExpression);
         }
         finally
         {
-            context.Query = query;
-            context.Reporter = reporter;
+            saved.Restore(ref context);
         }
     }
 

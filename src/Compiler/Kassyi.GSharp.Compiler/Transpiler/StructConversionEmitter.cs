@@ -243,11 +243,7 @@ internal static class StructConversionEmitter
     public static void WriteOperatorFunction(IMethodSymbol method, BaseMethodDeclarationSyntax declaration,
         ref TranspileContext context)
     {
-        var query = context.Query;
-        var reporter = context.Reporter;
-        var model = query.SemanticModel.Compilation.GetSemanticModel(declaration.SyntaxTree);
-        context.Query = new Query(model, query.BclIntrinsicMap, query.UsedStructs);
-        context.Reporter = reporter.WithSemanticModel(model);
+        var saved = SemanticModelSwitch.Enter(ref context, declaration.SyntaxTree);
         var previousCtorType = context.Emitter.StructConstructorType;
         var previousCallableDepth = context.Emitter.CallableDepth;
         context.Emitter.StructConstructorType = null;
@@ -271,8 +267,7 @@ internal static class StructConversionEmitter
         {
             context.Emitter.StructConstructorType = previousCtorType;
             context.Emitter.CallableDepth = previousCallableDepth;
-            context.Query = query;
-            context.Reporter = reporter;
+            saved.Restore(ref context);
         }
     }
 }
