@@ -5,6 +5,7 @@ using Xunit;
 namespace Kassyi.GSharp.Tests.Shared.Analyzers;
 
 [Category(TestCategory.Compiler)]
+[Collection(TestCollections.CorpusScan)]
 public class StructSizeDiagnosticsTests : TranspilerTestBase
 {
     private const string TestCasePath = "Analyzers/StructSizeDiagnostics.cs";

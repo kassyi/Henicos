@@ -8,6 +8,7 @@ namespace Kassyi.GSharp.Tests.Shared.Diagnostics;
 /// the generator to an analyzer shows up as a reviewed snapshot diff.
 /// </summary>
 [Category(TestCategory.Compiler)]
+[Collection(TestCollections.CorpusScan)]
 public class KernelDiagnosticsInventoryTests
 {
     // Test cases, relative to the TestCases directory
