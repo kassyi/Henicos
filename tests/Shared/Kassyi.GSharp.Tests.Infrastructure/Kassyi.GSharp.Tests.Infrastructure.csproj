@@ -13,6 +13,15 @@
     <PackageReference Include="xunit" Version="2.9.3" />
   </ItemGroup>
   <ItemGroup>
+    <!-- Compiled into each test assembly by tests/Directory.Build.props, not into this library -->
+    <Compile Remove="TestAssemblySources\**" />
+    <None Include="TestAssemblySources\**" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+    <!-- The memory budget watchdog runs in the net10.0 test hosts only -->
+    <Compile Remove="MemoryBudget*.cs;MemoryWatchdog.cs;ProcessMemory.cs" />
+  </ItemGroup>
+  <ItemGroup>
     <Using Include="Xunit" />
   </ItemGroup>
 </Project>
