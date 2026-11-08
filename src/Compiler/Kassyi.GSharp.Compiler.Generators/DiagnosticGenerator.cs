@@ -48,17 +48,31 @@ public static partial class DiagnosticGenerator
     };
 
     /// <summary>Reads diagnostic definitions from the input JSON file and emits generated source files.</summary>
+    /// <exception cref="GeneratorInputException">The file does not exist or is not a JSON array of diagnostics.</exception>
     public static void Run(string inputFile, string outputDir)
     {
-        Directory.CreateDirectory(outputDir);
-
-        var json = File.ReadAllText(inputFile);
-        var diagnostics = JsonSerializer.Deserialize<List<DiagnosticDefinition>>(json, s_jsonOptions);
-        if (diagnostics == null)
+        if (!File.Exists(inputFile))
         {
-            return;
+            throw new GeneratorInputException(inputFile, 0, "The diagnostics file does not exist.");
         }
 
+        List<DiagnosticDefinition>? diagnostics;
+        try
+        {
+            diagnostics = JsonSerializer.Deserialize<List<DiagnosticDefinition>>(File.ReadAllText(inputFile), s_jsonOptions);
+        }
+        catch (JsonException ex)
+        {
+            // LineNumber is 0-based.
+            throw new GeneratorInputException(inputFile, (int)(ex.LineNumber ?? -1) + 1, ex.Message);
+        }
+
+        if (diagnostics is null)
+        {
+            throw new GeneratorInputException(inputFile, 0, "The file must hold a JSON array of diagnostics, not null.");
+        }
+
+        Directory.CreateDirectory(outputDir);
         var source = GenerateSource(diagnostics);
         File.WriteAllText(Path.Combine(outputDir, "GSharpDiagnostics.g.cs"), source, Encoding.UTF8);
     }
@@ -124,10 +138,10 @@ public static partial class DiagnosticGenerator
         writer.Line($"public static readonly DiagnosticDescriptor {fieldName} = new(");
         using (writer.Scope("", ");"))
         {
-            writer.Line($"id: \"{diag.Id}\",");
-            writer.Line($"title: \"{Escape(diag.Title)}\",");
-            writer.Line($"messageFormat: \"{Escape(diag.MessageFormat)}\",");
-            writer.Line($"category: \"{Escape(diag.Category)}\",");
+            writer.Line($"id: {CSharpStringLiteral.Quote(diag.Id)},");
+            writer.Line($"title: {CSharpStringLiteral.Quote(diag.Title)},");
+            writer.Line($"messageFormat: {CSharpStringLiteral.Quote(diag.MessageFormat)},");
+            writer.Line($"category: {CSharpStringLiteral.Quote(diag.Category)},");
             writer.Line($"defaultSeverity: DiagnosticSeverity.{diag.DefaultSeverity},");
             if (string.IsNullOrEmpty(diag.Description))
             {
@@ -136,7 +150,7 @@ public static partial class DiagnosticGenerator
             else
             {
                 writer.Line($"isEnabledByDefault: {(diag.IsEnabledByDefault ? "true" : "false")},");
-                writer.Line($"description: \"{Escape(diag.Description)}\"");
+                writer.Line($"description: {CSharpStringLiteral.Quote(diag.Description)}");
             }
         }
 
@@ -170,7 +184,13 @@ public static partial class DiagnosticGenerator
             writer.Line($"#error Duplicate diagnostic ID found in diagnostics.json: {diag.Id}");
         }
 
-        // 3. Name Validation & Duplication (Error)
+        // 3. Severity (Error): written as DiagnosticSeverity.<value>
+        if (diag.DefaultSeverity is not ("Hidden" or "Info" or "Warning" or "Error"))
+        {
+            writer.Line($"#error Invalid defaultSeverity '{diag.DefaultSeverity}' in diagnostics.json (ID: {diag.Id}). Expected Hidden, Info, Warning or Error.");
+        }
+
+        // 4. Name Validation & Duplication (Error)
         if (string.IsNullOrWhiteSpace(diag.Name))
         {
             writer.Line($"#error Diagnostic Name is missing in diagnostics.json (ID: {diag.Id}).");
@@ -183,28 +203,6 @@ public static partial class DiagnosticGenerator
         {
             writer.Line($"#error Duplicate diagnostic Name found in diagnostics.json: {diag.Name}");
         }
-    }
-
-    private static string Escape(string? s)
-    {
-        if (string.IsNullOrEmpty(s))
-        {
-            return "";
-        }
-
-        if (s.IndexOf('"') < 0)
-        {
-            return s;
-        }
-
-        using var escaped = new SourceWriter();
-        foreach (var c in s)
-        {
-            escaped.AppendIf(c == '"', "\\");
-            escaped.Append(c);
-        }
-
-        return escaped.ToString();
     }
 
     private static bool IsValidId(string id)

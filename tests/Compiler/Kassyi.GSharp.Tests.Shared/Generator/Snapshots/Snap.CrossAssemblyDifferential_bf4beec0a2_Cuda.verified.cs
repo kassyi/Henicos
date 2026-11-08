@@ -592,6 +592,15 @@ if (__gsharp_d_2 != global::System.IntPtr.Zero && __gsharp_d_2 != __gsharp_d_0 &
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchCrossAssemblyVec2KernelPtr(global::System.IntPtr xs, global::System.IntPtr ys, global::System.IntPtr r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (xs == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(xs));
+}
+if (ys == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(ys));
+}
+if (r == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(r));
+}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "CrossAssemblyDifferentialKernels.CrossAssemblyVec2Kernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -832,6 +841,15 @@ if (__gsharp_d_2 != global::System.IntPtr.Zero && __gsharp_d_2 != __gsharp_d_0 &
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchCrossAssemblyParticleKernelPtr(global::System.IntPtr xs, global::System.IntPtr ys, global::System.IntPtr r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (xs == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(xs));
+}
+if (ys == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(ys));
+}
+if (r == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(r));
+}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "CrossAssemblyDifferentialKernels.CrossAssemblyParticleKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -1054,6 +1072,15 @@ if (__gsharp_d_2 != global::System.IntPtr.Zero && __gsharp_d_2 != __gsharp_d_0 &
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchCrossAssemblyScaledKernelPtr(global::System.IntPtr xs, global::System.IntPtr ys, global::System.IntPtr r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (xs == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(xs));
+}
+if (ys == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(ys));
+}
+if (r == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(r));
+}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "CrossAssemblyDifferentialKernels.CrossAssemblyScaledKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -1289,6 +1316,15 @@ if (__gsharp_d_2 != global::System.IntPtr.Zero && __gsharp_d_2 != __gsharp_d_0 &
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchCrossAssemblyTransitiveStructKernelPtr(global::System.IntPtr xs, global::System.IntPtr ys, global::System.IntPtr r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (xs == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(xs));
+}
+if (ys == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(ys));
+}
+if (r == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(r));
+}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "CrossAssemblyDifferentialKernels.CrossAssemblyTransitiveStructKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -1504,6 +1540,15 @@ if (__gsharp_d_2 != global::System.IntPtr.Zero && __gsharp_d_2 != __gsharp_d_0 &
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchCrossAssemblyFloat3FunctionsKernelPtr(global::System.IntPtr xs, global::System.IntPtr ys, global::System.IntPtr r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (xs == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(xs));
+}
+if (ys == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(ys));
+}
+if (r == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(r));
+}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "CrossAssemblyDifferentialKernels.CrossAssemblyFloat3FunctionsKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -1751,6 +1796,15 @@ if (__gsharp_d_2 != global::System.IntPtr.Zero && __gsharp_d_2 != __gsharp_d_0 &
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchCrossAssemblyExplicitPackedLayoutKernelPtr(global::System.IntPtr xs, global::System.IntPtr ys, global::System.IntPtr r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (xs == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(xs));
+}
+if (ys == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(ys));
+}
+if (r == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(r));
+}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "CrossAssemblyDifferentialKernels.CrossAssemblyExplicitPackedLayoutKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -1983,6 +2037,15 @@ if (__gsharp_d_2 != global::System.IntPtr.Zero && __gsharp_d_2 != __gsharp_d_0 &
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchCrossAssemblyDisposableGuardKernelPtr(global::System.IntPtr xs, global::System.IntPtr ys, global::System.IntPtr r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (xs == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(xs));
+}
+if (ys == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(ys));
+}
+if (r == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(r));
+}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "CrossAssemblyDifferentialKernels.CrossAssemblyDisposableGuardKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -2242,6 +2305,15 @@ if (__gsharp_d_2 != global::System.IntPtr.Zero && __gsharp_d_2 != __gsharp_d_0 &
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchCrossAssemblyFunctionsAndMacrosKernelPtr(global::System.IntPtr xs, global::System.IntPtr ys, global::System.IntPtr r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (xs == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(xs));
+}
+if (ys == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(ys));
+}
+if (r == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(r));
+}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "CrossAssemblyDifferentialKernels.CrossAssemblyFunctionsAndMacrosKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -2649,6 +2721,21 @@ if (__gsharp_d_4 != global::System.IntPtr.Zero && __gsharp_d_4 != __gsharp_d_0 &
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchCrossAssemblyExplicitLayoutArrayKernelPtr(global::System.IntPtr swaps, global::System.IntPtr packeds, global::System.IntPtr sizeds, global::System.IntPtr unions, global::System.IntPtr r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (swaps == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(swaps));
+}
+if (packeds == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(packeds));
+}
+if (sizeds == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(sizeds));
+}
+if (unions == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(unions));
+}
+if (r == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(r));
+}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "CrossAssemblyDifferentialKernels.CrossAssemblyExplicitLayoutArrayKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -2872,6 +2959,15 @@ if (__gsharp_d_2 != global::System.IntPtr.Zero && __gsharp_d_2 != __gsharp_d_0 &
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchCrossAssemblyBarrierExchangeKernelPtr(global::System.IntPtr inputs, global::System.IntPtr scratch, global::System.IntPtr r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (inputs == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(inputs));
+}
+if (scratch == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(scratch));
+}
+if (r == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(r));
+}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "CrossAssemblyDifferentialKernels.CrossAssemblyBarrierExchangeKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {

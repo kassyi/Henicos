@@ -271,6 +271,15 @@ if (__gsharp_d_2 != global::System.IntPtr.Zero && __gsharp_d_2 != __gsharp_d_0 &
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchInt32DivideKernelPtr(global::System.IntPtr nums, global::System.IntPtr denoms, global::System.IntPtr dst, global::System.Int32 rows, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (nums == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(nums));
+}
+if (denoms == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(denoms));
+}
+if (dst == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(dst));
+}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "IntegerTrapAndCheckedDifferentialKernels.Int32DivideKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -484,6 +493,15 @@ if (__gsharp_d_2 != global::System.IntPtr.Zero && __gsharp_d_2 != __gsharp_d_0 &
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchInt32RemainderKernelPtr(global::System.IntPtr nums, global::System.IntPtr denoms, global::System.IntPtr dst, global::System.Int32 rows, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (nums == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(nums));
+}
+if (denoms == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(denoms));
+}
+if (dst == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(dst));
+}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "IntegerTrapAndCheckedDifferentialKernels.Int32RemainderKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -697,6 +715,15 @@ if (__gsharp_d_2 != global::System.IntPtr.Zero && __gsharp_d_2 != __gsharp_d_0 &
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchUInt32DivideKernelPtr(global::System.IntPtr nums, global::System.IntPtr denoms, global::System.IntPtr dst, global::System.Int32 rows, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (nums == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(nums));
+}
+if (denoms == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(denoms));
+}
+if (dst == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(dst));
+}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "IntegerTrapAndCheckedDifferentialKernels.UInt32DivideKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -910,6 +937,15 @@ if (__gsharp_d_2 != global::System.IntPtr.Zero && __gsharp_d_2 != __gsharp_d_0 &
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchUInt32RemainderKernelPtr(global::System.IntPtr nums, global::System.IntPtr denoms, global::System.IntPtr dst, global::System.Int32 rows, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (nums == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(nums));
+}
+if (denoms == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(denoms));
+}
+if (dst == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(dst));
+}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "IntegerTrapAndCheckedDifferentialKernels.UInt32RemainderKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -1123,6 +1159,15 @@ if (__gsharp_d_2 != global::System.IntPtr.Zero && __gsharp_d_2 != __gsharp_d_0 &
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchInt64DivideKernelPtr(global::System.IntPtr nums, global::System.IntPtr denoms, global::System.IntPtr dst, global::System.Int32 rows, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (nums == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(nums));
+}
+if (denoms == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(denoms));
+}
+if (dst == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(dst));
+}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "IntegerTrapAndCheckedDifferentialKernels.Int64DivideKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -1336,6 +1381,15 @@ if (__gsharp_d_2 != global::System.IntPtr.Zero && __gsharp_d_2 != __gsharp_d_0 &
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchUInt64DivideKernelPtr(global::System.IntPtr nums, global::System.IntPtr denoms, global::System.IntPtr dst, global::System.Int32 rows, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (nums == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(nums));
+}
+if (denoms == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(denoms));
+}
+if (dst == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(dst));
+}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "IntegerTrapAndCheckedDifferentialKernels.UInt64DivideKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -1551,6 +1605,15 @@ if (__gsharp_d_2 != global::System.IntPtr.Zero && __gsharp_d_2 != __gsharp_d_0 &
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchInt16CompoundDivideKernelPtr(global::System.IntPtr nums, global::System.IntPtr denoms, global::System.IntPtr dst, global::System.Int32 rows, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (nums == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(nums));
+}
+if (denoms == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(denoms));
+}
+if (dst == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(dst));
+}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "IntegerTrapAndCheckedDifferentialKernels.Int16CompoundDivideKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -1766,6 +1829,15 @@ if (__gsharp_d_2 != global::System.IntPtr.Zero && __gsharp_d_2 != __gsharp_d_0 &
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchSByteCompoundRemainderKernelPtr(global::System.IntPtr nums, global::System.IntPtr denoms, global::System.IntPtr dst, global::System.Int32 rows, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (nums == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(nums));
+}
+if (denoms == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(denoms));
+}
+if (dst == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(dst));
+}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "IntegerTrapAndCheckedDifferentialKernels.SByteCompoundRemainderKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -1979,6 +2051,15 @@ if (__gsharp_d_2 != global::System.IntPtr.Zero && __gsharp_d_2 != __gsharp_d_0 &
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchInt32MinValueDivideKernelPtr(global::System.IntPtr nums, global::System.IntPtr denoms, global::System.IntPtr dst, global::System.Int32 rows, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (nums == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(nums));
+}
+if (denoms == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(denoms));
+}
+if (dst == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(dst));
+}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "IntegerTrapAndCheckedDifferentialKernels.Int32MinValueDivideKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -2192,6 +2273,15 @@ if (__gsharp_d_2 != global::System.IntPtr.Zero && __gsharp_d_2 != __gsharp_d_0 &
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchInt32MinValueRemainderKernelPtr(global::System.IntPtr nums, global::System.IntPtr denoms, global::System.IntPtr dst, global::System.Int32 rows, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (nums == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(nums));
+}
+if (denoms == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(denoms));
+}
+if (dst == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(dst));
+}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "IntegerTrapAndCheckedDifferentialKernels.Int32MinValueRemainderKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -2405,6 +2495,15 @@ if (__gsharp_d_2 != global::System.IntPtr.Zero && __gsharp_d_2 != __gsharp_d_0 &
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchInt64MinValueDivideKernelPtr(global::System.IntPtr nums, global::System.IntPtr denoms, global::System.IntPtr dst, global::System.Int32 rows, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (nums == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(nums));
+}
+if (denoms == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(denoms));
+}
+if (dst == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(dst));
+}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "IntegerTrapAndCheckedDifferentialKernels.Int64MinValueDivideKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -2618,6 +2717,15 @@ if (__gsharp_d_2 != global::System.IntPtr.Zero && __gsharp_d_2 != __gsharp_d_0 &
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchInt64MinValueRemainderKernelPtr(global::System.IntPtr nums, global::System.IntPtr denoms, global::System.IntPtr dst, global::System.Int32 rows, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (nums == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(nums));
+}
+if (denoms == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(denoms));
+}
+if (dst == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(dst));
+}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "IntegerTrapAndCheckedDifferentialKernels.Int64MinValueRemainderKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -2833,6 +2941,15 @@ if (__gsharp_d_2 != global::System.IntPtr.Zero && __gsharp_d_2 != __gsharp_d_0 &
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchShortMinValueDivideKernelPtr(global::System.IntPtr nums, global::System.IntPtr denoms, global::System.IntPtr dst, global::System.Int32 rows, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (nums == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(nums));
+}
+if (denoms == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(denoms));
+}
+if (dst == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(dst));
+}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "IntegerTrapAndCheckedDifferentialKernels.ShortMinValueDivideKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -3048,6 +3165,15 @@ if (__gsharp_d_2 != global::System.IntPtr.Zero && __gsharp_d_2 != __gsharp_d_0 &
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchSByteMinValueDivideKernelPtr(global::System.IntPtr nums, global::System.IntPtr denoms, global::System.IntPtr dst, global::System.Int32 rows, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (nums == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(nums));
+}
+if (denoms == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(denoms));
+}
+if (dst == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(dst));
+}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "IntegerTrapAndCheckedDifferentialKernels.SByteMinValueDivideKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -3216,6 +3342,12 @@ if (__gsharp_d_1 != global::System.IntPtr.Zero && __gsharp_d_1 != __gsharp_d_0) 
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchMathAbsInt32KernelPtr(global::System.IntPtr vals, global::System.IntPtr dst, global::System.Int32 rows, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (vals == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(vals));
+}
+if (dst == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(dst));
+}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "IntegerTrapAndCheckedDifferentialKernels.MathAbsInt32Kernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -3378,6 +3510,12 @@ if (__gsharp_d_1 != global::System.IntPtr.Zero && __gsharp_d_1 != __gsharp_d_0) 
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchMathAbsSingleKernelPtr(global::System.IntPtr vals, global::System.IntPtr dst, global::System.Int32 rows, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (vals == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(vals));
+}
+if (dst == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(dst));
+}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "IntegerTrapAndCheckedDifferentialKernels.MathAbsSingleKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -3540,6 +3678,12 @@ if (__gsharp_d_1 != global::System.IntPtr.Zero && __gsharp_d_1 != __gsharp_d_0) 
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchMathAbsDoubleKernelPtr(global::System.IntPtr vals, global::System.IntPtr dst, global::System.Int32 rows, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (vals == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(vals));
+}
+if (dst == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(dst));
+}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "IntegerTrapAndCheckedDifferentialKernels.MathAbsDoubleKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -4073,6 +4217,30 @@ if (__gsharp_d_7 != global::System.IntPtr.Zero && __gsharp_d_7 != __gsharp_d_0 &
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchShiftCountMaskBoundaryMatrixKernelPtr(global::System.IntPtr iVals, global::System.IntPtr uVals, global::System.IntPtr lVals, global::System.IntPtr ulVals, global::System.IntPtr sVals, global::System.IntPtr sbVals, global::System.IntPtr counts, global::System.IntPtr dst, global::System.Int32 rows, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (iVals == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(iVals));
+}
+if (uVals == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(uVals));
+}
+if (lVals == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(lVals));
+}
+if (ulVals == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(ulVals));
+}
+if (sVals == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(sVals));
+}
+if (sbVals == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(sbVals));
+}
+if (counts == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(counts));
+}
+if (dst == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(dst));
+}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "IntegerTrapAndCheckedDifferentialKernels.ShiftCountMaskBoundaryMatrixKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -4335,6 +4503,15 @@ if (__gsharp_d_2 != global::System.IntPtr.Zero && __gsharp_d_2 != __gsharp_d_0 &
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchUncheckedIntegerWrapKernelPtr(global::System.IntPtr left, global::System.IntPtr right, global::System.IntPtr dst, global::System.Int32 rows, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (left == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(left));
+}
+if (right == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(right));
+}
+if (dst == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(dst));
+}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "IntegerTrapAndCheckedDifferentialKernels.UncheckedIntegerWrapKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -4610,6 +4787,18 @@ if (__gsharp_d_3 != global::System.IntPtr.Zero && __gsharp_d_3 != __gsharp_d_0 &
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchFloatDivisionByZeroKernelPtr(global::System.IntPtr fVals, global::System.IntPtr dVals, global::System.IntPtr fDst, global::System.IntPtr dDst, global::System.Int32 rows, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (fVals == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(fVals));
+}
+if (dVals == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(dVals));
+}
+if (fDst == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(fDst));
+}
+if (dDst == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(dDst));
+}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "IntegerTrapAndCheckedDifferentialKernels.FloatDivisionByZeroKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -4843,6 +5032,15 @@ if (__gsharp_d_2 != global::System.IntPtr.Zero && __gsharp_d_2 != __gsharp_d_0 &
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchFloatToIntegerConversionKernelPtr(global::System.IntPtr fVals, global::System.IntPtr dVals, global::System.IntPtr dst, global::System.Int32 rows, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (fVals == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(fVals));
+}
+if (dVals == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(dVals));
+}
+if (dst == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(dst));
+}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "IntegerTrapAndCheckedDifferentialKernels.FloatToIntegerConversionKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {

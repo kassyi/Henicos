@@ -87,6 +87,7 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
         if (symbol is IMethodSymbol method && CppNameResolver.IsEmittedDeviceFunction(method, context.Emitter.Dialect))
         {
             DynamicSharedMemoryEmitter.FailIfReferencedWithoutCall(node, method, ref context);
+            NonNullProof.FailIfReferencedWithoutCall(node, method, ref context);
             context.Emitter.Writer.AppendCppName(CppNameResolver.Resolve(method, method.Name, context.Emitter.Dialect));
             return true;
         }

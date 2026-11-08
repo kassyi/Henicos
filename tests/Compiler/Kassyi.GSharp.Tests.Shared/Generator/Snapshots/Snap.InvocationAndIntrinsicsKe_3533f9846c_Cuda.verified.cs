@@ -312,6 +312,18 @@ if (__gsharp_d_3 != global::System.IntPtr.Zero && __gsharp_d_3 != __gsharp_d_0 &
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchInterlockedKernelPtr(global::System.IntPtr intBuf, global::System.IntPtr uintBuf, global::System.IntPtr longBuf, global::System.IntPtr ulongBuf, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (intBuf == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(intBuf));
+}
+if (uintBuf == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(uintBuf));
+}
+if (longBuf == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(longBuf));
+}
+if (ulongBuf == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(ulongBuf));
+}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "InvocationAndIntrinsicsKernels.InterlockedKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -508,6 +520,12 @@ if (__gsharp_d_1 != global::System.IntPtr.Zero && __gsharp_d_1 != __gsharp_d_0) 
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchInterlockedEdgeCasesKernelPtr(global::System.IntPtr array, global::System.IntPtr structArray, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (array == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(array));
+}
+if (structArray == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(structArray));
+}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "InvocationAndIntrinsicsKernels.InterlockedEdgeCasesKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -775,6 +793,18 @@ if (__gsharp_d_3 != global::System.IntPtr.Zero && __gsharp_d_3 != __gsharp_d_0 &
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchMathKernelPtr(global::System.IntPtr doubleInputs, global::System.IntPtr doubleOutputs, global::System.IntPtr floatInputs, global::System.IntPtr floatOutputs, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (doubleInputs == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(doubleInputs));
+}
+if (doubleOutputs == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(doubleOutputs));
+}
+if (floatInputs == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(floatInputs));
+}
+if (floatOutputs == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(floatOutputs));
+}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "InvocationAndIntrinsicsKernels.MathKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -1048,6 +1078,18 @@ if (__gsharp_d_3 != global::System.IntPtr.Zero && __gsharp_d_3 != __gsharp_d_0 &
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchMathEdgeCasesKernelPtr(global::System.IntPtr floatSpecialInputs, global::System.IntPtr floatSpecialResults, global::System.IntPtr doubleSpecialInputs, global::System.IntPtr doubleSpecialResults, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (floatSpecialInputs == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(floatSpecialInputs));
+}
+if (floatSpecialResults == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(floatSpecialResults));
+}
+if (doubleSpecialInputs == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(doubleSpecialInputs));
+}
+if (doubleSpecialResults == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(doubleSpecialResults));
+}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "InvocationAndIntrinsicsKernels.MathEdgeCasesKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {

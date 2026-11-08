@@ -474,7 +474,7 @@ public static partial class GpuBigIntVectorKernels
     /// </summary>
     public struct DivModWords
     {
-        public uint[] Scratch;
+        public uint[]? Scratch;
         public int Base;
         public int Count;
     }

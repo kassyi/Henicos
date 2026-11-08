@@ -466,10 +466,13 @@ public partial class EmissionShapeTests
     }
 
     // Not cached across tests: a mutation test run activates one compiler mutant after another in the same process
-    private static string Generate(string testCase, string dialect)
+    // withPath: the tree carries the test case's file name, so that places in the output name it
+    private static string Generate(string testCase, string dialect, bool withPath = false)
     {
-        var compilation = RoslynTestUtility.CreateCompilation(
-            RoslynTestUtility.ReadTestCase($"Transpiler/Emission/{testCase}.cu.cs"));
+        var text = RoslynTestUtility.ReadTestCase($"Transpiler/Emission/{testCase}.cu.cs");
+        var compilation = withPath
+            ? RoslynTestUtility.CreateCompilationAt($"{testCase}.cu.cs", text)
+            : RoslynTestUtility.CreateCompilation(text);
         var (driver, output, diagnostics) = RoslynTestUtility.RunGenerator(compilation, dialect);
         var errors = diagnostics
             .Concat(output.GetDiagnostics())

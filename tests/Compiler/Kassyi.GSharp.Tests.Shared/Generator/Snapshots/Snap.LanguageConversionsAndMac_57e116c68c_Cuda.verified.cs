@@ -329,9 +329,9 @@ auto __gsharp_id_6_a = __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Differential
 auto __gsharp_id_7_b = __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Differential__DiffMacroNum(__gsharp_id_3_y);
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffMacroNum __gsharp_id_8_pre = {};
 __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__DiffMacroNumOps__AddWithContext(&__gsharp_id_5_ctx,&__gsharp_id_8_pre,__gsharp_id_6_a,__gsharp_id_7_b);
-__gsharp_array_at(__gsharp_id_0_scratch, __gsharp_id_1_localTid, ""G#: a null array is read at LanguageConversionsAndMacrosDifferentialKernels.cs(174,9)"")=__gsharp_id_8_pre.__gsharp_mb_Value;
+__gsharp_id_0_scratch[__gsharp_id_1_localTid]=__gsharp_id_8_pre.__gsharp_mb_Value;
 __syncthreads();
-int __gsharp_id_9_neighbor = __gsharp_array_at(__gsharp_id_0_scratch, (__gsharp_add_i32(__gsharp_id_1_localTid,1))%(int)(int)blockDim.x, ""G#: a null array is read at LanguageConversionsAndMacrosDifferentialKernels.cs(177,24)"");
+int __gsharp_id_9_neighbor = __gsharp_id_0_scratch[(__gsharp_add_i32(__gsharp_id_1_localTid,1))%(int)(int)blockDim.x];
 __syncthreads();
 auto __gsharp_id_10_n = __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Differential__DiffMacroNum(__gsharp_id_9_neighbor);
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffMacroNum __gsharp_id_11_post = {};
@@ -476,6 +476,10 @@ namespace Kassyi.GSharp.Tests.Shared.Differential
 {
 public partial class LanguageConversionsAndMacrosDifferentialKernels
 {
+private static readonly global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[] s_errorSites = new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[]
+{
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(376381546u, "LanguageConversionsAndMacrosDifferentialKernels.cs", 341, 51, "OperatorMacroAcrossBarrierAndUsingStaticKernel", "G#: a null array is passed where it is not nullable"),
+};
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static partial class AotContexts
@@ -706,6 +710,15 @@ if (__gsharp_d_2 != global::System.IntPtr.Zero && __gsharp_d_2 != __gsharp_d_0 &
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchUserDefinedImplicitConversionsKernelPtr(global::System.IntPtr xs, global::System.IntPtr ys, global::System.IntPtr r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (xs == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(xs));
+}
+if (ys == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(ys));
+}
+if (r == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(r));
+}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LanguageConversionsAndMacrosDifferentialKernels.UserDefinedImplicitConversionsKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -973,6 +986,15 @@ if (__gsharp_d_2 != global::System.IntPtr.Zero && __gsharp_d_2 != __gsharp_d_0 &
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchOperatorMacroArithmeticKernelPtr(global::System.IntPtr xs, global::System.IntPtr ys, global::System.IntPtr r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (xs == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(xs));
+}
+if (ys == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(ys));
+}
+if (r == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(r));
+}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LanguageConversionsAndMacrosDifferentialKernels.OperatorMacroArithmeticKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -1229,6 +1251,15 @@ if (__gsharp_d_2 != global::System.IntPtr.Zero && __gsharp_d_2 != __gsharp_d_0 &
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchOperatorMacroEvaluationOrderKernelPtr(global::System.IntPtr xs, global::System.IntPtr ys, global::System.IntPtr r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (xs == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(xs));
+}
+if (ys == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(ys));
+}
+if (r == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(r));
+}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LanguageConversionsAndMacrosDifferentialKernels.OperatorMacroEvaluationOrderKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -1480,6 +1511,15 @@ if (__gsharp_d_2 != global::System.IntPtr.Zero && __gsharp_d_2 != __gsharp_d_0 &
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchOperatorMacroCastAndShiftKernelPtr(global::System.IntPtr xs, global::System.IntPtr ys, global::System.IntPtr r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (xs == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(xs));
+}
+if (ys == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(ys));
+}
+if (r == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(r));
+}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LanguageConversionsAndMacrosDifferentialKernels.OperatorMacroCastAndShiftKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -1708,6 +1748,15 @@ if (__gsharp_d_2 != global::System.IntPtr.Zero && __gsharp_d_2 != __gsharp_d_0 &
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchOperatorMacroInDeviceFunctionKernelPtr(global::System.IntPtr xs, global::System.IntPtr ys, global::System.IntPtr r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (xs == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(xs));
+}
+if (ys == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(ys));
+}
+if (r == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(r));
+}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LanguageConversionsAndMacrosDifferentialKernels.OperatorMacroInDeviceFunctionKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -1780,7 +1829,7 @@ __gsharp_id_2_r[__gsharp_add_i32(__gsharp_id_14_o,4)]=__gsharp_id_13_shadowAcc;
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_OperatorMacroAcrossBarrierAndUsingStaticKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__LanguageConversionsAndMacrosDifferentialKernels__OperatorMacroAcrossBarrierAndUsingStaticKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
-public static void WarmupFunctionPointerOperatorMacroAcrossBarrierAndUsingStaticKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.LanguageConversionsAndMacrosDifferentialKernels.__gsharp_hfunc_OperatorMacroAcrossBarrierAndUsingStaticKernel.Resolve();
+public static void WarmupFunctionPointerOperatorMacroAcrossBarrierAndUsingStaticKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.LanguageConversionsAndMacrosDifferentialKernels.__gsharp_hfunc_OperatorMacroAcrossBarrierAndUsingStaticKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Differential.LanguageConversionsAndMacrosDifferentialKernels.s_errorSites);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -1807,7 +1856,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LanguageConversionsAndMacrosDifferentialKernels.OperatorMacroAcrossBarrierAndUsingStaticKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.LanguageConversionsAndMacrosDifferentialKernels.__gsharp_hfunc_OperatorMacroAcrossBarrierAndUsingStaticKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.LanguageConversionsAndMacrosDifferentialKernels.__gsharp_hfunc_OperatorMacroAcrossBarrierAndUsingStaticKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Differential.LanguageConversionsAndMacrosDifferentialKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "LanguageConversionsAndMacrosDifferentialKernels.OperatorMacroAcrossBarrierAndUsingStaticKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 global::System.IntPtr __gsharp_d_1 = global::System.IntPtr.Zero;
@@ -1936,10 +1985,19 @@ if (__gsharp_d_2 != global::System.IntPtr.Zero && __gsharp_d_2 != __gsharp_d_0 &
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchOperatorMacroAcrossBarrierAndUsingStaticKernelPtr(global::System.IntPtr xs, global::System.IntPtr scratch, global::System.IntPtr r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (xs == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(xs));
+}
+if (scratch == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(scratch));
+}
+if (r == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(r));
+}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LanguageConversionsAndMacrosDifferentialKernels.OperatorMacroAcrossBarrierAndUsingStaticKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.LanguageConversionsAndMacrosDifferentialKernels.__gsharp_hfunc_OperatorMacroAcrossBarrierAndUsingStaticKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.LanguageConversionsAndMacrosDifferentialKernels.__gsharp_hfunc_OperatorMacroAcrossBarrierAndUsingStaticKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Differential.LanguageConversionsAndMacrosDifferentialKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "LanguageConversionsAndMacrosDifferentialKernels.OperatorMacroAcrossBarrierAndUsingStaticKernel");
 try
 {

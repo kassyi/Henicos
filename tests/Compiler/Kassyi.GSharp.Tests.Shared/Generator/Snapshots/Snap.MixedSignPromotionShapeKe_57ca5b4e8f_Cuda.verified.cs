@@ -360,6 +360,21 @@ if (__gsharp_d_4 != global::System.IntPtr.Zero && __gsharp_d_4 != __gsharp_d_0 &
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchConvertedKernelPtr(global::System.IntPtr us, global::System.IntPtr ns, global::System.IntPtr ss, global::System.IntPtr values, global::System.IntPtr flags, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (us == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(us));
+}
+if (ns == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(ns));
+}
+if (ss == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(ss));
+}
+if (values == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(values));
+}
+if (flags == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(flags));
+}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MixedSignPromotionShapeKernels.ConvertedKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -693,6 +708,21 @@ if (__gsharp_d_4 != global::System.IntPtr.Zero && __gsharp_d_4 != __gsharp_d_0 &
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchUnchangedKernelPtr(global::System.IntPtr us, global::System.IntPtr ns, global::System.IntPtr bs, global::System.IntPtr longs, global::System.IntPtr values, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (us == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(us));
+}
+if (ns == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(ns));
+}
+if (bs == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(bs));
+}
+if (longs == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(longs));
+}
+if (values == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(values));
+}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MixedSignPromotionShapeKernels.UnchangedKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {

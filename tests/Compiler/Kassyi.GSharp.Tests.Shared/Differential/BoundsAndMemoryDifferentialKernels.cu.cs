@@ -596,4 +596,74 @@ public static partial class BoundsAndMemoryDifferentialKernels
             dst[t] = emptySlice.AsStackEnumerable().First();
         }
     }
+
+    /// <summary>
+    /// A grid-stride loop that reads a nullable device function parameter, which keeps its null check (#1409): with
+    /// <c>flags[0] != 0</c> the parameter is null and the first read throws <see cref="NullReferenceException"/>, as in C#.
+    /// </summary>
+    [GpuKernel]
+    public static void GridStrideNullParameterKernel(int[] src, int[] flags, int[] dst, int rows)
+    {
+        DiffNullArrayHolder nullHolder = default;
+        int[]? input = flags[0] == 0 ? src : nullHolder.Data;
+        DoubleStrided(input, dst, rows);
+    }
+
+    [GpuDeviceFunction]
+    public static void DoubleStrided(int[]? input, int[] dst, int rows)
+    {
+#pragma warning disable CS8602 // Deliberate null read of a nullable parameter (#1409)
+        Gpu.GridStrideLoop(rows, i => { dst[i] = input[i] * 2; });
+#pragma warning restore CS8602
+    }
+
+    /// <summary>
+    /// A null passed to a non-nullable array parameter of a device function (#1409): the callee reads the parameter
+    /// without a check, so the call checks the argument and throws <see cref="NullReferenceException"/> there; C# throws
+    /// the same exception at the read in the callee.
+    /// </summary>
+    [GpuKernel]
+    public static void NonNullableParameterNullArgumentKernel(int[] src, int[] flags, int[] dst, int rows)
+    {
+        int t = (int)(BlockIndex.X * BlockDimension.X + ThreadIndex.X);
+        if (t >= rows)
+        {
+            return;
+        }
+
+        DiffNullArrayHolder nullHolder = default;
+        int[]? input = flags[0] == 0 ? src : nullHolder.Data;
+#pragma warning disable CS8604 // Deliberate null passed where the parameter is not nullable (#1409)
+        dst[t] = ReadAt(input, t);
+#pragma warning restore CS8604
+    }
+
+    [GpuDeviceFunction]
+    public static int ReadAt(int[] data, int index) => data[index] + 1;
+
+    /// <summary>
+    /// Reads a non-nullable array field of a struct argument without a check (#1409); the launchers reject a null in
+    /// it with <see cref="ArgumentNullException"/> before the launch.
+    /// </summary>
+    [GpuKernel]
+    public static void NonNullableFieldKernel(DiffNonNullableHolder holder, int[] dst, int rows)
+    {
+        int t = (int)(BlockIndex.X * BlockDimension.X + ThreadIndex.X);
+        if (t >= rows)
+        {
+            return;
+        }
+
+        dst[t] = holder.Data[t % holder.Data.Length] + holder.Offset;
+    }
+}
+
+/// <summary>A struct argument with a non-nullable array field, which the launchers check (#1409).</summary>
+public struct DiffNonNullableHolder
+{
+    /// <summary>The array the kernel reads; never null at a launch.</summary>
+    public int[] Data;
+
+    /// <summary>A value added to each element.</summary>
+    public int Offset;
 }

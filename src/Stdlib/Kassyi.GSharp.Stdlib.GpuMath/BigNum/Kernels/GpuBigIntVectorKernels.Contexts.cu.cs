@@ -91,7 +91,7 @@ public static partial class GpuBigIntVectorKernels
     public struct ElementCountContext
     {
         [GpuReadOnly]
-        public uint[] Base;
+        public uint[]? Base;
 
         public int Skip;
         public int Limit;
@@ -104,7 +104,7 @@ public static partial class GpuBigIntVectorKernels
     {
         /// <summary>The output of the last pass: one accumulator of <see cref="SourceWords"/> words.</summary>
         [GpuReadOnly]
-        public uint[] Source;
+        public uint[]? Source;
 
         /// <summary>Receives the magnitude, <see cref="ResultWords"/> words.</summary>
         public uint[] Destination;
@@ -197,13 +197,13 @@ public static partial class GpuBigIntVectorKernels
         /// <c>~index</c>; 0 when no divisor is zero). A Zip node clears it before the launch and reads it after; a
         /// scalar node, which rejects a zero divisor on the host, passes none, and the kernel then writes nothing.
         /// </summary>
-        public uint[] ZeroDivisor;
+        public uint[]? ZeroDivisor;
 
         /// <summary>
         /// The work buffers of elements wider than <see cref="DivModSharedWords"/>: <c>2 * evalWords</c> words per
         /// block (the remainder, then the quotient), from <c>DivModScratch</c>; none for narrower elements.
         /// </summary>
-        public uint[] Scratch;
+        public uint[]? Scratch;
     }
 
     public struct VectorFloatAddSubContext
@@ -222,10 +222,10 @@ public static partial class GpuBigIntVectorKernels
         public VectorFloatBinaryOperationContext FloatOp;
 
         /// <inheritdoc cref="VectorDivModContext.ZeroDivisor"/>
-        public uint[] ZeroDivisor;
+        public uint[]? ZeroDivisor;
 
         /// <inheritdoc cref="VectorDivModContext.Scratch"/>
-        public uint[] Scratch;
+        public uint[]? Scratch;
     }
 
     public struct VectorFloatCompareContext
