@@ -34,7 +34,7 @@ public readonly record struct FermatPrpProofHeader(int E, uint Base, int ProofPo
 /// <summary>
 /// Dual-segment batched Pietrzak proof certifying that a squaring chain modulo <c>N(E) = 2^(2E+1) - 2^E + 11</c>
 /// produced <see cref="ResidueE"/> (<c>u_E = a^(2^E) mod N</c>) and <see cref="ResidueK"/>
-/// (<c>u_K = a^(2^(2E+1)) mod N</c>) from base <see cref="Base"/>.
+/// (<c>u_K = a^(2^(2E+1)) mod N</c>) from base <see cref="Base"/>, up to sign.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -43,6 +43,15 @@ public readonly record struct FermatPrpProofHeader(int E, uint Base, int ProofPo
 /// halving tree of <c>k = ProofPower</c> witnesses (<see cref="Witnesses"/>) verified by
 /// <see cref="FermatAlgorithm.VerifyProof"/> with a single final <c>d</c>-squaring chain.
 /// </para>
+/// <para>
+/// Every residue of the proof is in the signed form <c>|x| = min(x, N - x)</c>, an element of
+/// <c>Z_N^* / {+-1}</c> (isomorphic to <c>QR_N</c> for a prime <c>N = 3 (mod 4)</c>, the setting of Pietrzak, "Simple
+/// Verifiable Delay Functions", ITCS 2019, section 2.1), and the verifier rejects any other encoding. This removes the
+/// element <c>-1</c> of order 2: in the full group, negating a midpoint and the next witness together kept every check
+/// true and flipped the sign of <c>u_K</c>. Soundness against elements of other small orders is not claimed, because
+/// <c>N</c> is not a product of safe primes. The sign of <c>a^(N-1)</c> the form leaves open does not change the
+/// verdict, because <c>a^(N-1) = -1 (mod N)</c> is impossible for this <c>N</c>.
+/// </para>
 /// <para>Instances are immutable; every residue buffer is defensively copied on construction.</para>
 /// </remarks>
 public sealed class FermatPrpProof
@@ -50,7 +59,7 @@ public sealed class FermatPrpProof
     /// <summary>The largest supported <see cref="ProofPower"/> (<c>2^20 = 1,048,576</c> leaves per segment).</summary>
     public const int MaxProofPower = 20;
 
-    private const int FormatVersion = 1;
+    private const int FormatVersion = 2;
     private const int HeaderBytes = 24;
     private const int HashBytes = 32;
 
@@ -58,9 +67,11 @@ public sealed class FermatPrpProof
 
     /// <summary>Initializes an immutable Pietrzak proof.</summary>
     /// <param name="header">The modulus, base, halving depth and residue word count.</param>
-    /// <param name="residueE">The canonical residue <c>u_E = a^(2^E) mod N</c>.</param>
-    /// <param name="residueK">The canonical residue <c>u_K = a^(2^(2E+1)) mod N</c>.</param>
-    /// <param name="witnesses">The <c>k</c> halving witnesses <c>mu_0, ..., mu_(k-1)</c>.</param>
+    /// <param name="residueE">The residue <c>|u_E|</c> (<c>u_E = a^(2^E) mod N</c>) in the signed form.</param>
+    /// <param name="residueK">The residue <c>|u_K|</c> (<c>u_K = a^(2^(2E+1)) mod N</c>) in the signed form.</param>
+    /// <param name="witnesses">
+    /// The <c>k</c> halving witnesses <c>|mu_0|, ..., |mu_(k-1)|</c> in the signed form.
+    /// </param>
     /// <exception cref="ArgumentNullException"><paramref name="witnesses"/> is <see langword="null"/>.</exception>
     public FermatPrpProof(
         FermatPrpProofHeader header,
@@ -98,13 +109,13 @@ public sealed class FermatPrpProof
     /// <summary>Gets the canonical word count <c>ceil((2E + 1) / 32)</c> of each residue.</summary>
     public int ResidueWords => Header.ResidueWords;
 
-    /// <summary>Gets the canonical residue <c>u_E = a^(2^E) mod N</c>.</summary>
+    /// <summary>Gets <c>|u_E| = min(u_E, N - u_E)</c> of <c>u_E = a^(2^E) mod N</c>.</summary>
     public ReadOnlyMemory<uint> ResidueE { get; }
 
-    /// <summary>Gets the canonical residue <c>u_K = a^(2^(2E+1)) mod N</c> (<c>K = 2E + 1</c>).</summary>
+    /// <summary>Gets <c>|u_K| = min(u_K, N - u_K)</c> of <c>u_K = a^(2^(2E+1)) mod N</c> (<c>K = 2E + 1</c>).</summary>
     public ReadOnlyMemory<uint> ResidueK { get; }
 
-    /// <summary>Gets the <c>k</c> canonical halving witnesses <c>mu_0, ..., mu_(k-1)</c>.</summary>
+    /// <summary>Gets the <c>k</c> halving witnesses <c>|mu_0|, ..., |mu_(k-1)|</c> in the signed form.</summary>
     public IReadOnlyList<ReadOnlyMemory<uint>> Witnesses { get; }
 
     /// <summary>

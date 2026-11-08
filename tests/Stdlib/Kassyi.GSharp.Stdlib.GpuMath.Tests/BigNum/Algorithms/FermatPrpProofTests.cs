@@ -25,6 +25,8 @@ using static FermatTestMath;
 /// <c>IsProbablePrime == false</c>.</description></item>
 /// <item><description><b>P-soundness-signflip</b>: odd 128-bit Fiat-Shamir challenges reject order-2 sign-flip forgeries
 /// (<c>v -&gt; N - v</c> on <c>u_E</c>, <c>u_K</c> or any <c>mu_t</c>) deterministically.</description></item>
+/// <item><description><b>P-signed-form</b>: every residue of an honest proof is <c>|x| = min(x, N - x)</c>
+/// (forgeries through the sign: <see cref="FermatPrpProofSignedFormTests"/>).</description></item>
 /// <item><description><b>P-domain-guards</b>: 1-bit tampering, zero residues, non-canonical (<c>&gt;= N</c>) residues,
 /// mismatched metadata and non-coprime bases are rejected.</description></item>
 /// </list>
@@ -72,8 +74,13 @@ public class FermatPrpProofTests
         Assert.NotNull(proof);
         Assert.Equal(new FermatPrpProofHeader(e, @base, proofPower, runner.ResidueWords), proof.Header);
         Assert.Equal(proofPower, proof.Witnesses.Count);
-        Assert.Equal(Squarings(e, @base, e), FromWords(proof.ResidueE.Span));
-        Assert.Equal(Squarings(e, @base, 2L * e + 1), FromWords(proof.ResidueK.Span));
+        var n = ModulusOf(e);
+        Assert.Equal(Signed(Squarings(e, @base, e), n), FromWords(proof.ResidueE.Span));
+        Assert.Equal(Signed(Squarings(e, @base, 2L * e + 1), n), FromWords(proof.ResidueK.Span));
+        for (var t = 0; t < proof.Witnesses.Count; t++)
+        {
+            Assert.True(FromWords(proof.Witnesses[t].Span) <= n / 2, $"Witness mu_{t} is not in the signed form.");
+        }
 
         var endIteration = (2L * e + 1 + runner.BlockSize - 1) / runner.BlockSize * runner.BlockSize;
         Assert.Equal(Squarings(e, @base, endIteration), FromWords(runner.GetState()));
@@ -89,8 +96,9 @@ public class FermatPrpProofTests
         Assert.Null(verification.FailureReason);
         Assert.Equal(expected.IsProbablePrime, runResult.IsProbablePrime);
         Assert.Equal(expected.IsProbablePrime, verification.IsProbablePrime);
-        Assert.Equal(expected.Residue64, verification.Residue64);
-        Assert.Equal(expected.CheckResidue64, verification.CheckResidue64);
+        var residueK = Squarings(e, @base, 2L * e + 1);
+        Assert.Equal(Low64(Signed(residueK * BigInteger.Pow(@base, 10) % n, n)), verification.Residue64);
+        Assert.Equal(Low64(Signed(Squarings(e, @base, e), n)), verification.CheckResidue64);
         Assert.Equal(expectedVerifySquarings, verification.Squarings);
     }
 
@@ -111,11 +119,13 @@ public class FermatPrpProofTests
             var verification = FermatAlgorithm.VerifyProof(proof);
             var expected = PrpReference(E, 3);
 
+            var n = ModulusOf(E);
             Assert.True(verification.IsValid, verification.FailureReason);
             Assert.Equal(expected.IsProbablePrime, result.IsProbablePrime);
             Assert.Equal(expected.IsProbablePrime, verification.IsProbablePrime);
-            Assert.Equal(expected.Residue64, verification.Residue64);
-            Assert.Equal(expected.CheckResidue64, verification.CheckResidue64);
+            var residueK = Squarings(E, 3, 2L * E + 1);
+            Assert.Equal(Low64(Signed(residueK * BigInteger.Pow(3, 10) % n, n)), verification.Residue64);
+            Assert.Equal(Low64(Signed(Squarings(E, 3, E), n)), verification.CheckResidue64);
         }
         finally
         {
