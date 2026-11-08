@@ -50,7 +50,7 @@ You **MUST** load and read the corresponding skill using `view_file` when perfor
 - [Transpiler & Source Generator Guidelines](.agents/skills/gsharp-transpiler-guidelines/SKILL.md): Roslyn syntax rewriters, AST visitors, and generator pipelines.
 - [QA & Test Coverage Guidelines](.agents/skills/qa-testing-guidelines/SKILL.md): Test scenario matrix (Happy/Boundary/Sad) and snapshot workflows.
 - [Property Test Design](.agents/skills/property-test-design/SKILL.md): Numeric / algorithm tests (GpuMath, CPU vs GPU): define properties first, prove each check is reached and can fail (one-line mutant).
-- [PR Review Pairing](.agents/skills/pr-review-pairing/SKILL.md): Reviewing open PRs with a person: plain walk-through per file, agent verifies logic and API, person judges structure, bugs verified before posting, comment drafts, `human-reviewed` label after posting, the author's fixes confirmed per item before the PR is called ready to merge.
+- [PR Review Pairing](.agents/skills/pr-review-pairing/SKILL.md): Reviewing open PRs with a person: plain walk-through per file, agent verifies logic and API, person judges structure, bugs verified before posting, comment drafts, `agent-reviewed` label after posting (merge and CI checked first), the author's fixes confirmed per item before the PR is called ready to merge.
 - [Review Probing](.agents/skills/review-probing/SKILL.md): Finding the bugs nobody asked about by treating every claim as a hypothesis to falsify, reverse-grepping sibling paths, running 10-line external oracles, scaling dimensions, and executing throwaway probes before reporting findings.
 
 ### Symbol Mapping & Demangling Tools (`*.gsym.json`)

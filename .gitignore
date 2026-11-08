@@ -64,6 +64,9 @@ dist-ssr/
 *.local
 .npm/
 
+# Personal Claude Code settings (permissions of one user), never shared
+/.claude/settings.local.json
+
 # --- BEGIN Antigravity global AGENTS MANAGED FILES ---
 # These files are auto-synced by setup.js. DO NOT EDIT MANUALLY.
 /.agents/bin/
