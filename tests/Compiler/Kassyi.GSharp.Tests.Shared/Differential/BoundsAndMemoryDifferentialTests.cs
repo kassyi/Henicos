@@ -39,6 +39,21 @@ public class BoundsAndMemoryDifferentialTests
         new(typeof(NullReferenceException), DiffPaths.CheckedPaths());
 #endif
 
+    // A null passed where a device function parameter is not nullable: NullReferenceException on every path; CUDA, the
+    // only path of Tests.Cuda, reports the place of the argument
+    private static ExceptionPolicy NullArrayArgument(int line, int column) =>
+#if GSHARP_CUDA
+        new(typeof(NullReferenceException), DiffPaths.CheckedPaths())
+        {
+            SourceFile = nameof(BoundsAndMemoryDifferentialKernels),
+            Line = line,
+            Column = column,
+            RequireCudaInnerException = true,
+        };
+#else
+        new(typeof(NullReferenceException), DiffPaths.CheckedPaths());
+#endif
+
     private static int[] CreateCanaryBacking()
     {
         var backing = new int[CanaryTotal];
@@ -882,6 +897,33 @@ public class BoundsAndMemoryDifferentialTests
             s.Rows),
     };
 
+    // A null read in a device function reports no site on CUDA (its message is not registered), so only the type is checked
+    private static readonly DifferentialCase s_gridStrideNullParameter = new(
+        $"{nameof(BoundsAndMemoryDifferentialKernels)}.{nameof(BoundsAndMemoryDifferentialKernels.GridStrideNullParameterKernel)}")
+    {
+        Shape = LaunchShapes.Linear(DefaultRows, 32),
+        Seeds = [0, 1],
+        ExpectedException = static (rng, _) => rng.Seed == 1
+            ? new ExceptionPolicy(typeof(NullReferenceException), DiffPaths.CheckedPaths())
+            : null,
+        Inputs = static (rng, shape) => new DiffBuffers()
+            .In("src", DiffValues.Int32(rng, shape.Rows), readOnly: true)
+            .In("flags", new[] { rng.Seed }, readOnly: true)
+            .Out<int>("dst", shape.Rows, ["doubled"], OutputPolicy.Exact),
+        Launch = static (b, s) => BoundsAndMemoryDifferentialKernels.LaunchGridStrideNullParameterKernel(
+            b.Get<int>("src"),
+            b.Get<int>("flags"),
+            b.Get<int>("dst"),
+            s.Rows,
+            gridDimX: s.GridX,
+            blockDimX: s.BlockX),
+        Oracle = static (b, s) => BoundsAndMemoryDifferentialKernels.GridStrideNullParameterKernel(
+            b.Get<int>("src"),
+            b.Get<int>("flags"),
+            b.Get<int>("dst"),
+            s.Rows),
+    };
+
     private static readonly DifferentialCase s_allThreadsEmptyFirstTrap = new(
         $"{nameof(BoundsAndMemoryDifferentialKernels)}.{nameof(BoundsAndMemoryDifferentialKernels.AllThreadsEmptyFirstTrapKernel)}")
     {
@@ -1000,6 +1042,75 @@ public class BoundsAndMemoryDifferentialTests
     [SkippableFact]
     public void Test_AllThreadsNullDereferenceTrap_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_allThreadsNullDereferenceTrap);
+
+    // A nullable parameter keeps its check: seed 1 reads null in the grid-stride loop and throws
+    [SkippableFact]
+    public void Test_GridStrideNullParameter_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_gridStrideNullParameter);
+
+    // A null passed to a non-nullable parameter: CUDA and the native build throw at the call (the place of the argument
+    // on CUDA), the managed path at the read in the callee, as C# does; the type is the same
+    [SkippableFact]
+    public void Test_NonNullableParameterNullArgument_ThrowsNullReferenceException() =>
+        DifferentialRunner.Run(new DifferentialCase(
+            $"{nameof(BoundsAndMemoryDifferentialKernels)}.{nameof(BoundsAndMemoryDifferentialKernels.NonNullableParameterNullArgumentKernel)}")
+        {
+            Shape = LaunchShapes.Linear(DefaultRows, 32),
+            Seeds = [0, 1],
+            ExpectedException = static (rng, _) => rng.Seed == 1 ? NullArrayArgument(637, 25) : null,
+            Inputs = static (rng, shape) => new DiffBuffers()
+                .In("src", DiffValues.Int32(rng, shape.Rows), readOnly: true)
+                .In("flags", new[] { rng.Seed }, readOnly: true)
+                .Out<int>("dst", shape.Rows, ["read"], OutputPolicy.Exact),
+            Launch = static (b, s) => BoundsAndMemoryDifferentialKernels.LaunchNonNullableParameterNullArgumentKernel(
+                b.Get<int>("src"),
+                b.Get<int>("flags"),
+                b.Get<int>("dst"),
+                s.Rows,
+                gridDimX: s.GridX,
+                blockDimX: s.BlockX),
+            Oracle = static (b, s) => BoundsAndMemoryDifferentialKernels.NonNullableParameterNullArgumentKernel(
+                b.Get<int>("src"),
+                b.Get<int>("flags"),
+                b.Get<int>("dst"),
+                s.Rows),
+        });
+
+    // The launchers reject a null in a non-nullable array field of a struct argument before the launch (#1409); a
+    // non-null one runs as the oracle
+    [SkippableFact]
+    public void Test_NonNullableField_NullIsRejectedAtTheLaunch() =>
+        DifferentialRunner.Run(new DifferentialCase(
+            $"{nameof(BoundsAndMemoryDifferentialKernels)}.{nameof(BoundsAndMemoryDifferentialKernels.NonNullableFieldKernel)}")
+        {
+            Shape = LaunchShapes.Linear(DefaultRows, 32),
+            Seeds = [0, 1],
+            ExpectedException = static (rng, _) => rng.Seed == 1
+                ? new ExceptionPolicy(typeof(ArgumentNullException), DiffPaths.CheckedPaths()) { ParamName = "holder" }
+                : null,
+            Inputs = static (rng, shape) => new DiffBuffers()
+                .InDeepScalar(
+                    "holder",
+                    new DiffNonNullableHolder
+                    {
+                        // Deliberately null in a non-nullable field for seed 1: the launch rejects it
+                        Data = rng.Seed == 1 ? null! : DiffValues.Int32(rng, 8),
+                        Offset = 3,
+                    },
+                    // The clone keeps the deliberate null of seed 1 in the non-nullable field
+                    static (src, scope) => new DiffNonNullableHolder { Data = scope.CloneArray(src.Data)!, Offset = src.Offset })
+                .Out<int>("dst", shape.Rows, ["value"], OutputPolicy.Exact),
+            Launch = static (b, s) => BoundsAndMemoryDifferentialKernels.LaunchNonNullableFieldKernel(
+                b.GetScalar<DiffNonNullableHolder>("holder"),
+                b.Get<int>("dst"),
+                s.Rows,
+                gridDimX: s.GridX,
+                blockDimX: s.BlockX),
+            Oracle = static (b, s) => BoundsAndMemoryDifferentialKernels.NonNullableFieldKernel(
+                b.GetScalar<DiffNonNullableHolder>("holder"),
+                b.Get<int>("dst"),
+                s.Rows),
+        });
 
     [SkippableFact]
     public void Test_AllThreadsEmptyFirstTrap_MatchesTheOracleOnEveryPath() =>

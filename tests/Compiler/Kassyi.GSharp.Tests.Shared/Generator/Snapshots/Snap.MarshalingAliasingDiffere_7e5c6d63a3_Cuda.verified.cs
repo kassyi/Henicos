@@ -101,9 +101,7 @@ public partial class MarshalingAliasingDifferentialKernels
 {
 private static readonly global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[] s_errorSites = new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[]
 {
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(420932807u, "MarshalingAliasingDifferentialKernels.cs", 77, 24, "DeepStructAllArgModesKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1098351376u, "MarshalingAliasingDifferentialKernels.cs", 78, 24, "DeepStructAllArgModesKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1155264008u, "MarshalingAliasingDifferentialKernels.cs", 79, 24, "DeepStructAllArgModesKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(368950891u, "MarshalingAliasingDifferentialKernels.cs", 80, 24, "DeepStructAllArgModesKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(577247711u, "MarshalingAliasingDifferentialKernels.cs", 84, 13, "DeepStructAllArgModesKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1685205037u, "MarshalingAliasingDifferentialKernels.cs", 84, 32, "DeepStructAllArgModesKernel", "G#: a null array is read"),
@@ -128,12 +126,9 @@ new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1953985880u, "MarshalingAl
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1315962450u, "MarshalingAliasingDifferentialKernels.cs", 253, 13, "DeepStructInternalAliasKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(260398589u, "MarshalingAliasingDifferentialKernels.cs", 254, 33, "DeepStructInternalAliasKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(996812875u, "MarshalingAliasingDifferentialKernels.cs", 255, 13, "DeepStructInternalAliasKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(165648161u, "MarshalingAliasingDifferentialKernels.cs", 257, 13, "DeepStructInternalAliasKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(374710943u, "MarshalingAliasingDifferentialKernels.cs", 258, 31, "DeepStructInternalAliasKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1247959648u, "MarshalingAliasingDifferentialKernels.cs", 260, 13, "DeepStructInternalAliasKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1350241392u, "MarshalingAliasingDifferentialKernels.cs", 261, 32, "DeepStructInternalAliasKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1399161530u, "MarshalingAliasingDifferentialKernels.cs", 264, 27, "DeepStructInternalAliasKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(47869693u, "MarshalingAliasingDifferentialKernels.cs", 284, 13, "CrossLevelTopAndDeepStructKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(541530947u, "MarshalingAliasingDifferentialKernels.cs", 289, 32, "CrossLevelTopAndDeepStructKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(177397611u, "MarshalingAliasingDifferentialKernels.cs", 290, 13, "CrossLevelTopAndDeepStructKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1648739861u, "MarshalingAliasingDifferentialKernels.cs", 309, 26, "CrossAliasInDeepArrayAndRwArrayKernel", "G#: a null array is read"),
@@ -688,9 +683,9 @@ extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Different
 int __gsharp_id_4_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 if(__gsharp_id_4_tid==0)
 {
-int __gsharp_id_5_idx0 = __gsharp_array_at(__gsharp_id_0_byVal.__gsharp_mb_Indices, 0, 420932807u);
+int __gsharp_id_5_idx0 = __gsharp_id_0_byVal.__gsharp_mb_Indices[0];
 int __gsharp_id_6_idx1 = __gsharp_array_at(__gsharp_id_1_byIn.__gsharp_mb_Indices, 1, 1098351376u);
-float __gsharp_id_7_w0 = __gsharp_array_at(__gsharp_id_0_byVal.__gsharp_mb_Inner.__gsharp_mb_Weights, __gsharp_id_5_idx0, 1155264008u)*__gsharp_id_0_byVal.__gsharp_mb_Scale;
+float __gsharp_id_7_w0 = __gsharp_id_0_byVal.__gsharp_mb_Inner.__gsharp_mb_Weights[__gsharp_id_5_idx0]*__gsharp_id_0_byVal.__gsharp_mb_Scale;
 float __gsharp_id_8_w1 = __gsharp_array_at(__gsharp_id_1_byIn.__gsharp_mb_Inner.__gsharp_mb_Weights, __gsharp_id_6_idx1, 368950891u)*__gsharp_id_1_byIn.__gsharp_mb_Scale;
 __gsharp_id_3_outSums[0]=__gsharp_id_7_w0+__gsharp_id_0_byVal.__gsharp_mb_Inner.__gsharp_mb_Bias;
 __gsharp_id_3_outSums[1]=__gsharp_id_8_w1+__gsharp_id_1_byIn.__gsharp_mb_Inner.__gsharp_mb_Bias;
@@ -715,6 +710,12 @@ throw new global::System.ArgumentNullException(nameof(outSums));
 }
 if (outSums.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(outSums));
+}
+if (byVal.Indices is null){
+throw new global::System.ArgumentNullException(nameof(byVal), "byVal.Indices is null, but the field is not nullable.");
+}
+if (byVal.Inner.Weights is null){
+throw new global::System.ArgumentNullException(nameof(byVal), "byVal.Inner.Weights is null, but the field is not nullable.");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -800,6 +801,12 @@ public static unsafe void LaunchDeepStructAllArgModesKernelPtr(global::Kassyi.GS
 {
 if (outSums == global::System.IntPtr.Zero){
 throw new global::System.ArgumentNullException(nameof(outSums));
+}
+if (byVal.Indices.Data == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(byVal), "byVal.Indices is null, but the field is not nullable.");
+}
+if (byVal.Inner.Weights.Data == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(byVal), "byVal.Inner.Weights is null, but the field is not nullable.");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -1367,6 +1374,9 @@ throw new global::System.ArgumentNullException(nameof(outEval));
 if (outEval.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(outEval));
 }
+if (byVal.Data is null){
+throw new global::System.ArgumentNullException(nameof(byVal), "byVal.Data is null, but the field is not nullable.");
+}
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.__gsharp_hfunc_PrimaryCtorDeepStructKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.s_errorSites);
@@ -1499,6 +1509,9 @@ throw new global::System.ArgumentNullException(nameof(arr));
 }
 if (outEval == global::System.IntPtr.Zero){
 throw new global::System.ArgumentNullException(nameof(outEval));
+}
+if (byVal.Data.Data == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(byVal), "byVal.Data is null, but the field is not nullable.");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -2730,8 +2743,8 @@ if(__gsharp_id_5_tid==0)
 __gsharp_array_at((*__gsharp_id_0_pair).__gsharp_mb_First, 0, 1315962450u)=__gsharp_add_i32(__gsharp_array_at((*__gsharp_id_0_pair).__gsharp_mb_First, 0, 1315962450u),10);
 int __gsharp_id_6_seenViaSecond = __gsharp_array_at((*__gsharp_id_0_pair).__gsharp_mb_Second, 0, 260398589u);
 __gsharp_array_at((*__gsharp_id_0_pair).__gsharp_mb_Second, 0, 996812875u)=__gsharp_add_i32(__gsharp_array_at((*__gsharp_id_0_pair).__gsharp_mb_Second, 0, 996812875u),20);
-__gsharp_array_at(__gsharp_id_1_bagA.__gsharp_mb_Data, 0, 165648161u)=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_1_bagA.__gsharp_mb_Data, 0, 165648161u),100);
-int __gsharp_id_7_seenViaBagB = __gsharp_array_at(__gsharp_id_2_bagB.__gsharp_mb_Data, 0, 374710943u);
+__gsharp_id_1_bagA.__gsharp_mb_Data[0]=__gsharp_add_i32(__gsharp_id_1_bagA.__gsharp_mb_Data[0],100);
+int __gsharp_id_7_seenViaBagB = __gsharp_id_2_bagB.__gsharp_mb_Data[0];
 __gsharp_array_at(__gsharp_id_3_bagArray[0].__gsharp_mb_Data, 0, 1247959648u)=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_3_bagArray[0].__gsharp_mb_Data, 0, 1247959648u),1000);
 int __gsharp_id_8_seenViaElem1 = __gsharp_array_at(__gsharp_id_3_bagArray[1].__gsharp_mb_Data, 0, 1350241392u);
 __gsharp_id_4_observed[0]=__gsharp_id_6_seenViaSecond;
@@ -2760,6 +2773,12 @@ throw new global::System.ArgumentNullException(nameof(observed));
 }
 if (observed.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(observed));
+}
+if (bagA.Data is null){
+throw new global::System.ArgumentNullException(nameof(bagA), "bagA.Data is null, but the field is not nullable.");
+}
+if (bagB.Data is null){
+throw new global::System.ArgumentNullException(nameof(bagB), "bagB.Data is null, but the field is not nullable.");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -2899,6 +2918,12 @@ throw new global::System.ArgumentNullException(nameof(bagArray));
 if (observed == global::System.IntPtr.Zero){
 throw new global::System.ArgumentNullException(nameof(observed));
 }
+if (bagA.Data.Data == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(bagA), "bagA.Data is null, but the field is not nullable.");
+}
+if (bagB.Data.Data == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(bagB), "bagB.Data is null, but the field is not nullable.");
+}
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.__gsharp_hfunc_DeepStructInternalAliasKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.s_errorSites);
@@ -2958,7 +2983,7 @@ int __gsharp_id_5_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)b
 if(__gsharp_id_5_tid==0)
 {
 int __gsharp_id_6_roBefore = __gsharp_id_0_topReadOnly[0];
-__gsharp_array_at(__gsharp_id_2_bagByVal.__gsharp_mb_Data, 0, 47869693u)=__gsharp_add_i32(__gsharp_id_6_roBefore,40);
+__gsharp_id_2_bagByVal.__gsharp_mb_Data[0]=__gsharp_add_i32(__gsharp_id_6_roBefore,40);
 int __gsharp_id_7_roAfter = __gsharp_id_0_topReadOnly[0];
 __gsharp_id_1_topWritable[0]=__gsharp_add_i32(__gsharp_id_1_topWritable[0],5);
 int __gsharp_id_8_seenInBagRef = __gsharp_array_at((*__gsharp_id_3_bagByRef).__gsharp_mb_Data, 0, 541530947u);
@@ -2995,6 +3020,9 @@ throw new global::System.ArgumentNullException(nameof(observed));
 }
 if (observed.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(observed));
+}
+if (bagByVal.Data is null){
+throw new global::System.ArgumentNullException(nameof(bagByVal), "bagByVal.Data is null, but the field is not nullable.");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -3135,6 +3163,9 @@ throw new global::System.ArgumentNullException(nameof(topWritable));
 }
 if (observed == global::System.IntPtr.Zero){
 throw new global::System.ArgumentNullException(nameof(observed));
+}
+if (bagByVal.Data.Data == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(bagByVal), "bagByVal.Data is null, but the field is not nullable.");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {

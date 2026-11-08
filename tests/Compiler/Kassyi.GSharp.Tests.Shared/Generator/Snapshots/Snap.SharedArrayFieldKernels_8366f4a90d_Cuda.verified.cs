@@ -81,14 +81,6 @@ public partial class SharedArrayFieldKernels
 {
 private static readonly global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[] s_errorSites = new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[]
 {
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(275990665u, "SharedArrayFieldKernels.cs", 27, 13, "TwoFieldsKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(211041909u, "SharedArrayFieldKernels.cs", 28, 13, "TwoFieldsKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(28458655u, "SharedArrayFieldKernels.cs", 28, 22, "TwoFieldsKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(214118785u, "SharedArrayFieldKernels.cs", 28, 31, "TwoFieldsKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1781008261u, "SharedArrayFieldKernels.cs", 38, 13, "TwoStructsKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(831610104u, "SharedArrayFieldKernels.cs", 39, 13, "TwoStructsKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(248647337u, "SharedArrayFieldKernels.cs", 39, 30, "TwoStructsKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1596651120u, "SharedArrayFieldKernels.cs", 39, 46, "TwoStructsKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1599644091u, "SharedArrayFieldKernels.cs", 49, 13, "ElementFieldsKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1383596827u, "SharedArrayFieldKernels.cs", 50, 13, "ElementFieldsKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1335158703u, "SharedArrayFieldKernels.cs", 50, 31, "ElementFieldsKernel", "G#: a null array is read"),
@@ -351,22 +343,28 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__SharedAr
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__SharedArrayFieldKernels__TwoFieldsKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__SharedArrayPair __gsharp_id_0_p){
 if((int)threadIdx.x==0)
 {
-__gsharp_array_at(__gsharp_id_0_p.__gsharp_mb_A, 0, 275990665u)=1;
-__gsharp_array_at(__gsharp_id_0_p.__gsharp_mb_B, 1, 211041909u)=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_0_p.__gsharp_mb_A, 0, 28458655u),__gsharp_array_at(__gsharp_id_0_p.__gsharp_mb_B, 0, 214118785u));
+__gsharp_id_0_p.__gsharp_mb_A[0]=1;
+__gsharp_id_0_p.__gsharp_mb_B[1]=__gsharp_add_i32(__gsharp_id_0_p.__gsharp_mb_A[0],__gsharp_id_0_p.__gsharp_mb_B[0]);
 }
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_TwoFieldsKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Core__SharedArrayFieldKernels__TwoFieldsKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
-public static void WarmupFunctionPointerTwoFieldsKernel() => global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayFieldKernels.__gsharp_hfunc_TwoFieldsKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayFieldKernels.s_errorSites);
+public static void WarmupFunctionPointerTwoFieldsKernel() => global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayFieldKernels.__gsharp_hfunc_TwoFieldsKernel.Resolve();
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchTwoFieldsKernel(global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayPair p, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (p.A is null){
+throw new global::System.ArgumentNullException(nameof(p), "p.A is null, but the field is not nullable.");
+}
+if (p.B is null){
+throw new global::System.ArgumentNullException(nameof(p), "p.B is null, but the field is not nullable.");
+}
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayFieldKernels.__gsharp_hfunc_TwoFieldsKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayFieldKernels.s_errorSites);
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayFieldKernels.__gsharp_hfunc_TwoFieldsKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "SharedArrayFieldKernels.TwoFieldsKernel");
 var __gsharp_device_arrays = new global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions();
 try
@@ -399,9 +397,15 @@ __gsharp_device_arrays.Free(hStream);
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchTwoFieldsKernelPtr(global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayFieldKernels.AotContexts.SharedArrayPair p, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (p.A.Data == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(p), "p.A is null, but the field is not nullable.");
+}
+if (p.B.Data == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(p), "p.B is null, but the field is not nullable.");
+}
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayFieldKernels.__gsharp_hfunc_TwoFieldsKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayFieldKernels.s_errorSites);
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayFieldKernels.__gsharp_hfunc_TwoFieldsKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "SharedArrayFieldKernels.TwoFieldsKernel");
 try
 {
@@ -438,22 +442,28 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__SharedAr
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__SharedArrayFieldKernels__TwoStructsKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__SharedArrayHolder __gsharp_id_0_first, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__SharedArrayHolder __gsharp_id_1_second){
 if((int)threadIdx.x==0)
 {
-__gsharp_array_at(__gsharp_id_0_first.__gsharp_mb_Data, 0, 1781008261u)=3;
-__gsharp_array_at(__gsharp_id_1_second.__gsharp_mb_Data, 1, 831610104u)=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_0_first.__gsharp_mb_Data, 0, 248647337u),__gsharp_array_at(__gsharp_id_1_second.__gsharp_mb_Data, 0, 1596651120u));
+__gsharp_id_0_first.__gsharp_mb_Data[0]=3;
+__gsharp_id_1_second.__gsharp_mb_Data[1]=__gsharp_add_i32(__gsharp_id_0_first.__gsharp_mb_Data[0],__gsharp_id_1_second.__gsharp_mb_Data[0]);
 }
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_TwoStructsKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Core__SharedArrayFieldKernels__TwoStructsKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
-public static void WarmupFunctionPointerTwoStructsKernel() => global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayFieldKernels.__gsharp_hfunc_TwoStructsKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayFieldKernels.s_errorSites);
+public static void WarmupFunctionPointerTwoStructsKernel() => global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayFieldKernels.__gsharp_hfunc_TwoStructsKernel.Resolve();
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchTwoStructsKernel(global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayHolder first, global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayHolder second, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (first.Data is null){
+throw new global::System.ArgumentNullException(nameof(first), "first.Data is null, but the field is not nullable.");
+}
+if (second.Data is null){
+throw new global::System.ArgumentNullException(nameof(second), "second.Data is null, but the field is not nullable.");
+}
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayFieldKernels.__gsharp_hfunc_TwoStructsKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayFieldKernels.s_errorSites);
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayFieldKernels.__gsharp_hfunc_TwoStructsKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "SharedArrayFieldKernels.TwoStructsKernel");
 var __gsharp_device_arrays = new global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions();
 try
@@ -491,9 +501,15 @@ __gsharp_device_arrays.Free(hStream);
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchTwoStructsKernelPtr(global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayFieldKernels.AotContexts.SharedArrayHolder first, global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayFieldKernels.AotContexts.SharedArrayHolder second, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (first.Data.Data == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(first), "first.Data is null, but the field is not nullable.");
+}
+if (second.Data.Data == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(second), "second.Data is null, but the field is not nullable.");
+}
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayFieldKernels.__gsharp_hfunc_TwoStructsKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayFieldKernels.s_errorSites);
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayFieldKernels.__gsharp_hfunc_TwoStructsKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "SharedArrayFieldKernels.TwoStructsKernel");
 try
 {

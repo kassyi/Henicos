@@ -75,7 +75,7 @@ public partial class EmissionShapeTests
     }
 
     // A check in a kernel body reports a site of the kernel's error site table, which holds the place of the receiver, so
-    // the host exception names it on CUDA as on the native build (#1409): h.Data in `o[0] = h.Data.Length;` (38,16)
+    // the host exception names it on CUDA as on the native build (#1409): h.Data in `o[0] = h.Data.Length;` (44,16)
     [Theory]
     [Scenario(TestScenario.HappyPath)]
     [InlineData("Cpu")]
@@ -92,7 +92,7 @@ public partial class EmissionShapeTests
         Assert.True(entry.Success, "The error site table has no entry for the site of h.Data.Length.");
         Assert.True(
             entry.Value.EndsWith(
-                "u, \"ArrayNullCheckShapeKernels.cu.cs\", 38, 16, \"CheckedKernel\", \"G#: a null array is read\"),",
+                "u, \"ArrayNullCheckShapeKernels.cu.cs\", 44, 16, \"CheckedKernel\", \"G#: a null array is read\"),",
                 StringComparison.Ordinal),
             entry.Value);
     }
@@ -113,6 +113,67 @@ public partial class EmissionShapeTests
         Assert.Contains("throw new global::System.ArgumentNullException(nameof(values));", launcher, StringComparison.Ordinal);
         Assert.Contains("throw new global::System.ArgumentNullException(nameof(o));", launcher, StringComparison.Ordinal);
         Assert.DoesNotContain("nameof(bias)", launcher, StringComparison.Ordinal);
+    }
+
+    // The nullable annotation is the contract (#1409): a non-nullable field of a struct argument is read unchecked, a call
+    // checks what it passes to a non-nullable parameter unless it is proven, and the callee reads its parameter unchecked
+    [Theory]
+    [Scenario(TestScenario.HappyPath)]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    public void ArrayNullCheck_NonNullableAnnotation_IsCheckedAtTheBoundaryOnly(string dialect)
+    {
+        var generated = Generate("ArrayNullCheckShapeKernels", dialect);
+        var kernel = KernelSource(generated, "BoundaryKernel");
+
+        Assert.DoesNotContain(ArrayAt, kernel, StringComparison.Ordinal);
+        Assert.Single(Regex.Matches(kernel, Regex.Escape(ArrayRef + "__gsharp_id_1_h.__gsharp_mb_Data, ")));
+        Assert.Contains("ReadFirst(__gsharp_id_0_p.__gsharp_mb_Data)", kernel, StringComparison.Ordinal);
+        Assert.Single(Regex.Matches(kernel, @"__gsharp_struct_ref\(__gsharp_id_\d+_made, [^,]+, \[\]\(const auto& s\) -> decltype\(auto\) \{ return \(s\.__gsharp_mb_Data\); \}\)"));
+        Assert.Contains("ReadHolder(__gsharp_id_0_p)", kernel, StringComparison.Ordinal);
+
+        var readFirst = generated[generated.LastIndexOf("ReadFirst(GSharpArray", StringComparison.Ordinal)..];
+        readFirst = readFirst[..readFirst.IndexOf('}', StringComparison.Ordinal)];
+        Assert.DoesNotContain(ArrayAt, readFirst, StringComparison.Ordinal);
+    }
+
+    // The launchers enforce the contract of a non-nullable array field of a struct argument; a nullable one is not
+    // checked (#1409)
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData("LaunchBoundaryKernel(global::", "p.Data is null")]
+    [InlineData("LaunchBoundaryKernelPtr(", "p.Data.Data == global::System.IntPtr.Zero")]
+    public void ArrayNullCheck_Launchers_RejectANullNonNullableField(string launcherStart, string test)
+    {
+        var generated = Generate("ArrayNullCheckShapeKernels", "Cuda");
+        var start = generated.IndexOf("public static unsafe void " + launcherStart, StringComparison.Ordinal);
+        Assert.True(start >= 0, $"The launcher {launcherStart} is not generated.");
+        var launcher = generated[start..generated.IndexOf("#pragma warning restore CS8500", start, StringComparison.Ordinal)];
+
+        Assert.Contains($"if ({test})", launcher, StringComparison.Ordinal);
+        Assert.Contains(
+            "throw new global::System.ArgumentNullException(nameof(p), \"p.Data is null, but the field is not nullable.\");",
+            launcher,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("h.Data", launcher, StringComparison.Ordinal);
+    }
+
+    // A call through a delegate could not check the argument that the callee reads unchecked (#1409)
+    [Theory]
+    [Scenario(TestScenario.SadPath)]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    public async Task ArrayNullCheck_MethodGroupOfACheckedDeviceFunction_IsGsh0003(string dialect)
+    {
+        var compilation = RoslynTestUtility.CreateCompilation(
+            RoslynTestUtility.ReadTestCase("Transpiler/Emission/NonNullableDelegateKernels.cu.cs"));
+        var run = await KernelDiagnostics.RunCompilationAsync(compilation, dialect);
+
+        var generated = string.Join("\n", run.Output.SyntaxTrees.Where(t => !run.Input.SyntaxTrees.Contains(t)).Select(static t => t.ToString()));
+        Assert.Contains(
+            "(14,40): GSH0003: The syntax 'a [GpuDeviceFunction] with a non-nullable array parameter (or a struct parameter that holds one) passed as a delegate' is not supported",
+            generated,
+            StringComparison.Ordinal);
     }
 
     // A device function parameter may be null: the foreach over it checks its source once, at the loop entry

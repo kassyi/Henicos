@@ -444,6 +444,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
                 if (symbol is IMethodSymbol method)
                 {
                     DynamicSharedMemoryEmitter.FailIfReferencedWithoutCall(node, method, ref Context);
+                    NonNullProof.FailIfReferencedWithoutCall(node, method, ref Context);
                 }
 
                 if (SpanWriteClassifier.TryFailUninvoked(node, ref Context))

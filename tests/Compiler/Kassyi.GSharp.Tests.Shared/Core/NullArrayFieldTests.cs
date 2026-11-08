@@ -109,7 +109,7 @@ public class NullArrayFieldTests : TranspilerTestBase
     {
         var o = new[] { -1 };
 
-        AssertNullRead(forceManaged, "(123,40)",
+        AssertNullRead(forceManaged, "(123,41)",
             () => NullArrayFieldKernels.LaunchLocalToDeviceFunctionKernel(new NullArrayHolder { Data = null }, o),
             inDeviceFunction: true);
     }

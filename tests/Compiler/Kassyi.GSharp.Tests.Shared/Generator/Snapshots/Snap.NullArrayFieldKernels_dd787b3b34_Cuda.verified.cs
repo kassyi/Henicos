@@ -80,7 +80,7 @@ inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__NullArray
 inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__NullArrayFieldKernels__Bump(GSharpArray<int> __gsharp_id_0_o);
 
 inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__NullArrayFieldKernels__Len(GSharpArray<int> __gsharp_id_0_a){
-return __gsharp_array_ref(__gsharp_id_0_a, ""G#: a null array is read at NullArrayFieldKernels.cs(123,40)"").length;
+return __gsharp_array_ref(__gsharp_id_0_a, ""G#: a null array is read at NullArrayFieldKernels.cs(123,41)"").length;
 }
 
 #ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__NullArrayHolder__

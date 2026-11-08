@@ -466,6 +466,10 @@ namespace Kassyi.GSharp.Tests.Shared.Differential
 {
 public partial class LanguageConversionsAndMacrosDifferentialKernels
 {
+private static readonly global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[] s_errorSites = new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[]
+{
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(376381546u, "LanguageConversionsAndMacrosDifferentialKernels.cs", 341, 51, "OperatorMacroAcrossBarrierAndUsingStaticKernel", "G#: a null array is passed where it is not nullable"),
+};
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static partial class AotContexts
@@ -2175,7 +2179,7 @@ goto __gsharp_switch_1_state_1;
 case 1:
 __gsharp_switch_1_state_1:
 {
-if(!__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__LanguageConversionsAndMacrosDifferentialKernels__SuspendAndCombineMacro(__gsharp_ctx->__gsharp_id_1_scratch,__gsharp_ctx->__gsharp_id_3_localTid,__gsharp_ctx->__gsharp_id_5_x,__gsharp_ctx->__gsharp_id_6_y,&__gsharp_ctx->__gsharp_id_8_macroCalls,&__gsharp_ctx->__gsharp_call_frame_0,__gsharp_root,&(__gsharp_ctx->__gsharp_call_temp_0)))
+if(!__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__LanguageConversionsAndMacrosDifferentialKernels__SuspendAndCombineMacro(__gsharp_array_ref(__gsharp_ctx->__gsharp_id_1_scratch, 376381546u),__gsharp_ctx->__gsharp_id_3_localTid,__gsharp_ctx->__gsharp_id_5_x,__gsharp_ctx->__gsharp_id_6_y,&__gsharp_ctx->__gsharp_id_8_macroCalls,&__gsharp_ctx->__gsharp_call_frame_0,__gsharp_root,&(__gsharp_ctx->__gsharp_call_temp_0)))
 {
 __gsharp_state=1;
 return;
@@ -2548,6 +2552,10 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.EndGrid();
 return;
 }
 var __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_OperatorMacroAcrossBarrierAndUsingStaticKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Differential__LanguageConversionsAndMacrosDifferentialKernels__OperatorMacroAcrossBarrierAndUsingStaticKernel", __gsharp_dll_path);
+if (s_errorSites.Length > 0)
+{
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
+}
 fixed (global::System.Int32* __gsharp_p_0 = xs)
 fixed (global::System.Int32* __gsharp_p_1 = scratch)
 fixed (global::System.Int32* __gsharp_p_2 = r)
