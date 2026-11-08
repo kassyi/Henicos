@@ -38,7 +38,6 @@ public class BoundsAndMemoryDifferentialTests
             SourceFile = nameof(BoundsAndMemoryDifferentialKernels),
             Line = line,
             Column = column,
-            RequireCudaInnerException = true,
         };
 #else
         new(typeof(NullReferenceException), DiffPaths.CheckedPaths());
@@ -53,7 +52,6 @@ public class BoundsAndMemoryDifferentialTests
             SourceFile = nameof(BoundsAndMemoryDifferentialKernels),
             Line = line,
             Column = column,
-            RequireCudaInnerException = true,
         };
 #else
         new(typeof(NullReferenceException), DiffPaths.CheckedPaths());

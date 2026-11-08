@@ -788,15 +788,18 @@ __forceinline__ __device__ long long __gsharp_atomicExch(long long* address, lon
 __device__ __forceinline__ unsigned int __gsharp_null_read_site(const char* message) { return __gsharp_builtin_message_id(message); }
 __device__ __forceinline__ unsigned int __gsharp_null_read_site(unsigned int site_id) { return site_id; }
 
-// The failure of a null array read, written inline: the record of __gsharp_trap_site without the warp leader election.
-// The first failing thread writes the record and its completion bit; any other waits until the record is complete, so
-// that its trap cannot stop the kernel before the record is written; then each traps.
+// The failure of a null array read, written inline: the record of __gsharp_trap_site without the warp leader election,
+// then the end of __gsharp_trap_site: the thread exits (sm_70+), or traps before sm_70 and without a slot.
 // [WHY] A call to __gsharp_trap_site (__noinline__) makes ptxas keep the caller's live registers across the call: the
 // cooperative ReciprocalNewtonRaphsonMegaKernel of GpuMath went from 60 registers to 255 with a 336-byte stack and no
 // longer launched with 1024 threads per block (CUDA_ERROR_COOPERATIVE_LAUNCH_TOO_LARGE). Written inline it takes 64
 [[noreturn]] __device__ __forceinline__ void __gsharp_null_read_trap(unsigned int site_id) {
 GSharpDeviceErrorSlot* slot = __gsharp_error_slot;
-if (slot != nullptr) {
+if (slot == nullptr) {
+// Nothing would record the error, so the thread must not exit with no exception (see __gsharp_trap_site)
+asm volatile(""trap;"");
+__builtin_unreachable();
+}
 constexpr unsigned int code = static_cast<unsigned int>(GSharpErrorCode::NullReference);
 if (atomicCAS(&slot->code, 0u, code) == 0u) {
 slot->site_id = site_id;
@@ -807,14 +810,20 @@ slot->block_yz = (blockIdx.y & 0xFFFFu) | ((blockIdx.z & 0xFFFFu) << 16);
 __threadfence_system();
 atomicExch(&slot->code, code | 0x10000u);
 __threadfence_system();
-} else {
-// The writer sets the bit a few stores after its claim, and every other trap waits for it as well, so the
-// record always completes. A bounded wait (a counter) costs the cooperative InverseSqrtNewtonRaphsonMegaKernel
-// 38 more registers and a stack
+}
+#ifdef __GSHARP_TRAP_EXITS
+// A thread that exits stops only itself, so a thread that lost the slot does not wait for the winner's record
+#if __CUDA_ARCH__ >= 800
+asm volatile(""cp.async.wait_all;"" ::: ""memory"");
+#endif
+asm volatile(""exit;"");
+#else
+// trap stops the whole kernel, so a thread that lost the slot waits until the winner has written its record; the
+// writer sets the bit a few stores after its claim, so the wait ends. A bounded wait (a counter) costs the
+// cooperative InverseSqrtNewtonRaphsonMegaKernel 38 more registers and a stack
 while ((*(volatile unsigned int*)&slot->code & 0x10000u) == 0u) { }
-}
-}
 asm volatile(""trap;"");
+#endif
 __builtin_unreachable();
 }
 
