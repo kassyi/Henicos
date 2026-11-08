@@ -362,6 +362,56 @@ public class CudaStreamGateTests
     [SkippableFact]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.Boundary)]
+    public void IsOpen_WhenDeviceFlagIsOpen_IsNeverFalse()
+    {
+        CudaCapability.EnsureGpuAvailable();
+
+        const int Rounds = 1_000_000;
+        using var gate = new CudaStreamGate();
+        var writerDone = 0;
+        long violations = 0;
+        long openFlagReads = 0;
+
+        var reader = new Thread(() =>
+        {
+            while (Volatile.Read(ref writerDone) == 0)
+            {
+                // A Close() between the two generation reads changes the generation, so a read that keeps the
+                // same generation saw no Close() and IsOpen must agree with the device-visible flag.
+                var before = gate.CurrentGeneration;
+                var flagOpen = gate.DeviceFlag == before;
+                var isOpen = gate.IsOpen;
+                var after = gate.CurrentGeneration;
+                if (before != after || !flagOpen)
+                {
+                    continue;
+                }
+
+                openFlagReads++;
+                if (!isOpen)
+                {
+                    violations++;
+                }
+            }
+        });
+        reader.Start();
+
+        for (var i = 0; i < Rounds; i++)
+        {
+            gate.Open();
+            gate.Close();
+        }
+
+        Volatile.Write(ref writerDone, 1);
+        reader.Join();
+
+        Assert.True(openFlagReads > 0, "The reader never observed the device-visible flag open.");
+        Assert.Equal(0, violations);
+    }
+
+    [SkippableFact]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.Boundary)]
     public async Task Dispose_WhileStreamWaiting_ReleasesStreamWithoutDeadlock()
     {
         CudaCapability.EnsureGpuAvailable();
