@@ -36,6 +36,9 @@ internal abstract class VectorBinaryVectorExpressionBase(
     // The result buffers, lent until the next evaluation or Dispose; a caller's target is never kept
     private readonly VectorResultCache _cache = new();
 
+    // Evaluates the operands so that a shared sub-expression read at two offsets keeps both results
+    private readonly VectorOperandPair _operands = new();
+
     protected uint BlockDimX => (uint)Math.Min(1024, WordsPerElement);
 
     /// <summary>Gets whether the kernel reports a zero divisor element (<see cref="ZeroDivisorCheck"/>).</summary>
@@ -63,8 +66,7 @@ internal abstract class VectorBinaryVectorExpressionBase(
             ? VectorResultCache.TargetValues(targetResult, evalCount, WordsPerElement)
             : default;
 
-        var leftResult = DeviceCounted.Evaluate(left, workspace, elementOffset, evalCount);
-        var rightResult = DeviceCounted.Evaluate(right, workspace, elementOffset, evalCount);
+        _operands.Evaluate(left, right, workspace, elementOffset, evalCount, out var leftResult, out var rightResult);
 
         if (leftResult.Storage.Length != rightResult.Storage.Length)
         {
@@ -88,7 +90,7 @@ internal abstract class VectorBinaryVectorExpressionBase(
             }
         }
 
-        return new VectorEvaluation(output.Close(workspace), count);
+        return new VectorEvaluation(output.Close(workspace), count, _cache.Lease);
     }
 
     protected GpuBigIntVectorKernels.AotContexts.VectorBinaryOperation CreateZipOp(VectorZipOperands operands) =>
@@ -126,7 +128,14 @@ internal abstract class VectorBinaryVectorExpressionBase(
         // A cache release that throws (a failed capture refuses the clear) does not skip the children
         try
         {
-            _cache.Dispose();
+            try
+            {
+                _cache.Dispose();
+            }
+            finally
+            {
+                _operands.Dispose();
+            }
         }
         finally
         {
