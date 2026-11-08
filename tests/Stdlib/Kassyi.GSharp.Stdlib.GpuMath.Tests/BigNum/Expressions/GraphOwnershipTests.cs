@@ -247,7 +247,8 @@ public sealed class GraphOwnershipTests : IDisposable
         left.Dispose();
         Assert.Throws<ObjectDisposedException>(graph.Execute);
 
-        var target = new GpuBigUInt(_workspace, Words);
+        // A sum is one bit wider than its operands, so its target has one word more
+        var target = new GpuBigUInt(_workspace, Words + 1);
         using var targetGraph = ((GpuBigIntExpr)_a + _b).CompileToGraph(_workspace, target);
         target.Dispose();
         Assert.Throws<ObjectDisposedException>(() => { _ = targetGraph.ExecuteAsync(); });

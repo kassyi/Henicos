@@ -101,6 +101,58 @@ internal static class BigIntWideOps
     }
 
     /// <summary>
+    /// <c>result = |a - b|</c>, and whether <c>b &gt; a</c> and whether the result is zero: the magnitude and the sign
+    /// information of a sum of two values with different signs. Reads two words from the device, once.
+    /// </summary>
+    /// <param name="a">The first magnitude.</param>
+    /// <param name="b">The second magnitude.</param>
+    /// <param name="result">The result buffer, at least as wide as each operand; it must not overlap them.</param>
+    /// <returns><c>Negated</c>: <c>b &gt; a</c>; <c>IsZero</c>: <c>a == b</c>.</returns>
+    /// <exception cref="ArgumentException"><paramref name="result"/> is narrower than an operand.</exception>
+    /// <exception cref="NotSupportedException">The workspace stream is capturing a CUDA graph.</exception>
+    public static (bool Negated, bool IsZero) SubtractMagnitudes(GpuBigUInt a, GpuBigUInt b, GpuBigUInt result)
+    {
+        if (result.NumWords < Math.Max(a.NumWords, b.NumWords))
+        {
+            throw new ArgumentException(
+                $"The result buffer must be at least as wide as each operand. a: {a.NumWords}, b: {b.NumWords}, " +
+                $"result: {result.NumWords} words.", nameof(result));
+        }
+
+        if (GpuKernelLoader.IsCpuFallbackMode)
+        {
+            var value = a.ToBigInteger() - b.ToBigInteger();
+            WriteModulo(BigInteger.Abs(value), result);
+            return (value.Sign < 0, value.IsZero);
+        }
+
+        var workspace = a.Workspace;
+        if (DeviceCounted.IsCapturing(workspace))
+        {
+            throw new NotSupportedException(
+                "The sign of a sum of two values with different signs is read from the device, which a CUDA graph " +
+                "capture cannot record. Evaluate the expression without a graph, or give the operands the same sign.");
+        }
+
+        using var flags = workspace.RentTemp(2);
+        GpuBigIntWideKernels.LaunchMagnitudeDifferenceKernelPtr(
+            a.DevicePointer, a.NumWords, b.DevicePointer, b.NumWords, result.DevicePointer, result.NumWords,
+            flags.DevicePointer,
+            gridDimX: 1, blockDimX: SingleBlockSize(result.NumWords), hStream: workspace.Stream);
+
+        var host = ArrayPool<uint>.Shared.Rent(2);
+        try
+        {
+            workspace.Provider.CopyDeviceToHost(host, flags.DevicePointer, 2, workspace.Stream);
+            return (host[0] != 0u, host[1] == 0u);
+        }
+        finally
+        {
+            ArrayPool<uint>.Shared.Return(host);
+        }
+    }
+
+    /// <summary>
     /// One block, a multiple of 32 threads, for a kernel that loops over <paramref name="words"/> words.
     /// </summary>
     public static uint SingleBlockSize(int words) => (uint)((Math.Min(1024, Math.Max(words, 1)) + 31) / 32 * 32);

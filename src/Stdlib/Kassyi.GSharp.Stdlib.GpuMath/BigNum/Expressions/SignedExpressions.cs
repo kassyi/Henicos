@@ -1,8 +1,15 @@
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 
-internal class GpuBigIntLeafExpression(GpuBigInt value) : IGpuBigIntExpression
+// Signed expression nodes. Every node has a static upper bound of its result in bits (BigIntWidths), computed from
+// the bounds of its children when the expression is built; its result buffer has the words of that bound, so no
+// node drops a carry. A caller's target must be at least that wide; the words above the result are cleared.
+
+internal class GpuBigIntLeafExpression(GpuBigInt value) : IGpuBigIntExpression, IBitBoundedExpression
 {
     public int NumWords => value.Value.NumWords;
+
+    // Every bit of the operand's words: the leaf does not read its value
+    public long Bits => BigIntWidths.OfWords(Math.Max(1, NumWords));
 
     public GpuBigInt Evaluate(GpuWorkspace workspace, GpuBigUInt? targetResult = null)
     {
@@ -12,12 +19,14 @@ internal class GpuBigIntLeafExpression(GpuBigInt value) : IGpuBigIntExpression
             return new GpuBigInt(value.Value.AsBorrowed(), value.IsNegative);
         }
 
+        var target = targetResult.Value;
+        var words = value.Value.NumWords;
+        SignedRoot.ThrowIfNarrower(target, words);
+
         // The target may be the operand itself (d.Value = d): then there is nothing to copy, and cuMemcpyDtoD does not
         // promise a copy onto itself
-        var target = targetResult.Value;
         if (target.DevicePointer != value.Value.DevicePointer)
         {
-            var words = Math.Min(target.NumWords, value.Value.NumWords);
             if (DeviceRanges.Overlaps(target.DevicePointer, words, value.Value.DevicePointer, words))
             {
                 // A target that partly overlaps the leaf (two views of one buffer): cuMemcpyDtoD does not promise
@@ -28,16 +37,17 @@ internal class GpuBigIntLeafExpression(GpuBigInt value) : IGpuBigIntExpression
             }
             else
             {
-                target.CopyFrom(value.Value);
+                target.CopyFrom(value.Value, numWords: words);
             }
         }
 
-        return new GpuBigInt(targetResult.Value, value.IsNegative);
+        SignedRoot.ClearAbove(target, words);
+        return new GpuBigInt(target, value.IsNegative);
     }
 }
 
 internal abstract class SignedBinaryExpression(IGpuBigIntExpression left, IGpuBigIntExpression right)
-    : IGpuBigIntExpression, IDisposable
+    : IGpuBigIntExpression, IBitBoundedExpression, IDisposable
 {
     internal IGpuBigIntExpression Left { get; } = left ?? throw new ArgumentNullException(nameof(left));
     internal IGpuBigIntExpression Right { get; } = right ?? throw new ArgumentNullException(nameof(right));
@@ -54,30 +64,21 @@ internal abstract class SignedBinaryExpression(IGpuBigIntExpression left, IGpuBi
         }
     }
 
-    // The width, computed once: the children never change, and a left fold builds chains as deep as the sequence,
-    // where reading the children's widths again at every level (and at every Evaluate) would cost 2^depth steps.
-    private int _numWords = -1;
+    // The bound, computed once: the children never change, and a left fold builds chains as deep as the sequence,
+    // where reading the children's bounds again at every level (and at every Evaluate) would cost 2^depth steps.
+    private long _bits = -1;
 
-    public int NumWords => _numWords >= 0 ? _numWords : _numWords = ComputeNumWords();
+    public long Bits =>
+        _bits >= 0 ? _bits : _bits = ComputeBits(IBitBoundedExpression.Of(Left), IBitBoundedExpression.Of(Right));
 
-    protected virtual int ComputeNumWords()
-    {
-        var leftWords = Left.NumWords;
-        if (leftWords != Right.NumWords)
-        {
-            throw new ArgumentException("Left and Right expressions must have the same number of words.");
-        }
+    public int NumWords => BigIntWidths.Words(Bits);
 
-        return leftWords;
-    }
+    // The bound of the result from the bounds of the operands (BigIntWidths)
+    protected abstract long ComputeBits(long left, long right);
 
     public GpuBigInt Evaluate(GpuWorkspace workspace, GpuBigUInt? targetResult = null)
     {
-        if (targetResult.HasValue && targetResult.Value.NumWords != NumWords)
-        {
-            throw new ArgumentException($"Destination buffer must have {NumWords} words.", nameof(targetResult));
-        }
-
+        SignedRoot.ThrowIfNarrower(targetResult, NumWords);
         return Combine(workspace, EvaluateLeft(workspace), targetResult);
     }
 
@@ -130,24 +131,26 @@ internal abstract class SignedBinaryExpression(IGpuBigIntExpression left, IGpuBi
     {
         GpuBigInt rightResult = default;
         GpuBigUInt staging = default;
-        var finalBuffer = targetResult;
+        GpuBigUInt? rented = null;
 
         try
         {
             rightResult = Right.Evaluate(workspace);
-            finalBuffer ??= workspace.RentTemp(NumWords);
+            var result = targetResult.HasValue
+                ? SignedRoot.Head(targetResult.Value, NumWords)
+                : (rented = workspace.RentTemp(NumWords)).Value;
 
             // The kernels take __restrict__ pointers: a target that overlaps an operand gets the result through a
-            // temporary (design gpumath-m1-misc 4.2.5)
-            staging = SignedRoot.StagingFor(workspace, targetResult, leftResult, rightResult);
-            var result = Execute(leftResult, rightResult, staging.Handle.IsDefault ? finalBuffer.Value : staging);
-            result = SignedRoot.Deliver(result, staging, finalBuffer.Value);
-            finalBuffer = null; // Evaluated successfully, do not return the result buffer
-            return result;
+            // temporary
+            staging = SignedRoot.StagingFor(workspace, targetResult, NumWords, leftResult, rightResult);
+            var value = Execute(leftResult, rightResult, staging.Handle.IsDefault ? result : staging);
+            value = SignedRoot.Deliver(value, staging, result, targetResult);
+            rented = null; // Evaluated successfully, do not return the result buffer
+            return value;
         }
         finally
         {
-            Release(leftResult, rightResult, staging, targetResult.HasValue ? null : finalBuffer);
+            Release(leftResult, rightResult, staging, rented);
         }
     }
 
@@ -180,15 +183,42 @@ internal abstract class SignedBinaryExpression(IGpuBigIntExpression left, IGpuBi
         }
     }
 
+    // a op b into resultBuffer, which has exactly NumWords words
     protected abstract GpuBigInt Execute(GpuBigInt a, GpuBigInt b, GpuBigUInt resultBuffer);
 }
 
-// The overlap guard of the signed roots: a caller's target that overlaps an operand is not written by the kernel; the
-// result goes to a temporary and is then copied into the target
+// The result buffer of a signed root: the first NumWords words of the caller's target, through a temporary when the
+// target overlaps an operand, with the target's words above the result cleared
 internal static class SignedRoot
 {
-    // An owned temporary when the target overlaps an operand; otherwise the default value, which owns nothing
-    public static GpuBigUInt StagingFor(GpuWorkspace workspace, GpuBigUInt? target, GpuBigInt operand0,
+    // A caller's target narrower than the bound would lose words
+    public static void ThrowIfNarrower(GpuBigUInt? target, int numWords)
+    {
+        if (target is { } t && t.NumWords < numWords)
+        {
+            throw new ArgumentException(
+                $"Destination buffer must have at least {numWords} words; it has {t.NumWords}. The result of an " +
+                "expression is as wide as its bound; narrow it explicitly with Fit.", nameof(target));
+        }
+    }
+
+    // The first numWords words of target, borrowed
+    public static GpuBigUInt Head(GpuBigUInt target, int numWords) =>
+        numWords == target.NumWords ? target : new GpuBigUInt(target.Workspace, target.Handle.Slice(0, numWords));
+
+    // Clears the words of target above the first numWords (a memset, which a CUDA graph capture records)
+    public static void ClearAbove(GpuBigUInt target, int numWords)
+    {
+        if (target.NumWords > numWords)
+        {
+            target.Workspace.Provider.ClearMemoryAsync(IntPtr.Add(target.DevicePointer, numWords * sizeof(uint)),
+                target.NumWords - numWords, target.Workspace.Stream);
+        }
+    }
+
+    // An owned temporary of numWords words when the target overlaps an operand; otherwise the default value, which owns
+    // nothing
+    public static GpuBigUInt StagingFor(GpuWorkspace workspace, GpuBigUInt? target, int numWords, GpuBigInt operand0,
         GpuBigInt operand1)
     {
         if (target is not { } t ||
@@ -198,76 +228,77 @@ internal static class SignedRoot
             return default;
         }
 
-        return workspace.RentTemp(t.NumWords);
+        return workspace.RentTemp(numWords);
     }
 
-    // The result in the buffer the caller sees: copied from the temporary into the target when one was used
-    public static GpuBigInt Deliver(GpuBigInt result, GpuBigUInt staging, GpuBigUInt target)
+    // The value in the buffer the caller sees: copied from the temporary when one was used; a caller's target gets its
+    // words above the result cleared and is returned whole
+    public static GpuBigInt Deliver(GpuBigInt value, GpuBigUInt staging, GpuBigUInt result, GpuBigUInt? target)
     {
-        if (staging.Handle.IsDefault)
+        if (!staging.Handle.IsDefault)
         {
-            return result;
+            result.CopyFrom(staging);
         }
 
-        target.CopyFrom(staging);
-        return new GpuBigInt(target, result.IsNegative);
+        if (target is not { } t)
+        {
+            return new GpuBigInt(result, value.IsNegative);
+        }
+
+        ClearAbove(t, result.NumWords);
+        return new GpuBigInt(t, value.IsNegative);
     }
 }
 
-internal class SignedAddExpression(IGpuBigIntExpression left, IGpuBigIntExpression right)
+// a + b and a - b. Same effective signs add the magnitudes into max + 1 bits, which never overflows; different signs
+// subtract them in one kernel that also negates on a borrow, and read the borrow and zero flags once (the sign of the
+// result depends on the values). A zero result is +0.
+internal abstract class SignedAddSubExpression(IGpuBigIntExpression left, IGpuBigIntExpression right, bool subtract)
     : SignedBinaryExpression(left, right)
 {
+    protected override long ComputeBits(long left, long right) => BigIntWidths.Add(left, right);
+
     protected override GpuBigInt Execute(GpuBigInt a, GpuBigInt b, GpuBigUInt resultBuffer)
     {
-        if (a.IsNegative == b.IsNegative)
+        var bNegative = b.IsNegative ^ subtract;
+        if (a.IsNegative == bNegative)
         {
-            GpuBigIntMath.Add(a.Value, b.Value, resultBuffer);
+            BigIntWideOps.AddSubtract(a.Value, b.Value, resultBuffer, subtract: false);
             return new GpuBigInt(resultBuffer, a.IsNegative);
         }
 
-        var cmp = a.Value.CompareTo(b.Value);
-        if (cmp >= 0)
-        {
-            GpuBigIntMath.Sub(a.Value, b.Value, resultBuffer);
-            return new GpuBigInt(resultBuffer, cmp != 0 && a.IsNegative);
-        }
-
-        GpuBigIntMath.Sub(b.Value, a.Value, resultBuffer);
-        return new GpuBigInt(resultBuffer, b.IsNegative);
+        var (negated, isZero) = BigIntWideOps.SubtractMagnitudes(a.Value, b.Value, resultBuffer);
+        return new GpuBigInt(resultBuffer, !isZero && (negated ? bNegative : a.IsNegative));
     }
 }
 
-internal class SignedSubExpression(IGpuBigIntExpression left, IGpuBigIntExpression right)
-    : SignedBinaryExpression(left, right)
-{
-    protected override GpuBigInt Execute(GpuBigInt a, GpuBigInt b, GpuBigUInt resultBuffer)
-    {
-        if (a.IsNegative != b.IsNegative)
-        {
-            GpuBigIntMath.Add(a.Value, b.Value, resultBuffer);
-            return new GpuBigInt(resultBuffer, a.IsNegative);
-        }
+internal sealed class SignedAddExpression(IGpuBigIntExpression left, IGpuBigIntExpression right)
+    : SignedAddSubExpression(left, right, subtract: false);
 
-        var cmp = a.Value.CompareTo(b.Value);
-        if (cmp >= 0)
-        {
-            GpuBigIntMath.Sub(a.Value, b.Value, resultBuffer);
-            return new GpuBigInt(resultBuffer, cmp != 0 && a.IsNegative);
-        }
-
-        GpuBigIntMath.Sub(b.Value, a.Value, resultBuffer);
-        return new GpuBigInt(resultBuffer, !a.IsNegative);
-    }
-}
+internal sealed class SignedSubExpression(IGpuBigIntExpression left, IGpuBigIntExpression right)
+    : SignedAddSubExpression(left, right, subtract: true);
 
 internal class SignedMulExpression(IGpuBigIntExpression left, IGpuBigIntExpression right)
     : SignedBinaryExpression(left, right)
 {
-    protected override int ComputeNumWords() => Left.NumWords + Right.NumWords;
+    protected override long ComputeBits(long left, long right) => BigIntWidths.Multiply(left, right);
 
     protected override GpuBigInt Execute(GpuBigInt a, GpuBigInt b, GpuBigUInt resultBuffer)
     {
-        GpuBigIntMath.Mul(a.Value, b.Value, resultBuffer);
+        // The product kernels write the sum of the operand words; the bound may need fewer (a node narrower than its
+        // words), and then the product goes through a temporary whose top words are zero
+        var productWords = a.Value.NumWords + b.Value.NumWords;
+        if (resultBuffer.NumWords == productWords)
+        {
+            GpuBigIntMath.Mul(a.Value, b.Value, resultBuffer);
+        }
+        else
+        {
+            using var product = resultBuffer.Workspace.RentTemp(productWords);
+            GpuBigIntMath.Mul(a.Value, b.Value, product);
+            resultBuffer.CopyFrom(product, numWords: resultBuffer.NumWords);
+        }
+
         return new GpuBigInt(resultBuffer, a.IsNegative ^ b.IsNegative);
     }
 }
@@ -275,9 +306,12 @@ internal class SignedMulExpression(IGpuBigIntExpression left, IGpuBigIntExpressi
 internal class SignedDivExpression(IGpuBigIntExpression left, IGpuBigIntExpression right)
     : SignedBinaryExpression(left, right)
 {
+    protected override long ComputeBits(long left, long right) => BigIntWidths.Divide(left, right);
+
     protected override GpuBigInt Execute(GpuBigInt a, GpuBigInt b, GpuBigUInt resultBuffer)
     {
-        GpuBigIntDivRem.Div(a.Value, b.Value, resultBuffer);
+        using var remainder = resultBuffer.Workspace.RentTemp(b.Value.NumWords);
+        GpuBigIntDivRem.DivRem(a.Value, b.Value, resultBuffer, remainder);
         return new GpuBigInt(resultBuffer, a.IsNegative ^ b.IsNegative);
     }
 }
@@ -285,17 +319,26 @@ internal class SignedDivExpression(IGpuBigIntExpression left, IGpuBigIntExpressi
 internal class SignedModExpression(IGpuBigIntExpression left, IGpuBigIntExpression right)
     : SignedBinaryExpression(left, right)
 {
+    protected override long ComputeBits(long left, long right) => BigIntWidths.Remainder(left, right);
+
     protected override GpuBigInt Execute(GpuBigInt a, GpuBigInt b, GpuBigUInt resultBuffer)
     {
-        GpuBigIntDivRem.Mod(a.Value, b.Value, resultBuffer);
+        // The remainder is below |b| and at most |a|, so the low words of the divisor-wide remainder hold it
+        var workspace = resultBuffer.Workspace;
+        using var quotient = workspace.RentTemp(a.Value.NumWords);
+        using var remainder = workspace.RentTemp(b.Value.NumWords);
+        GpuBigIntDivRem.DivRem(a.Value, b.Value, quotient, remainder);
+        resultBuffer.CopyFrom(remainder, numWords: resultBuffer.NumWords);
         return new GpuBigInt(resultBuffer, a.IsNegative && !resultBuffer.IsZero());
     }
 }
 
-internal class SignedNegateExpression(IGpuBigIntExpression target) : IGpuBigIntExpression, IDisposable
+internal class SignedNegateExpression(IGpuBigIntExpression target)
+    : IGpuBigIntExpression, IBitBoundedExpression, IDisposable
 {
     internal IGpuBigIntExpression Target { get; } = target ?? throw new ArgumentNullException(nameof(target));
     public int NumWords => Target.NumWords;
+    public long Bits => IBitBoundedExpression.Of(Target);
 
     public void Dispose() => (Target as IDisposable)?.Dispose();
 
@@ -306,35 +349,36 @@ internal class SignedNegateExpression(IGpuBigIntExpression target) : IGpuBigIntE
     }
 }
 
-internal abstract class SignedUnaryExpression(IGpuBigIntExpression target) : IGpuBigIntExpression, IDisposable
+internal abstract class SignedUnaryExpression(IGpuBigIntExpression target)
+    : IGpuBigIntExpression, IBitBoundedExpression, IDisposable
 {
     internal IGpuBigIntExpression Target { get; } = target ?? throw new ArgumentNullException(nameof(target));
-    public virtual int NumWords => Target.NumWords;
+    public virtual long Bits => IBitBoundedExpression.Of(Target);
+    public int NumWords => BigIntWidths.Words(Bits);
 
     public void Dispose() => (Target as IDisposable)?.Dispose();
 
     public GpuBigInt Evaluate(GpuWorkspace workspace, GpuBigUInt? targetResult = null)
     {
-        if (targetResult.HasValue && targetResult.Value.NumWords != NumWords)
-        {
-            throw new ArgumentException($"Destination buffer must have {NumWords} words.", nameof(targetResult));
-        }
+        SignedRoot.ThrowIfNarrower(targetResult, NumWords);
 
         GpuBigInt targetEval = default;
         GpuBigUInt staging = default;
-        var finalBuffer = targetResult;
+        GpuBigUInt? rented = null;
 
         try
         {
             targetEval = Target.Evaluate(workspace);
-            finalBuffer ??= workspace.RentTemp(NumWords);
+            var result = targetResult.HasValue
+                ? SignedRoot.Head(targetResult.Value, NumWords)
+                : (rented = workspace.RentTemp(NumWords)).Value;
 
             // As in SignedBinaryExpression: a target that overlaps the operand gets the result through a temporary
-            staging = SignedRoot.StagingFor(workspace, targetResult, targetEval, default);
-            var result = Execute(targetEval, staging.Handle.IsDefault ? finalBuffer.Value : staging);
-            result = SignedRoot.Deliver(result, staging, finalBuffer.Value);
-            finalBuffer = null;
-            return result;
+            staging = SignedRoot.StagingFor(workspace, targetResult, NumWords, targetEval, default);
+            var value = Execute(targetEval, staging.Handle.IsDefault ? result : staging);
+            value = SignedRoot.Deliver(value, staging, result, targetResult);
+            rented = null;
+            return value;
         }
         finally
         {
@@ -352,23 +396,55 @@ internal abstract class SignedUnaryExpression(IGpuBigIntExpression target) : IGp
                 }
                 finally
                 {
-                    if (!targetResult.HasValue && finalBuffer.HasValue)
-                    {
-                        finalBuffer.Value.Dispose();
-                    }
+                    rented?.Dispose();
                 }
             }
         }
     }
 
+    // The operation on the evaluated operand into resultBuffer, which has exactly NumWords words
     protected abstract GpuBigInt Execute(GpuBigInt targetEval, GpuBigUInt resultBuffer);
 }
 
+// ~x == -x - 1, as BigInteger and C# int: -(|x| + 1) for a non-negative x, |x| - 1 for a negative one. The result is
+// one bit wider than x (GMP mpz_com). A negative x reads the borrow of |x| - 1 from the device, once: a magnitude of
+// zero with the negative flag (-0) is 0, and ~0 is -1.
 internal class SignedBitwiseNotExpression(IGpuBigIntExpression target) : SignedUnaryExpression(target)
 {
+    public override long Bits => BigIntWidths.SignedNot(IBitBoundedExpression.Of(Target));
+
     protected override GpuBigInt Execute(GpuBigInt targetEval, GpuBigUInt resultBuffer)
     {
-        GpuBigIntMath.BitwiseNot(targetEval.Value, resultBuffer);
+        if (!targetEval.IsNegative)
+        {
+            // The result is wider than the bound of x, so the carry of |x| + 1 is kept
+            GpuBigIntMath.Add(targetEval.Value, 1u, resultBuffer);
+            return new GpuBigInt(resultBuffer, isNegative: true);
+        }
+
+        var workspace = resultBuffer.Workspace;
+        using var one = workspace.RentTemp(1);
+        workspace.Provider.WriteWord(one.DevicePointer, 0, 1u, workspace.Stream);
+        var (negated, _) = BigIntWideOps.SubtractMagnitudes(targetEval.Value, one, resultBuffer);
+
+        // |x| - 1 borrowed only for -0: the result is then |0 - 1| = 1 with a minus sign
+        return new GpuBigInt(resultBuffer, isNegative: negated);
+    }
+}
+
+// x.Fit(words): the value in words words, checked: a magnitude that does not fit is a domain error (C# checked
+// narrowing). The sign is kept.
+internal sealed class SignedFitExpression(IGpuBigIntExpression target, int words) : SignedUnaryExpression(target)
+{
+    public override long Bits => BigIntWidths.OfWords(words);
+
+    protected override GpuBigInt Execute(GpuBigInt targetEval, GpuBigUInt resultBuffer)
+    {
+        var magnitude = targetEval.Value;
+        BigIntWideOps.CheckFits(magnitude, words);
+        var copied = Math.Min(words, magnitude.NumWords);
+        resultBuffer.CopyFrom(magnitude, numWords: copied);
+        SignedRoot.ClearAbove(resultBuffer, copied);
         return new GpuBigInt(resultBuffer, targetEval.IsNegative);
     }
 }
@@ -376,33 +452,30 @@ internal class SignedBitwiseNotExpression(IGpuBigIntExpression target) : SignedU
 internal class SignedMaxExpression(IGpuBigIntExpression left, IGpuBigIntExpression right)
     : SignedBinaryExpression(left, right)
 {
-    protected override GpuBigInt Execute(GpuBigInt a, GpuBigInt b, GpuBigUInt resultBuffer)
-    {
-        var cmp = a.CompareTo(b);
-        if (cmp >= 0)
-        {
-            resultBuffer.CopyFrom(a.Value);
-            return new GpuBigInt(resultBuffer, a.IsNegative);
-        }
+    protected override long ComputeBits(long left, long right) => Math.Max(left, right);
 
-        resultBuffer.CopyFrom(b.Value);
-        return new GpuBigInt(resultBuffer, b.IsNegative);
-    }
+    protected override GpuBigInt Execute(GpuBigInt a, GpuBigInt b, GpuBigUInt resultBuffer) =>
+        SignedSelect.Copy(a.CompareTo(b) >= 0 ? a : b, resultBuffer);
 }
 
 internal class SignedMinExpression(IGpuBigIntExpression left, IGpuBigIntExpression right)
     : SignedBinaryExpression(left, right)
 {
-    protected override GpuBigInt Execute(GpuBigInt a, GpuBigInt b, GpuBigUInt resultBuffer)
-    {
-        var cmp = a.CompareTo(b);
-        if (cmp <= 0)
-        {
-            resultBuffer.CopyFrom(a.Value);
-            return new GpuBigInt(resultBuffer, a.IsNegative);
-        }
+    protected override long ComputeBits(long left, long right) => Math.Max(left, right);
 
-        resultBuffer.CopyFrom(b.Value);
-        return new GpuBigInt(resultBuffer, b.IsNegative);
+    protected override GpuBigInt Execute(GpuBigInt a, GpuBigInt b, GpuBigUInt resultBuffer) =>
+        SignedSelect.Copy(a.CompareTo(b) <= 0 ? a : b, resultBuffer);
+}
+
+internal static class SignedSelect
+{
+    // The chosen operand in resultBuffer, which is at least as wide as either operand's words; the words above it are
+    // cleared
+    public static GpuBigInt Copy(GpuBigInt chosen, GpuBigUInt resultBuffer)
+    {
+        var words = chosen.Value.NumWords;
+        resultBuffer.CopyFrom(chosen.Value, numWords: words);
+        SignedRoot.ClearAbove(resultBuffer, words);
+        return new GpuBigInt(resultBuffer, chosen.IsNegative);
     }
 }

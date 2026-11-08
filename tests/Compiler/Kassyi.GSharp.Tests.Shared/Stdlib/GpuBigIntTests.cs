@@ -137,7 +137,8 @@ public class GpuBigIntegerTests
 
         GpuBigIntExpr addExpr = a + b;
 
-        using var dest = new GpuBigUInt(context, 4);
+        // A sum or difference is one bit wider than its operands: 4 words + 1 bit needs 5 words
+        using var dest = new GpuBigUInt(context, 5);
         var evalAdd = addExpr.Evaluate(dest);
         Assert.Equal(expectedNeg, evalAdd.IsNegative);
     }
@@ -167,7 +168,8 @@ public class GpuBigIntegerTests
 
         GpuBigIntExpr addExpr = a + b;
 
-        using var dest = new GpuBigUInt(context, 4);
+        // A sum or difference is one bit wider than its operands: 4 words + 1 bit needs 5 words
+        using var dest = new GpuBigUInt(context, 5);
         var evalAdd = addExpr.Evaluate(dest);
         
         Assert.Equal(expectedNeg, evalAdd.IsNegative);
@@ -194,7 +196,8 @@ public class GpuBigIntegerTests
 
         GpuBigIntExpr subExpr = a - b;
 
-        using var dest = new GpuBigUInt(context, 4);
+        // A sum or difference is one bit wider than its operands: 4 words + 1 bit needs 5 words
+        using var dest = new GpuBigUInt(context, 5);
         var evalSub = subExpr.Evaluate(dest);
         Assert.Equal(expectedNeg, evalSub.IsNegative);
     }
@@ -225,7 +228,8 @@ public class GpuBigIntegerTests
 
         GpuBigIntExpr subExpr = a - b;
 
-        using var dest = new GpuBigUInt(context, 4);
+        // A sum or difference is one bit wider than its operands: 4 words + 1 bit needs 5 words
+        using var dest = new GpuBigUInt(context, 5);
         var evalSub = subExpr.Evaluate(dest);
         
         Assert.Equal(expectedNeg, evalSub.IsNegative);
@@ -252,9 +256,11 @@ public class GpuBigIntegerTests
         var evalNeg = negExpr.Evaluate(destNeg);
         Assert.True(evalNeg.IsNegative);
 
-        using var destNot = new GpuBigUInt(context, 4);
+        // ~0 == -1, one bit wider than the operand: 4 words + 1 bit needs 5 words
+        using var destNot = new GpuBigUInt(context, 5);
         var evalNot = notExpr.Evaluate(destNot);
-        Assert.False(evalNot.IsNegative);
+        Assert.True(evalNot.IsNegative);
+        Assert.Equal(System.Numerics.BigInteger.One, evalNot.Value.ToBigInteger());
     }
 
     [SkippableFact]
@@ -273,14 +279,20 @@ public class GpuBigIntegerTests
         var c = new GpuBigInt(uC_8, false);
 
         GpuBigIntExpr exprAddUnequal = a + c;
-        
-        // 1. Unequal operand widths
-        Assert.Throws<ArgumentException>(() => exprAddUnequal.Evaluate(context));
-        
-        // 2. Incompatible destination widths
+
+        // 1. Unequal operand widths are accepted: the sum is one bit wider than the wider operand (8 words + 1 bit)
+        using (var unequal = exprAddUnequal.Evaluate(context))
+        {
+            Assert.Equal(9, unequal.Value.NumWords);
+            Assert.Equal(new System.Numerics.BigInteger(30), unequal.Value.ToBigInteger());
+        }
+
+        // 2. A destination narrower than the result (5 words) is rejected; a wider one is accepted
         GpuBigIntExpr exprAdd = a + b;
-        using var invalidDest = new GpuBigUInt(context, 8); // Should be 4
+        using var invalidDest = new GpuBigUInt(context, 4);
         Assert.Throws<ArgumentException>(() => exprAdd.Evaluate(invalidDest));
+        using var widerDest = new GpuBigUInt(context, 8);
+        Assert.Equal(new System.Numerics.BigInteger(10), exprAdd.Evaluate(widerDest).Value.ToBigInteger());
 
         // 3. Division by zero (verify temps are reused via loop)
         GpuBigIntExpr exprDivZero = a / b;
