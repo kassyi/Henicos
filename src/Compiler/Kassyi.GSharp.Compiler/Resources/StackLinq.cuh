@@ -8,6 +8,19 @@ __device__ __forceinline__ bool __gsharp_linq_equals(const T& a, const T& b) { r
 __device__ __forceinline__ bool __gsharp_linq_equals(float a, float b) { return a == b || (a != a && b != b); }
 __device__ __forceinline__ bool __gsharp_linq_equals(double a, double b) { return a == b || (a != a && b != b); }
 
+// The accumulator of a Sum: float adds in double and rounds once at the end, as System.Linq does
+template <typename T>
+struct __gsharp_linq_sum_accumulator { typedef T type; };
+template <>
+struct __gsharp_linq_sum_accumulator<float> { typedef double type; };
+
+// Whether a Max / Min element is NaN, which System.Linq places independently of its position; false for every
+// other type
+template <typename T>
+__device__ __forceinline__ bool __gsharp_linq_is_nan(const T&) { return false; }
+__device__ __forceinline__ bool __gsharp_linq_is_nan(float a) { return a != a; }
+__device__ __forceinline__ bool __gsharp_linq_is_nan(double a) { return a != a; }
+
 namespace Kassyi { namespace ZeroAlloc { namespace Linq {
     
     template <typename T>
@@ -481,11 +494,12 @@ namespace Kassyi { namespace ZeroAlloc { namespace Linq {
 
         template <typename TSource>
         __device__ static inline auto Sum(TSource source) {
-            decltype(source.Current()) sum = 0;
+            using TElement = decltype(source.Current());
+            typename __gsharp_linq_sum_accumulator<TElement>::type sum = 0;
             while (source.MoveNext()) {
                 sum += source.Current();
             }
-            return sum;
+            return (TElement)sum;
         }
 
         template <typename TSource, typename TFunc>
@@ -519,6 +533,11 @@ namespace Kassyi { namespace ZeroAlloc { namespace Linq {
                 return decltype(source.Current())();
             }
             auto max_val = source.Current();
+            // As System.Linq: NaN is skipped, and is the result only when every element is NaN
+            while (__gsharp_linq_is_nan(max_val)) {
+                if (!source.MoveNext()) return max_val;
+                max_val = source.Current();
+            }
             while (source.MoveNext()) {
                 auto val = source.Current();
                 if (val > max_val) max_val = val;
@@ -534,9 +553,12 @@ namespace Kassyi { namespace ZeroAlloc { namespace Linq {
                 return decltype(source.Current())();
             }
             auto min_val = source.Current();
+            // As System.Linq: the first NaN is the result, and the elements after it are not read
+            if (__gsharp_linq_is_nan(min_val)) return min_val;
             while (source.MoveNext()) {
                 auto val = source.Current();
                 if (val < min_val) min_val = val;
+                else if (__gsharp_linq_is_nan(val)) return val;
             }
             return min_val;
         }

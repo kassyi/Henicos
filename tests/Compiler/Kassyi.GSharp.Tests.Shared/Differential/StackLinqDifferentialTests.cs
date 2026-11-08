@@ -43,6 +43,8 @@ public class StackLinqDifferentialTests
     // Row 9: [-0.0f, -1.0f, -2.0f, +0.0f] (Max is -0.0f vs +0.0f)
     // Row 10: [+0.0f, 1.0f, 2.0f, -0.0f] (Min is +0.0f vs -0.0f)
     // Row 11: [1f, 0f, 0f, 0f] -> exact in float (0.25f)
+    // Row 12: every element NaN (Max is NaN only here)
+    // Row 13: two leading NaN (Max skips both, Min stops at the first)
     private static readonly float[][] s_singleSeed0Rows =
     [
         [16777216f, 1f, 1f, 1f],
@@ -57,6 +59,8 @@ public class StackLinqDifferentialTests
         [-0.0f, -1.0f, -2.0f, +0.0f],
         [+0.0f, 1.0f, 2.0f, -0.0f],
         [1f, 0f, 0f, 0f],
+        [float.NaN, float.NaN, float.NaN, float.NaN],
+        [float.NaN, float.NaN, 1f, -3f],
     ];
 
     private static readonly double[][] s_doubleSeed0Rows =
@@ -69,6 +73,8 @@ public class StackLinqDifferentialTests
         [+0.0, -0.0, +0.0, -0.0],
         [-0.0, -1.0, -2.0, +0.0],
         [+0.0, 1.0, 2.0, -0.0],
+        [double.NaN, double.NaN, double.NaN, double.NaN],
+        [double.NaN, double.NaN, 1.0, -3.0],
     ];
 
     private static readonly DifferentialCase s_int32Matrix = new($"{nameof(StackLinqDifferentialKernels)}.{nameof(StackLinqDifferentialKernels.Int32StackLinqMatrixKernel)}")
@@ -250,11 +256,7 @@ public class StackLinqDifferentialTests
             int rows = xs.Length / SliceLen;
             for (int t = 0; t < rows; t++)
             {
-                float sum = 0f;
-                for (int i = 0; i < SliceLen; i++)
-                {
-                    sum += xs[t * SliceLen + i];
-                }
+                float sum = System.Linq.Enumerable.Sum(xs.AsSpan(t * SliceLen, SliceLen).ToArray());
 
                 int o = t * 3;
                 r[o] = sum;
@@ -283,14 +285,9 @@ public class StackLinqDifferentialTests
             int rows = xs.Length / SliceLen;
             for (int t = 0; t < rows; t++)
             {
-                double sum = 0.0;
-                double selSum = 0.0;
-                for (int i = 0; i < SliceLen; i++)
-                {
-                    double val = xs[t * SliceLen + i];
-                    sum += val;
-                    selSum += val * 2.0;
-                }
+                var slice = xs.AsSpan(t * SliceLen, SliceLen).ToArray();
+                double sum = System.Linq.Enumerable.Sum(slice);
+                double selSum = System.Linq.Enumerable.Sum(slice, static x => x * 2.0);
 
                 int o = t * 4;
                 r[o + 0] = sum;
