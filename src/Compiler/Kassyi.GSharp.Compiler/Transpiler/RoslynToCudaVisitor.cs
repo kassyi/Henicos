@@ -376,6 +376,14 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
             return;
         }
 
+        // C# removes the call of a partial method without an implementing declaration, arguments included
+        if (node.Expression is InvocationExpressionSyntax invocation &&
+            (Context.Query.SemanticModel.GetSymbol(invocation) as IMethodSymbol).IsPartialWithoutImplementation())
+        {
+            Context.Emitter.Writer.AppendLine(";");
+            return;
+        }
+
         StatementPrelude.Emit(node, ref Context);
         Visit(node.Expression);
         Context.Emitter.Writer.Append(';');
@@ -383,13 +391,12 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
 
     public override void VisitIdentifierName(IdentifierNameSyntax node)
     {
-        if (Context.Emitter.TryGetOverride(node.Identifier.Text, out var overrideValue))
+        var symbol = Context.Query.SemanticModel.GetSymbol(node);
+        if (Context.Emitter.TryGetOverride(node.Identifier.Text, symbol, out var overrideValue))
         {
             overrideValue.WriteTo(this);
             return;
         }
-
-        var symbol = Context.Query.SemanticModel.GetSymbol(node);
 
         // A Core intrinsic named without its type (using static Kassyi.GSharp.Core.Gpu) maps as Gpu.<name> does (#565);
         // so does a Math or MathF member (using static System.Math), which ProhibitedApiRule allows when it is mapped (#899)
@@ -494,6 +501,17 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
             return;
         }
 
+        // An unsuffixed decimal C# literal from 2^31 to 2^32 - 1 is uint, but C++ gives a decimal literal the first of
+        // int, long and long long that holds it, a signed 64-bit type under LP64 (g++), so it carries the 'u' of its C#
+        // type. A hexadecimal or binary literal of that value is unsigned int in C++ as well.
+        if (node.IsKind(SyntaxKind.NumericLiteralExpression) &&
+            node.Token.Value is uint &&
+            IsUnsuffixedDecimal(node.Token.Text))
+        {
+            AppendUInt32Literal(node.Token.Text);
+            return;
+        }
+
         // C# accepts "2f" and "2d", but C++ treats "2" as an integer literal (so "f" is an unknown suffix) and has no "d" suffix.
         if (node.IsKind(SyntaxKind.NumericLiteralExpression) && node.Token.Value is float or double)
         {
@@ -576,6 +594,17 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
         {
             Context.Emitter.Writer.Append('f');
         }
+    }
+
+    // A decimal literal (not 0x / 0b) without the u or U suffix
+    private static bool IsUnsuffixedDecimal(string text) =>
+        !(text.Length > 1 && text[0] == '0' && text[1] is 'x' or 'X' or 'b' or 'B') &&
+        text[text.Length - 1] is not ('u' or 'U');
+
+    private void AppendUInt32Literal(string text)
+    {
+        AppendWithoutSeparators(text, text.Length);
+        Context.Emitter.Writer.Append('u');
     }
 
     private void AppendInt64Literal(string text, bool isUnsigned)

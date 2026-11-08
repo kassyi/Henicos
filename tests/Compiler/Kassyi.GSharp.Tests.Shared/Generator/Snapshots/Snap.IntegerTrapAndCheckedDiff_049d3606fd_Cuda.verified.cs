@@ -10,19 +10,15 @@ namespace Kassyi.GSharp.Generated
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static class GSharpModuleContext_SnapshotTest
 {
-private static global::System.IntPtr? s_hModule;
-private static readonly object s_lock = new object();
+private static byte[]? s_fatbin;
 
 /// <summary>
-/// Loads the fatbin module for this assembly into the CUDA driver if it hasn't been loaded yet.
+/// Reads the fatbin module of this assembly; the file is read once.
 /// </summary>
-public static global::System.IntPtr GetOrLoadModule()
+public static byte[] GetFatbin()
 {
-if (s_hModule.HasValue) return s_hModule.Value;
-lock (s_lock)
-{
-if (s_hModule.HasValue) return s_hModule.Value;
-
+var fatbin = global::System.Threading.Volatile.Read(ref s_fatbin);
+if (fatbin is not null) return fatbin;
 var baseDir = global::System.IO.Path.GetDirectoryName(typeof(GSharpModuleContext_SnapshotTest).Assembly.Location) ?? global::System.AppContext.BaseDirectory;
 var fatbinPath = global::System.IO.Path.Combine(baseDir, "Kassyi.GSharp.Kernels_SnapshotTest.gfatbin");
 if (!global::System.IO.File.Exists(fatbinPath))
@@ -30,11 +26,14 @@ if (!global::System.IO.File.Exists(fatbinPath))
 throw new global::System.InvalidOperationException($"AOT kernel binary was not found at '{fatbinPath}'.");
 }
 
-byte[] binaryData = global::System.IO.File.ReadAllBytes(fatbinPath);
-s_hModule = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadModule(binaryData);
-return s_hModule.Value;
+fatbin = global::System.IO.File.ReadAllBytes(fatbinPath);
+return global::System.Threading.Interlocked.CompareExchange(ref s_fatbin, fatbin, null) ?? fatbin;
 }
-}
+
+/// <summary>
+/// Loads the fatbin module of this assembly into the current CUDA context if it is not loaded there yet.
+/// </summary>
+public static global::System.IntPtr GetOrLoadModule() => global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadModule(GetFatbin());
 
 /// <summary>
 /// Preloads the module and all function pointers for kernels in this assembly to eliminate lazy-loading latency.
@@ -112,15 +111,9 @@ return;
 __gsharp_id_2_dst[__gsharp_id_4_t]=__gsharp_id_0_nums[__gsharp_id_4_t]/__gsharp_id_1_denoms[__gsharp_id_4_t];
 }
 ";
-public static readonly string Int32DivideKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +Int32DivideKernel_Source;
-private static global::System.IntPtr? __gsharp_hfunc_Int32DivideKernel;
-/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
-public static void WarmupFunctionPointerInt32DivideKernel()
-{
-if (__gsharp_hfunc_Int32DivideKernel.HasValue) return;
-global::System.IntPtr __gsharp_hmodule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
-__gsharp_hfunc_Int32DivideKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(__gsharp_hmodule, "__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__IntegerTrapAndCheckedDifferentialKernels__Int32DivideKernel");
-}
+private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_Int32DivideKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__IntegerTrapAndCheckedDifferentialKernels__Int32DivideKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
+public static void WarmupFunctionPointerInt32DivideKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.__gsharp_hfunc_Int32DivideKernel.Resolve();
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -146,8 +139,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.WarmupFunctionPointerInt32DivideKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_Int32DivideKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.__gsharp_hfunc_Int32DivideKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "IntegerTrapAndCheckedDifferentialKernels.Int32DivideKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 global::System.IntPtr __gsharp_d_1 = global::System.IntPtr.Zero;
@@ -279,8 +271,7 @@ public static unsafe void LaunchInt32DivideKernelPtr(global::System.IntPtr nums,
 {
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.WarmupFunctionPointerInt32DivideKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_Int32DivideKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.__gsharp_hfunc_Int32DivideKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "IntegerTrapAndCheckedDifferentialKernels.Int32DivideKernel");
 try
 {
@@ -330,15 +321,9 @@ return;
 __gsharp_id_2_dst[__gsharp_id_4_t]=__gsharp_id_0_nums[__gsharp_id_4_t]%__gsharp_id_1_denoms[__gsharp_id_4_t];
 }
 ";
-public static readonly string Int32RemainderKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +Int32RemainderKernel_Source;
-private static global::System.IntPtr? __gsharp_hfunc_Int32RemainderKernel;
-/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
-public static void WarmupFunctionPointerInt32RemainderKernel()
-{
-if (__gsharp_hfunc_Int32RemainderKernel.HasValue) return;
-global::System.IntPtr __gsharp_hmodule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
-__gsharp_hfunc_Int32RemainderKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(__gsharp_hmodule, "__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__IntegerTrapAndCheckedDifferentialKernels__Int32RemainderKernel");
-}
+private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_Int32RemainderKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__IntegerTrapAndCheckedDifferentialKernels__Int32RemainderKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
+public static void WarmupFunctionPointerInt32RemainderKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.__gsharp_hfunc_Int32RemainderKernel.Resolve();
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -364,8 +349,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.WarmupFunctionPointerInt32RemainderKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_Int32RemainderKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.__gsharp_hfunc_Int32RemainderKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "IntegerTrapAndCheckedDifferentialKernels.Int32RemainderKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 global::System.IntPtr __gsharp_d_1 = global::System.IntPtr.Zero;
@@ -497,8 +481,7 @@ public static unsafe void LaunchInt32RemainderKernelPtr(global::System.IntPtr nu
 {
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.WarmupFunctionPointerInt32RemainderKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_Int32RemainderKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.__gsharp_hfunc_Int32RemainderKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "IntegerTrapAndCheckedDifferentialKernels.Int32RemainderKernel");
 try
 {
@@ -548,15 +531,9 @@ return;
 __gsharp_id_2_dst[__gsharp_id_4_t]=__gsharp_id_0_nums[__gsharp_id_4_t]/__gsharp_id_1_denoms[__gsharp_id_4_t];
 }
 ";
-public static readonly string UInt32DivideKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +UInt32DivideKernel_Source;
-private static global::System.IntPtr? __gsharp_hfunc_UInt32DivideKernel;
-/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
-public static void WarmupFunctionPointerUInt32DivideKernel()
-{
-if (__gsharp_hfunc_UInt32DivideKernel.HasValue) return;
-global::System.IntPtr __gsharp_hmodule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
-__gsharp_hfunc_UInt32DivideKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(__gsharp_hmodule, "__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__IntegerTrapAndCheckedDifferentialKernels__UInt32DivideKernel");
-}
+private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_UInt32DivideKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__IntegerTrapAndCheckedDifferentialKernels__UInt32DivideKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
+public static void WarmupFunctionPointerUInt32DivideKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.__gsharp_hfunc_UInt32DivideKernel.Resolve();
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -582,8 +559,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.WarmupFunctionPointerUInt32DivideKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_UInt32DivideKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.__gsharp_hfunc_UInt32DivideKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "IntegerTrapAndCheckedDifferentialKernels.UInt32DivideKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 global::System.IntPtr __gsharp_d_1 = global::System.IntPtr.Zero;
@@ -715,8 +691,7 @@ public static unsafe void LaunchUInt32DivideKernelPtr(global::System.IntPtr nums
 {
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.WarmupFunctionPointerUInt32DivideKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_UInt32DivideKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.__gsharp_hfunc_UInt32DivideKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "IntegerTrapAndCheckedDifferentialKernels.UInt32DivideKernel");
 try
 {
@@ -766,15 +741,9 @@ return;
 __gsharp_id_2_dst[__gsharp_id_4_t]=__gsharp_id_0_nums[__gsharp_id_4_t]%__gsharp_id_1_denoms[__gsharp_id_4_t];
 }
 ";
-public static readonly string UInt32RemainderKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +UInt32RemainderKernel_Source;
-private static global::System.IntPtr? __gsharp_hfunc_UInt32RemainderKernel;
-/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
-public static void WarmupFunctionPointerUInt32RemainderKernel()
-{
-if (__gsharp_hfunc_UInt32RemainderKernel.HasValue) return;
-global::System.IntPtr __gsharp_hmodule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
-__gsharp_hfunc_UInt32RemainderKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(__gsharp_hmodule, "__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__IntegerTrapAndCheckedDifferentialKernels__UInt32RemainderKernel");
-}
+private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_UInt32RemainderKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__IntegerTrapAndCheckedDifferentialKernels__UInt32RemainderKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
+public static void WarmupFunctionPointerUInt32RemainderKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.__gsharp_hfunc_UInt32RemainderKernel.Resolve();
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -800,8 +769,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.WarmupFunctionPointerUInt32RemainderKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_UInt32RemainderKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.__gsharp_hfunc_UInt32RemainderKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "IntegerTrapAndCheckedDifferentialKernels.UInt32RemainderKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 global::System.IntPtr __gsharp_d_1 = global::System.IntPtr.Zero;
@@ -933,8 +901,7 @@ public static unsafe void LaunchUInt32RemainderKernelPtr(global::System.IntPtr n
 {
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.WarmupFunctionPointerUInt32RemainderKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_UInt32RemainderKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.__gsharp_hfunc_UInt32RemainderKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "IntegerTrapAndCheckedDifferentialKernels.UInt32RemainderKernel");
 try
 {
@@ -984,15 +951,9 @@ return;
 __gsharp_id_2_dst[__gsharp_id_4_t]=__gsharp_id_0_nums[__gsharp_id_4_t]/__gsharp_id_1_denoms[__gsharp_id_4_t];
 }
 ";
-public static readonly string Int64DivideKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +Int64DivideKernel_Source;
-private static global::System.IntPtr? __gsharp_hfunc_Int64DivideKernel;
-/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
-public static void WarmupFunctionPointerInt64DivideKernel()
-{
-if (__gsharp_hfunc_Int64DivideKernel.HasValue) return;
-global::System.IntPtr __gsharp_hmodule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
-__gsharp_hfunc_Int64DivideKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(__gsharp_hmodule, "__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__IntegerTrapAndCheckedDifferentialKernels__Int64DivideKernel");
-}
+private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_Int64DivideKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__IntegerTrapAndCheckedDifferentialKernels__Int64DivideKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
+public static void WarmupFunctionPointerInt64DivideKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.__gsharp_hfunc_Int64DivideKernel.Resolve();
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -1018,8 +979,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.WarmupFunctionPointerInt64DivideKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_Int64DivideKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.__gsharp_hfunc_Int64DivideKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "IntegerTrapAndCheckedDifferentialKernels.Int64DivideKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 global::System.IntPtr __gsharp_d_1 = global::System.IntPtr.Zero;
@@ -1151,8 +1111,7 @@ public static unsafe void LaunchInt64DivideKernelPtr(global::System.IntPtr nums,
 {
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.WarmupFunctionPointerInt64DivideKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_Int64DivideKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.__gsharp_hfunc_Int64DivideKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "IntegerTrapAndCheckedDifferentialKernels.Int64DivideKernel");
 try
 {
@@ -1202,15 +1161,9 @@ return;
 __gsharp_id_2_dst[__gsharp_id_4_t]=__gsharp_id_0_nums[__gsharp_id_4_t]/__gsharp_id_1_denoms[__gsharp_id_4_t];
 }
 ";
-public static readonly string UInt64DivideKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +UInt64DivideKernel_Source;
-private static global::System.IntPtr? __gsharp_hfunc_UInt64DivideKernel;
-/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
-public static void WarmupFunctionPointerUInt64DivideKernel()
-{
-if (__gsharp_hfunc_UInt64DivideKernel.HasValue) return;
-global::System.IntPtr __gsharp_hmodule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
-__gsharp_hfunc_UInt64DivideKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(__gsharp_hmodule, "__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__IntegerTrapAndCheckedDifferentialKernels__UInt64DivideKernel");
-}
+private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_UInt64DivideKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__IntegerTrapAndCheckedDifferentialKernels__UInt64DivideKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
+public static void WarmupFunctionPointerUInt64DivideKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.__gsharp_hfunc_UInt64DivideKernel.Resolve();
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -1236,8 +1189,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.WarmupFunctionPointerUInt64DivideKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_UInt64DivideKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.__gsharp_hfunc_UInt64DivideKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "IntegerTrapAndCheckedDifferentialKernels.UInt64DivideKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 global::System.IntPtr __gsharp_d_1 = global::System.IntPtr.Zero;
@@ -1369,8 +1321,7 @@ public static unsafe void LaunchUInt64DivideKernelPtr(global::System.IntPtr nums
 {
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.WarmupFunctionPointerUInt64DivideKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_UInt64DivideKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.__gsharp_hfunc_UInt64DivideKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "IntegerTrapAndCheckedDifferentialKernels.UInt64DivideKernel");
 try
 {
@@ -1422,15 +1373,9 @@ __gsharp_id_5_val/=__gsharp_id_1_denoms[__gsharp_id_4_t];
 __gsharp_id_2_dst[__gsharp_id_4_t]=__gsharp_id_5_val;
 }
 ";
-public static readonly string Int16CompoundDivideKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +Int16CompoundDivideKernel_Source;
-private static global::System.IntPtr? __gsharp_hfunc_Int16CompoundDivideKernel;
-/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
-public static void WarmupFunctionPointerInt16CompoundDivideKernel()
-{
-if (__gsharp_hfunc_Int16CompoundDivideKernel.HasValue) return;
-global::System.IntPtr __gsharp_hmodule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
-__gsharp_hfunc_Int16CompoundDivideKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(__gsharp_hmodule, "__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__IntegerTrapAndCheckedDifferentialKernels__Int16CompoundDivideKernel");
-}
+private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_Int16CompoundDivideKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__IntegerTrapAndCheckedDifferentialKernels__Int16CompoundDivideKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
+public static void WarmupFunctionPointerInt16CompoundDivideKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.__gsharp_hfunc_Int16CompoundDivideKernel.Resolve();
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -1456,8 +1401,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.WarmupFunctionPointerInt16CompoundDivideKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_Int16CompoundDivideKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.__gsharp_hfunc_Int16CompoundDivideKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "IntegerTrapAndCheckedDifferentialKernels.Int16CompoundDivideKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 global::System.IntPtr __gsharp_d_1 = global::System.IntPtr.Zero;
@@ -1589,8 +1533,7 @@ public static unsafe void LaunchInt16CompoundDivideKernelPtr(global::System.IntP
 {
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.WarmupFunctionPointerInt16CompoundDivideKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_Int16CompoundDivideKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.__gsharp_hfunc_Int16CompoundDivideKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "IntegerTrapAndCheckedDifferentialKernels.Int16CompoundDivideKernel");
 try
 {
@@ -1642,15 +1585,9 @@ __gsharp_id_5_val%=__gsharp_id_1_denoms[__gsharp_id_4_t];
 __gsharp_id_2_dst[__gsharp_id_4_t]=__gsharp_id_5_val;
 }
 ";
-public static readonly string SByteCompoundRemainderKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +SByteCompoundRemainderKernel_Source;
-private static global::System.IntPtr? __gsharp_hfunc_SByteCompoundRemainderKernel;
-/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
-public static void WarmupFunctionPointerSByteCompoundRemainderKernel()
-{
-if (__gsharp_hfunc_SByteCompoundRemainderKernel.HasValue) return;
-global::System.IntPtr __gsharp_hmodule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
-__gsharp_hfunc_SByteCompoundRemainderKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(__gsharp_hmodule, "__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__IntegerTrapAndCheckedDifferentialKernels__SByteCompoundRemainderKernel");
-}
+private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_SByteCompoundRemainderKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__IntegerTrapAndCheckedDifferentialKernels__SByteCompoundRemainderKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
+public static void WarmupFunctionPointerSByteCompoundRemainderKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.__gsharp_hfunc_SByteCompoundRemainderKernel.Resolve();
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -1676,8 +1613,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.WarmupFunctionPointerSByteCompoundRemainderKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_SByteCompoundRemainderKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.__gsharp_hfunc_SByteCompoundRemainderKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "IntegerTrapAndCheckedDifferentialKernels.SByteCompoundRemainderKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 global::System.IntPtr __gsharp_d_1 = global::System.IntPtr.Zero;
@@ -1809,8 +1745,7 @@ public static unsafe void LaunchSByteCompoundRemainderKernelPtr(global::System.I
 {
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.WarmupFunctionPointerSByteCompoundRemainderKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_SByteCompoundRemainderKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.__gsharp_hfunc_SByteCompoundRemainderKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "IntegerTrapAndCheckedDifferentialKernels.SByteCompoundRemainderKernel");
 try
 {
@@ -1860,15 +1795,9 @@ return;
 __gsharp_id_2_dst[__gsharp_id_4_t]=__gsharp_id_0_nums[__gsharp_id_4_t]/__gsharp_id_1_denoms[__gsharp_id_4_t];
 }
 ";
-public static readonly string Int32MinValueDivideKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +Int32MinValueDivideKernel_Source;
-private static global::System.IntPtr? __gsharp_hfunc_Int32MinValueDivideKernel;
-/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
-public static void WarmupFunctionPointerInt32MinValueDivideKernel()
-{
-if (__gsharp_hfunc_Int32MinValueDivideKernel.HasValue) return;
-global::System.IntPtr __gsharp_hmodule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
-__gsharp_hfunc_Int32MinValueDivideKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(__gsharp_hmodule, "__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__IntegerTrapAndCheckedDifferentialKernels__Int32MinValueDivideKernel");
-}
+private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_Int32MinValueDivideKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__IntegerTrapAndCheckedDifferentialKernels__Int32MinValueDivideKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
+public static void WarmupFunctionPointerInt32MinValueDivideKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.__gsharp_hfunc_Int32MinValueDivideKernel.Resolve();
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -1894,8 +1823,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.WarmupFunctionPointerInt32MinValueDivideKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_Int32MinValueDivideKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.__gsharp_hfunc_Int32MinValueDivideKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "IntegerTrapAndCheckedDifferentialKernels.Int32MinValueDivideKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 global::System.IntPtr __gsharp_d_1 = global::System.IntPtr.Zero;
@@ -2027,8 +1955,7 @@ public static unsafe void LaunchInt32MinValueDivideKernelPtr(global::System.IntP
 {
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.WarmupFunctionPointerInt32MinValueDivideKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_Int32MinValueDivideKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.__gsharp_hfunc_Int32MinValueDivideKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "IntegerTrapAndCheckedDifferentialKernels.Int32MinValueDivideKernel");
 try
 {
@@ -2078,15 +2005,9 @@ return;
 __gsharp_id_2_dst[__gsharp_id_4_t]=__gsharp_id_0_nums[__gsharp_id_4_t]%__gsharp_id_1_denoms[__gsharp_id_4_t];
 }
 ";
-public static readonly string Int32MinValueRemainderKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +Int32MinValueRemainderKernel_Source;
-private static global::System.IntPtr? __gsharp_hfunc_Int32MinValueRemainderKernel;
-/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
-public static void WarmupFunctionPointerInt32MinValueRemainderKernel()
-{
-if (__gsharp_hfunc_Int32MinValueRemainderKernel.HasValue) return;
-global::System.IntPtr __gsharp_hmodule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
-__gsharp_hfunc_Int32MinValueRemainderKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(__gsharp_hmodule, "__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__IntegerTrapAndCheckedDifferentialKernels__Int32MinValueRemainderKernel");
-}
+private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_Int32MinValueRemainderKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__IntegerTrapAndCheckedDifferentialKernels__Int32MinValueRemainderKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
+public static void WarmupFunctionPointerInt32MinValueRemainderKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.__gsharp_hfunc_Int32MinValueRemainderKernel.Resolve();
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -2112,8 +2033,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.WarmupFunctionPointerInt32MinValueRemainderKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_Int32MinValueRemainderKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.__gsharp_hfunc_Int32MinValueRemainderKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "IntegerTrapAndCheckedDifferentialKernels.Int32MinValueRemainderKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 global::System.IntPtr __gsharp_d_1 = global::System.IntPtr.Zero;
@@ -2245,8 +2165,7 @@ public static unsafe void LaunchInt32MinValueRemainderKernelPtr(global::System.I
 {
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.WarmupFunctionPointerInt32MinValueRemainderKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_Int32MinValueRemainderKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.__gsharp_hfunc_Int32MinValueRemainderKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "IntegerTrapAndCheckedDifferentialKernels.Int32MinValueRemainderKernel");
 try
 {
@@ -2296,15 +2215,9 @@ return;
 __gsharp_id_2_dst[__gsharp_id_4_t]=__gsharp_id_0_nums[__gsharp_id_4_t]/__gsharp_id_1_denoms[__gsharp_id_4_t];
 }
 ";
-public static readonly string Int64MinValueDivideKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +Int64MinValueDivideKernel_Source;
-private static global::System.IntPtr? __gsharp_hfunc_Int64MinValueDivideKernel;
-/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
-public static void WarmupFunctionPointerInt64MinValueDivideKernel()
-{
-if (__gsharp_hfunc_Int64MinValueDivideKernel.HasValue) return;
-global::System.IntPtr __gsharp_hmodule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
-__gsharp_hfunc_Int64MinValueDivideKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(__gsharp_hmodule, "__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__IntegerTrapAndCheckedDifferentialKernels__Int64MinValueDivideKernel");
-}
+private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_Int64MinValueDivideKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__IntegerTrapAndCheckedDifferentialKernels__Int64MinValueDivideKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
+public static void WarmupFunctionPointerInt64MinValueDivideKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.__gsharp_hfunc_Int64MinValueDivideKernel.Resolve();
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -2330,8 +2243,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.WarmupFunctionPointerInt64MinValueDivideKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_Int64MinValueDivideKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.__gsharp_hfunc_Int64MinValueDivideKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "IntegerTrapAndCheckedDifferentialKernels.Int64MinValueDivideKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 global::System.IntPtr __gsharp_d_1 = global::System.IntPtr.Zero;
@@ -2463,8 +2375,7 @@ public static unsafe void LaunchInt64MinValueDivideKernelPtr(global::System.IntP
 {
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.WarmupFunctionPointerInt64MinValueDivideKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_Int64MinValueDivideKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.__gsharp_hfunc_Int64MinValueDivideKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "IntegerTrapAndCheckedDifferentialKernels.Int64MinValueDivideKernel");
 try
 {
@@ -2514,15 +2425,9 @@ return;
 __gsharp_id_2_dst[__gsharp_id_4_t]=__gsharp_id_0_nums[__gsharp_id_4_t]%__gsharp_id_1_denoms[__gsharp_id_4_t];
 }
 ";
-public static readonly string Int64MinValueRemainderKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +Int64MinValueRemainderKernel_Source;
-private static global::System.IntPtr? __gsharp_hfunc_Int64MinValueRemainderKernel;
-/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
-public static void WarmupFunctionPointerInt64MinValueRemainderKernel()
-{
-if (__gsharp_hfunc_Int64MinValueRemainderKernel.HasValue) return;
-global::System.IntPtr __gsharp_hmodule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
-__gsharp_hfunc_Int64MinValueRemainderKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(__gsharp_hmodule, "__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__IntegerTrapAndCheckedDifferentialKernels__Int64MinValueRemainderKernel");
-}
+private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_Int64MinValueRemainderKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__IntegerTrapAndCheckedDifferentialKernels__Int64MinValueRemainderKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
+public static void WarmupFunctionPointerInt64MinValueRemainderKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.__gsharp_hfunc_Int64MinValueRemainderKernel.Resolve();
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -2548,8 +2453,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.WarmupFunctionPointerInt64MinValueRemainderKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_Int64MinValueRemainderKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.__gsharp_hfunc_Int64MinValueRemainderKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "IntegerTrapAndCheckedDifferentialKernels.Int64MinValueRemainderKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 global::System.IntPtr __gsharp_d_1 = global::System.IntPtr.Zero;
@@ -2681,8 +2585,7 @@ public static unsafe void LaunchInt64MinValueRemainderKernelPtr(global::System.I
 {
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.WarmupFunctionPointerInt64MinValueRemainderKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_Int64MinValueRemainderKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.__gsharp_hfunc_Int64MinValueRemainderKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "IntegerTrapAndCheckedDifferentialKernels.Int64MinValueRemainderKernel");
 try
 {
@@ -2734,15 +2637,9 @@ short __gsharp_id_6_sMinusOne = __gsharp_id_1_denoms[__gsharp_id_4_t];
 __gsharp_id_2_dst[__gsharp_id_4_t]=__gsharp_id_5_sMin/__gsharp_id_6_sMinusOne;
 }
 ";
-public static readonly string ShortMinValueDivideKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ShortMinValueDivideKernel_Source;
-private static global::System.IntPtr? __gsharp_hfunc_ShortMinValueDivideKernel;
-/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
-public static void WarmupFunctionPointerShortMinValueDivideKernel()
-{
-if (__gsharp_hfunc_ShortMinValueDivideKernel.HasValue) return;
-global::System.IntPtr __gsharp_hmodule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
-__gsharp_hfunc_ShortMinValueDivideKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(__gsharp_hmodule, "__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__IntegerTrapAndCheckedDifferentialKernels__ShortMinValueDivideKernel");
-}
+private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ShortMinValueDivideKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__IntegerTrapAndCheckedDifferentialKernels__ShortMinValueDivideKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
+public static void WarmupFunctionPointerShortMinValueDivideKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.__gsharp_hfunc_ShortMinValueDivideKernel.Resolve();
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -2768,8 +2665,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.WarmupFunctionPointerShortMinValueDivideKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_ShortMinValueDivideKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.__gsharp_hfunc_ShortMinValueDivideKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "IntegerTrapAndCheckedDifferentialKernels.ShortMinValueDivideKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 global::System.IntPtr __gsharp_d_1 = global::System.IntPtr.Zero;
@@ -2901,8 +2797,7 @@ public static unsafe void LaunchShortMinValueDivideKernelPtr(global::System.IntP
 {
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.WarmupFunctionPointerShortMinValueDivideKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_ShortMinValueDivideKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.__gsharp_hfunc_ShortMinValueDivideKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "IntegerTrapAndCheckedDifferentialKernels.ShortMinValueDivideKernel");
 try
 {
@@ -2954,15 +2849,9 @@ signed char __gsharp_id_6_sbMinusOne = __gsharp_id_1_denoms[__gsharp_id_4_t];
 __gsharp_id_2_dst[__gsharp_id_4_t]=__gsharp_id_5_sbMin/__gsharp_id_6_sbMinusOne;
 }
 ";
-public static readonly string SByteMinValueDivideKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +SByteMinValueDivideKernel_Source;
-private static global::System.IntPtr? __gsharp_hfunc_SByteMinValueDivideKernel;
-/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
-public static void WarmupFunctionPointerSByteMinValueDivideKernel()
-{
-if (__gsharp_hfunc_SByteMinValueDivideKernel.HasValue) return;
-global::System.IntPtr __gsharp_hmodule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
-__gsharp_hfunc_SByteMinValueDivideKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(__gsharp_hmodule, "__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__IntegerTrapAndCheckedDifferentialKernels__SByteMinValueDivideKernel");
-}
+private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_SByteMinValueDivideKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__IntegerTrapAndCheckedDifferentialKernels__SByteMinValueDivideKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
+public static void WarmupFunctionPointerSByteMinValueDivideKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.__gsharp_hfunc_SByteMinValueDivideKernel.Resolve();
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -2988,8 +2877,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.WarmupFunctionPointerSByteMinValueDivideKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_SByteMinValueDivideKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.__gsharp_hfunc_SByteMinValueDivideKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "IntegerTrapAndCheckedDifferentialKernels.SByteMinValueDivideKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 global::System.IntPtr __gsharp_d_1 = global::System.IntPtr.Zero;
@@ -3121,8 +3009,7 @@ public static unsafe void LaunchSByteMinValueDivideKernelPtr(global::System.IntP
 {
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.WarmupFunctionPointerSByteMinValueDivideKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_SByteMinValueDivideKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.__gsharp_hfunc_SByteMinValueDivideKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "IntegerTrapAndCheckedDifferentialKernels.SByteMinValueDivideKernel");
 try
 {
@@ -3172,15 +3059,9 @@ return;
 __gsharp_id_1_dst[__gsharp_id_3_t]=abs(__gsharp_id_0_vals[__gsharp_id_3_t]);
 }
 ";
-public static readonly string MathAbsInt32Kernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +MathAbsInt32Kernel_Source;
-private static global::System.IntPtr? __gsharp_hfunc_MathAbsInt32Kernel;
-/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
-public static void WarmupFunctionPointerMathAbsInt32Kernel()
-{
-if (__gsharp_hfunc_MathAbsInt32Kernel.HasValue) return;
-global::System.IntPtr __gsharp_hmodule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
-__gsharp_hfunc_MathAbsInt32Kernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(__gsharp_hmodule, "__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__IntegerTrapAndCheckedDifferentialKernels__MathAbsInt32Kernel");
-}
+private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_MathAbsInt32Kernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__IntegerTrapAndCheckedDifferentialKernels__MathAbsInt32Kernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
+public static void WarmupFunctionPointerMathAbsInt32Kernel() => global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.__gsharp_hfunc_MathAbsInt32Kernel.Resolve();
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -3200,8 +3081,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.WarmupFunctionPointerMathAbsInt32Kernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_MathAbsInt32Kernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.__gsharp_hfunc_MathAbsInt32Kernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "IntegerTrapAndCheckedDifferentialKernels.MathAbsInt32Kernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 global::System.IntPtr __gsharp_d_1 = global::System.IntPtr.Zero;
@@ -3294,8 +3174,7 @@ public static unsafe void LaunchMathAbsInt32KernelPtr(global::System.IntPtr vals
 {
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.WarmupFunctionPointerMathAbsInt32Kernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_MathAbsInt32Kernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.__gsharp_hfunc_MathAbsInt32Kernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "IntegerTrapAndCheckedDifferentialKernels.MathAbsInt32Kernel");
 try
 {
@@ -3339,15 +3218,9 @@ return;
 __gsharp_id_1_dst[__gsharp_id_3_t]=fabsf(__gsharp_id_0_vals[__gsharp_id_3_t]);
 }
 ";
-public static readonly string MathAbsSingleKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +MathAbsSingleKernel_Source;
-private static global::System.IntPtr? __gsharp_hfunc_MathAbsSingleKernel;
-/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
-public static void WarmupFunctionPointerMathAbsSingleKernel()
-{
-if (__gsharp_hfunc_MathAbsSingleKernel.HasValue) return;
-global::System.IntPtr __gsharp_hmodule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
-__gsharp_hfunc_MathAbsSingleKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(__gsharp_hmodule, "__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__IntegerTrapAndCheckedDifferentialKernels__MathAbsSingleKernel");
-}
+private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_MathAbsSingleKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__IntegerTrapAndCheckedDifferentialKernels__MathAbsSingleKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
+public static void WarmupFunctionPointerMathAbsSingleKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.__gsharp_hfunc_MathAbsSingleKernel.Resolve();
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -3367,8 +3240,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.WarmupFunctionPointerMathAbsSingleKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_MathAbsSingleKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.__gsharp_hfunc_MathAbsSingleKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "IntegerTrapAndCheckedDifferentialKernels.MathAbsSingleKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 global::System.IntPtr __gsharp_d_1 = global::System.IntPtr.Zero;
@@ -3461,8 +3333,7 @@ public static unsafe void LaunchMathAbsSingleKernelPtr(global::System.IntPtr val
 {
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.WarmupFunctionPointerMathAbsSingleKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_MathAbsSingleKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.__gsharp_hfunc_MathAbsSingleKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "IntegerTrapAndCheckedDifferentialKernels.MathAbsSingleKernel");
 try
 {
@@ -3506,15 +3377,9 @@ return;
 __gsharp_id_1_dst[__gsharp_id_3_t]=fabs(__gsharp_id_0_vals[__gsharp_id_3_t]);
 }
 ";
-public static readonly string MathAbsDoubleKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +MathAbsDoubleKernel_Source;
-private static global::System.IntPtr? __gsharp_hfunc_MathAbsDoubleKernel;
-/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
-public static void WarmupFunctionPointerMathAbsDoubleKernel()
-{
-if (__gsharp_hfunc_MathAbsDoubleKernel.HasValue) return;
-global::System.IntPtr __gsharp_hmodule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
-__gsharp_hfunc_MathAbsDoubleKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(__gsharp_hmodule, "__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__IntegerTrapAndCheckedDifferentialKernels__MathAbsDoubleKernel");
-}
+private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_MathAbsDoubleKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__IntegerTrapAndCheckedDifferentialKernels__MathAbsDoubleKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
+public static void WarmupFunctionPointerMathAbsDoubleKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.__gsharp_hfunc_MathAbsDoubleKernel.Resolve();
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -3534,8 +3399,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.WarmupFunctionPointerMathAbsDoubleKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_MathAbsDoubleKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.__gsharp_hfunc_MathAbsDoubleKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "IntegerTrapAndCheckedDifferentialKernels.MathAbsDoubleKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 global::System.IntPtr __gsharp_d_1 = global::System.IntPtr.Zero;
@@ -3628,8 +3492,7 @@ public static unsafe void LaunchMathAbsDoubleKernelPtr(global::System.IntPtr val
 {
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.WarmupFunctionPointerMathAbsDoubleKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_MathAbsDoubleKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.__gsharp_hfunc_MathAbsDoubleKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "IntegerTrapAndCheckedDifferentialKernels.MathAbsDoubleKernel");
 try
 {
@@ -3714,15 +3577,9 @@ __gsharp_id_7_dst[__gsharp_add_i32(__gsharp_id_33_baseIdx,14)]=__gsharp_id_31_co
 __gsharp_id_7_dst[__gsharp_add_i32(__gsharp_id_33_baseIdx,15)]=__gsharp_id_32_compUshr;
 }
 ";
-public static readonly string ShiftCountMaskBoundaryMatrixKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ShiftCountMaskBoundaryMatrixKernel_Source;
-private static global::System.IntPtr? __gsharp_hfunc_ShiftCountMaskBoundaryMatrixKernel;
-/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
-public static void WarmupFunctionPointerShiftCountMaskBoundaryMatrixKernel()
-{
-if (__gsharp_hfunc_ShiftCountMaskBoundaryMatrixKernel.HasValue) return;
-global::System.IntPtr __gsharp_hmodule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
-__gsharp_hfunc_ShiftCountMaskBoundaryMatrixKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(__gsharp_hmodule, "__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__IntegerTrapAndCheckedDifferentialKernels__ShiftCountMaskBoundaryMatrixKernel");
-}
+private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ShiftCountMaskBoundaryMatrixKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__IntegerTrapAndCheckedDifferentialKernels__ShiftCountMaskBoundaryMatrixKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
+public static void WarmupFunctionPointerShiftCountMaskBoundaryMatrixKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.__gsharp_hfunc_ShiftCountMaskBoundaryMatrixKernel.Resolve();
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -3778,8 +3635,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.WarmupFunctionPointerShiftCountMaskBoundaryMatrixKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_ShiftCountMaskBoundaryMatrixKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.__gsharp_hfunc_ShiftCountMaskBoundaryMatrixKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "IntegerTrapAndCheckedDifferentialKernels.ShiftCountMaskBoundaryMatrixKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 global::System.IntPtr __gsharp_d_1 = global::System.IntPtr.Zero;
@@ -4166,8 +4022,7 @@ public static unsafe void LaunchShiftCountMaskBoundaryMatrixKernelPtr(global::Sy
 {
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.WarmupFunctionPointerShiftCountMaskBoundaryMatrixKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_ShiftCountMaskBoundaryMatrixKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.__gsharp_hfunc_ShiftCountMaskBoundaryMatrixKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "IntegerTrapAndCheckedDifferentialKernels.ShiftCountMaskBoundaryMatrixKernel");
 try
 {
@@ -4266,15 +4121,9 @@ __gsharp_id_2_dst[__gsharp_add_i32(__gsharp_id_14_baseIdx,5)]=__gsharp_id_12_bMa
 __gsharp_id_2_dst[__gsharp_add_i32(__gsharp_id_14_baseIdx,6)]=__gsharp_id_13_sAcc;
 }
 ";
-public static readonly string UncheckedIntegerWrapKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +UncheckedIntegerWrapKernel_Source;
-private static global::System.IntPtr? __gsharp_hfunc_UncheckedIntegerWrapKernel;
-/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
-public static void WarmupFunctionPointerUncheckedIntegerWrapKernel()
-{
-if (__gsharp_hfunc_UncheckedIntegerWrapKernel.HasValue) return;
-global::System.IntPtr __gsharp_hmodule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
-__gsharp_hfunc_UncheckedIntegerWrapKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(__gsharp_hmodule, "__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__IntegerTrapAndCheckedDifferentialKernels__UncheckedIntegerWrapKernel");
-}
+private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_UncheckedIntegerWrapKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__IntegerTrapAndCheckedDifferentialKernels__UncheckedIntegerWrapKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
+public static void WarmupFunctionPointerUncheckedIntegerWrapKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.__gsharp_hfunc_UncheckedIntegerWrapKernel.Resolve();
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -4300,8 +4149,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.WarmupFunctionPointerUncheckedIntegerWrapKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_UncheckedIntegerWrapKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.__gsharp_hfunc_UncheckedIntegerWrapKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "IntegerTrapAndCheckedDifferentialKernels.UncheckedIntegerWrapKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 global::System.IntPtr __gsharp_d_1 = global::System.IntPtr.Zero;
@@ -4433,8 +4281,7 @@ public static unsafe void LaunchUncheckedIntegerWrapKernelPtr(global::System.Int
 {
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.WarmupFunctionPointerUncheckedIntegerWrapKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_UncheckedIntegerWrapKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.__gsharp_hfunc_UncheckedIntegerWrapKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "IntegerTrapAndCheckedDifferentialKernels.UncheckedIntegerWrapKernel");
 try
 {
@@ -4497,15 +4344,9 @@ __gsharp_id_3_dDst[__gsharp_id_15_dBase+0]=__gsharp_id_12_dQuot;
 __gsharp_id_3_dDst[__gsharp_add_i32(__gsharp_id_15_dBase,1)]=__gsharp_id_13_dZeroByZero;
 }
 ";
-public static readonly string FloatDivisionByZeroKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +FloatDivisionByZeroKernel_Source;
-private static global::System.IntPtr? __gsharp_hfunc_FloatDivisionByZeroKernel;
-/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
-public static void WarmupFunctionPointerFloatDivisionByZeroKernel()
-{
-if (__gsharp_hfunc_FloatDivisionByZeroKernel.HasValue) return;
-global::System.IntPtr __gsharp_hmodule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
-__gsharp_hfunc_FloatDivisionByZeroKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(__gsharp_hmodule, "__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__IntegerTrapAndCheckedDifferentialKernels__FloatDivisionByZeroKernel");
-}
+private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_FloatDivisionByZeroKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__IntegerTrapAndCheckedDifferentialKernels__FloatDivisionByZeroKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
+public static void WarmupFunctionPointerFloatDivisionByZeroKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.__gsharp_hfunc_FloatDivisionByZeroKernel.Resolve();
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -4537,8 +4378,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.WarmupFunctionPointerFloatDivisionByZeroKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_FloatDivisionByZeroKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.__gsharp_hfunc_FloatDivisionByZeroKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "IntegerTrapAndCheckedDifferentialKernels.FloatDivisionByZeroKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 global::System.IntPtr __gsharp_d_1 = global::System.IntPtr.Zero;
@@ -4713,8 +4553,7 @@ public static unsafe void LaunchFloatDivisionByZeroKernelPtr(global::System.IntP
 {
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.WarmupFunctionPointerFloatDivisionByZeroKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_FloatDivisionByZeroKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.__gsharp_hfunc_FloatDivisionByZeroKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "IntegerTrapAndCheckedDifferentialKernels.FloatDivisionByZeroKernel");
 try
 {
@@ -4784,15 +4623,9 @@ __gsharp_id_2_dst[__gsharp_add_i32(__gsharp_id_13_baseIdx,4)]=__gsharp_id_11_dTo
 __gsharp_id_2_dst[__gsharp_add_i32(__gsharp_id_13_baseIdx,5)]=(int)(__gsharp_id_12_dToLong^(__gsharp_id_12_dToLong>>32));
 }
 ";
-public static readonly string FloatToIntegerConversionKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +FloatToIntegerConversionKernel_Source;
-private static global::System.IntPtr? __gsharp_hfunc_FloatToIntegerConversionKernel;
-/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
-public static void WarmupFunctionPointerFloatToIntegerConversionKernel()
-{
-if (__gsharp_hfunc_FloatToIntegerConversionKernel.HasValue) return;
-global::System.IntPtr __gsharp_hmodule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
-__gsharp_hfunc_FloatToIntegerConversionKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(__gsharp_hmodule, "__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__IntegerTrapAndCheckedDifferentialKernels__FloatToIntegerConversionKernel");
-}
+private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_FloatToIntegerConversionKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__IntegerTrapAndCheckedDifferentialKernels__FloatToIntegerConversionKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
+public static void WarmupFunctionPointerFloatToIntegerConversionKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.__gsharp_hfunc_FloatToIntegerConversionKernel.Resolve();
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -4818,8 +4651,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.WarmupFunctionPointerFloatToIntegerConversionKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_FloatToIntegerConversionKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.__gsharp_hfunc_FloatToIntegerConversionKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "IntegerTrapAndCheckedDifferentialKernels.FloatToIntegerConversionKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 global::System.IntPtr __gsharp_d_1 = global::System.IntPtr.Zero;
@@ -4951,8 +4783,7 @@ public static unsafe void LaunchFloatToIntegerConversionKernelPtr(global::System
 {
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.WarmupFunctionPointerFloatToIntegerConversionKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_FloatToIntegerConversionKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.IntegerTrapAndCheckedDifferentialKernels.__gsharp_hfunc_FloatToIntegerConversionKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "IntegerTrapAndCheckedDifferentialKernels.FloatToIntegerConversionKernel");
 try
 {

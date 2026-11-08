@@ -765,7 +765,7 @@ public static float ShuffleSync(uint mask, float var, int srcLane, int width = 3
 /// <summary>Exchanges a variable from a thread with a higher ID relative to the caller.</summary>
 /// <param name="mask">The 32-bit thread participation bitmask.</param>
 /// <param name="var">The source value to shift.</param>
-/// <param name="delta">The positive lane index offset to shift down by.</param>
+/// <param name="delta">The positive lane index offset to shift down by. Only its low 5 bits are used, as on the GPU (33 shifts by 1).</param>
 /// <param name="width">The sub-warp width in threads, 1, 2, 4, 8, 16 or 32 (default 32); any other width is undefined on CUDA, reported as GSH0095 when constant, and an InvalidOperationException on the CPU paths.</param>
 /// <returns>The value from the lane delta above the caller, or the caller's own value when that lane is outside the caller's segment. Reading a lane that does not exist in the block is undefined on CUDA and an InvalidOperationException on the CPU paths.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("__shfl_down_sync")]
@@ -773,7 +773,7 @@ public static int ShuffleDownSync(uint mask, int var, uint delta, int width = 32
 /// <summary>Exchanges a variable from a thread with a higher ID relative to the caller.</summary>
 /// <param name="mask">The 32-bit thread participation bitmask.</param>
 /// <param name="var">The source value to shift.</param>
-/// <param name="delta">The positive lane index offset to shift down by.</param>
+/// <param name="delta">The positive lane index offset to shift down by. Only its low 5 bits are used, as on the GPU (33 shifts by 1).</param>
 /// <param name="width">The sub-warp width in threads, 1, 2, 4, 8, 16 or 32 (default 32); any other width is undefined on CUDA, reported as GSH0095 when constant, and an InvalidOperationException on the CPU paths.</param>
 /// <returns>The value from the lane delta above the caller, or the caller's own value when that lane is outside the caller's segment. Reading a lane that does not exist in the block is undefined on CUDA and an InvalidOperationException on the CPU paths.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("__shfl_down_sync")]
@@ -781,7 +781,7 @@ public static uint ShuffleDownSync(uint mask, uint var, uint delta, int width = 
 /// <summary>Exchanges a variable from a thread with a higher ID relative to the caller.</summary>
 /// <param name="mask">The 32-bit thread participation bitmask.</param>
 /// <param name="var">The source value to shift.</param>
-/// <param name="delta">The positive lane index offset to shift down by.</param>
+/// <param name="delta">The positive lane index offset to shift down by. Only its low 5 bits are used, as on the GPU (33 shifts by 1).</param>
 /// <param name="width">The sub-warp width in threads, 1, 2, 4, 8, 16 or 32 (default 32); any other width is undefined on CUDA, reported as GSH0095 when constant, and an InvalidOperationException on the CPU paths.</param>
 /// <returns>The value from the lane delta above the caller, or the caller's own value when that lane is outside the caller's segment. Reading a lane that does not exist in the block is undefined on CUDA and an InvalidOperationException on the CPU paths.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("__shfl_down_sync")]
@@ -789,7 +789,7 @@ public static float ShuffleDownSync(uint mask, float var, uint delta, int width 
 /// <summary>Exchanges a variable from a thread with a higher ID relative to the caller.</summary>
 /// <param name="mask">The 32-bit thread participation bitmask.</param>
 /// <param name="var">The source value to shift.</param>
-/// <param name="delta">The positive lane index offset to shift down by.</param>
+/// <param name="delta">The positive lane index offset to shift down by. Only its low 5 bits are used, as on the GPU (33 shifts by 1).</param>
 /// <param name="width">The sub-warp width in threads, 1, 2, 4, 8, 16 or 32 (default 32); any other width is undefined on CUDA, reported as GSH0095 when constant, and an InvalidOperationException on the CPU paths.</param>
 /// <returns>The value from the lane delta above the caller, or the caller's own value when that lane is outside the caller's segment. Reading a lane that does not exist in the block is undefined on CUDA and an InvalidOperationException on the CPU paths.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("__shfl_down_sync")]
@@ -797,7 +797,7 @@ public static double ShuffleDownSync(uint mask, double var, uint delta, int widt
 /// <summary>Exchanges a variable from a thread with a lower ID relative to the caller.</summary>
 /// <param name="mask">The 32-bit thread participation bitmask.</param>
 /// <param name="var">The source value to shift.</param>
-/// <param name="delta">The positive lane index offset to shift up by.</param>
+/// <param name="delta">The positive lane index offset to shift up by. Only its low 5 bits are used, as on the GPU (33 shifts by 1).</param>
 /// <param name="width">The sub-warp width in threads, 1, 2, 4, 8, 16 or 32 (default 32); any other width is undefined on CUDA, reported as GSH0095 when constant, and an InvalidOperationException on the CPU paths.</param>
 /// <returns>The value from the lane delta below the caller, or the caller's own value when that lane is outside the caller's segment. Reading a lane that does not exist in the block is undefined on CUDA and an InvalidOperationException on the CPU paths.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("__shfl_up_sync")]
@@ -805,7 +805,7 @@ public static int ShuffleUpSync(uint mask, int var, uint delta, int width = 32) 
 /// <summary>Exchanges a variable from a thread with a lower ID relative to the caller.</summary>
 /// <param name="mask">The 32-bit thread participation bitmask.</param>
 /// <param name="var">The source value to shift.</param>
-/// <param name="delta">The positive lane index offset to shift up by.</param>
+/// <param name="delta">The positive lane index offset to shift up by. Only its low 5 bits are used, as on the GPU (33 shifts by 1).</param>
 /// <param name="width">The sub-warp width in threads, 1, 2, 4, 8, 16 or 32 (default 32); any other width is undefined on CUDA, reported as GSH0095 when constant, and an InvalidOperationException on the CPU paths.</param>
 /// <returns>The value from the lane delta below the caller, or the caller's own value when that lane is outside the caller's segment. Reading a lane that does not exist in the block is undefined on CUDA and an InvalidOperationException on the CPU paths.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("__shfl_up_sync")]
@@ -813,7 +813,7 @@ public static uint ShuffleUpSync(uint mask, uint var, uint delta, int width = 32
 /// <summary>Exchanges a variable from a thread with a lower ID relative to the caller.</summary>
 /// <param name="mask">The 32-bit thread participation bitmask.</param>
 /// <param name="var">The source value to shift.</param>
-/// <param name="delta">The positive lane index offset to shift up by.</param>
+/// <param name="delta">The positive lane index offset to shift up by. Only its low 5 bits are used, as on the GPU (33 shifts by 1).</param>
 /// <param name="width">The sub-warp width in threads, 1, 2, 4, 8, 16 or 32 (default 32); any other width is undefined on CUDA, reported as GSH0095 when constant, and an InvalidOperationException on the CPU paths.</param>
 /// <returns>The value from the lane delta below the caller, or the caller's own value when that lane is outside the caller's segment. Reading a lane that does not exist in the block is undefined on CUDA and an InvalidOperationException on the CPU paths.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("__shfl_up_sync")]
@@ -821,7 +821,7 @@ public static float ShuffleUpSync(uint mask, float var, uint delta, int width = 
 /// <summary>Exchanges a variable based on a bitwise XOR of the caller's lane ID.</summary>
 /// <param name="mask">The 32-bit thread participation bitmask.</param>
 /// <param name="var">The source value to exchange.</param>
-/// <param name="laneMask">The bitmask used to XOR against the calling thread's lane ID.</param>
+/// <param name="laneMask">The bitmask used to XOR against the calling thread's lane ID. Only its low 5 bits are used, as on the GPU (-1 acts as 31).</param>
 /// <param name="width">The sub-warp width in threads, 1, 2, 4, 8, 16 or 32 (default 32); any other width is undefined on CUDA, reported as GSH0095 when constant, and an InvalidOperationException on the CPU paths.</param>
 /// <returns>The value from the lane laneMask XOR the caller when that lane is in the caller's group of width lanes or an earlier group, or the caller's own value when it is in a later group. Reading a lane that does not exist in the block is undefined on CUDA and an InvalidOperationException on the CPU paths.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("__shfl_xor_sync")]
@@ -829,7 +829,7 @@ public static int ShuffleXorSync(uint mask, int var, int laneMask, int width = 3
 /// <summary>Exchanges a variable based on a bitwise XOR of the caller's lane ID.</summary>
 /// <param name="mask">The 32-bit thread participation bitmask.</param>
 /// <param name="var">The source value to exchange.</param>
-/// <param name="laneMask">The bitmask used to XOR against the calling thread's lane ID.</param>
+/// <param name="laneMask">The bitmask used to XOR against the calling thread's lane ID. Only its low 5 bits are used, as on the GPU (-1 acts as 31).</param>
 /// <param name="width">The sub-warp width in threads, 1, 2, 4, 8, 16 or 32 (default 32); any other width is undefined on CUDA, reported as GSH0095 when constant, and an InvalidOperationException on the CPU paths.</param>
 /// <returns>The value from the lane laneMask XOR the caller when that lane is in the caller's group of width lanes or an earlier group, or the caller's own value when it is in a later group. Reading a lane that does not exist in the block is undefined on CUDA and an InvalidOperationException on the CPU paths.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("__shfl_xor_sync")]
@@ -837,7 +837,7 @@ public static uint ShuffleXorSync(uint mask, uint var, int laneMask, int width =
 /// <summary>Exchanges a variable based on a bitwise XOR of the caller's lane ID.</summary>
 /// <param name="mask">The 32-bit thread participation bitmask.</param>
 /// <param name="var">The source value to exchange.</param>
-/// <param name="laneMask">The bitmask used to XOR against the calling thread's lane ID.</param>
+/// <param name="laneMask">The bitmask used to XOR against the calling thread's lane ID. Only its low 5 bits are used, as on the GPU (-1 acts as 31).</param>
 /// <param name="width">The sub-warp width in threads, 1, 2, 4, 8, 16 or 32 (default 32); any other width is undefined on CUDA, reported as GSH0095 when constant, and an InvalidOperationException on the CPU paths.</param>
 /// <returns>The value from the lane laneMask XOR the caller when that lane is in the caller's group of width lanes or an earlier group, or the caller's own value when it is in a later group. Reading a lane that does not exist in the block is undefined on CUDA and an InvalidOperationException on the CPU paths.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("__shfl_xor_sync")]

@@ -39,6 +39,8 @@
   <ItemGroup>
     <InternalsVisibleTo Include="Kassyi.GSharp.Tests.Cpu" />
     <InternalsVisibleTo Include="Kassyi.GSharp.Tests.Cuda" />
+    <!-- CudaModuleCache.CurrentContextId keys the device memory caches of the stdlib by context -->
+    <InternalsVisibleTo Include="Kassyi.GSharp.Stdlib.GpuMath" />
   </ItemGroup>
 
 </Project>

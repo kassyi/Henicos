@@ -273,6 +273,73 @@ public class NativeApiGeneratorTests
         Assert.Empty(result.GeneratedTrees);
     }
 
+    [Theory]
+    [Scenario(TestScenario.SadPath)]
+    [InlineData("\"float[]?\"", "nullable types")]
+    [InlineData("\"int?\"", "nullable types")]
+    [InlineData("\"float[,]\"", "one-dimensional arrays")]
+    [InlineData("\"float[][]\"", "one-dimensional arrays")]
+    [InlineData("string", "reference types")]
+    [InlineData("\"string[]\"", "reference types")]
+    [InlineData("global::System.Object", "reference types")]
+    [InlineData("String", "reference types")]
+    [InlineData("Object", "reference types")]
+    [InlineData("System.Array", "reference types")]
+    [InlineData("ref int", "'ref', 'out', 'in', 'scoped' and 'params'")]
+    [InlineData("out int", "'ref', 'out', 'in', 'scoped' and 'params'")]
+    [InlineData("in int", "'ref', 'out', 'in', 'scoped' and 'params'")]
+    [InlineData("scoped ref int", "'ref', 'out', 'in', 'scoped' and 'params'")]
+    public void Test_ModuleDefinition_ParameterTheLauncherCannotPass_ReportsSchemaDiagnostic(string type, string reason)
+    {
+        var yaml = $$"""
+            namespace: My.Kernels
+            className: K
+            moduleName: k.fatbin
+            methods:
+              - name: Run
+                parameters:
+                  - { name: data, type: "float[]" }
+                  - { name: p, type: {{type}} }
+                  - { name: gridDimX, type: uint }
+            """;
+
+        var result = RunGenerator(Api("k.yml", yaml));
+
+        var diagnostic = Assert.Single(result.Diagnostics);
+        Assert.Equal(GSharpDiagnostics.NativeApiSchemaViolation.Id, diagnostic.Id);
+        Assert.Equal(DiagnosticSeverity.Error, diagnostic.Severity);
+        var span = diagnostic.Location.GetLineSpan();
+        Assert.Equal("k.yml", span.Path);
+        Assert.Equal(new LinePosition(7, 0), span.StartLinePosition);
+        Assert.Equal(new LinePosition(7, 0), span.EndLinePosition);
+        var message = diagnostic.GetMessage();
+        Assert.Contains("Parameter 'p' of kernel method 'Run'", message);
+        Assert.Contains(reason, message);
+        Assert.Empty(result.GeneratedTrees);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_LibraryDefinition_RefAndStringParameters_RemainAllowed()
+    {
+        const string Yaml = """
+            namespace: My.Interop
+            className: Lib
+            libraryName: mylib
+            methods:
+              - name: Create
+                returnType: int
+                parameters:
+                  - { name: handle, type: out IntPtr }
+                  - { name: name, type: string }
+            """;
+
+        var result = RunGenerator(Api("lib.yml", Yaml));
+
+        Assert.Empty(result.Diagnostics);
+        Assert.Single(result.GeneratedTrees);
+    }
+
     [Fact]
     [Scenario(TestScenario.SadPath)]
     public void Test_DuplicateClassAcrossFiles_ReportsSchemaDiagnosticWithoutCrashing()
@@ -463,19 +530,14 @@ public class NativeApiGeneratorTests
             driverOptions: new GeneratorDriverOptions(IncrementalGeneratorOutputKind.None, trackIncrementalGeneratorSteps: true));
     }
 
-    private static CSharpCompilation CreateCompilation()
-    {
-        var references = ((string?)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES") ?? string.Empty)
-            .Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries)
-            .Select(p => MetadataReference.CreateFromFile(p))
-            .Append(MetadataReference.CreateFromFile(typeof(GpuKernelLoader).Assembly.Location));
-
-        return CSharpCompilation.Create(
+    // The shared references hold the trusted platform assemblies (Kassyi.GSharp.Runtime with GpuKernelLoader among
+    // them) once per process; creating them per test read every image into memory again.
+    private static CSharpCompilation CreateCompilation() =>
+        CSharpCompilation.Create(
             "NativeApiGeneratorTestAssembly",
             [],
-            references,
+            RoslynTestUtility.BaseReferences,
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, allowUnsafe: true));
-    }
 
     private static string FindSource(GeneratorDriverRunResult result, string marker)
     {

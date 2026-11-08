@@ -109,7 +109,8 @@ Argument = 5,
 NullReference = 6,
 DivideByZero = 7,
 Overflow = 8,
-DataRace = 9
+DataRace = 9,
+SwitchExpression = 10
 };
 inline void __gsharp_trap(GSharpErrorCode code, const char* message);
 
@@ -1279,11 +1280,13 @@ return val;
 uint32_t tid = __gsharp_warp_linear_tid();
 uint32_t laneId = tid % 32u;
 uint32_t logicalLane = laneId % (uint32_t)width;
-uint64_t srcLogicalLane = (uint64_t)logicalLane + delta;
-if (srcLogicalLane >= (uint64_t)width) {
+// PTX shfl.sync uses only the low 5 bits of the lane offset
+uint32_t srcLogicalLane = logicalLane + (delta & 31u);
+if (srcLogicalLane >= (uint32_t)width) {
 return val;
 }
-return __gsharp_warp_shuffle_read_lane(__gsharp_ctx, val, tid, laneId - logicalLane + (uint32_t)srcLogicalLane, name, location);
+uint32_t srcLaneId = laneId - logicalLane + srcLogicalLane;
+return __gsharp_warp_shuffle_read_lane(__gsharp_ctx, val, tid, srcLaneId, name, location);
 }
 
 template<typename TContext, typename T>
@@ -1297,10 +1300,12 @@ return val;
 uint32_t tid = __gsharp_warp_linear_tid();
 uint32_t laneId = tid % 32u;
 uint32_t logicalLane = laneId % (uint32_t)width;
-if (logicalLane < delta) {
+// PTX shfl.sync uses only the low 5 bits of the lane offset
+uint32_t offset = delta & 31u;
+if (logicalLane < offset) {
 return val;
 }
-return __gsharp_warp_shuffle_read_lane(__gsharp_ctx, val, tid, laneId - delta, name, location);
+return __gsharp_warp_shuffle_read_lane(__gsharp_ctx, val, tid, laneId - offset, name, location);
 }
 
 template<typename TContext, typename T>
@@ -1314,8 +1319,9 @@ return val;
 uint32_t tid = __gsharp_warp_linear_tid();
 uint32_t laneId = tid % 32u;
 // CUDA lets a group of width lanes read its own group and the earlier ones; a later group gives the caller's own value
-// (PTX shfl.bfly reads lane j when j <= maxLane, the last lane of the caller's group)
-uint32_t srcLane = laneId ^ laneMask;
+// (PTX shfl.bfly reads lane j when j <= maxLane, the last lane of the caller's group). PTX uses only the low 5 bits
+// of the lane mask
+uint32_t srcLane = laneId ^ (laneMask & 31u);
 if (srcLane > (laneId | ((uint32_t)width - 1u))) {
 return val;
 }
@@ -1866,11 +1872,12 @@ __device__ __forceinline__ bool __gsharp_linq_equals(const T& a, const T& b) { r
 __device__ __forceinline__ bool __gsharp_linq_equals(float a, float b) { return a == b || (a != a && b != b); }
 __device__ __forceinline__ bool __gsharp_linq_equals(double a, double b) { return a == b || (a != a && b != b); }
 
-// The accumulator of a Sum: float adds in double and rounds once at the end, as System.Linq does
+// Whether a Max / Min element is NaN, which System.Linq places independently of its position; false for every
+// other type
 template <typename T>
-struct __gsharp_linq_sum_accumulator { typedef T type; };
-template <>
-struct __gsharp_linq_sum_accumulator<float> { typedef double type; };
+__device__ __forceinline__ bool __gsharp_linq_is_nan(const T&) { return false; }
+__device__ __forceinline__ bool __gsharp_linq_is_nan(float a) { return a != a; }
+__device__ __forceinline__ bool __gsharp_linq_is_nan(double a) { return a != a; }
 
 namespace Kassyi { namespace ZeroAlloc { namespace Linq {
 
@@ -2345,12 +2352,11 @@ return result;
 
 template <typename TSource>
 __device__ static inline auto Sum(TSource source) {
-using TElement = decltype(source.Current());
-typename __gsharp_linq_sum_accumulator<TElement>::type sum = 0;
+decltype(source.Current()) sum = 0;
 while (source.MoveNext()) {
 sum += source.Current();
 }
-return (TElement)sum;
+return sum;
 }
 
 template <typename TSource, typename TFunc>
@@ -2384,6 +2390,11 @@ else __gsharp_trap(GSharpErrorCode::InvalidOperation, ""Sequence contains no ele
 return decltype(source.Current())();
 }
 auto max_val = source.Current();
+// As System.Linq: NaN is skipped, and is the result only when every element is NaN
+while (__gsharp_linq_is_nan(max_val)) {
+if (!source.MoveNext()) return max_val;
+max_val = source.Current();
+}
 while (source.MoveNext()) {
 auto val = source.Current();
 if (val > max_val) max_val = val;
@@ -2399,9 +2410,12 @@ else __gsharp_trap(GSharpErrorCode::InvalidOperation, ""Sequence contains no ele
 return decltype(source.Current())();
 }
 auto min_val = source.Current();
+// As System.Linq: the first NaN is the result, and the elements after it are not read
+if (__gsharp_linq_is_nan(min_val)) return min_val;
 while (source.MoveNext()) {
 auto val = source.Current();
 if (val < min_val) min_val = val;
+else if (__gsharp_linq_is_nan(val)) return val;
 }
 return min_val;
 }

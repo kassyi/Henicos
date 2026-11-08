@@ -12,21 +12,31 @@ internal static class MacroTranspilerHelper
     {
         private readonly OverrideScopeStack _stack;
         public readonly string ParamName;
+
+        /// <summary>The loop parameter, whose references alone the iteration value replaces.</summary>
+        public readonly IParameterSymbol? ParamSymbol;
+
         private readonly int _cookie;
 
         public MacroScope(
             ref TranspileContext context,
-            string paramName,
-            string? contextParamName,
+            ParameterSyntax param,
+            ParameterSyntax? contextParam,
             ExpressionSyntax? contextArgExpr)
         {
+            var model = context.Query.SemanticModel;
             _stack = context.Emitter.LocalVariableOverrides;
-            ParamName = paramName;
+            ParamName = param.Identifier.Text;
+            ParamSymbol = model.GetDeclaredSymbol<IParameterSymbol>(param);
             _cookie = _stack.Count;
 
-            if (contextParamName != null && contextArgExpr != null)
+            if (contextParam != null && contextArgExpr != null)
             {
-                context.Emitter.PushOverrideScope(contextParamName, new OverrideValue(contextArgExpr));
+                context.Emitter.PushOverrideScope(
+                    contextParam.Identifier.Text,
+                    new OverrideValue(contextArgExpr),
+                    model.GetDeclaredSymbol<IParameterSymbol>(contextParam)
+                );
             }
         }
 
@@ -36,29 +46,30 @@ internal static class MacroTranspilerHelper
     public static bool TryBeginMacroScope(
         InvocationExpressionSyntax invocation,
         LambdaExpressionSyntax lambdaExpr,
-        bool hasContext,
+        GpuMacroCall call,
         SeparatedSyntaxList<ArgumentSyntax> args,
         ref TranspileContext context,
         string macroName,
         out MacroScope scope)
     {
         scope = default;
-        var paramName = GpuCodeConstraints.GetMacroLoopParameter(lambdaExpr, hasContext)?.Identifier.Text ?? string.Empty;
-        if (paramName.Length == 0)
+        if (GpuCodeConstraints.GetMacroLoopParameter(lambdaExpr, call.HasContext) is not
+            { Identifier.Text.Length: > 0 } param)
         {
             context.Reporter.Fail(GSharpDiagnostics.MacroLambdaRequiresParameter, invocation, macroName);
             return false;
         }
 
-        string? contextParamName = null;
+        ParameterSyntax? contextParam = null;
         ExpressionSyntax? contextArgExpr = null;
-        if (hasContext && lambdaExpr is ParenthesizedLambdaExpressionSyntax parenLambda)
+        if (call.GetContext(args) is { } contextArgument &&
+            lambdaExpr is ParenthesizedLambdaExpressionSyntax parenLambda)
         {
-            contextParamName = parenLambda.ParameterList.Parameters[0].Identifier.Text;
-            contextArgExpr = args[0].Expression;
+            contextParam = parenLambda.ParameterList.Parameters[0];
+            contextArgExpr = contextArgument;
         }
 
-        scope = new MacroScope(ref context, paramName, contextParamName, contextArgExpr);
+        scope = new MacroScope(ref context, param, contextParam, contextArgExpr);
         return true;
     }
 
