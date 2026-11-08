@@ -402,10 +402,12 @@ G# natively handles `null` array members:
   `GSharpArrayProxy.EmptyArrayData`, a non-null address that is never dereferenced (the native CPU build passes the
   pinned address of the empty array). On every path `ctx.DebugTelemetry is null` is false for it and `Length` is 0.
 - A launch never rejects a struct whose array field is `null`: a kernel that does not read the field runs normally.
-- Reading a `null` array field (`Length`, an element, `foreach`) follows C# and throws `NullReferenceException`: on the
-  native CPU build with the place in your source (`G#: a null array is read at Kernels.cu.cs(12,17)`), on the managed
-  path as .NET throws it, and on the checked CUDA build. The release CUDA build does not check. The same holds for an
-  array local, a device function parameter or an array element that holds `null`. Converting the array to a span
+- Reading a `null` array field (`Length`, an element, `foreach`) follows C# and throws `NullReferenceException` on
+  every path: on CUDA and the native CPU build with the place in your source (`Exception.Data["GSharp.SourceLocation"]`
+  holds `Kernels.cu.cs(12,17)`; inside a device function the native CPU message names the place instead), and on the
+  managed path as .NET throws it. On CUDA the failing thread stops the kernel with `trap`, which leaves the CUDA
+  context unusable for the rest of the process, as any device fault does. The same holds for an array local, a device
+  function parameter or an array element that holds `null`. Converting the array to a span
   (`ReadOnlySpan<T> s = ctx.DebugTelemetry;`) gives an empty span, as in C#. If you mean "no data", write `= []`.
 - A `null` optional kernel argument (`float[]? bias` passed as `null` or `[]`) keeps its own contract: the kernel reads
   it as an array of length 0, also through a local or a device function, on CUDA and the native CPU build. The managed
