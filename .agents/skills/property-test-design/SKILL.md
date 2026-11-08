@@ -73,10 +73,10 @@ Confirm that each input runs the lines it targets with `just coverage-diff` (`sc
 
 For each property, find one one-line change (a mutant) that breaks the property, and show that one of the inputs of §4 makes the test fail.
 
-1. Change one line of the implementation. For example, flip a comparison, remove a `+ 1`, stop a carry from propagating, or lower a loop bound by 1.
+1. Change one line of the implementation. For example, flip a comparison, remove a `+ 1`, stop a carry from propagating, or lower a loop bound by 1. Mark the changed line with a comment at its end, `// MUTANT: <the original code>`, in the same edit, so that anyone who opens the file sees at once that the line is broken on purpose and what it was. The comment goes away with the undo in step 4.
 2. Run only the affected tests (`dotnet test --filter` through `just`, or with `DiffEngine_Disabled=true`).
 3. Make sure that the test fails. If it does not, the check is too weak or no input reaches the branch; go back to §2 or §4.
-4. **Undo the change with Edit.** Do not use `git checkout` / `git restore`: they also discard other changes in the same file. After you undo it, confirm with `git diff` that no difference is left in that file.
+4. **Undo the change with Edit.** Do not use `git checkout` / `git restore`: they also discard other changes in the same file. After you undo it, confirm with `git diff` that no difference is left in that file, and that `grep -rn "// MUTANT:"` over the changed files finds nothing before every commit.
 5. Record the mutant in a comment above the check (the line number and the change below only show the format):
 
 ```csharp
