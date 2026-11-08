@@ -178,7 +178,11 @@ public interface IGpuBasicMathProvider
     /// <param name="workspace">The GPU workspace.</param>
     /// <param name="leftOperand">The big integer operand.</param>
     /// <param name="rightOperand">The 32-bit unsigned scalar.</param>
-    /// <param name="resultBuffer">The destination buffer.</param>
+    /// <param name="resultBuffer">The destination buffer, at least as wide as <paramref name="leftOperand"/>; the
+    /// result width rules and domain errors are those of
+    /// <see cref="GpuBigIntMath.Add(GpuBigUIntView, uint, GpuBigUIntView)"/>.</param>
+    /// <exception cref="ArgumentException"><paramref name="resultBuffer"/> is narrower than
+    /// <paramref name="leftOperand"/>.</exception>
     void Add(GpuWorkspace workspace, GpuBigUInt leftOperand, uint rightOperand, GpuBigUInt resultBuffer);
 
     /// <summary>
@@ -187,7 +191,11 @@ public interface IGpuBasicMathProvider
     /// <param name="workspace">The GPU workspace.</param>
     /// <param name="leftOperand">The big integer operand.</param>
     /// <param name="rightOperand">The 32-bit unsigned scalar.</param>
-    /// <param name="resultBuffer">The destination buffer.</param>
+    /// <param name="resultBuffer">The destination buffer, at least as wide as <paramref name="leftOperand"/>; the
+    /// result width rules and domain errors are those of
+    /// <see cref="GpuBigIntMath.Sub(GpuBigUIntView, uint, GpuBigUIntView)"/>.</param>
+    /// <exception cref="ArgumentException"><paramref name="resultBuffer"/> is narrower than
+    /// <paramref name="leftOperand"/>.</exception>
     void Sub(GpuWorkspace workspace, GpuBigUInt leftOperand, uint rightOperand, GpuBigUInt resultBuffer);
 
     /// <summary>
@@ -327,7 +335,11 @@ public interface IGpuAdvancedMathProvider
     /// <param name="workspace">The GPU workspace.</param>
     /// <param name="leftOperand">The big integer operand.</param>
     /// <param name="rightOperand">The 32-bit scalar multiplier.</param>
-    /// <param name="resultBuffer">The destination buffer.</param>
+    /// <param name="resultBuffer">The destination buffer, at least as wide as <paramref name="leftOperand"/>; the
+    /// result width rules and domain errors are those of
+    /// <see cref="GpuBigIntMath.Mul(GpuBigUIntView, uint, GpuBigUIntView)"/>.</param>
+    /// <exception cref="ArgumentException"><paramref name="resultBuffer"/> is narrower than
+    /// <paramref name="leftOperand"/>.</exception>
     void Mul(GpuWorkspace workspace, GpuBigUInt leftOperand, uint rightOperand, GpuBigUInt resultBuffer);
 
     /// <summary>

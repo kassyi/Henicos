@@ -285,9 +285,10 @@ public class GpuBigIntCoreTests
         GpuBigIntMath.Sub(gpuB, scalarSub, gpuResult);
         AssertGpuResultEqualsCpu(bigB - scalarSub, gpuResult, TestSizeWords);
 
-        // Scalar Mul
-        GpuBigIntMath.Mul(gpuA, scalarMul, gpuResult);
-        AssertGpuResultEqualsCpu(bigA * scalarMul, gpuResult, TestSizeWords);
+        // Scalar Mul: the product needs one word more than the operand
+        using var gpuProduct = new GpuBigUInt(context, TestSizeWords + 1);
+        GpuBigIntMath.Mul(gpuA, scalarMul, gpuProduct);
+        AssertGpuResultEqualsCpu(bigA * scalarMul, gpuProduct, TestSizeWords + 1);
     }
 
     [SkippableTheory]
@@ -1309,11 +1310,13 @@ public class GpuBigIntCoreTests
         return new BigInteger(bytes, isUnsigned: true, isBigEndian: false);
     }
 
-    // Scalar add / sub carry and borrow through every word, also beyond the 1024 threads of one block (mod 2^(32n)).
+    // Scalar add / sub carry and borrow through every word, also beyond the 1024 threads of one block. The result
+    // buffer has one word more than the operand, so a carry out of the top word is kept; a difference below zero is a
+    // domain error.
     [SkippableTheory]
     [Category(TestCategory.Stdlib)]
     [Scenario(TestScenario.Boundary)]
-    // mutant: KernelBasicMathHandler.cs:61 / 73 `Math.Min(1024, NumWords)` -> `Math.Max` (a 1500-thread block fails to launch)
+    // mutant: ScalarResultWidth.BlockSize `Math.Min(1024, ...)` -> `Math.Max` (a 1500-thread block fails to launch)
     [InlineData(0xFFFFFFFFu, true, 1u)]
     [InlineData(0u, false, 1u)]
     [InlineData(0x9E3779B9u, true, 0x7F4A7C15u)]
@@ -1327,9 +1330,8 @@ public class GpuBigIntCoreTests
         var words = new uint[N];
         Array.Fill(words, fill);
         var value = WordsToBigInteger(words);
-        var modulus = BigInteger.One << (32 * N);
         using var operand = new GpuBigUInt(ctx, words);
-        using var result = new GpuBigUInt(ctx, N);
+        using var result = new GpuBigUInt(ctx, N + 1);
 
         if (add)
         {
@@ -1340,7 +1342,13 @@ public class GpuBigIntCoreTests
             GpuBigIntMath.Sub(operand, scalar, result);
         }
 
-        var expected = ((add ? value + scalar : value - scalar) % modulus + modulus) % modulus;
+        var expected = add ? value + scalar : value - scalar;
+        if (expected.Sign < 0)
+        {
+            Assert.Throws<OverflowException>(() => result.ToBigInteger());
+            return;
+        }
+
         Assert.Equal(expected, result.ToBigInteger());
     }
 

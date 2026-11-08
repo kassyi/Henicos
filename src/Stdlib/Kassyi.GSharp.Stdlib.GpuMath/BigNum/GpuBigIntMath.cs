@@ -58,6 +58,26 @@ public static class GpuBigIntMath
     /// <param name="leftOperand">The big integer addend.</param>
     /// <param name="rightOperand">The 32-bit unsigned scalar addend.</param>
     /// <param name="resultBuffer">The destination buffer in GPU device memory receiving the sum.</param>
+    /// <exception cref="ArgumentException"><paramref name="resultBuffer"/> has fewer words than
+    /// <paramref name="leftOperand"/>; nothing is written.</exception>
+    /// <exception cref="OverflowException">CPU fallback mode only: the sum does not fit in a
+    /// <paramref name="resultBuffer"/> as wide as <paramref name="leftOperand"/>.</exception>
+    /// <remarks>
+    /// <para>
+    /// <b>Result width:</b> <paramref name="resultBuffer"/> must have at least as many words as
+    /// <paramref name="leftOperand"/>. A wider buffer receives the exact sum and zeros above it. A buffer as wide as
+    /// the operand is the checked form: a sum that needs another word is a domain error, never dropped.
+    /// </para>
+    /// <para>
+    /// <b>Domain errors:</b> on the GPU, reported as <see cref="OverflowException"/> at the next read of the workspace
+    /// stream (or by <see cref="GpuWorkspace.ThrowIfDeviceErrors"/>); in CPU fallback mode, thrown by this call. The
+    /// contents of <paramref name="resultBuffer"/> are then unspecified.
+    /// </para>
+    /// <para>
+    /// <paramref name="resultBuffer"/> may be <paramref name="leftOperand"/> itself (in place); a buffer that only
+    /// partly overlaps it is not supported.
+    /// </para>
+    /// </remarks>
     public static void Add(scoped GpuBigUIntView leftOperand, uint rightOperand, scoped GpuBigUIntView resultBuffer) =>
         AddCore(leftOperand.AsBorrowedBigUInt(), rightOperand, resultBuffer.AsBorrowedBigUInt());
 
@@ -143,6 +163,25 @@ public static class GpuBigIntMath
     /// <param name="leftOperand">The minuend operand.</param>
     /// <param name="rightOperand">The 32-bit unsigned scalar subtrahend.</param>
     /// <param name="resultBuffer">The destination buffer in GPU device memory receiving the difference.</param>
+    /// <exception cref="ArgumentException"><paramref name="resultBuffer"/> has fewer words than
+    /// <paramref name="leftOperand"/>; nothing is written.</exception>
+    /// <exception cref="OverflowException">CPU fallback mode only: the difference is below zero.</exception>
+    /// <remarks>
+    /// <para>
+    /// <b>Result width:</b> <paramref name="resultBuffer"/> must have at least as many words as
+    /// <paramref name="leftOperand"/>. A wider buffer receives the exact difference and zeros above it. A buffer as
+    /// wide as the operand is the checked form: a difference below zero is a domain error, never dropped.
+    /// </para>
+    /// <para>
+    /// <b>Domain errors:</b> on the GPU, reported as <see cref="OverflowException"/> at the next read of the workspace
+    /// stream (or by <see cref="GpuWorkspace.ThrowIfDeviceErrors"/>); in CPU fallback mode, thrown by this call. The
+    /// contents of <paramref name="resultBuffer"/> are then unspecified.
+    /// </para>
+    /// <para>
+    /// <paramref name="resultBuffer"/> may be <paramref name="leftOperand"/> itself (in place); a buffer that only
+    /// partly overlaps it is not supported.
+    /// </para>
+    /// </remarks>
     public static void Sub(scoped GpuBigUIntView leftOperand, uint rightOperand, scoped GpuBigUIntView resultBuffer) =>
         SubCore(leftOperand.AsBorrowedBigUInt(), rightOperand, resultBuffer.AsBorrowedBigUInt());
 
@@ -185,7 +224,28 @@ public static class GpuBigIntMath
     /// </summary>
     /// <param name="leftOperand">The multiplicand operand.</param>
     /// <param name="rightOperand">The 32-bit unsigned scalar multiplier.</param>
-    /// <param name="resultBuffer">The destination buffer in GPU device memory receiving the product.</param>
+    /// <param name="resultBuffer">The destination buffer in GPU device memory receiving the product. One word more
+    /// than <paramref name="leftOperand"/> always holds it.</param>
+    /// <exception cref="ArgumentException"><paramref name="resultBuffer"/> has fewer words than
+    /// <paramref name="leftOperand"/>; nothing is written.</exception>
+    /// <exception cref="OverflowException">CPU fallback mode only: the product does not fit in a
+    /// <paramref name="resultBuffer"/> as wide as <paramref name="leftOperand"/>.</exception>
+    /// <remarks>
+    /// <para>
+    /// <b>Result width:</b> <paramref name="resultBuffer"/> must have at least as many words as
+    /// <paramref name="leftOperand"/>. A wider buffer receives the exact product and zeros above it. A buffer as
+    /// wide as the operand is the checked form: a product that needs another word is a domain error, never dropped.
+    /// </para>
+    /// <para>
+    /// <b>Domain errors:</b> on the GPU, reported as <see cref="OverflowException"/> at the next read of the workspace
+    /// stream (or by <see cref="GpuWorkspace.ThrowIfDeviceErrors"/>); in CPU fallback mode, thrown by this call. The
+    /// contents of <paramref name="resultBuffer"/> are then unspecified.
+    /// </para>
+    /// <para>
+    /// <paramref name="resultBuffer"/> may be <paramref name="leftOperand"/> itself (in place); a buffer that only
+    /// partly overlaps it is not supported.
+    /// </para>
+    /// </remarks>
     public static void Mul(scoped GpuBigUIntView leftOperand, uint rightOperand, scoped GpuBigUIntView resultBuffer) =>
         MulCore(leftOperand.AsBorrowedBigUInt(), rightOperand, resultBuffer.AsBorrowedBigUInt());
 
