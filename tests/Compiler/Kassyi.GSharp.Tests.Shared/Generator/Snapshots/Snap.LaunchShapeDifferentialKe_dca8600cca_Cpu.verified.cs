@@ -1001,9 +1001,16 @@ __gsharp_warp_record __gsharp_warp_records[2] = {};
 uint32_t __gsharp_warp_record_next = 0;
 uint32_t __gsharp_warp_round = 0;
 bool __gsharp_warp_waiting = false;
+__gsharp_warp_instance __gsharp_warp_regions[16] = {};
+uint32_t __gsharp_warp_region_depth = 0;
+bool __gsharp_warp_reconverging = false;
+uint32_t __gsharp_warp_reconverge_round = 0;
+const char* __gsharp_warp_reconverge_location = nullptr;
+uint32_t __gsharp_warp_decided_round = 0;
+bool __gsharp_warp_may_pass = false;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
-uint32_t __gsharp_warp_visits[6] = {};
+uint32_t __gsharp_warp_visits[7] = {};
 GSharpArray<int> __gsharp_id_0_srcInt;
 GSharpArray<float> __gsharp_id_1_srcFloat;
 GSharpArray<unsigned int> __gsharp_id_2_srcUInt;
@@ -1011,6 +1018,7 @@ GSharpArray<unsigned int> __gsharp_id_3_outMask;
 GSharpArray<int> __gsharp_id_4_outShflInt;
 GSharpArray<float> __gsharp_id_5_outShflFloat;
 GSharpArray<unsigned int> __gsharp_id_6_outShflUInt;
+unsigned int __gsharp_warp_temp_0;
 unsigned int __gsharp_id_7_mask;
 int __gsharp_id_8_bdx;
 int __gsharp_id_9_bdy;
@@ -1029,19 +1037,19 @@ int __gsharp_id_21_lane;
 int __gsharp_id_22_warpStart;
 int __gsharp_id_23_rem;
 int __gsharp_id_24_activeLanes;
-int __gsharp_warp_temp_0;
-int __gsharp_id_25_shfl0;
 int __gsharp_warp_temp_1;
+int __gsharp_id_25_shfl0;
+int __gsharp_warp_temp_2;
 int __gsharp_id_26_up1;
 int __gsharp_id_27_safeXor1;
-int __gsharp_warp_temp_2;
+int __gsharp_warp_temp_3;
 int __gsharp_id_28_xor1;
 int __gsharp_id_29_seg4Target;
 int __gsharp_id_30_safeSeg4Lane;
-int __gsharp_warp_temp_3;
+int __gsharp_warp_temp_4;
 int __gsharp_id_31_shflSeg4;
 unsigned int __gsharp_id_32_safeDown1;
-float __gsharp_warp_temp_4;
+float __gsharp_warp_temp_5;
 float __gsharp_id_33_fDown1;
 };
 extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__LaunchShapeDifferentialKernels__CrossAxisWarpShuffleAndActiveMaskKernel(GSharpArray<int> __gsharp_in___gsharp_id_0_srcInt, GSharpArray<float> __gsharp_in___gsharp_id_1_srcFloat, GSharpArray<unsigned int> __gsharp_in___gsharp_id_2_srcUInt, GSharpArray<unsigned int> __gsharp_in___gsharp_id_3_outMask, GSharpArray<int> __gsharp_in___gsharp_id_4_outShflInt, GSharpArray<float> __gsharp_in___gsharp_id_5_outShflFloat, GSharpArray<unsigned int> __gsharp_in___gsharp_id_6_outShflUInt, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LaunchShapeDifferentialKernels__CrossAxisWarpShuffleAndActiveMaskKernel* __gsharp_ctx){
@@ -1063,7 +1071,15 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_7_mask=__activemask();
+__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,0,0,0,""Warp.ActiveMask"",""LaunchShapeDifferentialKernels.cs(183,21)"");
+__gsharp_state=1;
+return;
+}
+case 1:
+__gsharp_switch_1_state_1:
+{
+__gsharp_ctx->__gsharp_warp_temp_0=__gsharp_warp_active_mask_read(__gsharp_root,__gsharp_ctx,0,""LaunchShapeDifferentialKernels.cs(183,21)"");
+__gsharp_ctx->__gsharp_id_7_mask=__gsharp_ctx->__gsharp_warp_temp_0;
 __gsharp_ctx->__gsharp_id_8_bdx=(int)blockDim.x;
 __gsharp_ctx->__gsharp_id_9_bdy=(int)blockDim.y;
 __gsharp_ctx->__gsharp_id_10_bdz=(int)blockDim.z;
@@ -1081,64 +1097,64 @@ __gsharp_ctx->__gsharp_id_21_lane=__gsharp_ctx->__gsharp_id_13_blockTid&31;
 __gsharp_ctx->__gsharp_id_22_warpStart=__gsharp_ctx->__gsharp_id_13_blockTid&(-32);
 __gsharp_ctx->__gsharp_id_23_rem=__gsharp_sub_i32(__gsharp_ctx->__gsharp_id_14_blockThreads,__gsharp_ctx->__gsharp_id_22_warpStart);
 __gsharp_ctx->__gsharp_id_24_activeLanes=(__gsharp_ctx->__gsharp_id_23_rem>=32?32:((__gsharp_ctx->__gsharp_id_23_rem>0?__gsharp_ctx->__gsharp_id_23_rem:0)));
-__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,0,__gsharp_ctx->__gsharp_id_7_mask,__gsharp_ctx->__gsharp_id_18_v,""Warp.ShuffleSync"",""LaunchShapeDifferentialKernels.cs(206,21)"");
-__gsharp_state=1;
-return;
-}
-case 1:
-__gsharp_switch_1_state_1:
-{
-__gsharp_ctx->__gsharp_warp_temp_0=__gsharp_warp_shuffle_read_sync(__gsharp_root,__gsharp_ctx,0,__gsharp_ctx->__gsharp_id_7_mask,__gsharp_ctx->__gsharp_id_18_v,0,32,""LaunchShapeDifferentialKernels.cs(206,21)"");
-__gsharp_ctx->__gsharp_id_25_shfl0=__gsharp_ctx->__gsharp_warp_temp_0;
-__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,1,__gsharp_ctx->__gsharp_id_7_mask,__gsharp_ctx->__gsharp_id_18_v,""Warp.ShuffleUpSync"",""LaunchShapeDifferentialKernels.cs(207,19)"");
+__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,1,__gsharp_ctx->__gsharp_id_7_mask,__gsharp_ctx->__gsharp_id_18_v,""Warp.ShuffleSync"",""LaunchShapeDifferentialKernels.cs(206,21)"");
 __gsharp_state=2;
 return;
 }
 case 2:
 __gsharp_switch_1_state_2:
 {
-__gsharp_ctx->__gsharp_warp_temp_1=__gsharp_warp_shuffle_read_up_sync(__gsharp_root,__gsharp_ctx,1,__gsharp_ctx->__gsharp_id_7_mask,__gsharp_ctx->__gsharp_id_18_v,1u,32,""LaunchShapeDifferentialKernels.cs(207,19)"");
-__gsharp_ctx->__gsharp_id_26_up1=__gsharp_ctx->__gsharp_warp_temp_1;
-__gsharp_ctx->__gsharp_id_27_safeXor1=(((__gsharp_ctx->__gsharp_id_21_lane^1)<__gsharp_ctx->__gsharp_id_24_activeLanes)?1:0);
-__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,2,__gsharp_ctx->__gsharp_id_7_mask,__gsharp_ctx->__gsharp_id_18_v,""Warp.ShuffleXorSync"",""LaunchShapeDifferentialKernels.cs(210,20)"");
+__gsharp_ctx->__gsharp_warp_temp_1=__gsharp_warp_shuffle_read_sync(__gsharp_root,__gsharp_ctx,1,__gsharp_ctx->__gsharp_id_7_mask,__gsharp_ctx->__gsharp_id_18_v,0,32,""LaunchShapeDifferentialKernels.cs(206,21)"");
+__gsharp_ctx->__gsharp_id_25_shfl0=__gsharp_ctx->__gsharp_warp_temp_1;
+__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,2,__gsharp_ctx->__gsharp_id_7_mask,__gsharp_ctx->__gsharp_id_18_v,""Warp.ShuffleUpSync"",""LaunchShapeDifferentialKernels.cs(207,19)"");
 __gsharp_state=3;
 return;
 }
 case 3:
 __gsharp_switch_1_state_3:
 {
-__gsharp_ctx->__gsharp_warp_temp_2=__gsharp_warp_shuffle_read_xor_sync(__gsharp_root,__gsharp_ctx,2,__gsharp_ctx->__gsharp_id_7_mask,__gsharp_ctx->__gsharp_id_18_v,__gsharp_ctx->__gsharp_id_27_safeXor1,32,""LaunchShapeDifferentialKernels.cs(210,20)"");
-__gsharp_ctx->__gsharp_id_28_xor1=__gsharp_ctx->__gsharp_warp_temp_2;
-__gsharp_ctx->__gsharp_id_29_seg4Target=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_21_lane&(-4),(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_21_lane,1))&3);
-__gsharp_ctx->__gsharp_id_30_safeSeg4Lane=(__gsharp_ctx->__gsharp_id_29_seg4Target<__gsharp_ctx->__gsharp_id_24_activeLanes?(__gsharp_ctx->__gsharp_id_29_seg4Target&3):(__gsharp_ctx->__gsharp_id_21_lane&3));
-__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,3,__gsharp_ctx->__gsharp_id_7_mask,__gsharp_ctx->__gsharp_id_18_v,""Warp.ShuffleSync"",""LaunchShapeDifferentialKernels.cs(214,24)"");
+__gsharp_ctx->__gsharp_warp_temp_2=__gsharp_warp_shuffle_read_up_sync(__gsharp_root,__gsharp_ctx,2,__gsharp_ctx->__gsharp_id_7_mask,__gsharp_ctx->__gsharp_id_18_v,1u,32,""LaunchShapeDifferentialKernels.cs(207,19)"");
+__gsharp_ctx->__gsharp_id_26_up1=__gsharp_ctx->__gsharp_warp_temp_2;
+__gsharp_ctx->__gsharp_id_27_safeXor1=(((__gsharp_ctx->__gsharp_id_21_lane^1)<__gsharp_ctx->__gsharp_id_24_activeLanes)?1:0);
+__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,3,__gsharp_ctx->__gsharp_id_7_mask,__gsharp_ctx->__gsharp_id_18_v,""Warp.ShuffleXorSync"",""LaunchShapeDifferentialKernels.cs(210,20)"");
 __gsharp_state=4;
 return;
 }
 case 4:
 __gsharp_switch_1_state_4:
 {
-__gsharp_ctx->__gsharp_warp_temp_3=__gsharp_warp_shuffle_read_sync(__gsharp_root,__gsharp_ctx,3,__gsharp_ctx->__gsharp_id_7_mask,__gsharp_ctx->__gsharp_id_18_v,__gsharp_ctx->__gsharp_id_30_safeSeg4Lane,4,""LaunchShapeDifferentialKernels.cs(214,24)"");
-__gsharp_ctx->__gsharp_id_31_shflSeg4=__gsharp_ctx->__gsharp_warp_temp_3;
-__gsharp_ctx->__gsharp_id_32_safeDown1=((__gsharp_add_i32(__gsharp_ctx->__gsharp_id_21_lane,1)<__gsharp_ctx->__gsharp_id_24_activeLanes)?1u:0u);
-__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,4,__gsharp_ctx->__gsharp_id_7_mask,__gsharp_ctx->__gsharp_id_19_fv,""Warp.ShuffleDownSync"",""LaunchShapeDifferentialKernels.cs(217,24)"");
+__gsharp_ctx->__gsharp_warp_temp_3=__gsharp_warp_shuffle_read_xor_sync(__gsharp_root,__gsharp_ctx,3,__gsharp_ctx->__gsharp_id_7_mask,__gsharp_ctx->__gsharp_id_18_v,__gsharp_ctx->__gsharp_id_27_safeXor1,32,""LaunchShapeDifferentialKernels.cs(210,20)"");
+__gsharp_ctx->__gsharp_id_28_xor1=__gsharp_ctx->__gsharp_warp_temp_3;
+__gsharp_ctx->__gsharp_id_29_seg4Target=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_21_lane&(-4),(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_21_lane,1))&3);
+__gsharp_ctx->__gsharp_id_30_safeSeg4Lane=(__gsharp_ctx->__gsharp_id_29_seg4Target<__gsharp_ctx->__gsharp_id_24_activeLanes?(__gsharp_ctx->__gsharp_id_29_seg4Target&3):(__gsharp_ctx->__gsharp_id_21_lane&3));
+__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,4,__gsharp_ctx->__gsharp_id_7_mask,__gsharp_ctx->__gsharp_id_18_v,""Warp.ShuffleSync"",""LaunchShapeDifferentialKernels.cs(214,24)"");
 __gsharp_state=5;
 return;
 }
 case 5:
 __gsharp_switch_1_state_5:
 {
-__gsharp_ctx->__gsharp_warp_temp_4=__gsharp_warp_shuffle_read_down_sync(__gsharp_root,__gsharp_ctx,4,__gsharp_ctx->__gsharp_id_7_mask,__gsharp_ctx->__gsharp_id_19_fv,__gsharp_ctx->__gsharp_id_32_safeDown1,32,""LaunchShapeDifferentialKernels.cs(217,24)"");
-__gsharp_ctx->__gsharp_id_33_fDown1=__gsharp_ctx->__gsharp_warp_temp_4;
-__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,5,__gsharp_ctx->__gsharp_id_7_mask,__gsharp_ctx->__gsharp_id_20_uv,""Warp.ShuffleXorSync"",""LaunchShapeDifferentialKernels.cs(218,22)"");
+__gsharp_ctx->__gsharp_warp_temp_4=__gsharp_warp_shuffle_read_sync(__gsharp_root,__gsharp_ctx,4,__gsharp_ctx->__gsharp_id_7_mask,__gsharp_ctx->__gsharp_id_18_v,__gsharp_ctx->__gsharp_id_30_safeSeg4Lane,4,""LaunchShapeDifferentialKernels.cs(214,24)"");
+__gsharp_ctx->__gsharp_id_31_shflSeg4=__gsharp_ctx->__gsharp_warp_temp_4;
+__gsharp_ctx->__gsharp_id_32_safeDown1=((__gsharp_add_i32(__gsharp_ctx->__gsharp_id_21_lane,1)<__gsharp_ctx->__gsharp_id_24_activeLanes)?1u:0u);
+__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,5,__gsharp_ctx->__gsharp_id_7_mask,__gsharp_ctx->__gsharp_id_19_fv,""Warp.ShuffleDownSync"",""LaunchShapeDifferentialKernels.cs(217,24)"");
 __gsharp_state=6;
 return;
 }
 case 6:
 __gsharp_switch_1_state_6:
 {
-auto __gsharp_warp_temp_5 = __gsharp_warp_shuffle_read_xor_sync(__gsharp_root,__gsharp_ctx,5,__gsharp_ctx->__gsharp_id_7_mask,__gsharp_ctx->__gsharp_id_20_uv,__gsharp_ctx->__gsharp_id_27_safeXor1,32,""LaunchShapeDifferentialKernels.cs(218,22)"");
-unsigned int __gsharp_id_34_uXor1 = __gsharp_warp_temp_5;
+__gsharp_ctx->__gsharp_warp_temp_5=__gsharp_warp_shuffle_read_down_sync(__gsharp_root,__gsharp_ctx,5,__gsharp_ctx->__gsharp_id_7_mask,__gsharp_ctx->__gsharp_id_19_fv,__gsharp_ctx->__gsharp_id_32_safeDown1,32,""LaunchShapeDifferentialKernels.cs(217,24)"");
+__gsharp_ctx->__gsharp_id_33_fDown1=__gsharp_ctx->__gsharp_warp_temp_5;
+__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,6,__gsharp_ctx->__gsharp_id_7_mask,__gsharp_ctx->__gsharp_id_20_uv,""Warp.ShuffleXorSync"",""LaunchShapeDifferentialKernels.cs(218,22)"");
+__gsharp_state=7;
+return;
+}
+case 7:
+__gsharp_switch_1_state_7:
+{
+auto __gsharp_warp_temp_6 = __gsharp_warp_shuffle_read_xor_sync(__gsharp_root,__gsharp_ctx,6,__gsharp_ctx->__gsharp_id_7_mask,__gsharp_ctx->__gsharp_id_20_uv,__gsharp_ctx->__gsharp_id_27_safeXor1,32,""LaunchShapeDifferentialKernels.cs(218,22)"");
+unsigned int __gsharp_id_34_uXor1 = __gsharp_warp_temp_6;
 if(__gsharp_ctx->__gsharp_id_16_gid<__gsharp_ctx->__gsharp_id_17_rows)
 {
 __gsharp_ctx->__gsharp_id_3_outMask[__gsharp_ctx->__gsharp_id_16_gid]=__gsharp_ctx->__gsharp_id_7_mask;
@@ -1250,6 +1266,7 @@ public uint[] outMask;
 public int[] outShflInt;
 public float[] outShflFloat;
 public uint[] outShflUInt;
+public uint __gsharp_warp_temp_0;
 public uint mask;
 public int bdx;
 public int bdy;
@@ -1268,21 +1285,21 @@ public int lane;
 public int warpStart;
 public int rem;
 public int activeLanes;
-public int __gsharp_warp_temp_0;
-public int shfl0;
 public int __gsharp_warp_temp_1;
+public int shfl0;
+public int __gsharp_warp_temp_2;
 public int up1;
 public int safeXor1;
-public int __gsharp_warp_temp_2;
+public int __gsharp_warp_temp_3;
 public int xor1;
 public int seg4Target;
 public int safeSeg4Lane;
-public int __gsharp_warp_temp_3;
+public int __gsharp_warp_temp_4;
 public int shflSeg4;
 public uint safeDown1;
-public float __gsharp_warp_temp_4;
+public float __gsharp_warp_temp_5;
 public float fDown1;
-public uint[] __gsharp_warp_visits = new uint[6];
+public uint[] __gsharp_warp_visits = new uint[7];
 uint global::Kassyi.GSharp.Core.IManagedWarpFrame.WarpPath => __gsharp_warp_path;
 uint global::Kassyi.GSharp.Core.IManagedWarpFrame.AdvanceWarpVisit(int site) => ++__gsharp_warp_visits[site];
 uint global::Kassyi.GSharp.Core.IManagedWarpFrame.GetWarpVisit(int site) => __gsharp_warp_visits[site];
@@ -1307,7 +1324,15 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_ctx.mask = global::Kassyi.GSharp.Core.Warp.ActiveMask();
+__gsharp_warp_publish(0, ref __gsharp_ctx, 0, 0, 0, "Warp.ActiveMask", "LaunchShapeDifferentialKernels.cs(183,21)");
+__gsharp_ctx.__gsharp_state = 1;
+return;
+}
+
+case 1:
+{
+__gsharp_ctx.__gsharp_warp_temp_0 = __gsharp_warp_active_mask_read(0, ref __gsharp_ctx, 0, "LaunchShapeDifferentialKernels.cs(183,21)");
+__gsharp_ctx.mask = __gsharp_ctx.__gsharp_warp_temp_0;
 __gsharp_ctx.bdx = global::Kassyi.GSharp.Core.BlockDimension.X;
 __gsharp_ctx.bdy = global::Kassyi.GSharp.Core.BlockDimension.Y;
 __gsharp_ctx.bdz = global::Kassyi.GSharp.Core.BlockDimension.Z;
@@ -1325,64 +1350,64 @@ __gsharp_ctx.lane = __gsharp_ctx.blockTid & 31;
 __gsharp_ctx.warpStart = __gsharp_ctx.blockTid & ~31;
 __gsharp_ctx.rem = __gsharp_ctx.blockThreads - __gsharp_ctx.warpStart;
 __gsharp_ctx.activeLanes = __gsharp_ctx.rem >= 32 ? 32 : (__gsharp_ctx.rem > 0 ? __gsharp_ctx.rem : 0);
-__gsharp_warp_publish(0, ref __gsharp_ctx, 0, __gsharp_ctx.mask, __gsharp_ctx.v, "Warp.ShuffleSync", "LaunchShapeDifferentialKernels.cs(206,21)");
-__gsharp_ctx.__gsharp_state = 1;
-return;
-}
-
-case 1:
-{
-__gsharp_ctx.__gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_sync(0, ref __gsharp_ctx, 0, __gsharp_ctx.mask, __gsharp_ctx.v, 0, 32, "LaunchShapeDifferentialKernels.cs(206,21)");
-__gsharp_ctx.shfl0 = __gsharp_ctx.__gsharp_warp_temp_0;
-__gsharp_warp_publish(0, ref __gsharp_ctx, 1, __gsharp_ctx.mask, __gsharp_ctx.v, "Warp.ShuffleUpSync", "LaunchShapeDifferentialKernels.cs(207,19)");
+__gsharp_warp_publish(0, ref __gsharp_ctx, 1, __gsharp_ctx.mask, __gsharp_ctx.v, "Warp.ShuffleSync", "LaunchShapeDifferentialKernels.cs(206,21)");
 __gsharp_ctx.__gsharp_state = 2;
 return;
 }
 
 case 2:
 {
-__gsharp_ctx.__gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_up_sync(0, ref __gsharp_ctx, 1, __gsharp_ctx.mask, __gsharp_ctx.v, 1u, 32, "LaunchShapeDifferentialKernels.cs(207,19)");
-__gsharp_ctx.up1 = __gsharp_ctx.__gsharp_warp_temp_1;
-__gsharp_ctx.safeXor1 = ((__gsharp_ctx.lane ^ 1) < __gsharp_ctx.activeLanes) ? 1 : 0;
-__gsharp_warp_publish(0, ref __gsharp_ctx, 2, __gsharp_ctx.mask, __gsharp_ctx.v, "Warp.ShuffleXorSync", "LaunchShapeDifferentialKernels.cs(210,20)");
+__gsharp_ctx.__gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_sync(0, ref __gsharp_ctx, 1, __gsharp_ctx.mask, __gsharp_ctx.v, 0, 32, "LaunchShapeDifferentialKernels.cs(206,21)");
+__gsharp_ctx.shfl0 = __gsharp_ctx.__gsharp_warp_temp_1;
+__gsharp_warp_publish(0, ref __gsharp_ctx, 2, __gsharp_ctx.mask, __gsharp_ctx.v, "Warp.ShuffleUpSync", "LaunchShapeDifferentialKernels.cs(207,19)");
 __gsharp_ctx.__gsharp_state = 3;
 return;
 }
 
 case 3:
 {
-__gsharp_ctx.__gsharp_warp_temp_2 = __gsharp_warp_shuffle_read_xor_sync(0, ref __gsharp_ctx, 2, __gsharp_ctx.mask, __gsharp_ctx.v, __gsharp_ctx.safeXor1, 32, "LaunchShapeDifferentialKernels.cs(210,20)");
-__gsharp_ctx.xor1 = __gsharp_ctx.__gsharp_warp_temp_2;
-__gsharp_ctx.seg4Target = (__gsharp_ctx.lane & ~3) + ((__gsharp_ctx.lane + 1) & 3);
-__gsharp_ctx.safeSeg4Lane = __gsharp_ctx.seg4Target < __gsharp_ctx.activeLanes ? (__gsharp_ctx.seg4Target & 3) : (__gsharp_ctx.lane & 3);
-__gsharp_warp_publish(0, ref __gsharp_ctx, 3, __gsharp_ctx.mask, __gsharp_ctx.v, "Warp.ShuffleSync", "LaunchShapeDifferentialKernels.cs(214,24)");
+__gsharp_ctx.__gsharp_warp_temp_2 = __gsharp_warp_shuffle_read_up_sync(0, ref __gsharp_ctx, 2, __gsharp_ctx.mask, __gsharp_ctx.v, 1u, 32, "LaunchShapeDifferentialKernels.cs(207,19)");
+__gsharp_ctx.up1 = __gsharp_ctx.__gsharp_warp_temp_2;
+__gsharp_ctx.safeXor1 = ((__gsharp_ctx.lane ^ 1) < __gsharp_ctx.activeLanes) ? 1 : 0;
+__gsharp_warp_publish(0, ref __gsharp_ctx, 3, __gsharp_ctx.mask, __gsharp_ctx.v, "Warp.ShuffleXorSync", "LaunchShapeDifferentialKernels.cs(210,20)");
 __gsharp_ctx.__gsharp_state = 4;
 return;
 }
 
 case 4:
 {
-__gsharp_ctx.__gsharp_warp_temp_3 = __gsharp_warp_shuffle_read_sync(0, ref __gsharp_ctx, 3, __gsharp_ctx.mask, __gsharp_ctx.v, __gsharp_ctx.safeSeg4Lane, 4, "LaunchShapeDifferentialKernels.cs(214,24)");
-__gsharp_ctx.shflSeg4 = __gsharp_ctx.__gsharp_warp_temp_3;
-__gsharp_ctx.safeDown1 = (__gsharp_ctx.lane + 1 < __gsharp_ctx.activeLanes) ? 1u : 0u;
-__gsharp_warp_publish(0, ref __gsharp_ctx, 4, __gsharp_ctx.mask, __gsharp_ctx.fv, "Warp.ShuffleDownSync", "LaunchShapeDifferentialKernels.cs(217,24)");
+__gsharp_ctx.__gsharp_warp_temp_3 = __gsharp_warp_shuffle_read_xor_sync(0, ref __gsharp_ctx, 3, __gsharp_ctx.mask, __gsharp_ctx.v, __gsharp_ctx.safeXor1, 32, "LaunchShapeDifferentialKernels.cs(210,20)");
+__gsharp_ctx.xor1 = __gsharp_ctx.__gsharp_warp_temp_3;
+__gsharp_ctx.seg4Target = (__gsharp_ctx.lane & ~3) + ((__gsharp_ctx.lane + 1) & 3);
+__gsharp_ctx.safeSeg4Lane = __gsharp_ctx.seg4Target < __gsharp_ctx.activeLanes ? (__gsharp_ctx.seg4Target & 3) : (__gsharp_ctx.lane & 3);
+__gsharp_warp_publish(0, ref __gsharp_ctx, 4, __gsharp_ctx.mask, __gsharp_ctx.v, "Warp.ShuffleSync", "LaunchShapeDifferentialKernels.cs(214,24)");
 __gsharp_ctx.__gsharp_state = 5;
 return;
 }
 
 case 5:
 {
-__gsharp_ctx.__gsharp_warp_temp_4 = __gsharp_warp_shuffle_read_down_sync(0, ref __gsharp_ctx, 4, __gsharp_ctx.mask, __gsharp_ctx.fv, __gsharp_ctx.safeDown1, 32, "LaunchShapeDifferentialKernels.cs(217,24)");
-__gsharp_ctx.fDown1 = __gsharp_ctx.__gsharp_warp_temp_4;
-__gsharp_warp_publish(0, ref __gsharp_ctx, 5, __gsharp_ctx.mask, __gsharp_ctx.uv, "Warp.ShuffleXorSync", "LaunchShapeDifferentialKernels.cs(218,22)");
+__gsharp_ctx.__gsharp_warp_temp_4 = __gsharp_warp_shuffle_read_sync(0, ref __gsharp_ctx, 4, __gsharp_ctx.mask, __gsharp_ctx.v, __gsharp_ctx.safeSeg4Lane, 4, "LaunchShapeDifferentialKernels.cs(214,24)");
+__gsharp_ctx.shflSeg4 = __gsharp_ctx.__gsharp_warp_temp_4;
+__gsharp_ctx.safeDown1 = (__gsharp_ctx.lane + 1 < __gsharp_ctx.activeLanes) ? 1u : 0u;
+__gsharp_warp_publish(0, ref __gsharp_ctx, 5, __gsharp_ctx.mask, __gsharp_ctx.fv, "Warp.ShuffleDownSync", "LaunchShapeDifferentialKernels.cs(217,24)");
 __gsharp_ctx.__gsharp_state = 6;
 return;
 }
 
 case 6:
 {
-var __gsharp_warp_temp_5 = __gsharp_warp_shuffle_read_xor_sync(0, ref __gsharp_ctx, 5, __gsharp_ctx.mask, __gsharp_ctx.uv, __gsharp_ctx.safeXor1, 32, "LaunchShapeDifferentialKernels.cs(218,22)");
-uint uXor1 = __gsharp_warp_temp_5;
+__gsharp_ctx.__gsharp_warp_temp_5 = __gsharp_warp_shuffle_read_down_sync(0, ref __gsharp_ctx, 5, __gsharp_ctx.mask, __gsharp_ctx.fv, __gsharp_ctx.safeDown1, 32, "LaunchShapeDifferentialKernels.cs(217,24)");
+__gsharp_ctx.fDown1 = __gsharp_ctx.__gsharp_warp_temp_5;
+__gsharp_warp_publish(0, ref __gsharp_ctx, 6, __gsharp_ctx.mask, __gsharp_ctx.uv, "Warp.ShuffleXorSync", "LaunchShapeDifferentialKernels.cs(218,22)");
+__gsharp_ctx.__gsharp_state = 7;
+return;
+}
+
+case 7:
+{
+var __gsharp_warp_temp_6 = __gsharp_warp_shuffle_read_xor_sync(0, ref __gsharp_ctx, 6, __gsharp_ctx.mask, __gsharp_ctx.uv, __gsharp_ctx.safeXor1, 32, "LaunchShapeDifferentialKernels.cs(218,22)");
+uint uXor1 = __gsharp_warp_temp_6;
 if (__gsharp_ctx.gid < __gsharp_ctx.rows)
 {
 __gsharp_ctx.outMask[__gsharp_ctx.gid] = __gsharp_ctx.mask;

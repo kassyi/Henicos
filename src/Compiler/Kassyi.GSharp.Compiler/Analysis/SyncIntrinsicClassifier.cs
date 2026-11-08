@@ -97,7 +97,13 @@ internal enum WarpShuffleKind
     ReduceXor,
 
     /// <summary><c>Gpu.SyncWarp</c>: the lanes of the mask meet, without a value.</summary>
-    SyncWarp
+    SyncWarp,
+
+    /// <summary>
+    /// <c>Warp.ActiveMask()</c>: the lanes of the warp that reach the call together, which the CPU paths find among the
+    /// lanes that stop at the same call in the same round.
+    /// </summary>
+    ActiveMask
 }
 
 /// <summary>How the analyzers and the lowering treat a call to an intrinsic of <c>Kassyi.GSharp.Core</c>.</summary>
@@ -244,7 +250,7 @@ internal static class SyncIntrinsicClassifier
         "ReduceAndSync" => Shuffle(WarpShuffleKind.ReduceAnd),
         "ReduceOrSync" => Shuffle(WarpShuffleKind.ReduceOr),
         "ReduceXorSync" => Shuffle(WarpShuffleKind.ReduceXor),
-        TypeConstants.ActiveMaskMethod => s_variantValue,
+        TypeConstants.ActiveMaskMethod => Shuffle(WarpShuffleKind.ActiveMask),
         _ => default
     };
 

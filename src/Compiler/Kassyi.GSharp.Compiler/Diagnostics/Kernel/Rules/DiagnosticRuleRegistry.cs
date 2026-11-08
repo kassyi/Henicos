@@ -26,7 +26,6 @@ internal static class DiagnosticRuleRegistry
         StructLayoutRule.Instance,
         UnsupportedConstructRule.Instance,
         UserDefinedOperatorRule.Instance,
-        WarpActiveMaskDivergenceRule.Instance,
         WarpShuffleWidthRule.Instance,
         WmmaRule.Instance
     );

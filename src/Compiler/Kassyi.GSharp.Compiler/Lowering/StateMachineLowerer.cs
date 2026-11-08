@@ -27,8 +27,17 @@ public class StateMachineLowerer(bool isDeviceFunction = false, SemanticModel? s
     /// <summary>The calls that may suspend, in frame index order (see <see cref="LoweredStateMachine.CallSites"/>).</summary>
     public IReadOnlyList<InvocationExpressionSyntax> CallSites => _callSites.ToImmutable();
 
-    /// <summary>The warp collectives of the body, numbered from 0 in order (see <see cref="LoweredStateMachine.WarpSiteCount"/>).</summary>
+    /// <summary>
+    /// The warp collectives of the body, numbered in order after the sites that <see cref="ReserveWarpSites"/> reserved
+    /// (see <see cref="LoweredStateMachine.WarpSiteCount"/>).
+    /// </summary>
     public int WarpSiteCount { get; private set; }
+
+    /// <summary>
+    /// Reserves the first <paramref name="count"/> warp sites of the frame for the branches that
+    /// <see cref="ReconvergenceInserter"/> numbered; the warp collectives are numbered after them.
+    /// </summary>
+    internal void ReserveWarpSites(int count) => WarpSiteCount = count;
 
     /// <summary>Transforms statements into switch sections keyed by state indices across barrier boundaries.</summary>
     public BlockSyntax Lower(BlockSyntax block)
@@ -102,6 +111,10 @@ public class StateMachineLowerer(bool isDeviceFunction = false, SemanticModel? s
         {
             LowerSuspendingCall(stmt, splitPoint, sections);
         }
+        else if (BarrierHelper.IsReconvergence(splitPoint))
+        {
+            LowerReconvergence(stmt, splitPoint, sections);
+        }
         else if (BarrierHelper.TryGetWarpShuffle(splitPoint, out var shuffleKind))
         {
             LowerWarpShuffle(stmt, splitPoint, shuffleKind, labelStates, sections);
@@ -141,6 +154,28 @@ public class StateMachineLowerer(bool isDeviceFunction = false, SemanticModel? s
         sections.Add(RewriteGoto(readStmt, labelStates));
     }
 
+    // [WHY] The lanes that entered a branch or loop of a method that reaches Warp.ActiveMask() wait for each other where
+    // it ends (#844), as the GPU runs them together again there: a lane arrives and stops, and the launcher runs it again
+    // once no lane of the warp is still inside the same entry of the branch
+    // __gsharp_warp_reconverge_arrive(...); __gsharp_state = <n>; return; case <n>: __gsharp_warp_reconverge_pass(...);
+    private static void LowerReconvergence(StatementSyntax stmt, InvocationExpressionSyntax arrive,
+        SectionBuilder sections)
+    {
+        sections.Add(stmt);
+        sections.CommitState(sections.State + 1, isBarrier: true);
+        var arguments = arrive.ArgumentList.Arguments;
+        sections.Add(
+            SyntaxFactory.ExpressionStatement(
+                SyntaxFactory.InvocationExpression(
+                    SyntaxFactory.IdentifierName(GSharpInternalNames.Prelude.WarpReconvergePass),
+                    SyntaxFactory.ArgumentList(
+                        SyntaxFactory.SeparatedList<ArgumentSyntax>([arguments[0], arguments[1], arguments[2]])
+                    )
+                )
+            ).WithAdditionalAnnotations(stmt.GetAnnotations(LoweringAnnotations.OriginalSpanAnnotationKind))
+        );
+    }
+
     private static void LowerBarrier(InvocationExpressionSyntax barrier, SectionBuilder sections)
     {
         // The launcher keeps a thread that stopped at a barrier waiting there (#664): at a grid sync until the next grid
@@ -158,18 +193,22 @@ public class StateMachineLowerer(bool isDeviceFunction = false, SemanticModel? s
         sections.CommitState(sections.State + 1, isBarrier: true);
     }
 
-    // __gsharp_warp_publish(__gsharp_root, __gsharp_ctx, <site>, <mask>, <val or 0>, "<name>", "<place>");
+    // __gsharp_warp_publish(__gsharp_root, __gsharp_ctx, <site>, <mask or 0>, <val or 0>, "<name>", "<place>");
+    // Warp.ActiveMask() publishes the mask 0: it waits for no lane, and goes on in the next round
     private static ExpressionStatementSyntax CreateWarpPublish(InvocationExpressionSyntax shuffle, ShuffleShape shape,
         int site, string place)
     {
         var value = shape.HasValue
             ? GetShuffleArgument(shuffle, ShuffleValuePosition)
             : SyntaxFactory.Argument(IntegerLiteral(0));
+        var mask = shape.HasMask
+            ? GetMaskArgument(shuffle)
+            : SyntaxFactory.Argument(IntegerLiteral(0));
         var arguments = SyntaxFactory.SeparatedList<ArgumentSyntax>()
             .Add(SyntaxFactory.Argument(SyntaxFactory.IdentifierName(GSharpInternalNames.SuspendingCall.Root)))
             .Add(SyntaxFactory.Argument(SyntaxFactory.IdentifierName(GSharpInternalNames.StateMachine.Context)))
             .Add(SyntaxFactory.Argument(IntegerLiteral(site)))
-            .Add(GetMaskArgument(shuffle))
+            .Add(mask)
             .Add(value)
             .Add(SyntaxFactory.Argument(StringLiteral(shape.DisplayName)))
             .Add(SyntaxFactory.Argument(StringLiteral(place)));
@@ -410,14 +449,15 @@ public class StateMachineLowerer(bool isDeviceFunction = false, SemanticModel? s
         );
 
     // How the read of a warp collective is called: the Prelude function, the C# name for the messages, whether it takes
-    // the value, the lane operand, the predicate target and the width
+    // the value, the lane operand, the predicate target, the width and the mask
     private readonly record struct ShuffleShape(
         string ReadFunction,
         string DisplayName,
         bool HasValue,
         bool HasLane,
         string? PredicateArgument,
-        bool HasWidth)
+        bool HasWidth,
+        bool HasMask = true)
     {
         private static readonly Dictionary<WarpShuffleKind, ShuffleShape> s_shapes = new()
         {
@@ -451,6 +491,15 @@ public class StateMachineLowerer(bool isDeviceFunction = false, SemanticModel? s
                 HasLane: false,
                 PredicateArgument: null,
                 HasWidth: false),
+            // The lanes that stopped at the same call in the same round: read(<root>, <frame>, <site>, "<place>")
+            [WarpShuffleKind.ActiveMask] = new(
+                GSharpInternalNames.Prelude.WarpActiveMaskRead,
+                "Warp.ActiveMask",
+                HasValue: false,
+                HasLane: false,
+                PredicateArgument: null,
+                HasWidth: false,
+                HasMask: false),
         };
 
         // A shuffle: read(<root>, <frame>, <site>, mask, val, <lane operand>, width, "<place>")
@@ -475,8 +524,12 @@ public class StateMachineLowerer(bool isDeviceFunction = false, SemanticModel? s
         var newArgs = SyntaxFactory.SeparatedList<ArgumentSyntax>()
             .Add(SyntaxFactory.Argument(SyntaxFactory.IdentifierName(GSharpInternalNames.SuspendingCall.Root)))
             .Add(SyntaxFactory.Argument(SyntaxFactory.IdentifierName(GSharpInternalNames.StateMachine.Context)))
-            .Add(SyntaxFactory.Argument(IntegerLiteral(site)))
-            .Add(GetMaskArgument(barrierInv));
+            .Add(SyntaxFactory.Argument(IntegerLiteral(site)));
+        if (shape.HasMask)
+        {
+            newArgs = newArgs.Add(GetMaskArgument(barrierInv));
+        }
+
         if (shape.HasValue)
         {
             newArgs = newArgs.Add(GetShuffleArgument(barrierInv, ShuffleValuePosition)); // pass val for type inference
