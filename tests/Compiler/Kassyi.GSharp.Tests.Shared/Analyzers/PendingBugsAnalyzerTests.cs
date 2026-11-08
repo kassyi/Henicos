@@ -146,8 +146,9 @@ public class PendingBugsAnalyzerTests : TranspilerTestBase
         Assert.Empty(gsh0062);
     }
 
-    // #1082: Expect 3 GSH0003 diagnostics for ToArray(), CopyTo(Span<T>), and SumSequential() once StackLinqHelper.IsHostOnly includes them.
-    [Fact(Skip = "#1082: StackLinqHelper.IsHostOnly does not include ToArray, CopyTo, SumSequential.")]
+    // #1082: ToArray() and CopyTo(Span<T>) have no device function and report GSH0003 at their call; SumSequential() adds
+    // in order as Sum does in one thread, and is supported
+    [Fact]
     [Scenario(TestScenario.SadPath)]
     public async Task Test_HostOnlyStackLinqTerminalsInKernel_ReportsGSH0003()
     {
@@ -159,12 +160,11 @@ public class PendingBugsAnalyzerTests : TranspilerTestBase
             .OfType<InvocationExpressionSyntax>()
             .Where(inv => inv.Expression is MemberAccessExpressionSyntax ma &&
                           (ma.Name.Identifier.ValueText == "ToArray" ||
-                           ma.Name.Identifier.ValueText == "CopyTo" ||
-                           ma.Name.Identifier.ValueText == "SumSequential"))
+                           ma.Name.Identifier.ValueText == "CopyTo"))
             .OrderBy(inv => inv.SpanStart)
             .ToArray();
 
-        Assert.Equal(3, invocations.Length);
+        Assert.Equal(2, invocations.Length);
 
         var diagnostics = await TestAnalyzer(
                 "Analyzers/PendingBugs/HostOnlyStackLinqProhibitedKernels.cu.cs",
@@ -176,11 +176,10 @@ public class PendingBugsAnalyzerTests : TranspilerTestBase
             .OrderBy(d => d.Location.SourceSpan.Start)
             .ToArray();
 
-        Assert.Equal(3, gsh0003.Length);
+        Assert.Equal(2, gsh0003.Length);
         Assert.All(gsh0003, d => Assert.Equal(GSharpDiagnostics.UnsupportedSyntax.Id, d.Id));
         Assert.Equal(invocations[0].GetLocation().GetLineSpan().Span, gsh0003[0].Location.GetLineSpan().Span);
         Assert.Equal(invocations[1].GetLocation().GetLineSpan().Span, gsh0003[1].Location.GetLineSpan().Span);
-        Assert.Equal(invocations[2].GetLocation().GetLineSpan().Span, gsh0003[2].Location.GetLineSpan().Span);
     }
 
     // #1083: Expect 2 SLQ0001 diagnostics once StackLinqChainAnalyzer counts StackEnumerable.OfType<T>() and static StackLinqExtensions calls.
