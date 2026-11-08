@@ -106,10 +106,22 @@ public class AutoAllocateReturnArraysTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void KernelLaunchOverflowingDimension_ThrowsOverflowException()
+    public void KernelLaunchWithMoreThreadsThanTheResultArrayHolds_ThrowsOverflowException()
     {
-        Assert.Throws<OverflowException>(() => 
+        // 2^32 threads, within the limits of every GPU: the result array, one element per thread, cannot hold them
+        Assert.Throws<OverflowException>(() =>
+            AutoAllocateReturnArraysKernels.LaunchNormalReturnKernel(10, gridDimX: 1u << 22, blockDimX: 1024));
+    }
+
+    // A block of 2^32 - 2 threads is beyond the limits of every GPU (#799)
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void KernelLaunchBeyondTheBlockLimit_ThrowsArgumentOutOfRangeException()
+    {
+        var exception = Assert.Throws<ArgumentOutOfRangeException>(() =>
             AutoAllocateReturnArraysKernels.LaunchNormalReturnKernel(10, blockDimX: int.MaxValue, blockDimY: 2));
+
+        Assert.Equal("blockDimX", exception.ParamName);
     }
 
     private T Run<T>(bool forceManaged, Func<T> launch)

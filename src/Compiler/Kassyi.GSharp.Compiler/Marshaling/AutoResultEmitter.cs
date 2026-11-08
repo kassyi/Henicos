@@ -30,9 +30,12 @@ internal static class AutoResultEmitter
     /// <summary>The pinned auto result (or its shadow) that the launchers pass to the native kernel or <c>cuMemcpyDtoHAsync_v2</c>.</summary>
     internal const string PinnedAutoResult = "p_" + Buffer;
 
-    // if (<a launch dimension is 0>) throw ...; uint __gsharp_total_threads; checked { ... }
+    // uint __gsharp_total_threads; checked { ... }
     // var __gsharp_auto_result = new <result>[__gsharp_total_threads];
-    /// <summary>Emits the host array of the auto result, one element per thread of the launch.</summary>
+    /// <summary>
+    /// Emits the host array of the auto result, one element per thread of the launch, after the launch check
+    /// (<see cref="LaunchLimitEmitter"/>) has rejected a zero dimension.
+    /// </summary>
     internal static void WriteAllocation(SourceWriter writer, in KernelHostModel kernel)
     {
         if (kernel.ReturnTypeName is not { } returnType)
@@ -40,9 +43,6 @@ internal static class AutoResultEmitter
             return;
         }
 
-        writer.AppendLine(
-            "if (gridDimX == 0 || gridDimY == 0 || gridDimZ == 0 || blockDimX == 0 || blockDimY == 0 || blockDimZ == 0)" +
-            " throw new global::System.ArgumentOutOfRangeException(\"Dimensions\", \"Launch dimensions must be greater than 0.\");");
         writer.AppendLine(
             $"uint {TotalThreads}; checked {{ {TotalThreads} = (gridDimX * gridDimY * gridDimZ) * (blockDimX * blockDimY * blockDimZ); }}");
         writer.AppendLine($"var {Buffer} = new {returnType}[{TotalThreads}];");

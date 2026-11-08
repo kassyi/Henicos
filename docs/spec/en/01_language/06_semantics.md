@@ -61,6 +61,7 @@ Some C# definitions cost time on the GPU: bounds checks and division-by-zero che
 ## 6.5 The CPU paths
 
 - The native CPU build and the managed path must produce the GPU result.
+- The CPU paths accept every launch that the GPU accepts and reject what every GPU rejects ([launch limits](../02_architecture/01_aot_transpiler.md)). The run time, the speed or the memory of the machine never defines that contract.
 - A form whose GPU result the CPU cannot reproduce exactly is not supported on the CPU. G# works around technical obstacles, but not limits that come from the definition of the form itself.
 - The CPU paths are also checkers: they report the undefined behavior of §6.3 instead of hiding it.
 
