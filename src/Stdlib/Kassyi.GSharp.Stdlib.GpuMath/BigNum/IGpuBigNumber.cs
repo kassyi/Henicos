@@ -29,6 +29,17 @@ public interface IGpuBigNumber<TSelf> : IGpuNumber<TSelf>, IDisposable
     long EffectiveScale { get; }
 
     /// <summary>
+    /// Gets whether the addition of <typeparamref name="TSelf"/> is exact, so that the order of the additions in a sum
+    /// cannot change its value: <see langword="true"/> for the integer types, <see langword="false"/> for the
+    /// floating-point types, which round every addition.
+    /// </summary>
+    /// <remarks>
+    /// A sum without <c>AsParallel()</c> adds in a balanced tree when this is <see langword="true"/> and from the left,
+    /// in the order written, when it is <see langword="false"/>.
+    /// </remarks>
+    static abstract bool AdditionIsExact { get; }
+
+    /// <summary>
     /// Creates a new instance of <typeparamref name="TSelf"/> from its unified mathematical components.
     /// </summary>
     /// <param name="magnitude">The unsigned magnitude buffer.</param>
