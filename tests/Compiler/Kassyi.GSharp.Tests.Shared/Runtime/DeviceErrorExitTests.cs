@@ -124,6 +124,38 @@ public sealed class DeviceErrorExitTests
         Assert.True(cudaEx.Result is CUresult.CudaErrorIllegalInstruction or CUresult.CudaErrorLaunchFailed);
     }
 
+    // [WHY] Without the error slot (the host could not allocate it) a failing thread has nowhere to record its error, so
+    // it traps instead of exiting with no exception: a real GPU fault, run in a child process of its own and only in
+    // `just test-gpu-trap`
+    [SkippableFact]
+    [Category(TestCategory.GpuTrap)]
+    [Scenario(TestScenario.SadPath)]
+    public unsafe void Test_WithoutErrorSlot_FailingThreadTraps()
+    {
+        Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
+        if (!IsolatedTestProcess.IsChild(nameof(Test_WithoutErrorSlot_FailingThreadTraps)))
+        {
+            CudaTrapRuns.RunIsolated(typeof(DeviceErrorExitTests), nameof(Test_WithoutErrorSlot_FailingThreadTraps));
+            return;
+        }
+
+        // The module's pointer to the slot, as a failed allocation leaves it
+        var module = Kassyi.GSharp.Generated.GSharpModuleContext_Kassyi_GSharp_Tests_Cuda.GetOrLoadModule();
+        using (new GpuKernelLoader.CudaContextScope())
+        {
+            CudaException.ThrowIfError(
+                CudaDriverApi.cuModuleGetGlobal_v2(out var slotGlobal, out _, module, "__gsharp_error_slot"));
+            ulong none = 0;
+            CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(slotGlobal, (IntPtr)(&none), sizeof(ulong)));
+        }
+
+        int[] keys = [0, DeviceErrorExitKernels.FailKey, 1, 0];
+        int[] result = Filled(keys.Length);
+        var cudaEx = Assert.Throws<CudaException>(() =>
+            DeviceErrorExitKernels.LaunchWriteUnlessFailKernel(keys, result, blockDimX: (uint)keys.Length));
+        Assert.True(cudaEx.Result is CUresult.CudaErrorIllegalInstruction or CUresult.CudaErrorLaunchFailed);
+    }
+
     private static void AssertBarrierLoop(int[] keys)
     {
         int[] result = Filled(keys.Length);

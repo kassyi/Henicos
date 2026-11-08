@@ -175,6 +175,58 @@ public sealed class GridBarrierTests
         Assert.True(cudaEx.Result is CUresult.CudaErrorIllegalInstruction or CUresult.CudaErrorLaunchFailed);
     }
 
+    // [WHY] A host synchronization may consume and clear the error slot while the waiters of a block that never arrives
+    // still wait; a waiter that saw the error keeps it and traps instead of waiting forever. A real GPU fault, run in a
+    // child process of its own (with the timeout of IsolatedTestProcess, so a hang fails the test) and only in
+    // `just test-gpu-trap`
+    [SkippableFact]
+    [Category(TestCategory.GpuTrap)]
+    [Scenario(TestScenario.SadPath)]
+    public void Test_SlotConsumedWhileBlockNeverArrives_WaitersStillTrap()
+    {
+        Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
+        if (!IsolatedTestProcess.IsChild(nameof(Test_SlotConsumedWhileBlockNeverArrives_WaitersStillTrap)))
+        {
+            CudaTrapRuns.RunIsolated(typeof(GridBarrierTests), nameof(Test_SlotConsumedWhileBlockNeverArrives_WaitersStillTrap));
+            return;
+        }
+
+        var keys = new int[Blocks * BlockSize];
+        for (int t = 0; t < BlockSize; t++)
+        {
+            keys[BlockSize + t] = GridBarrierKernels.FailKey;
+        }
+
+        int[] result = Filled(keys.Length);
+
+        // From 20 ms after the start, well after the waiters first looked at the slot (every 1024 polls), another thread
+        // consumes the record, as the synchronization of another stream would
+        GSharpDeviceErrorSlot consumed = default;
+        bool consumedAny = false;
+        var consumer = new Thread(() =>
+        {
+            Thread.Sleep(20);
+            var deadline = DateTime.UtcNow.AddSeconds(5);
+            while (!consumedAny && DateTime.UtcNow < deadline)
+            {
+                consumedAny = DeviceErrorSlot.TryConsumeSlot(out consumed);
+                Thread.Sleep(1);
+            }
+        });
+        consumer.Start();
+
+        var ex = Assert.ThrowsAny<Exception>(() =>
+            GridBarrierKernels.LaunchWholeBlockFailsBeforeGridSyncKernel(keys, result, gridDimX: Blocks,
+                blockDimX: BlockSize));
+        consumer.Join();
+
+        Assert.True(consumedAny, "the consumer found no record");
+        Assert.Equal(1u, consumed.BlockX);
+        // The record is gone, so the launch reports the trap of the waiters alone
+        var cudaEx = Assert.IsType<CudaException>(ex);
+        Assert.True(cudaEx.Result is CUresult.CudaErrorIllegalInstruction or CUresult.CudaErrorLaunchFailed);
+    }
+
     private static void AssertGridSyncAfterFail(int[] keys)
     {
         int[] result = Filled(keys.Length);

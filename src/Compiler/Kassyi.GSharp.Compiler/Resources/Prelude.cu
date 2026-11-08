@@ -64,7 +64,13 @@ __device__ __host__ constexpr unsigned int __gsharp_builtin_message_id(const cha
 
 [[noreturn]] __device__ __noinline__ void __gsharp_trap_site(GSharpErrorCode code, unsigned int site_id) {
     GSharpDeviceErrorSlot* slot = __gsharp_error_slot;
-    if (slot != nullptr) {
+    // [WHY] Without a slot (the host could not allocate it) nothing records the error, and a thread that exited would
+    // let the launch complete with partial results and no exception, so the thread traps
+    if (slot == nullptr) {
+        asm volatile("trap;");
+        __builtin_unreachable();
+    }
+    {
         unsigned int active = __activemask();
         unsigned int lane;
         asm volatile("mov.u32 %0, %%laneid;" : "=r"(lane));
@@ -108,20 +114,41 @@ __device__ __host__ constexpr unsigned int __gsharp_builtin_message_id(const cha
     __builtin_unreachable();
 }
 
-// Called by a thread that waits at a barrier counting a fixed number of arrivals (the G# grid barrier, an mbarrier)
-// every 1024 polls that saw no progress; *stalled counts those calls since an error was recorded. The arrival the
-// thread waits for may belong to a thread that failed and exited, so once an error is recorded and 64 more calls (64 *
-// 1024 polls) passed without progress, the thread traps instead of waiting forever. [WHY] trap, not exit: the slot is
-// shared by every launch of the process, so the error may be another launch's, and a waiter that exited would let this
-// launch complete with partial results and no exception of its own
-__device__ __noinline__ void __gsharp_wait_check_device_error(unsigned int* stalled) {
-    GSharpDeviceErrorSlot* slot = __gsharp_error_slot;
-    if (slot == nullptr || *(volatile unsigned int*)&slot->code == 0u) {
-        *stalled = 0u;
+// The time a waiter at a barrier that counts a fixed number of arrivals keeps waiting without progress after it saw a
+// recorded error: 100 ms, in %globaltimer nanoseconds
+#define __GSHARP_WAIT_AFTER_ERROR_NS 100000000ull
+
+__device__ __forceinline__ unsigned long long __gsharp_globaltimer() {
+    unsigned long long ns;
+    asm volatile("mov.u64 %0, %%globaltimer;" : "=l"(ns));
+    return ns;
+}
+
+// Called every 1024 polls without progress by a thread that waits at a barrier counting a fixed number of arrivals
+// (the G# grid barrier, an mbarrier). *seen is 0 until the thread sees a recorded error, then the time it saw it or
+// last saw progress (__gsharp_wait_note_progress). The arrival it waits for may belong to a thread that failed and
+// exited, so 100 ms after that without progress the thread traps instead of waiting forever. [WHY] *seen stays set
+// once a code was seen: a synchronization of the host may consume and clear the slot meanwhile, and a waiter that
+// forgot the error would wait forever. trap, not exit: the slot is shared by every launch of the process, so the error
+// may be another launch's, and a waiter that exited would let this launch complete with partial results and no
+// exception of its own. Without a slot a failing thread traps (__gsharp_trap_site), so no waiter is left behind.
+__device__ __noinline__ void __gsharp_wait_check_device_error(unsigned long long* seen) {
+    if (*seen == 0ull) {
+        GSharpDeviceErrorSlot* slot = __gsharp_error_slot;
+        if (slot != nullptr && *(volatile unsigned int*)&slot->code != 0u) {
+            *seen = __gsharp_globaltimer() | 1ull;
+        }
         return;
     }
-    if (++*stalled >= 64u) {
+    if (__gsharp_globaltimer() - *seen >= __GSHARP_WAIT_AFTER_ERROR_NS) {
         asm volatile("trap;");
+    }
+}
+
+// Restarts the wait of __gsharp_wait_check_device_error after progress, keeping that an error was seen
+__device__ __forceinline__ void __gsharp_wait_note_progress(unsigned long long* seen) {
+    if (*seen != 0ull) {
+        *seen = __gsharp_globaltimer() | 1ull;
     }
 }
 
@@ -359,7 +386,7 @@ __device__ __forceinline__ void __gsharp_mbarrier_wait(unsigned long long* barri
     unsigned int addr = (unsigned int)__cvta_generic_to_shared(barrier);
     unsigned int done = 0;
     unsigned int tests = 0;
-    unsigned int stalled = 0;
+    unsigned long long errorSeen = 0ull;
     while (!done) {
         asm volatile(
             "{\n\t"
@@ -369,7 +396,7 @@ __device__ __forceinline__ void __gsharp_mbarrier_wait(unsigned long long* barri
             "}"
             : "=r"(done) : "r"(addr), "r"(phase) : "memory");
         if (!done && (++tests & 1023u) == 0u) {
-            __gsharp_wait_check_device_error(&stalled);
+            __gsharp_wait_check_device_error(&errorSeen);
         }
     }
 }
@@ -745,12 +772,18 @@ __device__ T __gsharp_block_reduce(T value, Op op)
 // (sm_70+). A block whose threads all exited never arrives either, so the arriving thread looks at the error slot while
 // it waits (__gsharp_wait_check_device_error) and traps.
 // The arrival counter is the one cooperative_groups uses: the barrier word of the grid workspace that the driver gives
-// every cooperative launch. Each barrier adds exactly 2^31 to it (block 0 adds 2^31 - (blocks - 1), every other block
-// 1), so a barrier is complete when bit 31 has flipped since the thread's own arrival, and no state has to be reset
-// between barriers or launches. One global atomic per block and barrier; the fence and the release add before it and
-// the acquire load after it order the writes of the block before the barrier with the reads of every block after it.
+// every cooperative launch, starting at 0. Each barrier adds exactly 2^31 to it (block 0 adds 2^31 - (blocks - 1),
+// every other block 1), so a barrier is complete when bit 31 has flipped since the thread's own arrival, and no state
+// has to be reset between barriers. One global atomic per block and barrier. The release add after __syncthreads and
+// the acquire load before the last __syncthreads order the writes of a block before the barrier with the reads of every
+// block after it (the same order as cooperative_groups' sync_grids on sm_70+, which has no fence either).
+// cg::details::get_grid_workspace is an internal function of the CUDA headers (the envreg1/envreg2 address of the
+// driver's grid workspace, unchanged since CUDA 11); the static_assert stops the build if its layout changes.
 #if defined(__CUDA_ARCH__) && __CUDA_ARCH__ >= 700
-__device__ __noinline__ void __gsharp_grid_sync() {
+static_assert(sizeof(cg::details::grid_workspace) == 8u && __builtin_offsetof(cg::details::grid_workspace, barrier) == 4u,
+    "G#: the layout of cooperative_groups' grid workspace changed; __gsharp_grid_sync uses its barrier word");
+
+__device__ __forceinline__ void __gsharp_grid_sync() {
     __shared__ unsigned int leader;
     const unsigned int rank = threadIdx.x + blockDim.x * (threadIdx.y + blockDim.y * threadIdx.z);
     // Every thread writes the same value, and no thread reads it before the barrier below
@@ -763,12 +796,11 @@ __device__ __noinline__ void __gsharp_grid_sync() {
         const unsigned int blocks = gridDim.x * gridDim.y * gridDim.z;
         const unsigned int add = blockIdx.x + blockIdx.y + blockIdx.z == 0u ? 0x80000000u - (blocks - 1u) : 1u;
         unsigned int old;
-        __threadfence();
         asm volatile("atom.add.release.gpu.u32 %0,[%1],%2;" : "=r"(old) : "l"(arrived), "r"(add) : "memory");
         unsigned int current;
         unsigned int seen = old;
         unsigned int polls = 0u;
-        unsigned int stalled = 0u;
+        unsigned long long errorSeen = 0ull;
         for (;;) {
             asm volatile("ld.acquire.gpu.u32 %0,[%1];" : "=r"(current) : "l"(arrived) : "memory");
             if (((old ^ current) & 0x80000000u) != 0u) {
@@ -777,9 +809,9 @@ __device__ __noinline__ void __gsharp_grid_sync() {
             // Another block arriving is progress: only a wait that sees none counts toward the trap
             if (current != seen) {
                 seen = current;
-                stalled = 0u;
+                __gsharp_wait_note_progress(&errorSeen);
             } else if ((++polls & 1023u) == 0u) {
-                __gsharp_wait_check_device_error(&stalled);
+                __gsharp_wait_check_device_error(&errorSeen);
             }
         }
     }

@@ -82,6 +82,8 @@ public abstract class GpuBigMathBenchmarkBase : IDisposable
         // Explicit host-device synchronization to ensure asynchronous kernel completion
         ExecuteBatchMultiply();
         CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(Stream));
+
+        global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfDeviceError();
     }
 
     [Benchmark]
@@ -89,6 +91,8 @@ public abstract class GpuBigMathBenchmarkBase : IDisposable
     {
         ExecuteBatchDivide();
         CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(Stream));
+
+        global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfDeviceError();
     }
 
     [Benchmark]
@@ -96,6 +100,8 @@ public abstract class GpuBigMathBenchmarkBase : IDisposable
     {
         ExecuteBatchSqrt();
         CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(Stream));
+
+        global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfDeviceError();
     }
 
     protected abstract void ExecuteBatchMultiply();

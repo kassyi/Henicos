@@ -51,6 +51,7 @@ public static unsafe class DeviceErrorSlot
             var allocResult = CudaDriverApi.cuMemHostAlloc(out var hostPtr, sizeof(GSharpDeviceErrorSlot), flags);
             if (allocResult != CUresult.CudaSuccess || hostPtr == IntPtr.Zero)
             {
+                ReportUnavailable($"cuMemHostAlloc returned {allocResult}");
                 return;
             }
 
@@ -58,6 +59,7 @@ public static unsafe class DeviceErrorSlot
             if (mapResult != CUresult.CudaSuccess)
             {
                 CudaDriverApi.cuMemFreeHost(hostPtr);
+                ReportUnavailable($"cuMemHostGetDevicePointer returned {mapResult}");
                 return;
             }
 
@@ -66,6 +68,12 @@ public static unsafe class DeviceErrorSlot
             s_deviceErrorSlotPtr = (ulong)devPtr;
         }
     }
+
+    // [WHY] Without the slot a failing device check traps instead of reporting its exception (Prelude.cu,
+    // __gsharp_trap_site): the error then surfaces as a CudaException that leaves the context unusable
+    private static void ReportUnavailable(string reason) =>
+        Logger.Warning(nameof(DeviceErrorSlot),
+            $"The device error slot could not be allocated ({reason}); a failing device check traps and fails the launch with a CudaException.");
 
     /// <summary>
     /// Injects the device error slot pointer and module ID into the loaded CUDA module's globals.
