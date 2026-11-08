@@ -129,11 +129,9 @@ public class IdentityTests : StateMachineTestBase
             forEach,
             iteratorMethod,
             invocation,
-            model,
+            new IteratorExpansionContext(model, new StandardCppDialect(), new Reporter(failures.Add, model)),
             ref regionCounter,
-            ref argumentTempCounter,
-            new StandardCppDialect(),
-            new Reporter(failures.Add, model));
+            ref argumentTempCounter);
 
         Assert.Empty(failures);
         var endLabel = Assert.IsType<LabeledStatementSyntax>(expanded.Statements[1]);

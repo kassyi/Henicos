@@ -42,11 +42,9 @@ internal static class IteratorInliner
     public static BlockSyntax ExpandStandalone(
         MethodDeclarationSyntax iteratorDecl,
         IMethodSymbol iteratorMethod,
-        SemanticModel semanticModel,
+        in IteratorExpansionContext context,
         ref int regionCounter,
-        ref int argumentTempCounter,
-        ITranspilerDialect dialect,
-        Reporter reporter)
+        ref int argumentTempCounter)
     {
         var arguments = ImmutableArray.CreateBuilder<ArgumentSyntax>(iteratorDecl.ParameterList.Parameters.Count);
         foreach (var parameter in iteratorDecl.ParameterList.Parameters)
@@ -69,11 +67,9 @@ internal static class IteratorInliner
             syntheticForEach,
             iteratorMethod,
             syntheticInvocation,
-            semanticModel,
+            context,
             ref regionCounter,
-            ref argumentTempCounter,
-            dialect,
-            reporter);
+            ref argumentTempCounter);
     }
 
     /// <summary>
@@ -84,16 +80,16 @@ internal static class IteratorInliner
         ForEachStatementSyntax forEachNode,
         IMethodSymbol iteratorMethod,
         InvocationExpressionSyntax sourceInvocation,
-        SemanticModel semanticModel,
+        in IteratorExpansionContext context,
         ref int regionCounter,
-        ref int argumentTempCounter,
-        ITranspilerDialect dialect,
-        Reporter reporter)
+        ref int argumentTempCounter)
     {
+        var semanticModel = context.SemanticModel;
         var compilation = semanticModel.Compilation;
-        if (!TryGetInlinableSyntax(iteratorMethod, compilation, out var iteratorDecl) || iteratorDecl.Body is not { } iteratorBody)
+        if (!TryGetInlinableSyntax(iteratorMethod, compilation, out var iteratorDecl) ||
+            iteratorDecl.Body is not { } iteratorBody)
         {
-            reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, forEachNode, IteratorWithoutBody);
+            context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, forEachNode, IteratorWithoutBody);
             return SyntaxFactory.Block();
         }
 
@@ -106,23 +102,14 @@ internal static class IteratorInliner
         var loopVariableType = ResolveLoopVariableType(annotatedForEach, iteratorDecl, compilation);
 
         var expansionStatements = ImmutableArray.CreateBuilder<StatementSyntax>();
-        AddParameterLocals(
-            expansionStatements,
-            annotatedForEach,
-            iteratorMethod,
-            stampedParamList,
-            sourceInvocation,
-            semanticModel,
-            ref argumentTempCounter,
-            dialect);
+        var site = new IteratorCallSite(annotatedForEach, iteratorMethod, sourceInvocation);
+        AddParameterLocals(expansionStatements, site, stampedParamList, context, ref argumentTempCounter);
 
         var endLabel = $"{GSharpInternalNames.Iterator.EndLabelPrefix}{iteratorRegion}";
-        var needsElementCast = IteratorTypeResolver.IsGenericIEnumerable(iteratorMethod.ReturnType, out var iteratorElementType) &&
-                               ForEachElementConversion.GetTarget(annotatedForEach, iteratorElementType, semanticModel) != null;
-        var yieldRewriter = new YieldRewriter(
+        var yieldRewriter = new IteratorYieldRewriter(
             annotatedForEach,
             loopVariableType,
-            needsElementCast,
+            NeedsElementCast(annotatedForEach, iteratorMethod, semanticModel),
             iteratorRegion,
             endLabel,
             semanticModel);
@@ -173,16 +160,14 @@ internal static class IteratorInliner
     /// </summary>
     private static void AddParameterLocals(
         ImmutableArray<StatementSyntax>.Builder expansionStatements,
-        ForEachStatementSyntax annotatedForEach,
-        IMethodSymbol iteratorMethod,
+        in IteratorCallSite site,
         ParameterListSyntax stampedParamList,
-        InvocationExpressionSyntax sourceInvocation,
-        SemanticModel semanticModel,
-        ref int argumentTempCounter,
-        ITranspilerDialect dialect)
+        in IteratorExpansionContext context,
+        ref int argumentTempCounter)
     {
+        var semanticModel = context.SemanticModel;
         var compilation = semanticModel.Compilation;
-        var unwrappedExpression = IteratorTypeResolver.UnwrapParentheses(annotatedForEach.Expression);
+        var unwrappedExpression = IteratorTypeResolver.UnwrapParentheses(site.AnnotatedForEach.Expression);
         if (unwrappedExpression is IdentifierNameSyntax localIdentifier)
         {
             var localSymbol = semanticModel.GetSymbol(localIdentifier)
@@ -191,7 +176,7 @@ internal static class IteratorInliner
             var localCppName = CppNameResolver.Resolve(
                 localSymbol,
                 localIdentifier.Identifier.ValueText,
-                dialect,
+                context.Dialect,
                 localRegion).ToString();
 
             for (var i = 0; i < stampedParamList.Parameters.Count; i++)
@@ -204,17 +189,32 @@ internal static class IteratorInliner
             return;
         }
 
+        var sourceInvocation = site.SourceInvocation;
         var annotatedInvocation = unwrappedExpression as InvocationExpressionSyntax
                                   ?? (compilation.ContainsSyntaxTree(sourceInvocation.SyntaxTree)
                                       ? LoweringAnnotations.AnnotateOriginalSpans(sourceInvocation, compilation)
                                       : sourceInvocation);
         EmitDirectCallParameterLocals(
             expansionStatements,
-            iteratorMethod.Parameters,
+            site.IteratorMethod.Parameters,
             stampedParamList.Parameters,
             annotatedInvocation.ArgumentList.Arguments,
             ref argumentTempCounter);
     }
+
+    // Whether the loop variable converts each element of the iterator with a .NET conversion (ForEachElementConversion)
+    private static bool NeedsElementCast(
+        ForEachStatementSyntax annotatedForEach,
+        IMethodSymbol iteratorMethod,
+        SemanticModel semanticModel) =>
+        IteratorTypeResolver.IsGenericIEnumerable(iteratorMethod.ReturnType, out var iteratorElementType) &&
+        ForEachElementConversion.GetTarget(annotatedForEach, iteratorElementType, semanticModel) != null;
+
+    // The foreach being expanded (with its original spans), the iterator it enumerates and the iterator call
+    private readonly record struct IteratorCallSite(
+        ForEachStatementSyntax AnnotatedForEach,
+        IMethodSymbol IteratorMethod,
+        InvocationExpressionSyntax SourceInvocation);
 
     private static TypeSyntax ResolveLoopVariableType(
         ForEachStatementSyntax annotatedForEach,
@@ -305,6 +305,8 @@ internal static class IteratorInliner
         return false;
     }
 
+    // A local per parameter from the arguments of a direct iterator call, in parameter order; the arguments of a call
+    // that names them out of order are first spilled into temporaries in the order written
     private static void EmitDirectCallParameterLocals(
         ImmutableArray<StatementSyntax>.Builder statements,
         ImmutableArray<IParameterSymbol> parameters,
@@ -312,8 +314,48 @@ internal static class IteratorInliner
         SeparatedSyntaxList<ArgumentSyntax> arguments,
         ref int argumentTempCounter)
     {
+        var paramIndices = MapArgumentsToParameters(parameters, arguments, out var isOutOfOrder);
+        var argExpressions = new ExpressionSyntax?[parameters.Length];
+        if (isOutOfOrder)
+        {
+            SpillArguments(
+                statements,
+                annotatedParameters,
+                arguments,
+                paramIndices,
+                argExpressions,
+                ref argumentTempCounter
+            );
+        }
+        else
+        {
+            for (var lexIdx = 0; lexIdx < arguments.Count; lexIdx++)
+            {
+                var paramIdx = paramIndices[lexIdx];
+                if ((uint)paramIdx < (uint)argExpressions.Length)
+                {
+                    argExpressions[paramIdx] = arguments[lexIdx].Expression;
+                }
+            }
+        }
+
+        for (var i = 0; i < annotatedParameters.Count && i < parameters.Length; i++)
+        {
+            var paramSyntax = annotatedParameters[i];
+            var initExpr = argExpressions[i] ?? GetDefaultArgumentExpression(parameters[i], paramSyntax);
+            AddParameterLocalDeclaration(statements, paramSyntax, initExpr);
+        }
+    }
+
+    // The parameter index of each argument in the order written (a named argument by its name, any other by its
+    // position), and whether a later argument names an earlier parameter
+    private static int[] MapArgumentsToParameters(
+        ImmutableArray<IParameterSymbol> parameters,
+        SeparatedSyntaxList<ArgumentSyntax> arguments,
+        out bool isOutOfOrder)
+    {
         var paramIndices = new int[arguments.Count];
-        var isOutOfOrder = false;
+        isOutOfOrder = false;
         var lastParamIdx = -1;
 
         for (var lexIdx = 0; lexIdx < arguments.Count; lexIdx++)
@@ -338,48 +380,39 @@ internal static class IteratorInliner
             paramIndices[lexIdx] = paramIdx;
         }
 
-        var argExpressions = new ExpressionSyntax?[parameters.Length];
-        if (isOutOfOrder)
+        return paramIndices;
+    }
+
+    // <ParamType> __gsharp_arg_temp_<n> = <arg>; for each argument in the order written, which argExpressions then
+    // passes by parameter index
+    private static void SpillArguments(
+        ImmutableArray<StatementSyntax>.Builder statements,
+        SeparatedSyntaxList<ParameterSyntax> annotatedParameters,
+        SeparatedSyntaxList<ArgumentSyntax> arguments,
+        int[] paramIndices,
+        ExpressionSyntax?[] argExpressions,
+        ref int argumentTempCounter)
+    {
+        for (var lexIdx = 0; lexIdx < arguments.Count; lexIdx++)
         {
-            for (var lexIdx = 0; lexIdx < arguments.Count; lexIdx++)
+            var paramIdx = paramIndices[lexIdx];
+            if ((uint)paramIdx >= (uint)annotatedParameters.Count)
             {
-                var paramIdx = paramIndices[lexIdx];
-                if ((uint)paramIdx >= (uint)annotatedParameters.Count)
-                {
-                    continue;
-                }
-
-                var paramSyntax = annotatedParameters[paramIdx];
-                var tempName = $"{GSharpInternalNames.Lowering.ArgumentTempPrefix}{argumentTempCounter++}";
-
-                // <ParamType> __gsharp_arg_temp_<n> = <arg>;
-                var tempDeclarator = SyntaxFactory.VariableDeclarator(SyntaxFactory.Identifier(tempName))
-                    .WithInitializer(SyntaxFactory.EqualsValueClause(arguments[lexIdx].Expression));
-                var tempDecl = SyntaxFactory.VariableDeclaration(
-                    paramSyntax.Type ?? SyntaxFactory.IdentifierName("var"),
-                    SyntaxFactory.SingletonSeparatedList(tempDeclarator)
-                );
-                statements.Add(SyntaxFactory.LocalDeclarationStatement(tempDecl));
-                argExpressions[paramIdx] = SyntaxFactory.IdentifierName(tempName);
+                continue;
             }
-        }
-        else
-        {
-            for (var lexIdx = 0; lexIdx < arguments.Count; lexIdx++)
-            {
-                var paramIdx = paramIndices[lexIdx];
-                if ((uint)paramIdx < (uint)argExpressions.Length)
-                {
-                    argExpressions[paramIdx] = arguments[lexIdx].Expression;
-                }
-            }
-        }
 
-        for (var i = 0; i < annotatedParameters.Count && i < parameters.Length; i++)
-        {
-            var paramSyntax = annotatedParameters[i];
-            var initExpr = argExpressions[i] ?? GetDefaultArgumentExpression(parameters[i], paramSyntax);
-            AddParameterLocalDeclaration(statements, paramSyntax, initExpr);
+            var paramSyntax = annotatedParameters[paramIdx];
+            var tempName = $"{GSharpInternalNames.Lowering.ArgumentTempPrefix}{argumentTempCounter++}";
+
+            // <ParamType> __gsharp_arg_temp_<n> = <arg>;
+            var tempDeclarator = SyntaxFactory.VariableDeclarator(SyntaxFactory.Identifier(tempName))
+                .WithInitializer(SyntaxFactory.EqualsValueClause(arguments[lexIdx].Expression));
+            var tempDecl = SyntaxFactory.VariableDeclaration(
+                paramSyntax.Type ?? SyntaxFactory.IdentifierName("var"),
+                SyntaxFactory.SingletonSeparatedList(tempDeclarator)
+            );
+            statements.Add(SyntaxFactory.LocalDeclarationStatement(tempDecl));
+            argExpressions[paramIdx] = SyntaxFactory.IdentifierName(tempName);
         }
     }
 
@@ -398,98 +431,5 @@ internal static class IteratorInliner
             SyntaxFactory.SingletonSeparatedList(declarator)
         );
         statements.Add(SyntaxFactory.LocalDeclarationStatement(declaration));
-    }
-
-    private sealed class YieldRewriter(
-        ForEachStatementSyntax annotatedForEach,
-        TypeSyntax loopVariableType,
-        bool needsElementCast,
-        int iteratorRegion,
-        string endLabel,
-        SemanticModel semanticModel) : CSharpSyntaxRewriter
-    {
-        private int _yieldCounter;
-        private int _regionCounter;
-
-        public BlockSyntax Rewrite(BlockSyntax body, ref int regionCounter)
-        {
-            _regionCounter = regionCounter;
-            var result = Visit(body) as BlockSyntax ?? body;
-            regionCounter = _regionCounter;
-            return result;
-        }
-
-        public override SyntaxNode? VisitYieldStatement(YieldStatementSyntax node)
-        {
-            if (node.IsKind(SyntaxKind.YieldBreakStatement))
-            {
-                // goto __gsharp_iter_end_<r>;
-                return SyntaxFactory.GotoStatement(
-                        SyntaxKind.GotoStatement,
-                        SyntaxFactory.IdentifierName(endLabel)
-                    )
-                    .WithAdditionalAnnotations(node.GetAnnotations(LoweringAnnotations.OriginalSpanAnnotationKind));
-            }
-
-            var yieldIndex = _yieldCounter++;
-            var consumerRegion = ++_regionCounter;
-            var nextLabel = $"{GSharpInternalNames.Iterator.NextLabelPrefix}{iteratorRegion}_{yieldIndex}";
-            var yieldedExpression = Visit(node.Expression) as ExpressionSyntax
-                                    ?? SyntaxFactory.LiteralExpression(SyntaxKind.DefaultLiteralExpression);
-            if (needsElementCast)
-            {
-                yieldedExpression = SyntaxFactory.CastExpression(
-                    loopVariableType.WithoutTrivia(),
-                    SyntaxFactory.ParenthesizedExpression(yieldedExpression.WithoutTrivia()));
-            }
-
-            // Stamp consumerRegion onto the uninitialized loop variable declaration and consumer body together so that
-            // references to the foreach loop variable and consumer-local declarations receive consumerRegion without
-            // overwriting iteratorRegion on yieldedExpression.
-            // { <ElementType> <loopVar>; { <consumerBody> } }
-            var uninitDeclarator = SyntaxFactory.VariableDeclarator(annotatedForEach.Identifier)
-                .WithAdditionalAnnotations(
-                    annotatedForEach.GetAnnotations(LoweringAnnotations.OriginalSpanAnnotationKind));
-            var uninitVarDecl = SyntaxFactory.VariableDeclaration(
-                loopVariableType,
-                SyntaxFactory.SingletonSeparatedList(uninitDeclarator)
-            );
-            var uninitLocalDecl = SyntaxFactory.LocalDeclarationStatement(uninitVarDecl);
-
-            var rewrittenConsumerBody = BranchTargetRewriter.Rewrite(annotatedForEach.Statement, endLabel, nextLabel);
-            var rawConsumerBlock = (rewrittenConsumerBody is BlockSyntax block
-                    ? SyntaxFactory.Block(block.Statements)
-                    : SyntaxFactory.Block(rewrittenConsumerBody))
-                .WithAdditionalAnnotations(new SyntaxAnnotation(LoweringAnnotations.ScopedBlockAnnotationKind));
-
-            var stampedConsumerEnvelope = LoweringAnnotations.StampRegion(
-                SyntaxFactory.Block(uninitLocalDecl, rawConsumerBlock),
-                consumerRegion,
-                semanticModel);
-
-            // { <ElementType> <loopVar> = <yieldedExpr>; { <consumerBody> } __gsharp_iter_next_<r>_<j>: ; }
-            var stampedDeclStmt = (LocalDeclarationStatementSyntax)stampedConsumerEnvelope.Statements[0];
-            var stampedDeclarator = stampedDeclStmt.Declaration.Variables[0]
-                .WithInitializer(SyntaxFactory.EqualsValueClause(yieldedExpression));
-            var loopVarDeclaration = stampedDeclStmt.WithDeclaration(
-                stampedDeclStmt.Declaration.WithVariables(SyntaxFactory.SingletonSeparatedList(stampedDeclarator)));
-            var consumerBodyBlock = stampedConsumerEnvelope.Statements[1];
-
-            var nextLabeledStmt = SyntaxFactory.LabeledStatement(
-                SyntaxFactory.Identifier(nextLabel),
-                SyntaxFactory.EmptyStatement()
-            );
-
-            return SyntaxFactory.Block(loopVarDeclaration, consumerBodyBlock, nextLabeledStmt)
-                .WithAdditionalAnnotations(new SyntaxAnnotation(LoweringAnnotations.ScopedBlockAnnotationKind));
-        }
-
-        public override SyntaxNode? VisitSimpleLambdaExpression(SimpleLambdaExpressionSyntax node) => node;
-
-        public override SyntaxNode? VisitParenthesizedLambdaExpression(ParenthesizedLambdaExpressionSyntax node) => node;
-
-        public override SyntaxNode? VisitAnonymousMethodExpression(AnonymousMethodExpressionSyntax node) => node;
-
-        public override SyntaxNode? VisitLocalFunctionStatement(LocalFunctionStatementSyntax node) => node;
     }
 }
