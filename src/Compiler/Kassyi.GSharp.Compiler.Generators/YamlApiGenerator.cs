@@ -12,6 +12,11 @@ public static class YamlApiGenerator
 {
     public static void Run(string inputDir, string outputDir)
     {
+        if (!Directory.Exists(inputDir))
+        {
+            throw new GeneratorInputException(inputDir, 0, "The native API YAML directory does not exist.");
+        }
+
         Directory.CreateDirectory(outputDir);
 
         var definitions = ImmutableArray.CreateBuilder<NativeApiDefinition>();
@@ -28,9 +33,7 @@ public static class YamlApiGenerator
 
             if (!NativeApiYamlReader.TryRead(File.ReadAllText(path), out var definition, out var error))
             {
-                // MSBuild canonical error format so that the failure surfaces in the build output and IDE.
-                throw new InvalidDataException(
-                    $"{path}({error.Line}): error {error.DiagnosticId}: {error.Message}");
+                throw new GeneratorInputException(path, error.Line, error.Message, error.DiagnosticId);
             }
 
             definitions.Add(definition);
@@ -44,7 +47,7 @@ public static class YamlApiGenerator
             {
                 var error = new NativeApiReadError(NativeApiReadErrorKind.Schema, def.ClassNameLine,
                     $"Intrinsic definitions in different namespaces declare the class '{def.ClassName}', and both would be written to {fileName}.");
-                throw new InvalidDataException($"{inputDir}: error {error.DiagnosticId}: {error.Message}");
+                throw new GeneratorInputException(inputDir, 0, error.Message, error.DiagnosticId);
             }
 
             File.WriteAllText(Path.Combine(outputDir, fileName), NativeIntrinsicEmitter.EmitIntrinsics(def), Encoding.UTF8);
