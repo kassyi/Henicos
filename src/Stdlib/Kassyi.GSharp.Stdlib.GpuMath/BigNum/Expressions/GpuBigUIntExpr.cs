@@ -12,6 +12,21 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 /// <para>
 /// <b>Zero-Allocation:</b> As a readonly struct wrapping immutable AST nodes, no device memory is allocated until evaluated.
 /// </para>
+/// <para>
+/// <b>Result widths:</b> a result never overflows. Every node has an upper bound of its result in bits, computed from
+/// its operands when the expression is built, and the result has the words of that bound
+/// (<see cref="IGpuBigUIntExpression.NumWords"/>): <c>a + b</c> one bit more than the wider operand, <c>a - b</c>
+/// the left operand, <c>a * b</c> the sum of the operands, <c>a / b</c> the dividend, <c>a % b</c> and <c>a &amp; b</c>
+/// the narrower operand, <c>a | b</c> and <c>a ^ b</c> the wider one, <c>a &lt;&lt; k</c> <c>k</c> bits more,
+/// <c>a &gt;&gt; k</c> <c>k</c> bits fewer (at least one), <c>~a</c> every bit of the words of <c>a</c>, and the
+/// square root half the bits. The operands may have different widths. Narrow a result explicitly with
+/// <see cref="Fit"/> or <see cref="Truncate"/>.
+/// </para>
+/// <para>
+/// <b>Domain errors:</b> a difference below zero, and a value that does not <see cref="Fit"/>, are reported as
+/// <see cref="OverflowException"/> at the next read of the workspace stream (or by
+/// <see cref="GpuWorkspace.ThrowIfDeviceErrors"/>); in CPU fallback mode they are thrown at the evaluation.
+/// </para>
 /// </remarks>
 public readonly struct GpuBigUIntExpr
 {
@@ -45,7 +60,8 @@ public readonly struct GpuBigUIntExpr
         => new(new AddExpression(left.Node, right.Node));
 
     /// <summary>
-    /// Constructs a lazy subtraction expression between two unsigned big integer expressions.
+    /// Constructs a lazy subtraction expression between two unsigned big integer expressions. A difference below zero
+    /// is a domain error.
     /// </summary>
     /// <param name="left">The minuend unsigned expression operand.</param>
     /// <param name="right">The subtrahend unsigned expression operand.</param>
@@ -127,7 +143,8 @@ public readonly struct GpuBigUIntExpr
     /// Constructs a lazy left bit-shift expression for the specified unsigned big integer expression.
     /// </summary>
     /// <param name="left">The unsigned expression operand to shift.</param>
-    /// <param name="shiftBits">The number of bits to shift left.</param>
+    /// <param name="shiftBits">The number of bits to shift left; a negative count shifts right, as
+    /// <see cref="BigInteger"/>. The result keeps every bit.</param>
     /// <returns>A new <see cref="GpuBigUIntExpr"/> representing the left-shift AST node.</returns>
     public static GpuBigUIntExpr operator <<(GpuBigUIntExpr left, int shiftBits)
         => new(new ShiftLeftExpression(left.Node, shiftBits));
@@ -136,10 +153,42 @@ public readonly struct GpuBigUIntExpr
     /// Constructs a lazy right bit-shift expression for the specified unsigned big integer expression.
     /// </summary>
     /// <param name="left">The unsigned expression operand to shift.</param>
-    /// <param name="shiftBits">The number of bits to shift right.</param>
+    /// <param name="shiftBits">The number of bits to shift right; a negative count shifts left, as
+    /// <see cref="BigInteger"/>.</param>
     /// <returns>A new <see cref="GpuBigUIntExpr"/> representing the right-shift AST node.</returns>
     public static GpuBigUIntExpr operator >>(GpuBigUIntExpr left, int shiftBits)
         => new(new ShiftRightExpression(left.Node, shiftBits));
+
+    /// <summary>
+    /// Narrows this expression to <paramref name="words"/> words, unchecked: the value modulo
+    /// <c>2^(32 * words)</c>, as a C# <c>unchecked</c> narrowing. A wider word count zero-extends.
+    /// </summary>
+    /// <param name="words">The word count of the result, at least 1.</param>
+    /// <returns>A new <see cref="GpuBigUIntExpr"/> whose result has <paramref name="words"/> words.</returns>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="words"/> is below 1.</exception>
+    public GpuBigUIntExpr Truncate(int words)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThan(words, 1);
+        return new GpuBigUIntExpr(new NarrowExpression(Node, words, isChecked: false));
+    }
+
+    /// <summary>
+    /// Narrows this expression to <paramref name="words"/> words, checked: a value that does not fit is a domain
+    /// error, as a C# <c>checked</c> narrowing.
+    /// </summary>
+    /// <param name="words">The word count of the result, at least 1.</param>
+    /// <returns>A new <see cref="GpuBigUIntExpr"/> whose result has <paramref name="words"/> words.</returns>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="words"/> is below 1.</exception>
+    /// <remarks>
+    /// On the GPU the domain error is reported as <see cref="OverflowException"/> at the next read of the workspace
+    /// stream (or by <see cref="GpuWorkspace.ThrowIfDeviceErrors"/>); in CPU fallback mode it is thrown when the
+    /// expression is evaluated.
+    /// </remarks>
+    public GpuBigUIntExpr Fit(int words)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThan(words, 1);
+        return new GpuBigUIntExpr(new NarrowExpression(Node, words, isChecked: true));
+    }
 }
 
 

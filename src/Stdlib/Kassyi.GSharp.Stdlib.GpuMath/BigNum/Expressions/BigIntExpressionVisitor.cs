@@ -1,5 +1,3 @@
-
-
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 
 /// <summary>
@@ -8,7 +6,7 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 /// <param name="context">The execution context providing memory manager and arithmetic providers.</param>
 /// <param name="targetResult">
 /// An optional pre-allocated destination buffer to receive the root evaluation result. A root node wider than it throws
-/// <see cref="ArgumentException"/> before anything is written.
+/// <see cref="ArgumentException"/> before anything is written; the root writes the first words of a wider one.
 /// </param>
 /// <remarks>
 /// <para>
@@ -57,11 +55,11 @@ public ref struct BigIntExpressionVisitor(GpuBigIntExecutionContext context, Sco
         return new ScopedBigIntMemory(node.Handle.Borrow());
     }
 
-    // The root writes into the target, unless the target overlaps one of the root's operands: the kernels take their
-    // pointers as __restrict__ and some read words that other threads write, so the root then computes into a
-    // temporary, which the caller copies into the target. Only the root can meet the target: every other node writes
-    // a temporary, and the root reads only its own operands. A target narrower than the root is rejected: the kernels
-    // write the full width of the operation through the result pointer.
+    // The root writes into the first numWords words of the target, unless the target overlaps one of the root's
+    // operands: the kernels take their pointers as __restrict__ and some read words that other threads write, so the
+    // root then computes into a temporary, which the caller copies into the target. Only the root can meet the target:
+    // every other node writes a temporary, and the root reads only its own operands. A target narrower than the root
+    // is rejected; the caller clears the words of a wider one above the result.
     private ScopedBigIntMemory GetResultBuffer(int numWords, bool isRoot, GpuBigIntMemoryHandle operand0,
         GpuBigIntMemoryHandle operand1 = default)
     {
@@ -70,7 +68,8 @@ public ref struct BigIntExpressionVisitor(GpuBigIntExecutionContext context, Sco
             if (_targetResult.Handle.NumWords < numWords)
             {
                 throw new ArgumentException(
-                    $"Destination buffer must have at least {numWords} words; it has {_targetResult.Handle.NumWords}.",
+                    $"Destination buffer must have at least {numWords} words; it has " +
+                    $"{_targetResult.Handle.NumWords}. Narrow the expression with Fit or Truncate.",
                     nameof(targetResult)
                 );
             }
@@ -79,7 +78,7 @@ public ref struct BigIntExpressionVisitor(GpuBigIntExecutionContext context, Sco
             _targetResult = default;
             if (!DeviceRanges.Overlaps(target.Handle, operand0) && !DeviceRanges.Overlaps(target.Handle, operand1))
             {
-                return target;
+                return new ScopedBigIntMemory(target.Handle.Slice(0, numWords));
             }
         }
 
@@ -196,4 +195,24 @@ public ref struct BigIntExpressionVisitor(GpuBigIntExecutionContext context, Sco
 
     internal ScopedBigIntMemory VisitShiftRight(ShiftRightExpression node) =>
         VisitShiftOperation(node.Target, node.NumWords, node.ShiftBits, ShiftOp.Right);
+
+    // Truncate and Fit: the low words of the operand, zero-extended; Fit also checks that no word above them is set
+    internal ScopedBigIntMemory VisitNarrow(NarrowExpression node)
+    {
+        using var target = Visit(node.Target);
+        var result = GetResultBuffer(node.NumWords, _isRoot, target.Handle);
+        var workspace = Context.GpuWorkspace;
+        // Borrowed views: disposing them frees nothing
+        using var operand = new GpuBigUInt(workspace, target.Handle.Borrow());
+        if (node.IsChecked)
+        {
+            BigIntWideOps.CheckFits(operand, node.Words);
+        }
+
+        var copied = Math.Min(node.Words, operand.NumWords);
+        using var resultBuffer = new GpuBigUInt(workspace, result.Handle.Borrow());
+        resultBuffer.CopyFrom(operand, numWords: copied);
+        SignedRoot.ClearAbove(resultBuffer, copied);
+        return result;
+    }
 }

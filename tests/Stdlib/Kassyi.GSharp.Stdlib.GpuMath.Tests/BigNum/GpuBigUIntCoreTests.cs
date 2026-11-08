@@ -58,24 +58,20 @@ public class GpuUIntBigIntegerCoreTests : IDisposable
     }
 
     [SkippableFact]
-    public void Test_PadTo_SmallerSize_ReturnsTruncatedValue()
+    public void Test_PadTo_SmallerSize_Throws_AndTruncateNarrows()
     {
         CudaCapability.EnsureGpuAvailable();
         var originalData = new uint[] { 1, 2, 3, 4, 5 };
         using var original = new GpuBigUInt(_context, originalData);
 
-        using var padded = original.PadTo(3);
+        // PadTo only widens; narrowing is explicit (Truncate: unchecked, Fit: checked)
+        Assert.Throws<ArgumentOutOfRangeException>(() => original.PadTo(3));
 
-        Assert.Equal(3, padded.NumWords);
-        
-        var resultData = new uint[3];
-        _context.Provider.CopyDeviceToHost(resultData, padded.DevicePointer, 3, _context.Stream);
-        
-        Assert.Equal(3, resultData.Length);
-        Assert.Equal(1u, resultData[0]);
-        Assert.Equal(2u, resultData[1]);
-        Assert.Equal(3u, resultData[2]);
+        using var truncated = original.Value.Truncate(3).Node.Evaluate(_context);
+        Assert.Equal(3, truncated.NumWords);
+        Assert.Equal(new uint[] { 1, 2, 3 }, truncated.ToHostArray());
     }
+
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
     public void Test_Addition_EvaluatesCorrectly()

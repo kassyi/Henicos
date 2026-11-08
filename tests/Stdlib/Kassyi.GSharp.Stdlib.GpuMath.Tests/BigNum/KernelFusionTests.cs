@@ -29,7 +29,8 @@ public class KernelFusionTests : IDisposable
         using var a = new GpuBigUInt(_context, new uint[] { 100, 0, 0, 0 });
         using var b = new GpuBigUInt(_context, new uint[] { 200, 0, 0, 0 });
         using var c = new GpuBigUInt(_context, new uint[] { 300, 0, 0, 0 });
-        using var result = new GpuBigUInt(_context, 8);
+        // (4 words + 1 bit) * 4 words: the product has 9 words
+        using var result = new GpuBigUInt(_context, 9);
 
         var expr = (a + b) * c;
 
@@ -55,7 +56,8 @@ public class KernelFusionTests : IDisposable
         using var b = new GpuBigUInt(_context, new uint[] { 250, 0, 0, 0 });
         using var c = new GpuBigUInt(_context, new uint[] { 1000, 0, 0, 0 });
         using var d = new GpuBigUInt(_context, new uint[] { 400, 0, 0, 0 });
-        using var result = new GpuBigUInt(_context, 8);
+        // (4 words + 1 bit) * 4 words: the product has 9 words
+        using var result = new GpuBigUInt(_context, 9);
 
         var expr = (a + b) * (c - d);
 
@@ -86,7 +88,8 @@ public class KernelFusionTests : IDisposable
         using var a = new GpuBigUInt(_context, new uint[] { valA, 0, 0, 0 });
         using var b = new GpuBigUInt(_context, new uint[] { valB, 0, 0, 0 });
         using var c = new GpuBigUInt(_context, new uint[] { valC, 0, 0, 0 });
-        using var result = new GpuBigUInt(_context, 8);
+        // (4 words + 1 bit) * 4 words: the product has 9 words
+        using var result = new GpuBigUInt(_context, 9);
 
         var expr = (a + b) * c;
         Assert.IsType<MulExpression>(expr.Node);

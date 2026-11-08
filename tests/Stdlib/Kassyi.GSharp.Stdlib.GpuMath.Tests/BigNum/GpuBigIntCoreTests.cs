@@ -24,8 +24,9 @@ public class GpuBigIntCoreTests
                 uint valB = (uint)i + 2;
                 using var a = new GpuBigUInt(sharedCtx, new uint[] { valA, 0, 0, 0 });
                 using var b = new GpuBigUInt(sharedCtx, new uint[] { valB, 0, 0, 0 });
-                using var c = new GpuBigUInt(sharedCtx, 4);
-                using var d = new GpuBigUInt(sharedCtx, 8);
+                // a + b has 4 words + 1 bit (5 words); c * a then 5 + 4 words
+                using var c = new GpuBigUInt(sharedCtx, 5);
+                using var d = new GpuBigUInt(sharedCtx, 9);
 
                 c.Value = a + b;
                 d.Value = c * a;
@@ -137,7 +138,7 @@ public class GpuBigIntCoreTests
         using var a = new GpuBigUInt(ctx, new uint[] { 100, 0, 0, 0 });
         using var b = new GpuBigUInt(ctx, new uint[] { 200, 0, 0, 0 });
         using var c = new GpuBigUInt(ctx, new uint[] { 300, 0, 0, 0 });
-        using var result = new GpuBigUInt(ctx, 8); // Mul requires a+b size
+        using var result = new GpuBigUInt(ctx, 9); // (4 words + 1 bit) * 4 words
 
         // (a + b) * c
         result.Value = (a + b) * c;
@@ -151,9 +152,10 @@ public class GpuBigIntCoreTests
     public void Test_Add_Correctness(GpuExecutionEngine engine)
     {
         CudaCapability.EnsureGpuAvailable();
+        // A sum is one bit wider than its operands
         RunBinaryOpTest(
             engine,
-            resultWords: TestSizeWords,
+            resultWords: TestSizeWords + 1,
             contextWords: TestSizeWords * 2,
             prepareData: null,
             cpuFunc: (a, b) => a + b,
@@ -183,11 +185,12 @@ public class GpuBigIntCoreTests
 
         using var gpuA = new GpuBigUInt(context, arrA);
         using var gpuB = new GpuBigUInt(context, arrB);
-        using var gpuResult = new GpuBigUInt(context, TestSizeWords);
+        // A sum is one bit wider than its operands
+        using var gpuResult = new GpuBigUInt(context, TestSizeWords + 1);
 
         gpuResult.Value = gpuA + gpuB;
 
-        AssertGpuResultEqualsCpu(bigA + bigB, gpuResult, TestSizeWords);
+        AssertGpuResultEqualsCpu(bigA + bigB, gpuResult, TestSizeWords + 1);
     }
 
     [SkippableTheory]
@@ -428,7 +431,8 @@ public class GpuBigIntCoreTests
         using var gpuA = new GpuBigUInt(context, arrA);
         using var gpuResult = new GpuBigUInt(context, TestSizeWords);
 
-        gpuResult.Value = gpuA << shiftBits;
+        // A left shift keeps every bit; truncating it to the operand width gives the value modulo 2^(32 n)
+        gpuResult.Value = (gpuA << shiftBits).Truncate(TestSizeWords);
 
         AssertGpuResultEqualsCpu(expectedBig, gpuResult, TestSizeWords);
     }

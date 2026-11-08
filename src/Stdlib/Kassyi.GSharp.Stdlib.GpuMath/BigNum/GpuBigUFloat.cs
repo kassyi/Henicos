@@ -141,10 +141,11 @@ public readonly struct GpuBigUFloat : IGpuBigNumber<GpuBigUFloat>
         var normExp = Exponent;
         var normSig = Significand;
 
+        // The significand keeps its width: the shift drops the low bit of a carry, or moves leading zeros out. An
+        // expression shift would size the result by its bound instead.
         if (carryOut)
         {
-            var expr = normSig >> 1;
-            normSig = expr.Node.Evaluate(normSig.Workspace);
+            normSig = ShiftWithinWidth(normSig, -1);
             checked
             {
                 normExp = Exponent + 1;
@@ -152,8 +153,7 @@ public readonly struct GpuBigUFloat : IGpuBigNumber<GpuBigUFloat>
         }
         else if (leadingZeros > 0)
         {
-            var expr = normSig << leadingZeros;
-            normSig = expr.Node.Evaluate(normSig.Workspace);
+            normSig = ShiftWithinWidth(normSig, leadingZeros);
             checked
             {
                 normExp = Exponent - leadingZeros;
@@ -161,6 +161,14 @@ public readonly struct GpuBigUFloat : IGpuBigNumber<GpuBigUFloat>
         }
 
         return new GpuBigUFloat(normSig, normExp);
+    }
+
+    // significand * 2^signedBitShift in a new buffer of the same width (a negative shift moves right)
+    private static GpuBigUInt ShiftWithinWidth(GpuBigUInt significand, int signedBitShift)
+    {
+        var shifted = significand.Workspace.RentTemp(significand.NumWords);
+        GpuBigIntMath.ShiftAndResize(significand, signedBitShift, shifted);
+        return shifted;
     }
 
     /// <summary>
