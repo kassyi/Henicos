@@ -125,9 +125,11 @@ StackLinq implements an extensive suite of standard query operators optimized fo
 | **Terminal Aggregation** | `Sum()`, `Count()`, `Aggregate(func)`, `Aggregate(seed, func)`, `Max()`, `Min()`, `Average()` |
 | **Quantifiers & Search** | `Any()`, `All()`, `Contains(value)` |
 | **Element Selection** | `First()`, `FirstOrDefault()`, `Last()`, `LastOrDefault()`, `Single()`, `SingleOrDefault()`, `ElementAt(index)`, `ElementAtOrDefault(index)` |
-| **Materialization & Parallel** | `CopyTo(Span<T>)`, `ToArray()`, `AsParallel()` |
+| **Materialization & Parallel** | `CopyTo(Span<T>)`, `ToArray()` (host-only: a kernel reports `GSH0003`), `AsParallel()` |
 | **State overloads (host-only)** | `Where(state, (item, state) => ...)` (`WhereWithStateEnumerator`), `Select(state, ...)` (`SelectWithStateEnumerator`), `Count`, `Any`, `All`, `First`, `FirstOrDefault` with `(state, predicate)`. The outer value goes in `state` so the lambda can be `static` and allocate no closure. A kernel reports `GSH0003` for them; a kernel lambda reads outer values directly. |
 | **Collect, act & search (host-only)** | `AddTo(collection)`, `AddIf(collection, predicate)`, `Do(action)`, `DoIf(predicate, action)`, `SelectMany(selector)` (`SelectManyEnumerator`), `TryFirst(predicate, out value)`, `IndexOf(predicate)`; all but `AddTo` and `SelectMany` also take a state value. `OfType<TResult>()` (`OfTypeEnumerator`, an instance method of `StackEnumerable`) keeps the elements of a type and drops `null`. They replace host loops that add to a caller-owned collection, run an action per element or search with a "found" result. A kernel reports `GSH0003` for them. |
+
+In a kernel, a chain written in one expression runs as one fused loop. A query stored in a local, an indexed overload (`Where((item, index) => ...)`) and an operator without a fused form (`ElementAt`, `Single`, `SumSequential`, ...) call the device implementation of each operator instead, with the same results. `Sum()` over a struct (the generic `Sum` of an `AsParallel()` sequence) and `Contains(value)` over a struct need the user-defined `+` or the `Equals` of the struct, which GPU code does not call; a kernel reports `GSH0003` for them and suggests `Aggregate` or `Any` with a `[GpuDeviceFunction]`.
 
 For full method signatures and examples, refer to [StackLinqExtensions Class](StackLinqExtensions.md) and the individual method/enumerator reference pages below.
 

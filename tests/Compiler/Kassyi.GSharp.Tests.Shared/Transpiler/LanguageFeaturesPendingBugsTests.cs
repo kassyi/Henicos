@@ -42,7 +42,8 @@ public class LanguageFeaturesPendingBugsTests
         Assert.DoesNotContain("__gsharp_fn_GenericDeviceFunctionCase__Pick_a1(", code, StringComparison.Ordinal);
     }
 
-    [Fact(Skip = "Pending #464: Indexed StackLinq overloads (TakeWhile/SkipWhile/Select/Where) emit 1-arg calls in fused C++ and non-At helpers in unfused C++")]
+    // #464: the indexed overloads are left unfused and call the ...At functions of the device header
+    [Fact]
     public void Test_StackLinqIndexedOverloads_EmitIndexedCalls()
     {
         string source = RoslynTestUtility.ReadTestCase("Transpiler/LanguageFeaturesPending/IndexedStackLinqCase.cs");
@@ -54,7 +55,8 @@ public class LanguageFeaturesPendingBugsTests
         Assert.Contains("StackLinq::SkipWhileAt(", code, StringComparison.Ordinal);
     }
 
-    [Fact(Skip = "Pending #1144: StackLinq Aggregate with named arguments (func:, seed:) misbinds seed and accumulator lambda")]
+    // #1144: reordered named arguments keep the seed as the seed
+    [Fact]
     public void Test_StackLinqAggregateNamedArguments_BindsSeedAndAccumulatorCorrectly()
     {
         string source = RoslynTestUtility.ReadTestCase("Transpiler/LanguageFeaturesPending/AggregateBindingCase.cs");
@@ -65,15 +67,15 @@ public class LanguageFeaturesPendingBugsTests
         Assert.Contains("10", code, StringComparison.Ordinal);
     }
 
-    [Fact(Skip = "Pending #1081: StackLinq TakeLast followed by unfused terminal emits undefined helper in C++")]
+    // #1081: TakeLast before an unfused terminal calls the TakeLast of the device header
+    [Fact]
     public void Test_StackLinqTakeLastWithUnfusedTerminal_EmitsValidCpp()
     {
         string source = RoslynTestUtility.ReadTestCase("Transpiler/LanguageFeaturesPending/TakeLastUnfusedCase.cs");
         var (driver, _, _) = RoslynTestUtility.RunGenerator(source, "Cpu");
         string code = GetGeneratedDeviceCode(driver, "TakeLastUnfusedCase");
 
-        Assert.DoesNotContain("StackLinq::TakeLast(", code, StringComparison.Ordinal);
-    }
+        Assert.Contains("StackLinq::Single(Kassyi::ZeroAlloc::Linq::StackLinq::TakeLast(", code, StringComparison.Ordinal);    }
 
     [Fact]
     public void Test_UserDefinedInlinePtxMethod_IsNotRewrittenToThrow()

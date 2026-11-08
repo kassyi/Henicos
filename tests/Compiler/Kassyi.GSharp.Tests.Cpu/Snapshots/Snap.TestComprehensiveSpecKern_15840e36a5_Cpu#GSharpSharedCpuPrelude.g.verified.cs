@@ -2203,15 +2203,20 @@ __device__ __forceinline__ bool __gsharp_linq_is_nan(double a) { return a != a; 
 
 namespace Kassyi { namespace ZeroAlloc { namespace Linq {
 
+// The elements [index + 1, end) of an array or span; TakeLast / SkipLast narrow the range, as the span overloads of C#
 template <typename T>
 struct ArrayEnumerator {
 GSharpArray<T> source;
 int index;
+int end;
 
-__device__ inline ArrayEnumerator(GSharpArray<T> src) : source(src), index(-1) {}
+__device__ inline ArrayEnumerator(GSharpArray<T> src) : source(src), index(-1), end(src.length) {}
+__device__ inline ArrayEnumerator(GSharpArray<T> src, int first, int last) : source(src), index(first - 1), end(last) {}
+
+__device__ inline int Remaining() const { return end - (index + 1); }
 
 __device__ inline bool MoveNext() {
-if (index + 1 < source.length) {
+if (index + 1 < end) {
 index++;
 return true;
 }
@@ -2413,6 +2418,25 @@ struct StackLinq {
 template <typename T>
 __device__ static inline auto AsStackEnumerable(GSharpArray<T> source) {
 return ArrayEnumerator<T>(source);
+}
+
+// A query that is not fused runs in the calling thread, which gives each thread the aggregate of the whole
+// sequence, as AsParallel() promises
+template <typename TSource>
+__device__ static inline TSource AsParallel(TSource source) {
+return source;
+}
+
+template <typename T>
+__device__ static inline auto TakeLast(ArrayEnumerator<T> source, int count) {
+int n = __gsharp_clamp_count(count, source.Remaining());
+return ArrayEnumerator<T>(source.source, source.end - n, source.end);
+}
+
+template <typename T>
+__device__ static inline auto SkipLast(ArrayEnumerator<T> source, int count) {
+int n = __gsharp_clamp_count(count, source.Remaining());
+return ArrayEnumerator<T>(source.source, source.index + 1, source.end - n);
 }
 
 template <typename TSource, typename TPredicate>
@@ -2663,11 +2687,39 @@ else __gsharp_trap(GSharpErrorCode::InvalidOperation, ""Sequence contains no ele
 return result;
 }
 
+template <typename TSource, typename TPredicate>
+__device__ static inline auto Last(TSource source, TPredicate predicate, uint32_t site_id = 0) {
+auto result = decltype(source.Current())();
+bool found = false;
+while (source.MoveNext()) {
+auto val = source.Current();
+if (predicate(val)) {
+result = val;
+found = true;
+}
+}
+if (!found) {
+if (site_id != 0) __gsharp_trap(GSharpErrorCode::InvalidOperation, site_id);
+else __gsharp_trap(GSharpErrorCode::InvalidOperation, ""Sequence contains no matching element"");
+}
+return result;
+}
+
 template <typename TSource>
 __device__ static inline auto LastOrDefault(TSource source) {
 auto result = decltype(source.Current())();
 while (source.MoveNext()) {
 result = source.Current();
+}
+return result;
+}
+
+template <typename TSource, typename TPredicate>
+__device__ static inline auto LastOrDefault(TSource source, TPredicate predicate) {
+auto result = decltype(source.Current())();
+while (source.MoveNext()) {
+auto val = source.Current();
+if (predicate(val)) result = val;
 }
 return result;
 }
@@ -2680,6 +2732,23 @@ while (source.MoveNext()) {
 sum += source.Current();
 }
 return (TElement)sum;
+}
+
+// Sum(selector) is Select(selector).Sum(), as in C#
+template <typename TSource, typename TSelector>
+__device__ static inline auto Sum(TSource source, TSelector selector) {
+return Sum(SelectEnumerator<TSource, TSelector>(source, selector));
+}
+
+// SumSequential adds in the order of the elements, which is how Sum adds in one thread
+template <typename TSource>
+__device__ static inline auto SumSequential(TSource source) {
+return Sum(source);
+}
+
+template <typename TSource, typename TSelector>
+__device__ static inline auto SumSequential(TSource source, TSelector selector) {
+return Sum(SelectEnumerator<TSource, TSelector>(source, selector));
 }
 
 template <typename TSource, typename TFunc>
