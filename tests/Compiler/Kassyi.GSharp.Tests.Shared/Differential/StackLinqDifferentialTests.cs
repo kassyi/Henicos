@@ -43,6 +43,8 @@ public class StackLinqDifferentialTests
     // Row 9: [-0.0f, -1.0f, -2.0f, +0.0f] (Max is -0.0f vs +0.0f)
     // Row 10: [+0.0f, 1.0f, 2.0f, -0.0f] (Min is +0.0f vs -0.0f)
     // Row 11: [1f, 0f, 0f, 0f] -> exact in float (0.25f)
+    // Row 12: every element NaN (Max is NaN only here)
+    // Row 13: two leading NaN (Max skips both, Min stops at the first)
     private static readonly float[][] s_singleSeed0Rows =
     [
         [16777216f, 1f, 1f, 1f],
@@ -57,6 +59,8 @@ public class StackLinqDifferentialTests
         [-0.0f, -1.0f, -2.0f, +0.0f],
         [+0.0f, 1.0f, 2.0f, -0.0f],
         [1f, 0f, 0f, 0f],
+        [float.NaN, float.NaN, float.NaN, float.NaN],
+        [float.NaN, float.NaN, 1f, -3f],
     ];
 
     private static readonly double[][] s_doubleSeed0Rows =
@@ -69,6 +73,8 @@ public class StackLinqDifferentialTests
         [+0.0, -0.0, +0.0, -0.0],
         [-0.0, -1.0, -2.0, +0.0],
         [+0.0, 1.0, 2.0, -0.0],
+        [double.NaN, double.NaN, double.NaN, double.NaN],
+        [double.NaN, double.NaN, 1.0, -3.0],
     ];
 
     private static readonly DifferentialCase s_int32Matrix = new($"{nameof(StackLinqDifferentialKernels)}.{nameof(StackLinqDifferentialKernels.Int32StackLinqMatrixKernel)}")
