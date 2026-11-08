@@ -131,7 +131,6 @@ __gsharp_id_0_a[__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_id_0_a[__gsharp_id_
 }
 }
 ";
-public static readonly string ContinueInSwitchKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ContinueInSwitchKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ContinueInSwitchKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Transpiler__SwitchInBarrierLoopKernels__ContinueInSwitchKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerContinueInSwitchKernel() => global::Kassyi.GSharp.Tests.Shared.Transpiler.SwitchInBarrierLoopKernels.__gsharp_hfunc_ContinueInSwitchKernel.Resolve();
@@ -300,7 +299,6 @@ __gsharp_id_0_a[__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_id_0_a[__gsharp_id_
 }
 }
 ";
-public static readonly string ContinueInSwitchWithoutCaseKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ContinueInSwitchWithoutCaseKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ContinueInSwitchWithoutCaseKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Transpiler__SwitchInBarrierLoopKernels__ContinueInSwitchWithoutCaseKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerContinueInSwitchWithoutCaseKernel() => global::Kassyi.GSharp.Tests.Shared.Transpiler.SwitchInBarrierLoopKernels.__gsharp_hfunc_ContinueInSwitchWithoutCaseKernel.Resolve();
@@ -500,7 +498,6 @@ __gsharp_id_4_done:
 __gsharp_id_0_a[__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_id_0_a[__gsharp_id_2_tid],7);
 }
 ";
-public static readonly string GotoOutOfSwitchKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +GotoOutOfSwitchKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_GotoOutOfSwitchKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Transpiler__SwitchInBarrierLoopKernels__GotoOutOfSwitchKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerGotoOutOfSwitchKernel() => global::Kassyi.GSharp.Tests.Shared.Transpiler.SwitchInBarrierLoopKernels.__gsharp_hfunc_GotoOutOfSwitchKernel.Resolve();
@@ -697,7 +694,6 @@ __gsharp_id_0_a[__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_id_0_a[__gsharp_id_
 while(__gsharp_id_3_i<3);
 }
 ";
-public static readonly string ContinueInNestedSwitchKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ContinueInNestedSwitchKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ContinueInNestedSwitchKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Transpiler__SwitchInBarrierLoopKernels__ContinueInNestedSwitchKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerContinueInNestedSwitchKernel() => global::Kassyi.GSharp.Tests.Shared.Transpiler.SwitchInBarrierLoopKernels.__gsharp_hfunc_ContinueInNestedSwitchKernel.Resolve();

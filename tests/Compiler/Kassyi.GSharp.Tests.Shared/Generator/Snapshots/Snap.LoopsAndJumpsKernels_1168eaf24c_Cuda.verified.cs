@@ -120,7 +120,6 @@ __gsharp_id_2_total=__gsharp_add_i32(__gsharp_id_2_total,__gsharp_id_3_val);
 __gsharp_id_0_output[0]=__gsharp_id_2_total;
 }
 ";
-public static readonly string ForeachInlineArrayKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ForeachInlineArrayKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ForeachInlineArrayKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__LoopsAndJumpsKernels__ForeachInlineArrayKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerForeachInlineArrayKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.LoopsAndJumpsKernels.__gsharp_hfunc_ForeachInlineArrayKernel.Resolve();
@@ -230,7 +229,6 @@ __gsharp_id_2_total=__gsharp_add_i32(__gsharp_id_2_total,__gsharp_id_3_val);
 __gsharp_id_0_output[0]=__gsharp_id_2_total;
 }
 ";
-public static readonly string ForeachCollectionExpressionKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ForeachCollectionExpressionKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ForeachCollectionExpressionKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__LoopsAndJumpsKernels__ForeachCollectionExpressionKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerForeachCollectionExpressionKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.LoopsAndJumpsKernels.__gsharp_hfunc_ForeachCollectionExpressionKernel.Resolve();
@@ -340,7 +338,6 @@ __gsharp_id_2_total=__gsharp_add_i32(__gsharp_id_2_total,__gsharp_id_3_val);
 __gsharp_id_0_output[0]=__gsharp_id_2_total;
 }
 ";
-public static readonly string ForeachStackAllocKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ForeachStackAllocKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ForeachStackAllocKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__LoopsAndJumpsKernels__ForeachStackAllocKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerForeachStackAllocKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.LoopsAndJumpsKernels.__gsharp_hfunc_ForeachStackAllocKernel.Resolve();

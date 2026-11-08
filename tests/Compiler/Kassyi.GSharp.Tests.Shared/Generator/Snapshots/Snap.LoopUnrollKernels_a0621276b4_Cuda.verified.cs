@@ -96,7 +96,6 @@ __gsharp_id_1_sum=__gsharp_add_i32(__gsharp_id_1_sum,__gsharp_add_i32(__gsharp_i
 __gsharp_id_0_data[0]=__gsharp_id_1_sum;
 }
 ";
-public static readonly string LoopUnrollForKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +LoopUnrollForKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_LoopUnrollForKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__LoopUnrollKernels__LoopUnrollForKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerLoopUnrollForKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.LoopUnrollKernels.__gsharp_hfunc_LoopUnrollForKernel.Resolve();
@@ -206,7 +205,6 @@ __gsharp_id_1_sum=__gsharp_add_i32(__gsharp_id_1_sum,__gsharp_mul_i32(__gsharp_a
 __gsharp_id_0_data[0]=__gsharp_id_1_sum;
 }
 ";
-public static readonly string LoopUnrollFactorKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +LoopUnrollFactorKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_LoopUnrollFactorKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__LoopUnrollKernels__LoopUnrollFactorKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerLoopUnrollFactorKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.LoopUnrollKernels.__gsharp_hfunc_LoopUnrollFactorKernel.Resolve();
@@ -318,7 +316,6 @@ __gsharp_id_1_count=__gsharp_add_i32(__gsharp_id_1_count,1);
 __gsharp_id_0_data[0]=__gsharp_id_2_sum;
 }
 ";
-public static readonly string LoopUnrollWhileKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +LoopUnrollWhileKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_LoopUnrollWhileKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__LoopUnrollKernels__LoopUnrollWhileKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerLoopUnrollWhileKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.LoopUnrollKernels.__gsharp_hfunc_LoopUnrollWhileKernel.Resolve();
@@ -431,7 +428,6 @@ __gsharp_id_1_sum=__gsharp_add_i32(__gsharp_id_1_sum,__gsharp_mul_i32(__gsharp_a
 __gsharp_id_0_data[0]=__gsharp_id_1_sum;
 }
 ";
-public static readonly string LoopUnrollNestedKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +LoopUnrollNestedKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_LoopUnrollNestedKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__LoopUnrollKernels__LoopUnrollNestedKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerLoopUnrollNestedKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.LoopUnrollKernels.__gsharp_hfunc_LoopUnrollNestedKernel.Resolve();
@@ -541,7 +537,6 @@ __gsharp_id_1_sum=__gsharp_add_i32(__gsharp_id_1_sum,2);
 __gsharp_id_0_data[0]=__gsharp_id_1_sum;
 }
 ";
-public static readonly string LoopUnrollSingleStatementKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +LoopUnrollSingleStatementKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_LoopUnrollSingleStatementKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__LoopUnrollKernels__LoopUnrollSingleStatementKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerLoopUnrollSingleStatementKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.LoopUnrollKernels.__gsharp_hfunc_LoopUnrollSingleStatementKernel.Resolve();

@@ -115,7 +115,6 @@ __gsharp_id_0_data[0]=__gsharp_id_2_sum;
 }
 }
 ";
-public static readonly string SimpleWhereSelectSum_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +SimpleWhereSelectSum_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_SimpleWhereSelectSum = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__TestCases__StackLinqFusionTestCases__SimpleWhereSelectSum", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerSimpleWhereSelectSum() => global::Kassyi.GSharp.Tests.Shared.TestCases.StackLinqFusionTestCases.__gsharp_hfunc_SimpleWhereSelectSum.Resolve();
@@ -247,7 +246,6 @@ __gsharp_id_0_data[0]=__gsharp_id_2_sum;
 }
 }
 ";
-public static readonly string MultipleWhere_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +MultipleWhere_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_MultipleWhere = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__TestCases__StackLinqFusionTestCases__MultipleWhere", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerMultipleWhere() => global::Kassyi.GSharp.Tests.Shared.TestCases.StackLinqFusionTestCases.__gsharp_hfunc_MultipleWhere.Resolve();
@@ -375,7 +373,6 @@ __gsharp_id_0_data[0]=__gsharp_id_2_sum;
 }
 }
 ";
-public static readonly string MultipleSelect_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +MultipleSelect_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_MultipleSelect = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__TestCases__StackLinqFusionTestCases__MultipleSelect", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerMultipleSelect() => global::Kassyi.GSharp.Tests.Shared.TestCases.StackLinqFusionTestCases.__gsharp_hfunc_MultipleSelect.Resolve();
@@ -536,7 +533,6 @@ __gsharp_id_0_data[0]=__gsharp_id_2_sum;
 }
 }
 ";
-public static readonly string HellPattern_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +HellPattern_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_HellPattern = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__TestCases__StackLinqFusionTestCases__HellPattern", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerHellPattern() => global::Kassyi.GSharp.Tests.Shared.TestCases.StackLinqFusionTestCases.__gsharp_hfunc_HellPattern.Resolve();

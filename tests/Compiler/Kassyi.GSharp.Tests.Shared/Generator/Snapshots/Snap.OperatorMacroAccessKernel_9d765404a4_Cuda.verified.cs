@@ -317,7 +317,6 @@ __gsharp_id_1_result[1]=__gsharp_id_6_z.__gsharp_mb_V;
 __gsharp_id_1_result[2]=__gsharp_id_2_ctx.__gsharp_mb_Calls;
 }
 ";
-public static readonly string PrivateTargetsKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +PrivateTargetsKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_PrivateTargetsKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroAccessKernels__PrivateTargetsKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerPrivateTargetsKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroAccessKernels.__gsharp_hfunc_PrivateTargetsKernel.Resolve();
@@ -481,7 +480,6 @@ __gsharp_id_1_result[0]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__Opera
 __gsharp_id_1_result[1]=__gsharp_id_2_ctx.__gsharp_mb_Calls;
 }
 ";
-public static readonly string DeviceFunctionKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +DeviceFunctionKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_DeviceFunctionKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroAccessKernels__DeviceFunctionKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerDeviceFunctionKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroAccessKernels.__gsharp_hfunc_DeviceFunctionKernel.Resolve();

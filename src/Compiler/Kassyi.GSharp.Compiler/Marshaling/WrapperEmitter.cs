@@ -230,11 +230,6 @@ internal static class WrapperEmitter
         writer.Append($"public const string {key}_Source = @\"");
         writer.AppendVerbatimLiteral(kernel.GetSource(config.IsCuda));
         writer.AppendLine("\";");
-        writer.AppendLine(
-            $"public static readonly string {key}_FullSource=" +
-            $"global::Kassyi.GSharp.Generated.{config.SharedPreludeClassName}.Source +" +
-            $"global::Kassyi.GSharp.Generated.{config.SharedDeviceCodeClassName}.Source +" +
-            $"{key}_Source;");
         writer.AppendLine();
     }
 

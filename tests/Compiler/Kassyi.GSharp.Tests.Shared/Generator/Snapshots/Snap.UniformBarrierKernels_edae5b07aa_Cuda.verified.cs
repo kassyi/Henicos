@@ -91,7 +91,6 @@ __syncthreads();
 __gsharp_id_0_buffer[0]=__gsharp_add_i32(__gsharp_id_0_buffer[0],2);
 }
 ";
-public static readonly string FlatBarrierKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +FlatBarrierKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_FlatBarrierKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__UniformBarrierKernels__FlatBarrierKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerFlatBarrierKernel() => global::Kassyi.GSharp.Tests.Shared.TestCases.Analyzers.BarrierUsage.UniformBarrierKernels.__gsharp_hfunc_FlatBarrierKernel.Resolve();
@@ -199,7 +198,6 @@ __syncthreads();
 }
 }
 ";
-public static readonly string LoopBarrierKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +LoopBarrierKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_LoopBarrierKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__UniformBarrierKernels__LoopBarrierKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerLoopBarrierKernel() => global::Kassyi.GSharp.Tests.Shared.TestCases.Analyzers.BarrierUsage.UniformBarrierKernels.__gsharp_hfunc_LoopBarrierKernel.Resolve();
@@ -311,7 +309,6 @@ GSharpArray<int> __gsharp_id_2_localSpan = GSharpArray<int>{__gsharp_id_0_buffer
 __gsharp_id_2_localSpan[0]=__gsharp_add_i32(__gsharp_id_2_localSpan[0],200);
 }
 ";
-public static readonly string ScopedSpanBeforeBarrierKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ScopedSpanBeforeBarrierKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ScopedSpanBeforeBarrierKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__UniformBarrierKernels__ScopedSpanBeforeBarrierKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerScopedSpanBeforeBarrierKernel() => global::Kassyi.GSharp.Tests.Shared.TestCases.Analyzers.BarrierUsage.UniformBarrierKernels.__gsharp_hfunc_ScopedSpanBeforeBarrierKernel.Resolve();
@@ -384,7 +381,6 @@ __syncthreads();
 __gsharp_id_0_buffer[0]=3;
 }
 ";
-public static readonly string SafeGotoWithinPhaseKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +SafeGotoWithinPhaseKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_SafeGotoWithinPhaseKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__UniformBarrierKernels__SafeGotoWithinPhaseKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerSafeGotoWithinPhaseKernel() => global::Kassyi.GSharp.Tests.Shared.TestCases.Analyzers.BarrierUsage.UniformBarrierKernels.__gsharp_hfunc_SafeGotoWithinPhaseKernel.Resolve();
