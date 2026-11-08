@@ -7,3 +7,4 @@ cannot catch or would not pay for.
 | Check | How | Issue |
 | :- | :- | :- |
 | Names of members that return `bool` say what `true` means, in the affirmative | List the methods with ast-grep and jq, then read the candidates | #1129 |
+| The specification (`docs/spec`) matches the implementation: APIs, diagnostics, samples | Run the `.agents/workflows/sync-spec.ja.prompt.md` workflow (the C# implementation is the source of truth); pull requests update the pages they touch, this pass catches the rest | - |
