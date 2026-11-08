@@ -162,31 +162,6 @@ public static partial class ManagedGpuContext
     [EditorBrowsable(EditorBrowsableState.Never)]
     public static uint GridStrideCount(int count) => count < 0 ? 0u : (uint)count;
 
-    // The names of the C++ preludes, which the loop that the CPU lowering makes of a Gpu.GridStrideLoop whose body splits
-    // the state machine calls (PreLoweringExpander); generated code reaches them through using static
-
-    /// <summary>The same as <see cref="GridStrideStart"/>. For generated code only.</summary>
-    /// <returns>The rank of the thread, or 2^31 when it is 2^31 or more.</returns>
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public static uint __gsharp_grid_stride_start() => GridStrideStart();
-
-    /// <summary>The same as <see cref="GridStrideStep"/>. For generated code only.</summary>
-    /// <returns>The number of threads, or 2^31 when it is 2^31 or more.</returns>
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public static uint __gsharp_grid_stride_step() => GridStrideStep();
-
-    /// <summary>The same as <see cref="GridStrideCount"/>. For generated code only.</summary>
-    /// <param name="count">The count argument of the loop.</param>
-    /// <returns><paramref name="count"/>, or 0 when it is negative.</returns>
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public static uint __gsharp_grid_stride_count(int count) => GridStrideCount(count);
-
-    /// <summary>The int loop variable of that loop; the index is below the count, so below 2^31. For generated code only.</summary>
-    /// <param name="index">The unsigned index of the loop.</param>
-    /// <returns><paramref name="index"/> as an <see cref="int"/>.</returns>
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public static int __gsharp_grid_stride_index(uint index) => (int)index;
-
     /// <summary>
     /// Set by generated code when the GPU thread being stepped stops at <c>Gpu.SyncThreads</c>, in the kernel or in any
     /// device function it calls; the managed launcher clears it before each step and reads it after, like
@@ -366,20 +341,6 @@ public static partial class ManagedGpuContext
         var lanes = BlockDimX * BlockDimY * BlockDimZ - (LinearThreadId & ~31);
         return lanes >= 32 ? 0xFFFFFFFFu : (1u << lanes) - 1u;
     }
-
-    /// <summary>
-    /// The managed form of <c>Gpu.LaneId()</c>, to which its stub forwards: the linear thread index in the block (x
-    /// fastest) modulo 32, as on the GPU (#845). Outside a managed launch it throws <see cref="GpuOnlyException"/>.
-    /// </summary>
-    /// <returns>The lane of the calling thread in its warp, 0 to 31.</returns>
-    internal static int LaneId() => IsActive ? LinearThreadId & 31 : GpuOnlyException.Throw<int>();
-
-    /// <summary>
-    /// The managed form of <c>Gpu.WarpId()</c>, to which its stub forwards: the linear thread index in the block (x
-    /// fastest) divided by 32, as on the GPU (#845). Outside a managed launch it throws <see cref="GpuOnlyException"/>.
-    /// </summary>
-    /// <returns>The warp of the calling thread in its block.</returns>
-    internal static int WarpId() => IsActive ? LinearThreadId >> 5 : GpuOnlyException.Throw<int>();
 
     // Reads the value that lane srcLane of the caller's warp published for its current shuffle, after checking that the
     // lane exists in the block

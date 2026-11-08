@@ -3,11 +3,25 @@ using System.Numerics;
 
 namespace Kassyi.GSharp.Core;
 
-// The managed forms of the warp votes and reductions (#845). Each lane publishes its predicate or value through
+// The managed forms of Gpu.LaneId(), Gpu.WarpId() and the warp votes and reductions (#845). For a vote, each lane publishes its predicate or value through
 // __gsharp_warp_exchange_assign before a state boundary; after it, every lane reads the values that the lanes of the
 // mask published for the same exchange. The native CPU prelude (WarpAndHints.hpp) computes the same.
 public static partial class ManagedGpuContext
 {
+    /// <summary>
+    /// The managed form of <c>Gpu.LaneId()</c>, to which its stub forwards: the linear thread index in the block (x
+    /// fastest) modulo 32, as on the GPU (#845). Outside a managed launch it throws <see cref="GpuOnlyException"/>.
+    /// </summary>
+    /// <returns>The lane of the calling thread in its warp, 0 to 31.</returns>
+    internal static int LaneId() => IsActive ? LinearThreadId & 31 : GpuOnlyException.Throw<int>();
+
+    /// <summary>
+    /// The managed form of <c>Gpu.WarpId()</c>, to which its stub forwards: the linear thread index in the block (x
+    /// fastest) divided by 32, as on the GPU (#845). Outside a managed launch it throws <see cref="GpuOnlyException"/>.
+    /// </summary>
+    /// <returns>The warp of the calling thread in its block.</returns>
+    internal static int WarpId() => IsActive ? LinearThreadId >> 5 : GpuOnlyException.Throw<int>();
+
     // The lanes that take part: the lanes of mask that exist in the block. The caller must be one of them; CUDA leaves the
     // result undefined otherwise.
     private static uint GetVoteLanes(int linearTid, uint mask, string name, string location)

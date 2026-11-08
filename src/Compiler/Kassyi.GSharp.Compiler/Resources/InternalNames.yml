@@ -263,10 +263,10 @@ Prelude:
     SetThreadIndex: { Value: __gsharp_set_thread_idx, Prelude: ThreadAndMemory.hpp }
     # Gpu.GridStrideLoop: declared by ThreadAndMemory.hpp for the CPU dialects and by the CUDA prelude, and by
     # ManagedGpuContext for the loop that the CPU lowering expands (PreLoweringExpander)
-    GridStrideStart: { Value: __gsharp_grid_stride_start, Prelude: ThreadAndMemory.hpp, Managed: ManagedGpuContext.cs }
-    GridStrideStep: { Value: __gsharp_grid_stride_step, Prelude: ThreadAndMemory.hpp, Managed: ManagedGpuContext.cs }
-    GridStrideCount: { Value: __gsharp_grid_stride_count, Prelude: ThreadAndMemory.hpp, Managed: ManagedGpuContext.cs }
-    GridStrideIndex: { Value: __gsharp_grid_stride_index, Prelude: ThreadAndMemory.hpp, Managed: ManagedGpuContext.cs }
+    GridStrideStart: { Value: __gsharp_grid_stride_start, Prelude: ThreadAndMemory.hpp, Managed: ManagedGpuContext.GridStride.cs }
+    GridStrideStep: { Value: __gsharp_grid_stride_step, Prelude: ThreadAndMemory.hpp, Managed: ManagedGpuContext.GridStride.cs }
+    GridStrideCount: { Value: __gsharp_grid_stride_count, Prelude: ThreadAndMemory.hpp, Managed: ManagedGpuContext.GridStride.cs }
+    GridStrideIndex: { Value: __gsharp_grid_stride_index, Prelude: ThreadAndMemory.hpp, Managed: ManagedGpuContext.GridStride.cs }
     # The extern dynamic shared memory buffer of the CUDA prelude; the CPU dialects place dynamic declarations in the
     # arena of ThreadAndMemory.hpp instead.
     DynamicSharedMemory: { Value: __gsharp_dynamic_smem, Prelude: ../Prelude.cu }
