@@ -20,7 +20,7 @@ public class SyncIntrinsicClassifierTests
     {
         [("Gpu", "SyncThreads")] = new(SyncIntrinsicKind.BlockBarrier, SyncScope.Block, true, false),
         [("Gpu", "SyncGrid")] = new(SyncIntrinsicKind.GridBarrier, SyncScope.Grid, true, false),
-        [("Gpu", "SyncWarp")] = new(SyncIntrinsicKind.WarpBarrier, SyncScope.Warp, false, false),
+        [("Gpu", "SyncWarp")] = new(SyncIntrinsicKind.WarpShuffle, SyncScope.Warp, true, false, WarpShuffleKind.SyncWarp),
         [("Gpu", "MatchAnySync")] = new(SyncIntrinsicKind.WarpShuffle, SyncScope.Warp, true, true, WarpShuffleKind.MatchAny),
         [("Gpu", "MatchAllSync")] = new(SyncIntrinsicKind.WarpShuffle, SyncScope.Warp, true, true, WarpShuffleKind.MatchAll),
         [("Gpu", "ThreadFence")] = new(SyncIntrinsicKind.MemoryFence, SyncScope.None, false, false),

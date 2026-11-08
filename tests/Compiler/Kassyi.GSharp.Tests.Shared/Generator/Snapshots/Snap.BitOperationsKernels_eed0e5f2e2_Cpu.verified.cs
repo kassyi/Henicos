@@ -43,8 +43,6 @@ public static partial class AotContexts
 public const string Rotate32Kernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__BitOperationsKernels__Rotate32Kernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__BitOperationsKernels__Rotate32Kernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -142,7 +140,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__BitOperationsKernels__Rotate32Kernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__BitOperationsKernels__Rotate32Kernel(uint[] val, int[] shift, uint[] rotLeftRes, uint[] rotRightRes, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__BitOperationsKernels__Rotate32Kernel __gsharp_ctx) {
@@ -305,8 +307,6 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dl
 public const string Rotate64Kernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__BitOperationsKernels__Rotate64Kernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__BitOperationsKernels__Rotate64Kernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -404,7 +404,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__BitOperationsKernels__Rotate64Kernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__BitOperationsKernels__Rotate64Kernel(ulong[] val, int[] shift, ulong[] rotLeftRes, ulong[] rotRightRes, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__BitOperationsKernels__Rotate64Kernel __gsharp_ctx) {
@@ -567,8 +571,6 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dl
 public const string InterlockedReorderedNamedArgsKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__BitOperationsKernels__InterlockedReorderedNamedArgsKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__BitOperationsKernels__InterlockedReorderedNamedArgsKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -690,7 +692,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__BitOperationsKernels__InterlockedReorderedNamedArgsKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__BitOperationsKernels__InterlockedReorderedNamedArgsKernel(int[] targets, int[] results, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__BitOperationsKernels__InterlockedReorderedNamedArgsKernel __gsharp_ctx) {
@@ -849,8 +855,6 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dl
 public const string InterlockedLongReorderedNamedArgsKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__BitOperationsKernels__InterlockedLongReorderedNamedArgsKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__BitOperationsKernels__InterlockedLongReorderedNamedArgsKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -966,7 +970,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__BitOperationsKernels__InterlockedLongReorderedNamedArgsKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__BitOperationsKernels__InterlockedLongReorderedNamedArgsKernel(long[] targets, long[] results, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__BitOperationsKernels__InterlockedLongReorderedNamedArgsKernel __gsharp_ctx) {
@@ -1124,8 +1132,6 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dl
 public const string RotationReorderedNamedArgsKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__BitOperationsKernels__RotationReorderedNamedArgsKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__BitOperationsKernels__RotationReorderedNamedArgsKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -1235,7 +1241,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__BitOperationsKernels__RotationReorderedNamedArgsKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__BitOperationsKernels__RotationReorderedNamedArgsKernel(uint[] values, uint[] results, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__BitOperationsKernels__RotationReorderedNamedArgsKernel __gsharp_ctx) {
@@ -1392,8 +1402,6 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dl
 public const string RotationLongReorderedNamedArgsKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__BitOperationsKernels__RotationLongReorderedNamedArgsKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__BitOperationsKernels__RotationLongReorderedNamedArgsKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -1503,7 +1511,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__BitOperationsKernels__RotationLongReorderedNamedArgsKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__BitOperationsKernels__RotationLongReorderedNamedArgsKernel(ulong[] values, ulong[] results, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__BitOperationsKernels__RotationLongReorderedNamedArgsKernel __gsharp_ctx) {
@@ -1660,8 +1672,6 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dl
 public const string ReorderedNamedArgsEvaluationOrderKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__BitOperationsKernels__ReorderedNamedArgsEvaluationOrderKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__BitOperationsKernels__ReorderedNamedArgsEvaluationOrderKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -1774,7 +1784,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__BitOperationsKernels__ReorderedNamedArgsEvaluationOrderKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__BitOperationsKernels__ReorderedNamedArgsEvaluationOrderKernel(int[] targets, int[] intResults, uint[] u32Results, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__BitOperationsKernels__ReorderedNamedArgsEvaluationOrderKernel __gsharp_ctx) {

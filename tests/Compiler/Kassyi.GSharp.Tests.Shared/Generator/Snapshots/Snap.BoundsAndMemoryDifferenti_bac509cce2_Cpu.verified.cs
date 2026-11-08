@@ -59,8 +59,6 @@ static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__D
 struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__ArrayAndSpanBoundaryEdgesKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__ArrayAndSpanBoundaryEdgesKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -189,7 +187,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__ArrayAndSpanBoundaryEdgesKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__ArrayAndSpanBoundaryEdgesKernel(int[] src, int[] dst, int rows, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__ArrayAndSpanBoundaryEdgesKernel __gsharp_ctx) {
@@ -373,8 +375,6 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dl
 public const string ArrayIndexBoundsKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__ArrayIndexBoundsKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__ArrayIndexBoundsKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -478,7 +478,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__ArrayIndexBoundsKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__ArrayIndexBoundsKernel(int[] src, int[] readIndices, int[] writeIndices, int[] dst, int rows, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__ArrayIndexBoundsKernel __gsharp_ctx) {
@@ -651,8 +655,6 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dl
 public const string SpanCanaryIndexBoundsKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__SpanCanaryIndexBoundsKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__SpanCanaryIndexBoundsKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -758,7 +760,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__SpanCanaryIndexBoundsKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__SpanCanaryIndexBoundsKernel(int[] backing, int[] indices, int[] dst, int sliceStart, int sliceLen, int rows, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__SpanCanaryIndexBoundsKernel __gsharp_ctx) {
@@ -926,8 +932,6 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dl
 public const string SpanSliceStartKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__SpanSliceStartKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__SpanSliceStartKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -1030,7 +1034,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__SpanSliceStartKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__SpanSliceStartKernel(int[] backing, int[] starts, int[] dst, int sliceStart, int sliceLen, int rows, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__SpanSliceStartKernel __gsharp_ctx) {
@@ -1195,8 +1203,6 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dl
 public const string SpanSliceStartCountKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__SpanSliceStartCountKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__SpanSliceStartCountKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -1299,7 +1305,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__SpanSliceStartCountKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__SpanSliceStartCountKernel(int[] backing, int[] starts, int[] counts, int[] dst, int sliceStart, int sliceLen, int rows, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__SpanSliceStartCountKernel __gsharp_ctx) {
@@ -1471,8 +1481,6 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dl
 public const string ArraySegmentBoundsKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__ArraySegmentBoundsKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__ArraySegmentBoundsKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -1574,7 +1582,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__ArraySegmentBoundsKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__ArraySegmentBoundsKernel(global::System.ArraySegment<int> seg, int[] indices, int[] dst, int rows, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__ArraySegmentBoundsKernel __gsharp_ctx) {
@@ -1735,8 +1747,6 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dl
 public const string MemoryBoundsKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__MemoryBoundsKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__MemoryBoundsKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -1838,7 +1848,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__MemoryBoundsKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__MemoryBoundsKernel(global::System.Memory<int> mem, global::System.ReadOnlyMemory<int> roMem, int[] indices, int[] dst, int rows, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__MemoryBoundsKernel __gsharp_ctx) {
@@ -2003,8 +2017,6 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dl
 public const string SharedMemoryBoundsKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__SharedMemoryBoundsKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__SharedMemoryBoundsKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 GSharpArray<int> __gsharp_id_0_indices;
@@ -2128,11 +2140,15 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__SharedMemoryBoundsKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
 public int[] indices;
 public int[] dst;
 public int rows;
 public int tid;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__SharedMemoryBoundsKernel(int[] __gsharp_in_indices, int[] __gsharp_in_dst, int __gsharp_in_rows, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__SharedMemoryBoundsKernel __gsharp_ctx) {
@@ -2341,8 +2357,6 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__
 struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__InlineArrayBoundsKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__InlineArrayBoundsKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -2451,7 +2465,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__InlineArrayBoundsKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__InlineArrayBoundsKernel(int[] indices, int[] dst, int rows, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__InlineArrayBoundsKernel __gsharp_ctx) {
@@ -2616,8 +2634,6 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dl
 public const string NullArrayOptionalValidKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__NullArrayOptionalValidKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__NullArrayOptionalValidKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -2727,7 +2743,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__NullArrayOptionalValidKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__NullArrayOptionalValidKernel(int[] src, int[] dst, int rows, int[]? opt, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__NullArrayOptionalValidKernel __gsharp_ctx) {
@@ -2908,8 +2928,6 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__
 struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__NullArrayLengthTrapKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__NullArrayLengthTrapKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -3012,7 +3030,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__NullArrayLengthTrapKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__NullArrayLengthTrapKernel(int[] dst, int rows, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__NullArrayLengthTrapKernel __gsharp_ctx) {
@@ -3176,8 +3198,6 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__
 struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__NullArrayIndexerTrapKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__NullArrayIndexerTrapKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -3280,7 +3300,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__NullArrayIndexerTrapKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__NullArrayIndexerTrapKernel(int[] dst, int rows, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__NullArrayIndexerTrapKernel __gsharp_ctx) {
@@ -3444,8 +3468,6 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__
 struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__NullArrayForeachTrapKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__NullArrayForeachTrapKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -3553,7 +3575,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__NullArrayForeachTrapKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__NullArrayForeachTrapKernel(int[] dst, int rows, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__NullArrayForeachTrapKernel __gsharp_ctx) {
@@ -3724,8 +3750,6 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__
 struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__NullArrayReassignedParameterTrapKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__NullArrayReassignedParameterTrapKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -3832,7 +3856,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__NullArrayReassignedParameterTrapKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__NullArrayReassignedParameterTrapKernel(int[] src, int[] dst, int rows, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__NullArrayReassignedParameterTrapKernel __gsharp_ctx) {
@@ -3997,8 +4025,6 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dl
 public const string BoundsCheckEliminationValidKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__BoundsCheckEliminationValidKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__BoundsCheckEliminationValidKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -4104,7 +4130,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__BoundsCheckEliminationValidKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__BoundsCheckEliminationValidKernel(int[] backing, int[] indices, int[] dst, int sliceStart, int sliceLen, int rows, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__BoundsCheckEliminationValidKernel __gsharp_ctx) {
@@ -4273,8 +4303,6 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dl
 public const string BoundsCheckEliminationOffByOneKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__BoundsCheckEliminationOffByOneKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__BoundsCheckEliminationOffByOneKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -4380,7 +4408,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__BoundsCheckEliminationOffByOneKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__BoundsCheckEliminationOffByOneKernel(int[] backing, int[] indices, int[] dst, int sliceStart, int sliceLen, int rows, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__BoundsCheckEliminationOffByOneKernel __gsharp_ctx) {
@@ -4549,8 +4581,6 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dl
 public const string BoundsCheckEliminationWrongSpanKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__BoundsCheckEliminationWrongSpanKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__BoundsCheckEliminationWrongSpanKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -4657,7 +4687,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__BoundsCheckEliminationWrongSpanKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__BoundsCheckEliminationWrongSpanKernel(int[] backing, int[] otherBacking, int[] indices, int[] dst, int sliceStart, int sliceLen, int otherLen, int rows, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__BoundsCheckEliminationWrongSpanKernel __gsharp_ctx) {
@@ -4834,8 +4868,6 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dl
 public const string BoundsCheckEliminationPostIncrementKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__BoundsCheckEliminationPostIncrementKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__BoundsCheckEliminationPostIncrementKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -4942,7 +4974,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__BoundsCheckEliminationPostIncrementKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__BoundsCheckEliminationPostIncrementKernel(int[] backing, int[] indices, int[] dst, int sliceStart, int sliceLen, int rows, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__BoundsCheckEliminationPostIncrementKernel __gsharp_ctx) {
@@ -5112,8 +5148,6 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dl
 public const string BoundsCheckEliminationUpperOnlyKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__BoundsCheckEliminationUpperOnlyKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__BoundsCheckEliminationUpperOnlyKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -5219,7 +5253,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__BoundsCheckEliminationUpperOnlyKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__BoundsCheckEliminationUpperOnlyKernel(int[] backing, int[] indices, int[] dst, int sliceStart, int sliceLen, int rows, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__BoundsCheckEliminationUpperOnlyKernel __gsharp_ctx) {
@@ -5399,8 +5437,6 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__
 struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__AllThreadsNullDereferenceTrapKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__AllThreadsNullDereferenceTrapKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -5513,7 +5549,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__AllThreadsNullDereferenceTrapKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__AllThreadsNullDereferenceTrapKernel(int[] flags, int[] dst, int rows, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__AllThreadsNullDereferenceTrapKernel __gsharp_ctx) {
@@ -5685,8 +5725,6 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dl
 public const string AllThreadsEmptyFirstTrapKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__AllThreadsEmptyFirstTrapKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__AllThreadsEmptyFirstTrapKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -5812,7 +5850,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__AllThreadsEmptyFirstTrapKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__AllThreadsEmptyFirstTrapKernel(int[] emptyArr, int[] flags, int[] dst, int rows, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__AllThreadsEmptyFirstTrapKernel __gsharp_ctx) {

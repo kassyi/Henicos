@@ -37,8 +37,6 @@ public static partial class AotContexts
 public const string SingleMaxMinKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__MathMaxMinKernels__SingleMaxMinKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__MathMaxMinKernels__SingleMaxMinKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -143,7 +141,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__MathMaxMinKernels__SingleMaxMinKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__MathMaxMinKernels__SingleMaxMinKernel(float[] left, float[] right, float[] result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__MathMaxMinKernels__SingleMaxMinKernel __gsharp_ctx) {
@@ -306,8 +308,6 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dl
 public const string DoubleMaxMinKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__MathMaxMinKernels__DoubleMaxMinKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__MathMaxMinKernels__DoubleMaxMinKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -410,7 +410,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__MathMaxMinKernels__DoubleMaxMinKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__MathMaxMinKernels__DoubleMaxMinKernel(double[] left, double[] right, double[] result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__MathMaxMinKernels__DoubleMaxMinKernel __gsharp_ctx) {
@@ -571,8 +575,6 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dl
 public const string SingleClampKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__MathMaxMinKernels__SingleClampKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__MathMaxMinKernels__SingleClampKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -669,7 +671,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__MathMaxMinKernels__SingleClampKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__MathMaxMinKernels__SingleClampKernel(float[] value, float[] min, float[] max, float[] result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__MathMaxMinKernels__SingleClampKernel __gsharp_ctx) {
@@ -831,8 +837,6 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dl
 public const string DoubleClampKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__MathMaxMinKernels__DoubleClampKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__MathMaxMinKernels__DoubleClampKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -929,7 +933,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__MathMaxMinKernels__DoubleClampKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__MathMaxMinKernels__DoubleClampKernel(double[] value, double[] min, double[] max, double[] result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__MathMaxMinKernels__DoubleClampKernel __gsharp_ctx) {
@@ -1091,8 +1099,6 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dl
 public const string MixedOperandMaxKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__MathMaxMinKernels__MixedOperandMaxKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__MathMaxMinKernels__MixedOperandMaxKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -1191,7 +1197,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__MathMaxMinKernels__MixedOperandMaxKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__MathMaxMinKernels__MixedOperandMaxKernel(float[] single, double[] wide, int[] whole, float[] singleResult, double[] wideResult, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__MathMaxMinKernels__MixedOperandMaxKernel __gsharp_ctx) {

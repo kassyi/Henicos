@@ -139,6 +139,7 @@ internal static class HostLauncherTranspiler
 
                     context.Emitter.Writer.AppendLine("}");
                     context.Emitter.Writer.AppendLine($"std::atomic<bool> {AnyActive}{{true}};");
+                    WriteRoundDeclaration(step, ref context);
                     context.Emitter.Writer.AppendLine($"while ({AnyActive} && !{Error}.HasError())");
                     using (context.Emitter.Writer.Scope())
                     {
@@ -309,6 +310,7 @@ internal static class HostLauncherTranspiler
 
                 context.Emitter.Writer.AppendLine($"std::atomic<bool> {AnyActive}{{true}};");
                 context.Emitter.Writer.AppendLine($"bool {GridSyncReached} = false;");
+                WriteRoundDeclaration(step, ref context);
                 // [WHY] A thread that reached the grid sync waits there while the other threads of the block go on to it:
                 // they may need more steps (a shuffle or a block barrier before it). The block's part of the phase ends
                 // when no thread can run
@@ -360,7 +362,8 @@ internal static class HostLauncherTranspiler
 
         if (step.ReachesWarpShuffle)
         {
-            context.Emitter.Writer.AppendLine($"int32_t {WarpMinState} = INT32_MAX;");
+            context.Emitter.Writer.AppendLine($"{Round}++;");
+            context.Emitter.Writer.AppendLine($"bool {Stepped} = false;");
         }
 
         // [WHY] The threads of a block run one after another on the OpenMP thread that runs the block: the shared memory
@@ -370,11 +373,6 @@ internal static class HostLauncherTranspiler
         using (context.Emitter.Writer.Scope())
         {
             context.Emitter.Writer.AppendLine($"if ({Error}.HasError()) continue;");
-            if (step.ReachesWarpShuffle)
-            {
-                WriteWarpMinState(ref context);
-            }
-
             context.Emitter.Writer.AppendLine($"{ActiveErrorSlot} = &{Error};");
             context.Emitter.Writer.AppendLine($"int32_t {ThreadX} = {ThreadLoopIndex} % {BlockDimX};");
             context.Emitter.Writer.AppendLine(
@@ -406,9 +404,38 @@ internal static class HostLauncherTranspiler
             }
         }
 
+        if (step.ReachesWarpShuffle)
+        {
+            WriteWarpStallCheck(ref context);
+        }
+
         if (step.HasContext)
         {
             WriteBlockBarrierRelease(ref context);
+        }
+    }
+
+    // uint32_t __gsharp_round = 0; in a kernel that reaches a warp collective: the launcher's rounds of the block, which
+    // tell when a lane published (#1468)
+    private static void WriteRoundDeclaration(in KernelStep step, ref TranspileContext context)
+    {
+        if (step.ReachesWarpShuffle)
+        {
+            context.Emitter.Writer.AppendLine($"uint32_t {Round} = 0;");
+        }
+    }
+
+    // [WHY] A thread that waits at a warp collective counts as one that can go on, so a round in which none of them ran
+    // means that they wait for lanes that never reach the same call: the GPU leaves that undefined (#1468), and the next
+    // round would be the same.
+    // if (__gsharp_any_active && !__gsharp_stepped) { __gsharp_warp_report_stall(<contexts>, <threads>); }
+    private static void WriteWarpStallCheck(ref TranspileContext context)
+    {
+        context.Emitter.Writer.AppendLine($"if ({AnyActive} && !{Stepped})");
+        using (context.Emitter.Writer.Scope())
+        {
+            context.Emitter.Writer.AppendLine(
+                $"{WarpReportStall}(&{Contexts}[0], (uint32_t){ThreadsPerBlock});");
         }
     }
 
@@ -416,51 +443,24 @@ internal static class HostLauncherTranspiler
     private const string RunnableCondition =
         $"{Contexts}[{ContextThreadIndex}].{State} != -1 && !{Contexts}[{ContextThreadIndex}].{YieldedForBlockBarrier} && !{Contexts}[{ContextThreadIndex}].{YieldedForGridSync}";
 
-    private const string WarpRunnableCondition =
-        $"{Contexts}[{WarpThreadIndex}].{State} != -1 && !{Contexts}[{WarpThreadIndex}].{YieldedForBlockBarrier} && !{Contexts}[{WarpThreadIndex}].{YieldedForGridSync}";
-
     private static void WriteSteppedThread(in KernelStep step, ref TranspileContext context)
     {
+        // A thread that waits at a warp collective runs once the lanes of its mask have met there (#1468)
         if (step.ReachesWarpShuffle)
         {
-            context.Emitter.Writer.AppendLine($"if ({Contexts}[{ContextThreadIndex}].{State} == {WarpMinState})");
+            context.Emitter.Writer.AppendLine(
+                $"if ({WarpCanRun}(&{Contexts}[0], {ContextThreadIndex}, (uint32_t){ThreadsPerBlock}, {Round}))");
         }
 
         using (step.ReachesWarpShuffle ? context.Emitter.Writer.Scope() : default)
         {
+            context.Emitter.Writer.AppendLineIf(step.ReachesWarpShuffle, $"{Stepped} = true;");
             context.Emitter.Writer.AppendLine(
                 $"{SetThreadIndex}({ThreadX}, {ThreadY}, {ThreadZ}, {BlockX}, {BlockY}, {BlockZ}, {BlockDimX}, {BlockDimY}, {BlockDimZ}, {GridDimX}, {GridDimY}, {GridDimZ});");
             WriteKernelCall(step, ref context);
             if (step.HasContext)
             {
                 WriteGridSyncCheck(step, ref context);
-            }
-        }
-    }
-
-    // In a kernel that reaches a warp shuffle, only the runnable lanes at the warp's lowest state step in each round,
-    // so lanes that skip a sub-warp shuffle reconverge with the lanes that took it before the next full-warp shuffle (#1001).
-    // Assumes a lower state number means a lane is behind. A loop back-edge returns to a lower state, which would invert
-    // the order across iterations; that only arises when a full-mask shuffle sits inside a loop with divergent trip count,
-    // which is undefined behavior on CUDA as well.
-    private static void WriteWarpMinState(ref TranspileContext context)
-    {
-        context.Emitter.Writer.AppendLine($"if (({ThreadLoopIndex} & 31) == 0)");
-        using (context.Emitter.Writer.Scope())
-        {
-            context.Emitter.Writer.AppendLine($"{WarpMinState} = INT32_MAX;");
-            context.Emitter.Writer.AppendLine(
-                $"int32_t {WarpEnd} = {ThreadLoopIndex} + 32 < {ThreadsPerBlock} ? {ThreadLoopIndex} + 32 : {ThreadsPerBlock};");
-            context.Emitter.Writer.AppendLine(
-                $"for (int32_t {WarpThreadIndex} = {ThreadLoopIndex}; {WarpThreadIndex} < {WarpEnd}; {WarpThreadIndex}++)");
-            using (context.Emitter.Writer.Scope())
-            {
-                context.Emitter.Writer.AppendLine(
-                    $"if ({WarpRunnableCondition} && {Contexts}[{WarpThreadIndex}].{State} < {WarpMinState})");
-                using (context.Emitter.Writer.Scope())
-                {
-                    context.Emitter.Writer.AppendLine($"{WarpMinState} = {Contexts}[{WarpThreadIndex}].{State};");
-                }
             }
         }
     }

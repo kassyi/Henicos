@@ -150,13 +150,18 @@ public partial class SyncGridBodyKernels
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__Step {
 internal int __gsharp_state;
-internal uint __gsharp_warp_exchange;
+internal uint __gsharp_warp_path;
 internal int[] a;
 internal int[] b;
 internal int[] c;
 internal int tid;
 internal int n;
 internal global::Kassyi.GSharp.Tests.Shared.Transpiler.SyncGridBodyKernels.__gsharp_frame_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ShiftInBlock __gsharp_call_frame_0 = new();
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+next = __gsharp_call_frame_0.__gsharp_number_warp_paths(next);
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__Step(int[] __gsharp_in_a, int[] __gsharp_in_b, int[] __gsharp_in_c, int __gsharp_in_tid, int __gsharp_in_n, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__Step __gsharp_ctx) {
@@ -212,12 +217,16 @@ throw new global::System.InvalidOperationException("The device function state ma
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ShiftInBlock {
 internal int __gsharp_state;
-internal uint __gsharp_warp_exchange;
+internal uint __gsharp_warp_path;
 internal int[] c;
 internal int tid;
 internal int lane;
 internal int next;
 internal int value;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ShiftInBlock(int[] __gsharp_in_c, int __gsharp_in_tid, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ShiftInBlock __gsharp_ctx) {
@@ -262,11 +271,15 @@ throw new global::System.InvalidOperationException("The device function state ma
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__WriteSyncRead {
 internal int __gsharp_state;
-internal uint __gsharp_warp_exchange;
+internal uint __gsharp_warp_path;
 internal int[] a;
 internal int[] b;
 internal int tid;
 internal int n;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__WriteSyncRead(int[] __gsharp_in_a, int[] __gsharp_in_b, int __gsharp_in_tid, int __gsharp_in_n, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__WriteSyncRead __gsharp_ctx) {
@@ -303,12 +316,17 @@ throw new global::System.InvalidOperationException("The device function state ma
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__CallWriteSyncRead {
 internal int __gsharp_state;
-internal uint __gsharp_warp_exchange;
+internal uint __gsharp_warp_path;
 internal int[] a;
 internal int[] b;
 internal int tid;
 internal int n;
 internal global::Kassyi.GSharp.Tests.Shared.Transpiler.SyncGridBodyKernels.__gsharp_frame_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__WriteSyncRead __gsharp_call_frame_0 = new();
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+next = __gsharp_call_frame_0.__gsharp_number_warp_paths(next);
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__CallWriteSyncRead(int[] __gsharp_in_a, int[] __gsharp_in_b, int __gsharp_in_tid, int __gsharp_in_n, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__CallWriteSyncRead __gsharp_ctx) {

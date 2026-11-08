@@ -84,7 +84,11 @@ public partial class GridSyncPhaseKernels
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__GridSyncPhaseKernels__WaitForGrid {
 internal int __gsharp_state;
-internal uint __gsharp_warp_exchange;
+internal uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__GridSyncPhaseKernels__WaitForGrid(__gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__GridSyncPhaseKernels__WaitForGrid __gsharp_ctx) {

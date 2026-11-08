@@ -624,8 +624,6 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__
 struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__BoolAllPositionsKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__BoolAllPositionsKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -748,7 +746,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__BoolAllPositionsKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__BoolAllPositionsKernel(bool v, in bool iv, ref bool rv, ref bool ov, bool[] arr, ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffBoolPack pack, int[] probe, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__BoolAllPositionsKernel __gsharp_ctx, ref bool __gsharp_auto_result) {
@@ -965,8 +967,6 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__
 struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__CharAllPositionsKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__CharAllPositionsKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -1088,7 +1088,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__CharAllPositionsKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__CharAllPositionsKernel(char v, in char iv, ref char rv, ref char ov, char[] arr, ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffCharPack pack, int[] probe, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__CharAllPositionsKernel __gsharp_ctx, ref char __gsharp_auto_result) {
@@ -1306,8 +1310,6 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__
 struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__NullableBlitPositionsKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__NullableBlitPositionsKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -1471,7 +1473,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__NullableBlitPositionsKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__NullableBlitPositionsKernel(int?[] arr, ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffNullableBlitHolder h, int[] probe, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__NullableBlitPositionsKernel __gsharp_ctx, ref int? __gsharp_auto_result) {
@@ -1703,8 +1709,6 @@ return __gsharp_auto_result;
 public const string NullableBlitScalarArgKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__NullableBlitScalarArgKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__NullableBlitScalarArgKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -1827,7 +1831,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__NullableBlitScalarArgKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__NullableBlitScalarArgKernel(int? v, ref byte? rb, ref char? oc, int[] probe, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__NullableBlitScalarArgKernel __gsharp_ctx) {
@@ -2015,8 +2023,6 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__
 struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__NullableConvertPositionsKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__NullableConvertPositionsKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -2141,7 +2147,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__NullableConvertPositionsKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__NullableConvertPositionsKernel(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffNullableVec2Holder h, float[] probe, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__NullableConvertPositionsKernel __gsharp_ctx) {
@@ -2365,8 +2375,6 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__
 struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__ExplicitLayoutAndUnionPositionsKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__ExplicitLayoutAndUnionPositionsKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -2492,7 +2500,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__ExplicitLayoutAndUnionPositionsKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__ExplicitLayoutAndUnionPositionsKernel(global::Kassyi.GSharp.Tests.Shared.Differential.DiffExplicitGapped gVal, ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffFloatUintUnion uRef, global::Kassyi.GSharp.Tests.Shared.Differential.DiffExplicitGapped[] gArr, global::Kassyi.GSharp.Tests.Shared.Differential.DiffFloatUintUnion[] uArr, int[] probe, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__ExplicitLayoutAndUnionPositionsKernel __gsharp_ctx, ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffFloatUintUnion __gsharp_auto_result) {
@@ -2741,8 +2753,6 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__
 struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__ExplicitUnionWithConvertArmKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__ExplicitUnionWithConvertArmKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -2856,7 +2866,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__ExplicitUnionWithConvertArmKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__ExplicitUnionWithConvertArmKernel(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffConvertExplicitUnion u, float[] probe, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__ExplicitUnionWithConvertArmKernel __gsharp_ctx) {
@@ -3069,8 +3083,6 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__
 struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__AutoLayoutAllPositionsKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__AutoLayoutAllPositionsKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -3201,7 +3213,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__AutoLayoutAllPositionsKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__AutoLayoutAllPositionsKernel(global::Kassyi.GSharp.Tests.Shared.Differential.DiffAutoMixed val, in global::Kassyi.GSharp.Tests.Shared.Differential.DiffAutoMixed inVal, ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffAutoMixed refVal, ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffAutoMixed outVal, global::Kassyi.GSharp.Tests.Shared.Differential.DiffAutoMixed[] arr, ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffAutoNested nested, long[] probe, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__AutoLayoutAllPositionsKernel __gsharp_ctx, ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffAutoMixed __gsharp_auto_result) {
@@ -3572,8 +3588,6 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__
 struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__InlineArrayAndFixedBufferPositionsKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__InlineArrayAndFixedBufferPositionsKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -3714,7 +3728,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public unsafe struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__InlineArrayAndFixedBufferPositionsKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__InlineArrayAndFixedBufferPositionsKernel(global::Kassyi.GSharp.Tests.Shared.Differential.DiffInlineVec2Padded3 valVecs, ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffInlineOuterPacket outer, global::Kassyi.GSharp.Tests.Shared.Differential.DiffInlineVec2Padded3[] vecArr, ref global::Kassyi.GSharp.Tests.Shared.Differential.FixedBufferPacket fixedPkt, global::Kassyi.GSharp.Tests.Shared.Differential.FixedBufferPacket[] fixedArr, int[] probe, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__InlineArrayAndFixedBufferPositionsKernel* __gsharp_ctx, ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffInlineVec2Padded3 __gsharp_auto_result) {
@@ -3988,8 +4006,6 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__
 struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__InlineArrayNullableVec2Kernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__InlineArrayNullableVec2Kernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -4110,7 +4126,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__InlineArrayNullableVec2Kernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__InlineArrayNullableVec2Kernel(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffInlineNullableVec2Holder h, float[] probe, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__InlineArrayNullableVec2Kernel __gsharp_ctx) {
@@ -4421,8 +4441,6 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__
 struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__VectorAlignmentAndExternalStructsKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__VectorAlignmentAndExternalStructsKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -4568,7 +4586,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__VectorAlignmentAndExternalStructsKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__VectorAlignmentAndExternalStructsKernel(global::Kassyi.GSharp.Tests.Shared.Differential.DiffVecAlignTorture tortVal, ref global::Kassyi.GSharp.Tests.Shared.Differential.OuterPacket outerRef, global::Kassyi.GSharp.Tests.Shared.Differential.DiffVecAlignTorture[] tortArr, global::Kassyi.GSharp.Tests.DeviceLibrary.PackedPair[] extPackedArr, global::Kassyi.GSharp.Tests.DeviceLibrary.SwapPair[] extSwapArr, ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffExternalNestedHolder extHolder, float[] probe, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__VectorAlignmentAndExternalStructsKernel __gsharp_ctx, ref global::Kassyi.GSharp.Tests.Shared.Differential.OuterPacket __gsharp_auto_result) {
@@ -4870,8 +4892,6 @@ return __gsharp_auto_result;
 public const string MultiRefScalarAndRawPointerKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__MultiRefScalarAndRawPointerKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__MultiRefScalarAndRawPointerKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -4991,7 +5011,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public unsafe struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__MultiRefScalarAndRawPointerKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__MultiRefScalarAndRawPointerKernel(in int inScalar, ref int refA, ref int refB, ref float refF, ref int outSum, int* pValid, int* pNull, int constFactor, int[] roTable, int[] probe, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__MultiRefScalarAndRawPointerKernel* __gsharp_ctx) {

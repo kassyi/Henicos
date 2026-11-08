@@ -85,7 +85,8 @@ public static class AstLoweringPipeline
             stateMachineBody = stateMachineBody.WithAdditionalAnnotations(LoweringAnnotations.SplitStateMachineAnnotation);
         }
 
-        return new LoweredStateMachine(stateMachineBody, contextFields, lowerer.CallSites, copiedParameters);
+        return new LoweredStateMachine(stateMachineBody, contextFields, lowerer.CallSites, copiedParameters,
+            WarpSiteCount: lowerer.WarpSiteCount);
     }
 
     // The body as one block that the passes can rewrite: annotated with its original spans and split points, without

@@ -37,8 +37,6 @@ public static partial class AotContexts
 public const string LocalFunctionVoidKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__LocalFunctionLoweringKernels__LocalFunctionVoidKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__LocalFunctionLoweringKernels__LocalFunctionVoidKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -139,7 +137,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__LocalFunctionLoweringKernels__LocalFunctionVoidKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__LocalFunctionLoweringKernels__LocalFunctionVoidKernel(int[] data, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__LocalFunctionLoweringKernels__LocalFunctionVoidKernel __gsharp_ctx) {
@@ -285,8 +287,6 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dl
 public const string LocalFunctionValueReturnKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__LocalFunctionLoweringKernels__LocalFunctionValueReturnKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__LocalFunctionLoweringKernels__LocalFunctionValueReturnKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -387,7 +387,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__LocalFunctionLoweringKernels__LocalFunctionValueReturnKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__LocalFunctionLoweringKernels__LocalFunctionValueReturnKernel(int[] data, int bonus, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__LocalFunctionLoweringKernels__LocalFunctionValueReturnKernel __gsharp_ctx) {
@@ -533,8 +537,6 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dl
 public const string LocalFunctionExpressionBodyKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__LocalFunctionLoweringKernels__LocalFunctionExpressionBodyKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__LocalFunctionLoweringKernels__LocalFunctionExpressionBodyKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -635,7 +637,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__LocalFunctionLoweringKernels__LocalFunctionExpressionBodyKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__LocalFunctionLoweringKernels__LocalFunctionExpressionBodyKernel(int[] data, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__LocalFunctionLoweringKernels__LocalFunctionExpressionBodyKernel __gsharp_ctx) {
@@ -777,8 +783,6 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dl
 public const string NestedLocalFunctionKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__LocalFunctionLoweringKernels__NestedLocalFunctionKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__LocalFunctionLoweringKernels__NestedLocalFunctionKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -884,7 +888,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__LocalFunctionLoweringKernels__NestedLocalFunctionKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__LocalFunctionLoweringKernels__NestedLocalFunctionKernel(int[] data, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__LocalFunctionLoweringKernels__NestedLocalFunctionKernel __gsharp_ctx) {
@@ -1032,8 +1040,6 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dl
 public const string MultiParamLocalFunctionKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__LocalFunctionLoweringKernels__MultiParamLocalFunctionKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__LocalFunctionLoweringKernels__MultiParamLocalFunctionKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -1143,7 +1149,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__LocalFunctionLoweringKernels__MultiParamLocalFunctionKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__LocalFunctionLoweringKernels__MultiParamLocalFunctionKernel(int[] a, int[] b, int[] result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__LocalFunctionLoweringKernels__MultiParamLocalFunctionKernel __gsharp_ctx) {

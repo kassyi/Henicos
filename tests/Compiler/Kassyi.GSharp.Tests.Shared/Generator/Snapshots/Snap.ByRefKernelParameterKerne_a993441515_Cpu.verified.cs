@@ -70,8 +70,6 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ByRefP
 struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ByRefKernelParameterKernels__RefStructBarrierKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ByRefKernelParameterKernels__RefStructBarrierKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 GSharpArray<int> __gsharp_id_1_o;
@@ -194,10 +192,14 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ByRefKernelParameterKernels__RefStructBarrierKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
 public int[] o;
 public int tid;
 public int a;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__ByRefKernelParameterKernels__RefStructBarrierKernel(ref global::Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct s, int[] __gsharp_in_o, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ByRefKernelParameterKernels__RefStructBarrierKernel __gsharp_ctx) {
@@ -374,8 +376,6 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dl
 public const string RefIntBarrierKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ByRefKernelParameterKernels__RefIntBarrierKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ByRefKernelParameterKernels__RefIntBarrierKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 GSharpArray<int> __gsharp_id_1_o;
@@ -497,10 +497,14 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ByRefKernelParameterKernels__RefIntBarrierKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
 public int[] o;
 public int tid;
 public int a;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__ByRefKernelParameterKernels__RefIntBarrierKernel(ref int x, int[] __gsharp_in_o, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ByRefKernelParameterKernels__RefIntBarrierKernel __gsharp_ctx) {
@@ -678,8 +682,6 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ByRefP
 struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ByRefKernelParameterKernels__OutStructBarrierKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ByRefKernelParameterKernels__OutStructBarrierKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 GSharpArray<int> __gsharp_id_1_o;
@@ -802,9 +804,13 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ByRefKernelParameterKernels__OutStructBarrierKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
 public int[] o;
 public int tid;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__ByRefKernelParameterKernels__OutStructBarrierKernel(ref global::Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct s, int[] __gsharp_in_o, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ByRefKernelParameterKernels__OutStructBarrierKernel __gsharp_ctx) {
@@ -996,8 +1002,6 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ByRefP
 struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ByRefKernelParameterKernels__RefReadOnlyStructNoBarrierKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ByRefKernelParameterKernels__RefReadOnlyStructNoBarrierKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -1095,7 +1099,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ByRefKernelParameterKernels__RefReadOnlyStructNoBarrierKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__ByRefKernelParameterKernels__RefReadOnlyStructNoBarrierKernel(ref readonly global::Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct s, int[] o, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ByRefKernelParameterKernels__RefReadOnlyStructNoBarrierKernel __gsharp_ctx) {
@@ -1260,8 +1268,6 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ByRefP
 struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ByRefKernelParameterKernels__RefReadOnlyStructBarrierKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ByRefKernelParameterKernels__RefReadOnlyStructBarrierKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 GSharpArray<int> __gsharp_id_1_o;
@@ -1373,10 +1379,14 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ByRefKernelParameterKernels__RefReadOnlyStructBarrierKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
 public int[] o;
 public int tid;
 public int a;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__ByRefKernelParameterKernels__RefReadOnlyStructBarrierKernel(ref readonly global::Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct s, int[] __gsharp_in_o, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ByRefKernelParameterKernels__RefReadOnlyStructBarrierKernel __gsharp_ctx) {
@@ -1552,8 +1562,6 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ByRefP
 struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ByRefKernelParameterKernels__InStructBarrierKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ByRefKernelParameterKernels__InStructBarrierKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 GSharpArray<int> __gsharp_id_1_o;
@@ -1665,10 +1673,14 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ByRefKernelParameterKernels__InStructBarrierKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
 public int[] o;
 public int tid;
 public int a;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__ByRefKernelParameterKernels__InStructBarrierKernel(in global::Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct s, int[] __gsharp_in_o, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ByRefKernelParameterKernels__InStructBarrierKernel __gsharp_ctx) {
@@ -1831,8 +1843,6 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dl
 public const string SpanBarrierKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ByRefKernelParameterKernels__SpanBarrierKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ByRefKernelParameterKernels__SpanBarrierKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 GSharpArray<int> __gsharp_id_1_o;
@@ -1951,10 +1961,14 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ByRefKernelParameterKernels__SpanBarrierKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
 public int[] o;
 public int tid;
 public int a;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__ByRefKernelParameterKernels__SpanBarrierKernel(global::System.Span<int> sp, int[] __gsharp_in_o, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ByRefKernelParameterKernels__SpanBarrierKernel __gsharp_ctx) {
@@ -2118,8 +2132,6 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dl
 public const string ReadOnlySpanBarrierKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ByRefKernelParameterKernels__ReadOnlySpanBarrierKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ByRefKernelParameterKernels__ReadOnlySpanBarrierKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 GSharpArray<int> __gsharp_id_1_o;
@@ -2230,10 +2242,14 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ByRefKernelParameterKernels__ReadOnlySpanBarrierKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
 public int[] o;
 public int tid;
 public int a;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__ByRefKernelParameterKernels__ReadOnlySpanBarrierKernel(global::System.ReadOnlySpan<int> rs, int[] __gsharp_in_o, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ByRefKernelParameterKernels__ReadOnlySpanBarrierKernel __gsharp_ctx) {

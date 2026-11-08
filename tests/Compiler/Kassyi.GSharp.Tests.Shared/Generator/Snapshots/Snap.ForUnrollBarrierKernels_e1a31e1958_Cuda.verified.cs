@@ -89,11 +89,15 @@ public partial class ForUnrollBarrierKernels
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__ForUnrollBarrierKernels__Neighbor {
 internal int __gsharp_state;
-internal uint __gsharp_warp_exchange;
+internal uint __gsharp_warp_path;
 internal int[] buffer;
 internal int tid;
 internal int value;
 internal int r;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__ForUnrollBarrierKernels__Neighbor(int[] __gsharp_in_buffer, int __gsharp_in_tid, int __gsharp_in_value, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__ForUnrollBarrierKernels__Neighbor __gsharp_ctx, ref int __gsharp_result) {

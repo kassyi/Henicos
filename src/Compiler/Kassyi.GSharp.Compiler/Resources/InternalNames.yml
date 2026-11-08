@@ -25,14 +25,25 @@ StateMachine:
     YieldedForBlockBarrier: __gsharp_yielded_for_block_barrier
     # The incoming value of a by-value parameter that the body writes; the state machine reads the copy in its context
     CopiedParameterPrefix: __gsharp_in_
-    WarpExchange: { Value: __gsharp_warp_exchange, Prelude: WarpAndHints.hpp }
-    WarpShuffleCount: { Value: __gsharp_warp_shuffle_count, Prelude: WarpAndHints.hpp }
     AllContexts: { Value: __gsharp_all_contexts, Prelude: WarpAndHints.hpp }
+    # The warp collectives of a thread (#1468): the two values it published last, which slot it writes next, the round
+    # of the launcher it runs in, and whether it waits for the lanes of a mask
+    WarpRecordType: { Value: __gsharp_warp_record, Prelude: WarpAndHints.hpp }
+    WarpRecords: { Value: __gsharp_warp_records, Prelude: WarpAndHints.hpp }
+    WarpRecordNext: { Value: __gsharp_warp_record_next, Prelude: WarpAndHints.hpp }
+    WarpRound: { Value: __gsharp_warp_round, Prelude: WarpAndHints.hpp }
+    WarpWaiting: { Value: __gsharp_warp_waiting, Prelude: WarpAndHints.hpp }
+    # How often a frame reached each warp collective of its body
+    WarpVisits: { Value: __gsharp_warp_visits, Prelude: WarpAndHints.hpp }
+    # The managed path numbers the frames of a thread to tell the paths through device functions apart (the native
+    # path uses the offset of the frame in the kernel context)
+    WarpPath: __gsharp_warp_path
+    NumberWarpPaths: __gsharp_number_warp_paths
 
 SuspendingCall:
   Summary: >-
     Device functions that reach a barrier (CPU dialects). Each one is a state machine with its own frame; the kernel
-    context is passed down as the root, which owns the warp exchange of the thread.
+    context is passed down as the root, which owns the values the thread published at warp collectives.
   Names:
     Root: { Value: __gsharp_root, Prelude: WarpAndHints.hpp }
     FrameTypePrefix: __gsharp_frame_
@@ -187,10 +198,9 @@ Launcher:
     GridSyncReached: __gsharp_grid_sync_reached
     StructArgumentPrefix: __gsharp_arg_
     LayoutProbe: __gsharp_layout_probe
-    # The minimum runnable state of a warp in a round of a kernel that reaches a warp shuffle (#1001)
-    WarpMinState: __gsharp_warp_min_state
-    WarpEnd: __gsharp_warp_end
-    WarpThreadIndex: __gsharp_w
+    # The round of a block, and whether a thread ran in it, in a kernel that reaches a warp collective (#1468)
+    Round: __gsharp_round
+    Stepped: __gsharp_stepped
     # Managed host launch wrappers (#406): fixed locals, per-kernel member prefixes, and per-parameter local prefixes
     KernelParams: __gsharp_kernel_params
     FunctionHandle: __gsharp_hfunc
@@ -287,7 +297,12 @@ Prelude:
     # region of the launch's sharedMemBytes); the native launcher resets the arena of each block
     AllocateStaticSharedMemory: { Value: __gsharp_allocate_smem_static, Prelude: ThreadAndMemory.hpp }
     AllocateDynamicSharedMemory: { Value: __gsharp_allocate_smem_dynamic, Prelude: ThreadAndMemory.hpp }
-    WarpExchangeAssign: { Value: __gsharp_warp_exchange_assign, Prelude: WarpAndHints.hpp, Managed: ManagedGpuContext.cs }
+    # A warp collective publishes the value of the lane before its state boundary; the launcher runs the lane again when
+    # the lanes of the mask have met, and reports lanes that never meet (#1468)
+    WarpPublish: { Value: __gsharp_warp_publish, Prelude: WarpAndHints.hpp, Managed: ManagedGpuContext.WarpRendezvous.cs }
+    WarpSyncRead: { Value: __gsharp_warp_sync_read, Prelude: WarpAndHints.hpp, Managed: ManagedGpuContext.WarpRendezvous.cs }
+    WarpCanRun: { Value: __gsharp_warp_can_run, Prelude: WarpAndHints.hpp }
+    WarpReportStall: { Value: __gsharp_warp_report_stall, Prelude: WarpAndHints.hpp }
     WarpShuffleReadSync: { Value: __gsharp_warp_shuffle_read_sync, Prelude: WarpAndHints.hpp, Managed: ManagedGpuContext.cs }
     WarpShuffleReadDownSync: { Value: __gsharp_warp_shuffle_read_down_sync, Prelude: WarpAndHints.hpp, Managed: ManagedGpuContext.cs }
     WarpShuffleReadUpSync: { Value: __gsharp_warp_shuffle_read_up_sync, Prelude: WarpAndHints.hpp, Managed: ManagedGpuContext.cs }

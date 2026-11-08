@@ -76,7 +76,7 @@ internal static class WrapperEmitter
     // CS0162 = Lowered state machines emit statements or 'goto case' transitions immediately after unconditional throw or goto
     // CS0164 = Lowered state machines preserve user labels (e.g. sync:) or synthesized branch targets (__gsharp_sg_next_<n>) that no jump targets
     // CS0219 = Lowered state machines declare locals (e.g. int unused = 0) that are assigned but never read
-    // CS0649 = Internal frame fields (e.g. __gsharp_warp_exchange) are populated by the runtime rather than C# assignment
+    // CS0649 = Internal frame fields are populated by the runtime rather than C# assignment
     // CS1718 = Lowered switch/pattern dispatch performs __gsharp_switch_temp_<n> != __gsharp_switch_temp_<n> self-comparisons for NaN detection
     private const string GeneratedCSharpWarningSuppressions =
         "#pragma warning disable CS0162, CS0164, CS0219, CS0649, CS1718";

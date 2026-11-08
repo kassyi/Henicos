@@ -261,8 +261,6 @@ __gsharp_array_at(__gsharp_mb_Log, __gsharp_mb_LogSlot, ""G#: a null array is re
 struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__GenericStructScopeUsingKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__GenericStructScopeUsingKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -371,7 +369,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__GenericStructScopeUsingKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__GenericStructScopeUsingKernel(int[] xs, int[] ys, int[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__GenericStructScopeUsingKernel __gsharp_ctx) {
@@ -611,8 +613,6 @@ return __gsharp_self;
 struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__GenericStructPrimitivesAndNestingKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__GenericStructPrimitivesAndNestingKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -723,7 +723,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__GenericStructPrimitivesAndNestingKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__GenericStructPrimitivesAndNestingKernel(int[] xs, int[] ys, int[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__GenericStructPrimitivesAndNestingKernel __gsharp_ctx) {
@@ -918,8 +922,6 @@ return __gsharp_self;
 struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__ReadonlyStructWeightedSumKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__ReadonlyStructWeightedSumKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -1021,7 +1023,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__ReadonlyStructWeightedSumKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__ReadonlyStructWeightedSumKernel(int[] xs, int[] ys, int[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__ReadonlyStructWeightedSumKernel __gsharp_ctx) {
@@ -1207,8 +1213,6 @@ return __gsharp_self;
 struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__NestedTypesInNamespaceAndClassKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__NestedTypesInNamespaceAndClassKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -1317,7 +1321,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__NestedTypesInNamespaceAndClassKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__NestedTypesInNamespaceAndClassKernel(int[] xs, int[] ys, int[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__NestedTypesInNamespaceAndClassKernel __gsharp_ctx) {
@@ -1513,8 +1521,6 @@ return __gsharp_self;
 struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__ValueReceiverExtensionMethodKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__ValueReceiverExtensionMethodKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -1619,7 +1625,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__ValueReceiverExtensionMethodKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__ValueReceiverExtensionMethodKernel(int[] xs, int[] ys, int[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__ValueReceiverExtensionMethodKernel __gsharp_ctx) {
@@ -1811,8 +1821,6 @@ return __gsharp_self;
 struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__InReceiverExtensionMethodKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__InReceiverExtensionMethodKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -1914,7 +1922,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__InReceiverExtensionMethodKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__InReceiverExtensionMethodKernel(int[] xs, int[] ys, int[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__InReceiverExtensionMethodKernel __gsharp_ctx) {
@@ -2103,8 +2115,6 @@ return __gsharp_self;
 struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__RefReceiverExtensionMethodKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__RefReceiverExtensionMethodKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -2209,7 +2219,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__RefReceiverExtensionMethodKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__RefReceiverExtensionMethodKernel(int[] xs, int[] ys, int[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__RefReceiverExtensionMethodKernel __gsharp_ctx) {
@@ -2376,8 +2390,6 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dl
 public const string StaticMethodGroupConversionKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__StaticMethodGroupConversionKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__StaticMethodGroupConversionKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -2483,7 +2495,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__StaticMethodGroupConversionKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__StaticMethodGroupConversionKernel(int[] xs, int[] ys, int[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__StaticMethodGroupConversionKernel __gsharp_ctx) {
@@ -2647,8 +2663,6 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dl
 public const string ReducedExtensionMethodGroupKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__ReducedExtensionMethodGroupKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__ReducedExtensionMethodGroupKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -2756,7 +2770,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__ReducedExtensionMethodGroupKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__ReducedExtensionMethodGroupKernel(int[] xs, int[] ys, int[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__ReducedExtensionMethodGroupKernel __gsharp_ctx) {
@@ -2963,8 +2981,6 @@ return __gsharp_self;
 struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__ReadonlyPropertyAccessOnInAndFieldKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__ReadonlyPropertyAccessOnInAndFieldKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -3075,7 +3091,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__ReadonlyPropertyAccessOnInAndFieldKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__ReadonlyPropertyAccessOnInAndFieldKernel(int[] xs, int[] ys, int[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__ReadonlyPropertyAccessOnInAndFieldKernel __gsharp_ctx) {
@@ -3248,8 +3268,6 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dl
 public const string TupleDeconstructionSwapAndRotationKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__TupleDeconstructionSwapAndRotationKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__TupleDeconstructionSwapAndRotationKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -3376,7 +3394,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__TupleDeconstructionSwapAndRotationKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__TupleDeconstructionSwapAndRotationKernel(int[] xs, int[] ys, int[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__TupleDeconstructionSwapAndRotationKernel __gsharp_ctx) {
@@ -3553,8 +3575,6 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dl
 public const string DeconstructionSideEffectingTargetOrderKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__DeconstructionSideEffectingTargetOrderKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__DeconstructionSideEffectingTargetOrderKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -3667,7 +3687,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__DeconstructionSideEffectingTargetOrderKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__DeconstructionSideEffectingTargetOrderKernel(int[] xs, int[] ys, int[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__DeconstructionSideEffectingTargetOrderKernel __gsharp_ctx) {
@@ -3835,8 +3859,6 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dl
 public const string DeconstructionDuplicateTargetOverwriteKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__DeconstructionDuplicateTargetOverwriteKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__DeconstructionDuplicateTargetOverwriteKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -3946,7 +3968,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__DeconstructionDuplicateTargetOverwriteKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__DeconstructionDuplicateTargetOverwriteKernel(int[] xs, int[] ys, int[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__DeconstructionDuplicateTargetOverwriteKernel __gsharp_ctx) {
@@ -4113,8 +4139,6 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dl
 public const string DeconstructionImplicitWideningKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__DeconstructionImplicitWideningKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__DeconstructionImplicitWideningKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -4225,7 +4249,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__DeconstructionImplicitWideningKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__DeconstructionImplicitWideningKernel(int[] xs, int[] ys, int[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__DeconstructionImplicitWideningKernel __gsharp_ctx) {
@@ -4416,8 +4444,6 @@ return __gsharp_self;
 struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__ReadonlyRecordStructWithExpressionKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__ReadonlyRecordStructWithExpressionKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -4535,7 +4561,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__ReadonlyRecordStructWithExpressionKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__ReadonlyRecordStructWithExpressionKernel(int[] xs, int[] ys, int[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__ReadonlyRecordStructWithExpressionKernel __gsharp_ctx) {
@@ -4713,8 +4743,6 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dl
 public const string PatternMatchingAndSwitchExpressionKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__PatternMatchingAndSwitchExpressionKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__PatternMatchingAndSwitchExpressionKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -4832,7 +4860,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__PatternMatchingAndSwitchExpressionKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__PatternMatchingAndSwitchExpressionKernel(int[] xs, int[] ys, int[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__PatternMatchingAndSwitchExpressionKernel __gsharp_ctx) {

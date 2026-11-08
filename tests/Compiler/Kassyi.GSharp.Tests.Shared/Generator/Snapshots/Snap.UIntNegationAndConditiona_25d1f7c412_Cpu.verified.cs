@@ -57,8 +57,6 @@ public static partial class AotContexts
 public const string NegationKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UIntNegationAndConditionalKernels__NegationKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UIntNegationAndConditionalKernels__NegationKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -155,7 +153,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UIntNegationAndConditionalKernels__NegationKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__UIntNegationAndConditionalKernels__NegationKernel(uint[] us, long[] values, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UIntNegationAndConditionalKernels__NegationKernel __gsharp_ctx) {
@@ -303,8 +305,6 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dl
 public const string ConditionalKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UIntNegationAndConditionalKernels__ConditionalKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UIntNegationAndConditionalKernels__ConditionalKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -402,7 +402,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UIntNegationAndConditionalKernels__ConditionalKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__UIntNegationAndConditionalKernels__ConditionalKernel(uint[] us, int[] ns, long[] longs, double[] doubles, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UIntNegationAndConditionalKernels__ConditionalKernel __gsharp_ctx) {

@@ -86,8 +86,12 @@ internal static class ManagedStateMachineEmitter
     /// <param name="semanticModel">The model of the calls.</param>
     /// <param name="accessibility">The class's accessibility.</param>
     /// <param name="memberAccessibility">The accessibility of the fields other than the call frames.</param>
+    /// <param name="isUnsafe">Whether the context is an unsafe struct rather than a class.</param>
+    /// <param name="warpSiteCount">The warp collectives of the body (<see cref="LoweredStateMachine.WarpSiteCount"/>).</param>
     /// <remarks>
-    /// A call frame field is internal: the frame of a device function that is not public is an internal class.
+    /// A call frame field is internal: the frame of a device function that is not public is an internal class. Every
+    /// context numbers its frames for the warp collectives (<c>__gsharp_number_warp_paths</c>), which is public because a
+    /// frame of a public device function may belong to a caller in another assembly.
     /// </remarks>
     public static void EmitContextClass(
         SourceWriter writer,
@@ -98,14 +102,16 @@ internal static class ManagedStateMachineEmitter
         SemanticModel semanticModel,
         string accessibility = "public",
         string memberAccessibility = "public",
-        bool isUnsafe = false)
+        bool isUnsafe = false,
+        int warpSiteCount = 0)
     {
         writer.AppendLine(EditorBrowsableNever);
         var typeKeyword = isUnsafe ? "unsafe struct" : "class";
-        using (writer.Scope($"{accessibility} {typeKeyword} {contextName} {{"))
+        var warpFrame = warpSiteCount > 0 ? $" : {ManagedWarpFrameInterface}" : "";
+        using (writer.Scope($"{accessibility} {typeKeyword} {contextName}{warpFrame} {{"))
         {
             writer.AppendLine($"{memberAccessibility} int {GSharpInternalNames.StateMachine.State};");
-            writer.AppendLine($"{memberAccessibility} uint {GSharpInternalNames.StateMachine.WarpExchange};");
+            writer.AppendLine($"{memberAccessibility} uint {GSharpInternalNames.StateMachine.WarpPath};");
 
             foreach (var parameter in copiedParameters)
             {
@@ -133,9 +139,52 @@ internal static class ManagedStateMachineEmitter
                     ? $" {GSharpInternalNames.SuspendingCall.CallFramePrefix}{i};"
                     : $" {GSharpInternalNames.SuspendingCall.CallFramePrefix}{i} = new();");
             }
+
+            EmitWarpFrameMembers(writer, memberAccessibility, isUnsafe, warpSiteCount);
+            EmitWarpPathNumbering(writer, callSites.Count);
         }
 
         writer.AppendLine();
+    }
+
+    private const string ManagedWarpFrameInterface = "global::Kassyi.GSharp.Core.IManagedWarpFrame";
+
+    // The visit counts of the warp collectives of the body and the frame's side of IManagedWarpFrame, which the managed
+    // warp collectives read (#1468)
+    private static void EmitWarpFrameMembers(SourceWriter writer, string memberAccessibility, bool isUnsafe,
+        int warpSiteCount)
+    {
+        if (warpSiteCount == 0)
+        {
+            return;
+        }
+
+        var visits = GSharpInternalNames.StateMachine.WarpVisits;
+        writer.AppendLine(isUnsafe
+            ? $"{memberAccessibility} fixed uint {visits}[{warpSiteCount}];"
+            : $"{memberAccessibility} uint[] {visits} = new uint[{warpSiteCount}];");
+        writer.AppendLine($"uint {ManagedWarpFrameInterface}.WarpPath => {GSharpInternalNames.StateMachine.WarpPath};");
+        writer.AppendLine($"uint {ManagedWarpFrameInterface}.AdvanceWarpVisit(int site) => ++{visits}[site];");
+        writer.AppendLine($"uint {ManagedWarpFrameInterface}.GetWarpVisit(int site) => {visits}[site];");
+    }
+
+    // [WHY] The lanes of a warp meet at the same call only when they reach it through the same device function calls.
+    // The launcher numbers the frames of every thread in the same order, so a frame has the same number in every lane and
+    // a different one from any other frame of the thread (the native path uses the frame's offset in the context).
+    // public uint __gsharp_number_warp_paths(uint next) { __gsharp_warp_path = next++; next = __gsharp_call_frame_<i>.__gsharp_number_warp_paths(next); ... return next; }
+    private static void EmitWarpPathNumbering(SourceWriter writer, int callSiteCount)
+    {
+        var number = GSharpInternalNames.StateMachine.NumberWarpPaths;
+        using (writer.Scope($"public uint {number}(uint next) {{"))
+        {
+            writer.AppendLine($"{GSharpInternalNames.StateMachine.WarpPath} = next++;");
+            for (var i = 0; i < callSiteCount; i++)
+            {
+                writer.AppendLine($"next = {GSharpInternalNames.SuspendingCall.CallFramePrefix}{i}.{number}(next);");
+            }
+
+            writer.AppendLine("return next;");
+        }
     }
 
     /// <summary>Writes the qualified name of a member that G# emits next to <paramref name="function"/>.</summary>

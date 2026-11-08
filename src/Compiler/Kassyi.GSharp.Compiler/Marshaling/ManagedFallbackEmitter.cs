@@ -61,6 +61,18 @@ internal static class ManagedFallbackEmitter
             }
         }
 
+        if (kernel.ReachesWarpShuffle)
+        {
+            // The frames of every thread get the same numbers, which tell the paths through device functions apart at a
+            // warp collective (#1468)
+            writer.AppendLine($"for (int {ContextIndex} = 0; {ContextIndex} < {Contexts}.Length; {ContextIndex}++)");
+            using (writer.Scope())
+            {
+                writer.AppendLine(
+                    $"{Contexts}[{ContextIndex}].{GSharpInternalNames.StateMachine.NumberWarpPaths}(0u);");
+            }
+        }
+
         // A cooperative kernel's blocks run in grid phases and keep their dynamic shared memory for the grid; the
         // blocks of any other kernel run to their end one after another and use one array in turn
         writer.AppendLine(
@@ -155,6 +167,11 @@ internal static class ManagedFallbackEmitter
         using (writer.Scope())
         {
             WriteManagedBlockSetup(writer);
+            if (kernel.IsCooperative && kernel.ReachesWarpShuffle)
+            {
+                WriteManagedExitedLanes(writer, kernel);
+            }
+
             if (kernel.IsCooperative)
             {
                 // The threads that wait at the grid sync go on in this phase
@@ -174,6 +191,25 @@ internal static class ManagedFallbackEmitter
         using (writer.Scope())
         {
             writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;");
+        }
+    }
+
+    // A cooperative kernel's block runs again in the next grid phase, after the warp collectives of another block: the
+    // threads of the block that have exited stay out of its warp collectives
+    // for (<threads of the block>) { if (<exited>) { ManagedGpuContext.MarkWarpLaneExited(<thread>); } }
+    private static void WriteManagedExitedLanes(SourceWriter writer, in KernelHostModel kernel)
+    {
+        var contextSlot = kernel.IsUnsafeContext ? PinnedContexts : Contexts;
+        writer.AppendLine($"for (int {ThreadLoopIndex} = 0; {ThreadLoopIndex} < {ThreadsPerBlock}; {ThreadLoopIndex}++)");
+        using (writer.Scope())
+        {
+            writer.AppendLine(
+                $"if ({contextSlot}[{BlockLoopIndex} * {ThreadsPerBlock} + {ThreadLoopIndex}].{GSharpInternalNames.StateMachine.State} == -1)");
+            using (writer.Scope())
+            {
+                writer.AppendLine(
+                    $"global::Kassyi.GSharp.Core.ManagedGpuContext.MarkWarpLaneExited({ThreadLoopIndex});");
+            }
         }
     }
 
@@ -199,19 +235,37 @@ internal static class ManagedFallbackEmitter
     private static void WriteManagedBarrierRounds(SourceWriter writer, in KernelHostModel kernel)
     {
         writer.AppendLine($"bool {AnyBlockActive} = true;");
+        if (kernel.ReachesWarpShuffle)
+        {
+            writer.AppendLine($"int {Round} = 0;");
+        }
+
         writer.AppendLine($"while ({AnyBlockActive})");
         using (writer.Scope())
         {
             writer.AppendLine($"{AnyBlockActive} = false;");
             if (kernel.ReachesWarpShuffle)
             {
-                writer.AppendLine($"int {WarpMinState} = int.MaxValue;");
+                writer.AppendLine($"{Round}++;");
+                writer.AppendLine($"bool {Stepped} = false;");
             }
 
             writer.AppendLine($"for (int {ThreadLoopIndex} = 0; {ThreadLoopIndex} < {ThreadsPerBlock}; {ThreadLoopIndex}++)");
             using (writer.Scope())
             {
                 WriteManagedThreadStep(writer, kernel);
+            }
+
+            if (kernel.ReachesWarpShuffle)
+            {
+                // [WHY] A thread that waits at a warp collective counts as one that can go on, so a round in which none of
+                // them ran means that they wait for lanes that never reach the same call (#1468)
+                writer.AppendLine($"if ({AnyBlockActive} && !{Stepped})");
+                using (writer.Scope())
+                {
+                    writer.AppendLine(
+                        $"throw global::Kassyi.GSharp.Core.ManagedGpuContext.WarpStall({ThreadsPerBlock});");
+                }
             }
 
             WriteManagedBlockBarrierRelease(writer);
@@ -267,11 +321,6 @@ internal static class ManagedFallbackEmitter
     // One step of one thread: from where it stopped to its next barrier, grid sync or end
     private static void WriteManagedThreadStep(SourceWriter writer, in KernelHostModel kernel)
     {
-        if (kernel.ReachesWarpShuffle)
-        {
-            WriteManagedWarpMinState(writer, kernel);
-        }
-
         writer.AppendLine($"int {ThreadX} = {ThreadLoopIndex} % (int)blockDimX;");
         writer.AppendLine($"int {ThreadY} = ({ThreadLoopIndex} / (int)blockDimX) % (int)blockDimY;");
         writer.AppendLine($"int {ThreadZ} = {ThreadLoopIndex} / (int)(blockDimX * blockDimY);");
@@ -286,19 +335,26 @@ internal static class ManagedFallbackEmitter
         using (writer.Scope())
         {
             writer.AppendLine($"{AnyGridActive} = true;");
+            // A thread that waits at a warp collective runs once the lanes of its mask have met there (#1468)
             if (kernel.ReachesWarpShuffle)
             {
-                writer.AppendLine($"if ({LinearContext}.{GSharpInternalNames.StateMachine.State} == {WarpMinState})");
+                writer.AppendLine(
+                    $"if (global::Kassyi.GSharp.Core.ManagedGpuContext.WarpCanRun({ThreadLoopIndex}, {Round}))");
             }
 
             using (kernel.ReachesWarpShuffle ? writer.Scope() : default)
             {
+                writer.AppendLineIf(kernel.ReachesWarpShuffle, $"{Stepped} = true;");
                 // The state machines of the kernel and of the device functions it calls request a grid sync (#665) and report
                 // a block barrier through thread-static flags; the launcher steps one GPU thread at a time on this host thread
                 writer.AppendLine($"{ManagedExecutionRewriter.ManagedGridSyncRequested} = false;");
                 writer.AppendLine($"{ManagedExecutionRewriter.ManagedBlockBarrierRequested} = false;");
                 WriteStateMachineCall(writer, kernel);
                 WriteManagedWaits(writer, kernel);
+                if (kernel.ReachesWarpShuffle)
+                {
+                    WriteManagedExitCheck(writer, kernel);
+                }
             }
 
             // The next round runs while a thread can go on: one that stopped at a shuffle runs again, one at a barrier
@@ -335,37 +391,15 @@ internal static class ManagedFallbackEmitter
             (false, false) => RunnableCondition
         };
 
-    private const string WarpContext =
-        $"{GSharpInternalNames.Launcher.Contexts}[{GSharpInternalNames.Launcher.WarpThreadIndex}]";
-
-    private const string WarpRunnableCondition =
-        $"{WarpContext}.{GSharpInternalNames.StateMachine.State} != -1 && !{ThreadAtBlockBarrier}[{WarpThreadIndex}]";
-
-    private const string CooperativeWarpRunnableCondition =
-        $"{WarpRunnableCondition} && !{ThreadAtGridSync}[{WarpThreadIndex}]";
-
-    // In a kernel that reaches a warp shuffle, only the runnable lanes at the warp's lowest state step in each round,
-    // so lanes that skip a sub-warp shuffle reconverge with the lanes that took it before the next full-warp shuffle (#1001)
-    private static void WriteManagedWarpMinState(SourceWriter writer, in KernelHostModel kernel)
+    // A thread that has exited no longer takes part in a warp collective
+    // if (<context>.__gsharp_state == -1) { ManagedGpuContext.MarkWarpLaneExited(<thread>); }
+    private static void WriteManagedExitCheck(SourceWriter writer, in KernelHostModel kernel)
     {
-        var warpRunnable = kernel.IsCooperative ? CooperativeWarpRunnableCondition : WarpRunnableCondition;
-        writer.AppendLine($"if (({ThreadLoopIndex} & 31) == 0)");
+        var contextSlot = kernel.IsUnsafeContext ? PinnedLinearContext : LinearContext;
+        writer.AppendLine($"if ({contextSlot}.{GSharpInternalNames.StateMachine.State} == -1)");
         using (writer.Scope())
         {
-            writer.AppendLine($"{WarpMinState} = int.MaxValue;");
-            writer.AppendLine(
-                $"int {WarpEnd} = {ThreadLoopIndex} + 32 < {ThreadsPerBlock} ? {ThreadLoopIndex} + 32 : {ThreadsPerBlock};");
-            writer.AppendLine(
-                $"for (int {WarpThreadIndex} = {BlockLoopIndex} * {ThreadsPerBlock} + {ThreadLoopIndex}; {WarpThreadIndex} < {BlockLoopIndex} * {ThreadsPerBlock} + {WarpEnd}; {WarpThreadIndex}++)");
-            using (writer.Scope())
-            {
-                writer.AppendLine(
-                    $"if ({warpRunnable} && {WarpContext}.{GSharpInternalNames.StateMachine.State} < {WarpMinState})");
-                using (writer.Scope())
-                {
-                    writer.AppendLine($"{WarpMinState} = {WarpContext}.{GSharpInternalNames.StateMachine.State};");
-                }
-            }
+            writer.AppendLine($"global::Kassyi.GSharp.Core.ManagedGpuContext.MarkWarpLaneExited({ThreadLoopIndex});");
         }
     }
 

@@ -178,10 +178,14 @@ public partial class StructWithExpressionKernels
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__StructWithExpressionKernels__SuspendingWith {
 internal int __gsharp_state;
-internal uint __gsharp_warp_exchange;
+internal uint __gsharp_warp_path;
 internal global::Kassyi.GSharp.Tests.Shared.Syntax.WithPlainStruct p;
 internal int tid;
 internal global::Kassyi.GSharp.Tests.Shared.Syntax.WithPlainStruct q;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__StructWithExpressionKernels__SuspendingWith(global::Kassyi.GSharp.Tests.Shared.Syntax.WithPlainStruct __gsharp_in_p, int __gsharp_in_tid, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__StructWithExpressionKernels__SuspendingWith __gsharp_ctx, ref int __gsharp_result) {

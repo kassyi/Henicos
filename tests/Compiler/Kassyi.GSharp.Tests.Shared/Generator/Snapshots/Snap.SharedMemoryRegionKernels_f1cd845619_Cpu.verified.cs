@@ -82,11 +82,15 @@ public partial class SharedMemoryRegionKernels
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryRegionKernels__RotateThroughDynamicSharedMemory {
 internal int __gsharp_state;
-internal uint __gsharp_warp_exchange;
+internal uint __gsharp_warp_path;
 internal int value;
 internal int count;
 internal int tid;
 internal int rotated;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryRegionKernels__RotateThroughDynamicSharedMemory(int __gsharp_in_value, int __gsharp_in_count, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryRegionKernels__RotateThroughDynamicSharedMemory __gsharp_ctx, ref int __gsharp_result) {
@@ -163,8 +167,6 @@ public static partial class AotContexts
 public const string StaleSpanKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryRegionKernels__StaleSpanKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryRegionKernels__StaleSpanKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 GSharpArray<int> __gsharp_id_0_output;
@@ -279,9 +281,13 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryRegionKernels__StaleSpanKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
 public int[] output;
 public int tid;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryRegionKernels__StaleSpanKernel(int[] __gsharp_in_output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryRegionKernels__StaleSpanKernel __gsharp_ctx) {
@@ -436,8 +442,6 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dl
 public const string MixedElementTypesKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryRegionKernels__MixedElementTypesKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryRegionKernels__MixedElementTypesKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 GSharpArray<int> __gsharp_id_0_output;
@@ -556,9 +560,13 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryRegionKernels__MixedElementTypesKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
 public int[] output;
 public int tid;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryRegionKernels__MixedElementTypesKernel(int[] __gsharp_in_output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryRegionKernels__MixedElementTypesKernel __gsharp_ctx) {
@@ -716,8 +724,6 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dl
 public const string GrowingDeclarationKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryRegionKernels__GrowingDeclarationKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryRegionKernels__GrowingDeclarationKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 GSharpArray<int> __gsharp_id_0_output;
@@ -854,7 +860,7 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryRegionKernels__GrowingDeclarationKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
 public int[] output;
 public int smallCount;
 public int largeCount;
@@ -866,6 +872,12 @@ public int __gsharp_arg_temp_2;
 public int __gsharp_call_temp_3;
 internal global::Kassyi.GSharp.Tests.Shared.Core.SharedMemoryRegionKernels.__gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryRegionKernels__RotateThroughDynamicSharedMemory __gsharp_call_frame_0 = new();
 internal global::Kassyi.GSharp.Tests.Shared.Core.SharedMemoryRegionKernels.__gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryRegionKernels__RotateThroughDynamicSharedMemory __gsharp_call_frame_1 = new();
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+next = __gsharp_call_frame_0.__gsharp_number_warp_paths(next);
+next = __gsharp_call_frame_1.__gsharp_number_warp_paths(next);
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryRegionKernels__GrowingDeclarationKernel(int[] __gsharp_in_output, int __gsharp_in_smallCount, int __gsharp_in_largeCount, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryRegionKernels__GrowingDeclarationKernel __gsharp_ctx) {

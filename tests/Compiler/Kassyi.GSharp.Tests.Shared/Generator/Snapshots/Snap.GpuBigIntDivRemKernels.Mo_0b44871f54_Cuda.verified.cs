@@ -682,7 +682,7 @@ public partial class GpuBigIntDivRemKernels
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 internal class __gsharp_frame_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteNttMultiplyMacroModPow {
 internal int __gsharp_state;
-internal uint __gsharp_warp_exchange;
+internal uint __gsharp_warp_path;
 internal global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.NewtonRaphsonContext core;
 internal uint[] opA;
 internal uint[] opB;
@@ -700,6 +700,10 @@ internal global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.DualNtt forwardB
 internal global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.DualNtt inverseA;
 internal int chunkSize;
 internal int numBlocks;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 internal static bool __gsharp_statemachine_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteNttMultiplyMacroModPow(global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.NewtonRaphsonContext __gsharp_in_core, uint[] __gsharp_in_opA, uint[] __gsharp_in_opB, uint[] __gsharp_in_resultDest, int __gsharp_in_numWordsA, int __gsharp_in_numWordsB, int __gsharp_in_numWordsResult, __gsharp_frame_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteNttMultiplyMacroModPow __gsharp_ctx) {
@@ -814,7 +818,7 @@ throw new global::System.InvalidOperationException("The device function state ma
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 internal class __gsharp_frame_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteBarrettReductionMacro {
 internal int __gsharp_state;
-internal uint __gsharp_warp_exchange;
+internal uint __gsharp_warp_path;
 internal global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.NewtonRaphsonContext core;
 internal uint[] leftOperand;
 internal uint[] rightOperand;
@@ -843,6 +847,12 @@ internal uint top2;
 internal bool underflow2;
 internal global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntDivRemKernels.__gsharp_frame_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteNttMultiplyMacroModPow __gsharp_call_frame_0 = new();
 internal global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntDivRemKernels.__gsharp_frame_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteNttMultiplyMacroModPow __gsharp_call_frame_1 = new();
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+next = __gsharp_call_frame_0.__gsharp_number_warp_paths(next);
+next = __gsharp_call_frame_1.__gsharp_number_warp_paths(next);
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 internal static bool __gsharp_statemachine_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteBarrettReductionMacro(global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.NewtonRaphsonContext __gsharp_in_core, uint[] __gsharp_in_leftOperand, uint[] __gsharp_in_rightOperand, uint[] __gsharp_in_reciprocalOfB, int __gsharp_in_targetBits, int __gsharp_in_aActualWords, uint[] __gsharp_in_quotientBuffer, uint[] __gsharp_in_remainderBuffer, __gsharp_frame_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteBarrettReductionMacro __gsharp_ctx) {

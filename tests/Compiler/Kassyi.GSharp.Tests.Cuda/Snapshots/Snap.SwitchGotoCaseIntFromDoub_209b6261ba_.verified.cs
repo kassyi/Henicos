@@ -27,14 +27,14 @@
 
         case 1:
         {
-            __gsharp_warp_exchange_assign(__gsharp_ctx->value);
+            __gsharp_warp_publish(__gsharp_root, __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx->value, "Warp.ShuffleXorSync", "SwitchGotoCaseIntFromDouble.cs(17,25)");
             __gsharp_state = 2;
             return;
         }
 
         case 2:
         {
-            __gsharp_ctx->__gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_xor_sync(__gsharp_root, 0xFFFFFFFFu, __gsharp_ctx->value, 1, 32, "SwitchGotoCaseIntFromDouble.cs(17,25)");
+            __gsharp_ctx->__gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_xor_sync(__gsharp_root, __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx->value, 1, 32, "SwitchGotoCaseIntFromDouble.cs(17,25)");
             __gsharp_ctx->value = __gsharp_ctx->__gsharp_warp_temp_0;
             goto case 3;
             goto case 3;
@@ -49,14 +49,14 @@
 
         case 4:
         {
-            __gsharp_warp_exchange_assign(__gsharp_ctx->value);
+            __gsharp_warp_publish(__gsharp_root, __gsharp_ctx, 1, 0xFFFFFFFFu, __gsharp_ctx->value, "Warp.ShuffleXorSync", "SwitchGotoCaseIntFromDouble.cs(23,25)");
             __gsharp_state = 5;
             return;
         }
 
         case 5:
         {
-            var __gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_xor_sync(__gsharp_root, 0xFFFFFFFFu, __gsharp_ctx->value, 2, 32, "SwitchGotoCaseIntFromDouble.cs(23,25)");
+            var __gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_xor_sync(__gsharp_root, __gsharp_ctx, 1, 0xFFFFFFFFu, __gsharp_ctx->value, 2, 32, "SwitchGotoCaseIntFromDouble.cs(23,25)");
             __gsharp_ctx->value = __gsharp_warp_temp_1;
             goto case 3;
             goto case 6;

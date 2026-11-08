@@ -82,13 +82,21 @@ namespace Kassyi.GSharp.Tests.Shared.Syntax
 public partial class SuspendingCallArgumentKernels
 {
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingCallArgumentKernels__PairSum {
+public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingCallArgumentKernels__PairSum : global::Kassyi.GSharp.Core.IManagedWarpFrame {
 internal int __gsharp_state;
-internal uint __gsharp_warp_exchange;
+internal uint __gsharp_warp_path;
 internal int value;
 internal uint scale;
 internal bool negate;
 internal global::Kassyi.GSharp.Tests.Shared.Syntax.PacketColor color;
+internal uint[] __gsharp_warp_visits = new uint[1];
+uint global::Kassyi.GSharp.Core.IManagedWarpFrame.WarpPath => __gsharp_warp_path;
+uint global::Kassyi.GSharp.Core.IManagedWarpFrame.AdvanceWarpVisit(int site) => ++__gsharp_warp_visits[site];
+uint global::Kassyi.GSharp.Core.IManagedWarpFrame.GetWarpVisit(int site) => __gsharp_warp_visits[site];
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingCallArgumentKernels__PairSum(int __gsharp_in_value, uint __gsharp_in_scale, bool __gsharp_in_negate, global::Kassyi.GSharp.Tests.Shared.Syntax.PacketColor __gsharp_in_color, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingCallArgumentKernels__PairSum __gsharp_ctx, ref int __gsharp_result) {
@@ -103,14 +111,14 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_warp_exchange_assign(__gsharp_ctx.value);
+__gsharp_warp_publish(0, ref __gsharp_ctx, 0, global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendingCallArgumentKernels.FullMask, __gsharp_ctx.value, "Warp.ShuffleXorSync", "SuspendingCallArgumentKernels.cs(17,24)");
 __gsharp_ctx.__gsharp_state = 1;
 return false;
 }
 
 case 1:
 {
-var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_xor_sync(0, global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendingCallArgumentKernels.FullMask, __gsharp_ctx.value, 1, 32, "SuspendingCallArgumentKernels.cs(17,24)");
+var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_xor_sync(0, ref __gsharp_ctx, 0, global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendingCallArgumentKernels.FullMask, __gsharp_ctx.value, 1, 32, "SuspendingCallArgumentKernels.cs(17,24)");
 int neighbor = __gsharp_warp_temp_0;
 int result = (__gsharp_ctx.value + neighbor) * (int)__gsharp_ctx.scale + (int)__gsharp_ctx.color;
 {

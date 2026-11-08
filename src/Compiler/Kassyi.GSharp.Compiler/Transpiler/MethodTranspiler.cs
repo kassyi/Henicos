@@ -315,8 +315,9 @@ public static class MethodTranspiler
     internal static string GenerateManagedVersionSource(in MethodEmissionPlan plan) =>
         ManagedCSharpTranspiler.GenerateManagedVersion(in plan);
 
-    // kernelName is the C# name, used only in internal-error reports. A kernel context also holds the warp exchange of the
-    // thread; a device function frame reaches the warp exchange through the root. Both hold their copied parameters.
+    // kernelName is the C# name, used only in internal-error reports. A kernel context also holds the values the thread
+    // published at warp collectives; a device function frame reaches them through the root. Both hold their copied
+    // parameters, and the visit counts of the warp collectives of their body.
     private static void WriteContextStruct(string contextName, string kernelName, LoweredStateMachine lowered,
         in MethodEmissionPlan plan, bool isFrame, ref TranspileContext context)
     {
@@ -325,7 +326,13 @@ public static class MethodTranspiler
             context.Emitter.Writer.AppendLine($"int {GSharpInternalNames.StateMachine.State} = 0;");
             if (!isFrame)
             {
-                WriteThreadStateFields(contextName, ref context);
+                WriteThreadStateFields(contextName, in plan, ref context);
+            }
+
+            if (lowered.WarpSiteCount > 0)
+            {
+                context.Emitter.Writer.AppendLine(
+                    $"uint32_t {GSharpInternalNames.StateMachine.WarpVisits}[{lowered.WarpSiteCount}] = {{}};");
             }
 
             foreach (var parameter in plan.GetCopiedParameters(lowered))
@@ -352,15 +359,23 @@ public static class MethodTranspiler
         context.Emitter.Writer.AppendLine();
     }
 
-    // The state of the thread that only a kernel context holds: the contexts of the block, the warp exchange and the
-    // flags of a grid sync and a block barrier
-    private static void WriteThreadStateFields(string contextName, ref TranspileContext context)
+    // The state of the thread that only a kernel context holds: the contexts of the block, the values it published at
+    // warp collectives (a kernel that reaches one) and the flags of a grid sync and a block barrier
+    private static void WriteThreadStateFields(string contextName, in MethodEmissionPlan plan,
+        ref TranspileContext context)
     {
         context.Emitter.Writer.AppendLine($"{contextName}* {GSharpInternalNames.StateMachine.AllContexts} = nullptr;");
-        // Two exchange slots alternate per shuffle, so a lane that has already published its next shuffle does not
-        // overwrite the value a slower lane is still reading
-        context.Emitter.Writer.AppendLine($"uint64_t {GSharpInternalNames.StateMachine.WarpExchange}[2] = {{}};");
-        context.Emitter.Writer.AppendLine($"uint32_t {GSharpInternalNames.StateMachine.WarpShuffleCount} = 0;");
+        if (plan.Symbol is { } kernel &&
+            SuspensionAnalysis.ReachesWarpShuffle(kernel, context.Query.SemanticModel.Compilation))
+        {
+            // Two slots alternate, so the value a slower lane of the group still reads is never overwritten
+            context.Emitter.Writer.AppendLine(
+                $"{GSharpInternalNames.StateMachine.WarpRecordType} {GSharpInternalNames.StateMachine.WarpRecords}[2] = {{}};");
+            context.Emitter.Writer.AppendLine($"uint32_t {GSharpInternalNames.StateMachine.WarpRecordNext} = 0;");
+            context.Emitter.Writer.AppendLine($"uint32_t {GSharpInternalNames.StateMachine.WarpRound} = 0;");
+            context.Emitter.Writer.AppendLine($"bool {GSharpInternalNames.StateMachine.WarpWaiting} = false;");
+        }
+
         context.Emitter.Writer.AppendLine($"bool {GSharpInternalNames.StateMachine.YieldedForGridSync} = false;");
         context.Emitter.Writer.AppendLine($"bool {GSharpInternalNames.StateMachine.YieldedForBlockBarrier} = false;");
     }

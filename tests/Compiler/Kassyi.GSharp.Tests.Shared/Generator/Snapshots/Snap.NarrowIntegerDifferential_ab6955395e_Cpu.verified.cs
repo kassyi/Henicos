@@ -37,8 +37,6 @@ public static partial class AotContexts
 public const string NarrowCompoundAndStepMatrixKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__NarrowIntegerDifferentialKernels__NarrowCompoundAndStepMatrixKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__NarrowIntegerDifferentialKernels__NarrowCompoundAndStepMatrixKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -224,7 +222,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__NarrowIntegerDifferentialKernels__NarrowCompoundAndStepMatrixKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__NarrowIntegerDifferentialKernels__NarrowCompoundAndStepMatrixKernel(int[] a, int[] b, int[] sh, int[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__NarrowIntegerDifferentialKernels__NarrowCompoundAndStepMatrixKernel __gsharp_ctx) {
@@ -479,8 +481,6 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dl
 public const string NarrowEnumAndSignedEnumMatrixKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__NarrowIntegerDifferentialKernels__NarrowEnumAndSignedEnumMatrixKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__NarrowIntegerDifferentialKernels__NarrowEnumAndSignedEnumMatrixKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -616,7 +616,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__NarrowIntegerDifferentialKernels__NarrowEnumAndSignedEnumMatrixKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__NarrowIntegerDifferentialKernels__NarrowEnumAndSignedEnumMatrixKernel(int[] a, int[] b, int[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__NarrowIntegerDifferentialKernels__NarrowEnumAndSignedEnumMatrixKernel __gsharp_ctx) {
@@ -814,8 +818,6 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dl
 public const string MixedSignDivRemMatrixKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__NarrowIntegerDifferentialKernels__MixedSignDivRemMatrixKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__NarrowIntegerDifferentialKernels__MixedSignDivRemMatrixKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -947,7 +949,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__NarrowIntegerDifferentialKernels__MixedSignDivRemMatrixKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__NarrowIntegerDifferentialKernels__MixedSignDivRemMatrixKernel(long[] l, int[] iNz, uint[] uNz, long[] lNz, long[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__NarrowIntegerDifferentialKernels__MixedSignDivRemMatrixKernel __gsharp_ctx) {
@@ -1157,8 +1163,6 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dl
 public const string BitOpsReturnSignMatrixKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__NarrowIntegerDifferentialKernels__BitOpsReturnSignMatrixKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__NarrowIntegerDifferentialKernels__BitOpsReturnSignMatrixKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -1271,7 +1275,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__NarrowIntegerDifferentialKernels__BitOpsReturnSignMatrixKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__NarrowIntegerDifferentialKernels__BitOpsReturnSignMatrixKernel(uint[] u, ulong[] ul, int[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__NarrowIntegerDifferentialKernels__BitOpsReturnSignMatrixKernel __gsharp_ctx) {
@@ -1446,8 +1454,6 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dl
 public const string TargetEvaluationOrderMatrixKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__NarrowIntegerDifferentialKernels__TargetEvaluationOrderMatrixKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__NarrowIntegerDifferentialKernels__TargetEvaluationOrderMatrixKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -1590,7 +1596,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__NarrowIntegerDifferentialKernels__TargetEvaluationOrderMatrixKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__NarrowIntegerDifferentialKernels__TargetEvaluationOrderMatrixKernel(int[] a, int[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__NarrowIntegerDifferentialKernels__TargetEvaluationOrderMatrixKernel __gsharp_ctx) {

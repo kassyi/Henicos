@@ -98,10 +98,14 @@ public partial class NonRecursiveDeviceFunctionBarrierKernels
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__NonRecursiveDeviceFunctionBarrierKernels__Exchange {
 internal int __gsharp_state;
-internal uint __gsharp_warp_exchange;
+internal uint __gsharp_warp_path;
 internal int value;
 internal int length;
 internal int tid;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__NonRecursiveDeviceFunctionBarrierKernels__Exchange(int __gsharp_in_value, int __gsharp_in_length, __gsharp_frame_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__NonRecursiveDeviceFunctionBarrierKernels__Exchange __gsharp_ctx, ref int __gsharp_result) {
@@ -138,7 +142,7 @@ throw new global::System.InvalidOperationException("The device function state ma
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__NonRecursiveDeviceFunctionBarrierKernels__ExchangeTwice {
 internal int __gsharp_state;
-internal uint __gsharp_warp_exchange;
+internal uint __gsharp_warp_path;
 internal int value;
 internal int length;
 internal int __gsharp_call_temp_0;
@@ -146,6 +150,12 @@ internal int once;
 internal int __gsharp_call_temp_1;
 internal global::Kassyi.GSharp.Tests.Shared.TestCases.Analyzers.BarrierUsage.NonRecursiveDeviceFunctionBarrierKernels.__gsharp_frame_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__NonRecursiveDeviceFunctionBarrierKernels__Exchange __gsharp_call_frame_0 = new();
 internal global::Kassyi.GSharp.Tests.Shared.TestCases.Analyzers.BarrierUsage.NonRecursiveDeviceFunctionBarrierKernels.__gsharp_frame_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__NonRecursiveDeviceFunctionBarrierKernels__Exchange __gsharp_call_frame_1 = new();
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+next = __gsharp_call_frame_0.__gsharp_number_warp_paths(next);
+next = __gsharp_call_frame_1.__gsharp_number_warp_paths(next);
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__NonRecursiveDeviceFunctionBarrierKernels__ExchangeTwice(int __gsharp_in_value, int __gsharp_in_length, __gsharp_frame_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__NonRecursiveDeviceFunctionBarrierKernels__ExchangeTwice __gsharp_ctx, ref int __gsharp_result) {
@@ -193,12 +203,20 @@ throw new global::System.InvalidOperationException("The device function state ma
 }
 
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__NonRecursiveDeviceFunctionBarrierKernels__ReverseWarp {
+public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__NonRecursiveDeviceFunctionBarrierKernels__ReverseWarp : global::Kassyi.GSharp.Core.IManagedWarpFrame {
 internal int __gsharp_state;
-internal uint __gsharp_warp_exchange;
+internal uint __gsharp_warp_path;
 internal int lane;
 internal int __gsharp_arg_temp_0;
 internal int __gsharp_arg_temp_1;
+internal uint[] __gsharp_warp_visits = new uint[1];
+uint global::Kassyi.GSharp.Core.IManagedWarpFrame.WarpPath => __gsharp_warp_path;
+uint global::Kassyi.GSharp.Core.IManagedWarpFrame.AdvanceWarpVisit(int site) => ++__gsharp_warp_visits[site];
+uint global::Kassyi.GSharp.Core.IManagedWarpFrame.GetWarpVisit(int site) => __gsharp_warp_visits[site];
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__NonRecursiveDeviceFunctionBarrierKernels__ReverseWarp(global::System.Span<int> data, __gsharp_frame_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__NonRecursiveDeviceFunctionBarrierKernels__ReverseWarp __gsharp_ctx) {
@@ -210,14 +228,14 @@ case 0:
 __gsharp_ctx.lane = global::Kassyi.GSharp.Core.ThreadIndex.X & 31;
 __gsharp_ctx.__gsharp_arg_temp_0 = data[__gsharp_ctx.lane];
 __gsharp_ctx.__gsharp_arg_temp_1 = 31 - __gsharp_ctx.lane;
-__gsharp_warp_exchange_assign(__gsharp_ctx.__gsharp_arg_temp_0);
+__gsharp_warp_publish(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.__gsharp_arg_temp_0, "Warp.ShuffleSync", "NonRecursiveDeviceFunctionBarrierKernels.cs(30,22)");
 __gsharp_ctx.__gsharp_state = 1;
 return false;
 }
 
 case 1:
 {
-var __gsharp_warp_temp_2 = __gsharp_warp_shuffle_read_sync(0, 0xFFFFFFFFu, __gsharp_ctx.__gsharp_arg_temp_0, __gsharp_ctx.__gsharp_arg_temp_1, 32, "NonRecursiveDeviceFunctionBarrierKernels.cs(30,22)");
+var __gsharp_warp_temp_2 = __gsharp_warp_shuffle_read_sync(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.__gsharp_arg_temp_0, __gsharp_ctx.__gsharp_arg_temp_1, 32, "NonRecursiveDeviceFunctionBarrierKernels.cs(30,22)");
 data[__gsharp_ctx.lane] = __gsharp_warp_temp_2;
 {
 __gsharp_ctx.__gsharp_state = 0;

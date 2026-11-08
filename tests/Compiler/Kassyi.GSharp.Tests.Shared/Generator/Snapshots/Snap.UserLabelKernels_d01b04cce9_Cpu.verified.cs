@@ -37,10 +37,13 @@ public static partial class AotContexts
 public const string LabeledShuffleLoopKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UserLabelKernels__LabeledShuffleLoopKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UserLabelKernels__LabeledShuffleLoopKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
+__gsharp_warp_record __gsharp_warp_records[2] = {};
+uint32_t __gsharp_warp_record_next = 0;
+uint32_t __gsharp_warp_round = 0;
+bool __gsharp_warp_waiting = false;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
+uint32_t __gsharp_warp_visits[1] = {};
 GSharpArray<int> __gsharp_id_0_data;
 int __gsharp_id_1_tid;
 int __gsharp_id_2_v;
@@ -69,14 +72,14 @@ goto __gsharp_switch_1_state_1;
 case 1:
 __gsharp_switch_1_state_1:
 {
-__gsharp_warp_exchange_assign(__gsharp_ctx->__gsharp_id_2_v);
+__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,0,4294967295U,__gsharp_ctx->__gsharp_id_2_v,""Warp.ShuffleDownSync"",""UserLabelKernels.cs(37,16)"");
 __gsharp_state=2;
 return;
 }
 case 2:
 __gsharp_switch_1_state_2:
 {
-auto __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_down_sync(__gsharp_root,4294967295U,__gsharp_ctx->__gsharp_id_2_v,1,32,""UserLabelKernels.cs(37,16)"");
+auto __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_down_sync(__gsharp_root,__gsharp_ctx,0,4294967295U,__gsharp_ctx->__gsharp_id_2_v,1,32,""UserLabelKernels.cs(37,16)"");
 __gsharp_ctx->__gsharp_id_3_acc=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_3_acc,__gsharp_warp_temp_0);
 __gsharp_ctx->__gsharp_id_2_v=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_2_v,1);
 if((__gsharp_ctx->__gsharp_id_4_k=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_4_k,1))<3)
@@ -112,26 +115,16 @@ __gsharp_launch_ctx.__gsharp_state = 0;
 __gsharp_launch_ctx.__gsharp_all_contexts = __gsharp_contexts.data();
 }
 std::atomic<bool> __gsharp_any_active{true};
+uint32_t __gsharp_round = 0;
 while (__gsharp_any_active && !__gsharp_launch_error.HasError())
 {
 __gsharp_any_active = false;
 int32_t __gsharp_threads_per_block = (int32_t)(__gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z);
-int32_t __gsharp_warp_min_state = INT32_MAX;
+__gsharp_round++;
+bool __gsharp_stepped = false;
 for (int32_t __gsharp_thread_index = 0; __gsharp_thread_index < __gsharp_threads_per_block; __gsharp_thread_index++)
 {
 if (__gsharp_launch_error.HasError()) continue;
-if ((__gsharp_thread_index & 31) == 0)
-{
-__gsharp_warp_min_state = INT32_MAX;
-int32_t __gsharp_warp_end = __gsharp_thread_index + 32 < __gsharp_threads_per_block ? __gsharp_thread_index + 32 : __gsharp_threads_per_block;
-for (int32_t __gsharp_w = __gsharp_thread_index; __gsharp_w < __gsharp_warp_end; __gsharp_w++)
-{
-if (__gsharp_contexts[__gsharp_w].__gsharp_state != -1 && !__gsharp_contexts[__gsharp_w].__gsharp_yielded_for_block_barrier && !__gsharp_contexts[__gsharp_w].__gsharp_yielded_for_grid_sync && __gsharp_contexts[__gsharp_w].__gsharp_state < __gsharp_warp_min_state)
-{
-__gsharp_warp_min_state = __gsharp_contexts[__gsharp_w].__gsharp_state;
-}
-}
-}
 __gsharp_active_error_slot = &__gsharp_launch_error;
 int32_t __gsharp_tx = __gsharp_thread_index % __gsharp_block_dim_x;
 int32_t __gsharp_ty = (__gsharp_thread_index / __gsharp_block_dim_x) % __gsharp_block_dim_y;
@@ -139,8 +132,9 @@ int32_t __gsharp_tz = __gsharp_thread_index / (__gsharp_block_dim_x * __gsharp_b
 uint32_t __gsharp_ctx_tid = __gsharp_tz * __gsharp_block_dim_y * __gsharp_block_dim_x + __gsharp_ty * __gsharp_block_dim_x + __gsharp_tx;
 if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_state != -1 && !__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_block_barrier && !__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_grid_sync)
 {
-if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_state == __gsharp_warp_min_state)
+if (__gsharp_warp_can_run(&__gsharp_contexts[0], __gsharp_ctx_tid, (uint32_t)__gsharp_threads_per_block, __gsharp_round))
 {
+__gsharp_stepped = true;
 __gsharp_set_thread_idx(__gsharp_tx, __gsharp_ty, __gsharp_tz, __gsharp_bx, __gsharp_by, __gsharp_bz, __gsharp_block_dim_x, __gsharp_block_dim_y, __gsharp_block_dim_z, __gsharp_grid_dim_x, __gsharp_grid_dim_y, __gsharp_grid_dim_z);
 __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__UserLabelKernels__LabeledShuffleLoopKernel(__gsharp_id_0_data, &__gsharp_contexts[__gsharp_ctx_tid]);
 if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_grid_sync)
@@ -153,6 +147,10 @@ if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_state != -1 && !__gsharp_contex
 __gsharp_any_active = true;
 }
 }
+}
+if (__gsharp_any_active && !__gsharp_stepped)
+{
+__gsharp_warp_report_stall(&__gsharp_contexts[0], (uint32_t)__gsharp_threads_per_block);
 }
 if (!__gsharp_any_active)
 {
@@ -179,14 +177,22 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UserLabelKernels__LabeledShuffleLoopKernel {
+public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UserLabelKernels__LabeledShuffleLoopKernel : global::Kassyi.GSharp.Core.IManagedWarpFrame {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
 public int[] data;
 public int tid;
 public int v;
 public int acc;
 public int k;
+public uint[] __gsharp_warp_visits = new uint[1];
+uint global::Kassyi.GSharp.Core.IManagedWarpFrame.WarpPath => __gsharp_warp_path;
+uint global::Kassyi.GSharp.Core.IManagedWarpFrame.AdvanceWarpVisit(int site) => ++__gsharp_warp_visits[site];
+uint global::Kassyi.GSharp.Core.IManagedWarpFrame.GetWarpVisit(int site) => __gsharp_warp_visits[site];
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__UserLabelKernels__LabeledShuffleLoopKernel(int[] __gsharp_in_data, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UserLabelKernels__LabeledShuffleLoopKernel __gsharp_ctx) {
@@ -207,14 +213,14 @@ goto case 1;
 
 case 1:
 {
-__gsharp_warp_exchange_assign(__gsharp_ctx.v);
+__gsharp_warp_publish(0, ref __gsharp_ctx, 0, global::Kassyi.GSharp.Tests.Shared.Syntax.UserLabelKernels.FullMask, __gsharp_ctx.v, "Warp.ShuffleDownSync", "UserLabelKernels.cs(37,16)");
 __gsharp_ctx.__gsharp_state = 2;
 return;
 }
 
 case 2:
 {
-var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_down_sync(0, global::Kassyi.GSharp.Tests.Shared.Syntax.UserLabelKernels.FullMask, __gsharp_ctx.v, 1, 32, "UserLabelKernels.cs(37,16)");
+var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_down_sync(0, ref __gsharp_ctx, 0, global::Kassyi.GSharp.Tests.Shared.Syntax.UserLabelKernels.FullMask, __gsharp_ctx.v, 1, 32, "UserLabelKernels.cs(37,16)");
 __gsharp_ctx.acc += __gsharp_warp_temp_0;
 __gsharp_ctx.v += 1;
 if (++__gsharp_ctx.k < 3)
@@ -257,6 +263,10 @@ for (int __gsharp_context_index = 0; __gsharp_context_index < __gsharp_contexts.
 {
 __gsharp_contexts[__gsharp_context_index] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UserLabelKernels__LabeledShuffleLoopKernel();
 }
+for (int __gsharp_context_index = 0; __gsharp_context_index < __gsharp_contexts.Length; __gsharp_context_index++)
+{
+__gsharp_contexts[__gsharp_context_index].__gsharp_number_warp_paths(0u);
+}
 global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks, sharedMemBytes, false);
 var __gsharp_thread_at_block_barrier = new bool[__gsharp_contexts.Length];
 bool __gsharp_any_grid_active = true;
@@ -284,24 +294,14 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimY = (int)gridDimY;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimZ = (int)gridDimZ;
 global::Kassyi.GSharp.Core.ManagedGpuContext.ResetWarpExchange();
 bool __gsharp_any_block_active = true;
+int __gsharp_round = 0;
 while (__gsharp_any_block_active)
 {
 __gsharp_any_block_active = false;
-int __gsharp_warp_min_state = int.MaxValue;
+__gsharp_round++;
+bool __gsharp_stepped = false;
 for (int __gsharp_thread_index = 0; __gsharp_thread_index < __gsharp_threads_per_block; __gsharp_thread_index++)
 {
-if ((__gsharp_thread_index & 31) == 0)
-{
-__gsharp_warp_min_state = int.MaxValue;
-int __gsharp_warp_end = __gsharp_thread_index + 32 < __gsharp_threads_per_block ? __gsharp_thread_index + 32 : __gsharp_threads_per_block;
-for (int __gsharp_w = __gsharp_block_index * __gsharp_threads_per_block + __gsharp_thread_index; __gsharp_w < __gsharp_block_index * __gsharp_threads_per_block + __gsharp_warp_end; __gsharp_w++)
-{
-if (__gsharp_contexts[__gsharp_w].__gsharp_state != -1 && !__gsharp_thread_at_block_barrier[__gsharp_w] && __gsharp_contexts[__gsharp_w].__gsharp_state < __gsharp_warp_min_state)
-{
-__gsharp_warp_min_state = __gsharp_contexts[__gsharp_w].__gsharp_state;
-}
-}
-}
 int __gsharp_tx = __gsharp_thread_index % (int)blockDimX;
 int __gsharp_ty = (__gsharp_thread_index / (int)blockDimX) % (int)blockDimY;
 int __gsharp_tz = __gsharp_thread_index / (int)(blockDimX * blockDimY);
@@ -312,8 +312,9 @@ int __gsharp_linear_tid = __gsharp_block_index * __gsharp_threads_per_block + __
 if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1 && !__gsharp_thread_at_block_barrier[__gsharp_linear_tid])
 {
 __gsharp_any_grid_active = true;
-if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state == __gsharp_warp_min_state)
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.WarpCanRun(__gsharp_thread_index, __gsharp_round))
 {
+__gsharp_stepped = true;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = false;
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__UserLabelKernels__LabeledShuffleLoopKernel(data, __gsharp_contexts[__gsharp_linear_tid]);
@@ -325,12 +326,20 @@ if (global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested)
 {
 __gsharp_thread_at_block_barrier[__gsharp_linear_tid] = true;
 }
+if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state == -1)
+{
+global::Kassyi.GSharp.Core.ManagedGpuContext.MarkWarpLaneExited(__gsharp_thread_index);
+}
 }
 if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1 && !__gsharp_thread_at_block_barrier[__gsharp_linear_tid])
 {
 __gsharp_any_block_active = true;
 }
 }
+}
+if (__gsharp_any_block_active && !__gsharp_stepped)
+{
+throw global::Kassyi.GSharp.Core.ManagedGpuContext.WarpStall(__gsharp_threads_per_block);
 }
 if (!__gsharp_any_block_active)
 {
@@ -369,8 +378,6 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dl
 public const string LabelLoopKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UserLabelKernels__LabelLoopKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UserLabelKernels__LabelLoopKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -476,7 +483,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UserLabelKernels__LabelLoopKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__UserLabelKernels__LabelLoopKernel(int[] data, int rounds, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UserLabelKernels__LabelLoopKernel __gsharp_ctx) {
@@ -627,8 +638,6 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dl
 public const string BranchExitLabelKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UserLabelKernels__BranchExitLabelKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UserLabelKernels__BranchExitLabelKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 GSharpArray<int> __gsharp_id_0_data;
@@ -758,11 +767,15 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UserLabelKernels__BranchExitLabelKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
 public int[] data;
 public int flag;
 public int tid;
 public int value;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__UserLabelKernels__BranchExitLabelKernel(int[] __gsharp_in_data, int __gsharp_in_flag, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UserLabelKernels__BranchExitLabelKernel __gsharp_ctx) {
@@ -930,8 +943,6 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dl
 public const string ChainedLabelKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UserLabelKernels__ChainedLabelKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UserLabelKernels__ChainedLabelKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 GSharpArray<int> __gsharp_id_0_data;
@@ -1072,11 +1083,15 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UserLabelKernels__ChainedLabelKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
 public int[] data;
 public int flag;
 public int tid;
 public int x;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__UserLabelKernels__ChainedLabelKernel(int[] __gsharp_in_data, int __gsharp_in_flag, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UserLabelKernels__ChainedLabelKernel __gsharp_ctx) {
@@ -1256,8 +1271,6 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dl
 public const string CrossLabelWriteKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UserLabelKernels__CrossLabelWriteKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UserLabelKernels__CrossLabelWriteKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 GSharpArray<int> __gsharp_id_0_data;
@@ -1393,12 +1406,16 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UserLabelKernels__CrossLabelWriteKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
 public int[] data;
 public int flag;
 public int tid;
 public int value;
 public int extra;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__UserLabelKernels__CrossLabelWriteKernel(int[] __gsharp_in_data, int __gsharp_in_flag, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UserLabelKernels__CrossLabelWriteKernel __gsharp_ctx) {
@@ -1590,8 +1607,6 @@ return __gsharp_self;
 struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UserLabelKernels__GotoPastInitializationKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UserLabelKernels__GotoPastInitializationKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -1698,7 +1713,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UserLabelKernels__GotoPastInitializationKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__UserLabelKernels__GotoPastInitializationKernel(int[] data, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UserLabelKernels__GotoPastInitializationKernel __gsharp_ctx) {
@@ -1848,8 +1867,6 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dl
 public const string GotoPastConstAndArraysKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UserLabelKernels__GotoPastConstAndArraysKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UserLabelKernels__GotoPastConstAndArraysKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -1963,7 +1980,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UserLabelKernels__GotoPastConstAndArraysKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__UserLabelKernels__GotoPastConstAndArraysKernel(int[] data, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UserLabelKernels__GotoPastConstAndArraysKernel __gsharp_ctx) {
@@ -2121,8 +2142,6 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dl
 public const string SiblingSameLabelKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UserLabelKernels__SiblingSameLabelKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UserLabelKernels__SiblingSameLabelKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 GSharpArray<int> __gsharp_id_0_data;
@@ -2264,13 +2283,17 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UserLabelKernels__SiblingSameLabelKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
 public int[] data;
 public int flag;
 public int tid;
 public int acc;
 public int first0;
 public int first1;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__UserLabelKernels__SiblingSameLabelKernel(int[] __gsharp_in_data, int __gsharp_in_flag, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UserLabelKernels__SiblingSameLabelKernel __gsharp_ctx) {
@@ -2452,8 +2475,6 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dl
 public const string SameStateSameLabelKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UserLabelKernels__SameStateSameLabelKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UserLabelKernels__SameStateSameLabelKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 GSharpArray<int> __gsharp_id_0_data;
@@ -2589,12 +2610,16 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UserLabelKernels__SameStateSameLabelKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
 public int[] data;
 public int tid;
 public int acc;
 public int __gsharp_id_3_step;
 public int __gsharp_id_5_step;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__UserLabelKernels__SameStateSameLabelKernel(int[] __gsharp_in_data, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UserLabelKernels__SameStateSameLabelKernel __gsharp_ctx) {
@@ -2773,8 +2798,6 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dl
 public const string CrossLabelInitializedKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UserLabelKernels__CrossLabelInitializedKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UserLabelKernels__CrossLabelInitializedKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 GSharpArray<int> __gsharp_id_0_data;
@@ -2907,12 +2930,16 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UserLabelKernels__CrossLabelInitializedKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
 public int[] data;
 public int flag;
 public int tid;
 public int value;
 public int extra;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__UserLabelKernels__CrossLabelInitializedKernel(int[] __gsharp_in_data, int __gsharp_in_flag, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UserLabelKernels__CrossLabelInitializedKernel __gsharp_ctx) {
@@ -3082,8 +3109,6 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dl
 public const string LabeledBarrierKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UserLabelKernels__LabeledBarrierKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UserLabelKernels__LabeledBarrierKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 GSharpArray<int> __gsharp_id_0_output;
@@ -3196,9 +3221,13 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UserLabelKernels__LabeledBarrierKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
 public int[] output;
 public int tid;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__UserLabelKernels__LabeledBarrierKernel(int[] __gsharp_in_output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__UserLabelKernels__LabeledBarrierKernel __gsharp_ctx) {

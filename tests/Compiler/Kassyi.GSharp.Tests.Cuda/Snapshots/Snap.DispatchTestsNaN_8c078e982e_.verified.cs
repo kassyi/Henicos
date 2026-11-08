@@ -24,14 +24,14 @@
 
         case 1:
         {
-            __gsharp_warp_exchange_assign(__gsharp_ctx->value);
+            __gsharp_warp_publish(__gsharp_root, __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx->value, "Warp.ShuffleXorSync", "SwitchNaNCase.cs(17,25)");
             __gsharp_state = 2;
             return;
         }
 
         case 2:
         {
-            var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_xor_sync(__gsharp_root, 0xFFFFFFFFu, __gsharp_ctx->value, 1, 32, "SwitchNaNCase.cs(17,25)");
+            var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_xor_sync(__gsharp_root, __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx->value, 1, 32, "SwitchNaNCase.cs(17,25)");
             __gsharp_ctx->value = __gsharp_warp_temp_0;
             goto case 5;
             goto case 3;

@@ -37,8 +37,6 @@ public static partial class AotContexts
 public const string GridSumKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Runtime__ParallelAggregateGridKernels__GridSumKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Runtime__ParallelAggregateGridKernels__GridSumKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -195,7 +193,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Runtime__ParallelAggregateGridKernels__GridSumKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Runtime__ParallelAggregateGridKernels__GridSumKernel(int[] data, int[] result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Runtime__ParallelAggregateGridKernels__GridSumKernel __gsharp_ctx) {
@@ -367,8 +369,6 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dl
 public const string GridLongSumKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Runtime__ParallelAggregateGridKernels__GridLongSumKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Runtime__ParallelAggregateGridKernels__GridLongSumKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -512,7 +512,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Runtime__ParallelAggregateGridKernels__GridLongSumKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Runtime__ParallelAggregateGridKernels__GridLongSumKernel(long[] data, long[] result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Runtime__ParallelAggregateGridKernels__GridLongSumKernel __gsharp_ctx) {
@@ -681,8 +685,6 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dl
 public const string GridRepeatedSumKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Runtime__ParallelAggregateGridKernels__GridRepeatedSumKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Runtime__ParallelAggregateGridKernels__GridRepeatedSumKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -847,7 +849,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Runtime__ParallelAggregateGridKernels__GridRepeatedSumKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Runtime__ParallelAggregateGridKernels__GridRepeatedSumKernel(int[] a, int[] b, int[] result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Runtime__ParallelAggregateGridKernels__GridRepeatedSumKernel __gsharp_ctx) {
@@ -1030,8 +1036,6 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dl
 public const string GridSegmentSumKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Runtime__ParallelAggregateGridKernels__GridSegmentSumKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Runtime__ParallelAggregateGridKernels__GridSegmentSumKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -1179,7 +1183,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Runtime__ParallelAggregateGridKernels__GridSegmentSumKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Runtime__ParallelAggregateGridKernels__GridSegmentSumKernel(int[] data, int m, int[] result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Runtime__ParallelAggregateGridKernels__GridSegmentSumKernel __gsharp_ctx) {
@@ -1348,8 +1356,6 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dl
 public const string GridLambdaBlockIndexKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Runtime__ParallelAggregateGridKernels__GridLambdaBlockIndexKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Runtime__ParallelAggregateGridKernels__GridLambdaBlockIndexKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -1497,7 +1503,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Runtime__ParallelAggregateGridKernels__GridLambdaBlockIndexKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Runtime__ParallelAggregateGridKernels__GridLambdaBlockIndexKernel(int[] data, int[] result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Runtime__ParallelAggregateGridKernels__GridLambdaBlockIndexKernel __gsharp_ctx) {

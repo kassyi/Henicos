@@ -175,8 +175,6 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__GpuB
 struct __gsharp_context_Kassyi__GSharp__Tests__TestCases__Emission__BigIntRefShiftKernels__ShiftKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__TestCases__Emission__BigIntRefShiftKernels__ShiftKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -277,7 +275,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__TestCases__Emission__BigIntRefShiftKernels__ShiftKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__TestCases__Emission__BigIntRefShiftKernels__ShiftKernel(uint[] input, uint[] shiftedLeft, uint[] shiftedRight, __gsharp_context_Kassyi__GSharp__Tests__TestCases__Emission__BigIntRefShiftKernels__ShiftKernel __gsharp_ctx) {
