@@ -2,7 +2,7 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Rules.MacroRules;
 
 /// <summary>
 /// Transpiles a <c>Gpu.SyncGrid(body)</c> statement (CUDA): the statements of the body with a cooperative grid sync
-/// (<c>cg::this_grid().sync();</c>) between its top-level statements.
+/// (<c>__gsharp_grid_sync();</c>) between its top-level statements.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -19,7 +19,7 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Rules.MacroRules;
 /// </remarks>
 internal sealed class SyncGridMacroRule : IMacroTranspilerRule
 {
-    private const string GridSync = "cg::this_grid().sync();";
+    private const string GridSync = "__gsharp_grid_sync();";
 
     public bool TryTranspile(
         InvocationExpressionSyntax invocation,

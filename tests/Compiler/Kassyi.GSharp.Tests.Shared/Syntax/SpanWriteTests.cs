@@ -7,7 +7,12 @@ namespace Kassyi.GSharp.Tests.Shared.Syntax;
 /// <c>System.Array</c> write and slice members (#731), comparing G# execution (native CPU, managed CPU, and CUDA)
 /// directly against .NET's BCL implementations.
 /// </summary>
+#if GSHARP_CUDA
+// A device error goes to the one error slot of the process, which a test running beside this one could read first
+[Collection(TestCollections.DeviceExclusive)]
+#else
 [Collection(TestCollections.GlobalStateSequential)]
+#endif
 public class SpanWriteTests : TranspilerTestBase
 {
     private const uint GridDimX = 1;
@@ -351,26 +356,18 @@ public class SpanWriteTests : TranspilerTestBase
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
-    [Category(TestCategory.GpuTrap)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_P4_CopyTo_DestinationTooShort_CudaTrapsWhenEnabled()
+    public void Test_P4_CopyTo_DestinationTooShort_CudaThrowsArgumentException()
     {
-        Skip.IfNot(IsCudaDialect, "Checks the CUDA trap; the exception is checked on the CPU paths.");
-
-        // A CUDA trap leaves the context of the process unusable, so the launch runs in a child process of its own
-        if (!IsolatedTestProcess.IsChild(nameof(Test_P4_CopyTo_DestinationTooShort_CudaTrapsWhenEnabled)))
-        {
-            CudaTrapRuns.RunIsolated(typeof(SpanWriteTests), nameof(Test_P4_CopyTo_DestinationTooShort_CudaTrapsWhenEnabled));
-            return;
-        }
+        Skip.IfNot(IsCudaDialect, "Checks the CUDA device error; the exception is checked on the CPU paths.");
 
         int[] src = [1, 2, 3, 4];
         int[] dst = [90, 91, 92];
-        // The device error channel turns the trap into the exception the CPU paths throw, with the CUDA error inside
+        // The failing thread records the error and exits; the launcher throws the exception the CPU paths throw
         var ex = Assert.Throws<ArgumentException>(() =>
             SpanWriteKernels.LaunchCopyToDirectKernel(src, dst, gridDimX: GridDimX, blockDimX: BlockDimX));
-        var cudaEx = Assert.IsType<Kassyi.GSharp.Runtime.Interop.CudaException>(ex.InnerException);
-        Assert.True(cudaEx.Result is Kassyi.GSharp.Runtime.Interop.CUresult.CudaErrorIllegalInstruction or Kassyi.GSharp.Runtime.Interop.CUresult.CudaErrorLaunchFailed);
+        Assert.Null(ex.InnerException);
+        Assert.Equal([90, 91, 92], dst);
     }
 
     [SkippableTheory]
