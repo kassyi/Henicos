@@ -88,19 +88,19 @@ public static partial class AotContexts
 public const string InterlockedKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__InvocationAndIntrinsicsKernels__InterlockedKernel(GSharpArray<int> __gsharp_id_0_intBuf, GSharpArray<unsigned int> __gsharp_id_1_uintBuf, GSharpArray<long long> __gsharp_id_2_longBuf, GSharpArray<unsigned long long> __gsharp_id_3_ulongBuf){
 int __gsharp_id_4_tid = (int)threadIdx.x;
 __gsharp_atomicAdd(&__gsharp_id_0_intBuf[0],1);
-__gsharp_atomicAdd((unsigned long long*)(&__gsharp_id_2_longBuf[0]),2ll);
+__gsharp_atomicAdd(&__gsharp_id_2_longBuf[0],2ll);
 if(__gsharp_id_4_tid==0)
 {
 atomicExch(&__gsharp_id_0_intBuf[1],100);
 atomicExch(&__gsharp_id_1_uintBuf[1],200u);
-atomicExch((unsigned long long*)(&__gsharp_id_2_longBuf[1]),300ll);
+__gsharp_atomicExch(&__gsharp_id_2_longBuf[1],300ll);
 atomicExch((unsigned long long*)(&__gsharp_id_3_ulongBuf[1]),400ull);
 }
 if(__gsharp_id_4_tid==0)
 {
 __gsharp_atomicCAS(&__gsharp_id_0_intBuf[2],500,0);
 __gsharp_atomicCAS(&__gsharp_id_1_uintBuf[2],600u,0u);
-__gsharp_atomicCAS((unsigned long long*)(&__gsharp_id_2_longBuf[2]),700ll,0ll);
+__gsharp_atomicCAS(&__gsharp_id_2_longBuf[2],700ll,0ll);
 __gsharp_atomicCAS((unsigned long long*)(&__gsharp_id_3_ulongBuf[2]),800ull,0ull);
 }
 }
@@ -379,7 +379,7 @@ int __gsharp_id_2_tid = (int)threadIdx.x;
 __gsharp_atomicAdd(&__gsharp_id_0_array[__gsharp_id_2_tid],10);
 __gsharp_atomicAdd(&__gsharp_id_1_structArray[__gsharp_id_2_tid].__gsharp_mb_ValueI,1);
 atomicExch(&__gsharp_id_1_structArray[__gsharp_id_2_tid].__gsharp_mb_ValueU,42u);
-__gsharp_atomicCAS((unsigned long long*)(&__gsharp_id_1_structArray[__gsharp_id_2_tid].__gsharp_mb_ValueL),99ll,0ll);
+__gsharp_atomicCAS(&__gsharp_id_1_structArray[__gsharp_id_2_tid].__gsharp_mb_ValueL,99ll,0ll);
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_InterlockedEdgeCasesKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__InvocationAndIntrinsicsKernels__InterlockedEdgeCasesKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);

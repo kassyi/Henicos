@@ -2491,12 +2491,12 @@ finally
 public const string InterlockedInt64OverloadsKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__AtomicsDifferentialKernels__InterlockedInt64OverloadsKernel(GSharpArray<long long> __gsharp_id_0_input, GSharpArray<long long> __gsharp_id_1_uncontendedSlots, GSharpArray<long long> __gsharp_id_2_returnsOut, GSharpArray<long long> __gsharp_id_3_contendedState){
 int __gsharp_id_4_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 long long __gsharp_id_5_vl = __gsharp_id_0_input[__gsharp_id_4_tid];
-long long __gsharp_id_6_retAdd = __gsharp_atomicAdd((unsigned long long*)(&__gsharp_id_1_uncontendedSlots[__gsharp_mul_i32(__gsharp_id_4_tid,3)+0]),__gsharp_id_5_vl);
-long long __gsharp_id_7_retExch = atomicExch((unsigned long long*)(&__gsharp_id_1_uncontendedSlots[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_4_tid,3),1)]),__gsharp_add_i64(__gsharp_id_5_vl,1000ll));
+long long __gsharp_id_6_retAdd = __gsharp_atomicAdd(&__gsharp_id_1_uncontendedSlots[__gsharp_mul_i32(__gsharp_id_4_tid,3)+0],__gsharp_id_5_vl);
+long long __gsharp_id_7_retExch = __gsharp_atomicExch(&__gsharp_id_1_uncontendedSlots[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_4_tid,3),1)],__gsharp_add_i64(__gsharp_id_5_vl,1000ll));
 long long __gsharp_id_8_expectedCas = __gsharp_id_1_uncontendedSlots[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_4_tid,3),2)];
-long long __gsharp_id_9_retCasHit = __gsharp_atomicCAS((unsigned long long*)(&__gsharp_id_1_uncontendedSlots[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_4_tid,3),2)]),__gsharp_add_i64(__gsharp_id_5_vl,2000ll),__gsharp_id_8_expectedCas);
-__gsharp_atomicAdd((unsigned long long*)(&__gsharp_id_3_contendedState[0]),__gsharp_id_5_vl);
-__gsharp_atomicCAS((unsigned long long*)(&__gsharp_id_3_contendedState[1]),(-9876543210LL),(-1234567890LL));
+long long __gsharp_id_9_retCasHit = __gsharp_atomicCAS(&__gsharp_id_1_uncontendedSlots[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_4_tid,3),2)],__gsharp_add_i64(__gsharp_id_5_vl,2000ll),__gsharp_id_8_expectedCas);
+__gsharp_atomicAdd(&__gsharp_id_3_contendedState[0],__gsharp_id_5_vl);
+__gsharp_atomicCAS(&__gsharp_id_3_contendedState[1],(-9876543210LL),(-1234567890LL));
 int __gsharp_id_10_o = __gsharp_mul_i32(__gsharp_id_4_tid,3);
 __gsharp_id_2_returnsOut[__gsharp_id_10_o+0]=__gsharp_id_6_retAdd;
 __gsharp_id_2_returnsOut[__gsharp_add_i32(__gsharp_id_10_o,1)]=__gsharp_id_7_retExch;
@@ -3025,23 +3025,34 @@ finally
 #pragma warning restore CS8500
 public const string InterlockedReturnExpressionKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__AtomicsDifferentialKernels__InterlockedReturnExpressionKernel(GSharpArray<long long> __gsharp_id_0_state64, GSharpArray<int> __gsharp_id_1_state32, GSharpArray<int> __gsharp_id_2_output){
 int __gsharp_id_3_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
-int __gsharp_id_4_add64LtZero = (__gsharp_atomicAdd((unsigned long long*)(&__gsharp_id_0_state64[__gsharp_mul_i32(__gsharp_id_3_tid,3)+0]),(-5LL))<0ll?1:0);
-int __gsharp_id_5_exch64SarSign = (int)(atomicExch((unsigned long long*)(&__gsharp_id_0_state64[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_3_tid,3),1)]),42ll)>>62);
-int __gsharp_id_6_cas64LtZero = (__gsharp_atomicCAS((unsigned long long*)(&__gsharp_id_0_state64[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_3_tid,3),2)]),99ll,(-10LL))<0ll?1:0);
-int __gsharp_id_7_add32WrapMin = (__gsharp_atomicAdd(&__gsharp_id_1_state32[__gsharp_mul_i32(__gsharp_id_3_tid,2)+0],1)==(-2147483647-1)?1:0);
+int __gsharp_id_4_add64LtZero = (__gsharp_atomicAdd(&__gsharp_id_0_state64[__gsharp_mul_i32(__gsharp_id_3_tid,5)+0],(-5LL))<0ll?1:0);
+int __gsharp_id_5_exch64SarSign = (int)(__gsharp_atomicExch(&__gsharp_id_0_state64[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_3_tid,5),1)],42ll)>>62);
+int __gsharp_id_6_cas64LtZero = (__gsharp_atomicCAS(&__gsharp_id_0_state64[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_3_tid,5),2)],99ll,(-10LL))<0ll?1:0);
+int __gsharp_id_7_add32WrapMin = (__gsharp_atomicAdd(&__gsharp_id_1_state32[__gsharp_mul_i32(__gsharp_id_3_tid,3)+0],1)==(-2147483647-1)?1:0);
 ([&]() {
-auto&& __gsharp_seq_0 = __gsharp_id_1_state32[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_3_tid,2),1)];
+auto&& __gsharp_seq_0 = __gsharp_id_1_state32[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_3_tid,3),1)];
 int __gsharp_seq_1 = 100;
 int __gsharp_seq_2 = 555;
 return __gsharp_atomicCAS(&__gsharp_seq_0,__gsharp_seq_2,__gsharp_seq_1);
 }());
-int __gsharp_id_8_casNamedUpdated = __gsharp_id_1_state32[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_3_tid,2),1)];
-int __gsharp_id_9_o = __gsharp_mul_i32(__gsharp_id_3_tid,5);
-__gsharp_id_2_output[__gsharp_id_9_o+0]=__gsharp_id_4_add64LtZero;
-__gsharp_id_2_output[__gsharp_add_i32(__gsharp_id_9_o,1)]=__gsharp_id_5_exch64SarSign;
-__gsharp_id_2_output[__gsharp_add_i32(__gsharp_id_9_o,2)]=__gsharp_id_6_cas64LtZero;
-__gsharp_id_2_output[__gsharp_add_i32(__gsharp_id_9_o,3)]=__gsharp_id_7_add32WrapMin;
-__gsharp_id_2_output[__gsharp_add_i32(__gsharp_id_9_o,4)]=__gsharp_id_8_casNamedUpdated;
+int __gsharp_id_8_casNamedUpdated = __gsharp_id_1_state32[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_3_tid,3),1)];
+int __gsharp_id_9_add64WrapMin = (__gsharp_atomicAdd(&__gsharp_id_0_state64[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_3_tid,5),3)],1ll)==(-9223372036854775807LL-1)?1:0);
+int __gsharp_id_10_add32WrapMax = (__gsharp_atomicAdd(&__gsharp_id_1_state32[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_3_tid,3),2)],(-2147483647-1))==2147483647?1:0);
+int __gsharp_id_11_cas64NamedLtZero = (([&]() {
+auto&& __gsharp_seq_3 = __gsharp_id_0_state64[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_3_tid,5),4)];
+long long __gsharp_seq_4 = (-7LL);
+long long __gsharp_seq_5 = (-9876543210LL);
+return __gsharp_atomicCAS(&__gsharp_seq_3,__gsharp_seq_5,__gsharp_seq_4);
+}())<0ll?1:0);
+int __gsharp_id_12_o = __gsharp_mul_i32(__gsharp_id_3_tid,8);
+__gsharp_id_2_output[__gsharp_id_12_o+0]=__gsharp_id_4_add64LtZero;
+__gsharp_id_2_output[__gsharp_add_i32(__gsharp_id_12_o,1)]=__gsharp_id_5_exch64SarSign;
+__gsharp_id_2_output[__gsharp_add_i32(__gsharp_id_12_o,2)]=__gsharp_id_6_cas64LtZero;
+__gsharp_id_2_output[__gsharp_add_i32(__gsharp_id_12_o,3)]=__gsharp_id_7_add32WrapMin;
+__gsharp_id_2_output[__gsharp_add_i32(__gsharp_id_12_o,4)]=__gsharp_id_8_casNamedUpdated;
+__gsharp_id_2_output[__gsharp_add_i32(__gsharp_id_12_o,5)]=__gsharp_id_9_add64WrapMin;
+__gsharp_id_2_output[__gsharp_add_i32(__gsharp_id_12_o,6)]=__gsharp_id_10_add32WrapMax;
+__gsharp_id_2_output[__gsharp_add_i32(__gsharp_id_12_o,7)]=__gsharp_id_11_cas64NamedLtZero;
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_InterlockedReturnExpressionKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__AtomicsDifferentialKernels__InterlockedReturnExpressionKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);

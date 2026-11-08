@@ -53,6 +53,10 @@ Standard .NET Interlocked operations are safely mapped to CUDA atomic instructio
 | `Exchange(ref location, value)` | `int`, `uint`, `long`, `ulong` | `atomicExch` |
 | `CompareExchange(ref location, value, comparand)` | `int`, `uint`, `long`, `ulong` | `atomicCAS` (Compare And Swap) |
 
+The results are the C# results on every path: `Add` returns the new value and wraps on overflow
+(`Interlocked.Add(ref x, 1)` with `x == int.MaxValue` returns `int.MinValue`), and the `long` overloads return a signed
+`long` (CUDA has only `unsigned long long` atomics; the generated code converts the result back).
+
 > [!NOTE]
 > **Interlocked vs Gpu.AtomicAdd**
 > 

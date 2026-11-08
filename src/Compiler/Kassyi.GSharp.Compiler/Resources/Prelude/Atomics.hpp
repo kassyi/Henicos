@@ -128,11 +128,17 @@ __forceinline__ unsigned int atomicDec(unsigned int* address, unsigned int val) 
 __forceinline__ int __gsharp_atomicCAS(int* address, int val, int compare) { return atomicCAS(address, compare, val); }
 __forceinline__ unsigned int __gsharp_atomicCAS(unsigned int* address, unsigned int val, unsigned int compare) { return atomicCAS(address, compare, val); }
 __forceinline__ unsigned long long __gsharp_atomicCAS(unsigned long long* address, unsigned long long val, unsigned long long compare) { return atomicCAS(address, compare, val); }
+__forceinline__ long long __gsharp_atomicCAS(long long* address, long long val, long long compare) { return (long long)atomicCAS((unsigned long long*)address, (unsigned long long)compare, (unsigned long long)val); }
 
-__forceinline__ int __gsharp_atomicAdd(int* address, int val) { return atomicAdd(address, val) + val; }
+// Interlocked.Add returns the new value and wraps (unchecked), and the long overloads return long. C++ leaves signed
+// overflow undefined and the atomics have no long long overloads, so the sum is computed in the unsigned type and the
+// result of the unsigned atomic is converted back (modulo 2^n, as in IntegerSemantics.hpp).
+__forceinline__ int __gsharp_atomicAdd(int* address, int val) { return (int)((unsigned int)atomicAdd(address, val) + (unsigned int)val); }
 __forceinline__ unsigned int __gsharp_atomicAdd(unsigned int* address, unsigned int val) { return atomicAdd(address, val) + val; }
 __forceinline__ unsigned long long __gsharp_atomicAdd(unsigned long long* address, unsigned long long val) { return atomicAdd(address, val) + val; }
+__forceinline__ long long __gsharp_atomicAdd(long long* address, long long val) { return (long long)(atomicAdd((unsigned long long*)address, (unsigned long long)val) + (unsigned long long)val); }
 
 __forceinline__ int __gsharp_atomicExch(int* address, int val) { return atomicExch(address, val); }
 __forceinline__ unsigned int __gsharp_atomicExch(unsigned int* address, unsigned int val) { return atomicExch(address, val); }
 __forceinline__ unsigned long long __gsharp_atomicExch(unsigned long long* address, unsigned long long val) { return atomicExch(address, val); }
+__forceinline__ long long __gsharp_atomicExch(long long* address, long long val) { return (long long)atomicExch((unsigned long long*)address, (unsigned long long)val); }
