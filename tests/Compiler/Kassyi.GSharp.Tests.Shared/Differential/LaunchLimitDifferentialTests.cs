@@ -60,6 +60,8 @@ public sealed class LaunchLimitDifferentialTests : TranspilerTestBase
     [InlineData(1u, 1u, 1u, 0u, 1u, 1u, "blockDimX", "is 0")]
     [InlineData(1u, 1u, 1u, 1u, 0u, 1u, "blockDimY", "is 0")]
     [InlineData(1u, 1u, 1u, 1u, 1u, 0u, "blockDimZ", "is 0")]
+    [InlineData(0x80000000u, 1u, 1u, 1u, 1u, 1u, "gridDimX", "at most 2147483647 blocks in x")]
+    [InlineData(uint.MaxValue, 1u, 1u, 1u, 1u, 1u, "gridDimX", "at most 2147483647 blocks in x")]
     [InlineData(1u, 65536u, 1u, 1u, 1u, 1u, "gridDimY", "at most 65535 blocks in y")]
     [InlineData(1u, 1u, 65536u, 1u, 1u, 1u, "gridDimZ", "at most 65535 blocks in z")]
     [InlineData(1u, 1u, 1u, 1025u, 1u, 1u, "blockDimX", "at most 1024 threads in x")]

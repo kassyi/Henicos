@@ -107,4 +107,50 @@ public class DynamicSharedMemoryModuleTests : TranspilerTestBase
         // (they are disposed either way); NativeApiGeneratorTests asserts that placement in the generated source.
         Assert.All(output, static value => Assert.Equal(0u, value));
     }
+
+    // The [CudaImport] launcher rejects a launch beyond the limits of every GPU with the same exception as the
+    // launcher of a [GpuKernel] method (#799), not the driver's CUDA_ERROR_INVALID_VALUE
+    [SkippableTheory]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.SadPath)]
+    [InlineData(0u, "is 0")]
+    [InlineData(1025u, "at most 1024 threads in x")]
+    [InlineData(2048u, "at most 1024 threads in x")]
+    public void Test_ModuleKernelBlockBeyondTheLimitsOfEveryGpu_ThrowsBeforeLaunch(uint blockDimX, string limit)
+    {
+        var output = new uint[BlockSize];
+
+        var ex = Assert.Throws<ArgumentOutOfRangeException>(() =>
+            DynamicSharedMemoryModuleInvoker.LaunchFillAndSum(output, BlockSize, blockDimX, 1024));
+
+        Assert.Equal("blockDimX", ex.ParamName);
+        Assert.Contains(limit, ex.Message);
+        Assert.Contains("(DynamicSharedMemoryModuleInvoker.LaunchFillAndSum).", ex.Message);
+        Assert.All(output, static value => Assert.Equal(0u, value));
+    }
+
+    // The largest block runs: the check does not reject a launch that every GPU accepts
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_ModuleKernelBlockAtTheLimit_Launches()
+    {
+        const int n = 4096;
+        var output = new uint[1024];
+
+        DynamicSharedMemoryModuleInvoker.LaunchFillAndSum(output, n, 1024, n * 4);
+
+        for (var t = 0; t < output.Length; t++)
+        {
+            uint sum = 0;
+            for (var j = t; j < n; j += output.Length)
+            {
+                sum += ElementValue(n - 1 - j);
+            }
+
+            Assert.Equal(sum, output[t]);
+        }
+    }
 }
