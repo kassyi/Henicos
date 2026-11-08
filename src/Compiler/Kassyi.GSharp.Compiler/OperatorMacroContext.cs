@@ -50,8 +50,8 @@ internal static class OperatorMacroContext
         var target = $"{targetMethod.ContainingType.Name}.{targetMethod.Name}";
         var type = contextType.Name;
         failure = candidates.Count == 0
-            ? $"Operator macro target '{target}' takes a context of type '{type}', but no parameter or local of that type is in scope"
-            : $"Operator macro target '{target}' takes a context of type '{type}', but {candidates.Count} parameters or locals of that type are in scope ({FormatNames(candidates)})";
+            ? OperatorMacroMessages.NoContext(target, type)
+            : OperatorMacroMessages.SeveralContexts(target, type, candidates.Count, FormatNames(candidates));
         return false;
     }
 

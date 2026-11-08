@@ -11,7 +11,7 @@ namespace Kassyi.GSharp.Tests.Shared.Syntax;
 
 /// <summary>
 /// The expansion plan of <c>&amp;&amp;</c> and <c>||</c> over operator macros
-/// (<see cref="OperatorMacroResolver.PlanConditional"/>), on the kernels of
+/// (<see cref="OperatorMacroCallPlanner.PlanConditional"/>), on the kernels of
 /// <see cref="OperatorMacroConditionalKernels"/>: which truth operator tests the left operand, and whether the target
 /// is evaluated before it.
 /// </summary>
@@ -56,15 +56,15 @@ public class OperatorMacroConditionalPlanTests
         Assert.Equal("op_False", nested.Inner.Test?.Name);
     }
 
-    private static OperatorMacroResolver.ConditionalPlan PlanFirstAssignment(string kernel)
+    private static MacroConditionalPlan PlanFirstAssignment(string kernel)
     {
         var (assignment, model) = FindAssignments(kernel).First();
         Assert.True(OperatorMacroResolver.TryResolve(assignment, model, out var macro));
         Assert.True(
-            OperatorMacroResolver.TryPrepareCall(assignment.Left, macro, assignment, model, out var call, out _)
+            OperatorMacroCallPlanner.TryPrepareCall(assignment.Left, macro, assignment, model, out var call, out _)
         );
-        var effects = OperatorMacroResolver.GetOperandEffects(call, macro, assignment, model);
-        return OperatorMacroResolver.PlanConditional(call, macro, effects);
+        var effects = OperatorMacroCallPlanner.GetOperandEffects(call, macro, assignment, model);
+        return OperatorMacroCallPlanner.PlanConditional(call, macro, effects);
     }
 
     // The assignments of <kernel> whose right side is an operator, in source order
