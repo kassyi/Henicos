@@ -636,31 +636,16 @@ public const string RunLinqIndexedAndSelectorSum_Source = @"extern ""C"" __globa
 int __gsharp_id_1_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 if(__gsharp_id_1_tid==0)
 {
-int __gsharp_id_2_sum = ([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_id_0_data;
-int __gsharp_fusion_res = 0;
-int __gsharp_fusion_lo = 0;
-int __gsharp_fusion_hi = __gsharp_fusion_src.length;
-for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
-{
-auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
-if (([&](auto __gsharp_id_3_x, auto __gsharp_id_4_i) {
+int __gsharp_id_2_sum = Kassyi::ZeroAlloc::Linq::StackLinq::Sum(Kassyi::ZeroAlloc::Linq::StackLinq::SelectAt(Kassyi::ZeroAlloc::Linq::StackLinq::WhereAt(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_id_0_data),[&](auto __gsharp_id_3_x, auto __gsharp_id_4_i) {
 return __gsharp_id_3_x>5&&__gsharp_id_4_i%2==0;
 }
-)(__gsharp_val_0))
-{
-auto __gsharp_val_1 = ([&](auto __gsharp_id_5_x, auto __gsharp_id_6_i) {
+),[&](auto __gsharp_id_5_x, auto __gsharp_id_6_i) {
 return __gsharp_add_i32(__gsharp_id_5_x,__gsharp_id_6_i);
 }
-)(__gsharp_val_0);
-__gsharp_fusion_res += ([&](auto __gsharp_id_7_x) {
+),[&](auto __gsharp_id_7_x) {
 return __gsharp_mul_i32(__gsharp_id_7_x,3);
 }
-)(__gsharp_val_1);
-}
-}
-return __gsharp_fusion_res;
-}());
+);
 __gsharp_id_0_data[0]=__gsharp_id_2_sum;
 }
 }

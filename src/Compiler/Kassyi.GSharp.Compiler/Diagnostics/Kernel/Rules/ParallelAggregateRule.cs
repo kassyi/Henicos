@@ -21,14 +21,31 @@ internal sealed class ParallelAggregateRule : ISyntaxValidationRule<InvocationEx
     public void Analyze(InvocationExpressionSyntax node, ref ValidationContext context)
     {
         var model = context.SemanticModel;
-        if (model.GetSymbol(node) is not IMethodSymbol symbol ||
-            !StackLinqChainExtractor.TryExtract(node, model, symbol, out var chain) ||
-            !chain.IsParallel)
+        if (model.GetSymbol(node) is not IMethodSymbol symbol || !StackLinqHelper.IsStackLinqMethod(symbol))
         {
             return;
         }
 
-        var plan = ParallelAggregatePlanner.Plan(node, model);
+        ParallelAggregatePlan plan;
+        if (StackLinqChainExtractor.TryExtract(node, model, symbol, out var chain))
+        {
+            if (!chain.IsParallel)
+            {
+                return;
+            }
+
+            plan = ParallelAggregatePlanner.Plan(node, model);
+        }
+        else if (IsParallelSource(symbol))
+        {
+            // The unfused call runs in each thread (StackLinqTranspilerRule)
+            plan = new ParallelAggregatePlan(ParallelAggregateStrategy.PerThread, ParallelAggregateFallback.UnfusedChain,
+                IsGridUniform: false);
+        }
+        else
+        {
+            return;
+        }
 
         // From the name of the terminal operator to the end of its arguments: Sum()
         var start = node.Expression is MemberAccessExpressionSyntax access ? access.Name.SpanStart : node.SpanStart;
@@ -45,5 +62,14 @@ internal sealed class ParallelAggregateRule : ISyntaxValidationRule<InvocationEx
             context.ReportDiagnostic(GSharpDiagnostics.ParallelAggregateNotCooperative, location,
                 context.MethodSymbol.Name, $"AsParallel().{symbol.Name}()");
         }
+    }
+
+    // A terminal called on an AsParallel() sequence (ParallelStackEnumerable), as its receiver or first argument
+    private static bool IsParallelSource(IMethodSymbol symbol)
+    {
+        var source = symbol.ReducedFrom is not null
+            ? symbol.ReceiverType
+            : symbol.Parameters.Length > 0 ? symbol.Parameters[0].Type : null;
+        return source is { Name: "ParallelStackEnumerable" } && StackLinqHelper.IsStackLinqType(source);
     }
 }

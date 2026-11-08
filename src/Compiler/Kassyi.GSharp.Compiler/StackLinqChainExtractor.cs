@@ -72,7 +72,9 @@ internal static class StackLinqChainExtractor
 
         while (true)
         {
-            if (StackLinqHelper.HasInterferingReorderedArguments(current, currentSymbol, semanticModel))
+            // [WHY] A fused loop passes no element index to a lambda; the unfused ...At functions of the device header do
+            if (StackLinqHelper.HasInterferingReorderedArguments(current, currentSymbol, semanticModel) ||
+                StackLinqHelper.IsIndexedOverload(currentSymbol))
             {
                 return false;
             }
