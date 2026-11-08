@@ -283,12 +283,14 @@ internal static class DeviceExportEmitter
 
         foreach (var member in type.GetMembers())
         {
-            if (member is IMethodSymbol conversion &&
-                StructTranspiler.IsEmittedStructConversion(conversion, compilation))
+            // A conversion, or an operator true or false, defined with the struct
+            if (member is IMethodSymbol method &&
+                (StructTranspiler.IsEmittedStructConversion(method, compilation) ||
+                 StructTruthOperatorEmitter.IsEmittedTruthOperator(method, compilation)))
             {
-                var name = GlobalCppNames.GetFunctionName(conversion);
+                var name = GlobalCppNames.GetFunctionName(method);
                 definedFunctions.Add(name);
-                definedFunctionIds.Add(conversion.OriginalDefinition.GetDocumentationCommentId() ?? "");
+                definedFunctionIds.Add(method.OriginalDefinition.GetDocumentationCommentId() ?? "");
                 definedFunctionFullNames.Add(GlobalCppNames.TryGetFullName(name, out var full) ? full : "");
             }
         }
