@@ -16,6 +16,7 @@ namespace Kassyi.GSharp.Tests.Shared.Transpiler;
 /// </remarks>
 [Category(TestCategory.Compiler)]
 [Scenario(TestScenario.HappyPath)]
+[Collection(TestCollections.CorpusScan)]
 public class ManagedRewriteConsistencyTests
 {
     [Fact]

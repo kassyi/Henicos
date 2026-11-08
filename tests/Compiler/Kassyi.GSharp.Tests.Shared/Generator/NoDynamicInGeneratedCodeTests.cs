@@ -10,6 +10,7 @@ using Xunit;
 namespace Kassyi.GSharp.Tests.Shared.Generator;
 
 [Category(TestCategory.Compiler)]
+[Collection(TestCollections.CorpusScan)]
 public class NoDynamicInGeneratedCodeTests
 {
     [Fact]
@@ -17,13 +18,20 @@ public class NoDynamicInGeneratedCodeTests
     public void NoDynamicInVerifiedSnapshots()
     {
         var testsDirectory = RepositoryPaths.Combine("tests");
-        var verifiedFiles = Directory.GetFiles(testsDirectory, "*.verified.cs", SearchOption.AllDirectories);
+        var verifiedFiles = Directory.EnumerateFiles(testsDirectory, "*.verified.cs", SearchOption.AllDirectories);
 
         var violations = new List<string>();
 
         foreach (var file in verifiedFiles)
         {
+            // The snapshots add up to tens of MB; only a file with a dynamic identifier token (not one in a comment or a
+            // string) is parsed into a tree, and no tree outlives its file.
             var code = File.ReadAllText(file);
+            if (!HasDynamicIdentifier(code))
+            {
+                continue;
+            }
+
             var tree = CSharpSyntaxTree.ParseText(code);
             var root = tree.GetRoot();
 
@@ -64,6 +72,22 @@ public class NoDynamicInGeneratedCodeTests
 
         Assert.Empty(violations);
     }
+
+    // The prefilter keeps a file with dynamic in each position the scan reports, and skips comments, strings and longer names
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData("class C { dynamic f; }", true)]
+    [InlineData("class C { void M() { List<dynamic> l = null; } }", true)]
+    [InlineData("class C { void M(dynamic p) { } }", true)]
+    [InlineData("class C { void M(int @dynamic) { } }", true)]
+    [InlineData("// dynamic shared memory\nclass C { string s = \"dynamic\"; /* dynamic */ }", false)]
+    [InlineData("class C { int dynamicSize; }", false)]
+    public void HasDynamicIdentifier_FindsOnlyIdentifierTokens(string code, bool expected) =>
+        Assert.Equal(expected, HasDynamicIdentifier(code));
+
+    private static bool HasDynamicIdentifier(string code) =>
+        SyntaxFactory.ParseTokens(code)
+            .Any(static t => t.IsKind(SyntaxKind.IdentifierToken) && t.ValueText == "dynamic");
 
     private static bool UsesDynamic(TypeSyntax typeSyntax)
     {

@@ -9,6 +9,7 @@ namespace Kassyi.GSharp.Tests.Shared.Diagnostics;
 /// the C++ dialect's lowered output has no failure of its own that a build would only see in the native compiler.
 /// </remarks>
 [Category(TestCategory.Compiler)]
+[Collection(TestCollections.CorpusScan)]
 public class KernelDiagnosticsLeakTests
 {
     private static readonly string[] s_generatorIds =
@@ -58,14 +59,21 @@ public class KernelDiagnosticsLeakTests
             KernelDiagnostics.FindStatedFailures(run));
     }
 
-    // The kernels of the standard library build in both dialects with nothing stated as #error
-    [Theory]
-    [InlineData("Cpu")]
-    [InlineData("Cuda")]
+    // The kernels of the standard library build in both dialects with nothing stated as #error. Both dialects share one
+    // compilation of the library, which the test does not keep: it is bound in full and takes hundreds of MB.
+    [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public async Task Test_StdlibKernels_HaveNoUnreportedFailure(string dialect)
+    public async Task Test_StdlibKernels_HaveNoUnreportedFailure()
     {
-        var run = await KernelDiagnostics.RunCompilationAsync(s_stdlibCompilation.Value, dialect);
+        var compilation = CreateStdlibCompilation();
+
+        await AssertNoUnreportedFailureAsync(compilation, "Cuda");
+        await AssertNoUnreportedFailureAsync(compilation, "Cpu");
+    }
+
+    private static async Task AssertNoUnreportedFailureAsync(Compilation compilation, string dialect)
+    {
+        var run = await KernelDiagnostics.RunCompilationAsync(compilation, dialect);
 
         // The input is the real library: for its own dialect (CUDA) it compiles with the generated code. The C++ dialect
         // generates other launchers (no Ptr wrappers) and, for CooperativeMath, managed state machines that do not compile
@@ -78,8 +86,6 @@ public class KernelDiagnosticsLeakTests
         Assert.All(run.Generator, static d => Assert.Contains(d.Id, s_generatorIds));
         Assert.Empty(KernelDiagnostics.FindStatedFailures(run).Where(static f => !f.IsReported));
     }
-
-    private static readonly Lazy<Compilation> s_stdlibCompilation = new(CreateStdlibCompilation);
 
     // The project's own sources and the sources of its other generator, without the built Stdlib assembly
     private static Compilation CreateStdlibCompilation()

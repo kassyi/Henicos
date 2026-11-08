@@ -13,6 +13,7 @@ namespace Kassyi.GSharp.Tests.Shared.Generator;
 /// <see cref="ContextHoister"/> and <see cref="LoweringIdentity"/> maintain declaration/reference consistency across
 /// <c>ContextFields</c> and <c>LoweredBody</c>.
 /// </summary>
+[Collection(TestCollections.CorpusScan)]
 public class HoistedSymbolConsistencyTests
 {
     private const string ConsistencyId = "GCNR0002";

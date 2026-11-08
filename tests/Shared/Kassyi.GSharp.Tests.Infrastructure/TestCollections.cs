@@ -21,4 +21,15 @@ public static class TestCollections
     /// (see <c>DeviceExclusiveCollection</c> in <c>Kassyi.GSharp.Tests.Shared</c>).
     /// </remarks>
     public const string DeviceExclusive = "DeviceExclusive";
+
+    /// <summary>
+    /// Runs the tests that compile, transpile or parse the whole test corpus or the whole standard library one after
+    /// another, so that their large transient heaps do not add up; the collection still runs in parallel with every
+    /// other collection.
+    /// </summary>
+    /// <remarks>
+    /// Each assembly that uses this collection must declare a <c>[CollectionDefinition(CorpusScan)]</c> class
+    /// (see <c>CorpusScanCollection</c> in <c>Kassyi.GSharp.Tests.Shared</c>).
+    /// </remarks>
+    public const string CorpusScan = "CorpusScan";
 }

@@ -12,6 +12,7 @@ namespace Kassyi.GSharp.Tests.Shared.Generator;
 /// the generated code itself legitimately uses (C++ keywords, prelude and dialect vocabulary) are skipped, as are
 /// member accesses, string literals and comments.
 /// </remarks>
+[Collection(TestCollections.CorpusScan)]
 public partial class GeneratedNameLeakTests
 {
     private const string LeakId = "GCNR0001";
