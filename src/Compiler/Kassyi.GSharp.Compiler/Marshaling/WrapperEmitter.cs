@@ -403,6 +403,70 @@ internal static class WrapperEmitter
                 WriteEmptyArrayCheck(writer, shape.LengthExpression, name);
             }
         }
+
+        WriteStructFieldChecks(writer, kernel, isPointer: false);
+    }
+
+    // if (<name>.<field path> is null) { throw new ArgumentNullException(nameof(<name>), "<name>.<field path> is null, ..."); }
+    // if (<name>.<field path>.Data == IntPtr.Zero) { ... }   (the shadow struct of the IntPtr launcher)
+    // [WHY] The kernel reads a non-nullable array field of a by-value struct argument without a null check
+    // (NonNullProof); the launcher enforces the annotation, as it rejects a null non-optional array argument (#1409)
+    private static void WriteStructFieldChecks(SourceWriter writer, in KernelHostModel kernel, bool isPointer)
+    {
+        foreach (var shape in kernel.Parameters)
+        {
+            if (shape.NonNullableArrayFields.IsDefaultOrEmpty)
+            {
+                continue;
+            }
+
+            var name = shape.Identifier;
+            foreach (var path in shape.NonNullableArrayFields)
+            {
+                writer.Append("if ");
+                using (writer.Parentheses())
+                {
+                    writer.Append(isPointer
+                        ? $"{name}.{path}.Data == {HostTypeNames.IntPtr}.Zero"
+                        : $"{name}.{path} is null");
+                }
+
+                using (writer.Scope())
+                {
+                    writer.AppendLine(
+                        $"throw new global::System.ArgumentNullException(nameof({name}), \"{name}.{path} is null, but the field is not nullable.\");");
+                }
+            }
+        }
+    }
+
+    // if (<name> == IntPtr.Zero) { throw new ArgumentNullException(nameof(<name>)); }   for each array that is not optional
+    // [WHY] The IntPtr launcher keeps the contract of the array launcher: a null array that is not optional is rejected
+    // before the launch. The kernel leaves out the null check of an array parameter it never writes on that promise
+    // (ArrayNullCheck.IsUnwrittenKernelParameter); without it the device reads through nullptr (#1409).
+    internal static void WritePointerArgumentChecks(SourceWriter writer, in KernelHostModel kernel)
+    {
+        foreach (var shape in kernel.Parameters)
+        {
+            if (!shape.IsArray || shape.IsOptional)
+            {
+                continue;
+            }
+
+            var name = shape.Identifier;
+            writer.Append("if ");
+            using (writer.Parentheses())
+            {
+                writer.Append($"{name} == {HostTypeNames.IntPtr}.Zero");
+            }
+
+            using (writer.Scope())
+            {
+                writer.AppendLine($"throw new global::System.ArgumentNullException(nameof({name}));");
+            }
+        }
+
+        WriteStructFieldChecks(writer, kernel, isPointer: true);
     }
 
     // if (<length> == 0) { throw new ArgumentException(<message>, nameof(<name>)); }

@@ -3,9 +3,10 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Helpers;
 /// <summary>
 /// The null check of a C# array read (#706): <c>Length</c> and the other <c>System.Array</c> members, an element and
 /// <c>foreach</c> throw <see cref="NullReferenceException"/> on a null array in C#. The receiver goes through the Prelude
-/// helper <c>__gsharp_array_ref(&lt;receiver&gt;, "&lt;message&gt;")</c>, which fails on the native CPU build always and
-/// on CUDA under <c>GSHARP_CHECKED</c>; a null optional kernel argument reads as an empty array there
-/// (<c>GSharpArray::flags</c>, set by the launchers).
+/// helper <c>__gsharp_array_ref(&lt;receiver&gt;, &lt;site&gt;)</c>, which fails on every build (#1409); a null optional
+/// kernel argument reads as an empty array there (<c>GSharpArray::flags</c>, set by the launchers). In a kernel body the
+/// place is a site of the kernel's error site table, so the host exception carries it on CUDA as well
+/// (<see cref="NullCheckSite"/>).
 /// </summary>
 /// <remarks>
 /// <para>
@@ -23,6 +24,20 @@ internal static class ArrayNullCheck
 {
     /// <summary>The text of the error, followed by the place of the receiver (<see cref="SourcePlace"/>).</summary>
     public const string MessagePrefix = "G#: a null array is read at ";
+
+    /// <summary>The text of the error of a registered site, whose place the error site table holds.</summary>
+    public const string SiteMessage = "G#: a null array is read";
+
+    // The trap kind of the site ID, which tells the site apart from another trap at the same place
+    private const string TrapKind = "ArrayNull";
+
+    /// <summary>The text of a null passed where a device function parameter is not nullable, followed by the place.</summary>
+    public const string ArgumentMessagePrefix = "G#: a null array is passed where it is not nullable at ";
+
+    /// <summary>The text of the error of a registered site of a null passed where the parameter is not nullable.</summary>
+    public const string ArgumentSiteMessage = "G#: a null array is passed where it is not nullable";
+
+    private const string ArgumentTrapKind = "ArrayNullArgument";
 
     private static readonly ConditionalWeakTable<Compilation, ConcurrentDictionary<IParameterSymbol, bool>> s_written =
         new();
@@ -43,6 +58,12 @@ internal static class ArrayNullCheck
         if (expression is ConditionalExpressionSyntax conditional)
         {
             return MayBeNull(conditional.WhenTrue, semanticModel) || MayBeNull(conditional.WhenFalse, semanticModel);
+        }
+
+        // A non-nullable array that a launch or a call has checked (#1409)
+        if (NonNullProof.IsProvenNonNull(expression, semanticModel))
+        {
+            return false;
         }
 
         return semanticModel.GetSymbol(expression) switch
@@ -66,7 +87,7 @@ internal static class ArrayNullCheck
             return;
         }
 
-        AppendCheck(receiver, SourcePlace.Format(context.Query.SemanticModel, receiver), ref context);
+        AppendCheck(receiver, PlanSite(receiver, ref context), ref context);
     }
 
     /// <summary>
@@ -83,7 +104,7 @@ internal static class ArrayNullCheck
             return false;
         }
 
-        AppendCheck(receiver, SourcePlace.Format(context.Query.SemanticModel, receiver), ref context);
+        AppendCheck(receiver, PlanSite(receiver, ref context), ref context);
         return true;
     }
 
@@ -116,12 +137,12 @@ internal static class ArrayNullCheck
             return false;
         }
 
-        var place = SourcePlace.Format(model, node.Expression);
+        var site = PlanSite(node.Expression, ref context);
         var writer = context.Emitter.Writer;
         if (EvaluationOrder.LastSpilledOperand(
                 [ExpressionEffects.Of(node.Expression, model), ExpressionEffects.Of(argument.Expression, model)]) < 0)
         {
-            AppendElementCall(node.Expression, argument.Expression, place, ref context);
+            AppendElementCall(node.Expression, argument.Expression, site, ref context);
             return true;
         }
 
@@ -136,14 +157,14 @@ internal static class ArrayNullCheck
             writer.Append(", ");
             EvaluationOrder.AppendTempName(writer, index);
             writer.Append(", ");
-            CppStringLiteral.Append(writer, MessagePrefix + place);
+            AppendSite(writer, site);
         }
 
         return true;
     }
 
-    // __gsharp_array_at(<receiver>, <index>, "G#: a null array is read at <place>")
-    private static void AppendElementCall(ExpressionSyntax receiver, ExpressionSyntax index, string place,
+    // __gsharp_array_at(<receiver>, <index>, <site>)
+    private static void AppendElementCall(ExpressionSyntax receiver, ExpressionSyntax index, NullCheckSite site,
         ref TranspileContext context)
     {
         var writer = context.Emitter.Writer;
@@ -154,7 +175,7 @@ internal static class ArrayNullCheck
             writer.Append(", ");
             context.Visitor.Visit(index);
             writer.Append(", ");
-            CppStringLiteral.Append(writer, MessagePrefix + place);
+            AppendSite(writer, site);
         }
     }
 
@@ -176,8 +197,8 @@ internal static class ArrayNullCheck
             if (annotation.Data is { } place)
             {
                 // The expression itself, without the annotation that brought it here
-                AppendCheck(expression.WithoutAnnotations(LoweringAnnotations.ArrayNullCheckAnnotationKind), place,
-                    ref context);
+                var receiver = expression.WithoutAnnotations(LoweringAnnotations.ArrayNullCheckAnnotationKind);
+                AppendCheck(receiver, PlanSite(receiver, place, ref context), ref context);
                 return true;
             }
         }
@@ -185,10 +206,8 @@ internal static class ArrayNullCheck
         return false;
     }
 
-    /// <summary>
-    /// Writes <c>__gsharp_array_ref(&lt;receiver&gt;, "G#: a null array is read at &lt;place&gt;")</c>.
-    /// </summary>
-    public static void AppendCheck(ExpressionSyntax receiver, string place, ref TranspileContext context)
+    /// <summary>Writes <c>__gsharp_array_ref(&lt;receiver&gt;, &lt;site&gt;)</c>.</summary>
+    public static void AppendCheck(ExpressionSyntax receiver, NullCheckSite site, ref TranspileContext context)
     {
         var writer = context.Emitter.Writer;
         writer.Append(GSharpInternalNames.Prelude.ArrayRef);
@@ -196,8 +215,136 @@ internal static class ArrayNullCheck
         {
             context.Visitor.Visit(receiver);
             writer.Append(", ");
-            CppStringLiteral.Append(writer, MessagePrefix + place);
+            AppendSite(writer, site);
         }
+    }
+
+    /// <summary>
+    /// The place a failing check of <paramref name="receiver"/> reports: a site of the kernel's error site table when the
+    /// method has one (a kernel body), otherwise a message that names the place (a device function).
+    /// </summary>
+    public static NullCheckSite PlanSite(ExpressionSyntax receiver, ref TranspileContext context) =>
+        PlanSite(receiver, SourcePlace.Format(context.Query.SemanticModel, receiver), ref context);
+
+    /// <summary>
+    /// <see cref="PlanSite(ExpressionSyntax, ref TranspileContext)"/> with the place already formatted: the place that
+    /// lowering recorded for the source of a <c>foreach</c>.
+    /// </summary>
+    public static NullCheckSite PlanSite(ExpressionSyntax receiver, string place, ref TranspileContext context)
+    {
+        if (context.Emitter.ErrorSites is not { } table)
+        {
+            return new NullCheckSite(0u, MessagePrefix + place);
+        }
+
+        var model = context.Query.SemanticModel;
+        var memberName = GetSourceMemberName(receiver, model) ?? context.Emitter.CurrentMemberName ?? "";
+        return new NullCheckSite(table.Register(receiver, model, memberName, SiteMessage, TrapKind), "");
+    }
+
+    // The method that holds the receiver in the user's source, past lambdas and local functions.
+    // [WHY] A member function of a struct (Dispose of a using) is emitted once per kernel that uses it, into one guarded
+    // definition of the module, so its site must be the same entry for every kernel: named after the kernel, two kernels
+    // would give one site ID two entries (GSH0103)
+    private static string? GetSourceMemberName(ExpressionSyntax receiver, SemanticModel model)
+    {
+        if (model.GetReportLocation(receiver) is not { SourceTree: { } tree } location ||
+            !model.Compilation.ContainsSyntaxTree(tree))
+        {
+            return null;
+        }
+
+        var symbol = model.Compilation.GetCachedSemanticModel(tree).GetEnclosingSymbol(location.SourceSpan.Start);
+        while (symbol is IMethodSymbol { MethodKind: MethodKind.AnonymousFunction or MethodKind.LocalFunction })
+        {
+            symbol = symbol.ContainingSymbol;
+        }
+
+        return symbol is IMethodSymbol method ? method.Name : null;
+    }
+
+    /// <summary>
+    /// The Prelude helper that checks a device function argument (#1409, the plan of <see cref="PlanArgument"/>):
+    /// <c>__gsharp_array_ref</c> for a non-nullable array, <c>__gsharp_struct_ref</c> for a struct that reaches
+    /// non-nullable array fields. The caller writes it, then in parentheses the argument and
+    /// <see cref="AppendArgumentCheckTail"/>.
+    /// </summary>
+    public static string GetArgumentCheckHelper(ArgumentCheck check) =>
+        check.Kind == ArgumentCheckKind.Array ? GSharpInternalNames.Prelude.ArrayRef : GSharpInternalNames.Prelude.StructRef;
+
+    /// <summary>
+    /// Writes what follows the argument in the check: <c>, &lt;site&gt;</c>, and for a struct one getter per field chain,
+    /// <c>, [](const auto&amp; s) -&gt; decltype(auto) { return (s.&lt;field&gt;...); }</c>.
+    /// </summary>
+    public static void AppendArgumentCheckTail(ArgumentCheck check, ref TranspileContext context)
+    {
+        var writer = context.Emitter.Writer;
+        writer.Append(", ");
+        AppendSite(writer, check.Site);
+        foreach (var path in check.Fields)
+        {
+            writer.Append(", [](const auto& s) -> decltype(auto) { return (s");
+            foreach (var field in path)
+            {
+                writer.Append(".");
+                CppNameResolver.AppendSymbolName(field, ref context);
+            }
+
+            writer.Append("); }");
+        }
+    }
+
+    /// <summary>
+    /// The check an argument of a device function call needs (#1409): none when the parameter has no non-nullable array
+    /// to guard or the argument is proven (<see cref="NonNullProof"/>), otherwise the array or the struct fields to check
+    /// and the place to report.
+    /// </summary>
+    public static ArgumentCheck PlanArgument(ExpressionSyntax argument, IParameterSymbol parameter,
+        ref TranspileContext context)
+    {
+        if (!NonNullProof.NeedsBoundaryCheck(parameter))
+        {
+            return ArgumentCheck.None;
+        }
+
+        var model = context.Query.SemanticModel;
+        if (parameter.Type is IArrayTypeSymbol)
+        {
+            return NonNullProof.IsProvenNonNull(argument, model)
+                ? ArgumentCheck.None
+                : new ArgumentCheck(ArgumentCheckKind.Array, PlanArgumentSite(argument, ref context),
+                    ImmutableArray<ImmutableArray<IFieldSymbol>>.Empty);
+        }
+
+        return NonNullProof.IsProvenStruct(argument, model)
+            ? ArgumentCheck.None
+            : new ArgumentCheck(ArgumentCheckKind.Struct, PlanArgumentSite(argument, ref context),
+                NonNullProof.GetNonNullableArrayFields(parameter.Type));
+    }
+
+    // The place of a null passed where the parameter is not nullable
+    private static NullCheckSite PlanArgumentSite(ExpressionSyntax argument, ref TranspileContext context)
+    {
+        var model = context.Query.SemanticModel;
+        if (context.Emitter.ErrorSites is not { } table)
+        {
+            return new NullCheckSite(0u, ArgumentMessagePrefix + SourcePlace.Format(model, argument));
+        }
+
+        var memberName = GetSourceMemberName(argument, model) ?? context.Emitter.CurrentMemberName ?? "";
+        return new NullCheckSite(table.Register(argument, model, memberName, ArgumentSiteMessage, ArgumentTrapKind), "");
+    }
+
+    // <site>u for a registered site, "<message>" otherwise
+    private static void AppendSite(SourceWriter writer, NullCheckSite site)
+    {
+        if (site.SiteId != 0u)
+        {
+            writer.Append($"{site.SiteId}u");
+            return;
+        }
+
+        CppStringLiteral.Append(writer, site.Message);
     }
 
     // a[^1] and a[1..]: an argument of type System.Index or System.Range
@@ -289,4 +436,36 @@ internal static class ArrayNullCheck
                identifier.Identifier.ValueText == parameter.Name &&
                model.GetSymbol(identifier).IsEqualTo(parameter);
     }
+}
+
+/// <summary>
+/// Where a failing array null check reports (<see cref="ArrayNullCheck.PlanSite(ExpressionSyntax, ref TranspileContext)"/>):
+/// a site of the kernel's error site table (<paramref name="SiteId"/>, never 0), or <paramref name="Message"/>, which
+/// names the place, when the method has no table.
+/// </summary>
+internal readonly record struct NullCheckSite(uint SiteId, string Message);
+
+/// <summary>What the check of a device function argument tests (<see cref="ArrayNullCheck.PlanArgument"/>).</summary>
+internal enum ArgumentCheckKind
+{
+    /// <summary>No check: the parameter has no non-nullable array, or the argument is proven.</summary>
+    None,
+
+    /// <summary>The argument is a non-nullable array.</summary>
+    Array,
+
+    /// <summary>The argument is a struct; its non-nullable array fields are tested.</summary>
+    Struct
+}
+
+/// <summary>
+/// The check of one device function argument: its kind, the place a failure reports, and for a struct the chains of
+/// fields to the non-nullable arrays it tests.
+/// </summary>
+internal readonly record struct ArgumentCheck(ArgumentCheckKind Kind, NullCheckSite Site,
+    ImmutableArray<ImmutableArray<IFieldSymbol>> Fields)
+{
+    /// <summary>The argument needs no check.</summary>
+    public static ArgumentCheck None { get; } =
+        new(ArgumentCheckKind.None, default, ImmutableArray<ImmutableArray<IFieldSymbol>>.Empty);
 }

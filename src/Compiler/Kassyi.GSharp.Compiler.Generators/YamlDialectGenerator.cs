@@ -3,15 +3,27 @@ namespace Kassyi.GSharp.Compiler.Generators;
 /// <summary>Generates C# dialect classes implementing ITranspilerDialect from YAML configuration files.</summary>
 public static class YamlDialectGenerator
 {
-    /// <summary>Discovers YAML dialect files in inputDir and generates dialect C# classes in outputDir.</summary>
+    /// <summary>
+    /// Discovers YAML dialect files in <paramref name="inputDir"/> and generates dialect C# classes in
+    /// <paramref name="outputDir"/>. A <c>*Dialect.g.cs</c> file in <paramref name="outputDir"/> that no dialect wrote
+    /// this time is deleted, so a dialect removed from the input is not compiled from an earlier build.
+    /// </summary>
+    /// <exception cref="GeneratorInputException">A dialect file cannot be read as a dialect.</exception>
     public static void Run(string inputDir, string outputDir)
     {
-        Directory.CreateDirectory(outputDir);
+        if (!Directory.Exists(inputDir))
+        {
+            throw new GeneratorInputException(inputDir, 0, "The dialect YAML directory does not exist.");
+        }
+
+        var paths = Directory.GetFiles(inputDir, "*.*", SearchOption.AllDirectories);
+        Array.Sort(paths, StringComparer.Ordinal);
 
         var dialectDefinitions = new List<DialectDefinition>();
         var defMap = new Dictionary<string, DialectDefinition>(StringComparer.Ordinal);
-
-        foreach (var path in Directory.GetFiles(inputDir, "*.*", SearchOption.AllDirectories))
+        // Names that differ only in case would write the same file on a case-insensitive file system.
+        var byFileName = new Dictionary<string, DialectDefinition>(StringComparer.OrdinalIgnoreCase);
+        foreach (var path in paths)
         {
             if (!path.EndsWith(".yml", StringComparison.OrdinalIgnoreCase) &&
                 !path.EndsWith(".yaml", StringComparison.OrdinalIgnoreCase))
@@ -19,20 +31,82 @@ public static class YamlDialectGenerator
                 continue;
             }
 
-            var text = File.ReadAllText(path);
-            var def = DialectDefinition.TryParse(text);
-
-            if (def != null && !string.IsNullOrEmpty(def.Name))
+            var def = DialectDefinition.Parse(File.ReadAllText(path), path);
+            if (byFileName.TryGetValue(def.Name, out var other))
             {
-                dialectDefinitions.Add(def);
-                defMap[def.Name] = def;
+                throw new GeneratorInputException(path, def.Line, $"The dialect '{def.Name}' is also defined in {other.Path} ('{other.Name}').");
             }
+
+            dialectDefinitions.Add(def);
+            defMap.Add(def.Name, def);
+            byFileName.Add(def.Name, def);
         }
 
         foreach (var def in dialectDefinitions)
         {
-            var source = GenerateDialectClass(def, defMap);
-            File.WriteAllText(Path.Combine(outputDir, $"{def.Name}Dialect.g.cs"), source, Encoding.UTF8);
+            CheckInheritance(def, defMap);
+        }
+
+        var sources = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var def in dialectDefinitions)
+        {
+            sources.Add($"{def.Name}Dialect.g.cs", GenerateDialectClass(def, defMap));
+        }
+
+        Directory.CreateDirectory(outputDir);
+        foreach (var stale in Directory.GetFiles(outputDir, "*Dialect.g.cs"))
+        {
+            if (!sources.ContainsKey(Path.GetFileName(stale)))
+            {
+                File.Delete(stale);
+            }
+        }
+
+        foreach (var source in sources)
+        {
+            File.WriteAllText(Path.Combine(outputDir, source.Key), source.Value, Encoding.UTF8);
+        }
+    }
+
+    // A base dialect must be one of the inputs (the generated class derives from <base>Dialect), and the chain must end.
+    private static void CheckInheritance(DialectDefinition def, Dictionary<string, DialectDefinition> definitions)
+    {
+        var visited = new HashSet<string>(StringComparer.Ordinal) { def.Name };
+        for (var current = def; current.Inherits is { } baseName;)
+        {
+            if (!definitions.TryGetValue(baseName, out var parent))
+            {
+                throw new GeneratorInputException(current.Path, current.Line,
+                    $"The dialect '{current.Name}' inherits '{baseName}', which no dialect YAML file defines.");
+            }
+
+            if (!visited.Add(parent.Name))
+            {
+                throw new GeneratorInputException(def.Path, def.Line,
+                    $"The dialect '{def.Name}' inherits from itself through '{baseName}'.");
+            }
+
+            current = parent;
+        }
+
+        var backend = GetInheritedValue(def, definitions, static d => d.Backend);
+        if (backend is not ("Cuda" or "Cpp"))
+        {
+            throw new GeneratorInputException(def.Path, def.Line,
+                $"The dialect '{def.Name}' must set Backend to Cuda or Cpp, itself or through Inherits (got '{backend}').");
+        }
+
+        if (GetInheritedValue(def, definitions, static d => d.Capabilities) is { } capabilities)
+        {
+            foreach (var flag in capabilities.Split([',', '|']))
+            {
+                var name = flag.AsSpan().Trim().ToString();
+                if (name.Length > 0 && !SyntaxFacts.IsValidIdentifier(name))
+                {
+                    throw new GeneratorInputException(def.Path, def.Line,
+                        $"The capability '{name}' of the dialect '{def.Name}' is not a valid DialectCapabilities name.");
+                }
+            }
         }
     }
 
@@ -55,15 +129,11 @@ public static class YamlDialectGenerator
         writer.Line($"public class {def.Name}Dialect : {baseClass}");
         using (writer.Scope())
         {
-            writer.Line($"public override string Name => \"{def.Name}Dialect\";");
+            writer.Line($"public override string Name => {CSharpStringLiteral.Quote(def.Name + "Dialect")};");
 
             var backend = GetInheritedValue(def, definitions, d => d.Backend);
-            var isCuda = backend switch
-            {
-                "Cuda" => true,
-                "Cpp" => false,
-                _ => throw new InvalidOperationException($"Dialect '{def.Name}' must set Backend to Cuda or Cpp (got '{backend}').")
-            };
+            // CheckInheritance has rejected any other value.
+            var isCuda = backend == "Cuda";
             writer.Line($"public override bool IsCuda => {(isCuda ? "true" : "false")};");
 
             // Capabilities
@@ -95,7 +165,7 @@ public static class YamlDialectGenerator
                     {
                         foreach (var kvp in def.Types)
                         {
-                            writer.Line($"case \"{kvp.Key}\": mappedType = \"{kvp.Value.CppType}\"; return true;");
+                            writer.Line($"case {CSharpStringLiteral.Quote(kvp.Key)}: mappedType = {CSharpStringLiteral.Quote(kvp.Value.CppType)}; return true;");
                         }
                     }
 
@@ -124,7 +194,7 @@ public static class YamlDialectGenerator
                             {
                                 if (kvp.Value.Size is { } size && kvp.Value.Align is { } align)
                                 {
-                                    writer.Line($"case \"{kvp.Key}\": layout = new TypeLayout({size}, {align}); return true;");
+                                    writer.Line($"case {CSharpStringLiteral.Quote(kvp.Key)}: layout = new TypeLayout({size}, {align}); return true;");
                                 }
                             }
                         }
@@ -146,7 +216,7 @@ public static class YamlDialectGenerator
                     {
                         foreach (var kvp in def.Intrinsics)
                         {
-                            writer.Line($"case \"{kvp.Key}\": mappedExpression = \"{kvp.Value}\"; return true;");
+                            writer.Line($"case {CSharpStringLiteral.Quote(kvp.Key)}: mappedExpression = {CSharpStringLiteral.Quote(kvp.Value)}; return true;");
                         }
                     }
 

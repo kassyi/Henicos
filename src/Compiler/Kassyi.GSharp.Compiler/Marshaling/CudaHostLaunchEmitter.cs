@@ -32,6 +32,10 @@ internal static class CudaHostLaunchEmitter
                 WrapperEmitter.WriteOutParameterDefaults(writer, kernel.Host);
                 WrapperEmitter.WriteArrayArgumentChecks(writer, kernel.Host);
             }
+            else
+            {
+                WrapperEmitter.WritePointerArgumentChecks(writer, kernel.Host);
+            }
 
             LaunchLimitEmitter.WriteCudaCheck(writer, kernel.Host);
             AutoResultEmitter.WriteAllocation(writer, kernel.Host);
