@@ -504,7 +504,8 @@ internal static class EvaluationOrder
                 return;
             }
 
-            if (convertToParameter && !_isBraces && !byReference && parameter?.Type is { } parameterType)
+            // [WHY] Also in a brace initialization, which rejects a narrowing conversion that C# makes implicitly (#897)
+            if (convertToParameter && !byReference && parameter?.Type is { } parameterType)
             {
                 ArithmeticConversions.AppendArgument(argument, parameterType, ref context);
                 return;

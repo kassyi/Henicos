@@ -106,6 +106,8 @@ public static void CategorizeValuesKernel(int[] input, float[] output)
 
 When no arm matches the input, C# throws `SwitchExpressionException`, and so does G# on every path: the managed path runs the C# switch expression, and the native CPU and CUDA builds stop with a run-time error that the host throws as `SwitchExpressionException`, with its message and the place of the switch expression (on CUDA only for a switch expression in the kernel itself, not in a device function it calls). `UnmatchedValue` is not set on the native and CUDA paths. The check stays in the release CUDA build, because it sits in the branch that only an unmatched input reaches. A switch expression with a discard arm (`_`) matches every input and has no such check.
 
+Each arm is converted to the type of the switch expression, as in C#: `x switch { 0 => 1, _ => 2L }` is a `long`, and `n switch { 0 => 1, _ => null }` assigned to an `int?` gives `null` for the discard arm. The input may be a `float`, a `double` or a `Nullable<T>`; it is evaluated once and compared with each constant in order with C# equality, so `double.NaN` matches only a NaN input, `0.0` matches `-0.0`, and `null` matches an input without a value.
+
 ### 2.5.2 Local Functions and Lambdas
 
 > [!IMPORTANT]

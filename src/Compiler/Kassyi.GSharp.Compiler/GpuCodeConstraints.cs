@@ -97,6 +97,14 @@ internal static class GpuCodeConstraints
             : null;
     }
 
+    /// <summary>
+    /// The GSH0003 text for a call of a <c>[GpuKernel]</c> method from device code: a kernel is launched by the host
+    /// through its launcher, and C++ has no call of it from another kernel or a device function.
+    /// </summary>
+    public static string FormatKernelCalledFromDeviceCode(IMethodSymbol kernel) =>
+        $"call of the [GpuKernel] method '{kernel.Name}' from device code (a kernel runs only through its launcher; " +
+        "move its body to a [GpuDeviceFunction] method and call that from both)";
+
     /// <summary>The GSH0003 text for a switch expression arm with a <c>when</c> clause.</summary>
     public const string SwitchArmWhenClauseNotSupported = "Switch expression arms with 'when' clauses are not supported";
 
