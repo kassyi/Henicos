@@ -11,6 +11,7 @@
 | `just test-differential-cpu` | Differential tests on Tests.Cpu: each kernel on the managed and native paths against the sequential C# oracle (`Category=Differential`, no GPU) |
 | `just test-differential-cuda` | The same differential tests on Tests.Cuda against CUDA (uses the GPU; run through `gpu-lock.js`). Long runs: `just test-stability` (`scripts/human/test-stability.js`), whose `TEST_SEED` adds one input seed per iteration |
 | `just fuzz-diff [profile] [minutes] *args` | Differential kernel fuzzer (`profile`: `M`/`managed`, `C`/`cpu` [default], or `G`/`all`; extra arguments such as `--allow-issue <n>` and `--swarm-focus <mode>` are passed to `fuzz-differential.js`; wraps GPU execution in `gpu-lock.js`) |
+| `just test-memory <project> [args]` | One run of a test project with the memory report, `dotnet-counters` and a gcdump at the end; prints the peak, the tests that raised it and the types left on the heap (see Memory budgets) |
 | `just coverage-diff [base]` | `just test` with coverage, then the lines changed since `base` (default `main`) that no test executed |
 | `just mutate [gpumath\|compiler\|compiler-cuda] [since]` | Stryker.NET mutation test of the host code (`gpumath`: `Kassyi.GSharp.Stdlib.GpuMath`, `compiler`: `Kassyi.GSharp.Compiler` with `Tests.Cpu` minus the Differential tests that only run kernels generated at build time and so execute no compiler code (the ones that run the generator in process, `SpillOrderMutatingGetterTests` and `MathDifferentialTests`, stay), `compiler-cuda`: the files of the same compiler that branch on the CUDA dialect, with the `Tests.Cuda` snapshots; Tests.Cpu already kills most mutants elsewhere), optionally only the files changed after `since`. Runs for hours and uses the GPU (`gpumath`); report in `tmp/stryker/<phase>`. Stryker does not write the AOT artifacts under `obj/` (generator-invariants §7), so the build is usable after the run as it is. The test host heap is capped at `mutate_heap_limit` of the justfile, 8 GB (`GSharpTestHeapHardLimit`, in bytes; set it to override), so a mutant that allocates without bound fails its tests instead of exhausting memory |
 
@@ -22,14 +23,53 @@ Pick the command matching the domain you modified. Methodology (TDD, snapshot hi
 
 ## Memory budgets
 
-Every test assembly has a memory budget for its whole test host in `tests/memory-budgets.yml` (`<test project name>: <MB>`, one line per test project at column 0; `MemoryBudgetFileTests` fails when a test project has no line or a line names no test project). The watchdog of `Kassyi.GSharp.Tests.Infrastructure` (`MemoryBudget`) runs in every test host and samples the peak memory of the process every 250 ms and at the end of every test: the peak private memory (commit charge) on Windows, the peak resident memory (`VmHWM`) on Linux. Native allocations count.
+Every test assembly has a memory budget for its whole test host in `tests/memory-budgets.yml`. The watchdog of
+`Kassyi.GSharp.Tests.Infrastructure` (`MemoryBudget`) runs in every test host and samples the peak memory of the process
+every 250 ms and at the start and end of every test: the peak private memory (commit charge) on Windows, the peak
+resident memory (`VmHWM`) on Linux. Native allocations count.
 
-- When the peak passes the budget, every test that was running at that moment fails with `MemoryBudgetExceededException`, the peak, the budget and the names of the running tests. One of them caused the growth; while tests run in parallel the memory of one test cannot be told apart from the others.
-- `MemoryBudgetFinalCheck.WholeRunPeak_StaysWithinBudget`, compiled into every test assembly, runs after every other test (a collection with `DisableParallelization`, ordered last by `MemoryBudgetCollectionOrderer`) and fails when the peak of the run passed the budget, also between tests (fixtures, disposal). A run filtered to some categories skips it unless the filter keeps `Category=Unit`.
-- `tests/Directory.Build.props` caps the managed heap at twice the budget (`System.GC.HeapHardLimit`), so growth faster than the sampling still cannot take the machine down. `GSharpTestHeapHardLimit` set from outside (`just mutate`) takes precedence.
-- A breach is a finding, not a number to raise: find the test that grew (start from the running tests in the message) and fix the growth. Raise a budget only when the growth is intended, and say why in the PR.
+- **Two budgets per assembly**: `<test project name>: <MB>[, stress <MB>]`, one line per test project at column 0
+  (`MemoryBudgetFileTests` fails when a test project has no line or a line names no test project). The first value
+  holds for a run without Stress and Benchmark tests (`just test`); the `stress` value takes over when the first test
+  with `[Category(TestCategory.Stress)]` or `[Category(TestCategory.Benchmark)]` starts (the CI filter
+  `Category!=GpuExecution` runs them). The build configuration does not change the peaks measurably, so it does not
+  select a budget.
+- **Breach**: every test that was running when the peak passed the budget fails with `MemoryBudgetExceededException`.
+  The message gives the peak, the budget and its profile, the running tests (one of them caused the growth), the five
+  tests that raised the peak most (growth of the high-water mark between their start and end; approximate while tests
+  run in parallel) and the memory snapshot taken at the breach.
+- **Snapshot at the breach**: `dotnet-gcdump collect` of the test host plus its `dotnet-gcdump report` (types by size),
+  run one-shot through `dotnet dnx` at a pinned version, into `tmp/test-memory/<assembly>-<time>-<pid>/`.
+  `GSHARP_TEST_MEMORY_DUMP=full` writes a full dump (`dotnet-dump collect --type Full`) instead; `none` writes nothing.
+  A tool that fails or does not finish in time is named in the message; the failing test waits at most about three
+  minutes for it.
+- **Final check**: `MemoryBudgetFinalCheck.WholeRunPeak_StaysWithinBudget`, compiled into every test assembly, runs
+  after every other test (a collection with `DisableParallelization`, ordered last by `MemoryBudgetCollectionOrderer`) and
+  fails when the peak of the run passed the budget, also between tests (fixtures, disposal). A run filtered to some
+  categories skips it unless the filter keeps `Category=Unit`.
+- **Backstop**: `tests/Directory.Build.props` caps the managed heap at twice the larger budget
+  (`System.GC.HeapHardLimit`). `GSharpTestHeapHardLimit` set from outside (`just mutate`) takes precedence. Under the
+  limit, `GC.GetGCMemoryInfo().TotalAvailableMemoryBytes` is the limit, not the machine: a test that checks the
+  machine's free memory uses `ProcessMemory.ReadAvailablePhysicalBytes()`.
+- **Dead hosts**: the `just` test recipes and CI pass `--blame-crash --blame-crash-dump-type mini`, so a host that dies
+  (for example at the heap limit) leaves a mini dump under its `TestResults` directory. CI uploads `tmp/test-memory/`
+  and those dumps as the `memory-diagnostics-<os>-<suite>` artifact when a job fails.
+- A breach is a finding, not a number to raise: find the test that grew and fix the growth. Raise a budget only when the
+  growth is intended, and say why in the PR.
 
-To measure and update the budgets: set `GSHARP_TEST_MEMORY_REPORT=<dir>` (under `tmp/`), and `GSHARP_TEST_MEMORY_BUDGET_MB=1000000` so that no breach stops the run; each test host then appends `<peak MB>\t<GC heap peak MB>\t<budget MB>\t<tests run>\t<metric>` to `<dir>/<assembly>.tsv` when its final check runs (a run filtered so that the final check is skipped writes nothing). Run the suite three times each: on Windows as `just test` (Debug, GPU tests included) and as CI runs it (`-c Release --filter "Category!=GpuExecution"`, which includes the Stress and Benchmark tests), and on Linux (WSL) as CI runs it; take the largest peak per assembly, multiply by 1.5 and round up to a multiple of 64 MB. `GSHARP_TEST_MEMORY_BUDGET_MB` alone overrides the budget of every assembly of the run.
+To look into one suite: `just test-memory <project> [-c <configuration>] [--filter <expr>]`
+(`scripts/human/test-memory.js`) runs it once with the report on and no budget, samples the host with `dotnet-counters`,
+takes a gcdump at the end of the run and prints the peak, the tests that raised it, the counter maxima and the types
+left on the heap. Run GPU suites under `gpu-lock.js`.
+
+To measure and update the budgets: set `GSHARP_TEST_MEMORY_REPORT=<dir>` (under `tmp/`) and
+`GSHARP_TEST_MEMORY_BUDGET_MB=1000000` (no breach); each test host appends
+`<peak MB>\t<GC heap peak MB>\t<budget MB>\t<tests run>\t<profile>\t<metric>` to `<dir>/<assembly>.tsv`, and its top
+growth to `<assembly>.top.tsv`, when its final check runs. Run the suite three times each on Windows as `just test` and
+as CI runs it (`-c Release --filter "Category!=GpuExecution"` with `GSHARP_TEST_NO_CUDA=1`), and on Linux (WSL) as CI
+runs it. Per assembly, the first budget is 1.2 times the largest peak of the `default` profile lines and the `stress`
+budget 1.2 times the largest peak of the `stress` lines, each rounded up to a multiple of 64 MB.
+`GSHARP_TEST_MEMORY_BUDGET_MB` alone replaces both budgets of every assembly of the run.
 
 ## CI (GitHub Actions)
 
