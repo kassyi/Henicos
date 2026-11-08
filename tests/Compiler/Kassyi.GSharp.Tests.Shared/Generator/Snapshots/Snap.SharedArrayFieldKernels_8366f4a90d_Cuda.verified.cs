@@ -372,6 +372,7 @@ __gsharp_kernel_params,
 global::System.IntPtr.Zero // Extra
 ));
 global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayFieldKernels.AotContexts.Unmarshal_SharedArrayPair(ref p, ref __gsharp_native_0, hStream);
+global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfDeviceError();
 }
 finally
 {
@@ -466,6 +467,7 @@ global::System.IntPtr.Zero // Extra
 ));
 global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayFieldKernels.AotContexts.Unmarshal_SharedArrayHolder(ref first, ref __gsharp_native_0, hStream);
 global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayFieldKernels.AotContexts.Unmarshal_SharedArrayHolder(ref second, ref __gsharp_native_1, hStream);
+global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfDeviceError();
 }
 finally
 {
@@ -609,6 +611,7 @@ for (int __gsharp_index_0 = 0; __gsharp_index_0 < __gsharp_native_0.Length; __gs
 global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayFieldKernels.AotContexts.Unmarshal_ConvertBag(ref __gsharp_host_0[__gsharp_index_0], ref __gsharp_native_0[__gsharp_index_0], hStream);
 }
 }
+global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfDeviceError();
 }
 finally
 {

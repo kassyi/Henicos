@@ -15,6 +15,7 @@ internal static class KernelLaunchEmitter
     private const string CudaDriverApiType = HostTypeNames.CudaDriverApi;
     private const string CudaExceptionType = HostTypeNames.CudaException;
     private const string IntPtrType = HostTypeNames.IntPtr;
+    private const string GpuKernelLoaderType = HostTypeNames.GpuKernelLoader;
 
     internal enum CopyDirection
     {
@@ -84,6 +85,10 @@ internal static class KernelLaunchEmitter
         AutoResultEmitter.WriteCudaCopyBack(writer, kernel);
         writer.AppendLineIf(isCheckedBuild,
             "CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));");
+        // A failing device thread records its error and exits, and the kernel completes: the launcher reads the record
+        // once the stream has synchronized (copy-back or checked build). A launch with neither leaves it to the next
+        // synchronization of the stream.
+        writer.AppendLineIf(isCheckedBuild || !isDevicePtr, $"{GpuKernelLoaderType}.ThrowIfDeviceError();");
     }
 
     // void** __gsharp_kernel_params = stackalloc void*[<parameters>[ + auto result][ + grid scratch]];

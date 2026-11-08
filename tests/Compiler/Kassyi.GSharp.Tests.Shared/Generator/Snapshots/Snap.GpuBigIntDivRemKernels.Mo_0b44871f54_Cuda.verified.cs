@@ -335,7 +335,7 @@ __gsharp_id_8_n2=1;
 auto __gsharp_id_10_nttScratch = __gsharp_id_0_core.__gsharp_mb_Workspace.__gsharp_mb_NttScratch;
 DeviceUnpack16(__gsharp_id_1_opA,__gsharp_id_10_nttScratch.__gsharp_mb_NttBuf1A,__gsharp_id_10_nttScratch.__gsharp_mb_NttBuf2A,__gsharp_id_7_m,__gsharp_id_4_numWordsA,true);
 DeviceUnpack16(__gsharp_id_2_opB,__gsharp_id_10_nttScratch.__gsharp_mb_NttBuf1B,__gsharp_id_10_nttScratch.__gsharp_mb_NttBuf2B,__gsharp_id_7_m,__gsharp_id_5_numWordsB,true);
-cg::this_grid().sync();
+__gsharp_grid_sync();
 auto __gsharp_id_11_baseNtt = ([&]() {
 __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__DualNtt __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_TemporaryBuffer = __gsharp_id_10_nttScratch.__gsharp_mb_TmpBuf; __gsharp_tmp.__gsharp_mb_Grid = ([&]() {
 __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__NttGridContext __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_M = __gsharp_id_7_m; __gsharp_tmp.__gsharp_mb_N1 = __gsharp_id_9_n1; __gsharp_tmp.__gsharp_mb_N2 = __gsharp_id_8_n2; return __gsharp_tmp; }
@@ -352,7 +352,7 @@ __gsharp_id_13_forwardB.__gsharp_mb_Buffer1=__gsharp_id_10_nttScratch.__gsharp_m
 __gsharp_id_13_forwardB.__gsharp_mb_Buffer2=__gsharp_id_10_nttScratch.__gsharp_mb_NttBuf2B;
 ExecuteDualForwardNtt(__gsharp_id_13_forwardB);
 ExecuteNttPointwiseMultiply(__gsharp_id_10_nttScratch.__gsharp_mb_NttBuf1A,__gsharp_id_10_nttScratch.__gsharp_mb_NttBuf2A,__gsharp_id_10_nttScratch.__gsharp_mb_NttBuf1B,__gsharp_id_10_nttScratch.__gsharp_mb_NttBuf2B,__gsharp_id_7_m);
-cg::this_grid().sync();
+__gsharp_grid_sync();
 auto __gsharp_id_14_inverseA = __gsharp_id_11_baseNtt;
 __gsharp_id_14_inverseA.__gsharp_mb_Buffer1=__gsharp_id_10_nttScratch.__gsharp_mb_NttBuf1A;
 __gsharp_id_14_inverseA.__gsharp_mb_Buffer2=__gsharp_id_10_nttScratch.__gsharp_mb_NttBuf2A;
@@ -360,13 +360,13 @@ __gsharp_id_14_inverseA.__gsharp_mb_Twiddle1=__gsharp_id_0_core.__gsharp_mb_Ntt.
 __gsharp_id_14_inverseA.__gsharp_mb_Twiddle2=__gsharp_id_0_core.__gsharp_mb_Ntt.__gsharp_mb_TwiddleFactors.__gsharp_mb_Inverse2;
 ExecuteDualInverseNtt(__gsharp_id_14_inverseA);
 ExecuteCrtComputeCoefficients(__gsharp_id_10_nttScratch.__gsharp_mb_NttBuf1A,__gsharp_id_10_nttScratch.__gsharp_mb_NttBuf2A,__gsharp_id_10_nttScratch.__gsharp_mb_UncarriedLow,__gsharp_id_10_nttScratch.__gsharp_mb_UncarriedHigh,__gsharp_id_7_m);
-cg::this_grid().sync();
+__gsharp_grid_sync();
 int __gsharp_id_15_chunkSize = (int)blockDim.x;
 int __gsharp_id_16_numBlocks = (__gsharp_sub_i32(__gsharp_add_i32(__gsharp_id_6_numWordsResult,__gsharp_id_15_chunkSize),1))/__gsharp_id_15_chunkSize;
 ExecuteResolveNttCarriesBlocked(__gsharp_id_10_nttScratch.__gsharp_mb_UncarriedLow,__gsharp_id_10_nttScratch.__gsharp_mb_UncarriedHigh,__gsharp_id_3_resultDest,__gsharp_id_10_nttScratch.__gsharp_mb_BlockCarries,__gsharp_id_7_m,__gsharp_id_6_numWordsResult,__gsharp_id_15_chunkSize);
-cg::this_grid().sync();
+__gsharp_grid_sync();
 ExecuteResolveNttCarriesApply(__gsharp_id_3_resultDest,__gsharp_id_10_nttScratch.__gsharp_mb_BlockCarries,__gsharp_id_6_numWordsResult,__gsharp_id_15_chunkSize,__gsharp_id_16_numBlocks);
-cg::this_grid().sync();
+__gsharp_grid_sync();
 }
 
 #ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__OperandContext__
@@ -601,7 +601,7 @@ __gsharp_array_at(__gsharp_id_6_quotientBuffer, __gsharp_id_15_idx, ""G#: a null
 }
 }
 }
-cg::this_grid().sync();
+__gsharp_grid_sync();
 __gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteNttMultiplyMacroModPow(__gsharp_id_0_core,__gsharp_id_6_quotientBuffer,__gsharp_id_2_rightOperand,__gsharp_id_11_iterScratch.__gsharp_mb_NextIter,__gsharp_id_14_destWords,__gsharp_id_9_n,__gsharp_add_i32(__gsharp_id_14_destWords,__gsharp_id_9_n));
 int __gsharp_id_20_evalWords = __gsharp_add_i32(__gsharp_id_5_aActualWords,1);
 auto __gsharp_id_21_subCtx = ([&]() {
@@ -620,30 +620,30 @@ __gsharp_array_at(__gsharp_id_11_iterScratch.__gsharp_mb_Diff, __gsharp_id_22_id
 }
 }
 }
-cg::this_grid().sync();
+__gsharp_grid_sync();
 DeviceAddSubParallel(__gsharp_id_11_iterScratch.__gsharp_mb_Diff,__gsharp_id_11_iterScratch.__gsharp_mb_NextIter,__gsharp_id_11_iterScratch.__gsharp_mb_Diff,__gsharp_id_20_evalWords,(-1),true);
-cg::this_grid().sync();
+__gsharp_grid_sync();
 for(int __gsharp_id_23_iter = 0;__gsharp_id_23_iter<1000;__gsharp_id_23_iter++)
 {
 unsigned int __gsharp_id_24_topWord = __gsharp_array_at(__gsharp_id_11_iterScratch.__gsharp_mb_Diff, __gsharp_sub_i32(__gsharp_id_20_evalWords,1), ""G#: a null array is read at GpuBigIntDivRemKernels.ModPow.cs(162,28)"");
 bool __gsharp_id_25_underflow = (__gsharp_id_24_topWord&0x80000000u)!=0;
-cg::this_grid().sync();
+__gsharp_grid_sync();
 if(__gsharp_id_25_underflow)
 {
 DeviceAddSubParallel(__gsharp_id_11_iterScratch.__gsharp_mb_Diff,__gsharp_id_2_rightOperand,__gsharp_id_11_iterScratch.__gsharp_mb_Diff,__gsharp_id_20_evalWords,1,true);
-cg::this_grid().sync();
+__gsharp_grid_sync();
 }
 else
 {
 DeviceAddSubParallel(__gsharp_id_11_iterScratch.__gsharp_mb_Diff,__gsharp_id_2_rightOperand,__gsharp_id_11_iterScratch.__gsharp_mb_Diff,__gsharp_id_20_evalWords,(-1),true);
-cg::this_grid().sync();
+__gsharp_grid_sync();
 unsigned int __gsharp_id_26_top2 = __gsharp_array_at(__gsharp_id_11_iterScratch.__gsharp_mb_Diff, __gsharp_sub_i32(__gsharp_id_20_evalWords,1), ""G#: a null array is read at GpuBigIntDivRemKernels.ModPow.cs(181,29)"");
 bool __gsharp_id_27_underflow2 = (__gsharp_id_26_top2&0x80000000u)!=0;
-cg::this_grid().sync();
+__gsharp_grid_sync();
 if(__gsharp_id_27_underflow2)
 {
 DeviceAddSubParallel(__gsharp_id_11_iterScratch.__gsharp_mb_Diff,__gsharp_id_2_rightOperand,__gsharp_id_11_iterScratch.__gsharp_mb_Diff,__gsharp_id_20_evalWords,1,true);
-cg::this_grid().sync();
+__gsharp_grid_sync();
 break;
 }
 }
@@ -659,7 +659,7 @@ __gsharp_array_at(__gsharp_id_7_remainderBuffer, __gsharp_id_28_idx, ""G#: a nul
 }
 }
 }
-cg::this_grid().sync();
+__gsharp_grid_sync();
 }
 
 ";
@@ -3386,6 +3386,7 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
+global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfDeviceError();
 }
 finally
 {
@@ -3695,7 +3696,7 @@ __gsharp_array_at(__gsharp_id_2_iterScratch.__gsharp_mb_ModulusExpanded, __gshar
 }
 }
 }
-cg::this_grid().sync();
+__gsharp_grid_sync();
 }
 for(int __gsharp_id_13_i = __gsharp_id_3_expSlice.__gsharp_mb_StartWord;__gsharp_id_13_i<__gsharp_id_3_expSlice.__gsharp_mb_EndWord;__gsharp_id_13_i++)
 {
@@ -3728,7 +3729,7 @@ __gsharp_array_at(__gsharp_id_1_core.__gsharp_mb_Operands.__gsharp_mb_ResultBuff
 }
 }
 }
-cg::this_grid().sync();
+__gsharp_grid_sync();
 }
 }
 ";
@@ -3781,6 +3782,7 @@ hStream, // Stream
 __gsharp_kernel_params
 ));
 global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntDivRemKernels.AotContexts.Unmarshal_ModPowNttContext(ref ctx, ref __gsharp_native_0, hStream);
+global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfDeviceError();
 }
 finally
 {

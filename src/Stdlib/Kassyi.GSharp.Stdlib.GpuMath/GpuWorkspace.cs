@@ -437,6 +437,7 @@ public class GpuWorkspace : IGpuResourceScope
             // this one, not the whole device) before destroying it. A failed wait is reported, and the stream is
             // still destroyed.
             CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(Stream));
+            GpuKernelLoader.ThrowIfDeviceError();
         }
         catch (Exception ex)
         {

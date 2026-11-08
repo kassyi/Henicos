@@ -12,8 +12,10 @@ using Kassyi.GSharp.Runtime.Interop;
 /// <remarks>
 /// <para>
 /// <b>[SINGLE-SLOT DESIGN]:</b> A single host-mapped error slot is shared across all CUDA modules, streams, and contexts
-/// within the process. When a device trap occurs on any stream, the trapping warp elects a leader that atomically records
-/// the error code, site ID, module ID, and coordinates before trapping. Any subsequent host check
+/// within the process. When a device check fails on any stream, the failing warp elects a leader that atomically records
+/// the error code, site ID, module ID, and coordinates; the failing threads then exit and the kernel completes (a
+/// cooperative launch traps instead, and so does a thread that waits at an mbarrier while an error is recorded). Any
+/// subsequent host check
 /// (<see cref="ThrowIfDeviceError"/>, <see cref="CreateExceptionForDriverError"/>, or stream synchronization) consumes and
 /// resets the slot.
 /// </para>

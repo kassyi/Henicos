@@ -34,8 +34,9 @@ test-differential-cuda *args="":
     dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cuda/Kassyi.GSharp.Tests.Cuda.csproj \
         --filter "Category=Differential&Category!=Stress" {{blame_crash}} {{args}}
 
-# Tests that raise a real GPU fault (CUDA trap), each in a child process, one at a time pause_ms apart, plus the
-# CUDA fault seeds of the differential tests (agents: wrap in node scripts/agent/gpu-lock.js -- "...")
+# Tests that raise a real GPU fault (a CUDA trap of a cooperative launch or an mbarrier wait), each in a child process,
+# one at a time pause_ms apart, plus the CUDA fault seeds of the differential tests that CUDA does not check (agents:
+# wrap in node scripts/agent/gpu-lock.js -- "...")
 test-gpu-trap pause_ms="3000" *args="":
     dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cuda/Kassyi.GSharp.Tests.Cuda.csproj \
         --filter "(Category=GpuTrap|Category=Differential)&Category!=Stress" \

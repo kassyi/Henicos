@@ -33,7 +33,7 @@ public enum TestCategory
     Differential,
 
     /// <summary>
-    /// Raises a real GPU fault (a CUDA trap in a child process); left out of the default runs and run by
+    /// Raises a real GPU fault (a CUDA trap of a cooperative launch or an mbarrier wait, in a child process); left out of the default runs and run by
     /// <c>just test-gpu-trap</c>.
     /// </summary>
     GpuTrap

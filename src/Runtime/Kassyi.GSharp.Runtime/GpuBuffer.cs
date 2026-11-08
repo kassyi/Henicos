@@ -208,6 +208,7 @@ public sealed class GpuBuffer<T> : IDisposable where T : unmanaged
 
             using var scope = new ContextScope(_owningContext);
             CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2((IntPtr)ptr, _devicePointer, byteCount));
+            DeviceErrorSlot.ThrowIfDeviceError();
         }
     }
 

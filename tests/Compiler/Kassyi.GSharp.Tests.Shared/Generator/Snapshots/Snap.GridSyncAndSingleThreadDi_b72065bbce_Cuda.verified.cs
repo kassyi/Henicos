@@ -77,7 +77,7 @@ return __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_0_baseValue,17),0x1234);
 inline __device__ void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__GridSyncAndSingleThreadDifferentialKernels__InnerGridStep(GSharpArray<int> __gsharp_id_0_phaseBuf, GSharpArray<int> __gsharp_id_1_scratch, int __gsharp_id_2_gid, int __gsharp_id_3_total){
 int __gsharp_id_4_partner = (__gsharp_add_i32(__gsharp_id_2_gid,3))%__gsharp_id_3_total;
 __gsharp_array_at(__gsharp_id_1_scratch, __gsharp_id_2_gid, ""G#: a null array is read at GridSyncAndSingleThreadDifferentialKernels.cs(60,9)"")=__gsharp_array_at(__gsharp_id_0_phaseBuf, __gsharp_id_2_gid, ""G#: a null array is read at GridSyncAndSingleThreadDifferentialKernels.cs(60,24)"")^(__gsharp_add_i32(__gsharp_array_at(__gsharp_id_0_phaseBuf, __gsharp_id_4_partner, ""G#: a null array is read at GridSyncAndSingleThreadDifferentialKernels.cs(60,41)""),19));
-cg::this_grid().sync();
+__gsharp_grid_sync();
 }
 
 inline __device__ void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__GridSyncAndSingleThreadDifferentialKernels__OuterGridStep(GSharpArray<int> __gsharp_id_0_phaseBuf, GSharpArray<int> __gsharp_id_1_scratch, GSharpArray<int> __gsharp_id_2_output, int __gsharp_id_3_gid, int __gsharp_id_4_total){
@@ -260,7 +260,7 @@ __gsharp_id_12_bSum=__gsharp_add_i32(__gsharp_id_12_bSum,__gsharp_id_10_sBlock[_
 __gsharp_id_1_blockSums[__gsharp_id_6_blockId]=__gsharp_id_12_bSum;
 atomicAdd(&__gsharp_id_2_gridStats[2],__gsharp_id_12_bSum);
 }
-cg::this_grid().sync();
+__gsharp_grid_sync();
 if((threadIdx.x|threadIdx.y|threadIdx.z|blockIdx.x|blockIdx.y|blockIdx.z)==0)
 {
 int __gsharp_id_14_total = 0;
@@ -277,7 +277,7 @@ __gsharp_id_15_maxBlock=__gsharp_id_17_bs;
 __gsharp_id_2_gridStats[0]=__gsharp_id_14_total;
 __gsharp_id_2_gridStats[1]=__gsharp_id_15_maxBlock;
 }
-cg::this_grid().sync();
+__gsharp_grid_sync();
 int __gsharp_id_18_ownBlockSum = __gsharp_id_1_blockSums[__gsharp_id_6_blockId];
 int __gsharp_id_19_nextBlockSum = __gsharp_id_1_blockSums[(__gsharp_add_i32(__gsharp_id_6_blockId,1))%__gsharp_id_8_numBlocks];
 int __gsharp_id_20_gridTotal = __gsharp_id_2_gridStats[0];
@@ -480,6 +480,7 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
+global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfDeviceError();
 }
 finally
 {
@@ -556,13 +557,13 @@ int __gsharp_id_8_oppositeBlockPeer = (__gsharp_add_i32(__gsharp_id_3_gid,__gsha
 int __gsharp_id_9_selfVal = __gsharp_id_0_state[__gsharp_id_3_gid];
 int __gsharp_id_10_haloDelta = (__gsharp_sub_i32(__gsharp_id_0_state[__gsharp_id_6_prev],__gsharp_id_0_state[__gsharp_id_7_next]))^(__gsharp_id_0_state[__gsharp_id_8_oppositeBlockPeer]&0xFF);
 __gsharp_id_1_scratch[__gsharp_id_3_gid]=__gsharp_add_i32(__gsharp_add_i32(__gsharp_id_9_selfVal,__gsharp_id_10_haloDelta),__gsharp_mul_i32(__gsharp_id_5_step,7));
-cg::this_grid().sync();
+__gsharp_grid_sync();
 int __gsharp_id_11_partner = __gsharp_id_3_gid^1;
 int __gsharp_id_12_a = __gsharp_id_1_scratch[__gsharp_id_3_gid];
 int __gsharp_id_13_b = __gsharp_id_1_scratch[__gsharp_id_11_partner];
 int __gsharp_id_14_mixed = ((__gsharp_id_3_gid&1)==0?__gsharp_add_i32(__gsharp_id_12_a,__gsharp_sub_i32(__gsharp_id_13_b&0x3F,0x1F)):__gsharp_sub_i32(__gsharp_id_13_b,__gsharp_sub_i32(__gsharp_id_12_a&0x3F,0x1F)));
 __gsharp_id_0_state[__gsharp_id_3_gid]=__gsharp_id_14_mixed;
-cg::this_grid().sync();
+__gsharp_grid_sync();
 }
 }
 ";
@@ -665,6 +666,7 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
+global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfDeviceError();
 }
 finally
 {
@@ -730,27 +732,27 @@ __gsharp_sg_done_0=true;
 goto __gsharp_sg_next_0_0;
 }
 __gsharp_sg_next_0_0:;
-cg::this_grid().sync();
+__gsharp_grid_sync();
 if(!__gsharp_sg_done_0)
 {
 __gsharp_id_6_oddBase = __gsharp_add_i32(__gsharp_id_0_input[__gsharp_id_4_gid]&0xFFF,200);
 }
-cg::this_grid().sync();
+__gsharp_grid_sync();
 if(!__gsharp_sg_done_0)
 {
 __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__GridSyncAndSingleThreadDifferentialKernels__TryComputeOut(__gsharp_id_6_oddBase,&__gsharp_id_7_oddTransformed);
 }
-cg::this_grid().sync();
+__gsharp_grid_sync();
 if(!__gsharp_sg_done_0)
 {
 __gsharp_id_1_phaseBuf[__gsharp_id_4_gid]=__gsharp_id_7_oddTransformed;
 }
 }
-cg::this_grid().sync();
+__gsharp_grid_sync();
 {
 bool __gsharp_sg_done_1 = false;
 int __gsharp_id_8_nextNeighbor = __gsharp_id_1_phaseBuf[(__gsharp_add_i32(__gsharp_id_4_gid,1))%__gsharp_id_5_total];
-cg::this_grid().sync();
+__gsharp_grid_sync();
 switch(__gsharp_id_4_gid&3)
 {
 case 0:
@@ -781,21 +783,21 @@ break;
 }
 }
 __gsharp_sg_next_1_1:;
-cg::this_grid().sync();
+__gsharp_grid_sync();
 if(!__gsharp_sg_done_1)
 {
 __gsharp_id_2_scratch[__gsharp_id_4_gid]=__gsharp_add_i32(__gsharp_id_2_scratch[__gsharp_id_4_gid],5);
 }
 }
-cg::this_grid().sync();
+__gsharp_grid_sync();
 for(int __gsharp_id_9_round = 0;__gsharp_id_9_round<2;__gsharp_id_9_round++)
 {
 {
 int __gsharp_id_10_opposite = __gsharp_id_2_scratch[(__gsharp_add_i32(__gsharp_id_4_gid,__gsharp_id_5_total>>1))%__gsharp_id_5_total];
-cg::this_grid().sync();
+__gsharp_grid_sync();
 __gsharp_id_1_phaseBuf[__gsharp_id_4_gid]=__gsharp_add_i32(__gsharp_add_i32(__gsharp_id_1_phaseBuf[__gsharp_id_4_gid],__gsharp_id_10_opposite),__gsharp_mul_i32(__gsharp_id_9_round,11));
 }
-cg::this_grid().sync();
+__gsharp_grid_sync();
 }
 __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__GridSyncAndSingleThreadDifferentialKernels__OuterGridStep(__gsharp_id_1_phaseBuf,__gsharp_id_2_scratch,__gsharp_id_3_output,__gsharp_id_4_gid,__gsharp_id_5_total);
 }
@@ -989,6 +991,7 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
+global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfDeviceError();
 }
 finally
 {
@@ -1190,6 +1193,7 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
+global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfDeviceError();
 }
 finally
 {
@@ -1258,7 +1262,7 @@ __gsharp_id_1_globalState[0]=500;
 __gsharp_id_1_globalState[1]=0;
 __gsharp_id_1_globalState[2]=0;
 }
-cg::this_grid().sync();
+__gsharp_grid_sync();
 __syncthreads();
 int __gsharp_id_8_v = __gsharp_add_i32(__gsharp_id_0_input[__gsharp_id_6_gid]&0x3FF,1);
 atomicAdd(&__gsharp_id_7_sBlockSum[0],__gsharp_id_8_v);
@@ -1267,12 +1271,12 @@ if(__gsharp_id_3_localTid==0)
 {
 atomicAdd(&__gsharp_id_1_globalState[1],__gsharp_id_7_sBlockSum[0]);
 }
-cg::this_grid().sync();
+__gsharp_grid_sync();
 if((threadIdx.x|threadIdx.y|threadIdx.z|blockIdx.x|blockIdx.y|blockIdx.z)==0)
 {
 __gsharp_id_1_globalState[2]=__gsharp_add_i32(__gsharp_id_1_globalState[0],__gsharp_id_1_globalState[1]);
 }
-cg::this_grid().sync();
+__gsharp_grid_sync();
 __gsharp_id_2_output[__gsharp_id_6_gid]=__gsharp_add_i32(__gsharp_add_i32(__gsharp_id_1_globalState[2],__gsharp_id_7_sBlockSum[0]),__gsharp_id_3_localTid);
 }
 ";
@@ -1417,6 +1421,7 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
+global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfDeviceError();
 }
 finally
 {

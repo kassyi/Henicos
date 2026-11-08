@@ -158,7 +158,7 @@ public static partial class Gpu
     }
 
     /// <summary>
-    /// Executes the provided action, automatically inserting a grid synchronization (<c>cg::this_grid().sync()</c>)
+    /// Executes the provided action, automatically inserting a grid synchronization (<see cref="SyncGrid()"/>)
     /// between the top-level statements of the action body.
     /// </summary>
     /// <param name="body">The action containing statements separated by automatic grid synchronization.</param>
