@@ -48,8 +48,8 @@ public class CudaStreamTests : TranspilerTestBase
 
         // When using GpuBuffer<T>, the Transpiler passes pointers directly without 
         // host-sync memory copies. Thus, Launch returns immediately, queueing the kernel.
-        CudaStreamKernels.LaunchDelayKernelPtr(buf1.DevicePointer, 1000000, hStream: stream1.Handle);
-        CudaStreamKernels.LaunchDelayKernelPtr(buf2.DevicePointer, 1000000, hStream: stream2.Handle);
+        CudaStreamKernels.LaunchDelayKernelPtr(buf1.ToProxy(), 1000000, hStream: stream1.Handle);
+        CudaStreamKernels.LaunchDelayKernelPtr(buf2.ToProxy(), 1000000, hStream: stream2.Handle);
 
         // Synchronize both streams
         stream1.Synchronize();

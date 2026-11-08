@@ -199,17 +199,32 @@ float[] magnitudes = MathKernels.LaunchComputeMagnitude(
 
 ### The Explicit Output Buffer Pattern
 
-For peak performance, allocate persistent device memory upfront using `GpuBuffer<T>` and reuse it. Pass the `DevicePointer` directly to the `_Device` variant of the generated launcher:
+For peak performance, write the result into an output parameter, allocate persistent device memory upfront using
+`GpuBuffer<T>`, and reuse it. Pass each buffer to the `Ptr` variant of the generated launcher with `ToProxy()`, which
+carries the buffer's length, so the kernel sees `magnitudes.Length` as C# would:
+
+```csharp
+// Execution Context: G# Kernel (GPU)
+[GpuKernel]
+public static void ComputeMagnitudeInto(PhysicsVector[] particles, float[] magnitudes)
+{
+    int tid = ThreadIndex.X + BlockIndex.X * BlockDimension.X;
+    var p = particles[tid];
+    magnitudes[tid] = MathF.Sqrt(p.X * p.X + p.Y * p.Y + p.Z * p.Z);
+}
+```
 
 ```csharp
 // Execution Context: Host (CPU)
-// 1. Allocate a persistent device buffer once (e.g., during initialization)
+// 1. Allocate persistent device buffers once (e.g., during initialization)
+using GpuBuffer<PhysicsVector> gpuParticles = new GpuBuffer<PhysicsVector>(25600);
 using GpuBuffer<float> gpuMagnitudes = new GpuBuffer<float>(25600);
+gpuParticles.CopyToDevice(particlesArray);
 
-// 2. In your hot loop, launch using the Ptr suffix method and pass the pointer
-MathKernels.LaunchComputeMagnitudePtr(
-    particles: particlesArray,
-    magnitudes: gpuMagnitudes.DevicePointer, // Pass the native device pointer
+// 2. In your hot loop, launch using the Ptr suffix method: nothing is allocated or copied
+MathKernels.LaunchComputeMagnitudeIntoPtr(
+    particles: gpuParticles.ToProxy(),
+    magnitudes: gpuMagnitudes.ToProxy(),
     gridDimX: 100,
     blockDimX: 256
 );

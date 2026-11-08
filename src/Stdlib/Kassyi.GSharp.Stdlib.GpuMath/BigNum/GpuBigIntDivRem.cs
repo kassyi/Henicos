@@ -549,8 +549,8 @@ public static partial class GpuBigIntDivRem
 
         // Zero-sync correction using single block kernel: the remainder and the quotient move by the same steps.
         GpuBigIntDivRemKernels.LaunchBarrettCorrectionKernelPtr(
-            remainderExtended.DevicePointer, bPaddedExtended.DevicePointer, quotientBuffer.DevicePointer, evalWords,
-            quotientBuffer.NumWords, rightOperand.Workspace.CorrectionStatusPointer, gridDimX: 1, blockDimX: 1024,
+            remainderExtended.ToProxy(), bPaddedExtended.ToProxy(), quotientBuffer.ToProxy(), evalWords,
+            quotientBuffer.NumWords, rightOperand.Workspace.CorrectionStatusProxy, gridDimX: 1, blockDimX: 1024,
             hStream: rightOperand.Workspace.Stream);
         rightOperand.Workspace.CorrectionStatus?.MarkPending();
 

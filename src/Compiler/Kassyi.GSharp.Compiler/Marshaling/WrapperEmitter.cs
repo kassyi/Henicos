@@ -5,6 +5,7 @@ namespace Kassyi.GSharp.Compiler.Marshaling;
 /// <summary>Generates host-side C# wrapper classes that load and invoke GPU kernels.</summary>
 internal static class WrapperEmitter
 {
+    private const string NegativeLengthMessage = "The array length must not be negative.";
     private const string EmptyArrayMessage = "Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.";
 
     internal readonly struct InteropParameterInfo(
@@ -53,11 +54,18 @@ internal static class WrapperEmitter
 
     internal static InteropParameterInfo GetInteropParameterInfo(in KernelParameterShape shape, bool isDevicePtr)
     {
-        switch (isDevicePtr)
+        switch (isDevicePtr ? PointerLaunchPlan.Classify(shape) : PointerArgumentKind.Value)
         {
-            case true when shape.IsDevicePointer:
+            case PointerArgumentKind.Array or PointerArgumentKind.OptionalArray:
+                return new InteropParameterInfo(
+                    string.Empty,
+                    HostTypeNames.ArrayProxy,
+                    false,
+                    shape.HasExplicitDefault ? "default" : null
+                );
+            case PointerArgumentKind.Reference:
                 return new InteropParameterInfo(string.Empty, null, true, shape.HasExplicitDefault ? "default" : null);
-            case true when shape.IsCustomStruct:
+            case PointerArgumentKind.ShadowStruct:
                 return new InteropParameterInfo(string.Empty, shape.AotStructPath, false, shape.DefaultValueLiteral);
             default:
             {
@@ -408,7 +416,7 @@ internal static class WrapperEmitter
     }
 
     // if (<name>.<field path> is null) { throw new ArgumentNullException(nameof(<name>), "<name>.<field path> is null, ..."); }
-    // if (<name>.<field path>.Data == IntPtr.Zero) { ... }   (the shadow struct of the IntPtr launcher)
+    // if (<name>.<field path>.Data == IntPtr.Zero) { ... }   (the shadow struct of the pointer launcher)
     // [WHY] The kernel reads a non-nullable array field of a by-value struct argument without a null check
     // (NonNullProof); the launcher enforces the annotation, as it rejects a null non-optional array argument (#1409)
     private static void WriteStructFieldChecks(SourceWriter writer, in KernelHostModel kernel, bool isPointer)
@@ -440,35 +448,6 @@ internal static class WrapperEmitter
         }
     }
 
-    // if (<name> == IntPtr.Zero) { throw new ArgumentNullException(nameof(<name>)); }   for each array that is not optional
-    // [WHY] The IntPtr launcher keeps the contract of the array launcher: a null array that is not optional is rejected
-    // before the launch. The kernel leaves out the null check of an array parameter it never writes on that promise
-    // (ArrayNullCheck.IsUnwrittenKernelParameter); without it the device reads through nullptr (#1409).
-    internal static void WritePointerArgumentChecks(SourceWriter writer, in KernelHostModel kernel)
-    {
-        foreach (var shape in kernel.Parameters)
-        {
-            if (!shape.IsArray || shape.IsOptional)
-            {
-                continue;
-            }
-
-            var name = shape.Identifier;
-            writer.Append("if ");
-            using (writer.Parentheses())
-            {
-                writer.Append($"{name} == {HostTypeNames.IntPtr}.Zero");
-            }
-
-            using (writer.Scope())
-            {
-                writer.AppendLine($"throw new global::System.ArgumentNullException(nameof({name}));");
-            }
-        }
-
-        WriteStructFieldChecks(writer, kernel, isPointer: true);
-    }
-
     // if (<length> == 0) { throw new ArgumentException(<message>, nameof(<name>)); }
     private static void WriteEmptyArrayCheck(SourceWriter writer, string length, string name)
     {
@@ -482,6 +461,72 @@ internal static class WrapperEmitter
         {
             writer.AppendLine($"throw new global::System.ArgumentException(\"{EmptyArrayMessage}\", nameof({name}));");
         }
+    }
+
+    /// <summary>
+    /// Emits the checks of the <c>GSharpArrayProxy</c> arguments of the <c>Launch{Kernel}Ptr</c> launcher, with the
+    /// contract of <see cref="WriteArrayArgumentChecks"/>: a non-optional array must not be null or empty, and an empty
+    /// optional one is passed as null. A negative length is rejected for both. The non-nullable array fields of a by-value
+    /// struct argument must not be null either.
+    /// </summary>
+    /// <remarks>
+    /// The kernel leaves out the null check of a non-nullable array parameter or field it never writes on that promise
+    /// (<c>NonNullProof</c>); without the checks the device would read through <c>nullptr</c> (#1409).
+    /// </remarks>
+    internal static void WritePointerArrayArgumentChecks(SourceWriter writer, in KernelHostModel kernel)
+    {
+        foreach (var shape in kernel.Parameters)
+        {
+            var kind = PointerLaunchPlan.Classify(shape);
+            if (!PointerLaunchPlan.IsProxy(kind))
+            {
+                continue;
+            }
+
+            var name = shape.Identifier;
+            writer.Append("if ");
+            using (writer.Parentheses())
+            {
+                writer.Append($"{name}.Length < 0");
+            }
+
+            using (writer.Scope())
+            {
+                writer.AppendLine(
+                    $"throw new global::System.ArgumentOutOfRangeException(nameof({name}), {name}.Length, \"{NegativeLengthMessage}\");");
+            }
+
+            if (kind == PointerArgumentKind.OptionalArray)
+            {
+                writer.Append("if ");
+                using (writer.Parentheses())
+                {
+                    writer.Append($"{name}.Data == {HostTypeNames.IntPtr}.Zero || {name}.Length == 0");
+                }
+
+                using (writer.Scope())
+                {
+                    writer.AppendLine($"{name} = default;");
+                }
+
+                continue;
+            }
+
+            writer.Append("if ");
+            using (writer.Parentheses())
+            {
+                writer.Append($"{name}.Data == {HostTypeNames.IntPtr}.Zero");
+            }
+
+            using (writer.Scope())
+            {
+                writer.AppendLine($"throw new global::System.ArgumentNullException(nameof({name}));");
+            }
+
+            WriteEmptyArrayCheck(writer, $"{name}.Length", name);
+        }
+
+        WriteStructFieldChecks(writer, kernel, isPointer: true);
     }
     private static void WriteErrorSiteTableField(SourceWriter writer, EquatableArray<ErrorSiteEntry> errorSites)
     {

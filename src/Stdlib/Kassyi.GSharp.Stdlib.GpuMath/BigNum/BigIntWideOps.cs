@@ -38,8 +38,8 @@ internal static class BigIntWideOps
         var workspace = a.Workspace;
         var words = Math.Max(Math.Max(a.NumWords, b.NumWords), result.NumWords);
         GpuBigIntWideKernels.LaunchAddSubWideKernelPtr(
-            a.DevicePointer, a.NumWords, b.DevicePointer, b.NumWords, result.DevicePointer, result.NumWords,
-            subtract ? 1 : 0, workspace.CorrectionStatusPointer,
+            a.ToProxy(), a.NumWords, b.ToProxy(), b.NumWords, result.ToProxy(), result.NumWords,
+            subtract ? 1 : 0, workspace.CorrectionStatusProxy,
             gridDimX: 1, blockDimX: SingleBlockSize(words), hStream: workspace.Stream);
         workspace.CorrectionStatus?.MarkPending();
     }
@@ -71,7 +71,7 @@ internal static class BigIntWideOps
         var (gridSize, blockSize) = KernelGraphHandler.CalculateGridDim(result.NumWords);
         var bWords = operation == GpuBigIntWideKernels.BitwiseNot ? 0 : b.NumWords;
         GpuBigIntWideKernels.LaunchBitwiseWideKernelPtr(
-            a.DevicePointer, a.NumWords, b.DevicePointer, bWords, result.DevicePointer, result.NumWords, operation,
+            a.ToProxy(), a.NumWords, b.ToProxy(), bWords, result.ToProxy(), result.NumWords, operation,
             gridDimX: gridSize, blockDimX: blockSize, hStream: workspace.Stream);
     }
 
@@ -94,8 +94,8 @@ internal static class BigIntWideOps
         }
 
         var workspace = value.Workspace;
-        GpuBigIntWideKernels.LaunchFitCheckKernelPtr(value.DevicePointer, value.NumWords, words,
-            workspace.CorrectionStatusPointer, gridDimX: 1, blockDimX: SingleBlockSize(value.NumWords - words),
+        GpuBigIntWideKernels.LaunchFitCheckKernelPtr(value.ToProxy(), value.NumWords, words,
+            workspace.CorrectionStatusProxy, gridDimX: 1, blockDimX: SingleBlockSize(value.NumWords - words),
             hStream: workspace.Stream);
         workspace.CorrectionStatus?.MarkPending();
     }
@@ -136,8 +136,8 @@ internal static class BigIntWideOps
 
         using var flags = workspace.RentTemp(2);
         GpuBigIntWideKernels.LaunchMagnitudeDifferenceKernelPtr(
-            a.DevicePointer, a.NumWords, b.DevicePointer, b.NumWords, result.DevicePointer, result.NumWords,
-            flags.DevicePointer,
+            a.ToProxy(), a.NumWords, b.ToProxy(), b.NumWords, result.ToProxy(), result.NumWords,
+            flags.ToProxy(),
             gridDimX: 1, blockDimX: SingleBlockSize(result.NumWords), hStream: workspace.Stream);
 
         var host = ArrayPool<uint>.Shared.Rent(2);
