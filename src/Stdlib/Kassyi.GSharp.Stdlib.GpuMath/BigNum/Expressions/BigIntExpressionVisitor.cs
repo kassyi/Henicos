@@ -6,7 +6,10 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 /// A stack-scoped visitor that recursively evaluates unsigned GPU BigInteger AST expressions using rented device memory buffers.
 /// </summary>
 /// <param name="context">The execution context providing memory manager and arithmetic providers.</param>
-/// <param name="targetResult">An optional pre-allocated destination buffer to receive the root evaluation result.</param>
+/// <param name="targetResult">
+/// An optional pre-allocated destination buffer to receive the root evaluation result. A root node wider than it throws
+/// <see cref="ArgumentException"/> before anything is written.
+/// </param>
 /// <remarks>
 /// <para>
 /// <b>[WHY]:</b> Traverses the expression AST and emits low-level kernel invocations, managing intermediate temporary buffer lifetimes
@@ -57,12 +60,21 @@ public ref struct BigIntExpressionVisitor(GpuBigIntExecutionContext context, Sco
     // The root writes into the target, unless the target overlaps one of the root's operands: the kernels take their
     // pointers as __restrict__ and some read words that other threads write, so the root then computes into a
     // temporary, which the caller copies into the target. Only the root can meet the target: every other node writes
-    // a temporary, and the root reads only its own operands.
+    // a temporary, and the root reads only its own operands. A target narrower than the root is rejected: the kernels
+    // write the full width of the operation through the result pointer.
     private ScopedBigIntMemory GetResultBuffer(int numWords, bool isRoot, GpuBigIntMemoryHandle operand0,
         GpuBigIntMemoryHandle operand1 = default)
     {
         if (isRoot && !_targetResult.Handle.IsDefault)
         {
+            if (_targetResult.Handle.NumWords < numWords)
+            {
+                throw new ArgumentException(
+                    $"Destination buffer must have at least {numWords} words; it has {_targetResult.Handle.NumWords}.",
+                    nameof(targetResult)
+                );
+            }
+
             var target = _targetResult;
             _targetResult = default;
             if (!DeviceRanges.Overlaps(target.Handle, operand0) && !DeviceRanges.Overlaps(target.Handle, operand1))

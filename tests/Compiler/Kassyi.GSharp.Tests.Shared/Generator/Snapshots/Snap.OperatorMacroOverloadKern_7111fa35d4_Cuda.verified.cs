@@ -10,19 +10,15 @@ namespace Kassyi.GSharp.Generated
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static class GSharpModuleContext_SnapshotTest
 {
-private static global::System.IntPtr? s_hModule;
-private static readonly object s_lock = new object();
+private static byte[]? s_fatbin;
 
 /// <summary>
-/// Loads the fatbin module for this assembly into the CUDA driver if it hasn't been loaded yet.
+/// Reads the fatbin module of this assembly; the file is read once.
 /// </summary>
-public static global::System.IntPtr GetOrLoadModule()
+public static byte[] GetFatbin()
 {
-if (s_hModule.HasValue) return s_hModule.Value;
-lock (s_lock)
-{
-if (s_hModule.HasValue) return s_hModule.Value;
-
+var fatbin = global::System.Threading.Volatile.Read(ref s_fatbin);
+if (fatbin is not null) return fatbin;
 var baseDir = global::System.IO.Path.GetDirectoryName(typeof(GSharpModuleContext_SnapshotTest).Assembly.Location) ?? global::System.AppContext.BaseDirectory;
 var fatbinPath = global::System.IO.Path.Combine(baseDir, "Kassyi.GSharp.Kernels_SnapshotTest.gfatbin");
 if (!global::System.IO.File.Exists(fatbinPath))
@@ -30,11 +26,14 @@ if (!global::System.IO.File.Exists(fatbinPath))
 throw new global::System.InvalidOperationException($"AOT kernel binary was not found at '{fatbinPath}'.");
 }
 
-byte[] binaryData = global::System.IO.File.ReadAllBytes(fatbinPath);
-s_hModule = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadModule(binaryData);
-return s_hModule.Value;
+fatbin = global::System.IO.File.ReadAllBytes(fatbinPath);
+return global::System.Threading.Interlocked.CompareExchange(ref s_fatbin, fatbin, null) ?? fatbin;
 }
-}
+
+/// <summary>
+/// Loads the fatbin module of this assembly into the current CUDA context if it is not loaded there yet.
+/// </summary>
+public static global::System.IntPtr GetOrLoadModule() => global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadModule(GetFatbin());
 
 /// <summary>
 /// Preloads the module and all function pointers for kernels in this assembly to eliminate lazy-loading latency.
@@ -170,12 +169,8 @@ struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PickRef
 {
 GSharpArray<unsigned int> __gsharp_mb_Data;
 __device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PickRef() {}
-__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PickRef(GSharpArray<unsigned int> v) {
-this->__gsharp_mb_Data = v;
-}
-__device__ inline operator GSharpArray<unsigned int>() const {
-return this->__gsharp_mb_Data;
-}
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PickRef(GSharpArray<unsigned int> v);
+__device__ inline operator GSharpArray<unsigned int>() const;
 }
 ;
 static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PickRef)==16,""Kassyi.GSharp.Tests.Shared.Syntax.PickRef: size"");
@@ -186,6 +181,14 @@ __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PickRef __gsharp_self{};
 __gsharp_self.__gsharp_mb_Data=__gsharp_id_0_data;
 return __gsharp_self;
 }
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PickRef __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__PickRef__op_uImplicit_o0(GSharpArray<unsigned int> __gsharp_id_0_data) {
+return __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__PickRef(__gsharp_id_0_data);
+}
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PickRef::__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PickRef(GSharpArray<unsigned int> v) { *this = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__PickRef__op_uImplicit_o0(v); }
+__device__ inline GSharpArray<unsigned int> __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__PickRef__op_uImplicit_o1(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PickRef __gsharp_id_0_value) {
+return __gsharp_id_0_value.__gsharp_mb_Data;
+}
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PickRef::operator GSharpArray<unsigned int>() const { return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__PickRef__op_uImplicit_o1(*this); }
 #endif
 inline __device__ void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__PickOps__Add_o1(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PickRef __gsharp_id_0_result, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PickRef __gsharp_id_1_left, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PickRef __gsharp_id_2_right){
 int __gsharp_id_3_tid = (int)threadIdx.x;
@@ -208,9 +211,7 @@ struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__SubRef
 {
 GSharpArray<unsigned int> __gsharp_mb_Data;
 __device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__SubRef() {}
-__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__SubRef(GSharpArray<unsigned int> v) {
-this->__gsharp_mb_Data = v;
-}
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__SubRef(GSharpArray<unsigned int> v);
 }
 ;
 static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__SubRef)==16,""Kassyi.GSharp.Tests.Shared.Syntax.SubRef: size"");
@@ -221,6 +222,10 @@ __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__SubRef __gsharp_self{};
 __gsharp_self.__gsharp_mb_Data=__gsharp_id_0_data;
 return __gsharp_self;
 }
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__SubRef __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__SubRef__op_uImplicit(GSharpArray<unsigned int> __gsharp_id_0_data) {
+return __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__SubRef(__gsharp_id_0_data);
+}
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__SubRef::__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__SubRef(GSharpArray<unsigned int> v) { *this = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__SubRef__op_uImplicit(v); }
 #endif
 inline __device__ void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__SubOps__Sub_o0(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__SubRef __gsharp_id_0_result, const __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__SubRef* __gsharp_id_1_left, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__SubRef __gsharp_id_2_right){
 int __gsharp_id_3_tid = (int)threadIdx.x;
@@ -233,9 +238,7 @@ struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__SubRef
 {
 GSharpArray<unsigned int> __gsharp_mb_Data;
 __device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__SubRef() {}
-__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__SubRef(GSharpArray<unsigned int> v) {
-this->__gsharp_mb_Data = v;
-}
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__SubRef(GSharpArray<unsigned int> v);
 }
 ;
 static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__SubRef)==16,""Kassyi.GSharp.Tests.Shared.Syntax.SubRef: size"");
@@ -246,6 +249,10 @@ __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__SubRef __gsharp_self{};
 __gsharp_self.__gsharp_mb_Data=__gsharp_id_0_data;
 return __gsharp_self;
 }
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__SubRef __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__SubRef__op_uImplicit(GSharpArray<unsigned int> __gsharp_id_0_data) {
+return __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__SubRef(__gsharp_id_0_data);
+}
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__SubRef::__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__SubRef(GSharpArray<unsigned int> v) { *this = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__SubRef__op_uImplicit(v); }
 #endif
 inline __device__ void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__SubOps__Sub_o1(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__SubRef __gsharp_id_0_result, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__SubRef __gsharp_id_1_left, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__SubRef __gsharp_id_2_right){
 int __gsharp_id_3_tid = (int)threadIdx.x;
@@ -274,12 +281,8 @@ struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtxRef
 {
 GSharpArray<unsigned int> __gsharp_mb_Data;
 __device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtxRef() {}
-__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtxRef(GSharpArray<unsigned int> v) {
-this->__gsharp_mb_Data = v;
-}
-__device__ inline operator GSharpArray<unsigned int>() const {
-return this->__gsharp_mb_Data;
-}
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtxRef(GSharpArray<unsigned int> v);
+__device__ inline operator GSharpArray<unsigned int>() const;
 }
 ;
 static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtxRef)==16,""Kassyi.GSharp.Tests.Shared.Syntax.CtxRef: size"");
@@ -290,6 +293,14 @@ __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtxRef __gsharp_self{};
 __gsharp_self.__gsharp_mb_Data=__gsharp_id_0_data;
 return __gsharp_self;
 }
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtxRef __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__CtxRef__op_uImplicit_o0(GSharpArray<unsigned int> __gsharp_id_0_data) {
+return __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__CtxRef(__gsharp_id_0_data);
+}
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtxRef::__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtxRef(GSharpArray<unsigned int> v) { *this = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__CtxRef__op_uImplicit_o0(v); }
+__device__ inline GSharpArray<unsigned int> __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__CtxRef__op_uImplicit_o1(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtxRef __gsharp_id_0_value) {
+return __gsharp_id_0_value.__gsharp_mb_Data;
+}
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtxRef::operator GSharpArray<unsigned int>() const { return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__CtxRef__op_uImplicit_o1(*this); }
 #endif
 inline __device__ void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__CtxOps__Add_o1(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShiftCtx* __gsharp_id_0_ctx, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtxRef __gsharp_id_1_result, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtxRef __gsharp_id_2_left, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtxRef __gsharp_id_3_right){
 int __gsharp_id_4_tid = (int)threadIdx.x;
@@ -351,12 +362,8 @@ struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShiftRef
 {
 GSharpArray<unsigned int> __gsharp_mb_Data;
 __device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShiftRef() {}
-__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShiftRef(GSharpArray<unsigned int> v) {
-this->__gsharp_mb_Data = v;
-}
-__device__ inline operator GSharpArray<unsigned int>() const {
-return this->__gsharp_mb_Data;
-}
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShiftRef(GSharpArray<unsigned int> v);
+__device__ inline operator GSharpArray<unsigned int>() const;
 }
 ;
 static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShiftRef)==16,""Kassyi.GSharp.Tests.Shared.Syntax.ShiftRef: size"");
@@ -367,6 +374,14 @@ __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShiftRef __gsharp_self{};
 __gsharp_self.__gsharp_mb_Data=__gsharp_id_0_data;
 return __gsharp_self;
 }
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShiftRef __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ShiftRef__op_uImplicit_o0(GSharpArray<unsigned int> __gsharp_id_0_data) {
+return __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__ShiftRef(__gsharp_id_0_data);
+}
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShiftRef::__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShiftRef(GSharpArray<unsigned int> v) { *this = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ShiftRef__op_uImplicit_o0(v); }
+__device__ inline GSharpArray<unsigned int> __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ShiftRef__op_uImplicit_o1(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShiftRef __gsharp_id_0_value) {
+return __gsharp_id_0_value.__gsharp_mb_Data;
+}
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShiftRef::operator GSharpArray<unsigned int>() const { return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ShiftRef__op_uImplicit_o1(*this); }
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroOverloadKernels__ShiftKernel(GSharpArray<unsigned int> __gsharp_id_0_input, GSharpArray<unsigned int> __gsharp_id_1_output, int __gsharp_id_2_bias){
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShiftCtx __gsharp_id_3_ctx = {};
@@ -377,14 +392,9 @@ __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ShiftOps__Shift_o1(&__gsharp_
 }
 ";
 public static readonly string ShiftKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ShiftKernel_Source;
-private static global::System.IntPtr? __gsharp_hfunc_ShiftKernel;
-/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
-public static void WarmupFunctionPointerShiftKernel()
-{
-if (__gsharp_hfunc_ShiftKernel.HasValue) return;
-global::System.IntPtr __gsharp_hmodule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
-__gsharp_hfunc_ShiftKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(__gsharp_hmodule, "__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroOverloadKernels__ShiftKernel");
-}
+private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ShiftKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroOverloadKernels__ShiftKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
+public static void WarmupFunctionPointerShiftKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroOverloadKernels.__gsharp_hfunc_ShiftKernel.Resolve();
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -404,8 +414,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroOverloadKernels.WarmupFunctionPointerShiftKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_ShiftKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroOverloadKernels.__gsharp_hfunc_ShiftKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "OperatorMacroOverloadKernels.ShiftKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 global::System.IntPtr __gsharp_d_1 = global::System.IntPtr.Zero;
@@ -498,8 +507,7 @@ public static unsafe void LaunchShiftKernelPtr(global::System.IntPtr input, glob
 {
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroOverloadKernels.WarmupFunctionPointerShiftKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_ShiftKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroOverloadKernels.__gsharp_hfunc_ShiftKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "OperatorMacroOverloadKernels.ShiftKernel");
 try
 {
@@ -551,12 +559,8 @@ struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReversedShiftRef
 {
 GSharpArray<unsigned int> __gsharp_mb_Data;
 __device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReversedShiftRef() {}
-__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReversedShiftRef(GSharpArray<unsigned int> v) {
-this->__gsharp_mb_Data = v;
-}
-__device__ inline operator GSharpArray<unsigned int>() const {
-return this->__gsharp_mb_Data;
-}
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReversedShiftRef(GSharpArray<unsigned int> v);
+__device__ inline operator GSharpArray<unsigned int>() const;
 }
 ;
 static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReversedShiftRef)==16,""Kassyi.GSharp.Tests.Shared.Syntax.ReversedShiftRef: size"");
@@ -567,6 +571,14 @@ __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReversedShiftRef __gsharp_sel
 __gsharp_self.__gsharp_mb_Data=__gsharp_id_0_data;
 return __gsharp_self;
 }
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReversedShiftRef __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ReversedShiftRef__op_uImplicit_o0(GSharpArray<unsigned int> __gsharp_id_0_data) {
+return __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__ReversedShiftRef(__gsharp_id_0_data);
+}
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReversedShiftRef::__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReversedShiftRef(GSharpArray<unsigned int> v) { *this = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ReversedShiftRef__op_uImplicit_o0(v); }
+__device__ inline GSharpArray<unsigned int> __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ReversedShiftRef__op_uImplicit_o1(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReversedShiftRef __gsharp_id_0_value) {
+return __gsharp_id_0_value.__gsharp_mb_Data;
+}
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReversedShiftRef::operator GSharpArray<unsigned int>() const { return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ReversedShiftRef__op_uImplicit_o1(*this); }
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroOverloadKernels__ReversedShiftKernel(GSharpArray<unsigned int> __gsharp_id_0_input, GSharpArray<unsigned int> __gsharp_id_1_output, int __gsharp_id_2_bias){
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShiftCtx __gsharp_id_3_ctx = {};
@@ -577,14 +589,9 @@ __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ReversedShiftOps__Shift_o0(&_
 }
 ";
 public static readonly string ReversedShiftKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ReversedShiftKernel_Source;
-private static global::System.IntPtr? __gsharp_hfunc_ReversedShiftKernel;
-/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
-public static void WarmupFunctionPointerReversedShiftKernel()
-{
-if (__gsharp_hfunc_ReversedShiftKernel.HasValue) return;
-global::System.IntPtr __gsharp_hmodule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
-__gsharp_hfunc_ReversedShiftKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(__gsharp_hmodule, "__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroOverloadKernels__ReversedShiftKernel");
-}
+private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ReversedShiftKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroOverloadKernels__ReversedShiftKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
+public static void WarmupFunctionPointerReversedShiftKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroOverloadKernels.__gsharp_hfunc_ReversedShiftKernel.Resolve();
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -604,8 +611,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroOverloadKernels.WarmupFunctionPointerReversedShiftKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_ReversedShiftKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroOverloadKernels.__gsharp_hfunc_ReversedShiftKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "OperatorMacroOverloadKernels.ReversedShiftKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 global::System.IntPtr __gsharp_d_1 = global::System.IntPtr.Zero;
@@ -698,8 +704,7 @@ public static unsafe void LaunchReversedShiftKernelPtr(global::System.IntPtr inp
 {
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroOverloadKernels.WarmupFunctionPointerReversedShiftKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_ReversedShiftKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroOverloadKernels.__gsharp_hfunc_ReversedShiftKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "OperatorMacroOverloadKernels.ReversedShiftKernel");
 try
 {
@@ -740,12 +745,8 @@ struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PickRef
 {
 GSharpArray<unsigned int> __gsharp_mb_Data;
 __device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PickRef() {}
-__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PickRef(GSharpArray<unsigned int> v) {
-this->__gsharp_mb_Data = v;
-}
-__device__ inline operator GSharpArray<unsigned int>() const {
-return this->__gsharp_mb_Data;
-}
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PickRef(GSharpArray<unsigned int> v);
+__device__ inline operator GSharpArray<unsigned int>() const;
 }
 ;
 static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PickRef)==16,""Kassyi.GSharp.Tests.Shared.Syntax.PickRef: size"");
@@ -756,6 +757,14 @@ __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PickRef __gsharp_self{};
 __gsharp_self.__gsharp_mb_Data=__gsharp_id_0_data;
 return __gsharp_self;
 }
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PickRef __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__PickRef__op_uImplicit_o0(GSharpArray<unsigned int> __gsharp_id_0_data) {
+return __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__PickRef(__gsharp_id_0_data);
+}
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PickRef::__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PickRef(GSharpArray<unsigned int> v) { *this = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__PickRef__op_uImplicit_o0(v); }
+__device__ inline GSharpArray<unsigned int> __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__PickRef__op_uImplicit_o1(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PickRef __gsharp_id_0_value) {
+return __gsharp_id_0_value.__gsharp_mb_Data;
+}
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PickRef::operator GSharpArray<unsigned int>() const { return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__PickRef__op_uImplicit_o1(*this); }
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroOverloadKernels__PickKernel(GSharpArray<unsigned int> __gsharp_id_0_left, GSharpArray<unsigned int> __gsharp_id_1_right, GSharpArray<unsigned int> __gsharp_id_2_output){
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PickRef __gsharp_id_3_a = __gsharp_id_0_left;
@@ -765,14 +774,9 @@ __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__PickOps__Add_o1(__gsharp_id_5
 }
 ";
 public static readonly string PickKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +PickKernel_Source;
-private static global::System.IntPtr? __gsharp_hfunc_PickKernel;
-/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
-public static void WarmupFunctionPointerPickKernel()
-{
-if (__gsharp_hfunc_PickKernel.HasValue) return;
-global::System.IntPtr __gsharp_hmodule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
-__gsharp_hfunc_PickKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(__gsharp_hmodule, "__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroOverloadKernels__PickKernel");
-}
+private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_PickKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroOverloadKernels__PickKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
+public static void WarmupFunctionPointerPickKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroOverloadKernels.__gsharp_hfunc_PickKernel.Resolve();
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -798,8 +802,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroOverloadKernels.WarmupFunctionPointerPickKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_PickKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroOverloadKernels.__gsharp_hfunc_PickKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "OperatorMacroOverloadKernels.PickKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 global::System.IntPtr __gsharp_d_1 = global::System.IntPtr.Zero;
@@ -929,8 +932,7 @@ public static unsafe void LaunchPickKernelPtr(global::System.IntPtr left, global
 {
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroOverloadKernels.WarmupFunctionPointerPickKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_PickKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroOverloadKernels.__gsharp_hfunc_PickKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "OperatorMacroOverloadKernels.PickKernel");
 try
 {
@@ -975,12 +977,8 @@ struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PickRef
 {
 GSharpArray<unsigned int> __gsharp_mb_Data;
 __device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PickRef() {}
-__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PickRef(GSharpArray<unsigned int> v) {
-this->__gsharp_mb_Data = v;
-}
-__device__ inline operator GSharpArray<unsigned int>() const {
-return this->__gsharp_mb_Data;
-}
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PickRef(GSharpArray<unsigned int> v);
+__device__ inline operator GSharpArray<unsigned int>() const;
 }
 ;
 static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PickRef)==16,""Kassyi.GSharp.Tests.Shared.Syntax.PickRef: size"");
@@ -991,6 +989,14 @@ __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PickRef __gsharp_self{};
 __gsharp_self.__gsharp_mb_Data=__gsharp_id_0_data;
 return __gsharp_self;
 }
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PickRef __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__PickRef__op_uImplicit_o0(GSharpArray<unsigned int> __gsharp_id_0_data) {
+return __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__PickRef(__gsharp_id_0_data);
+}
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PickRef::__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PickRef(GSharpArray<unsigned int> v) { *this = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__PickRef__op_uImplicit_o0(v); }
+__device__ inline GSharpArray<unsigned int> __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__PickRef__op_uImplicit_o1(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PickRef __gsharp_id_0_value) {
+return __gsharp_id_0_value.__gsharp_mb_Data;
+}
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PickRef::operator GSharpArray<unsigned int>() const { return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__PickRef__op_uImplicit_o1(*this); }
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroOverloadKernels__CastPickKernel(GSharpArray<unsigned int> __gsharp_id_0_left, GSharpArray<unsigned int> __gsharp_id_1_right, GSharpArray<unsigned int> __gsharp_id_2_output){
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PickRef __gsharp_id_3_a = __gsharp_id_0_left;
@@ -1000,14 +1006,9 @@ __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__PickOps__Add_o1(__gsharp_id_5
 }
 ";
 public static readonly string CastPickKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +CastPickKernel_Source;
-private static global::System.IntPtr? __gsharp_hfunc_CastPickKernel;
-/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
-public static void WarmupFunctionPointerCastPickKernel()
-{
-if (__gsharp_hfunc_CastPickKernel.HasValue) return;
-global::System.IntPtr __gsharp_hmodule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
-__gsharp_hfunc_CastPickKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(__gsharp_hmodule, "__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroOverloadKernels__CastPickKernel");
-}
+private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_CastPickKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroOverloadKernels__CastPickKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
+public static void WarmupFunctionPointerCastPickKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroOverloadKernels.__gsharp_hfunc_CastPickKernel.Resolve();
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -1033,8 +1034,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroOverloadKernels.WarmupFunctionPointerCastPickKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_CastPickKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroOverloadKernels.__gsharp_hfunc_CastPickKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "OperatorMacroOverloadKernels.CastPickKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 global::System.IntPtr __gsharp_d_1 = global::System.IntPtr.Zero;
@@ -1164,8 +1164,7 @@ public static unsafe void LaunchCastPickKernelPtr(global::System.IntPtr left, gl
 {
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroOverloadKernels.WarmupFunctionPointerCastPickKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_CastPickKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroOverloadKernels.__gsharp_hfunc_CastPickKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "OperatorMacroOverloadKernels.CastPickKernel");
 try
 {
@@ -1210,12 +1209,8 @@ struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShrRef
 {
 GSharpArray<unsigned int> __gsharp_mb_Data;
 __device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShrRef() {}
-__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShrRef(GSharpArray<unsigned int> v) {
-this->__gsharp_mb_Data = v;
-}
-__device__ inline operator GSharpArray<unsigned int>() const {
-return this->__gsharp_mb_Data;
-}
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShrRef(GSharpArray<unsigned int> v);
+__device__ inline operator GSharpArray<unsigned int>() const;
 }
 ;
 static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShrRef)==16,""Kassyi.GSharp.Tests.Shared.Syntax.ShrRef: size"");
@@ -1226,6 +1221,14 @@ __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShrRef __gsharp_self{};
 __gsharp_self.__gsharp_mb_Data=__gsharp_id_0_data;
 return __gsharp_self;
 }
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShrRef __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ShrRef__op_uImplicit_o0(GSharpArray<unsigned int> __gsharp_id_0_data) {
+return __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__ShrRef(__gsharp_id_0_data);
+}
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShrRef::__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShrRef(GSharpArray<unsigned int> v) { *this = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ShrRef__op_uImplicit_o0(v); }
+__device__ inline GSharpArray<unsigned int> __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ShrRef__op_uImplicit_o1(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShrRef __gsharp_id_0_value) {
+return __gsharp_id_0_value.__gsharp_mb_Data;
+}
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShrRef::operator GSharpArray<unsigned int>() const { return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ShrRef__op_uImplicit_o1(*this); }
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroOverloadKernels__ShrKernel(GSharpArray<unsigned int> __gsharp_id_0_input, GSharpArray<unsigned int> __gsharp_id_1_output){
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShrRef __gsharp_id_2_x = __gsharp_id_0_input;
@@ -1234,14 +1237,9 @@ __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ShrOps__Shr_o1(__gsharp_id_3_
 }
 ";
 public static readonly string ShrKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ShrKernel_Source;
-private static global::System.IntPtr? __gsharp_hfunc_ShrKernel;
-/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
-public static void WarmupFunctionPointerShrKernel()
-{
-if (__gsharp_hfunc_ShrKernel.HasValue) return;
-global::System.IntPtr __gsharp_hmodule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
-__gsharp_hfunc_ShrKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(__gsharp_hmodule, "__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroOverloadKernels__ShrKernel");
-}
+private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ShrKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroOverloadKernels__ShrKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
+public static void WarmupFunctionPointerShrKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroOverloadKernels.__gsharp_hfunc_ShrKernel.Resolve();
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -1261,8 +1259,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroOverloadKernels.WarmupFunctionPointerShrKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_ShrKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroOverloadKernels.__gsharp_hfunc_ShrKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "OperatorMacroOverloadKernels.ShrKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 global::System.IntPtr __gsharp_d_1 = global::System.IntPtr.Zero;
@@ -1353,8 +1350,7 @@ public static unsafe void LaunchShrKernelPtr(global::System.IntPtr input, global
 {
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroOverloadKernels.WarmupFunctionPointerShrKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_ShrKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroOverloadKernels.__gsharp_hfunc_ShrKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "OperatorMacroOverloadKernels.ShrKernel");
 try
 {
@@ -1393,9 +1389,7 @@ struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__SubRef
 {
 GSharpArray<unsigned int> __gsharp_mb_Data;
 __device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__SubRef() {}
-__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__SubRef(GSharpArray<unsigned int> v) {
-this->__gsharp_mb_Data = v;
-}
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__SubRef(GSharpArray<unsigned int> v);
 }
 ;
 static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__SubRef)==16,""Kassyi.GSharp.Tests.Shared.Syntax.SubRef: size"");
@@ -1406,6 +1400,10 @@ __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__SubRef __gsharp_self{};
 __gsharp_self.__gsharp_mb_Data=__gsharp_id_0_data;
 return __gsharp_self;
 }
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__SubRef __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__SubRef__op_uImplicit(GSharpArray<unsigned int> __gsharp_id_0_data) {
+return __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__SubRef(__gsharp_id_0_data);
+}
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__SubRef::__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__SubRef(GSharpArray<unsigned int> v) { *this = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__SubRef__op_uImplicit(v); }
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroOverloadKernels__SubKernel(GSharpArray<unsigned int> __gsharp_id_0_left, GSharpArray<unsigned int> __gsharp_id_1_right, GSharpArray<unsigned int> __gsharp_id_2_output){
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__SubRef __gsharp_id_3_a = __gsharp_id_0_left;
@@ -1415,14 +1413,9 @@ __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__SubOps__Sub_o1(__gsharp_id_5_
 }
 ";
 public static readonly string SubKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +SubKernel_Source;
-private static global::System.IntPtr? __gsharp_hfunc_SubKernel;
-/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
-public static void WarmupFunctionPointerSubKernel()
-{
-if (__gsharp_hfunc_SubKernel.HasValue) return;
-global::System.IntPtr __gsharp_hmodule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
-__gsharp_hfunc_SubKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(__gsharp_hmodule, "__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroOverloadKernels__SubKernel");
-}
+private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_SubKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroOverloadKernels__SubKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
+public static void WarmupFunctionPointerSubKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroOverloadKernels.__gsharp_hfunc_SubKernel.Resolve();
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -1448,8 +1441,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroOverloadKernels.WarmupFunctionPointerSubKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_SubKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroOverloadKernels.__gsharp_hfunc_SubKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "OperatorMacroOverloadKernels.SubKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 global::System.IntPtr __gsharp_d_1 = global::System.IntPtr.Zero;
@@ -1579,8 +1571,7 @@ public static unsafe void LaunchSubKernelPtr(global::System.IntPtr left, global:
 {
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroOverloadKernels.WarmupFunctionPointerSubKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_SubKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroOverloadKernels.__gsharp_hfunc_SubKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "OperatorMacroOverloadKernels.SubKernel");
 try
 {
@@ -1636,12 +1627,8 @@ struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtxRef
 {
 GSharpArray<unsigned int> __gsharp_mb_Data;
 __device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtxRef() {}
-__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtxRef(GSharpArray<unsigned int> v) {
-this->__gsharp_mb_Data = v;
-}
-__device__ inline operator GSharpArray<unsigned int>() const {
-return this->__gsharp_mb_Data;
-}
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtxRef(GSharpArray<unsigned int> v);
+__device__ inline operator GSharpArray<unsigned int>() const;
 }
 ;
 static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtxRef)==16,""Kassyi.GSharp.Tests.Shared.Syntax.CtxRef: size"");
@@ -1652,6 +1639,14 @@ __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtxRef __gsharp_self{};
 __gsharp_self.__gsharp_mb_Data=__gsharp_id_0_data;
 return __gsharp_self;
 }
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtxRef __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__CtxRef__op_uImplicit_o0(GSharpArray<unsigned int> __gsharp_id_0_data) {
+return __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__CtxRef(__gsharp_id_0_data);
+}
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtxRef::__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtxRef(GSharpArray<unsigned int> v) { *this = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__CtxRef__op_uImplicit_o0(v); }
+__device__ inline GSharpArray<unsigned int> __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__CtxRef__op_uImplicit_o1(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtxRef __gsharp_id_0_value) {
+return __gsharp_id_0_value.__gsharp_mb_Data;
+}
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtxRef::operator GSharpArray<unsigned int>() const { return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__CtxRef__op_uImplicit_o1(*this); }
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroOverloadKernels__ContextOverloadKernel(GSharpArray<unsigned int> __gsharp_id_0_left, GSharpArray<unsigned int> __gsharp_id_1_right, GSharpArray<unsigned int> __gsharp_id_2_output, int __gsharp_id_3_bias){
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShiftCtx __gsharp_id_4_ctx = {};
@@ -1663,14 +1658,9 @@ __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__CtxOps__Add_o1(&__gsharp_id_4
 }
 ";
 public static readonly string ContextOverloadKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ContextOverloadKernel_Source;
-private static global::System.IntPtr? __gsharp_hfunc_ContextOverloadKernel;
-/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
-public static void WarmupFunctionPointerContextOverloadKernel()
-{
-if (__gsharp_hfunc_ContextOverloadKernel.HasValue) return;
-global::System.IntPtr __gsharp_hmodule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
-__gsharp_hfunc_ContextOverloadKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(__gsharp_hmodule, "__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroOverloadKernels__ContextOverloadKernel");
-}
+private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ContextOverloadKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroOverloadKernels__ContextOverloadKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
+public static void WarmupFunctionPointerContextOverloadKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroOverloadKernels.__gsharp_hfunc_ContextOverloadKernel.Resolve();
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -1696,8 +1686,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroOverloadKernels.WarmupFunctionPointerContextOverloadKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_ContextOverloadKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroOverloadKernels.__gsharp_hfunc_ContextOverloadKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "OperatorMacroOverloadKernels.ContextOverloadKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 global::System.IntPtr __gsharp_d_1 = global::System.IntPtr.Zero;
@@ -1829,8 +1818,7 @@ public static unsafe void LaunchContextOverloadKernelPtr(global::System.IntPtr l
 {
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroOverloadKernels.WarmupFunctionPointerContextOverloadKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_ContextOverloadKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroOverloadKernels.__gsharp_hfunc_ContextOverloadKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "OperatorMacroOverloadKernels.ContextOverloadKernel");
 try
 {
@@ -1877,12 +1865,8 @@ struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ConstantShrRef
 {
 GSharpArray<unsigned int> __gsharp_mb_Data;
 __device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ConstantShrRef() {}
-__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ConstantShrRef(GSharpArray<unsigned int> v) {
-this->__gsharp_mb_Data = v;
-}
-__device__ inline operator GSharpArray<unsigned int>() const {
-return this->__gsharp_mb_Data;
-}
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ConstantShrRef(GSharpArray<unsigned int> v);
+__device__ inline operator GSharpArray<unsigned int>() const;
 }
 ;
 static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ConstantShrRef)==16,""Kassyi.GSharp.Tests.Shared.Syntax.ConstantShrRef: size"");
@@ -1893,6 +1877,14 @@ __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ConstantShrRef __gsharp_self{
 __gsharp_self.__gsharp_mb_Data=__gsharp_id_0_data;
 return __gsharp_self;
 }
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ConstantShrRef __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ConstantShrRef__op_uImplicit_o0(GSharpArray<unsigned int> __gsharp_id_0_data) {
+return __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__ConstantShrRef(__gsharp_id_0_data);
+}
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ConstantShrRef::__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ConstantShrRef(GSharpArray<unsigned int> v) { *this = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ConstantShrRef__op_uImplicit_o0(v); }
+__device__ inline GSharpArray<unsigned int> __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ConstantShrRef__op_uImplicit_o1(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ConstantShrRef __gsharp_id_0_value) {
+return __gsharp_id_0_value.__gsharp_mb_Data;
+}
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ConstantShrRef::operator GSharpArray<unsigned int>() const { return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ConstantShrRef__op_uImplicit_o1(*this); }
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroOverloadKernels__ConstantShrKernel(GSharpArray<unsigned int> __gsharp_id_0_input, GSharpArray<unsigned int> __gsharp_id_1_output){
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ConstantShrRef __gsharp_id_2_x = __gsharp_id_0_input;
@@ -1901,14 +1893,9 @@ __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ConstantShrOps__Shr_o1(__gsha
 }
 ";
 public static readonly string ConstantShrKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ConstantShrKernel_Source;
-private static global::System.IntPtr? __gsharp_hfunc_ConstantShrKernel;
-/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
-public static void WarmupFunctionPointerConstantShrKernel()
-{
-if (__gsharp_hfunc_ConstantShrKernel.HasValue) return;
-global::System.IntPtr __gsharp_hmodule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
-__gsharp_hfunc_ConstantShrKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(__gsharp_hmodule, "__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroOverloadKernels__ConstantShrKernel");
-}
+private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ConstantShrKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroOverloadKernels__ConstantShrKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
+public static void WarmupFunctionPointerConstantShrKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroOverloadKernels.__gsharp_hfunc_ConstantShrKernel.Resolve();
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -1928,8 +1915,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroOverloadKernels.WarmupFunctionPointerConstantShrKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_ConstantShrKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroOverloadKernels.__gsharp_hfunc_ConstantShrKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "OperatorMacroOverloadKernels.ConstantShrKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 global::System.IntPtr __gsharp_d_1 = global::System.IntPtr.Zero;
@@ -2020,8 +2006,7 @@ public static unsafe void LaunchConstantShrKernelPtr(global::System.IntPtr input
 {
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroOverloadKernels.WarmupFunctionPointerConstantShrKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_ConstantShrKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroOverloadKernels.__gsharp_hfunc_ConstantShrKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "OperatorMacroOverloadKernels.ConstantShrKernel");
 try
 {

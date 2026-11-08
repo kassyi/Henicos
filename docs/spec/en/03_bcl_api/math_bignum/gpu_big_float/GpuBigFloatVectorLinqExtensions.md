@@ -177,7 +177,7 @@ public static IGpuBigFloatVectorExpression SelectMultiply<TScalar>(
 
 ## SelectDivide\<TScalar\>(IGpuBigFloatVectorExpression, TScalar)
 
-Divides every element of `source` by `scalar`. Output `WordsPerElement` is `Math.Max(source.WordsPerElement, scalar.Words) + 1`. Throws `DivideByZeroException` during evaluation if `scalar` is zero.
+Divides every element of `source` by `scalar`. Output `WordsPerElement` is `Math.Max(source.WordsPerElement, scalar.Words) + 1`. Throws `DivideByZeroException` during evaluation if `scalar` is zero. When the widest of the significands and the result has more than 512 words, each evaluation allocates `2 * width` words of temporary device memory per element (4 bytes each: about 480 MB for 100,000 elements of 600 words) and releases it after the launch.
 
 ```csharp
 public static IGpuBigFloatVectorExpression SelectDivide<TScalar>(
@@ -279,7 +279,7 @@ public static IGpuBigFloatVectorExpression ZipMultiply(
 
 ## ZipDivide(IGpuBigFloatVectorExpression, IGpuBigFloatVectorExpression)
 
-Performs element-wise division of `left` by `right`. Output `WordsPerElement` is `Math.Max(left.WordsPerElement, right.WordsPerElement) + 1`. Throws `DivideByZeroException` during evaluation if any active divisor element in `right` is zero.
+Performs element-wise division of `left` by `right`. Output `WordsPerElement` is `Math.Max(left.WordsPerElement, right.WordsPerElement) + 1`. Throws `DivideByZeroException` during evaluation if any active divisor element in `right` is zero. The check is read back from the device (one synchronization of the workspace stream), so evaluating it while the stream captures a CUDA graph throws `NotSupportedException`. When the widest of the significands and the result has more than 512 words, each evaluation allocates `2 * width` words of temporary device memory per element (4 bytes each: about 480 MB for 100,000 elements of 600 words) and releases it after the launch.
 
 ```csharp
 public static IGpuBigFloatVectorExpression ZipDivide(
