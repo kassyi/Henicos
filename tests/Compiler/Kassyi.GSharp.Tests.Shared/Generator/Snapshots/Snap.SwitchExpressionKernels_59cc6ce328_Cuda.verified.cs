@@ -600,23 +600,9 @@ __gsharp_trap_abort(GSharpErrorCode::SwitchExpression, 904882063u);
 }
 ";
 public static readonly string NoDiscardArmSwitchKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +NoDiscardArmSwitchKernel_Source;
-private static global::System.IntPtr? __gsharp_hfunc_NoDiscardArmSwitchKernel;
-/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
-public static void WarmupFunctionPointerNoDiscardArmSwitchKernel()
-{
-if (__gsharp_hfunc_NoDiscardArmSwitchKernel.HasValue) return;
-global::System.IntPtr __gsharp_hmodule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
-__gsharp_hfunc_NoDiscardArmSwitchKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(__gsharp_hmodule, "__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__SwitchExpressionKernels__NoDiscardArmSwitchKernel");
-if (s_errorSites.Length > 0)
-{
-var baseDir = global::System.IO.Path.GetDirectoryName(typeof(global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest).Assembly.Location) ?? global::System.AppContext.BaseDirectory;
-var fatbinPath = global::System.IO.Path.Combine(baseDir, "Kassyi.GSharp.Kernels_SnapshotTest.gfatbin");
-if (global::System.IO.File.Exists(fatbinPath))
-{
-global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.RegisterErrorSites(global::System.IO.File.ReadAllBytes(fatbinPath), s_errorSites);
-}
-}
-}
+private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_NoDiscardArmSwitchKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__SwitchExpressionKernels__NoDiscardArmSwitchKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
+public static void WarmupFunctionPointerNoDiscardArmSwitchKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.SwitchExpressionKernels.__gsharp_hfunc_NoDiscardArmSwitchKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Syntax.SwitchExpressionKernels.s_errorSites);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -636,8 +622,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Syntax.SwitchExpressionKernels.WarmupFunctionPointerNoDiscardArmSwitchKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_NoDiscardArmSwitchKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.SwitchExpressionKernels.__gsharp_hfunc_NoDiscardArmSwitchKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Syntax.SwitchExpressionKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "SwitchExpressionKernels.NoDiscardArmSwitchKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 global::System.IntPtr __gsharp_d_1 = global::System.IntPtr.Zero;
@@ -728,8 +713,7 @@ public static unsafe void LaunchNoDiscardArmSwitchKernelPtr(global::System.IntPt
 {
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.Shared.Syntax.SwitchExpressionKernels.WarmupFunctionPointerNoDiscardArmSwitchKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_NoDiscardArmSwitchKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.SwitchExpressionKernels.__gsharp_hfunc_NoDiscardArmSwitchKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Syntax.SwitchExpressionKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "SwitchExpressionKernels.NoDiscardArmSwitchKernel");
 try
 {
