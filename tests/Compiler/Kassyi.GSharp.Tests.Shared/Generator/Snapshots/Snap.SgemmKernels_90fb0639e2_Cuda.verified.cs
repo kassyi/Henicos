@@ -123,7 +123,6 @@ __gsharp_id_2_c[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_10_row,__gsharp_id
 }
 }
 ";
-public static readonly string SgemmKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +SgemmKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_SgemmKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Henicos__Benchmarks__ComputeBenchmarks__SgemmKernels__SgemmKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerSgemmKernel() => global::Henicos.Benchmarks.ComputeBenchmarks.SgemmKernels.__gsharp_hfunc_SgemmKernel.Resolve();

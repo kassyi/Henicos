@@ -92,7 +92,6 @@ int __gsharp_id_3_tid = (int)threadIdx.x;
 __gsharp_id_2_result[__gsharp_id_3_tid]=(__gsharp_id_0_a[__gsharp_id_3_tid]>__gsharp_id_1_b[__gsharp_id_3_tid]?__gsharp_id_0_a[__gsharp_id_3_tid]:__gsharp_id_1_b[__gsharp_id_3_tid]*1.5);
 }
 ";
-public static readonly string SimpleTernaryKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +SimpleTernaryKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_SimpleTernaryKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__ControlFlowKernels__SimpleTernaryKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerSimpleTernaryKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.ControlFlowKernels.__gsharp_hfunc_SimpleTernaryKernel.Resolve();
@@ -298,7 +297,6 @@ int __gsharp_id_7_z = __gsharp_id_2_c[__gsharp_id_4_tid];
 __gsharp_id_3_result[__gsharp_id_4_tid]=(__gsharp_id_5_x>__gsharp_id_6_y?((__gsharp_id_6_y>__gsharp_id_7_z?1:2)):((__gsharp_id_5_x>__gsharp_id_7_z?3:4)));
 }
 ";
-public static readonly string NestedTernaryKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +NestedTernaryKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_NestedTernaryKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__ControlFlowKernels__NestedTernaryKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerNestedTernaryKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.ControlFlowKernels.__gsharp_hfunc_NestedTernaryKernel.Resolve();
@@ -565,7 +563,6 @@ default: return 99;
 }());
 }
 ";
-public static readonly string SwitchExpressionKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +SwitchExpressionKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_SwitchExpressionKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__ControlFlowKernels__SwitchExpressionKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerSwitchExpressionKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.ControlFlowKernels.__gsharp_hfunc_SwitchExpressionKernel.Resolve();
@@ -724,7 +721,6 @@ __gsharp_id_1_b[__gsharp_id_4_tid]=__gsharp_id_3_valuesToAssign[__gsharp_id_4_ti
 }
 }
 ";
-public static readonly string RefSwitchExpressionKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +RefSwitchExpressionKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_RefSwitchExpressionKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__ControlFlowKernels__RefSwitchExpressionKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerRefSwitchExpressionKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.ControlFlowKernels.__gsharp_hfunc_RefSwitchExpressionKernel.Resolve();
@@ -986,7 +982,6 @@ return __gsharp_coalesce_tmp.HasValue ? __gsharp_coalesce_tmp.Value : __gsharp_i
 }());
 }
 ";
-public static readonly string NullCoalescingKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +NullCoalescingKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_NullCoalescingKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__ControlFlowKernels__NullCoalescingKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerNullCoalescingKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.ControlFlowKernels.__gsharp_hfunc_NullCoalescingKernel.Resolve();
@@ -1194,7 +1189,6 @@ return !__gsharp_coalesce_target.HasValue ? (__gsharp_coalesce_target = __gsharp
 }());
 }
 ";
-public static readonly string NullCoalescingAssignmentSideEffectKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +NullCoalescingAssignmentSideEffectKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_NullCoalescingAssignmentSideEffectKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__ControlFlowKernels__NullCoalescingAssignmentSideEffectKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerNullCoalescingAssignmentSideEffectKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.ControlFlowKernels.__gsharp_hfunc_NullCoalescingAssignmentSideEffectKernel.Resolve();

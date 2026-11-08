@@ -106,7 +106,6 @@ __gsharp_id_2_v=__shfl_down_sync(0xFFFFFFFFu,__gsharp_id_2_v,__gsharp_id_1_delta
 __gsharp_id_0_result[(int)threadIdx.x]=__gsharp_id_2_v;
 }
 ";
-public static readonly string ShuffleDownKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ShuffleDownKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ShuffleDownKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleDownKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerShuffleDownKernel() => global::Kassyi.GSharp.Tests.Shared.Transpiler.PartialWarpShuffleKernels.__gsharp_hfunc_ShuffleDownKernel.Resolve();
@@ -216,7 +215,6 @@ __gsharp_id_2_v=__shfl_xor_sync(0xFFFFFFFFu,__gsharp_id_2_v,__gsharp_id_1_laneMa
 __gsharp_id_0_result[(int)threadIdx.x]=__gsharp_id_2_v;
 }
 ";
-public static readonly string ShuffleXorKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ShuffleXorKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ShuffleXorKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleXorKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerShuffleXorKernel() => global::Kassyi.GSharp.Tests.Shared.Transpiler.PartialWarpShuffleKernels.__gsharp_hfunc_ShuffleXorKernel.Resolve();
@@ -326,7 +324,6 @@ __gsharp_id_3_v=__shfl_sync(0xFFFFFFFFu,__gsharp_id_3_v,__gsharp_id_1_srcLane,__
 __gsharp_id_0_result[(int)threadIdx.x]=__gsharp_id_3_v;
 }
 ";
-public static readonly string ShuffleIdxKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ShuffleIdxKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ShuffleIdxKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleIdxKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerShuffleIdxKernel() => global::Kassyi.GSharp.Tests.Shared.Transpiler.PartialWarpShuffleKernels.__gsharp_hfunc_ShuffleIdxKernel.Resolve();
@@ -440,7 +437,6 @@ __gsharp_id_2_v=__shfl_down_sync(0xFFFFFFFFu,__gsharp_id_2_v,1u,__gsharp_id_1_wi
 __gsharp_id_0_result[(int)threadIdx.x]=__gsharp_id_2_v;
 }
 ";
-public static readonly string ShuffleDownWidthKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ShuffleDownWidthKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ShuffleDownWidthKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleDownWidthKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerShuffleDownWidthKernel() => global::Kassyi.GSharp.Tests.Shared.Transpiler.PartialWarpShuffleKernels.__gsharp_hfunc_ShuffleDownWidthKernel.Resolve();
@@ -550,7 +546,6 @@ __gsharp_id_3_v=__shfl_xor_sync(0xFFFFFFFFu,__gsharp_id_3_v,__gsharp_id_1_laneMa
 __gsharp_id_0_result[(int)threadIdx.x]=__gsharp_id_3_v;
 }
 ";
-public static readonly string ShuffleXorWidthKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ShuffleXorWidthKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ShuffleXorWidthKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleXorWidthKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerShuffleXorWidthKernel() => global::Kassyi.GSharp.Tests.Shared.Transpiler.PartialWarpShuffleKernels.__gsharp_hfunc_ShuffleXorWidthKernel.Resolve();
@@ -664,7 +659,6 @@ __gsharp_id_3_v=__shfl_up_sync(0xFFFFFFFFu,__gsharp_id_3_v,__gsharp_id_1_delta,_
 __gsharp_id_0_result[(int)threadIdx.x]=__gsharp_id_3_v;
 }
 ";
-public static readonly string ShuffleUpWidthKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ShuffleUpWidthKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ShuffleUpWidthKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleUpWidthKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerShuffleUpWidthKernel() => global::Kassyi.GSharp.Tests.Shared.Transpiler.PartialWarpShuffleKernels.__gsharp_hfunc_ShuffleUpWidthKernel.Resolve();
@@ -778,7 +772,6 @@ __gsharp_id_1_v=__shfl_sync(0xFFFFFFFFu,__gsharp_id_1_v,3,8);
 __gsharp_id_0_result[(int)threadIdx.x]=__gsharp_id_1_v;
 }
 ";
-public static readonly string ShuffleNamedArgumentsKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ShuffleNamedArgumentsKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ShuffleNamedArgumentsKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleNamedArgumentsKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerShuffleNamedArgumentsKernel() => global::Kassyi.GSharp.Tests.Shared.Transpiler.PartialWarpShuffleKernels.__gsharp_hfunc_ShuffleNamedArgumentsKernel.Resolve();
@@ -884,7 +877,6 @@ __gsharp_id_1_v=__shfl_sync(0xFFFFFFFFu,__gsharp_id_1_v,3,8);
 __gsharp_id_0_result[(int)threadIdx.x]=__gsharp_id_1_v;
 }
 ";
-public static readonly string ShuffleNamedValueKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ShuffleNamedValueKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ShuffleNamedValueKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleNamedValueKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerShuffleNamedValueKernel() => global::Kassyi.GSharp.Tests.Shared.Transpiler.PartialWarpShuffleKernels.__gsharp_hfunc_ShuffleNamedValueKernel.Resolve();
@@ -988,7 +980,6 @@ public const string ActiveMaskKernel_Source = @"extern ""C"" __global__ void __g
 __gsharp_id_0_result[(int)threadIdx.x]=__activemask();
 }
 ";
-public static readonly string ActiveMaskKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ActiveMaskKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ActiveMaskKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ActiveMaskKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerActiveMaskKernel() => global::Kassyi.GSharp.Tests.Shared.Transpiler.PartialWarpShuffleKernels.__gsharp_hfunc_ActiveMaskKernel.Resolve();
@@ -1092,7 +1083,6 @@ public const string ActiveMaskViaDeviceKernel_Source = @"extern ""C"" __global__
 __gsharp_id_0_result[(int)threadIdx.x]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__MaskViaDevice();
 }
 ";
-public static readonly string ActiveMaskViaDeviceKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ActiveMaskViaDeviceKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ActiveMaskViaDeviceKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ActiveMaskViaDeviceKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerActiveMaskViaDeviceKernel() => global::Kassyi.GSharp.Tests.Shared.Transpiler.PartialWarpShuffleKernels.__gsharp_hfunc_ActiveMaskViaDeviceKernel.Resolve();
@@ -1196,7 +1186,6 @@ public const string ActiveMask2DKernel_Source = @"extern ""C"" __global__ void _
 __gsharp_id_0_result[__gsharp_add_i32(__gsharp_mul_i32((int)threadIdx.y,(int)blockDim.x),(int)threadIdx.x)]=__activemask();
 }
 ";
-public static readonly string ActiveMask2DKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ActiveMask2DKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ActiveMask2DKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ActiveMask2DKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerActiveMask2DKernel() => global::Kassyi.GSharp.Tests.Shared.Transpiler.PartialWarpShuffleKernels.__gsharp_hfunc_ActiveMask2DKernel.Resolve();
@@ -1301,7 +1290,6 @@ int __gsharp_id_2_v = __gsharp_add_i32((int)threadIdx.x,1);
 __gsharp_id_0_result[(int)threadIdx.x]=__match_any_sync(__gsharp_id_1_mask,__gsharp_id_2_v);
 }
 ";
-public static readonly string MatchAnyCallerOutsideMaskKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +MatchAnyCallerOutsideMaskKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_MatchAnyCallerOutsideMaskKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__MatchAnyCallerOutsideMaskKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerMatchAnyCallerOutsideMaskKernel() => global::Kassyi.GSharp.Tests.Shared.Transpiler.PartialWarpShuffleKernels.__gsharp_hfunc_MatchAnyCallerOutsideMaskKernel.Resolve();
@@ -1411,7 +1399,6 @@ int __gsharp_id_3_pred = 0;
 __gsharp_id_0_result[(int)threadIdx.x]=__match_all_sync(__gsharp_id_1_mask,__gsharp_id_2_v,&__gsharp_id_3_pred);
 }
 ";
-public static readonly string MatchAllCallerOutsideMaskKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +MatchAllCallerOutsideMaskKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_MatchAllCallerOutsideMaskKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__MatchAllCallerOutsideMaskKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerMatchAllCallerOutsideMaskKernel() => global::Kassyi.GSharp.Tests.Shared.Transpiler.PartialWarpShuffleKernels.__gsharp_hfunc_MatchAllCallerOutsideMaskKernel.Resolve();

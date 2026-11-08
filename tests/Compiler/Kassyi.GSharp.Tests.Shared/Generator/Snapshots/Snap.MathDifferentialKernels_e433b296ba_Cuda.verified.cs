@@ -116,7 +116,6 @@ __gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,8)]=rint((double)__gsharp_id_0_
 __gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,9)]=fabsf(__gsharp_id_0_f[__gsharp_id_2_t]);
 }
 ";
-public static readonly string MathOfSingleMatrixKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +MathOfSingleMatrixKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_MathOfSingleMatrixKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__MathDifferentialKernels__MathOfSingleMatrixKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerMathOfSingleMatrixKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.MathDifferentialKernels.__gsharp_hfunc_MathOfSingleMatrixKernel.Resolve();
@@ -278,7 +277,6 @@ __gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,4)]=sqrtf(__gsharp_id_0_f[__gsh
 __gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,5)]=fabsf(__gsharp_id_0_f[__gsharp_id_2_t]);
 }
 ";
-public static readonly string SingleRoundingAndUnaryMatrixKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +SingleRoundingAndUnaryMatrixKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_SingleRoundingAndUnaryMatrixKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__MathDifferentialKernels__SingleRoundingAndUnaryMatrixKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerSingleRoundingAndUnaryMatrixKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.MathDifferentialKernels.__gsharp_hfunc_SingleRoundingAndUnaryMatrixKernel.Resolve();
@@ -439,7 +437,6 @@ __gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,3)]=fabs(__gsharp_id_0_d[__gsha
 __gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,4)]=sqrt(__gsharp_id_0_d[__gsharp_id_2_t]);
 }
 ";
-public static readonly string DoubleRoundingAndUnaryMatrixKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +DoubleRoundingAndUnaryMatrixKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_DoubleRoundingAndUnaryMatrixKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__MathDifferentialKernels__DoubleRoundingAndUnaryMatrixKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerDoubleRoundingAndUnaryMatrixKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.MathDifferentialKernels.__gsharp_hfunc_DoubleRoundingAndUnaryMatrixKernel.Resolve();
@@ -604,7 +601,6 @@ __gsharp_id_4_r[__gsharp_add_i32(__gsharp_id_6_o,7)]=__gsharp_min_number_f32(__g
 __gsharp_id_4_r[__gsharp_add_i32(__gsharp_id_6_o,8)]=__gsharp_clamp(__gsharp_id_0_a[__gsharp_id_5_t],__gsharp_id_2_min[__gsharp_id_5_t],__gsharp_id_3_max[__gsharp_id_5_t]);
 }
 ";
-public static readonly string SingleMaxMinClampMatrixKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +SingleMaxMinClampMatrixKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_SingleMaxMinClampMatrixKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__MathDifferentialKernels__SingleMaxMinClampMatrixKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerSingleMaxMinClampMatrixKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.MathDifferentialKernels.__gsharp_hfunc_SingleMaxMinClampMatrixKernel.Resolve();
@@ -932,7 +928,6 @@ __gsharp_id_4_r[__gsharp_add_i32(__gsharp_id_6_o,5)]=__gsharp_min_number_f64(__g
 __gsharp_id_4_r[__gsharp_add_i32(__gsharp_id_6_o,6)]=__gsharp_clamp(__gsharp_id_0_a[__gsharp_id_5_t],__gsharp_id_2_min[__gsharp_id_5_t],__gsharp_id_3_max[__gsharp_id_5_t]);
 }
 ";
-public static readonly string DoubleMaxMinClampMatrixKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +DoubleMaxMinClampMatrixKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_DoubleMaxMinClampMatrixKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__MathDifferentialKernels__DoubleMaxMinClampMatrixKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerDoubleMaxMinClampMatrixKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.MathDifferentialKernels.__gsharp_hfunc_DoubleMaxMinClampMatrixKernel.Resolve();
@@ -1266,7 +1261,6 @@ __gsharp_id_4_rd[__gsharp_add_i32(__gsharp_id_7_od,6)]=__gsharp_max_number_f64((
 __gsharp_id_4_rd[__gsharp_add_i32(__gsharp_id_7_od,7)]=__gsharp_min_number_f64((double)__gsharp_id_0_f[__gsharp_id_5_t],__gsharp_id_1_d[__gsharp_id_5_t]);
 }
 ";
-public static readonly string MixedFloatMaxMinMatrixKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +MixedFloatMaxMinMatrixKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_MixedFloatMaxMinMatrixKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__MathDifferentialKernels__MixedFloatMaxMinMatrixKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerMixedFloatMaxMinMatrixKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.MathDifferentialKernels.__gsharp_hfunc_MixedFloatMaxMinMatrixKernel.Resolve();
@@ -1595,7 +1589,6 @@ __gsharp_id_6_r[__gsharp_add_i32(__gsharp_id_8_o,6)]=min(__gsharp_id_0_a[__gshar
 __gsharp_id_6_r[__gsharp_add_i32(__gsharp_id_8_o,7)]=__gsharp_clamp(__gsharp_id_0_a[__gsharp_id_7_t],__gsharp_id_4_min[__gsharp_id_7_t],__gsharp_id_5_max[__gsharp_id_7_t]);
 }
 ";
-public static readonly string Int32MathMatrixKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +Int32MathMatrixKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_Int32MathMatrixKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__MathDifferentialKernels__Int32MathMatrixKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerInt32MathMatrixKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.MathDifferentialKernels.__gsharp_hfunc_Int32MathMatrixKernel.Resolve();
@@ -2050,7 +2043,6 @@ __gsharp_id_3_rf[__gsharp_add_i32(__gsharp_id_5_o,2)]=__gsharp_max_f32((float)__
 __gsharp_id_3_rf[__gsharp_add_i32(__gsharp_id_5_o,3)]=__gsharp_min_f32((float)__gsharp_id_0_v[__gsharp_id_4_t],(float)__gsharp_id_2_max[__gsharp_id_4_t]);
 }
 ";
-public static readonly string MathFIntArgumentMatrixKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +MathFIntArgumentMatrixKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_MathFIntArgumentMatrixKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__MathDifferentialKernels__MathFIntArgumentMatrixKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerMathFIntArgumentMatrixKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.MathDifferentialKernels.__gsharp_hfunc_MathFIntArgumentMatrixKernel.Resolve();
@@ -2328,7 +2320,6 @@ __gsharp_id_5_rd[__gsharp_add_i32(__gsharp_id_10_od,3)]=__gsharp_id_11_u/__gshar
 __gsharp_id_5_rd[__gsharp_add_i32(__gsharp_id_10_od,4)]=sqrt(fabs(__gsharp_id_11_u));
 }
 ";
-public static readonly string SubnormalIeeeExactMatrixKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +SubnormalIeeeExactMatrixKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_SubnormalIeeeExactMatrixKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__MathDifferentialKernels__SubnormalIeeeExactMatrixKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerSubnormalIeeeExactMatrixKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.MathDifferentialKernels.__gsharp_hfunc_SubnormalIeeeExactMatrixKernel.Resolve();
@@ -2726,7 +2717,6 @@ __gsharp_id_9_rd[__gsharp_add_i32(__gsharp_id_12_od,4)]=log(__gsharp_id_5_logD[_
 __gsharp_id_9_rd[__gsharp_add_i32(__gsharp_id_12_od,5)]=pow(__gsharp_id_6_powBaseD[__gsharp_id_10_t],__gsharp_id_7_powExpD[__gsharp_id_10_t]);
 }
 ";
-public static readonly string TranscendentalSpecialValuesKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +TranscendentalSpecialValuesKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_TranscendentalSpecialValuesKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__MathDifferentialKernels__TranscendentalSpecialValuesKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerTranscendentalSpecialValuesKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.MathDifferentialKernels.__gsharp_hfunc_TranscendentalSpecialValuesKernel.Resolve();
@@ -3422,7 +3412,6 @@ return __gsharp_rotl32(__gsharp_seq_1,__gsharp_seq_0);
 }());
 }
 ";
-public static readonly string BitOperationsMatrixKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +BitOperationsMatrixKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_BitOperationsMatrixKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__MathDifferentialKernels__BitOperationsMatrixKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerBitOperationsMatrixKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.MathDifferentialKernels.__gsharp_hfunc_BitOperationsMatrixKernel.Resolve();
@@ -3708,7 +3697,6 @@ __gsharp_id_6_rRound[__gsharp_id_14_or]=rintf(__gsharp_id_8_x);
 __gsharp_id_6_rRound[__gsharp_add_i32(__gsharp_id_14_or,1)]=rint(__gsharp_id_10_u);
 }
 ";
-public static readonly string FloatComparisonAndLargeTieMatrixKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +FloatComparisonAndLargeTieMatrixKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_FloatComparisonAndLargeTieMatrixKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__MathDifferentialKernels__FloatComparisonAndLargeTieMatrixKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerFloatComparisonAndLargeTieMatrixKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.MathDifferentialKernels.__gsharp_hfunc_FloatComparisonAndLargeTieMatrixKernel.Resolve();
@@ -4161,7 +4149,6 @@ float __gsharp_id_6_k = __gsharp_id_0_fa[__gsharp_id_5_t];
 __gsharp_id_4_rContract[__gsharp_id_5_t]=__gsharp_id_6_k*__gsharp_id_6_k-(1.0f+2.0f*0.000244140625f);
 }
 ";
-public static readonly string MulAddExactAndContractionKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +MulAddExactAndContractionKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_MulAddExactAndContractionKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__MathDifferentialKernels__MulAddExactAndContractionKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerMulAddExactAndContractionKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.MathDifferentialKernels.__gsharp_hfunc_MulAddExactAndContractionKernel.Resolve();
@@ -4488,7 +4475,6 @@ __gsharp_id_5_r[__gsharp_add_i32(__gsharp_id_7_o,4)]=logf(__gsharp_id_2_logX[__g
 __gsharp_id_5_r[__gsharp_add_i32(__gsharp_id_7_o,5)]=powf(__gsharp_id_3_powBase[__gsharp_id_6_t],__gsharp_id_4_powExp[__gsharp_id_6_t]);
 }
 ";
-public static readonly string SingleTranscendentalMatrixKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +SingleTranscendentalMatrixKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_SingleTranscendentalMatrixKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__MathDifferentialKernels__SingleTranscendentalMatrixKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerSingleTranscendentalMatrixKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.MathDifferentialKernels.__gsharp_hfunc_SingleTranscendentalMatrixKernel.Resolve();
@@ -4884,7 +4870,6 @@ __gsharp_id_7_r[__gsharp_add_i32(__gsharp_id_9_o,10)]=log((double)(fabsf(__gshar
 __gsharp_id_7_r[__gsharp_add_i32(__gsharp_id_9_o,11)]=pow((double)(fabsf(__gsharp_id_5_fArg[__gsharp_id_8_t])+0.25f),(double)__gsharp_id_6_fExp[__gsharp_id_8_t]);
 }
 ";
-public static readonly string DoubleAndPromotedSingleTranscendentalMatrixKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +DoubleAndPromotedSingleTranscendentalMatrixKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_DoubleAndPromotedSingleTranscendentalMatrixKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__MathDifferentialKernels__DoubleAndPromotedSingleTranscendentalMatrixKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerDoubleAndPromotedSingleTranscendentalMatrixKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.MathDifferentialKernels.__gsharp_hfunc_DoubleAndPromotedSingleTranscendentalMatrixKernel.Resolve();
@@ -5411,7 +5396,6 @@ __gsharp_id_4_r[__gsharp_add_i32(__gsharp_id_6_o,3)]=__logf(__gsharp_id_2_logUni
 __gsharp_id_4_r[__gsharp_add_i32(__gsharp_id_6_o,4)]=__logf(__gsharp_id_3_logWideX[__gsharp_id_5_t]);
 }
 ";
-public static readonly string FastMathMatrixKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +FastMathMatrixKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_FastMathMatrixKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__MathDifferentialKernels__FastMathMatrixKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerFastMathMatrixKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.MathDifferentialKernels.__gsharp_hfunc_FastMathMatrixKernel.Resolve();
