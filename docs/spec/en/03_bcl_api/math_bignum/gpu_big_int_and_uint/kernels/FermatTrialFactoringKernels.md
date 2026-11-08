@@ -69,7 +69,7 @@ public static void SearchFactors32Kernel(
 #### Parameters
 
 `startOdd` _uint_<br>
-The odd number to start the factor search from.
+The odd number to start the factor search from. Thread `t` tests the candidate `startOdd + 2t`; candidates below 3 (the trivial divisor 1) and candidates past `2^32 - 1` are skipped, so a launch never reports 1 and never wraps around to small numbers.
 
 `exp` _uint_<br>
 The exponent of the Fermat number $F_n$.
