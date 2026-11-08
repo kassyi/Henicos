@@ -606,12 +606,12 @@ public class GpuBigFloatLinqAndVectorTests : IDisposable
             Assert.Equal(1.0 / vals[i], ToDouble(recipRes.GetElement(i)), precision: 6);
         }
 
-        // 4. SelectDivideByUInt32 (divides significand by uint32 while preserving exponent, matching GpuBigFloat.DivideByUInt32)
+        // 4. SelectDivideByUInt32 (the quotient rounded toward zero to the element precision, so x / 2 is exact)
         using var divU32Expr = vec.AsVectorizedEnumerable().SelectDivideByUInt32(2u);
         var divU32Res = divU32Expr.Evaluate(_context);
         for (var i = 0; i < length; i++)
         {
-            Assert.Equal(Math.Floor(vals[i] / 2.0), ToDouble(divU32Res.GetElement(i)), precision: 8);
+            Assert.Equal(vals[i] / 2.0, ToDouble(divU32Res.GetElement(i)), precision: 8);
         }
 
         // 5. SelectLog & SelectExp

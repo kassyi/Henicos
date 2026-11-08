@@ -69,26 +69,65 @@ public static partial class GpuBigIntVectorKernels
     {
         var core = ctx.FloatOp.Core;
         var exps = ctx.FloatOp.Exponents;
+        int laneId = ThreadIndex.X & 31;
+        int batchIdx = BlockIndex.X;
+        int offsetA = batchIdx * core.Left.NumWords;
+        int offsetB = core.IsScalar ? 0 : batchIdx * core.Right.NumWords;
+
+        // floor(A * 2^s / B) has p - 1 or p bits for s = p - 1 - bits(A) + bits(B), p being the bits of the result
+        // element; the division adds the missing bit of the first case, so the quotient is RZ_p of A / B. The result
+        // is one word wider than both operands, so s is at least 32 (a zero operand leaves s unused).
+        int precision = core.Result.NumWords * 32;
+        int bitsA = SignificantBitsWarp(core.Left.Limbs, offsetA, core.Left.NumWords, laneId);
+        int bitsB = SignificantBitsWarp(core.Right.Limbs, offsetB, core.Right.NumWords, laneId);
+        int preShift = precision - 1 - bitsA + bitsB;
+        if (preShift < 0)
+        {
+            preShift = 0;
+        }
+
         var divCtx = new VectorDivModContext
         {
             Op = core,
             IsModulo = false,
-            PreShiftBits = ctx.PreShiftBits,
+            PreShiftBits = preShift,
             ZeroDivisor = ctx.ZeroDivisor,
             Scratch = ctx.Scratch
         };
-        DeviceVectorDivModParallel(divCtx);
+        int extraBit = DeviceVectorDivModParallel(divCtx, precision);
         if (ThreadIndex.X == 0)
         {
-            int bIdx = BlockIndex.X;
-            int eB = core.IsScalar ? exps.ScalarExp : (int)exps.ExpB[bIdx];
-            exps.ExpResult[bIdx] = (uint)((int)exps.ExpA[bIdx] - eB - ctx.PreShiftBits);
+            int eB = core.IsScalar ? exps.ScalarExp : (int)exps.ExpB[batchIdx];
+            exps.ExpResult[batchIdx] = (uint)((int)exps.ExpA[batchIdx] - eB - preShift - extraBit);
         }
     }
 
+    // The bit length of the significand of numWords words at baseOffset; 0 for zero. Every lane returns it.
     [GpuDeviceFunction]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void DeviceVectorDivModParallel(VectorDivModContext ctx)
+    private static int SignificantBitsWarp([GpuReadOnly] uint[] data, int baseOffset, int numWords, int laneId)
+    {
+        int topWord = FindMaxNonZeroWordWarp(data, baseOffset, numWords, laneId);
+        if (topWord < 0)
+        {
+            return 0;
+        }
+
+        return topWord * 32 + 32 - (int)Gpu.CountLeadingZeros(data[baseOffset + topWord]);
+    }
+
+    /// <summary>
+    /// Divides the elements of <c>ctx.Op</c> bit by bit, the dividend shifted left by <c>ctx.PreShiftBits</c>.
+    /// </summary>
+    /// <param name="ctx">The operands, the result and the work buffers.</param>
+    /// <param name="normalizedBits">
+    /// 0, or the bit count p of a quotient that must have its bit p - 1 set: when it has not, one more quotient bit is
+    /// computed (the dividend shifted one bit further) and the return value is 1.
+    /// </param>
+    /// <returns>The extra pre-shift bit taken for <paramref name="normalizedBits"/>: 0 or 1.</returns>
+    [GpuDeviceFunction]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static int DeviceVectorDivModParallel(VectorDivModContext ctx, int normalizedBits = 0)
     {
         int tid = ThreadIndex.X;
         int batchIdx = BlockIndex.X;
@@ -99,7 +138,7 @@ public static partial class GpuBigIntVectorKernels
 
         if (tid >= 32)
         {
-            return;
+            return 0;
         }
 
         var op = ctx.Op;
@@ -140,14 +179,14 @@ public static partial class GpuBigIntVectorKernels
                 }
             }
 
-            return;
+            return 0;
         }
 
         int maxNonZeroWordA = FindMaxNonZeroWordWarp(op.Left.Limbs, offsetA, op.Left.NumWords, laneId);
         if (maxNonZeroWordA < 0)
         {
             if (laneId == 0) op.Result.Signs[batchIdx] = 0u;
-            return;
+            return 0;
         }
 
         int totalBits = (maxNonZeroWordA + 1) * 32 + ctx.PreShiftBits;
@@ -184,7 +223,50 @@ public static partial class GpuBigIntVectorKernels
             }
         }
 
+        int extraBit = normalizedBits > 0
+            ? NormalizeQuotientWarp(op, offsetB, sharedQuot, sharedRem, quot, rem, normalizedBits, laneId)
+            : 0;
+
         CommitDivModResultWarp(ctx, sharedQuot, sharedRem, quot, rem, batchIdx, offsetResult, laneId);
+        return extraBit;
+    }
+
+    // Gives the quotient its bit normalizedBits - 1 when it is clear: one more step of the division with a zero shifted
+    // into the remainder yields the next quotient bit, shifted into the bottom of the quotient. Returns 1 for that
+    // step, 0 when the bit was already set. The remainder is not kept up to date (a float division does not read it).
+    [GpuDeviceFunction]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static int NormalizeQuotientWarp(
+        VectorBinaryOperationContext op,
+        int offsetB,
+        SharedMemory<uint> sharedQuot,
+        SharedMemory<uint> sharedRem,
+        DivModWords quot,
+        DivModWords rem,
+        int normalizedBits,
+        int laneId)
+    {
+        // Lane 0 wrote the quotient bits; every lane reads the top one below
+        Gpu.SyncWarp();
+        int topIdx = normalizedBits - 1;
+        uint topBit = (LoadDivModWord(sharedQuot, quot, topIdx >> 5) >> (topIdx & 31)) & 1u;
+        if (topBit != 0u)
+        {
+            return 0;
+        }
+
+        uint remOverflow = ShiftLeftOneBitWarp(sharedRem, rem, laneId, 0u);
+        uint noBorrow = SubtractDivisorWarp(
+            op.Right.Limbs,
+            offsetB,
+            op.Right.NumWords,
+            sharedRem,
+            rem,
+            laneId,
+            false);
+        uint nextBit = remOverflow != 0u || noBorrow != 0u ? 1u : 0u;
+        ShiftLeftOneBitWarp(sharedQuot, quot, laneId, nextBit);
+        return 1;
     }
 
     [GpuDeviceFunction]

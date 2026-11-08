@@ -44,7 +44,12 @@ public static class GpuBigFloatVectorLinqExtensions
         /// <typeparam name="TScalar">The scalar GPU big number type.</typeparam>
         /// <param name="scalar">The scalar divisor value.</param>
         /// <returns>A new vectorized expression representing the scalar division.</returns>
-        /// <remarks>The evaluation throws <see cref="DivideByZeroException"/> when the scalar is zero.</remarks>
+        /// <remarks>
+        /// The result elements have one word more than the wider of the element and the scalar; each is the exact
+        /// quotient rounded toward zero to that precision (32 bits per word), with the significand normalized to its
+        /// top bit, whatever the normalization of the operands. The evaluation throws
+        /// <see cref="DivideByZeroException"/> when the scalar is zero.
+        /// </remarks>
         public IGpuBigFloatVectorExpression SelectDivide<TScalar>(TScalar scalar)
             where TScalar : struct, IGpuBigNumber<TScalar> =>
             new FloatVectorDivScalarExpression(source, GpuFloatOperand.From(scalar));
@@ -75,6 +80,12 @@ public static class GpuBigFloatVectorLinqExtensions
         /// </summary>
         /// <param name="divisor">The 32-bit unsigned integer divisor.</param>
         /// <returns>A new vectorized expression representing the element-wise scalar division.</returns>
+        /// <remarks>
+        /// Each element of the result is the exact quotient rounded toward zero to the precision of the element (32
+        /// bits per word), with the significand normalized to its top bit, as
+        /// <see cref="IGpuBigFloatArithmetic.Divide"/> by <paramref name="divisor"/>. The evaluation throws <see cref="DivideByZeroException"/> when
+        /// <paramref name="divisor"/> is zero.
+        /// </remarks>
         public IGpuBigFloatVectorExpression SelectDivideByUInt32(uint divisor) =>
             new FloatVectorDivByUInt32Expression(source, divisor);
 
@@ -152,6 +163,9 @@ public static class GpuBigFloatVectorLinqExtensions
         /// <param name="right">The divisor vectorized expression.</param>
         /// <returns>A new vectorized expression representing the element-wise division.</returns>
         /// <remarks>
+        /// The result elements have one word more than the wider operand; each is the exact quotient rounded toward
+        /// zero to that precision (32 bits per word), with the significand normalized to its top bit, whatever the
+        /// normalization of the operands.
         /// The evaluation throws <see cref="DivideByZeroException"/> when the divisor of an element is zero. It reads
         /// that check back from the device (one synchronization of the workspace stream), so evaluating it while the
         /// stream captures a CUDA graph throws <see cref="NotSupportedException"/>.

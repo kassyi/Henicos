@@ -39,7 +39,7 @@ public static class GpuBigFloatVectorLinqExtensions
 | [SelectMultiply\<TScalar\>(IGpuBigFloatVectorExpression, TScalar)](#selectmultiplytscalarigpubigfloatvectorexpression-tscalar) | Projects each element by multiplying by a scalar `TScalar`. |
 | [SelectDivide\<TScalar\>(IGpuBigFloatVectorExpression, TScalar)](#selectdividetscalarigpubigfloatvectorexpression-tscalar) | Projects each element by dividing by a scalar `TScalar`. |
 | [SelectPow\<TScalar\>(IGpuBigFloatVectorExpression, TScalar)](#selectpowtscalarigpubigfloatvectorexpression-tscalar) | Projects each element by raising it to a scalar power `TScalar`. |
-| [SelectDivideByUInt32(IGpuBigFloatVectorExpression, uint)](#selectdividebyuint32igpubigfloatvectorexpression-uint) | Projects each element by dividing its significand by a 32-bit unsigned integer `divisor`. |
+| [SelectDivideByUInt32(IGpuBigFloatVectorExpression, uint)](#selectdividebyuint32igpubigfloatvectorexpression-uint) | Projects each element by dividing it by a 32-bit unsigned integer `divisor`, rounded toward zero to the element precision. |
 | [SelectSqrt(IGpuBigFloatVectorExpression)](#selectsqrtigpubigfloatvectorexpression) | Projects each element to its square root ($\sqrt{x}$). |
 | [SelectRsqrt(IGpuBigFloatVectorExpression)](#selectrsqrtigpubigfloatvectorexpression) | Projects each element to its reciprocal square root ($1 / \sqrt{x}$). |
 | [SelectReciprocal(IGpuBigFloatVectorExpression)](#selectreciprocaligpubigfloatvectorexpression) | Projects each element to its reciprocal ($1 / x$). |
@@ -177,7 +177,7 @@ public static IGpuBigFloatVectorExpression SelectMultiply<TScalar>(
 
 ## SelectDivide\<TScalar\>(IGpuBigFloatVectorExpression, TScalar)
 
-Divides every element of `source` by `scalar`. Output `WordsPerElement` is `Math.Max(source.WordsPerElement, scalar.Words) + 1`. Throws `DivideByZeroException` during evaluation if `scalar` is zero. When the widest of the significands and the result has more than 512 words, each evaluation allocates `2 * width` words of temporary device memory per element (4 bytes each: about 480 MB for 100,000 elements of 600 words) and releases it after the launch.
+Divides every element of `source` by `scalar`. Output `WordsPerElement` is `Math.Max(source.WordsPerElement, scalar.Words) + 1`; each result is the exact quotient rounded toward zero to that precision, with the significand normalized to its top bit, whatever the normalization of the operands. Throws `DivideByZeroException` during evaluation if `scalar` is zero. When the widest of the significands and the result has more than 512 words, each evaluation allocates `2 * width` words of temporary device memory per element (4 bytes each: about 480 MB for 100,000 elements of 600 words) and releases it after the launch.
 
 ```csharp
 public static IGpuBigFloatVectorExpression SelectDivide<TScalar>(
@@ -199,7 +199,7 @@ public static IGpuBigFloatVectorExpression SelectPow<TScalar>(
 
 ## SelectDivideByUInt32(IGpuBigFloatVectorExpression, uint)
 
-Divides the significand of every element in `source` by a 32-bit unsigned integer `divisor` using [`IGpuBigFloatArithmetic.DivideByUInt32`](IGpuBigFloatArithmetic.md). Output `WordsPerElement` equals `source.WordsPerElement`. Throws `DivideByZeroException` during evaluation if `divisor == 0`.
+Divides every element in `source` by a 32-bit unsigned integer `divisor` with [`IGpuBigFloatArithmetic.Divide`](IGpuBigFloatArithmetic.md): each result is the exact quotient rounded toward zero to the precision of the element, with the significand normalized to its top bit. Output `WordsPerElement` equals `source.WordsPerElement`. Throws `DivideByZeroException` during evaluation if `divisor == 0`.
 
 ```csharp
 public static IGpuBigFloatVectorExpression SelectDivideByUInt32(
@@ -279,7 +279,7 @@ public static IGpuBigFloatVectorExpression ZipMultiply(
 
 ## ZipDivide(IGpuBigFloatVectorExpression, IGpuBigFloatVectorExpression)
 
-Performs element-wise division of `left` by `right`. Output `WordsPerElement` is `Math.Max(left.WordsPerElement, right.WordsPerElement) + 1`. Throws `DivideByZeroException` during evaluation if any active divisor element in `right` is zero. The check is read back from the device (one synchronization of the workspace stream), so evaluating it while the stream captures a CUDA graph throws `NotSupportedException`. When the widest of the significands and the result has more than 512 words, each evaluation allocates `2 * width` words of temporary device memory per element (4 bytes each: about 480 MB for 100,000 elements of 600 words) and releases it after the launch.
+Performs element-wise division of `left` by `right`. Output `WordsPerElement` is `Math.Max(left.WordsPerElement, right.WordsPerElement) + 1`; each result is the exact quotient rounded toward zero to that precision, with the significand normalized to its top bit, whatever the normalization of the operands. Throws `DivideByZeroException` during evaluation if any active divisor element in `right` is zero. The check is read back from the device (one synchronization of the workspace stream), so evaluating it while the stream captures a CUDA graph throws `NotSupportedException`. When the widest of the significands and the result has more than 512 words, each evaluation allocates `2 * width` words of temporary device memory per element (4 bytes each: about 480 MB for 100,000 elements of 600 words) and releases it after the launch.
 
 ```csharp
 public static IGpuBigFloatVectorExpression ZipDivide(

@@ -180,7 +180,6 @@ public struct VectorFloatMulContext
 public struct VectorFloatDivContext
 {
     public VectorFloatBinaryOperationContext FloatOp;
-    public int PreShiftBits;
     public uint[] ZeroDivisor;
     public uint[] Scratch;
 }
@@ -623,14 +622,14 @@ Performs element-wise modulo of two `GpuBigIntArray` batches.
 public static void VectorZipModKernel(VectorDivModContext ctx);
 ```
 
-## DeviceVectorDivModParallel(VectorDivModContext)
+## DeviceVectorDivModParallel(VectorDivModContext, int)
 
-Performs block-parallel restoring bitwise division or modulo (`ctx.IsModulo`) for one vector element per block, supporting an optional left pre-shift (`ctx.PreShiftBits`) of the dividend for floating-point significand division. An element whose divisor is zero gets a zero result, and its index is recorded in `ctx.ZeroDivisor[0]` as an atomic maximum of `~index`, so that the word, cleared to 0 before the launch, ends as the complement of the lowest such index; the host reads it and throws `DivideByZeroException`. A scalar launch, whose divisor the host has checked, passes no word (null), and the kernel then records nothing. The remainder and the quotient are kept in two shared buffers of `DivModSharedWords` (512) words; when the widest of the result and the operands has more words, they are kept instead in `ctx.Scratch`, which holds `2 * evalWords` words per block (the remainder, then the quotient) and which the host allocates only for such widths.
+Performs block-parallel restoring bitwise division or modulo (`ctx.IsModulo`) for one vector element per block, supporting an optional left pre-shift (`ctx.PreShiftBits`) of the dividend for floating-point significand division. With `normalizedBits` = p > 0, a quotient whose bit p - 1 is clear gets one more quotient bit (the dividend shifted one bit further), and the method returns 1 (otherwise 0), so that the quotient has exactly p bits. An element whose divisor is zero gets a zero result, and its index is recorded in `ctx.ZeroDivisor[0]` as an atomic maximum of `~index`, so that the word, cleared to 0 before the launch, ends as the complement of the lowest such index; the host reads it and throws `DivideByZeroException`. A scalar launch, whose divisor the host has checked, passes no word (null), and the kernel then records nothing. The remainder and the quotient are kept in two shared buffers of `DivModSharedWords` (512) words; when the widest of the result and the operands has more words, they are kept instead in `ctx.Scratch`, which holds `2 * evalWords` words per block (the remainder, then the quotient) and which the host allocates only for such widths.
 
 ```csharp
 [GpuDeviceFunction]
 [MethodImpl(MethodImplOptions.AggressiveInlining)]
-public static void DeviceVectorDivModParallel(VectorDivModContext ctx);
+public static int DeviceVectorDivModParallel(VectorDivModContext ctx, int normalizedBits = 0);
 ```
 
 ## VectorFloatDivScalarKernel(VectorFloatDivContext)
@@ -653,7 +652,7 @@ public static void VectorFloatZipDivKernel(VectorFloatDivContext ctx);
 
 ## DeviceVectorFloatDivParallel(VectorFloatDivContext)
 
-Computes the bit lengths of the dividend and divisor significands, invokes `DeviceVectorDivModParallel` with `ctx.PreShiftBits` to produce a full-precision quotient significand, and normalizes the result exponent and sign.
+Computes the bit lengths of the dividend and divisor significands, shifts the dividend left by `p - 1 - bits(A) + bits(B)` for the `p` bits of the result element, and invokes `DeviceVectorDivModParallel` with `normalizedBits = p`, so that each quotient is the exact quotient rounded toward zero to `p` bits with its top bit set, whatever the normalization of the operands; the result exponent accounts for the shift and the extra bit.
 
 ```csharp
 [GpuDeviceFunction]
