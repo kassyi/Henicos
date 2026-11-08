@@ -23,7 +23,6 @@ public static partial class AotContexts
 }
 public const string ArrayKernel_Source = @"#error ""(10,27): GSH0004: Method 'ArrayKernel' is marked with [GpuKernel] but returns unsupported type 'float[]'. GpuKernel methods must return void or an unmanaged blittable type.""
 ";
-public static readonly string ArrayKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ArrayKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ArrayKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__TestCases__Generator__TestKernelReturnTypesSadPath__ArrayKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_MegaTestCompilationBase.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerArrayKernel() => global::Kassyi.GSharp.Tests.Shared.TestCases.Generator.TestKernelReturnTypesSadPath.__gsharp_hfunc_ArrayKernel.Resolve();
@@ -127,7 +126,6 @@ return __gsharp_auto_result;
 #pragma warning restore CS8500
 public const string StringKernel_Source = @"#error ""(14,26): GSH0004: Method 'StringKernel' is marked with [GpuKernel] but returns unsupported type 'string'. GpuKernel methods must return void or an unmanaged blittable type.""
 ";
-public static readonly string StringKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +StringKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_StringKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__TestCases__Generator__TestKernelReturnTypesSadPath__StringKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_MegaTestCompilationBase.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerStringKernel() => global::Kassyi.GSharp.Tests.Shared.TestCases.Generator.TestKernelReturnTypesSadPath.__gsharp_hfunc_StringKernel.Resolve();
@@ -235,7 +233,6 @@ __gsharp_auto_result[__gsharp_global_tid] = nullptr;
 return;
 }
 ";
-public static readonly string PointerKernel2_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +PointerKernel2_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_PointerKernel2 = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__TestCases__Generator__TestKernelReturnTypesSadPath__PointerKernel2", global::Kassyi.GSharp.Generated.GSharpModuleContext_MegaTestCompilationBase.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerPointerKernel2() => global::Kassyi.GSharp.Tests.Shared.TestCases.Generator.TestKernelReturnTypesSadPath.__gsharp_hfunc_PointerKernel2.Resolve();
@@ -339,7 +336,6 @@ return __gsharp_auto_result;
 #pragma warning restore CS8500
 public const string ManagedStructKernel_Source = @"#error ""(30,33): GSH0004: Method 'ManagedStructKernel' is marked with [GpuKernel] but returns unsupported type 'Kassyi.GSharp.Tests.Shared.TestCases.Generator.TestKernelReturnTypesSadPath.ManagedStruct'. GpuKernel methods must return void or an unmanaged blittable type.""
 ";
-public static readonly string ManagedStructKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ManagedStructKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ManagedStructKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__TestCases__Generator__TestKernelReturnTypesSadPath__ManagedStructKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_MegaTestCompilationBase.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerManagedStructKernel() => global::Kassyi.GSharp.Tests.Shared.TestCases.Generator.TestKernelReturnTypesSadPath.__gsharp_hfunc_ManagedStructKernel.Resolve();
@@ -443,7 +439,6 @@ return __gsharp_auto_result;
 #pragma warning restore CS8500
 public const string SpanKernel_Source = @"#error ""(34,39): GSH0004: Method 'SpanKernel' is marked with [GpuKernel] but returns unsupported type 'System.ReadOnlySpan<float>'. GpuKernel methods must return void or an unmanaged blittable type.""
 ";
-public static readonly string SpanKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +SpanKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_SpanKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__TestCases__Generator__TestKernelReturnTypesSadPath__SpanKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_MegaTestCompilationBase.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerSpanKernel() => global::Kassyi.GSharp.Tests.Shared.TestCases.Generator.TestKernelReturnTypesSadPath.__gsharp_hfunc_SpanKernel.Resolve();

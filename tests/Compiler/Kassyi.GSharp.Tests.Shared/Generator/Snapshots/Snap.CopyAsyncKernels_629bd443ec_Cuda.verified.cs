@@ -94,7 +94,6 @@ __syncthreads();
 __gsharp_id_1_output[__gsharp_id_2_tid]=__gsharp_id_3_smem[__gsharp_sub_i32(31,__gsharp_id_2_tid)];
 }
 ";
-public static readonly string CopyAsyncIntKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +CopyAsyncIntKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_CopyAsyncIntKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Core__CopyAsyncKernels__CopyAsyncIntKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerCopyAsyncIntKernel() => global::Kassyi.GSharp.Tests.Shared.Core.CopyAsyncKernels.__gsharp_hfunc_CopyAsyncIntKernel.Resolve();
@@ -251,7 +250,6 @@ __syncthreads();
 __gsharp_id_1_output[__gsharp_id_2_tid]=__gsharp_id_3_smem[(__gsharp_add_i32(__gsharp_id_2_tid,1))%32];
 }
 ";
-public static readonly string CopyAsyncVector4Kernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +CopyAsyncVector4Kernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_CopyAsyncVector4Kernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Core__CopyAsyncKernels__CopyAsyncVector4Kernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerCopyAsyncVector4Kernel() => global::Kassyi.GSharp.Tests.Shared.Core.CopyAsyncKernels.__gsharp_hfunc_CopyAsyncVector4Kernel.Resolve();
@@ -425,7 +423,6 @@ __gsharp_id_1_output[__gsharp_id_2_tid]=__gsharp_id_3_smem[__gsharp_sub_i32(47,_
 }
 }
 ";
-public static readonly string CopyAsyncTwoGroupsKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +CopyAsyncTwoGroupsKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_CopyAsyncTwoGroupsKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Core__CopyAsyncKernels__CopyAsyncTwoGroupsKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerCopyAsyncTwoGroupsKernel() => global::Kassyi.GSharp.Tests.Shared.Core.CopyAsyncKernels.__gsharp_hfunc_CopyAsyncTwoGroupsKernel.Resolve();

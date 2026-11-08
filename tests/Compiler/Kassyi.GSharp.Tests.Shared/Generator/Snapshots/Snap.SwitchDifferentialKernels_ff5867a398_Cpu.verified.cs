@@ -297,7 +297,6 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 }
 ";
-public static readonly string SwitchIntStatementKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +SwitchIntStatementKernel_Source;
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__SwitchDifferentialKernels__SwitchIntStatementKernel {
 public int __gsharp_state;
@@ -754,7 +753,6 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 }
 ";
-public static readonly string SwitchWideInt64StatementKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +SwitchWideInt64StatementKernel_Source;
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__SwitchDifferentialKernels__SwitchWideInt64StatementKernel {
 public int __gsharp_state;
@@ -1300,7 +1298,6 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 }
 ";
-public static readonly string SwitchNarrowCharEnumStatementKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +SwitchNarrowCharEnumStatementKernel_Source;
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__SwitchDifferentialKernels__SwitchNarrowCharEnumStatementKernel {
 public int __gsharp_state;
@@ -1872,7 +1869,6 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 }
 ";
-public static readonly string SwitchGotoAndSharedLocalsKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +SwitchGotoAndSharedLocalsKernel_Source;
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__SwitchDifferentialKernels__SwitchGotoAndSharedLocalsKernel {
 public int __gsharp_state;
@@ -2311,7 +2307,6 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 }
 ";
-public static readonly string SwitchExpressionIntAndLongKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +SwitchExpressionIntAndLongKernel_Source;
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__SwitchDifferentialKernels__SwitchExpressionIntAndLongKernel {
 public int __gsharp_state;
@@ -2664,7 +2659,6 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 }
 ";
-public static readonly string SwitchExpressionFloatSpecialKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +SwitchExpressionFloatSpecialKernel_Source;
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__SwitchDifferentialKernels__SwitchExpressionFloatSpecialKernel {
 public int __gsharp_state;
@@ -2977,7 +2971,6 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 }
 ";
-public static readonly string TernaryNestedAndRefKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +TernaryNestedAndRefKernel_Source;
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__SwitchDifferentialKernels__TernaryNestedAndRefKernel {
 public int __gsharp_state;
@@ -3298,7 +3291,6 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 }
 ";
-public static readonly string TernaryTargetTypedAndNarrowKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +TernaryTargetTypedAndNarrowKernel_Source;
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__SwitchDifferentialKernels__TernaryTargetTypedAndNarrowKernel {
 public int __gsharp_state;
@@ -3684,7 +3676,6 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 }
 ";
-public static readonly string NullCoalesceAndNullCheckMatchingKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +NullCoalesceAndNullCheckMatchingKernel_Source;
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__SwitchDifferentialKernels__NullCoalesceAndNullCheckMatchingKernel {
 public int __gsharp_state;
@@ -4201,7 +4192,6 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 }
 ";
-public static readonly string SwitchFlattenedFloatAndGotoKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +SwitchFlattenedFloatAndGotoKernel_Source;
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__SwitchDifferentialKernels__SwitchFlattenedFloatAndGotoKernel {
 public int __gsharp_state;

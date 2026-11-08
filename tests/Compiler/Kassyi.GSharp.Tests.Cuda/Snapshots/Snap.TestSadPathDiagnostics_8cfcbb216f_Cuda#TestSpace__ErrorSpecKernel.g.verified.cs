@@ -24,7 +24,6 @@ public static partial class AotContexts
 public const string BadKernel_Source = @"#error ""(11,13): GSH0002: The string type is not supported in GPU kernels""
 #error ""(12,26): GSH0001: Object creation ('new') is not supported in GPU kernels. Only struct instantiation, SharedMemory<T> and an array of a constant size that initializes a local variable are allowed; use stackalloc for a temporary array.""
 ";
-public static readonly string BadKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +BadKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_BadKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_TestSpace__ErrorSpecKernel__BadKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_MegaTestCompilationBase.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerBadKernel() => global::TestSpace.ErrorSpecKernel.__gsharp_hfunc_BadKernel.Resolve();

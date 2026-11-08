@@ -23,7 +23,6 @@ public static partial class AotContexts
 }
 public const string Kernel_Source = @"#error ""(11,9): GSH0002: The string type is not supported in GPU kernels""
 ";
-public static readonly string Kernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +Kernel_Source;
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__TestCases__Transpiler__GpuMacroTranspilerRule_uSadPath__Kernel {
 public int __gsharp_state;

@@ -85,7 +85,6 @@ public static partial class AotContexts
 public const string EmptyKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Henicos__Benchmarks__ComputeBenchmarks__EmptyKernelKernels__EmptyKernel(){
 }
 ";
-public static readonly string EmptyKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +EmptyKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_EmptyKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Henicos__Benchmarks__ComputeBenchmarks__EmptyKernelKernels__EmptyKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerEmptyKernel() => global::Henicos.Benchmarks.ComputeBenchmarks.EmptyKernelKernels.__gsharp_hfunc_EmptyKernel.Resolve();

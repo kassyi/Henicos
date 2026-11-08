@@ -121,7 +121,6 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 }
 ";
-public static readonly string NonVoidReturnKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +NonVoidReturnKernel_Source;
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_TestSpace__ErrorKernels__NonVoidReturnKernel {
 public int __gsharp_state;
@@ -360,7 +359,6 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 }
 ";
-public static readonly string ManagedParamKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +ManagedParamKernel_Source;
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_TestSpace__ErrorKernels__ManagedParamKernel {
 public int __gsharp_state;

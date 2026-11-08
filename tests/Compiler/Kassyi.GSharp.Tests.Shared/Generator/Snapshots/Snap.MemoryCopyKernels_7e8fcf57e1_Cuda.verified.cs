@@ -90,7 +90,6 @@ __gsharp_id_1_dst[__gsharp_id_3_idx]=__gsharp_id_0_src[__gsharp_id_3_idx];
 }
 }
 ";
-public static readonly string MemoryCopyKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +MemoryCopyKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_MemoryCopyKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Henicos__Benchmarks__ComputeBenchmarks__MemoryCopyKernels__MemoryCopyKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerMemoryCopyKernel() => global::Henicos.Benchmarks.ComputeBenchmarks.MemoryCopyKernels.__gsharp_hfunc_MemoryCopyKernel.Resolve();

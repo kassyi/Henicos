@@ -121,7 +121,6 @@ __gsharp_id_3_c2.__gsharp_mb_Value=__gsharp_add_i32(__gsharp_id_1_tid,200);
 __gsharp_id_0_output[__gsharp_id_1_tid]=__gsharp_add_i32(__gsharp_id_2_c1.__gsharp_mb_Value,__gsharp_id_3_c2.__gsharp_mb_Value);
 }
 ";
-public static readonly string HappyPathKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +HappyPathKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_HappyPathKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__TargetTypedNewKernels__HappyPathKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerHappyPathKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.TargetTypedNewKernels.__gsharp_hfunc_HappyPathKernel.Resolve();
@@ -254,7 +253,6 @@ __gsharp_id_2_p.__gsharp_mb_Child.__gsharp_mb_Value=__gsharp_mul_i32(__gsharp_id
 __gsharp_id_0_output[__gsharp_id_1_tid]=__gsharp_add_i32(__gsharp_id_2_p.__gsharp_mb_Id,__gsharp_id_2_p.__gsharp_mb_Child.__gsharp_mb_Value);
 }
 ";
-public static readonly string NestedInitializerKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +NestedInitializerKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_NestedInitializerKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__TargetTypedNewKernels__NestedInitializerKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerNestedInitializerKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.TargetTypedNewKernels.__gsharp_hfunc_NestedInitializerKernel.Resolve();

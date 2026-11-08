@@ -27,7 +27,6 @@ __gsharp_auto_result[__gsharp_global_tid] = 1;
 return;
 }
 ";
-public static readonly string NonVoidReturnKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +NonVoidReturnKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_NonVoidReturnKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_TestSpace__ErrorKernels__NonVoidReturnKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_MegaTestCompilationBase.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerNonVoidReturnKernel() => global::TestSpace.ErrorKernels.__gsharp_hfunc_NonVoidReturnKernel.Resolve();
@@ -132,7 +131,6 @@ return __gsharp_auto_result;
 public const string ManagedParamKernel_Source = @"extern ""C"" __global__ void __gsharp_k_TestSpace__ErrorKernels__ManagedParamKernel(TestSpace_ManagedClass __gsharp_id_0_obj){
 }
 ";
-public static readonly string ManagedParamKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ManagedParamKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ManagedParamKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_TestSpace__ErrorKernels__ManagedParamKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_MegaTestCompilationBase.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerManagedParamKernel() => global::TestSpace.ErrorKernels.__gsharp_hfunc_ManagedParamKernel.Resolve();

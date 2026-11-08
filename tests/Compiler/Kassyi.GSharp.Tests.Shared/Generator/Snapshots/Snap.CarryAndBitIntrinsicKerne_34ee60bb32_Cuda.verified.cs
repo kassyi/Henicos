@@ -93,7 +93,6 @@ __gsharp_id_1_output[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_3_tid,3),1)]=
 __gsharp_id_1_output[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_3_tid,3),2)]=__funnelshift_r(__gsharp_id_4_value,__gsharp_id_5_next,__gsharp_id_6_shift);
 }
 ";
-public static readonly string BitIntrinsicsKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +BitIntrinsicsKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_BitIntrinsicsKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__CarryAndBitIntrinsicKernels__BitIntrinsicsKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerBitIntrinsicsKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.CarryAndBitIntrinsicKernels.__gsharp_hfunc_BitIntrinsicsKernel.Resolve();
@@ -254,7 +253,6 @@ __gsharp_id_4_difference[__gsharp_id_6_tid]=__gsharp_sub_cc(__gsharp_id_0_a[__gs
 __gsharp_id_5_borrowOut[__gsharp_id_6_tid]=__gsharp_id_8_borrow;
 }
 ";
-public static readonly string CarryChainKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +CarryChainKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_CarryChainKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__CarryAndBitIntrinsicKernels__CarryChainKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerCarryChainKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.CarryAndBitIntrinsicKernels.__gsharp_hfunc_CarryChainKernel.Resolve();

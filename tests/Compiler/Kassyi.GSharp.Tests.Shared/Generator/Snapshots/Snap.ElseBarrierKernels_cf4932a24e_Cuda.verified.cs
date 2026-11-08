@@ -97,7 +97,6 @@ __syncthreads();
 __gsharp_id_1_output[__gsharp_id_3_tid]=__gsharp_id_4_shared[__gsharp_sub_i32(__gsharp_sub_i32(__gsharp_id_2_length,1),__gsharp_id_3_tid)];
 }
 ";
-public static readonly string ReverseWithElseBarrierKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ReverseWithElseBarrierKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ReverseWithElseBarrierKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__ElseBarrierKernels__ReverseWithElseBarrierKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerReverseWithElseBarrierKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.ElseBarrierKernels.__gsharp_hfunc_ReverseWithElseBarrierKernel.Resolve();
