@@ -1,0 +1,61 @@
+namespace Kassyi.GSharp.Compiler.Analysis;
+
+/// <summary>
+/// The effects of creating a value for <see cref="ExpressionEffects"/>: object creation, <c>with</c> expressions and
+/// object initializers.
+/// </summary>
+internal static class CreationEffects
+{
+    public static void AddObjectCreation(
+        ref ExpressionEffects.Walker walker,
+        BaseObjectCreationExpressionSyntax creation
+    )
+    {
+        var model = walker.Model;
+        if (model.GetTypeSymbol(creation).IsSharedMemoryType())
+        {
+            walker.Writes.Memory = true;
+        }
+
+        if (model.GetSymbol(creation) is IMethodSymbol constructor)
+        {
+            CallEffects.AddCall(ref walker, constructor, creation.ArgumentList?.Arguments ?? default, receiver: null);
+        }
+        else if (creation.ArgumentList != null)
+        {
+            walker.AddArgumentValues(creation.ArgumentList.Arguments);
+        }
+
+        if (creation.Initializer != null)
+        {
+            AddInitializer(ref walker, creation.Initializer);
+        }
+    }
+
+    // The members that the initializer assigns belong to the copy
+    public static void AddWith(ref ExpressionEffects.Walker walker, WithExpressionSyntax with)
+    {
+        walker.AddValue(with.Expression);
+        AddInitializer(ref walker, with.Initializer);
+    }
+
+    // The members that an object initializer assigns belong to the new object; only their values are evaluated
+    private static void AddInitializer(ref ExpressionEffects.Walker walker, InitializerExpressionSyntax initializer)
+    {
+        foreach (var expression in initializer.Expressions)
+        {
+            switch (expression)
+            {
+                case AssignmentExpressionSyntax { Right: InitializerExpressionSyntax nested }:
+                    AddInitializer(ref walker, nested);
+                    break;
+                case AssignmentExpressionSyntax assignment:
+                    walker.AddValue(assignment.Right);
+                    break;
+                default:
+                    walker.AddValue(expression);
+                    break;
+            }
+        }
+    }
+}
