@@ -57,6 +57,13 @@ public readonly ref struct GpuBigUIntArrayView
     public IntPtr DevicePointer => Handle.DevicePointer;
 
     /// <summary>
+    /// Returns the array argument that passes the words of the view to a <c>Launch{Kernel}Ptr</c> launcher or a shadow
+    /// struct field: the kernel sees an array of <see cref="TotalWords"/> words.
+    /// </summary>
+    /// <exception cref="ObjectDisposedException">The owner of the buffer has been disposed.</exception>
+    public GSharpArrayProxy ToProxy() => new() { Data = DevicePointer, Length = TotalWords };
+
+    /// <summary>
     /// Gets a value indicating whether this is the empty view (<see langword="default"/>).
     /// </summary>
     public bool IsEmpty => Handle.IsDefault;
