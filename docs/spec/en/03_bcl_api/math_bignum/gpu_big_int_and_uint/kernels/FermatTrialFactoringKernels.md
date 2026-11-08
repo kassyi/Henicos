@@ -25,6 +25,8 @@ public static partial class FermatTrialFactoringKernels
 | Name | Description |
 | --- | --- |
 | [Device_ModPow64_Under32Bit(ulong, ulong, ulong)](#device_modpow64_under32bitulong-ulong-ulong) | A GPU device function (`[GpuDeviceFunction, GpuInline]`) that computes 64-bit modular exponentiation for moduli under 32 bits. |
+| [SearchFactors32(uint, uint, uint[], uint[], int, uint, uint)](#searchfactors32uint-uint-uint-uint-int-uint-uint) | Checks the arguments and launches `SearchFactors32Kernel` on arrays. |
+| [SearchFactors32(uint, uint, IntPtr, IntPtr, int, uint, uint, IntPtr)](#searchfactors32uint-uint-intptr-intptr-int-uint-uint-intptr) | Checks the arguments and launches `SearchFactors32Kernel` on device buffers. |
 | [SearchFactors32Kernel(uint, uint, uint[], uint[], int)](#searchfactors32kerneluint-uint-uint-uint-int) | A GPU kernel (`[GpuKernel]`) that searches for 32-bit factors of a Fermat number. |
 
 ## Device_ModPow64_Under32Bit(ulong, ulong, ulong)
@@ -72,16 +74,60 @@ public static void SearchFactors32Kernel(
 The odd number to start the factor search from. Thread `t` tests the candidate `startOdd + 2t`; candidates below 3 (the trivial divisor 1) and candidates past `2^32 - 1` are skipped, so a launch never reports 1 and never wraps around to small numbers.
 
 `exp` _uint_<br>
-The exponent of the Fermat number $F_n$.
+The exponent of the Fermat number $F_n$. Each candidate `k` is tested with $2^{	ext{exp}} mod k$ itself; the exponent is not reduced modulo `k - 1`, which would hold only for a prime `k`.
 
 `results` _uint[]_<br>
 The buffer to store the discovered factors.
 
 `resultCount` _uint[]_<br>
-The counter buffer indicating how many factors were found.
+The counter buffer, increased by the number of factors found, whether or not they were stored.
 
 `maxResults` _int_<br>
-The maximum number of factors to store in the `results` buffer.
+The maximum number of factors to store in the `results` buffer. A value of 0 or less stores nothing. The kernel cannot check that `results` holds `maxResults` elements; a larger value writes past the buffer. Launch through `SearchFactors32`, which rejects a negative value (and, for arrays, a value past the length of `results`) with `ArgumentOutOfRangeException`.
+
+## SearchFactors32(uint, uint, uint[], uint[], int, uint, uint)
+
+Checks the arguments, then launches `SearchFactors32Kernel` with `gridDimX` blocks of `blockDimX` threads on arrays that are copied to and from the device.
+
+```csharp
+public static void SearchFactors32(
+    uint startOdd,
+    uint exp,
+    uint[] results,
+    uint[] resultCount,
+    int maxResults,
+    uint gridDimX,
+    uint blockDimX);
+```
+
+#### Exceptions
+
+`ArgumentNullException`<br>
+`results` or `resultCount` is `null`.
+
+`ArgumentOutOfRangeException`<br>
+`maxResults` is negative or greater than the length of `results`.
+
+## SearchFactors32(uint, uint, IntPtr, IntPtr, int, uint, uint, IntPtr)
+
+Checks the arguments, then launches `SearchFactors32Kernel` on device buffers on `stream`. `results` must hold `maxResults` elements.
+
+```csharp
+public static void SearchFactors32(
+    uint startOdd,
+    uint exp,
+    IntPtr results,
+    IntPtr resultCount,
+    int maxResults,
+    uint gridDimX,
+    uint blockDimX,
+    IntPtr stream = default);
+```
+
+#### Exceptions
+
+`ArgumentOutOfRangeException`<br>
+`maxResults` is negative.
 
 ## Examples
 
