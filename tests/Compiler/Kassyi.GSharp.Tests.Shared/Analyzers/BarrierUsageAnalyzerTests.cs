@@ -250,9 +250,8 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
     }
 
     // A warp shuffle is a split point of the CPU state machine only in the statements of the body, the operands of '?:',
-    // '&&' and '||' and a Gpu.ForUnroll body; anywhere else it is reported like a call that suspends (#1274), except in
-    // a Gpu.GridStrideLoop body, which is #1091 (A warp shuffle in a Gpu.GridStrideLoop body is not split on the CPU
-    // paths: native returns the lane's own value, managed throws)
+    // '&&' and '||' and a Gpu.ForUnroll or Gpu.GridStrideLoop body; anywhere else it is reported like a call that
+    // suspends (#1274)
     [Fact]
     [Scenario(TestScenario.SadPath)]
     public async Task Test_WarpShuffleInUnsplitContext_ReportsGSH0062ForTheCpuDialect()
@@ -276,6 +275,44 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
             .GetDiagnosticsAsync();
         Assert.All(diagnostics, static d => Assert.Contains("' is a warp shuffle, so it cannot be called ",
             d.GetMessage(CultureInfo.InvariantCulture), StringComparison.Ordinal));
+    }
+
+    // A using or fixed statement and the scope of a using declaration are not flattened by the CPU lowering, so a warp
+    // shuffle, vote or reduction there is not split (#1172); a vote in a local function is not split either (#845). A
+    // Gpu.GridStrideLoop body is (#1091)
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public async Task Test_WarpExchangeInScope_ReportsGSH0062ForTheCpuDialect()
+    {
+        var actual = await RunAsync("Analyzers/BarrierUsage/WarpExchangeInScopeKernels.cu.cs", "Cpu");
+
+        Assert.Equal(
+            [
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 28, 17, 28, 62),
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 40, 23, 40, 75),
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 50, 22, 50, 58),
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 58, 31, 58, 70)
+            ],
+            actual);
+
+        var messages = (await RoslynTestUtility
+                .TestAnalyzer("Analyzers/BarrierUsage/WarpExchangeInScopeKernels.cu.cs", s_analyzer)
+                .WithDialect("Cpu")
+                .GetDiagnosticsAsync())
+            .OrderBy(static d => d.Location.SourceSpan.Start)
+            .Select(static d => d.GetMessage(CultureInfo.InvariantCulture))
+            .ToArray();
+        Assert.Contains("in a using statement", messages[0], StringComparison.Ordinal);
+        Assert.Contains("in the scope of a using declaration", messages[1], StringComparison.Ordinal);
+        Assert.Contains("in a fixed statement", messages[2], StringComparison.Ordinal);
+        Assert.Contains("in a local function", messages[3], StringComparison.Ordinal);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public async Task Test_WarpExchangeInScope_IsAcceptedForTheCudaDialect()
+    {
+        Assert.Empty(await RunAsync("Analyzers/BarrierUsage/WarpExchangeInScopeKernels.cu.cs", "Cuda"));
     }
 
     // CUDA runs a warp shuffle where it stands, so a project built only for CUDA has no CPU path to split and accepts

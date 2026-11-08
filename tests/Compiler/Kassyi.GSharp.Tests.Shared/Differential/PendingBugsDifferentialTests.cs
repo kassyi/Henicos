@@ -6,7 +6,7 @@ using Xunit;
 namespace Kassyi.GSharp.Tests.Shared.Differential;
 
 /// <summary>
-/// Differential tests for open issues (#904, #1091) and regression coverage (#1080, StackLinq Take(0)).
+/// Differential tests for open issues (#904) and regression coverage (#1080, #1091, StackLinq Take(0)).
 /// </summary>
 [Category(TestCategory.Differential)]
 [TestTarget(ExecutionTarget.GpuExecution)]
@@ -155,16 +155,11 @@ public class PendingBugsDifferentialTests
     public void Test_ForUnrollWithOverflowingStartPlusCount_ExecutesZeroIterationsOnEveryPath() =>
         DifferentialRunner.Run(s_forUnrollOverflowBound);
 
-    // #1091: Remove KnownDivergence entries and unskip CPU once Warp.ShuffleDownSync inside Gpu.GridStrideLoop is rejected or lowered.
+    // #1091: the CPU paths turn the grid-stride loop into a loop before the state machine lowering, so the shuffle splits
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_WarpShuffleDownInGridStrideLoop_UniformIterationCount()
-    {
-#if !GSHARP_CUDA
-        Skip.If(true, "#1091: Managed path throws GpuOnlyException for Warp.ShuffleDownSync inside GridStrideLoop.");
-#endif
+    public void Test_WarpShuffleDownInGridStrideLoop_UniformIterationCount() =>
         DifferentialRunner.Run(s_gridStrideLoopUniformWarpShuffle);
-    }
 
     // #1146: A full-mask Warp.ShuffleDownSync in the last, partial wave of a Gpu.GridStrideLoop is undefined on CUDA.
     // Under semantics charter section 3, undefined behavior must be rejected with a diagnostic or run-time exception.
