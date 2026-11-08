@@ -256,6 +256,96 @@ public partial class GpuBigIntVectorLinqExtensionsTests
 
     [Fact]
     [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.SadPath)]
+    public void ZipDivideAndModulo_ZeroDivisorElement_ThrowsDivideByZeroException()
+    {
+        // mutant: the kernel no longer records the zero divisor ([5, 0] and [0, 0] come back with no error)
+        using var dividends = CreateArray(new BigInteger[] { 10, 7, -9 });
+        using var divisors = CreateArray(new BigInteger[] { 2, 0, 4 });
+
+        using var divExpr = dividends.AsVectorizedEnumerable().ZipDivide(divisors.AsVectorizedEnumerable());
+        Assert.Throws<DivideByZeroException>(() => divExpr.Evaluate(_context));
+
+        using var modExpr = dividends.AsVectorizedEnumerable().ZipModulo(divisors.AsVectorizedEnumerable());
+        Assert.Throws<DivideByZeroException>(() => modExpr.Evaluate(_context));
+    }
+
+    [Fact]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.Boundary)]
+    public void ZipDivide_ZeroDivisorPastTheWhereCount_IsNotAnElement()
+    {
+        // The Where keeps 3 of 4 dividends; the divisor of the window's 4th element is zero but belongs to no element.
+        // mutant: ThrowIfFound comparing with the capacity instead of the count (throws)
+        using var zero = CreateScalar(0);
+        using var dividends = CreateArray(new BigInteger[] { 5, -1, 7, 9 });
+        using var tailZero = CreateArray(new BigInteger[] { 1, 2, 3, 0 });
+        var v = dividends.AsVectorizedEnumerable();
+        using var past = v.Where(v.IsGreaterThan(zero)).ZipDivide(tailZero.AsVectorizedEnumerable());
+
+        var quotients = ToHostArray(past.Evaluate(_context));
+
+        BigInteger[] expected = [5, 3, 3];
+        Assert.Equal(expected, quotients);
+    }
+
+    [Fact]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.SadPath)]
+    public void ZipDivide_ZeroDivisorWithinTheWhereCount_ThrowsDivideByZeroException()
+    {
+        // The Where keeps 3 of 4 dividends; the divisor of the window's 2nd element is zero and belongs to an element.
+        // mutant: no zero divisor check after the launch (no exception)
+        using var zero = CreateScalar(0);
+        using var dividends = CreateArray(new BigInteger[] { 5, -1, 7, 9 });
+        using var innerZero = CreateArray(new BigInteger[] { 1, 0, 3, 4 });
+        var v = dividends.AsVectorizedEnumerable();
+        using var inside = v.Where(v.IsGreaterThan(zero)).ZipDivide(innerZero.AsVectorizedEnumerable());
+
+        Assert.Throws<DivideByZeroException>(() => inside.Evaluate(_context));
+    }
+
+    [Theory]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(512)]
+    [InlineData(513)]
+    [InlineData(600)]
+    public void Division_ElementsWiderThanTheSharedBuffers_UseEveryWord(int words)
+    {
+        // 512 words fill the kernel's shared buffers exactly; 513 and 600 words pass them, and the division works in
+        // global scratch instead of the low 512 words of each operand.
+        // mutant: evalWords clamped to DivModSharedWords again (600 words: quotient 12345 instead of 2^19168 + 12345)
+        // mutant: the kernel working in scratch for `evalWords >= DivModSharedWords` while the host rents it only
+        // above (512 words: the kernel indexes a null scratch)
+        var top = BigInteger.One << (32 * (words - 1));
+        var divisor = (BigInteger.One << (32 * (words - 50))) + 7;
+        BigInteger[] dividends = [top, top + 12345, -(top + 12345), top * 3 + 1];
+        BigInteger[] divisors = [top, 1, divisor, -divisor];
+        using var left = CreateArray(dividends, words);
+        using var right = CreateArray(divisors, words);
+        using var scalar = CreateScalar(divisor, words);
+        using var quotients = left.AsVectorizedEnumerable().ZipDivide(right.AsVectorizedEnumerable());
+        using var remainders = left.AsVectorizedEnumerable().ZipModulo(right.AsVectorizedEnumerable());
+        using var scalarQuotients = left.AsVectorizedEnumerable().SelectDivide(scalar);
+        using var scalarRemainders = left.AsVectorizedEnumerable().SelectModulo(scalar);
+
+        var q = ToHostArray(quotients.Evaluate(_context));
+        var r = ToHostArray(remainders.Evaluate(_context));
+        var sq = ToHostArray(scalarQuotients.Evaluate(_context));
+        var sr = ToHostArray(scalarRemainders.Evaluate(_context));
+
+        for (var i = 0; i < dividends.Length; i++)
+        {
+            Assert.Equal(BigInteger.Divide(dividends[i], divisors[i]), q[i]);
+            Assert.Equal(BigInteger.Remainder(dividends[i], divisors[i]), r[i]);
+            Assert.Equal(BigInteger.Divide(dividends[i], divisor), sq[i]);
+            Assert.Equal(BigInteger.Remainder(dividends[i], divisor), sr[i]);
+        }
+    }
+
+    [Fact]
+    [Category(TestCategory.Unit)]
     [Scenario(TestScenario.HappyPath)]
     public void SelectSqrt_And_SelectDivideByUInt32_EvaluateCorrectly()
     {

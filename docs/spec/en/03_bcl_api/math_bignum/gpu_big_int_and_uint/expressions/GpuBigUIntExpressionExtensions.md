@@ -54,6 +54,11 @@ An optional destination buffer. If `null`, a temporary buffer is rented from `wo
 _[GpuBigUInt](../GpuBigUInt.md)_<br>
 A `GpuBigUInt` containing the evaluated unsigned large integer.
 
+#### Exceptions
+
+`ArgumentException`<br>
+Thrown when `targetResult` has fewer words than `expr.NumWords`. Nothing is written.
+
 ## Examples
 
 > [!NOTE]

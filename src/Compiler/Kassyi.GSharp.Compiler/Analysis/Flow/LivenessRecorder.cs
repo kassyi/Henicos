@@ -288,6 +288,11 @@ internal sealed class LivenessRecorder : IFlowRecorder
         }
     }
 
+    /// <summary>The value was walked as a top operation; returning it changes no local.</summary>
+    public void OnBodyReturn(IOperation value, ControlFlowGraph graph, int node)
+    {
+    }
+
     /// <summary>Flushes the remaining statement events after a top operation ends.</summary>
     public void OnTopOperation(IOperation operation, ControlFlowGraph graph, int node) => Flush(node);
 
