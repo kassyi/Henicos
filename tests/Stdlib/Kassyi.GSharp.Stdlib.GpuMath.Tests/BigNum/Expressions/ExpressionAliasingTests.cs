@@ -258,13 +258,18 @@ public sealed class ExpressionAliasingTests : IDisposable
         // The signed root (SignedBinaryExpression / SignedUnaryExpression) with its target in an operand: the value and
         // the sign equal BigInteger's (truncated division, the remainder takes the dividend's sign), and the other
         // operand keeps its value.
+        // A sum, a difference and ~ are one bit wider than their operands, so the target is the buffer that holds an
+        // operand in its low words and has one word more
         var a0 = negativeA ? -_a : _a;
         var b0 = negativeA ? _b : -_b;
-        using var aMagnitude = GpuBigUInt.FromBigInteger(_workspace, _a, Words);
-        using var bMagnitude = GpuBigUInt.FromBigInteger(_workspace, _b, Words);
+        var extra = op is SignedOp.Add or SignedOp.Sub or SignedOp.Not ? 1 : 0;
+        using var aOwner = GpuBigUInt.FromBigInteger(_workspace, _a, Words + extra);
+        using var bOwner = GpuBigUInt.FromBigInteger(_workspace, _b, Words + extra);
+        var aMagnitude = Head(aOwner, Words);
+        var bMagnitude = Head(bOwner, Words);
         var a = new GpuBigInt(aMagnitude, negativeA);
         var b = new GpuBigInt(bMagnitude, !negativeA);
-        var target = intoRight && op is not (SignedOp.Negate or SignedOp.Not) ? bMagnitude : aMagnitude;
+        var target = intoRight && op is not (SignedOp.Negate or SignedOp.Not) ? bOwner : aOwner;
 
         var result = SignedExpression(op, a, b).Evaluate(target);
 
@@ -276,8 +281,8 @@ public sealed class ExpressionAliasingTests : IDisposable
             SignedOp.Div => a0 / b0,
             SignedOp.Mod => a0 % b0,
             SignedOp.Negate => -a0,
-            // Not inverts the magnitude words and keeps the sign
-            _ => negativeA ? -((BigInteger.One << (Words * 32)) - 1 - _a) : (BigInteger.One << (Words * 32)) - 1 - _a
+            // ~x == -x - 1
+            _ => -a0 - 1
         };
         var message = $"{op} a<0 {negativeA} into {(target.DevicePointer == bMagnitude.DevicePointer ? "b" : "a")}, seed {Seed}";
         Assert.True(expected == result.Value.ToBigInteger(result.IsNegative), message);
@@ -301,21 +306,26 @@ public sealed class ExpressionAliasingTests : IDisposable
         // The guard itself (values can be right by chance in place): the same expression first into a separate target
         // sets the peak of live buffers it needs; into an operand the root takes one temporary more.
         // mutant: SignedBinaryExpression / SignedUnaryExpression without the overlap check
-        using var aMagnitude = GpuBigUInt.FromBigInteger(_workspace, _a, Words);
+        // A sum and ~ are one bit wider than their operands: the target holds the operand a in its low words
+        var extra = op is SignedOp.Add or SignedOp.Not ? 1 : 0;
+        using var aOwner = GpuBigUInt.FromBigInteger(_workspace, _a, Words + extra);
         using var bMagnitude = GpuBigUInt.FromBigInteger(_workspace, _b, Words);
-        using var separate = new GpuBigUInt(_workspace, Words);
-        var a = new GpuBigInt(aMagnitude, false);
+        using var separate = new GpuBigUInt(_workspace, Words + extra);
+        var a = new GpuBigInt(Head(aOwner, Words), false);
         var b = new GpuBigInt(bMagnitude, false);
 
         SignedExpression(op, a, b).Evaluate(separate);
         var before = _workspace.GetMemoryStatistics();
-        SignedExpression(op, a, b).Evaluate(aMagnitude);
+        SignedExpression(op, a, b).Evaluate(aOwner);
         var after = _workspace.GetMemoryStatistics();
 
         Assert.Equal(before.LiveBuffers, before.PeakLiveBuffers);
         Assert.Equal(before.PeakLiveBuffers + 1, after.PeakLiveBuffers);
         Assert.Equal(before.LiveBuffers, after.LiveBuffers);
     }
+
+    // The first words of owner, borrowed
+    private GpuBigUInt Head(GpuBigUInt owner, int words) => new(_workspace, owner.Handle.Slice(0, words));
 
     private static GpuBigIntExpr SignedExpression(SignedOp op, GpuBigInt a, GpuBigInt b)
     {
