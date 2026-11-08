@@ -20,6 +20,17 @@ Test assemblies discard console output (`TestConsole.Silence()`); set `GSHARP_TE
 
 Pick the command matching the domain you modified. Methodology (TDD, snapshot hierarchy) lives in [test-architecture.md](test-architecture.md).
 
+## Memory budgets
+
+Every test assembly has a memory budget for its whole test host in `tests/memory-budgets.yml` (`<test project name>: <MB>`, one line per test project at column 0; `MemoryBudgetFileTests` fails when a test project has no line or a line names no test project). The watchdog of `Kassyi.GSharp.Tests.Infrastructure` (`MemoryBudget`) runs in every test host and samples the peak memory of the process every 250 ms and at the end of every test: the peak private memory (commit charge) on Windows, the peak resident memory (`VmHWM`) on Linux. Native allocations count.
+
+- When the peak passes the budget, every test that was running at that moment fails with `MemoryBudgetExceededException`, the peak, the budget and the names of the running tests. One of them caused the growth; while tests run in parallel the memory of one test cannot be told apart from the others.
+- `MemoryBudgetFinalCheck.WholeRunPeak_StaysWithinBudget`, compiled into every test assembly, runs after every other test (a collection with `DisableParallelization`, ordered last by `MemoryBudgetCollectionOrderer`) and fails when the peak of the run passed the budget, also between tests (fixtures, disposal). A run filtered to some categories skips it unless the filter keeps `Category=Unit`.
+- `tests/Directory.Build.props` caps the managed heap at twice the budget (`System.GC.HeapHardLimit`), so growth faster than the sampling still cannot take the machine down. `GSharpTestHeapHardLimit` set from outside (`just mutate`) takes precedence.
+- A breach is a finding, not a number to raise: find the test that grew (start from the running tests in the message) and fix the growth. Raise a budget only when the growth is intended, and say why in the PR.
+
+To measure and update the budgets: set `GSHARP_TEST_MEMORY_REPORT=<dir>` (under `tmp/`), and `GSHARP_TEST_MEMORY_BUDGET_MB=1000000` so that no breach stops the run; each test host then appends `<peak MB>\t<GC heap peak MB>\t<budget MB>\t<tests run>\t<metric>` to `<dir>/<assembly>.tsv` when its final check runs (a run filtered so that the final check is skipped writes nothing). Run the suite three times each: on Windows as `just test` (Debug, GPU tests included) and as CI runs it (`-c Release --filter "Category!=GpuExecution"`, which includes the Stress and Benchmark tests), and on Linux (WSL) as CI runs it; take the largest peak per assembly, multiply by 1.5 and round up to a multiple of 64 MB. `GSHARP_TEST_MEMORY_BUDGET_MB` alone overrides the budget of every assembly of the run.
+
 ## CI (GitHub Actions)
 
 `.github/workflows/gpu-tests.yml` ("Hybrid CI") runs the tests without CUDA on GitHub-hosted runners. The repository is public, so these runners have no minute limit.
