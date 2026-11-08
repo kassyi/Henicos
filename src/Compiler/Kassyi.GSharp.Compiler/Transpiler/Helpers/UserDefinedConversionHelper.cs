@@ -2,8 +2,8 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Helpers;
 
 /// <summary>
 /// Emits calls to user-defined struct conversion operators (<c>implicit operator</c> and <c>explicit operator</c>),
-/// which <see cref="StructTranspiler"/> emits as free device functions (<c>__gsharp_fn_&lt;Type&gt;__op_Implicit</c> /
-/// <c>__op_Explicit</c>).
+/// which <see cref="StructConversionEmitter"/> emits as free device functions
+/// (<c>__gsharp_fn_&lt;Type&gt;__op_Implicit</c> / <c>__op_Explicit</c>).
 /// </summary>
 internal static class UserDefinedConversionHelper
 {
@@ -41,7 +41,7 @@ internal static class UserDefinedConversionHelper
         }
 
         conversionMethod = SubstituteStructConversion(conversionMethod, ref context);
-        if (!StructTranspiler.IsEmittedStructConversion(conversionMethod, model.Compilation))
+        if (!StructConversionEmitter.IsEmittedStructConversion(conversionMethod, model.Compilation))
         {
             return false;
         }
@@ -77,26 +77,26 @@ internal static class UserDefinedConversionHelper
         var compilation = context.Query.SemanticModel.Compilation;
         conversion = SubstituteStructConversion(conversion, ref context);
 
-        StructTranspiler.RegisterUsedStructIfApplicable(conversion.ContainingType, ref context);
-        var returnType = StructTranspiler.SubstituteTypeParameters(
+        StructOrdering.RegisterUsedStructIfApplicable(conversion.ContainingType, ref context);
+        var returnType = StructTypeSubstitution.SubstituteTypeParameters(
             conversion.ReturnType,
             context.Emitter.CurrentStructType,
             compilation);
-        StructTranspiler.RegisterUsedStructIfApplicable(returnType, ref context);
+        StructOrdering.RegisterUsedStructIfApplicable(returnType, ref context);
 
         ITypeSymbol? paramType = null;
         var isByRefParam = false;
         if (conversion.Parameters.Length > 0)
         {
-            paramType = StructTranspiler.SubstituteTypeParameters(
+            paramType = StructTypeSubstitution.SubstituteTypeParameters(
                 conversion.Parameters[0].Type,
                 context.Emitter.CurrentStructType,
                 compilation);
-            StructTranspiler.RegisterUsedStructIfApplicable(paramType, ref context);
+            StructOrdering.RegisterUsedStructIfApplicable(paramType, ref context);
             isByRefParam = conversion.Parameters[0].RefKind is RefKind.In or RefKind.RefReadOnlyParameter;
         }
 
-        targetType = StructTranspiler.SubstituteTypeParameters(
+        targetType = StructTypeSubstitution.SubstituteTypeParameters(
             targetType,
             context.Emitter.CurrentStructType,
             compilation);

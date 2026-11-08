@@ -1,7 +1,7 @@
 #pragma warning disable CS0649
 namespace Kassyi.GSharp.Tests.Shared.Transpiler;
 
-public class StructTranspilerEdgeCasesTests : TranspilerTestBase
+public class StructOrderingTests : TranspilerTestBase
 {
     // Resolves within this file only: the shared compilation may contain other types with the same name.
     private static INamedTypeSymbol GetLocalTypeSymbol(string name, [CallerFilePath] string callerFilePath = "")
@@ -20,7 +20,7 @@ public class StructTranspilerEdgeCasesTests : TranspilerTestBase
     public void Test_TopologicallySortedStructs_EmptyStruct()
     {
         var structSym = GetLocalTypeSymbol("EmptyStruct");
-        var sorted = StructTranspiler.GetTopologicallySortedStructs([structSym]);
+        var sorted = StructOrdering.GetTopologicallySortedStructs([structSym]);
 
         Assert.Single(sorted);
         Assert.Equal("EmptyStruct", sorted[0].Name);
@@ -35,7 +35,7 @@ public class StructTranspilerEdgeCasesTests : TranspilerTestBase
         var symC = GetLocalTypeSymbol("StructEdgeCases_StructC");
         var symD = GetLocalTypeSymbol("StructEdgeCases_StructD");
 
-        var sorted = StructTranspiler.GetTopologicallySortedStructs([symA, symB, symC, symD]);
+        var sorted = StructOrdering.GetTopologicallySortedStructs([symA, symB, symC, symD]);
 
         Assert.Equal(4, sorted.Length);
         // Order must be D -> C -> B -> A (dependents last)
@@ -50,7 +50,7 @@ public class StructTranspilerEdgeCasesTests : TranspilerTestBase
     public void Test_TopologicallySortedStructs_ExcludesSystemTypes()
     {
         var structSym = GetLocalTypeSymbol(nameof(MyStruct));
-        var sorted = StructTranspiler.GetTopologicallySortedStructs([structSym]);
+        var sorted = StructOrdering.GetTopologicallySortedStructs([structSym]);
 
         Assert.Single(sorted);
         Assert.Equal(nameof(MyStruct), sorted[0].Name);

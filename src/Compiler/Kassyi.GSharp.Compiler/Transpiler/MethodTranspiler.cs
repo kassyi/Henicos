@@ -209,7 +209,7 @@ public static class MethodTranspiler
         SortComparisonMembers.WriteDefinitions(ref context);
 
         context.Emitter.Writer = mainWriter;
-        var sortedStructs = StructTranspiler.GetTopologicallySortedStructs(ref context);
+        var sortedStructs = StructOrdering.GetTopologicallySortedStructs(ref context);
         foreach (var structSym in sortedStructs)
         {
             if (structSources == null)
@@ -285,7 +285,7 @@ public static class MethodTranspiler
         context.Emitter.Writer.AppendLine(";");
 
         context.Emitter.Writer = mainWriter;
-        foreach (var structSym in StructTranspiler.GetTopologicallySortedStructs(ref context))
+        foreach (var structSym in StructOrdering.GetTopologicallySortedStructs(ref context))
         {
             context.Emitter.Writer.Append("struct ").AppendFullyQualifiedCppName(structSym).AppendLine(";");
         }
@@ -384,7 +384,7 @@ public static class MethodTranspiler
         }
 
         var type = parameter.Type;
-        StructTranspiler.RegisterUsedStructIfApplicable(type, ref context);
+        StructOrdering.RegisterUsedStructIfApplicable(type, ref context);
         context.Emitter.Dialect.AppendParameter(ref context, syntax, type, parameter);
         context.Emitter.Writer.Append(' ').AppendCppName(name).AppendLine(";");
     }
@@ -392,7 +392,7 @@ public static class MethodTranspiler
     // <type> <name>;
     private static void WriteMember(ITypeSymbol type, in CppName name, ref TranspileContext context)
     {
-        StructTranspiler.RegisterUsedStructIfApplicable(type, ref context);
+        StructOrdering.RegisterUsedStructIfApplicable(type, ref context);
         context.Emitter.Dialect.AppendType(ref context, type);
         context.Emitter.Writer.Append(' ').AppendCppName(name).AppendLine(";");
     }

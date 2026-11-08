@@ -80,7 +80,7 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
             return;
         }
 
-        StructTranspiler.RegisterUsedStructIfApplicable(symbol.ReturnType, ref context);
+        StructOrdering.RegisterUsedStructIfApplicable(symbol.ReturnType, ref context);
         var convertArguments = context.Emitter.Dialect.TryMapIntrinsic(symbol, out _) &&
                                !symbol.HasAttribute(KnownAttributes.CudaIntrinsic) &&
                                symbol.ContainingType?.HasAttribute(KnownAttributes.CudaIntrinsicPattern) != true;
@@ -107,7 +107,7 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
         var model = context.Query.SemanticModel;
         var byReference = extension.Parameters[0].RefKind != RefKind.None;
 
-        StructTranspiler.RegisterUsedStructIfApplicable(symbol.ReturnType, ref context);
+        StructOrdering.RegisterUsedStructIfApplicable(symbol.ReturnType, ref context);
         using var sequence = EvaluationOrder.BeginExtensionCall(ref context, receiver, extension.Parameters[0],
             node.ArgumentList.Arguments, symbol);
         CppNameResolver.AppendSymbolName(extension, ref context);
@@ -151,7 +151,7 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
             return;
         }
 
-        StructTranspiler.RegisterUsedStructIfApplicable(callee.ReturnType, ref context);
+        StructOrdering.RegisterUsedStructIfApplicable(callee.ReturnType, ref context);
         context.Visitor.Visit(call.Expression);
         using (context.Emitter.Writer.Parentheses())
         {
