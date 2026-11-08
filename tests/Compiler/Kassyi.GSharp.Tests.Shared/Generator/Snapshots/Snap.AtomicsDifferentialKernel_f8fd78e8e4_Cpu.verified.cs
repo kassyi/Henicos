@@ -1294,7 +1294,7 @@ __gsharp_ctx->__gsharp_id_9_sMin={ (int*)__gsharp_allocate_smem_static(0x83e0dd3
 __gsharp_ctx->__gsharp_id_10_sAnd={ (int*)__gsharp_allocate_smem_static(0x83e0de38fe1f1a17ull, (8) * sizeof(int), alignof(int)) };
 __gsharp_ctx->__gsharp_id_11_sXor={ (int*)__gsharp_allocate_smem_static(0x83e0db38fe1f14feull, (8) * sizeof(int), alignof(int)) };
 __gsharp_ctx->__gsharp_id_12_sCas={ (int*)__gsharp_allocate_smem_static(0x83e0dc38fe1f16b1ull, (4) * sizeof(int), alignof(int)) };
-__gsharp_ctx->__gsharp_id_13_sDyn={ (int*)__gsharp_allocate_smem_dynamic(0x83e0d938fe1f1198ull, (__gsharp_ctx->__gsharp_id_3_dynSize) * sizeof(int), alignof(int), ""AtomicsDifferentialKernels.cs(385,20)"") };
+__gsharp_ctx->__gsharp_id_13_sDyn={ (int*)__gsharp_allocate_smem_dynamic(0x83e0d938fe1f1198ull, (__gsharp_ctx->__gsharp_id_3_dynSize) * sizeof(int), alignof(int), ""AtomicsDifferentialKernels.cs(388,20)"") };
 if(__gsharp_ctx->__gsharp_id_4_localTid<8)
 {
 __gsharp_ctx->__gsharp_id_7_sAdd[__gsharp_ctx->__gsharp_id_4_localTid]=100;
@@ -1474,7 +1474,7 @@ case 0:
 __gsharp_ctx.localTid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 __gsharp_ctx.gid = global::Kassyi.GSharp.Core.BlockIndex.X * global::Kassyi.GSharp.Core.BlockDimension.X + __gsharp_ctx.localTid;
 __gsharp_ctx.bucket = __gsharp_ctx.localTid & 7;
-sDyn = new global::Kassyi.GSharp.Core.SharedMemory<int>(__gsharp_ctx.dynSize, 0x83e0d938fe1f1198UL, "AtomicsDifferentialKernels.cs(385,20)");
+sDyn = new global::Kassyi.GSharp.Core.SharedMemory<int>(__gsharp_ctx.dynSize, 0x83e0d938fe1f1198UL, "AtomicsDifferentialKernels.cs(388,20)");
 if (__gsharp_ctx.localTid < 8)
 {
 sAdd[__gsharp_ctx.localTid] = 100;
@@ -3046,12 +3046,12 @@ __gsharp_switch_1_state_0:
 {
 int __gsharp_id_4_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 long long __gsharp_id_5_vl = __gsharp_id_0_input[__gsharp_id_4_tid];
-long long __gsharp_id_6_retAdd = __gsharp_atomicAdd((unsigned long long*)(&__gsharp_id_1_uncontendedSlots[__gsharp_mul_i32(__gsharp_id_4_tid,3)+0]),__gsharp_id_5_vl);
-long long __gsharp_id_7_retExch = atomicExch((unsigned long long*)(&__gsharp_id_1_uncontendedSlots[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_4_tid,3),1)]),__gsharp_add_i64(__gsharp_id_5_vl,1000ll));
+long long __gsharp_id_6_retAdd = __gsharp_atomicAdd(&__gsharp_id_1_uncontendedSlots[__gsharp_mul_i32(__gsharp_id_4_tid,3)+0],__gsharp_id_5_vl);
+long long __gsharp_id_7_retExch = __gsharp_atomicExch(&__gsharp_id_1_uncontendedSlots[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_4_tid,3),1)],__gsharp_add_i64(__gsharp_id_5_vl,1000ll));
 long long __gsharp_id_8_expectedCas = __gsharp_id_1_uncontendedSlots[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_4_tid,3),2)];
-long long __gsharp_id_9_retCasHit = __gsharp_atomicCAS((unsigned long long*)(&__gsharp_id_1_uncontendedSlots[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_4_tid,3),2)]),__gsharp_add_i64(__gsharp_id_5_vl,2000ll),__gsharp_id_8_expectedCas);
-__gsharp_atomicAdd((unsigned long long*)(&__gsharp_id_3_contendedState[0]),__gsharp_id_5_vl);
-__gsharp_atomicCAS((unsigned long long*)(&__gsharp_id_3_contendedState[1]),(-9876543210LL),(-1234567890LL));
+long long __gsharp_id_9_retCasHit = __gsharp_atomicCAS(&__gsharp_id_1_uncontendedSlots[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_4_tid,3),2)],__gsharp_add_i64(__gsharp_id_5_vl,2000ll),__gsharp_id_8_expectedCas);
+__gsharp_atomicAdd(&__gsharp_id_3_contendedState[0],__gsharp_id_5_vl);
+__gsharp_atomicCAS(&__gsharp_id_3_contendedState[1],(-9876543210LL),(-1234567890LL));
 int __gsharp_id_10_o = __gsharp_mul_i32(__gsharp_id_4_tid,3);
 __gsharp_id_2_returnsOut[__gsharp_id_10_o+0]=__gsharp_id_6_retAdd;
 __gsharp_id_2_returnsOut[__gsharp_add_i32(__gsharp_id_10_o,1)]=__gsharp_id_7_retExch;
@@ -3597,23 +3597,34 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 int __gsharp_id_3_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
-int __gsharp_id_4_add64LtZero = (__gsharp_atomicAdd((unsigned long long*)(&__gsharp_id_0_state64[__gsharp_mul_i32(__gsharp_id_3_tid,3)+0]),(-5LL))<0ll?1:0);
-int __gsharp_id_5_exch64SarSign = (int)(atomicExch((unsigned long long*)(&__gsharp_id_0_state64[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_3_tid,3),1)]),42ll)>>62);
-int __gsharp_id_6_cas64LtZero = (__gsharp_atomicCAS((unsigned long long*)(&__gsharp_id_0_state64[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_3_tid,3),2)]),99ll,(-10LL))<0ll?1:0);
-int __gsharp_id_7_add32WrapMin = (__gsharp_atomicAdd(&__gsharp_id_1_state32[__gsharp_mul_i32(__gsharp_id_3_tid,2)+0],1)==(-2147483647-1)?1:0);
+int __gsharp_id_4_add64LtZero = (__gsharp_atomicAdd(&__gsharp_id_0_state64[__gsharp_mul_i32(__gsharp_id_3_tid,5)+0],(-5LL))<0ll?1:0);
+int __gsharp_id_5_exch64SarSign = (int)(__gsharp_atomicExch(&__gsharp_id_0_state64[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_3_tid,5),1)],42ll)>>62);
+int __gsharp_id_6_cas64LtZero = (__gsharp_atomicCAS(&__gsharp_id_0_state64[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_3_tid,5),2)],99ll,(-10LL))<0ll?1:0);
+int __gsharp_id_7_add32WrapMin = (__gsharp_atomicAdd(&__gsharp_id_1_state32[__gsharp_mul_i32(__gsharp_id_3_tid,3)+0],1)==(-2147483647-1)?1:0);
 ([&]() {
-auto&& __gsharp_seq_0 = __gsharp_id_1_state32[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_3_tid,2),1)];
+auto&& __gsharp_seq_0 = __gsharp_id_1_state32[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_3_tid,3),1)];
 int __gsharp_seq_1 = 100;
 int __gsharp_seq_2 = 555;
 return __gsharp_atomicCAS(&__gsharp_seq_0,__gsharp_seq_2,__gsharp_seq_1);
 }());
-int __gsharp_id_8_casNamedUpdated = __gsharp_id_1_state32[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_3_tid,2),1)];
-int __gsharp_id_9_o = __gsharp_mul_i32(__gsharp_id_3_tid,5);
-__gsharp_id_2_output[__gsharp_id_9_o+0]=__gsharp_id_4_add64LtZero;
-__gsharp_id_2_output[__gsharp_add_i32(__gsharp_id_9_o,1)]=__gsharp_id_5_exch64SarSign;
-__gsharp_id_2_output[__gsharp_add_i32(__gsharp_id_9_o,2)]=__gsharp_id_6_cas64LtZero;
-__gsharp_id_2_output[__gsharp_add_i32(__gsharp_id_9_o,3)]=__gsharp_id_7_add32WrapMin;
-__gsharp_id_2_output[__gsharp_add_i32(__gsharp_id_9_o,4)]=__gsharp_id_8_casNamedUpdated;
+int __gsharp_id_8_casNamedUpdated = __gsharp_id_1_state32[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_3_tid,3),1)];
+int __gsharp_id_9_add64WrapMin = (__gsharp_atomicAdd(&__gsharp_id_0_state64[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_3_tid,5),3)],1ll)==(-9223372036854775807LL-1)?1:0);
+int __gsharp_id_10_add32WrapMax = (__gsharp_atomicAdd(&__gsharp_id_1_state32[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_3_tid,3),2)],(-2147483647-1))==2147483647?1:0);
+int __gsharp_id_11_cas64NamedLtZero = (([&]() {
+auto&& __gsharp_seq_3 = __gsharp_id_0_state64[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_3_tid,5),4)];
+long long __gsharp_seq_4 = (-7LL);
+long long __gsharp_seq_5 = (-9876543210LL);
+return __gsharp_atomicCAS(&__gsharp_seq_3,__gsharp_seq_5,__gsharp_seq_4);
+}())<0ll?1:0);
+int __gsharp_id_12_o = __gsharp_mul_i32(__gsharp_id_3_tid,8);
+__gsharp_id_2_output[__gsharp_id_12_o+0]=__gsharp_id_4_add64LtZero;
+__gsharp_id_2_output[__gsharp_add_i32(__gsharp_id_12_o,1)]=__gsharp_id_5_exch64SarSign;
+__gsharp_id_2_output[__gsharp_add_i32(__gsharp_id_12_o,2)]=__gsharp_id_6_cas64LtZero;
+__gsharp_id_2_output[__gsharp_add_i32(__gsharp_id_12_o,3)]=__gsharp_id_7_add32WrapMin;
+__gsharp_id_2_output[__gsharp_add_i32(__gsharp_id_12_o,4)]=__gsharp_id_8_casNamedUpdated;
+__gsharp_id_2_output[__gsharp_add_i32(__gsharp_id_12_o,5)]=__gsharp_id_9_add64WrapMin;
+__gsharp_id_2_output[__gsharp_add_i32(__gsharp_id_12_o,6)]=__gsharp_id_10_add32WrapMax;
+__gsharp_id_2_output[__gsharp_add_i32(__gsharp_id_12_o,7)]=__gsharp_id_11_cas64NamedLtZero;
 __gsharp_state=-1;
 return;
 }
@@ -3706,23 +3717,32 @@ switch (__gsharp_ctx.__gsharp_state)
 case 0:
 {
 int tid = global::Kassyi.GSharp.Core.BlockIndex.X * global::Kassyi.GSharp.Core.BlockDimension.X + global::Kassyi.GSharp.Core.ThreadIndex.X;
-// #1057 probe 1: Interlocked.Add(ref long, long) return value compared directly with < 0L
-int add64LtZero = global::System.Threading.Interlocked.Add(ref state64[tid * 3 + 0], -5L) < 0L ? 1 : 0;
-// #1057 probe 2: Interlocked.Exchange(ref long, long) return value right-shifted directly (arithmetic vs logical)
-int exch64SarSign = (int)(global::System.Threading.Interlocked.Exchange(ref state64[tid * 3 + 1], 42L) >> 62);
-// #1057 probe 3: Interlocked.CompareExchange(ref long, long, long) return value compared directly with < 0L
-int cas64LtZero = global::System.Threading.Interlocked.CompareExchange(ref state64[tid * 3 + 2], 99L, -10L) < 0L ? 1 : 0;
-// #1058 probe: Interlocked.Add(ref int, int) wrapping across int.MaxValue -> int.MinValue
-int add32WrapMin = global::System.Threading.Interlocked.Add(ref state32[tid * 2 + 0], 1) == int.MinValue ? 1 : 0;
-// #1059 probe: Interlocked.CompareExchange with reversed named arguments (comparand: ..., value: ...)
-global::System.Threading.Interlocked.CompareExchange(ref state32[tid * 2 + 1], comparand: 100, value: 555);
-int casNamedUpdated = state32[tid * 2 + 1];
-int o = tid * 5;
+// Interlocked.Add(ref long, long) return value compared directly with < 0L
+int add64LtZero = global::System.Threading.Interlocked.Add(ref state64[tid * 5 + 0], -5L) < 0L ? 1 : 0;
+// Interlocked.Exchange(ref long, long) return value right-shifted directly (arithmetic vs logical)
+int exch64SarSign = (int)(global::System.Threading.Interlocked.Exchange(ref state64[tid * 5 + 1], 42L) >> 62);
+// Interlocked.CompareExchange(ref long, long, long) return value compared directly with < 0L
+int cas64LtZero = global::System.Threading.Interlocked.CompareExchange(ref state64[tid * 5 + 2], 99L, -10L) < 0L ? 1 : 0;
+// Interlocked.Add(ref int, int) wrapping across int.MaxValue -> int.MinValue
+int add32WrapMin = global::System.Threading.Interlocked.Add(ref state32[tid * 3 + 0], 1) == int.MinValue ? 1 : 0;
+// Interlocked.CompareExchange with reversed named arguments (comparand: ..., value: ...)
+global::System.Threading.Interlocked.CompareExchange(ref state32[tid * 3 + 1], comparand: 100, value: 555);
+int casNamedUpdated = state32[tid * 3 + 1];
+// Interlocked.Add(ref long, long) wrapping across long.MaxValue -> long.MinValue
+int add64WrapMin = global::System.Threading.Interlocked.Add(ref state64[tid * 5 + 3], 1L) == long.MinValue ? 1 : 0;
+// Interlocked.Add(ref int, int) wrapping downward: -1 + int.MinValue -> int.MaxValue
+int add32WrapMax = global::System.Threading.Interlocked.Add(ref state32[tid * 3 + 2], int.MinValue) == int.MaxValue ? 1 : 0;
+// Interlocked.CompareExchange(ref long, ...) with reversed named arguments; the old value is negative
+int cas64NamedLtZero = global::System.Threading.Interlocked.CompareExchange(ref state64[tid * 5 + 4], comparand: -7L, value: -9876543210L) < 0L ? 1 : 0;
+int o = tid * 8;
 output[o + 0] = add64LtZero;
 output[o + 1] = exch64SarSign;
 output[o + 2] = cas64LtZero;
 output[o + 3] = add32WrapMin;
 output[o + 4] = casNamedUpdated;
+output[o + 5] = add64WrapMin;
+output[o + 6] = add32WrapMax;
+output[o + 7] = cas64NamedLtZero;
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -3919,7 +3939,7 @@ __gsharp_switch_1_state_0:
 __gsharp_ctx->__gsharp_id_6_localTid=(int)threadIdx.x;
 __gsharp_ctx->__gsharp_id_7_gid=__gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),__gsharp_ctx->__gsharp_id_6_localTid);
 __gsharp_ctx->__gsharp_id_8_sStatic={ (float*)__gsharp_allocate_smem_static(0xc19130e0685e4806ull, (4) * sizeof(float), alignof(float)) };
-__gsharp_ctx->__gsharp_id_9_sDyn={ (float*)__gsharp_allocate_smem_dynamic(0xc19131e0685e49b9ull, (__gsharp_ctx->__gsharp_id_5_dynLen) * sizeof(float), alignof(float), ""AtomicsDifferentialKernels.cs(702,20)"") };
+__gsharp_ctx->__gsharp_id_9_sDyn={ (float*)__gsharp_allocate_smem_dynamic(0xc19131e0685e49b9ull, (__gsharp_ctx->__gsharp_id_5_dynLen) * sizeof(float), alignof(float), ""AtomicsDifferentialKernels.cs(718,20)"") };
 if(__gsharp_ctx->__gsharp_id_6_localTid<4)
 {
 __gsharp_ctx->__gsharp_id_8_sStatic[__gsharp_ctx->__gsharp_id_6_localTid]=1.0f;
@@ -4069,7 +4089,7 @@ case 0:
 {
 __gsharp_ctx.localTid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 __gsharp_ctx.gid = global::Kassyi.GSharp.Core.BlockIndex.X * global::Kassyi.GSharp.Core.BlockDimension.X + __gsharp_ctx.localTid;
-sDyn = new global::Kassyi.GSharp.Core.SharedMemory<float>(__gsharp_ctx.dynLen, 0xc19131e0685e49b9UL, "AtomicsDifferentialKernels.cs(702,20)");
+sDyn = new global::Kassyi.GSharp.Core.SharedMemory<float>(__gsharp_ctx.dynLen, 0xc19131e0685e49b9UL, "AtomicsDifferentialKernels.cs(718,20)");
 if (__gsharp_ctx.localTid < 4)
 {
 sStatic[__gsharp_ctx.localTid] = 1.0f;

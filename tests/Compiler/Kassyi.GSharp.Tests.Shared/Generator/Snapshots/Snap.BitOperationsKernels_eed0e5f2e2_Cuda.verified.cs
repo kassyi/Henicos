@@ -796,17 +796,17 @@ __gsharp_id_1_results[0]=([&]() {
 long long __gsharp_seq_0 = 100ll;
 long long __gsharp_seq_1 = 999ll;
 auto&& __gsharp_seq_2 = __gsharp_id_0_targets[0];
-return __gsharp_atomicCAS((unsigned long long*)(&__gsharp_seq_2),__gsharp_seq_1,__gsharp_seq_0);
+return __gsharp_atomicCAS(&__gsharp_seq_2,__gsharp_seq_1,__gsharp_seq_0);
 }());
 __gsharp_id_1_results[1]=([&]() {
 long long __gsharp_seq_3 = 50ll;
 auto&& __gsharp_seq_4 = __gsharp_id_0_targets[1];
-return __gsharp_atomicAdd((unsigned long long*)(&__gsharp_seq_4),__gsharp_seq_3);
+return __gsharp_atomicAdd(&__gsharp_seq_4,__gsharp_seq_3);
 }());
 __gsharp_id_1_results[2]=([&]() {
 long long __gsharp_seq_5 = 420ll;
 auto&& __gsharp_seq_6 = __gsharp_id_0_targets[2];
-return atomicExch((unsigned long long*)(&__gsharp_seq_6),__gsharp_seq_5);
+return __gsharp_atomicExch(&__gsharp_seq_6,__gsharp_seq_5);
 }());
 }
 ";

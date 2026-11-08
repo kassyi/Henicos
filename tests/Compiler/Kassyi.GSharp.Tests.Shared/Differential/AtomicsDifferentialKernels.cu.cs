@@ -192,6 +192,9 @@ public static partial class AtomicsDifferentialKernels
         "cas64_lt_zero",
         "add32_wrap_min",
         "cas32_named_args_reversed",
+        "add64_wrap_min",
+        "add32_wrap_max",
+        "cas64_named_args_reversed",
     ];
 
     /// <summary>Exact float accumulator columns for <see cref="FloatExactPowersOfTwoAtomicKernel"/>.</summary>
@@ -647,7 +650,7 @@ public static partial class AtomicsDifferentialKernels
 
     // -------------------------------------------------------------------------
     // Direct consumption of Interlocked return values in signed comparisons,
-    //      shifts, wraparound, and named-argument calls (#1057, #1058, #1059).
+    //      shifts, wraparound, and named-argument calls, for int and long.
     // -------------------------------------------------------------------------
     [GpuKernel]
     public static void InterlockedReturnExpressionKernel(
@@ -657,28 +660,41 @@ public static partial class AtomicsDifferentialKernels
     {
         int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
 
-        // #1057 probe 1: Interlocked.Add(ref long, long) return value compared directly with < 0L
-        int add64LtZero = Interlocked.Add(ref state64[tid * 3 + 0], -5L) < 0L ? 1 : 0;
+        // Interlocked.Add(ref long, long) return value compared directly with < 0L
+        int add64LtZero = Interlocked.Add(ref state64[tid * 5 + 0], -5L) < 0L ? 1 : 0;
 
-        // #1057 probe 2: Interlocked.Exchange(ref long, long) return value right-shifted directly (arithmetic vs logical)
-        int exch64SarSign = (int)(Interlocked.Exchange(ref state64[tid * 3 + 1], 42L) >> 62);
+        // Interlocked.Exchange(ref long, long) return value right-shifted directly (arithmetic vs logical)
+        int exch64SarSign = (int)(Interlocked.Exchange(ref state64[tid * 5 + 1], 42L) >> 62);
 
-        // #1057 probe 3: Interlocked.CompareExchange(ref long, long, long) return value compared directly with < 0L
-        int cas64LtZero = Interlocked.CompareExchange(ref state64[tid * 3 + 2], 99L, -10L) < 0L ? 1 : 0;
+        // Interlocked.CompareExchange(ref long, long, long) return value compared directly with < 0L
+        int cas64LtZero = Interlocked.CompareExchange(ref state64[tid * 5 + 2], 99L, -10L) < 0L ? 1 : 0;
 
-        // #1058 probe: Interlocked.Add(ref int, int) wrapping across int.MaxValue -> int.MinValue
-        int add32WrapMin = Interlocked.Add(ref state32[tid * 2 + 0], 1) == int.MinValue ? 1 : 0;
+        // Interlocked.Add(ref int, int) wrapping across int.MaxValue -> int.MinValue
+        int add32WrapMin = Interlocked.Add(ref state32[tid * 3 + 0], 1) == int.MinValue ? 1 : 0;
 
-        // #1059 probe: Interlocked.CompareExchange with reversed named arguments (comparand: ..., value: ...)
-        Interlocked.CompareExchange(ref state32[tid * 2 + 1], comparand: 100, value: 555);
-        int casNamedUpdated = state32[tid * 2 + 1];
+        // Interlocked.CompareExchange with reversed named arguments (comparand: ..., value: ...)
+        Interlocked.CompareExchange(ref state32[tid * 3 + 1], comparand: 100, value: 555);
+        int casNamedUpdated = state32[tid * 3 + 1];
 
-        int o = tid * 5;
+        // Interlocked.Add(ref long, long) wrapping across long.MaxValue -> long.MinValue
+        int add64WrapMin = Interlocked.Add(ref state64[tid * 5 + 3], 1L) == long.MinValue ? 1 : 0;
+
+        // Interlocked.Add(ref int, int) wrapping downward: -1 + int.MinValue -> int.MaxValue
+        int add32WrapMax = Interlocked.Add(ref state32[tid * 3 + 2], int.MinValue) == int.MaxValue ? 1 : 0;
+
+        // Interlocked.CompareExchange(ref long, ...) with reversed named arguments; the old value is negative
+        int cas64NamedLtZero =
+            Interlocked.CompareExchange(ref state64[tid * 5 + 4], comparand: -7L, value: -9876543210L) < 0L ? 1 : 0;
+
+        int o = tid * 8;
         output[o + 0] = add64LtZero;
         output[o + 1] = exch64SarSign;
         output[o + 2] = cas64LtZero;
         output[o + 3] = add32WrapMin;
         output[o + 4] = casNamedUpdated;
+        output[o + 5] = add64WrapMin;
+        output[o + 6] = add32WrapMax;
+        output[o + 7] = cas64NamedLtZero;
     }
 
     // -------------------------------------------------------------------------
