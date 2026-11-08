@@ -31,6 +31,9 @@ __forceinline__ unsigned int __gsharp_grid_stride_step() {
 }
 // The count of Gpu.GridStrideLoop, evaluated once; a negative count runs no iteration, as i < n does in C#
 __forceinline__ unsigned int __gsharp_grid_stride_count(int n) { return n < 0 ? 0u : (unsigned int)n; }
+// The int loop variable of the loop that the CPU lowering makes of a Gpu.GridStrideLoop (PreLoweringExpander); the
+// index is below the count, so below 2^31
+__forceinline__ int __gsharp_grid_stride_index(unsigned int index) { return (int)index; }
 
 namespace cg {
     struct grid_group {
