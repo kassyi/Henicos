@@ -32,13 +32,13 @@ public class AtomicAndSyncGridDiagnosticsTests
     }
 
     // Both Gpu.AtomicAdd and Interlocked.Add return thread-variant values; barriers under conditions on those
-    // values must report GSH0083 (and on CPU, Warp.ActiveMask reports GSH0101).
+    // values must report GSH0083.
     [Theory(Skip = "Pending #1072 (Interlocked return variance and GSH0083)")]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Scenario(TestScenario.SadPath)]
     [InlineData("Cpu")]
     [InlineData("Cuda")]
-    public async Task Test_GpuAtomicVsInterlockedBarrierUniformity_ReportsGsh0083AndGsh0101(string dialect)
+    public async Task Test_GpuAtomicVsInterlockedBarrierUniformity_ReportsGsh0083(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(AtomicBarrierUniformityCase, dialect);
 
@@ -48,16 +48,6 @@ public class AtomicAndSyncGridDiagnosticsTests
                 (Analyzer, 27, 13, 27, 29)
             ],
             diagnostics.Ranges(GSharpDiagnostics.LaunchDependentDivergentBarrier.Id));
-
-        if (dialect != "Cuda")
-        {
-            Assert.Equal(
-                [
-                    (Analyzer, 12, 32, 12, 49),
-                    (Analyzer, 26, 32, 26, 49)
-                ],
-                diagnostics.Ranges(GSharpDiagnostics.WarpActiveMaskInDivergentCode.Id));
-        }
     }
 
     // Interlocked.Add(ref long, long) and Interlocked.Exchange(ref long, long) should cast the unsigned atomic result

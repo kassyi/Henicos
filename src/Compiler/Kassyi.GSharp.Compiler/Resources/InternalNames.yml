@@ -35,6 +35,17 @@ StateMachine:
     WarpWaiting: { Value: __gsharp_warp_waiting, Prelude: WarpAndHints.hpp }
     # How often a frame reached each warp collective of its body
     WarpVisits: { Value: __gsharp_warp_visits, Prelude: WarpAndHints.hpp }
+    # The branches and loops a thread is inside in a kernel that reaches Warp.ActiveMask() (#844), innermost last, and
+    # whether it waits where one of them ends for the other lanes that entered it, since which round and where
+    WarpRegions: { Value: __gsharp_warp_regions, Prelude: WarpAndHints.hpp }
+    WarpInstanceType: { Value: __gsharp_warp_instance, Prelude: WarpAndHints.hpp }
+    WarpRegionDepth: { Value: __gsharp_warp_region_depth, Prelude: WarpAndHints.hpp }
+    WarpReconverging: { Value: __gsharp_warp_reconverging, Prelude: WarpAndHints.hpp }
+    WarpReconvergeRound: { Value: __gsharp_warp_reconverge_round, Prelude: WarpAndHints.hpp }
+    WarpReconvergeLocation: { Value: __gsharp_warp_reconverge_location, Prelude: WarpAndHints.hpp }
+    # The round in which the waiting lanes of the warp were last decided (kept by its lane 0) and whether this lane goes on
+    WarpDecidedRound: { Value: __gsharp_warp_decided_round, Prelude: WarpAndHints.hpp }
+    WarpMayPass: { Value: __gsharp_warp_may_pass, Prelude: WarpAndHints.hpp }
     # The managed path numbers the frames of a thread to tell the paths through device functions apart (the native
     # path uses the offset of the frame in the kernel context)
     WarpPath: __gsharp_warp_path
@@ -122,6 +133,8 @@ Lowering:
     # returns (__gsharp_sg_next_<body>_<statement>); the CUDA emitter and the CPU lowering both spell them
     SyncGridDonePrefix: __gsharp_sg_done_
     SyncGridNextLabelPrefix: __gsharp_sg_next_
+    # The end of a loop body where the lanes that continue wait for the others (__gsharp_ReconvergeContinue_<n>, #844)
+    ReconvergeContinueLabelPrefix: __gsharp_ReconvergeContinue_
     # The label after a Gpu.SingleThread body with a return (__gsharp_st_end_<body>), which a return of the body jumps to;
     # the C++ emitter and the managed rewrite both spell it
     SingleThreadEndLabelPrefix: __gsharp_st_end_
@@ -303,6 +316,14 @@ Prelude:
     WarpSyncRead: { Value: __gsharp_warp_sync_read, Prelude: WarpAndHints.hpp, Managed: ManagedGpuContext.WarpRendezvous.cs }
     WarpCanRun: { Value: __gsharp_warp_can_run, Prelude: WarpAndHints.hpp }
     WarpReportStall: { Value: __gsharp_warp_report_stall, Prelude: WarpAndHints.hpp }
+    # Warp.ActiveMask() publishes without a mask and reads the lanes that published the same call in the same round; a
+    # method that reaches it enters and leaves its thread-dependent branches and loops, and the lanes that entered one
+    # wait for each other where it ends (#844)
+    WarpActiveMaskRead: { Value: __gsharp_warp_active_mask_read, Prelude: WarpAndHints.hpp, Managed: ManagedGpuContext.WarpRendezvous.cs }
+    WarpRegionEnter: { Value: __gsharp_warp_region_enter, Prelude: WarpAndHints.hpp, Managed: ManagedGpuContext.WarpRendezvous.cs }
+    WarpRegionLeave: { Value: __gsharp_warp_region_leave, Prelude: WarpAndHints.hpp, Managed: ManagedGpuContext.WarpRendezvous.cs }
+    WarpReconvergeArrive: { Value: __gsharp_warp_reconverge_arrive, Prelude: WarpAndHints.hpp, Managed: ManagedGpuContext.WarpRendezvous.cs }
+    WarpReconvergePass: { Value: __gsharp_warp_reconverge_pass, Prelude: WarpAndHints.hpp, Managed: ManagedGpuContext.WarpRendezvous.cs }
     WarpShuffleReadSync: { Value: __gsharp_warp_shuffle_read_sync, Prelude: WarpAndHints.hpp, Managed: ManagedGpuContext.cs }
     WarpShuffleReadDownSync: { Value: __gsharp_warp_shuffle_read_down_sync, Prelude: WarpAndHints.hpp, Managed: ManagedGpuContext.cs }
     WarpShuffleReadUpSync: { Value: __gsharp_warp_shuffle_read_up_sync, Prelude: WarpAndHints.hpp, Managed: ManagedGpuContext.cs }

@@ -1300,16 +1300,146 @@ missing |= 1u << lane;
 return missing;
 }
 
+// The thread-dependent branches and loops of a method that reaches Warp.ActiveMask() (#844). A lane enters one before
+// it (the entry is the frame's path, the number of the branch and how often the frame entered it) and leaves it where it
+// ends, or by a jump out of it. Where it ends, the lane waits until no other lane of its warp is still inside the same
+// entry: the GPU runs the lanes of a warp that took different ways through a branch together again there, and
+// Warp.ActiveMask() returns the lanes that run together. ManagedGpuContext does the same.
+template<typename TRoot, typename TFrame>
+inline void __gsharp_warp_region_enter(TRoot* __gsharp_root, TFrame* __gsharp_ctx, uint32_t site) {
+constexpr uint32_t capacity = sizeof(__gsharp_root->__gsharp_warp_regions) / sizeof(__gsharp_warp_instance);
+if (__gsharp_root->__gsharp_warp_region_depth == capacity) {
+__gsharp_trap(GSharpErrorCode::InvalidOperation,
+""G#: a thread is inside more than 16 thread-dependent branches and loops at once in methods that ""
+""reach Warp.ActiveMask(); the CPU paths cannot follow which lanes run together"");
+return;
+}
+__gsharp_root->__gsharp_warp_regions[__gsharp_root->__gsharp_warp_region_depth++] = {
+__gsharp_warp_path_of(__gsharp_root, __gsharp_ctx), site, ++__gsharp_ctx->__gsharp_warp_visits[site]};
+}
+
+template<typename TRoot, typename TFrame>
+inline void __gsharp_warp_region_leave(TRoot* __gsharp_root, TFrame* __gsharp_ctx, uint32_t site) {
+uint32_t depth = __gsharp_root->__gsharp_warp_region_depth;
+if (depth == 0u || __gsharp_root->__gsharp_warp_regions[depth - 1u].site != site ||
+__gsharp_root->__gsharp_warp_regions[depth - 1u].path != __gsharp_warp_path_of(__gsharp_root, __gsharp_ctx)) {
+__gsharp_trap(GSharpErrorCode::InvalidOperation,
+""G#: internal error: a thread left a branch it is not inside (please report this G# bug)"");
+return;
+}
+__gsharp_root->__gsharp_warp_region_depth = depth - 1u;
+}
+
+// The lane arrives where the innermost branch it is inside ends, and waits (__gsharp_warp_can_run)
+template<typename TRoot, typename TFrame>
+inline void __gsharp_warp_reconverge_arrive(TRoot* __gsharp_root, TFrame* __gsharp_ctx, uint32_t site,
+const char* location) {
+(void)__gsharp_ctx;
+(void)site;
+__gsharp_root->__gsharp_warp_reconverging = true;
+// Decided in a later round (a cooperative kernel counts the rounds of each grid phase from 1, so a decision of an
+// earlier phase may carry the same round; it then waits one round more)
+__gsharp_root->__gsharp_warp_may_pass = false;
+__gsharp_root->__gsharp_warp_reconverge_round = __gsharp_root->__gsharp_warp_round;
+__gsharp_root->__gsharp_warp_reconverge_location = location;
+}
+
+// The lanes that entered the branch with it have arrived or left: it leaves the branch and goes on
+template<typename TRoot, typename TFrame>
+inline void __gsharp_warp_reconverge_pass(TRoot* __gsharp_root, TFrame* __gsharp_ctx, uint32_t site) {
+__gsharp_root->__gsharp_warp_reconverging = false;
+__gsharp_warp_region_leave(__gsharp_root, __gsharp_ctx, site);
+}
+
+// The other lanes of the warp of thread tid that have not exited and are inside the entry of the branch where tid waits,
+// and have not arrived at its end before the given round. A lane that arrived in this round still counts: the lanes of
+// an entry all go on in the same round
+template<typename TContext>
+inline uint32_t __gsharp_warp_reconverge_missing(const TContext* contexts, uint32_t tid, uint32_t threads,
+uint32_t round) {
+const TContext& self = contexts[tid];
+const __gsharp_warp_instance& region = self.__gsharp_warp_regions[self.__gsharp_warp_region_depth - 1u];
+uint32_t warpBase = tid & ~31u;
+uint32_t missing = 0u;
+for (uint32_t lane = 0u; lane < 32u; lane++) {
+uint32_t laneTid = warpBase + lane;
+if (laneTid >= threads || laneTid == tid || contexts[laneTid].__gsharp_state == -1) {
+continue;
+}
+const TContext& other = contexts[laneTid];
+for (uint32_t depth = 0u; depth < other.__gsharp_warp_region_depth; depth++) {
+const __gsharp_warp_instance& entry = other.__gsharp_warp_regions[depth];
+if (entry.path != region.path || entry.site != region.site || entry.visit != region.visit) {
+continue;
+}
+bool arrived = other.__gsharp_warp_reconverging && depth + 1u == other.__gsharp_warp_region_depth &&
+other.__gsharp_warp_reconverge_round < round;
+if (!arrived) {
+missing |= 1u << lane;
+}
+break;
+}
+}
+return missing;
+}
+
+// 1 when thread tid waits where a branch ends and may go on, 0 when it waits there still, -1 when it does not wait
+// there; a kernel that does not reach Warp.ActiveMask() has no branches to wait at (the second overload).
+// [WHY] Which waiting lanes of a warp go on is decided once per round, before any lane of the warp takes its step (the
+// first call for the warp in the round): a lane that leaves the branch by a jump earlier in the same round must still
+// hold back the lanes after it, so that every lane of the entry goes on in the same round
+template<typename TContext>
+inline auto __gsharp_warp_reconverge_state(TContext* contexts, uint32_t tid, uint32_t threads, uint32_t round, int)
+-> decltype(contexts[tid].__gsharp_warp_reconverging, int()) {
+uint32_t warpBase = tid & ~31u;
+TContext& leader = contexts[warpBase];
+if (leader.__gsharp_warp_decided_round != round) {
+leader.__gsharp_warp_decided_round = round;
+for (uint32_t laneTid = warpBase; laneTid < warpBase + 32u && laneTid < threads; laneTid++) {
+TContext& lane = contexts[laneTid];
+if (lane.__gsharp_state != -1 && lane.__gsharp_warp_reconverging) {
+lane.__gsharp_warp_may_pass = __gsharp_warp_reconverge_missing(contexts, laneTid, threads, round) == 0u;
+}
+}
+}
+if (!contexts[tid].__gsharp_warp_reconverging) {
+return -1;
+}
+return contexts[tid].__gsharp_warp_may_pass ? 1 : 0;
+}
+
+template<typename TContext>
+inline int __gsharp_warp_reconverge_state(TContext*, uint32_t, uint32_t, uint32_t, long) {
+return -1;
+}
+
 // Whether thread tid of the block takes its next step in this round: it does not wait at a warp collective, or every
 // lane of the mask that has not exited published the same instance in an earlier round (CUDA evaluates a collective
-// for the lanes of the mask that have not exited). The lanes of a group all go on in the same round.
+// for the lanes of the mask that have not exited). The lanes of a group all go on in the same round. A lane that waits
+// where a branch ends goes on once the lanes that entered it with it have arrived (#844)
 template<typename TContext>
 inline bool __gsharp_warp_can_run(TContext* contexts, uint32_t tid, uint32_t threads, uint32_t round) {
 TContext& self = contexts[tid];
 self.__gsharp_warp_round = round;
+int reconverge = __gsharp_warp_reconverge_state(contexts, tid, threads, round, 0);
+if (reconverge >= 0) {
+return reconverge == 1;
+}
 return !self.__gsharp_warp_waiting ||
 __gsharp_warp_missing_lanes(contexts, tid, threads, round,
 self.__gsharp_warp_records[self.__gsharp_warp_record_next ^ 1u]) == 0u;
+}
+
+// Where a lane that waits where a branch ends waits, for the error of a stall; null for a lane that does not
+template<typename TContext>
+inline auto __gsharp_warp_reconverge_location_of(const TContext& lane, int)
+-> decltype(lane.__gsharp_warp_reconverging, (const char*)nullptr) {
+return lane.__gsharp_warp_reconverging ? lane.__gsharp_warp_reconverge_location : nullptr;
+}
+
+template<typename TContext>
+inline const char* __gsharp_warp_reconverge_location_of(const TContext&, long) {
+return nullptr;
 }
 
 // No thread of the block could run in a round while some wait at a warp collective: a lane of their mask that has not
@@ -1332,7 +1462,9 @@ first++;
 }
 const TContext& other = contexts[(tid & ~31u) + first];
 char where[320];
-if (other.__gsharp_warp_waiting) {
+if (const char* branch = __gsharp_warp_reconverge_location_of(other, 0)) {
+std::snprintf(where, sizeof(where), ""waits for the other lanes where the branch or call at %s ends"", branch);
+} else if (other.__gsharp_warp_waiting) {
 const __gsharp_warp_record& otherWait = other.__gsharp_warp_records[other.__gsharp_warp_record_next ^ 1u];
 std::snprintf(where, sizeof(where), ""waits at %s at %s"", otherWait.name, otherWait.location);
 } else if (other.__gsharp_yielded_for_block_barrier) {
@@ -1387,6 +1519,42 @@ return threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + thread
 // Gpu.LaneId() and Gpu.WarpId(): a warp holds 32 consecutive linear thread indices of the block, as on the GPU (#845)
 inline int __gsharp_lane_id() { return (int)(__gsharp_warp_linear_tid() & 31u); }
 inline int __gsharp_warp_id() { return (int)(__gsharp_warp_linear_tid() >> 5); }
+
+// Warp.ActiveMask() (#844): the lanes of the caller's warp that stopped at the same call (path and site) in the same
+// round, which the lanes that reach it together on the GPU do: the lanes that took the same way through the
+// thread-dependent branches since they last ran together, and have not exited. A lane that has exited since it stopped
+// there still counts, as it ran with the others. ManagedGpuContext computes the same
+template<typename TRoot, typename TFrame>
+inline uint32_t __gsharp_warp_active_mask_read(TRoot* __gsharp_root, TFrame* __gsharp_ctx, uint32_t site,
+const char* location) {
+__gsharp_warp_instance instance = __gsharp_warp_begin_read(__gsharp_root, __gsharp_ctx, site);
+const __gsharp_warp_record* own = __gsharp_warp_find(*__gsharp_root, instance.path, instance.site, instance.visit);
+if (own == nullptr) {
+char text[320];
+std::snprintf(text, sizeof(text),
+""G#: internal error: Warp.ActiveMask() at %s finds no record of its own call (please report this ""
+""G# bug)"",
+location);
+__gsharp_trap(GSharpErrorCode::InvalidOperation, text);
+return 0u;
+}
+uint32_t round = own->round;
+uint32_t threads = blockDim.x * blockDim.y * blockDim.z;
+uint32_t warpBase = __gsharp_warp_linear_tid() & ~31u;
+uint32_t lanes = 0u;
+for (uint32_t lane = 0u; lane < 32u && warpBase + lane < threads; lane++) {
+const auto& other = __gsharp_root->__gsharp_all_contexts[warpBase + lane];
+for (uint32_t slot = 0u; slot < 2u; slot++) {
+const __gsharp_warp_record& record = other.__gsharp_warp_records[slot];
+if (record.visit != 0u && record.round == round && record.site == instance.site &&
+record.path == instance.path) {
+lanes |= 1u << lane;
+break;
+}
+}
+}
+return lanes;
+}
 
 // Reads the value that lane srcLane of the caller's warp published for the same instance of the call. Reading a lane
 // that does not exist in the block, that has exited or that does not take part in the call, or one that called it with
