@@ -26,7 +26,7 @@ internal abstract class FloatVectorBinaryScalarExpressionBase(
     public int Length => vector.Length;
     public int WordsPerElement { get; } = wordsPerElement;
 
-    // The result buffers, lent until the next evaluation or Dispose; a caller's target is never kept (design 4.6)
+    // The result buffers, lent until the next evaluation or Dispose; a caller's target is never kept
     private readonly VectorResultCache _cache = new();
 
     protected uint BlockDimX => (uint)Math.Min(1024, WordsPerElement);
@@ -35,7 +35,7 @@ internal abstract class FloatVectorBinaryScalarExpressionBase(
 
     public bool TryGetLength(out int length) => vector.TryGetLength(out length);
 
-    // Evaluates the window of the capacity; the elements are the first Count of them (design D3 4.3)
+    // Evaluates the window of the capacity; the elements are the first Count of them
     public FloatVectorEvaluation EvaluateCore(
         GpuWorkspace workspace,
         int elementOffset,
@@ -62,7 +62,7 @@ internal abstract class FloatVectorBinaryScalarExpressionBase(
 
         // A host loop wrote only the elements; a kernel wrote the whole window
         var written = RunsOnHost ? vecResult.Count : DeviceElementCount.Static(evalCount);
-        return new FloatVectorEvaluation(output.Close(workspace, written), vecResult.Count);
+        return new FloatVectorEvaluation(output.Close(workspace, written), vecResult.Count, _cache.Lease);
     }
 
     /// <summary>
@@ -209,11 +209,18 @@ internal sealed class FloatVectorDivScalarExpression(
         FloatVectorScalarOperands operands,
         uint gridDimX)
     {
+        if (new GpuBigUIntView(workspace, operands.Scalar.Significand).IsZero())
+        {
+            throw new DivideByZeroException();
+        }
+
         var ctx = new GpuBigIntVectorKernels.AotContexts.VectorFloatDiv
         {
             FloatOp = CreateScalarFloatOp(operands),
             PreShiftBits = DefaultDivShiftBits
         };
+        using var scratch = DivModScratch.Rent(workspace, ctx.FloatOp.Core, gridDimX);
+        ctx.Scratch = scratch?.DevicePointer ?? IntPtr.Zero;
         GpuBigIntVectorKernels.LaunchVectorFloatDivScalarKernelPtr(
             ctx, gridDimX, 1, 1, 32, 1, 1, 0, workspace.Stream);
     }

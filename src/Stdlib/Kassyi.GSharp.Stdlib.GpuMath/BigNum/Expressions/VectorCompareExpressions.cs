@@ -12,7 +12,7 @@ internal class VectorCompareScalarExpression(
 
     public bool TryGetLength(out int length) => vector.TryGetLength(out length);
 
-    // The flags of the capacity; the elements are the first Count of them, as for the input (design D3 4.3)
+    // The flags of the capacity; the elements are the first Count of them, as for the input
     public BoolVectorEvaluation EvaluateCore(GpuWorkspace workspace)
     {
         var vecResult = DeviceCounted.Evaluate(vector, workspace);
@@ -77,6 +77,9 @@ internal class VectorCompareVectorExpression(
     private GpuBigUIntArray _finalValues;
     private bool _allocated;
 
+    // Evaluates the operands so that a shared sub-expression read at two offsets keeps both results
+    private readonly VectorOperandPair _operands = new();
+
     public bool TryGetLength(out int length) => left.TryGetLength(out length);
 
     public BoolVectorEvaluation EvaluateCore(GpuWorkspace workspace)
@@ -86,8 +89,7 @@ internal class VectorCompareVectorExpression(
             throw new ArgumentException("Lengths must match");
         }
 
-        var leftResult = DeviceCounted.Evaluate(left, workspace);
-        var rightResult = DeviceCounted.Evaluate(right, workspace);
+        _operands.Evaluate(left, right, workspace, 0, null, out var leftResult, out var rightResult);
         var count = DeviceCounted.Combine(leftResult.Count, rightResult.Count);
 
         var capacity = Capacity;
@@ -120,6 +122,7 @@ internal class VectorCompareVectorExpression(
             _allocated = false;
         }
 
+        _operands.Dispose();
         left.Dispose();
         right.Dispose();
     }

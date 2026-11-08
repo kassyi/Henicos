@@ -221,9 +221,8 @@ var ctx = new AdvancedContext { Data = new float[100] };
 // ✅ Allowed: The host-array launcher automatically performs deep struct marshaling
 MyKernels.LaunchProcess(ref ctx);
 
-// ❌ Prohibited: The Ptr overload expects pre-allocated device pointers.
-// A struct containing a managed array (T[]) cannot be mapped safely here.
-// Throws NotSupportedException: "Passing a struct with arrays is not supported when isDevicePtr is true."
+// ❌ Does not compile: the Ptr overload takes the native struct (AotContexts.AdvancedContext)
+// whose array fields are pre-allocated device pointers, not a struct containing a managed array (T[]).
 MyKernels.LaunchProcessPtr(ctx);
 ```
 
@@ -243,7 +242,7 @@ When the transpiler is configured to use the `CpuDialect` (Standard C++), the ge
 The `GpuKernelGenerator` reads several MSBuild properties via `AnalyzerConfigOptions` to control the compilation pipeline. These properties must be prefixed with `build_property.` when accessed:
 
 - `GSharpTargetDialect`: Specifies the target transpilation dialect (e.g., `Cuda` or `Cpu`).
-- `GSharpEmitSource`: If `true`, the compiler embeds the generated C++ source in the assembly as string constants (`{Kernel}_Source`, `{Kernel}_FullSource` and the shared `Source`). Defaults to `false` when unset.
+- `GSharpEmitSource`: If `true`, the compiler embeds the generated C++ source in the assembly as string constants (`{Kernel}_Source` and the shared `Source` of the prelude and device code classes). A user who needs the whole translation unit concatenates the shared prelude, the shared device code and `{Kernel}_Source`. Defaults to `false` when unset.
 - `IntermediateOutputPath`: Used to determine where to output generated artifacts and intermediate files.
 - `GSharpExportDeviceCode`: If `false`, the assembly writes no device code records for other assemblies and no managed state machines for them (§1.7). Defaults to `true` when unset. Set it to `false` in an application or a test assembly that no other assembly calls into; a library keeps the default.
 

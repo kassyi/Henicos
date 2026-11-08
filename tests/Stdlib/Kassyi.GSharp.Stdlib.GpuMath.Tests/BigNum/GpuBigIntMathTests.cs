@@ -97,11 +97,15 @@ public sealed class GpuBigIntMathTests : IDisposable
     [InlineData(-5, 3)]
     [InlineData(3, -5)]
     [InlineData(-3, 5)]
+    [InlineData(5, -5)]
+    [InlineData(-5, 5)]
+    [InlineData(0, 0)]
     public void AddSignedMagnitude_SignTable_MatchesBigIntegerSum(int leftValue, int rightValue)
     {
-        // The magnitude and the returned sign are those of the BigInteger sum. Equal magnitudes with opposite signs
-        // are left out: the sign of a zero sum is #651.
-        // mutant: GpuBigIntMath.cs:82 `return rightNegative` -> `return !rightNegative` / `leftNegative` (3 + -5, -3 + 5)
+        // The magnitude and the returned sign are those of the BigInteger sum. BigInteger has no negative zero, so a
+        // zero sum (equal magnitudes with opposite signs, -5 + 5) must return false.
+        // mutant: GpuBigIntMath.cs:114 `return rightNegative` -> `return !rightNegative` / `leftNegative` (3 + -5, -3 + 5)
+        // mutant: GpuBigIntMath.cs:110 `return comparison > 0 && leftNegative` -> `return leftNegative` (-5 + 5)
         using var left = new GpuBigUInt(_workspace, Words(2, (uint)Math.Abs(leftValue)));
         using var right = new GpuBigUInt(_workspace, Words(2, (uint)Math.Abs(rightValue)));
         using var result = new GpuBigUInt(_workspace, 2);
@@ -110,6 +114,60 @@ public sealed class GpuBigIntMathTests : IDisposable
 
         var sum = leftValue + rightValue;
         Assert.Equal((new BigInteger(Math.Abs(sum)), sum < 0), (result.ToBigInteger(), negative));
+    }
+
+    // Pairs at both ends of the 1- and 2-word ranges; the first, second, fourth, eighth and ninth differ by half the
+    // range or more, where the top bit of the wrapping difference a - b has the opposite value.
+    public static TheoryData<int, ulong, ulong> IsLessThanPairs => new()
+    {
+        { 1, 0x8000_0000ul, 0ul },
+        { 1, 0ul, 0x8000_0001ul },
+        { 1, 0xFFFF_FFFFul, 0ul },
+        { 1, 0ul, 0xFFFF_FFFFul },
+        { 1, 3ul, 5ul },
+        { 1, 5ul, 3ul },
+        { 1, 7ul, 7ul },
+        { 2, 0x8000_0000_0000_0000ul, 1ul },
+        { 2, 1ul, 0xFFFF_FFFF_0000_0000ul },
+        { 2, 0x1_0000_0000ul, 0xFFFF_FFFFul }
+    };
+
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [MemberData(nameof(IsLessThanPairs))]
+    public void IsLessThan_AnyPairOfTheWidth_MatchesUnsignedComparison(int words, ulong leftValue, ulong rightValue)
+    {
+        // The answer is the unsigned order for every pair of the width, also when the operands differ by half the
+        // range or more.
+        // mutant: GpuBigIntMath.cs IsLessThanCore `< 0` -> `<= 0` (7 < 7)
+        // mutant: GpuBigIntMath.cs IsLessThanCore back to the top bit of `Sub` (0x80000000 < 0, 0 < 0x80000001)
+        using var left = GpuBigUInt.FromBigInteger(_workspace, leftValue, words);
+        using var right = GpuBigUInt.FromBigInteger(_workspace, rightValue, words);
+
+        Assert.Equal(leftValue < rightValue, GpuBigIntMath.IsLessThan(left, right));
+    }
+
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [MemberData(nameof(IsLessThanPairs))]
+    public void IsLessThan_CpuFallback_MatchesUnsignedComparison(int words, ulong leftValue, ulong rightValue)
+    {
+        // The CPU provider answers through BigInteger.CompareTo of the unsigned values; the same pairs as on CUDA.
+        // mutant: GpuBigIntMath.cs IsLessThanCore back to the top bit of `Sub` (0x80000000 < 0, 0 < 0x80000001)
+        // ForceCpuFallback is AsyncLocal, so the override cannot leak into other tests.
+        GpuKernelLoader.ForceCpuFallback = true;
+        try
+        {
+            using var workspace = new GpuWorkspace(64);
+            using var left = GpuBigUInt.FromBigInteger(workspace, leftValue, words);
+            using var right = GpuBigUInt.FromBigInteger(workspace, rightValue, words);
+
+            Assert.Equal(leftValue < rightValue, GpuBigIntMath.IsLessThan(left, right));
+        }
+        finally
+        {
+            GpuKernelLoader.ForceCpuFallback = false;
+        }
     }
 
     [SkippableTheory]

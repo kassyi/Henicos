@@ -5,6 +5,9 @@ using Kassyi.GSharp.Hashing;
 using Kassyi.GSharp.Compiler;
 #endif
 
+// Encodes and decodes names as strings, also in the demangle tool that has no SourceWriter, so StringBuilder is the intended tool here.
+#pragma warning disable RS0030
+
 namespace Kassyi.GSharp.Naming;
 
 /// <summary>

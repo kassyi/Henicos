@@ -1,7 +1,7 @@
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 
 /// <summary>
-/// The number of elements of a vector expression after evaluation (design D3 4.1): a host value, or a device word with
+/// The number of elements of a vector expression after evaluation: a host value, or a device word with
 /// a host-side offset and limit, <c>count = clamp(*Base - Skip, 0, Limit)</c>.
 /// </summary>
 /// <remarks>
@@ -65,29 +65,39 @@ internal readonly record struct DeviceElementCount(IntPtr Base, int Skip, int Li
 /// </summary>
 internal readonly ref struct VectorEvaluation
 {
-    public VectorEvaluation(GpuBigIntArrayView storage, DeviceElementCount count)
+    public VectorEvaluation(GpuBigIntArrayView storage, DeviceElementCount count, VectorLease lease = default)
     {
         Storage = storage;
         Count = count;
+        Lease = lease;
     }
 
     public GpuBigIntArrayView Storage { get; }
 
     public DeviceElementCount Count { get; }
+
+    /// <summary>
+    /// Gets whether <see cref="Storage"/> still holds this result (see <see cref="VectorOperandPair"/>).
+    /// </summary>
+    public VectorLease Lease { get; }
 }
 
 /// <summary>The same for a floating-point vector.</summary>
 internal readonly ref struct FloatVectorEvaluation
 {
-    public FloatVectorEvaluation(GpuBigFloatArrayView storage, DeviceElementCount count)
+    public FloatVectorEvaluation(GpuBigFloatArrayView storage, DeviceElementCount count, VectorLease lease = default)
     {
         Storage = storage;
         Count = count;
+        Lease = lease;
     }
 
     public GpuBigFloatArrayView Storage { get; }
 
     public DeviceElementCount Count { get; }
+
+    /// <inheritdoc cref="VectorEvaluation.Lease"/>
+    public VectorLease Lease { get; }
 
     /// <summary>The number of elements to run a host loop over: the count, read when it is on the device.</summary>
     public int Elements(GpuWorkspace workspace) => Count.IsStatic ? Storage.Length : Count.Read(workspace);
@@ -191,7 +201,7 @@ internal static class DeviceCounted
     /// <exception cref="NotSupportedException">The workspace uses the CPU fallback provider.</exception>
     public static void ThrowIfCpuFallback(GpuWorkspace workspace)
     {
-        if (workspace.Provider is not GSharpKernelProvider || GpuKernelLoader.IsCpuFallbackMode)
+        if (GpuKernelLoader.IsCpuFallbackMode)
         {
             throw new NotSupportedException(
                 "Vectorized GpuMath expressions require a GPU workspace and are not supported under the CPU fallback.");

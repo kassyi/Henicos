@@ -1,3 +1,5 @@
+using System;
+using System.Globalization;
 using System.Threading.Tasks;
 using Kassyi.GSharp.Compiler.Diagnostics;
 using Kassyi.GSharp.Tests.Shared.Helpers;
@@ -247,6 +249,44 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
                                .ReportsErrorsAsync("GSH0062");
     }
 
+    // A warp shuffle is a split point of the CPU state machine only in the statements of the body, the operands of '?:',
+    // '&&' and '||' and a Gpu.ForUnroll body; anywhere else it is reported like a call that suspends (#1274), except in
+    // a Gpu.GridStrideLoop body, which is #1091 (A warp shuffle in a Gpu.GridStrideLoop body is not split on the CPU
+    // paths: native returns the lane's own value, managed throws)
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public async Task Test_WarpShuffleInUnsplitContext_ReportsGSH0062ForTheCpuDialect()
+    {
+        var actual = await RunAsync("Analyzers/BarrierUsage/WarpShuffleInUnsplitContextKernels.cu.cs", "Cpu");
+
+        Assert.Equal(
+            [
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 24, 22, 24, 66),
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 38, 45, 38, 84),
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 60, 18, 60, 70),
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 72, 25, 72, 65),
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 83, 30, 83, 75),
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 92, 31, 92, 74)
+            ],
+            actual);
+
+        var diagnostics = await RoslynTestUtility
+            .TestAnalyzer("Analyzers/BarrierUsage/WarpShuffleInUnsplitContextKernels.cu.cs", s_analyzer)
+            .WithDialect("Cpu")
+            .GetDiagnosticsAsync();
+        Assert.All(diagnostics, static d => Assert.Contains("' is a warp shuffle, so it cannot be called ",
+            d.GetMessage(CultureInfo.InvariantCulture), StringComparison.Ordinal));
+    }
+
+    // CUDA runs a warp shuffle where it stands, so a project built only for CUDA has no CPU path to split and accepts
+    // every shuffle of the same kernels
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public async Task Test_WarpShuffleInUnsplitContext_IsAcceptedForTheCudaDialect()
+    {
+        Assert.Empty(await RunAsync("Analyzers/BarrierUsage/WarpShuffleInUnsplitContextKernels.cu.cs", "Cuda"));
+    }
+
     // A reference into the result of a call cannot be kept across a resume, also through a member access, parentheses or
     // an in parameter without the keyword (#788 review); variables stay allowed
     [Fact]
@@ -312,9 +352,12 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
     }
 
     private static async Task<IReadOnlyList<(string Id, int StartLine, int StartCol, int EndLine, int EndCol)>> RunAsync(
-        string relativeTestCasePath)
+        string relativeTestCasePath, string dialect = "Cuda")
     {
-        var diagnostics = await RoslynTestUtility.TestAnalyzer(relativeTestCasePath, s_analyzer).GetDiagnosticsAsync();
+        var diagnostics = await RoslynTestUtility
+            .TestAnalyzer(relativeTestCasePath, s_analyzer)
+            .WithDialect(dialect)
+            .GetDiagnosticsAsync();
 
         return diagnostics
             .Select(static d => ReportedDiagnostic.From(DiagnosticOrigin.Analyzer, d))

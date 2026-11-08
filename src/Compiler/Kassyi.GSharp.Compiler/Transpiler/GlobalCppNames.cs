@@ -98,7 +98,7 @@ internal static class GlobalCppNames
             static symbol =>
             {
                 var m = (IMethodSymbol)symbol;
-                if (m.MethodKind == MethodKind.Conversion &&
+                if ((m.MethodKind == MethodKind.Conversion || StructTruthOperatorEmitter.IsTruthOperator(m)) &&
                     DeviceExportTable.TryGetRecordedName(m, out var recorded))
                 {
                     return recorded;
@@ -166,7 +166,7 @@ internal static class GlobalCppNames
 
     private static IMethodSymbol GetDefinition(IMethodSymbol method)
     {
-        if (method.MethodKind == MethodKind.Conversion)
+        if (method.MethodKind == MethodKind.Conversion || StructTruthOperatorEmitter.IsTruthOperator(method))
         {
             return method;
         }
@@ -439,11 +439,7 @@ internal static class GlobalCppNames
             headLength--;
         }
 
-        var shortened = new StringBuilder(ShortenThreshold)
-            .Append(full, 0, headLength)
-            .Append(HashMarker)
-            .Append(HashHelper.ComputeFnv1A64ShortHash(full))
-            .ToString();
+        var shortened = full[..headLength] + HashMarker + HashHelper.ComputeFnv1A64ShortHash(full);
 
         var recorded = s_shortenedNames.GetOrAdd(shortened, full);
         if (!string.Equals(recorded, full, StringComparison.Ordinal))

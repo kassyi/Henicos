@@ -239,13 +239,19 @@ internal static class SymbolExtensions
         } && type.ContainingNamespace.IsCoreNamespace();
 
     /// <summary>
-    /// Attempts to get the first declaring syntax node of the specified type for this symbol.
+    /// Attempts to get the first declaring syntax node of the specified type for this symbol. For the defining
+    /// declaration of a partial method, it is the implementing declaration, which has the body.
     /// </summary>
     public static bool TryGetDeclaringSyntax<TSyntax>(
         this ISymbol? symbol,
         [NotNullWhen(true)] out TSyntax? syntax)
         where TSyntax : SyntaxNode
     {
+        if (symbol is IMethodSymbol { PartialImplementationPart: { } implementation })
+        {
+            symbol = implementation;
+        }
+
         if (symbol is { DeclaringSyntaxReferences.Length: > 0 } &&
             symbol.DeclaringSyntaxReferences[0].GetSyntax() is TSyntax node)
         {
@@ -256,6 +262,13 @@ internal static class SymbolExtensions
         syntax = null;
         return false;
     }
+
+    /// <summary>
+    /// Whether <paramref name="method"/> is a partial method without an implementing declaration, whose calls C#
+    /// removes, arguments included.
+    /// </summary>
+    public static bool IsPartialWithoutImplementation([NotNullWhen(true)] this IMethodSymbol? method) =>
+        method is { IsPartialDefinition: true, PartialImplementationPart: null };
 
     /// <summary>
     /// Whether <paramref name="constructor"/> is the primary constructor of its type (<c>struct S(int a)</c>,
@@ -389,17 +402,19 @@ internal static class SymbolExtensions
     /// </summary>
     public static string FormatSignature(this IMethodSymbol method)
     {
-        var text = new StringBuilder();
-        text.Append(method.Name).Append('(');
-        for (var i = 0; i < method.Parameters.Length; i++)
+        using var text = new SourceWriter();
+        text.Append(method.Name);
+        using (text.Parentheses())
         {
-            var parameter = method.Parameters[i];
-            text.Append(i > 0 ? ", " : string.Empty)
-                .Append(parameter.RefKind.FormatRefKind())
-                .Append(IteratorTypeResolver.FormatType(parameter.Type));
+            for (var i = 0; i < method.Parameters.Length; i++)
+            {
+                var parameter = method.Parameters[i];
+                text.AppendIf(i > 0, ", ");
+                text.Append($"{parameter.RefKind.FormatRefKind()}{IteratorTypeResolver.FormatType(parameter.Type)}");
+            }
         }
 
-        return text.Append(')').ToString();
+        return text.ToString();
     }
 
     /// <summary>The modifier of a parameter with <paramref name="refKind"/> in message text, with a trailing space (<c>ref </c>).</summary>

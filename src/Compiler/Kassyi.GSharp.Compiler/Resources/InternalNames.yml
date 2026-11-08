@@ -133,8 +133,8 @@ Using:
     The disposal of a C# using in device code. A struct that has a Dispose method declares it as a member under its own
     name; the guard of each using calls it when its scope ends.
   Names:
-    ScopeGuard: { Value: __gsharp_using_scope, Prelude: Types.hpp }
-    Dispose: { Value: __gsharp_dispose, Prelude: Types.hpp }
+    ScopeGuard: { Value: __gsharp_using_scope, Prelude: StandardTypes.hpp }
+    Dispose: { Value: __gsharp_dispose, Prelude: StandardTypes.hpp }
     GuardPrefix: __gsharp_using_guard_
     ResourcePrefix: __gsharp_using_resource_
 
@@ -185,7 +185,6 @@ Launcher:
     # Managed host launch wrappers (#406): fixed locals, per-kernel member prefixes, and per-parameter local prefixes
     KernelParams: __gsharp_kernel_params
     FunctionHandle: __gsharp_hfunc
-    ModuleHandle: __gsharp_hmodule
     ArchSuffix: __gsharp_arch_suffix
     DllName: __gsharp_dll_name
     DllPath: __gsharp_dll_path
@@ -238,7 +237,7 @@ Prelude:
     Unsupported: { Value: __gsharp_unsupported, Prelude: ErrorChannel.hpp }
     Trap: { Value: __gsharp_trap, Prelude: ErrorChannel.hpp }
     # A failure after which the kernel step cannot go on: reports, then throws __gsharp_step_abort, which the native
-    # launcher catches around each block
+    # launcher catches around each block; the CUDA prelude defines it as well, where the trap stops the kernel
     TrapAbort: { Value: __gsharp_trap_abort, Prelude: ErrorChannel.hpp }
     StepAbort: { Value: __gsharp_step_abort, Prelude: ErrorChannel.hpp }
     # The array that a C# array read (Length, an element, foreach) goes through: a null array fails with
@@ -294,7 +293,7 @@ Prelude:
     LeadingZeroCountFor64: { Value: __gsharp_lzc_64, Prelude: MathAndBitOps.hpp }
     TrailingZeroCountFor32: { Value: __gsharp_tzc_32, Prelude: MathAndBitOps.hpp }
     TrailingZeroCountFor64: { Value: __gsharp_tzc_64, Prelude: MathAndBitOps.hpp }
-    TempAddress: { Value: __gsharp_temp_address, Prelude: Types.hpp }
+    TempAddress: { Value: __gsharp_temp_address, Prelude: StandardTypes.hpp }
     # A stack array viewed as a span (StackArrayLocals.AppendView). Declared by Types.hpp and by the CUDA prelude.
     StackAllocSpan: { Value: __gsharp_stackalloc_span, Prelude: Types.hpp }
     # The zero fill of a stackalloc outside a declaration (StackAllocEmitter). Declared by Types.hpp and by the CUDA prelude.
@@ -328,6 +327,7 @@ StackLinq:
   Names:
     ClampCount: { Value: __gsharp_clamp_count, Prelude: ../StackLinq.cuh }
     LinqEquals: { Value: __gsharp_linq_equals, Prelude: ../StackLinq.cuh }
+    LinqIsNaN: { Value: __gsharp_linq_is_nan, Prelude: ../StackLinq.cuh }
     # The Block strategy of AsParallel() aggregates (CUDA only)
     BlockRank: { Value: __gsharp_block_rank, Prelude: ../Prelude.cu }
     BlockSize: { Value: __gsharp_block_size, Prelude: ../Prelude.cu }

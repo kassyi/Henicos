@@ -4,7 +4,6 @@ using System.IO;
 using Kassyi.GSharp.Compiler.Tasks;
 using Kassyi.GSharp.Cryptography;
 using Microsoft.Build.Framework;
-using Microsoft.Build.Locator;
 using Microsoft.Build.Utilities;
 using Xunit;
 
@@ -15,17 +14,7 @@ public class ArtifactHelperTests
 {
     static ArtifactHelperTests()
     {
-        if (!MSBuildLocator.IsRegistered)
-        {
-            try
-            {
-                MSBuildLocator.RegisterDefaults();
-            }
-            catch (InvalidOperationException)
-            {
-                // Ignore if already registered
-            }
-        }
+        MSBuildLocatorSetup.EnsureRegistered();
     }
 
     [Fact]

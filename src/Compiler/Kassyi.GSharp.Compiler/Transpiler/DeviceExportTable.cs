@@ -67,14 +67,20 @@ internal sealed class DeviceExportTable
             .AsStackEnumerable()
             .Any(compilation, static (reference, c) => c.ContainsSyntaxTree(reference.SyntaxTree));
 
+    // A function that a struct's record defines with the struct: a constructor, a conversion, an operator true or false
+    private static bool IsStructMethod(IMethodSymbol method) =>
+        method.MethodKind is MethodKind.Constructor or MethodKind.Conversion ||
+        StructTruthOperatorEmitter.IsTruthOperator(method);
+
     /// <summary>
-    /// The record of <paramref name="symbol"/> (a device function, a struct, or a struct constructor) in the assembly
-    /// that declares it. A constructor's is the record of its struct as constructed (<c>Box&lt;float&gt;</c>, not
-    /// <c>Box&lt;int&gt;</c>), when that record lists the constructor (<see cref="DeviceExportRecord.DefinedIds"/>).
+    /// The record of <paramref name="symbol"/> (a device function, a struct, or a struct constructor, conversion or
+    /// truth operator) in the assembly that declares it. A constructor's is the record of its struct as constructed
+    /// (<c>Box&lt;float&gt;</c>, not <c>Box&lt;int&gt;</c>), when that record lists the constructor
+    /// (<see cref="DeviceExportRecord.DefinedIds"/>).
     /// </summary>
     public static bool TryFind(ISymbol symbol, out ImportedDeviceRecord imported)
     {
-        if (symbol is IMethodSymbol { MethodKind: MethodKind.Constructor or MethodKind.Conversion, ContainingType: { } structType } structMethod)
+        if (symbol is IMethodSymbol { ContainingType: { } structType } structMethod && IsStructMethod(structMethod))
         {
             return TryFind(structType, out imported) &&
                    imported.Record.DefinedIds
@@ -155,7 +161,7 @@ internal sealed class DeviceExportTable
             return false;
         }
 
-        if (symbol is IMethodSymbol { MethodKind: MethodKind.Constructor or MethodKind.Conversion } structMethod)
+        if (symbol is IMethodSymbol structMethod && IsStructMethod(structMethod))
         {
             var id = structMethod.OriginalDefinition.GetDocumentationCommentId();
             for (var i = 0; i < imported.Record.DefinedIds.Length && i < imported.Record.DefinedNames.Length; i++)
@@ -189,7 +195,7 @@ internal sealed class DeviceExportTable
             return id;
         }
 
-        var builder = new StringBuilder(id.Length);
+        using var definitionId = new SourceWriter();
         var depth = 0;
         var arity = 0;
         foreach (var c in id)
@@ -204,7 +210,7 @@ internal sealed class DeviceExportTable
                     depth--;
                     if (depth == 0)
                     {
-                        builder.Append('`').Append(arity);
+                        definitionId.Append($"`{arity}");
                     }
 
                     break;
@@ -214,14 +220,14 @@ internal sealed class DeviceExportTable
                 default:
                     if (depth == 0)
                     {
-                        builder.Append(c);
+                        definitionId.Append(c);
                     }
 
                     break;
             }
         }
 
-        return builder.ToString();
+        return definitionId.ToString();
     }
 
     /// <summary>

@@ -41,11 +41,11 @@ public const string DebugName_A = "global::System.Int32";
 [global::System.Runtime.InteropServices.FieldOffset(0)]
 public global::System.Int32 A;
 }
-public static unsafe void Marshal_Pair(ref global::Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Pair host, ref AotContexts.Pair native, bool isDevicePtr, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_Pair(ref global::Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Pair host, ref AotContexts.Pair native, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
 {
 native = global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Pair, AotContexts.Pair>(ref host);
 }
-public static unsafe void Unmarshal_Pair(ref global::Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Pair host, ref AotContexts.Pair native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_Pair(ref global::Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Pair host, ref AotContexts.Pair native, global::System.IntPtr hStream = default)
 {
 host = global::System.Runtime.CompilerServices.Unsafe.As<AotContexts.Pair, global::Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Pair>(ref native);
 }
@@ -56,11 +56,11 @@ public const string DebugName_Value = "global::System.Int32";
 [global::System.Runtime.InteropServices.FieldOffset(0)]
 public global::System.Int32 Value;
 }
-public static unsafe void Marshal_Box(ref global::Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Box<global::System.Int32> host, ref AotContexts.Box native, bool isDevicePtr, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
+public static unsafe void Marshal_Box(ref global::Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Box<global::System.Int32> host, ref AotContexts.Box native, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
 {
 native = global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Box<global::System.Int32>, AotContexts.Box>(ref host);
 }
-public static unsafe void Unmarshal_Box(ref global::Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Box<global::System.Int32> host, ref AotContexts.Box native, bool isDevicePtr, global::System.IntPtr hStream = default)
+public static unsafe void Unmarshal_Box(ref global::Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Box<global::System.Int32> host, ref AotContexts.Box native, global::System.IntPtr hStream = default)
 {
 host = global::System.Runtime.CompilerServices.Unsafe.As<AotContexts.Box, global::Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Box<global::System.Int32>>(ref native);
 }
@@ -176,7 +176,6 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 }
 ";
-public static readonly string First_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +First_Source;
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Generator__AotContextName__AotContextNameKernels__First {
 public int __gsharp_state;
@@ -435,7 +434,6 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 }
 ";
-public static readonly string Second_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +Second_Source;
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Generator__AotContextName__AotContextNameKernels__Second {
 public int __gsharp_state;
@@ -694,7 +692,6 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 }
 ";
-public static readonly string Third_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +Third_Source;
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Generator__AotContextName__AotContextNameKernels__Third {
 public int __gsharp_state;

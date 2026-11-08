@@ -2,8 +2,9 @@
 namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum.Expressions;
 
 /// <summary>
-/// The integer <c>Where</c> with its element count on the device (#633, design D3 4.4, test plan 6.5): everything after
-/// <c>v.Where(m)</c> equals System.Linq's <c>Where</c> over the same values.
+/// The integer <c>Where</c> with its element count on the device
+/// (#633 (Where keeps the source length, and empty integer Max returns 0)): everything after <c>v.Where(m)</c>
+/// equals System.Linq's <c>Where</c> over the same values.
 /// </summary>
 [Category(TestCategory.Unit)]
 [TestTarget(ExecutionTarget.GpuExecution)]
@@ -196,11 +197,29 @@ public sealed class WhereDeviceCountTests : IDisposable
     public void SumInAGraph_IsNotSupported()
     {
         // A reduction reads its result header back, which a capture cannot record: NotSupportedException with the
-        // reason, instead of a CUDA error (design 4.8, until stage 7)
+        // reason, instead of a CUDA error (until the capture of a device count is supported)
         var array = CreateArray([-5, 3, -1, 8]);
         var sum = array.AsVectorizedEnumerable().Where(Flags([1, 0, 1, 1])).Sum();
 
         Assert.Throws<NotSupportedException>(() => sum.CompileToGraph(_workspace));
+    }
+
+    [SkippableFact]
+    [Scenario(TestScenario.SadPath)]
+    public void ZipDivideInAGraph_IsNotSupported()
+    {
+        // ZipDivide reads its zero-divisor check back, which a capture cannot record: NotSupportedException with the
+        // reason, instead of a CUDA error; the workspace still works afterwards.
+        // mutant: ZeroDivisorCheck.Open without the capture check (a CUDA error from the read inside the capture)
+        var array = CreateArray([4, 9, 16, 25]);
+        var divisors = CreateArray([2, 3, 4, 5]);
+        var count = array.AsVectorizedEnumerable().Where(Flags([1, 0, 1, 1]))
+            .ZipDivide(divisors.AsVectorizedEnumerable())
+            .Count();
+
+        Assert.Throws<NotSupportedException>(() => count.CompileToGraph(_workspace));
+
+        Assert.Equal(new BigInteger(3), ReadScalar(array.AsVectorizedEnumerable().Where(Flags([1, 0, 1, 1])).Count()));
     }
 
     [SkippableFact]

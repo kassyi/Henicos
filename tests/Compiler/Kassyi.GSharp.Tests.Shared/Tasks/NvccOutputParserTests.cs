@@ -1,7 +1,7 @@
 using System.Reflection;
-using Microsoft.Build.Locator;
 using Xunit;
 using Kassyi.GSharp.Compiler.Tasks;
+using Kassyi.GSharp.Tests.Shared.Tasks;
 
 namespace Kassyi.GSharp.Tests.Tasks;
 
@@ -10,17 +10,7 @@ public class NvccOutputParserTests
 {
     static NvccOutputParserTests()
     {
-        if (!MSBuildLocator.IsRegistered)
-        {
-            try
-            {
-                MSBuildLocator.RegisterDefaults();
-            }
-            catch (InvalidOperationException)
-            {
-                // ignore
-            }
-        }
+        MSBuildLocatorSetup.EnsureRegistered();
     }
 
     private static bool DetectRegisterSpill(string output, string error, out string errorMessage)
@@ -97,7 +87,12 @@ public class NvccOutputParserTests
         var parserType =
             typeof(CompileCudaToFatbinTask).Assembly.GetType("Kassyi.GSharp.Compiler.Tasks.NvccOutputParser");
         Assert.NotNull(parserType);
-        var getSuppressedMethod = parserType.GetMethod("GetSuppressedSpillFunctions", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
+        var suppressionParserType =
+            typeof(CompileCudaToFatbinTask).Assembly.GetType("Kassyi.GSharp.Compiler.Tasks.SpillSuppressionParser");
+        Assert.NotNull(suppressionParserType);
+        var getSuppressedMethod = suppressionParserType.GetMethod(
+            "GetSuppressedSpillFunctions",
+            BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
         Assert.NotNull(getSuppressedMethod);
         var detectMethods = parserType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static)
             .Where(m => m.Name == "DetectRegisterSpill" && m.GetParameters().Length == 4)

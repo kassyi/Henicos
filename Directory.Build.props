@@ -40,6 +40,8 @@
     <AdditionalFiles Include="$(MSBuildThisFileDirectory)stylecop.json" Condition="Exists('$(MSBuildThisFileDirectory)stylecop.json')" />
     <!-- Root BannedSymbols.txt -->
     <AdditionalFiles Include="$(MSBuildThisFileDirectory)BannedSymbols.txt" Condition="Exists('$(MSBuildThisFileDirectory)BannedSymbols.txt')" />
+    <!-- System.Linq bans, for product code only: test projects set GSharpAllowsSystemLinq, since tests may use System.Linq -->
+    <AdditionalFiles Include="$(MSBuildThisFileDirectory)BannedSymbols.Linq.txt" Condition="'$(GSharpAllowsSystemLinq)' != 'true' and Exists('$(MSBuildThisFileDirectory)BannedSymbols.Linq.txt')" />
     <!-- Per-project BannedSymbols.txt (if present in project directory and distinct from root) -->
     <AdditionalFiles Include="$(MSBuildProjectDirectory)\BannedSymbols.txt" Condition="Exists('$(MSBuildProjectDirectory)\BannedSymbols.txt') and '$(MSBuildProjectDirectory)\' != '$(MSBuildThisFileDirectory)'" />
   </ItemGroup>

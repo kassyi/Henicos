@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using System.Text;
 
 namespace Kassyi.GSharp.Compiler.Marshaling;
 
@@ -59,37 +58,33 @@ internal static class KernelHostNames
 
     private static string BuildLaunchOptionNames()
     {
-        var sb = new StringBuilder();
+        using var names = new SourceWriter();
         for (var i = 0; i < LaunchOptions.Length; i++)
         {
-            if (i > 0)
-            {
-                sb.Append(", ");
-            }
-
-            sb.Append(LaunchOptions[i].Name);
+            names.AppendIf(i > 0, ", ");
+            names.Append(LaunchOptions[i].Name);
         }
 
-        return sb.ToString();
+        return names.ToString();
     }
 
     private static string BuildLaunchOptionParameters()
     {
-        var sb = new StringBuilder();
+        using var parameters = new SourceWriter();
         for (var i = 0; i < LaunchOptions.Length; i++)
         {
             if (i > 0)
             {
                 // [WHY] The wrappers have always been written "uint blockDimY = 1,uint blockDimZ = 1"; existing output is
                 // not respaced (transpiler-emission section 3), so the missing space is kept, keyed by name
-                sb.Append(LaunchOptions[i].Name == "blockDimZ" ? "," : ", ");
+                parameters.Append(LaunchOptions[i].Name == "blockDimZ" ? "," : ", ");
             }
 
             var opt = LaunchOptions[i];
-            sb.Append(opt.Type).Append(' ').Append(opt.Name).Append(" = ").Append(opt.DefaultValue);
+            parameters.Append($"{opt.Type} {opt.Name} = {opt.DefaultValue}");
         }
 
-        return sb.ToString();
+        return parameters.ToString();
     }
 
     /// <summary>The kernel in a run-time error of the CPU paths: <c>Type.Method</c>.</summary>
@@ -108,7 +103,9 @@ internal static class KernelHostNames
     public static string GetQualifiedPointerLaunchName(in KernelEmission kernel) =>
         $"{kernel.Host.ClassQualifiedName}.{GetPointerLaunchName(kernel)}";
 
-    /// <summary>The static field caching the CUDA function pointer of a kernel, <c>__gsharp_hfunc_{key}</c>.</summary>
+    /// <summary>
+    /// The static field that resolves the CUDA function of a kernel per context, <c>__gsharp_hfunc_{key}</c>.
+    /// </summary>
     public static string GetFunctionPointerFieldName(string memberKey) =>
         GSharpInternalNames.Launcher.FunctionPointerFieldPrefix + memberKey;
 
@@ -118,10 +115,6 @@ internal static class KernelHostNames
 
     /// <summary>The method that preloads the CUDA module and resolves the function pointer, <c>WarmupFunctionPointer{key}</c>.</summary>
     public static string GetWarmupMethodName(string memberKey) => WarmupPrefix + memberKey;
-
-    /// <summary>The class-qualified <see cref="GetWarmupMethodName"/> call target, so a parameter of the same name cannot shadow it.</summary>
-    public static string GetQualifiedWarmupMethodName(in KernelEmission kernel) =>
-        $"{kernel.Host.ClassQualifiedName}.{GetWarmupMethodName(kernel.MemberKey)}";
 
     /// <summary>The private CPU P/Invoke delegate type of a kernel, <c>__gsharp_delegate_{key}</c>.</summary>
     public static string GetDelegateTypeName(in KernelEmission kernel) =>

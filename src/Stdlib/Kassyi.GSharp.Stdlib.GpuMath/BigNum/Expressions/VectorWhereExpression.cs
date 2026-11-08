@@ -1,7 +1,7 @@
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 
 /// <summary>
-/// Keeps the elements whose predicate is true (design D3 4.4). The number of selected elements is computed on the
+/// Keeps the elements whose predicate is true. The number of selected elements is computed on the
 /// device into a word this node owns, so neither the selection nor its consumers (Count, Sum, Skip, ...) synchronize
 /// with the host; only the public <c>Evaluate</c> reads it, to return exactly the selected elements.
 /// </summary>
@@ -36,9 +36,15 @@ internal class VectorWhereExpression(
                 DeviceElementCount.Static(0));
         }
 
+        // The predicate first: when the source and the predicate read one shared sub-expression at different offsets
+        // (e.Skip(1).Where(e.Take(3).IsGreaterThan(x))), the later evaluation overwrites that node's cache. The flags
+        // are in the predicate's own buffer, which a source evaluation leaves as it is (a bool vector is always read
+        // over its whole length, so evaluating a shared bool node again writes the same flags); the source evaluated
+        // second keeps its values.
+        var predicates = DeviceCounted.Evaluate(predicate, workspace);
         var evaluatedSource = DeviceCounted.Evaluate(source, workspace);
         var selected = _state.Select<IntVectorResultKind, GpuBigIntArrayView>(workspace, evaluatedSource.Storage,
-            evaluatedSource.Count, predicate, capacity, WordsPerElement, elementOffset, elementCount, out var count);
+            evaluatedSource.Count, predicates, capacity, WordsPerElement, elementOffset, elementCount, out var count);
         return new VectorEvaluation(selected, count);
     }
 

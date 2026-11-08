@@ -1,7 +1,7 @@
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 
 /// <summary>
-/// The floating-point <c>Where</c> (design D3 4.4): the number of selected elements is computed on the device into a
+/// The floating-point <c>Where</c>: the number of selected elements is computed on the device into a
 /// word this node owns, as in <see cref="VectorWhereExpression"/>.
 /// </summary>
 internal sealed class FloatVectorWhereExpression(
@@ -38,9 +38,12 @@ internal sealed class FloatVectorWhereExpression(
                 DeviceElementCount.Static(0));
         }
 
+        // The predicate first, as in VectorWhereExpression: a source that shares a sub-expression with it is
+        // evaluated last and keeps its values.
+        var predicates = DeviceCounted.Evaluate(predicate, workspace);
         var evaluatedSource = DeviceCounted.Evaluate(source, workspace);
         var selected = _state.Select<FloatVectorResultKind, GpuBigFloatArrayView>(workspace, evaluatedSource.Storage,
-            evaluatedSource.Count, predicate, capacity, WordsPerElement, elementOffset, elementCount, out var count);
+            evaluatedSource.Count, predicates, capacity, WordsPerElement, elementOffset, elementCount, out var count);
         return new FloatVectorEvaluation(selected, count);
     }
 

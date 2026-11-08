@@ -1,0 +1,2 @@
+# Banned APIs for a project that emits code. Format: see the root BannedSymbols.txt.
+T:System.Text.StringBuilder;Emit code with SourceWriter; build a name with + or an interpolated string.

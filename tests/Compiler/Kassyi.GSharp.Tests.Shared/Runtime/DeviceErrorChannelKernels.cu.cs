@@ -88,4 +88,23 @@ public static partial class DeviceErrorChannelKernels
             result[0] = (data.AsStackEnumerable().Take(0)).Max();
         }
     }
+
+#pragma warning disable CS8509 // The switch expressions below leave inputs unmatched on purpose
+    [GpuKernel]
+    public static void SwitchExpressionNoMatchKernel(int[] keys, int[] result)
+    {
+        int i = ThreadIndex.X;
+        result[i] = keys[i] switch { 0 => 10, 1 => 20 };
+    }
+
+    [GpuKernel]
+    public static void SwitchExpressionNoMatchInDeviceFunctionKernel(int[] keys, int[] result)
+    {
+        int i = ThreadIndex.X;
+        result[i] = ArmValue(keys[i]);
+    }
+
+    [GpuDeviceFunction]
+    public static int ArmValue(int key) => key switch { 0 => 10, 1 => 20 };
+#pragma warning restore CS8509
 }

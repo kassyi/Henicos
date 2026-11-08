@@ -1,3 +1,6 @@
+// StringBuilder is banned in the code that emits source so that it goes through this writer; this is the one writer that owns one.
+#pragma warning disable RS0030
+
 namespace Kassyi.GSharp.Compiler;
 
 /// <summary>A zero-allocation writer that builds source text using a pooled thread-static <see cref="StringBuilder"/>.</summary>
@@ -51,6 +54,17 @@ public readonly struct SourceWriter : IDisposable, IEquatable<SourceWriter>
             Builder.Append(value);
         }
 
+        return ref this;
+    }
+
+    /// <summary>
+    /// Appends <paramref name="count"/> characters of <paramref name="value"/> from <paramref name="startIndex"/>,
+    /// without a substring.
+    /// </summary>
+    [UnscopedRef]
+    public ref readonly SourceWriter Append(string value, int startIndex, int count)
+    {
+        Builder.Append(value, startIndex, count);
         return ref this;
     }
 

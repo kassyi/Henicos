@@ -2,11 +2,16 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 
 internal readonly ref struct VectorZipOperands
 {
-    public VectorZipOperands(GpuBigIntArrayView left, GpuBigIntArrayView right, GpuBigIntArrayView destination)
+    public VectorZipOperands(
+        GpuBigIntArrayView left,
+        GpuBigIntArrayView right,
+        GpuBigIntArrayView destination,
+        GpuBigUIntArrayView zeroDivisor)
     {
         Left = left;
         Right = right;
         Destination = destination;
+        ZeroDivisor = zeroDivisor;
     }
 
     public GpuBigIntArrayView Left { get; }
@@ -14,6 +19,9 @@ internal readonly ref struct VectorZipOperands
     public GpuBigIntArrayView Right { get; }
 
     public GpuBigIntArrayView Destination { get; }
+
+    /// <summary>Gets the word of <see cref="ZeroDivisorCheck"/> for a division, or the default view.</summary>
+    public GpuBigUIntArrayView ZeroDivisor { get; }
 }
 
 internal abstract class VectorBinaryVectorExpressionBase(
@@ -25,16 +33,22 @@ internal abstract class VectorBinaryVectorExpressionBase(
     public int Length => left.Length;
     public int WordsPerElement { get; } = wordsPerElement;
 
-    // The result buffers, lent until the next evaluation or Dispose; a caller's target is never kept (design 4.6)
+    // The result buffers, lent until the next evaluation or Dispose; a caller's target is never kept
     private readonly VectorResultCache _cache = new();
 
+    // Evaluates the operands so that a shared sub-expression read at two offsets keeps both results
+    private readonly VectorOperandPair _operands = new();
+
     protected uint BlockDimX => (uint)Math.Min(1024, WordsPerElement);
+
+    /// <summary>Gets whether the kernel reports a zero divisor element (<see cref="ZeroDivisorCheck"/>).</summary>
+    protected virtual bool ChecksZeroDivisor => false;
 
     public int Capacity => left.Capacity;
 
     public bool TryGetLength(out int length) => left.TryGetLength(out length);
 
-    // Evaluates the window of the capacity; the elements are the first Count of them (design D3 4.3)
+    // Evaluates the window of the capacity; the elements are the first Count of them
     public VectorEvaluation EvaluateCore(
         GpuWorkspace workspace,
         int elementOffset,
@@ -52,8 +66,7 @@ internal abstract class VectorBinaryVectorExpressionBase(
             ? VectorResultCache.TargetValues(targetResult, evalCount, WordsPerElement)
             : default;
 
-        var leftResult = DeviceCounted.Evaluate(left, workspace, elementOffset, evalCount);
-        var rightResult = DeviceCounted.Evaluate(right, workspace, elementOffset, evalCount);
+        _operands.Evaluate(left, right, workspace, elementOffset, evalCount, out var leftResult, out var rightResult);
 
         if (leftResult.Storage.Length != rightResult.Storage.Length)
         {
@@ -64,14 +77,20 @@ internal abstract class VectorBinaryVectorExpressionBase(
         // A target that shares words with an input is written from the cache after the launch (#864)
         var output = VectorOutput.Open(_cache, workspace, evalCount, WordsPerElement, targetValues, leftResult.Storage,
             rightResult.Storage);
-        var operands = new VectorZipOperands(leftResult.Storage, rightResult.Storage, output.Destination);
         // An empty vector launches nothing: a grid of 0 blocks is an invalid launch.
         if (evalCount > 0)
         {
+            var zeroDivisor = ChecksZeroDivisor ? ZeroDivisorCheck.Open(workspace, _cache) : default;
+            var operands = new VectorZipOperands(leftResult.Storage, rightResult.Storage, output.Destination,
+                zeroDivisor);
             DispatchKernel(workspace, operands, (uint)evalCount);
+            if (ChecksZeroDivisor)
+            {
+                ZeroDivisorCheck.ThrowIfFound(workspace, zeroDivisor, count);
+            }
         }
 
-        return new VectorEvaluation(output.Close(workspace), count);
+        return new VectorEvaluation(output.Close(workspace), count, _cache.Lease);
     }
 
     protected GpuBigIntVectorKernels.AotContexts.VectorBinaryOperation CreateZipOp(VectorZipOperands operands) =>
@@ -109,7 +128,14 @@ internal abstract class VectorBinaryVectorExpressionBase(
         // A cache release that throws (a failed capture refuses the clear) does not skip the children
         try
         {
-            _cache.Dispose();
+            try
+            {
+                _cache.Dispose();
+            }
+            finally
+            {
+                _operands.Dispose();
+            }
         }
         finally
         {
@@ -193,6 +219,8 @@ internal sealed class VectorDivVectorExpression(
         Math.Max(left.WordsPerElement, right.WordsPerElement),
         checkConstructorLength: true)
 {
+    protected override bool ChecksZeroDivisor => true;
+
     protected override void DispatchKernel(
         GpuWorkspace workspace,
         VectorZipOperands operands,
@@ -201,8 +229,11 @@ internal sealed class VectorDivVectorExpression(
         var ctx = new GpuBigIntVectorKernels.AotContexts.VectorDivMod
         {
             Op = CreateZipOp(operands),
-            IsModulo = false
+            IsModulo = false,
+            ZeroDivisor = operands.ZeroDivisor.DevicePointer
         };
+        using var scratch = DivModScratch.Rent(workspace, ctx.Op, gridDimX);
+        ctx.Scratch = scratch?.DevicePointer ?? IntPtr.Zero;
         GpuBigIntVectorKernels.LaunchVectorZipDivKernelPtr(
             ctx, gridDimX, 1, 1, 32, 1, 1, 0, workspace.Stream);
     }
@@ -217,6 +248,8 @@ internal sealed class VectorModVectorExpression(
         Math.Max(left.WordsPerElement, right.WordsPerElement),
         checkConstructorLength: true)
 {
+    protected override bool ChecksZeroDivisor => true;
+
     protected override void DispatchKernel(
         GpuWorkspace workspace,
         VectorZipOperands operands,
@@ -225,8 +258,11 @@ internal sealed class VectorModVectorExpression(
         var ctx = new GpuBigIntVectorKernels.AotContexts.VectorDivMod
         {
             Op = CreateZipOp(operands),
-            IsModulo = true
+            IsModulo = true,
+            ZeroDivisor = operands.ZeroDivisor.DevicePointer
         };
+        using var scratch = DivModScratch.Rent(workspace, ctx.Op, gridDimX);
+        ctx.Scratch = scratch?.DevicePointer ?? IntPtr.Zero;
         GpuBigIntVectorKernels.LaunchVectorZipModKernelPtr(
             ctx, gridDimX, 1, 1, 32, 1, 1, 0, workspace.Stream);
     }

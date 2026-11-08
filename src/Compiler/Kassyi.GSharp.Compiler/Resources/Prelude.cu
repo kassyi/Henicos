@@ -10,27 +10,7 @@ namespace cg = cooperative_groups;
 #define __gsharp_inf_d CUDART_INF
 
 // --- Standard Types ---
-template <typename T>
-struct System_Nullable {
-    bool HasValue;
-    T Value;
-    __device__ inline System_Nullable() : HasValue(false), Value() {}
-    __device__ inline System_Nullable(decltype(nullptr)) : HasValue(false), Value() {}
-    __device__ inline System_Nullable(T val) : HasValue(true), Value(val) {}
-    template <typename U>
-    __device__ inline System_Nullable(const System_Nullable<U>& other) : HasValue(other.HasValue), Value(static_cast<T>(other.Value)) {}
-};
-
-// The scope of a C# using: disposes the resource when control leaves the enclosing block (end, return, break, continue,
-// goto). Guards of one block are destroyed in reverse order, as C# disposes nested usings.
-template <typename T>
-struct __gsharp_using_scope {
-    T& resource;
-    __device__ inline ~__gsharp_using_scope() { resource.__gsharp_dispose(); }
-};
-
-template <class T> __device__ __host__ inline const T* __gsharp_temp_address(const T& v) { return &v; }
-
+#include "Prelude/StandardTypes.hpp"
 #include "Prelude/IntegerSemantics.hpp"
 
 // --- Runtime Error / Trap ---
@@ -44,7 +24,8 @@ enum class GSharpErrorCode : int {
     NullReference = 6,
     DivideByZero = 7,
     Overflow = 8,
-    DataRace = 9
+    DataRace = 9,
+    SwitchExpression = 10
 };
 
 struct GSharpDeviceErrorSlot {
@@ -108,6 +89,19 @@ __device__ __forceinline__ void __gsharp_trap(GSharpErrorCode code, const char* 
 
 __device__ __forceinline__ void __gsharp_trap(GSharpErrorCode code, unsigned int site_id) {
     __gsharp_trap_site(code, site_id);
+}
+
+// A failure after which the thread cannot go on (no arm of a switch expression matches): the trap stops the kernel,
+// so the call never returns and a form that must yield a value needs none after it (ErrorChannel.hpp ends the step
+// instead)
+[[noreturn]] __device__ __forceinline__ void __gsharp_trap_abort(GSharpErrorCode code, const char* message) {
+    __gsharp_trap_site(code, __gsharp_builtin_message_id(message));
+    __builtin_unreachable();
+}
+
+[[noreturn]] __device__ __forceinline__ void __gsharp_trap_abort(GSharpErrorCode code, unsigned int site_id) {
+    __gsharp_trap_site(code, site_id);
+    __builtin_unreachable();
 }
 
 template <GSharpErrorCode ErrorCode>

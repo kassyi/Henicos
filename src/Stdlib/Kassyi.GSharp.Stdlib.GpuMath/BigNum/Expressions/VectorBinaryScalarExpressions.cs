@@ -24,7 +24,7 @@ internal abstract class VectorBinaryScalarExpressionBase(
     public int Length => vector.Length;
     public int WordsPerElement { get; } = wordsPerElement;
 
-    // The result buffers, lent until the next evaluation or Dispose; a caller's target is never kept (design 4.6)
+    // The result buffers, lent until the next evaluation or Dispose; a caller's target is never kept
     private readonly VectorResultCache _cache = new();
 
     protected uint BlockDimX => (uint)Math.Min(1024, WordsPerElement);
@@ -33,7 +33,7 @@ internal abstract class VectorBinaryScalarExpressionBase(
 
     public bool TryGetLength(out int length) => vector.TryGetLength(out length);
 
-    // Evaluates the window of the capacity; the elements are the first Count of them (design D3 4.3)
+    // Evaluates the window of the capacity; the elements are the first Count of them
     public VectorEvaluation EvaluateCore(
         GpuWorkspace workspace,
         int elementOffset,
@@ -60,7 +60,7 @@ internal abstract class VectorBinaryScalarExpressionBase(
                 DispatchKernel(workspace, operands, (uint)evalCount);
             }
 
-            return new VectorEvaluation(output.Close(workspace), vecResult.Count);
+            return new VectorEvaluation(output.Close(workspace), vecResult.Count, _cache.Lease);
         }
         finally
         {
@@ -192,6 +192,8 @@ internal sealed class VectorDivScalarExpression(
             Op = CreateScalarOp(operands),
             IsModulo = false
         };
+        using var scratch = DivModScratch.Rent(workspace, ctx.Op, gridDimX);
+        ctx.Scratch = scratch?.DevicePointer ?? IntPtr.Zero;
         GpuBigIntVectorKernels.LaunchVectorDivScalarKernelPtr(
             ctx, gridDimX, 1, 1, 32, 1, 1, 0, workspace.Stream);
     }
@@ -217,6 +219,8 @@ internal sealed class VectorModScalarExpression(
             Op = CreateScalarOp(operands),
             IsModulo = true
         };
+        using var scratch = DivModScratch.Rent(workspace, ctx.Op, gridDimX);
+        ctx.Scratch = scratch?.DevicePointer ?? IntPtr.Zero;
         GpuBigIntVectorKernels.LaunchVectorModScalarKernelPtr(
             ctx, gridDimX, 1, 1, 32, 1, 1, 0, workspace.Stream);
     }

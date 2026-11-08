@@ -36,7 +36,7 @@ public class GeneratorOutputTests
         Assert.DoesNotContain("__o", wrapper, StringComparison.Ordinal);
     }
 
-    // An alias of the attribute marks a kernel as well as its spelled-out name (A-53)
+    // An alias of the attribute marks a kernel as well as its spelled-out name
     [Theory]
     [Scenario(TestScenario.Boundary)]
     [InlineData("Cuda", "UsingAliasKernels")]
@@ -92,7 +92,7 @@ public class GeneratorOutputTests
             static s => s.HintName == "GSharpModuleContext_UnknownAssembly.g.cs");
         var wrapper = GetSource(result, "FirstKernels.g.cs");
         Assert.Contains(
-            $"global::Kassyi.GSharp.Generated.GSharpModuleContext_{compilation.Assembly.Name}.GetOrLoadModule();",
+            $"global::Kassyi.GSharp.Generated.GSharpModuleContext_{compilation.Assembly.Name}.GetFatbin);",
             wrapper,
             StringComparison.Ordinal);
     }
