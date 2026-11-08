@@ -11,6 +11,9 @@ public static class PreludeGenerator
 {
     private const string IncludePrefix = "#include \"";
 
+    private static readonly StringComparer s_pathComparer =
+        OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
+
     /// <summary>
     /// Reads prelude resource files from <paramref name="resourcesDir"/> and writes <c>GSharpPreludeResources.g.cs</c> to
     /// <paramref name="outputDir"/>, with the hash of the preludes and of <c>InternalNames.yml</c> in the same directory.
@@ -29,10 +32,15 @@ public static class PreludeGenerator
 
     private static string LoadAndResolvePrelude(string resourcesDir, string rootFileName, bool isCuda)
     {
-        var rootPath = Path.Combine(resourcesDir, rootFileName);
-        using var reader = new StreamReader(rootPath, Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
-        var content = reader.ReadToEnd() + "\n";
-        return RemoveIndentation(ResolveEmbeddedIncludes(resourcesDir, content, isCuda));
+        var rootPath = Path.GetFullPath(Path.Combine(resourcesDir, rootFileName));
+        if (!File.Exists(rootPath))
+        {
+            throw new GeneratorInputException(rootPath, 0, "The prelude file does not exist.");
+        }
+
+        var content = ReadText(rootPath) + "\n";
+        var includeChain = new List<string> { rootPath };
+        return RemoveIndentation(ResolveEmbeddedIncludes(resourcesDir, rootPath, content, isCuda, atDocumentEnd: true, includeChain));
     }
 
     // Generated code is left-aligned (transpiler-emission §3); the resources stay indented for reading. They contain no
@@ -55,23 +63,34 @@ public static class PreludeGenerator
         return unindented.ToString();
     }
 
-    private static string ResolveEmbeddedIncludes(string resourcesDir, string content, bool isCuda)
+    // Replaces each #include "<path>" of content (the text of file) with the resolved text of <resourcesDir>/<path>.
+    // atDocumentEnd: nothing but whitespace follows this text in the whole prelude. For the C++ prelude, a header
+    // included there loses one trailing line break. includeChain: the files being resolved, outermost first.
+    private static string ResolveEmbeddedIncludes(
+        string resourcesDir,
+        string file,
+        string content,
+        bool isCuda,
+        bool atDocumentEnd,
+        List<string> includeChain)
     {
-        var searchStart = 0;
+        using var resolved = new SourceWriter();
+        var copied = 0;
 
         while (true)
         {
-            var includeIndex = content.IndexOf(IncludePrefix, searchStart, StringComparison.Ordinal);
+            var includeIndex = content.IndexOf(IncludePrefix, copied, StringComparison.Ordinal);
             if (includeIndex < 0)
             {
                 break;
             }
 
+            var line = LineOf(content, includeIndex);
             var pathStart = includeIndex + IncludePrefix.Length;
-            var pathEnd = content.IndexOf('"', pathStart);
-            if (pathEnd < 0)
+            var pathEnd = content.IndexOfAny(['"', '\n'], pathStart);
+            if (pathEnd < 0 || content[pathEnd] != '"')
             {
-                break;
+                throw new GeneratorInputException(file, line, "The #include directive has no closing quote on its line.");
             }
 
             var relativeInclude = string.Create(pathEnd - pathStart, (content, pathStart), static (span, state) =>
@@ -83,32 +102,73 @@ public static class PreludeGenerator
                     span[i] = c is '/' or '\\' ? Path.DirectorySeparatorChar : c;
                 }
             });
-            var includedFilePath = Path.Combine(resourcesDir, relativeInclude);
+            var includedFilePath = Path.GetFullPath(Path.Combine(resourcesDir, relativeInclude));
             if (!File.Exists(includedFilePath))
             {
-                searchStart = pathEnd + 1;
-                continue;
+                throw new GeneratorInputException(file, line,
+                    $"Cannot find the included file '{content[pathStart..pathEnd]}' ({includedFilePath}); prelude includes are relative to the resources directory.");
             }
 
-            string includedContent;
-            using (var includeReader =
-                   new StreamReader(includedFilePath, Encoding.UTF8, detectEncodingFromByteOrderMarks: true))
+            if (includeChain.FindIndex(p => s_pathComparer.Equals(p, includedFilePath)) >= 0)
             {
-                includedContent = includeReader.ReadToEnd();
+                throw new GeneratorInputException(file, line, $"Include cycle: {DescribeCycle(includeChain, includedFilePath)}.");
             }
 
-            var before = content[..includeIndex];
-            var after = content[(pathEnd + 1)..];
-            if (!isCuda && after.AsSpan().Trim().IsEmpty)
+            var includedAtDocumentEnd = atDocumentEnd && content.AsSpan(pathEnd + 1).Trim().IsEmpty;
+            var includedContent = ReadText(includedFilePath);
+            if (!isCuda && includedAtDocumentEnd)
             {
                 includedContent = TrimOneTrailingNewline(includedContent);
             }
 
-            content = before + includedContent + after;
-            searchStart = includeIndex;
+            includeChain.Add(includedFilePath);
+            var resolvedInclude = ResolveEmbeddedIncludes(
+                resourcesDir,
+                includedFilePath,
+                includedContent,
+                isCuda,
+                includedAtDocumentEnd,
+                includeChain
+            );
+            includeChain.RemoveAt(includeChain.Count - 1);
+
+            resolved.Append(content, copied, includeIndex - copied);
+            resolved.Append(resolvedInclude);
+            copied = pathEnd + 1;
         }
 
-        return content;
+        resolved.Append(content, copied, content.Length - copied);
+        return resolved.ToString();
+    }
+
+    // "Prelude.cu -> a.cuh -> b.cuh -> a.cuh" (file names only).
+    private static string DescribeCycle(List<string> includeChain, string repeated)
+    {
+        using var cycle = new SourceWriter();
+        foreach (var path in includeChain)
+        {
+            cycle.Append($"{Path.GetFileName(path)} -> ");
+        }
+
+        cycle.Append(Path.GetFileName(repeated));
+        return cycle.ToString();
+    }
+
+    private static int LineOf(string text, int index)
+    {
+        var line = 1;
+        for (var i = 0; i < index; i++)
+        {
+            line += text[i] == '\n' ? 1 : 0;
+        }
+
+        return line;
+    }
+
+    private static string ReadText(string path)
+    {
+        using var reader = new StreamReader(path, Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
+        return reader.ReadToEnd();
     }
 
     private static string TrimOneTrailingNewline(string text)
@@ -137,13 +197,9 @@ public static class PreludeGenerator
         writer.Line("internal static class GSharpPreludeResources");
         using (writer.Scope())
         {
-            writer.Append("public const string Cuda = \"");
-            AppendEscapedStringLiteral(writer, cudaPrelude);
-            writer.AppendLine("\";");
+            writer.AppendLine($"public const string Cuda = {CSharpStringLiteral.Quote(cudaPrelude)};");
             writer.Line();
-            writer.Append("public const string Cpp = \"");
-            AppendEscapedStringLiteral(writer, cppPrelude);
-            writer.AppendLine("\";");
+            writer.AppendLine($"public const string Cpp = {CSharpStringLiteral.Quote(cppPrelude)};");
             writer.Line();
             writer.Line("/// <summary>");
             writer.Line("/// The FNV-1a 64 hash of <see cref=\"Cuda\"/>, <see cref=\"Cpp\"/> and <c>InternalNames.yml</c> (the spelling of the");
@@ -171,33 +227,5 @@ public static class PreludeGenerator
         }
 
         return hash.Value.ToString("x16", CultureInfo.InvariantCulture);
-    }
-
-    private static void AppendEscapedStringLiteral(SourceWriter writer, string value)
-    {
-        foreach (var c in value)
-        {
-            switch (c)
-            {
-                case '\\':
-                    writer.Append(@"\\");
-                    break;
-                case '"':
-                    writer.Append("\\\"");
-                    break;
-                case '\r':
-                    writer.Append(@"\r");
-                    break;
-                case '\n':
-                    writer.Append(@"\n");
-                    break;
-                case '\t':
-                    writer.Append(@"\t");
-                    break;
-                default:
-                    writer.Append(c);
-                    break;
-            }
-        }
     }
 }

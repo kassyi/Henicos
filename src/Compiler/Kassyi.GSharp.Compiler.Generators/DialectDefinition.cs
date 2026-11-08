@@ -42,74 +42,165 @@ public class DialectDefinition
         get; set;
     }
 
-    /// <summary>Parses a <see cref="DialectDefinition"/> from YAML text using <see cref="YamlSubsetParser"/>.</summary>
-    public static DialectDefinition? TryParse(string text)
+    /// <summary>Gets or sets the 1-based line of the <c>Dialect</c> key, for errors about the dialect as a whole.</summary>
+    public int Line
+    {
+        get; set;
+    }
+
+    /// <summary>Gets or sets the file the dialect was read from, for errors.</summary>
+    public string Path { get; set; } = string.Empty;
+
+    private static readonly string[] s_topLevelKeys = ["Dialect", "Inherits", "Backend", "Capabilities", "Types", "Layout", "Intrinsics"];
+
+    /// <summary>
+    /// Parses a <see cref="DialectDefinition"/> from YAML text using <see cref="YamlSubsetParser"/>.
+    /// </summary>
+    /// <param name="text">The YAML text.</param>
+    /// <param name="path">The file the text was read from; errors name it.</param>
+    /// <exception cref="GeneratorInputException">The text is not valid YAML or does not describe a dialect.</exception>
+    public static DialectDefinition Parse(string text, string path)
     {
         YamlNode root;
         try
         {
             root = YamlSubsetParser.Parse(text);
         }
-        catch
+        catch (NativeApiReadException ex)
         {
-            return null;
+            throw new GeneratorInputException(path, ex.ToError().Line, ex.Message);
         }
 
-        if (root is not YamlMapping mapping || !mapping.TryGetScalar("Dialect", out var dialectName) ||
-            string.IsNullOrEmpty(dialectName))
+        if (root is not YamlMapping mapping)
         {
-            return null;
+            throw new GeneratorInputException(path, root.Line, "The document root must be a mapping with a 'Dialect' key.");
+        }
+
+        foreach (var entry in mapping.Entries)
+        {
+            if (Array.IndexOf(s_topLevelKeys, entry.Key) < 0)
+            {
+                throw new GeneratorInputException(path, entry.Value.Line,
+                    $"Unknown key '{entry.Key}'. Expected one of: {string.Join(", ", s_topLevelKeys)}.");
+            }
         }
 
         var def = new DialectDefinition
         {
-            Name = dialectName,
-            Inherits = mapping.TryGetScalar("Inherits", out var inherits) ? inherits : null,
-            Backend = mapping.TryGetScalar("Backend", out var backend) ? backend : null,
-            Capabilities = mapping.TryGetScalar("Capabilities", out var capabilities) ? capabilities : null,
+            Path = path,
+            Name = RequireIdentifier(mapping, "Dialect", path, required: true) ?? string.Empty,
+            Line = mapping.TryGetValue("Dialect", out var dialectNode) ? dialectNode.Line : 0,
+            Inherits = RequireIdentifier(mapping, "Inherits", path, required: false),
+            Backend = OptionalScalar(mapping, "Backend", path),
+            Capabilities = OptionalScalar(mapping, "Capabilities", path),
         };
 
-        if (mapping.TryGetValue("Types", out var typesNode) && typesNode is YamlMapping typesMapping)
+        foreach (var entry in Entries(mapping, "Types", path))
         {
-            foreach (var entry in typesMapping.Entries)
+            if (entry.Value is YamlScalar { IsNull: false } scalar)
             {
-                if (entry.Value is YamlScalar { IsNull: false } scalar)
+                def.Types[entry.Key] = new DialectTypeMapping(scalar.Value);
+            }
+            else if (entry.Value is YamlMapping flow && flow.TryGetScalar("cpp", out var cppType))
+            {
+                int? size = OptionalInt32(flow, "size", path);
+                int? align = OptionalInt32(flow, "align", path);
+                if (size.HasValue != align.HasValue)
                 {
-                    def.Types[entry.Key] = new DialectTypeMapping(scalar.Value);
+                    throw new GeneratorInputException(path, entry.Value.Line,
+                        $"The type '{entry.Key}' must give both 'size' and 'align', or neither.");
                 }
-                else if (entry.Value is YamlMapping flow && flow.TryGetScalar("cpp", out var cppType))
-                {
-                    int? size = flow.TryGetInt32("size", out var s) ? s : null;
-                    int? align = flow.TryGetInt32("align", out var a) ? a : null;
-                    def.Types[entry.Key] = new DialectTypeMapping(cppType, size, align);
-                }
+
+                def.Types[entry.Key] = new DialectTypeMapping(cppType, size, align);
+            }
+            else
+            {
+                throw new GeneratorInputException(path, entry.Value.Line,
+                    $"The type '{entry.Key}' must map to a C++ type name or to {{ cpp: <type>, size: <bytes>, align: <bytes> }}.");
             }
         }
 
-        if (mapping.TryGetValue("Layout", out var layoutNode) && layoutNode is YamlMapping layoutMapping)
+        foreach (var entry in Entries(mapping, "Layout", path))
         {
-            foreach (var entry in layoutMapping.Entries)
+            if (entry.Value is not YamlMapping flow ||
+                OptionalInt32(flow, "size", path) is not { } size ||
+                OptionalInt32(flow, "align", path) is not { } align)
             {
-                if (entry.Value is YamlMapping flow &&
-                    flow.TryGetInt32("size", out var size) &&
-                    flow.TryGetInt32("align", out var align))
-                {
-                    def.Layout[entry.Key] = new DialectLayoutEntry(size, align);
-                }
+                throw new GeneratorInputException(path, entry.Value.Line,
+                    $"The layout '{entry.Key}' must be {{ size: <bytes>, align: <bytes> }}.");
             }
+
+            def.Layout[entry.Key] = new DialectLayoutEntry(size, align);
         }
 
-        if (mapping.TryGetValue("Intrinsics", out var intrinsicsNode) && intrinsicsNode is YamlMapping intrinsicsMapping)
+        foreach (var entry in Entries(mapping, "Intrinsics", path))
         {
-            foreach (var entry in intrinsicsMapping.Entries)
+            if (entry.Value is not YamlScalar { IsNull: false } scalar)
             {
-                if (entry.Value is YamlScalar { IsNull: false } scalar)
-                {
-                    def.Intrinsics[entry.Key] = scalar.Value;
-                }
+                throw new GeneratorInputException(path, entry.Value.Line,
+                    $"The intrinsic '{entry.Key}' must map to a C++ expression.");
             }
+
+            def.Intrinsics[entry.Key] = scalar.Value;
         }
 
         return def;
+    }
+
+    private static string? OptionalScalar(YamlMapping mapping, string key, string path)
+    {
+        if (!mapping.TryGetValue(key, out var node))
+        {
+            return null;
+        }
+
+        return node is YamlScalar { IsNull: false } scalar
+            ? scalar.Value
+            : throw new GeneratorInputException(path, node.Line, $"'{key}' must be a single value.");
+    }
+
+    // The dialect name and its base name become C# class names (<name>Dialect).
+    private static string? RequireIdentifier(YamlMapping mapping, string key, string path, bool required)
+    {
+        var value = OptionalScalar(mapping, key, path);
+        if (value is null)
+        {
+            return required
+                ? throw new GeneratorInputException(path, mapping.Line, $"The '{key}' key is missing; it names the dialect.")
+                : null;
+        }
+
+        if (!SyntaxFacts.IsValidIdentifier(value))
+        {
+            mapping.TryGetValue(key, out var node);
+            throw new GeneratorInputException(path, node?.Line ?? mapping.Line,
+                $"'{key}: {value}' is not a valid C# identifier; it is used in the class name {value}Dialect.");
+        }
+
+        return value;
+    }
+
+    private static int? OptionalInt32(YamlMapping mapping, string key, string path)
+    {
+        if (!mapping.TryGetValue(key, out var node))
+        {
+            return null;
+        }
+
+        return mapping.TryGetInt32(key, out var value) && value > 0
+            ? value
+            : throw new GeneratorInputException(path, node.Line, $"'{key}' must be a positive integer.");
+    }
+
+    private static ImmutableArray<KeyValuePair<string, YamlNode>> Entries(YamlMapping mapping, string key, string path)
+    {
+        if (!mapping.TryGetValue(key, out var node))
+        {
+            return [];
+        }
+
+        return node is YamlMapping section
+            ? section.Entries.ToImmutable()
+            : throw new GeneratorInputException(path, node.Line, $"'{key}' must be a mapping.");
     }
 }
