@@ -132,7 +132,8 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
         }
     }
 
-    // The special cases that run before the rule of the expression's kind (TranspilerRuleRegistry.ExpressionInterceptors)
+    // The special cases that run before the rule of the expression's kind
+    // (TranspilerRuleRegistry.ExpressionInterceptors)
     private bool TryIntercept(ExpressionSyntax expression)
     {
         foreach (var interceptor in Context.RuleRegistry.ExpressionInterceptors)

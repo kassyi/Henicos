@@ -2,7 +2,9 @@ using Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules;
 
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
-/// <summary>Transpiles a simple name (a local, a parameter, a field, a property or a method group) to CUDA C++.</summary>
+/// <summary>
+/// Transpiles a simple name (a local, a parameter, a field, a property or a method group) to CUDA C++.
+/// </summary>
 /// <remarks>
 /// A name that refers to a span or array method without calling it is failed before this runs
 /// (<see cref="Rules.ExpressionInterceptors.UninvokedSpanMethodInterceptor"/>).
@@ -45,7 +47,8 @@ internal static class IdentifierNameTranspiler
     }
 
     // A Core intrinsic named without its type (using static Kassyi.GSharp.Core.Gpu) maps as Gpu.<name> does (#565);
-    // so does a Math or MathF member (using static System.Math), which ProhibitedApiRule allows when it is mapped (#899)
+    // so does a Math or MathF member (using static System.Math), which ProhibitedApiRule allows when it is mapped
+    // (#899)
     private static bool TryAppendUnqualifiedIntrinsic(ISymbol? symbol, ref TranspileContext context) =>
         symbol is IMethodSymbol or IPropertySymbol or IFieldSymbol &&
         symbol is { IsStatic: true, ContainingType: { } owner } &&
@@ -97,7 +100,8 @@ internal static class IdentifierNameTranspiler
 
     // A host static member and a method that takes the dynamic shared memory table named without a call are recorded
     // as failures; the name is still written
-    private static void FailUnemittableReference(IdentifierNameSyntax node, ISymbol? symbol, ref TranspileContext context)
+    private static void FailUnemittableReference(IdentifierNameSyntax node, ISymbol? symbol,
+        ref TranspileContext context)
     {
         if (symbol != null &&
             GpuCodeConstraints.IsHostStaticMemberReference(

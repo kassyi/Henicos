@@ -23,8 +23,8 @@ internal sealed class TranspilerRuleRegistry
     /// expression ends the visit.
     /// </summary>
     /// <remarks>
-    /// A spilled part of a target is written as its temporary before anything else looks at it; the uninvoked span method
-    /// check comes after the conversions, where the member access rule used to run it.
+    /// A spilled part of a target is written as its temporary before anything else looks at it; the uninvoked span
+    /// method check comes after the conversions, where the member access rule used to run it.
     /// </remarks>
     public ImmutableArray<IExpressionInterceptor> ExpressionInterceptors { get; } =
         ImmutableArray.Create<IExpressionInterceptor>(
