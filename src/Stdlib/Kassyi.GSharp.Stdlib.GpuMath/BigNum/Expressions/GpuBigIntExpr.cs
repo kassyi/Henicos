@@ -97,10 +97,15 @@ public readonly struct GpuBigIntExpr : IDisposable
         => new(new SignedNegateExpression(left.Node));
 
     /// <summary>
-    /// Constructs a lazy bitwise NOT expression for the specified signed big integer expression.
+    /// Constructs a lazy bitwise NOT expression for the specified signed big integer expression: <c>~x == -x - 1</c>,
+    /// as for <see cref="BigInteger"/> and <see cref="int"/>, independent of the word count.
     /// </summary>
     /// <param name="left">The signed expression operand.</param>
     /// <returns>A new <see cref="GpuBigIntExpr"/> representing the bitwise NOT AST node.</returns>
+    /// <remarks>
+    /// The result is one bit wider than the operand. A negative operand reads one flag from the device (the borrow of
+    /// <c>|x| - 1</c>, which tells a negative zero apart), so its <c>~</c> cannot be captured into a CUDA graph.
+    /// </remarks>
     public static GpuBigIntExpr operator ~(GpuBigIntExpr left)
         => new(new SignedBitwiseNotExpression(left.Node));
 
