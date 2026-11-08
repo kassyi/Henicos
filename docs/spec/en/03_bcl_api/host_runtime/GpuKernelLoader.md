@@ -70,7 +70,7 @@ public static bool IsDriverAvailable { get; }
 | [GetFunction(IntPtr, string)](#getfunctionintptr-string) | Retrieves a function handle (`CUfunction`) from a loaded CUDA module. |
 | [GetKernelAttributes(IntPtr)](#getkernelattributesintptr) | Queries the hardware resource attributes (`KernelResourceAttributes`) of a compiled kernel function. |
 | [SynchronizeDevice()](#synchronizedevice) | Blocks until the device has completed all preceding requested tasks in the current context. |
-| [Shutdown()](#shutdown) | Unloads all cached GPU modules and clears the module cache. |
+| [Shutdown()](#shutdown) | Unloads all cached GPU modules and clears the module cache. A later launch loads its module again. |
 
 ## EnsureInitialized()
 
@@ -195,11 +195,14 @@ public static void SynchronizeDevice();
 
 ## Shutdown()
 
-Unloads all cached GPU modules and clears the module cache.
+Unloads all cached GPU modules and clears the module cache. A later launch loads its module again.
 
 ```csharp
 public static void Shutdown();
 ```
+
+Do not call it while another thread launches a kernel or loads a module: such a launch can still use a function of a
+module that is being unloaded.
 
 ## Examples
 

@@ -60,6 +60,9 @@ internal interface IFlowRecorder
     /// <summary>A body was spliced in; node follows it.</summary>
     void OnBodyExited(SplicedBody body, int node);
 
+    /// <summary>The innermost spliced body returns <paramref name="value"/>, which was walked.</summary>
+    void OnBodyReturn(IOperation value, ControlFlowGraph graph, int node);
+
     /// <summary>An operation of a basic block (or its branch value) was walked.</summary>
     void OnTopOperation(IOperation operation, ControlFlowGraph graph, int node);
 }
