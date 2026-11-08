@@ -1,4 +1,6 @@
 using System;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Kassyi.GSharp.Runtime;
 using Kassyi.GSharp.Runtime.Aot;
@@ -11,6 +13,11 @@ namespace Kassyi.GSharp.Tests.Shared.Runtime;
 public class GpuBufferTests : TranspilerTestBase
 {
     private const int WordsPerChunk = PinnedStagingBuffer.Size / sizeof(uint);
+
+    // One element past 2 GiB of 4 KiB blocks: the byte count no longer fits int, the element count does
+    private const int LargeBlockCount = (int)((1L << 31) / PageBlock.ByteSize) + 1;
+    // The 2 GiB host copy and the 2 GiB buffer (device or fallback host memory), plus a margin
+    private const long LargeRequiredFreeMemory = 5L << 30;
     private static readonly TimeSpan CompletionTimeout = TimeSpan.FromSeconds(10);
 
     public GpuBufferTests()
@@ -212,6 +219,94 @@ public class GpuBufferTests : TranspilerTestBase
         Assert.Null(exception);
     }
 
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Runtime)]
+    [Category(TestCategory.Stress)]
+    [Scenario(TestScenario.Boundary)]
+    public void CopyToDeviceAndCopyToHost_BufferOf2GiBOrMore_RoundTrip()
+    {
+        CudaCapability.EnsureGpuAvailable();
+        SkipUnlessLargeMemoryAvailable();
+
+        using var buffer = CudaTestEnvironment.InContext(static () => new GpuBuffer<PageBlock>(LargeBlockCount));
+        AssertLargeRoundTrip(buffer);
+    }
+
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Runtime)]
+    [Category(TestCategory.Stress)]
+    [Scenario(TestScenario.Boundary)]
+    public void CopyToDeviceAndCopyToHost_BufferOf2GiBOrMoreInCpuFallbackMode_RoundTrip()
+    {
+        SkipUnlessLargeMemoryAvailable();
+
+        // ForceCpuFallback is AsyncLocal, so the override cannot leak into other tests.
+        GpuKernelLoader.ForceCpuFallback = true;
+        try
+        {
+            using var buffer = new GpuBuffer<PageBlock>(LargeBlockCount);
+            AssertLargeRoundTrip(buffer);
+        }
+        finally
+        {
+            GpuKernelLoader.ForceCpuFallback = false;
+        }
+    }
+
+    private static void SkipUnlessLargeMemoryAvailable()
+    {
+        // The GC measures the memory load at each collection; collect so the value is current.
+        GC.Collect();
+        var info = GC.GetGCMemoryInfo();
+        var freeBytes = info.TotalAvailableMemoryBytes - info.MemoryLoadBytes;
+        Skip.If(
+            freeBytes < LargeRequiredFreeMemory,
+            $"A copy of 2 GiB or more needs about 5 GiB of free memory; {freeBytes >> 20} MiB is free."
+        );
+    }
+
+    private static unsafe void AssertLargeRoundTrip(GpuBuffer<PageBlock> buffer)
+    {
+        var byteCount = (nuint)LargeBlockCount * PageBlock.ByteSize;
+        var wordCount = checked((int)(byteCount / sizeof(uint)));
+        var host = NativeMemory.Alloc(byteCount);
+        try
+        {
+            var words = new Span<uint>(host, wordCount);
+            for (var i = 0; i < words.Length; i++)
+            {
+                words[i] = Pattern(i);
+            }
+
+            var blocks = new Span<PageBlock>(host, LargeBlockCount);
+            buffer.CopyToDevice(blocks);
+            NativeMemory.Clear(host, byteCount);
+            buffer.CopyToHost(blocks);
+
+            for (var i = 0; i < words.Length; i++)
+            {
+                if (words[i] != Pattern(i))
+                {
+                    Assert.Fail($"Word {i} was 0x{words[i]:X8}, expected 0x{Pattern(i):X8}.");
+                }
+            }
+        }
+        finally
+        {
+            NativeMemory.Free(host);
+        }
+    }
+
     private static uint Pattern(int index) => unchecked(((uint)index * 2654435761u) + 17u);
+
+    [InlineArray(ByteSize / sizeof(uint))]
+    private struct PageBlock
+    {
+        public const int ByteSize = 4096;
+
+        private uint _element0;
+    }
 }
 
