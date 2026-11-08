@@ -131,6 +131,31 @@ public sealed class SignedWidthTests : IDisposable
         Assert.Throws<ArgumentOutOfRangeException>(() => ((GpuBigIntExpr)a).Fit(0));
     }
 
+    [Theory]
+    [MemberData(nameof(NotCases))]
+    [Scenario(TestScenario.Boundary)]
+    public void Not_IsMinusXMinusOne_OneBitWider(string value, int words, bool negativeZero) =>
+        SignedCases.Not(_workspace, BigInteger.Parse(value), words, negativeZero);
+
+    public static TheoryData<string, int, bool> NotCases() => SignedCases.NotCases();
+
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void Not_OfANegativeValue_CannotBeCaptured_OfANonNegativeOneCan()
+    {
+        using var positive = SignedCases.Value(_workspace, 5, 1);
+        using var negative = SignedCases.Value(_workspace, -5, 1);
+
+        using (var graph = (~(GpuBigIntExpr)positive).CompileToGraph(_workspace))
+        {
+            graph.Execute();
+            using var owned = graph.Result.ToOwned();
+            Assert.Equal(-6, SignedCases.Read(owned));
+        }
+
+        Assert.Throws<NotSupportedException>(() => (~(GpuBigIntExpr)negative).CompileToGraph(_workspace));
+    }
+
     [Fact]
     [Scenario(TestScenario.SadPath)]
     public void Capture_OfAValueDependentSign_IsNotSupported_ButSameSignsAre()
@@ -173,6 +198,10 @@ public sealed class SignedWidthCpuFallbackTests
             SignedCases.AddSubtract(workspace, aWords, bWords);
             SignedCases.Differences(workspace, aWords, bWords);
             SignedCases.OtherOperators(workspace, aWords, bWords);
+            foreach (var (value, words, negativeZero) in SignedCases.NotValues())
+            {
+                SignedCases.Not(workspace, BigInteger.Parse(value), words, negativeZero);
+            }
 
             using var a = SignedCases.Value(workspace, -SignedCases.AllOnes(32 * aWords), aWords);
             using var one = SignedCases.Value(workspace, 1, 1);
@@ -229,6 +258,45 @@ internal static class SignedCases
         var limbs = new uint[words];
         value.WriteLimbs(limbs);
         return limbs;
+    }
+
+    // Values for ~: zero, the negative zero (a zero magnitude with the negative flag), small values, and the largest
+    // magnitudes of 1, 2 and 33 words, whose ~ needs one more word
+    public static (string Value, int Words, bool NegativeZero)[] NotValues() =>
+    [
+        ("0", 1, false),
+        ("0", 1, true),
+        ("1", 1, false),
+        ("-1", 1, false),
+        ("5", 1, false),
+        ("-5", 2, false),
+        (uint.MaxValue.ToString(), 1, false),
+        ((-(BigInteger.One << 32)).ToString(), 2, false),
+        (AllOnes(32 * 33).ToString(), 33, false),
+        ((-AllOnes(32 * 33)).ToString(), 33, false)
+    ];
+
+    public static TheoryData<string, int, bool> NotCases()
+    {
+        var data = new TheoryData<string, int, bool>();
+        foreach (var (value, words, negativeZero) in NotValues())
+        {
+            data.Add(value, words, negativeZero);
+        }
+
+        return data;
+    }
+
+    public static void Not(GpuWorkspace workspace, BigInteger value, int words, bool negativeZero)
+    {
+        var limbs = new uint[words];
+        BigInteger.Abs(value).WriteLimbs(limbs);
+        using var x = new GpuBigInt(new GpuBigUInt(workspace, limbs), value.Sign < 0 || negativeZero);
+
+        using var result = (~(GpuBigIntExpr)x).Evaluate(workspace);
+
+        Assert.Equal(-value - 1, Read(result));
+        Assert.Equal(BigIntWidths.Words(32L * words + 1), result.Value.NumWords);
     }
 
     public static void AddSubtract(GpuWorkspace workspace, int aWords, int bWords)

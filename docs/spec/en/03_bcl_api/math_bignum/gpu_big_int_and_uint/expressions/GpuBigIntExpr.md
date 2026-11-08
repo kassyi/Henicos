@@ -256,7 +256,7 @@ A new `GpuBigIntExpr` representing the Min AST node.
 | `operator +(GpuBigIntExpr, GpuBigIntExpr)` | Constructs a lazy addition expression with deferred sign resolution. |
 | `operator -(GpuBigIntExpr, GpuBigIntExpr)` | Constructs a lazy subtraction expression with deferred sign resolution. |
 | `operator -(GpuBigIntExpr)` | Constructs a lazy negation expression. |
-| `operator ~(GpuBigIntExpr)` | Constructs a lazy bitwise NOT expression. |
+| `operator ~(GpuBigIntExpr)` | Constructs a lazy bitwise NOT expression: `~x == -x - 1`, as `BigInteger`, one bit wider than the operand. A negative operand reads one flag from the device, so its `~` cannot be captured into a CUDA graph. |
 
 ## Remarks
 

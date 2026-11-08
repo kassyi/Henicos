@@ -406,15 +406,29 @@ internal abstract class SignedUnaryExpression(IGpuBigIntExpression target)
     protected abstract GpuBigInt Execute(GpuBigInt targetEval, GpuBigUInt resultBuffer);
 }
 
+// ~x == -x - 1, as BigInteger and C# int: -(|x| + 1) for a non-negative x, |x| - 1 for a negative one. The result is
+// one bit wider than x (GMP mpz_com). A negative x reads the borrow of |x| - 1 from the device, once: a magnitude of
+// zero with the negative flag (-0) is 0, and ~0 is -1.
 internal class SignedBitwiseNotExpression(IGpuBigIntExpression target) : SignedUnaryExpression(target)
 {
-    // Every bit of the operand's words: the magnitude is inverted within them
-    public override long Bits => BigIntWidths.OfWords(Math.Max(1, Target.NumWords));
+    public override long Bits => BigIntWidths.SignedNot(IBitBoundedExpression.Of(Target));
 
     protected override GpuBigInt Execute(GpuBigInt targetEval, GpuBigUInt resultBuffer)
     {
-        GpuBigIntMath.BitwiseNot(targetEval.Value, resultBuffer);
-        return new GpuBigInt(resultBuffer, targetEval.IsNegative);
+        if (!targetEval.IsNegative)
+        {
+            // The result is wider than the bound of x, so the carry of |x| + 1 is kept
+            GpuBigIntMath.Add(targetEval.Value, 1u, resultBuffer);
+            return new GpuBigInt(resultBuffer, isNegative: true);
+        }
+
+        var workspace = resultBuffer.Workspace;
+        using var one = workspace.RentTemp(1);
+        workspace.Provider.WriteWord(one.DevicePointer, 0, 1u, workspace.Stream);
+        var (negated, _) = BigIntWideOps.SubtractMagnitudes(targetEval.Value, one, resultBuffer);
+
+        // |x| - 1 borrowed only for -0: the result is then |0 - 1| = 1 with a minus sign
+        return new GpuBigInt(resultBuffer, isNegative: negated);
     }
 }
 
