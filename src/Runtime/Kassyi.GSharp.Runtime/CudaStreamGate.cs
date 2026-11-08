@@ -95,6 +95,12 @@ public sealed unsafe class CudaStreamGate : IDisposable
     /// </summary>
     public bool IsOpen => _isOpen;
 
+    // The value the device compares against the current generation; read by the write-order regression test.
+    internal uint DeviceFlag => Volatile.Read(ref *(uint*)_hostPointer);
+
+    // The generation that Enqueue waits for and Open releases; read by the write-order regression test.
+    internal uint CurrentGeneration => Volatile.Read(ref _generation);
+
     /// <summary>
     /// Enqueues a device-side wait on <paramref name="stream"/> so that work enqueued on the stream after this call
     /// does not execute until <see cref="Open"/> is called for the current generation.
@@ -151,8 +157,11 @@ public sealed unsafe class CudaStreamGate : IDisposable
         lock (_sync)
         {
             ObjectDisposedException.ThrowIf(_hostPointer == IntPtr.Zero, this);
-            Volatile.Write(ref *(uint*)_hostPointer, _generation);
+
+            // IsOpen first: once the flag is stored the device can run and a host callback can observe the open
+            // gate, so IsOpen must already read true by then.
             _isOpen = true;
+            Volatile.Write(ref *(uint*)_hostPointer, _generation);
         }
     }
 
@@ -197,8 +206,9 @@ public sealed unsafe class CudaStreamGate : IDisposable
 
             // Unblock any streams still waiting on the current generation before calling cuMemFreeHost,
             // which implicitly synchronizes the device and would otherwise deadlock against a closed gate.
-            Volatile.Write(ref *(uint*)hostPointer, _generation);
+            // IsOpen is set before the store for the same reason as in Open.
             _isOpen = true;
+            Volatile.Write(ref *(uint*)hostPointer, _generation);
         }
 
         using var scope = new GpuKernelLoader.CudaContextScope(GpuKernelLoader.GlobalContext);
