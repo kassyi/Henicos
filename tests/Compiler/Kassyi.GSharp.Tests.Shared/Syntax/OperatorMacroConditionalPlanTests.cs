@@ -56,7 +56,7 @@ public class OperatorMacroConditionalPlanTests
         Assert.Equal("op_False", nested.Inner.Test?.Name);
     }
 
-    private static OperatorMacroCallPlanner.ConditionalPlan PlanFirstAssignment(string kernel)
+    private static MacroConditionalPlan PlanFirstAssignment(string kernel)
     {
         var (assignment, model) = FindAssignments(kernel).First();
         Assert.True(OperatorMacroResolver.TryResolve(assignment, model, out var macro));

@@ -91,8 +91,8 @@ internal static class ManagedOperatorMacroExpander
         public bool AddConditional(ExpressionSyntax? result, string? resultTemp, OperatorMacro macro)
         {
             if (!TryPrepareCall(result, macro, assignment, semanticModel, out var call, out _) ||
-                call.Parameters[0] is not { } resultParameter ||
-                call.Operands[1] is not { } left)
+                call.Result.Parameter is not { } resultParameter ||
+                call.Left.Expression is not { } left)
             {
                 return false;
             }
@@ -139,7 +139,7 @@ internal static class ManagedOperatorMacroExpander
         // The argument of the result of a && or || and the <target> that receives the left operand: the temporary
         // <resultTemp> (<result> is null), a reference to <result> evaluated now (the plan spills it), or <result>
         private ArgumentSyntax? PrepareTarget(ExpressionSyntax? result, string? resultTemp, IParameterSymbol parameter,
-            in ConditionalPlan plan, in MacroArgument resultPlan, out ExpressionSyntax target)
+            in MacroConditionalPlan plan, in MacroArgument resultPlan, out ExpressionSyntax target)
         {
             if (result is null)
             {
@@ -165,7 +165,7 @@ internal static class ManagedOperatorMacroExpander
         private static MacroArgument FindResult(ImmutableArray<MacroArgument> arguments) =>
             arguments
                 .AsStackEnumerable()
-                .First(static argument => argument.Slot == 0);
+                .First(static argument => argument.Role == MacroOperandRole.Result);
 
         // { <right temporaries> <target method>(<context>, <result>, <left temporary>, <right>); }: the call of the
         // target when the test of a && or || fails, after the statements that compute an operator macro among the right
@@ -207,11 +207,12 @@ internal static class ManagedOperatorMacroExpander
             var arguments = ImmutableArray.CreateBuilder<ArgumentSyntax>(plan.Length);
             foreach (var planned in plan)
             {
-                var argument = planned.Slot switch
+                var argument = planned.Role switch
                 {
-                    -1 => CreateContextArgument(call, planned),
-                    0 => resultArgument,
-                    1 => CreateArgument(Temp(leftTemp), planned.Parameter, isVariable: true, conversion: null),
+                    MacroOperandRole.Context => CreateContextArgument(call, planned),
+                    MacroOperandRole.Result => resultArgument,
+                    MacroOperandRole.Left =>
+                        CreateArgument(Temp(leftTemp), planned.Parameter, isVariable: true, conversion: null),
                     _ => CreateOperand(planned, null)
                 };
                 if (argument is null)

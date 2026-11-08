@@ -57,7 +57,7 @@ internal static class GpuOperatorMacroTranspiler
             if (last >= 0)
             {
                 // Without an operator macro among the operands, declaring cannot fail
-                _ = DeclareOperandTemps(arguments, call.Operands.Length, assignment, ref context, out temps);
+                _ = DeclareOperandTemps(arguments, MacroCall.OperandRoles.Length, assignment, ref context, out temps);
                 sequence.Return();
             }
 
@@ -88,7 +88,7 @@ internal static class GpuOperatorMacroTranspiler
         var model = context.Query.SemanticModel;
         var effects = GetOperandEffects(call, macro, assignment, model);
         var arguments = PlanArguments(call, macro, effects, EvaluationOrder.LastSpilledOperand(effects), model);
-        if (!DeclareOperandTemps(arguments, call.Operands.Length, assignment, ref context, out var temps))
+        if (!DeclareOperandTemps(arguments, MacroCall.OperandRoles.Length, assignment, ref context, out var temps))
         {
             return false;
         }
@@ -117,10 +117,10 @@ internal static class GpuOperatorMacroTranspiler
         int[] temps = [-1, -1, -1, -1];
         if (plan.SpillsTarget && result != null)
         {
-            temps[0] = EvaluationOrder.DeclareTemp(ref context, result, reference: true);
+            temps[(int)MacroOperandRole.Result] = EvaluationOrder.DeclareTemp(ref context, result, reference: true);
         }
 
-        if (!TryDeclareLeftOperand(call, macro, assignment, ref context, out temps[1]))
+        if (!TryDeclareLeftOperand(call, macro, assignment, ref context, out temps[(int)MacroOperandRole.Left]))
         {
             return false;
         }
@@ -130,8 +130,8 @@ internal static class GpuOperatorMacroTranspiler
         writer.AppendLine("else");
         using (writer.Scope())
         {
-            if (call.Operands[2] is { } right &&
-                !TryDeclareNestedTemp(right, macro, assignment, ref context, out temps[2]))
+            if (call.Right.Expression is { } right &&
+                !TryDeclareNestedTemp(right, macro, assignment, ref context, out temps[(int)MacroOperandRole.Right]))
             {
                 return false;
             }
@@ -149,7 +149,7 @@ internal static class GpuOperatorMacroTranspiler
     private static bool TryDeclareLeftOperand(in MacroCall call, OperatorMacro macro,
         AssignmentExpressionSyntax assignment, ref TranspileContext context, out int temp)
     {
-        var left = call.Operands[1] ?? throw new InvalidOperationException("A && or || has a left operand.");
+        var left = call.Left.Expression ?? throw new InvalidOperationException("A && or || has a left operand.");
         if (!TryDeclareNestedTemp(left, macro, assignment, ref context, out temp))
         {
             return false;
@@ -165,9 +165,9 @@ internal static class GpuOperatorMacroTranspiler
     }
 
     // if(<test>(__gsharp_seq_1)) { <target>=__gsharp_seq_1; }
-    // The test of the left operand in temps[1] and the assignment of it to the target (temps[0], the temporary
-    // <resultTemp> or <result>) when the test holds
-    private static void AppendTest(ExpressionSyntax? result, int resultTemp, in ConditionalPlan plan, int[] temps,
+    // The test of the left operand in its temporary (temps[Left]) and the assignment of it to the target
+    // (temps[Result], the temporary <resultTemp> or <result>) when the test holds
+    private static void AppendTest(ExpressionSyntax? result, int resultTemp, in MacroConditionalPlan plan, int[] temps,
         ref TranspileContext context)
     {
         var writer = context.Emitter.Writer;
@@ -178,16 +178,16 @@ internal static class GpuOperatorMacroTranspiler
             using (writer.Parentheses())
             {
                 writer.AppendIf(plan.PassesTestByReference, "&");
-                EvaluationOrder.AppendTempName(writer, temps[1]);
+                EvaluationOrder.AppendTempName(writer, temps[(int)MacroOperandRole.Left]);
             }
         }
 
         writer.AppendLine();
         using (writer.Scope())
         {
-            AppendTarget(result, temps[0], resultTemp, ref context);
+            AppendTarget(result, temps[(int)MacroOperandRole.Result], resultTemp, ref context);
             writer.Append("=");
-            EvaluationOrder.AppendTempName(writer, temps[1]);
+            EvaluationOrder.AppendTempName(writer, temps[(int)MacroOperandRole.Left]);
             writer.AppendLine(";");
         }
     }
@@ -241,26 +241,26 @@ internal static class GpuOperatorMacroTranspiler
 
     // In the order of the arguments (PlanArguments): an operator macro among them as <T> __gsharp_seq_<n>{}; and its
     // own expansion, which computes it into that temporary; an operand that spills as auto&& __gsharp_seq_<n> =
-    // <operand passed by reference>; or auto __gsharp_seq_<n> = <operand>; (-1 in <temps>, one per operand slot:
+    // <operand passed by reference>; or auto __gsharp_seq_<n> = <operand>; (-1 in <temps>, indexed by MacroOperandRole:
     // emitted in place)
-    private static bool DeclareOperandTemps(ImmutableArray<MacroArgument> arguments, int slotCount,
+    private static bool DeclareOperandTemps(ImmutableArray<MacroArgument> arguments, int operandCount,
         AssignmentExpressionSyntax assignment, ref TranspileContext context, out int[] temps)
     {
-        temps = new int[slotCount];
+        temps = new int[operandCount];
         temps.AsSpan().Fill(-1);
         foreach (var argument in arguments)
         {
             switch (argument)
             {
                 case { Kind: MacroArgumentKind.NestedOperand, Nested.Inner: var inner }:
-                    if (!DeclareNestedTemp(inner, assignment, ref context, out temps[argument.Slot]))
+                    if (!DeclareNestedTemp(inner, assignment, ref context, out temps[(int)argument.Role]))
                     {
                         return false;
                     }
 
                     break;
                 case { Kind: MacroArgumentKind.Operand, Spills: true, Operand: { } operand }:
-                    temps[argument.Slot] = EvaluationOrder.DeclareTemp(ref context, operand,
+                    temps[(int)argument.Role] = EvaluationOrder.DeclareTemp(ref context, operand,
                         argument.IsPassedByReference);
                     break;
             }
@@ -326,7 +326,7 @@ internal static class GpuOperatorMacroTranspiler
                 AppendContextArgument(variable, argument.Parameter, assignment, ref context);
                 break;
             case { Operand: { } operand }:
-                AppendOperand(operand, temps?[argument.Slot] ?? -1, argument, ref context);
+                AppendOperand(operand, temps?[(int)argument.Role] ?? -1, argument, ref context);
                 break;
             default:
                 context.Emitter.Writer.Append('&');

@@ -33,7 +33,10 @@ public class OperatorMacroCallPlanTests
     {
         var arguments = Plan("AddKernel");
 
-        Assert.Equal(new[] { 0, 1, 2 }, arguments.Select(static a => a.Slot));
+        Assert.Equal(
+            new[] { MacroOperandRole.Result, MacroOperandRole.Left, MacroOperandRole.Right },
+            arguments.Select(static a => a.Role)
+        );
         Assert.Equal(
             new[] { "c", "a", "b" },
             arguments.Select(static a => (a.Operand as IdentifierNameSyntax)?.Identifier.ValueText)
@@ -51,7 +54,7 @@ public class OperatorMacroCallPlanTests
         var arguments = Plan("ContextKernel");
 
         Assert.Equal(MacroArgumentKind.Context, arguments[0].Kind);
-        Assert.Equal(-1, arguments[0].Slot);
+        Assert.Equal(MacroOperandRole.Context, arguments[0].Role);
         Assert.Equal(new[] { 0, 1, 2, 3 }, arguments.Select(static a => a.Parameter.Ordinal));
         Assert.Equal(new[] { false, true, false, true }, arguments.Select(static a => a.IsPassedByReference));
     }
@@ -69,11 +72,30 @@ public class OperatorMacroCallPlanTests
         Assert.Equal(SpecialType.System_Int64, arguments[2].ConversionType?.SpecialType);
     }
 
-    // c = a << n: the count is the extra operand, slot 3
+    // c = a << n: the count is the extra operand
     [Fact]
     [Scenario(TestScenario.Boundary)]
     public void Plan_Shift_PassesTheCountAsTheExtraOperand() =>
-        Assert.Equal(new[] { 0, 1, 3 }, Plan("ShiftKernel").Select(static a => a.Slot));
+        Assert.Equal(
+            new[] { MacroOperandRole.Result, MacroOperandRole.Left, MacroOperandRole.Extra },
+            Plan("ShiftKernel").Select(static a => a.Role)
+        );
+
+    // c = a << n: Shift(ref c, a, n) takes the count as Extra; Right has neither an operand nor a parameter
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Prepare_Shift_NamesTheOperandsByRole()
+    {
+        var (assignment, model) = FindAssignment("ShiftKernel");
+        Assert.True(OperatorMacroResolver.TryResolve(assignment, model, out var macro));
+        Assert.True(TryPrepareCall(assignment.Left, macro, assignment, model, out var call, out _));
+
+        Assert.Equal(new[] { "result", "value", "count" },
+            new[] { call.Result, call.Left, call.Extra }.Select(static o => o.Parameter?.Name));
+        Assert.Null(call.Right.Expression);
+        Assert.Null(call.Right.Parameter);
+        Assert.Equal("n", (call.Extra.Expression as IdentifierNameSyntax)?.Identifier.ValueText);
+    }
 
     // c = (a + b) + d: the inner a + b is computed into a temporary of its own
     [Fact]
@@ -88,7 +110,7 @@ public class OperatorMacroCallPlanTests
         Assert.Equal(MacroArgumentKind.Operand, arguments[2].Kind);
     }
 
-    // The inner call computes its result into the temporary of the outer one: no operand in slot 0
+    // The inner call computes its result into the temporary of the outer one: the result has no operand
     [Fact]
     [Scenario(TestScenario.Boundary)]
     public void Plan_InnerOperatorMacro_PassesTheResultTemporary()
