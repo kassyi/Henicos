@@ -283,10 +283,11 @@ public class UnsignedExpressionsTests : IDisposable
     [Scenario(TestScenario.Boundary)]
     public void Evaluate_TargetOfTheExpressionWidth_HoldsTheResult()
     {
-        // The same width as the expression is accepted (the check rejects only a narrower target).
+        // The same width as the expression is accepted (the check rejects only a narrower target). A sum of 4-word
+        // operands has 4 words + 1 bit, so 5 words.
         using var a = Create(_context, 1, 4);
         using var b = Create(_context, 2, 4);
-        using var target = new GpuBigUInt(_context, 4);
+        using var target = new GpuBigUInt(_context, 5);
 
         ((GpuBigUIntExpr)a + b).Node.Evaluate(_context, target);
 
