@@ -199,10 +199,16 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
 
     private const string WarpBarrierCallee = "is a warp barrier";
 
+    private const string WarpActiveMaskCallee = "returns the lanes of the warp that reach it together";
+
     private static string GetWarpCallee(WarpShuffleKind kind) =>
-        kind == WarpShuffleKind.SyncWarp ? WarpBarrierCallee
-        : IsVoteOrReduction(kind) ? WarpVoteCallee
-        : WarpShuffleCallee;
+        kind switch
+        {
+            WarpShuffleKind.SyncWarp => WarpBarrierCallee,
+            WarpShuffleKind.ActiveMask => WarpActiveMaskCallee,
+            _ when IsVoteOrReduction(kind) => WarpVoteCallee,
+            _ => WarpShuffleCallee
+        };
 
     private static bool IsVoteOrReduction(WarpShuffleKind kind) =>
         kind is WarpShuffleKind.Ballot or WarpShuffleKind.All or WarpShuffleKind.Any or WarpShuffleKind.ReduceAdd

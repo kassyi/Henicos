@@ -196,6 +196,44 @@ internal sealed class UniformityAnalysis
         return false;
     }
 
+    /// <summary>
+    /// The thread-variant branches of the body: the syntax of each condition, whether its influence region holds a call
+    /// that splits the state machine, and the calls and object creations evaluated at its immediate post-dominator, where
+    /// the threads that took either way meet again. The tests of <c>ReconvergenceInserter</c> compare its reconvergence
+    /// points with them.
+    /// </summary>
+    public ImmutableArray<DivergentBranch> GetDivergentBranches()
+    {
+        var branches = ImmutableArray.CreateBuilder<DivergentBranch>();
+        for (var branch = 0; branch < _state.Branch.Length; branch++)
+        {
+            if (_state.Branch[branch] != ThreadVariance.Block ||
+                _state.Graph.Nodes[branch].Condition?.Syntax is not { } condition)
+            {
+                continue;
+            }
+
+            var region = _state.PostDominators.GetRegion(branch);
+            var join = _state.PostDominators.GetImmediatePostDominator(branch);
+            var holdsSplit = _state.Recorder.SplitsAt
+                .AsStackEnumerable()
+                .Any(region, static (split, inRegion) => split.Value
+                    .AsStackEnumerable()
+                    .Any(inRegion, static (node, r) => r.Contains(node))
+                );
+            var joinCalls = ImmutableArray.CreateBuilder<SyntaxNode>();
+            _state.Recorder.NodesOf
+                .AsStackEnumerable()
+                .Where(join, static (call, node) => call.Value.Contains(node))
+                .Select(static call => call.Key)
+                .AddTo(joinCalls);
+
+            branches.Add(new DivergentBranch(condition, holdsSplit, joinCalls.ToImmutable()));
+        }
+
+        return branches.ToImmutable();
+    }
+
     /// <summary>Whether only some threads of the grid reach the call or object creation <paramref name="node"/>.</summary>
     public bool IsReachedByPartOfGrid(SyntaxNode node) =>
         _state.Recorder.NodesOf.TryGetValue(node, out var nodes) &&
