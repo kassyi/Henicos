@@ -371,13 +371,15 @@ However, in high-throughput hot loops (e.g., 10,000 iterations per second), repe
 1. **Host Array Mode (`LaunchKernel(ctx)`)**:
    Pass a struct containing managed `T[]` arrays. Zero boilerplate, full automatic round-trip.
 2. **Device Pointer Mode (`LaunchKernelPtr(...)`)**:
-   Pass pre-allocated GPU pointers (`IntPtr` or `GpuBuffer<T>.DevicePointer`).
-   
+   Pass pre-allocated device memory as `GSharpArrayProxy` values, which carry the length the kernel sees:
+   `GpuBuffer<T>.ToProxy()`, or `new GSharpArrayProxy(pointer, length)` for memory you manage yourself.
+
 > [!WARNING]
 > **Device Pointer Mode Constraint**:
-> `LaunchKernelPtr` takes the native struct (`AotContexts.<Struct>`), whose array fields are device pointers, so a struct
-> that contains managed arrays (`T[]`) cannot be passed to it (the call does not compile).
-> If you require context structs in hot loops with pre-allocated buffers, define the struct fields as `IntPtr` or raw pointers (`uint*`), or use `GpuBuffer<T>`.
+> `LaunchKernelPtr` takes the native struct (`AotContexts.<Struct>`), whose array fields are `GSharpArrayProxy` values,
+> so a struct that contains managed arrays (`T[]`) cannot be passed to it (the call does not compile). Fill each array
+> field with a proxy of the device buffer (`Field = buffer.ToProxy()`); a raw `IntPtr` does not convert, because the
+> kernel would see `Length == 0`.
 
 ---
 
