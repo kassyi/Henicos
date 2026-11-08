@@ -99,7 +99,6 @@ __gsharp_id_2_result[__gsharp_add_i32(__gsharp_id_4_row,6)]=__gsharp_max_number_
 __gsharp_id_2_result[__gsharp_add_i32(__gsharp_id_4_row,7)]=__gsharp_min_number_f32(__gsharp_id_0_left[__gsharp_id_3_i],__gsharp_id_1_right[__gsharp_id_3_i]);
 }
 ";
-public static readonly string SingleMaxMinKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +SingleMaxMinKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_SingleMaxMinKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__MathMaxMinKernels__SingleMaxMinKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerSingleMaxMinKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.MathMaxMinKernels.__gsharp_hfunc_SingleMaxMinKernel.Resolve();
@@ -308,7 +307,6 @@ __gsharp_id_2_result[__gsharp_add_i32(__gsharp_id_4_row,4)]=__gsharp_max_number_
 __gsharp_id_2_result[__gsharp_add_i32(__gsharp_id_4_row,5)]=__gsharp_min_number_f64(__gsharp_id_0_left[__gsharp_id_3_i],__gsharp_id_1_right[__gsharp_id_3_i]);
 }
 ";
-public static readonly string DoubleMaxMinKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +DoubleMaxMinKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_DoubleMaxMinKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__MathMaxMinKernels__DoubleMaxMinKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerDoubleMaxMinKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.MathMaxMinKernels.__gsharp_hfunc_DoubleMaxMinKernel.Resolve();
@@ -511,7 +509,6 @@ int __gsharp_id_4_i = (int)threadIdx.x;
 __gsharp_id_3_result[__gsharp_id_4_i]=__gsharp_clamp(__gsharp_id_0_value[__gsharp_id_4_i],__gsharp_id_1_min[__gsharp_id_4_i],__gsharp_id_2_max[__gsharp_id_4_i]);
 }
 ";
-public static readonly string SingleClampKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +SingleClampKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_SingleClampKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__MathMaxMinKernels__SingleClampKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerSingleClampKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.MathMaxMinKernels.__gsharp_hfunc_SingleClampKernel.Resolve();
@@ -769,7 +766,6 @@ int __gsharp_id_4_i = (int)threadIdx.x;
 __gsharp_id_3_result[__gsharp_id_4_i]=__gsharp_clamp(__gsharp_id_0_value[__gsharp_id_4_i],__gsharp_id_1_min[__gsharp_id_4_i],__gsharp_id_2_max[__gsharp_id_4_i]);
 }
 ";
-public static readonly string DoubleClampKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +DoubleClampKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_DoubleClampKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__MathMaxMinKernels__DoubleClampKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerDoubleClampKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.MathMaxMinKernels.__gsharp_hfunc_DoubleClampKernel.Resolve();
@@ -1029,7 +1025,6 @@ __gsharp_id_4_wideResult[0]=__gsharp_max_f64(__gsharp_id_1_wide[0],(double)__gsh
 __gsharp_id_4_wideResult[1]=__gsharp_min_f64(__gsharp_id_1_wide[0],(double)__gsharp_id_2_whole[0]);
 }
 ";
-public static readonly string MixedOperandMaxKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +MixedOperandMaxKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_MixedOperandMaxKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__MathMaxMinKernels__MixedOperandMaxKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerMixedOperandMaxKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.MathMaxMinKernels.__gsharp_hfunc_MixedOperandMaxKernel.Resolve();

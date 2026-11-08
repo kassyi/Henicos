@@ -105,7 +105,6 @@ __gsharp_atomicCAS((unsigned long long*)(&__gsharp_id_3_ulongBuf[2]),800ull,0ull
 }
 }
 ";
-public static readonly string InterlockedKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +InterlockedKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_InterlockedKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__InvocationAndIntrinsicsKernels__InterlockedKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerInterlockedKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.InvocationAndIntrinsicsKernels.__gsharp_hfunc_InterlockedKernel.Resolve();
@@ -381,7 +380,6 @@ atomicExch(&__gsharp_id_1_structArray[__gsharp_id_2_tid].__gsharp_mb_ValueU,42u)
 __gsharp_atomicCAS((unsigned long long*)(&__gsharp_id_1_structArray[__gsharp_id_2_tid].__gsharp_mb_ValueL),99ll,0ll);
 }
 ";
-public static readonly string InterlockedEdgeCasesKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +InterlockedEdgeCasesKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_InterlockedEdgeCasesKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__InvocationAndIntrinsicsKernels__InterlockedEdgeCasesKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 private static bool __gsharp_layout_checked_InterlockedEdgeCasesKernel;
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
@@ -564,7 +562,6 @@ __gsharp_id_3_floatOutputs[7]=sqrtf(fabsf(__gsharp_id_6_fVal));
 __gsharp_id_3_floatOutputs[8]=logf(fabsf(__gsharp_id_6_fVal)+1.0f);
 }
 ";
-public static readonly string MathKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +MathKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_MathKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__InvocationAndIntrinsicsKernels__MathKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerMathKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.InvocationAndIntrinsicsKernels.__gsharp_hfunc_MathKernel.Resolve();
@@ -835,7 +832,6 @@ __gsharp_id_3_doubleSpecialResults[4]=sqrt(__gsharp_id_6_d);
 __gsharp_id_3_doubleSpecialResults[5]=log(__gsharp_id_6_d);
 }
 ";
-public static readonly string MathEdgeCasesKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +MathEdgeCasesKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_MathEdgeCasesKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__InvocationAndIntrinsicsKernels__MathEdgeCasesKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerMathEdgeCasesKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.InvocationAndIntrinsicsKernels.__gsharp_hfunc_MathEdgeCasesKernel.Resolve();

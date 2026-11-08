@@ -422,7 +422,6 @@ __gsharp_array_at(__gsharp_id_0_ctx.__gsharp_mb_PutResult, __gsharp_id_1_tid, ""
 }
 }
 ";
-public static readonly string BlackScholesKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +BlackScholesKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_BlackScholesKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Henicos__Benchmarks__ComputeBenchmarks__BlackScholesKernels__BlackScholesKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerBlackScholesKernel() => global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.__gsharp_hfunc_BlackScholesKernel.Resolve();

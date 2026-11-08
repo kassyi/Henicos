@@ -96,7 +96,6 @@ __gsharp_id_2_c[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_4_row,__gsharp_id_
 }
 }
 ";
-public static readonly string MatrixMultiplyStressKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +MatrixMultiplyStressKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_MatrixMultiplyStressKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Runtime__HeavyGpuStressKernels__MatrixMultiplyStressKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerMatrixMultiplyStressKernel() => global::Kassyi.GSharp.Tests.Shared.Runtime.HeavyGpuStressKernels.__gsharp_hfunc_MatrixMultiplyStressKernel.Resolve();

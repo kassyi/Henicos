@@ -94,7 +94,6 @@ cg::this_grid().sync();
 __gsharp_id_0_buffer[__gsharp_id_1_tid]=__gsharp_id_4_nextVal;
 }
 ";
-public static readonly string GlobalBarrierKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +GlobalBarrierKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_GlobalBarrierKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Core__GridSyncManagedKernels__GlobalBarrierKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerGlobalBarrierKernel() => global::Kassyi.GSharp.Tests.Shared.Core.GridSyncManagedKernels.__gsharp_hfunc_GlobalBarrierKernel.Resolve();
@@ -223,7 +222,6 @@ __gsharp_id_2_totalSum[0]=__gsharp_id_8_sum;
 }
 }
 ";
-public static readonly string GlobalReductionKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +GlobalReductionKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_GlobalReductionKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Core__GridSyncManagedKernels__GlobalReductionKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerGlobalReductionKernel() => global::Kassyi.GSharp.Tests.Shared.Core.GridSyncManagedKernels.__gsharp_hfunc_GlobalReductionKernel.Resolve();

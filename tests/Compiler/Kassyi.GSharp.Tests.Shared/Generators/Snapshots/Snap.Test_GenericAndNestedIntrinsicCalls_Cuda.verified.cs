@@ -33,7 +33,6 @@ return __gsharp_seq_0 = (int)__gsharp_add_i32(__gsharp_seq_1,__gsharp_seq_2);
 }());
 }
 ";
-public static readonly string CopyAndReleaseKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +CopyAndReleaseKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_CopyAndReleaseKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__NativeApi__GenericIntrinsicCallKernels__CopyAndReleaseKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_MegaTestCompilationBase.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerCopyAndReleaseKernel() => global::Kassyi.GSharp.Tests.NativeApi.GenericIntrinsicCallKernels.__gsharp_hfunc_CopyAndReleaseKernel.Resolve();

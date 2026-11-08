@@ -162,7 +162,6 @@ cg::this_grid().sync();
 __gsharp_id_1_output[__gsharp_id_5_tid]=__gsharp_add_i32(__gsharp_add_i32(__gsharp_id_7_next,__gsharp_id_3_staticCopy[(__gsharp_add_i32(__gsharp_id_6_local,1))%(int)blockDim.x]),__gsharp_id_4_dynamicCopy[(__gsharp_add_i32(__gsharp_id_6_local,2))%(int)blockDim.x]);
 }
 ";
-public static readonly string SharedMemoryAcrossGridSyncKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +SharedMemoryAcrossGridSyncKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_SharedMemoryAcrossGridSyncKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Core__GridSyncPhaseKernels__SharedMemoryAcrossGridSyncKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerSharedMemoryAcrossGridSyncKernel() => global::Kassyi.GSharp.Tests.Shared.Core.GridSyncPhaseKernels.__gsharp_hfunc_SharedMemoryAcrossGridSyncKernel.Resolve();
@@ -325,7 +324,6 @@ cg::this_grid().sync();
 __gsharp_id_1_output[__gsharp_id_4_gid]=__gsharp_id_0_data[(__gsharp_add_i32(__gsharp_id_4_gid,32))%__gsharp_id_3_total];
 }
 ";
-public static readonly string ShuffleBeforeGridSyncKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ShuffleBeforeGridSyncKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ShuffleBeforeGridSyncKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Core__GridSyncPhaseKernels__ShuffleBeforeGridSyncKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerShuffleBeforeGridSyncKernel() => global::Kassyi.GSharp.Tests.Shared.Core.GridSyncPhaseKernels.__gsharp_hfunc_ShuffleBeforeGridSyncKernel.Resolve();
@@ -480,7 +478,6 @@ cg::this_grid().sync();
 __gsharp_id_0_a[__gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x)]=2;
 }
 ";
-public static readonly string BlockFinishesBeforeGridSyncKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +BlockFinishesBeforeGridSyncKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_BlockFinishesBeforeGridSyncKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Core__GridSyncPhaseKernels__BlockFinishesBeforeGridSyncKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerBlockFinishesBeforeGridSyncKernel() => global::Kassyi.GSharp.Tests.Shared.Core.GridSyncPhaseKernels.__gsharp_hfunc_BlockFinishesBeforeGridSyncKernel.Resolve();
@@ -589,7 +586,6 @@ cg::this_grid().sync();
 __gsharp_id_0_a[__gsharp_id_1_tid]=2;
 }
 ";
-public static readonly string RepresentativeFinishesBeforeGridSyncKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +RepresentativeFinishesBeforeGridSyncKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_RepresentativeFinishesBeforeGridSyncKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Core__GridSyncPhaseKernels__RepresentativeFinishesBeforeGridSyncKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerRepresentativeFinishesBeforeGridSyncKernel() => global::Kassyi.GSharp.Tests.Shared.Core.GridSyncPhaseKernels.__gsharp_hfunc_RepresentativeFinishesBeforeGridSyncKernel.Resolve();
@@ -694,7 +690,6 @@ __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__GridSyncPhaseKernels__WaitForGr
 __gsharp_id_0_a[__gsharp_id_1_tid]=2;
 }
 ";
-public static readonly string NotCooperativeKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +NotCooperativeKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_NotCooperativeKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Core__GridSyncPhaseKernels__NotCooperativeKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerNotCooperativeKernel() => global::Kassyi.GSharp.Tests.Shared.Core.GridSyncPhaseKernels.__gsharp_hfunc_NotCooperativeKernel.Resolve();

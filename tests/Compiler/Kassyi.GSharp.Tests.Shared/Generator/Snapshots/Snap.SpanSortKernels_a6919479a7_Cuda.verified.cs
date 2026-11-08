@@ -123,7 +123,6 @@ __gsharp_sort(__gsharp_id_0_data);
 }
 }
 ";
-public static readonly string SortIntKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +SortIntKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_SortIntKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortIntKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerSortIntKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.__gsharp_hfunc_SortIntKernel.Resolve();
@@ -227,7 +226,6 @@ __gsharp_sort(__gsharp_id_0_data);
 }
 }
 ";
-public static readonly string SortLongKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +SortLongKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_SortLongKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortLongKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerSortLongKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.__gsharp_hfunc_SortLongKernel.Resolve();
@@ -331,7 +329,6 @@ __gsharp_sort(__gsharp_id_0_data);
 }
 }
 ";
-public static readonly string SortUIntKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +SortUIntKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_SortUIntKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortUIntKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerSortUIntKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.__gsharp_hfunc_SortUIntKernel.Resolve();
@@ -435,7 +432,6 @@ __gsharp_sort(__gsharp_id_0_data);
 }
 }
 ";
-public static readonly string SortCharKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +SortCharKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_SortCharKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortCharKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerSortCharKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.__gsharp_hfunc_SortCharKernel.Resolve();
@@ -539,7 +535,6 @@ __gsharp_sort(__gsharp_id_0_data);
 }
 }
 ";
-public static readonly string SortEnumKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +SortEnumKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_SortEnumKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortEnumKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerSortEnumKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.__gsharp_hfunc_SortEnumKernel.Resolve();
@@ -643,7 +638,6 @@ __gsharp_sort(__gsharp_id_0_data);
 }
 }
 ";
-public static readonly string SortFloatKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +SortFloatKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_SortFloatKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortFloatKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerSortFloatKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.__gsharp_hfunc_SortFloatKernel.Resolve();
@@ -747,7 +741,6 @@ __gsharp_sort(__gsharp_id_0_data);
 }
 }
 ";
-public static readonly string SortDoubleKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +SortDoubleKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_SortDoubleKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortDoubleKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerSortDoubleKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.__gsharp_hfunc_SortDoubleKernel.Resolve();
@@ -858,7 +851,6 @@ __gsharp_id_0_data[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_1_segment,33),_
 }
 }
 ";
-public static readonly string SortSegmentsKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +SortSegmentsKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_SortSegmentsKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortSegmentsKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerSortSegmentsKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.__gsharp_hfunc_SortSegmentsKernel.Resolve();
@@ -987,7 +979,6 @@ __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__MaskedComparer __gsharp_tmp{}
 }
 }
 ";
-public static readonly string SortComparerKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +SortComparerKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_SortComparerKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortComparerKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerSortComparerKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.__gsharp_hfunc_SortComparerKernel.Resolve();
@@ -1112,7 +1103,6 @@ __gsharp_sort(__gsharp_id_0_data,[__gsharp_comparer = __gsharp_ty_Kassyi__GSharp
 }
 }
 ";
-public static readonly string SortDescendingKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +SortDescendingKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_SortDescendingKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortDescendingKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerSortDescendingKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.__gsharp_hfunc_SortDescendingKernel.Resolve();
@@ -1219,7 +1209,6 @@ return ((__gsharp_id_2_a&__gsharp_id_1_mask)<(__gsharp_id_3_b&__gsharp_id_1_mask
 }
 }
 ";
-public static readonly string SortComparisonKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +SortComparisonKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_SortComparisonKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortComparisonKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerSortComparisonKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.__gsharp_hfunc_SortComparisonKernel.Resolve();
@@ -1327,7 +1316,6 @@ __gsharp_sort(__gsharp_id_0_data,__gsharp_fn_Kassyi__GSharp__Tests__Shared__Synt
 }
 }
 ";
-public static readonly string SortMethodGroupKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +SortMethodGroupKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_SortMethodGroupKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortMethodGroupKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerSortMethodGroupKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.__gsharp_hfunc_SortMethodGroupKernel.Resolve();
@@ -1431,7 +1419,6 @@ __gsharp_sort(__gsharp_id_0_data);
 }
 }
 ";
-public static readonly string SortNullComparerKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +SortNullComparerKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_SortNullComparerKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortNullComparerKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerSortNullComparerKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.__gsharp_hfunc_SortNullComparerKernel.Resolve();
@@ -1555,7 +1542,6 @@ __gsharp_sort_comparable(__gsharp_id_0_data,[](auto& __gsharp_left, auto& __gsha
 }
 }
 ";
-public static readonly string SortComparableKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +SortComparableKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_SortComparableKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortComparableKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 private static bool __gsharp_layout_checked_SortComparableKernel;
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
@@ -1670,7 +1656,6 @@ __gsharp_sort_pairs(__gsharp_id_0_keys,__gsharp_id_1_items);
 }
 }
 ";
-public static readonly string SortPairsKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +SortPairsKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_SortPairsKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortPairsKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerSortPairsKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.__gsharp_hfunc_SortPairsKernel.Resolve();
@@ -1811,7 +1796,6 @@ __gsharp_sort_pairs(__gsharp_id_0_keys,__gsharp_id_1_items);
 }
 }
 ";
-public static readonly string SortPairsFloatKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +SortPairsFloatKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_SortPairsFloatKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortPairsFloatKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerSortPairsFloatKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.__gsharp_hfunc_SortPairsFloatKernel.Resolve();
@@ -1974,7 +1958,6 @@ __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__MaskedComparer __gsharp_tmp{}
 }
 }
 ";
-public static readonly string SortPairsComparerKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +SortPairsComparerKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_SortPairsComparerKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortPairsComparerKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerSortPairsComparerKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.__gsharp_hfunc_SortPairsComparerKernel.Resolve();
@@ -2122,7 +2105,6 @@ return ((__gsharp_id_3_a&__gsharp_id_2_mask)<(__gsharp_id_4_b&__gsharp_id_2_mask
 }
 }
 ";
-public static readonly string SortPairsComparisonKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +SortPairsComparisonKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_SortPairsComparisonKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortPairsComparisonKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerSortPairsComparisonKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.__gsharp_hfunc_SortPairsComparisonKernel.Resolve();
@@ -2287,7 +2269,6 @@ __gsharp_sort_pairs_comparable(__gsharp_id_0_keys,__gsharp_id_1_items,[](auto& _
 }
 }
 ";
-public static readonly string SortPairsComparableKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +SortPairsComparableKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_SortPairsComparableKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortPairsComparableKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 private static bool __gsharp_layout_checked_SortPairsComparableKernel;
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
@@ -2456,7 +2437,6 @@ __gsharp_sort(__gsharp_id_0_data,[__gsharp_comparer = __gsharp_ty_Kassyi__GSharp
 }
 }
 ";
-public static readonly string SortBogusComparerKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +SortBogusComparerKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_SortBogusComparerKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortBogusComparerKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerSortBogusComparerKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.__gsharp_hfunc_SortBogusComparerKernel.Resolve();
@@ -2578,7 +2558,6 @@ __gsharp_sort_pairs_comparable(__gsharp_id_0_keys,__gsharp_id_1_items,[](auto& _
 }
 }
 ";
-public static readonly string SortPairsInconsistentKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +SortPairsInconsistentKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_SortPairsInconsistentKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortPairsInconsistentKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 private static bool __gsharp_layout_checked_SortPairsInconsistentKernel;
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
@@ -2736,7 +2715,6 @@ return __gsharp_seq_0<__gsharp_seq_1;
 }
 }
 ";
-public static readonly string SortTrappingComparisonKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +SortTrappingComparisonKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_SortTrappingComparisonKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__SpanSortKernels__SortTrappingComparisonKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerSortTrappingComparisonKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.__gsharp_hfunc_SortTrappingComparisonKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.s_errorSites);
