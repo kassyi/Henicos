@@ -85,6 +85,16 @@ internal static class EvaluationOrder
         return temp;
     }
 
+    /// <summary>
+    /// Writes <c>auto __gsharp_seq_&lt;n&gt; = </c> and returns <c>n</c>; the caller writes the value and <c>;</c>
+    /// (a value that is not the translation of one expression, such as a getter call or an operation on temporaries).
+    /// </summary>
+    public static int BeginDeclaration(ref TranspileContext context)
+    {
+        context.Emitter.Writer.Append("auto");
+        return AppendDeclaredName(ref context);
+    }
+
     /// <summary>Writes <c>auto __gsharp_seq_&lt;n&gt; = __gsharp_seq_&lt;source&gt;;</c> (a read of a location) and returns <c>n</c>.</summary>
     public static int DeclareCopy(ref TranspileContext context, int source)
     {

@@ -47,47 +47,18 @@ public class WithExpressionDiagnosticsTests
             diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "the [GpuReadOnly] member 'Fixed'"));
     }
 
+    // Compound assignment, increment and chained assignment of a computed property are written as getter and setter
+    // calls (#908)
     [Theory]
     [InlineData("Cpu")]
     [InlineData("Cuda")]
-    [Scenario(TestScenario.SadPath)]
-    public async Task Test_ComputedPropertyCompoundAssignment_ReportsGsh0003(string dialect)
+    [Scenario(TestScenario.HappyPath)]
+    public async Task Test_ComputedPropertyCompoundIncrementAndChainedAssignment_AreSupported(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(
             "Diagnostics/WithExpressionUnsupported.cu.cs", dialect);
 
-        Assert.Equal(
-            [(Analyzer, 71, 9, 71, 22)],
-            diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "compound assignment to a computed property"));
-    }
-
-    [Theory]
-    [InlineData("Cpu")]
-    [InlineData("Cuda")]
-    [Scenario(TestScenario.SadPath)]
-    public async Task Test_ComputedPropertyIncrement_ReportsGsh0003(string dialect)
-    {
-        var diagnostics = await KernelDiagnostics.RunTestCaseAsync(
-            "Diagnostics/WithExpressionUnsupported.cu.cs", dialect);
-
-        Assert.Equal(
-            [(Analyzer, 72, 9, 72, 19)],
-            diagnostics.Ranges(
-                GSharpDiagnostics.UnsupportedSyntax.Id, "increment or decrement of a computed property"));
-    }
-
-    [Theory]
-    [InlineData("Cpu")]
-    [InlineData("Cuda")]
-    [Scenario(TestScenario.SadPath)]
-    public async Task Test_ComputedPropertyChainedAssignment_ReportsGsh0003(string dialect)
-    {
-        var diagnostics = await KernelDiagnostics.RunTestCaseAsync(
-            "Diagnostics/WithExpressionUnsupported.cu.cs", dialect);
-
-        Assert.Equal(
-            [(Analyzer, 73, 17, 73, 29)],
-            diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "chained assignment to a computed property"));
+        Assert.Empty(diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "computed property"));
     }
 
     [Theory]
@@ -98,6 +69,6 @@ public class WithExpressionDiagnosticsTests
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/WithExpressionUnsupported.cu.cs", dialect);
 
-        Assert.Equal(5, diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id).Count);
+        Assert.Equal(2, diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id).Count);
     }
 }

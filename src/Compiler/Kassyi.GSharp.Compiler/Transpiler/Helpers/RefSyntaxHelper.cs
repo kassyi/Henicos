@@ -30,6 +30,11 @@ internal static class RefSyntaxHelper
     /// </summary>
     public static void TranspileAsByRefArgument(ref TranspileContext context, ExpressionSyntax expression)
     {
+        if (DiscardOutArgument.TryAppend(expression, ref context))
+        {
+            return;
+        }
+
         var semanticModel = context.Query.SemanticModel;
         if (!NeedsAddressOf(expression, semanticModel))
         {

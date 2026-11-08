@@ -34,9 +34,8 @@ public sealed class PostfixUnaryExpressionTranspilerRule : SyntaxNodeTranspilerR
         if ((node.IsKind(SyntaxKind.PostIncrementExpression) || node.IsKind(SyntaxKind.PostDecrementExpression)) &&
             ComputedPropertyGetterCall.IsComputedPropertyTarget(node.Operand, ref context))
         {
-            context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, node,
-                ComputedPropertyGetterCall.IncrementOrDecrementOfComputedProperty);
-            context.Visitor.AppendUnsupportedPlaceholder(node);
+            // The getter, the step and the setter, in the C# order (#908)
+            ComputedPropertyAssignment.TranspileStep(node, node.Operand, ref context);
             return;
         }
 
