@@ -13,8 +13,8 @@ internal enum SyncIntrinsicKind
     GridBarrier,
 
     /// <summary>
-    /// <c>Warp.Shuffle*Sync</c>, <c>Gpu.Match*Sync</c>, and the votes and reductions of <c>Warp</c>: reads the values of
-    /// other lanes named in the mask, which the CPU paths exchange across a state boundary.
+    /// <c>Warp.Shuffle*Sync</c>, <c>Gpu.Match*Sync</c>, and the votes and reductions of <c>Warp</c>: reads the values
+    /// of other lanes named in the mask, which the CPU paths exchange across a state boundary.
     /// </summary>
     WarpShuffle,
 

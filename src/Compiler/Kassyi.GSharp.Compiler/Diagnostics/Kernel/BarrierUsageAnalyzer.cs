@@ -203,9 +203,9 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
             or WarpShuffleKind.ReduceOr or WarpShuffleKind.ReduceXor;
 
     // isWarpShuffle: a Gpu.GridStrideLoop body is allowed for a warp shuffle, which the CPU lowering turns into a loop
-    // (#1091). A using or fixed statement and the scope of a using declaration are reported for a warp shuffle only: the
-    // CPU lowering does not flatten them, so the shuffle would not split there (#1172); a call that suspends there is
-    // GSH0003 / GSH0043 (BarrierDivergenceChecks).
+    // (#1091). A using or fixed statement and the scope of a using declaration are reported for a warp shuffle only:
+    // the CPU lowering does not flatten them, so the shuffle would not split there (#1172); a call that suspends there
+    // is GSH0003 / GSH0043 (BarrierDivergenceChecks).
     private static string? FindUnsupportedContext(InvocationExpressionSyntax invocation, SemanticModel semanticModel,
         bool isWarpShuffle)
     {
