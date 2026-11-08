@@ -47,13 +47,13 @@ The GPU computation workspace managing memory and kernel dispatches.
 The unsigned large integer to convert.
 
 `targetDigits` _int_<br>
-The expected or target number of decimal digits to generate.
+The number of decimal digits to write: a shorter value is padded with leading zeros, and a longer one is written in full. The text is the same whether `targetDigits` is handled on the CPU directly (up to 10,000 digits) or split on the GPU first.
 
 `writer` _TextWriter_<br>
 The output stream writer receiving the formatted decimal text.
 
 `isMostSignificant` _bool_<br>
-`true` if formatting the integer part with a decimal point (e.g. `"3.1415..."`); otherwise, `false`.
+`true` to write the fixed-point number `value / 10^(targetDigits - 1)`: exactly `targetDigits - 1` digits after the decimal point and at least one before it (`"3.1415"` for 31415 and 5 digits, `"0.0012"` for 12 and 5 digits, `"123.45"` for 12345 and 3 digits). With `targetDigits` 1 there is no fraction and no point is written, as the .NET format `"F0"` (`"12345"`). `false` to write the digits alone.
 
 #### Exceptions
 

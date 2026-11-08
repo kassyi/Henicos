@@ -41,9 +41,18 @@ public static class GpuRadixConverter
     /// </summary>
     /// <param name="workspace">The GPU computation workspace managing memory and kernel dispatches.</param>
     /// <param name="value">The unsigned large integer to convert.</param>
-    /// <param name="targetDigits">The expected or target number of decimal digits to generate.</param>
+    /// <param name="targetDigits">
+    /// The number of decimal digits to write: a shorter value is padded with leading zeros, and a longer one is written
+    /// in full.
+    /// </param>
     /// <param name="writer">The output stream writer receiving the formatted decimal text.</param>
-    /// <param name="isMostSignificant"><see langword="true"/> if formatting the integer part with a decimal point (e.g. <c>"3.1415..."</c>); otherwise, <see langword="false"/>.</param>
+    /// <param name="isMostSignificant">
+    /// <see langword="true"/> to write the fixed-point number <c>value / 10^(targetDigits - 1)</c>: exactly
+    /// <c>targetDigits - 1</c> digits after the decimal point and at least one before it (for example <c>"3.1415"</c>
+    /// for 31415 and 5 digits, <c>"0.0012"</c> for 12 and 5 digits); with <paramref name="targetDigits"/> 1 there is no
+    /// fraction and no point is written, as the .NET format <c>"F0"</c>. <see langword="false"/> to write the digits
+    /// alone.
+    /// </param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="workspace"/> or <paramref name="writer"/> is <see langword="null"/>.</exception>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="targetDigits"/> is less than or equal to zero.</exception>
     public static void ConvertAndWrite(
@@ -147,17 +156,24 @@ public static class GpuRadixConverter
         var cpuVal = value.ToBigInteger();
         var str = cpuVal.ToString();
 
-        if (!isMostSignificant && str.Length < targetDigits)
+        if (str.Length < targetDigits)
         {
             str = new string('0', targetDigits - str.Length) + str;
         }
 
-        if (isMostSignificant && str.Length > 0)
+        // Without a fraction (targetDigits = 1) no point is written, as the "F0" format of .NET
+        if (!isMostSignificant || targetDigits == 1)
         {
-            str = str[..1] + "." + str[1..];
+            writer.Write(str);
+            return;
         }
 
-        writer.Write(str);
+        // value / 10^(targetDigits - 1): the last targetDigits - 1 digits follow the point, the rest (at least one,
+        // more when the value is longer than targetDigits) precede it.
+        var integerDigits = str.Length - (targetDigits - 1);
+        writer.Write(str.AsSpan(0, integerDigits));
+        writer.Write('.');
+        writer.Write(str.AsSpan(integerDigits));
     }
 
     private static GpuBigUInt GetOrCreateRadixDivisor(
