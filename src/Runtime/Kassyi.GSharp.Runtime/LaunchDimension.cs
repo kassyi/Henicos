@@ -13,14 +13,18 @@ public static class LaunchDimension
     /// <summary>
     /// The hardware maximum number of threads per block (1024).
     /// </summary>
-    public const int MaxThreadsPerBlock = 1024;
+    public const int MaxThreadsPerBlock = (int)LaunchLimits.MaxThreadsPerBlock;
 
     /// <summary>
     /// Calculates the 1D grid and block dimensions required to execute the specified number of total threads.
     /// </summary>
     /// <param name="totalThreads">The total number of threads to dispatch.</param>
     /// <param name="threadsPerBlock">The number of threads per block. Defaults to <see cref="DefaultThreadsPerBlock"/>.</param>
-    /// <returns>A tuple containing the grid dimension and block dimension.</returns>
+    /// <returns>
+    /// A tuple containing the grid dimension and block dimension; <c>(0, 0)</c> when <paramref name="totalThreads"/>
+    /// is 0, which means there is nothing to launch: a launch with a zero dimension throws
+    /// <see cref="ArgumentOutOfRangeException"/> on every path, as on the GPU.
+    /// </returns>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="totalThreads"/> is negative, or <paramref name="threadsPerBlock"/> is non-positive or exceeds <see cref="MaxThreadsPerBlock"/>.</exception>
     public static (uint Grid, uint Block) Calculate1D(int totalThreads, int threadsPerBlock = DefaultThreadsPerBlock)
     {
@@ -41,7 +45,7 @@ public static class LaunchDimension
 
         if (totalThreads == 0)
         {
-            return (0, 0); // Skip launch
+            return (0, 0); // Nothing to launch; the caller skips the launch
         }
 
         var block = (uint)threadsPerBlock;

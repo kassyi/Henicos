@@ -1009,14 +1009,14 @@ error->Report(GSharpErrorCode::InvalidOperation, text);
 
 // Ends a phase of the grid: true when every block waits at a grid sync, so that the next phase starts; false when every
 // block has finished or the launch failed. A phase in which some blocks finished while others wait is reported
-inline bool __gsharp_end_grid_phase(GSharpErrorSlot* error, const uint8_t* status, int32_t totalBlocks,
+inline bool __gsharp_end_grid_phase(GSharpErrorSlot* error, const uint8_t* status, int64_t totalBlocks,
 uint32_t gridDimX, uint32_t gridDimY, const char* kernel) {
 if (error->HasError()) {
 return false;
 }
-int32_t firstFinished = -1;
+int64_t firstFinished = -1;
 bool anyWaiting = false;
-for (int32_t block = 0; block < totalBlocks; block++) {
+for (int64_t block = 0; block < totalBlocks; block++) {
 if (status[block] == __gsharp_block_at_grid_sync) {
 anyWaiting = true;
 } else if (firstFinished < 0) {
@@ -1026,7 +1026,7 @@ firstFinished = block;
 if (anyWaiting && firstFinished >= 0) {
 int32_t x = (int32_t)(firstFinished % gridDimX);
 int32_t y = (int32_t)((firstFinished / gridDimX) % gridDimY);
-int32_t z = (int32_t)(firstFinished / (gridDimX * gridDimY));
+int32_t z = (int32_t)(firstFinished / ((int64_t)gridDimX * gridDimY));
 char text[512];
 std::snprintf(text, sizeof(text),
 ""G#: block (%d,%d,%d) of %s finished while other blocks wait at Gpu.SyncGrid; on the GPU the grid sync never completes"",

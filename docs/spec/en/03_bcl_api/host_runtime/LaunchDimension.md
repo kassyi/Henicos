@@ -44,7 +44,7 @@ The number of threads per block. Defaults to `256`.
 #### Returns
 
 _(UInt32 Grid, UInt32 Block)_<br>
-A tuple containing the calculated grid dimension and block dimension. When `totalThreads` is `0`, returns `(0, 0)`.
+A tuple containing the calculated grid dimension and block dimension. When `totalThreads` is `0`, returns `(0, 0)`. There is nothing to launch then: a launch with a zero dimension throws `ArgumentOutOfRangeException` on every path, as on the GPU.
 
 #### Exceptions
 
