@@ -121,6 +121,7 @@ internal static class IdentifierNameTranspiler
         if (symbol is IMethodSymbol method)
         {
             DynamicSharedMemoryEmitter.FailIfReferencedWithoutCall(node, method, ref context);
+            NonNullProof.FailIfReferencedWithoutCall(node, method, ref context);
         }
     }
 

@@ -29,7 +29,7 @@ public static class InternalNamesGenerator
     public static void Run(string yamlPath, string preludeDir, string coreDir, string outputDir)
     {
         var groups = Read(yamlPath);
-        Check(groups, preludeDir, coreDir);
+        Check(yamlPath, groups, preludeDir, coreDir);
 
         Directory.CreateDirectory(outputDir);
         File.WriteAllText(Path.Combine(outputDir, "GSharpInternalNames.g.cs"), Generate(groups), Encoding.UTF8);
@@ -37,37 +37,49 @@ public static class InternalNamesGenerator
 
     private static List<NameGroup> Read(string yamlPath)
     {
+        if (!File.Exists(yamlPath))
+        {
+            throw new GeneratorInputException(yamlPath, 0, "The internal names file does not exist.");
+        }
+
         var stream = new YamlStream();
         using (var reader = new StreamReader(yamlPath, Encoding.UTF8))
         {
-            stream.Load(reader);
+            try
+            {
+                stream.Load(reader);
+            }
+            catch (YamlDotNet.Core.YamlException ex)
+            {
+                throw new GeneratorInputException(yamlPath, (int)ex.Start.Line, ex.Message);
+            }
         }
 
         var groups = new List<NameGroup>();
         var root = (YamlMappingNode)stream.Documents[0].RootNode;
         foreach (var (groupKey, groupNode) in root.Children)
         {
-            var groupName = ((YamlScalarNode)groupKey).Value ?? string.Empty;
+            var groupName = Identifier(yamlPath, groupKey);
             var group = (YamlMappingNode)groupNode;
-            var summary = Scalar(group, "Summary") ?? throw Fail($"Group '{groupName}' has no Summary.");
+            var summary = Scalar(group, "Summary") ?? throw Fail(yamlPath, $"Group '{groupName}' has no Summary.");
             if (!group.Children.TryGetValue(new YamlScalarNode("Names"), out var namesNode) ||
                 namesNode is not YamlMappingNode names)
             {
-                throw Fail($"Group '{groupName}' has no Names.");
+                throw Fail(yamlPath, $"Group '{groupName}' has no Names.");
             }
 
             var entries = new List<InternalName>();
             foreach (var (nameKey, valueNode) in names.Children)
             {
-                var name = ((YamlScalarNode)nameKey).Value ?? string.Empty;
+                var name = Identifier(yamlPath, nameKey);
                 entries.Add(valueNode switch
                 {
                     YamlScalarNode scalar => new InternalName(groupName, name, scalar.Value ?? string.Empty, null,
                         null),
                     YamlMappingNode mapping => new InternalName(groupName, name,
-                        Scalar(mapping, "Value") ?? throw Fail($"{groupName}.{name} has no Value."),
+                        Scalar(mapping, "Value") ?? throw Fail(yamlPath, $"{groupName}.{name} has no Value."),
                         Scalar(mapping, "Prelude"), Scalar(mapping, "Managed")),
-                    _ => throw Fail($"{groupName}.{name} must be a value or a mapping.")
+                    _ => throw Fail(yamlPath, $"{groupName}.{name} must be a value or a mapping.")
                 });
             }
 
@@ -77,10 +89,19 @@ public static class InternalNamesGenerator
         return groups;
     }
 
+    // Group and entry names become C# class and constant names.
+    private static string Identifier(string yamlPath, YamlDotNet.RepresentationModel.YamlNode key)
+    {
+        var value = (key as YamlScalarNode)?.Value ?? string.Empty;
+        return SyntaxFacts.IsValidIdentifier(value)
+            ? value
+            : throw new GeneratorInputException(yamlPath, (int)key.Start.Line, $"'{value}' is not a valid C# identifier.");
+    }
+
     private static string? Scalar(YamlMappingNode mapping, string key) =>
         mapping.Children.TryGetValue(new YamlScalarNode(key), out var node) ? (node as YamlScalarNode)?.Value : null;
 
-    private static void Check(List<NameGroup> groups, string preludeDir, string coreDir)
+    private static void Check(string yamlPath, List<NameGroup> groups, string preludeDir, string coreDir)
     {
         var owners = new Dictionary<string, string>(StringComparer.Ordinal);
         foreach (var group in groups)
@@ -90,39 +111,40 @@ public static class InternalNamesGenerator
                 var path = $"{entry.Group}.{entry.Name}";
                 if (!entry.Value.StartsWith(RequiredPrefix, StringComparison.Ordinal))
                 {
-                    throw Fail($"{path} = '{entry.Value}' must start with {RequiredPrefix}.");
+                    throw Fail(yamlPath, $"{path} = '{entry.Value}' must start with {RequiredPrefix}.");
                 }
 
                 if (entry.Name.EndsWith(PrefixSuffix, StringComparison.Ordinal) != entry.Value.EndsWith('_'))
                 {
                     throw Fail(
+                        yamlPath,
                         $"{path} = '{entry.Value}': a name ends in {PrefixSuffix} exactly when its value ends in '_'.");
                 }
 
                 if (!owners.TryAdd(entry.Value, path))
                 {
-                    throw Fail($"{path} and {owners[entry.Value]} both spell '{entry.Value}'.");
+                    throw Fail(yamlPath, $"{path} and {owners[entry.Value]} both spell '{entry.Value}'.");
                 }
 
                 if (entry.PreludeFile is { } preludeFile)
                 {
-                    CheckDeclared(path, entry.Value, preludeDir, preludeFile, "Prelude");
+                    CheckDeclared(yamlPath, path, entry.Value, preludeDir, preludeFile, "Prelude");
                 }
 
                 if (entry.ManagedFile is { } managedFile)
                 {
-                    CheckDeclared(path, entry.Value, coreDir, managedFile, "Kassyi.GSharp.Core");
+                    CheckDeclared(yamlPath, path, entry.Value, coreDir, managedFile, "Kassyi.GSharp.Core");
                 }
             }
         }
     }
 
-    private static void CheckDeclared(string path, string value, string directory, string file, string label)
+    private static void CheckDeclared(string yamlPath, string path, string value, string directory, string file, string label)
     {
         var filePath = Path.Combine(directory, file);
         if (!File.Exists(filePath) || !ContainsIdentifier(File.ReadAllText(filePath), value))
         {
-            throw Fail($"{path} = '{value}' is not declared in {label}/{file}.");
+            throw Fail(yamlPath, $"{path} = '{value}' is not declared in {label}/{file}.");
         }
     }
 
@@ -162,7 +184,7 @@ public static class InternalNamesGenerator
                 {
                     foreach (var entry in group.Names)
                     {
-                        writer.Line($"public const string {entry.Name} = \"{entry.Value}\";");
+                        writer.Line($"public const string {entry.Name} = {CSharpStringLiteral.Quote(entry.Value)};");
                     }
                 }
             }
@@ -180,14 +202,14 @@ public static class InternalNamesGenerator
             for (var i = 0; i < all.Count; i++)
             {
                 var entry = all[i];
-                var prelude = entry.PreludeFile is null ? "null" : $"\"{entry.PreludeFile}\"";
+                var prelude = entry.PreludeFile is null ? "null" : CSharpStringLiteral.Quote(entry.PreludeFile);
                 var separator = i == all.Count - 1 ? ");" : ",";
-                writer.Line($"(\"{entry.Group}.{entry.Name}\", {entry.Group}.{entry.Name}, {prelude}){separator}");
+                writer.Line($"({CSharpStringLiteral.Quote(entry.Group + "." + entry.Name)}, {entry.Group}.{entry.Name}, {prelude}){separator}");
             }
         }
 
         return writer.ToString();
     }
 
-    private static InvalidOperationException Fail(string message) => new($"InternalNames.yml: {message}");
+    private static GeneratorInputException Fail(string yamlPath, string message) => new(yamlPath, 0, message);
 }

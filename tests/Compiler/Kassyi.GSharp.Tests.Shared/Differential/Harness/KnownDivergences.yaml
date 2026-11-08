@@ -210,9 +210,3 @@
       paths: [Cuda]
       columns: [sharedRef, observed]
 
-- issue: 1409
-  title: "[Bug]: Reading an element of a null array in a CUDA kernel fails the launch instead of throwing NullReferenceException"
-  entries:
-    - case: BoundsAndMemoryDifferentialKernels.AllThreadsNullDereferenceTrapKernel
-      paths: [Cuda]
-      columns: [$exception]
