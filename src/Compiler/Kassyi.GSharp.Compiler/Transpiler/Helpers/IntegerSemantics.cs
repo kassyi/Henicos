@@ -199,10 +199,13 @@ internal static class IntegerSemantics
 
     /// <summary>
     /// The type that the result of the operator of the compound assignment <paramref name="operation"/> is cast back to,
-    /// when the target is narrower than the operator (<c>short += 1</c> computes in int); null when it is not.
+    /// when the target is narrower than the operator (<c>short += 1</c> computes in int); null when it is not, and for
+    /// a target that is not an integer (a floating-point <c>%=</c> has the type of its target).
     /// </summary>
     public static ITypeSymbol? GetCompoundNarrowing(ICompoundAssignmentOperation operation) =>
-        UnderlyingOrSelf(operation.Target.Type) is { } target && target.SpecialType != GetCompoundOperatorType(operation)
+        UnderlyingOrSelf(operation.Target.Type) is { } target &&
+        GetCompoundOperatorType(operation) is var operatorType and not SpecialType.None &&
+        target.SpecialType != operatorType
             ? target
             : null;
 

@@ -1,4 +1,3 @@
-using System.Buffers;
 using Microsoft.CodeAnalysis.Operations;
 
 namespace Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules;
@@ -20,24 +19,42 @@ public sealed class AssignmentExpressionTranspilerRule : SyntaxNodeTranspilerRul
     {
     }
 
+    /// <summary>The GSH0003 text for a <c>??=</c> whose target is a computed property.</summary>
+    public const string CoalesceAssignmentToComputedProperty = "??= of a computed property";
+
     /// <inheritdoc />
     public override void Transpile(AssignmentExpressionSyntax node, ref TranspileContext context)
     {
-        if (node is { Left: TupleExpressionSyntax leftTuple, Right: TupleExpressionSyntax rightTuple })
+        if (DeconstructionAssignment.IsDeconstruction(node))
         {
-            TranspileTupleDeconstruction(leftTuple, rightTuple, ref context);
+            DeconstructionAssignment.Transpile(node, ref context);
             return;
         }
 
+        var isComputedProperty = ComputedPropertyGetterCall.IsComputedPropertyTarget(node.Left, ref context);
         if (node.IsKind(SyntaxKind.CoalesceAssignmentExpression))
         {
+            if (isComputedProperty)
+            {
+                context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, node, CoalesceAssignmentToComputedProperty);
+                context.Visitor.AppendUnsupportedPlaceholder(node);
+                return;
+            }
+
             NullRepresentation.AppendCoalesceAssignment(node.Left, node.Right, ref context);
+            return;
+        }
+
+        // A discard target keeps only the evaluation of the right side (#1289)
+        if (context.Query.SemanticModel.IsDiscard(node.Left))
+        {
+            DeconstructionAssignment.AppendDiscardedValue(node, ref context);
             return;
         }
 
         if (node.IsKind(SyntaxKind.SimpleAssignmentExpression))
         {
-            if (!ComputedPropertyGetterCall.IsComputedPropertyTarget(node.Left, ref context) &&
+            if (!isComputedProperty &&
                 node.Right is not RefExpressionSyntax &&
                 OperandsInterfere(node, readsTarget: false, ref context, out _))
             {
@@ -49,22 +66,21 @@ public sealed class AssignmentExpressionTranspilerRule : SyntaxNodeTranspilerRul
             return;
         }
 
-        if (ComputedPropertyGetterCall.IsComputedPropertyTarget(node.Left, ref context))
+        if (isComputedProperty)
         {
-            context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, node,
-                ComputedPropertyGetterCall.CompoundAssignmentToComputedProperty);
-            context.Visitor.AppendUnsupportedPlaceholder(node);
+            ComputedPropertyAssignment.TranspileAssignment(node, ref context);
             return;
         }
 
-        // int and long arithmetic that C++ leaves undefined goes through the Prelude, and a shift that stays a C++
-        // operator masks its count (#722)
+        // int and long arithmetic that C++ leaves undefined goes through the Prelude, a shift that stays a C++ operator
+        // masks its count (#722), and a floating-point remainder is fmod (#727)
         var compound = context.Query.SemanticModel.GetSafeOperation(node) is ICompoundAssignmentOperation operation &&
                        operation.Syntax.RawKind == node.RawKind
             ? operation
             : null;
-        var helper = compound != null ? IntegerSemantics.GetCompoundHelper(compound) : null;
-        var shiftMask = compound != null && helper == null ? IntegerSemantics.GetCompoundShiftMask(compound) : 0;
+        var compoundOperator = CompoundOperator.ForAssignment(node, compound);
+        var helper = compoundOperator?.Helper;
+        var shiftMask = compoundOperator?.ShiftMask ?? 0;
 
         // C++ has no >>>=; the integer types are handled here (nint and nuint are not)
         if (node.IsKind(SyntaxKind.UnsignedRightShiftAssignmentExpression) && helper == null && shiftMask == 0)
@@ -74,11 +90,14 @@ public sealed class AssignmentExpressionTranspilerRule : SyntaxNodeTranspilerRul
             return;
         }
 
-        if (GetCompoundOperator(node) is { } binaryOperator &&
-            OperandsInterfere(node, readsTarget: true, ref context, out var rightEffects))
+        // A floating-point remainder whose value has another type than the target converts it first (fmod has no device
+        // overload for two types)
+        if (compoundOperator is { } sequencedOperator &&
+            (OperandsInterfere(node, readsTarget: true, ref context, out var rightEffects) ||
+             (sequencedOperator.ConvertsValue && compound?.Target.Type is { } targetType &&
+              ArithmeticConversions.IsConverted(compound.Value, targetType))))
         {
-            TranspileSequencedCompoundAssignment(node, new CompoundOperator(binaryOperator, helper, shiftMask),
-                rightEffects, ref context);
+            TranspileSequencedCompoundAssignment(node, sequencedOperator, rightEffects, ref context);
             return;
         }
 
@@ -100,124 +119,6 @@ public sealed class AssignmentExpressionTranspilerRule : SyntaxNodeTranspilerRul
         context.Emitter.Writer.Append(node.OperatorToken.Text);
         context.Visitor.Visit(node.Right);
     }
-
-    // [WHY] Emits an immediately invoked C++ lambda to evaluate RHS tuple elements before assigning to LHS, preventing
-    // variable swap clobbering. Any LHS target whose location evaluation writes something, reads a variable written by
-    // an earlier LHS target, or interferes with another LHS location or RHS element is bound to a reference first in
-    // left-to-right order (C# spec §12.23.2, #996).
-    private static void TranspileTupleDeconstruction(TupleExpressionSyntax leftTuple, TupleExpressionSyntax rightTuple,
-        ref TranspileContext context)
-    {
-        var model = context.Query.SemanticModel;
-        var leftCount = leftTuple.Arguments.Count;
-        var rightCount = rightTuple.Arguments.Count;
-        var locEffects = ArrayPool<ExpressionEffects>.Shared.Rent(leftCount);
-        var writeRoots = ArrayPool<VariableSet>.Shared.Rent(leftCount);
-        var rhsEffects = ArrayPool<ExpressionEffects>.Shared.Rent(rightCount);
-        var lhsTemps = ArrayPool<int>.Shared.Rent(leftCount);
-        try
-        {
-            for (var i = 0; i < leftCount; i++)
-            {
-                var expr = leftTuple.Arguments[i].Expression;
-                locEffects[i] = ExpressionEffects.OfLocation(expr, model);
-                writeRoots[i] = ExpressionEffects.RootOf(expr, model);
-                lhsTemps[i] = -1;
-            }
-
-            for (var j = 0; j < rightCount; j++)
-            {
-                rhsEffects[j] = ExpressionEffects.Of(rightTuple.Arguments[j].Expression, model);
-            }
-
-            using (context.Emitter.Writer.ImmediatelyInvokedLambda())
-            {
-                for (var i = 0; i < leftCount; i++)
-                {
-                    if (NeedsTupleTargetPreBind(i, leftCount, rightCount, locEffects, writeRoots, rhsEffects))
-                    {
-                        lhsTemps[i] = EvaluationOrder.DeclareTemp(ref context, leftTuple.Arguments[i].Expression,
-                            reference: true);
-                    }
-                }
-
-                for (var j = 0; j < rightCount; j++)
-                {
-                    context.Emitter.Writer.Append($"auto {GSharpInternalNames.Lowering.TupleTempPrefix}{j} = ");
-                    context.Visitor.Visit(rightTuple.Arguments[j].Expression);
-                    context.Emitter.Writer.AppendLine(";");
-                }
-
-                for (var i = 0; i < leftCount; i++)
-                {
-                    if (lhsTemps[i] >= 0)
-                    {
-                        EvaluationOrder.AppendTempName(context.Emitter.Writer, lhsTemps[i]);
-                    }
-                    else
-                    {
-                        context.Visitor.Visit(leftTuple.Arguments[i].Expression);
-                    }
-
-                    context.Emitter.Writer
-                        .Append($" = {GSharpInternalNames.Lowering.TupleTempPrefix}{i}")
-                        .AppendLine(";");
-                }
-            }
-        }
-        finally
-        {
-            ArrayPool<ExpressionEffects>.Shared.Return(locEffects, clearArray: true);
-            ArrayPool<VariableSet>.Shared.Return(writeRoots, clearArray: true);
-            ArrayPool<ExpressionEffects>.Shared.Return(rhsEffects, clearArray: true);
-            ArrayPool<int>.Shared.Return(lhsTemps);
-        }
-    }
-
-    private static bool NeedsTupleTargetPreBind(int index, int leftCount, int rightCount,
-        ExpressionEffects[] locEffects, VariableSet[] writeRoots, ExpressionEffects[] rhsEffects)
-    {
-        var current = locEffects[index];
-        if (current.IsEmpty)
-        {
-            return false;
-        }
-
-        if (!current.Writes.IsEmpty)
-        {
-            return true;
-        }
-
-        for (var j = 0; j < index; j++)
-        {
-            if (current.Reads.Overlaps(writeRoots[j]))
-            {
-                return true;
-            }
-        }
-
-        for (var j = 0; j < leftCount; j++)
-        {
-            if (j != index && current.InterferesWith(locEffects[j]))
-            {
-                return true;
-            }
-        }
-
-        for (var j = 0; j < rightCount; j++)
-        {
-            if (current.InterferesWith(rhsEffects[j]))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    // The operator of a compound assignment as the sequenced form writes it: <op>, a Prelude call (__gsharp_add_i32),
-    // or a shift whose count is masked
-    private readonly record struct CompoundOperator(string Operator, string? Helper, int ShiftMask);
 
     // [WHY] C# finds the location of the target first, then (for a compound assignment) reads it, then evaluates the
     // right side, and stores last (C# spec §12.21.2, §12.21.4). C++17 evaluates the right side of an assignment first
@@ -250,8 +151,8 @@ public sealed class AssignmentExpressionTranspilerRule : SyntaxNodeTranspilerRul
     //   return __gsharp_seq_0 = (<T>)(__gsharp_seq_1 <op> __gsharp_seq_2); }())
     // The cast is C#'s x = (T)(x op y), which narrows the promoted result back to the type of the target. The copy of
     // the target is left out (its temporary read in place) when the right side cannot write the variable it belongs to.
-    // The operation is <helper>(__gsharp_seq_1,__gsharp_seq_2) for int and long arithmetic, and a shift masks its count:
-    // __gsharp_seq_1>>(__gsharp_seq_2&31) (#722)
+    // The operation is <helper>(__gsharp_seq_1,__gsharp_seq_2) for int and long arithmetic (#722) and a floating-point
+    // remainder (fmodf, #727), and a shift masks its count: __gsharp_seq_1>>(__gsharp_seq_2&31) (#722)
     private static void TranspileSequencedCompoundAssignment(AssignmentExpressionSyntax node,
         CompoundOperator binaryOperator, in ExpressionEffects rightEffects, ref TranspileContext context)
     {
@@ -263,7 +164,8 @@ public sealed class AssignmentExpressionTranspilerRule : SyntaxNodeTranspilerRul
         using var sequence = EvaluationOrder.BeginSequence(writer);
         var target = EvaluationOrder.DeclareTemp(ref context, node.Left, reference: true);
         var current = readsBeforeRight ? EvaluationOrder.DeclareCopy(ref context, target) : target;
-        var value = EvaluationOrder.DeclareTemp(ref context, node.Right, reference: false);
+        var value = EvaluationOrder.DeclareTemp(ref context, node.Right, reference: false,
+            binaryOperator.ConvertsValue ? model.GetTypeSymbol(node.Left) : null);
         sequence.Return();
         EvaluationOrder.AppendTempName(writer, target);
         writer.Append(" = ");
@@ -272,27 +174,7 @@ public sealed class AssignmentExpressionTranspilerRule : SyntaxNodeTranspilerRul
             AppendTargetType(node.Left, current, ref context);
         }
 
-        if (binaryOperator.Helper != null)
-        {
-            writer.Append(binaryOperator.Helper);
-        }
-
-        using (writer.Parentheses())
-        {
-            EvaluationOrder.AppendTempName(writer, current);
-            writer.Append(binaryOperator.Helper != null ? "," : binaryOperator.Operator);
-            if (binaryOperator.ShiftMask == 0)
-            {
-                EvaluationOrder.AppendTempName(writer, value);
-                return;
-            }
-
-            using (writer.Parentheses())
-            {
-                EvaluationOrder.AppendTempName(writer, value);
-                writer.Append($"&{binaryOperator.ShiftMask}");
-            }
-        }
+        binaryOperator.AppendOperation(writer, current, value);
     }
 
     // The C++ type of the target (an enum is its underlying type, as G# emits enum variables); decltype of the copy of
@@ -315,21 +197,4 @@ public sealed class AssignmentExpressionTranspilerRule : SyntaxNodeTranspilerRul
     }
 
     private static bool NeedsDecltype(ITypeSymbol? type) => type is null or ITypeParameterSymbol or { TypeKind: TypeKind.Error };
-
-    // The binary operator of a compound assignment (+= gives +), or null for one that the sequence does not rewrite
-    // (??= is handled before). >>>= is >> of an unsigned type; of int and long it is a Prelude call
-    private static string? GetCompoundOperator(AssignmentExpressionSyntax node) => node.Kind() switch
-    {
-        SyntaxKind.AddAssignmentExpression => "+",
-        SyntaxKind.SubtractAssignmentExpression => "-",
-        SyntaxKind.MultiplyAssignmentExpression => "*",
-        SyntaxKind.DivideAssignmentExpression => "/",
-        SyntaxKind.ModuloAssignmentExpression => "%",
-        SyntaxKind.AndAssignmentExpression => "&",
-        SyntaxKind.OrAssignmentExpression => "|",
-        SyntaxKind.ExclusiveOrAssignmentExpression => "^",
-        SyntaxKind.LeftShiftAssignmentExpression => "<<",
-        SyntaxKind.RightShiftAssignmentExpression or SyntaxKind.UnsignedRightShiftAssignmentExpression => ">>",
-        _ => null
-    };
 }

@@ -140,9 +140,12 @@ public sealed class CastExpressionTranspilerRule : SyntaxNodeTranspilerRuleBase<
                     }
                 }
 
-                context.Emitter.Writer.Append($"{helper}(");
-                context.Visitor.Visit(node.Expression);
-                context.Emitter.Writer.Append(".Value)");
+                context.Emitter.Writer.Append(helper);
+                using (context.Emitter.Writer.Parentheses())
+                {
+                    AppendValueOf(node.Expression, ref context);
+                }
+
                 return;
             }
 
@@ -158,12 +161,46 @@ public sealed class CastExpressionTranspilerRule : SyntaxNodeTranspilerRuleBase<
             return;
         }
 
+        // A Nullable<S> converted to S or to another type reads its Value, then converts it as S converts (#1143):
+        // (int)opt is (opt).Value, (long)opt is (long long)(opt).Value
+        if (IsNullable(sourceType) && targetType != null && !IsNullable(targetType))
+        {
+            if (!targetType.IsEqualTo(sourceUnderlying))
+            {
+                using (context.Emitter.Writer.Parentheses())
+                {
+                    context.Emitter.Dialect.AppendType(ref context, targetType);
+                }
+            }
+
+            AppendValueOf(node.Expression, ref context);
+            return;
+        }
+
         using (context.Emitter.Writer.Parentheses())
         {
             context.Emitter.Dialect.AppendType(ref context, targetType);
         }
 
         context.Visitor.Visit(node.Expression);
+    }
+
+    private static bool IsNullable(ITypeSymbol? type) =>
+        type is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T };
+
+    // <nullable>.Value, with the nullable in parentheses unless it is a primary expression (a name, a member or element
+    // access, a call), which binds before the member access as it is
+    private static void AppendValueOf(ExpressionSyntax nullable, ref TranspileContext context)
+    {
+        using (nullable is IdentifierNameSyntax or MemberAccessExpressionSyntax or ElementAccessExpressionSyntax or
+                   InvocationExpressionSyntax or ParenthesizedExpressionSyntax
+                   ? default
+                   : context.Emitter.Writer.Parentheses())
+        {
+            context.Visitor.Visit(nullable);
+        }
+
+        context.Emitter.Writer.Append(".Value");
     }
 
     private static ITypeSymbol? GetSynthesizedSourceType(CastExpressionSyntax node, SemanticModel model)
