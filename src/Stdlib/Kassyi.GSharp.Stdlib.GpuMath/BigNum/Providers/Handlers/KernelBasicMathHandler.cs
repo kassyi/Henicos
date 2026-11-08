@@ -50,6 +50,7 @@ public sealed class KernelBasicMathHandler : IGpuBasicMathProvider
         }
 
         status?.EndRead();
+        GpuKernelLoader.ThrowIfDeviceError();
 
         return result;
     }

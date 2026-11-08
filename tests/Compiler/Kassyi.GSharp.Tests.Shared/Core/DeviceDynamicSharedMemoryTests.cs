@@ -10,6 +10,10 @@ namespace Kassyi.GSharp.Tests.Shared.Core;
 /// </summary>
 [TestTarget(ExecutionTarget.GpuExecution)]
 [Category(TestCategory.Syntax)]
+#if GSHARP_CUDA
+// A device error goes to the one error slot of the process, which a test running beside this one could read first
+[Collection(TestCollections.DeviceExclusive)]
+#endif
 public class DeviceDynamicSharedMemoryTests : TranspilerTestBase
 {
     private static readonly Action<Action> s_runNative = launch => launch();
@@ -122,29 +126,13 @@ public class DeviceDynamicSharedMemoryTests : TranspilerTestBase
     }
 
 #if GSHARP_CUDA
-    // [WHY] A trap leaves the CUDA context of the process unusable, so every later CUDA test in the same testhost would
-    // fail. Each case runs in a child process of its own (#439), and only in `just test-gpu-trap` (#1457).
-    [SkippableFact]
-    [Category(TestCategory.GpuTrap)]
+    [SkippableTheory]
+    [InlineData(-1)]
+    [InlineData(-32)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_NegativeCountMinusOne_AfterRegion_Traps() =>
-        RunNegativeCountTrap(-1, nameof(Test_NegativeCountMinusOne_AfterRegion_Traps));
-
-    [SkippableFact]
-    [Category(TestCategory.GpuTrap)]
-    [Scenario(TestScenario.SadPath)]
-    public void Test_NegativeCountMinus32_AfterRegion_Traps() =>
-        RunNegativeCountTrap(-32, nameof(Test_NegativeCountMinus32_AfterRegion_Traps));
-
-    private void RunNegativeCountTrap(int negative, string testMethodName)
+    public void Test_NegativeCount_AfterRegion_Throws(int negative)
     {
         EnsureCapability(DialectCapabilities.SharedMemory);
-        if (!IsolatedTestProcess.IsChild(testMethodName))
-        {
-            CudaTrapRuns.RunIsolated(typeof(DeviceDynamicSharedMemoryTests), testMethodName);
-            return;
-        }
-
         var output = new int[DeviceDynamicSharedMemoryScenarios.Length];
 
         var ex = Assert.Throws<ArgumentOutOfRangeException>(() =>
@@ -152,8 +140,7 @@ public class DeviceDynamicSharedMemoryTests : TranspilerTestBase
                 negative, blockDimX: DeviceDynamicSharedMemoryScenarios.Length,
                 sharedMemBytes: 3 * DeviceDynamicSharedMemoryScenarios.Length * sizeof(int)));
         Assert.Contains("G#: dynamic shared memory exceeds sharedMemBytes", ex.Message);
-        var cudaEx = Assert.IsType<Kassyi.GSharp.Runtime.Interop.CudaException>(ex.InnerException);
-        Assert.True(cudaEx.Result is Kassyi.GSharp.Runtime.Interop.CUresult.CudaErrorIllegalInstruction or Kassyi.GSharp.Runtime.Interop.CUresult.CudaErrorLaunchFailed);
+        Assert.Null(ex.InnerException);
     }
 #endif
 }

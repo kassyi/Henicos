@@ -496,6 +496,7 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
             }
 
             status?.EndRead();
+            GpuKernelLoader.ThrowIfDeviceError();
         }
     }
 

@@ -101,6 +101,10 @@ public class GpuWorkspace : IGpuResourceScope
     /// <summary>
     /// Gets the status words of <see cref="CorrectionStatus"/> as a kernel array argument, or a null array without one.
     /// </summary>
+    /// <remarks>
+    /// Only a CPU fallback workspace has no status words, and it launches no kernel: its operations compute on the host.
+    /// The kernels therefore take the status as a non-nullable array, which their launchers check.
+    /// </remarks>
     internal GSharpArrayProxy CorrectionStatusProxy =>
         CorrectionStatus is { } status ? new GSharpArrayProxy(status.DevicePointer, GpuCorrectionStatus.DeviceWords) : default;
 
@@ -440,6 +444,7 @@ public class GpuWorkspace : IGpuResourceScope
             // this one, not the whole device) before destroying it. A failed wait is reported, and the stream is
             // still destroyed.
             CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(Stream));
+            GpuKernelLoader.ThrowIfDeviceError();
         }
         catch (Exception ex)
         {

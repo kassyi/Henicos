@@ -94,7 +94,7 @@ __gsharp_id_0_outputBuffer[__gsharp_id_4_i]=__gsharp_id_2_fillValue;
 }
 }
 }
-cg::this_grid().sync();
+__gsharp_grid_sync();
 if((threadIdx.x|threadIdx.y|threadIdx.z|blockIdx.x|blockIdx.y|blockIdx.z)==0)
 {
 if(__gsharp_id_1_length>0)
@@ -167,6 +167,7 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
+global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfDeviceError();
 }
 finally
 {

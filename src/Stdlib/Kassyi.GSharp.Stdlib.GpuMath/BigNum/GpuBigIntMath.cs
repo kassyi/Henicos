@@ -367,7 +367,8 @@ public static class GpuBigIntMath
     /// Shifts the big integer left by the specified bit count on the GPU (<c>resultBuffer = leftOperand &lt;&lt; shiftBits</c>).
     /// </summary>
     /// <param name="leftOperand">The big integer to shift.</param>
-    /// <param name="shiftBits">The number of bit positions to shift left.</param>
+    /// <param name="shiftBits">The number of bit positions to shift left; a negative count shifts right, as
+    /// <see cref="BigInteger"/>. Bits shifted out of the buffer are dropped.</param>
     /// <param name="resultBuffer">The destination buffer receiving the shifted value.</param>
     /// <exception cref="ArgumentException">Thrown when buffer word lengths do not match.</exception>
     public static void ShiftLeft(
@@ -381,6 +382,12 @@ public static class GpuBigIntMath
     private static void ShiftLeftCore(GpuBigUInt leftOperand, int shiftBits, GpuBigUInt resultBuffer)
     {
         ThrowIfSizeMismatch(leftOperand, resultBuffer);
+        if (shiftBits < 0)
+        {
+            ShiftAndResizeCore(leftOperand, shiftBits, resultBuffer);
+            return;
+        }
+
         leftOperand.Workspace.Provider.ShiftLeft(leftOperand.Workspace, leftOperand, shiftBits, resultBuffer);
     }
 
@@ -388,7 +395,8 @@ public static class GpuBigIntMath
     /// Shifts the big integer right by the specified bit count on the GPU (<c>resultBuffer = leftOperand &gt;&gt; shiftBits</c>).
     /// </summary>
     /// <param name="leftOperand">The big integer to shift.</param>
-    /// <param name="shiftBits">The number of bit positions to shift right.</param>
+    /// <param name="shiftBits">The number of bit positions to shift right; a negative count shifts left, as
+    /// <see cref="BigInteger"/>. Bits shifted out of the buffer are dropped.</param>
     /// <param name="resultBuffer">The destination buffer receiving the shifted value.</param>
     /// <exception cref="ArgumentException">Thrown when buffer word lengths do not match.</exception>
     public static void ShiftRight(
@@ -402,6 +410,20 @@ public static class GpuBigIntMath
     private static void ShiftRightCore(GpuBigUInt leftOperand, int shiftBits, GpuBigUInt resultBuffer)
     {
         ThrowIfSizeMismatch(leftOperand, resultBuffer);
+        if (shiftBits < 0)
+        {
+            // A left shift by -shiftBits within the same width; int.MinValue shifts every bit out
+            if (shiftBits == int.MinValue)
+            {
+                resultBuffer.Workspace.Provider.ClearMemoryAsync(resultBuffer.DevicePointer, resultBuffer.NumWords,
+                    resultBuffer.Workspace.Stream);
+                return;
+            }
+
+            ShiftAndResizeCore(leftOperand, -shiftBits, resultBuffer);
+            return;
+        }
+
         leftOperand.Workspace.Provider.ShiftRight(leftOperand.Workspace, leftOperand, shiftBits, resultBuffer);
     }
 
@@ -461,7 +483,9 @@ public static class GpuBigIntMath
         {
             workspace.Provider.CopyDeviceToHost(srcWords, source.DevicePointer, source.NumWords, workspace.Stream);
             var val = BigIntExtensions.ToBigInteger(srcWords.AsSpan(0, source.NumWords));
-            var shifted = signedBitShift >= 0 ? (val << signedBitShift) : (val >> -signedBitShift);
+            // -int.MinValue does not fit in an int; shifting by it moves every bit out
+            var shifted = signedBitShift >= 0 ? val << signedBitShift
+                : signedBitShift == int.MinValue ? BigInteger.Zero : val >> -signedBitShift;
             shifted.WriteLimbs(dstWords.AsSpan(0, resultBuffer.NumWords));
             workspace.Provider.CopyHostToDevice(resultBuffer.DevicePointer, dstWords, resultBuffer.NumWords, workspace.Stream);
         }
@@ -696,7 +720,8 @@ public static class GpuBigIntMath
                 actualWords = 1;
             }
 
-            trimmed = nextBuffer.PadTo(actualWords);
+            // The value has actualWords words, so the low words hold it (PadTo only widens)
+            trimmed = nextBuffer.CopyToWidth(actualWords);
 
             var result = trimmed;
             trimmed = null; // Ownership transferred to caller

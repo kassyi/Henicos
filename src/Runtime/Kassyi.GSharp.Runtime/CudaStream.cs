@@ -25,11 +25,16 @@ public sealed class CudaStream : IDisposable
     /// <summary>
     /// Blocks the current host thread until all operations in this stream have completed.
     /// </summary>
+    /// <remarks>
+    /// Throws the exception of a device error that a kernel recorded and that no other synchronization has thrown yet
+    /// (for example an <see cref="IndexOutOfRangeException"/> of a kernel launched through a <c>Ptr</c> launcher).
+    /// </remarks>
     public void Synchronize()
     {
         var handle = Volatile.Read(ref _handle);
         ObjectDisposedException.ThrowIf(handle == IntPtr.Zero, this);
         CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(handle));
+        DeviceErrorSlot.ThrowIfDeviceError();
     }
 
     /// <summary>

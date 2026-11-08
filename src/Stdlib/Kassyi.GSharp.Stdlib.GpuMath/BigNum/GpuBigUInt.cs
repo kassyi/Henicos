@@ -555,13 +555,37 @@ public readonly partial struct GpuBigUInt : IGpuBigUIntExpression, IGpuBigNumber
     /// <summary>
     /// Allocates a new <see cref="GpuBigUInt"/> with the specified target word capacity and copies this instance's limbs into it.
     /// </summary>
-    /// <param name="targetWords">The target word capacity of the new buffer.</param>
-    /// <returns>A new <see cref="GpuBigUInt"/> padded or truncated to <paramref name="targetWords"/>.</returns>
+    /// <param name="targetWords">The target word capacity of the new buffer, at least <see cref="NumWords"/>.</param>
+    /// <returns>A new <see cref="GpuBigUInt"/> padded with zero words to <paramref name="targetWords"/>.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// <paramref name="targetWords"/> is below <see cref="NumWords"/>: <c>PadTo</c> only widens. Narrow a value with
+    /// <see cref="GpuBigUIntExpr.Fit"/> (checked) or <see cref="GpuBigUIntExpr.Truncate"/> (unchecked).
+    /// </exception>
     public GpuBigUInt PadTo(int targetWords)
     {
+        if (targetWords < NumWords)
+        {
+            throw new ArgumentOutOfRangeException(nameof(targetWords), targetWords,
+                $"PadTo only widens; the value has {NumWords} words. Narrow it with Fit (checked) or Truncate " +
+                "(unchecked).");
+        }
+
         var result = new GpuBigUInt(Workspace, targetWords);
         var copyWords = Math.Min(NumWords, targetWords);
         Workspace.Provider.CopyDeviceToDevice(result.DevicePointer, DevicePointer, copyWords, Workspace.Stream);
+        return result;
+    }
+
+    /// <summary>
+    /// Copies this value into a new buffer of <paramref name="words"/> words, padding with zero words or dropping the
+    /// words above <paramref name="words"/>. For callers that know the value fits (its words above are zero), such as
+    /// a buffer trimmed to the bit length of its value; <see cref="PadTo"/> only widens.
+    /// </summary>
+    internal GpuBigUInt CopyToWidth(int words)
+    {
+        var result = new GpuBigUInt(Workspace, words);
+        Workspace.Provider.CopyDeviceToDevice(result.DevicePointer, DevicePointer, Math.Min(NumWords, words),
+            Workspace.Stream);
         return result;
     }
 

@@ -155,6 +155,7 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
+global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfDeviceError();
 }
 finally
 {
@@ -287,6 +288,7 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
+global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfDeviceError();
 }
 finally
 {
@@ -357,7 +359,7 @@ if(__gsharp_id_3_tid<32)
 __gsharp_id_7_w=__shfl_down_sync(0xFFFFFFFFu,__gsharp_id_7_w,0,32);
 }
 __gsharp_id_0_data[__gsharp_id_4_gid]=__gsharp_id_7_w;
-cg::this_grid().sync();
+__gsharp_grid_sync();
 __gsharp_id_1_output[__gsharp_id_4_gid]=__gsharp_id_0_data[(__gsharp_add_i32(__gsharp_id_4_gid,64))%__gsharp_id_5_total];
 }
 ";
@@ -458,6 +460,7 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
+global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfDeviceError();
 }
 finally
 {

@@ -107,7 +107,8 @@ public static class GpuRadixConverter
                 var quotient = new GpuBigUInt(workspace, targetWords);
                 var remainder = new GpuBigUInt(workspace, targetWords);
 
-                using (var paddedValue = item.Value.PadTo(targetWords))
+                // The value has actualWords <= targetWords words, so a narrower copy keeps it (PadTo only widens)
+                using (var paddedValue = item.Value.CopyToWidth(targetWords))
                 using (var paddedDivisor = divisorGpu.PadTo(targetWords))
                 {
                     GpuBigIntDivRem.DivRem(paddedValue, paddedDivisor, quotient, remainder);

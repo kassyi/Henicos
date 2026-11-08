@@ -72,17 +72,28 @@ public sealed class ExpressionAliasingTests : IDisposable
         // P1: the target holds a op b of the original values; P2: the other operand keeps its value; the temporary the
         // root used is returned (LiveBuffers comes back).
         // mutant: GpuBigUIntExpressionExtensions.Evaluate without using on the root result (LiveBuffers stays one up)
-        using var a = GpuBigUInt.FromBigInteger(_workspace, _a, Words);
-        using var b = GpuBigUInt.FromBigInteger(_workspace, _b, Words);
+        // A sum is one bit wider and a product as wide as both operands, so the target is the buffer that holds an
+        // operand in its low words and is wide enough for the result
+        var extra = op switch
+        {
+            Op.Add => 1,
+            Op.Mul => Words,
+            _ => 0
+        };
+        using var aOwner = GpuBigUInt.FromBigInteger(_workspace, _a, Words + extra);
+        using var bOwner = GpuBigUInt.FromBigInteger(_workspace, _b, Words + extra);
+        var a = Head(aOwner, Words);
+        var b = Head(bOwner, Words);
         GpuBigUIntExpr ea = a;
         GpuBigUIntExpr eb = b;
         var before = _workspace.GetMemoryStatistics();
 
-        Binary(op, ea, eb).Node.Evaluate(_workspace, intoRight ? b : a);
+        Binary(op, ea, eb).Node.Evaluate(_workspace, intoRight ? bOwner : aOwner);
 
         var after = _workspace.GetMemoryStatistics();
-        var expected = Expected(op, _a, _b, Words);
-        Assert.True(expected == (intoRight ? b : a).ToBigInteger(), $"{op} into {(intoRight ? "b" : "a")}, seed {Seed}");
+        var expected = Expected(op, _a, _b);
+        Assert.True(expected == (intoRight ? bOwner : aOwner).ToBigInteger(),
+            $"{op} into {(intoRight ? "b" : "a")}, seed {Seed}");
         Assert.Equal(intoRight ? _a : _b, (intoRight ? a : b).ToBigInteger());
         Assert.Equal(before.LiveBuffers, after.LiveBuffers);
     }
@@ -104,21 +115,23 @@ public sealed class ExpressionAliasingTests : IDisposable
     public void UnaryAndShift_TargetIsTheOperand_GivesTheSeparateBufferResult(Unary op)
     {
         // 4096 words, so that a shift runs in several blocks (thread i reads the word that thread i - 1 writes)
+        // A left shift keeps every bit: its target holds the operand in its low words and has two words more
         var value = RandomValue(new Random(Seed), WideWords * 32 - 7);
-        using var a = GpuBigUInt.FromBigInteger(_workspace, value, WideWords);
+        using var owner = GpuBigUInt.FromBigInteger(_workspace, value, WideWords + (op == Unary.ShiftLeft ? 2 : 0));
+        var a = Head(owner, WideWords);
         GpuBigUIntExpr ea = a;
 
-        UnaryExpression(op, ea).Node.Evaluate(_workspace, a);
+        UnaryExpression(op, ea).Node.Evaluate(_workspace, owner);
 
         var modulus = BigInteger.One << (WideWords * 32);
         var expected = op switch
         {
             Unary.Not => (modulus - 1) ^ value,
-            Unary.ShiftLeft => (value << 37) % modulus,
+            Unary.ShiftLeft => value << 37,
             Unary.ShiftRight => value >> 37,
             _ => BigFloatReference.IntegerSqrt(value)
         };
-        Assert.True(expected == a.ToBigInteger(), $"{op}, seed {Seed}");
+        Assert.True(expected == owner.ToBigInteger(), $"{op}, seed {Seed}");
     }
 
     [SkippableFact]
@@ -128,8 +141,12 @@ public sealed class ExpressionAliasingTests : IDisposable
         // P4: with the target an operand of the root, no arithmetic call receives a result that overlaps an operand.
         // The calls are counted too, so the check is reached.
         // mutant: BigIntExpressionVisitor.GetResultBuffer without the overlap check (the root writes into its operand)
-        using var a = GpuBigUInt.FromBigInteger(_workspace, _a, Words);
-        using var b = GpuBigUInt.FromBigInteger(_workspace, _b, Words);
+        // The targets hold the operands in their low words and are wide enough for every result here (the nested
+        // product has 2 * Words + 1 words)
+        using var aOwner = GpuBigUInt.FromBigInteger(_workspace, _a, 2 * Words + 1);
+        using var bOwner = GpuBigUInt.FromBigInteger(_workspace, _b, 2 * Words + 1);
+        var a = Head(aOwner, Words);
+        var b = Head(bOwner, Words);
         using var a0 = GpuBigUInt.FromBigInteger(_workspace, _a, Words);
         using var b0 = GpuBigUInt.FromBigInteger(_workspace, _b, Words);
         GpuBigUIntExpr ea = a;
@@ -139,17 +156,17 @@ public sealed class ExpressionAliasingTests : IDisposable
         // Each evaluation starts from the original values (the previous one overwrote an operand)
         foreach (var op in Enum.GetValues<Op>())
         {
-            EvaluateRecorded(Binary(op, ea, eb), a, recorder, a, a0, b, b0);
-            EvaluateRecorded(Binary(op, ea, eb), b, recorder, a, a0, b, b0);
+            EvaluateRecorded(Binary(op, ea, eb), aOwner, recorder, a, a0, b, b0);
+            EvaluateRecorded(Binary(op, ea, eb), bOwner, recorder, a, a0, b, b0);
         }
 
         foreach (var op in Enum.GetValues<Unary>())
         {
-            EvaluateRecorded(UnaryExpression(op, ea), a, recorder, a, a0, b, b0);
+            EvaluateRecorded(UnaryExpression(op, ea), aOwner, recorder, a, a0, b, b0);
         }
 
         // A nested expression: only the root writes into the target
-        EvaluateRecorded((ea + eb) * (ea - eb), a, recorder, a, a0, b, b0);
+        EvaluateRecorded((ea + eb) * (ea - eb), aOwner, recorder, a, a0, b, b0);
 
         Assert.Equal(8 * 2 + 4 + 3, recorder.Calls);
         Assert.Equal(0, recorder.OverlappingCalls);
@@ -165,7 +182,8 @@ public sealed class ExpressionAliasingTests : IDisposable
 
         a.Value = a.Value / b.Value;
         var quotient = a.ToBigInteger();
-        a.Value = a.Value << 5;
+        // A left shift is wider than its operand; the shifted quotient fits the old width
+        a.Value = (a.Value << 5).Fit(Words);
 
         Assert.Equal(_a / _b, quotient);
         Assert.Equal((_a / _b) << 5, a.ToBigInteger());
@@ -258,13 +276,18 @@ public sealed class ExpressionAliasingTests : IDisposable
         // The signed root (SignedBinaryExpression / SignedUnaryExpression) with its target in an operand: the value and
         // the sign equal BigInteger's (truncated division, the remainder takes the dividend's sign), and the other
         // operand keeps its value.
+        // A sum, a difference and ~ are one bit wider than their operands, so the target is the buffer that holds an
+        // operand in its low words and has one word more
         var a0 = negativeA ? -_a : _a;
         var b0 = negativeA ? _b : -_b;
-        using var aMagnitude = GpuBigUInt.FromBigInteger(_workspace, _a, Words);
-        using var bMagnitude = GpuBigUInt.FromBigInteger(_workspace, _b, Words);
+        var extra = op is SignedOp.Add or SignedOp.Sub or SignedOp.Not ? 1 : 0;
+        using var aOwner = GpuBigUInt.FromBigInteger(_workspace, _a, Words + extra);
+        using var bOwner = GpuBigUInt.FromBigInteger(_workspace, _b, Words + extra);
+        var aMagnitude = Head(aOwner, Words);
+        var bMagnitude = Head(bOwner, Words);
         var a = new GpuBigInt(aMagnitude, negativeA);
         var b = new GpuBigInt(bMagnitude, !negativeA);
-        var target = intoRight && op is not (SignedOp.Negate or SignedOp.Not) ? bMagnitude : aMagnitude;
+        var target = intoRight && op is not (SignedOp.Negate or SignedOp.Not) ? bOwner : aOwner;
 
         var result = SignedExpression(op, a, b).Evaluate(target);
 
@@ -276,8 +299,8 @@ public sealed class ExpressionAliasingTests : IDisposable
             SignedOp.Div => a0 / b0,
             SignedOp.Mod => a0 % b0,
             SignedOp.Negate => -a0,
-            // Not inverts the magnitude words and keeps the sign
-            _ => negativeA ? -((BigInteger.One << (Words * 32)) - 1 - _a) : (BigInteger.One << (Words * 32)) - 1 - _a
+            // ~x == -x - 1
+            _ => -a0 - 1
         };
         var message = $"{op} a<0 {negativeA} into {(target.DevicePointer == bMagnitude.DevicePointer ? "b" : "a")}, seed {Seed}";
         Assert.True(expected == result.Value.ToBigInteger(result.IsNegative), message);
@@ -301,21 +324,26 @@ public sealed class ExpressionAliasingTests : IDisposable
         // The guard itself (values can be right by chance in place): the same expression first into a separate target
         // sets the peak of live buffers it needs; into an operand the root takes one temporary more.
         // mutant: SignedBinaryExpression / SignedUnaryExpression without the overlap check
-        using var aMagnitude = GpuBigUInt.FromBigInteger(_workspace, _a, Words);
+        // A sum and ~ are one bit wider than their operands: the target holds the operand a in its low words
+        var extra = op is SignedOp.Add or SignedOp.Not ? 1 : 0;
+        using var aOwner = GpuBigUInt.FromBigInteger(_workspace, _a, Words + extra);
         using var bMagnitude = GpuBigUInt.FromBigInteger(_workspace, _b, Words);
-        using var separate = new GpuBigUInt(_workspace, Words);
-        var a = new GpuBigInt(aMagnitude, false);
+        using var separate = new GpuBigUInt(_workspace, Words + extra);
+        var a = new GpuBigInt(Head(aOwner, Words), false);
         var b = new GpuBigInt(bMagnitude, false);
 
         SignedExpression(op, a, b).Evaluate(separate);
         var before = _workspace.GetMemoryStatistics();
-        SignedExpression(op, a, b).Evaluate(aMagnitude);
+        SignedExpression(op, a, b).Evaluate(aOwner);
         var after = _workspace.GetMemoryStatistics();
 
         Assert.Equal(before.LiveBuffers, before.PeakLiveBuffers);
         Assert.Equal(before.PeakLiveBuffers + 1, after.PeakLiveBuffers);
         Assert.Equal(before.LiveBuffers, after.LiveBuffers);
     }
+
+    // The first words of owner, borrowed
+    private GpuBigUInt Head(GpuBigUInt owner, int words) => new(_workspace, owner.Handle.Slice(0, words));
 
     private static GpuBigIntExpr SignedExpression(SignedOp op, GpuBigInt a, GpuBigInt b)
     {
@@ -365,21 +393,19 @@ public sealed class ExpressionAliasingTests : IDisposable
             _ => GpuBigUIntExpr.Sqrt(a)
         };
 
-    private static BigInteger Expected(Op op, BigInteger a, BigInteger b, int words)
-    {
-        var modulus = BigInteger.One << (words * 32);
-        return op switch
+    // The exact result: every operator has a result wide enough for it
+    private static BigInteger Expected(Op op, BigInteger a, BigInteger b) =>
+        op switch
         {
-            Op.Add => (a + b) % modulus,
+            Op.Add => a + b,
             Op.Sub => a - b,
-            Op.Mul => a * b % modulus,
+            Op.Mul => a * b,
             Op.Div => a / b,
             Op.Mod => a % b,
             Op.And => a & b,
             Op.Or => a | b,
             _ => a ^ b
         };
-    }
 
     // A value of exactly 'bits' bits
     private static BigInteger RandomValue(Random random, int bits)
