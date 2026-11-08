@@ -128,7 +128,6 @@ while(__gsharp_id_5_k<10);
 __gsharp_id_0_output[0]=__gsharp_id_2_total;
 }
 ";
-public static readonly string BasicStatementsKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +BasicStatementsKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_BasicStatementsKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__StatementsSnapshotKernels__BasicStatementsKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerBasicStatementsKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.StatementsSnapshotKernels.__gsharp_hfunc_BasicStatementsKernel.Resolve();

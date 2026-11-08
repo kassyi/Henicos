@@ -85,7 +85,6 @@ public static partial class AotContexts
 public const string Execute_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__SpanKernel__Execute(GSharpArray<int> __gsharp_id_0_data){
 }
 ";
-public static readonly string Execute_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +Execute_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_Execute = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__SpanKernel__Execute", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerExecute() => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanKernel.__gsharp_hfunc_Execute.Resolve();

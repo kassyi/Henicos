@@ -92,7 +92,6 @@ __gsharp_id_4_floats[__gsharp_id_6_i]=1000.0f;
 __gsharp_id_5_doubles[__gsharp_id_6_i]=10.5e10;
 }
 ";
-public static readonly string DigitSeparatorKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +DigitSeparatorKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_DigitSeparatorKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__DigitSeparatorLiteralKernels__DigitSeparatorKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerDigitSeparatorKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.DigitSeparatorLiteralKernels.__gsharp_hfunc_DigitSeparatorKernel.Resolve();

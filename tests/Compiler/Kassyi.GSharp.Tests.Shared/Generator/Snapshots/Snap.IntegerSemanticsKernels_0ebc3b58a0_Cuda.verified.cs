@@ -285,7 +285,6 @@ int __gsharp_id_3_t = (int)threadIdx.x;
 __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__IntegerSemanticsKernels__IntOperators(__gsharp_id_0_ints[__gsharp_id_3_t/__gsharp_id_0_ints.length],__gsharp_id_0_ints[__gsharp_id_3_t%__gsharp_id_0_ints.length],__gsharp_id_1_shifts[__gsharp_id_3_t%__gsharp_id_1_shifts.length],__gsharp_id_2_o,__gsharp_id_3_t);
 }
 ";
-public static readonly string IntTriplesKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +IntTriplesKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_IntTriplesKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__IntegerSemanticsKernels__IntTriplesKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerIntTriplesKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.IntegerSemanticsKernels.__gsharp_hfunc_IntTriplesKernel.Resolve();
@@ -488,7 +487,6 @@ int __gsharp_id_3_t = (int)threadIdx.x;
 __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__IntegerSemanticsKernels__LongOperators(__gsharp_id_0_longs[__gsharp_id_3_t/__gsharp_id_0_longs.length],__gsharp_id_0_longs[__gsharp_id_3_t%__gsharp_id_0_longs.length],__gsharp_id_1_shifts[__gsharp_id_3_t%__gsharp_id_1_shifts.length],__gsharp_id_2_o,__gsharp_id_3_t);
 }
 ";
-public static readonly string LongTriplesKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +LongTriplesKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_LongTriplesKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__IntegerSemanticsKernels__LongTriplesKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerLongTriplesKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.IntegerSemanticsKernels.__gsharp_hfunc_LongTriplesKernel.Resolve();
@@ -691,7 +689,6 @@ int __gsharp_id_3_t = (int)threadIdx.x;
 __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__IntegerSemanticsKernels__ConvertOperators(__gsharp_id_0_fs[__gsharp_id_3_t],__gsharp_id_1_ds[__gsharp_id_3_t],__gsharp_id_2_o,__gsharp_id_3_t);
 }
 ";
-public static readonly string ConversionsKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ConversionsKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ConversionsKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__IntegerSemanticsKernels__ConversionsKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerConversionsKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.IntegerSemanticsKernels.__gsharp_hfunc_ConversionsKernel.Resolve();
@@ -907,7 +904,6 @@ __gsharp_id_1_wide[__gsharp_add_i32(6,__gsharp_id_2_i)]=__gsharp_sub_i32(__gshar
 __gsharp_id_1_wide[__gsharp_add_i32(8,__gsharp_id_2_i)]=__gsharp_sub_i32((int)threadIdx.x,2);
 }
 ";
-public static readonly string SignedBuiltInsKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +SignedBuiltInsKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_SignedBuiltInsKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__IntegerSemanticsKernels__SignedBuiltInsKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerSignedBuiltInsKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.IntegerSemanticsKernels.__gsharp_hfunc_SignedBuiltInsKernel.Resolve();
@@ -1083,7 +1079,6 @@ __gsharp_id_2_counts[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_3_t,4),2)]=__
 __gsharp_id_2_counts[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_3_t,4),3)]=__gsharp_id_9_last;
 }
 ";
-public static readonly string LoopCountersKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +LoopCountersKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_LoopCountersKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__IntegerSemanticsKernels__LoopCountersKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerLoopCountersKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.IntegerSemanticsKernels.__gsharp_hfunc_LoopCountersKernel.Resolve();
@@ -1302,7 +1297,6 @@ extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__I
 __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__IntegerSemanticsKernels__PackedTargetSteps(__gsharp_id_0_data,__gsharp_id_1_old,(int)threadIdx.x);
 }
 ";
-public static readonly string PackedTargetKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +PackedTargetKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_PackedTargetKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__IntegerSemanticsKernels__PackedTargetKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 private static bool __gsharp_layout_checked_PackedTargetKernel;
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
@@ -1474,7 +1468,6 @@ __gsharp_id_2_o[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_3_t,4),2)]=__gshar
 __gsharp_id_2_o[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_3_t,4),3)]=__gsharp_to_i32(__gsharp_id_4_x*1.0e10f);
 }
 ";
-public static readonly string AcrossBarrierKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +AcrossBarrierKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_AcrossBarrierKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__IntegerSemanticsKernels__AcrossBarrierKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerAcrossBarrierKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.IntegerSemanticsKernels.__gsharp_hfunc_AcrossBarrierKernel.Resolve();

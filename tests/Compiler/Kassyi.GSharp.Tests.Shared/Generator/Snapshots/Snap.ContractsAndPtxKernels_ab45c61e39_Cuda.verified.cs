@@ -88,7 +88,6 @@ __gsharp_id_0_data[0] = 999;
 ;
 }
 ";
-public static readonly string InlinePtxKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +InlinePtxKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_InlinePtxKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__ContractsAndPtxKernels__InlinePtxKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerInlinePtxKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.ContractsAndPtxKernels.__gsharp_hfunc_InlinePtxKernel.Resolve();
@@ -194,7 +193,6 @@ __gsharp_id_0_data[0] = 999;
 __gsharp_id_0_data[0]=777;
 }
 ";
-public static readonly string InlinePtxFollowedByWriteKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +InlinePtxFollowedByWriteKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_InlinePtxFollowedByWriteKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__ContractsAndPtxKernels__InlinePtxFollowedByWriteKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerInlinePtxFollowedByWriteKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.ContractsAndPtxKernels.__gsharp_hfunc_InlinePtxFollowedByWriteKernel.Resolve();

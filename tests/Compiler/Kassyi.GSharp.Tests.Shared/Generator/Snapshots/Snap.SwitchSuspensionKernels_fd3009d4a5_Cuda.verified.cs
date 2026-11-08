@@ -114,7 +114,6 @@ break;
 __gsharp_id_1_output[__gsharp_id_4_tid]=__gsharp_id_0_data[(__gsharp_add_i32(__gsharp_id_4_tid,1))%__gsharp_id_3_count];
 }
 ";
-public static readonly string BarrierInSectionKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +BarrierInSectionKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_BarrierInSectionKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__SwitchSuspensionKernels__BarrierInSectionKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerBarrierInSectionKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.SwitchSuspensionKernels.__gsharp_hfunc_BarrierInSectionKernel.Resolve();
@@ -303,7 +302,6 @@ break;
 __gsharp_id_0_output[__gsharp_id_2_tid]=__gsharp_id_3_value;
 }
 ";
-public static readonly string ShuffleInSeveralSectionsKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ShuffleInSeveralSectionsKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ShuffleInSeveralSectionsKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__SwitchSuspensionKernels__ShuffleInSeveralSectionsKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerShuffleInSeveralSectionsKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.SwitchSuspensionKernels.__gsharp_hfunc_ShuffleInSeveralSectionsKernel.Resolve();
@@ -458,7 +456,6 @@ break;
 __gsharp_id_0_output[__gsharp_id_3_tid]=__gsharp_id_4_value;
 }
 ";
-public static readonly string NestedSwitchKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +NestedSwitchKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_NestedSwitchKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__SwitchSuspensionKernels__NestedSwitchKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerNestedSwitchKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.SwitchSuspensionKernels.__gsharp_hfunc_NestedSwitchKernel.Resolve();
@@ -600,7 +597,6 @@ break;
 __gsharp_id_0_output[__gsharp_id_2_tid]=__gsharp_id_3_value;
 }
 ";
-public static readonly string GotoCaseKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +GotoCaseKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_GotoCaseKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__SwitchSuspensionKernels__GotoCaseKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerGotoCaseKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.SwitchSuspensionKernels.__gsharp_hfunc_GotoCaseKernel.Resolve();
@@ -735,7 +731,6 @@ __gsharp_id_3_value=__gsharp_add_i32(__gsharp_id_3_value,10);
 __gsharp_id_0_output[__gsharp_id_2_tid]=__gsharp_id_3_value;
 }
 ";
-public static readonly string SwitchInLoopKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +SwitchInLoopKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_SwitchInLoopKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__SwitchSuspensionKernels__SwitchInLoopKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerSwitchInLoopKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.SwitchSuspensionKernels.__gsharp_hfunc_SwitchInLoopKernel.Resolve();
@@ -861,7 +856,6 @@ break;
 __gsharp_id_0_output[__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_4_value,10),__gsharp_id_3_k);
 }
 ";
-public static readonly string GoverningEvaluatedOnceKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +GoverningEvaluatedOnceKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_GoverningEvaluatedOnceKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__SwitchSuspensionKernels__GoverningEvaluatedOnceKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerGoverningEvaluatedOnceKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.SwitchSuspensionKernels.__gsharp_hfunc_GoverningEvaluatedOnceKernel.Resolve();
@@ -992,7 +986,6 @@ break;
 }
 }
 ";
-public static readonly string SectionConstantAcrossBarrierKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +SectionConstantAcrossBarrierKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_SectionConstantAcrossBarrierKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__SwitchSuspensionKernels__SectionConstantAcrossBarrierKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerSectionConstantAcrossBarrierKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.SwitchSuspensionKernels.__gsharp_hfunc_SectionConstantAcrossBarrierKernel.Resolve();
@@ -1126,7 +1119,6 @@ break;
 __gsharp_id_0_output[__gsharp_id_2_tid]=__gsharp_id_3_value;
 }
 ";
-public static readonly string SectionConstantCaseLabelKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +SectionConstantCaseLabelKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_SectionConstantCaseLabelKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__SwitchSuspensionKernels__SectionConstantCaseLabelKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerSectionConstantCaseLabelKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.SwitchSuspensionKernels.__gsharp_hfunc_SectionConstantCaseLabelKernel.Resolve();
@@ -1261,7 +1253,6 @@ break;
 }
 }
 ";
-public static readonly string SectionConstantChainKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +SectionConstantChainKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_SectionConstantChainKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__SwitchSuspensionKernels__SectionConstantChainKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerSectionConstantChainKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.SwitchSuspensionKernels.__gsharp_hfunc_SectionConstantChainKernel.Resolve();
@@ -1393,7 +1384,6 @@ break;
 __gsharp_id_0_output[__gsharp_id_2_tid]=__gsharp_id_3_value;
 }
 ";
-public static readonly string GotoCaseCharKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +GotoCaseCharKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_GotoCaseCharKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__SwitchSuspensionKernels__GotoCaseCharKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerGotoCaseCharKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.SwitchSuspensionKernels.__gsharp_hfunc_GotoCaseCharKernel.Resolve();
@@ -1525,7 +1515,6 @@ break;
 __gsharp_id_0_output[__gsharp_id_2_tid]=__gsharp_id_3_value;
 }
 ";
-public static readonly string GotoCaseEnumKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +GotoCaseEnumKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_GotoCaseEnumKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__SwitchSuspensionKernels__GotoCaseEnumKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerGotoCaseEnumKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.SwitchSuspensionKernels.__gsharp_hfunc_GotoCaseEnumKernel.Resolve();

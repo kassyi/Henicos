@@ -90,7 +90,6 @@ int __gsharp_id_2_tid = (int)threadIdx.x;
 __gsharp_id_1_output[__gsharp_id_2_tid]=__expf(__gsharp_id_0_input[__gsharp_id_2_tid]);
 }
 ";
-public static readonly string Kernel_COR01_FastMath_Exp_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +Kernel_COR01_FastMath_Exp_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_Kernel_COR01_FastMath_Exp = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Core__FastMathBoundaryKernels__Kernel_uCOR01_uFastMath_uExp", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerKernel_COR01_FastMath_Exp() => global::Kassyi.GSharp.Tests.Shared.Core.FastMathBoundaryKernels.__gsharp_hfunc_Kernel_COR01_FastMath_Exp.Resolve();
@@ -242,7 +241,6 @@ int __gsharp_id_2_tid = (int)threadIdx.x;
 __gsharp_id_1_output[__gsharp_id_2_tid]=__logf(__gsharp_id_0_input[__gsharp_id_2_tid]);
 }
 ";
-public static readonly string Kernel_COR01_FastMath_Log_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +Kernel_COR01_FastMath_Log_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_Kernel_COR01_FastMath_Log = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Core__FastMathBoundaryKernels__Kernel_uCOR01_uFastMath_uLog", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerKernel_COR01_FastMath_Log() => global::Kassyi.GSharp.Tests.Shared.Core.FastMathBoundaryKernels.__gsharp_hfunc_Kernel_COR01_FastMath_Log.Resolve();
@@ -394,7 +392,6 @@ int __gsharp_id_2_tid = (int)threadIdx.x;
 __gsharp_id_1_output[__gsharp_id_2_tid]=__fsqrt_rn(__gsharp_id_0_input[__gsharp_id_2_tid]);
 }
 ";
-public static readonly string Kernel_COR01_FastMath_Sqrt_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +Kernel_COR01_FastMath_Sqrt_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_Kernel_COR01_FastMath_Sqrt = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Core__FastMathBoundaryKernels__Kernel_uCOR01_uFastMath_uSqrt", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerKernel_COR01_FastMath_Sqrt() => global::Kassyi.GSharp.Tests.Shared.Core.FastMathBoundaryKernels.__gsharp_hfunc_Kernel_COR01_FastMath_Sqrt.Resolve();
@@ -546,7 +543,6 @@ int __gsharp_id_2_tid = (int)threadIdx.x;
 __gsharp_id_1_output[__gsharp_id_2_tid]=fabsf(__gsharp_id_0_input[__gsharp_id_2_tid]);
 }
 ";
-public static readonly string Kernel_COR01_FastMath_Abs_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +Kernel_COR01_FastMath_Abs_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_Kernel_COR01_FastMath_Abs = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Core__FastMathBoundaryKernels__Kernel_uCOR01_uFastMath_uAbs", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerKernel_COR01_FastMath_Abs() => global::Kassyi.GSharp.Tests.Shared.Core.FastMathBoundaryKernels.__gsharp_hfunc_Kernel_COR01_FastMath_Abs.Resolve();
