@@ -254,12 +254,6 @@ internal readonly record struct KernelParameterShape
     /// </summary>
     public bool IsCpuConvertedArray => IsArray && Cpu.ConvertedElementAotStructPath is not null;
 
-    /// <summary>
-    /// Whether the <c>IntPtr</c> launch wrapper takes the parameter as a raw device pointer: an array-like or
-    /// <c>ref</c> / <c>out</c> parameter.
-    /// </summary>
-    public bool IsDevicePointer => IsArray || IsByRef;
-
     /// <summary>Whether the caller may pass <c>null</c>.</summary>
     public bool IsOptional => IsNullableReference || IsNullableValue;
 

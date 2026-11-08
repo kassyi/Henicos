@@ -143,11 +143,11 @@ public sealed class GSharpKernelFloatProvider(IGpuBigFloatArithmetic fallbackStr
         var blockThreads = (uint)Math.Clamp(((alignedWords + 31) / 32) * 32, 32, 1024);
         var kernelCtx = new GpuBigFloatKernels.AotContexts.GpuBigFloatAdd
         {
-            BaseSig = lowSig.DevicePointer,
+            BaseSig = lowSig.ToProxy(),
             BaseWords = lowSig.NumWords,
-            ShiftedSig = highSig.DevicePointer,
+            ShiftedSig = highSig.ToProxy(),
             ShiftedWords = highSig.NumWords,
-            ResultSig = tempResult.DevicePointer,
+            ResultSig = tempResult.ToProxy(),
             NumWords = alignedWords,
             WordShift = wordShift,
             BitShift = bitShift,
@@ -490,8 +490,8 @@ public sealed class GSharpKernelFloatProvider(IGpuBigFloatArithmetic fallbackStr
         workspace.WideOperandCounters.AddBoundCheck();
         var words = Math.Max(product.NumWords, bound.NumWords);
         var blockThreads = (uint)Math.Clamp((words + 31) / 32 * 32, 32, 1024);
-        GpuBigIntDivRemKernels.LaunchTruncatedBoundCorrectionKernelPtr(product.DevicePointer, product.NumWords,
-            bound.DevicePointer, bound.NumWords, estimate.DevicePointer, estimate.NumWords, gridDimX: 1,
+        GpuBigIntDivRemKernels.LaunchTruncatedBoundCorrectionKernelPtr(product.ToProxy(), product.NumWords,
+            bound.ToProxy(), bound.NumWords, estimate.ToProxy(), estimate.NumWords, gridDimX: 1,
             blockDimX: blockThreads, hStream: workspace.Stream);
     }
 

@@ -59,6 +59,24 @@ public sealed class GpuBuffer<T> : IDisposable where T : unmanaged
     }
 
     /// <summary>
+    /// Returns the array argument that passes this buffer to a <c>Launch{Kernel}Ptr</c> launcher or a shadow struct
+    /// field: the kernel sees an array of <see cref="Length"/> elements.
+    /// </summary>
+    /// <remarks>An empty buffer becomes an empty array, not a null one, as an empty C# array does.</remarks>
+    /// <exception cref="ObjectDisposedException">The buffer has been disposed.</exception>
+    public GSharpArrayProxy ToProxy()
+    {
+        ObjectDisposedException.ThrowIf(_isDisposed, this);
+        return Length == 0
+            ? new GSharpArrayProxy(GSharpArrayProxy.EmptyArrayData, 0)
+            : new GSharpArrayProxy(_devicePointer, Length);
+    }
+
+    /// <summary>Converts <paramref name="buffer"/> with <see cref="ToProxy"/>; <see langword="null"/> becomes a null array.</summary>
+    /// <param name="buffer">The buffer to pass, or <see langword="null"/>.</param>
+    public static implicit operator GSharpArrayProxy(GpuBuffer<T>? buffer) => buffer?.ToProxy() ?? default;
+
+    /// <summary>
     /// Allocates a new device buffer capable of holding <paramref name="length"/> elements.
     /// </summary>
     /// <remarks>

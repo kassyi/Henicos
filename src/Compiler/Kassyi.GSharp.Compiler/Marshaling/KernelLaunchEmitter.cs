@@ -175,7 +175,7 @@ internal static class KernelLaunchEmitter
 
     // [WHY] The IntPtr wrapper receives device memory that the caller owns, so it forwards it without copying
     private static bool IsPassedThrough(in KernelParameterShape shape, bool isDevicePtr) =>
-        isDevicePtr && (shape.IsArray || shape.IsCustomStruct || shape.IsByRef);
+        isDevicePtr && PointerLaunchPlan.Classify(shape) != PointerArgumentKind.Value;
 
     private static void WriteParameterMarshal(SourceWriter writer, in ArraySharingPlan plan, int paramIndex,
         bool isDevicePtr)
@@ -194,10 +194,11 @@ internal static class KernelLaunchEmitter
             {
                 var proxy = KernelHostNames.GetLocal(LauncherLocal.Proxy, shape);
                 writer.AppendLine($"{IntPtrType}* {proxy} = stackalloc {IntPtrType}[2];");
-                writer.AppendLine($"{proxy}[0] = {shape.Identifier};");
-                writer.AppendLine($"((int*)({proxy} + 1))[0] = 0; // Length is unknown for raw IntPtr");
-                // The caller's pointer may be IntPtr.Zero for any array: a non-optional one then reads as null (#706)
-                WriteNullReadsAsEmptyFlag(writer, shape, $"{shape.Identifier} == {IntPtrType}.Zero");
+                // The argument checks have rejected a null non-optional array and made a null optional one 0 long
+                writer.AppendLine($"{proxy}[0] = {shape.Identifier}.Data;");
+                writer.AppendLine($"((int*)({proxy} + 1))[0] = {shape.Identifier}.Length;");
+                // The launcher decides the flags; the caller's Flags never reach the device
+                WriteNullReadsAsEmptyFlag(writer, shape, $"{shape.Identifier}.Data == {IntPtrType}.Zero");
                 writer.AppendLine($"{KernelParams}[{paramIndex}] = {proxy};");
             }
             else

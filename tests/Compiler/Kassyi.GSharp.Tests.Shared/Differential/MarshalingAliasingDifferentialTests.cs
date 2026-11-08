@@ -813,10 +813,8 @@ public sealed class MarshalingAliasingDifferentialTests
             int[] outLen = b.Get<int>("outLen");
 #if GSHARP_CUDA
             using var scope = b.PinOrUpload();
-            IntPtr pData = scope.PinOrUpload<int>("data");
-            IntPtr pLen = scope.PinOrUpload<int>("outLen");
             MarshalingAliasingDifferentialKernels.LaunchPtrLengthGuardedScaleKernelPtr(
-                pData, 3, pLen, gridDimX: s.GridX, blockDimX: s.BlockX);
+                scope.GetArray("data"), 3, scope.GetArray("outLen"), gridDimX: s.GridX, blockDimX: s.BlockX);
 #else
             MarshalingAliasingDifferentialKernels.LaunchPtrLengthGuardedScaleKernel(
                 data, 3, outLen, gridDimX: s.GridX, blockDimX: s.BlockX);
@@ -964,7 +962,7 @@ public sealed class MarshalingAliasingDifferentialTests
                 dItems.CopyToDevice(items);
                 dAccum.CopyToDevice(new ReadOnlySpan<MarshalingAliasingDifferentialKernels.AotContexts.DiffVec2Padded>(ref nativeAccum));
                 MarshalingAliasingDifferentialKernels.LaunchPtrConvertStructAndRefKernelPtr(
-                    dItems.DevicePointer, dAccum.DevicePointer, n, gridDimX: s.GridX, blockDimX: s.BlockX);
+                    dItems.ToProxy(), dAccum.DevicePointer, n, gridDimX: s.GridX, blockDimX: s.BlockX);
                 dItems.CopyToHost(items);
                 dAccum.CopyToHost(new Span<MarshalingAliasingDifferentialKernels.AotContexts.DiffVec2Padded>(ref nativeAccum));
                 MarshalingAliasingDifferentialKernels.AotContexts.Unmarshal_DiffVec2Padded(

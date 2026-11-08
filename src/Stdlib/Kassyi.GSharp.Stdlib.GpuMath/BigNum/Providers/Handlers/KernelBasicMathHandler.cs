@@ -15,7 +15,7 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers.Handlers;
 /// </remarks>
 public sealed class KernelBasicMathHandler : IGpuBasicMathProvider
 {
-    private unsafe T EvaluateKernelResult<T>(GpuWorkspace workspace, int resultWords, Action<IntPtr> launchKernel)
+    private unsafe T EvaluateKernelResult<T>(GpuWorkspace workspace, int resultWords, Action<GSharpArrayProxy> launchKernel)
         where T : unmanaged
     {
         var byteSize = sizeof(T);
@@ -27,7 +27,7 @@ public sealed class KernelBasicMathHandler : IGpuBasicMathProvider
                 workspace.Stream));
         }
 
-        launchKernel(resultBuf.DevicePointer);
+        launchKernel(resultBuf.ToProxy());
 
         // This wait also carries the correction status words (GpuCorrectionStatus).
         var status = workspace.CorrectionStatus?.BeginRead();
@@ -60,8 +60,8 @@ public sealed class KernelBasicMathHandler : IGpuBasicMathProvider
     {
         ScalarResultWidth.ThrowIfNarrower(leftOperand, resultBuffer);
         GpuBigIntScalarKernels.LaunchScalarAddKernelPtr(
-            leftOperand.DevicePointer, rightOperand, resultBuffer.DevicePointer, leftOperand.NumWords,
-            resultBuffer.NumWords, workspace.CorrectionStatusPointer,
+            leftOperand.ToProxy(), rightOperand, resultBuffer.ToProxy(), leftOperand.NumWords,
+            resultBuffer.NumWords, workspace.CorrectionStatusProxy,
             gridDimX: 1, blockDimX: ScalarResultWidth.BlockSize(leftOperand), hStream: workspace.Stream);
         workspace.CorrectionStatus?.MarkPending();
     }
@@ -73,8 +73,8 @@ public sealed class KernelBasicMathHandler : IGpuBasicMathProvider
     {
         ScalarResultWidth.ThrowIfNarrower(leftOperand, resultBuffer);
         GpuBigIntScalarKernels.LaunchScalarSubKernelPtr(
-            leftOperand.DevicePointer, rightOperand, resultBuffer.DevicePointer, leftOperand.NumWords,
-            resultBuffer.NumWords, workspace.CorrectionStatusPointer,
+            leftOperand.ToProxy(), rightOperand, resultBuffer.ToProxy(), leftOperand.NumWords,
+            resultBuffer.NumWords, workspace.CorrectionStatusProxy,
             gridDimX: 1, blockDimX: ScalarResultWidth.BlockSize(leftOperand), hStream: workspace.Stream);
         workspace.CorrectionStatus?.MarkPending();
     }
@@ -91,7 +91,7 @@ public sealed class KernelBasicMathHandler : IGpuBasicMathProvider
         return EvaluateKernelResult<uint>(workspace, 1, remPtr =>
         {
             GpuBigIntScalarKernels.LaunchScalarDivByUInt32KernelPtr(
-                dividend.DevicePointer, divisor, quotientBuffer.DevicePointer, remPtr, dividend.NumWords,
+                dividend.ToProxy(), divisor, quotientBuffer.ToProxy(), remPtr, dividend.NumWords,
                 gridDimX: 1, blockDimX: 32, hStream: workspace.Stream);
         });
     }
@@ -104,7 +104,7 @@ public sealed class KernelBasicMathHandler : IGpuBasicMathProvider
         var dims = KernelGraphHandler.CalculateGridDim(leftOperand.NumWords);
 
         GpuBigIntKernels.LaunchBitwiseOrKernelPtr(
-            leftOperand.DevicePointer, rightOperand.DevicePointer, resultBuffer.DevicePointer, leftOperand.NumWords,
+            leftOperand.ToProxy(), rightOperand.ToProxy(), resultBuffer.ToProxy(), leftOperand.NumWords,
             gridDimX: dims.GridSize, blockDimX: dims.BlockSize, hStream: workspace.Stream);
     }
 
@@ -116,7 +116,7 @@ public sealed class KernelBasicMathHandler : IGpuBasicMathProvider
         var dims = KernelGraphHandler.CalculateGridDim(leftOperand.NumWords);
 
         GpuBigIntKernels.LaunchBitwiseXorKernelPtr(
-            leftOperand.DevicePointer, rightOperand.DevicePointer, resultBuffer.DevicePointer, leftOperand.NumWords,
+            leftOperand.ToProxy(), rightOperand.ToProxy(), resultBuffer.ToProxy(), leftOperand.NumWords,
             gridDimX: dims.GridSize, blockDimX: dims.BlockSize, hStream: workspace.Stream);
     }
 
@@ -127,7 +127,7 @@ public sealed class KernelBasicMathHandler : IGpuBasicMathProvider
         var dims = KernelGraphHandler.CalculateGridDim(leftOperand.NumWords);
 
         GpuBigIntKernels.LaunchBitwiseNotKernelPtr(
-            leftOperand.DevicePointer, resultBuffer.DevicePointer, leftOperand.NumWords,
+            leftOperand.ToProxy(), resultBuffer.ToProxy(), leftOperand.NumWords,
             gridDimX: dims.GridSize, blockDimX: dims.BlockSize, hStream: workspace.Stream);
     }
 
@@ -139,7 +139,7 @@ public sealed class KernelBasicMathHandler : IGpuBasicMathProvider
         var res = EvaluateKernelResult<uint>(workspace, 1, resultPtr =>
         {
             GpuBigIntCmpKernels.LaunchIsZeroKernelPtr(
-                leftOperand.DevicePointer, resultPtr, leftOperand.NumWords,
+                leftOperand.ToProxy(), resultPtr, leftOperand.NumWords,
                 gridDimX: dims.GridSize, blockDimX: dims.BlockSize, hStream: workspace.Stream);
         });
         return res == 0;
@@ -153,7 +153,7 @@ public sealed class KernelBasicMathHandler : IGpuBasicMathProvider
         var res = EvaluateKernelResult<uint>(workspace, 1, resultPtr =>
         {
             GpuBigIntCmpKernels.LaunchIsOneKernelPtr(
-                leftOperand.DevicePointer, resultPtr, leftOperand.NumWords,
+                leftOperand.ToProxy(), resultPtr, leftOperand.NumWords,
                 gridDimX: dims.GridSize, blockDimX: dims.BlockSize, hStream: workspace.Stream);
         });
         return res == 0;
@@ -180,13 +180,14 @@ public sealed class KernelBasicMathHandler : IGpuBasicMathProvider
 
         try
         {
-            var leftPtr = leftPad?.DevicePointer ?? leftOperand.DevicePointer;
-            var rightPtr = rightPad?.DevicePointer ?? rightOperand.DevicePointer;
+            var left = (leftPad ?? leftOperand).ToProxy();
+            var right = (rightPad ?? rightOperand).ToProxy();
 
-            var val = EvaluateKernelResult<ulong>(workspace, 2, resultPtr =>
+            var val = EvaluateKernelResult<ulong>(workspace, 2, resultWords =>
             {
+                // The kernel writes one ulong into the two result words
                 GpuBigIntCmpKernels.LaunchCompareToKernelPtr(
-                    leftPtr, rightPtr, resultPtr, numWords,
+                    left, right, new GSharpArrayProxy(resultWords.Data, 1), numWords,
                     gridDimX: dims.GridSize, blockDimX: dims.BlockSize, hStream: workspace.Stream);
             });
 
@@ -213,7 +214,7 @@ public sealed class KernelBasicMathHandler : IGpuBasicMathProvider
         var res = EvaluateKernelResult<uint>(workspace, 1, resultPtr =>
         {
             GpuBigIntCmpKernels.LaunchGetBitLengthKernelPtr(
-                leftOperand.DevicePointer, resultPtr, leftOperand.NumWords,
+                leftOperand.ToProxy(), resultPtr, leftOperand.NumWords,
                 gridDimX: dims.GridSize, blockDimX: dims.BlockSize, hStream: workspace.Stream);
         });
         return (int)res;
@@ -228,10 +229,10 @@ public sealed class KernelBasicMathHandler : IGpuBasicMathProvider
         var res = EvaluateKernelResult<UInt128>(workspace, 4, resultPtr =>
         {
             GpuBigIntCmpKernels.LaunchGetBitLengthKernelPtr(
-                value.DevicePointer, resultPtr, value.NumWords,
+                value.ToProxy(), resultPtr, value.NumWords,
                 gridDimX: dims.GridSize, blockDimX: dims.BlockSize, hStream: workspace.Stream);
             GpuBigIntCmpKernels.LaunchLeadingBitsKernelPtr(
-                value.DevicePointer, resultPtr, value.NumWords,
+                value.ToProxy(), resultPtr, value.NumWords,
                 gridDimX: 1, blockDimX: 32, hStream: workspace.Stream);
         });
         bitLength = (int)(uint)res;
@@ -249,7 +250,7 @@ public sealed class KernelBasicMathHandler : IGpuBasicMathProvider
         blockSize = (blockSize + 31) / 32 * 32;
 
         GpuBigIntKernels.LaunchParallelAddKernelPtr(
-            leftOperand.DevicePointer, rightOperand.DevicePointer, resultBuffer.DevicePointer,
+            leftOperand.ToProxy(), rightOperand.ToProxy(), resultBuffer.ToProxy(),
             leftOperand.NumWords,
             gridDimX: 1, blockDimX: blockSize, hStream: workspace.Stream);
     }
@@ -265,7 +266,7 @@ public sealed class KernelBasicMathHandler : IGpuBasicMathProvider
         blockSize = (blockSize + 31) / 32 * 32;
 
         GpuBigIntKernels.LaunchParallelSubKernelPtr(
-            leftOperand.DevicePointer, rightOperand.DevicePointer, resultBuffer.DevicePointer,
+            leftOperand.ToProxy(), rightOperand.ToProxy(), resultBuffer.ToProxy(),
             leftOperand.NumWords,
             gridDimX: 1, blockDimX: blockSize, hStream: workspace.Stream);
     }
@@ -278,7 +279,7 @@ public sealed class KernelBasicMathHandler : IGpuBasicMathProvider
         var dims = KernelGraphHandler.CalculateGridDim(leftOperand.NumWords);
 
         GpuBigIntKernels.LaunchBitwiseAndKernelPtr(
-            leftOperand.DevicePointer, rightOperand.DevicePointer, resultBuffer.DevicePointer, leftOperand.NumWords,
+            leftOperand.ToProxy(), rightOperand.ToProxy(), resultBuffer.ToProxy(), leftOperand.NumWords,
             gridDimX: dims.GridSize, blockDimX: dims.BlockSize, hStream: workspace.Stream);
     }
 
@@ -292,7 +293,7 @@ public sealed class KernelBasicMathHandler : IGpuBasicMathProvider
         var dims = KernelGraphHandler.CalculateGridDim(leftOperand.NumWords);
 
         GpuBigIntKernels.LaunchShiftLeftKernelPtr(
-            leftOperand.DevicePointer, wordShift, bitShift, resultBuffer.DevicePointer, leftOperand.NumWords,
+            leftOperand.ToProxy(), wordShift, bitShift, resultBuffer.ToProxy(), leftOperand.NumWords,
             gridDimX: dims.GridSize, blockDimX: dims.BlockSize, hStream: workspace.Stream);
     }
 
@@ -306,7 +307,7 @@ public sealed class KernelBasicMathHandler : IGpuBasicMathProvider
         var dims = KernelGraphHandler.CalculateGridDim(leftOperand.NumWords);
 
         GpuBigIntKernels.LaunchShiftRightKernelPtr(
-            leftOperand.DevicePointer, wordShift, bitShift, resultBuffer.DevicePointer, leftOperand.NumWords,
+            leftOperand.ToProxy(), wordShift, bitShift, resultBuffer.ToProxy(), leftOperand.NumWords,
             gridDimX: dims.GridSize, blockDimX: dims.BlockSize, hStream: workspace.Stream);
     }
 

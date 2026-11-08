@@ -74,20 +74,20 @@ internal abstract class VectorBinaryScalarExpressionBase(
         {
             Left = new GpuBigIntVectorKernels.AotContexts.SignedVectorOperandReadOnly
             {
-                Limbs = operands.Vector.Values.DevicePointer,
-                Signs = operands.Vector.Signs.DevicePointer,
+                Limbs = operands.Vector.Values.ToProxy(),
+                Signs = operands.Vector.Signs.ToProxy(),
                 NumWords = vector.WordsPerElement
             },
             Right = new GpuBigIntVectorKernels.AotContexts.SignedVectorOperandReadOnly
             {
-                Limbs = operands.Scalar.Value.DevicePointer,
-                Signs = operands.Vector.Signs.DevicePointer,
+                Limbs = operands.Scalar.Value.ToProxy(),
+                Signs = operands.Vector.Signs.ToProxy(),
                 NumWords = operands.Scalar.Value.NumWords
             },
             Result = new GpuBigIntVectorKernels.AotContexts.SignedVectorOutput
             {
-                Limbs = operands.Destination.Values.DevicePointer,
-                Signs = operands.Destination.Signs.DevicePointer,
+                Limbs = operands.Destination.Values.ToProxy(),
+                Signs = operands.Destination.Signs.ToProxy(),
                 NumWords = WordsPerElement
             },
             ScalarSign = operands.Scalar.IsNegative ? 1u : 0u,
@@ -193,7 +193,7 @@ internal sealed class VectorDivScalarExpression(
             IsModulo = false
         };
         using var scratch = DivModScratch.Rent(workspace, ctx.Op, gridDimX);
-        ctx.Scratch = scratch?.DevicePointer ?? IntPtr.Zero;
+        ctx.Scratch = scratch?.ToProxy() ?? default;
         GpuBigIntVectorKernels.LaunchVectorDivScalarKernelPtr(
             ctx, gridDimX, 1, 1, 32, 1, 1, 0, workspace.Stream);
     }
@@ -220,7 +220,7 @@ internal sealed class VectorModScalarExpression(
             IsModulo = true
         };
         using var scratch = DivModScratch.Rent(workspace, ctx.Op, gridDimX);
-        ctx.Scratch = scratch?.DevicePointer ?? IntPtr.Zero;
+        ctx.Scratch = scratch?.ToProxy() ?? default;
         GpuBigIntVectorKernels.LaunchVectorModScalarKernelPtr(
             ctx, gridDimX, 1, 1, 32, 1, 1, 0, workspace.Stream);
     }

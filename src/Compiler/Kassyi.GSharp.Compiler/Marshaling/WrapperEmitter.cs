@@ -5,6 +5,7 @@ namespace Kassyi.GSharp.Compiler.Marshaling;
 /// <summary>Generates host-side C# wrapper classes that load and invoke GPU kernels.</summary>
 internal static class WrapperEmitter
 {
+    private const string NegativeLengthMessage = "The array length must not be negative.";
     private const string EmptyArrayMessage = "Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.";
 
     internal readonly struct InteropParameterInfo(
@@ -53,11 +54,18 @@ internal static class WrapperEmitter
 
     internal static InteropParameterInfo GetInteropParameterInfo(in KernelParameterShape shape, bool isDevicePtr)
     {
-        switch (isDevicePtr)
+        switch (isDevicePtr ? PointerLaunchPlan.Classify(shape) : PointerArgumentKind.Value)
         {
-            case true when shape.IsDevicePointer:
+            case PointerArgumentKind.Array or PointerArgumentKind.OptionalArray:
+                return new InteropParameterInfo(
+                    string.Empty,
+                    HostTypeNames.ArrayProxy,
+                    false,
+                    shape.HasExplicitDefault ? "default" : null
+                );
+            case PointerArgumentKind.Reference:
                 return new InteropParameterInfo(string.Empty, null, true, shape.HasExplicitDefault ? "default" : null);
-            case true when shape.IsCustomStruct:
+            case PointerArgumentKind.ShadowStruct:
                 return new InteropParameterInfo(string.Empty, shape.AotStructPath, false, shape.DefaultValueLiteral);
             default:
             {
@@ -417,6 +425,65 @@ internal static class WrapperEmitter
         using (writer.Scope())
         {
             writer.AppendLine($"throw new global::System.ArgumentException(\"{EmptyArrayMessage}\", nameof({name}));");
+        }
+    }
+
+    /// <summary>
+    /// Emits the checks of the <c>GSharpArrayProxy</c> arguments of the <c>Launch{Kernel}Ptr</c> launcher, with the
+    /// contract of <see cref="WriteArrayArgumentChecks"/>: a non-optional array must not be null or empty, and an empty
+    /// optional one is passed as null. A negative length is rejected for both.
+    /// </summary>
+    internal static void WritePointerArrayArgumentChecks(SourceWriter writer, in KernelHostModel kernel)
+    {
+        foreach (var shape in kernel.Parameters)
+        {
+            var kind = PointerLaunchPlan.Classify(shape);
+            if (!PointerLaunchPlan.IsProxy(kind))
+            {
+                continue;
+            }
+
+            var name = shape.Identifier;
+            writer.Append("if ");
+            using (writer.Parentheses())
+            {
+                writer.Append($"{name}.Length < 0");
+            }
+
+            using (writer.Scope())
+            {
+                writer.AppendLine(
+                    $"throw new global::System.ArgumentOutOfRangeException(nameof({name}), {name}.Length, \"{NegativeLengthMessage}\");");
+            }
+
+            if (kind == PointerArgumentKind.OptionalArray)
+            {
+                writer.Append("if ");
+                using (writer.Parentheses())
+                {
+                    writer.Append($"{name}.Data == {HostTypeNames.IntPtr}.Zero || {name}.Length == 0");
+                }
+
+                using (writer.Scope())
+                {
+                    writer.AppendLine($"{name} = default;");
+                }
+
+                continue;
+            }
+
+            writer.Append("if ");
+            using (writer.Parentheses())
+            {
+                writer.Append($"{name}.Data == {HostTypeNames.IntPtr}.Zero");
+            }
+
+            using (writer.Scope())
+            {
+                writer.AppendLine($"throw new global::System.ArgumentNullException(nameof({name}));");
+            }
+
+            WriteEmptyArrayCheck(writer, $"{name}.Length", name);
         }
     }
     private static void WriteErrorSiteTableField(SourceWriter writer, EquatableArray<ErrorSiteEntry> errorSites)

@@ -285,9 +285,9 @@ public static class GpuBigIntMath
         if (resultBuffer.NumWords <= 512 && !GpuKernelLoader.IsCpuFallbackMode)
         {
             GpuBigIntMulKernels.LaunchMultiplyNttKernelPtr(
-                resultBuffer.DevicePointer, resultBuffer.NumWords,
-                leftOperand.DevicePointer, leftOperand.NumWords,
-                rightOperand.DevicePointer, rightOperand.NumWords,
+                resultBuffer.ToProxy(), resultBuffer.NumWords,
+                leftOperand.ToProxy(), leftOperand.NumWords,
+                rightOperand.ToProxy(), rightOperand.NumWords,
                 gridDimX: 1, blockDimX: 256, hStream: leftOperand.Workspace.Stream);
             return;
         }
@@ -438,16 +438,16 @@ public static class GpuBigIntMath
                 using var tempCopy = workspace.RentTemp(source.NumWords);
                 workspace.Provider.CopyDeviceToDevice(tempCopy.DevicePointer, source.DevicePointer, source.NumWords, workspace.Stream);
                 GpuBigFloatKernels.LaunchFloatNormalizeKernelPtr(
-                    tempCopy.DevicePointer, source.NumWords,
-                    resultBuffer.DevicePointer, resultBuffer.NumWords,
+                    tempCopy.ToProxy(), source.NumWords,
+                    resultBuffer.ToProxy(), resultBuffer.NumWords,
                     wordShift, bitShift,
                     gridDimX: 1, blockDimX: blockDim, hStream: workspace.Stream);
             }
             else
             {
                 GpuBigFloatKernels.LaunchFloatNormalizeKernelPtr(
-                    source.DevicePointer, source.NumWords,
-                    resultBuffer.DevicePointer, resultBuffer.NumWords,
+                    source.ToProxy(), source.NumWords,
+                    resultBuffer.ToProxy(), resultBuffer.NumWords,
                     wordShift, bitShift,
                     gridDimX: 1, blockDimX: blockDim, hStream: workspace.Stream);
             }
