@@ -56,6 +56,13 @@ Some C# definitions cost time on the GPU: bounds checks and division-by-zero che
 
 - By default, G# follows C# and emits the check.
 - The compiler removes the check where it can prove the access is in range, as the .NET JIT does for loop indices.
+- The null check of an array read is removed where the array is declared non-nullable (`T[]` in a `#nullable enable`
+  context) and a boundary has checked it: the launcher rejects a `null` non-nullable kernel array argument, and a
+  `null` non-nullable array field that a by-value struct argument reaches through struct fields, with
+  `ArgumentNullException`; a call of a device function checks an argument that may be `null` once, at the call, for a
+  non-nullable array parameter (or a struct that holds one) and throws `NullReferenceException` there. This is the one
+  place where G# throws earlier than C#, which throws only when such a `null` is read. A nullable (`T[]?`) or
+  unannotated array keeps the check where it is read.
 - Removing the remaining checks for speed is explicit: you write a marker, in the same way `[SkipLocalsInit]` turns off zero-initialization in C#.
 
 ## 6.5 The CPU paths

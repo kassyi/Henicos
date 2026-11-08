@@ -196,7 +196,7 @@ internal static class KernelLaunchEmitter
                 writer.AppendLine($"{IntPtrType}* {proxy} = stackalloc {IntPtrType}[2];");
                 writer.AppendLine($"{proxy}[0] = {shape.Identifier};");
                 writer.AppendLine($"((int*)({proxy} + 1))[0] = 0; // Length is unknown for raw IntPtr");
-                // The caller's pointer may be IntPtr.Zero for any array: a non-optional one then reads as null (#706)
+                // IntPtr.Zero reaches here only for an optional array (WritePointerArgumentChecks), which reads as empty
                 WriteNullReadsAsEmptyFlag(writer, shape, $"{shape.Identifier} == {IntPtrType}.Zero");
                 writer.AppendLine($"{KernelParams}[{paramIndex}] = {proxy};");
             }

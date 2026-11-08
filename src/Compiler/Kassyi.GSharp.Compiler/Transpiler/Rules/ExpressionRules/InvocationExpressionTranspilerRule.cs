@@ -84,14 +84,38 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
         var convertArguments = context.Emitter.Dialect.TryMapIntrinsic(symbol, out _) &&
                                !symbol.HasAttribute(KnownAttributes.CudaIntrinsic) &&
                                symbol.ContainingType?.HasAttribute(KnownAttributes.CudaIntrinsicPattern) != true;
+        var checks = PlanArgumentChecks(symbol, node.ArgumentList.Arguments, ref context);
         using var sequence = EvaluationOrder.BeginCall(ref context, node.ArgumentList.Arguments, symbol,
             GetReceiver(node, symbol), spillAll: false);
         context.Visitor.Visit(node.Expression);
         using (context.Emitter.Writer.Parentheses())
         {
-            TranspileArguments(symbol, node.ArgumentList.Arguments, in sequence, ref context, convertArguments);
+            TranspileArguments(symbol, node.ArgumentList.Arguments, in sequence, ref context, convertArguments, checks);
             DynamicSharedMemoryEmitter.AppendTableArgument(node, symbol, ref context);
         }
+    }
+
+    // The check of each argument of a call of a device function that the parameter's nullable annotation asks for
+    // (#1409): the callee reads a non-nullable array parameter without a check, so the caller checks what it has not
+    // proven. Empty for any other callee
+    private static ImmutableArray<ArgumentCheck> PlanArgumentChecks(IMethodSymbol callee,
+        SeparatedSyntaxList<ArgumentSyntax> arguments, ref TranspileContext context)
+    {
+        if (!CppNameResolver.IsEmittedDeviceFunction(callee, context.Emitter.Dialect) || callee.IsExtensionMethod ||
+            !NonNullProof.ChecksArguments(callee))
+        {
+            return ImmutableArray<ArgumentCheck>.Empty;
+        }
+
+        var checks = ImmutableArray.CreateBuilder<ArgumentCheck>(arguments.Count);
+        for (var j = 0; j < arguments.Count; j++)
+        {
+            checks.Add(callee.FindParameter(arguments, j) is { } parameter
+                ? ArrayNullCheck.PlanArgument(arguments[j].Expression, parameter, ref context)
+                : ArgumentCheck.None);
+        }
+
+        return checks.MoveToImmutable();
     }
 
     // <function>(<receiver>, <arguments>): the reduced call x.M(a) of a [GpuDeviceFunction] extension method is the
@@ -152,11 +176,12 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
         }
 
         StructOrdering.RegisterUsedStructIfApplicable(callee.ReturnType, ref context);
+        var checks = PlanArgumentChecks(callee, call.ArgumentList.Arguments, ref context);
         context.Visitor.Visit(call.Expression);
         using (context.Emitter.Writer.Parentheses())
         {
             // Lowering has evaluated the arguments into temporaries already (WarpInstructionRewriter.SpillArguments)
-            TranspileArguments(callee, call.ArgumentList.Arguments, default, ref context);
+            TranspileArguments(callee, call.ArgumentList.Arguments, default, ref context, checks: checks);
             if (callee.Parameters.Length > 0)
             {
                 context.Emitter.Writer.Append(',');
@@ -209,7 +234,8 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
         SeparatedSyntaxList<ArgumentSyntax> arguments,
         in EvaluationOrder.CallSequence sequence,
         ref TranspileContext context,
-        bool convertArguments = false)
+        bool convertArguments = false,
+        ImmutableArray<ArgumentCheck> checks = default)
     {
         var parameters = callee.Parameters;
         for (var i = 0; i < parameters.Length; i++)
@@ -225,8 +251,22 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
 
                 context.Emitter.Writer.AppendIf(hasArgument, ",");
                 // The argument itself, or the temporary it was evaluated into (an in or ref readonly parameter by
-                // address)
-                sequence.AppendArgument(arguments[j], parameter, ref context, convertArguments);
+                // address), checked when the parameter's annotation asks for it
+                var check = checks.IsDefaultOrEmpty ? ArgumentCheck.None : checks[j];
+                if (check.Kind == ArgumentCheckKind.None)
+                {
+                    sequence.AppendArgument(arguments[j], parameter, ref context, convertArguments);
+                }
+                else
+                {
+                    context.Emitter.Writer.Append(ArrayNullCheck.GetArgumentCheckHelper(check));
+                    using (context.Emitter.Writer.Parentheses())
+                    {
+                        sequence.AppendArgument(arguments[j], parameter, ref context, convertArguments);
+                        ArrayNullCheck.AppendArgumentCheckTail(check, ref context);
+                    }
+                }
+
                 hasArgument = true;
             }
 

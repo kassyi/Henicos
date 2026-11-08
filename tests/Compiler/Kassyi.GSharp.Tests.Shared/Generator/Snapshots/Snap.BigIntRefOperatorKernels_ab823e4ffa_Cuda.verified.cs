@@ -107,14 +107,14 @@ auto __gsharp_id_7_srcIdx0 = __gsharp_sub_i32(__gsharp_id_6_i,__gsharp_id_4_word
 auto __gsharp_id_8_srcIdx1 = __gsharp_sub_i32(__gsharp_id_7_srcIdx0,1);
 auto __gsharp_id_9_safeIdx0 = (__gsharp_id_7_srcIdx0<0?0:((__gsharp_id_7_srcIdx0>=(*__gsharp_id_0_ctx).__gsharp_mb_NumberOfWords?__gsharp_sub_i32((*__gsharp_id_0_ctx).__gsharp_mb_NumberOfWords,1):__gsharp_id_7_srcIdx0)));
 auto __gsharp_id_10_safeIdx1 = (__gsharp_id_8_srcIdx1<0?0:((__gsharp_id_8_srcIdx1>=(*__gsharp_id_0_ctx).__gsharp_mb_NumberOfWords?__gsharp_sub_i32((*__gsharp_id_0_ctx).__gsharp_mb_NumberOfWords,1):__gsharp_id_8_srcIdx1)));
-auto __gsharp_id_11_w0 = __gsharp_array_at(__gsharp_id_2_left, __gsharp_id_9_safeIdx0, ""G#: a null array is read at GpuBigIntKernels.cu.cs(435,22)"");
-auto __gsharp_id_12_w1 = __gsharp_array_at(__gsharp_id_2_left, __gsharp_id_10_safeIdx1, ""G#: a null array is read at GpuBigIntKernels.cu.cs(436,22)"");
+auto __gsharp_id_11_w0 = __gsharp_id_2_left[__gsharp_id_9_safeIdx0];
+auto __gsharp_id_12_w1 = __gsharp_id_2_left[__gsharp_id_10_safeIdx1];
 auto __gsharp_id_13_mask0 = (__gsharp_id_7_srcIdx0>=0&&__gsharp_id_7_srcIdx0<(*__gsharp_id_0_ctx).__gsharp_mb_NumberOfWords?0xFFFFFFFFu:0u);
 auto __gsharp_id_14_mask1 = (__gsharp_id_8_srcIdx1>=0&&__gsharp_id_8_srcIdx1<(*__gsharp_id_0_ctx).__gsharp_mb_NumberOfWords?0xFFFFFFFFu:0u);
 __gsharp_id_11_w0&=__gsharp_id_13_mask0;
 __gsharp_id_12_w1&=__gsharp_id_14_mask1;
 auto __gsharp_id_15_shiftMask = (__gsharp_id_5_bitShift==0?0u:0xFFFFFFFFu);
-__gsharp_array_at(__gsharp_id_1_result, __gsharp_id_6_i, ""G#: a null array is read at GpuBigIntKernels.cu.cs(445,13)"")=(__gsharp_id_11_w0<<(__gsharp_id_5_bitShift&31))|((__gsharp_id_12_w1>>(__gsharp_sub_i32(32,__gsharp_id_5_bitShift)&31))&__gsharp_id_15_shiftMask);
+__gsharp_id_1_result[__gsharp_id_6_i]=(__gsharp_id_11_w0<<(__gsharp_id_5_bitShift&31))|((__gsharp_id_12_w1>>(__gsharp_sub_i32(32,__gsharp_id_5_bitShift)&31))&__gsharp_id_15_shiftMask);
 }
 }
 
@@ -127,14 +127,14 @@ auto __gsharp_id_7_srcIdx0 = __gsharp_add_i32(__gsharp_id_6_i,__gsharp_id_4_word
 auto __gsharp_id_8_srcIdx1 = __gsharp_add_i32(__gsharp_id_7_srcIdx0,1);
 auto __gsharp_id_9_safeIdx0 = (__gsharp_id_7_srcIdx0<0?0:((__gsharp_id_7_srcIdx0>=(*__gsharp_id_0_ctx).__gsharp_mb_NumberOfWords?__gsharp_sub_i32((*__gsharp_id_0_ctx).__gsharp_mb_NumberOfWords,1):__gsharp_id_7_srcIdx0)));
 auto __gsharp_id_10_safeIdx1 = (__gsharp_id_8_srcIdx1<0?0:((__gsharp_id_8_srcIdx1>=(*__gsharp_id_0_ctx).__gsharp_mb_NumberOfWords?__gsharp_sub_i32((*__gsharp_id_0_ctx).__gsharp_mb_NumberOfWords,1):__gsharp_id_8_srcIdx1)));
-auto __gsharp_id_11_w0 = __gsharp_array_at(__gsharp_id_2_left, __gsharp_id_9_safeIdx0, ""G#: a null array is read at GpuBigIntKernels.cu.cs(462,22)"");
-auto __gsharp_id_12_w1 = __gsharp_array_at(__gsharp_id_2_left, __gsharp_id_10_safeIdx1, ""G#: a null array is read at GpuBigIntKernels.cu.cs(463,22)"");
+auto __gsharp_id_11_w0 = __gsharp_id_2_left[__gsharp_id_9_safeIdx0];
+auto __gsharp_id_12_w1 = __gsharp_id_2_left[__gsharp_id_10_safeIdx1];
 auto __gsharp_id_13_mask0 = (__gsharp_id_7_srcIdx0>=0&&__gsharp_id_7_srcIdx0<(*__gsharp_id_0_ctx).__gsharp_mb_NumberOfWords?0xFFFFFFFFu:0u);
 auto __gsharp_id_14_mask1 = (__gsharp_id_8_srcIdx1>=0&&__gsharp_id_8_srcIdx1<(*__gsharp_id_0_ctx).__gsharp_mb_NumberOfWords?0xFFFFFFFFu:0u);
 __gsharp_id_11_w0&=__gsharp_id_13_mask0;
 __gsharp_id_12_w1&=__gsharp_id_14_mask1;
 auto __gsharp_id_15_shiftMask = (__gsharp_id_5_bitShift==0?0u:0xFFFFFFFFu);
-__gsharp_array_at(__gsharp_id_1_result, __gsharp_id_6_i, ""G#: a null array is read at GpuBigIntKernels.cu.cs(472,13)"")=(__gsharp_id_11_w0>>(__gsharp_id_5_bitShift&31))|((__gsharp_id_12_w1<<(__gsharp_sub_i32(32,__gsharp_id_5_bitShift)&31))&__gsharp_id_15_shiftMask);
+__gsharp_id_1_result[__gsharp_id_6_i]=(__gsharp_id_11_w0>>(__gsharp_id_5_bitShift&31))|((__gsharp_id_12_w1<<(__gsharp_sub_i32(32,__gsharp_id_5_bitShift)&31))&__gsharp_id_15_shiftMask);
 }
 }
 
@@ -389,6 +389,15 @@ if (__gsharp_d_2 != global::System.IntPtr.Zero && __gsharp_d_2 != __gsharp_d_0 &
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchShiftKernelPtr(global::System.IntPtr input, global::System.IntPtr shiftedLeft, global::System.IntPtr shiftedRight, global::System.Int32 numberOfWords, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (input == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(input));
+}
+if (shiftedLeft == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(shiftedLeft));
+}
+if (shiftedRight == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(shiftedRight));
+}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "BigIntRefOperatorKernels.ShiftKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {

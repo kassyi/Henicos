@@ -6,15 +6,15 @@ namespace Kassyi.GSharp.Tests.Shared.Core;
 /// <summary>A struct with an array field that a caller may leave null or set to an empty array.</summary>
 public struct NullArrayHolder
 {
-    public int[] Data;
+    public int[]? Data;
     public int X;
 }
 
 /// <summary>Two array fields, for the interplay with one device region per host array (#707).</summary>
 public struct NullArrayPair
 {
-    public int[] A;
-    public int[] B;
+    public int[]? A;
+    public int[]? B;
 }
 
 public static partial class NullArrayFieldKernels
@@ -120,7 +120,7 @@ public static partial class NullArrayFieldKernels
     }
 
     [GpuDeviceFunction]
-    private static int Len(int[] a) => a.Length;
+    private static int Len(int[]? a) => a.Length;
 
     // A foreach that holds a barrier is lowered to a for loop over a copy of the source; the check moves with it
     [GpuKernel]
