@@ -152,6 +152,17 @@ public static partial class StackLinqExtensions
             throw new InvalidOperationException("Sequence contains no elements");
         }
 
+        // As System.Linq: NaN is skipped, and is the result only when every element is NaN
+        while (float.IsNaN(max))
+        {
+            if (!enumerator.TryGetNext(out var next))
+            {
+                return max;
+            }
+
+            max = next;
+        }
+
         while (enumerator.TryGetNext(out var value))
         {
             if (value > max)
@@ -178,11 +189,21 @@ public static partial class StackLinqExtensions
             throw new InvalidOperationException("Sequence contains no elements");
         }
 
+        // As System.Linq: the first NaN is the result, and the elements after it are not read
+        if (float.IsNaN(min))
+        {
+            return min;
+        }
+
         while (enumerator.TryGetNext(out var value))
         {
             if (value < min)
             {
                 min = value;
+            }
+            else if (float.IsNaN(value))
+            {
+                return value;
             }
         }
         return min;
@@ -230,6 +251,17 @@ public static partial class StackLinqExtensions
             throw new InvalidOperationException("Sequence contains no elements");
         }
 
+        // As System.Linq: NaN is skipped, and is the result only when every element is NaN
+        while (double.IsNaN(max))
+        {
+            if (!enumerator.TryGetNext(out var next))
+            {
+                return max;
+            }
+
+            max = next;
+        }
+
         while (enumerator.TryGetNext(out var value))
         {
             if (value > max)
@@ -256,11 +288,21 @@ public static partial class StackLinqExtensions
             throw new InvalidOperationException("Sequence contains no elements");
         }
 
+        // As System.Linq: the first NaN is the result, and the elements after it are not read
+        if (double.IsNaN(min))
+        {
+            return min;
+        }
+
         while (enumerator.TryGetNext(out var value))
         {
             if (value < min)
             {
                 min = value;
+            }
+            else if (double.IsNaN(value))
+            {
+                return value;
             }
         }
         return min;
