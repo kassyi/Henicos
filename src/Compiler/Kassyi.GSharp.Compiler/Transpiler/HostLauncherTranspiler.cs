@@ -190,7 +190,7 @@ internal static class HostLauncherTranspiler
             context.Emitter.Writer.Append(", ");
             if (i < structArguments.Length && structArguments[i] is { } structType)
             {
-                StructTranspiler.RegisterUsedStructIfApplicable(structType, ref context);
+                StructOrdering.RegisterUsedStructIfApplicable(structType, ref context);
                 context.Emitter.Writer.Append("const ");
                 context.Emitter.Dialect.AppendType(ref context, structType);
                 context.Emitter.Writer.Append($"* {StructArgumentPrefix}{i}");

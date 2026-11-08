@@ -8,10 +8,10 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Helpers;
 /// [WHY] A declaration that a goto jumps past is split into <c>&lt;type&gt; &lt;name&gt;;</c> and an assignment (#768). C++
 /// allows a jump past <c>&lt;type&gt; &lt;name&gt;;</c> only when that default initialization does nothing (a scalar or a
 /// trivial struct, [stmt.dcl]). A struct with an array field holds a <c>GSharpArray&lt;T&gt;</c>, and a struct with an
-/// implicit conversion operator gets <c>T() {}</c> (StructTranspiler): both have a default constructor, so g++ and clang
-/// reject the jump (MSVC accepts it). Such a local is declared before the first statement of its list, where no goto of
-/// the list jumps past it, and its declaration becomes an assignment. C# makes sure that it is assigned before it is read,
-/// so the earlier default construction is not observable.
+/// implicit conversion operator gets <c>T() {}</c> (StructConversionEmitter): both have a default constructor, so g++
+/// and clang reject the jump (MSVC accepts it). Such a local is declared before the first statement of its list, where
+/// no goto of the list jumps past it, and its declaration becomes an assignment. C# makes sure that it is assigned
+/// before it is read, so the earlier default construction is not observable.
 /// </remarks>
 internal static class JumpedOverDeclarations
 {

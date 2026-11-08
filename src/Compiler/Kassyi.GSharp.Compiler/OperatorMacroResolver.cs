@@ -1,202 +1,48 @@
 using Microsoft.CodeAnalysis.Operations;
-using static Kassyi.GSharp.Compiler.OperatorMacroContext;
 using static Kassyi.GSharp.Compiler.OperatorMacroOverloadResolver;
+using static Kassyi.GSharp.Compiler.OperatorMacroSyntax;
 
 namespace Kassyi.GSharp.Compiler;
 
 /// <summary>
-/// Resolves a <c>[GpuOperatorMacro]</c> operator: the target it maps to, where it is expanded, whether its target can
-/// receive the result, and what evaluating its operands reads and writes. The analyzers, the C++ emitter
-/// (<see cref="Transpiler.Rules.MacroRules.GpuOperatorMacroTranspiler"/>) and the managed expansion
-/// (<see cref="Transpiler.ManagedOperatorMacroExpander"/>) read the same answer. The overload of the target is chosen by
-/// <see cref="OperatorMacroOverloadResolver"/>, the context variable found by <see cref="OperatorMacroContext"/>.
+/// Resolves a <c>[GpuOperatorMacro]</c> operator: the target it maps to and the operator macros among its operands.
+/// The analyzers, the C++ emitter (<see cref="Transpiler.Rules.MacroRules.GpuOperatorMacroTranspiler"/>) and the
+/// managed expansion (<see cref="Transpiler.ManagedOperatorMacroExpander"/>) read the same answer. The overload of the
+/// target is chosen by <see cref="OperatorMacroOverloadResolver"/>, the context variable found by
+/// <see cref="OperatorMacroContext"/>; how the target is called is planned by <see cref="OperatorMacroCallPlanner"/>,
+/// where the operator may be written is checked by <see cref="OperatorMacroPosition"/>, and whether its target and
+/// context are assigned by <see cref="OperatorMacroAssignment"/>.
 /// </summary>
 internal static class OperatorMacroResolver
 {
     /// <summary>
-    /// The call of an operator macro's target: the target, its context variable, and each operand (the result first) with
-    /// the parameter it passes to.
-    /// </summary>
-    internal readonly struct MacroCall(IMethodSymbol target, ISymbol? contextVariable, ExpressionSyntax?[] operands,
-        IParameterSymbol?[] parameters)
-    {
-        public IMethodSymbol Target { get; } = target;
-
-        public ISymbol? ContextVariable { get; } = contextVariable;
-
-        // [result, left, right, extra]: the result is null when it is the temporary of an inner operator macro
-        public ExpressionSyntax?[] Operands { get; } = operands;
-
-        public IParameterSymbol?[] Parameters { get; } = parameters;
-    }
-
-    /// <summary>
-    /// The call of the target of <paramref name="macro"/> with <paramref name="result"/> as its result (<see langword="null"/>:
-    /// the temporary of an inner operator macro), or <paramref name="failure"/> (the message argument of GSH0003) when the
-    /// context variable cannot be found.
-    /// </summary>
-    public static bool TryPrepareCall(ExpressionSyntax? result, OperatorMacro macro,
-        AssignmentExpressionSyntax assignment, SemanticModel model, out MacroCall call, out string? failure)
-    {
-        call = default;
-        failure = null;
-        if (macro.TargetMethod is not { } target)
-        {
-            return false;
-        }
-
-        ISymbol? contextVariable = null;
-        if (macro.HasContext && !TryFindContextVariable(assignment, target, model, out contextVariable, out failure))
-        {
-            return false;
-        }
-
-        var (left, right, extra) = ExtractOperands(macro.OperatorCall);
-        ExpressionSyntax?[] operands = [result, left, right, extra];
-        call = new MacroCall(target, contextVariable, operands,
-            MapParameters(operands, target, contextVariable != null ? 1 : 0));
-        return true;
-    }
-
-    // The parameter each operand passes to (null: the operator has no such operand). Slot 0 is the result, which takes
-    // its parameter also when it is a temporary
-    private static IParameterSymbol?[] MapParameters(ExpressionSyntax?[] operands, IMethodSymbol target, int first)
-    {
-        var parameters = new IParameterSymbol?[operands.Length];
-        parameters[0] = target.Parameters[first];
-        var index = first + 1;
-        for (var i = 1; i < operands.Length; i++)
-        {
-            parameters[i] = operands[i] != null ? target.Parameters[index++] : null;
-        }
-
-        return parameters;
-    }
-
-    /// <summary>
-    /// What evaluating each operand of <paramref name="call"/> reads and writes, in the C# order (result, left, right,
-    /// extra): an operator macro among them as its operands and calls, an operand passed by reference as its location, any
-    /// other as its value.
-    /// </summary>
-    internal static ExpressionEffects[] GetOperandEffects(in MacroCall call, OperatorMacro macro,
-        AssignmentExpressionSyntax assignment, SemanticModel model)
-    {
-        var effects = new ExpressionEffects[call.Operands.Length];
-        for (var i = 0; i < effects.Length; i++)
-        {
-            if (call.Operands[i] is not { } operand || call.Parameters[i] is not { } parameter)
-            {
-                continue;
-            }
-
-            effects[i] = macro.TryGetNested(operand, out var inner) ? GetNestedEffects(inner, assignment, model)
-                : IsPassedByReference(parameter) ? ExpressionEffects.OfLocation(operand, model)
-                : ExpressionEffects.Of(operand, model);
-        }
-
-        return effects;
-    }
-
-    /// <summary>
-    /// How a <c>&amp;&amp;</c> or <c>||</c> over an operator macro (<paramref name="macro"/>, with its
-    /// <see cref="OperatorMacro.Test"/>) is expanded: <c>x &amp;&amp; y</c> is <c>T.false(x) ? x : T.&amp;(x, y)</c>
-    /// and <c>x || y</c> is <c>T.true(x) ? x : T.|(x, y)</c> (C# spec §12.14.3), so the left operand is evaluated once
-    /// into a temporary, tested, and either assigned to the result or passed to the target, whose call (with the right
-    /// operand) runs only when the test fails.
-    /// </summary>
-    /// <remarks>
-    /// C# evaluates the target of the assignment before the left operand. The target is evaluated into a reference
-    /// first when it interferes with an operand (<paramref name="effects"/>, from <see cref="GetOperandEffects"/>): the
-    /// left one is evaluated before the target is used, and C++ leaves the order of the call's arguments open.
-    /// </remarks>
-    internal static ConditionalPlan PlanConditional(in MacroCall call, OperatorMacro macro, ExpressionEffects[] effects)
-    {
-        var test = macro.Test ?? throw new InvalidOperationException("The operator macro is not a && or ||.");
-        var spillsTarget = call.Operands[0] != null && !effects[0].IsEmpty &&
-                           (effects[0].InterferesWith(effects[1]) || effects[0].InterferesWith(effects[2]));
-        return new ConditionalPlan(test, IsPassedByReference(test.Parameters[0]), spillsTarget);
-    }
-
-    /// <summary>
-    /// The expansion of a <c>&amp;&amp;</c> or <c>||</c> over an operator macro (<see cref="PlanConditional"/>).
-    /// </summary>
-    internal readonly struct ConditionalPlan(IMethodSymbol test, bool passesTestByReference, bool spillsTarget)
-    {
-        /// <summary>The <c>operator false</c> or <c>operator true</c> that tests the left operand.</summary>
-        public IMethodSymbol Test { get; } = test;
-
-        /// <summary>Whether the test takes the left operand by reference (<c>in</c>).</summary>
-        public bool PassesTestByReference { get; } = passesTestByReference;
-
-        /// <summary>Whether the target is evaluated into a reference before the left operand.</summary>
-        public bool SpillsTarget { get; } = spillsTarget;
-    }
-
-    // What computing <inner> reads and writes: its operands, and the calls of its target and of the operator macros nested
-    // in it (ExpressionEffects.OfCall, with the context variable passed by reference)
-    private static ExpressionEffects GetNestedEffects(OperatorMacro inner, AssignmentExpressionSyntax assignment,
-        SemanticModel model) =>
-        AddCallEffects(inner, assignment, model, ExpressionEffects.Of(inner.OperatorCall, model));
-
-    private static ExpressionEffects AddCallEffects(OperatorMacro macro, AssignmentExpressionSyntax assignment,
-        SemanticModel model, ExpressionEffects effects)
-    {
-        if (macro.TargetMethod is { } target)
-        {
-            ISymbol? contextVariable = null;
-            if (macro.HasContext)
-            {
-                TryFindContextVariable(assignment, target, model, out contextVariable, out _);
-            }
-
-            effects = effects.Union(ExpressionEffects.OfCall(target, contextVariable, model));
-        }
-
-        if (macro.Test is { } test)
-        {
-            effects = effects.Union(ExpressionEffects.OfCall(test, null, model));
-        }
-
-        if (macro.Nested.IsDefaultOrEmpty)
-        {
-            return effects;
-        }
-
-        foreach (var nested in macro.Nested)
-        {
-            effects = AddCallEffects(nested.Inner, assignment, model, effects);
-        }
-
-        return effects;
-    }
-
-    /// <summary>
-    /// The <c>[GpuOperatorMacro]</c> operator that the right side of <paramref name="assignment"/> calls, and the overload
-    /// of its target that the call maps to. The analyzer reports a target that cannot be resolved (GSH0003) from the same
-    /// answer, and so are the forms an operator macro does not expand: a compound assignment whose operator or right
-    /// side is an operator macro, an increment or decrement, and a lifted (nullable) operator.
+    /// The <c>[GpuOperatorMacro]</c> operator that the right side of <paramref name="assignment"/> calls, and the
+    /// overload of its target that the call maps to. The analyzer reports a target that cannot be resolved (GSH0003)
+    /// from the same answer, and so are the forms an operator macro does not expand: a compound assignment whose
+    /// operator or right side is an operator macro, an increment or decrement, and a lifted (nullable) operator.
     /// </summary>
     /// <remarks>
     /// <para>
     /// The overload is chosen as C# overload resolution would choose it for a call with the operator's types (C# spec
-    /// §12.6.4, Roslyn <c>OverloadResolution</c>), not by declaration order (#478): the result is the operator's return
-    /// type and the operands are its parameter types. A candidate is a static, non-generic <c>[GpuDeviceFunction]</c>
-    /// method of that name that takes the result and the operands, optionally after a context of a value type. A value
-    /// parameter takes an implicit conversion; a <c>ref</c>, <c>out</c>, <c>in</c> or <c>ref readonly</c> parameter
-    /// takes only its own type, and only the result may be <c>ref</c> or <c>out</c>. Of the candidates that apply, the
-    /// one that is a better function member than every other one is chosen (§12.6.4.3): no argument converts better to
-    /// the other one, and at least one converts better to it. A conversion is better when the argument's type is the
-    /// parameter type and the other parameter type is not, otherwise when its parameter type is the better conversion
-    /// target (§12.6.4.7: it converts implicitly to the other type and not back, or it is signed and the other unsigned).
-    /// When the parameter types are the same, a value parameter is better than an <c>in</c> or <c>ref readonly</c> one.
-    /// Without a better one, the call is ambiguous.
+    /// §12.6.4, Roslyn <c>OverloadResolution</c>), not by declaration order (#478): the result is the operator's
+    /// return type and the operands are its parameter types. A candidate is a static, non-generic
+    /// <c>[GpuDeviceFunction]</c> method of that name that takes the result and the operands, optionally after a
+    /// context of a value type. A value parameter takes an implicit conversion; a <c>ref</c>, <c>out</c>, <c>in</c> or
+    /// <c>ref readonly</c> parameter takes only its own type, and only the result may be <c>ref</c> or <c>out</c>. Of
+    /// the candidates that apply, the one that is a better function member than every other one is chosen
+    /// (§12.6.4.3): no argument converts better to the other one, and at least one converts better to it. A conversion
+    /// is better when the argument's type is the parameter type and the other parameter type is not, otherwise when its
+    /// parameter type is the better conversion target (§12.6.4.7: it converts implicitly to the other type and not
+    /// back, or it is signed and the other unsigned). When the parameter types are the same, a value parameter is
+    /// better than an <c>in</c> or <c>ref readonly</c> one. Without a better one, the call is ambiguous.
     /// </para>
     /// <para>
     /// [WHY] Whether a context is in scope does not take part in the choice: a local added to a kernel would otherwise
     /// change the function an operator calls. Two overloads that differ only by the context are ambiguous.
     /// </para>
     /// </remarks>
-    public static bool TryResolve(AssignmentExpressionSyntax assignment, SemanticModel semanticModel, out OperatorMacro macro)
+    public static bool TryResolve(AssignmentExpressionSyntax assignment, SemanticModel semanticModel,
+        out OperatorMacro macro)
     {
         macro = default;
         var operatorCall = UnwrapExpression(assignment.Right, semanticModel);
@@ -204,14 +50,13 @@ internal static class OperatorMacroResolver
         if (!assignment.IsKind(SyntaxKind.SimpleAssignmentExpression))
         {
             // c += a + b would become Add(c, a, b), which computes c = a + b; c += a has no call to become
-            if (GetMacroAttribute(operatorMethod) == null &&
-                GetMacroAttribute((semanticModel.GetSafeOperation(assignment) as ICompoundAssignmentOperation)?.OperatorMethod) == null)
+            var compound = semanticModel.GetSafeOperation(assignment) as ICompoundAssignmentOperation;
+            if (GetMacroAttribute(operatorMethod) == null && GetMacroAttribute(compound?.OperatorMethod) == null)
             {
                 return false;
             }
 
-            macro = new OperatorMacro(operatorCall, null, false,
-                $"The compound assignment '{assignment.OperatorToken.Text}' does not expand operator macros: give each operator macro a simple assignment of its own, as in 't = a + b; c = c + t;'");
+            macro = Failed(operatorCall, OperatorMacroMessages.CompoundAssignment(assignment.OperatorToken.Text));
             return true;
         }
 
@@ -222,150 +67,31 @@ internal static class OperatorMacroResolver
 
         macro = ResolveCall(operatorCall, operatorMethod, macroAttr, isLifted, isIncrementOrDecrement, test,
             semanticModel);
-        if (macro.TargetMethod is not { } method)
+        if (macro.TargetMethod is { } method &&
+            GetTargetFailure(assignment, macro, method, semanticModel) is { } failure)
         {
-            return true;
-        }
-
-        var resultParameter = method.Parameters[macro.HasContext ? 1 : 0];
-        if (!AcceptsTarget(assignment.Left, resultParameter, semanticModel))
-        {
-            var name = semanticModel.GetSymbol(assignment.Left) is { } symbol ? $"'{symbol.Name}' " : string.Empty;
-            macro = new OperatorMacro(operatorCall, null, false,
-                $"The target {name}of operator macro '{macro.TargetName}' does not convert to '{FormatType(resultParameter.Type)}' of parameter '{resultParameter.Name}'");
-        }
-        else if (IsPropertyWithoutStorage(assignment.Left, resultParameter, semanticModel))
-        {
-            macro = new OperatorMacro(operatorCall, null, false,
-                $"The target '{assignment.Left}' of operator macro '{macro.TargetName}' is a property without storage: the target writes the result through its '{FormatRefKind(resultParameter.RefKind).TrimEnd()}' parameter '{resultParameter.Name}', which would reach a copy and never the setter; compute into a variable first and assign it, as in 't = a + b; {assignment.Left} = t;'");
+            macro = Failed(operatorCall, failure);
         }
 
         return true;
     }
 
-    /// <summary>
-    /// Why the target of <paramref name="assignment"/> (the user's tree, an operator macro <paramref name="macro"/> with a
-    /// target) cannot receive the result, or <see langword="null"/> when it can: a local or <c>out</c> parameter, or a
-    /// field of a struct one, that is not definitely assigned before the assignment, when the target method takes the
-    /// result as a value, <c>ref</c> or <c>in</c> parameter.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// [WHY] The expansion passes the target to the target method, which writes the result into the storage the target
-    /// holds; it does not assign the target. An unassigned target has no storage: the C++ code reads an uninitialized
-    /// value, and the managed expansion does not compile (CS0165, CS0170, CS0269). A target method that takes the result
-    /// as <c>out</c> assigns it, so any target can receive it.
-    /// </para>
-    /// <para>
-    /// Only what is certain is reported (semantics charter §3): a variable captured from outside the enclosing lambda or
-    /// local function is assigned wherever the caller assigned it, which this body's data flow does not see.
-    /// </para>
-    /// </remarks>
-    public static string? GetUnassignedTargetFailure(AssignmentExpressionSyntax assignment, OperatorMacro macro,
-        SemanticModel semanticModel)
+    // Why the target of <assignment> cannot receive the result of <macro> (whose target is <method>), or null: it does
+    // not pass to the result parameter, or it is a property that a by-reference result would never reach
+    private static string? GetTargetFailure(AssignmentExpressionSyntax assignment, OperatorMacro macro,
+        IMethodSymbol method, SemanticModel semanticModel)
     {
-        if (macro.TargetMethod is not { } target ||
-            target.Parameters[macro.HasContext ? 1 : 0].RefKind == RefKind.Out ||
-            assignment.Parent is not ExpressionStatementSyntax statement ||
-            GetTargetVariable(assignment.Left, semanticModel) is not { } symbol ||
-            !IsUnassignedBefore(statement, symbol, semanticModel))
+        var resultParameter = method.Parameters[macro.HasContext ? 1 : 0];
+        if (!AcceptsTarget(assignment.Left, resultParameter, semanticModel))
         {
-            return null;
+            var name = semanticModel.GetSymbol(assignment.Left) is { } symbol ? $"'{symbol.Name}' " : string.Empty;
+            return OperatorMacroMessages.TargetDoesNotConvert(name, macro.TargetName, resultParameter);
         }
 
-        return
-            $"The target '{assignment.Left}' of operator macro '{macro.TargetName}' is not assigned before the assignment: the target receives the result in the storage it holds, so assign '{symbol.Name}' first, as in '{symbol.Name} = default;'";
+        return IsPropertyWithoutStorage(assignment.Left, resultParameter, semanticModel)
+            ? OperatorMacroMessages.PropertyWithoutStorage(assignment.Left, macro.TargetName, resultParameter)
+            : null;
     }
-
-    /// <summary>
-    /// Why the context variable of <paramref name="assignment"/> (the user's tree), or of an operator macro nested in it,
-    /// cannot be passed to its target, or <see langword="null"/> when it can: a local or <c>out</c> parameter that is not
-    /// definitely assigned before the assignment.
-    /// </summary>
-    /// <remarks>
-    /// [WHY] The expansion passes the variable itself (by reference, or as a copy of its value), which the target may
-    /// read: the C++ code reads an uninitialized value, and the managed expansion does not compile (CS0165). Only what is
-    /// certain is reported, as for the target (<see cref="GetUnassignedTargetFailure"/>).
-    /// </remarks>
-    public static string? GetUnassignedContextFailure(AssignmentExpressionSyntax assignment, OperatorMacro macro,
-        SemanticModel semanticModel)
-    {
-        if (assignment.Parent is not ExpressionStatementSyntax statement)
-        {
-            return null;
-        }
-
-        if (macro is { HasContext: true, TargetMethod: { } target } &&
-            TryFindContextVariable(assignment, target, semanticModel, out var variable, out _) &&
-            variable is ILocalSymbol { IsRef: false } or IParameterSymbol { RefKind: RefKind.Out } &&
-            IsUnassignedBefore(statement, variable, semanticModel))
-        {
-            return
-                $"The context '{variable.Name}' of operator macro '{macro.TargetName}' is not assigned before the assignment: the target receives the context variable itself, so assign '{variable.Name}' first, as in '{variable.Name} = default;'";
-        }
-
-        if (macro.Nested.IsDefaultOrEmpty)
-        {
-            return null;
-        }
-
-        foreach (var nested in macro.Nested)
-        {
-            if (GetUnassignedContextFailure(assignment, nested.Inner, semanticModel) is { } failure)
-            {
-                return failure;
-            }
-        }
-
-        return null;
-    }
-
-    // Whether <symbol> (a local or out parameter of the method that holds <statement>) is certainly not assigned when
-    // <statement> starts. A local declared with a value, and a variable captured from outside the enclosing lambda or
-    // local function, are not
-    private static bool IsUnassignedBefore(ExpressionStatementSyntax statement, ISymbol symbol,
-        SemanticModel semanticModel)
-    {
-        if (IsAssignedWhereDeclared(symbol) ||
-            !symbol.ContainingSymbol.IsEqualTo(semanticModel.GetEnclosingSymbol(statement.SpanStart)))
-        {
-            return false;
-        }
-
-        var flow = semanticModel.AnalyzeDataFlow(statement);
-        return flow is { Succeeded: true } &&
-               !flow.DefinitelyAssignedOnEntry
-                   .AsStackEnumerable()
-                   .Any(symbol, static (assigned, s) => assigned.IsEqualTo(s));
-    }
-
-    // The local or out parameter whose storage <target> is: the variable itself, or the variable that holds the struct
-    // whose field it is (h.Inner.Value); null for anything else (an array element, a field of a class, a ref local)
-    private static ISymbol? GetTargetVariable(ExpressionSyntax target, SemanticModel semanticModel)
-    {
-        while (true)
-        {
-            switch (semanticModel.GetSymbol(target))
-            {
-                case ILocalSymbol { IsRef: false } local:
-                    return local;
-                case IParameterSymbol { RefKind: RefKind.Out } parameter:
-                    return parameter;
-                case IFieldSymbol { IsStatic: false, ContainingType.IsValueType: true }
-                    when target is MemberAccessExpressionSyntax { Expression: var receiver }:
-                    target = receiver;
-                    continue;
-                default:
-                    return null;
-            }
-        }
-    }
-
-    // A local declared with an initializer, or by a foreach statement, is assigned wherever it is in scope; the data
-    // flow need not run for it
-    private static bool IsAssignedWhereDeclared(ISymbol symbol) =>
-        symbol is ILocalSymbol { DeclaringSyntaxReferences: [var reference] } &&
-        reference.GetSyntax() is VariableDeclaratorSyntax { Initializer: not null } or ForEachStatementSyntax;
 
     // The target that <operatorCall> (an operator macro <operatorMethod>, or a && or || over one that tests its left
     // operand with <test>) maps to, and the operator macros among its operands, each computed into a temporary; or why
@@ -377,22 +103,22 @@ internal static class OperatorMacroResolver
         if (isIncrementOrDecrement || isLifted)
         {
             var op = GetOperatorText(operatorCall);
-            return new OperatorMacro(operatorCall, null, false, isIncrementOrDecrement
-                ? $"Operator macro '{op}' is an increment or decrement operator, which assigns its operand and is not expanded; write the assignment with a binary operator macro"
-                : $"Operator macro '{op}' is applied to nullable operands (a lifted operator), which it does not expand; apply it to the values ('.Value')");
+            return Failed(operatorCall, isIncrementOrDecrement
+                ? OperatorMacroMessages.IncrementOrDecrement(op)
+                : OperatorMacroMessages.Lifted(op));
         }
 
         if (macroAttr.ConstructorArguments[0].Value is not INamedTypeSymbol targetType ||
             macroAttr.ConstructorArguments[1].Value is not string targetMethodName)
         {
-            return new OperatorMacro(operatorCall, null, false, null);
+            return Failed(operatorCall, null);
         }
 
         var target = $"{targetType.Name}.{targetMethodName}";
-        if (ResolveOverload(targetType, targetMethodName, operatorMethod, semanticModel.Compilation, out var failure) is not
-            var (method, hasContext))
+        if (ResolveOverload(targetType, targetMethodName, operatorMethod, semanticModel.Compilation,
+                out var failure) is not var (method, hasContext))
         {
-            return new OperatorMacro(operatorCall, null, false, $"Operator macro target '{target}' {failure}");
+            return Failed(operatorCall, OperatorMacroMessages.NoOverload(target, failure));
         }
 
         ImmutableArray<NestedOperatorMacro>.Builder? nested = null;
@@ -406,48 +132,106 @@ internal static class OperatorMacroResolver
             }
 
             var operandType = operatorMethod.Parameters[operandIndex].Type;
-            var unwrapped = UnwrapExpression(operand, semanticModel);
-            var (innerMethod, innerLifted, innerIncrement, innerTest) = GetOperator(unwrapped, semanticModel);
-            if (GetMacroAttribute(innerMethod) is not { } innerAttr || innerMethod == null)
+            if (!TryResolveNested(operand, operandType, operatorCall, semanticModel, out var inner,
+                    out var nestedFailure))
             {
-                continue;
+                return Failed(operatorCall, nestedFailure);
             }
 
-            var inner = ResolveCall(unwrapped, innerMethod, innerAttr, innerLifted, innerIncrement,
-                innerTest, semanticModel);
-
-            // [WHY] The target writes its result into the storage of the assignment target: a temporary has storage
-            // only when the result is a value passed by reference. The temporary is passed as it is: a conversion to
-            // the outer operand type would be a call of its own
-            var innerResult = inner.TargetMethod?.Parameters[inner.HasContext ? 1 : 0];
-            var nestedFailure = innerResult switch
+            if (inner != null)
             {
-                null => inner.Failure ?? $"Operator macro '{GetOperatorText(unwrapped)}' names no target method",
-                { RefKind: not (RefKind.Ref or RefKind.Out) } => NoTemporary(unwrapped, inner, innerResult),
-                _ when !innerMethod.ReturnType.IsUnmanagedType => NoTemporary(unwrapped, inner, innerResult),
-                _ when !SymbolEqualityComparer.Default.Equals(innerMethod.ReturnType, operandType) =>
-                    $"Operator macro '{GetOperatorText(unwrapped)}' returns '{FormatType(innerMethod.ReturnType)}', but the operand of '{GetOperatorText(operatorCall)}' takes '{FormatType(operandType)}'; assign it to a variable first, as in 't = a + b; c = c + t;'",
-                _ => null
-            };
-            if (nestedFailure != null)
-            {
-                return new OperatorMacro(operatorCall, null, false, nestedFailure);
+                nested ??= ImmutableArray.CreateBuilder<NestedOperatorMacro>();
+                nested.Add(inner);
             }
-
-            nested ??= ImmutableArray.CreateBuilder<NestedOperatorMacro>();
-            nested.Add(new NestedOperatorMacro(operand, inner));
         }
 
         return new OperatorMacro(operatorCall, method, hasContext, null, target, operatorMethod.ReturnType,
             nested?.ToImmutable() ?? default) { Test = test };
     }
 
-    private static string NoTemporary(ExpressionSyntax unwrapped, OperatorMacro inner, IParameterSymbol innerResult) =>
-        $"Operator macro '{GetOperatorText(unwrapped)}' is an operand of another operator macro, but its target '{inner.TargetName}' takes the result as '{FormatRefKind(innerResult.RefKind)}{FormatType(innerResult.Type)} {innerResult.Name}', not as a ref or out parameter of an unmanaged type, so it has no temporary to compute into; assign it to a variable first, as in 't = a + b; c = c + t;'";
+    // The operator macro that <operand> (an operand of <operatorCall>, of the operator's parameter type <operandType>)
+    // is, to be computed into a temporary first. <nested> is null when the operand is no operator macro; false, with
+    // <failure>, when it is one that cannot be computed into a temporary
+    private static bool TryResolveNested(ExpressionSyntax operand, ITypeSymbol operandType,
+        ExpressionSyntax operatorCall, SemanticModel semanticModel, out NestedOperatorMacro? nested,
+        out string? failure)
+    {
+        nested = null;
+        failure = null;
+        var unwrapped = UnwrapExpression(operand, semanticModel);
+        var (innerMethod, innerLifted, innerIncrement, innerTest) = GetOperator(unwrapped, semanticModel);
+        if (GetMacroAttribute(innerMethod) is not { } innerAttr || innerMethod == null)
+        {
+            return true;
+        }
 
-    // An operand (as written) that is an operator macro itself. [WHY] A class: the runtime refuses to load a struct that
-    // holds a generic value type instantiated with the struct itself (ImmutableArray<(ExpressionSyntax, OperatorMacro)>
-    // through ValueTuple<..., OperatorMacro>: TypeLoadException); ImmutableArray of a class loads
+        var inner = ResolveCall(unwrapped, innerMethod, innerAttr, innerLifted, innerIncrement, innerTest,
+            semanticModel);
+        failure = GetNestedFailure(unwrapped, inner, innerMethod.ReturnType, operandType, operatorCall);
+        if (failure != null)
+        {
+            return false;
+        }
+
+        nested = new NestedOperatorMacro(operand, inner);
+        return true;
+    }
+
+    // Why the inner operator macro <inner> (<unwrapped>, returning <innerType>) cannot be computed into a temporary
+    // passed to the operand of <operatorCall> that takes <operandType>, or null when it can.
+    // [WHY] The target writes its result into the storage of the assignment target: a temporary has storage only when
+    // the result is a value passed by reference. The temporary is passed as it is: a conversion to the outer operand
+    // type would be a call of its own
+    private static string? GetNestedFailure(ExpressionSyntax unwrapped, OperatorMacro inner, ITypeSymbol innerType,
+        ITypeSymbol operandType, ExpressionSyntax operatorCall)
+    {
+        var innerResult = inner.TargetMethod?.Parameters[inner.HasContext ? 1 : 0];
+        var innerOp = GetOperatorText(unwrapped);
+        return innerResult switch
+        {
+            null => inner.Failure ?? OperatorMacroMessages.NoTargetMethod(innerOp),
+            { RefKind: not (RefKind.Ref or RefKind.Out) } =>
+                OperatorMacroMessages.NoTemporary(innerOp, inner.TargetName, innerResult),
+            _ when !innerType.IsUnmanagedType =>
+                OperatorMacroMessages.NoTemporary(innerOp, inner.TargetName, innerResult),
+            _ when !SymbolEqualityComparer.Default.Equals(innerType, operandType) =>
+                OperatorMacroMessages.NestedTypeMismatch(innerOp, innerType, GetOperatorText(operatorCall),
+                    operandType),
+            _ => null
+        };
+    }
+
+    // An operator macro that cannot be expanded, and why (null: the attribute names no target)
+    private static OperatorMacro Failed(ExpressionSyntax operatorCall, string? failure) =>
+        new(operatorCall, null, false, failure);
+
+    // A property that the target cannot write into by reference: one with accessors of its own (or an indexer) that
+    // does not return by reference; neither has a backing field. An auto-property is a field on the device, and the
+    // managed path writes its backing field (ManagedOperatorMacroExpander)
+    private static bool IsPropertyWithoutStorage(ExpressionSyntax target, IParameterSymbol resultParameter,
+        SemanticModel semanticModel) =>
+        resultParameter.RefKind != RefKind.None &&
+        semanticModel.GetSymbol(target) is IPropertySymbol { RefKind: RefKind.None } property &&
+        !StructAbiMembers.IsAutoProperty(property);
+
+    // Whether the assignment target passes to the result parameter of the chosen overload. The overload is chosen by
+    // the operator's return type (decision V7), so a target of another type is checked here
+    private static bool AcceptsTarget(ExpressionSyntax target, IParameterSymbol resultParameter,
+        SemanticModel semanticModel)
+    {
+        if (semanticModel.GetTypeSymbol(target) is not { } targetType)
+        {
+            return true;
+        }
+
+        return resultParameter.RefKind == RefKind.None
+            ? semanticModel.Compilation.ClassifyConversion(targetType, resultParameter.Type).IsImplicit
+            : SymbolEqualityComparer.Default.Equals(targetType, resultParameter.Type);
+    }
+
+    // An operand (as written) that is an operator macro itself. [WHY] A class: the runtime refuses to load a struct
+    // that holds a generic value type instantiated with the struct itself (ImmutableArray<(ExpressionSyntax,
+    // OperatorMacro)> through ValueTuple<..., OperatorMacro>: TypeLoadException); ImmutableArray of a class loads
     internal sealed class NestedOperatorMacro(ExpressionSyntax operand, OperatorMacro inner)
     {
         public ExpressionSyntax Operand { get; } = operand;
@@ -475,24 +259,28 @@ internal static class OperatorMacroResolver
         public bool HasContext { get; } = hasContext;
 
         /// <summary>
-        /// Why the attribute's target cannot be called (the message argument of GSH0003), or <see langword="null"/> when
-        /// it can, or when the attribute names no target.
+        /// Why the attribute's target cannot be called (the message argument of GSH0003), or <see langword="null"/>
+        /// when it can, or when the attribute names no target.
         /// </summary>
         public string? Failure { get; } = failure;
 
         /// <summary>The target as the attribute names it (<c>Ops.Add</c>), for messages.</summary>
         public string TargetName { get; } = targetName;
 
-        /// <summary>The operator's return type: the type of the temporary that an inner operator macro is computed into.</summary>
+        /// <summary>
+        /// The operator's return type: the type of the temporary that an inner operator macro is computed into.
+        /// </summary>
         public ITypeSymbol? ResultType { get; } = resultType;
 
-        /// <summary>The operands (as written) that are operator macros themselves, computed into temporaries first.</summary>
+        /// <summary>
+        /// The operands (as written) that are operator macros themselves, computed into temporaries first.
+        /// </summary>
         public ImmutableArray<NestedOperatorMacro> Nested { get; } = nested;
 
         /// <summary>
         /// The <c>operator false</c> (of <c>&amp;&amp;</c>) or <c>operator true</c> (of <c>||</c>) that the operator
         /// tests its left operand with before it calls <see cref="TargetMethod"/>, or <see langword="null"/> when the
-        /// operator is not a conditional one (<see cref="PlanConditional"/>).
+        /// operator is not a conditional one (<see cref="OperatorMacroCallPlanner.PlanConditional"/>).
         /// </summary>
         public IMethodSymbol? Test { get; init; }
 
@@ -500,10 +288,7 @@ internal static class OperatorMacroResolver
         public bool TryGetNested(ExpressionSyntax? operand, out OperatorMacro inner)
         {
             inner = default;
-            if (operand == null || Nested.IsDefaultOrEmpty ||
-                !Nested
-                    .AsStackEnumerable()
-                    .TryFirst(operand, static (candidate, o) => candidate.Operand == o, out var found))
+            if (FindNested(operand) is not { } found)
             {
                 return false;
             }
@@ -511,198 +296,19 @@ internal static class OperatorMacroResolver
             inner = found.Inner;
             return true;
         }
-    }
 
-    /// <summary>
-    /// Why the operator macro expression <paramref name="operatorExpression"/> is not expanded where it is, or
-    /// <see langword="null"/> when it is: as the right side of an assignment statement (inside parentheses and casts), or
-    /// as an operand of an operator macro that is. <see cref="TryResolve"/> reports what goes wrong there; anywhere else
-    /// (a statement of its own such as <c>++x;</c>, an initializer, an argument) the operator would reach C++ as a
-    /// struct operator that does not exist.
-    /// </summary>
-    public static string? GetPositionFailure(ExpressionSyntax operatorExpression, SemanticModel semanticModel)
-    {
-        var position = GetPosition(operatorExpression, semanticModel);
-        if (position == Position.Expanded)
+        /// <summary>The entry of <see cref="Nested"/> for <paramref name="operand"/>, if any.</summary>
+        public NestedOperatorMacro? FindNested(ExpressionSyntax? operand)
         {
-            return null;
-        }
-
-        var op = operatorExpression is AssignmentExpressionSyntax assignment
-            ? assignment.OperatorToken.Text
-            : GetOperatorText(operatorExpression);
-        return position == Position.UnderConversion
-            ? $"Operator macro '{op}' is under a user-defined conversion, which its expansion would drop; assign it to a variable first, as in 't = a + b;', and convert the variable"
-            : $"Operator macro '{op}' is expanded only as the right side of an assignment statement, or as an operand of an operator macro there; assign it to a variable first, as in 't = a + b;'";
-    }
-
-    private enum Position
-    {
-        Expanded,
-        Elsewhere,
-
-        // Inside a cast with a user-defined conversion, which the expansion would not apply (#759)
-        UnderConversion
-    }
-
-    private static Position GetPosition(ExpressionSyntax operatorExpression, SemanticModel semanticModel)
-    {
-        // A compound assignment is the statement itself; TryResolve reports it
-        if (operatorExpression is AssignmentExpressionSyntax)
-        {
-            return operatorExpression.Parent is ExpressionStatementSyntax ? Position.Expanded : Position.Elsewhere;
-        }
-
-        SyntaxNode node = operatorExpression;
-        while (node.Parent is ParenthesizedExpressionSyntax ||
-               (node.Parent is CastExpressionSyntax cast && IsTransparentCast(cast, semanticModel)))
-        {
-            node = node.Parent;
-        }
-
-        return node.Parent switch
-        {
-            CastExpressionSyntax => Position.UnderConversion,
-            AssignmentExpressionSyntax assignment when assignment.Right == node =>
-                assignment.Parent is ExpressionStatementSyntax ? Position.Expanded : Position.Elsewhere,
-            ExpressionSyntax parent and (BinaryExpressionSyntax or PrefixUnaryExpressionSyntax)
-                when GetMacroAttribute(GetOperator(parent, semanticModel).Method) != null =>
-                GetPosition(parent, semanticModel),
-            _ => Position.Elsewhere
-        };
-    }
-
-    // The operator call inside the parentheses and the transparent casts written around it: c = (T)(a + b) calls +
-    // (#641). A cast with a user-defined conversion stops it: the expansion passes the operator's own result on, so
-    // the conversion would be dropped (#759); GetPositionFailure reports the operator inside
-    private static ExpressionSyntax UnwrapExpression(ExpressionSyntax expression, SemanticModel semanticModel)
-    {
-        while (true)
-        {
-            switch (expression)
+            if (operand == null || Nested.IsDefaultOrEmpty ||
+                !Nested
+                    .AsStackEnumerable()
+                    .TryFirst(operand, static (candidate, o) => candidate.Operand == o, out var found))
             {
-                case ParenthesizedExpressionSyntax parenthesized:
-                    expression = parenthesized.Expression;
-                    break;
-                case CastExpressionSyntax cast when IsTransparentCast(cast, semanticModel):
-                    expression = cast.Expression;
-                    break;
-                default:
-                    return expression;
+                return null;
             }
+
+            return found;
         }
     }
-
-    // A cast whose conversion is not user-defined (an identity or built-in conversion), which the expansion can skip
-    private static bool IsTransparentCast(CastExpressionSyntax cast, SemanticModel semanticModel) =>
-        semanticModel.GetSafeOperation(cast) is not IConversionOperation { Conversion.IsUserDefined: true };
-
-    // The user-defined operator that a binary, unary, increment or decrement expression calls, whether it is lifted to
-    // nullable operands, whether it is an increment or decrement, and for a user-defined && or || the operator false or
-    // true that tests its left operand (Roslyn gives the & or | as the operator method)
-    private static (IMethodSymbol? Method, bool IsLifted, bool IsIncrementOrDecrement, IMethodSymbol? Test) GetOperator(
-        ExpressionSyntax operatorCall, SemanticModel semanticModel)
-    {
-        if (operatorCall is not (BinaryExpressionSyntax or PrefixUnaryExpressionSyntax or PostfixUnaryExpressionSyntax))
-        {
-            return default;
-        }
-
-        var operation = semanticModel.GetSafeOperation(operatorCall);
-        while (operation is IConversionOperation { IsImplicit: true } conversion)
-        {
-            operation = conversion.Operand;
-        }
-
-        return operation switch
-        {
-            IBinaryOperation
-                {
-                    OperatorKind: BinaryOperatorKind.ConditionalAnd or BinaryOperatorKind.ConditionalOr
-                } binary =>
-                (binary.OperatorMethod, binary.IsLifted, false, FindTest(binary)),
-            IBinaryOperation binary => (binary.OperatorMethod, binary.IsLifted, false, null),
-            IUnaryOperation unary => (unary.OperatorMethod, unary.IsLifted, false, null),
-            IIncrementOrDecrementOperation incrementOrDecrement =>
-                (incrementOrDecrement.OperatorMethod, incrementOrDecrement.IsLifted, true, null),
-            _ => default
-        };
-    }
-
-    // T.false of x && y and T.true of x || y, T being the type that declares the & or | (C# spec §12.14.3): the
-    // operator of T that takes T
-    private static IMethodSymbol? FindTest(IBinaryOperation conditional)
-    {
-        if (conditional.OperatorMethod is not { ContainingType: { } type, ReturnType: var operandType })
-        {
-            return null;
-        }
-
-        var name = conditional.OperatorKind == BinaryOperatorKind.ConditionalAnd
-            ? WellKnownMemberNames.FalseOperatorName
-            : WellKnownMemberNames.TrueOperatorName;
-        return type.GetMembers(name)
-            .AsStackEnumerable()
-            .OfType<IMethodSymbol>()
-            .FirstOrDefault(operandType, static (test, t) =>
-                test is { MethodKind: MethodKind.UserDefinedOperator, Parameters: [var parameter] } &&
-                parameter.Type.IsEqualTo(t)
-            );
-    }
-
-    // The [GpuOperatorMacro] of G# on <operatorMethod>, with its two arguments, or null
-    private static AttributeData? GetMacroAttribute(IMethodSymbol? operatorMethod) =>
-        operatorMethod?.GetAttribute(KnownAttributes.GpuOperatorMacro) is { } attribute &&
-        attribute.AttributeClass?.ContainingNamespace.IsCoreNamespace() == true &&
-        attribute.ConstructorArguments.Length >= 2
-            ? attribute
-            : null;
-
-    // +, ++ (the operator as written)
-    private static string GetOperatorText(ExpressionSyntax operatorCall) => operatorCall switch
-    {
-        BinaryExpressionSyntax binary => binary.OperatorToken.Text,
-        PrefixUnaryExpressionSyntax prefix => prefix.OperatorToken.Text,
-        PostfixUnaryExpressionSyntax postfix => postfix.OperatorToken.Text,
-        _ => string.Empty
-    };
-
-    // Whether the assignment target passes to the result parameter of the chosen overload. The overload is chosen by the
-    // operator's return type (decision V7), so a target of another type is checked here
-    // A property that the target cannot write into by reference: one with accessors of its own (or an indexer) that does
-    // not return by reference; neither has a backing field. An auto-property is a field on the device, and the managed path writes its backing field
-    // (ManagedOperatorMacroExpander)
-    private static bool IsPropertyWithoutStorage(ExpressionSyntax target, IParameterSymbol resultParameter,
-        SemanticModel semanticModel) =>
-        resultParameter.RefKind != RefKind.None &&
-        semanticModel.GetSymbol(target) is IPropertySymbol { RefKind: RefKind.None } property &&
-        !StructAbiMembers.IsAutoProperty(property);
-
-    private static bool AcceptsTarget(ExpressionSyntax target, IParameterSymbol resultParameter, SemanticModel semanticModel)
-    {
-        if (semanticModel.GetTypeSymbol(target) is not { } targetType)
-        {
-            return true;
-        }
-
-        return resultParameter.RefKind == RefKind.None
-            ? semanticModel.Compilation.ClassifyConversion(targetType, resultParameter.Type).IsImplicit
-            : SymbolEqualityComparer.Default.Equals(targetType, resultParameter.Type);
-    }
-
-    internal static (ExpressionSyntax? Left, ExpressionSyntax? Right, ExpressionSyntax? Extra) ExtractOperands(
-        ExpressionSyntax rightNode) => rightNode switch
-        {
-            BinaryExpressionSyntax { Left: var left, Right: var right } binary
-                when binary.IsKind(SyntaxKind.LeftShiftExpression, SyntaxKind.RightShiftExpression)
-                => (left, null, right),
-            BinaryExpressionSyntax { Left: var left, Right: var right }
-                => (left, right, null),
-            PrefixUnaryExpressionSyntax unary
-                => (unary.Operand, null, null),
-            _ => (null, null, null)
-        };
-
-    internal static bool IsPassedByReference(IParameterSymbol parameter) =>
-        parameter.RefKind is RefKind.Ref or RefKind.Out or RefKind.In or RefKind.RefReadOnlyParameter;
 }

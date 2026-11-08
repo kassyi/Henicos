@@ -11,29 +11,59 @@ internal static class OperatorMacroOverloadResolver
     private const int Left = 1;
     private const int Right = 2;
 
-    // The overload of <type>.<name> that a call with the operator's types (result, operands) selects, and whether it takes
-    // a context; otherwise null, and <failure> completes "Operator macro target 'T.M' ..."
+    // The overload of <type>.<name> that a call with the operator's types (result, operands) selects, and whether it
+    // takes a context; otherwise null, and <failure> completes "Operator macro target 'T.M' ..."
     internal static (IMethodSymbol Method, bool HasContext)? ResolveOverload(INamedTypeSymbol type, string name,
         IMethodSymbol operatorMethod, Compilation compilation, out string failure)
     {
-        failure = string.Empty;
-        var operandTypes = new ITypeSymbol[operatorMethod.Parameters.Length + 1];
-        operandTypes[0] = operatorMethod.ReturnType;
-        for (var i = 0; i < operatorMethod.Parameters.Length; i++)
+        var argumentTypes = GetArgumentTypes(operatorMethod);
+        var applicable = CollectApplicable(type.GetMembers(name), argumentTypes, compilation, out var rejections);
+        if (applicable.Length == 0)
         {
-            operandTypes[i + 1] = operatorMethod.Parameters[i].Type;
+            failure = OperatorMacroMessages.NoApplicableOverload(FormatOperands(operatorMethod),
+                rejections ?? OperatorMacroMessages.NoMethodOfThatName);
+            return null;
         }
 
+        if (FindBest(applicable, argumentTypes, compilation) is { } best)
+        {
+            failure = string.Empty;
+            return best;
+        }
+
+        failure = DescribeAmbiguity(applicable, argumentTypes, compilation);
+        return null;
+    }
+
+    // The types of the arguments of a call with the operator's types: its return type for the result, then the types
+    // of its parameters
+    private static ITypeSymbol[] GetArgumentTypes(IMethodSymbol operatorMethod)
+    {
+        var argumentTypes = new ITypeSymbol[operatorMethod.Parameters.Length + 1];
+        argumentTypes[0] = operatorMethod.ReturnType;
+        for (var i = 0; i < operatorMethod.Parameters.Length; i++)
+        {
+            argumentTypes[i + 1] = operatorMethod.Parameters[i].Type;
+        }
+
+        return argumentTypes;
+    }
+
+    // The candidates among <members> that apply to <argumentTypes> (TryApply), in declaration order; <rejections>
+    // lists why each other method does not ("<signature>: <reason>; ..."), or is null when there is none
+    private static ImmutableArray<(IMethodSymbol Method, bool HasContext)> CollectApplicable(
+        ImmutableArray<ISymbol> members, ITypeSymbol[] argumentTypes, Compilation compilation, out string? rejections)
+    {
         var applicable = ImmutableArray.CreateBuilder<(IMethodSymbol Method, bool HasContext)>();
         using var reasons = new SourceWriter();
-        foreach (var member in type.GetMembers(name))
+        foreach (var member in members)
         {
             if (member is not IMethodSymbol method)
             {
                 continue;
             }
 
-            if (TryApply(method, operandTypes, compilation, out var hasContext, out var reason))
+            if (TryApply(method, argumentTypes, compilation, out var hasContext, out var reason))
             {
                 applicable.Add((method, hasContext));
                 continue;
@@ -43,20 +73,21 @@ internal static class OperatorMacroOverloadResolver
             reasons.Append($"{method.FormatSignature()}: {reason}");
         }
 
-        if (applicable.Count == 0)
-        {
-            var why = reasons.Length > 0 ? reasons.ToString() : "no method has that name";
-            failure = $"has no overload that takes ({FormatOperands(operatorMethod)}): {why}";
-            return null;
-        }
+        rejections = reasons.Length > 0 ? reasons.ToString() : null;
+        return applicable.ToImmutable();
+    }
 
-        // The candidate that is better than every other one
-        for (var i = 0; i < applicable.Count; i++)
+    // The candidate that is better than every other one (C# spec §12.6.4.3), or null when there is none
+    private static (IMethodSymbol Method, bool HasContext)? FindBest(
+        ImmutableArray<(IMethodSymbol Method, bool HasContext)> applicable, ITypeSymbol[] argumentTypes,
+        Compilation compilation)
+    {
+        for (var i = 0; i < applicable.Length; i++)
         {
             var best = true;
-            for (var j = 0; j < applicable.Count && best; j++)
+            for (var j = 0; j < applicable.Length && best; j++)
             {
-                best = i == j || CompareCandidates(applicable[i], applicable[j], operandTypes, compilation) == Left;
+                best = i == j || CompareCandidates(applicable[i], applicable[j], argumentTypes, compilation) == Left;
             }
 
             if (best)
@@ -65,19 +96,19 @@ internal static class OperatorMacroOverloadResolver
             }
         }
 
-        // Ambiguous: the candidates that no other one is better than, in declaration order
+        return null;
+    }
+
+    // "is ambiguous between A, B and C": the candidates that no other one is better than, in declaration order
+    private static string DescribeAmbiguity(ImmutableArray<(IMethodSymbol Method, bool HasContext)> applicable,
+        ITypeSymbol[] argumentTypes, Compilation compilation)
+    {
         using var names = new SourceWriter();
         var tied = 0;
         var last = string.Empty;
-        for (var i = 0; i < applicable.Count; i++)
+        for (var i = 0; i < applicable.Length; i++)
         {
-            var dominated = false;
-            for (var j = 0; j < applicable.Count && !dominated; j++)
-            {
-                dominated = i != j && CompareCandidates(applicable[j], applicable[i], operandTypes, compilation) == Left;
-            }
-
-            if (dominated)
+            if (IsDominated(i, applicable, argumentTypes, compilation))
             {
                 continue;
             }
@@ -91,8 +122,22 @@ internal static class OperatorMacroOverloadResolver
             last = applicable[i].Method.FormatSignature();
         }
 
-        failure = $"is ambiguous between {names.ToString()} and {last}";
-        return null;
+        return OperatorMacroMessages.Ambiguous(names.ToString(), last);
+    }
+
+    // Whether another candidate is better than candidate <index>
+    private static bool IsDominated(int index, ImmutableArray<(IMethodSymbol Method, bool HasContext)> applicable,
+        ITypeSymbol[] argumentTypes, Compilation compilation)
+    {
+        for (var j = 0; j < applicable.Length; j++)
+        {
+            if (j != index && CompareCandidates(applicable[j], applicable[index], argumentTypes, compilation) == Left)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     // Whether <method> can take (result, operands), optionally after a context of a value type; otherwise <reason> says
@@ -104,13 +149,13 @@ internal static class OperatorMacroOverloadResolver
         if (method.MethodKind != MethodKind.Ordinary || !method.IsStatic ||
             !method.HasAttribute(KnownAttributes.GpuDeviceFunction))
         {
-            reason = "not a static [GpuDeviceFunction] method";
+            reason = OperatorMacroMessages.NotStaticDeviceFunction;
             return false;
         }
 
         if (method.IsGenericMethod)
         {
-            reason = "generic methods are not candidates";
+            reason = OperatorMacroMessages.GenericCandidate;
             return false;
         }
 
@@ -118,7 +163,7 @@ internal static class OperatorMacroOverloadResolver
         hasContext = parameters.Length == operandTypes.Length + 1 && parameters[0].Type.IsValueType;
         if (parameters.Length != operandTypes.Length && !hasContext)
         {
-            reason = $"takes {parameters.Length} parameters, but the operator passes {operandTypes.Length} (or a context of a value type and {operandTypes.Length})";
+            reason = OperatorMacroMessages.ParameterCount(parameters.Length, operandTypes.Length);
             return false;
         }
 
@@ -143,16 +188,16 @@ internal static class OperatorMacroOverloadResolver
         reason = string.Empty;
         if (parameter.RefKind != RefKind.None)
         {
-            var keyword = FormatRefKind(parameter.RefKind).TrimEnd();
+            var keyword = parameter.RefKind.FormatRefKind().TrimEnd();
             if (parameter.RefKind is RefKind.Ref or RefKind.Out && !isResult)
             {
-                reason = $"'{keyword}' parameter '{parameter.Name}' is not the result";
+                reason = OperatorMacroMessages.ReferenceNotResult(keyword, parameter.Name);
                 return false;
             }
 
             if (!SymbolEqualityComparer.Default.Equals(from, parameter.Type))
             {
-                reason = $"'{keyword}' parameter '{parameter.Name}' takes only '{FormatType(parameter.Type)}', not '{FormatType(from)}'";
+                reason = OperatorMacroMessages.ReferenceTakesOnlyItsType(keyword, parameter, from);
                 return false;
             }
 
@@ -161,7 +206,7 @@ internal static class OperatorMacroOverloadResolver
 
         if (!compilation.ClassifyConversion(from, parameter.Type).IsImplicit)
         {
-            reason = $"'{FormatType(from)}' does not convert to '{FormatType(parameter.Type)}' for '{parameter.Name}'";
+            reason = OperatorMacroMessages.DoesNotConvert(from, parameter);
             return false;
         }
 
@@ -288,17 +333,12 @@ internal static class OperatorMacroOverloadResolver
     private static string FormatOperands(IMethodSymbol operatorMethod)
     {
         using var text = new SourceWriter();
-        text.Append($"{FormatType(operatorMethod.ReturnType)} result");
+        text.Append($"{OperatorMacroMessages.FormatType(operatorMethod.ReturnType)} result");
         foreach (var parameter in operatorMethod.Parameters)
         {
-            text.Append($", {FormatType(parameter.Type)} {parameter.Name}");
+            text.Append($", {OperatorMacroMessages.FormatType(parameter.Type)} {parameter.Name}");
         }
 
         return text.ToString();
     }
-
-    internal static string FormatRefKind(RefKind refKind) => refKind.FormatRefKind();
-
-    // uint[], OverloadCtx: the short C# spelling of a type in a message
-    internal static string FormatType(ITypeSymbol type) => IteratorTypeResolver.FormatType(type);
 }

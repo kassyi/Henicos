@@ -63,7 +63,7 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
             context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, typeSyntax, typeSyntax.Kind().ToString());
         }
 
-        StructTranspiler.RegisterUsedStructIfApplicable(typeSymbol, ref context);
+        StructOrdering.RegisterUsedStructIfApplicable(typeSymbol, ref context);
     }
 
     private static void TranspileSplitVariableDeclarations(SeparatedSyntaxList<VariableDeclaratorSyntax> variables,
@@ -320,7 +320,7 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
         }
 
         var paramType = paramSymbol.Type;
-        StructTranspiler.RegisterUsedStructIfApplicable(paramType, ref context);
+        StructOrdering.RegisterUsedStructIfApplicable(paramType, ref context);
 
         if (paramIdx < annotatedParamList.Parameters.Count)
         {

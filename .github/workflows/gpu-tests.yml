@@ -100,13 +100,21 @@ jobs:
         env:
           GSHARP_TEST_NO_CUDA: "1"
           GH_TOKEN: ${{ github.token }}
-        run: dotnet test ${{ matrix.target }} --filter "Category!=GpuExecution&FullyQualifiedName!~Kassyi.GSharp.Tests.Integration." --no-build -c Release --logger trx --results-directory "${{ env.TEST_RESULTS_DIR }}"
+        run: >-
+          dotnet test ${{ matrix.target }}
+          --filter "Category!=GpuExecution&FullyQualifiedName!~Kassyi.GSharp.Tests.Integration."
+          --no-build -c Release --logger trx --results-directory "${{ env.TEST_RESULTS_DIR }}"
+          --blame-crash --blame-crash-dump-type mini
 
       - name: Run CPU Native Toolchain Execution Tests
         if: matrix.suite == 'cpu'
         env:
           GSHARP_TEST_NO_CUDA: "1"
-        run: dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cpu/Kassyi.GSharp.Tests.Cpu.csproj --filter "Category=GpuExecution&Category!=Stress&Category!=Benchmark" --no-build -c Release --logger trx --results-directory "${{ env.TEST_RESULTS_DIR }}"
+        run: >-
+          dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cpu/Kassyi.GSharp.Tests.Cpu.csproj
+          --filter "Category=GpuExecution&Category!=Stress&Category!=Benchmark"
+          --no-build -c Release --logger trx --results-directory "${{ env.TEST_RESULTS_DIR }}"
+          --blame-crash --blame-crash-dump-type mini
 
       # Runs after the other test steps, also when one of them failed (the job still fails), but not without a build
       - name: Run MSBuild Integration Tests
@@ -115,7 +123,11 @@ jobs:
           GSHARP_TEST_NO_CUDA: "1"
           # Every dotnet build of these tests writes its binary log here; uploaded below when the job fails
           GSHARP_TEST_BUILD_LOG_DIR: ${{ runner.temp }}/integration-build-logs
-        run: dotnet test tests/Compiler/Kassyi.GSharp.Tests.Integration/Kassyi.GSharp.Tests.Integration.csproj --filter "Category!=GpuExecution" --no-build -c Release --logger trx --results-directory "${{ env.TEST_RESULTS_DIR }}"
+        run: >-
+          dotnet test tests/Compiler/Kassyi.GSharp.Tests.Integration/Kassyi.GSharp.Tests.Integration.csproj
+          --filter "Category!=GpuExecution"
+          --no-build -c Release --logger trx --results-directory "${{ env.TEST_RESULTS_DIR }}"
+          --blame-crash --blame-crash-dump-type mini
 
       - name: Upload Integration build logs
         if: ${{ failure() && matrix.suite == 'rest' }}
@@ -128,11 +140,27 @@ jobs:
           retention-days: 14
 
       # On every run, passed or failed: the per-test durations for `node scripts/human/ci-test-durations.js <dir>`
+      # (crash dumps go to the memory diagnostics below)
       - name: Upload test results
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: test-results-${{ matrix.os }}-${{ matrix.suite }}
-          path: ${{ env.TEST_RESULTS_DIR }}/
+          path: |
+            ${{ env.TEST_RESULTS_DIR }}/
+            !${{ env.TEST_RESULTS_DIR }}/**/*.dmp
+          if-no-files-found: ignore
+          retention-days: 7
+
+      # When a job fails: the memory snapshots of a test host over its budget (tests/memory-budgets.yml) and the
+      # mini dumps of a test host that died (--blame-crash)
+      - name: Upload memory diagnostics
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: memory-diagnostics-${{ matrix.os }}-${{ matrix.suite }}
+          path: |
+            tmp/test-memory/
+            ${{ env.TEST_RESULTS_DIR }}/**/*.dmp
           if-no-files-found: ignore
           retention-days: 7

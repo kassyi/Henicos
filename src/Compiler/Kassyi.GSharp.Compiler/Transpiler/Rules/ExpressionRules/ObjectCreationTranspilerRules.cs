@@ -35,7 +35,7 @@ internal static class ObjectCreationHelper
 {
     public static void TranspileObjectCreation(BaseObjectCreationExpressionSyntax node, ref TranspileContext context)
     {
-        var typeSymbol = StructTranspiler.SubstituteTypeParameters(
+        var typeSymbol = StructTypeSubstitution.SubstituteTypeParameters(
             context.Query.SemanticModel.GetTypeSymbol(node), context.Emitter.CurrentStructType,
             context.Query.SemanticModel.Compilation);
         if (!GpuCodeConstraints.IsSupportedObjectCreation(typeSymbol))
@@ -118,7 +118,7 @@ internal static class ObjectCreationHelper
     // How `new T(args)` reaches the device
     private enum StructCreationKind
     {
-        // A user constructor with a body, or a primary constructor: __gsharp_ctor_...(args) (StructTranspiler)
+        // A user constructor with a body, or a primary constructor: __gsharp_ctor_...(args) (StructConstructorEmitter)
         Factory,
 
         // A constructor that the dialect YAML maps to a function: <mapped>(args) (Vector3(float), ...)
@@ -136,7 +136,7 @@ internal static class ObjectCreationHelper
     {
         mappedFunction = string.Empty;
         if (constructor != null &&
-            StructTranspiler.IsEmittedStructConstructor(constructor, context.Query.SemanticModel.Compilation))
+            StructConstructorEmitter.IsEmittedStructConstructor(constructor, context.Query.SemanticModel.Compilation))
         {
             return StructCreationKind.Factory;
         }
@@ -285,7 +285,7 @@ internal static class ObjectCreationHelper
     internal static void TranspileConstructorCall(ITypeSymbol typeSymbol, IMethodSymbol constructor,
         ArgumentListSyntax? argumentList, ref TranspileContext context)
     {
-        StructTranspiler.RegisterUsedStructIfApplicable(typeSymbol, ref context);
+        StructOrdering.RegisterUsedStructIfApplicable(typeSymbol, ref context);
         TranspileCall(GlobalCppNames.GetConstructorName(constructor), constructor, argumentList, ref context);
     }
 

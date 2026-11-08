@@ -37,6 +37,7 @@
   </Folder>
   <Folder Name="/tests/Shared/">
     <Project Path="tests/Shared/Kassyi.GSharp.Tests.Infrastructure/Kassyi.GSharp.Tests.Infrastructure.csproj" />
+    <Project Path="tests/Shared/Kassyi.GSharp.Tests.Infrastructure.Tests/Kassyi.GSharp.Tests.Infrastructure.Tests.csproj" />
     <Project Path="tests/Shared/Kassyi.GSharp.Tests.Generators/Kassyi.GSharp.Tests.Generators.csproj" />
   </Folder>
   <Folder Name="/tests/Stdlib/">

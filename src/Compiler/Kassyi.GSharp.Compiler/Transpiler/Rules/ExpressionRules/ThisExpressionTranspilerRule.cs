@@ -6,7 +6,7 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules;
 /// </summary>
 /// <remarks>
 /// Device code reaches <c>this</c> in a struct's property accessor or <c>Dispose</c> member function, or in a
-/// user-defined struct constructor emitted by <c>StructTranspiler</c> as a value-returning function.
+/// user-defined struct constructor emitted by <c>StructConstructorEmitter</c> as a value-returning function.
 /// </remarks>
 public sealed class ThisExpressionTranspilerRule : SyntaxNodeTranspilerRuleBase<ThisExpressionSyntax>
 {
