@@ -3,7 +3,7 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 /// <summary>
 /// Emits the <c>operator true</c> and <c>operator false</c> of a struct as value-returning device functions
 /// (<c>__gsharp_fn_...__op_True</c> / <c>__op_False</c>), which a <c>&amp;&amp;</c> or <c>||</c> over an operator macro
-/// of the struct calls to test its left operand (<see cref="OperatorMacroResolver.PlanConditional"/>).
+/// of the struct calls to test its left operand (<see cref="OperatorMacroCallPlanner.PlanConditional"/>).
 /// </summary>
 /// <remarks>
 /// [WHY] Only the operators that such a <c>&amp;&amp;</c> or <c>||</c> can call are emitted: <c>operator false</c>

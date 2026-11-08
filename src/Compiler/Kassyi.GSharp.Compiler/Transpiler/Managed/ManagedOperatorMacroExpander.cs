@@ -1,5 +1,6 @@
 using Microsoft.CodeAnalysis.Operations;
 using Kassyi.GSharp.Compiler.Transpiler.Rules.MacroRules;
+using static Kassyi.GSharp.Compiler.OperatorMacroCallPlanner;
 using static Kassyi.GSharp.Compiler.OperatorMacroContext;
 using static Kassyi.GSharp.Compiler.OperatorMacroResolver;
 
@@ -84,9 +85,9 @@ internal static class ManagedOperatorMacroExpander
 
         // [ref <T> <t0> = ref <target>;] <T> <t1> = <left>;
         // if (<test>(<t1>)) { <target> = <t1>; } else { <right temporaries> <target method>(<result>, <t1>, <right>); }
-        // A && or || over <macro> (OperatorMacroResolver.PlanConditional), as GpuOperatorMacroTranspiler writes it: the
-        // left operand is evaluated once and tested, and the target is called with the right operand only when the test
-        // fails. <result> or the temporary <resultTemp> receives the left operand or the target's result
+        // A && or || over <macro> (OperatorMacroCallPlanner.PlanConditional), as GpuOperatorMacroTranspiler writes it:
+        // the left operand is evaluated once and tested, and the target is called with the right operand only when the
+        // test fails. <result> or the temporary <resultTemp> receives the left operand or the target's result
         public bool AddConditional(ExpressionSyntax? result, string? resultTemp, OperatorMacro macro)
         {
             if (!TryPrepareCall(result, macro, assignment, semanticModel, out var call, out _) ||
@@ -97,14 +98,16 @@ internal static class ManagedOperatorMacroExpander
             }
 
             var plan = PlanConditional(call, macro, GetOperandEffects(call, macro, assignment, semanticModel));
-            var resultArgument = PrepareTarget(result, resultTemp, resultParameter, plan, macro, out var target);
+            var arguments = PlanArguments(call, macro, null, -1, semanticModel);
+            var resultArgument = PrepareTarget(result, resultTemp, resultParameter, plan, FindResult(arguments),
+                out var target);
 
             // The left operand: an operator macro computed into its temporary, or its value as the operand type
             var leftTemp = macro.TryGetNested(left, out var innerLeft)
                 ? ComputeNested(innerLeft)
                 : DeclareValue(left, macro.ResultType);
             if (resultArgument is null || leftTemp is null ||
-                CreateTargetCall(call, macro, resultArgument, leftTemp) is not { } otherwise)
+                CreateTargetCall(call, arguments, resultArgument, leftTemp) is not { } otherwise)
             {
                 return false;
             }
@@ -136,12 +139,12 @@ internal static class ManagedOperatorMacroExpander
         // The argument of the result of a && or || and the <target> that receives the left operand: the temporary
         // <resultTemp> (<result> is null), a reference to <result> evaluated now (the plan spills it), or <result>
         private ArgumentSyntax? PrepareTarget(ExpressionSyntax? result, string? resultTemp, IParameterSymbol parameter,
-            in ConditionalPlan plan, OperatorMacro macro, out ExpressionSyntax target)
+            in ConditionalPlan plan, in MacroArgument resultPlan, out ExpressionSyntax target)
         {
             if (result is null)
             {
                 target = Temp(resultTemp);
-                return CreateArgument(target, parameter, isVariable: true, type: null);
+                return CreateArgument(target, parameter, isVariable: true, conversion: null);
             }
 
             if (plan.SpillsTarget && TryCreateReference(result) is { } reference)
@@ -151,24 +154,30 @@ internal static class ManagedOperatorMacroExpander
                 Statements.Add(DeclareLocal(semanticModel.GetTypeSymbol(result), temp,
                     SyntaxFactory.RefExpression(reference), RefKind.Ref));
                 target = Temp(temp);
-                return CreateArgument(target, parameter, isVariable: true, type: null);
+                return CreateArgument(target, parameter, isVariable: true, conversion: null);
             }
 
             target = Visit(result);
-            return CreateOperand(result, parameter, macro, null, spill: false);
+            return CreateOperand(resultPlan, null);
         }
+
+        // The argument of the result in <arguments>
+        private static MacroArgument FindResult(ImmutableArray<MacroArgument> arguments) =>
+            arguments
+                .AsStackEnumerable()
+                .First(static argument => argument.Slot == 0);
 
         // { <right temporaries> <target method>(<context>, <result>, <left temporary>, <right>); }: the call of the
         // target when the test of a && or || fails, after the statements that compute an operator macro among the right
         // operands; null when an operand cannot be expanded
-        private BlockSyntax? CreateTargetCall(in MacroCall call, OperatorMacro macro, ArgumentSyntax resultArgument,
-            string leftTemp)
+        private BlockSyntax? CreateTargetCall(in MacroCall call, ImmutableArray<MacroArgument> plan,
+            ArgumentSyntax resultArgument, string leftTemp)
         {
             var outer = Statements;
             Statements = ImmutableArray.CreateBuilder<StatementSyntax>();
             try
             {
-                if (CreateTargetArguments(call, macro, resultArgument, leftTemp) is not { } arguments)
+                if (CreateTargetArguments(call, plan, resultArgument, leftTemp) is not { } arguments)
                 {
                     return null;
                 }
@@ -192,27 +201,18 @@ internal static class ManagedOperatorMacroExpander
 
         // <context>, <result>, <left temporary>, <right>: the arguments of the target of a && or || in parameter order;
         // null when an operand cannot be expanded
-        private ImmutableArray<ArgumentSyntax>? CreateTargetArguments(in MacroCall call, OperatorMacro macro,
-            ArgumentSyntax resultArgument, string leftTemp)
+        private ImmutableArray<ArgumentSyntax>? CreateTargetArguments(in MacroCall call,
+            ImmutableArray<MacroArgument> plan, ArgumentSyntax resultArgument, string leftTemp)
         {
-            var arguments = ImmutableArray.CreateBuilder<ArgumentSyntax>(call.Operands.Length + 1);
-            if (call.ContextVariable is { } contextVariable)
+            var arguments = ImmutableArray.CreateBuilder<ArgumentSyntax>(plan.Length);
+            foreach (var planned in plan)
             {
-                arguments.Add(CreateContextArgument(contextVariable, call.Target.Parameters[0]));
-            }
-
-            for (var i = 0; i < call.Operands.Length; i++)
-            {
-                if (call.Parameters[i] is not { } parameter)
+                var argument = planned.Slot switch
                 {
-                    continue;
-                }
-
-                var argument = i switch
-                {
+                    -1 => CreateContextArgument(call, planned),
                     0 => resultArgument,
-                    1 => CreateArgument(Temp(leftTemp), parameter, isVariable: true, type: null),
-                    _ => CreateOperand(call.Operands[i], parameter, macro, null, spill: false)
+                    1 => CreateArgument(Temp(leftTemp), planned.Parameter, isVariable: true, conversion: null),
+                    _ => CreateOperand(planned, null)
                 };
                 if (argument is null)
                 {
@@ -277,21 +277,14 @@ internal static class ManagedOperatorMacroExpander
                 last = EvaluationOrder.LastSpilledOperand(effects);
             }
 
-            var arguments = ImmutableArray.CreateBuilder<ArgumentSyntax>(call.Operands.Length + 1);
-            if (call.ContextVariable is { } contextVariable)
+            var plan = PlanArguments(call, macro, effects, last, semanticModel);
+            var arguments = ImmutableArray.CreateBuilder<ArgumentSyntax>(plan.Length);
+            foreach (var planned in plan)
             {
-                arguments.Add(CreateContextArgument(contextVariable, call.Target.Parameters[0]));
-            }
-
-            for (var i = 0; i < call.Operands.Length; i++)
-            {
-                if (call.Parameters[i] is not { } parameter)
-                {
-                    continue;
-                }
-
-                var spill = i <= last && effects is not null && !effects[i].IsEmpty;
-                if (CreateOperand(call.Operands[i], parameter, macro, resultTemp, spill) is not { } argument)
+                var argument = planned.Kind == MacroArgumentKind.Context
+                    ? CreateContextArgument(call, planned)
+                    : CreateOperand(planned, resultTemp);
+                if (argument is null)
                 {
                     return null;
                 }
@@ -305,35 +298,35 @@ internal static class ManagedOperatorMacroExpander
             );
         }
 
-        // The argument of one operand, as GpuOperatorMacroTranspiler.DeclareOperandTemps and AppendOperand write it:
-        // the temporary <resultTemp> of the inner operator macro that this call computes (the operand is null), the
-        // temporary of an inner operator macro computed first, the operand evaluated into a temporary now (<spill>), or
-        // the operand in place
-        private ArgumentSyntax? CreateOperand(ExpressionSyntax? operand, IParameterSymbol parameter, OperatorMacro macro,
-            string? resultTemp, bool spill)
+        // The argument of one operand of the plan, as GpuOperatorMacroTranspiler.DeclareOperandTemps and AppendOperand
+        // write it: the temporary <resultTemp> of the inner operator macro that this call computes, the temporary of
+        // an inner operator macro computed first, the operand evaluated into a temporary now (it spills), or the
+        // operand in place
+        private ArgumentSyntax? CreateOperand(in MacroArgument argument, string? resultTemp)
         {
-            if (operand is null)
+            var parameter = argument.Parameter;
+            switch (argument)
             {
-                // The temporary of the inner operator macro that this call computes, passed to its ref or out result
-                return CreateArgument(Temp(resultTemp), parameter, isVariable: true, type: null);
+                case { Kind: MacroArgumentKind.NestedOperand, Nested.Inner: var inner }:
+                    return ComputeNested(inner) is { } temp
+                        ? CreateArgument(Temp(temp), parameter, isVariable: true, conversion: null)
+                        : null;
+                case { Operand: { } operand }:
+                    var reference = IsPassedByReference(parameter) &&
+                                    (parameter.RefKind is RefKind.Ref or RefKind.Out ||
+                                     argument.OperandType.IsEqualTo(parameter.Type))
+                        ? TryCreateReference(operand)
+                        : null;
+                    var expression = reference ?? Visit(operand);
+                    return argument.Spills
+                        ? Spill(expression, argument, isVariable: reference is not null)
+                        : CreateArgument(expression, parameter, isVariable: reference is not null,
+                            argument.ConversionType);
+                default:
+                    // The temporary of the inner operator macro that this call computes, passed to its ref or out
+                    // result
+                    return CreateArgument(Temp(resultTemp), parameter, isVariable: true, conversion: null);
             }
-
-            if (macro.TryGetNested(operand, out var inner))
-            {
-                return ComputeNested(inner) is { } temp
-                    ? CreateArgument(Temp(temp), parameter, isVariable: true, type: null)
-                    : null;
-            }
-
-            var type = semanticModel.GetTypeSymbol(operand);
-            var reference = IsPassedByReference(parameter) && (parameter.RefKind is RefKind.Ref or RefKind.Out ||
-                                                                 type.IsEqualTo(parameter.Type))
-                ? TryCreateReference(operand)
-                : null;
-            var expression = reference ?? Visit(operand);
-            return spill
-                ? Spill(expression, type, parameter, isVariable: reference is not null)
-                : CreateArgument(expression, parameter, isVariable: reference is not null, type);
         }
 
         // The operand evaluated into a temporary now, in the C# order, as the C++ emitter does (EvaluationOrder.DeclareTemp:
@@ -342,9 +335,10 @@ internal static class ManagedOperatorMacroExpander
         // ref readonly <type> <temp> = ref <operand>;   storage passed to an 'in' or 'ref readonly' parameter: the call
         //                                               reads the storage itself, as in C++
         // <type> <temp> = <operand>;                    any other value
-        private ArgumentSyntax Spill(ExpressionSyntax operand, ITypeSymbol? type, IParameterSymbol parameter,
-            bool isVariable)
+        private ArgumentSyntax Spill(ExpressionSyntax operand, in MacroArgument argument, bool isVariable)
         {
+            var type = argument.OperandType;
+            var parameter = argument.Parameter;
             var temp = NextTemp();
             var reference = type is null ? RefKind.None : parameter.RefKind switch
             {
@@ -354,20 +348,21 @@ internal static class ManagedOperatorMacroExpander
             };
             Statements.Add(DeclareLocal(type, temp,
                 reference == RefKind.None ? operand : SyntaxFactory.RefExpression(operand), reference));
-            return CreateArgument(Temp(temp), parameter, isVariable: reference != RefKind.None, type);
+            return CreateArgument(Temp(temp), parameter, isVariable: reference != RefKind.None,
+                argument.ConversionType);
         }
 
-        // ref <argument> / out <argument>, in <argument> for storage, or the value cast to the parameter type when its type
-        // is not that type
+        // ref <argument> / out <argument>, in <argument> for storage, or the value cast to <conversion>, the parameter
+        // type when the value's type is another one (MacroArgument.ConversionType)
         private static ArgumentSyntax CreateArgument(ExpressionSyntax expression, IParameterSymbol parameter,
-            bool isVariable, ITypeSymbol? type)
+            bool isVariable, ITypeSymbol? conversion)
         {
             if (parameter.RefKind is RefKind.Ref or RefKind.Out || isVariable && IsPassedByReference(parameter))
             {
                 return WithModifier(expression, parameter.RefKind);
             }
 
-            if (type is null || type.IsEqualTo(parameter.Type))
+            if (conversion is null)
             {
                 return SyntaxFactory.Argument(expression);
             }
@@ -375,7 +370,7 @@ internal static class ManagedOperatorMacroExpander
             // (<parameter type>)<expression>, with the expression in parentheses unless it is a primary expression
             return SyntaxFactory.Argument(
                 SyntaxFactory.CastExpression(
-                    ParseType(parameter.Type),
+                    ParseType(conversion),
                     IsPrimary(expression) ? expression : SyntaxFactory.ParenthesizedExpression(expression)
                 )
             );
@@ -390,8 +385,11 @@ internal static class ManagedOperatorMacroExpander
         // The context variable, as the body spells it: a local that a state machine keeps in its context is read through
         // the context there (OperatorMacroContext.FindLoweredReference finds a reference of the lowered body); otherwise,
         // in the user's own tree, its name
-        private ArgumentSyntax CreateContextArgument(ISymbol variable, IParameterSymbol parameter)
+        private ArgumentSyntax CreateContextArgument(in MacroCall call, in MacroArgument argument)
         {
+            var variable = call.ContextVariable ??
+                           throw new InvalidOperationException("A context argument has a variable.");
+            var parameter = argument.Parameter;
             ExpressionSyntax reference = FindLoweredReference(assignment, variable, semanticModel) is { } lowered
                 ? Visit(lowered)
                 : SyntaxFactory.IdentifierName(SyntaxFactory.Identifier(variable.Name.ToCSharpIdentifier()));
