@@ -97,7 +97,6 @@ __gsharp_id_1_output[__gsharp_id_3_tid]=__gsharp_id_4_shared[__gsharp_id_5_rever
 }
 }
 ";
-public static readonly string ReverseArrayWithSharedMemoryKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ReverseArrayWithSharedMemoryKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ReverseArrayWithSharedMemoryKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryKernels__ReverseArrayWithSharedMemoryKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerReverseArrayWithSharedMemoryKernel() => global::Kassyi.GSharp.Tests.Shared.Core.SharedMemoryKernels.__gsharp_hfunc_ReverseArrayWithSharedMemoryKernel.Resolve();

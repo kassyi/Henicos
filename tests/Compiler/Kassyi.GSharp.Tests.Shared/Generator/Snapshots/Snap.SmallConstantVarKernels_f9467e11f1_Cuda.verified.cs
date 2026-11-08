@@ -248,7 +248,6 @@ __gsharp_id_8_compound=(unsigned char)__gsharp_add_i32(__gsharp_id_8_compound,2)
 __gsharp_id_0_output[7]=__gsharp_id_8_compound;
 }
 ";
-public static readonly string IncrementKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +IncrementKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_IncrementKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__SmallConstantVarKernels__IncrementKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerIncrementKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.SmallConstantVarKernels.__gsharp_hfunc_IncrementKernel.Resolve();
@@ -360,7 +359,6 @@ __gsharp_id_3_lowest=(short)__gsharp_sub_i32(__gsharp_id_3_lowest,1);
 __gsharp_id_0_output[2]=(int)__gsharp_id_3_lowest;
 }
 ";
-public static readonly string EnumIncrementKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +EnumIncrementKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_EnumIncrementKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__SmallConstantVarKernels__EnumIncrementKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerEnumIncrementKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.SmallConstantVarKernels.__gsharp_hfunc_EnumIncrementKernel.Resolve();
@@ -464,7 +462,6 @@ public const string NarrowConstantUsesKernel_Source = @"extern ""C"" __global__ 
 __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__SmallConstantVarKernels__NarrowConstantUses(__gsharp_id_0_input,__gsharp_id_1_output);
 }
 ";
-public static readonly string NarrowConstantUsesKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +NarrowConstantUsesKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_NarrowConstantUsesKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__SmallConstantVarKernels__NarrowConstantUsesKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerNarrowConstantUsesKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.SmallConstantVarKernels.__gsharp_hfunc_NarrowConstantUsesKernel.Resolve();
@@ -618,7 +615,6 @@ __gsharp_id_2_x=(unsigned char)__gsharp_add_i32(__gsharp_id_2_x,1);
 __gsharp_id_0_output[0]=__gsharp_id_2_x;
 }
 ";
-public static readonly string LocalConstKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +LocalConstKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_LocalConstKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__SmallConstantVarKernels__LocalConstKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerLocalConstKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.SmallConstantVarKernels.__gsharp_hfunc_LocalConstKernel.Resolve();

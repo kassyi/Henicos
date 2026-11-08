@@ -186,7 +186,6 @@ bool __gsharp_id_4_broadcast = __gsharp_id_1_usePrimary!=0&&__gsharp_fn_Kassyi__
 __gsharp_id_0_buffer[(int)threadIdx.x]=(__gsharp_id_4_broadcast?__gsharp_id_2_value:__gsharp_id_3_previous);
 }
 ";
-public static readonly string RefParameterKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +RefParameterKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_RefParameterKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__DeviceFunctionRefParameterBarrierKernels__RefParameterKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerRefParameterKernel() => global::Kassyi.GSharp.Tests.Shared.TestCases.Analyzers.BarrierUsage.DeviceFunctionRefParameterBarrierKernels.__gsharp_hfunc_RefParameterKernel.Resolve();

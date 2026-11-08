@@ -113,7 +113,6 @@ __gsharp_id_2_success[__gsharp_id_3_tid]=0;
 }
 }
 ";
-public static readonly string HappyPathKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +HappyPathKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_HappyPathKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__InlineOutVarKernels__HappyPathKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerHappyPathKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.InlineOutVarKernels.__gsharp_hfunc_HappyPathKernel.Resolve();
@@ -324,7 +323,6 @@ __gsharp_id_1_output[__gsharp_id_2_tid]=__gsharp_sub_i32(__gsharp_id_3_val,10);
 }
 }
 ";
-public static readonly string IfConditionKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +IfConditionKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_IfConditionKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__InlineOutVarKernels__IfConditionKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerIfConditionKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.InlineOutVarKernels.__gsharp_hfunc_IfConditionKernel.Resolve();
@@ -484,7 +482,6 @@ __gsharp_id_3_curr=__gsharp_id_5_nextVal;
 __gsharp_id_1_output[__gsharp_id_2_tid]=__gsharp_id_4_sum;
 }
 ";
-public static readonly string WhileConditionKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +WhileConditionKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_WhileConditionKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__InlineOutVarKernels__WhileConditionKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerWhileConditionKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.InlineOutVarKernels.__gsharp_hfunc_WhileConditionKernel.Resolve();

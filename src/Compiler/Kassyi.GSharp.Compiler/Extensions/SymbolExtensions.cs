@@ -239,13 +239,19 @@ internal static class SymbolExtensions
         } && type.ContainingNamespace.IsCoreNamespace();
 
     /// <summary>
-    /// Attempts to get the first declaring syntax node of the specified type for this symbol.
+    /// Attempts to get the first declaring syntax node of the specified type for this symbol. For the defining
+    /// declaration of a partial method, it is the implementing declaration, which has the body.
     /// </summary>
     public static bool TryGetDeclaringSyntax<TSyntax>(
         this ISymbol? symbol,
         [NotNullWhen(true)] out TSyntax? syntax)
         where TSyntax : SyntaxNode
     {
+        if (symbol is IMethodSymbol { PartialImplementationPart: { } implementation })
+        {
+            symbol = implementation;
+        }
+
         if (symbol is { DeclaringSyntaxReferences.Length: > 0 } &&
             symbol.DeclaringSyntaxReferences[0].GetSyntax() is TSyntax node)
         {
@@ -256,6 +262,13 @@ internal static class SymbolExtensions
         syntax = null;
         return false;
     }
+
+    /// <summary>
+    /// Whether <paramref name="method"/> is a partial method without an implementing declaration, whose calls C#
+    /// removes, arguments included.
+    /// </summary>
+    public static bool IsPartialWithoutImplementation([NotNullWhen(true)] this IMethodSymbol? method) =>
+        method is { IsPartialDefinition: true, PartialImplementationPart: null };
 
     /// <summary>
     /// Whether <paramref name="constructor"/> is the primary constructor of its type (<c>struct S(int a)</c>,

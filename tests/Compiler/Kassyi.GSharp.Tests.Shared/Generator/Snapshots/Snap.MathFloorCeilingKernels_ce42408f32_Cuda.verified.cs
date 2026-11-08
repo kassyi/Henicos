@@ -92,7 +92,6 @@ __gsharp_id_4_floatFloor[__gsharp_id_6_tid]=floorf(__gsharp_id_3_floatInputs[__g
 __gsharp_id_5_floatCeiling[__gsharp_id_6_tid]=ceilf(__gsharp_id_3_floatInputs[__gsharp_id_6_tid]);
 }
 ";
-public static readonly string FloorCeilingKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +FloorCeilingKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_FloorCeilingKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__MathFloorCeilingKernels__FloorCeilingKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerFloorCeilingKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.MathFloorCeilingKernels.__gsharp_hfunc_FloorCeilingKernel.Resolve();
@@ -473,7 +472,6 @@ __gsharp_id_2_doubleResults[__gsharp_id_6_tid]=pow(__gsharp_id_0_doubleBases[__g
 __gsharp_id_5_floatResults[__gsharp_id_6_tid]=powf(__gsharp_id_3_floatBases[__gsharp_id_6_tid],__gsharp_id_4_floatExponents[__gsharp_id_6_tid]);
 }
 ";
-public static readonly string PowKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +PowKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_PowKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__MathFloorCeilingKernels__PowKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerPowKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.MathFloorCeilingKernels.__gsharp_hfunc_PowKernel.Resolve();
@@ -854,7 +852,6 @@ __gsharp_id_1_doubleResults[__gsharp_id_4_tid]=rint(__gsharp_id_0_doubleInputs[_
 __gsharp_id_3_floatResults[__gsharp_id_4_tid]=rintf(__gsharp_id_2_floatInputs[__gsharp_id_4_tid]);
 }
 ";
-public static readonly string RoundKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +RoundKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_RoundKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__MathFloorCeilingKernels__RoundKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerRoundKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.MathFloorCeilingKernels.__gsharp_hfunc_RoundKernel.Resolve();

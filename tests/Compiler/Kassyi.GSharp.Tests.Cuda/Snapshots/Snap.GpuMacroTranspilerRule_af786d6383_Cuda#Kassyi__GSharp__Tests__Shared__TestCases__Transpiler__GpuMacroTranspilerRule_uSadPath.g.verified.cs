@@ -24,7 +24,6 @@ public static partial class AotContexts
 public const string Kernel_Source = @"#error ""(11,9): GSH0002: The string type is not supported in GPU kernels""
 #error ""(13,23): GSH0006: The argument to Gpu.InlinePtx must be a string literal or an interpolated string literal""
 ";
-public static readonly string Kernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +Kernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_Kernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__TestCases__Transpiler__GpuMacroTranspilerRule_uSadPath__Kernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_MegaTestCompilationBase.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerKernel() => global::Kassyi.GSharp.Tests.Shared.TestCases.Transpiler.GpuMacroTranspilerRule_SadPath.__gsharp_hfunc_Kernel.Resolve();
