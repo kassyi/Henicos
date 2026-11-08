@@ -287,8 +287,8 @@ public static partial class ManagedGpuContext
     /// </summary>
     /// <returns>All 32 lanes, or fewer in the last warp of a block whose size is not a multiple of 32.</returns>
     /// <remarks>
-    /// A converged warp on the GPU reports the same lanes. Under a condition that depends on the thread, the GPU reports
-    /// only the lanes that reach the call together; the analyzer reports such a call as GSH0101 on the CPU dialects.
+    /// A call in a kernel or device function does not get here: the lowering makes it a meeting of the lanes that reach it
+    /// together (<see cref="__gsharp_warp_active_mask_read{TFrame}"/>, #844), and GSH0062 reports one where it cannot.
     /// </remarks>
     internal static uint ActiveMask()
     {

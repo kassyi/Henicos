@@ -27,6 +27,13 @@ internal static class BarrierHelper
     public static bool IsGridBarrier(InvocationExpressionSyntax inv) =>
         TryGetSyncIntrinsic(inv, out var data) && data == LoweringAnnotations.GridBarrierAnnotationData;
 
+    /// <summary>
+    /// Determines whether the specified invocation is a reconvergence point that <see cref="ReconvergenceInserter"/> put
+    /// after a branch or loop.
+    /// </summary>
+    public static bool IsReconvergence(InvocationExpressionSyntax inv) =>
+        TryGetSyncIntrinsic(inv, out var data) && data == LoweringAnnotations.ReconvergeAnnotationData;
+
     /// <summary>Determines whether the specified invocation calls a device function that may suspend the calling thread.</summary>
     public static bool IsSuspendingCall(InvocationExpressionSyntax inv) =>
         inv.HasAnnotations(LoweringAnnotations.SuspendingCallAnnotationKind);
@@ -47,7 +54,7 @@ internal static class BarrierHelper
 
     /// <summary>
     /// Determines whether the specified invocation is a warp shuffle (<c>Warp.Shuffle*Sync</c>, <c>Gpu.Match*Sync</c>, the
-    /// votes and reductions of <c>Warp</c>, <c>Gpu.SyncWarp</c>).
+    /// votes and reductions of <c>Warp</c>, <c>Gpu.SyncWarp</c>, <c>Warp.ActiveMask</c>).
     /// </summary>
     /// <remarks>
     /// Other <c>Warp</c> / <c>Gpu</c> members (<c>Gpu.WarpId()</c>, <c>Gpu.LaneId()</c>) are plain intrinsics and do not
@@ -80,6 +87,7 @@ internal static class BarrierHelper
                 LoweringAnnotations.ReduceOrAnnotationData => WarpShuffleKind.ReduceOr,
                 LoweringAnnotations.ReduceXorAnnotationData => WarpShuffleKind.ReduceXor,
                 LoweringAnnotations.SyncWarpAnnotationData => WarpShuffleKind.SyncWarp,
+                LoweringAnnotations.ActiveMaskAnnotationData => WarpShuffleKind.ActiveMask,
                 _ => WarpShuffleKind.None
             };
             return kind != WarpShuffleKind.None;
