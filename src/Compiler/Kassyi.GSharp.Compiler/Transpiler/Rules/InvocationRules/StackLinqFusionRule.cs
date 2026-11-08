@@ -27,8 +27,8 @@ public sealed class StackLinqFusionRule : IInvocationTranspilerRule
         { StackLinqOperator.FirstOrDefault, new ElementSelectionStrategy(stopOnFirstMatch: true, trapOnEmpty: false) },
         { StackLinqOperator.Last, new ElementSelectionStrategy(stopOnFirstMatch: false, trapOnEmpty: true) },
         { StackLinqOperator.LastOrDefault, new ElementSelectionStrategy(stopOnFirstMatch: false, trapOnEmpty: false) },
-        { StackLinqOperator.Max, new ExtremaStrategy(">") },
-        { StackLinqOperator.Min, new ExtremaStrategy("<") },
+        { StackLinqOperator.Max, new ExtremaStrategy(isMax: true) },
+        { StackLinqOperator.Min, new ExtremaStrategy(isMax: false) },
         { StackLinqOperator.Average, new AverageStrategy() },
         { StackLinqOperator.Aggregate, new AggregateStrategy() },
         { StackLinqOperator.Contains, new ContainsStrategy() }
@@ -169,8 +169,9 @@ public sealed class StackLinqFusionRule : IInvocationTranspilerRule
                 writer.Append(
                     $"return {GSharpInternalNames.StackLinq.BlockReduce}({ResultVar}, {GSharpInternalNames.StackLinq.Plus}{{}});");
             }
-            else if (chain.Terminal == StackLinqOperator.Average &&
-                     terminalStage.Symbol.ReturnType.SpecialType == SpecialType.System_Single)
+            else if ((chain.Terminal == StackLinqOperator.Average &&
+                      terminalStage.Symbol.ReturnType.SpecialType == SpecialType.System_Single) ||
+                     (chain.Terminal == StackLinqOperator.Sum && SumStrategy.AccumulatesInDouble(in terminalStage)))
             {
                 writer.Append($"return (float){ResultVar};");
             }
