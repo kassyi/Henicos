@@ -96,6 +96,27 @@ public class ForEachRewriter(SemanticModel? semanticModel = null) : CSharpSyntax
         var srcName = $"{GSharpInternalNames.Lowering.ForEachSourcePrefix}{id}";
         var indexName = $"{GSharpInternalNames.Lowering.ForEachIndexPrefix}{id}";
 
+        var srcStatement = DeclareSource(srcName, expr, nullCheckPlace, annotations);
+        var itemStatement = DeclareItem(node, srcName, indexName, castElement, annotations);
+        var forStatement = SyntaxFactory.ForStatement(
+            DeclareIndex(indexName, annotations),
+            SyntaxFactory.SeparatedList<ExpressionSyntax>(),
+            IndexInRange(indexName, srcName, annotations),
+            SyntaxFactory.SingletonSeparatedList<ExpressionSyntax>(IncrementIndex(indexName, annotations)),
+            PrependItem(itemStatement, body).WithAdditionalAnnotations(annotations)
+        ).WithAdditionalAnnotations(annotations);
+
+        return SyntaxFactory.Block(srcStatement, forStatement).WithAdditionalAnnotations(annotations);
+    }
+
+    // var __gsharp_foreach_src_<id> = <expr>;
+    // The source carries the null check decision when one is needed (GetNullCheckPlace)
+    private static LocalDeclarationStatementSyntax DeclareSource(
+        string srcName,
+        ExpressionSyntax expr,
+        string? nullCheckPlace,
+        ImmutableArray<SyntaxAnnotation> annotations)
+    {
         var source = nullCheckPlace == null
             ? expr
             : expr.WithAdditionalAnnotations(
@@ -103,13 +124,19 @@ public class ForEachRewriter(SemanticModel? semanticModel = null) : CSharpSyntax
             );
         var srcDeclarator = SyntaxFactory.VariableDeclarator(SyntaxFactory.Identifier(srcName))
             .WithInitializer(SyntaxFactory.EqualsValueClause(source));
-        var srcStatement = SyntaxFactory.LocalDeclarationStatement(
+        return SyntaxFactory.LocalDeclarationStatement(
             SyntaxFactory.VariableDeclaration(
                 SyntaxFactory.IdentifierName("var"),
                 SyntaxFactory.SingletonSeparatedList(srcDeclarator)
             )
         ).WithAdditionalAnnotations(annotations);
+    }
 
+    // int __gsharp_foreach_i_<id> = 0
+    private static VariableDeclarationSyntax DeclareIndex(
+        string indexName,
+        ImmutableArray<SyntaxAnnotation> annotations)
+    {
         var indexDeclarator = SyntaxFactory.VariableDeclarator(SyntaxFactory.Identifier(indexName))
             .WithInitializer(
                 SyntaxFactory.EqualsValueClause(
@@ -117,12 +144,18 @@ public class ForEachRewriter(SemanticModel? semanticModel = null) : CSharpSyntax
                 )
             )
             .WithAdditionalAnnotations(new SyntaxAnnotation(LoweringAnnotations.ForEachIndexAnnotationKind));
-        var indexDeclaration = SyntaxFactory.VariableDeclaration(
+        return SyntaxFactory.VariableDeclaration(
             SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.IntKeyword)),
             SyntaxFactory.SingletonSeparatedList(indexDeclarator)
         ).WithAdditionalAnnotations(annotations);
+    }
 
-        var condition = SyntaxFactory.BinaryExpression(
+    // __gsharp_foreach_i_<id> < __gsharp_foreach_src_<id>.Length
+    private static BinaryExpressionSyntax IndexInRange(
+        string indexName,
+        string srcName,
+        ImmutableArray<SyntaxAnnotation> annotations) =>
+        SyntaxFactory.BinaryExpression(
             SyntaxKind.LessThanExpression,
             SyntaxFactory.IdentifierName(indexName),
             SyntaxFactory.MemberAccessExpression(
@@ -134,11 +167,24 @@ public class ForEachRewriter(SemanticModel? semanticModel = null) : CSharpSyntax
             )
         ).WithAdditionalAnnotations(annotations);
 
-        var incrementor = SyntaxFactory.PostfixUnaryExpression(
+    // __gsharp_foreach_i_<id>++
+    private static PostfixUnaryExpressionSyntax IncrementIndex(
+        string indexName,
+        ImmutableArray<SyntaxAnnotation> annotations) =>
+        SyntaxFactory.PostfixUnaryExpression(
             SyntaxKind.PostIncrementExpression,
             SyntaxFactory.IdentifierName(indexName)
         ).WithAdditionalAnnotations(annotations);
 
+    // <T> <x> = __gsharp_foreach_src_<id>[__gsharp_foreach_i_<id>];
+    // <T> <x> = (<T>)__gsharp_foreach_src_<id>[__gsharp_foreach_i_<id>]; when the element converts (castElement)
+    private static LocalDeclarationStatementSyntax DeclareItem(
+        ForEachStatementSyntax node,
+        string srcName,
+        string indexName,
+        bool castElement,
+        ImmutableArray<SyntaxAnnotation> annotations)
+    {
         ExpressionSyntax elementAccess = SyntaxFactory.ElementAccessExpression(
             SyntaxFactory.IdentifierName(srcName),
             SyntaxFactory.BracketedArgumentList(
@@ -156,13 +202,17 @@ public class ForEachRewriter(SemanticModel? semanticModel = null) : CSharpSyntax
         var itemDeclarator = SyntaxFactory.VariableDeclarator(node.Identifier.WithoutTrivia())
             .WithInitializer(SyntaxFactory.EqualsValueClause(elementAccess))
             .WithAdditionalAnnotations(annotations);
-        var itemStatement = SyntaxFactory.LocalDeclarationStatement(
+        return SyntaxFactory.LocalDeclarationStatement(
             SyntaxFactory.VariableDeclaration(
                 node.Type.WithoutTrivia(),
                 SyntaxFactory.SingletonSeparatedList(itemDeclarator)
             )
         ).WithAdditionalAnnotations(annotations);
+    }
 
+    // { <item declaration> <body statements> }: a block body is inlined, any other statement follows the item
+    private static BlockSyntax PrependItem(LocalDeclarationStatementSyntax itemStatement, StatementSyntax body)
+    {
         var bodyStatements = ImmutableArray.CreateBuilder<StatementSyntax>();
         bodyStatements.Add(itemStatement);
         if (body is BlockSyntax bodyBlock)
@@ -174,14 +224,6 @@ public class ForEachRewriter(SemanticModel? semanticModel = null) : CSharpSyntax
             bodyStatements.Add(body);
         }
 
-        var forStatement = SyntaxFactory.ForStatement(
-            indexDeclaration,
-            SyntaxFactory.SeparatedList<ExpressionSyntax>(),
-            condition,
-            SyntaxFactory.SingletonSeparatedList<ExpressionSyntax>(incrementor),
-            SyntaxFactory.Block(bodyStatements).WithAdditionalAnnotations(annotations)
-        ).WithAdditionalAnnotations(annotations);
-
-        return SyntaxFactory.Block(srcStatement, forStatement).WithAdditionalAnnotations(annotations);
+        return SyntaxFactory.Block(bodyStatements);
     }
 }
