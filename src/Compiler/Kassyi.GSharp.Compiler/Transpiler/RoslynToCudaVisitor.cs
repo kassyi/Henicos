@@ -376,6 +376,14 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
             return;
         }
 
+        // C# removes the call of a partial method without an implementing declaration, arguments included
+        if (node.Expression is InvocationExpressionSyntax invocation &&
+            (Context.Query.SemanticModel.GetSymbol(invocation) as IMethodSymbol).IsPartialWithoutImplementation())
+        {
+            Context.Emitter.Writer.AppendLine(";");
+            return;
+        }
+
         StatementPrelude.Emit(node, ref Context);
         Visit(node.Expression);
         Context.Emitter.Writer.Append(';');
@@ -383,13 +391,12 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
 
     public override void VisitIdentifierName(IdentifierNameSyntax node)
     {
-        if (Context.Emitter.TryGetOverride(node.Identifier.Text, out var overrideValue))
+        var symbol = Context.Query.SemanticModel.GetSymbol(node);
+        if (Context.Emitter.TryGetOverride(node.Identifier.Text, symbol, out var overrideValue))
         {
             overrideValue.WriteTo(this);
             return;
         }
-
-        var symbol = Context.Query.SemanticModel.GetSymbol(node);
 
         // A Core intrinsic named without its type (using static Kassyi.GSharp.Core.Gpu) maps as Gpu.<name> does (#565);
         // so does a Math or MathF member (using static System.Math), which ProhibitedApiRule allows when it is mapped (#899)
