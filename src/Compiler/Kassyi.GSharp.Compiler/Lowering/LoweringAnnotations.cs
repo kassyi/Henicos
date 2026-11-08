@@ -80,6 +80,9 @@ public static class LoweringAnnotations
     /// <summary>Data of a <see cref="SyncIntrinsicAnnotationKind"/> annotation on <c>Warp.ReduceXorSync</c>.</summary>
     public const string ReduceXorAnnotationData = "Shuffle:ReduceXor";
 
+    /// <summary>Data of a <see cref="SyncIntrinsicAnnotationKind"/> annotation on <c>Gpu.SyncWarp</c>.</summary>
+    public const string SyncWarpAnnotationData = "Shuffle:SyncWarp";
+
     /// <summary>
     /// Annotation kind that marks a <c>return</c> the state machine inserts to suspend (after storing the next state), as
     /// opposed to a <c>return</c> of the user's code. Emitters leave it as a plain suspension instead of finishing the
@@ -204,6 +207,7 @@ public static class LoweringAnnotations
                 WarpShuffleKind.ReduceAnd => ReduceAndAnnotationData,
                 WarpShuffleKind.ReduceOr => ReduceOrAnnotationData,
                 WarpShuffleKind.ReduceXor => ReduceXorAnnotationData,
+                WarpShuffleKind.SyncWarp => SyncWarpAnnotationData,
                 _ => null
             },
             _ => null

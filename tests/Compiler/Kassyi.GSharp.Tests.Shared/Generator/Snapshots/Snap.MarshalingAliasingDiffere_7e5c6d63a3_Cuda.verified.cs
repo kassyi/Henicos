@@ -99,6 +99,53 @@ namespace Kassyi.GSharp.Tests.Shared.Differential
 {
 public partial class MarshalingAliasingDifferentialKernels
 {
+private static readonly global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[] s_errorSites = new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[]
+{
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1098351376u, "MarshalingAliasingDifferentialKernels.cs", 78, 24, "DeepStructAllArgModesKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(368950891u, "MarshalingAliasingDifferentialKernels.cs", 80, 24, "DeepStructAllArgModesKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(577247711u, "MarshalingAliasingDifferentialKernels.cs", 84, 13, "DeepStructAllArgModesKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1685205037u, "MarshalingAliasingDifferentialKernels.cs", 84, 32, "DeepStructAllArgModesKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(533218250u, "MarshalingAliasingDifferentialKernels.cs", 85, 13, "DeepStructAllArgModesKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1051258268u, "MarshalingAliasingDifferentialKernels.cs", 85, 38, "DeepStructAllArgModesKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1490555612u, "MarshalingAliasingDifferentialKernels.cs", 88, 26, "DeepStructAllArgModesKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(639306883u, "MarshalingAliasingDifferentialKernels.cs", 88, 51, "DeepStructAllArgModesKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1689822357u, "MarshalingAliasingDifferentialKernels.cs", 106, 13, "DeepStructSixContainersKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(82588436u, "MarshalingAliasingDifferentialKernels.cs", 109, 13, "DeepStructSixContainersKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(441352051u, "MarshalingAliasingDifferentialKernels.cs", 112, 25, "DeepStructSixContainersKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(553601554u, "MarshalingAliasingDifferentialKernels.cs", 115, 13, "DeepStructSixContainersKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(819962249u, "MarshalingAliasingDifferentialKernels.cs", 119, 13, "DeepStructSixContainersKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1740593472u, "MarshalingAliasingDifferentialKernels.cs", 122, 26, "DeepStructSixContainersKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1776180332u, "MarshalingAliasingDifferentialKernels.cs", 124, 28, "DeepStructSixContainersKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1610279595u, "MarshalingAliasingDifferentialKernels.cs", 125, 28, "DeepStructSixContainersKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2015692594u, "MarshalingAliasingDifferentialKernels.cs", 127, 28, "DeepStructSixContainersKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1617413881u, "MarshalingAliasingDifferentialKernels.cs", 128, 28, "DeepStructSixContainersKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2002005818u, "MarshalingAliasingDifferentialKernels.cs", 145, 13, "PrimaryCtorDeepStructKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1233924877u, "MarshalingAliasingDifferentialKernels.cs", 148, 13, "PrimaryCtorDeepStructKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(820312444u, "MarshalingAliasingDifferentialKernels.cs", 35, 28, "get_Eval0", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1953985880u, "MarshalingAliasingDifferentialKernels.cs", 37, 28, "get_Eval1", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1315962450u, "MarshalingAliasingDifferentialKernels.cs", 253, 13, "DeepStructInternalAliasKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(260398589u, "MarshalingAliasingDifferentialKernels.cs", 254, 33, "DeepStructInternalAliasKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(996812875u, "MarshalingAliasingDifferentialKernels.cs", 255, 13, "DeepStructInternalAliasKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1247959648u, "MarshalingAliasingDifferentialKernels.cs", 260, 13, "DeepStructInternalAliasKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1350241392u, "MarshalingAliasingDifferentialKernels.cs", 261, 32, "DeepStructInternalAliasKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1399161530u, "MarshalingAliasingDifferentialKernels.cs", 264, 27, "DeepStructInternalAliasKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(541530947u, "MarshalingAliasingDifferentialKernels.cs", 289, 32, "CrossLevelTopAndDeepStructKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(177397611u, "MarshalingAliasingDifferentialKernels.cs", 290, 13, "CrossLevelTopAndDeepStructKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1648739861u, "MarshalingAliasingDifferentialKernels.cs", 309, 26, "CrossAliasInDeepArrayAndRwArrayKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1713647672u, "MarshalingAliasingDifferentialKernels.cs", 311, 25, "CrossAliasInDeepArrayAndRwArrayKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1628883429u, "MarshalingAliasingDifferentialKernels.cs", 333, 13, "InArrayMutationIsolationKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(22120456u, "MarshalingAliasingDifferentialKernels.cs", 334, 13, "InArrayMutationIsolationKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1763774710u, "MarshalingAliasingDifferentialKernels.cs", 338, 85, "InArrayMutationIsolationKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(529053070u, "MarshalingAliasingDifferentialKernels.cs", 338, 115, "InArrayMutationIsolationKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1908951708u, "MarshalingAliasingDifferentialKernels.cs", 456, 93, "NullableTopLevelArrayKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1302072368u, "MarshalingAliasingDifferentialKernels.cs", 458, 29, "NullableTopLevelArrayKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1133720059u, "MarshalingAliasingDifferentialKernels.cs", 478, 53, "StructFieldNullOrEmptySafeKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(677922429u, "MarshalingAliasingDifferentialKernels.cs", 480, 53, "StructFieldNullOrEmptySafeKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(739990211u, "MarshalingAliasingDifferentialKernels.cs", 481, 46, "StructFieldNullOrEmptySafeKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1457024296u, "MarshalingAliasingDifferentialKernels.cs", 483, 17, "StructFieldNullOrEmptySafeKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1059400332u, "MarshalingAliasingDifferentialKernels.cs", 484, 29, "StructFieldNullOrEmptySafeKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(520265450u, "MarshalingAliasingDifferentialKernels.cs", 502, 25, "StructFieldNullDereferenceKernel", "G#: a null array is read"),
+};
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static partial class AotContexts
@@ -636,23 +683,23 @@ extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Different
 int __gsharp_id_4_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 if(__gsharp_id_4_tid==0)
 {
-int __gsharp_id_5_idx0 = __gsharp_array_at(__gsharp_id_0_byVal.__gsharp_mb_Indices, 0, ""G#: a null array is read at MarshalingAliasingDifferentialKernels.cs(77,24)"");
-int __gsharp_id_6_idx1 = __gsharp_array_at(__gsharp_id_1_byIn.__gsharp_mb_Indices, 1, ""G#: a null array is read at MarshalingAliasingDifferentialKernels.cs(78,24)"");
-float __gsharp_id_7_w0 = __gsharp_array_at(__gsharp_id_0_byVal.__gsharp_mb_Inner.__gsharp_mb_Weights, __gsharp_id_5_idx0, ""G#: a null array is read at MarshalingAliasingDifferentialKernels.cs(79,24)"")*__gsharp_id_0_byVal.__gsharp_mb_Scale;
-float __gsharp_id_8_w1 = __gsharp_array_at(__gsharp_id_1_byIn.__gsharp_mb_Inner.__gsharp_mb_Weights, __gsharp_id_6_idx1, ""G#: a null array is read at MarshalingAliasingDifferentialKernels.cs(80,24)"")*__gsharp_id_1_byIn.__gsharp_mb_Scale;
+int __gsharp_id_5_idx0 = __gsharp_id_0_byVal.__gsharp_mb_Indices[0];
+int __gsharp_id_6_idx1 = __gsharp_array_at(__gsharp_id_1_byIn.__gsharp_mb_Indices, 1, 1098351376u);
+float __gsharp_id_7_w0 = __gsharp_id_0_byVal.__gsharp_mb_Inner.__gsharp_mb_Weights[__gsharp_id_5_idx0]*__gsharp_id_0_byVal.__gsharp_mb_Scale;
+float __gsharp_id_8_w1 = __gsharp_array_at(__gsharp_id_1_byIn.__gsharp_mb_Inner.__gsharp_mb_Weights, __gsharp_id_6_idx1, 368950891u)*__gsharp_id_1_byIn.__gsharp_mb_Scale;
 __gsharp_id_3_outSums[0]=__gsharp_id_7_w0+__gsharp_id_0_byVal.__gsharp_mb_Inner.__gsharp_mb_Bias;
 __gsharp_id_3_outSums[1]=__gsharp_id_8_w1+__gsharp_id_1_byIn.__gsharp_mb_Inner.__gsharp_mb_Bias;
-__gsharp_array_at((*__gsharp_id_2_byRef).__gsharp_mb_Indices, 0, ""G#: a null array is read at MarshalingAliasingDifferentialKernels.cs(84,13)"")=__gsharp_add_i32(__gsharp_array_at((*__gsharp_id_2_byRef).__gsharp_mb_Indices, 0, ""G#: a null array is read at MarshalingAliasingDifferentialKernels.cs(84,32)""),10);
-__gsharp_array_at((*__gsharp_id_2_byRef).__gsharp_mb_Inner.__gsharp_mb_Weights, 0, ""G#: a null array is read at MarshalingAliasingDifferentialKernels.cs(85,13)"")=__gsharp_array_at((*__gsharp_id_2_byRef).__gsharp_mb_Inner.__gsharp_mb_Weights, 0, ""G#: a null array is read at MarshalingAliasingDifferentialKernels.cs(85,38)"")+2.5f;
+__gsharp_array_at((*__gsharp_id_2_byRef).__gsharp_mb_Indices, 0, 577247711u)=__gsharp_add_i32(__gsharp_array_at((*__gsharp_id_2_byRef).__gsharp_mb_Indices, 0, 1685205037u),10);
+__gsharp_array_at((*__gsharp_id_2_byRef).__gsharp_mb_Inner.__gsharp_mb_Weights, 0, 533218250u)=__gsharp_array_at((*__gsharp_id_2_byRef).__gsharp_mb_Inner.__gsharp_mb_Weights, 0, 1051258268u)+2.5f;
 (*__gsharp_id_2_byRef).__gsharp_mb_Inner.__gsharp_mb_Bias=__gsharp_add_i32((*__gsharp_id_2_byRef).__gsharp_mb_Inner.__gsharp_mb_Bias,3);
 (*__gsharp_id_2_byRef).__gsharp_mb_Scale=__gsharp_mul_i32((*__gsharp_id_2_byRef).__gsharp_mb_Scale,2);
-__gsharp_id_3_outSums[2]=__gsharp_array_at((*__gsharp_id_2_byRef).__gsharp_mb_Inner.__gsharp_mb_Weights, 0, ""G#: a null array is read at MarshalingAliasingDifferentialKernels.cs(88,26)"")+__gsharp_array_at((*__gsharp_id_2_byRef).__gsharp_mb_Indices, 0, ""G#: a null array is read at MarshalingAliasingDifferentialKernels.cs(88,51)"")+(*__gsharp_id_2_byRef).__gsharp_mb_Inner.__gsharp_mb_Bias+(*__gsharp_id_2_byRef).__gsharp_mb_Scale;
+__gsharp_id_3_outSums[2]=__gsharp_array_at((*__gsharp_id_2_byRef).__gsharp_mb_Inner.__gsharp_mb_Weights, 0, 1490555612u)+__gsharp_array_at((*__gsharp_id_2_byRef).__gsharp_mb_Indices, 0, 639306883u)+(*__gsharp_id_2_byRef).__gsharp_mb_Inner.__gsharp_mb_Bias+(*__gsharp_id_2_byRef).__gsharp_mb_Scale;
 }
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_DeepStructAllArgModesKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__MarshalingAliasingDifferentialKernels__DeepStructAllArgModesKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
-public static void WarmupFunctionPointerDeepStructAllArgModesKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.__gsharp_hfunc_DeepStructAllArgModesKernel.Resolve();
+public static void WarmupFunctionPointerDeepStructAllArgModesKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.__gsharp_hfunc_DeepStructAllArgModesKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.s_errorSites);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -664,10 +711,16 @@ throw new global::System.ArgumentNullException(nameof(outSums));
 if (outSums.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(outSums));
 }
+if (byVal.Indices is null){
+throw new global::System.ArgumentNullException(nameof(byVal), "byVal.Indices is null, but the field is not nullable.");
+}
+if (byVal.Inner.Weights is null){
+throw new global::System.ArgumentNullException(nameof(byVal), "byVal.Inner.Weights is null, but the field is not nullable.");
+}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MarshalingAliasingDifferentialKernels.DeepStructAllArgModesKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.__gsharp_hfunc_DeepStructAllArgModesKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.__gsharp_hfunc_DeepStructAllArgModesKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "MarshalingAliasingDifferentialKernels.DeepStructAllArgModesKernel");
 var __gsharp_device_arrays = new global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions();
 global::System.IntPtr __gsharp_d_2 = global::System.IntPtr.Zero;
@@ -756,10 +809,16 @@ throw new global::System.ArgumentNullException(nameof(outSums));
 if (outSums.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(outSums));
 }
+if (byVal.Indices.Data == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(byVal), "byVal.Indices is null, but the field is not nullable.");
+}
+if (byVal.Inner.Weights.Data == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(byVal), "byVal.Inner.Weights is null, but the field is not nullable.");
+}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MarshalingAliasingDifferentialKernels.DeepStructAllArgModesKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.__gsharp_hfunc_DeepStructAllArgModesKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.__gsharp_hfunc_DeepStructAllArgModesKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "MarshalingAliasingDifferentialKernels.DeepStructAllArgModesKernel");
 try
 {
@@ -809,30 +868,30 @@ extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Different
 int __gsharp_id_7_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 if(__gsharp_id_7_tid==0)
 {
-__gsharp_array_at(__gsharp_id_0_arrBags[0].__gsharp_mb_Data, 0, ""G#: a null array is read at MarshalingAliasingDifferentialKernels.cs(106,13)"")=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_0_arrBags[0].__gsharp_mb_Data, 0, ""G#: a null array is read at MarshalingAliasingDifferentialKernels.cs(106,13)""),100);
+__gsharp_array_at(__gsharp_id_0_arrBags[0].__gsharp_mb_Data, 0, 1689822357u)=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_0_arrBags[0].__gsharp_mb_Data, 0, 1689822357u),100);
 __gsharp_id_0_arrBags[0].__gsharp_mb_Tag=__gsharp_add_i32(__gsharp_id_0_arrBags[0].__gsharp_mb_Tag,1);
-__gsharp_array_at(__gsharp_id_1_spanBags[0].__gsharp_mb_Data, 0, ""G#: a null array is read at MarshalingAliasingDifferentialKernels.cs(109,13)"")=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_1_spanBags[0].__gsharp_mb_Data, 0, ""G#: a null array is read at MarshalingAliasingDifferentialKernels.cs(109,13)""),200);
+__gsharp_array_at(__gsharp_id_1_spanBags[0].__gsharp_mb_Data, 0, 82588436u)=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_1_spanBags[0].__gsharp_mb_Data, 0, 82588436u),200);
 __gsharp_id_1_spanBags[0].__gsharp_mb_Tag=__gsharp_add_i32(__gsharp_id_1_spanBags[0].__gsharp_mb_Tag,2);
-int __gsharp_id_8_roVal = __gsharp_add_i32(__gsharp_array_at(__gsharp_id_2_roSpanBags[0].__gsharp_mb_Data, 0, ""G#: a null array is read at MarshalingAliasingDifferentialKernels.cs(112,25)""),__gsharp_id_2_roSpanBags[0].__gsharp_mb_Tag);
+int __gsharp_id_8_roVal = __gsharp_add_i32(__gsharp_array_at(__gsharp_id_2_roSpanBags[0].__gsharp_mb_Data, 0, 441352051u),__gsharp_id_2_roSpanBags[0].__gsharp_mb_Tag);
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffDeepBag __gsharp_id_9_segElem = __gsharp_id_3_segBags[0];
-__gsharp_array_at(__gsharp_id_9_segElem.__gsharp_mb_Data, 0, ""G#: a null array is read at MarshalingAliasingDifferentialKernels.cs(115,13)"")=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_9_segElem.__gsharp_mb_Data, 0, ""G#: a null array is read at MarshalingAliasingDifferentialKernels.cs(115,13)""),300);
+__gsharp_array_at(__gsharp_id_9_segElem.__gsharp_mb_Data, 0, 553601554u)=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_9_segElem.__gsharp_mb_Data, 0, 553601554u),300);
 __gsharp_id_9_segElem.__gsharp_mb_Tag=__gsharp_add_i32(__gsharp_id_9_segElem.__gsharp_mb_Tag,3);
 __gsharp_id_3_segBags[0]=__gsharp_id_9_segElem;
-__gsharp_array_at(__gsharp_id_4_memBags[0].__gsharp_mb_Data, 0, ""G#: a null array is read at MarshalingAliasingDifferentialKernels.cs(119,13)"")=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_4_memBags[0].__gsharp_mb_Data, 0, ""G#: a null array is read at MarshalingAliasingDifferentialKernels.cs(119,13)""),400);
+__gsharp_array_at(__gsharp_id_4_memBags[0].__gsharp_mb_Data, 0, 819962249u)=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_4_memBags[0].__gsharp_mb_Data, 0, 819962249u),400);
 __gsharp_id_4_memBags[0].__gsharp_mb_Tag=__gsharp_add_i32(__gsharp_id_4_memBags[0].__gsharp_mb_Tag,4);
-int __gsharp_id_10_immVal = __gsharp_add_i32(__gsharp_array_at(__gsharp_id_5_immBags[0].__gsharp_mb_Data, 0, ""G#: a null array is read at MarshalingAliasingDifferentialKernels.cs(122,26)""),__gsharp_id_5_immBags[0].__gsharp_mb_Tag);
-__gsharp_id_6_outTotals[0]=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_0_arrBags[0].__gsharp_mb_Data, 0, ""G#: a null array is read at MarshalingAliasingDifferentialKernels.cs(124,28)""),__gsharp_id_0_arrBags[0].__gsharp_mb_Tag);
-__gsharp_id_6_outTotals[1]=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_1_spanBags[0].__gsharp_mb_Data, 0, ""G#: a null array is read at MarshalingAliasingDifferentialKernels.cs(125,28)""),__gsharp_id_1_spanBags[0].__gsharp_mb_Tag);
+int __gsharp_id_10_immVal = __gsharp_add_i32(__gsharp_array_at(__gsharp_id_5_immBags[0].__gsharp_mb_Data, 0, 1740593472u),__gsharp_id_5_immBags[0].__gsharp_mb_Tag);
+__gsharp_id_6_outTotals[0]=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_0_arrBags[0].__gsharp_mb_Data, 0, 1776180332u),__gsharp_id_0_arrBags[0].__gsharp_mb_Tag);
+__gsharp_id_6_outTotals[1]=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_1_spanBags[0].__gsharp_mb_Data, 0, 1610279595u),__gsharp_id_1_spanBags[0].__gsharp_mb_Tag);
 __gsharp_id_6_outTotals[2]=__gsharp_id_8_roVal;
-__gsharp_id_6_outTotals[3]=__gsharp_add_i32(__gsharp_add_i32(__gsharp_array_at(__gsharp_id_3_segBags[0].__gsharp_mb_Data, 0, ""G#: a null array is read at MarshalingAliasingDifferentialKernels.cs(127,28)""),__gsharp_id_3_segBags[0].__gsharp_mb_Tag),__gsharp_id_3_segBags.length);
-__gsharp_id_6_outTotals[4]=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_4_memBags[0].__gsharp_mb_Data, 0, ""G#: a null array is read at MarshalingAliasingDifferentialKernels.cs(128,28)""),__gsharp_id_4_memBags[0].__gsharp_mb_Tag);
+__gsharp_id_6_outTotals[3]=__gsharp_add_i32(__gsharp_add_i32(__gsharp_array_at(__gsharp_id_3_segBags[0].__gsharp_mb_Data, 0, 2015692594u),__gsharp_id_3_segBags[0].__gsharp_mb_Tag),__gsharp_id_3_segBags.length);
+__gsharp_id_6_outTotals[4]=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_4_memBags[0].__gsharp_mb_Data, 0, 1617413881u),__gsharp_id_4_memBags[0].__gsharp_mb_Tag);
 __gsharp_id_6_outTotals[5]=__gsharp_add_i32(__gsharp_id_10_immVal,__gsharp_id_5_immBags.AsSpan().length);
 }
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_DeepStructSixContainersKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__MarshalingAliasingDifferentialKernels__DeepStructSixContainersKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
-public static void WarmupFunctionPointerDeepStructSixContainersKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.__gsharp_hfunc_DeepStructSixContainersKernel.Resolve();
+public static void WarmupFunctionPointerDeepStructSixContainersKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.__gsharp_hfunc_DeepStructSixContainersKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.s_errorSites);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -871,7 +930,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MarshalingAliasingDifferentialKernels.DeepStructSixContainersKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.__gsharp_hfunc_DeepStructSixContainersKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.__gsharp_hfunc_DeepStructSixContainersKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "MarshalingAliasingDifferentialKernels.DeepStructSixContainersKernel");
 var __gsharp_device_arrays = new global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions();
 byte[]? __gsharp_shadow_0 = null;
@@ -1231,7 +1290,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MarshalingAliasingDifferentialKernels.DeepStructSixContainersKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.__gsharp_hfunc_DeepStructSixContainersKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.__gsharp_hfunc_DeepStructSixContainersKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "MarshalingAliasingDifferentialKernels.DeepStructSixContainersKernel");
 try
 {
@@ -1302,10 +1361,10 @@ int __gsharp_mb_scale;
 float2 __gsharp_mb_bias;
 GSharpArray<int> __gsharp_mb_Data;
 __device__ inline float __gsharp_mb_Eval0() const {
-return (__gsharp_mul_i32(__gsharp_array_at(__gsharp_mb_Data, 0, ""G#: a null array is read at MarshalingAliasingDifferentialKernels.cs(35,28)""),__gsharp_mb_scale))+__gsharp_mb_bias.x+__gsharp_mb_bias.y;
+return (__gsharp_mul_i32(__gsharp_array_at(__gsharp_mb_Data, 0, 820312444u),__gsharp_mb_scale))+__gsharp_mb_bias.x+__gsharp_mb_bias.y;
 }
 __device__ inline float __gsharp_mb_Eval1() const {
-return (__gsharp_mul_i32(__gsharp_array_at(__gsharp_mb_Data, 1, ""G#: a null array is read at MarshalingAliasingDifferentialKernels.cs(37,28)""),__gsharp_mb_scale))+__gsharp_mb_bias.x+__gsharp_mb_bias.y;
+return (__gsharp_mul_i32(__gsharp_array_at(__gsharp_mb_Data, 1, 1953985880u),__gsharp_mb_scale))+__gsharp_mb_bias.x+__gsharp_mb_bias.y;
 }
 __device__ inline int __gsharp_mb_Scale() const {
 return __gsharp_mb_scale;
@@ -1339,17 +1398,17 @@ int __gsharp_id_4_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)b
 if(__gsharp_id_4_tid==0)
 {
 __gsharp_id_3_outEval[0]=__gsharp_id_0_byVal.__gsharp_mb_Eval0();
-__gsharp_array_at((*__gsharp_id_1_byRef).__gsharp_mb_Data, 0, ""G#: a null array is read at MarshalingAliasingDifferentialKernels.cs(145,13)"")=__gsharp_add_i32(__gsharp_array_at((*__gsharp_id_1_byRef).__gsharp_mb_Data, 0, ""G#: a null array is read at MarshalingAliasingDifferentialKernels.cs(145,13)""),5);
+__gsharp_array_at((*__gsharp_id_1_byRef).__gsharp_mb_Data, 0, 2002005818u)=__gsharp_add_i32(__gsharp_array_at((*__gsharp_id_1_byRef).__gsharp_mb_Data, 0, 2002005818u),5);
 (*__gsharp_id_1_byRef).__gsharp_mb_Scale(__gsharp_add_i32((*__gsharp_id_1_byRef).__gsharp_mb_Scale(),1));
 __gsharp_id_3_outEval[1]=(*__gsharp_id_1_byRef).__gsharp_mb_Eval0();
-__gsharp_array_at(__gsharp_id_2_arr[0].__gsharp_mb_Data, 1, ""G#: a null array is read at MarshalingAliasingDifferentialKernels.cs(148,13)"")=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_2_arr[0].__gsharp_mb_Data, 1, ""G#: a null array is read at MarshalingAliasingDifferentialKernels.cs(148,13)""),7);
+__gsharp_array_at(__gsharp_id_2_arr[0].__gsharp_mb_Data, 1, 1233924877u)=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_2_arr[0].__gsharp_mb_Data, 1, 1233924877u),7);
 __gsharp_id_3_outEval[2]=__gsharp_id_2_arr[0].__gsharp_mb_Eval1();
 }
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_PrimaryCtorDeepStructKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__MarshalingAliasingDifferentialKernels__PrimaryCtorDeepStructKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
-public static void WarmupFunctionPointerPrimaryCtorDeepStructKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.__gsharp_hfunc_PrimaryCtorDeepStructKernel.Resolve();
+public static void WarmupFunctionPointerPrimaryCtorDeepStructKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.__gsharp_hfunc_PrimaryCtorDeepStructKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.s_errorSites);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -1367,10 +1426,13 @@ throw new global::System.ArgumentNullException(nameof(outEval));
 if (outEval.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(outEval));
 }
+if (byVal.Data is null){
+throw new global::System.ArgumentNullException(nameof(byVal), "byVal.Data is null, but the field is not nullable.");
+}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MarshalingAliasingDifferentialKernels.PrimaryCtorDeepStructKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.__gsharp_hfunc_PrimaryCtorDeepStructKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.__gsharp_hfunc_PrimaryCtorDeepStructKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "MarshalingAliasingDifferentialKernels.PrimaryCtorDeepStructKernel");
 var __gsharp_device_arrays = new global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions();
 global::System.IntPtr __gsharp_d_1 = global::System.IntPtr.Zero;
@@ -1513,10 +1575,13 @@ throw new global::System.ArgumentNullException(nameof(outEval));
 if (outEval.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(outEval));
 }
+if (byVal.Data.Data == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(byVal), "byVal.Data is null, but the field is not nullable.");
+}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MarshalingAliasingDifferentialKernels.PrimaryCtorDeepStructKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.__gsharp_hfunc_PrimaryCtorDeepStructKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.__gsharp_hfunc_PrimaryCtorDeepStructKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "MarshalingAliasingDifferentialKernels.PrimaryCtorDeepStructKernel");
 try
 {
@@ -2849,15 +2914,15 @@ extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Different
 int __gsharp_id_5_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 if(__gsharp_id_5_tid==0)
 {
-__gsharp_array_at((*__gsharp_id_0_pair).__gsharp_mb_First, 0, ""G#: a null array is read at MarshalingAliasingDifferentialKernels.cs(253,13)"")=__gsharp_add_i32(__gsharp_array_at((*__gsharp_id_0_pair).__gsharp_mb_First, 0, ""G#: a null array is read at MarshalingAliasingDifferentialKernels.cs(253,13)""),10);
-int __gsharp_id_6_seenViaSecond = __gsharp_array_at((*__gsharp_id_0_pair).__gsharp_mb_Second, 0, ""G#: a null array is read at MarshalingAliasingDifferentialKernels.cs(254,33)"");
-__gsharp_array_at((*__gsharp_id_0_pair).__gsharp_mb_Second, 0, ""G#: a null array is read at MarshalingAliasingDifferentialKernels.cs(255,13)"")=__gsharp_add_i32(__gsharp_array_at((*__gsharp_id_0_pair).__gsharp_mb_Second, 0, ""G#: a null array is read at MarshalingAliasingDifferentialKernels.cs(255,13)""),20);
-__gsharp_array_at(__gsharp_id_1_bagA.__gsharp_mb_Data, 0, ""G#: a null array is read at MarshalingAliasingDifferentialKernels.cs(257,13)"")=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_1_bagA.__gsharp_mb_Data, 0, ""G#: a null array is read at MarshalingAliasingDifferentialKernels.cs(257,13)""),100);
-int __gsharp_id_7_seenViaBagB = __gsharp_array_at(__gsharp_id_2_bagB.__gsharp_mb_Data, 0, ""G#: a null array is read at MarshalingAliasingDifferentialKernels.cs(258,31)"");
-__gsharp_array_at(__gsharp_id_3_bagArray[0].__gsharp_mb_Data, 0, ""G#: a null array is read at MarshalingAliasingDifferentialKernels.cs(260,13)"")=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_3_bagArray[0].__gsharp_mb_Data, 0, ""G#: a null array is read at MarshalingAliasingDifferentialKernels.cs(260,13)""),1000);
-int __gsharp_id_8_seenViaElem1 = __gsharp_array_at(__gsharp_id_3_bagArray[1].__gsharp_mb_Data, 0, ""G#: a null array is read at MarshalingAliasingDifferentialKernels.cs(261,32)"");
+__gsharp_array_at((*__gsharp_id_0_pair).__gsharp_mb_First, 0, 1315962450u)=__gsharp_add_i32(__gsharp_array_at((*__gsharp_id_0_pair).__gsharp_mb_First, 0, 1315962450u),10);
+int __gsharp_id_6_seenViaSecond = __gsharp_array_at((*__gsharp_id_0_pair).__gsharp_mb_Second, 0, 260398589u);
+__gsharp_array_at((*__gsharp_id_0_pair).__gsharp_mb_Second, 0, 996812875u)=__gsharp_add_i32(__gsharp_array_at((*__gsharp_id_0_pair).__gsharp_mb_Second, 0, 996812875u),20);
+__gsharp_id_1_bagA.__gsharp_mb_Data[0]=__gsharp_add_i32(__gsharp_id_1_bagA.__gsharp_mb_Data[0],100);
+int __gsharp_id_7_seenViaBagB = __gsharp_id_2_bagB.__gsharp_mb_Data[0];
+__gsharp_array_at(__gsharp_id_3_bagArray[0].__gsharp_mb_Data, 0, 1247959648u)=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_3_bagArray[0].__gsharp_mb_Data, 0, 1247959648u),1000);
+int __gsharp_id_8_seenViaElem1 = __gsharp_array_at(__gsharp_id_3_bagArray[1].__gsharp_mb_Data, 0, 1350241392u);
 __gsharp_id_4_observed[0]=__gsharp_id_6_seenViaSecond;
-__gsharp_id_4_observed[1]=__gsharp_array_at((*__gsharp_id_0_pair).__gsharp_mb_First, 0, ""G#: a null array is read at MarshalingAliasingDifferentialKernels.cs(264,27)"");
+__gsharp_id_4_observed[1]=__gsharp_array_at((*__gsharp_id_0_pair).__gsharp_mb_First, 0, 1399161530u);
 __gsharp_id_4_observed[2]=__gsharp_id_7_seenViaBagB;
 __gsharp_id_4_observed[3]=__gsharp_id_8_seenViaElem1;
 }
@@ -2865,7 +2930,7 @@ __gsharp_id_4_observed[3]=__gsharp_id_8_seenViaElem1;
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_DeepStructInternalAliasKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__MarshalingAliasingDifferentialKernels__DeepStructInternalAliasKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
-public static void WarmupFunctionPointerDeepStructInternalAliasKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.__gsharp_hfunc_DeepStructInternalAliasKernel.Resolve();
+public static void WarmupFunctionPointerDeepStructInternalAliasKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.__gsharp_hfunc_DeepStructInternalAliasKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.s_errorSites);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -2883,10 +2948,16 @@ throw new global::System.ArgumentNullException(nameof(observed));
 if (observed.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(observed));
 }
+if (bagA.Data is null){
+throw new global::System.ArgumentNullException(nameof(bagA), "bagA.Data is null, but the field is not nullable.");
+}
+if (bagB.Data is null){
+throw new global::System.ArgumentNullException(nameof(bagB), "bagB.Data is null, but the field is not nullable.");
+}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MarshalingAliasingDifferentialKernels.DeepStructInternalAliasKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.__gsharp_hfunc_DeepStructInternalAliasKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.__gsharp_hfunc_DeepStructInternalAliasKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "MarshalingAliasingDifferentialKernels.DeepStructInternalAliasKernel");
 var __gsharp_device_arrays = new global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions();
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
@@ -3034,10 +3105,16 @@ throw new global::System.ArgumentNullException(nameof(observed));
 if (observed.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(observed));
 }
+if (bagA.Data.Data == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(bagA), "bagA.Data is null, but the field is not nullable.");
+}
+if (bagB.Data.Data == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(bagB), "bagB.Data is null, but the field is not nullable.");
+}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MarshalingAliasingDifferentialKernels.DeepStructInternalAliasKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.__gsharp_hfunc_DeepStructInternalAliasKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.__gsharp_hfunc_DeepStructInternalAliasKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "MarshalingAliasingDifferentialKernels.DeepStructInternalAliasKernel");
 try
 {
@@ -3094,11 +3171,11 @@ int __gsharp_id_5_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)b
 if(__gsharp_id_5_tid==0)
 {
 int __gsharp_id_6_roBefore = __gsharp_id_0_topReadOnly[0];
-__gsharp_array_at(__gsharp_id_2_bagByVal.__gsharp_mb_Data, 0, ""G#: a null array is read at MarshalingAliasingDifferentialKernels.cs(284,13)"")=__gsharp_add_i32(__gsharp_id_6_roBefore,40);
+__gsharp_id_2_bagByVal.__gsharp_mb_Data[0]=__gsharp_add_i32(__gsharp_id_6_roBefore,40);
 int __gsharp_id_7_roAfter = __gsharp_id_0_topReadOnly[0];
 __gsharp_id_1_topWritable[0]=__gsharp_add_i32(__gsharp_id_1_topWritable[0],5);
-int __gsharp_id_8_seenInBagRef = __gsharp_array_at((*__gsharp_id_3_bagByRef).__gsharp_mb_Data, 0, ""G#: a null array is read at MarshalingAliasingDifferentialKernels.cs(289,32)"");
-__gsharp_array_at((*__gsharp_id_3_bagByRef).__gsharp_mb_Data, 0, ""G#: a null array is read at MarshalingAliasingDifferentialKernels.cs(290,13)"")=__gsharp_add_i32(__gsharp_array_at((*__gsharp_id_3_bagByRef).__gsharp_mb_Data, 0, ""G#: a null array is read at MarshalingAliasingDifferentialKernels.cs(290,13)""),15);
+int __gsharp_id_8_seenInBagRef = __gsharp_array_at((*__gsharp_id_3_bagByRef).__gsharp_mb_Data, 0, 541530947u);
+__gsharp_array_at((*__gsharp_id_3_bagByRef).__gsharp_mb_Data, 0, 177397611u)=__gsharp_add_i32(__gsharp_array_at((*__gsharp_id_3_bagByRef).__gsharp_mb_Data, 0, 177397611u),15);
 __gsharp_id_4_observed[0]=__gsharp_id_6_roBefore;
 __gsharp_id_4_observed[1]=__gsharp_id_7_roAfter;
 __gsharp_id_4_observed[2]=__gsharp_id_8_seenInBagRef;
@@ -3108,7 +3185,7 @@ __gsharp_id_4_observed[3]=__gsharp_id_1_topWritable[0];
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_CrossLevelTopAndDeepStructKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__MarshalingAliasingDifferentialKernels__CrossLevelTopAndDeepStructKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
-public static void WarmupFunctionPointerCrossLevelTopAndDeepStructKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.__gsharp_hfunc_CrossLevelTopAndDeepStructKernel.Resolve();
+public static void WarmupFunctionPointerCrossLevelTopAndDeepStructKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.__gsharp_hfunc_CrossLevelTopAndDeepStructKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.s_errorSites);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -3132,10 +3209,13 @@ throw new global::System.ArgumentNullException(nameof(observed));
 if (observed.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(observed));
 }
+if (bagByVal.Data is null){
+throw new global::System.ArgumentNullException(nameof(bagByVal), "bagByVal.Data is null, but the field is not nullable.");
+}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MarshalingAliasingDifferentialKernels.CrossLevelTopAndDeepStructKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.__gsharp_hfunc_CrossLevelTopAndDeepStructKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.__gsharp_hfunc_CrossLevelTopAndDeepStructKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "MarshalingAliasingDifferentialKernels.CrossLevelTopAndDeepStructKernel");
 var __gsharp_device_arrays = new global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions();
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
@@ -3291,10 +3371,13 @@ throw new global::System.ArgumentNullException(nameof(observed));
 if (observed.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(observed));
 }
+if (bagByVal.Data.Data == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(bagByVal), "bagByVal.Data is null, but the field is not nullable.");
+}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MarshalingAliasingDifferentialKernels.CrossLevelTopAndDeepStructKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.__gsharp_hfunc_CrossLevelTopAndDeepStructKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.__gsharp_hfunc_CrossLevelTopAndDeepStructKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "MarshalingAliasingDifferentialKernels.CrossLevelTopAndDeepStructKernel");
 try
 {
@@ -3354,9 +3437,9 @@ extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Different
 int __gsharp_id_3_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 if(__gsharp_id_3_tid==0)
 {
-int __gsharp_id_4_before = __gsharp_array_at(__gsharp_id_0_inBags[0].__gsharp_mb_Data, 0, ""G#: a null array is read at MarshalingAliasingDifferentialKernels.cs(309,26)"");
+int __gsharp_id_4_before = __gsharp_array_at(__gsharp_id_0_inBags[0].__gsharp_mb_Data, 0, 1648739861u);
 __gsharp_id_1_rwArr[0]=__gsharp_add_i32(__gsharp_id_4_before,500);
-int __gsharp_id_5_after = __gsharp_array_at(__gsharp_id_0_inBags[0].__gsharp_mb_Data, 0, ""G#: a null array is read at MarshalingAliasingDifferentialKernels.cs(311,25)"");
+int __gsharp_id_5_after = __gsharp_array_at(__gsharp_id_0_inBags[0].__gsharp_mb_Data, 0, 1713647672u);
 __gsharp_id_2_observed[0]=__gsharp_id_4_before;
 __gsharp_id_2_observed[1]=__gsharp_id_5_after;
 }
@@ -3364,7 +3447,7 @@ __gsharp_id_2_observed[1]=__gsharp_id_5_after;
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_CrossAliasInDeepArrayAndRwArrayKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__MarshalingAliasingDifferentialKernels__CrossAliasInDeepArrayAndRwArrayKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
-public static void WarmupFunctionPointerCrossAliasInDeepArrayAndRwArrayKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.__gsharp_hfunc_CrossAliasInDeepArrayAndRwArrayKernel.Resolve();
+public static void WarmupFunctionPointerCrossAliasInDeepArrayAndRwArrayKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.__gsharp_hfunc_CrossAliasInDeepArrayAndRwArrayKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.s_errorSites);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -3391,7 +3474,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MarshalingAliasingDifferentialKernels.CrossAliasInDeepArrayAndRwArrayKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.__gsharp_hfunc_CrossAliasInDeepArrayAndRwArrayKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.__gsharp_hfunc_CrossAliasInDeepArrayAndRwArrayKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "MarshalingAliasingDifferentialKernels.CrossAliasInDeepArrayAndRwArrayKernel");
 var __gsharp_device_arrays = new global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions();
 byte[]? __gsharp_shadow_0 = null;
@@ -3539,7 +3622,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MarshalingAliasingDifferentialKernels.CrossAliasInDeepArrayAndRwArrayKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.__gsharp_hfunc_CrossAliasInDeepArrayAndRwArrayKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.__gsharp_hfunc_CrossAliasInDeepArrayAndRwArrayKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "MarshalingAliasingDifferentialKernels.CrossAliasInDeepArrayAndRwArrayKernel");
 try
 {
@@ -3628,17 +3711,17 @@ __gsharp_id_1_inConvertStructs[0].__gsharp_mb_A+=888.0f;
 __gsharp_id_1_inConvertStructs[0].__gsharp_mb_V=float2{77.0f, 88.0f};
 __gsharp_id_2_inDeepStructs[0].__gsharp_mb_Scale=__gsharp_add_i32(__gsharp_id_2_inDeepStructs[0].__gsharp_mb_Scale,555);
 __gsharp_id_2_inDeepStructs[0].__gsharp_mb_Inner.__gsharp_mb_Bias=__gsharp_add_i32(__gsharp_id_2_inDeepStructs[0].__gsharp_mb_Inner.__gsharp_mb_Bias,444);
-__gsharp_array_at(__gsharp_id_2_inDeepStructs[0].__gsharp_mb_Indices, 0, ""G#: a null array is read at MarshalingAliasingDifferentialKernels.cs(333,13)"")=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_2_inDeepStructs[0].__gsharp_mb_Indices, 0, ""G#: a null array is read at MarshalingAliasingDifferentialKernels.cs(333,13)""),333);
-__gsharp_array_at(__gsharp_id_2_inDeepStructs[0].__gsharp_mb_Inner.__gsharp_mb_Weights, 0, ""G#: a null array is read at MarshalingAliasingDifferentialKernels.cs(334,13)"")+=222.0f;
+__gsharp_array_at(__gsharp_id_2_inDeepStructs[0].__gsharp_mb_Indices, 0, 1628883429u)=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_2_inDeepStructs[0].__gsharp_mb_Indices, 0, 1628883429u),333);
+__gsharp_array_at(__gsharp_id_2_inDeepStructs[0].__gsharp_mb_Inner.__gsharp_mb_Weights, 0, 22120456u)+=222.0f;
 __gsharp_id_3_outObserved[0]=__gsharp_id_0_inPrimitives[0];
 __gsharp_id_3_outObserved[1]=__gsharp_id_1_inConvertStructs[0].__gsharp_mb_A+__gsharp_id_1_inConvertStructs[0].__gsharp_mb_V.x;
-__gsharp_id_3_outObserved[2]=__gsharp_add_i32(__gsharp_add_i32(__gsharp_id_2_inDeepStructs[0].__gsharp_mb_Scale,__gsharp_id_2_inDeepStructs[0].__gsharp_mb_Inner.__gsharp_mb_Bias),__gsharp_array_at(__gsharp_id_2_inDeepStructs[0].__gsharp_mb_Indices, 0, ""G#: a null array is read at MarshalingAliasingDifferentialKernels.cs(338,85)""))+__gsharp_array_at(__gsharp_id_2_inDeepStructs[0].__gsharp_mb_Inner.__gsharp_mb_Weights, 0, ""G#: a null array is read at MarshalingAliasingDifferentialKernels.cs(338,115)"");
+__gsharp_id_3_outObserved[2]=__gsharp_add_i32(__gsharp_add_i32(__gsharp_id_2_inDeepStructs[0].__gsharp_mb_Scale,__gsharp_id_2_inDeepStructs[0].__gsharp_mb_Inner.__gsharp_mb_Bias),__gsharp_array_at(__gsharp_id_2_inDeepStructs[0].__gsharp_mb_Indices, 0, 1763774710u))+__gsharp_array_at(__gsharp_id_2_inDeepStructs[0].__gsharp_mb_Inner.__gsharp_mb_Weights, 0, 529053070u);
 }
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_InArrayMutationIsolationKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__MarshalingAliasingDifferentialKernels__InArrayMutationIsolationKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
-public static void WarmupFunctionPointerInArrayMutationIsolationKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.__gsharp_hfunc_InArrayMutationIsolationKernel.Resolve();
+public static void WarmupFunctionPointerInArrayMutationIsolationKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.__gsharp_hfunc_InArrayMutationIsolationKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.s_errorSites);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -3671,7 +3754,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MarshalingAliasingDifferentialKernels.InArrayMutationIsolationKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.__gsharp_hfunc_InArrayMutationIsolationKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.__gsharp_hfunc_InArrayMutationIsolationKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "MarshalingAliasingDifferentialKernels.InArrayMutationIsolationKernel");
 var __gsharp_device_arrays = new global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions();
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
@@ -3852,7 +3935,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MarshalingAliasingDifferentialKernels.InArrayMutationIsolationKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.__gsharp_hfunc_InArrayMutationIsolationKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.__gsharp_hfunc_InArrayMutationIsolationKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "MarshalingAliasingDifferentialKernels.InArrayMutationIsolationKernel");
 try
 {
@@ -5231,9 +5314,9 @@ __gsharp_id_2_output[1]=((__gsharp_id_0_optPrim.data == nullptr)?(-1):1);
 __gsharp_id_2_output[2]=__gsharp_id_0_optPrim.length;
 __gsharp_id_2_output[3]=((__gsharp_id_1_optDeep.data == nullptr)?(-1):1);
 __gsharp_id_2_output[4]=__gsharp_id_1_optDeep.length;
-if((__gsharp_id_1_optDeep.data != nullptr)&&__gsharp_id_1_optDeep.length>0&&(__gsharp_id_1_optDeep[0].__gsharp_mb_Data.data != nullptr)&&__gsharp_array_ref(__gsharp_id_1_optDeep[0].__gsharp_mb_Data, ""G#: a null array is read at MarshalingAliasingDifferentialKernels.cs(456,93)"").length>0)
+if((__gsharp_id_1_optDeep.data != nullptr)&&__gsharp_id_1_optDeep.length>0&&(__gsharp_id_1_optDeep[0].__gsharp_mb_Data.data != nullptr)&&__gsharp_array_ref(__gsharp_id_1_optDeep[0].__gsharp_mb_Data, 1908951708u).length>0)
 {
-__gsharp_id_2_output[5]=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_1_optDeep[0].__gsharp_mb_Data, 0, ""G#: a null array is read at MarshalingAliasingDifferentialKernels.cs(458,29)""),__gsharp_id_1_optDeep[0].__gsharp_mb_Tag);
+__gsharp_id_2_output[5]=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_1_optDeep[0].__gsharp_mb_Data, 0, 1302072368u),__gsharp_id_1_optDeep[0].__gsharp_mb_Tag);
 }
 else
 {
@@ -5244,7 +5327,7 @@ __gsharp_id_2_output[5]=(-99);
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_NullableTopLevelArrayKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__MarshalingAliasingDifferentialKernels__NullableTopLevelArrayKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
-public static void WarmupFunctionPointerNullableTopLevelArrayKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.__gsharp_hfunc_NullableTopLevelArrayKernel.Resolve();
+public static void WarmupFunctionPointerNullableTopLevelArrayKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.__gsharp_hfunc_NullableTopLevelArrayKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.s_errorSites);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -5265,7 +5348,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MarshalingAliasingDifferentialKernels.NullableTopLevelArrayKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.__gsharp_hfunc_NullableTopLevelArrayKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.__gsharp_hfunc_NullableTopLevelArrayKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "MarshalingAliasingDifferentialKernels.NullableTopLevelArrayKernel");
 var __gsharp_device_arrays = new global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions();
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
@@ -5407,7 +5490,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MarshalingAliasingDifferentialKernels.NullableTopLevelArrayKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.__gsharp_hfunc_NullableTopLevelArrayKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.__gsharp_hfunc_NullableTopLevelArrayKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "MarshalingAliasingDifferentialKernels.NullableTopLevelArrayKernel");
 try
 {
@@ -5464,13 +5547,13 @@ int __gsharp_id_3_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)b
 if(__gsharp_id_3_tid==0)
 {
 __gsharp_id_2_output[0]=((__gsharp_id_0_bagByVal.__gsharp_mb_Data.data == nullptr)?1:0);
-__gsharp_id_2_output[1]=((__gsharp_id_0_bagByVal.__gsharp_mb_Data.data != nullptr)?__gsharp_array_ref(__gsharp_id_0_bagByVal.__gsharp_mb_Data, ""G#: a null array is read at MarshalingAliasingDifferentialKernels.cs(478,53)"").length:(-1));
+__gsharp_id_2_output[1]=((__gsharp_id_0_bagByVal.__gsharp_mb_Data.data != nullptr)?__gsharp_array_ref(__gsharp_id_0_bagByVal.__gsharp_mb_Data, 1133720059u).length:(-1));
 __gsharp_id_2_output[2]=(((*__gsharp_id_1_bagByRef).__gsharp_mb_Data.data == nullptr)?1:0);
-__gsharp_id_2_output[3]=(((*__gsharp_id_1_bagByRef).__gsharp_mb_Data.data != nullptr)?__gsharp_array_ref((*__gsharp_id_1_bagByRef).__gsharp_mb_Data, ""G#: a null array is read at MarshalingAliasingDifferentialKernels.cs(480,53)"").length:(-1));
-if(((*__gsharp_id_1_bagByRef).__gsharp_mb_Data.data != nullptr)&&__gsharp_array_ref((*__gsharp_id_1_bagByRef).__gsharp_mb_Data, ""G#: a null array is read at MarshalingAliasingDifferentialKernels.cs(481,46)"").length>0)
+__gsharp_id_2_output[3]=(((*__gsharp_id_1_bagByRef).__gsharp_mb_Data.data != nullptr)?__gsharp_array_ref((*__gsharp_id_1_bagByRef).__gsharp_mb_Data, 677922429u).length:(-1));
+if(((*__gsharp_id_1_bagByRef).__gsharp_mb_Data.data != nullptr)&&__gsharp_array_ref((*__gsharp_id_1_bagByRef).__gsharp_mb_Data, 739990211u).length>0)
 {
-__gsharp_array_at((*__gsharp_id_1_bagByRef).__gsharp_mb_Data, 0, ""G#: a null array is read at MarshalingAliasingDifferentialKernels.cs(483,17)"")=__gsharp_add_i32(__gsharp_array_at((*__gsharp_id_1_bagByRef).__gsharp_mb_Data, 0, ""G#: a null array is read at MarshalingAliasingDifferentialKernels.cs(483,17)""),(*__gsharp_id_1_bagByRef).__gsharp_mb_Fallback);
-__gsharp_id_2_output[4]=__gsharp_array_at((*__gsharp_id_1_bagByRef).__gsharp_mb_Data, 0, ""G#: a null array is read at MarshalingAliasingDifferentialKernels.cs(484,29)"");
+__gsharp_array_at((*__gsharp_id_1_bagByRef).__gsharp_mb_Data, 0, 1457024296u)=__gsharp_add_i32(__gsharp_array_at((*__gsharp_id_1_bagByRef).__gsharp_mb_Data, 0, 1457024296u),(*__gsharp_id_1_bagByRef).__gsharp_mb_Fallback);
+__gsharp_id_2_output[4]=__gsharp_array_at((*__gsharp_id_1_bagByRef).__gsharp_mb_Data, 0, 1059400332u);
 }
 else
 {
@@ -5481,7 +5564,7 @@ __gsharp_id_2_output[4]=__gsharp_add_i32(__gsharp_id_0_bagByVal.__gsharp_mb_Fall
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_StructFieldNullOrEmptySafeKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__MarshalingAliasingDifferentialKernels__StructFieldNullOrEmptySafeKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
-public static void WarmupFunctionPointerStructFieldNullOrEmptySafeKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.__gsharp_hfunc_StructFieldNullOrEmptySafeKernel.Resolve();
+public static void WarmupFunctionPointerStructFieldNullOrEmptySafeKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.__gsharp_hfunc_StructFieldNullOrEmptySafeKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.s_errorSites);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -5496,7 +5579,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MarshalingAliasingDifferentialKernels.StructFieldNullOrEmptySafeKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.__gsharp_hfunc_StructFieldNullOrEmptySafeKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.__gsharp_hfunc_StructFieldNullOrEmptySafeKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "MarshalingAliasingDifferentialKernels.StructFieldNullOrEmptySafeKernel");
 var __gsharp_device_arrays = new global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions();
 global::System.IntPtr __gsharp_d_1 = global::System.IntPtr.Zero;
@@ -5583,7 +5666,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MarshalingAliasingDifferentialKernels.StructFieldNullOrEmptySafeKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.__gsharp_hfunc_StructFieldNullOrEmptySafeKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.__gsharp_hfunc_StructFieldNullOrEmptySafeKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "MarshalingAliasingDifferentialKernels.StructFieldNullOrEmptySafeKernel");
 try
 {
@@ -5631,13 +5714,13 @@ extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Different
 int __gsharp_id_2_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 if(__gsharp_id_2_tid==0)
 {
-__gsharp_id_1_output[0]=__gsharp_add_i32(__gsharp_array_ref(__gsharp_id_0_bag.__gsharp_mb_Data, ""G#: a null array is read at MarshalingAliasingDifferentialKernels.cs(502,25)"").length,__gsharp_id_0_bag.__gsharp_mb_Fallback);
+__gsharp_id_1_output[0]=__gsharp_add_i32(__gsharp_array_ref(__gsharp_id_0_bag.__gsharp_mb_Data, 520265450u).length,__gsharp_id_0_bag.__gsharp_mb_Fallback);
 }
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_StructFieldNullDereferenceKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__MarshalingAliasingDifferentialKernels__StructFieldNullDereferenceKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
-public static void WarmupFunctionPointerStructFieldNullDereferenceKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.__gsharp_hfunc_StructFieldNullDereferenceKernel.Resolve();
+public static void WarmupFunctionPointerStructFieldNullDereferenceKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.__gsharp_hfunc_StructFieldNullDereferenceKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.s_errorSites);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -5652,7 +5735,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MarshalingAliasingDifferentialKernels.StructFieldNullDereferenceKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.__gsharp_hfunc_StructFieldNullDereferenceKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.__gsharp_hfunc_StructFieldNullDereferenceKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "MarshalingAliasingDifferentialKernels.StructFieldNullDereferenceKernel");
 var __gsharp_device_arrays = new global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions();
 global::System.IntPtr __gsharp_d_1 = global::System.IntPtr.Zero;
@@ -5724,7 +5807,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MarshalingAliasingDifferentialKernels.StructFieldNullDereferenceKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.__gsharp_hfunc_StructFieldNullDereferenceKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.__gsharp_hfunc_StructFieldNullDereferenceKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "MarshalingAliasingDifferentialKernels.StructFieldNullDereferenceKernel");
 try
 {

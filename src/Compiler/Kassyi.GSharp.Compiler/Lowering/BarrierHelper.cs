@@ -47,7 +47,7 @@ internal static class BarrierHelper
 
     /// <summary>
     /// Determines whether the specified invocation is a warp shuffle (<c>Warp.Shuffle*Sync</c>, <c>Gpu.Match*Sync</c>, the
-    /// votes and reductions of <c>Warp</c>).
+    /// votes and reductions of <c>Warp</c>, <c>Gpu.SyncWarp</c>).
     /// </summary>
     /// <remarks>
     /// Other <c>Warp</c> / <c>Gpu</c> members (<c>Gpu.WarpId()</c>, <c>Gpu.LaneId()</c>) are plain intrinsics and do not
@@ -79,6 +79,7 @@ internal static class BarrierHelper
                 LoweringAnnotations.ReduceAndAnnotationData => WarpShuffleKind.ReduceAnd,
                 LoweringAnnotations.ReduceOrAnnotationData => WarpShuffleKind.ReduceOr,
                 LoweringAnnotations.ReduceXorAnnotationData => WarpShuffleKind.ReduceXor,
+                LoweringAnnotations.SyncWarpAnnotationData => WarpShuffleKind.SyncWarp,
                 _ => WarpShuffleKind.None
             };
             return kind != WarpShuffleKind.None;

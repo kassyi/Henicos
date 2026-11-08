@@ -199,6 +199,8 @@ If `mask` includes a thread that never reaches the shuffle instruction, the hard
 
 Think of the `mask` as an attendance roster presented to the hardware at the exact moment the shuffle method is invoked. The hardware reads this roster and forces all currently arrived threads to wait (suspend execution) until every thread marked as "participating" on the roster also arrives. If a thread listed on the roster bypassed the shuffle instruction due to an `if` branch, the waiting threads will wait forever.
 
+> **On the CPU dialects**: the native C++ build and the managed path take the roster literally. A lane goes on from a shuffle, vote, reduction, match or `Gpu.SyncWarp` once every lane of its mask that has not exited has reached the same call: the same call in the source, reached through the same device function calls and as often (in a loop, the same iteration). A lane of the mask that never gets there, because it took another branch, waits at another call or a barrier, or calls the same device function from another call site, makes the launch fail with an `InvalidOperationException` that names the call, its place in the source and the lanes that never arrive, instead of hanging. Lanes of the mask that have exited do not take part in a vote, a reduction, a match or `Gpu.SyncWarp`, as on the GPU; a shuffle that reads one fails the same way, because CUDA leaves its value undefined. The release CUDA build does not check either.
+
 ### Dangerous Antipattern:
 
 ```csharp

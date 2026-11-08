@@ -45,7 +45,7 @@ internal static class ManagedCSharpTranspiler
         using var writer = new SourceWriter();
         ManagedStateMachineEmitter.EmitContextClass(
             writer, contextName, regularFields, copiedParameters, lowered.CallSites, semanticModel,
-            isUnsafe: isUnsafe);
+            isUnsafe: isUnsafe, warpSiteCount: lowered.WarpSiteCount);
         ManagedStateMachineEmitter.EmitStateMachineMethod(
             writer, contextName, stateMachineName, methodSymbol, plan.HasAutoResult, copiedParameters, localInits,
             bodySource, isUnsafe: isUnsafe);
@@ -107,7 +107,7 @@ internal static class ManagedCSharpTranspiler
         using var writer = new SourceWriter();
         ManagedStateMachineEmitter.EmitContextClass(
             writer, frameName, regularFields, copiedParameters, lowered.CallSites, semanticModel, accessibility,
-            "internal", isUnsafe: isUnsafe);
+            "internal", isUnsafe: isUnsafe, warpSiteCount: lowered.WarpSiteCount);
         ManagedStateMachineEmitter.EmitDeviceStateMachineMethod(
             writer, frameName, stateMachineName, methodSymbol, copiedParameters, localInits, bodySource, accessibility,
             isUnsafe: isUnsafe);

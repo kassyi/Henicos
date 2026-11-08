@@ -115,12 +115,20 @@ namespace Kassyi.GSharp.Tests.Shared.Differential
 public partial class WarpCollectiveDifferentialKernels
 {
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-internal class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Differential__WarpCollectiveDifferentialKernels__CountOddLanes {
+internal class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Differential__WarpCollectiveDifferentialKernels__CountOddLanes : global::Kassyi.GSharp.Core.IManagedWarpFrame {
 internal int __gsharp_state;
-internal uint __gsharp_warp_exchange;
+internal uint __gsharp_warp_path;
 internal uint mask;
 internal int v;
 internal int __gsharp_arg_temp_0;
+internal uint[] __gsharp_warp_visits = new uint[1];
+uint global::Kassyi.GSharp.Core.IManagedWarpFrame.WarpPath => __gsharp_warp_path;
+uint global::Kassyi.GSharp.Core.IManagedWarpFrame.AdvanceWarpVisit(int site) => ++__gsharp_warp_visits[site];
+uint global::Kassyi.GSharp.Core.IManagedWarpFrame.GetWarpVisit(int site) => __gsharp_warp_visits[site];
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 internal static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__WarpCollectiveDifferentialKernels__CountOddLanes(uint __gsharp_in_mask, int __gsharp_in_v, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Differential__WarpCollectiveDifferentialKernels__CountOddLanes __gsharp_ctx, ref int __gsharp_result) {
@@ -134,14 +142,14 @@ switch (__gsharp_ctx.__gsharp_state)
 case 0:
 {
 __gsharp_ctx.__gsharp_arg_temp_0 = __gsharp_ctx.v & 1;
-__gsharp_warp_exchange_assign(__gsharp_ctx.__gsharp_arg_temp_0);
+__gsharp_warp_publish(0, ref __gsharp_ctx, 0, __gsharp_ctx.mask, __gsharp_ctx.__gsharp_arg_temp_0, "Warp.ReduceAddSync", "WarpCollectiveDifferentialKernels.cs(118,59)");
 __gsharp_ctx.__gsharp_state = 1;
 return false;
 }
 
 case 1:
 {
-var __gsharp_warp_temp_1 = __gsharp_warp_reduce_add_read_sync(0, __gsharp_ctx.mask, __gsharp_ctx.__gsharp_arg_temp_0, "WarpCollectiveDifferentialKernels.cs(118,59)");
+var __gsharp_warp_temp_1 = __gsharp_warp_reduce_add_read_sync(0, ref __gsharp_ctx, 0, __gsharp_ctx.mask, __gsharp_ctx.__gsharp_arg_temp_0, "WarpCollectiveDifferentialKernels.cs(118,59)");
 {
 __gsharp_result = __gsharp_warp_temp_1;
 __gsharp_ctx.__gsharp_state = 0;
@@ -154,9 +162,9 @@ throw new global::System.InvalidOperationException("The device function state ma
 }
 
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-internal class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Differential__WarpCollectiveDifferentialKernels__ShuffleRounds {
+internal class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Differential__WarpCollectiveDifferentialKernels__ShuffleRounds : global::Kassyi.GSharp.Core.IManagedWarpFrame {
 internal int __gsharp_state;
-internal uint __gsharp_warp_exchange;
+internal uint __gsharp_warp_path;
 internal int[] input;
 internal int[] output;
 internal int totalThreads;
@@ -165,6 +173,14 @@ internal uint __gsharp_lgsl_s_0;
 internal uint __gsharp_lgsl_0;
 internal int __gsharp_unroll_0;
 internal int __gsharp_arg_temp_0;
+internal uint[] __gsharp_warp_visits = new uint[1];
+uint global::Kassyi.GSharp.Core.IManagedWarpFrame.WarpPath => __gsharp_warp_path;
+uint global::Kassyi.GSharp.Core.IManagedWarpFrame.AdvanceWarpVisit(int site) => ++__gsharp_warp_visits[site];
+uint global::Kassyi.GSharp.Core.IManagedWarpFrame.GetWarpVisit(int site) => __gsharp_warp_visits[site];
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 internal static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__WarpCollectiveDifferentialKernels__ShuffleRounds(int[] __gsharp_in_input, int[] __gsharp_in_output, int __gsharp_in_totalThreads, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Differential__WarpCollectiveDifferentialKernels__ShuffleRounds __gsharp_ctx) {
@@ -190,14 +206,14 @@ if (!(__gsharp_ctx.__gsharp_lgsl_0 < __gsharp_ctx.__gsharp_lgsl_n_0))
 goto case 4;
 __gsharp_ctx.__gsharp_unroll_0 = __gsharp_grid_stride_index(__gsharp_ctx.__gsharp_lgsl_0);
 __gsharp_ctx.__gsharp_arg_temp_0 = __gsharp_ctx.input[__gsharp_ctx.__gsharp_unroll_0];
-__gsharp_warp_exchange_assign(__gsharp_ctx.__gsharp_arg_temp_0);
+__gsharp_warp_publish(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.__gsharp_arg_temp_0, "Warp.ShuffleDownSync", "WarpCollectiveDifferentialKernels.cs(167,28)");
 __gsharp_ctx.__gsharp_state = 2;
 return false;
 }
 
 case 2:
 {
-var __gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_down_sync(0, 0xFFFFFFFFu, __gsharp_ctx.__gsharp_arg_temp_0, 1, 32, "WarpCollectiveDifferentialKernels.cs(167,28)");
+var __gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_down_sync(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.__gsharp_arg_temp_0, 1, 32, "WarpCollectiveDifferentialKernels.cs(167,28)");
 int shuffled = __gsharp_warp_temp_1;
 __gsharp_ctx.output[(__gsharp_ctx.__gsharp_unroll_0 % __gsharp_ctx.totalThreads) * 2 + __gsharp_ctx.__gsharp_unroll_0 / __gsharp_ctx.totalThreads] = shuffled;
 goto case 3;

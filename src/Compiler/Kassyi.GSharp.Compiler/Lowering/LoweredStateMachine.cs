@@ -16,9 +16,15 @@ namespace Kassyi.GSharp.Compiler.Lowering;
 /// The highest region number assigned by pre-lowering expansions so that subsequent inline expansions can continue from
 /// a disjoint counter.
 /// </param>
+/// <param name="WarpSiteCount">
+/// The warp collectives of the body (shuffles, votes, reductions, matches, <c>Gpu.SyncWarp</c>), numbered from 0. The
+/// frame counts how often the thread reached each one, so that the lanes of a warp meet at the same instance of a call
+/// that a loop repeats.
+/// </param>
 public sealed record LoweredStateMachine(
     BlockSyntax LoweredBody,
     IReadOnlyList<VariableDeclaratorSyntax> ContextFields,
     IReadOnlyList<InvocationExpressionSyntax> CallSites,
     IReadOnlyList<string> CopiedParameters,
-    int RegionCount = 0);
+    int RegionCount = 0,
+    int WarpSiteCount = 0);

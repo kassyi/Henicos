@@ -84,7 +84,7 @@ internal static class WrapperEmitter
     // CS0162 = Lowered state machines emit statements or 'goto case' transitions immediately after unconditional throw or goto
     // CS0164 = Lowered state machines preserve user labels (e.g. sync:) or synthesized branch targets (__gsharp_sg_next_<n>) that no jump targets
     // CS0219 = Lowered state machines declare locals (e.g. int unused = 0) that are assigned but never read
-    // CS0649 = Internal frame fields (e.g. __gsharp_warp_exchange) are populated by the runtime rather than C# assignment
+    // CS0649 = Internal frame fields are populated by the runtime rather than C# assignment
     // CS1718 = Lowered switch/pattern dispatch performs __gsharp_switch_temp_<n> != __gsharp_switch_temp_<n> self-comparisons for NaN detection
     private const string GeneratedCSharpWarningSuppressions =
         "#pragma warning disable CS0162, CS0164, CS0219, CS0649, CS1718";
@@ -411,6 +411,41 @@ internal static class WrapperEmitter
                 WriteEmptyArrayCheck(writer, shape.LengthExpression, name);
             }
         }
+
+        WriteStructFieldChecks(writer, kernel, isPointer: false);
+    }
+
+    // if (<name>.<field path> is null) { throw new ArgumentNullException(nameof(<name>), "<name>.<field path> is null, ..."); }
+    // if (<name>.<field path>.Data == IntPtr.Zero) { ... }   (the shadow struct of the pointer launcher)
+    // [WHY] The kernel reads a non-nullable array field of a by-value struct argument without a null check
+    // (NonNullProof); the launcher enforces the annotation, as it rejects a null non-optional array argument (#1409)
+    private static void WriteStructFieldChecks(SourceWriter writer, in KernelHostModel kernel, bool isPointer)
+    {
+        foreach (var shape in kernel.Parameters)
+        {
+            if (shape.NonNullableArrayFields.IsDefaultOrEmpty)
+            {
+                continue;
+            }
+
+            var name = shape.Identifier;
+            foreach (var path in shape.NonNullableArrayFields)
+            {
+                writer.Append("if ");
+                using (writer.Parentheses())
+                {
+                    writer.Append(isPointer
+                        ? $"{name}.{path}.Data == {HostTypeNames.IntPtr}.Zero"
+                        : $"{name}.{path} is null");
+                }
+
+                using (writer.Scope())
+                {
+                    writer.AppendLine(
+                        $"throw new global::System.ArgumentNullException(nameof({name}), \"{name}.{path} is null, but the field is not nullable.\");");
+                }
+            }
+        }
     }
 
     // if (<length> == 0) { throw new ArgumentException(<message>, nameof(<name>)); }
@@ -431,8 +466,13 @@ internal static class WrapperEmitter
     /// <summary>
     /// Emits the checks of the <c>GSharpArrayProxy</c> arguments of the <c>Launch{Kernel}Ptr</c> launcher, with the
     /// contract of <see cref="WriteArrayArgumentChecks"/>: a non-optional array must not be null or empty, and an empty
-    /// optional one is passed as null. A negative length is rejected for both.
+    /// optional one is passed as null. A negative length is rejected for both. The non-nullable array fields of a by-value
+    /// struct argument must not be null either.
     /// </summary>
+    /// <remarks>
+    /// The kernel leaves out the null check of a non-nullable array parameter or field it never writes on that promise
+    /// (<c>NonNullProof</c>); without the checks the device would read through <c>nullptr</c> (#1409).
+    /// </remarks>
     internal static void WritePointerArrayArgumentChecks(SourceWriter writer, in KernelHostModel kernel)
     {
         foreach (var shape in kernel.Parameters)
@@ -485,6 +525,8 @@ internal static class WrapperEmitter
 
             WriteEmptyArrayCheck(writer, $"{name}.Length", name);
         }
+
+        WriteStructFieldChecks(writer, kernel, isPointer: true);
     }
     private static void WriteErrorSiteTableField(SourceWriter writer, EquatableArray<ErrorSiteEntry> errorSites)
     {

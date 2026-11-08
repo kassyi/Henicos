@@ -59,14 +59,14 @@ auto __gsharp_id_7_srcIdx0 = __gsharp_sub_i32(__gsharp_id_6_i,__gsharp_id_4_word
 auto __gsharp_id_8_srcIdx1 = __gsharp_sub_i32(__gsharp_id_7_srcIdx0,1);
 auto __gsharp_id_9_safeIdx0 = (__gsharp_id_7_srcIdx0<0?0:((__gsharp_id_7_srcIdx0>=(*__gsharp_id_0_ctx).__gsharp_mb_NumberOfWords?__gsharp_sub_i32((*__gsharp_id_0_ctx).__gsharp_mb_NumberOfWords,1):__gsharp_id_7_srcIdx0)));
 auto __gsharp_id_10_safeIdx1 = (__gsharp_id_8_srcIdx1<0?0:((__gsharp_id_8_srcIdx1>=(*__gsharp_id_0_ctx).__gsharp_mb_NumberOfWords?__gsharp_sub_i32((*__gsharp_id_0_ctx).__gsharp_mb_NumberOfWords,1):__gsharp_id_8_srcIdx1)));
-auto __gsharp_id_11_w0 = __gsharp_array_at(__gsharp_id_2_left, __gsharp_id_9_safeIdx0, ""G#: a null array is read at GpuBigIntKernels.cu.cs(435,22)"");
-auto __gsharp_id_12_w1 = __gsharp_array_at(__gsharp_id_2_left, __gsharp_id_10_safeIdx1, ""G#: a null array is read at GpuBigIntKernels.cu.cs(436,22)"");
+auto __gsharp_id_11_w0 = __gsharp_id_2_left[__gsharp_id_9_safeIdx0];
+auto __gsharp_id_12_w1 = __gsharp_id_2_left[__gsharp_id_10_safeIdx1];
 auto __gsharp_id_13_mask0 = (__gsharp_id_7_srcIdx0>=0&&__gsharp_id_7_srcIdx0<(*__gsharp_id_0_ctx).__gsharp_mb_NumberOfWords?0xFFFFFFFFu:0u);
 auto __gsharp_id_14_mask1 = (__gsharp_id_8_srcIdx1>=0&&__gsharp_id_8_srcIdx1<(*__gsharp_id_0_ctx).__gsharp_mb_NumberOfWords?0xFFFFFFFFu:0u);
 __gsharp_id_11_w0&=__gsharp_id_13_mask0;
 __gsharp_id_12_w1&=__gsharp_id_14_mask1;
 auto __gsharp_id_15_shiftMask = (__gsharp_id_5_bitShift==0?0u:0xFFFFFFFFu);
-__gsharp_array_at(__gsharp_id_1_result, __gsharp_id_6_i, ""G#: a null array is read at GpuBigIntKernels.cu.cs(445,13)"")=(__gsharp_id_11_w0<<(__gsharp_id_5_bitShift&31))|((__gsharp_id_12_w1>>(__gsharp_sub_i32(32,__gsharp_id_5_bitShift)&31))&__gsharp_id_15_shiftMask);
+__gsharp_id_1_result[__gsharp_id_6_i]=(__gsharp_id_11_w0<<(__gsharp_id_5_bitShift&31))|((__gsharp_id_12_w1>>(__gsharp_sub_i32(32,__gsharp_id_5_bitShift)&31))&__gsharp_id_15_shiftMask);
 }
 }
 
@@ -79,14 +79,14 @@ auto __gsharp_id_7_srcIdx0 = __gsharp_add_i32(__gsharp_id_6_i,__gsharp_id_4_word
 auto __gsharp_id_8_srcIdx1 = __gsharp_add_i32(__gsharp_id_7_srcIdx0,1);
 auto __gsharp_id_9_safeIdx0 = (__gsharp_id_7_srcIdx0<0?0:((__gsharp_id_7_srcIdx0>=(*__gsharp_id_0_ctx).__gsharp_mb_NumberOfWords?__gsharp_sub_i32((*__gsharp_id_0_ctx).__gsharp_mb_NumberOfWords,1):__gsharp_id_7_srcIdx0)));
 auto __gsharp_id_10_safeIdx1 = (__gsharp_id_8_srcIdx1<0?0:((__gsharp_id_8_srcIdx1>=(*__gsharp_id_0_ctx).__gsharp_mb_NumberOfWords?__gsharp_sub_i32((*__gsharp_id_0_ctx).__gsharp_mb_NumberOfWords,1):__gsharp_id_8_srcIdx1)));
-auto __gsharp_id_11_w0 = __gsharp_array_at(__gsharp_id_2_left, __gsharp_id_9_safeIdx0, ""G#: a null array is read at GpuBigIntKernels.cu.cs(462,22)"");
-auto __gsharp_id_12_w1 = __gsharp_array_at(__gsharp_id_2_left, __gsharp_id_10_safeIdx1, ""G#: a null array is read at GpuBigIntKernels.cu.cs(463,22)"");
+auto __gsharp_id_11_w0 = __gsharp_id_2_left[__gsharp_id_9_safeIdx0];
+auto __gsharp_id_12_w1 = __gsharp_id_2_left[__gsharp_id_10_safeIdx1];
 auto __gsharp_id_13_mask0 = (__gsharp_id_7_srcIdx0>=0&&__gsharp_id_7_srcIdx0<(*__gsharp_id_0_ctx).__gsharp_mb_NumberOfWords?0xFFFFFFFFu:0u);
 auto __gsharp_id_14_mask1 = (__gsharp_id_8_srcIdx1>=0&&__gsharp_id_8_srcIdx1<(*__gsharp_id_0_ctx).__gsharp_mb_NumberOfWords?0xFFFFFFFFu:0u);
 __gsharp_id_11_w0&=__gsharp_id_13_mask0;
 __gsharp_id_12_w1&=__gsharp_id_14_mask1;
 auto __gsharp_id_15_shiftMask = (__gsharp_id_5_bitShift==0?0u:0xFFFFFFFFu);
-__gsharp_array_at(__gsharp_id_1_result, __gsharp_id_6_i, ""G#: a null array is read at GpuBigIntKernels.cu.cs(472,13)"")=(__gsharp_id_11_w0>>(__gsharp_id_5_bitShift&31))|((__gsharp_id_12_w1<<(__gsharp_sub_i32(32,__gsharp_id_5_bitShift)&31))&__gsharp_id_15_shiftMask);
+__gsharp_id_1_result[__gsharp_id_6_i]=(__gsharp_id_11_w0>>(__gsharp_id_5_bitShift&31))|((__gsharp_id_12_w1<<(__gsharp_sub_i32(32,__gsharp_id_5_bitShift)&31))&__gsharp_id_15_shiftMask);
 }
 }
 
@@ -175,8 +175,6 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__GpuB
 struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Stdlib__BigIntRefOperatorKernels__ShiftKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Stdlib__BigIntRefOperatorKernels__ShiftKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -278,7 +276,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Stdlib__BigIntRefOperatorKernels__ShiftKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Stdlib__BigIntRefOperatorKernels__ShiftKernel(uint[] input, uint[] shiftedLeft, uint[] shiftedRight, int numberOfWords, __gsharp_context_Kassyi__GSharp__Tests__Shared__Stdlib__BigIntRefOperatorKernels__ShiftKernel __gsharp_ctx) {

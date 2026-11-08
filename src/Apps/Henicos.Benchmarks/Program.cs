@@ -71,7 +71,7 @@ internal class Program
                                          Options:
                                            --out <path>        Write result digits to file
                                            --threshold <terms> CPU/GPU hybrid threshold (default: 8192)
-                                           --hex               Output in hexadecimal without decimal conversion
+                                           --hex               Output [digits] hexadecimal digits instead
               cpu-pi [digits]            CPU Chudnovsky Pi baseline computation (default: 10,000)
               tf [exponent] [maxP]       Mersenne trial factoring benchmark (default: 71428571, 4000000000)
               prp [exponent] [base]      Fermat PRP test with verified checkpoints (default: 71428571, 3)

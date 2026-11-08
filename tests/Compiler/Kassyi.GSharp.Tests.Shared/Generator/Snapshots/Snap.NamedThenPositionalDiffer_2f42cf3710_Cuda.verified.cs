@@ -112,9 +112,13 @@ public partial class NamedThenPositionalDifferentialKernels
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Differential__NamedThenPositionalDifferentialKernels__SubAcrossBarrier {
 internal int __gsharp_state;
-internal uint __gsharp_warp_exchange;
+internal uint __gsharp_warp_path;
 internal int a;
 internal int b;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__NamedThenPositionalDifferentialKernels__SubAcrossBarrier(int __gsharp_in_a, int __gsharp_in_b, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Differential__NamedThenPositionalDifferentialKernels__SubAcrossBarrier __gsharp_ctx, ref int __gsharp_result) {

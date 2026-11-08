@@ -122,23 +122,39 @@ public class ManagedExecutionTests : TranspilerTestBase
             ManagedGpuContext.InitializeGrid(10);
             ManagedGpuContext.InitializeGrid(5);
 
-            // Test warp shuffles directly
-            ManagedGpuContext.__gsharp_warp_exchange_assign(42);
-            
-            var valUp = ManagedGpuContext.__gsharp_warp_shuffle_read_up_sync<object, int>(null, 0xFFFFFFFF, 0, 1, 32, "ManagedExecutionTests");
-            var valDown = ManagedGpuContext.__gsharp_warp_shuffle_read_down_sync<object, int>(null, 0xFFFFFFFF, 0, 1, 32, "ManagedExecutionTests");
-            var valXor = ManagedGpuContext.__gsharp_warp_shuffle_read_xor_sync<object, int>(null, 0xFFFFFFFF, 0, 1, 32, "ManagedExecutionTests");
-            var valSync = ManagedGpuContext.__gsharp_warp_shuffle_read_sync<object, int>(null, 0xFFFFFFFF, 0, 1, 32, "ManagedExecutionTests");
-
-            // Sources outside the segment (idx wraps to lane 1)
-            ManagedGpuContext.__gsharp_warp_shuffle_read_up_sync<object, int>(null, 0xFFFFFFFF, 0, 33, 32, "ManagedExecutionTests");
-            ManagedGpuContext.__gsharp_warp_shuffle_read_down_sync<object, int>(null, 0xFFFFFFFF, 0, 33, 32, "ManagedExecutionTests");
-            ManagedGpuContext.__gsharp_warp_shuffle_read_xor_sync<object, int>(null, 0xFFFFFFFF, 0, 33, 32, "ManagedExecutionTests");
-            ManagedGpuContext.__gsharp_warp_shuffle_read_sync<object, int>(null, 0xFFFFFFFF, 0, 33, 32, "ManagedExecutionTests");
+            // Test the warp collectives directly: lane 0 meets alone (mask 1) and reads its own value; reading lane 1,
+            // which never published, is an error
+            var frame = new DirectWarpFrame();
+            ManagedGpuContext.ResetWarpExchange();
+            Assert.True(ManagedGpuContext.WarpCanRun(0, 1));
+            ManagedGpuContext.__gsharp_warp_publish(0, ref frame, 0, 1u, 42, "Warp.ShuffleSync", "ManagedExecutionTests");
+            Assert.False(ManagedGpuContext.WarpCanRun(0, 1));
+            Assert.True(ManagedGpuContext.WarpCanRun(0, 2));
+            Assert.Equal(42, ManagedGpuContext.__gsharp_warp_shuffle_read_sync(0, ref frame, 0, 1u, 0, 0, 32, "ManagedExecutionTests"));
+            Assert.Equal(7, ManagedGpuContext.__gsharp_warp_shuffle_read_up_sync(0, ref frame, 0, 1u, 7, 1u, 32, "ManagedExecutionTests"));
+            var notTakingPart = Assert.Throws<InvalidOperationException>(() =>
+                ManagedGpuContext.__gsharp_warp_shuffle_read_down_sync(0, ref frame, 0, 1u, 0, 1u, 32, "ManagedExecutionTests"));
+            Assert.Contains("reads lane 1 of warp 0, which does not take part", notTakingPart.Message);
+            ManagedGpuContext.MarkWarpLaneExited(1);
+            var exited = Assert.Throws<InvalidOperationException>(() =>
+                ManagedGpuContext.__gsharp_warp_shuffle_read_xor_sync(0, ref frame, 0, 1u, 0, 1, 32, "ManagedExecutionTests"));
+            Assert.Contains("reads lane 1 of warp 0, which has exited", exited.Message);
         }
         finally
         {
             ManagedGpuContext.ClearThreadContext();
         }
+    }
+
+    // A frame of one warp collective, for the direct calls
+    private sealed class DirectWarpFrame : IManagedWarpFrame
+    {
+        private uint _visits;
+
+        public uint WarpPath => 0u;
+
+        public uint AdvanceWarpVisit(int site) => ++_visits;
+
+        public uint GetWarpVisit(int site) => _visits;
     }
 }

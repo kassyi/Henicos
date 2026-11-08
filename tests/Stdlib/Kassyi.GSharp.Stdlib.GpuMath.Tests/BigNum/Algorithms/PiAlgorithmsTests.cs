@@ -77,7 +77,7 @@ public class PiAlgorithmsTests
 
     [SkippableTheory]
     [InlineData(10, false, "3.1415926535")]
-    [InlineData(10, true, "3.243F6A88")]
+    [InlineData(10, true, "3.243F6A8885")]
     public void Test_ChudnovskyAlgorithm_Gpu_ComputesPiCorrectly(int digits, bool asHex, string expected)
     {
         CudaCapability.EnsureGpuAvailable();
@@ -87,13 +87,24 @@ public class PiAlgorithmsTests
         Assert.Contains(expected.ToUpperInvariant(), output.ToUpperInvariant());
     }
 
-    // Hex output keeps floor(digits * log2(10) / 32) words of fraction above the dropped margin, so the top word of
-    // the result sits at index 40 + that count. 86 digits -> 8 words (index 48, below the BBP self-check);
-    // 87..96 -> 9 words (index 49, the self-check's 64-bit tail would start inside the integer part);
-    // 97 -> 10 words (index 50, first case with a valid self-check offset).
+    // With asHex, digits counts the hexadecimal digits after the point: the output has exactly that many, each a digit
+    // of pi, whatever the word boundaries (8 digits per word). The rows cover 1 digit, both sides of one and two words,
+    // and the counts around 87..96 that once put the self-check inside the integer part (#627).
+    // mutant: ChudnovskyAlgorithm.cs WriteHexPiOutput `written < digits` -> `written + 8 <= digits` (whole words only,
+    // as before: every row that is not a multiple of 8)
+    // mutant: WriteHexPiOutput `Math.Min(8, digits - written)` -> `8` (the same rows: up to 7 digits more)
+    // The guard bits below the printed words are digits of pi as well, so a fraction word fewer in HexTargetBits does
+    // not show in the output; the output loop decides the digit count.
     [SkippableTheory]
     [Category(TestCategory.Stdlib)]
     [Scenario(TestScenario.Boundary)]
+    [InlineData(1)]
+    [InlineData(7)]
+    [InlineData(8)]
+    [InlineData(9)]
+    [InlineData(15)]
+    [InlineData(16)]
+    [InlineData(17)]
     [InlineData(86)]
     [InlineData(87)]
     [InlineData(90)]
@@ -104,16 +115,31 @@ public class PiAlgorithmsTests
         CudaCapability.EnsureGpuAvailable();
         using var sw = new StringWriter();
 
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Algorithms/ChudnovskyAlgorithm.cs:302 `CheckIndex + 2 <= actualTopIndex` -> `CheckIndex + 1 <= actualTopIndex`
-        // input: 87, 90, 96 (ArgumentOutOfRangeException from BbpAlgorithm.ExtractHexDigits)
         ChudnovskyAlgorithm.ComputePi(digits, sw, thresholdTerms: 8, asHex: true);
 
         var output = sw.ToString().Trim().ToUpperInvariant();
-        var fractionHexDigits = (int)Math.Floor(digits * Math.Log2(10) / 32) * 8;
+        var fractionHexDigits = digits;
 
         // Every printed hex digit is a digit of pi: the reference is Machin's formula in BigInteger, independent of
         // both the Chudnovsky series and the BBP digit extraction that the algorithm uses for its own self-check.
         Assert.Equal("3." + MachinPiHexFraction(fractionHexDigits), output);
+    }
+
+    // The BBP self-check of the hex output covers its last digits, up to 16, at their position after the point, for
+    // every digit count: a short output is checked whole from offset 0.
+    // mutant: ChudnovskyAlgorithm.cs HexTail `Math.Min(digits, 16)` -> `16` (rows 1, 9: a tail longer than the output;
+    // the GPU rows below 16 digits then fail with a negative BBP offset)
+    [Theory]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(1, 0, 1)]
+    [InlineData(9, 0, 9)]
+    [InlineData(16, 0, 16)]
+    [InlineData(17, 1, 16)]
+    [InlineData(97, 81, 16)]
+    public void ChudnovskyAlgorithm_HexTail_CoversTheLastPrintedDigits(int digits, int offset, int length)
+    {
+        Assert.Equal((offset, length), ChudnovskyAlgorithm.HexTail(digits));
     }
 
     /// <summary>

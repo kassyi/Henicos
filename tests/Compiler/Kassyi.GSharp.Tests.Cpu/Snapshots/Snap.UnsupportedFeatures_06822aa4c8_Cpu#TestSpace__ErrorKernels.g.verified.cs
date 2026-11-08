@@ -24,8 +24,6 @@ public static partial class AotContexts
 public const string NonVoidReturnKernel_Source = @"struct __gsharp_context_TestSpace__ErrorKernels__NonVoidReturnKernel {
 int __gsharp_state = 0;
 __gsharp_context_TestSpace__ErrorKernels__NonVoidReturnKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -123,7 +121,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_TestSpace__ErrorKernels__NonVoidReturnKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_TestSpace__ErrorKernels__NonVoidReturnKernel(__gsharp_context_TestSpace__ErrorKernels__NonVoidReturnKernel __gsharp_ctx, ref int __gsharp_auto_result) {
@@ -265,8 +267,6 @@ return __gsharp_auto_result;
 public const string ManagedParamKernel_Source = @"struct __gsharp_context_TestSpace__ErrorKernels__ManagedParamKernel {
 int __gsharp_state = 0;
 __gsharp_context_TestSpace__ErrorKernels__ManagedParamKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -361,7 +361,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_TestSpace__ErrorKernels__ManagedParamKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_TestSpace__ErrorKernels__ManagedParamKernel(global::TestSpace.ManagedClass obj, __gsharp_context_TestSpace__ErrorKernels__ManagedParamKernel __gsharp_ctx) {

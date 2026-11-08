@@ -167,7 +167,7 @@ public abstract class StateMachineTestBase
 
 | Folder | Projects |
 | ----- | ----- |
-| `tests/Compiler/` | G# end-to-end suites: `Kassyi.GSharp.Tests.Shared` (shared project), `.Cpu`, `.Cuda`, `.Integration`, `Kassyi.GSharp.DocTest` |
+| `tests/Compiler/` | G# end-to-end suites: `Kassyi.GSharp.Tests.Shared` (shared project), `.Cpu`, `.Cuda`, `.Integration`, `Kassyi.GSharp.DocTest`; `Kassyi.GSharp.Compiler.Generators.Tests` (the build-time generator tool `src/Compiler/Kassyi.GSharp.Compiler.Generators`, run in process) |
 | `tests/Shared/` | Test infrastructure: `Kassyi.GSharp.Tests.Infrastructure`, `Kassyi.GSharp.Tests.Infrastructure.Tests` (the memory budget watchdog, including a child `dotnet test` run that breaches a small budget), `Kassyi.GSharp.Tests.Generators` |
 | `tests/Stdlib/` | `Kassyi.GSharp.Stdlib.GpuMath.Tests` |
 | `tests/Tools/` | `Kassyi.GSharp.Tools.CollectEnv.Tests` (runs `tools/collect-env/collect-env.cs` as a process), `Kassyi.GSharp.Tools.FuzzDiff.Tests` (in-memory determinism, Roslyn/G# diagnostics, oracle guard, and mutant-catching tests for `tools/fuzz-diff/`) |

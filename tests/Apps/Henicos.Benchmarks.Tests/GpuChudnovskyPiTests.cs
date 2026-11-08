@@ -28,8 +28,7 @@ public class GpuChudnovskyPiTests
     {
         CudaCapability.EnsureGpuAvailable();
 
-        // 60 decimal digits => floor(60 * 3.321928 / 32) * 32 = 192 bits = 48 hex digits (>= 40)
-        // Or 80 decimal digits => floor(80 * 3.321928 / 32) * 32 = 256 bits = 64 hex digits (>= 50)
+        // With asHex the digit count is the number of hex digits after the point: 80 of them (>= 50)
         var targetDigits = 80;
         using var sw = new StringWriter();
 

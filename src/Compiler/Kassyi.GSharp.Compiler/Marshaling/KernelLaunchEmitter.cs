@@ -195,6 +195,7 @@ internal static class KernelLaunchEmitter
                 var proxy = KernelHostNames.GetLocal(LauncherLocal.Proxy, shape);
                 writer.AppendLine($"{IntPtrType}* {proxy} = stackalloc {IntPtrType}[2];");
                 // The argument checks have rejected a null non-optional array and made a null optional one 0 long
+                // (WritePointerArrayArgumentChecks), so only an optional array reaches here with Data == 0 and reads as empty
                 writer.AppendLine($"{proxy}[0] = {shape.Identifier}.Data;");
                 writer.AppendLine($"((int*)({proxy} + 1))[0] = {shape.Identifier}.Length;");
                 // The launcher decides the flags; the caller's Flags never reach the device

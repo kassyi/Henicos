@@ -829,6 +829,43 @@ public sealed class MarshalingAliasingDifferentialTests
     public void Test_LaunchPtr_NonOverloadedIntPtrWithLengthGuard_MatchesSequentialOracle() =>
         DifferentialRunner.Run(s_ptrLengthGuardedScale);
 
+#if GSHARP_CUDA
+    // --- Launch{Kernel}Ptr rejects a null array that is not optional before the launch, as the array launcher does;
+    // the kernel leaves out the null check of an array parameter it never writes on that promise (#1409) ---
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Differential)]
+    [Scenario(TestScenario.SadPath)]
+    public void Test_LaunchPtr_NullNonOptionalArray_ThrowsArgumentNullExceptionBeforeTheLaunch()
+    {
+        CudaCapability.EnsureGpuAvailable();
+        const int rows = 4;
+        int[] src = [1, 2, 3, 4];
+        int[] dst = new int[rows];
+
+        using var ctxScope = new GpuKernelLoader.CudaContextScope();
+        using GpuBuffer<int> dSrc = new(rows);
+        using GpuBuffer<int> dDst = new(rows);
+        dSrc.CopyToDevice(src);
+
+        var srcNull = Assert.Throws<ArgumentNullException>(() =>
+            BoundsAndMemoryDifferentialKernels.LaunchNullArrayOptionalValidKernelPtr(
+                default, dDst.ToProxy(), rows, blockDimX: rows));
+        var dstNull = Assert.Throws<ArgumentNullException>(() =>
+            BoundsAndMemoryDifferentialKernels.LaunchNullArrayOptionalValidKernelPtr(
+                dSrc.ToProxy(), default, rows, blockDimX: rows));
+        Assert.Equal("src", srcNull.ParamName);
+        Assert.Equal("dst", dstNull.ParamName);
+
+        // A null optional array is not rejected and reads as empty; the launch after the rejected ones also shows that
+        // nothing reached the device
+        BoundsAndMemoryDifferentialKernels.LaunchNullArrayOptionalValidKernelPtr(
+            dSrc.ToProxy(), dDst.ToProxy(), rows, default, blockDimX: rows);
+        dDst.CopyToHost(dst);
+        Assert.Equal(src, dst);
+    }
+#endif
+
     // --- Launch{Kernel}Ptr with overloaded GpuBuffer<T> signature ---
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
@@ -1209,7 +1246,7 @@ public sealed class MarshalingAliasingDifferentialTests
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_NullAndEmptyArrays_StructFieldNullDereference_ThrowsNullReferenceExceptionOnCpu()
+    public void Test_NullAndEmptyArrays_StructFieldNullDereference_ThrowsNullReferenceException()
     {
         static DiffNullableDeepBag CloneNullBag(DiffNullableDeepBag src, DiffArrayCloneScope scope)
             => new()
@@ -1223,8 +1260,19 @@ public sealed class MarshalingAliasingDifferentialTests
         {
             Shape = LaunchShapes.SingleThread(),
             Seeds = [0],
-            // CUDA device error channel (#716 / #729) is not yet wired to NullReferenceException
-            ExceptionPolicy = ExceptionPolicy.For<NullReferenceException>(DiffPath.Managed | DiffPath.Native),
+            // Every path throws (#1409); CUDA, the only path of Tests.Cuda, also reports the place of bag.Data
+            // (MarshalingAliasingDifferentialKernels.cu.cs line 502, column 25), which the managed exception lacks
+#if GSHARP_CUDA
+            ExceptionPolicy = new ExceptionPolicy(typeof(NullReferenceException), DiffPaths.CheckedPaths())
+            {
+                SourceFile = nameof(MarshalingAliasingDifferentialKernels),
+                Line = 502,
+                Column = 25,
+                RequireCudaInnerException = true,
+            },
+#else
+            ExceptionPolicy = new ExceptionPolicy(typeof(NullReferenceException), DiffPaths.CheckedPaths()),
+#endif
             Inputs = static (_, _) => new DiffBuffers()
                 .InDeepScalar("bag", new DiffNullableDeepBag { Data = null, Fallback = 5 }, CloneNullBag)
                 .Out<int>("output", 1, OutputPolicy.Ignore),

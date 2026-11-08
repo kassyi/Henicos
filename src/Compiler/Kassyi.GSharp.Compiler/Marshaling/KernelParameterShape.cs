@@ -165,6 +165,13 @@ internal readonly record struct KernelParameterShape
     /// <summary>A nullable reference type such as <c>float[]?</c>.</summary>
     public bool IsNullableReference { get; init; }
 
+    /// <summary>
+    /// The non-nullable array fields that a by-value struct argument reaches through struct fields, each as the chain of
+    /// C# field names (<c>Operands.ResultBuffer</c>): the launchers reject a null in any of them, since the kernel reads
+    /// them without a check (#1409). Empty for any other parameter.
+    /// </summary>
+    public EquatableArray<string> NonNullableArrayFields { get; init; }
+
     /// <summary>A nullable value type such as <c>Memory&lt;float&gt;?</c>.</summary>
     public bool IsNullableValue { get; init; }
 
@@ -342,6 +349,9 @@ internal readonly record struct KernelParameterShape
                 UnmarshalMethodName = AotHostNames.GetQualifiedUnmarshalMethodName(marshaledType, kernelClass),
                 BufferElementTypeName = shape.IsByRef ? GetBufferElementTypeName(parameter.Type, kernelClass) : null,
                 HasArrayFields = hasArrayFields,
+                NonNullableArrayFields = parameter.RefKind == RefKind.None
+                    ? GetNonNullableArrayFieldNames(marshaledType)
+                    : default,
                 CpuHoldsArrayMethodName = hasArrayFields
                     ? AotHostNames.GetQualifiedHoldsArrayMethodName(marshaledType, kernelClass)
                     : null,
@@ -370,6 +380,30 @@ internal readonly record struct KernelParameterShape
         return shape.IsByRef
             ? shape with { BufferElementTypeName = GetBufferElementTypeName(parameter.Type, kernelClass) }
             : shape;
+    }
+
+    // Operands.ResultBuffer, ... (NonNullProof.GetNonNullableArrayFields as C# field names)
+    private static EquatableArray<string> GetNonNullableArrayFieldNames(ITypeSymbol type)
+    {
+        var paths = NonNullProof.GetNonNullableArrayFields(type);
+        if (paths.IsEmpty)
+        {
+            return default;
+        }
+
+        var names = ImmutableArray.CreateBuilder<string>(paths.Length);
+        foreach (var path in paths)
+        {
+            var name = "";
+            foreach (var field in path)
+            {
+                name = name.Length == 0 ? field.Name.ToCSharpIdentifier() : name + "." + field.Name.ToCSharpIdentifier();
+            }
+
+            names.Add(name);
+        }
+
+        return names.MoveToImmutable().AsEquatableArray();
     }
 
     /// <summary>
