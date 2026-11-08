@@ -70,7 +70,7 @@ public class CSharpCpuBigIntProviderTests : IDisposable
         _provider.Add(_workspace, a, rightVal, res);
         Assert.Equal(100 + rightVal, res.ToHostArray()[0]);
 
-        using var a2 = new GpuBigUInt(_workspace, new uint[] { 100 + rightVal, 0, 0, 0 });
+        using var a2 = GpuBigUInt.FromBigInteger(_workspace, 100 + (BigInteger)rightVal, 4);
         _provider.Sub(_workspace, a2, b, res);
         Assert.Equal(100u, res.ToHostArray()[0]);
 

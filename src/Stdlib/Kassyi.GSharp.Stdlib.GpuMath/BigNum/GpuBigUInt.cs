@@ -174,6 +174,10 @@ public readonly partial struct GpuBigUInt : IGpuBigUIntExpression, IGpuBigNumber
     /// </summary>
     /// <param name="operand">The big integer to increment.</param>
     /// <returns>The incremented <see cref="GpuBigUInt"/> instance.</returns>
+    /// <remarks>
+    /// The width stays the same: incrementing the largest value of the width is a domain error, reported as
+    /// <see cref="OverflowException"/> at the next read of the workspace stream (thrown here in CPU fallback mode).
+    /// </remarks>
     public static GpuBigUInt operator ++(GpuBigUInt operand)
     {
         GpuBigIntMath.Add(operand, 1u, operand);
@@ -185,6 +189,10 @@ public readonly partial struct GpuBigUInt : IGpuBigUIntExpression, IGpuBigNumber
     /// </summary>
     /// <param name="operand">The big integer to decrement.</param>
     /// <returns>The decremented <see cref="GpuBigUInt"/> instance.</returns>
+    /// <remarks>
+    /// Decrementing zero is a domain error, reported as <see cref="OverflowException"/> at the next read of the
+    /// workspace stream (thrown here in CPU fallback mode).
+    /// </remarks>
     public static GpuBigUInt operator --(GpuBigUInt operand)
     {
         GpuBigIntMath.Sub(operand, 1u, operand);

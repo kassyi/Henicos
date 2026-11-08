@@ -30,11 +30,12 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
     public void Mul(GpuWorkspace workspace, GpuBigUInt leftOperand, uint rightOperand,
         GpuBigUInt resultBuffer)
     {
-        var blockDim = Math.Min(1024, leftOperand.NumWords);
-
+        ScalarResultWidth.ThrowIfNarrower(leftOperand, resultBuffer);
         GpuBigIntScalarKernels.LaunchScalarMulKernelPtr(
             leftOperand.DevicePointer, rightOperand, resultBuffer.DevicePointer, leftOperand.NumWords,
-            gridDimX: 1, blockDimX: (uint)blockDim, hStream: workspace.Stream);
+            resultBuffer.NumWords, workspace.CorrectionStatusPointer,
+            gridDimX: 1, blockDimX: ScalarResultWidth.BlockSize(leftOperand), hStream: workspace.Stream);
+        workspace.CorrectionStatus?.MarkPending();
     }
 
     /// <inheritdoc />
