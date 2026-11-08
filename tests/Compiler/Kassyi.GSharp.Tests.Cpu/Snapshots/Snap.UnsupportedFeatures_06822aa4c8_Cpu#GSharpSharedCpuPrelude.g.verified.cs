@@ -708,25 +708,26 @@ throw __gsharp_step_abort{};
 // The array that an array-typed C# expression reads (Length, an element, foreach): a null array ends the step with
 // NullReferenceException, as C# throws (#706), and a null optional kernel argument reads as an empty array. The step
 // ends (__gsharp_trap_abort) because the read would dereference nullptr next. An rvalue is returned by value, so that a
-// range-based for over it does not keep a reference to a destroyed temporary
-template <typename A>
-inline A __gsharp_array_ref(A&& array, const char* message)
+// range-based for over it does not keep a reference to a destroyed temporary. The place is the site of the kernel's
+// error site table (uint32_t) or, in a device function, a message that names it (const char*)
+template <typename A, typename S>
+inline A __gsharp_array_ref(A&& array, S site)
 {
 if (array.data == nullptr && (array.flags & __gsharp_array_null_reads_empty) == 0)
 {
-__gsharp_trap_abort(GSharpErrorCode::NullReference, message);
+__gsharp_trap_abort(GSharpErrorCode::NullReference, site);
 }
 return static_cast<A&&>(array);
 }
 
 // The element array[index] as a location, with the check of __gsharp_array_ref. The array and the index are both
 // evaluated before the check, as C# evaluates them before ldelem / stelem throws (#706)
-template <typename A, typename I>
-inline decltype(auto) __gsharp_array_at(A&& array, I index, const char* message)
+template <typename A, typename I, typename S>
+inline decltype(auto) __gsharp_array_at(A&& array, I index, S site)
 {
 if (array.data == nullptr && (array.flags & __gsharp_array_null_reads_empty) == 0)
 {
-__gsharp_trap_abort(GSharpErrorCode::NullReference, message);
+__gsharp_trap_abort(GSharpErrorCode::NullReference, site);
 }
 return array[index];
 }

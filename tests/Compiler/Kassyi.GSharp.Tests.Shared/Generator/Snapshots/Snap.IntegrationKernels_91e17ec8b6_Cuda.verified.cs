@@ -572,6 +572,18 @@ if (__gsharp_d_4 != global::System.IntPtr.Zero && __gsharp_d_4 != __gsharp_d_0 &
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchAllInOneKernelPtr(global::System.IntPtr intInput, global::System.IntPtr floatInput, global::System.IntPtr results, global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1IntegrationKernels.AotContexts.Tier1CustomStruct config, global::System.IntPtr globalCounter, global::System.Int32 count, global::System.Int32 dynamicSharedSize, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (intInput == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(intInput));
+}
+if (floatInput == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(floatInput));
+}
+if (results == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(results));
+}
+if (globalCounter == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(globalCounter));
+}
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1IntegrationKernels.__gsharp_hfunc_AllInOneKernel.Resolve();

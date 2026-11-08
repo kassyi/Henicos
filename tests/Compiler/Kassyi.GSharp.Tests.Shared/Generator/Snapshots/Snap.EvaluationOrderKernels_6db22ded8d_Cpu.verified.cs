@@ -315,6 +315,10 @@ namespace Kassyi.GSharp.Tests.Shared.Syntax
 {
 public partial class EvaluationOrderKernels
 {
+private static readonly global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[] s_errorSites = new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[]
+{
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(825922400u, "EvaluationOrderKernels.cs", 451, 9, ".ctor", "G#: a null array is read"),
+};
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static partial class AotContexts
@@ -4441,7 +4445,7 @@ static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__EoTick)
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__EoTick,__gsharp_mb_V)==0,""Kassyi.GSharp.Tests.Shared.Syntax.EoTick.V: offset"");
 __device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__EoTick __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__EoTick_o0(GSharpArray<int> __gsharp_id_0_log, int __gsharp_id_1_v) {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__EoTick __gsharp_self{};
-__gsharp_array_at(__gsharp_id_0_log, 0, ""G#: a null array is read at EvaluationOrderKernels.cs(451,9)"")=__gsharp_id_1_v;
+__gsharp_array_at(__gsharp_id_0_log, 0, 825922400u)=__gsharp_id_1_v;
 __gsharp_self.__gsharp_mb_V=__gsharp_id_1_v;
 return __gsharp_self;
 }
@@ -4738,6 +4742,10 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.EndGrid();
 return;
 }
 var __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_HiddenWritesKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__HiddenWritesKernel", __gsharp_dll_path);
+if (s_errorSites.Length > 0)
+{
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
+}
 fixed (global::System.Int32* __gsharp_p_0 = log)
 fixed (global::System.Int32* __gsharp_p_1 = result)
 {

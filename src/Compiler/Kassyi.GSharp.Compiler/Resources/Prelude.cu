@@ -583,34 +583,66 @@ __forceinline__ __device__ unsigned long long __gsharp_atomicAdd(unsigned long l
 // --- Runtime Error / Trap ---
 // GSharpErrorCode and __gsharp_trap are defined above GSharpArray<T>.
 
+// The site ID of a null array read: a site of the kernel's error site table, or the builtin ID of a message
+__device__ __forceinline__ unsigned int __gsharp_null_read_site(const char* message) { return __gsharp_builtin_message_id(message); }
+__device__ __forceinline__ unsigned int __gsharp_null_read_site(unsigned int site_id) { return site_id; }
+
+// The failure of a null array read, written inline: the record of __gsharp_trap_site without the warp leader election.
+// The first failing thread writes the record and its completion bit; any other waits until the record is complete, so
+// that its trap cannot stop the kernel before the record is written; then each traps.
+// [WHY] A call to __gsharp_trap_site (__noinline__) makes ptxas keep the caller's live registers across the call: the
+// cooperative ReciprocalNewtonRaphsonMegaKernel of GpuMath went from 60 registers to 255 with a 336-byte stack and no
+// longer launched with 1024 threads per block (CUDA_ERROR_COOPERATIVE_LAUNCH_TOO_LARGE). Written inline it takes 64
+[[noreturn]] __device__ __forceinline__ void __gsharp_null_read_trap(unsigned int site_id) {
+    GSharpDeviceErrorSlot* slot = __gsharp_error_slot;
+    if (slot != nullptr) {
+        constexpr unsigned int code = static_cast<unsigned int>(GSharpErrorCode::NullReference);
+        if (atomicCAS(&slot->code, 0u, code) == 0u) {
+            slot->site_id = site_id;
+            slot->module_id = __gsharp_error_module_id;
+            slot->thread_linear = (threadIdx.x & 0x3FFu) | ((threadIdx.y & 0x3FFu) << 10) | ((threadIdx.z & 0x3FFu) << 20);
+            slot->block_x = blockIdx.x;
+            slot->block_yz = (blockIdx.y & 0xFFFFu) | ((blockIdx.z & 0xFFFFu) << 16);
+            __threadfence_system();
+            atomicExch(&slot->code, code | 0x10000u);
+            __threadfence_system();
+        } else {
+            // The writer sets the bit a few stores after its claim, and every other trap waits for it as well, so the
+            // record always completes. A bounded wait (a counter) costs the cooperative InverseSqrtNewtonRaphsonMegaKernel
+            // 38 more registers and a stack
+            while ((*(volatile unsigned int*)&slot->code & 0x10000u) == 0u) { }
+        }
+    }
+    asm volatile("trap;");
+    __builtin_unreachable();
+}
+
 // GSharpArray::flags bit 0: a null optional kernel argument, which reads as an empty array (#838)
 #define __gsharp_array_null_reads_empty 1
 // The array that an array-typed C# expression reads (Length, an element, foreach): a null array fails as C# throws
-// NullReferenceException (#706), a null optional kernel argument reads as an empty array. Only the checked build
-// (GSHARP_CHECKED) tests; otherwise it is the array itself, at no cost. An rvalue is returned by value, so that a
-// range-based for over it does not keep a reference to a destroyed temporary
-template <typename A>
-__device__ __forceinline__ A __gsharp_array_ref(A&& array, const char* message)
+// NullReferenceException (#706), a null optional kernel argument reads as an empty array. Every build tests it, as
+// C# defines the result and the GPU does not (#1409); the compiler leaves the check out where the array cannot be null.
+// The place is the site of the kernel's error site table (unsigned int) or, in a device function, a message that names
+// it (const char*). An rvalue is returned by value, so that a range-based for over it does not keep a reference to a
+// destroyed temporary
+template <typename A, typename S>
+__device__ __forceinline__ A __gsharp_array_ref(A&& array, S site)
 {
-#ifdef GSHARP_CHECKED
     if (array.data == nullptr && (array.flags & __gsharp_array_null_reads_empty) == 0)
     {
-        __gsharp_trap(GSharpErrorCode::NullReference, message);
+        __gsharp_null_read_trap(__gsharp_null_read_site(site));
     }
-#endif
     return static_cast<A&&>(array);
 }
 // The element array[index] as a location, with the check of __gsharp_array_ref. The array and the index are both
 // evaluated before the check, as C# evaluates them before ldelem / stelem throws (#706)
-template <typename A, typename I>
-__device__ __forceinline__ decltype(auto) __gsharp_array_at(A&& array, I index, const char* message)
+template <typename A, typename I, typename S>
+__device__ __forceinline__ decltype(auto) __gsharp_array_at(A&& array, I index, S site)
 {
-#ifdef GSHARP_CHECKED
     if (array.data == nullptr && (array.flags & __gsharp_array_null_reads_empty) == 0)
     {
-        __gsharp_trap(GSharpErrorCode::NullReference, message);
+        __gsharp_null_read_trap(__gsharp_null_read_site(site));
     }
-#endif
     return array[index];
 }
 // [WHY] A trap stops the kernel, so a trap in the comparison of a sort needs no translation (ErrorChannel.hpp does it on the CPU)

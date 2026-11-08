@@ -275,6 +275,15 @@ if (__gsharp_d_2 != global::System.IntPtr.Zero && __gsharp_d_2 != __gsharp_d_0 &
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchThreeDimensionalIndexAndSignednessKernelPtr(global::System.IntPtr outGid, global::System.IntPtr outSignedMath, global::System.IntPtr visitCount, global::System.Int32 rows, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (outGid == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(outGid));
+}
+if (outSignedMath == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(outSignedMath));
+}
+if (visitCount == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(visitCount));
+}
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.LaunchShapeDifferentialKernels.__gsharp_hfunc_ThreeDimensionalIndexAndSignednessKernel.Resolve();
@@ -577,6 +586,18 @@ if (__gsharp_d_3 != global::System.IntPtr.Zero && __gsharp_d_3 != __gsharp_d_0 &
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchGridStrideLoopMetamorphicKernelPtr(global::System.IntPtr src, global::System.IntPtr dstMulti, global::System.IntPtr dstShort, global::System.IntPtr zeroGuard, global::System.Int32 multiN, global::System.Int32 shortN, global::System.Int32 bias, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (src == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(src));
+}
+if (dstMulti == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(dstMulti));
+}
+if (dstShort == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(dstShort));
+}
+if (zeroGuard == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(zeroGuard));
+}
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.LaunchShapeDifferentialKernels.__gsharp_hfunc_GridStrideLoopMetamorphicKernel.Resolve();
@@ -773,6 +794,12 @@ if (__gsharp_d_1 != global::System.IntPtr.Zero && __gsharp_d_1 != __gsharp_d_0) 
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchSingleThreadMultiDimAndEarlyReturnKernelPtr(global::System.IntPtr header, global::System.IntPtr perThreadOut, global::System.Int32 rows, global::System.Int32 earlyExitLeader, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (header == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(header));
+}
+if (perThreadOut == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(perThreadOut));
+}
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.LaunchShapeDifferentialKernels.__gsharp_hfunc_SingleThreadMultiDimAndEarlyReturnKernel.Resolve();
@@ -1230,6 +1257,27 @@ if (__gsharp_d_6 != global::System.IntPtr.Zero && __gsharp_d_6 != __gsharp_d_0 &
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchCrossAxisWarpShuffleAndActiveMaskKernelPtr(global::System.IntPtr srcInt, global::System.IntPtr srcFloat, global::System.IntPtr srcUInt, global::System.IntPtr outMask, global::System.IntPtr outShflInt, global::System.IntPtr outShflFloat, global::System.IntPtr outShflUInt, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (srcInt == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(srcInt));
+}
+if (srcFloat == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(srcFloat));
+}
+if (srcUInt == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(srcUInt));
+}
+if (outMask == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(outMask));
+}
+if (outShflInt == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(outShflInt));
+}
+if (outShflFloat == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(outShflFloat));
+}
+if (outShflUInt == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(outShflUInt));
+}
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.LaunchShapeDifferentialKernels.__gsharp_hfunc_CrossAxisWarpShuffleAndActiveMaskKernel.Resolve();
@@ -1501,6 +1549,15 @@ if (__gsharp_d_2 != global::System.IntPtr.Zero && __gsharp_d_2 != __gsharp_d_0 &
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchMultiDimSharedMemoryAndBarrierKernelPtr(global::System.IntPtr src, global::System.IntPtr outPermuted, global::System.IntPtr outBlockSum, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (src == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(src));
+}
+if (outPermuted == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(outPermuted));
+}
+if (outBlockSum == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(outBlockSum));
+}
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.LaunchShapeDifferentialKernels.__gsharp_hfunc_MultiDimSharedMemoryAndBarrierKernel.Resolve();
@@ -1652,6 +1709,9 @@ return __gsharp_auto_result;
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe global::System.Int32[] LaunchAutoResultThreeDimensionalKernelPtr(global::System.IntPtr src, global::System.Int32 salt, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (src == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(src));
+}
 if (gridDimX == 0 || gridDimY == 0 || gridDimZ == 0 || blockDimX == 0 || blockDimY == 0 || blockDimZ == 0) throw new global::System.ArgumentOutOfRangeException("Dimensions", "Launch dimensions must be greater than 0.");
 uint __gsharp_total_threads; checked { __gsharp_total_threads = (gridDimX * gridDimY * gridDimZ) * (blockDimX * blockDimY * blockDimZ); }
 var __gsharp_auto_result = new global::System.Int32[__gsharp_total_threads];

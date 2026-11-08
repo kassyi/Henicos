@@ -11,9 +11,9 @@ namespace Kassyi.GSharp.Tests.Shared.Core;
 /// is no error, and a null optional kernel argument keeps reading as an empty array (#838).
 /// </summary>
 /// <remarks>
-/// CUDA checks a null array read only in the checked build (#716), and reports its place only with the device error
-/// record (#729); until then a trap also poisons the CUDA context of the test process, so the error cases are skipped on
-/// CUDA.
+/// CUDA checks a null array read on every build and reports its place through the device error record (#1409), but the
+/// trap leaves the CUDA context of the test process unusable, so the error cases are skipped on CUDA here; the
+/// differential null cases (<c>BoundsAndMemoryDifferentialTests</c>) run them in a child process.
 /// </remarks>
 [Category(TestCategory.Syntax)]
 [TestTarget(ExecutionTarget.GpuExecution)]
@@ -22,6 +22,7 @@ public class NullArrayFieldTests : TranspilerTestBase
 {
     private const string KernelFile = "NullArrayFieldKernels.cu.cs";
     private const string NullReadMessage = "G#: a null array is read at ";
+    private const string NullReadSiteMessage = "G#: a null array is read in ";
 
     [SkippableTheory]
     [Scenario(TestScenario.SadPath)]
@@ -109,7 +110,8 @@ public class NullArrayFieldTests : TranspilerTestBase
         var o = new[] { -1 };
 
         AssertNullRead(forceManaged, "(123,40)",
-            () => NullArrayFieldKernels.LaunchLocalToDeviceFunctionKernel(new NullArrayHolder { Data = null }, o));
+            () => NullArrayFieldKernels.LaunchLocalToDeviceFunctionKernel(new NullArrayHolder { Data = null }, o),
+            inDeviceFunction: true);
     }
 
     [SkippableTheory]
@@ -296,17 +298,28 @@ public class NullArrayFieldTests : TranspilerTestBase
         Assert.Equal([4], o);
     }
 
-    // The native CPU build names the place of the receiver; the managed path throws .NET's own exception
-    private void AssertNullRead(bool forceManaged, string place, Action launch)
+    // The native CPU build names the place of the receiver: in a kernel body as the site of the kernel's error site table
+    // (GSharp.SourceLocation), in a device function, which has no table, in the message. The managed path throws .NET's
+    // own exception
+    private void AssertNullRead(bool forceManaged, string place, Action launch, bool inDeviceFunction = false)
     {
         Skip.If(IsCudaDialect,
-            "CUDA checks a null array read only in the checked build (#716) and reports it only with the device error record (#729).");
+            "A CUDA trap leaves the context of the test process unusable; the differential null cases run it in a child process (#1409).");
 
         var exception = Assert.Throws<NullReferenceException>(() => Run(forceManaged, launch));
-        if (!forceManaged)
+        if (forceManaged)
+        {
+            return;
+        }
+
+        if (inDeviceFunction)
         {
             Assert.Equal(NullReadMessage + KernelFile + place, exception.Message);
+            return;
         }
+
+        Assert.Equal(KernelFile + place, exception.Data["GSharp.SourceLocation"]);
+        Assert.StartsWith(NullReadSiteMessage, exception.Message, StringComparison.Ordinal);
     }
 
     // The managed execution path exists only on the CPU dialects

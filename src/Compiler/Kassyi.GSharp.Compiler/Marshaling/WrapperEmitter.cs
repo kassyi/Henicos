@@ -405,6 +405,33 @@ internal static class WrapperEmitter
         }
     }
 
+    // if (<name> == IntPtr.Zero) { throw new ArgumentNullException(nameof(<name>)); }   for each array that is not optional
+    // [WHY] The IntPtr launcher keeps the contract of the array launcher: a null array that is not optional is rejected
+    // before the launch. The kernel leaves out the null check of an array parameter it never writes on that promise
+    // (ArrayNullCheck.IsUnwrittenKernelParameter); without it the device reads through nullptr (#1409).
+    internal static void WritePointerArgumentChecks(SourceWriter writer, in KernelHostModel kernel)
+    {
+        foreach (var shape in kernel.Parameters)
+        {
+            if (!shape.IsArray || shape.IsOptional)
+            {
+                continue;
+            }
+
+            var name = shape.Identifier;
+            writer.Append("if ");
+            using (writer.Parentheses())
+            {
+                writer.Append($"{name} == {HostTypeNames.IntPtr}.Zero");
+            }
+
+            using (writer.Scope())
+            {
+                writer.AppendLine($"throw new global::System.ArgumentNullException(nameof({name}));");
+            }
+        }
+    }
+
     // if (<length> == 0) { throw new ArgumentException(<message>, nameof(<name>)); }
     private static void WriteEmptyArrayCheck(SourceWriter writer, string length, string name)
     {

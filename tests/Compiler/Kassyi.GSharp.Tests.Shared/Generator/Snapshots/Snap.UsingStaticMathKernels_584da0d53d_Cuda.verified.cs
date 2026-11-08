@@ -293,6 +293,18 @@ if (__gsharp_d_3 != global::System.IntPtr.Zero && __gsharp_d_3 != __gsharp_d_0 &
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchUsingStaticMathKernelPtr(global::System.IntPtr inputs, global::System.IntPtr results, global::System.IntPtr intInputs, global::System.IntPtr intResults, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (inputs == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(inputs));
+}
+if (results == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(results));
+}
+if (intInputs == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(intInputs));
+}
+if (intResults == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(intResults));
+}
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.UsingStaticMathKernels.__gsharp_hfunc_UsingStaticMathKernel.Resolve();

@@ -74,6 +74,47 @@ public partial class EmissionShapeTests
         );
     }
 
+    // A check in a kernel body reports a site of the kernel's error site table, which holds the place of the receiver, so
+    // the host exception names it on CUDA as on the native build (#1409): h.Data in `o[0] = h.Data.Length;` (38,16)
+    [Theory]
+    [Scenario(TestScenario.HappyPath)]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    public void ArrayNullCheck_KernelBody_ReportsASiteOfTheErrorSiteTable(string dialect)
+    {
+        var generated = Generate("ArrayNullCheckShapeKernels", dialect, withPath: true);
+        var kernel = KernelSource(generated, "CheckedKernel");
+
+        Assert.DoesNotContain("G#: a null array is read at", kernel, StringComparison.Ordinal);
+        var check = Regex.Match(kernel, Regex.Escape(ArrayRef) + @"__gsharp_id_0_h\.__gsharp_mb_Data, (\d+)u\)\.length");
+        Assert.True(check.Success, "h.Data.Length does not go through a site of the error site table.");
+        var entry = Regex.Match(generated, @"new global::Kassyi\.GSharp\.Runtime\.Aot\.GSharpErrorSite\(" + check.Groups[1].Value + @"u, [^\n]*");
+        Assert.True(entry.Success, "The error site table has no entry for the site of h.Data.Length.");
+        Assert.True(
+            entry.Value.EndsWith(
+                "u, \"ArrayNullCheckShapeKernels.cu.cs\", 38, 16, \"CheckedKernel\", \"G#: a null array is read\"),",
+                StringComparison.Ordinal),
+            entry.Value);
+    }
+
+    // The Ptr launcher rejects IntPtr.Zero for an array that is not optional, as the array launcher rejects null: the
+    // kernel leaves out the check of an array parameter it never writes on that promise. An optional one is not rejected
+    // and reads as empty (#1409)
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void ArrayNullCheck_PtrLauncher_RejectsANullArrayThatIsNotOptional()
+    {
+        var generated = Generate("ArrayNullCheckShapeKernels", "Cuda");
+        var start = generated.IndexOf("public static unsafe void LaunchElidedKernelPtr(", StringComparison.Ordinal);
+        Assert.True(start >= 0, "The Ptr launcher of ElidedKernel is not generated.");
+        var launcher = generated[start..generated.IndexOf("#pragma warning restore CS8500", start, StringComparison.Ordinal)];
+
+        Assert.Contains("if (values == global::System.IntPtr.Zero)", launcher, StringComparison.Ordinal);
+        Assert.Contains("throw new global::System.ArgumentNullException(nameof(values));", launcher, StringComparison.Ordinal);
+        Assert.Contains("throw new global::System.ArgumentNullException(nameof(o));", launcher, StringComparison.Ordinal);
+        Assert.DoesNotContain("nameof(bias)", launcher, StringComparison.Ordinal);
+    }
+
     // A device function parameter may be null: the foreach over it checks its source once, at the loop entry
     [Theory]
     [Scenario(TestScenario.HappyPath)]

@@ -53,6 +53,14 @@ namespace Henicos.Benchmarks.ComputeBenchmarks
 {
 public partial class BlackScholesKernels
 {
+private static readonly global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[] s_errorSites = new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[]
+{
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1518676323u, "BlackScholesKernels.cs", 29, 34, "BlackScholesKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1618486772u, "BlackScholesKernels.cs", 29, 46, "BlackScholesKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(904618238u, "BlackScholesKernels.cs", 29, 58, "BlackScholesKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1677887815u, "BlackScholesKernels.cs", 30, 13, "BlackScholesKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1698584356u, "BlackScholesKernels.cs", 31, 13, "BlackScholesKernel", "G#: a null array is read"),
+};
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static partial class AotContexts
@@ -251,9 +259,9 @@ int __gsharp_id_1_tid = (int)__gsharp_gsl_0;
 {
 float __gsharp_id_2_c;
 float __gsharp_id_3_p;
-__gsharp_fn_Henicos__Benchmarks__ComputeBenchmarks__BlackScholesKernels__CalculateOptionPrice(__gsharp_array_at(__gsharp_id_0_ctx.__gsharp_mb_S, __gsharp_id_1_tid, ""G#: a null array is read at BlackScholesKernels.cs(29,34)""),__gsharp_array_at(__gsharp_id_0_ctx.__gsharp_mb_X, __gsharp_id_1_tid, ""G#: a null array is read at BlackScholesKernels.cs(29,46)""),__gsharp_array_at(__gsharp_id_0_ctx.__gsharp_mb_T, __gsharp_id_1_tid, ""G#: a null array is read at BlackScholesKernels.cs(29,58)""),__gsharp_id_0_ctx.__gsharp_mb_R,__gsharp_id_0_ctx.__gsharp_mb_V,&__gsharp_id_2_c,&__gsharp_id_3_p);
-__gsharp_array_at(__gsharp_id_0_ctx.__gsharp_mb_CallResult, __gsharp_id_1_tid, ""G#: a null array is read at BlackScholesKernels.cs(30,13)"")=__gsharp_id_2_c;
-__gsharp_array_at(__gsharp_id_0_ctx.__gsharp_mb_PutResult, __gsharp_id_1_tid, ""G#: a null array is read at BlackScholesKernels.cs(31,13)"")=__gsharp_id_3_p;
+__gsharp_fn_Henicos__Benchmarks__ComputeBenchmarks__BlackScholesKernels__CalculateOptionPrice(__gsharp_array_at(__gsharp_id_0_ctx.__gsharp_mb_S, __gsharp_id_1_tid, 1518676323u),__gsharp_array_at(__gsharp_id_0_ctx.__gsharp_mb_X, __gsharp_id_1_tid, 1618486772u),__gsharp_array_at(__gsharp_id_0_ctx.__gsharp_mb_T, __gsharp_id_1_tid, 904618238u),__gsharp_id_0_ctx.__gsharp_mb_R,__gsharp_id_0_ctx.__gsharp_mb_V,&__gsharp_id_2_c,&__gsharp_id_3_p);
+__gsharp_array_at(__gsharp_id_0_ctx.__gsharp_mb_CallResult, __gsharp_id_1_tid, 1677887815u)=__gsharp_id_2_c;
+__gsharp_array_at(__gsharp_id_0_ctx.__gsharp_mb_PutResult, __gsharp_id_1_tid, 1698584356u)=__gsharp_id_3_p;
 }
 }
 }
@@ -473,6 +481,10 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.EndGrid();
 return;
 }
 var __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_BlackScholesKernel>("__gsharp_launch_Henicos__Benchmarks__ComputeBenchmarks__BlackScholesKernels__BlackScholesKernel", __gsharp_dll_path);
+if (s_errorSites.Length > 0)
+{
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
+}
 global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.AotContexts.BlackScholes __gsharp_native_0 = default;
 var __gsharp_allocated_ptrs_0 = new global::System.Collections.Generic.List<global::System.IntPtr>();
 try

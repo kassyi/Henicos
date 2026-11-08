@@ -23,6 +23,22 @@ public class BoundsAndMemoryDifferentialTests
     private const int CanaryTotal = BoundsAndMemoryDifferentialKernels.CanaryBackingLength;
     private const int SharedTileLen = BoundsAndMemoryDifferentialKernels.SharedTileLength;
 
+    // Reading a null array throws NullReferenceException on every path (#1409). CUDA reports the place of the receiver
+    // (line and column in BoundsAndMemoryDifferentialKernels.cu.cs) through the kernel's error site table; the managed
+    // path throws .NET's own exception, which carries no place, so the place is checked where CUDA is the only path
+    private static ExceptionPolicy NullArrayRead(int line, int column) =>
+#if GSHARP_CUDA
+        new(typeof(NullReferenceException), DiffPaths.CheckedPaths())
+        {
+            SourceFile = nameof(BoundsAndMemoryDifferentialKernels),
+            Line = line,
+            Column = column,
+            RequireCudaInnerException = true,
+        };
+#else
+        new(typeof(NullReferenceException), DiffPaths.CheckedPaths());
+#endif
+
     private static int[] CreateCanaryBacking()
     {
         var backing = new int[CanaryTotal];
@@ -544,7 +560,7 @@ public class BoundsAndMemoryDifferentialTests
         $"{nameof(BoundsAndMemoryDifferentialKernels)}.{nameof(BoundsAndMemoryDifferentialKernels.NullArrayLengthTrapKernel)}")
     {
         Shape = LaunchShapes.Linear(DefaultRows, 32),
-        ExpectedException = static (_, _) => ExceptionPolicy.For<NullReferenceException>(DiffPath.Managed | DiffPath.Native),
+        ExpectedException = static (_, _) => NullArrayRead(337, 18),
         Inputs = static (_, shape) => new DiffBuffers()
             .Out<int>("dst", shape.Rows, ["trap_val"], OutputPolicy.Exact),
         Launch = static (b, s) => BoundsAndMemoryDifferentialKernels.LaunchNullArrayLengthTrapKernel(
@@ -561,7 +577,7 @@ public class BoundsAndMemoryDifferentialTests
         $"{nameof(BoundsAndMemoryDifferentialKernels)}.{nameof(BoundsAndMemoryDifferentialKernels.NullArrayIndexerTrapKernel)}")
     {
         Shape = LaunchShapes.Linear(DefaultRows, 32),
-        ExpectedException = static (_, _) => ExceptionPolicy.For<NullReferenceException>(DiffPath.Managed | DiffPath.Native),
+        ExpectedException = static (_, _) => NullArrayRead(356, 18),
         Inputs = static (_, shape) => new DiffBuffers()
             .Out<int>("dst", shape.Rows, ["trap_val"], OutputPolicy.Exact),
         Launch = static (b, s) => BoundsAndMemoryDifferentialKernels.LaunchNullArrayIndexerTrapKernel(
@@ -578,7 +594,7 @@ public class BoundsAndMemoryDifferentialTests
         $"{nameof(BoundsAndMemoryDifferentialKernels)}.{nameof(BoundsAndMemoryDifferentialKernels.NullArrayForeachTrapKernel)}")
     {
         Shape = LaunchShapes.Linear(DefaultRows, 32),
-        ExpectedException = static (_, _) => ExceptionPolicy.For<NullReferenceException>(DiffPath.Managed | DiffPath.Native),
+        ExpectedException = static (_, _) => NullArrayRead(376, 27),
         Inputs = static (_, shape) => new DiffBuffers()
             .Out<int>("dst", shape.Rows, ["trap_val"], OutputPolicy.Exact),
         Launch = static (b, s) => BoundsAndMemoryDifferentialKernels.LaunchNullArrayForeachTrapKernel(
@@ -595,7 +611,7 @@ public class BoundsAndMemoryDifferentialTests
         $"{nameof(BoundsAndMemoryDifferentialKernels)}.{nameof(BoundsAndMemoryDifferentialKernels.NullArrayReassignedParameterTrapKernel)}")
     {
         Shape = LaunchShapes.Linear(DefaultRows, 32),
-        ExpectedException = static (_, _) => ExceptionPolicy.For<NullReferenceException>(DiffPath.Managed | DiffPath.Native),
+        ExpectedException = static (_, _) => NullArrayRead(405, 18),
         Inputs = static (rng, shape) => new DiffBuffers()
             .In("src", DiffValues.Int32(rng, shape.Rows), readOnly: true)
             .Out<int>("dst", shape.Rows, ["trap_val"], OutputPolicy.Exact),
@@ -836,6 +852,7 @@ public class BoundsAndMemoryDifferentialTests
         Shape = new LaunchShape(2, 2, 2, 4, 4, 2, SimultaneousRows),
         Seeds = [0, 1],
         OracleExceptions = OracleExceptionMode.MatchOracle,
+        ExpectedException = static (rng, _) => rng.Seed == 1 ? NullArrayRead(568, 22) : null,
         Inputs = static (rng, shape) =>
         {
             int rows = shape.Rows;

@@ -1014,6 +1014,15 @@ namespace Kassyi.GSharp.Tests.Shared.Core
 {
 public partial class RefArgumentOrderKernels
 {
+private static readonly global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[] s_errorSites = new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[]
+{
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(713836524u, "RefArgumentOrderKernels.cs", 46, 29, "ArrayReplacedByLaterArgumentKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1249133802u, "RefArgumentOrderKernels.cs", 46, 47, "ArrayReplacedByLaterArgumentKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(316431260u, "RefArgumentOrderKernels.cs", 46, 29, "ArrayReplacedByLaterArgumentKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(127068307u, "RefArgumentOrderKernels.cs", 55, 29, "ArrayFieldReplacedByLaterArgumentKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(199322065u, "RefArgumentOrderKernels.cs", 55, 57, "ArrayFieldReplacedByLaterArgumentKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1455425621u, "RefArgumentOrderKernels.cs", 55, 29, "ArrayFieldReplacedByLaterArgumentKernel", "G#: a null array is read"),
+};
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static partial class AotContexts
@@ -1656,13 +1665,13 @@ __gsharp_switch_1_state_0:
 __gsharp_ctx->__gsharp_id_2_d=__gsharp_ctx->__gsharp_id_0_data;
 __gsharp_ctx->__gsharp_arg_temp_0=__gsharp_ctx->__gsharp_id_2_d;
 __gsharp_ctx->__gsharp_arg_temp_1=(int)threadIdx.x;
-__gsharp_ctx->__gsharp_arg_temp_2=__gsharp_array_ref((__gsharp_ctx->__gsharp_id_2_d=__gsharp_ctx->__gsharp_id_1_other), ""G#: a null array is read at RefArgumentOrderKernels.cs(46,47)"").length;
+__gsharp_ctx->__gsharp_arg_temp_2=__gsharp_array_ref((__gsharp_ctx->__gsharp_id_2_d=__gsharp_ctx->__gsharp_id_1_other), 1249133802u).length;
 goto __gsharp_switch_1_state_1;
 }
 case 1:
 __gsharp_switch_1_state_1:
 {
-if(!__gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__AddAfterBarrier(&__gsharp_array_at(__gsharp_ctx->__gsharp_arg_temp_0, __gsharp_ctx->__gsharp_arg_temp_1, ""G#: a null array is read at RefArgumentOrderKernels.cs(46,29)""),__gsharp_ctx->__gsharp_arg_temp_2,&__gsharp_ctx->__gsharp_call_frame_0,__gsharp_root))
+if(!__gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__AddAfterBarrier(&__gsharp_array_at(__gsharp_ctx->__gsharp_arg_temp_0, __gsharp_ctx->__gsharp_arg_temp_1, 316431260u),__gsharp_ctx->__gsharp_arg_temp_2,&__gsharp_ctx->__gsharp_call_frame_0,__gsharp_root))
 {
 __gsharp_state=1;
 return;
@@ -1908,6 +1917,10 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.EndGrid();
 return;
 }
 var __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_ArrayReplacedByLaterArgumentKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__ArrayReplacedByLaterArgumentKernel", __gsharp_dll_path);
+if (s_errorSites.Length > 0)
+{
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
+}
 fixed (global::System.Int32* __gsharp_p_0 = data)
 fixed (global::System.Int32* __gsharp_p_1 = other)
 {
@@ -1959,13 +1972,13 @@ __gsharp_switch_1_state_0:
 __gsharp_ctx->__gsharp_id_2_holder.__gsharp_mb_Data=__gsharp_ctx->__gsharp_id_0_data;
 __gsharp_ctx->__gsharp_arg_temp_0=__gsharp_ctx->__gsharp_id_2_holder.__gsharp_mb_Data;
 __gsharp_ctx->__gsharp_arg_temp_1=(int)threadIdx.x;
-__gsharp_ctx->__gsharp_arg_temp_2=__gsharp_array_ref((__gsharp_ctx->__gsharp_id_2_holder.__gsharp_mb_Data=__gsharp_ctx->__gsharp_id_1_other), ""G#: a null array is read at RefArgumentOrderKernels.cs(55,57)"").length;
+__gsharp_ctx->__gsharp_arg_temp_2=__gsharp_array_ref((__gsharp_ctx->__gsharp_id_2_holder.__gsharp_mb_Data=__gsharp_ctx->__gsharp_id_1_other), 199322065u).length;
 goto __gsharp_switch_1_state_1;
 }
 case 1:
 __gsharp_switch_1_state_1:
 {
-if(!__gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__AddAfterBarrier(&__gsharp_array_at(__gsharp_ctx->__gsharp_arg_temp_0, __gsharp_ctx->__gsharp_arg_temp_1, ""G#: a null array is read at RefArgumentOrderKernels.cs(55,29)""),__gsharp_ctx->__gsharp_arg_temp_2,&__gsharp_ctx->__gsharp_call_frame_0,__gsharp_root))
+if(!__gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__AddAfterBarrier(&__gsharp_array_at(__gsharp_ctx->__gsharp_arg_temp_0, __gsharp_ctx->__gsharp_arg_temp_1, 1455425621u),__gsharp_ctx->__gsharp_arg_temp_2,&__gsharp_ctx->__gsharp_call_frame_0,__gsharp_root))
 {
 __gsharp_state=1;
 return;
@@ -2211,6 +2224,10 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.EndGrid();
 return;
 }
 var __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_ArrayFieldReplacedByLaterArgumentKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__ArrayFieldReplacedByLaterArgumentKernel", __gsharp_dll_path);
+if (s_errorSites.Length > 0)
+{
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
+}
 fixed (global::System.Int32* __gsharp_p_0 = data)
 fixed (global::System.Int32* __gsharp_p_1 = other)
 {

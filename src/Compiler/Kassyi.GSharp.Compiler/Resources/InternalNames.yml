@@ -241,7 +241,7 @@ Prelude:
     TrapAbort: { Value: __gsharp_trap_abort, Prelude: ErrorChannel.hpp }
     StepAbort: { Value: __gsharp_step_abort, Prelude: ErrorChannel.hpp }
     # The array that a C# array read (Length, an element, foreach) goes through: a null array fails with
-    # NullReferenceException (native always, CUDA under GSHARP_CHECKED); declared by ErrorChannel.hpp and the CUDA prelude
+    # NullReferenceException on every build; declared by ErrorChannel.hpp and the CUDA prelude
     ArrayRef: { Value: __gsharp_array_ref, Prelude: ErrorChannel.hpp }
     # An element of such an array, checked after the array and the index are evaluated (C# order)
     ArrayAt: { Value: __gsharp_array_at, Prelude: ErrorChannel.hpp }

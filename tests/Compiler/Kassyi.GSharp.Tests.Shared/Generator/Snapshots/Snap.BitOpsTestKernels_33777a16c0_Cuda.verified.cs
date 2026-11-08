@@ -210,6 +210,12 @@ if (__gsharp_d_1 != global::System.IntPtr.Zero && __gsharp_d_1 != __gsharp_d_0) 
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchBitOpsKernelPtr(global::System.IntPtr u32Data, global::System.IntPtr u64Data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (u32Data == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(u32Data));
+}
+if (u64Data == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(u64Data));
+}
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.BitOpsTestKernels.__gsharp_hfunc_BitOpsKernel.Resolve();

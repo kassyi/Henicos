@@ -313,6 +313,18 @@ if (__gsharp_d_3 != global::System.IntPtr.Zero && __gsharp_d_3 != __gsharp_d_0 &
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchChunkAddKernelPtr(global::System.IntPtr dA, global::System.IntPtr dB, global::System.IntPtr dResult, global::System.IntPtr carryBuffer, global::System.Int32 numWords, global::System.Int32 chunkSize, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (dA == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(dA));
+}
+if (dB == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(dB));
+}
+if (dResult == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(dResult));
+}
+if (carryBuffer == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(carryBuffer));
+}
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.GpuBigIntKernels.__gsharp_hfunc_ChunkAddKernel.Resolve();

@@ -212,6 +212,11 @@ namespace Kassyi.GSharp.Tests.Shared.Syntax
 {
 public partial class StructWithExpressionKernels
 {
+private static readonly global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[] s_errorSites = new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[]
+{
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(191887812u, "StructWithExpressionKernels.cs", 162, 9, "ArrayFieldKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1318557092u, "StructWithExpressionKernels.cs", 163, 16, "ArrayFieldKernel", "G#: a null array is read"),
+};
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static partial class AotContexts
@@ -2208,8 +2213,8 @@ __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__WithArrayStruct __gsharp_tmp 
 __gsharp_tmp.__gsharp_mb_Count = 5;
 return __gsharp_tmp;
 }());
-__gsharp_array_at(__gsharp_id_2_b.__gsharp_mb_Data, 0, ""G#: a null array is read at StructWithExpressionKernels.cs(162,9)"")=7;
-__gsharp_id_0_r[1]=__gsharp_array_at(__gsharp_id_1_a.__gsharp_mb_Data, 0, ""G#: a null array is read at StructWithExpressionKernels.cs(163,16)"");
+__gsharp_array_at(__gsharp_id_2_b.__gsharp_mb_Data, 0, 191887812u)=7;
+__gsharp_id_0_r[1]=__gsharp_array_at(__gsharp_id_1_a.__gsharp_mb_Data, 0, 1318557092u);
 __gsharp_id_0_r[2]=__gsharp_id_1_a.__gsharp_mb_Count;
 __gsharp_id_0_r[3]=__gsharp_id_2_b.__gsharp_mb_Count;
 __gsharp_state=-1;
@@ -2435,6 +2440,10 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.EndGrid();
 return;
 }
 var __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_ArrayFieldKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__StructWithExpressionKernels__ArrayFieldKernel", __gsharp_dll_path);
+if (s_errorSites.Length > 0)
+{
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
+}
 fixed (global::System.Int32* __gsharp_p_0 = r)
 {
 __gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_0, Length = r.Length });

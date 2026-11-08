@@ -3,9 +3,10 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Helpers;
 /// <summary>
 /// The null check of a C# array read (#706): <c>Length</c> and the other <c>System.Array</c> members, an element and
 /// <c>foreach</c> throw <see cref="NullReferenceException"/> on a null array in C#. The receiver goes through the Prelude
-/// helper <c>__gsharp_array_ref(&lt;receiver&gt;, "&lt;message&gt;")</c>, which fails on the native CPU build always and
-/// on CUDA under <c>GSHARP_CHECKED</c>; a null optional kernel argument reads as an empty array there
-/// (<c>GSharpArray::flags</c>, set by the launchers).
+/// helper <c>__gsharp_array_ref(&lt;receiver&gt;, &lt;site&gt;)</c>, which fails on every build (#1409); a null optional
+/// kernel argument reads as an empty array there (<c>GSharpArray::flags</c>, set by the launchers). In a kernel body the
+/// place is a site of the kernel's error site table, so the host exception carries it on CUDA as well
+/// (<see cref="NullCheckSite"/>).
 /// </summary>
 /// <remarks>
 /// <para>
@@ -23,6 +24,12 @@ internal static class ArrayNullCheck
 {
     /// <summary>The text of the error, followed by the place of the receiver (<see cref="SourcePlace"/>).</summary>
     public const string MessagePrefix = "G#: a null array is read at ";
+
+    /// <summary>The text of the error of a registered site, whose place the error site table holds.</summary>
+    public const string SiteMessage = "G#: a null array is read";
+
+    // The trap kind of the site ID, which tells the site apart from another trap at the same place
+    private const string TrapKind = "ArrayNull";
 
     private static readonly ConditionalWeakTable<Compilation, ConcurrentDictionary<IParameterSymbol, bool>> s_written =
         new();
@@ -66,7 +73,7 @@ internal static class ArrayNullCheck
             return;
         }
 
-        AppendCheck(receiver, SourcePlace.Format(context.Query.SemanticModel, receiver), ref context);
+        AppendCheck(receiver, PlanSite(receiver, ref context), ref context);
     }
 
     /// <summary>
@@ -83,7 +90,7 @@ internal static class ArrayNullCheck
             return false;
         }
 
-        AppendCheck(receiver, SourcePlace.Format(context.Query.SemanticModel, receiver), ref context);
+        AppendCheck(receiver, PlanSite(receiver, ref context), ref context);
         return true;
     }
 
@@ -116,12 +123,12 @@ internal static class ArrayNullCheck
             return false;
         }
 
-        var place = SourcePlace.Format(model, node.Expression);
+        var site = PlanSite(node.Expression, ref context);
         var writer = context.Emitter.Writer;
         if (EvaluationOrder.LastSpilledOperand(
                 [ExpressionEffects.Of(node.Expression, model), ExpressionEffects.Of(argument.Expression, model)]) < 0)
         {
-            AppendElementCall(node.Expression, argument.Expression, place, ref context);
+            AppendElementCall(node.Expression, argument.Expression, site, ref context);
             return true;
         }
 
@@ -136,14 +143,14 @@ internal static class ArrayNullCheck
             writer.Append(", ");
             EvaluationOrder.AppendTempName(writer, index);
             writer.Append(", ");
-            CppStringLiteral.Append(writer, MessagePrefix + place);
+            AppendSite(writer, site);
         }
 
         return true;
     }
 
-    // __gsharp_array_at(<receiver>, <index>, "G#: a null array is read at <place>")
-    private static void AppendElementCall(ExpressionSyntax receiver, ExpressionSyntax index, string place,
+    // __gsharp_array_at(<receiver>, <index>, <site>)
+    private static void AppendElementCall(ExpressionSyntax receiver, ExpressionSyntax index, NullCheckSite site,
         ref TranspileContext context)
     {
         var writer = context.Emitter.Writer;
@@ -154,7 +161,7 @@ internal static class ArrayNullCheck
             writer.Append(", ");
             context.Visitor.Visit(index);
             writer.Append(", ");
-            CppStringLiteral.Append(writer, MessagePrefix + place);
+            AppendSite(writer, site);
         }
     }
 
@@ -176,8 +183,8 @@ internal static class ArrayNullCheck
             if (annotation.Data is { } place)
             {
                 // The expression itself, without the annotation that brought it here
-                AppendCheck(expression.WithoutAnnotations(LoweringAnnotations.ArrayNullCheckAnnotationKind), place,
-                    ref context);
+                var receiver = expression.WithoutAnnotations(LoweringAnnotations.ArrayNullCheckAnnotationKind);
+                AppendCheck(receiver, PlanSite(receiver, place, ref context), ref context);
                 return true;
             }
         }
@@ -185,10 +192,8 @@ internal static class ArrayNullCheck
         return false;
     }
 
-    /// <summary>
-    /// Writes <c>__gsharp_array_ref(&lt;receiver&gt;, "G#: a null array is read at &lt;place&gt;")</c>.
-    /// </summary>
-    public static void AppendCheck(ExpressionSyntax receiver, string place, ref TranspileContext context)
+    /// <summary>Writes <c>__gsharp_array_ref(&lt;receiver&gt;, &lt;site&gt;)</c>.</summary>
+    public static void AppendCheck(ExpressionSyntax receiver, NullCheckSite site, ref TranspileContext context)
     {
         var writer = context.Emitter.Writer;
         writer.Append(GSharpInternalNames.Prelude.ArrayRef);
@@ -196,8 +201,64 @@ internal static class ArrayNullCheck
         {
             context.Visitor.Visit(receiver);
             writer.Append(", ");
-            CppStringLiteral.Append(writer, MessagePrefix + place);
+            AppendSite(writer, site);
         }
+    }
+
+    /// <summary>
+    /// The place a failing check of <paramref name="receiver"/> reports: a site of the kernel's error site table when the
+    /// method has one (a kernel body), otherwise a message that names the place (a device function).
+    /// </summary>
+    public static NullCheckSite PlanSite(ExpressionSyntax receiver, ref TranspileContext context) =>
+        PlanSite(receiver, SourcePlace.Format(context.Query.SemanticModel, receiver), ref context);
+
+    /// <summary>
+    /// <see cref="PlanSite(ExpressionSyntax, ref TranspileContext)"/> with the place already formatted: the place that
+    /// lowering recorded for the source of a <c>foreach</c>.
+    /// </summary>
+    public static NullCheckSite PlanSite(ExpressionSyntax receiver, string place, ref TranspileContext context)
+    {
+        if (context.Emitter.ErrorSites is not { } table)
+        {
+            return new NullCheckSite(0u, MessagePrefix + place);
+        }
+
+        var model = context.Query.SemanticModel;
+        var memberName = GetSourceMemberName(receiver, model) ?? context.Emitter.CurrentMemberName ?? "";
+        return new NullCheckSite(table.Register(receiver, model, memberName, SiteMessage, TrapKind), "");
+    }
+
+    // The method that holds the receiver in the user's source, past lambdas and local functions.
+    // [WHY] A member function of a struct (Dispose of a using) is emitted once per kernel that uses it, into one guarded
+    // definition of the module, so its site must be the same entry for every kernel: named after the kernel, two kernels
+    // would give one site ID two entries (GSH0103)
+    private static string? GetSourceMemberName(ExpressionSyntax receiver, SemanticModel model)
+    {
+        if (model.GetReportLocation(receiver) is not { SourceTree: { } tree } location ||
+            !model.Compilation.ContainsSyntaxTree(tree))
+        {
+            return null;
+        }
+
+        var symbol = model.Compilation.GetCachedSemanticModel(tree).GetEnclosingSymbol(location.SourceSpan.Start);
+        while (symbol is IMethodSymbol { MethodKind: MethodKind.AnonymousFunction or MethodKind.LocalFunction })
+        {
+            symbol = symbol.ContainingSymbol;
+        }
+
+        return symbol is IMethodSymbol method ? method.Name : null;
+    }
+
+    // <site>u for a registered site, "<message>" otherwise
+    private static void AppendSite(SourceWriter writer, NullCheckSite site)
+    {
+        if (site.SiteId != 0u)
+        {
+            writer.Append($"{site.SiteId}u");
+            return;
+        }
+
+        CppStringLiteral.Append(writer, site.Message);
     }
 
     // a[^1] and a[1..]: an argument of type System.Index or System.Range
@@ -290,3 +351,10 @@ internal static class ArrayNullCheck
                model.GetSymbol(identifier).IsEqualTo(parameter);
     }
 }
+
+/// <summary>
+/// Where a failing array null check reports (<see cref="ArrayNullCheck.PlanSite(ExpressionSyntax, ref TranspileContext)"/>):
+/// a site of the kernel's error site table (<paramref name="SiteId"/>, never 0), or <paramref name="Message"/>, which
+/// names the place, when the method has no table.
+/// </summary>
+internal readonly record struct NullCheckSite(uint SiteId, string Message);
