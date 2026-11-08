@@ -2,7 +2,8 @@
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 
 /// <summary>
-/// Provides shared balanced-tree reduction and enumerator utilities for zero-allocation stack-based LINQ across GPU BigNum types.
+/// Provides shared reductions for zero-allocation stack-based LINQ across GPU BigNum types: the left fold of the
+/// sequential forms and the balanced tree of the <c>AsParallel()</c> forms.
 /// </summary>
 internal static class StackLinqReductionCore
 {
@@ -17,6 +18,35 @@ internal static class StackLinqReductionCore
         }
 
         return count;
+    }
+
+    /// <summary>
+    /// Combines the elements from the left, <c>combiner(combiner(combiner(x0, x1), x2), x3)</c>, in the order of
+    /// <c>Enumerable.Aggregate</c>: the reduction of a sequence without <c>AsParallel()</c>.
+    /// </summary>
+    public static TExpr FoldLeft<TEnumerator, TSource, TExpr>(
+        TEnumerator enumerator,
+        Func<TSource, TExpr> converter,
+        Func<TExpr, TExpr, TExpr> combiner,
+        out int count)
+        where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct
+        where TSource : struct
+        where TExpr : struct
+    {
+        if (!enumerator.TryGetNext(out var first))
+        {
+            throw new InvalidOperationException("Sequence contains no elements");
+        }
+
+        var accumulator = converter(first);
+        count = 1;
+        while (enumerator.TryGetNext(out var value))
+        {
+            accumulator = combiner(accumulator, converter(value));
+            count++;
+        }
+
+        return accumulator;
     }
 
     public static TExpr ReduceBalancedTree<TEnumerator, TSource, TExpr>(

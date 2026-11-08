@@ -54,17 +54,21 @@ internal abstract class SignedBinaryExpression(IGpuBigIntExpression left, IGpuBi
         }
     }
 
-    public virtual int NumWords
-    {
-        get
-        {
-            if (Left.NumWords != Right.NumWords)
-            {
-                throw new ArgumentException("Left and Right expressions must have the same number of words.");
-            }
+    // The width, computed once: the children never change, and a left fold builds chains as deep as the sequence,
+    // where reading the children's widths again at every level (and at every Evaluate) would cost 2^depth steps.
+    private int _numWords = -1;
 
-            return Left.NumWords;
+    public int NumWords => _numWords >= 0 ? _numWords : _numWords = ComputeNumWords();
+
+    protected virtual int ComputeNumWords()
+    {
+        var leftWords = Left.NumWords;
+        if (leftWords != Right.NumWords)
+        {
+            throw new ArgumentException("Left and Right expressions must have the same number of words.");
         }
+
+        return leftWords;
     }
 
     public GpuBigInt Evaluate(GpuWorkspace workspace, GpuBigUInt? targetResult = null)
@@ -74,14 +78,62 @@ internal abstract class SignedBinaryExpression(IGpuBigIntExpression left, IGpuBi
             throw new ArgumentException($"Destination buffer must have {NumWords} words.", nameof(targetResult));
         }
 
-        GpuBigInt leftResult = default;
+        return Combine(workspace, EvaluateLeft(workspace), targetResult);
+    }
+
+    // The left operand. A left fold builds a chain of binary nodes along Left as deep as the sequence; the chain is
+    // evaluated bottom-up in a loop, so that its length does not become the depth of the call stack. The order is that
+    // of the recursion: the innermost left operand first, then each right operand before the node that uses it.
+    private GpuBigInt EvaluateLeft(GpuWorkspace workspace)
+    {
+        if (Left is not SignedBinaryExpression)
+        {
+            return Left.Evaluate(workspace);
+        }
+
+        var depth = 0;
+        var node = Left;
+        while (node is SignedBinaryExpression inner)
+        {
+            depth++;
+            node = inner.Left;
+        }
+
+        var chain = ArrayPool<SignedBinaryExpression>.Shared.Rent(depth);
+        try
+        {
+            var count = 0;
+            node = Left;
+            while (node is SignedBinaryExpression inner)
+            {
+                chain[count++] = inner;
+                node = inner.Left;
+            }
+
+            var accumulated = node.Evaluate(workspace);
+            for (var i = count - 1; i >= 0; i--)
+            {
+                accumulated = chain[i].Combine(workspace, accumulated, targetResult: null);
+            }
+
+            return accumulated;
+        }
+        finally
+        {
+            ArrayPool<SignedBinaryExpression>.Shared.Return(chain, clearArray: true);
+        }
+    }
+
+    // This node applied to its evaluated left operand, which the call owns and releases (also when it fails), and to
+    // its right operand
+    private GpuBigInt Combine(GpuWorkspace workspace, GpuBigInt leftResult, GpuBigUInt? targetResult)
+    {
         GpuBigInt rightResult = default;
         GpuBigUInt staging = default;
         var finalBuffer = targetResult;
 
         try
         {
-            leftResult = Left.Evaluate(workspace);
             rightResult = Right.Evaluate(workspace);
             finalBuffer ??= workspace.RentTemp(NumWords);
 
@@ -95,31 +147,34 @@ internal abstract class SignedBinaryExpression(IGpuBigIntExpression left, IGpuBi
         }
         finally
         {
-            // A child result is owned (a rented intermediate) or borrowed (a leaf); Dispose returns only the former.
-            // Nested, so that a release that throws (a failed capture refuses the clear) does not skip the others.
+            Release(leftResult, rightResult, staging, targetResult.HasValue ? null : finalBuffer);
+        }
+    }
+
+    // A child result is owned (a rented intermediate) or borrowed (a leaf); Dispose returns only the former. Nested, so
+    // that a release that throws (a failed capture refuses the clear) does not skip the others.
+    private static void Release(GpuBigInt leftResult, GpuBigInt rightResult, GpuBigUInt staging,
+        GpuBigUInt? unusedResultBuffer)
+    {
+        try
+        {
+            leftResult.Dispose();
+        }
+        finally
+        {
             try
             {
-                leftResult.Dispose();
+                rightResult.Dispose();
             }
             finally
             {
                 try
                 {
-                    rightResult.Dispose();
+                    staging.Dispose();
                 }
                 finally
                 {
-                    try
-                    {
-                        staging.Dispose();
-                    }
-                    finally
-                    {
-                        if (!targetResult.HasValue && finalBuffer.HasValue)
-                        {
-                            finalBuffer.Value.Dispose();
-                        }
-                    }
+                    unusedResultBuffer?.Dispose();
                 }
             }
         }
@@ -208,7 +263,7 @@ internal class SignedSubExpression(IGpuBigIntExpression left, IGpuBigIntExpressi
 internal class SignedMulExpression(IGpuBigIntExpression left, IGpuBigIntExpression right)
     : SignedBinaryExpression(left, right)
 {
-    public override int NumWords => Left.NumWords + Right.NumWords;
+    protected override int ComputeNumWords() => Left.NumWords + Right.NumWords;
 
     protected override GpuBigInt Execute(GpuBigInt a, GpuBigInt b, GpuBigUInt resultBuffer)
     {
