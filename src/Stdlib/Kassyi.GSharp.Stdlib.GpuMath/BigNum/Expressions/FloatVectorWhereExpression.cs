@@ -38,9 +38,12 @@ internal sealed class FloatVectorWhereExpression(
                 DeviceElementCount.Static(0));
         }
 
+        // The predicate first, as in VectorWhereExpression: a source that shares a sub-expression with it is
+        // evaluated last and keeps its values.
+        var predicates = DeviceCounted.Evaluate(predicate, workspace);
         var evaluatedSource = DeviceCounted.Evaluate(source, workspace);
         var selected = _state.Select<FloatVectorResultKind, GpuBigFloatArrayView>(workspace, evaluatedSource.Storage,
-            evaluatedSource.Count, predicate, capacity, WordsPerElement, elementOffset, elementCount, out var count);
+            evaluatedSource.Count, predicates, capacity, WordsPerElement, elementOffset, elementCount, out var count);
         return new FloatVectorEvaluation(selected, count);
     }
 

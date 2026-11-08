@@ -35,7 +35,7 @@ internal sealed class WhereDeviceState : IDisposable
     }
 
     /// <summary>
-    /// The steps of a Where after its source was evaluated: evaluates the predicate, scans its flags over the input
+    /// The steps of a Where after its predicate and its source were evaluated: scans the predicate flags over the input
     /// count (a Where after another one reads only the elements the first one selected, design J4), moves the selected
     /// elements to their positions in the cache, and returns the window
     /// <paramref name="elementOffset"/>..<paramref name="elementCount"/> with its count.
@@ -44,7 +44,7 @@ internal sealed class WhereDeviceState : IDisposable
         GpuWorkspace workspace,
         TResult source,
         DeviceElementCount sourceCount,
-        IGpuBoolVectorExpression predicate,
+        scoped BoolVectorEvaluation predicates,
         int capacity,
         int wordsPerElement,
         int elementOffset,
@@ -54,7 +54,6 @@ internal sealed class WhereDeviceState : IDisposable
         where TResult : struct, allows ref struct
     {
         var evalCount = elementCount ?? (capacity - elementOffset);
-        var predicates = DeviceCounted.Evaluate(predicate, workspace);
         var inputCount = DeviceCounted.Combine(sourceCount, predicates.Count);
 
         // 1. The scan of the predicates gives each selected element its position, and its total is the count
