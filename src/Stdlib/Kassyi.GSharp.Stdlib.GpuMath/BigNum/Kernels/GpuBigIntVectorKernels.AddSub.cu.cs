@@ -114,6 +114,7 @@ public static partial class GpuBigIntVectorKernels
         bool differentSigns = (op.Left.Signs[batchIdx] != effSignB);
 
         SharedMemory<uint> sharedCarry = new SharedMemory<uint>(32);
+        SharedMemory<uint> topCarry = new SharedMemory<uint>(1);
         uint blockCarryIn = differentSigns ? 1u : 0u;
         int baseA = batchIdx * op.Left.NumWords;
         int baseB = (op.IsScalar ? 0 : batchIdx) * op.Right.NumWords;
@@ -141,6 +142,13 @@ public static partial class GpuBigIntVectorKernels
                 op.Result.Limbs[baseResult + idx] = (uint)sum + carryIn;
             }
 
+            // The carry out of the top word, taken from its own thread: the block carry of a partial warp is not
+            // defined (its last lane does not exist).
+            if (idx == op.Result.NumWords - 1)
+            {
+                topCarry[0] = g | (p & carryIn);
+            }
+
             Gpu.SyncThreads();
         }
 
@@ -154,10 +162,12 @@ public static partial class GpuBigIntVectorKernels
             }
             else
             {
-                uint topWord = op.Result.Limbs[baseResult + op.Result.NumWords - 1];
-                bool isNegTC = (topWord & 0x80000000u) != 0;
-                op.Result.Signs[batchIdx] = isNegTC ? effSignB : op.Left.Signs[batchIdx];
-                needsNegate[0] = isNegTC ? 1u : 0u;
+                // |A| + ~|B| + 1 carries out exactly when |A| >= |B|; a borrow means |B| is larger and the
+                // result holds |A| - |B| modulo the width, which is negated below. The top bit of the result
+                // says nothing about the sign once the difference reaches it.
+                bool borrowed = topCarry[0] == 0u;
+                op.Result.Signs[batchIdx] = borrowed ? effSignB : op.Left.Signs[batchIdx];
+                needsNegate[0] = borrowed ? 1u : 0u;
             }
         }
 
