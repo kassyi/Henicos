@@ -98,7 +98,7 @@ internal static class LoopStatementTranspilers
 
         if (IteratorTypeResolver.IsGenericIEnumerable(iteratorMethod.ReturnType, out var elementType))
         {
-            StructTranspiler.RegisterUsedStructIfApplicable(elementType, ref context);
+            StructOrdering.RegisterUsedStructIfApplicable(elementType, ref context);
         }
 
         var expandedBlock = IteratorInliner.Expand(

@@ -39,7 +39,7 @@ public sealed class CastExpressionTranspilerRule : SyntaxNodeTranspilerRuleBase<
         }
             ? opMethod
             : model.GetSymbol(node) as IMethodSymbol;
-        if (StructTranspiler.IsEmittedStructConversion(conversionMethod, model.Compilation) &&
+        if (StructConversionEmitter.IsEmittedStructConversion(conversionMethod, model.Compilation) &&
             conversionMethod != null)
         {
             UserDefinedConversionHelper.AppendConversionCall(conversionMethod, node.Expression, targetType, ref context);

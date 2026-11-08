@@ -410,8 +410,8 @@ public static partial class StructDifferentialKernels
 
     /// <summary>
     /// Reproduces #963: User-defined <c>implicit operator</c> on a struct.
-    /// <c>StructTranspiler.WriteImplicitConversionOperator</c> ignores the C# conversion operator body and hardcodes
-    /// <c>this-&gt;firstMember = v;</c> and <c>return this-&gt;firstMember;</c>.
+    /// <c>StructConversionEmitter.WriteImplicitConversionOperator</c> ignores the C# conversion operator body and
+    /// hardcodes <c>this-&gt;firstMember = v;</c> and <c>return this-&gt;firstMember;</c>.
     /// </summary>
     [GpuKernel]
     public static void StructUserDefinedImplicitConversion(int[] inputs, int[] r)

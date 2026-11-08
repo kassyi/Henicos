@@ -1,8 +1,11 @@
+using static Kassyi.GSharp.Compiler.Transpiler.StructTypeSubstitution;
+
 namespace Kassyi.GSharp.Tests.Shared.Transpiler;
 
 /// <summary>
-/// <see cref="StructTranspiler.SubstituteTypeParameters"/> replaces the type parameters of a constructed struct in the
-/// type of one of its members, also inside pointers, arrays and type arguments, and returns a type without them as it is.
+/// <see cref="StructTypeSubstitution.SubstituteTypeParameters"/> replaces the type parameters of a constructed struct
+/// in the type of one of its members, also inside pointers, arrays and type arguments, and returns a type without them
+/// as it is.
 /// </summary>
 [Category(TestCategory.Compiler)]
 [TestTarget(ExecutionTarget.CpuExecution)]
@@ -28,7 +31,7 @@ public class StructTypeSubstitutionTests
     {
         var closed = ParameterType("closed");
 
-        var actual = StructTranspiler.SubstituteTypeParameters(DefinitionFieldType(field), closed, s_compilation.Value);
+        var actual = SubstituteTypeParameters(DefinitionFieldType(field), closed, s_compilation.Value);
 
         Assert.Equal(expected, actual?.ToDisplayString());
     }
@@ -43,7 +46,7 @@ public class StructTypeSubstitutionTests
     {
         var type = DefinitionFieldType(field);
 
-        Assert.Same(type, StructTranspiler.SubstituteTypeParameters(type, ParameterType("closed"), s_compilation.Value));
+        Assert.Same(type, SubstituteTypeParameters(type, ParameterType("closed"), s_compilation.Value));
     }
 
     // Without a compilation, a pointer or an array cannot be constructed again and stays as it is
@@ -55,7 +58,7 @@ public class StructTypeSubstitutionTests
     {
         var type = DefinitionFieldType(field);
 
-        Assert.Same(type, StructTranspiler.SubstituteTypeParameters(type, ParameterType("closed")));
+        Assert.Same(type, SubstituteTypeParameters(type, ParameterType("closed")));
     }
 
     [Fact]
@@ -65,8 +68,8 @@ public class StructTypeSubstitutionTests
         var pair = ParameterType("pair");
         var definition = pair.OriginalDefinition;
 
-        Assert.Equal("int", StructTranspiler.SubstituteTypeParameters(FieldType(definition, "A"), pair)?.ToDisplayString());
-        Assert.Equal("float", StructTranspiler.SubstituteTypeParameters(FieldType(definition, "B"), pair)?.ToDisplayString());
+        Assert.Equal("int", SubstituteTypeParameters(FieldType(definition, "A"), pair)?.ToDisplayString());
+        Assert.Equal("float", SubstituteTypeParameters(FieldType(definition, "B"), pair)?.ToDisplayString());
     }
 
     [Fact]
@@ -75,7 +78,7 @@ public class StructTypeSubstitutionTests
     {
         var methodTypeParameter = AnyParameterType("methodTypeParameter");
 
-        Assert.Same(methodTypeParameter, StructTranspiler.SubstituteTypeParameters(methodTypeParameter, ParameterType("closed")));
+        Assert.Same(methodTypeParameter, SubstituteTypeParameters(methodTypeParameter, ParameterType("closed")));
     }
 
     [Fact]
@@ -85,10 +88,10 @@ public class StructTypeSubstitutionTests
         var plain = DefinitionFieldType("Plain");
         var definition = ParameterType("closed").OriginalDefinition;
 
-        Assert.Same(plain, StructTranspiler.SubstituteTypeParameters(plain, definition, s_compilation.Value));
-        Assert.Same(plain, StructTranspiler.SubstituteTypeParameters(plain, ParameterType("plain"), s_compilation.Value));
-        Assert.Same(plain, StructTranspiler.SubstituteTypeParameters(plain, null, s_compilation.Value));
-        Assert.Null(StructTranspiler.SubstituteTypeParameters(null, ParameterType("closed"), s_compilation.Value));
+        Assert.Same(plain, SubstituteTypeParameters(plain, definition, s_compilation.Value));
+        Assert.Same(plain, SubstituteTypeParameters(plain, ParameterType("plain"), s_compilation.Value));
+        Assert.Same(plain, SubstituteTypeParameters(plain, null, s_compilation.Value));
+        Assert.Null(SubstituteTypeParameters(null, ParameterType("closed"), s_compilation.Value));
     }
 
     private static INamedTypeSymbol ParameterType(string name) =>
