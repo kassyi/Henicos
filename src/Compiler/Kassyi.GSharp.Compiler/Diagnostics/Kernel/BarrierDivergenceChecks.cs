@@ -184,7 +184,7 @@ internal static class BarrierDivergenceChecks
     /// block: one declared before it, or any one when the block is a nested block, whose statements the lowering moves
     /// into the enclosing block (BranchRewriter, LoopRewriter) so that its scope would end there.
     /// </summary>
-    private static bool IsInUsingDeclarationScope(BlockSyntax block, InvocationExpressionSyntax barrier)
+    internal static bool IsInUsingDeclarationScope(BlockSyntax block, InvocationExpressionSyntax barrier)
     {
         var isNested = block.Parent is BlockSyntax;
         return block.Statements
