@@ -294,7 +294,7 @@ ComprehensiveSpecKernel.cu.cs(107,63): warning GSH0013: The kernel allocates 400
 
 // Execution Context: Transpiled CUDA C++ (Internal)
 
-The generator emits one C# file per kernel class. The CUDA C++ for each kernel is embedded in a `{Kernel}_Source` string constant and compiled together with the shared prelude and device code (`{Kernel}_FullSource`). The rest of the file is the host side: native shadow structs (`AotContexts`), the managed-array launcher `Launch{Kernel}`, and the raw-pointer launcher `Launch{Kernel}Ptr`.
+The generator emits one C# file per kernel class. The CUDA C++ for each kernel is embedded in a `{Kernel}_Source` string constant and compiled together with the shared prelude and device code. The rest of the file is the host side: native shadow structs (`AotContexts`), the managed-array launcher `Launch{Kernel}`, and the raw-pointer launcher `Launch{Kernel}Ptr`.
 
 Inside the C++, every user identifier is renamed from its symbol: parameters and locals become `__gsharp_id_{n}_{name}`, and fields of structs that G# defines become `__gsharp_mb_{name}`. The renaming keeps C# names that are reserved in C++ or CUDA from breaking the build. See [Identifier Naming](01_aot_transpiler.md#126-identifier-naming-cppnameresolver).
 
@@ -614,7 +614,6 @@ return;
 }
 }
 ";
-public static readonly string ProcessPhysics_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ProcessPhysics_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ProcessPhysics = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_DebugReduc__ComprehensiveSpecKernel__ProcessPhysics", global::Kassyi.GSharp.Generated.GSharpModuleContext_MegaTestCompilationBase.GetFatbin);
 private static bool __gsharp_layout_checked_ProcessPhysics;
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
@@ -795,7 +794,6 @@ __gsharp_id_0_data[__gsharp_id_1_tid]=__gsharp_id_1_tid;
 cg::this_grid().sync();
 }
 ";
-public static readonly string CooperativePhysicsProcess_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +CooperativePhysicsProcess_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_CooperativePhysicsProcess = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_DebugReduc__ComprehensiveSpecKernel__CooperativePhysicsProcess", global::Kassyi.GSharp.Generated.GSharpModuleContext_MegaTestCompilationBase.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerCooperativePhysicsProcess() => global::DebugReduc.ComprehensiveSpecKernel.__gsharp_hfunc_CooperativePhysicsProcess.Resolve();

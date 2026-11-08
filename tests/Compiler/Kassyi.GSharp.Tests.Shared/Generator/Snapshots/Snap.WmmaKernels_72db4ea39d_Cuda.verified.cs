@@ -102,7 +102,6 @@ __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__WmmaKernels__MultiplyAccumulate
 __gsharp_wmma_store<__gsharp_wmma_shape<16, 16, 16>, int>(&__gsharp_id_3_d[0],&__gsharp_id_6_acc,16,0);
 }
 ";
-public static readonly string WmmaInt8RowMajorKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +WmmaInt8RowMajorKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_WmmaInt8RowMajorKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Core__WmmaKernels__WmmaInt8RowMajorKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerWmmaInt8RowMajorKernel() => global::Kassyi.GSharp.Tests.Shared.Core.WmmaKernels.__gsharp_hfunc_WmmaInt8RowMajorKernel.Resolve();
@@ -366,7 +365,6 @@ __gsharp_wmma_mma<__gsharp_wmma_shape<16, 16, 16>, signed char, __gsharp_wmma_ro
 __gsharp_wmma_store<__gsharp_wmma_shape<16, 16, 16>, int>(&__gsharp_id_3_d[0],&__gsharp_id_6_acc,16,0);
 }
 ";
-public static readonly string WmmaInt8ColMajorBKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +WmmaInt8ColMajorBKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_WmmaInt8ColMajorBKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Core__WmmaKernels__WmmaInt8ColMajorBKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerWmmaInt8ColMajorBKernel() => global::Kassyi.GSharp.Tests.Shared.Core.WmmaKernels.__gsharp_hfunc_WmmaInt8ColMajorBKernel.Resolve();
@@ -630,7 +628,6 @@ __gsharp_wmma_mma<__gsharp_wmma_shape<16, 16, 16>, signed char, __gsharp_wmma_ro
 __gsharp_wmma_store<__gsharp_wmma_shape<16, 16, 16>, int>(&__gsharp_id_2_dColMajor[0],&__gsharp_id_5_acc,16,1);
 }
 ";
-public static readonly string WmmaInt8ColMajorStoreKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +WmmaInt8ColMajorStoreKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_WmmaInt8ColMajorStoreKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Core__WmmaKernels__WmmaInt8ColMajorStoreKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerWmmaInt8ColMajorStoreKernel() => global::Kassyi.GSharp.Tests.Shared.Core.WmmaKernels.__gsharp_hfunc_WmmaInt8ColMajorStoreKernel.Resolve();
@@ -839,7 +836,6 @@ __gsharp_wmma_mma<__gsharp_wmma_shape<8, 8, 4>, double, __gsharp_wmma_row_major,
 __gsharp_wmma_store<__gsharp_wmma_shape<8, 8, 4>, double>(&__gsharp_id_2_d[0],&__gsharp_id_5_acc,8,0);
 }
 ";
-public static readonly string WmmaDoubleM8N8K4Kernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +WmmaDoubleM8N8K4Kernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_WmmaDoubleM8N8K4Kernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Core__WmmaKernels__WmmaDoubleM8N8K4Kernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerWmmaDoubleM8N8K4Kernel() => global::Kassyi.GSharp.Tests.Shared.Core.WmmaKernels.__gsharp_hfunc_WmmaDoubleM8N8K4Kernel.Resolve();

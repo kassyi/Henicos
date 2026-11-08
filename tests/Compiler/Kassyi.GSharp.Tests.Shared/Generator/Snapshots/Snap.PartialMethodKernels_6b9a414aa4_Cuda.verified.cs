@@ -163,7 +163,6 @@ int __gsharp_id_1_i = (int)threadIdx.x;
 __gsharp_id_0_data[__gsharp_id_1_i]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__PartialMethodKernels__SevenPlus(__gsharp_id_1_i);
 }
 ";
-public static readonly string PartialFillKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +PartialFillKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_PartialFillKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__PartialMethodKernels__PartialFillKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerPartialFillKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.PartialMethodKernels.__gsharp_hfunc_PartialFillKernel.Resolve();
@@ -268,7 +267,6 @@ int __gsharp_id_2_i = (int)threadIdx.x;
 __gsharp_id_1_result[__gsharp_id_2_i]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__PartialMethodKernels__AddAfterBarrier(__gsharp_id_0_shared,__gsharp_id_2_i);
 }
 ";
-public static readonly string PartialBarrierKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +PartialBarrierKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_PartialBarrierKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__PartialMethodKernels__PartialBarrierKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerPartialBarrierKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.PartialMethodKernels.__gsharp_hfunc_PartialBarrierKernel.Resolve();
@@ -421,7 +419,6 @@ int __gsharp_id_1_i = (int)threadIdx.x;
 __gsharp_id_0_data[__gsharp_id_1_i]=__gsharp_add_i32(__gsharp_id_0_data[__gsharp_id_1_i],1);
 }
 ";
-public static readonly string UnimplementedPartialKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +UnimplementedPartialKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_UnimplementedPartialKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__PartialMethodKernels__UnimplementedPartialKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerUnimplementedPartialKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.PartialMethodKernels.__gsharp_hfunc_UnimplementedPartialKernel.Resolve();

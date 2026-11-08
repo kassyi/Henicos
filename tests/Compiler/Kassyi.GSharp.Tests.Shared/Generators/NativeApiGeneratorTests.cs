@@ -530,19 +530,14 @@ public class NativeApiGeneratorTests
             driverOptions: new GeneratorDriverOptions(IncrementalGeneratorOutputKind.None, trackIncrementalGeneratorSteps: true));
     }
 
-    private static CSharpCompilation CreateCompilation()
-    {
-        var references = ((string?)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES") ?? string.Empty)
-            .Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries)
-            .Select(p => MetadataReference.CreateFromFile(p))
-            .Append(MetadataReference.CreateFromFile(typeof(GpuKernelLoader).Assembly.Location));
-
-        return CSharpCompilation.Create(
+    // The shared references hold the trusted platform assemblies (Kassyi.GSharp.Runtime with GpuKernelLoader among
+    // them) once per process; creating them per test read every image into memory again.
+    private static CSharpCompilation CreateCompilation() =>
+        CSharpCompilation.Create(
             "NativeApiGeneratorTestAssembly",
             [],
-            references,
+            RoslynTestUtility.BaseReferences,
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, allowUnsafe: true));
-    }
 
     private static string FindSource(GeneratorDriverRunResult result, string marker)
     {

@@ -88,7 +88,6 @@ __gsharp_id_1_results[__gsharp_id_4_tid]=sqrt(fabs(__gsharp_id_0_inputs[__gsharp
 __gsharp_id_3_intResults[__gsharp_id_4_tid]=__gsharp_clamp(__gsharp_id_2_intInputs[__gsharp_id_4_tid],(-5),5);
 }
 ";
-public static readonly string UsingStaticMathKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +UsingStaticMathKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_UsingStaticMathKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__UsingStaticMathKernels__UsingStaticMathKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerUsingStaticMathKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.UsingStaticMathKernels.__gsharp_hfunc_UsingStaticMathKernel.Resolve();

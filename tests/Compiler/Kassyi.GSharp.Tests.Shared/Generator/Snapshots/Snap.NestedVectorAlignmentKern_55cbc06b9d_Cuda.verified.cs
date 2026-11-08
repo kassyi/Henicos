@@ -214,7 +214,6 @@ __gsharp_id_0_offsets[5]=64;
 }
 }
 ";
-public static readonly string WriteExpectedOffsetsKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +WriteExpectedOffsetsKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_WriteExpectedOffsetsKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Runtime__NestedVectorAlignmentKernels__WriteExpectedOffsetsKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerWriteExpectedOffsetsKernel() => global::Kassyi.GSharp.Tests.Runtime.NestedVectorAlignmentKernels.__gsharp_hfunc_WriteExpectedOffsetsKernel.Resolve();
@@ -381,7 +380,6 @@ extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Runtime__NestedVe
 (*__gsharp_id_0_data).__gsharp_mb_Field4_Short=(short)(__gsharp_sub_i32((*__gsharp_id_0_data).__gsharp_mb_Field4_Short+1,1));
 }
 ";
-public static readonly string RoundtripKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +RoundtripKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_RoundtripKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Runtime__NestedVectorAlignmentKernels__RoundtripKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerRoundtripKernel() => global::Kassyi.GSharp.Tests.Runtime.NestedVectorAlignmentKernels.__gsharp_hfunc_RoundtripKernel.Resolve();

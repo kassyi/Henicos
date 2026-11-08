@@ -98,7 +98,6 @@ __gsharp_id_0_output[1]=10;
 __gsharp_id_0_output[2]=__gsharp_mul_i32(__gsharp_id_1_a,__gsharp_add_i32(__gsharp_id_2_b,__gsharp_id_3_c));
 }
 ";
-public static readonly string ParenthesesKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ParenthesesKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ParenthesesKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__ParenthesesSuppressionKernels__ParenthesesKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerParenthesesKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.ParenthesesSuppressionKernels.__gsharp_hfunc_ParenthesesKernel.Resolve();

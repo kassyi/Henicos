@@ -88,7 +88,6 @@ int __gsharp_id_1_i = (int)threadIdx.x;
 __gsharp_id_0_values[__gsharp_id_1_i]=__gsharp_id_0_values[__gsharp_id_1_i]*2.0f+1.0f+1e1f;
 }
 ";
-public static readonly string FloatLiteralKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +FloatLiteralKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_FloatLiteralKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__FloatingPointLiteralKernels__FloatLiteralKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerFloatLiteralKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.FloatingPointLiteralKernels.__gsharp_hfunc_FloatLiteralKernel.Resolve();
@@ -193,7 +192,6 @@ int __gsharp_id_1_i = (int)threadIdx.x;
 __gsharp_id_0_values[__gsharp_id_1_i]=__gsharp_id_0_values[__gsharp_id_1_i]*2.0+1.5+1.0;
 }
 ";
-public static readonly string DoubleLiteralKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +DoubleLiteralKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_DoubleLiteralKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__FloatingPointLiteralKernels__DoubleLiteralKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerDoubleLiteralKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.FloatingPointLiteralKernels.__gsharp_hfunc_DoubleLiteralKernel.Resolve();
