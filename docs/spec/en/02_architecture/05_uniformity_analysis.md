@@ -14,7 +14,7 @@ The analyzer reports a barrier that only some threads of a block (or of the grid
 
 ## 5.1 Values and branches
 
-The analysis is a forward data flow on the control flow graph of the method, with lambda and local function bodies and the bodies of `Gpu.ForUnroll` and `Gpu.SyncGrid` spliced in (`SplicedFlowBuilder`). Every value has a variance:
+The analysis is a forward data flow on the control flow graph of the method, with lambda and local function bodies and the bodies of `Gpu.ForUnroll` and `Gpu.SyncGrid` spliced in (`SplicedFlowBuilder`). A local function body is spliced at each call (a recursive call excepted): its parameters start with the variance of the arguments of that call, and what it returns, or leaves in a `ref` / `out` parameter, becomes the result or the argument of the call. Every value has a variance:
 
 | Variance | Meaning |
 | :--- | :--- |

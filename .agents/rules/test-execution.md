@@ -30,8 +30,10 @@ Pick the command matching the domain you modified. Methodology (TDD, snapshot hi
 
 What an agent does:
 
-- The user adds the `human-reviewed` label when their review of a pull request is finished. Then read every review comment (`gh pr view <n> --comments` and `gh api repos/<owner>/<repo>/pulls/<n>/comments`), reply on the pull request with a decision per item (fixed here, or filed as an issue with its milestone), make the fixes, and push them.
-- A pull request is ready to merge when it is labeled `human-reviewed`, every review item is fixed or filed, and both its Ubuntu and Windows runs are green.
+- An agent reviews every pull request and posts the review as one comment ([pr-review-pairing](../skills/pr-review-pairing/SKILL.md)). The review starts with `git merge-tree --write-tree origin/<base> origin/<head>` and `gh pr checks <n>`; a conflict or a failing check is a blocking item. After posting it, the agent adds the `agent-reviewed` label.
+- The user samples pull requests and adds the `human-reviewed` label to the ones they reviewed themselves. A pull request whose description marks a breaking change, or whose review raises a question of the semantics charter, waits for the user before it is merged.
+- When a pull request carries either label, read every review comment (`gh pr view <n> --comments` and `gh api repos/<owner>/<repo>/pulls/<n>/comments`), reply on the pull request with a decision per item (fixed here, or filed as an issue with its milestone), make the fixes, and push them.
+- A pull request is ready to merge when it carries `agent-reviewed` or `human-reviewed`, every review item is fixed or filed, and both its Ubuntu and Windows runs are green. The agent then merges it.
 - When you hand the user a merge order, list only pull requests whose runs are green on both OS, or say which ones still wait for them.
 - Do not close and reopen a pull request to start CI again; it does not always pick up a newer `main`. To test against a newer `main`, push one merge of `main` into the branch. Re-running from the Actions page reuses the old merge.
 - If the run on a push to `main` fails, fix `main` first.

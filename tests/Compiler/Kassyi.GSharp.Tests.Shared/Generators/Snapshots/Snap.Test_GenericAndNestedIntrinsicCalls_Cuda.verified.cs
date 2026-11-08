@@ -34,14 +34,9 @@ return __gsharp_seq_0 = (int)__gsharp_add_i32(__gsharp_seq_1,__gsharp_seq_2);
 }
 ";
 public static readonly string CopyAndReleaseKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +CopyAndReleaseKernel_Source;
-private static global::System.IntPtr? __gsharp_hfunc_CopyAndReleaseKernel;
-/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
-public static void WarmupFunctionPointerCopyAndReleaseKernel()
-{
-if (__gsharp_hfunc_CopyAndReleaseKernel.HasValue) return;
-global::System.IntPtr __gsharp_hmodule = global::Kassyi.GSharp.Generated.GSharpModuleContext_MegaTestCompilationBase.GetOrLoadModule();
-__gsharp_hfunc_CopyAndReleaseKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(__gsharp_hmodule, "__gsharp_k_Kassyi__GSharp__Tests__NativeApi__GenericIntrinsicCallKernels__CopyAndReleaseKernel");
-}
+private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_CopyAndReleaseKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__NativeApi__GenericIntrinsicCallKernels__CopyAndReleaseKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_MegaTestCompilationBase.GetFatbin);
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
+public static void WarmupFunctionPointerCopyAndReleaseKernel() => global::Kassyi.GSharp.Tests.NativeApi.GenericIntrinsicCallKernels.__gsharp_hfunc_CopyAndReleaseKernel.Resolve();
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -61,8 +56,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.NativeApi.GenericIntrinsicCallKernels.WarmupFunctionPointerCopyAndReleaseKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_CopyAndReleaseKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.NativeApi.GenericIntrinsicCallKernels.__gsharp_hfunc_CopyAndReleaseKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "GenericIntrinsicCallKernels.CopyAndReleaseKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 global::System.IntPtr __gsharp_d_1 = global::System.IntPtr.Zero;
@@ -153,8 +147,7 @@ public static unsafe void LaunchCopyAndReleaseKernelPtr(global::System.IntPtr ds
 {
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::Kassyi.GSharp.Tests.NativeApi.GenericIntrinsicCallKernels.WarmupFunctionPointerCopyAndReleaseKernel();
-global::System.IntPtr __gsharp_hfunc = __gsharp_hfunc_CopyAndReleaseKernel!.Value;
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.NativeApi.GenericIntrinsicCallKernels.__gsharp_hfunc_CopyAndReleaseKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "GenericIntrinsicCallKernels.CopyAndReleaseKernel");
 try
 {

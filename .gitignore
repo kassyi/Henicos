@@ -87,6 +87,7 @@ dist-ssr/
 /.agents/skills/make-pr/
 /.agents/skills/phased-session-manager/
 /.agents/skills/pr-review-pairing/
+/.agents/skills/pr-sampling/
 /.agents/skills/qodo.en/
 /.agents/skills/qodo.ja/
 /.agents/skills/qodo/
@@ -118,6 +119,7 @@ dist-ssr/
 /.claude/skills/make-pr/
 /.claude/skills/phased-session-manager/
 /.claude/skills/pr-review-pairing/
+/.claude/skills/pr-sampling/
 /.claude/skills/property-test-design/
 /.claude/skills/qa-testing-guidelines/
 /.claude/skills/qodo.en/
