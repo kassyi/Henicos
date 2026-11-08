@@ -124,6 +124,20 @@ public static class RoslynTestUtility
         return MegaCompilationCache.BaseCompilation.AddSyntaxTrees(syntaxTrees);
     }
 
+    /// <summary>
+    /// Creates a Roslyn compilation of one source text whose tree has the file path <paramref name="path"/>, so that
+    /// places in the generated code (error sites, messages) name it.
+    /// </summary>
+    public static Compilation CreateCompilationAt(string path, string source)
+    {
+        var parseOptions = new CSharpParseOptions(LanguageVersion.Preview);
+#pragma warning disable RS0030
+        var syntaxTree = CSharpSyntaxTree.ParseText(source, parseOptions, path);
+#pragma warning restore RS0030
+
+        return MegaCompilationCache.BaseCompilation.AddSyntaxTrees(syntaxTree);
+    }
+
     /// <summary>Creates a dummy semantic model and method symbol for testing analyzers or isolated transpiler nodes.</summary>
     public static (SemanticModel Model, IMethodSymbol MethodSymbol) CreateDummyContext()
     {

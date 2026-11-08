@@ -1,10 +1,16 @@
 #nullable enable
-#pragma warning disable CS8602 // The device reads a null optional array as one of length 0
+#pragma warning disable CS8600, CS8601, CS8602, CS8604 // Nullable arrays flow into non-nullable places on purpose
 using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.TestCases.Emission;
 
 public struct NullCheckHolder
+{
+    public int[]? Data;
+}
+
+// A non-nullable array field, which the launchers check, so the kernel reads it without a check (#1409)
+public struct ProvenHolder
 {
     public int[] Data;
 }
@@ -53,14 +59,33 @@ public static partial class ArrayNullCheckShapeKernels
         void Reset() => fnWritten = h.Data;
     }
 
+    // A non-nullable field of a struct argument is read unchecked; a call checks what it passes to a non-nullable
+    // parameter (h.Data may be null; p.Data and the struct p are proven) and the callee reads its parameter unchecked
+    [GpuKernel]
+    public static void BoundaryKernel(ProvenHolder p, NullCheckHolder h, int[] o)
+    {
+        o[0] = p.Data[0];
+        o[1] = ReadFirst(h.Data);
+        o[2] = ReadFirst(p.Data);
+        var made = new ProvenHolder { Data = h.Data };
+        o[3] = ReadHolder(made);
+        o[4] = ReadHolder(p);
+    }
+
     [GpuDeviceFunction]
-    private static void Take(int[] source, out int[] target)
+    private static int ReadFirst(int[] a) => a[0];
+
+    [GpuDeviceFunction]
+    private static int ReadHolder(ProvenHolder holder) => holder.Data.Length;
+
+    [GpuDeviceFunction]
+    private static void Take(int[]? source, out int[]? target)
     {
         target = source;
     }
 
     [GpuDeviceFunction]
-    private static int Sum(int[] a)
+    private static int Sum(int[]? a)
     {
         int s = 0;
         foreach (var v in a)

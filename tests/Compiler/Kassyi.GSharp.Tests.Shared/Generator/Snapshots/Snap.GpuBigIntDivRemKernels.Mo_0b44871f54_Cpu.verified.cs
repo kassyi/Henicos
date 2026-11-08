@@ -665,7 +665,7 @@ goto __gsharp_switch_1_state_1;
 case 1:
 __gsharp_switch_1_state_1:
 {
-if(!__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteNttMultiplyMacroModPow(__gsharp_ctx->__gsharp_id_0_core,__gsharp_ctx->__gsharp_id_1_leftOperand,__gsharp_ctx->__gsharp_id_3_reciprocalOfB,__gsharp_ctx->__gsharp_arg_temp_0,__gsharp_ctx->__gsharp_id_8_nA,__gsharp_ctx->__gsharp_id_10_targetWords,__gsharp_ctx->__gsharp_arg_temp_1,&__gsharp_ctx->__gsharp_call_frame_0,__gsharp_root))
+if(!__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteNttMultiplyMacroModPow(__gsharp_struct_ref(__gsharp_ctx->__gsharp_id_0_core, ""G#: a null array is passed where it is not nullable at GpuBigIntDivRemKernels.ModPow.cs(123,39)"", [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Operands.__gsharp_mb_TargetOperand); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Operands.__gsharp_mb_ResultBuffer); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Ntt.__gsharp_mb_TwiddleFactors.__gsharp_mb_Forward1); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Ntt.__gsharp_mb_TwiddleFactors.__gsharp_mb_Forward2); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Ntt.__gsharp_mb_TwiddleFactors.__gsharp_mb_Inverse1); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Ntt.__gsharp_mb_TwiddleFactors.__gsharp_mb_Inverse2); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Workspace.__gsharp_mb_Iteration.__gsharp_mb_Diff); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Workspace.__gsharp_mb_NttScratch.__gsharp_mb_NttBuf1A); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Workspace.__gsharp_mb_NttScratch.__gsharp_mb_NttBuf2A); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Workspace.__gsharp_mb_NttScratch.__gsharp_mb_NttBuf1B); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Workspace.__gsharp_mb_NttScratch.__gsharp_mb_NttBuf2B); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Workspace.__gsharp_mb_NttScratch.__gsharp_mb_TmpBuf); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Workspace.__gsharp_mb_NttScratch.__gsharp_mb_UncarriedLow); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Workspace.__gsharp_mb_NttScratch.__gsharp_mb_UncarriedHigh); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Workspace.__gsharp_mb_NttScratch.__gsharp_mb_BlockCarries); }),__gsharp_ctx->__gsharp_id_1_leftOperand,__gsharp_ctx->__gsharp_id_3_reciprocalOfB,__gsharp_ctx->__gsharp_arg_temp_0,__gsharp_ctx->__gsharp_id_8_nA,__gsharp_ctx->__gsharp_id_10_targetWords,__gsharp_ctx->__gsharp_arg_temp_1,&__gsharp_ctx->__gsharp_call_frame_0,__gsharp_root))
 {
 __gsharp_state=1;
 return false;
@@ -702,7 +702,7 @@ goto __gsharp_switch_1_state_3;
 case 3:
 __gsharp_switch_1_state_3:
 {
-if(!__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteNttMultiplyMacroModPow(__gsharp_ctx->__gsharp_id_0_core,__gsharp_ctx->__gsharp_id_6_quotientBuffer,__gsharp_ctx->__gsharp_id_2_rightOperand,__gsharp_ctx->__gsharp_arg_temp_2,__gsharp_ctx->__gsharp_id_14_destWords,__gsharp_ctx->__gsharp_id_9_n,__gsharp_ctx->__gsharp_arg_temp_3,&__gsharp_ctx->__gsharp_call_frame_1,__gsharp_root))
+if(!__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteNttMultiplyMacroModPow(__gsharp_struct_ref(__gsharp_ctx->__gsharp_id_0_core, ""G#: a null array is passed where it is not nullable at GpuBigIntDivRemKernels.ModPow.cs(140,39)"", [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Operands.__gsharp_mb_TargetOperand); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Operands.__gsharp_mb_ResultBuffer); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Ntt.__gsharp_mb_TwiddleFactors.__gsharp_mb_Forward1); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Ntt.__gsharp_mb_TwiddleFactors.__gsharp_mb_Forward2); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Ntt.__gsharp_mb_TwiddleFactors.__gsharp_mb_Inverse1); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Ntt.__gsharp_mb_TwiddleFactors.__gsharp_mb_Inverse2); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Workspace.__gsharp_mb_Iteration.__gsharp_mb_Diff); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Workspace.__gsharp_mb_NttScratch.__gsharp_mb_NttBuf1A); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Workspace.__gsharp_mb_NttScratch.__gsharp_mb_NttBuf2A); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Workspace.__gsharp_mb_NttScratch.__gsharp_mb_NttBuf1B); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Workspace.__gsharp_mb_NttScratch.__gsharp_mb_NttBuf2B); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Workspace.__gsharp_mb_NttScratch.__gsharp_mb_TmpBuf); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Workspace.__gsharp_mb_NttScratch.__gsharp_mb_UncarriedLow); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Workspace.__gsharp_mb_NttScratch.__gsharp_mb_UncarriedHigh); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Workspace.__gsharp_mb_NttScratch.__gsharp_mb_BlockCarries); }),__gsharp_ctx->__gsharp_id_6_quotientBuffer,__gsharp_ctx->__gsharp_id_2_rightOperand,__gsharp_ctx->__gsharp_arg_temp_2,__gsharp_ctx->__gsharp_id_14_destWords,__gsharp_ctx->__gsharp_id_9_n,__gsharp_ctx->__gsharp_arg_temp_3,&__gsharp_ctx->__gsharp_call_frame_1,__gsharp_root))
 {
 __gsharp_state=3;
 return false;
@@ -1283,6 +1283,21 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels
 {
 public partial class GpuBigIntDivRemKernels
 {
+private static readonly global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[] s_errorSites = new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[]
+{
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1524199089u, "GpuBigIntDivRemKernels.ModPow.cs", 225, 21, "ModPowNttMegaKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1416136066u, "GpuBigIntDivRemKernels.ModPow.cs", 226, 21, "ModPowNttMegaKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2048618052u, "GpuBigIntDivRemKernels.ModPow.cs", 229, 17, "ModPowNttMegaKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(231376724u, "GpuBigIntDivRemKernels.ModPow.cs", 229, 62, "ModPowNttMegaKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(626290687u, "GpuBigIntDivRemKernels.ModPow.cs", 270, 51, "ModPowNttMegaKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(661987766u, "GpuBigIntDivRemKernels.ModPow.cs", 226, 59, "ModPowNttMegaKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(945852965u, "GpuBigIntDivRemKernels.ModPow.cs", 236, 22, "ModPowNttMegaKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1427554103u, "GpuBigIntDivRemKernels.ModPow.cs", 249, 51, "ModPowNttMegaKernel", "G#: a null array is passed where it is not nullable"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1277645415u, "GpuBigIntDivRemKernels.ModPow.cs", 251, 50, "ModPowNttMegaKernel", "G#: a null array is passed where it is not nullable"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(774048926u, "GpuBigIntDivRemKernels.ModPow.cs", 256, 47, "ModPowNttMegaKernel", "G#: a null array is passed where it is not nullable"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(604230476u, "GpuBigIntDivRemKernels.ModPow.cs", 258, 46, "ModPowNttMegaKernel", "G#: a null array is passed where it is not nullable"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(130405409u, "GpuBigIntDivRemKernels.ModPow.cs", 270, 17, "ModPowNttMegaKernel", "G#: a null array is read"),
+};
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static partial class AotContexts
@@ -3061,10 +3076,10 @@ int __gsharp_id_12_idx = (int)__gsharp_gsl_0;
 {
 if(__gsharp_id_12_idx<__gsharp_mul_i32(2,__gsharp_ctx->__gsharp_id_4_n))
 {
-__gsharp_array_at(__gsharp_ctx->__gsharp_id_2_iterScratch.__gsharp_mb_AxSquared, __gsharp_id_12_idx, ""G#: a null array is read at GpuBigIntDivRemKernels.ModPow.cs(225,21)"")=(__gsharp_id_12_idx==0?__gsharp_ctx->__gsharp_id_11_oneModulo:0u);
-__gsharp_array_at(__gsharp_ctx->__gsharp_id_2_iterScratch.__gsharp_mb_XSquared, __gsharp_id_12_idx, ""G#: a null array is read at GpuBigIntDivRemKernels.ModPow.cs(226,21)"")=(__gsharp_id_12_idx<__gsharp_ctx->__gsharp_id_4_n?__gsharp_array_at(__gsharp_ctx->__gsharp_id_1_core.__gsharp_mb_Operands.__gsharp_mb_TargetOperand, __gsharp_id_12_idx, ""G#: a null array is read at GpuBigIntDivRemKernels.ModPow.cs(226,59)""):0u);
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_2_iterScratch.__gsharp_mb_AxSquared, __gsharp_id_12_idx, 1524199089u)=(__gsharp_id_12_idx==0?__gsharp_ctx->__gsharp_id_11_oneModulo:0u);
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_2_iterScratch.__gsharp_mb_XSquared, __gsharp_id_12_idx, 1416136066u)=(__gsharp_id_12_idx<__gsharp_ctx->__gsharp_id_4_n?__gsharp_array_at(__gsharp_ctx->__gsharp_id_1_core.__gsharp_mb_Operands.__gsharp_mb_TargetOperand, __gsharp_id_12_idx, 661987766u):0u);
 }
-__gsharp_array_at(__gsharp_ctx->__gsharp_id_2_iterScratch.__gsharp_mb_ModulusExpanded, __gsharp_id_12_idx, ""G#: a null array is read at GpuBigIntDivRemKernels.ModPow.cs(229,17)"")=(__gsharp_id_12_idx<__gsharp_ctx->__gsharp_id_4_n?__gsharp_array_at(__gsharp_ctx->__gsharp_id_1_core.__gsharp_mb_Operands.__gsharp_mb_Constant, __gsharp_id_12_idx, ""G#: a null array is read at GpuBigIntDivRemKernels.ModPow.cs(229,62)""):0u);
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_2_iterScratch.__gsharp_mb_ModulusExpanded, __gsharp_id_12_idx, 2048618052u)=(__gsharp_id_12_idx<__gsharp_ctx->__gsharp_id_4_n?__gsharp_array_at(__gsharp_ctx->__gsharp_id_1_core.__gsharp_mb_Operands.__gsharp_mb_Constant, __gsharp_id_12_idx, 231376724u):0u);
 }
 }
 }
@@ -3090,7 +3105,7 @@ if(!(__gsharp_ctx->__gsharp_id_13_i<__gsharp_ctx->__gsharp_id_3_expSlice.__gshar
 {
 goto __gsharp_switch_1_state_13;
 }
-__gsharp_ctx->__gsharp_id_14_e=__gsharp_array_at(__gsharp_ctx->__gsharp_id_3_expSlice.__gsharp_mb_Words, __gsharp_ctx->__gsharp_id_13_i, ""G#: a null array is read at GpuBigIntDivRemKernels.ModPow.cs(236,22)"");
+__gsharp_ctx->__gsharp_id_14_e=__gsharp_array_at(__gsharp_ctx->__gsharp_id_3_expSlice.__gsharp_mb_Words, __gsharp_ctx->__gsharp_id_13_i, 945852965u);
 if(__gsharp_ctx->__gsharp_id_14_e==0)
 {
 }
@@ -3119,7 +3134,7 @@ goto __gsharp_switch_1_state_5;
 case 5:
 __gsharp_switch_1_state_5:
 {
-if(!__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteNttMultiplyMacroModPow(__gsharp_ctx->__gsharp_id_1_core,__gsharp_ctx->__gsharp_arg_temp_0,__gsharp_ctx->__gsharp_arg_temp_1,__gsharp_ctx->__gsharp_arg_temp_2,__gsharp_ctx->__gsharp_arg_temp_3,__gsharp_ctx->__gsharp_arg_temp_4,__gsharp_ctx->__gsharp_arg_temp_5,&__gsharp_ctx->__gsharp_call_frame_0,__gsharp_root))
+if(!__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteNttMultiplyMacroModPow(__gsharp_struct_ref(__gsharp_ctx->__gsharp_id_1_core, 1427554103u, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Operands.__gsharp_mb_TargetOperand); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Operands.__gsharp_mb_ResultBuffer); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Ntt.__gsharp_mb_TwiddleFactors.__gsharp_mb_Forward1); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Ntt.__gsharp_mb_TwiddleFactors.__gsharp_mb_Forward2); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Ntt.__gsharp_mb_TwiddleFactors.__gsharp_mb_Inverse1); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Ntt.__gsharp_mb_TwiddleFactors.__gsharp_mb_Inverse2); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Workspace.__gsharp_mb_Iteration.__gsharp_mb_Diff); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Workspace.__gsharp_mb_NttScratch.__gsharp_mb_NttBuf1A); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Workspace.__gsharp_mb_NttScratch.__gsharp_mb_NttBuf2A); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Workspace.__gsharp_mb_NttScratch.__gsharp_mb_NttBuf1B); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Workspace.__gsharp_mb_NttScratch.__gsharp_mb_NttBuf2B); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Workspace.__gsharp_mb_NttScratch.__gsharp_mb_TmpBuf); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Workspace.__gsharp_mb_NttScratch.__gsharp_mb_UncarriedLow); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Workspace.__gsharp_mb_NttScratch.__gsharp_mb_UncarriedHigh); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Workspace.__gsharp_mb_NttScratch.__gsharp_mb_BlockCarries); }),__gsharp_ctx->__gsharp_arg_temp_0,__gsharp_ctx->__gsharp_arg_temp_1,__gsharp_ctx->__gsharp_arg_temp_2,__gsharp_ctx->__gsharp_arg_temp_3,__gsharp_ctx->__gsharp_arg_temp_4,__gsharp_ctx->__gsharp_arg_temp_5,&__gsharp_ctx->__gsharp_call_frame_0,__gsharp_root))
 {
 __gsharp_state=5;
 return;
@@ -3134,7 +3149,7 @@ goto __gsharp_switch_1_state_6;
 case 6:
 __gsharp_switch_1_state_6:
 {
-if(!__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteBarrettReductionMacro(__gsharp_ctx->__gsharp_id_1_core,__gsharp_ctx->__gsharp_arg_temp_6,__gsharp_ctx->__gsharp_arg_temp_7,__gsharp_ctx->__gsharp_arg_temp_8,__gsharp_ctx->__gsharp_id_6_targetBits,__gsharp_ctx->__gsharp_id_8_aActualWords,__gsharp_ctx->__gsharp_arg_temp_9,__gsharp_ctx->__gsharp_arg_temp_10,&__gsharp_ctx->__gsharp_call_frame_1,__gsharp_root))
+if(!__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteBarrettReductionMacro(__gsharp_struct_ref(__gsharp_ctx->__gsharp_id_1_core, 1277645415u, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Operands.__gsharp_mb_TargetOperand); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Operands.__gsharp_mb_ResultBuffer); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Ntt.__gsharp_mb_TwiddleFactors.__gsharp_mb_Forward1); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Ntt.__gsharp_mb_TwiddleFactors.__gsharp_mb_Forward2); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Ntt.__gsharp_mb_TwiddleFactors.__gsharp_mb_Inverse1); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Ntt.__gsharp_mb_TwiddleFactors.__gsharp_mb_Inverse2); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Workspace.__gsharp_mb_Iteration.__gsharp_mb_Diff); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Workspace.__gsharp_mb_NttScratch.__gsharp_mb_NttBuf1A); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Workspace.__gsharp_mb_NttScratch.__gsharp_mb_NttBuf2A); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Workspace.__gsharp_mb_NttScratch.__gsharp_mb_NttBuf1B); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Workspace.__gsharp_mb_NttScratch.__gsharp_mb_NttBuf2B); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Workspace.__gsharp_mb_NttScratch.__gsharp_mb_TmpBuf); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Workspace.__gsharp_mb_NttScratch.__gsharp_mb_UncarriedLow); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Workspace.__gsharp_mb_NttScratch.__gsharp_mb_UncarriedHigh); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Workspace.__gsharp_mb_NttScratch.__gsharp_mb_BlockCarries); }),__gsharp_ctx->__gsharp_arg_temp_6,__gsharp_ctx->__gsharp_arg_temp_7,__gsharp_ctx->__gsharp_arg_temp_8,__gsharp_ctx->__gsharp_id_6_targetBits,__gsharp_ctx->__gsharp_id_8_aActualWords,__gsharp_ctx->__gsharp_arg_temp_9,__gsharp_ctx->__gsharp_arg_temp_10,&__gsharp_ctx->__gsharp_call_frame_1,__gsharp_root))
 {
 __gsharp_state=6;
 return;
@@ -3155,7 +3170,7 @@ goto __gsharp_switch_1_state_8;
 case 8:
 __gsharp_switch_1_state_8:
 {
-if(!__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteNttMultiplyMacroModPow(__gsharp_ctx->__gsharp_id_1_core,__gsharp_ctx->__gsharp_arg_temp_11,__gsharp_ctx->__gsharp_arg_temp_12,__gsharp_ctx->__gsharp_arg_temp_13,__gsharp_ctx->__gsharp_arg_temp_14,__gsharp_ctx->__gsharp_arg_temp_15,__gsharp_ctx->__gsharp_arg_temp_16,&__gsharp_ctx->__gsharp_call_frame_2,__gsharp_root))
+if(!__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteNttMultiplyMacroModPow(__gsharp_struct_ref(__gsharp_ctx->__gsharp_id_1_core, 774048926u, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Operands.__gsharp_mb_TargetOperand); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Operands.__gsharp_mb_ResultBuffer); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Ntt.__gsharp_mb_TwiddleFactors.__gsharp_mb_Forward1); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Ntt.__gsharp_mb_TwiddleFactors.__gsharp_mb_Forward2); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Ntt.__gsharp_mb_TwiddleFactors.__gsharp_mb_Inverse1); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Ntt.__gsharp_mb_TwiddleFactors.__gsharp_mb_Inverse2); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Workspace.__gsharp_mb_Iteration.__gsharp_mb_Diff); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Workspace.__gsharp_mb_NttScratch.__gsharp_mb_NttBuf1A); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Workspace.__gsharp_mb_NttScratch.__gsharp_mb_NttBuf2A); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Workspace.__gsharp_mb_NttScratch.__gsharp_mb_NttBuf1B); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Workspace.__gsharp_mb_NttScratch.__gsharp_mb_NttBuf2B); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Workspace.__gsharp_mb_NttScratch.__gsharp_mb_TmpBuf); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Workspace.__gsharp_mb_NttScratch.__gsharp_mb_UncarriedLow); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Workspace.__gsharp_mb_NttScratch.__gsharp_mb_UncarriedHigh); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Workspace.__gsharp_mb_NttScratch.__gsharp_mb_BlockCarries); }),__gsharp_ctx->__gsharp_arg_temp_11,__gsharp_ctx->__gsharp_arg_temp_12,__gsharp_ctx->__gsharp_arg_temp_13,__gsharp_ctx->__gsharp_arg_temp_14,__gsharp_ctx->__gsharp_arg_temp_15,__gsharp_ctx->__gsharp_arg_temp_16,&__gsharp_ctx->__gsharp_call_frame_2,__gsharp_root))
 {
 __gsharp_state=8;
 return;
@@ -3170,7 +3185,7 @@ goto __gsharp_switch_1_state_9;
 case 9:
 __gsharp_switch_1_state_9:
 {
-if(!__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteBarrettReductionMacro(__gsharp_ctx->__gsharp_id_1_core,__gsharp_ctx->__gsharp_arg_temp_17,__gsharp_ctx->__gsharp_arg_temp_18,__gsharp_ctx->__gsharp_arg_temp_19,__gsharp_ctx->__gsharp_id_6_targetBits,__gsharp_ctx->__gsharp_id_8_aActualWords,__gsharp_ctx->__gsharp_arg_temp_20,__gsharp_ctx->__gsharp_arg_temp_21,&__gsharp_ctx->__gsharp_call_frame_3,__gsharp_root))
+if(!__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteBarrettReductionMacro(__gsharp_struct_ref(__gsharp_ctx->__gsharp_id_1_core, 604230476u, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Operands.__gsharp_mb_TargetOperand); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Operands.__gsharp_mb_ResultBuffer); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Ntt.__gsharp_mb_TwiddleFactors.__gsharp_mb_Forward1); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Ntt.__gsharp_mb_TwiddleFactors.__gsharp_mb_Forward2); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Ntt.__gsharp_mb_TwiddleFactors.__gsharp_mb_Inverse1); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Ntt.__gsharp_mb_TwiddleFactors.__gsharp_mb_Inverse2); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Workspace.__gsharp_mb_Iteration.__gsharp_mb_Diff); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Workspace.__gsharp_mb_NttScratch.__gsharp_mb_NttBuf1A); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Workspace.__gsharp_mb_NttScratch.__gsharp_mb_NttBuf2A); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Workspace.__gsharp_mb_NttScratch.__gsharp_mb_NttBuf1B); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Workspace.__gsharp_mb_NttScratch.__gsharp_mb_NttBuf2B); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Workspace.__gsharp_mb_NttScratch.__gsharp_mb_TmpBuf); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Workspace.__gsharp_mb_NttScratch.__gsharp_mb_UncarriedLow); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Workspace.__gsharp_mb_NttScratch.__gsharp_mb_UncarriedHigh); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Workspace.__gsharp_mb_NttScratch.__gsharp_mb_BlockCarries); }),__gsharp_ctx->__gsharp_arg_temp_17,__gsharp_ctx->__gsharp_arg_temp_18,__gsharp_ctx->__gsharp_arg_temp_19,__gsharp_ctx->__gsharp_id_6_targetBits,__gsharp_ctx->__gsharp_id_8_aActualWords,__gsharp_ctx->__gsharp_arg_temp_20,__gsharp_ctx->__gsharp_arg_temp_21,&__gsharp_ctx->__gsharp_call_frame_3,__gsharp_root))
 {
 __gsharp_state=9;
 return;
@@ -3211,7 +3226,7 @@ for(unsigned int __gsharp_gsl_1 = __gsharp_grid_stride_start(); __gsharp_gsl_1 <
 {
 int __gsharp_id_16_idx = (int)__gsharp_gsl_1;
 {
-__gsharp_array_at(__gsharp_ctx->__gsharp_id_1_core.__gsharp_mb_Operands.__gsharp_mb_ResultBuffer, __gsharp_id_16_idx, ""G#: a null array is read at GpuBigIntDivRemKernels.ModPow.cs(270,17)"")=__gsharp_array_at(__gsharp_ctx->__gsharp_id_2_iterScratch.__gsharp_mb_AxSquared, __gsharp_id_16_idx, ""G#: a null array is read at GpuBigIntDivRemKernels.ModPow.cs(270,51)"");
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_1_core.__gsharp_mb_Operands.__gsharp_mb_ResultBuffer, __gsharp_id_16_idx, 130405409u)=__gsharp_array_at(__gsharp_ctx->__gsharp_id_2_iterScratch.__gsharp_mb_AxSquared, __gsharp_id_16_idx, 626290687u);
 }
 }
 }
@@ -3606,6 +3621,57 @@ private unsafe delegate void __gsharp_delegate_ModPowNttMegaKernel(uint gridDimX
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchModPowNttMegaKernel(global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.ModPowNttContext ctx, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (ctx.Core.Operands.TargetOperand is null){
+throw new global::System.ArgumentNullException(nameof(ctx), "ctx.Core.Operands.TargetOperand is null, but the field is not nullable.");
+}
+if (ctx.Core.Operands.ResultBuffer is null){
+throw new global::System.ArgumentNullException(nameof(ctx), "ctx.Core.Operands.ResultBuffer is null, but the field is not nullable.");
+}
+if (ctx.Core.Ntt.TwiddleFactors.Forward1 is null){
+throw new global::System.ArgumentNullException(nameof(ctx), "ctx.Core.Ntt.TwiddleFactors.Forward1 is null, but the field is not nullable.");
+}
+if (ctx.Core.Ntt.TwiddleFactors.Forward2 is null){
+throw new global::System.ArgumentNullException(nameof(ctx), "ctx.Core.Ntt.TwiddleFactors.Forward2 is null, but the field is not nullable.");
+}
+if (ctx.Core.Ntt.TwiddleFactors.Inverse1 is null){
+throw new global::System.ArgumentNullException(nameof(ctx), "ctx.Core.Ntt.TwiddleFactors.Inverse1 is null, but the field is not nullable.");
+}
+if (ctx.Core.Ntt.TwiddleFactors.Inverse2 is null){
+throw new global::System.ArgumentNullException(nameof(ctx), "ctx.Core.Ntt.TwiddleFactors.Inverse2 is null, but the field is not nullable.");
+}
+if (ctx.Core.Workspace.Iteration.Diff is null){
+throw new global::System.ArgumentNullException(nameof(ctx), "ctx.Core.Workspace.Iteration.Diff is null, but the field is not nullable.");
+}
+if (ctx.Core.Workspace.NttScratch.NttBuf1A is null){
+throw new global::System.ArgumentNullException(nameof(ctx), "ctx.Core.Workspace.NttScratch.NttBuf1A is null, but the field is not nullable.");
+}
+if (ctx.Core.Workspace.NttScratch.NttBuf2A is null){
+throw new global::System.ArgumentNullException(nameof(ctx), "ctx.Core.Workspace.NttScratch.NttBuf2A is null, but the field is not nullable.");
+}
+if (ctx.Core.Workspace.NttScratch.NttBuf1B is null){
+throw new global::System.ArgumentNullException(nameof(ctx), "ctx.Core.Workspace.NttScratch.NttBuf1B is null, but the field is not nullable.");
+}
+if (ctx.Core.Workspace.NttScratch.NttBuf2B is null){
+throw new global::System.ArgumentNullException(nameof(ctx), "ctx.Core.Workspace.NttScratch.NttBuf2B is null, but the field is not nullable.");
+}
+if (ctx.Core.Workspace.NttScratch.TmpBuf is null){
+throw new global::System.ArgumentNullException(nameof(ctx), "ctx.Core.Workspace.NttScratch.TmpBuf is null, but the field is not nullable.");
+}
+if (ctx.Core.Workspace.NttScratch.UncarriedLow is null){
+throw new global::System.ArgumentNullException(nameof(ctx), "ctx.Core.Workspace.NttScratch.UncarriedLow is null, but the field is not nullable.");
+}
+if (ctx.Core.Workspace.NttScratch.UncarriedHigh is null){
+throw new global::System.ArgumentNullException(nameof(ctx), "ctx.Core.Workspace.NttScratch.UncarriedHigh is null, but the field is not nullable.");
+}
+if (ctx.Core.Workspace.NttScratch.BlockCarries is null){
+throw new global::System.ArgumentNullException(nameof(ctx), "ctx.Core.Workspace.NttScratch.BlockCarries is null, but the field is not nullable.");
+}
+if (ctx.ReciprocalMod is null){
+throw new global::System.ArgumentNullException(nameof(ctx), "ctx.ReciprocalMod is null, but the field is not nullable.");
+}
+if (ctx.Exponent.Words is null){
+throw new global::System.ArgumentNullException(nameof(ctx), "ctx.Exponent.Words is null, but the field is not nullable.");
+}
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "GpuBigIntDivRemKernels.ModPowNttMegaKernel");
 var __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
@@ -3746,6 +3812,10 @@ if (global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System
 __gsharp_layout_checked_ModPowNttMegaKernel = true;
 }
 var __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_ModPowNttMegaKernel>("__gsharp_launch_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ModPowNttMegaKernel", __gsharp_dll_path);
+if (s_errorSites.Length > 0)
+{
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
+}
 global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntDivRemKernels.AotContexts.ModPowNtt __gsharp_native_0 = default;
 var __gsharp_allocated_ptrs_0 = new global::System.Collections.Generic.List<global::System.IntPtr>();
 try

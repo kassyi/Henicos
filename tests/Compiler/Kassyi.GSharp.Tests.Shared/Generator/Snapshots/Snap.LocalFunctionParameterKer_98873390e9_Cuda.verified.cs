@@ -77,6 +77,10 @@ namespace Kassyi.GSharp.Tests.Shared.Syntax
 {
 public partial class LocalFunctionParameterKernels
 {
+private static readonly global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[] s_errorSites = new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[]
+{
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1502772212u, "LocalFunctionParameterKernels.cs", 16, 20, "ReadOnlyLocalFunctionParameterKernel", "G#: a null array is read"),
+};
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static partial class AotContexts
@@ -85,7 +89,7 @@ public static partial class AotContexts
 public const string ReadOnlyLocalFunctionParameterKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__LocalFunctionParameterKernels__ReadOnlyLocalFunctionParameterKernel(GSharpArray<int> __gsharp_id_0_output, GSharpArray<const int> __gsharp_id_1_table, const int __gsharp_id_2_scale){
 int __gsharp_id_3_tid = (int)threadIdx.x;
 auto __gsharp_id_4_Lookup = [&](GSharpArray<const int> __gsharp_id_5_values, const int __gsharp_id_6_factor, int __gsharp_id_7_index) {
-return __gsharp_mul_i32(__gsharp_array_at(__gsharp_id_5_values, __gsharp_id_7_index, ""G#: a null array is read at LocalFunctionParameterKernels.cs(16,20)""),__gsharp_id_6_factor);
+return __gsharp_mul_i32(__gsharp_array_at(__gsharp_id_5_values, __gsharp_id_7_index, 1502772212u),__gsharp_id_6_factor);
 }
 ;
 __gsharp_id_0_output[__gsharp_id_3_tid]=__gsharp_id_4_Lookup(__gsharp_id_1_table,__gsharp_id_2_scale,__gsharp_id_3_tid);
@@ -93,7 +97,7 @@ __gsharp_id_0_output[__gsharp_id_3_tid]=__gsharp_id_4_Lookup(__gsharp_id_1_table
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ReadOnlyLocalFunctionParameterKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__LocalFunctionParameterKernels__ReadOnlyLocalFunctionParameterKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
-public static void WarmupFunctionPointerReadOnlyLocalFunctionParameterKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.LocalFunctionParameterKernels.__gsharp_hfunc_ReadOnlyLocalFunctionParameterKernel.Resolve();
+public static void WarmupFunctionPointerReadOnlyLocalFunctionParameterKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.LocalFunctionParameterKernels.__gsharp_hfunc_ReadOnlyLocalFunctionParameterKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Syntax.LocalFunctionParameterKernels.s_errorSites);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -114,7 +118,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LocalFunctionParameterKernels.ReadOnlyLocalFunctionParameterKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.LocalFunctionParameterKernels.__gsharp_hfunc_ReadOnlyLocalFunctionParameterKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.LocalFunctionParameterKernels.__gsharp_hfunc_ReadOnlyLocalFunctionParameterKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Syntax.LocalFunctionParameterKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "LocalFunctionParameterKernels.ReadOnlyLocalFunctionParameterKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 global::System.IntPtr __gsharp_d_1 = global::System.IntPtr.Zero;
@@ -205,10 +209,16 @@ if (__gsharp_d_1 != global::System.IntPtr.Zero && __gsharp_d_1 != __gsharp_d_0) 
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchReadOnlyLocalFunctionParameterKernelPtr(global::System.IntPtr output, global::System.IntPtr table, global::System.Int32 scale, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (output == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(output));
+}
+if (table == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(table));
+}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LocalFunctionParameterKernels.ReadOnlyLocalFunctionParameterKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.LocalFunctionParameterKernels.__gsharp_hfunc_ReadOnlyLocalFunctionParameterKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.LocalFunctionParameterKernels.__gsharp_hfunc_ReadOnlyLocalFunctionParameterKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Syntax.LocalFunctionParameterKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "LocalFunctionParameterKernels.ReadOnlyLocalFunctionParameterKernel");
 try
 {

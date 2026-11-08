@@ -6,23 +6,23 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms;
 public struct BufferContext
 {
     /// <summary>Primary scratch buffer 1.</summary>
-    public uint[] Buffer1;
+    public uint[]? Buffer1;
     /// <summary>Primary scratch buffer 2.</summary>
-    public uint[] Buffer2;
+    public uint[]? Buffer2;
     /// <summary>Primary scratch buffer 3.</summary>
-    public uint[] Buffer3;
+    public uint[]? Buffer3;
     /// <summary>Temporary intermediate value buffer.</summary>
-    public uint[] ValueT;
+    public uint[]? ValueT;
     /// <summary>Quotient output buffer.</summary>
-    public uint[] Quotient;
+    public uint[]? Quotient;
     /// <summary>Remainder output buffer.</summary>
-    public uint[] Remainder;
+    public uint[]? Remainder;
     /// <summary>Remainder bitmask buffer.</summary>
-    public uint[] RemainderMask;
+    public uint[]? RemainderMask;
     /// <summary>General-purpose scratch buffer.</summary>
-    public uint[] TemporaryBuffer;
+    public uint[]? TemporaryBuffer;
     /// <summary>Carry and borrow propagation accumulation buffer.</summary>
-    public long[] CarryBuffer;
+    public long[]? CarryBuffer;
 }
 
 /// <summary>
@@ -73,19 +73,19 @@ public struct DimensionContext
 public struct OperandContext
 {
     /// <summary>Left input operand buffer.</summary>
-    [GpuReadOnly] public uint[] LeftOperand;
+    [GpuReadOnly] public uint[]? LeftOperand;
     /// <summary>Right input operand buffer.</summary>
-    [GpuReadOnly] public uint[] RightOperand;
+    [GpuReadOnly] public uint[]? RightOperand;
     /// <summary>Target operand buffer for in-place or unary transformations.</summary>
     public uint[] TargetOperand;
     /// <summary>Destination output result buffer.</summary>
     public uint[] ResultBuffer;
     /// <summary>General constant operand buffer.</summary>
-    public uint[] Constant;
+    public uint[]? Constant;
     /// <summary>Specialized constant 3 operand buffer for Newton-Raphson iterations.</summary>
-    public uint[] Constant3;
+    public uint[]? Constant3;
     /// <summary>Carry accumulation buffer for multi-precision addition and subtraction.</summary>
-    public long[] CarryBuffer;
+    public long[]? CarryBuffer;
 }
 
 /// <summary>
@@ -94,21 +94,21 @@ public struct OperandContext
 public struct IterationScratchContext
 {
     /// <summary>Scratch buffer for squared variable $X^2$.</summary>
-    public uint[] XSquared;
+    public uint[]? XSquared;
     /// <summary>Scratch buffer for scaled squared variable $A \times X^2$.</summary>
-    public uint[] AxSquared;
+    public uint[]? AxSquared;
     /// <summary>Scratch buffer for current iteration product.</summary>
-    public uint[] CurrentProduct;
+    public uint[]? CurrentProduct;
     /// <summary>Scratch buffer for difference vector.</summary>
     public uint[] Diff;
     /// <summary>Scratch buffer for unshifted next iteration result.</summary>
-    public uint[] NextXUnshifted;
+    public uint[]? NextXUnshifted;
     /// <summary>Scratch buffer for bit-shifted next iteration result.</summary>
-    public uint[] NextXShifted;
+    public uint[]? NextXShifted;
     /// <summary>Scratch buffer for next iteration value.</summary>
-    public uint[] NextIter;
+    public uint[]? NextIter;
     /// <summary>Expanded modulus for Barrett reduction.</summary>
-    public uint[] ModulusExpanded;
+    public uint[]? ModulusExpanded;
 }
 
 /// <summary>
@@ -247,12 +247,12 @@ public struct NewtonRaphsonContext
     /// <summary>State scratch buffers for intermediate iterations.</summary>
     public WorkspaceStateContext Workspace;
     /// <summary>Carry accumulation buffer.</summary>
-    public long[] CarryBuffer;
+    public long[]? CarryBuffer;
     /// <summary>
     /// The workspace's correction status words: the final correction adds 1 to the failure count in word 0 and writes
     /// its code to word 1 when it does not converge, and the host reports a new count at the next read of the stream.
     /// </summary>
-    public uint[] CorrectionStatus;
+    public uint[]? CorrectionStatus;
 }
 
 /// <summary>
