@@ -47,6 +47,12 @@ public sealed class StackLinqFusionRule : IInvocationTranspilerRule
             return false;
         }
 
+        if (StackLinqHelper.TryGetUnsupportedElementType(symbol, out var elementFailure))
+        {
+            context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, node, elementFailure);
+            return true;
+        }
+
         // [WHY] AsParallel() keeps the meaning of C#: every calling thread receives the aggregate of the whole sequence
         // (#624). On CUDA the threads of a block share the elements when ParallelAggregatePlanner shows that this gives the
         // same value (integer sums, uniform inputs, every thread of the block reaching the call); otherwise each thread

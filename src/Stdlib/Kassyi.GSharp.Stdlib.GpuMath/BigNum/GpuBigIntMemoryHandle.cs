@@ -137,6 +137,10 @@ public readonly struct GpuBigIntMemoryHandle : IEquatable<GpuBigIntMemoryHandle>
         }
     }
 
+    /// <summary>Returns the words of this slice as a kernel array argument of <see cref="NumWords"/> words.</summary>
+    /// <exception cref="ObjectDisposedException">The buffer of this handle has been freed.</exception>
+    internal GSharpArrayProxy ToProxy() => new() { Data = DevicePointer, Length = NumWords };
+
     /// <summary>
     /// Returns a borrowed handle of the same words in the same lease, for code that uses the memory without freeing it.
     /// </summary>

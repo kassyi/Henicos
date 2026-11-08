@@ -47,6 +47,19 @@ public class PartialMethodTests : TranspilerTestBase
             Assert.Equal([11, 21], data);
         });
 
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_PartialDeviceFunctionWithoutImplementation_RemovesTheCallInExpressionBodies() =>
+        OnEveryPath(static () =>
+        {
+            int[] data = [10, 20];
+
+            PartialMethodKernels.LaunchUnimplementedPartialInExpressionBodiesKernel(data, blockDimX: 2);
+
+            // Two loop iterations and +10; no Bump (+100) of a lambda, a local function or an incrementor runs
+            Assert.Equal([22, 32], data);
+        });
+
     // The native build of the dialect, and on the CPU the managed path as well
     private static void OnEveryPath(Action check)
     {

@@ -32,9 +32,8 @@ public sealed class PrefixUnaryExpressionTranspilerRule : SyntaxNodeTranspilerRu
         if ((node.IsKind(SyntaxKind.PreIncrementExpression) || node.IsKind(SyntaxKind.PreDecrementExpression)) &&
             ComputedPropertyGetterCall.IsComputedPropertyTarget(node.Operand, ref context))
         {
-            context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, node,
-                ComputedPropertyGetterCall.IncrementOrDecrementOfComputedProperty);
-            context.Visitor.AppendUnsupportedPlaceholder(node);
+            // The getter, the step and the setter, in the C# order (#908)
+            ComputedPropertyAssignment.TranspileStep(node, node.Operand, ref context);
             return;
         }
 

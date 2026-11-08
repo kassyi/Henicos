@@ -87,16 +87,34 @@ internal static class IdentifierNameTranspiler
             context.Emitter.Writer.Append(GSharpInternalNames.Lowering.ConstructorSelf).Append('.');
         }
 
-        context.Emitter.Writer.AppendCppName(
-            CppNameResolver.Resolve(
-                symbol,
-                node.Identifier.ValueText,
-                context.Emitter.Dialect,
-                LoweringIdentity.GetRegion(node)
-            )
+        var name = CppNameResolver.Resolve(
+            symbol,
+            node.Identifier.ValueText,
+            context.Emitter.Dialect,
+            LoweringIdentity.GetRegion(node)
         );
+        if (name.Kind == CppNameKind.Verbatim && TryGetMappedInitializerMember(node, symbol, ref context) is { } mapped)
+        {
+            context.Emitter.Writer.Append(mapped);
+            return;
+        }
+
+        context.Emitter.Writer.AppendCppName(name);
         ComputedPropertyGetterCall.AppendCallIfGetter(node, symbol, ref context);
     }
+
+    // The member named by an object initializer (new Vector3(v) { Y = l }) of a type whose members the dialect maps, as
+    // a member access to it would be written (__gsharp_tmp.y)
+    private static string? TryGetMappedInitializerMember(IdentifierNameSyntax node, ISymbol? symbol,
+        ref TranspileContext context) =>
+        node.Parent is AssignmentExpressionSyntax { Parent: InitializerExpressionSyntax } assignment &&
+        assignment.Left == node &&
+        symbol is IFieldSymbol { IsStatic: false } or IPropertySymbol { IsStatic: false } &&
+        symbol.ContainingType is { } type &&
+        context.Emitter.Dialect.TryMapMemberAccess(type, node.Identifier.ValueText, out var mappedName, out var isCall) &&
+        !isCall
+            ? mappedName
+            : null;
 
     // A host static member and a method that takes the dynamic shared memory table named without a call are recorded
     // as failures; the name is still written

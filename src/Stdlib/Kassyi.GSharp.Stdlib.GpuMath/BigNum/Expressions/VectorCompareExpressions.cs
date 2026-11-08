@@ -33,13 +33,13 @@ internal class VectorCompareScalarExpression(
                 Left = VectorCompareLaunch.Operand(vecResult.Storage),
                 Right = new GpuBigIntCmpKernels.AotContexts.SignedCompareOperand
                 {
-                    Limbs = scalarResult.Value.DevicePointer,
-                    Signs = IntPtr.Zero,
+                    Limbs = scalarResult.Value.ToProxy(),
+                    Signs = default,
                     NumWords = scalarResult.Value.NumWords,
                     Stride = 0,
                     ScalarSign = scalarResult.IsNegative ? 1u : 0u
                 },
-                Result = _finalValues.DevicePointer,
+                Result = _finalValues.ToProxy(),
                 OpType = (int)opType
             };
 
@@ -104,7 +104,7 @@ internal class VectorCompareVectorExpression(
         {
             Left = VectorCompareLaunch.Operand(leftResult.Storage),
             Right = VectorCompareLaunch.Operand(rightResult.Storage),
-            Result = _finalValues.DevicePointer,
+            Result = _finalValues.ToProxy(),
             OpType = (int)opType
         };
 
@@ -132,8 +132,8 @@ internal static class VectorCompareLaunch
 {
     public static GpuBigIntCmpKernels.AotContexts.SignedCompareOperand Operand(GpuBigIntArrayView vector) => new()
     {
-        Limbs = vector.Values.DevicePointer,
-        Signs = vector.Signs.DevicePointer,
+        Limbs = vector.Values.ToProxy(),
+        Signs = vector.Signs.ToProxy(),
         NumWords = vector.WordsPerElement,
         Stride = vector.WordsPerElement,
         ScalarSign = 0u

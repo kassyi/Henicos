@@ -44,6 +44,7 @@ internal sealed class TranspilerRuleRegistry
             new GpuMacroTranspilerRule(),
             new MemoryExtensionsTranspilerRule(),
             new SpanMemberTranspilerRule(),
+            new NullableGetValueOrDefaultRule(),
             new StackLinqFusionRule(),
             new StackLinqTranspilerRule()
         );

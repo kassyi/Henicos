@@ -57,6 +57,13 @@ public sealed class BinaryExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
             return;
         }
 
+        // A floating-point remainder, which C++ has no operator for, is fmod of the operands converted to its type (#727)
+        if (operation is { Type: { } remainderType } && FloatingPointRemainder.GetHelper(operation) is { } remainder)
+        {
+            TranspileRemainder(node, operation, remainder, remainderType, ref context);
+            return;
+        }
+
         // int and long arithmetic that C++ leaves undefined goes through the Prelude (#722); a call leaves the order of its
         // arguments unspecified, so interfering operands go through temporaries
         if (operation != null && IntegerSemantics.GetBinaryHelper(operation) is { } helper)
@@ -229,6 +236,42 @@ public sealed class BinaryExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
             EvaluationOrder.AppendTempName(writer, left);
             writer.Append(',');
             EvaluationOrder.AppendTempName(writer, right);
+        }
+    }
+
+    // fmodf(<left>,<right>) with each operand converted to the type of the operation, as C# converts it: fmod of CUDA
+    // and of the C++ library is a host-only template for operands of two types. Interfering operands are evaluated into
+    // temporaries of that type first:
+    // ([&]() { double __gsharp_seq_0 = <left>; double __gsharp_seq_1 = <right>; return fmod(__gsharp_seq_0,__gsharp_seq_1); }())
+    private static void TranspileRemainder(BinaryExpressionSyntax node, IBinaryOperation operation, string remainder,
+        ITypeSymbol type, ref TranspileContext context)
+    {
+        var writer = context.Emitter.Writer;
+        if (OperandsInterfere(node, ref context))
+        {
+            using var sequence = EvaluationOrder.BeginSequence(writer);
+            var left = EvaluationOrder.DeclareTemp(ref context, node.Left, reference: false, type);
+            var right = EvaluationOrder.DeclareTemp(ref context, node.Right, reference: false, type);
+            sequence.Return();
+            writer.Append(remainder);
+            using (writer.Parentheses())
+            {
+                EvaluationOrder.AppendTempName(writer, left);
+                writer.Append(',');
+                EvaluationOrder.AppendTempName(writer, right);
+            }
+
+            return;
+        }
+
+        writer.Append(remainder);
+        using (writer.Parentheses())
+        {
+            ArithmeticConversions.AppendOperand(operation.LeftOperand, IntegerSemanticsEmitter.Unparenthesize(node.Left),
+                type, ref context);
+            writer.Append(',');
+            ArithmeticConversions.AppendOperand(operation.RightOperand,
+                IntegerSemanticsEmitter.Unparenthesize(node.Right), type, ref context);
         }
     }
 

@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using Kassyi.GSharp.Runtime.Interop;
 #if GSHARP_CUDA
 using Kassyi.GSharp.Runtime;
 using Kassyi.GSharp.Runtime.Aot;
@@ -19,6 +20,7 @@ public sealed class DiffPointerScope : IDisposable
 {
     private readonly DiffBuffers _buffers;
     private readonly Dictionary<string, IntPtr> _pointers = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, int> _lengths = new(StringComparer.Ordinal);
 #if GSHARP_CUDA
     private readonly GpuKernelLoader.CudaContextScope _contextScope;
     private readonly List<(DiffBuffer Buffer, GpuBuffer<byte> DeviceBuffer)> _deviceAllocations = [];
@@ -42,6 +44,7 @@ public sealed class DiffPointerScope : IDisposable
 
         foreach (var buffer in _buffers.All)
         {
+            _lengths[buffer.Name] = buffer.IsNullArray ? -1 : buffer.Length;
             if (buffer.IsNullArray || buffer.Length == 0 || !buffer.CanPinAsBytes)
             {
                 _pointers[buffer.Name] = IntPtr.Zero;
@@ -80,6 +83,21 @@ public sealed class DiffPointerScope : IDisposable
         _pointers.TryGetValue(name, out var ptr)
             ? ptr
             : throw new ArgumentException($"No device pointer registered for buffer '{name}'.", nameof(name));
+
+    /// <summary>
+    /// Gets the buffer named <paramref name="name"/> as an array argument of a <c>Launch{Kernel}Ptr</c> launcher: its
+    /// device (or staging) pointer and its element count, the null proxy for a null array.
+    /// </summary>
+    public GSharpArrayProxy GetArray(string name)
+    {
+        var pointer = Get(name);
+        return _lengths[name] switch
+        {
+            < 0 => default,
+            0 => new GSharpArrayProxy(GSharpArrayProxy.EmptyArrayData, 0),
+            var length => new GSharpArrayProxy(pointer, length)
+        };
+    }
 
     /// <summary>Gets the device (or staging) pointer for the unmanaged buffer named <paramref name="name"/>.</summary>
     public IntPtr PinOrUpload<T>(string name)

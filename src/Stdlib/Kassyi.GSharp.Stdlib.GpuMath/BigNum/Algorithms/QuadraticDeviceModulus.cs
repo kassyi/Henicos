@@ -310,9 +310,9 @@ internal sealed class QuadraticDeviceModulus : ISquaringModulus
         GpuBigIntFermatKernels.LaunchQuadraticFoldPassBlockedKernelPtr(
             new GpuBigIntFermatKernels.AotContexts.QuadraticFoldBlockedPass
             {
-                Source = source.DevicePointer,
-                Result = result.DevicePointer,
-                BlockCarries = blockCarries.DevicePointer,
+                Source = source.ToProxy(),
+                Result = result.ToProxy(),
+                BlockCarries = blockCarries.ToProxy(),
                 SourceWords = source.NumWords,
                 ResultWords = resultWords,
                 ModulusBits = modulus.ModulusBits,
@@ -328,8 +328,8 @@ internal sealed class QuadraticDeviceModulus : ISquaringModulus
             GpuBigIntFermatKernels.LaunchQuadraticFoldPassApplyKernelPtr(
                 new GpuBigIntFermatKernels.AotContexts.QuadraticFoldBlockedApply
                 {
-                    Result = result.DevicePointer,
-                    BlockCarries = blockCarries.DevicePointer,
+                    Result = result.ToProxy(),
+                    BlockCarries = blockCarries.ToProxy(),
                     ResultWords = resultWords,
                     ChunkSize = chunkSize,
                     NumBlocks = numBlocks
