@@ -90,7 +90,6 @@ __gsharp_auto_result[__gsharp_global_tid] = __gsharp_id_0_a[__gsharp_id_1_tid]*2
 return;
 }
 ";
-public static readonly string ComputeMag_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ComputeMag_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ComputeMag = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__TestCases__AutoAllocateReturnTest__ComputeMag", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerComputeMag() => global::Kassyi.GSharp.Tests.Shared.TestCases.AutoAllocateReturnTest.__gsharp_hfunc_ComputeMag.Resolve();
@@ -202,7 +201,6 @@ __gsharp_auto_result[__gsharp_global_tid] = __gsharp_add_i32(__gsharp_id_0_a[0],
 return;
 }
 ";
-public static readonly string ComputeInt_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ComputeInt_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ComputeInt = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__TestCases__AutoAllocateReturnTest__ComputeInt", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerComputeInt() => global::Kassyi.GSharp.Tests.Shared.TestCases.AutoAllocateReturnTest.__gsharp_hfunc_ComputeInt.Resolve();

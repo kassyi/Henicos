@@ -26,7 +26,6 @@ __gsharp_sort(__gsharp_id_0_data);
 __gsharp_sort(__gsharp_id_0_data);
 }
 ";
-public static readonly string Kernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +Kernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_Kernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__TestCases__Transpiler__MemoryExtensionsTranspilerRule_uHappyPath__Kernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_MegaTestCompilationBase.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerKernel() => global::Kassyi.GSharp.Tests.Shared.TestCases.Transpiler.MemoryExtensionsTranspilerRule_HappyPath.__gsharp_hfunc_Kernel.Resolve();

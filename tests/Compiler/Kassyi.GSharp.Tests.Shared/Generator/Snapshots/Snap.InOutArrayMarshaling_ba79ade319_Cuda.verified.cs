@@ -90,7 +90,6 @@ __gsharp_id_0_data[__gsharp_id_2_idx]*=2.0f;
 }
 }
 ";
-public static readonly string InOutKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +InOutKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_InOutKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__TestCases__GEN_u57_uInOutArrayMarshaling__InOutKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerInOutKernel() => global::Kassyi.GSharp.Tests.TestCases.GEN_57_InOutArrayMarshaling.__gsharp_hfunc_InOutKernel.Resolve();

@@ -182,7 +182,6 @@ __gsharp_iter_next_1_0:;
 __gsharp_iter_end_1:;
 }
 ";
-public static readonly string ForeachFloatToIntMatrixKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ForeachFloatToIntMatrixKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ForeachFloatToIntMatrixKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__ConversionDifferentialKernels__ForeachFloatToIntMatrixKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerForeachFloatToIntMatrixKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.ConversionDifferentialKernels.__gsharp_hfunc_ForeachFloatToIntMatrixKernel.Resolve();
@@ -404,7 +403,6 @@ __gsharp_id_3_r[__gsharp_add_i32(__gsharp_id_5_o,10)]=(unsigned char)(unsigned c
 __gsharp_id_3_r[__gsharp_add_i32(__gsharp_id_5_o,11)]=(unsigned char)(unsigned char)__gsharp_id_8_iv;
 }
 ";
-public static readonly string EnumCastMatrixKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +EnumCastMatrixKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_EnumCastMatrixKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__ConversionDifferentialKernels__EnumCastMatrixKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerEnumCastMatrixKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.ConversionDifferentialKernels.__gsharp_hfunc_EnumCastMatrixKernel.Resolve();
@@ -687,7 +685,6 @@ __gsharp_id_4_r[__gsharp_add_i32(__gsharp_id_6_o,5)]=__gsharp_id_12_implUl;
 __gsharp_id_4_r[__gsharp_add_i32(__gsharp_id_6_o,6)]=__gsharp_id_13_tupUl+(__gsharp_id_14_tupL-__gsharp_id_11_implL);
 }
 ";
-public static readonly string IntToFloatConversionMatrixKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +IntToFloatConversionMatrixKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_IntToFloatConversionMatrixKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__ConversionDifferentialKernels__IntToFloatConversionMatrixKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerIntToFloatConversionMatrixKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.ConversionDifferentialKernels.__gsharp_hfunc_IntToFloatConversionMatrixKernel.Resolve();
@@ -1020,7 +1017,6 @@ __gsharp_id_4_r[__gsharp_add_i32(__gsharp_id_6_o,4)]=__gsharp_id_11_implL;
 __gsharp_id_4_r[__gsharp_add_i32(__gsharp_id_6_o,5)]=__gsharp_id_12_implUl;
 }
 ";
-public static readonly string IntToDoubleConversionMatrixKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +IntToDoubleConversionMatrixKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_IntToDoubleConversionMatrixKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__ConversionDifferentialKernels__IntToDoubleConversionMatrixKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerIntToDoubleConversionMatrixKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.ConversionDifferentialKernels.__gsharp_hfunc_IntToDoubleConversionMatrixKernel.Resolve();
@@ -1344,7 +1340,6 @@ __gsharp_id_2_r[__gsharp_add_i32(__gsharp_id_4_o,1)]=__gsharp_id_1_cArr[__gsharp
 __gsharp_id_2_r[__gsharp_add_i32(__gsharp_id_4_o,2)]=(__gsharp_id_0_cArg==(char16_t)4660?1:0);
 }
 ";
-public static readonly string CharScalarArgKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +CharScalarArgKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_CharScalarArgKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__ConversionDifferentialKernels__CharScalarArgKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerCharScalarArgKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.ConversionDifferentialKernels.__gsharp_hfunc_CharScalarArgKernel.Resolve();
@@ -1535,7 +1530,6 @@ __gsharp_id_7_rDouble[__gsharp_add_i32(__gsharp_id_14_od,1)]=(double)__gsharp_id
 __gsharp_id_7_rDouble[__gsharp_add_i32(__gsharp_id_14_od,2)]=(double)__gsharp_id_3_u64[__gsharp_id_8_t];
 }
 ";
-public static readonly string DirectFloatDoubleCastMatrixKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +DirectFloatDoubleCastMatrixKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_DirectFloatDoubleCastMatrixKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__ConversionDifferentialKernels__DirectFloatDoubleCastMatrixKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerDirectFloatDoubleCastMatrixKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.ConversionDifferentialKernels.__gsharp_hfunc_DirectFloatDoubleCastMatrixKernel.Resolve();
@@ -2094,7 +2088,6 @@ __gsharp_id_6_rUnsigned[__gsharp_add_i32(__gsharp_id_20_ou,8)]=__gsharp_id_9_uv>
 __gsharp_id_6_rUnsigned[__gsharp_add_i32(__gsharp_id_20_ou,9)]=(__gsharp_id_11_ulv<<(__gsharp_id_12_s&63))^(__gsharp_id_11_ulv>>(__gsharp_id_12_s&63));
 }
 ";
-public static readonly string IntegerCastAndShiftMaskMatrixKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +IntegerCastAndShiftMaskMatrixKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_IntegerCastAndShiftMaskMatrixKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__ConversionDifferentialKernels__IntegerCastAndShiftMaskMatrixKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerIntegerCastAndShiftMaskMatrixKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.ConversionDifferentialKernels.__gsharp_hfunc_IntegerCastAndShiftMaskMatrixKernel.Resolve();

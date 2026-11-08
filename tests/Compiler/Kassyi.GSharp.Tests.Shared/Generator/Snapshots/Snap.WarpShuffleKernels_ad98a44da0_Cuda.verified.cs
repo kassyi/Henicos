@@ -102,7 +102,6 @@ __gsharp_id_1_output[__gsharp_id_4_warpId]=__gsharp_id_5_val;
 }
 }
 ";
-public static readonly string WarpReductionKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +WarpReductionKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_WarpReductionKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__WarpShuffleKernels__WarpReductionKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerWarpReductionKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.WarpShuffleKernels.__gsharp_hfunc_WarpReductionKernel.Resolve();
@@ -258,7 +257,6 @@ __gsharp_id_2_outputBoundary31[__gsharp_id_4_tid]=__shfl_down_sync(__gsharp_id_5
 __gsharp_id_3_outputBoundary32[__gsharp_id_4_tid]=__shfl_down_sync(__gsharp_id_5_mask,__gsharp_id_6_val,32,32);
 }
 ";
-public static readonly string WarpShuffleBoundaryKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +WarpShuffleBoundaryKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_WarpShuffleBoundaryKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__WarpShuffleKernels__WarpShuffleBoundaryKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerWarpShuffleBoundaryKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.WarpShuffleKernels.__gsharp_hfunc_WarpShuffleBoundaryKernel.Resolve();
@@ -529,7 +527,6 @@ __gsharp_id_5_val=__shfl_down_sync(__gsharp_id_4_mask,__gsharp_id_5_val,2,16);
 __gsharp_id_1_output[__gsharp_id_2_tid]=__gsharp_id_5_val;
 }
 ";
-public static readonly string WarpDivergenceKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +WarpDivergenceKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_WarpDivergenceKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__WarpShuffleKernels__WarpDivergenceKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerWarpDivergenceKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.WarpShuffleKernels.__gsharp_hfunc_WarpDivergenceKernel.Resolve();
@@ -681,7 +678,6 @@ int __gsharp_id_5_tid = (int)threadIdx.x;
 __gsharp_id_4_output[__gsharp_id_5_tid]=__shfl_down_sync(__gsharp_id_0_mask,__gsharp_id_1_input[__gsharp_id_5_tid],__gsharp_id_2_delta,__gsharp_id_3_width);
 }
 ";
-public static readonly string WarpShuffleExtremaKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +WarpShuffleExtremaKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_WarpShuffleExtremaKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__WarpShuffleKernels__WarpShuffleExtremaKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerWarpShuffleExtremaKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.WarpShuffleKernels.__gsharp_hfunc_WarpShuffleExtremaKernel.Resolve();

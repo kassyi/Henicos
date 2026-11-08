@@ -104,7 +104,6 @@ __gsharp_id_0_outputBuffer[0]=__gsharp_id_3_singleValue;
 }
 }
 ";
-public static readonly string Kernel_MacroTest_FillAndSingle_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +Kernel_MacroTest_FillAndSingle_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_Kernel_MacroTest_FillAndSingle = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Stdlib__GpuMath__Tests__Kernels__GpuMacroTestKernels__Kernel_uMacroTest_uFillAndSingle", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerKernel_MacroTest_FillAndSingle() => global::Kassyi.GSharp.Stdlib.GpuMath.Tests.Kernels.GpuMacroTestKernels.__gsharp_hfunc_Kernel_MacroTest_FillAndSingle.Resolve();
