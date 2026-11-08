@@ -144,6 +144,10 @@ Launcher:
     Contexts: __gsharp_contexts
     Error: __gsharp_launch_error
     TotalBlocks: __gsharp_total_blocks
+    # The number of blocks of the launch, counted in 64 bits by the managed wrapper (LaunchLimits.CheckLaunch) and
+    # passed to the native launcher, and the number of thread contexts of the managed path
+    GridBlockCount: __gsharp_launch_block_count
+    ContextCount: __gsharp_context_count
     ThreadsPerBlock: __gsharp_threads_per_block
     BlockLoopIndex: __gsharp_block_index
     ThreadLoopIndex: __gsharp_thread_index
