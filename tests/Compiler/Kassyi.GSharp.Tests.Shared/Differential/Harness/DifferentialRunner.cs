@@ -363,12 +363,12 @@ public static class DifferentialRunner
                     CudaTrapSubprocessRunner.IsFullSamplingEnabled ||
                     allowSubprocess;
 
-                if (!CudaTrapRuns.IsEnabled)
+                if (!CudaTrapGate.IsEnabled)
                 {
                     // Every fault seed traps on CUDA, and a trap is a real GPU fault (#1457): the CUDA cell is compared
                     // only by `just test-gpu-trap`, and the report lists the seeds left out
                     run.Report.AddSkippedCudaTrap(at.Seed, at.Shape);
-                    cells.Add(new PathCell(path.Path, $"skipped (CUDA fault seed {CudaTrapRuns.SkipReason})", Differs: false, Known: null));
+                    cells.Add(new PathCell(path.Path, $"skipped (CUDA fault seed {CudaTrapGate.SkipReason})", Differs: false, Known: null));
                     continue;
                 }
 
@@ -376,7 +376,7 @@ public static class DifferentialRunner
                 {
                     launchedSubprocess = true;
                     var (shapeIndex, seed) = (at.ShapeIndex, at.Seed);
-                    thrown = CudaTrapRuns.RunPaced(
+                    thrown = CudaTrapGate.RunPaced(
                         () => CudaTrapSubprocessRunner.RunInSubprocess(testCase.Name, shapeIndex, seed)
                     );
                 }

@@ -1095,9 +1095,9 @@ public class HarnessTests
         // A fault seed on the CUDA direct runner would start a child process that raises a real GPU fault (#1457); by
         // default the cell is skipped, the report lists the seed with the reason, and a known CUDA exception entry is
         // not reported stale
-        // mutant: DifferentialRunner.cs EvaluateExceptionExpectation drops the `!CudaTrapRuns.IsEnabled` gate
+        // mutant: DifferentialRunner.cs EvaluateExceptionExpectation drops the `!CudaTrapGate.IsEnabled` gate
         // mutant: DifferentialRunner.cs AddStaleEntries drops the skip of CUDA exception entries
-        Skip.If(CudaTrapRuns.IsEnabled, $"{CudaTrapRuns.EnableVariable}=1 runs the fault seeds.");
+        Skip.If(CudaTrapGate.IsEnabled, $"{CudaTrapGate.EnableVariable}=1 runs the fault seeds.");
         var faultCase = new DifferentialCase("HarnessTests.CudaFaultSeedKernel")
         {
             Shape = LaunchShapes.SingleThread(),

@@ -17,7 +17,7 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 /// </summary>
 /// <remarks>
 /// Each child raises a real GPU fault, so <see cref="DifferentialRunner"/> starts one only when
-/// <see cref="CudaTrapRuns.IsEnabled"/> (<c>just test-gpu-trap</c>), one at a time through <see cref="CudaTrapRuns.RunPaced{T}"/>.
+/// <see cref="CudaTrapGate.IsEnabled"/> (<c>just test-gpu-trap</c>), one at a time through <see cref="CudaTrapGate.RunPaced{T}"/>.
 /// </remarks>
 public static class CudaTrapSubprocessRunner
 {

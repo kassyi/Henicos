@@ -18,7 +18,7 @@
 
 The GPU is shared by every agent and worktree. Run any command that uses it (`just test-category Runtime`, a `dotnet test` of a GPU suite, a benchmark) as `node scripts/agent/gpu-lock.js -- "<command>"`; it waits for the lock `tmp/gpu-test-lock` and releases it when the command ends.
 
-A test that raises a real GPU fault carries `[Category(TestCategory.GpuTrap)]`, runs its launch in a child process (`CudaTrapRuns.RunIsolated`, or `CudaTrapRuns.RunPaced` around the start of the child) and skips unless `GSHARP_CUDA_TRAP_TESTS=1`, so `just test`, CI and a plain `dotnet test` raise no fault. A differential case keeps its fault seeds in the default run; only their CUDA cell is skipped, and the report lists those seeds.
+A test that raises a real GPU fault carries `[Category(TestCategory.GpuTrap)]`, runs its launch in a child process (`CudaTrapRuns.RunIsolated`, or `CudaTrapGate.RunPaced` around the start of the child) and skips unless `GSHARP_CUDA_TRAP_TESTS=1`, so `just test`, CI and a plain `dotnet test` raise no fault. A differential case keeps its fault seeds in the default run; only their CUDA cell is skipped, and the report lists those seeds.
 
 Test assemblies discard console output (`TestConsole.Silence()`); set `GSHARP_TEST_VERBOSE=1` to see `Logger` / benchmark output.
 

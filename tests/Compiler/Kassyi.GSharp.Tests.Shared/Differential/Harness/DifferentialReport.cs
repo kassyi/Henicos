@@ -135,7 +135,7 @@ public sealed class DifferentialReport
 
     /// <summary>
     /// Gets the seeds and shapes whose CUDA cell was not run because it raises a real GPU fault and
-    /// <see cref="CudaTrapRuns.IsEnabled"/> is false.
+    /// <see cref="CudaTrapGate.IsEnabled"/> is false.
     /// </summary>
     public IReadOnlyList<(int Seed, LaunchShape Shape)> SkippedCudaTraps => _skippedCudaTraps;
 
@@ -261,7 +261,7 @@ public sealed class DifferentialReport
         {
             text.AppendLine(
                 $"  CUDA fault seeds not run: {_skippedCudaTraps.Count} (seeds {string.Join(", ", _skippedCudaTraps.Select(static t => t.Seed).Distinct())}); each " +
-                CudaTrapRuns.SkipReason
+                CudaTrapGate.SkipReason
             );
         }
 
