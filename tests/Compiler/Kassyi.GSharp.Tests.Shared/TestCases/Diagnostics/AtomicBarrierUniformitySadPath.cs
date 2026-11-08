@@ -17,8 +17,7 @@ public static partial class AtomicBarrierUniformityAuditKernels
     }
 
     // #1072: Interlocked.Add return value is not classified as thread-variant in SyncIntrinsicClassifier,
-    // so neither GSH0083 (for Gpu.SyncThreads() on a uniform local ref) nor GSH0101 (for Warp.ActiveMask() on CPU)
-    // is reported inside the Interlocked.Add branch.
+    // so GSH0083 (for Gpu.SyncThreads() on a uniform local ref) is not reported inside the Interlocked.Add branch.
     [GpuKernel]
     public static void InterlockedBranchWithBarrierKernel(int[] outMask)
     {

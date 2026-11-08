@@ -46,12 +46,12 @@ internal static class Ntt35ConvolutionLauncher
         Ntt35CarryKernels.LaunchMultiplyNtt35PointwiseMultiplyKernelPtr(
             new Ntt35CarryKernels.AotContexts.Ntt35PointwiseMultiply
             {
-                Buf1A = scratch.OperandA[0].DevicePointer,
-                Buf2A = scratch.OperandA[1].DevicePointer,
-                Buf3A = scratch.OperandA[2].DevicePointer,
-                Buf1B = scratch.OperandB[0].DevicePointer,
-                Buf2B = scratch.OperandB[1].DevicePointer,
-                Buf3B = scratch.OperandB[2].DevicePointer,
+                Buf1A = scratch.OperandA[0].ToProxy(),
+                Buf2A = scratch.OperandA[1].ToProxy(),
+                Buf3A = scratch.OperandA[2].ToProxy(),
+                Buf1B = scratch.OperandB[0].ToProxy(),
+                Buf2B = scratch.OperandB[1].ToProxy(),
+                Buf3B = scratch.OperandB[2].ToProxy(),
                 TransformLength = m
             },
             gridDimX: shape.GridDim, blockDimX: shape.BlockDim,
@@ -129,10 +129,10 @@ internal static class Ntt35ConvolutionLauncher
         GpuBigUInt operand, GpuBigUInt[] buffers) =>
         new()
         {
-            Source = operand.DevicePointer,
-            NttBuf1 = buffers[0].DevicePointer,
-            NttBuf2 = buffers[1].DevicePointer,
-            NttBuf3 = buffers[2].DevicePointer,
+            Source = operand.ToProxy(),
+            NttBuf1 = buffers[0].ToProxy(),
+            NttBuf2 = buffers[1].ToProxy(),
+            NttBuf3 = buffers[2].ToProxy(),
             NumWords = operand.NumWords
         };
 
@@ -203,8 +203,8 @@ internal static class Ntt35ConvolutionLauncher
             Ntt35TablelessKernels.LaunchMultiplyNttTablelessSharedRowKernelPtr(
                 new Ntt35TablelessKernels.AotContexts.NttTablelessRow
                 {
-                    InputBuffer = buffer.DevicePointer,
-                    OutputBuffer = buffer.DevicePointer,
+                    InputBuffer = buffer.ToProxy(),
+                    OutputBuffer = buffer.ToProxy(),
                     RowRoot = spec.RootForLength(m, isInverse),
                     RootM = 1u,
                     P = spec.Prime,
@@ -227,7 +227,7 @@ internal static class Ntt35ConvolutionLauncher
 
         LaunchTablelessSharedRow(workspace, buffer, buffer, spec, firstMaxBlocks, firstL,
             isInverse, applyTwiddleAfter: true, rootM);
-        KernelAdvancedMathHandler.LaunchTranspose(workspace, buffer.DevicePointer, tempBuffer.DevicePointer,
+        KernelAdvancedMathHandler.LaunchTranspose(workspace, buffer.ToProxy(), tempBuffer.ToProxy(),
             width: firstL, height: firstMaxBlocks);
         LaunchTablelessSharedRow(workspace, tempBuffer, buffer, spec, secondMaxBlocks, secondL,
             isInverse, applyTwiddleAfter: false, 1u);
@@ -253,8 +253,8 @@ internal static class Ntt35ConvolutionLauncher
         Ntt35TablelessKernels.LaunchMultiplyNttTablelessSharedRowKernelPtr(
             new Ntt35TablelessKernels.AotContexts.NttTablelessRow
             {
-                InputBuffer = input.DevicePointer,
-                OutputBuffer = output.DevicePointer,
+                InputBuffer = input.ToProxy(),
+                OutputBuffer = output.ToProxy(),
                 RowRoot = spec.RootForLength(currentL, isInverse),
                 RootM = rootM,
                 P = spec.Prime,
@@ -283,8 +283,8 @@ internal static class Ntt35ConvolutionLauncher
             Ntt35TablelessKernels.LaunchMultiplyNttFusedMiddleSquareRowKernelPtr(
                 new Ntt35TablelessKernels.AotContexts.NttFusedMiddleSquare
                 {
-                    InputBuffer = buffer.DevicePointer,
-                    OutputBuffer = buffer.DevicePointer,
+                    InputBuffer = buffer.ToProxy(),
+                    OutputBuffer = buffer.ToProxy(),
                     RowForwardRoot = spec.RootForLength(m, isInverse: false),
                     InverseRootM = 1u,
                     P = spec.Prime,
@@ -304,7 +304,7 @@ internal static class Ntt35ConvolutionLauncher
             isInverse: false, applyTwiddleAfter: true, rootM: spec.RootForLength(m, isInverse: false));
 
         // Forward Transpose: (n2 x n1) buffer -> (n1 x n2) tempBuffer.
-        KernelAdvancedMathHandler.LaunchTranspose(workspace, buffer.DevicePointer, tempBuffer.DevicePointer,
+        KernelAdvancedMathHandler.LaunchTranspose(workspace, buffer.ToProxy(), tempBuffer.ToProxy(),
             width: n1, height: n2);
 
         // Fused Middle Pass: Forward Pass 2 + Pointwise Square + In-Shared Bit-Reverse + Inverse Pass 1 (with twiddle after).
@@ -316,8 +316,8 @@ internal static class Ntt35ConvolutionLauncher
         Ntt35TablelessKernels.LaunchMultiplyNttFusedMiddleSquareRowKernelPtr(
             new Ntt35TablelessKernels.AotContexts.NttFusedMiddleSquare
             {
-                InputBuffer = tempBuffer.DevicePointer,
-                OutputBuffer = buffer.DevicePointer,
+                InputBuffer = tempBuffer.ToProxy(),
+                OutputBuffer = buffer.ToProxy(),
                 RowForwardRoot = spec.RootForLength(n2, isInverse: false),
                 InverseRootM = spec.RootForLength(m, isInverse: true),
                 P = spec.Prime,
@@ -331,7 +331,7 @@ internal static class Ntt35ConvolutionLauncher
             hStream: workspace.Stream);
 
         // Inverse Transpose: (n1 x n2) buffer -> (n2 x n1) tempBuffer.
-        KernelAdvancedMathHandler.LaunchTranspose(workspace, buffer.DevicePointer, tempBuffer.DevicePointer,
+        KernelAdvancedMathHandler.LaunchTranspose(workspace, buffer.ToProxy(), tempBuffer.ToProxy(),
             width: n2, height: n1);
 
         // Inverse Pass 2: n2 rows of length n1 from tempBuffer into transposed buffer.
@@ -350,11 +350,11 @@ internal static class Ntt35ConvolutionLauncher
         var primes = PrimeModulusSpec.All;
         var ctx = new Ntt35CarryKernels.AotContexts.Ntt35ResolveCarries
         {
-            Result1 = scratch.OperandA[0].DevicePointer,
-            Result2 = scratch.OperandA[1].DevicePointer,
-            Result3 = scratch.OperandA[2].DevicePointer,
-            OutputBuffer = resultBuffer.DevicePointer,
-            BlockCarries = scratch.BlockCarries.DevicePointer,
+            Result1 = scratch.OperandA[0].ToProxy(),
+            Result2 = scratch.OperandA[1].ToProxy(),
+            Result3 = scratch.OperandA[2].ToProxy(),
+            OutputBuffer = resultBuffer.ToProxy(),
+            BlockCarries = scratch.BlockCarries.ToProxy(),
             Grid = shape.CarryGrid,
             MaxWordCount = writeWords,
             ChunkSize = CarryChunkSize,
@@ -379,7 +379,7 @@ internal static class Ntt35ConvolutionLauncher
                 var applyBlockDim = (uint)Math.Min(1024, Math.Max(256, numBlocks));
                 var applyGridDim = (uint)((numBlocks + applyBlockDim - 1) / applyBlockDim);
                 GpuBigIntNttKernels.LaunchResolveNttCarriesApplyKernelPtr(
-                    resultBuffer.DevicePointer, scratch.BlockCarries.DevicePointer, writeWords, CarryChunkSize,
+                    resultBuffer.ToProxy(), scratch.BlockCarries.ToProxy(), writeWords, CarryChunkSize,
                     numBlocks,
                     gridDimX: applyGridDim, blockDimX: applyBlockDim,
                     hStream: workspace.Stream);
@@ -410,7 +410,7 @@ internal static class Ntt35ConvolutionLauncher
             var applyBlockDim = (uint)Math.Min(1024, Math.Max(256, numTiles));
             var applyGridDim = (uint)((numTiles + applyBlockDim - 1) / applyBlockDim);
             GpuBigIntNttKernels.LaunchResolveNttCarriesApplyKernelPtr(
-                resultBuffer.DevicePointer, scratch.BlockCarries.DevicePointer, writeWords, TileOutputWords,
+                resultBuffer.ToProxy(), scratch.BlockCarries.ToProxy(), writeWords, TileOutputWords,
                 numTiles,
                 gridDimX: applyGridDim, blockDimX: applyBlockDim,
                 hStream: workspace.Stream);

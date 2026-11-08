@@ -179,10 +179,16 @@ if (__gsharp_d_0 != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.In
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-public static unsafe void LaunchKernel_MacroTest_FillAndSinglePtr(global::System.IntPtr outputBuffer, global::System.Int32 length, global::System.UInt32 fillValue, global::System.UInt32 singleValue, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchKernel_MacroTest_FillAndSinglePtr(global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy outputBuffer, global::System.Int32 length, global::System.UInt32 fillValue, global::System.UInt32 singleValue, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (outputBuffer == global::System.IntPtr.Zero){
+if (outputBuffer.Length < 0){
+throw new global::System.ArgumentOutOfRangeException(nameof(outputBuffer), outputBuffer.Length, "The array length must not be negative.");
+}
+if (outputBuffer.Data == global::System.IntPtr.Zero){
 throw new global::System.ArgumentNullException(nameof(outputBuffer));
+}
+if (outputBuffer.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(outputBuffer));
 }
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "GpuMacroTestKernels.Kernel_MacroTest_FillAndSingle");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
@@ -194,8 +200,8 @@ try
 void** __gsharp_kernel_params = stackalloc void*[4];
 // Marshal device array: outputBuffer
 global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
-__gsharp_proxy_0[0] = outputBuffer;
-((int*)(__gsharp_proxy_0 + 1))[0] = 0; // Length is unknown for raw IntPtr
+__gsharp_proxy_0[0] = outputBuffer.Data;
+((int*)(__gsharp_proxy_0 + 1))[0] = outputBuffer.Length;
 ((int*)(__gsharp_proxy_0 + 1))[1] = 0;
 __gsharp_kernel_params[0] = __gsharp_proxy_0;
 // Marshal scalar: length

@@ -38,8 +38,23 @@ public struct GSharpArrayProxy
     public int Flags;
 
     /// <summary>
-    /// Implicitly converts a raw device pointer to a proxy struct with unknown length (0).
-    /// Used for backward compatibility with manual AOT marshaling.
+    /// Initializes a proxy for <paramref name="length"/> elements at <paramref name="data"/>, with no
+    /// <see cref="Flags"/>.
     /// </summary>
-    public static implicit operator GSharpArrayProxy(IntPtr ptr) => new() { Data = ptr, Length = 0 };
+    /// <param name="data">The address of the first element, or <see cref="IntPtr.Zero"/> for a null array.</param>
+    /// <param name="length">The number of elements the kernel sees as the array's <c>Length</c>.</param>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="length"/> is negative.</exception>
+    /// <exception cref="ArgumentException"><paramref name="data"/> is null and <paramref name="length"/> is not 0.</exception>
+    public GSharpArrayProxy(IntPtr data, int length)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(length);
+        if (data == IntPtr.Zero && length != 0)
+        {
+            throw new ArgumentException("A null array has no elements, so its length must be 0.", nameof(length));
+        }
+
+        Data = data;
+        Length = length;
+        Flags = 0;
+    }
 }

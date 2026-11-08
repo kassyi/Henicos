@@ -38,19 +38,19 @@ internal sealed class FloatVectorCompareScalarExpression(
         {
             Left = new GpuBigIntVectorKernels.AotContexts.FloatVectorOperandReadOnly
             {
-                Limbs = vecResult.Significands.DevicePointer,
-                Exponents = vecResult.Exponents.DevicePointer,
-                Signs = vecResult.Signs.DevicePointer,
+                Limbs = vecResult.Significands.ToProxy(),
+                Exponents = vecResult.Exponents.ToProxy(),
+                Signs = vecResult.Signs.ToProxy(),
                 NumWords = vecResult.WordsPerElement
             },
             Right = new GpuBigIntVectorKernels.AotContexts.FloatVectorOperandReadOnly
             {
-                Limbs = scalarSig.DevicePointer,
-                Exponents = vecResult.Exponents.DevicePointer,
-                Signs = vecResult.Signs.DevicePointer,
+                Limbs = scalarSig.ToProxy(),
+                Exponents = vecResult.Exponents.ToProxy(),
+                Signs = vecResult.Signs.ToProxy(),
                 NumWords = scalarSig.NumWords
             },
-            Result = _finalValues.DevicePointer,
+            Result = _finalValues.ToProxy(),
             ScalarExp = scalar.Exponent,
             ScalarSign = scalar.IsNegative ? 1u : 0u,
             IsScalar = true,
@@ -121,19 +121,19 @@ internal sealed class FloatVectorCompareVectorExpression(
         {
             Left = new GpuBigIntVectorKernels.AotContexts.FloatVectorOperandReadOnly
             {
-                Limbs = leftResult.Significands.DevicePointer,
-                Exponents = leftResult.Exponents.DevicePointer,
-                Signs = leftResult.Signs.DevicePointer,
+                Limbs = leftResult.Significands.ToProxy(),
+                Exponents = leftResult.Exponents.ToProxy(),
+                Signs = leftResult.Signs.ToProxy(),
                 NumWords = leftResult.WordsPerElement
             },
             Right = new GpuBigIntVectorKernels.AotContexts.FloatVectorOperandReadOnly
             {
-                Limbs = rightResult.Significands.DevicePointer,
-                Exponents = rightResult.Exponents.DevicePointer,
-                Signs = rightResult.Signs.DevicePointer,
+                Limbs = rightResult.Significands.ToProxy(),
+                Exponents = rightResult.Exponents.ToProxy(),
+                Signs = rightResult.Signs.ToProxy(),
                 NumWords = rightResult.WordsPerElement
             },
-            Result = _finalValues.DevicePointer,
+            Result = _finalValues.ToProxy(),
             ScalarExp = 0,
             ScalarSign = 0u,
             IsScalar = false,

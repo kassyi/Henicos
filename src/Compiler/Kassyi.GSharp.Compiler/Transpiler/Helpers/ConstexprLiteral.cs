@@ -54,6 +54,13 @@ internal static class ConstexprLiteral
             return false;
         }
 
+        // A char converted to a number (new Vector4(x, y, 'A', w)) is its code unit; Convert.ToSingle and
+        // Convert.ToDouble reject a char
+        if (value is char character && specialType != SpecialType.System_Char)
+        {
+            value = (int)character;
+        }
+
         literal = specialType switch
         {
             SpecialType.System_Single when Convert.ToSingle(value, CultureInfo.InvariantCulture) is var single &&

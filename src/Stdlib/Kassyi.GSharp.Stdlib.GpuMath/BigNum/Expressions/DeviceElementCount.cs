@@ -48,15 +48,18 @@ internal readonly record struct DeviceElementCount(IntPtr Base, int Skip, int Li
         return (int)Math.Clamp(n, 0, Limit);
     }
 
+    // The one count word as a kernel array, or a null array for a host count
+    private GSharpArrayProxy BaseProxy => IsStatic ? default : new GSharpArrayProxy(Base, 1);
+
     /// <summary>The kernel argument for this count.</summary>
     public GpuBigIntVectorKernels.AotContexts.ElementCount ToContext() =>
-        new() { Base = Base, Skip = Skip, Limit = Limit };
+        new() { Base = BaseProxy, Skip = Skip, Limit = Limit };
 
     /// <summary>
     /// The kernel argument for the scan and scatter kernels, whose class has its own host copy of the same context.
     /// </summary>
     public GpuStreamCompactionKernels.AotContexts.ElementCount ToScanContext() =>
-        new() { Base = Base, Skip = Skip, Limit = Limit };
+        new() { Base = BaseProxy, Skip = Skip, Limit = Limit };
 }
 
 /// <summary>

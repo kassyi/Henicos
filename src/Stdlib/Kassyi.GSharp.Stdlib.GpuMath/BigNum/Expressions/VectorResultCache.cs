@@ -182,8 +182,8 @@ internal sealed class VectorResultCache : IDisposable
         var gridDimX = (uint)Math.Min((words + threadsPerBlock - 1) / threadsPerBlock, 4096);
         var ctx = new GpuBigIntVectorKernels.AotContexts.CountedCopy
         {
-            Destination = destination.DevicePointer,
-            Source = source.DevicePointer,
+            Destination = destination.ToProxy(),
+            Source = source.ToProxy(),
             WordsPerElement = destination.WordsPerElement,
             Count = count.ToContext()
         };

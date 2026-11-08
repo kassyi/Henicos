@@ -158,9 +158,9 @@ public class GpuBigIntMulTests
         using var result = new GpuBigUInt(ctx, 64);
 
         GpuBigIntMulKernels.LaunchMultiplyNttKernelPtr(
-            result.DevicePointer, result.NumWords,
-            a.DevicePointer, a.NumWords,
-            b.DevicePointer, b.NumWords,
+            result.ToProxy(), result.NumWords,
+            a.ToProxy(), a.NumWords,
+            b.ToProxy(), b.NumWords,
             gridDimX: 1, blockDimX: 256);
 
         Assert.Equal(expected, result.ToBigInteger());

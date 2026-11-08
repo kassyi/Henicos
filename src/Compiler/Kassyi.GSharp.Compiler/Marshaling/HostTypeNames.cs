@@ -9,6 +9,7 @@ internal static class HostTypeNames
     public const string CudaException = "global::Kassyi.GSharp.Runtime.Interop.CudaException";
     public const string GpuKernelLoader = "global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader";
     public const string IntPtr = "global::System.IntPtr";
+    public const string ArrayProxy = "global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy";
     public const string Unsafe = "global::System.Runtime.CompilerServices.Unsafe";
     public const string GCHandle = "global::System.Runtime.InteropServices.GCHandle";
     public const string GCHandleType = "global::System.Runtime.InteropServices.GCHandleType";

@@ -107,20 +107,20 @@ internal abstract class FloatVectorBinaryVectorExpressionBase(
             {
                 Left = new GpuBigIntVectorKernels.AotContexts.SignedVectorOperandReadOnly
                 {
-                    Limbs = operands.Left.Significands.DevicePointer,
-                    Signs = operands.Left.Signs.DevicePointer,
+                    Limbs = operands.Left.Significands.ToProxy(),
+                    Signs = operands.Left.Signs.ToProxy(),
                     NumWords = operands.Left.WordsPerElement
                 },
                 Right = new GpuBigIntVectorKernels.AotContexts.SignedVectorOperandReadOnly
                 {
-                    Limbs = operands.Right.Significands.DevicePointer,
-                    Signs = operands.Right.Signs.DevicePointer,
+                    Limbs = operands.Right.Significands.ToProxy(),
+                    Signs = operands.Right.Signs.ToProxy(),
                     NumWords = operands.Right.WordsPerElement
                 },
                 Result = new GpuBigIntVectorKernels.AotContexts.SignedVectorOutput
                 {
-                    Limbs = operands.Destination.Significands.DevicePointer,
-                    Signs = operands.Destination.Signs.DevicePointer,
+                    Limbs = operands.Destination.Significands.ToProxy(),
+                    Signs = operands.Destination.Signs.ToProxy(),
                     NumWords = operands.Destination.WordsPerElement
                 },
                 ScalarSign = 0u,
@@ -128,9 +128,9 @@ internal abstract class FloatVectorBinaryVectorExpressionBase(
             },
             Exponents = new GpuBigIntVectorKernels.AotContexts.FloatVectorExponents
             {
-                ExpA = operands.Left.Exponents.DevicePointer,
-                ExpB = operands.Right.Exponents.DevicePointer,
-                ExpResult = operands.Destination.Exponents.DevicePointer,
+                ExpA = operands.Left.Exponents.ToProxy(),
+                ExpB = operands.Right.Exponents.ToProxy(),
+                ExpResult = operands.Destination.Exponents.ToProxy(),
                 ScalarExp = 0
             }
         };
@@ -254,10 +254,10 @@ internal sealed class FloatVectorDivVectorExpression(
         var ctx = new GpuBigIntVectorKernels.AotContexts.VectorFloatDiv
         {
             FloatOp = CreateZipFloatOp(operands),
-            ZeroDivisor = operands.ZeroDivisor.DevicePointer
+            ZeroDivisor = operands.ZeroDivisor.ToProxy()
         };
         using var scratch = DivModScratch.Rent(workspace, ctx.FloatOp.Core, gridDimX);
-        ctx.Scratch = scratch?.DevicePointer ?? IntPtr.Zero;
+        ctx.Scratch = scratch?.ToProxy() ?? default;
         GpuBigIntVectorKernels.LaunchVectorFloatZipDivKernelPtr(
             ctx, gridDimX, 1, 1, 32, 1, 1, 0, workspace.Stream);
     }

@@ -374,11 +374,34 @@ public static class MethodTranspiler
             context.Emitter.Writer.AppendLine($"uint32_t {GSharpInternalNames.StateMachine.WarpRecordNext} = 0;");
             context.Emitter.Writer.AppendLine($"uint32_t {GSharpInternalNames.StateMachine.WarpRound} = 0;");
             context.Emitter.Writer.AppendLine($"bool {GSharpInternalNames.StateMachine.WarpWaiting} = false;");
+            if (SuspensionAnalysis.ReachesActiveMask(kernel, context.Query.SemanticModel.Compilation))
+            {
+                WriteReconvergenceFields(ref context);
+            }
         }
 
         context.Emitter.Writer.AppendLine($"bool {GSharpInternalNames.StateMachine.YieldedForGridSync} = false;");
         context.Emitter.Writer.AppendLine($"bool {GSharpInternalNames.StateMachine.YieldedForBlockBarrier} = false;");
     }
+
+    // The thread-dependent branches and loops of the methods that reach Warp.ActiveMask() that the thread is inside,
+    // innermost last, and whether it waits where one of them ends for the other lanes that entered it (#844). Recursion
+    // is rejected (GSH0061), so the nesting is bounded; one deeper than the room here is a run-time error
+    private static void WriteReconvergenceFields(ref TranspileContext context)
+    {
+        context.Emitter.Writer.AppendLine(
+            $"{GSharpInternalNames.StateMachine.WarpInstanceType} {GSharpInternalNames.StateMachine.WarpRegions}[{WarpRegionCapacity}] = {{}};");
+        context.Emitter.Writer.AppendLine($"uint32_t {GSharpInternalNames.StateMachine.WarpRegionDepth} = 0;");
+        context.Emitter.Writer.AppendLine($"bool {GSharpInternalNames.StateMachine.WarpReconverging} = false;");
+        context.Emitter.Writer.AppendLine($"uint32_t {GSharpInternalNames.StateMachine.WarpReconvergeRound} = 0;");
+        context.Emitter.Writer.AppendLine(
+            $"const char* {GSharpInternalNames.StateMachine.WarpReconvergeLocation} = nullptr;");
+        context.Emitter.Writer.AppendLine($"uint32_t {GSharpInternalNames.StateMachine.WarpDecidedRound} = 0;");
+        context.Emitter.Writer.AppendLine($"bool {GSharpInternalNames.StateMachine.WarpMayPass} = false;");
+    }
+
+    // The branches a thread can be inside at once (ManagedGpuContext keeps as many)
+    private const string WarpRegionCapacity = "16";
 
     // <parameter type> <name>; typed as the parameter is declared, so that a [GpuReadOnly] array keeps its const
     // elements and the copy on the first entry compiles

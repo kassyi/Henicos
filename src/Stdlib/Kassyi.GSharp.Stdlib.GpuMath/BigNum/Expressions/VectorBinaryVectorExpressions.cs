@@ -98,20 +98,20 @@ internal abstract class VectorBinaryVectorExpressionBase(
         {
             Left = new GpuBigIntVectorKernels.AotContexts.SignedVectorOperandReadOnly
             {
-                Limbs = operands.Left.Values.DevicePointer,
-                Signs = operands.Left.Signs.DevicePointer,
+                Limbs = operands.Left.Values.ToProxy(),
+                Signs = operands.Left.Signs.ToProxy(),
                 NumWords = operands.Left.WordsPerElement
             },
             Right = new GpuBigIntVectorKernels.AotContexts.SignedVectorOperandReadOnly
             {
-                Limbs = operands.Right.Values.DevicePointer,
-                Signs = operands.Right.Signs.DevicePointer,
+                Limbs = operands.Right.Values.ToProxy(),
+                Signs = operands.Right.Signs.ToProxy(),
                 NumWords = operands.Right.WordsPerElement
             },
             Result = new GpuBigIntVectorKernels.AotContexts.SignedVectorOutput
             {
-                Limbs = operands.Destination.Values.DevicePointer,
-                Signs = operands.Destination.Signs.DevicePointer,
+                Limbs = operands.Destination.Values.ToProxy(),
+                Signs = operands.Destination.Signs.ToProxy(),
                 NumWords = WordsPerElement
             },
             ScalarSign = 0u,
@@ -230,10 +230,10 @@ internal sealed class VectorDivVectorExpression(
         {
             Op = CreateZipOp(operands),
             IsModulo = false,
-            ZeroDivisor = operands.ZeroDivisor.DevicePointer
+            ZeroDivisor = operands.ZeroDivisor.ToProxy()
         };
         using var scratch = DivModScratch.Rent(workspace, ctx.Op, gridDimX);
-        ctx.Scratch = scratch?.DevicePointer ?? IntPtr.Zero;
+        ctx.Scratch = scratch?.ToProxy() ?? default;
         GpuBigIntVectorKernels.LaunchVectorZipDivKernelPtr(
             ctx, gridDimX, 1, 1, 32, 1, 1, 0, workspace.Stream);
     }
@@ -259,10 +259,10 @@ internal sealed class VectorModVectorExpression(
         {
             Op = CreateZipOp(operands),
             IsModulo = true,
-            ZeroDivisor = operands.ZeroDivisor.DevicePointer
+            ZeroDivisor = operands.ZeroDivisor.ToProxy()
         };
         using var scratch = DivModScratch.Rent(workspace, ctx.Op, gridDimX);
-        ctx.Scratch = scratch?.DevicePointer ?? IntPtr.Zero;
+        ctx.Scratch = scratch?.ToProxy() ?? default;
         GpuBigIntVectorKernels.LaunchVectorZipModKernelPtr(
             ctx, gridDimX, 1, 1, 32, 1, 1, 0, workspace.Stream);
     }

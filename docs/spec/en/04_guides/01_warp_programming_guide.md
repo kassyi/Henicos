@@ -142,17 +142,19 @@ When the shuffle occurs inside a conditional block where some threads in the war
 [GpuKernel]
 public static void DivergentExecution(int val)
 {
-    // On CUDA, ActiveMask computes who is actually executing this branch. The CPU dialects return every lane there
-    // (GSH0101); BallotSync before the branch (below) gives the same mask on every target.
+    // ActiveMask returns the lanes that run this branch together: the even lanes (0x55555555)
     if (ThreadIndex.X % 2 == 0) // Only even threads enter
     {
-        uint activeMask = Gpu.ActiveMask();
-        int result = Gpu.ShuffleDownSync(activeMask, val, 1);
+        uint activeMask = Warp.ActiveMask();
+        // Reads the next even lane, which takes part (an odd lane does not, and its value would be undefined)
+        int result = Warp.ShuffleDownSync(activeMask, val, 2);
     }
 }
 ```
 
-> **On the CPU dialects**: the native C++ build and the managed path run the threads of a warp one after another, so `Warp.ActiveMask()` there returns every lane of the warp that exists in the block (all 32, or fewer in the last warp of a block whose size is not a multiple of 32). That is the GPU result where every lane reaches the call. Inside a branch like the one above the GPU returns fewer lanes, and [GSH0101](../03_bcl_api/diagnostics/GSH0101.md) warns about the call. It also warns after a thread-dependent early `return` (the bounds guard). It does not warn in the body of `Gpu.GridStrideLoop`: in its last round the threads whose index is past the end have left the loop, so there the GPU may return fewer lanes than the CPU paths. A mask computed before the branch with `Warp.BallotSync` gives the same result on both:
+> **What `Warp.ActiveMask()` returns**: CUDA promises only that the result holds the calling lane and no lane that has exited. Which other lanes it holds is up to the scheduler: from Volta on (Independent Thread Scheduling), the lanes of a warp may run apart even on the same path, so the GPU may return a subset of the lanes on the current path. In practice the GPU returns the lanes that took the same way through the thread-dependent branches since the warp last ran together, which is where a branch or loop ends (its immediate post-dominator), and that have not exited: `0x0000000F` inside `if (t < 4)`, `0x0000000F` and `0xFFFFFFF0` from the same device function called on the two sides of an `if`/`else`, every lane after a branch or after a loop of a thread-dependent count, and the lanes left in the loop in the last round of `Gpu.GridStrideLoop` (`0x0000FFFF` for 80 elements and one block of 64 threads).
+>
+> **On the CPU dialects** the native C++ build and the managed path return that classic value: the lanes of the warp that reach the call in the same launcher round. A kernel or device function that reaches `Warp.ActiveMask()` makes its lanes wait for each other where a thread-dependent branch or loop ends, so that they reach the next call together again, as on the GPU. The value is unspecified within the bounds above, like the accuracy of the approximate math functions: a kernel whose result depends on which subset it gets is not portable between GPUs either. Use the mask as the mask of a collective of the lanes that run together (above), not as a count of lanes. A mask computed before the branch with `Warp.BallotSync` is defined on every target:
 
 ```csharp
 // Execution Context: G# Kernel (GPU or CPU)
@@ -227,11 +229,12 @@ public static void DeadlockExample(int val)
 [GpuKernel]
 public static void SafeActiveMaskExample(int val)
 {
-    // ⭕ SAFE on CUDA: Gpu.ActiveMask() in a divergent branch. The CPU dialects return every lane there (GSH0101); a
-    // mask from Warp.BallotSync(0xFFFFFFFFu, ThreadIndex.X < 16) before the branch is the same on every target
+    // ⭕ SAFE: Warp.ActiveMask() in a divergent branch returns the lanes that run it together (0x0000FFFF on CUDA and the
+    // CPU dialects); a mask from Warp.BallotSync(0xFFFFFFFFu, ThreadIndex.X < 16) before the branch is defined on every
+    // target
     if (ThreadIndex.X < 16)
     {
-        uint mask = Gpu.ActiveMask(); // Resolves to 0x0000FFFF on CUDA
+        uint mask = Warp.ActiveMask(); // 0x0000FFFF
         int partner = Gpu.ShuffleXorSync(mask, val, 1);
     }
 }

@@ -40,3 +40,4 @@ The rules of [`GpuBigUIntView`](GpuBigUIntView.md) apply: the view lives only in
 | --- | --- |
 | `GetElement(int index)` | A [`GpuBigUIntView`](GpuBigUIntView.md) of one element. |
 | `Slice(int elementOffset, int elementCount)` | A view of a range of the elements. |
+| `ToProxy()` | The words of the view as a kernel array argument of `TotalWords` words, for a `Launch{Kernel}Ptr` launcher or a shadow struct field. |

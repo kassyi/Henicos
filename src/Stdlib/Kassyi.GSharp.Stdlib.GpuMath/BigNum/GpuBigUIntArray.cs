@@ -78,6 +78,13 @@ public readonly struct GpuBigUIntArray : IDisposable
     public GpuBigUIntView GetElement(int index) => ((GpuBigUIntArrayView)this).GetElement(index);
 
     /// <summary>
+    /// Returns the array argument that passes the words of every element to a <c>Launch{Kernel}Ptr</c> launcher or a
+    /// shadow struct field: the kernel sees an array of <see cref="TotalWords"/> words.
+    /// </summary>
+    /// <exception cref="ObjectDisposedException">The buffer has been freed.</exception>
+    public GSharpArrayProxy ToProxy() => new() { Data = DevicePointer, Length = TotalWords };
+
+    /// <summary>
     /// Returns the element at <paramref name="index"/> as a <see cref="GpuBigUInt"/> that does not own the buffer, for
     /// the internal plumbing that needs the owned type; disposing it frees nothing.
     /// </summary>
