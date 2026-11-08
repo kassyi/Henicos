@@ -10,7 +10,7 @@ public abstract class YamlDialectBase : ITranspilerDialect
 
     public virtual void AppendType(ref TranspileContext context, ITypeSymbol? typeSymbol)
     {
-        typeSymbol = StructTranspiler.SubstituteTypeParameters(typeSymbol, context.Emitter.CurrentStructType,
+        typeSymbol = StructTypeSubstitution.SubstituteTypeParameters(typeSymbol, context.Emitter.CurrentStructType,
             context.Query.SemanticModel.Compilation);
 
         if (typeSymbol == null)
@@ -83,7 +83,7 @@ public abstract class YamlDialectBase : ITranspilerDialect
             return;
         }
 
-        StructTranspiler.RegisterUsedStructIfApplicable(typeSymbol, ref context);
+        StructOrdering.RegisterUsedStructIfApplicable(typeSymbol, ref context);
         context.Emitter.Writer.AppendFullyQualifiedCppName(typeSymbol);
 
         if (typeSymbol is not INamedTypeSymbol { IsGenericType: true } namedType ||

@@ -272,7 +272,7 @@ internal static class DeviceExportEmitter
         var definedFunctionFullNames = ImmutableArray.CreateBuilder<string>();
         foreach (var constructor in type.InstanceConstructors)
         {
-            if (StructTranspiler.IsEmittedStructConstructor(constructor, compilation))
+            if (StructConstructorEmitter.IsEmittedStructConstructor(constructor, compilation))
             {
                 var name = GlobalCppNames.GetConstructorName(constructor);
                 definedFunctions.Add(name);
@@ -285,7 +285,7 @@ internal static class DeviceExportEmitter
         {
             // A conversion, or an operator true or false, defined with the struct
             if (member is IMethodSymbol method &&
-                (StructTranspiler.IsEmittedStructConversion(method, compilation) ||
+                (StructConversionEmitter.IsEmittedStructConversion(method, compilation) ||
                  StructTruthOperatorEmitter.IsEmittedTruthOperator(method, compilation)))
             {
                 var name = GlobalCppNames.GetFunctionName(method);

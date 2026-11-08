@@ -20,7 +20,7 @@ internal static class PrimaryConstructorScenarios
         run(() => PrimaryConstructorKernels.LaunchInitializersKernel(output, blockDimX: Count));
 
         // X = a + 1 and Y = a * 2 with a = tid + 5: the initializers ran, a was not stored in X as it is.
-        // mutant: StructTranspiler.WriteStructMemberInitializers `if (!TryGetMemberInitializer(...))` ->
+        // mutant: StructConstructorEmitter.WriteStructMemberInitializers `if (!TryGetMemberInitializer(...))` ->
         // `if (!TryGetMemberInitializer(...) || primaryConstructor != null)` -> X and Y stay 0 (6 native tests fail)
         for (int i = 0; i < Count; i++)
         {
@@ -50,8 +50,9 @@ internal static class PrimaryConstructorScenarios
         run(() => PrimaryConstructorKernels.LaunchCapturedKernel(output, blockDimX: Count));
 
         // Sum = a + b + X with a = tid, b = 10, X = a; the setter writes the captured b, which Sum then reads.
-        // mutant: StructTranspiler.TryGetPrimaryParameter `member.Kind == StructAbiMemberKind.CapturedParameter ||` ->
-        // `false ||` -> the factory does not store a and b, which stay 0
+        // mutant: StructConstructorEmitter.TryGetPrimaryParameter
+        // `member.Kind == StructAbiMemberKind.CapturedParameter ||` -> `false ||` -> the factory does not store a and
+        // b, which stay 0
         for (int i = 0; i < Count; i++)
         {
             Assert.Equal(i + 10 + i, output[3 * i]);

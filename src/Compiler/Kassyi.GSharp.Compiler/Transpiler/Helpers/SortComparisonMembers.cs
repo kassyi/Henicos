@@ -31,7 +31,7 @@ internal static class SortComparisonMembers
     /// <summary>Records that the method sorts with <paramref name="method"/>, whose definition it then writes.</summary>
     public static void Use(IMethodSymbol method, ref TranspileContext context)
     {
-        StructTranspiler.RegisterUsedStructIfApplicable(method.ContainingType, ref context);
+        StructOrdering.RegisterUsedStructIfApplicable(method.ContainingType, ref context);
         var isRecorded = context.Emitter.SortComparisons
             .AsStackEnumerable()
             .Any(method, static (recorded, m) => recorded.IsEqualTo(m));

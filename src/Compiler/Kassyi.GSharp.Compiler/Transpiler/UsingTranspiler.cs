@@ -196,7 +196,7 @@ internal static class UsingTranspiler
     {
         resourceType = null;
         var compilation = context.Query.SemanticModel.Compilation;
-        type = StructTranspiler.SubstituteTypeParameters(type, context.Emitter.CurrentStructType, compilation);
+        type = StructTypeSubstitution.SubstituteTypeParameters(type, context.Emitter.CurrentStructType, compilation);
 
         // An unresolved type is the C# compiler's error
         if (type is null or IErrorTypeSymbol)
@@ -220,7 +220,7 @@ internal static class UsingTranspiler
             return false;
         }
 
-        StructTranspiler.RegisterUsedStructIfApplicable(named, ref context);
+        StructOrdering.RegisterUsedStructIfApplicable(named, ref context);
         var isRecorded = context.Emitter.DisposedStructs
             .AsStackEnumerable()
             .Any(named, static (recorded, type) => recorded.IsEqualTo(type));

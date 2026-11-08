@@ -127,7 +127,7 @@ internal sealed partial class ManagedExecutionRewriter(
         if (visited is ExpressionSyntax rewrittenExpr &&
             semanticModel.GetTypeSymbol(node) is INamedTypeSymbol { TypeKind: TypeKind.Struct, IsGenericType: true } structType &&
             semanticModel.GetSymbol(node) is IMethodSymbol ctor &&
-            StructTranspiler.IsEmittedStructConstructor(ctor, semanticModel.Compilation) &&
+            StructConstructorEmitter.IsEmittedStructConstructor(ctor, semanticModel.Compilation) &&
             DeclaresSharedMemoryInStruct(structType, semanticModel.Compilation))
         {
             var typeSyntax = SyntaxFactory.ParseTypeName(structType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));

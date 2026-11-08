@@ -241,7 +241,7 @@ internal static class MethodSignatureTranspiler
         var paramSemanticModel = context.Query.SemanticModel.Compilation.GetSemanticModel(p.SyntaxTree);
         var typeSymbol = paramSemanticModel.GetTypeSymbol(p.Type);
 
-        StructTranspiler.RegisterUsedStructIfApplicable(typeSymbol, ref context);
+        StructOrdering.RegisterUsedStructIfApplicable(typeSymbol, ref context);
 
         var paramSymbol = paramSemanticModel.GetDeclaredSymbol<IParameterSymbol>(p);
 
