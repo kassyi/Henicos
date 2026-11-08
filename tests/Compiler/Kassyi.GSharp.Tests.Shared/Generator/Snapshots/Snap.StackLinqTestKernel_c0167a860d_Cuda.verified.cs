@@ -116,7 +116,6 @@ __gsharp_id_0_data[0]=__gsharp_id_2_count;
 }
 }
 ";
-public static readonly string RunLinq_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +RunLinq_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_RunLinq = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__TestCases__StackLinqTestKernel__RunLinq", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerRunLinq() => global::Kassyi.GSharp.Tests.Shared.TestCases.StackLinqTestKernel.__gsharp_hfunc_RunLinq.Resolve();
@@ -240,7 +239,6 @@ __gsharp_id_0_data[0]=(__gsharp_id_2_hasEven?1:0);
 }
 }
 ";
-public static readonly string RunLinqAny_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +RunLinqAny_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_RunLinqAny = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__TestCases__StackLinqTestKernel__RunLinqAny", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerRunLinqAny() => global::Kassyi.GSharp.Tests.Shared.TestCases.StackLinqTestKernel.__gsharp_hfunc_RunLinqAny.Resolve();
@@ -364,7 +362,6 @@ __gsharp_id_0_data[0]=__gsharp_id_2_sum;
 }
 }
 ";
-public static readonly string RunLinqSum_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +RunLinqSum_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_RunLinqSum = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__TestCases__StackLinqTestKernel__RunLinqSum", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerRunLinqSum() => global::Kassyi.GSharp.Tests.Shared.TestCases.StackLinqTestKernel.__gsharp_hfunc_RunLinqSum.Resolve();
@@ -488,7 +485,6 @@ __gsharp_id_0_data[0]=__gsharp_id_2_first;
 }
 }
 ";
-public static readonly string RunLinqFirst_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +RunLinqFirst_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_RunLinqFirst = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__TestCases__StackLinqTestKernel__RunLinqFirst", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerRunLinqFirst() => global::Kassyi.GSharp.Tests.Shared.TestCases.StackLinqTestKernel.__gsharp_hfunc_RunLinqFirst.Resolve();
@@ -621,7 +617,6 @@ __gsharp_id_0_data[0]=__gsharp_id_2_sum;
 }
 }
 ";
-public static readonly string RunLinqIndexedAndSelectorSum_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +RunLinqIndexedAndSelectorSum_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_RunLinqIndexedAndSelectorSum = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__TestCases__StackLinqTestKernel__RunLinqIndexedAndSelectorSum", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerRunLinqIndexedAndSelectorSum() => global::Kassyi.GSharp.Tests.Shared.TestCases.StackLinqTestKernel.__gsharp_hfunc_RunLinqIndexedAndSelectorSum.Resolve();

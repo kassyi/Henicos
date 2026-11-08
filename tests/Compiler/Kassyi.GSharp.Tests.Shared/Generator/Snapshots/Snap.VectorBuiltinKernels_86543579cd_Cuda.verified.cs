@@ -94,7 +94,6 @@ __gsharp_id_2_result[__gsharp_id_4_tid]=float2{(float)(__gsharp_id_5_va.x+__gsha
 }
 }
 ";
-public static readonly string Vector2AddKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +Vector2AddKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_Vector2AddKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__VectorBuiltinKernels__Vector2AddKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerVector2AddKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.VectorBuiltinKernels.__gsharp_hfunc_Vector2AddKernel.Resolve();
@@ -306,7 +305,6 @@ __gsharp_id_2_result[__gsharp_id_4_tid]=float3{(float)(__gsharp_id_5_va.x+__gsha
 }
 }
 ";
-public static readonly string Vector3AddKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +Vector3AddKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_Vector3AddKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__VectorBuiltinKernels__Vector3AddKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerVector3AddKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.VectorBuiltinKernels.__gsharp_hfunc_Vector3AddKernel.Resolve();
@@ -518,7 +516,6 @@ __gsharp_id_2_result[__gsharp_id_4_tid]=float4{(float)(__gsharp_id_5_va.x+__gsha
 }
 }
 ";
-public static readonly string Vector4AddKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +Vector4AddKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_Vector4AddKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__VectorBuiltinKernels__Vector4AddKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerVector4AddKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.VectorBuiltinKernels.__gsharp_hfunc_Vector4AddKernel.Resolve();

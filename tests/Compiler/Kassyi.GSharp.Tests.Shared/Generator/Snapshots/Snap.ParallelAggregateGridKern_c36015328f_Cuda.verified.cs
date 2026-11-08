@@ -114,7 +114,6 @@ return __gsharp_grid_reduce(__gsharp_fusion_res, __gsharp_plus{}, __gsharp_grid_
 }());
 }
 ";
-public static readonly string GridSumKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +GridSumKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_GridSumKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Runtime__ParallelAggregateGridKernels__GridSumKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerGridSumKernel() => global::Kassyi.GSharp.Tests.Shared.Runtime.ParallelAggregateGridKernels.__gsharp_hfunc_GridSumKernel.Resolve();
@@ -284,7 +283,6 @@ return __gsharp_grid_reduce(__gsharp_fusion_res, __gsharp_plus{}, __gsharp_grid_
 }());
 }
 ";
-public static readonly string GridLongSumKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +GridLongSumKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_GridLongSumKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Runtime__ParallelAggregateGridKernels__GridLongSumKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerGridLongSumKernel() => global::Kassyi.GSharp.Tests.Shared.Runtime.ParallelAggregateGridKernels.__gsharp_hfunc_GridLongSumKernel.Resolve();
@@ -475,7 +473,6 @@ return __gsharp_grid_reduce(__gsharp_fusion_res, __gsharp_plus{}, __gsharp_grid_
 __gsharp_id_2_result[__gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x)]=__gsharp_id_3_total;
 }
 ";
-public static readonly string GridRepeatedSumKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +GridRepeatedSumKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_GridRepeatedSumKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Runtime__ParallelAggregateGridKernels__GridRepeatedSumKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerGridRepeatedSumKernel() => global::Kassyi.GSharp.Tests.Shared.Runtime.ParallelAggregateGridKernels.__gsharp_hfunc_GridRepeatedSumKernel.Resolve();
@@ -700,7 +697,6 @@ return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
 }
 ";
-public static readonly string GridSegmentSumKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +GridSegmentSumKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_GridSegmentSumKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Runtime__ParallelAggregateGridKernels__GridSegmentSumKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerGridSegmentSumKernel() => global::Kassyi.GSharp.Tests.Shared.Runtime.ParallelAggregateGridKernels.__gsharp_hfunc_GridSegmentSumKernel.Resolve();
@@ -868,7 +864,6 @@ return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
 }());
 }
 ";
-public static readonly string GridLambdaBlockIndexKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +GridLambdaBlockIndexKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_GridLambdaBlockIndexKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Runtime__ParallelAggregateGridKernels__GridLambdaBlockIndexKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerGridLambdaBlockIndexKernel() => global::Kassyi.GSharp.Tests.Shared.Runtime.ParallelAggregateGridKernels.__gsharp_hfunc_GridLambdaBlockIndexKernel.Resolve();

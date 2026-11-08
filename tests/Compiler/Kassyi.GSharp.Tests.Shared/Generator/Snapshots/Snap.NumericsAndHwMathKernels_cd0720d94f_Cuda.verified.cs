@@ -100,7 +100,6 @@ __gsharp_id_1_u64Data[5]=__gsharp_rotl64(__gsharp_id_3_u64Val,10);
 __gsharp_id_1_u64Data[6]=__gsharp_rotr64(__gsharp_id_3_u64Val,7);
 }
 ";
-public static readonly string BitOperationsTestKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +BitOperationsTestKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_BitOperationsTestKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__NumericsAndHwMathKernels__BitOperationsTestKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerBitOperationsTestKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.NumericsAndHwMathKernels.__gsharp_hfunc_BitOperationsTestKernel.Resolve();
@@ -269,7 +268,6 @@ __syncwarp(4294967295U);
 atomicAdd(&__gsharp_id_0_u32Out[8],42u);
 }
 ";
-public static readonly string PtxIntrinsicsExpansionKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +PtxIntrinsicsExpansionKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_PtxIntrinsicsExpansionKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__NumericsAndHwMathKernels__PtxIntrinsicsExpansionKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerPtxIntrinsicsExpansionKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.NumericsAndHwMathKernels.__gsharp_hfunc_PtxIntrinsicsExpansionKernel.Resolve();
