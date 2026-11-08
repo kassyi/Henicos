@@ -29,8 +29,6 @@ internal abstract class FloatVectorBinaryVectorExpressionBase(
     [TakesOwnership] IGpuBigFloatVectorExpression right,
     int wordsPerElement) : IGpuBigFloatVectorExpression, IDeviceCountedFloatVector
 {
-    protected const int DefaultDivShiftBits = 32;
-
     public int Length => left.Length;
     public int WordsPerElement { get; } = wordsPerElement;
 
@@ -256,7 +254,6 @@ internal sealed class FloatVectorDivVectorExpression(
         var ctx = new GpuBigIntVectorKernels.AotContexts.VectorFloatDiv
         {
             FloatOp = CreateZipFloatOp(operands),
-            PreShiftBits = DefaultDivShiftBits,
             ZeroDivisor = operands.ZeroDivisor.DevicePointer
         };
         using var scratch = DivModScratch.Rent(workspace, ctx.FloatOp.Core, gridDimX);

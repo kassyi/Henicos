@@ -220,7 +220,6 @@ public static partial class GpuBigIntVectorKernels
     public struct VectorFloatDivContext
     {
         public VectorFloatBinaryOperationContext FloatOp;
-        public int PreShiftBits;
 
         /// <inheritdoc cref="VectorDivModContext.ZeroDivisor"/>
         public uint[] ZeroDivisor;

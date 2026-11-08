@@ -165,14 +165,21 @@ internal abstract class FloatVectorUnaryExpressionBase(
 
         // The host loop runs over the elements only: a value after the count (the zero padding of a Where) could make
         // an element operation throw (Log(0))
-        FloatVectorElementwiseHelper.ExecuteUnary(workspace, vecResult.Storage, output.Destination,
-            vecResult.Elements(workspace), EvaluateElement);
+        ExecuteElements(workspace, vecResult.Storage, output.Destination, vecResult.Elements(workspace));
         return new FloatVectorEvaluation(output.Close(workspace, vecResult.Count), vecResult.Count, _cache.Lease);
     }
 
     protected virtual void ValidateBeforeEvaluate()
     {
     }
+
+    /// <summary>Runs <see cref="EvaluateElement"/> over the first <paramref name="count"/> elements.</summary>
+    protected virtual void ExecuteElements(
+        GpuWorkspace workspace,
+        GpuBigFloatArrayView source,
+        GpuBigFloatArrayView destination,
+        int count) =>
+        FloatVectorElementwiseHelper.ExecuteUnary(workspace, source, destination, count, EvaluateElement);
 
     protected abstract GpuFloatResult EvaluateElement(
         ref GpuBigIntExecutionContext context,
@@ -218,6 +225,9 @@ internal sealed class FloatVectorDivByUInt32Expression(
     [TakesOwnership] IGpuBigFloatVectorExpression vector,
     uint divisor) : FloatVectorUnaryExpressionBase(vector)
 {
+    // The divisor as a one-word float (exponent 0) while the elements are evaluated; default otherwise
+    private GpuFloatOperand _divisorOperand;
+
     protected override void ValidateBeforeEvaluate()
     {
         if (divisor == 0)
@@ -226,13 +236,35 @@ internal sealed class FloatVectorDivByUInt32Expression(
         }
     }
 
+    protected override void ExecuteElements(
+        GpuWorkspace workspace,
+        GpuBigFloatArrayView source,
+        GpuBigFloatArrayView destination,
+        int count)
+    {
+        if (count == 0)
+        {
+            return;
+        }
+
+        using var divisorWord = workspace.RentTemp(1);
+        workspace.Provider.WriteWord(divisorWord.DevicePointer, 0, divisor, workspace.Stream);
+        _divisorOperand = new GpuFloatOperand(divisorWord.Handle, 0);
+        try
+        {
+            base.ExecuteElements(workspace, source, destination, count);
+        }
+        finally
+        {
+            _divisorOperand = default;
+        }
+    }
+
+    // The quotient rounded toward zero to the precision of the element and normalized, as every float division
     protected override GpuFloatResult EvaluateElement(
         ref GpuBigIntExecutionContext context,
         IGpuBigFloatArithmetic arithmetic,
         in GpuFloatOperand source,
-        GpuBigIntMemoryHandle destination)
-    {
-        var res = arithmetic.DivideByUInt32(ref context, in source, divisor, destination);
-        return new GpuFloatResult(res.Exponent, res.IsNegative);
-    }
+        GpuBigIntMemoryHandle destination) =>
+        arithmetic.Divide(ref context, in source, in _divisorOperand, destination);
 }
