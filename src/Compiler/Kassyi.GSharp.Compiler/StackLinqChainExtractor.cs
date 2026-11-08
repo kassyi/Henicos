@@ -13,8 +13,9 @@ internal static class StackLinqChainExtractor
     /// </summary>
     /// <remarks>
     /// [WHY] Folding a Skip that follows a Select skips the selector for the skipped elements, which C# calls. That changes
-    /// nothing for a selector without side effects; after one that may write (a statement body, a method group, or an
-    /// expression with writes), the following stages stay in the loop so that it is called as many times as in C#.
+    /// nothing for a selector that neither writes nor raises an error; after one that may (a statement body, a method
+    /// group, or an expression with writes or with an operation that may trap, such as <c>10 / x</c> or
+    /// <c>table[x]</c>), the following stages stay in the loop so that it is called as many times as in C#.
     /// </remarks>
     public static int CountRangeStages(in StackLinqChain chain, SemanticModel model)
     {
@@ -28,7 +29,7 @@ internal static class StackLinqChainExtractor
             }
 
             folded = i + 1;
-            if (stage.Operator == StackLinqOperator.Select && MayWrite(stage, model))
+            if (stage.Operator == StackLinqOperator.Select && MayWriteOrTrap(stage, model))
             {
                 break;
             }
@@ -37,12 +38,13 @@ internal static class StackLinqChainExtractor
         return folded;
     }
 
-    // A selector that is not an expression lambda, or one whose expression writes a variable or memory
-    private static bool MayWrite(in LinqStage stage, SemanticModel model) =>
+    // A selector that is not an expression lambda, or one whose expression writes a variable or memory or may raise a
+    // run-time error
+    private static bool MayWriteOrTrap(in LinqStage stage, SemanticModel model) =>
         StackLinqHelper.GetLambdaArgument(stage.Invocation, stage.Symbol).Expression is not LambdaExpressionSyntax
         {
             ExpressionBody: { } body
-        } || !ExpressionEffects.Of(body, model).Writes.IsEmpty;
+        } || !ExpressionEffects.Of(body, model).Writes.IsEmpty || ExpressionTraps.MayTrap(body, model);
 
     /// <summary>The chain that ends in the terminal call <paramref name="node"/>, from its source to the terminal.</summary>
     public static bool TryExtract(
