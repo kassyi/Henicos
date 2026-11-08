@@ -29,6 +29,11 @@ namespace Kassyi.GSharp.Tests.Shared.Core
 {
 public partial class SharedArrayArgumentKernels
 {
+private static readonly global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[] s_errorSites = new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[]
+{
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(637817380u, "SharedArrayArgumentKernels.cs", 220, 13, "InAndElementFieldKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(973143630u, "SharedArrayArgumentKernels.cs", 221, 13, "InAndElementFieldKernel", "G#: a null array is read"),
+};
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static partial class AotContexts
@@ -701,8 +706,8 @@ __gsharp_switch_1_state_0:
 {
 if((int)threadIdx.x==0)
 {
-__gsharp_array_at(__gsharp_id_0_h.__gsharp_mb_Data, 0, ""G#: a null array is read at SharedArrayArgumentKernels.cs(59,13)"")=4;
-__gsharp_id_1_a[1]=__gsharp_add_i32(__gsharp_id_1_a[0],__gsharp_array_at(__gsharp_id_0_h.__gsharp_mb_Data, 0, ""G#: a null array is read at SharedArrayArgumentKernels.cs(60,27)""));
+__gsharp_id_0_h.__gsharp_mb_Data[0]=4;
+__gsharp_id_1_a[1]=__gsharp_add_i32(__gsharp_id_1_a[0],__gsharp_id_0_h.__gsharp_mb_Data[0]);
 }
 __gsharp_state=-1;
 return;
@@ -824,6 +829,9 @@ throw new global::System.ArgumentNullException(nameof(a));
 }
 if (a.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(a));
+}
+if (h.Data is null){
+throw new global::System.ArgumentNullException(nameof(h), "h.Data is null, but the field is not nullable.");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SharedArrayArgumentKernels.FieldAndArgumentKernel");
 var __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
@@ -2018,8 +2026,8 @@ __gsharp_switch_1_state_0:
 {
 if((int)threadIdx.x==0)
 {
-__gsharp_array_at(__gsharp_id_0_h.__gsharp_mb_Data, 0, ""G#: a null array is read at SharedArrayArgumentKernels.cs(113,13)"")=1;
-__gsharp_id_1_a[1]=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_0_h.__gsharp_mb_Data, 0, ""G#: a null array is read at SharedArrayArgumentKernels.cs(114,20)""),1);
+__gsharp_id_0_h.__gsharp_mb_Data[0]=1;
+__gsharp_id_1_a[1]=__gsharp_add_i32(__gsharp_id_0_h.__gsharp_mb_Data[0],1);
 __gsharp_id_1_a[2]=__gsharp_add_i32(__gsharp_add_i32(__gsharp_id_2_b[0],__gsharp_id_2_b[1]),1);
 }
 __gsharp_state=-1;
@@ -2149,6 +2157,9 @@ throw new global::System.ArgumentNullException(nameof(b));
 }
 if (b.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(b));
+}
+if (h.Data is null){
+throw new global::System.ArgumentNullException(nameof(h), "h.Data is null, but the field is not nullable.");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SharedArrayArgumentKernels.ThreeHoldersKernel");
 if (!global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayArgumentKernels.AotContexts.HoldsArray_SharedArrayHolder(h, b) && !global::System.Object.ReferenceEquals(b, a))
@@ -4257,8 +4268,8 @@ __gsharp_switch_1_state_0:
 if((int)threadIdx.x==0)
 {
 __gsharp_id_0_input[1]=9;
-__gsharp_array_at(__gsharp_id_1_h.__gsharp_mb_Data, 0, ""G#: a null array is read at SharedArrayArgumentKernels.cs(209,13)"")=4;
-__gsharp_array_at(__gsharp_id_1_h.__gsharp_mb_Data, 1, ""G#: a null array is read at SharedArrayArgumentKernels.cs(210,13)"")=__gsharp_add_i32(__gsharp_id_0_input[0],__gsharp_array_at(__gsharp_id_1_h.__gsharp_mb_Data, 1, ""G#: a null array is read at SharedArrayArgumentKernels.cs(210,36)""));
+__gsharp_id_1_h.__gsharp_mb_Data[0]=4;
+__gsharp_id_1_h.__gsharp_mb_Data[1]=__gsharp_add_i32(__gsharp_id_0_input[0],__gsharp_id_1_h.__gsharp_mb_Data[1]);
 }
 __gsharp_state=-1;
 return;
@@ -4381,6 +4392,9 @@ throw new global::System.ArgumentNullException(nameof(input));
 }
 if (input.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(input));
+}
+if (h.Data is null){
+throw new global::System.ArgumentNullException(nameof(h), "h.Data is null, but the field is not nullable.");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SharedArrayArgumentKernels.InAndFieldKernel");
 if (!global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayArgumentKernels.AotContexts.HoldsArray_SharedArrayHolder(h, input))
@@ -4535,8 +4549,8 @@ __gsharp_switch_1_state_0:
 {
 if((int)threadIdx.x==0)
 {
-__gsharp_array_at(__gsharp_id_1_bags[0].__gsharp_mb_Data, 0, ""G#: a null array is read at SharedArrayArgumentKernels.cs(220,13)"")=6;
-__gsharp_array_at(__gsharp_id_1_bags[0].__gsharp_mb_Data, 1, ""G#: a null array is read at SharedArrayArgumentKernels.cs(221,13)"")=__gsharp_add_i32(__gsharp_id_0_input[0],1);
+__gsharp_array_at(__gsharp_id_1_bags[0].__gsharp_mb_Data, 0, 637817380u)=6;
+__gsharp_array_at(__gsharp_id_1_bags[0].__gsharp_mb_Data, 1, 973143630u)=__gsharp_add_i32(__gsharp_id_0_input[0],1);
 }
 __gsharp_state=-1;
 return;
@@ -4768,6 +4782,10 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.EndGrid();
 return;
 }
 var __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_InAndElementFieldKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Core__SharedArrayArgumentKernels__InAndElementFieldKernel", __gsharp_dll_path);
+if (s_errorSites.Length > 0)
+{
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
+}
 byte[]? __gsharp_shadow_1 = null;
 var __gsharp_allocated_ptrs_1 = new global::System.Collections.Generic.List<global::System.IntPtr>();
 int __gsharp_size_1 = checked(bags.Length * sizeof(global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayArgumentKernels.AotContexts.ConvertBag));
