@@ -53,7 +53,7 @@ Number of elements.
 `length * sizeof(T)` overflows `nint`.
 
 `CudaException`<br>
-The CUDA driver failed to query the current context or allocate device memory.
+The CUDA driver failed to make the context current or allocate device memory.
 
 ## GpuBuffer(IntPtr)
 
@@ -165,7 +165,7 @@ The CUDA driver failed to free the device allocation (`cuMemFree_v2`).
 
 ## Remarks
 
-`GpuBuffer<T>` captures the current CUDA context (`cuCtxGetCurrent`) at allocation time and automatically pushes/pops that owning context during `CopyToDevice`, `CopyToHost`, and `Dispose`. When [GpuKernelLoader.IsCpuFallbackMode](GpuKernelLoader.md#iscpufallbackmode) is active, `GpuBuffer<T>` transparently allocates unmanaged host memory via `Marshal.AllocHGlobal` and performs copies via `Buffer.MemoryCopy`.
+`GpuBuffer<T>` allocates in the context of the calling thread's active [GpuKernelLoader.CudaContextScope](GpuKernelLoader.md#gpukernelloadercudacontextscope), or in the global context when no scope is active, so it needs no scope of its own. It keeps that context as its owning context and automatically pushes/pops it during `CopyToDevice`, `CopyToHost`, and `Dispose`. When [GpuKernelLoader.IsCpuFallbackMode](GpuKernelLoader.md#iscpufallbackmode) is active, `GpuBuffer<T>` transparently allocates unmanaged host memory via `Marshal.AllocHGlobal` and performs copies via `Buffer.MemoryCopy`.
 
 ## Examples
 
