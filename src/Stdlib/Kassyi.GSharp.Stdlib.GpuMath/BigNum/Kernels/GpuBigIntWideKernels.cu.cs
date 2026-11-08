@@ -172,4 +172,100 @@ public static partial class GpuBigIntWideKernels
             GpuDomainErrors.Report(status, GpuDomainErrors.FitOverflow);
         }
     }
+
+    /// <summary>
+    /// <c>result = |a - b|</c> over <paramref name="resultWords"/> words, at least as many as each operand: the
+    /// difference, and its two's complement when it borrowed. Writes <c>flags[0] = 1</c> when it borrowed
+    /// (<c>b &gt; a</c>) and <c>flags[1] = 1</c> when the result is not zero. Launch one block whose size is a multiple
+    /// of 32. The result must not overlap an operand.
+    /// </summary>
+    [GpuKernel]
+    public static void MagnitudeDifferenceKernel([GpuReadOnly] uint[] a, int aWords, [GpuReadOnly] uint[] b,
+        int bWords, uint[] result, int resultWords, uint[] flags)
+    {
+        int tid = ThreadIndex.X;
+        int bDim = BlockDimension.X;
+        int laneId = tid % 32;
+        int warpId = tid / 32;
+
+        SharedMemory<uint> sharedCarry = new SharedMemory<uint>(32);
+        SharedMemory<uint> topCarry = new SharedMemory<uint>(1);
+        SharedMemory<uint> nonZero = new SharedMemory<uint>(1);
+
+        if (tid == 0)
+        {
+            nonZero[0] = 0u;
+        }
+
+        // a - b is a + ~b + 1
+        uint blockCarryIn = 1u;
+        for (int offset = 0; offset < resultWords; offset += bDim)
+        {
+            int idx = offset + tid;
+            uint valA = idx < aWords ? a[idx] : 0u;
+            uint valB = ~(idx < bWords ? b[idx] : 0u);
+
+            ulong sum = (ulong)valA + valB;
+            uint g = (uint)(sum >> 32);
+            uint p = (uint)sum == 0xFFFFFFFFu ? 1u : 0u;
+
+            uint carryIn = GpuBigIntVectorKernels.PropagateBlockCarry(g, p, blockCarryIn, sharedCarry, laneId, warpId,
+                bDim, out blockCarryIn);
+
+            if (idx < resultWords)
+            {
+                result[idx] = (uint)sum + carryIn;
+            }
+
+            if (idx == resultWords - 1)
+            {
+                topCarry[0] = g | (p & carryIn);
+            }
+
+            Gpu.SyncThreads();
+        }
+
+        // No carry out of a + ~b + 1 is a borrow: b > a, and the result holds a - b modulo the width. Negate it:
+        // ~x + 1, each thread reading and writing its own words.
+        bool borrowed = topCarry[0] == 0u;
+        if (borrowed)
+        {
+            blockCarryIn = 1u;
+            for (int offset = 0; offset < resultWords; offset += bDim)
+            {
+                int idx = offset + tid;
+                uint valA = idx < resultWords ? ~result[idx] : 0u;
+
+                ulong sum = valA;
+                uint g = 0u;
+                uint p = (uint)sum == 0xFFFFFFFFu ? 1u : 0u;
+
+                uint carryIn = GpuBigIntVectorKernels.PropagateBlockCarry(g, p, blockCarryIn, sharedCarry, laneId,
+                    warpId, bDim, out blockCarryIn);
+
+                if (idx < resultWords)
+                {
+                    result[idx] = (uint)sum + carryIn;
+                }
+
+                Gpu.SyncThreads();
+            }
+        }
+
+        for (int i = tid; i < resultWords; i += bDim)
+        {
+            if (result[i] != 0u)
+            {
+                nonZero[0] = 1u;
+            }
+        }
+
+        Gpu.SyncThreads();
+
+        if (tid == 0)
+        {
+            flags[0] = borrowed ? 1u : 0u;
+            flags[1] = nonZero[0];
+        }
+    }
 }

@@ -41,6 +41,7 @@ public IGpuBigIntExpression Node { get; }
 | [Evaluate(GpuBigUInt)](#evaluategpubiguint) | Evaluates this signed expression into the provided destination buffer. |
 | [Evaluate(GpuWorkspace)](#evaluategpuworkspace) | Evaluates this signed expression into a newly rented temporary GPU buffer. |
 | [EvaluateWithCudaGraph(GpuWorkspace, GpuBigUInt?)](#evaluatewithcudagraphgpuworkspace-gpubiguint) | Evaluates this expression tree by dynamically compiling into a CUDA Graph, launching, and destroying it. |
+| [Fit(int)](#fitint) | Narrows the expression to a word count, checked: a magnitude that does not fit is a domain error. |
 | [EvaluateWithCudaGraphAsync(GpuWorkspace, GpuBigUInt?, CancellationToken)](#evaluatewithcudagraphasyncgpuworkspace-gpubiguint-cancellationtoken) | Like `EvaluateWithCudaGraph`, but waits for the graph without blocking the calling thread. |
 | [Max(GpuBigIntExpr, GpuBigIntExpr)](#maxgpubigintexpr-gpubigintexpr) | Constructs a lazy expression that resolves to the maximum of two signed big integer expressions. |
 | [Min(GpuBigIntExpr, GpuBigIntExpr)](#mingpubigintexpr-gpubigintexpr) | Constructs a lazy expression that resolves to the minimum of two signed big integer expressions. |
@@ -77,6 +78,9 @@ If the capture fails, the capture is ended and every buffer it took is returned 
 `InvalidOperationException`<br>
 Thrown if warm-up evaluation fails prior to beginning CUDA Graph capture, or if the expression is already owned by a graph that is alive.
 
+`NotSupportedException`<br>
+Thrown if the expression adds or subtracts values whose effective signs differ: the sign of the result is read from the device, which a capture cannot record.
+
 ## Evaluate(GpuBigUInt)
 
 Evaluates this signed expression into the provided destination buffer.
@@ -88,12 +92,46 @@ public GpuBigInt Evaluate(GpuBigUInt destination);
 #### Parameters
 
 `destination` _GpuBigUInt_<br>
-The pre-allocated GPU buffer to store the evaluated magnitude. It may be the magnitude of an operand (`(a / b).Evaluate(a.Value)`): the root then computes into a temporary and copies the result.
+The pre-allocated GPU buffer to store the evaluated magnitude, at least as wide as the result (`Node.NumWords`); its words above the result are cleared. It may be the magnitude of an operand (`(a / b).Evaluate(a.Value)`): the root then computes into a temporary and copies the result.
 
 #### Returns
 
 _GpuBigInt_<br>
 A new `GpuBigInt` instance wrapping the destination buffer with the evaluated sign.
+
+#### Exceptions
+
+`ArgumentException`<br>
+Thrown if `destination` is narrower than the result; nothing is written. Narrow the expression with `Fit`.
+
+## Fit(int)
+
+Narrows this expression to `words` words, checked: a magnitude that does not fit is a domain error, as a C# `checked` narrowing. The sign is kept.
+
+```csharp
+public GpuBigIntExpr Fit(int words);
+```
+
+#### Parameters
+
+`words` _int_<br>
+The word count of the result, at least 1.
+
+#### Returns
+
+_GpuBigIntExpr_<br>
+A new `GpuBigIntExpr` whose result has `words` words.
+
+#### Remarks
+
+On the GPU the domain error is reported as `OverflowException` at the next read of the workspace stream (or by `GpuWorkspace.ThrowIfDeviceErrors`); in CPU fallback mode it is thrown when the expression is evaluated.
+
+There is no unchecked counterpart (`Truncate`) for signed expressions. `GpuBigInt` stores a sign and a magnitude, so keeping the low words of the magnitude is not what a C# `unchecked` narrowing does: that keeps the low bits of the two's complement and reads them as a signed number of the narrower width. The two disagree whenever the kept magnitude reaches the sign bit: `unchecked((int)2147483648L)` is `int.MinValue`, while the sign and the low word of the magnitude stay `+2147483648`.
+
+#### Exceptions
+
+`ArgumentOutOfRangeException`<br>
+Thrown if `words` is below 1.
 
 ## Evaluate(GpuWorkspace)
 
@@ -225,6 +263,8 @@ A new `GpuBigIntExpr` representing the Min AST node.
 > [!IMPORTANT]
 > **Capture Warm-Up Requirement:** During CUDA Graph capture (`cuStreamBeginCapture`), any device memory allocation (`cuMemAlloc`) will invalidate the capture stream. `CompileToGraph` executes an automated warm-up pass before capture begins to ensure all necessary memory buffers and JIT kernels are primed outside the capture window.
 
+**Result widths:** a result never overflows. Every node has an upper bound of its result in bits, computed from its operands when the expression is built: `a + b` and `a - b` one bit more than the wider operand, `a * b` the sum of the operands, `a / b` the dividend, `a % b` the narrower operand, `Max` and `Min` the wider operand. The result has the words of that bound (`Node.NumWords`); narrow it explicitly with `Fit`. Adding or subtracting values whose effective signs differ reads two words from the device once, because the sign of the result depends on the values.
+
 This struct serves as the frontend for operator overloading on GPU BigIntegers, avoiding memory allocations by building a lightweight AST. The expression tree is then evaluated lazily in a single pass on the GPU device or compiled into an executable CUDA Graph for high-frequency kernel dispatch.
 
 ## Examples
@@ -260,8 +300,8 @@ GpuBigIntExpr exprB = b;
 var sumExpr = exprA + exprB;
 var prodExpr = sumExpr * exprA;
 
-// Evaluate AST back to a magnitude buffer
-using var dest = new GpuBigUInt(workspace, 8);
+// Evaluate AST back to a magnitude buffer as wide as the result: (4 words + 1 bit) * 4 words needs 9 words
+using var dest = new GpuBigUInt(workspace, prodExpr.Node.NumWords);
 var finalResult = prodExpr.Evaluate(dest);
 
 Console.WriteLine($"Result={finalResult.Value.ToBigInteger(finalResult.IsNegative)}");
