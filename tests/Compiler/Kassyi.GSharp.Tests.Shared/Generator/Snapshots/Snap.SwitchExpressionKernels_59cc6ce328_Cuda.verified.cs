@@ -98,7 +98,6 @@ default: return (-1);
 }());
 }
 ";
-public static readonly string SimpleConstantSwitchKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +SimpleConstantSwitchKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_SimpleConstantSwitchKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__SwitchExpressionKernels__SimpleConstantSwitchKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerSimpleConstantSwitchKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.SwitchExpressionKernels.__gsharp_hfunc_SimpleConstantSwitchKernel.Resolve();
@@ -259,7 +258,6 @@ default: return (-1.0f);
 }());
 }
 ";
-public static readonly string FloatingPointReturnSwitchKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +FloatingPointReturnSwitchKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_FloatingPointReturnSwitchKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__SwitchExpressionKernels__FloatingPointReturnSwitchKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerFloatingPointReturnSwitchKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.SwitchExpressionKernels.__gsharp_hfunc_FloatingPointReturnSwitchKernel.Resolve();
@@ -422,7 +420,6 @@ default: return 0;
 }());
 }
 ";
-public static readonly string MultipleArmsBoundarySwitchKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +MultipleArmsBoundarySwitchKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_MultipleArmsBoundarySwitchKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__SwitchExpressionKernels__MultipleArmsBoundarySwitchKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerMultipleArmsBoundarySwitchKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.SwitchExpressionKernels.__gsharp_hfunc_MultipleArmsBoundarySwitchKernel.Resolve();

@@ -105,7 +105,6 @@ __gsharp_id_0_data[__gsharp_id_2_idx]=__gsharp_id_3_val;
 }
 }
 ";
-public static readonly string BranchDivergenceKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +BranchDivergenceKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_BranchDivergenceKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Henicos__Benchmarks__ComputeBenchmarks__BranchDivergenceKernels__BranchDivergenceKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerBranchDivergenceKernel() => global::Henicos.Benchmarks.ComputeBenchmarks.BranchDivergenceKernels.__gsharp_hfunc_BranchDivergenceKernel.Resolve();

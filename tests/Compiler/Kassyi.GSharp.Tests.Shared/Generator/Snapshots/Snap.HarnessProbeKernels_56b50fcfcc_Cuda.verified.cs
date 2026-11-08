@@ -94,7 +94,6 @@ __gsharp_id_2_r[__gsharp_id_4_o]=__gsharp_id_0_a[__gsharp_id_3_t]+__gsharp_id_1_
 __gsharp_id_2_r[__gsharp_add_i32(__gsharp_id_4_o,1)]=__gsharp_id_0_a[__gsharp_id_3_t]^__gsharp_id_1_b[__gsharp_id_3_t];
 }
 ";
-public static readonly string UInt32AddMatrixKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +UInt32AddMatrixKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_UInt32AddMatrixKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__HarnessProbeKernels__UInt32AddMatrixKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerUInt32AddMatrixKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.HarnessProbeKernels.__gsharp_hfunc_UInt32AddMatrixKernel.Resolve();
@@ -296,7 +295,6 @@ public const string LastWriterKernel_Source = @"extern ""C"" __global__ void __g
 __gsharp_id_0_r[0]=__gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 }
 ";
-public static readonly string LastWriterKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +LastWriterKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_LastWriterKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__HarnessProbeKernels__LastWriterKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerLastWriterKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.HarnessProbeKernels.__gsharp_hfunc_LastWriterKernel.Resolve();

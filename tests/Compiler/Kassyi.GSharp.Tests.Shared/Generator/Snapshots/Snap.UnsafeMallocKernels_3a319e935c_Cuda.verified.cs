@@ -98,7 +98,6 @@ __gsharp_id_0_output[__gsharp_id_1_tid]=__gsharp_id_4_sum;
 free(__gsharp_id_2_block);
 }
 ";
-public static readonly string MallocRoundTripKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +MallocRoundTripKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_MallocRoundTripKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__UnsafeMallocKernels__MallocRoundTripKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerMallocRoundTripKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.UnsafeMallocKernels.__gsharp_hfunc_MallocRoundTripKernel.Resolve();

@@ -97,7 +97,6 @@ int __gsharp_id_2_i = (int)threadIdx.x;
 __gsharp_id_0_x[__gsharp_id_2_i]=((__gsharp_id_1_bias.data == nullptr)?__gsharp_id_0_x[__gsharp_id_2_i]:__gsharp_id_0_x[__gsharp_id_2_i]+__gsharp_id_1_bias[__gsharp_id_2_i]);
 }
 ";
-public static readonly string IsNullBiasKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +IsNullBiasKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_IsNullBiasKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OptionalArrayKernels__IsNullBiasKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerIsNullBiasKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.OptionalArrayKernels.__gsharp_hfunc_IsNullBiasKernel.Resolve();
@@ -246,7 +245,6 @@ int __gsharp_id_2_i = (int)threadIdx.x;
 __gsharp_id_0_x[__gsharp_id_2_i]=((__gsharp_id_1_bias.data == nullptr)?(-1.0f):(((__gsharp_id_1_bias.data != nullptr)?__gsharp_id_1_bias[__gsharp_id_2_i]:(-2.0f))));
 }
 ";
-public static readonly string EqualsNullBiasKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +EqualsNullBiasKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_EqualsNullBiasKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OptionalArrayKernels__EqualsNullBiasKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerEqualsNullBiasKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.OptionalArrayKernels.__gsharp_hfunc_EqualsNullBiasKernel.Resolve();
@@ -397,7 +395,6 @@ __gsharp_id_0_o[0]=__gsharp_id_1_bias.length;
 }
 }
 ";
-public static readonly string LengthOptionalKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +LengthOptionalKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_LengthOptionalKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OptionalArrayKernels__LengthOptionalKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerLengthOptionalKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.OptionalArrayKernels.__gsharp_hfunc_LengthOptionalKernel.Resolve();
@@ -552,7 +549,6 @@ __gsharp_id_0_bias[0]=5.0f;
 }
 }
 ";
-public static readonly string OutOptionalKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +OutOptionalKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_OutOptionalKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OptionalArrayKernels__OutOptionalKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerOutOptionalKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.OptionalArrayKernels.__gsharp_hfunc_OutOptionalKernel.Resolve();
@@ -703,7 +699,6 @@ __gsharp_id_0_bias[0]=__gsharp_id_0_bias[0]+1.0f;
 }
 }
 ";
-public static readonly string InOutOptionalKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +InOutOptionalKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_InOutOptionalKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OptionalArrayKernels__InOutOptionalKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerInOutOptionalKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.OptionalArrayKernels.__gsharp_hfunc_InOutOptionalKernel.Resolve();
@@ -852,7 +847,6 @@ int __gsharp_id_2_i = (int)threadIdx.x;
 __gsharp_id_0_x[__gsharp_id_2_i]=__gsharp_id_0_x[__gsharp_id_2_i]+__gsharp_id_1_y[__gsharp_id_2_i];
 }
 ";
-public static readonly string MemoryAddKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +MemoryAddKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_MemoryAddKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OptionalArrayKernels__MemoryAddKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerMemoryAddKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.OptionalArrayKernels.__gsharp_hfunc_MemoryAddKernel.Resolve();
@@ -983,7 +977,6 @@ int __gsharp_id_1_i = (int)threadIdx.x;
 __gsharp_id_0_segment[__gsharp_id_1_i]=__gsharp_id_0_segment[__gsharp_id_1_i]*2.0f+__gsharp_id_0_segment.length;
 }
 ";
-public static readonly string SegmentScaleKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +SegmentScaleKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_SegmentScaleKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OptionalArrayKernels__SegmentScaleKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerSegmentScaleKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.OptionalArrayKernels.__gsharp_hfunc_SegmentScaleKernel.Resolve();
@@ -1085,7 +1078,6 @@ int __gsharp_id_2_i = (int)threadIdx.x;
 __gsharp_id_0_x[__gsharp_id_2_i]=__gsharp_id_0_x[__gsharp_id_2_i]+__gsharp_id_1_y[__gsharp_id_2_i];
 }
 ";
-public static readonly string ImmutableAddKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ImmutableAddKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ImmutableAddKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OptionalArrayKernels__ImmutableAddKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerImmutableAddKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.OptionalArrayKernels.__gsharp_hfunc_ImmutableAddKernel.Resolve();
@@ -1226,7 +1218,6 @@ __gsharp_id_0_x[__gsharp_id_2_i]=__gsharp_id_0_x[__gsharp_id_2_i]+__gsharp_id_1_
 }
 }
 ";
-public static readonly string OptionalMemoryKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +OptionalMemoryKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_OptionalMemoryKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OptionalArrayKernels__OptionalMemoryKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerOptionalMemoryKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.OptionalArrayKernels.__gsharp_hfunc_OptionalMemoryKernel.Resolve();
@@ -1372,7 +1363,6 @@ __gsharp_id_0_x[__gsharp_id_2_i]=__gsharp_id_0_x[__gsharp_id_2_i]+__gsharp_id_1_
 }
 }
 ";
-public static readonly string OptionalSegmentKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +OptionalSegmentKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_OptionalSegmentKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OptionalArrayKernels__OptionalSegmentKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerOptionalSegmentKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.OptionalArrayKernels.__gsharp_hfunc_OptionalSegmentKernel.Resolve();
@@ -1515,7 +1505,6 @@ __gsharp_auto_result[__gsharp_global_tid] = __gsharp_id_0_values[(int)threadIdx.
 return;
 }
 ";
-public static readonly string ScaleKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ScaleKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ScaleKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OptionalArrayKernels__ScaleKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerScaleKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.OptionalArrayKernels.__gsharp_hfunc_ScaleKernel.Resolve();

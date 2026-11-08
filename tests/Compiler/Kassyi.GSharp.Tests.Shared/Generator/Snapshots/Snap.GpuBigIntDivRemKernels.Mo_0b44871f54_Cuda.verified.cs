@@ -3276,7 +3276,6 @@ __gsharp_id_0_result[0]=__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Ker
 }
 }
 ";
-public static readonly string InitializeOneModuloKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +InitializeOneModuloKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_InitializeOneModuloKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__InitializeOneModuloKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerInitializeOneModuloKernel() => global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntDivRemKernels.__gsharp_hfunc_InitializeOneModuloKernel.Resolve();
@@ -3721,7 +3720,6 @@ cg::this_grid().sync();
 }
 }
 ";
-public static readonly string ModPowNttMegaKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ModPowNttMegaKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ModPowNttMegaKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ModPowNttMegaKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 private static bool __gsharp_layout_checked_ModPowNttMegaKernel;
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
