@@ -55,13 +55,19 @@ public static class AstLoweringPipeline
         var conditionalRewriter = new ConditionalEvaluationRewriter();
         var warpRewriter = new WarpInstructionRewriter(bodyModel);
         var branchRewriter = new BranchRewriter(bodyModel);
-        IBlockLoweringPass[] passes =
-        [
-            conditionalRewriter, warpRewriter, branchRewriter,
-            new ForEachRewriter(bodyModel),
-            new LoopRewriter(),
-            conditionalRewriter, warpRewriter, branchRewriter
-        ];
+        // [WHY] A method that reaches Warp.ActiveMask() makes its lanes wait for each other where a thread-dependent
+        // branch or loop ends (#844), on the structure of the source, before the branches and loops are flattened
+        var reconvergence = ReconvergenceInserter.TryCreate(bodyModel, owner, isDeviceFunction);
+        var passes = ImmutableArray.CreateBuilder<IBlockLoweringPass>(9);
+        passes.Add(conditionalRewriter);
+        passes.Add(warpRewriter);
+        if (reconvergence != null)
+        {
+            passes.Add(reconvergence);
+        }
+
+        passes.AddRange(branchRewriter, new ForEachRewriter(bodyModel), new LoopRewriter(), conditionalRewriter,
+            warpRewriter, branchRewriter);
         var hoistedBody = annotatedBody;
         foreach (var pass in passes)
         {
@@ -79,6 +85,7 @@ public static class AstLoweringPipeline
         }
 
         var lowerer = new StateMachineLowerer(isDeviceFunction, bodyModel, statePlan);
+        lowerer.ReserveWarpSites(reconvergence?.RegionCount ?? 0);
         var stateMachineBody = lowerer.Lower(contextHoistedBody);
         if (hoister.HasSplitPoint)
         {

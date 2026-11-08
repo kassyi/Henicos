@@ -98,6 +98,7 @@ public int Length { get; }
 | [CopyToDevice(ReadOnlySpan\<T\>)](#copytodevicereadonlyspant) | Synchronously copies data from host memory to this device buffer. |
 | [CopyToHost(Span\<T\>)](#copytohostspant) | Synchronously copies data from this device buffer to host memory. |
 | [Dispose()](#dispose) | Releases the allocated device (or fallback unmanaged host) memory. |
+| [ToProxy()](#toproxy) | Returns the array argument that passes this buffer to a `Launch{Kernel}Ptr` launcher or a shadow struct field. |
 
 ## CopyToDevice(ReadOnlySpan\<T\>)
 
@@ -162,6 +163,40 @@ public void Dispose();
 
 `CudaException`<br>
 The CUDA driver failed to free the device allocation (`cuMemFree_v2`).
+
+## ToProxy()
+
+Returns the array argument that passes this buffer to a `Launch{Kernel}Ptr` launcher or a field of a native shadow
+struct: the kernel sees an array of [Length](#length) elements. An empty buffer becomes an empty array, not a `null` one,
+as an empty C# array does.
+
+```csharp
+public GSharpArrayProxy ToProxy();
+```
+
+#### Returns
+
+_[GSharpArrayProxy](GSharpArrayProxy.md)_<br>
+`DevicePointer` and `Length` of this buffer.
+
+#### Exceptions
+
+`ObjectDisposedException`<br>
+The buffer has been disposed.
+
+## Operators
+
+| Name | Description |
+| --- | --- |
+| [Implicit(GpuBuffer\<T\> to GSharpArrayProxy)](#implicitgpubuffert-to-gsharparrayproxy) | Converts a buffer with [ToProxy](#toproxy); `null` becomes a `null` array. |
+
+## Implicit(GpuBuffer\<T\> to GSharpArrayProxy)
+
+Converts `buffer` with [ToProxy](#toproxy); `null` becomes a `null` array (`default`).
+
+```csharp
+public static implicit operator GSharpArrayProxy(GpuBuffer<T>? buffer);
+```
 
 ## Remarks
 

@@ -76,7 +76,7 @@ public class TwiddleCacheContextTests
             {
                 var inIsolated = handler.GetOrCreateTwiddleFactors(isolated, TransformLength);
                 Assert.NotSame(inShared, inIsolated);
-                Assert.NotEqual(inShared.Forward1, inIsolated.Forward1);
+                Assert.NotEqual(inShared.Forward1.Data, inIsolated.Forward1.Data);
                 Assert.Same(inIsolated, handler.GetOrCreateTwiddleFactors(isolated, TransformLength));
             }
 

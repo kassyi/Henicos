@@ -33,8 +33,8 @@ public class TrialFactoringBenchmark
         FermatTrialFactoringKernels.SearchFactors32(
             3u,
             (uint)e,
-            resultsBuffer.DevicePointer,
-            resultCountBuffer.DevicePointer,
+            resultsBuffer.ToProxy(),
+            resultCountBuffer.ToProxy(),
             maxResults,
             gridDimX: 1,
             blockDimX: 1
@@ -53,8 +53,8 @@ public class TrialFactoringBenchmark
             FermatTrialFactoringKernels.SearchFactors32(
                 startOdd,
                 (uint)e,
-                resultsBuffer.DevicePointer,
-                resultCountBuffer.DevicePointer,
+                resultsBuffer.ToProxy(),
+                resultCountBuffer.ToProxy(),
                 maxResults,
                 gridDimX: gridX,
                 blockDimX: BlockSize

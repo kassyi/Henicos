@@ -203,13 +203,23 @@ internal static class NonNullProof
         return true;
     }
 
+    // Parentheses, and the null-forgiving operator, which has no run-time meaning (a! is proven when a is)
     private static ExpressionSyntax SkipParentheses(ExpressionSyntax expression)
     {
-        while (expression is ParenthesizedExpressionSyntax parenthesized)
+        while (true)
         {
-            expression = parenthesized.Expression;
+            switch (expression)
+            {
+                case ParenthesizedExpressionSyntax parenthesized:
+                    expression = parenthesized.Expression;
+                    break;
+                case PostfixUnaryExpressionSyntax suppressed
+                    when suppressed.IsKind(SyntaxKind.SuppressNullableWarningExpression):
+                    expression = suppressed.Operand;
+                    break;
+                default:
+                    return expression;
+            }
         }
-
-        return expression;
     }
 }

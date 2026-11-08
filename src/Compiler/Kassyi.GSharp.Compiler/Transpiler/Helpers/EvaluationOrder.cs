@@ -85,6 +85,16 @@ internal static class EvaluationOrder
         return temp;
     }
 
+    /// <summary>
+    /// Writes <c>auto __gsharp_seq_&lt;n&gt; = </c> and returns <c>n</c>; the caller writes the value and <c>;</c>
+    /// (a value that is not the translation of one expression, such as a getter call or an operation on temporaries).
+    /// </summary>
+    public static int BeginDeclaration(ref TranspileContext context)
+    {
+        context.Emitter.Writer.Append("auto");
+        return AppendDeclaredName(ref context);
+    }
+
     /// <summary>Writes <c>auto __gsharp_seq_&lt;n&gt; = __gsharp_seq_&lt;source&gt;;</c> (a read of a location) and returns <c>n</c>.</summary>
     public static int DeclareCopy(ref TranspileContext context, int source)
     {
@@ -504,7 +514,8 @@ internal static class EvaluationOrder
                 return;
             }
 
-            if (convertToParameter && !_isBraces && !byReference && parameter?.Type is { } parameterType)
+            // [WHY] Also in a brace initialization, which rejects a narrowing conversion that C# makes implicitly (#897)
+            if (convertToParameter && !byReference && parameter?.Type is { } parameterType)
             {
                 ArithmeticConversions.AppendArgument(argument, parameterType, ref context);
                 return;

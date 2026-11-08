@@ -65,6 +65,29 @@ public class StackLinqElementsTests
         Assert.Equal(20, data.AsStackEnumerable().Where(x => x < 30).LastOrDefault());
     }
 
+    // Last(predicate) reports a missing match with the message of System.Linq, also on an empty sequence; with a match
+    // it returns the last one, after the predicate has seen every element
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void LastWithPredicate_WithoutMatch_ThrowsNoMatchingElementAsSystemLinq()
+    {
+        int[] data = { 10, 20, 30 };
+        int[] empty = Array.Empty<int>();
+
+        var noMatch = Assert.Throws<InvalidOperationException>(() => data.AsStackEnumerable().Last(x => x > 30));
+        var expected = Assert.Throws<InvalidOperationException>(() => data.Last(x => x > 30));
+        Assert.Equal(expected.Message, noMatch.Message);
+        Assert.Equal("Sequence contains no matching element", noMatch.Message);
+
+        var onEmpty = Assert.Throws<InvalidOperationException>(() => empty.AsStackEnumerable().Last(x => x > 0));
+        Assert.Equal("Sequence contains no matching element", onEmpty.Message);
+
+        var calls = 0;
+        Assert.Equal(20, data.AsStackEnumerable().Last(x => ++calls > 0 && x < 30));
+        Assert.Equal(3, calls);
+        Assert.Throws<ArgumentNullException>(() => data.AsStackEnumerable().Last(null!)); // Intentionally passing null to assert the ArgumentNullException guard
+    }
+
     [Fact]
     public void ElementAt_ShouldReturnCorrectResult()
     {

@@ -572,19 +572,43 @@ if (__gsharp_d_4 != global::System.IntPtr.Zero && __gsharp_d_4 != __gsharp_d_0 &
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-public static unsafe void LaunchAllInOneKernelPtr(global::System.IntPtr intInput, global::System.IntPtr floatInput, global::System.IntPtr results, global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1IntegrationKernels.AotContexts.Tier1CustomStruct config, global::System.IntPtr globalCounter, global::System.Int32 count, global::System.Int32 dynamicSharedSize, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchAllInOneKernelPtr(global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy intInput, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy floatInput, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy results, global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1IntegrationKernels.AotContexts.Tier1CustomStruct config, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy globalCounter, global::System.Int32 count, global::System.Int32 dynamicSharedSize, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (intInput == global::System.IntPtr.Zero){
+if (intInput.Length < 0){
+throw new global::System.ArgumentOutOfRangeException(nameof(intInput), intInput.Length, "The array length must not be negative.");
+}
+if (intInput.Data == global::System.IntPtr.Zero){
 throw new global::System.ArgumentNullException(nameof(intInput));
 }
-if (floatInput == global::System.IntPtr.Zero){
+if (intInput.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(intInput));
+}
+if (floatInput.Length < 0){
+throw new global::System.ArgumentOutOfRangeException(nameof(floatInput), floatInput.Length, "The array length must not be negative.");
+}
+if (floatInput.Data == global::System.IntPtr.Zero){
 throw new global::System.ArgumentNullException(nameof(floatInput));
 }
-if (results == global::System.IntPtr.Zero){
+if (floatInput.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(floatInput));
+}
+if (results.Length < 0){
+throw new global::System.ArgumentOutOfRangeException(nameof(results), results.Length, "The array length must not be negative.");
+}
+if (results.Data == global::System.IntPtr.Zero){
 throw new global::System.ArgumentNullException(nameof(results));
 }
-if (globalCounter == global::System.IntPtr.Zero){
+if (results.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(results));
+}
+if (globalCounter.Length < 0){
+throw new global::System.ArgumentOutOfRangeException(nameof(globalCounter), globalCounter.Length, "The array length must not be negative.");
+}
+if (globalCounter.Data == global::System.IntPtr.Zero){
 throw new global::System.ArgumentNullException(nameof(globalCounter));
+}
+if (globalCounter.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(globalCounter));
 }
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "Tier1IntegrationKernels.AllInOneKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
@@ -596,28 +620,28 @@ try
 void** __gsharp_kernel_params = stackalloc void*[7];
 // Marshal device array: intInput
 global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
-__gsharp_proxy_0[0] = intInput;
-((int*)(__gsharp_proxy_0 + 1))[0] = 0; // Length is unknown for raw IntPtr
+__gsharp_proxy_0[0] = intInput.Data;
+((int*)(__gsharp_proxy_0 + 1))[0] = intInput.Length;
 ((int*)(__gsharp_proxy_0 + 1))[1] = 0;
 __gsharp_kernel_params[0] = __gsharp_proxy_0;
 // Marshal device array: floatInput
 global::System.IntPtr* __gsharp_proxy_1 = stackalloc global::System.IntPtr[2];
-__gsharp_proxy_1[0] = floatInput;
-((int*)(__gsharp_proxy_1 + 1))[0] = 0; // Length is unknown for raw IntPtr
+__gsharp_proxy_1[0] = floatInput.Data;
+((int*)(__gsharp_proxy_1 + 1))[0] = floatInput.Length;
 ((int*)(__gsharp_proxy_1 + 1))[1] = 0;
 __gsharp_kernel_params[1] = __gsharp_proxy_1;
 // Marshal device array: results
 global::System.IntPtr* __gsharp_proxy_2 = stackalloc global::System.IntPtr[2];
-__gsharp_proxy_2[0] = results;
-((int*)(__gsharp_proxy_2 + 1))[0] = 0; // Length is unknown for raw IntPtr
+__gsharp_proxy_2[0] = results.Data;
+((int*)(__gsharp_proxy_2 + 1))[0] = results.Length;
 ((int*)(__gsharp_proxy_2 + 1))[1] = 0;
 __gsharp_kernel_params[2] = __gsharp_proxy_2;
 // Marshal device struct: config
 __gsharp_kernel_params[3] = &config;
 // Marshal device array: globalCounter
 global::System.IntPtr* __gsharp_proxy_4 = stackalloc global::System.IntPtr[2];
-__gsharp_proxy_4[0] = globalCounter;
-((int*)(__gsharp_proxy_4 + 1))[0] = 0; // Length is unknown for raw IntPtr
+__gsharp_proxy_4[0] = globalCounter.Data;
+((int*)(__gsharp_proxy_4 + 1))[0] = globalCounter.Length;
 ((int*)(__gsharp_proxy_4 + 1))[1] = 0;
 __gsharp_kernel_params[4] = __gsharp_proxy_4;
 // Marshal scalar: count

@@ -6,6 +6,25 @@ internal static class LiteralTranspiler
     // A floating-point literal without one of these is an integer in C++ and needs ".0"
     private static readonly char[] s_fractionMarks = ['.', 'e', 'E'];
 
+    /// <summary>
+    /// Writes <c>null</c> converted to an array or span as the empty view of its C++ type (<c>GSharpArray&lt;int&gt;()</c>,
+    /// whose <c>data</c> is <c>nullptr</c>): the view has no constructor from <c>nullptr</c>, so <c>int[] x = null</c> and
+    /// <c>c ? x : null</c> would not compile. False for any other literal, which <see cref="Transpile"/> writes.
+    /// </summary>
+    public static bool TryAppendArrayNull(LiteralExpressionSyntax node, ref TranspileContext context)
+    {
+        if (!node.IsKind(SyntaxKind.NullLiteralExpression) ||
+            context.Query.SemanticModel.GetConvertedTypeSymbol(node) is not { } type ||
+            !type.IsArrayLikeType())
+        {
+            return false;
+        }
+
+        context.Emitter.Dialect.AppendType(ref context, type);
+        context.Emitter.Writer.Append("()");
+        return true;
+    }
+
     /// <summary>Writes <paramref name="node"/> as a C++ literal.</summary>
     public static void Transpile(LiteralExpressionSyntax node, SourceWriter writer)
     {

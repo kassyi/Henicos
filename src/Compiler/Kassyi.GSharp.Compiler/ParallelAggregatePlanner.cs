@@ -26,6 +26,7 @@ internal enum ParallelAggregateFallback
     SideEffect,
     ThreadVariantInput,
     UnsupportedElementType,
+    UnfusedChain,
     Unresolved
 }
 
@@ -149,6 +150,8 @@ internal static class ParallelAggregatePlanner
         ParallelAggregateFallback.SideEffect => "a lambda of the chain has a statement body or writes to a variable or memory",
         ParallelAggregateFallback.ThreadVariantInput => "its source, a stage argument or a value a lambda reads may differ between threads",
         ParallelAggregateFallback.UnsupportedElementType => "only int, uint, long and ulong sums are shared between threads",
+        ParallelAggregateFallback.UnfusedChain =>
+            "its chain is not fused into one loop (the AsParallel() sequence is stored in a local, or a lambda takes the element index)",
         _ => "it could not be traced to the source of the kernel"
     };
 

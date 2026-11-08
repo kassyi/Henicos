@@ -57,4 +57,22 @@ public static partial class PartialMethodKernels
         data[i] += 100;
         return data[i];
     }
+
+    // The removed call is also the body of an expression-bodied lambda, of a local function, and an incrementor of a
+    // for loop: in each, C# removes the call and its arguments (#1424)
+    [GpuKernel]
+    public static void UnimplementedPartialInExpressionBodiesKernel(int[] data)
+    {
+        int i = ThreadIndex.X;
+        void Forget(int value) => NotImplemented(Bump(data, i) + value);
+
+        Gpu.ForUnroll(0, 2, k => NotImplemented(Bump(data, i)));
+        Forget(3);
+        for (int k = 0; k < 2; k++, NotImplemented(Bump(data, i)))
+        {
+            data[i] += 1;
+        }
+
+        data[i] += 10;
+    }
 }

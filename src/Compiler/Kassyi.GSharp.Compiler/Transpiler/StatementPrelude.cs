@@ -2,8 +2,10 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 
 /// <summary>
 /// Writes the declarations that a statement needs before it, which C++ cannot write inside an expression: the variables
-/// of inline declaration expressions (<c>out var x</c>, <c>is T x</c>) and the storages of the <c>stackalloc</c> and
-/// collection expressions outside a stack array declaration (<see cref="StackAllocEmitter"/>).
+/// of inline declaration expressions (<c>out var x</c>, <c>is T x</c>) and of deconstruction declarations
+/// (<c>var (a, (b, c)) = ...</c>), the storages of the <c>stackalloc</c> and collection expressions outside a stack
+/// array declaration (<see cref="StackAllocEmitter"/>), and the variables of discard <c>out</c> arguments
+/// (<see cref="DiscardOutArgument"/>).
 /// </summary>
 /// <remarks>
 /// The walk does not enter a block (the body of a lambda), whose statements write their own prelude; it enters an
@@ -34,7 +36,36 @@ internal static class StatementPrelude
                 continue;
             }
 
+            // A variable of var (a, (b, c)) = ...: the declaration expression has the tuple type, each variable its own
+            if (desc is SingleVariableDesignationSyntax { Parent: ParenthesizedVariableDesignationSyntax } variable &&
+                IsDeconstructionDeclaration(variable))
+            {
+                var local = context.Query.SemanticModel.GetDeclaredSymbol<ILocalSymbol>(variable)
+                    ?? throw new InvalidOperationException(
+                        $"The variable '{variable}' of a deconstruction could not be resolved from the semantic model.");
+
+                context.Emitter.Dialect.AppendType(ref context, local.Type);
+                context.Emitter.Writer.Append(' ');
+                CppNameResolver.AppendDeclaredName(variable, variable.Identifier, ref context);
+                context.Emitter.Writer.AppendLine(";");
+                continue;
+            }
+
             StackAllocEmitter.DeclareStorage(desc, ref context);
+            DiscardOutArgument.DeclareStorage(desc, ref context);
         }
+    }
+
+    // The designation belongs to the left side of a deconstruction assignment (not a foreach or a pattern)
+    private static bool IsDeconstructionDeclaration(SyntaxNode designation)
+    {
+        var node = designation.Parent;
+        while (node is ParenthesizedVariableDesignationSyntax)
+        {
+            node = node.Parent;
+        }
+
+        return node is DeclarationExpressionSyntax { Parent: AssignmentExpressionSyntax assignment } declaration &&
+               assignment.Left == declaration;
     }
 }

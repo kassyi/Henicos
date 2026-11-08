@@ -196,11 +196,11 @@ internal abstract class VectorReductionExpressionBase : IGpuBigIntExpression, ID
         {
             Source = new GpuBigIntVectorKernels.AotContexts.SignedVectorOperandReadOnly
             {
-                Limbs = source.Values.DevicePointer,
-                Signs = source.Signs.DevicePointer,
+                Limbs = source.Values.ToProxy(),
+                Signs = source.Signs.ToProxy(),
                 NumWords = NumWords
             },
-            Dest = _buffers[0].DevicePointer,
+            Dest = _buffers[0].ToProxy(),
             DestWords = AccumulatorWords,
             BatchSize = source.Length
         };
@@ -219,19 +219,19 @@ internal abstract class VectorReductionExpressionBase : IGpuBigIntExpression, ID
 
     // Runs the passes over the accumulator buffers; returns the buffer that holds the reduced accumulator (the converted
     // elements themselves when there is no pass, which the finalize kernel does not read for a count of 0)
-    private IntPtr RunPasses(
+    private GSharpArrayProxy RunPasses(
         GpuWorkspace workspace,
         GpuBigIntVectorKernels.AotContexts.ElementCount countContext,
         uint blockDimX)
     {
-        var currentInputPtr = _buffers[0].DevicePointer;
+        var currentInput = _buffers[0].ToProxy();
         for (var i = 0; i < _passes.Count; i++)
         {
-            var currentOutputPtr = _buffers[i + 1].DevicePointer;
+            var currentOutput = _buffers[i + 1].ToProxy();
             var chunkCtx = new GpuBigIntVectorKernels.AotContexts.VectorReductionChunk
             {
-                A = currentInputPtr,
-                Result = currentOutputPtr,
+                A = currentInput,
+                Result = currentOutput,
                 NumWords = AccumulatorWords,
                 Count = countContext,
                 PassIndex = i,
@@ -239,16 +239,16 @@ internal abstract class VectorReductionExpressionBase : IGpuBigIntExpression, ID
             };
 
             DispatchChunkKernel(workspace, chunkCtx, (uint)_passes[i].GridDimX, blockDimX);
-            currentInputPtr = currentOutputPtr;
+            currentInput = currentOutput;
         }
 
-        return currentInputPtr;
+        return currentInput;
     }
 
     // Writes the magnitude into the destination and the sign, the overflow and the count into the header
     private void LaunchFinalize(
         GpuWorkspace workspace,
-        IntPtr reduced,
+        GSharpArrayProxy reduced,
         GpuBigIntVectorKernels.AotContexts.ElementCount countContext,
         GpuBigUInt destination,
         GpuBigUInt header,
@@ -257,8 +257,8 @@ internal abstract class VectorReductionExpressionBase : IGpuBigIntExpression, ID
         var finalizeCtx = new GpuBigIntVectorKernels.AotContexts.VectorReductionFinalize
         {
             Source = reduced,
-            Destination = destination.DevicePointer,
-            Header = header.DevicePointer,
+            Destination = destination.ToProxy(),
+            Header = header.ToProxy(),
             SourceWords = AccumulatorWords,
             ResultWords = NumWords,
             Count = countContext,
@@ -368,7 +368,7 @@ internal class VectorCountExpression([TakesOwnership] IGpuBigIntVectorExpression
         {
             var ctx = new GpuBigIntVectorKernels.AotContexts.ElementCountWrite
             {
-                Destination = destination.DevicePointer,
+                Destination = destination.ToProxy(),
                 DestinationWords = destination.NumWords,
                 Count = count.ToContext()
             };

@@ -167,10 +167,11 @@ public static class MyCustomMath_StrategyB
         using var scratch2 = new GpuBigUInt(workspace, workspace.MaxWords);
 
         // 2. Dispatch your custom kernel via the auto-generated launcher method.
-        // The GSharp Source Generator automatically injects Launch{MethodName}
-        // methods into the partial <KernelClass> for any [GpuKernel].
-        MyCustomMathKernels.LaunchMyCustomUnsignedKernel(
-            uA.DevicePointer, uB.DevicePointer, finalResult.DevicePointer, workspace.MaxWords,
+        // The GSharp Source Generator automatically injects Launch{MethodName}Ptr
+        // methods into the partial <KernelClass> for any [GpuKernel]; ToProxy() passes
+        // each device buffer with its word count, which the kernel sees as the array Length.
+        MyCustomMathKernels.LaunchMyCustomUnsignedKernelPtr(
+            uA.ToProxy(), uB.ToProxy(), finalResult.ToProxy(), workspace.MaxWords,
             gridDimX: 1, blockDimX: 1
         );
     }

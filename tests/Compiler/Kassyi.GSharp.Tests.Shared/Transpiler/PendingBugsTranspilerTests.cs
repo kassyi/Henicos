@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Kassyi.GSharp.Compiler.Transpiler;
+using Kassyi.GSharp.Compiler.Transpiler.Rules.InvocationRules;
 using Kassyi.GSharp.Tests.Shared.Helpers;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -41,9 +42,10 @@ public class PendingBugsTranspilerTests : TranspilerTestBase
         Assert.Contains("42", combinedGenerated, StringComparison.Ordinal);
     }
 
-    // #1081: Expect TakeLast, SkipLast, unfused Sum(selector), and unfused LastOrDefault(predicate) to fuse, emit valid StackLinq.cuh helpers, or report a diagnostic.
-    [Fact(Skip = "#1081: TakeLast, SkipLast, Sum(selector), and LastOrDefault(predicate) emit undefined StackLinq calls.")]
-    [Scenario(TestScenario.SadPath)]
+    // #1081: TakeLast, SkipLast, the unfused Sum(selector) and LastOrDefault(predicate) call functions that StackLinq.cuh
+    // defines (StackLinqOperatorTests checks the header against the list)
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
     public void Test_TakeLastWithElementAtOrDefault_EmitsValidCppWithoutUndefinedStackLinqCalls()
     {
         var (_, tree, model) =
@@ -66,10 +68,17 @@ public class PendingBugsTranspilerTests : TranspilerTestBase
         var cppUnfusedSelector = MethodTranspiler.GenerateCudaSource(
             unfusedSelectorMethod, model, failures2.Add, isDevice: false, CurrentDialect, out _);
 
-        Assert.DoesNotContain("StackLinq::TakeLast(", cppTakeLast, StringComparison.Ordinal);
-        Assert.DoesNotContain("StackLinq::SkipLast(", cppTakeLast, StringComparison.Ordinal);
-        Assert.DoesNotContain("StackLinq::Sum(__gsharp_id_", cppUnfusedSelector, StringComparison.Ordinal);
-        Assert.DoesNotContain("StackLinq::LastOrDefault(__gsharp_id_", cppUnfusedSelector, StringComparison.Ordinal);
+        Assert.Empty(failures1);
+        Assert.Empty(failures2);
+        var called = Regex.Matches(cppTakeLast + cppUnfusedSelector, @"StackLinq::(\w+)\(")
+            .Select(static m => m.Groups[1].Value)
+            .Distinct()
+            .ToArray();
+        Assert.Contains("TakeLast", called);
+        Assert.Contains("SkipLast", called);
+        Assert.Contains("Sum", called);
+        Assert.Contains("LastOrDefault", called);
+        Assert.All(called, static name => Assert.Contains(name, StackLinqTranspilerRule.DeviceOperators));
     }
 
     // #1086: Expect an unfused StackLinq query with a capturing lambda stored in a local to compile on native C++ without C2338 static_assert failure or report a diagnostic.

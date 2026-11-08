@@ -34,7 +34,7 @@ internal static class CudaHostLaunchEmitter
             }
             else
             {
-                WrapperEmitter.WritePointerArgumentChecks(writer, kernel.Host);
+                WrapperEmitter.WritePointerArrayArgumentChecks(writer, kernel.Host);
             }
 
             LaunchLimitEmitter.WriteCudaCheck(writer, kernel.Host);
@@ -68,7 +68,8 @@ internal static class CudaHostLaunchEmitter
     }
 
     // The public Launch{Name}Ptr of an overloaded kernel: device pointers are typed GpuBuffer<T>, so C# selects the
-    // overload, and the wrapper forwards their device pointers to the private IntPtr implementation.
+    // overload, and the wrapper forwards them to the private implementation: an array as GSharpArrayProxy with the
+    // buffer's length, a ref / out parameter as its device pointer.
     private static void WriteTypedPointerLaunchMethod(SourceWriter writer, in KernelEmission kernel)
     {
         writer.AppendGeneratedCodeAttributes();
@@ -108,7 +109,14 @@ internal static class CudaHostLaunchEmitter
                 writer.Append(p.Identifier);
                 if (p.BufferElementTypeName is not null)
                 {
-                    writer.Append(p.HasExplicitDefault ? "?.DevicePointer ?? global::System.IntPtr.Zero" : ".DevicePointer");
+                    // An array carries the buffer's length (#720); a ref / out parameter is the address alone
+                    writer.Append((PointerLaunchPlan.IsProxy(PointerLaunchPlan.Classify(p)), p.HasExplicitDefault) switch
+                    {
+                        (true, true) => "?.ToProxy() ?? default",
+                        (true, false) => ".ToProxy()",
+                        (false, true) => "?.DevicePointer ?? global::System.IntPtr.Zero",
+                        (false, false) => ".DevicePointer"
+                    });
                 }
 
                 writer.Append(", ");

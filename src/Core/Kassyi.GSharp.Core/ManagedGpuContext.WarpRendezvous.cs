@@ -44,6 +44,34 @@ public static partial class ManagedGpuContext
     [ThreadStatic]
     private static int s_warpRound;
 
+    // The thread-dependent branches and loops of methods that reach Warp.ActiveMask() that each thread of the block is
+    // inside, innermost last (#844): WarpRegionCapacity entries per thread; and whether it waits where the innermost one
+    // ends, since which round and where. Allocated by the first kernel that enters one
+    [ThreadStatic]
+    private static WarpInstance[]? s_warpRegions;
+
+    [ThreadStatic]
+    private static int[]? s_warpRegionDepth;
+
+    [ThreadStatic]
+    private static bool[]? s_warpReconverging;
+
+    [ThreadStatic]
+    private static int[]? s_warpReconvergeRound;
+
+    [ThreadStatic]
+    private static string?[]? s_warpReconvergeLocation;
+
+    // The round in which the waiting lanes of each warp of the block were last decided, and whether each thread goes on
+    [ThreadStatic]
+    private static int[]? s_warpDecidedRound;
+
+    [ThreadStatic]
+    private static bool[]? s_warpMayPass;
+
+    // The branches a thread can be inside at once (the native kernel context keeps as many)
+    private const int WarpRegionCapacity = 16;
+
     private static WarpRecord[] WarpRecords => s_warpRecords ??= new WarpRecord[WarpRecordSlots * MaxThreadsPerBlock];
 
     private static int[] WarpRecordNext => s_warpRecordNext ??= new int[MaxThreadsPerBlock];
@@ -64,6 +92,12 @@ public static partial class ManagedGpuContext
         Array.Clear(WarpWaiting);
         Array.Clear(WarpExited);
         s_warpRound = 0;
+        if (s_warpRegionDepth != null)
+        {
+            Array.Clear(s_warpRegionDepth);
+            Array.Clear(WarpReconverging);
+            Array.Clear(WarpDecidedRound);
+        }
     }
 
     /// <summary>Records that a thread of the block has exited: it no longer takes part in a warp collective.</summary>
@@ -83,6 +117,16 @@ public static partial class ManagedGpuContext
     public static bool WarpCanRun(int threadIndex, int round)
     {
         s_warpRound = round;
+        if (s_warpReconverging != null)
+        {
+            // A lane that waits where a branch ends goes on once the lanes that entered it with it have arrived (#844)
+            DecideReconvergence(threadIndex, round);
+            if (s_warpReconverging[threadIndex])
+            {
+                return WarpMayPass[threadIndex];
+            }
+        }
+
         return !WarpWaiting[threadIndex] || GetMissingLanes(threadIndex, round) == 0u;
     }
 
@@ -111,9 +155,11 @@ public static partial class ManagedGpuContext
             var wait = WarpRecords[GetWaitSlot(tid)];
             var first = BitOperations.TrailingZeroCount(missing);
             var other = (tid & ~31) + first;
-            var where = WarpWaiting[other]
-                ? $"waits at {WarpRecords[GetWaitSlot(other)].Name} at {WarpRecords[GetWaitSlot(other)].Location}"
-                : "waits at a barrier or has not reached it";
+            var where = s_warpReconverging != null && s_warpReconverging[other]
+                ? $"waits for the other lanes where the branch or call at {WarpReconvergeLocation[other]} ends"
+                : WarpWaiting[other]
+                    ? $"waits at {WarpRecords[GetWaitSlot(other)].Name} at {WarpRecords[GetWaitSlot(other)].Location}"
+                    : "waits at a barrier or has not reached it";
             return new InvalidOperationException(
                 $"G#: {wait.Name} at {wait.Location} in lane {tid & 31} of warp {tid / 32} waits for lanes 0x{missing:X8} of its mask 0x{wait.Mask:X8}, " +
                 $"which never reach the same call: lane {first} {where} (CUDA leaves the result undefined unless every lane of the mask that has not exited calls it with the same mask)");
@@ -168,6 +214,212 @@ public static partial class ManagedGpuContext
     public static void __gsharp_warp_sync_read<TFrame>(int root, ref TFrame frame, int site, uint mask, string location)
         where TFrame : IManagedWarpFrame =>
         GetVoteLanes(LinearThreadId, BeginWarpRead(ref frame, site), mask, "Gpu.SyncWarp", location);
+
+    /// <summary>
+    /// Internal: <c>Warp.ActiveMask()</c> (#844): the lanes of the caller's warp that stopped at the same call in the same
+    /// round, which the lanes that reach it together on the GPU do. Do not use directly.
+    /// </summary>
+    /// <typeparam name="TFrame">The frame of the state machine.</typeparam>
+    /// <param name="root">Unused: the managed path keeps the published values itself.</param>
+    /// <param name="frame">The frame the call is in.</param>
+    /// <param name="site">The number of the call in the body of its function.</param>
+    /// <param name="location">The place of the call in the C# source, for the error message.</param>
+    /// <returns>
+    /// The lanes that took the same way through the thread-dependent branches since they last ran together and have not
+    /// exited (a lane that has exited since it stopped at the call still counts).
+    /// </returns>
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public static uint __gsharp_warp_active_mask_read<TFrame>(int root, ref TFrame frame, int site, string location)
+        where TFrame : IManagedWarpFrame
+    {
+        var tid = LinearThreadId;
+        var instance = BeginWarpRead(ref frame, site);
+        var own = FindWarpRecord(tid, instance);
+        if (own < 0)
+        {
+            throw new InvalidOperationException(
+                $"G#: internal error: Warp.ActiveMask() at {location} finds no record of its own call (please report this G# bug)");
+        }
+
+        var round = WarpRecords[own].Round;
+        var threads = BlockDimX * BlockDimY * BlockDimZ;
+        var warpBase = tid & ~31;
+        var lanes = 0u;
+        for (var lane = 0; lane < 32 && warpBase + lane < threads; lane++)
+        {
+            for (var i = 0; i < WarpRecordSlots; i++)
+            {
+                ref readonly var record = ref WarpRecords[WarpRecordSlots * (warpBase + lane) + i];
+                if (record.Visit != 0u && record.Round == round && record.Site == instance.Site &&
+                    record.Path == instance.Path)
+                {
+                    lanes |= 1u << lane;
+                    break;
+                }
+            }
+        }
+
+        return lanes;
+    }
+
+    /// <summary>
+    /// Internal: the calling lane enters a thread-dependent branch or loop of a method that reaches
+    /// <c>Warp.ActiveMask()</c> (#844). Do not use directly.
+    /// </summary>
+    /// <typeparam name="TFrame">The frame of the state machine.</typeparam>
+    /// <param name="root">Unused.</param>
+    /// <param name="frame">The frame the branch is in, which counts its entries.</param>
+    /// <param name="site">The number of the branch in the body of its function.</param>
+    /// <exception cref="InvalidOperationException">The lane is inside too many branches at once.</exception>
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public static void __gsharp_warp_region_enter<TFrame>(int root, ref TFrame frame, int site)
+        where TFrame : IManagedWarpFrame
+    {
+        var tid = LinearThreadId;
+        var depth = WarpRegionDepth[tid];
+        if (depth == WarpRegionCapacity)
+        {
+            throw new InvalidOperationException(
+                $"G#: a thread is inside more than {WarpRegionCapacity} thread-dependent branches and loops at once in methods that reach Warp.ActiveMask(); the CPU paths cannot follow which lanes run together");
+        }
+
+        WarpRegions[WarpRegionCapacity * tid + depth] = new WarpInstance(frame.WarpPath, site, frame.AdvanceWarpVisit(site));
+        WarpRegionDepth[tid] = depth + 1;
+    }
+
+    /// <summary>Internal: the calling lane leaves a branch by a jump out of it (#844). Do not use directly.</summary>
+    /// <typeparam name="TFrame">The frame of the state machine.</typeparam>
+    /// <param name="root">Unused.</param>
+    /// <param name="frame">The frame the branch is in.</param>
+    /// <param name="site">The number of the branch in the body of its function.</param>
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public static void __gsharp_warp_region_leave<TFrame>(int root, ref TFrame frame, int site)
+        where TFrame : IManagedWarpFrame
+    {
+        var tid = LinearThreadId;
+        var depth = WarpRegionDepth[tid];
+        var top = depth > 0 ? WarpRegions[WarpRegionCapacity * tid + depth - 1] : default;
+        if (depth == 0 || top.Site != site || top.Path != frame.WarpPath)
+        {
+            throw new InvalidOperationException(
+                "G#: internal error: a thread left a branch it is not inside (please report this G# bug)");
+        }
+
+        WarpRegionDepth[tid] = depth - 1;
+    }
+
+    /// <summary>
+    /// Internal: the calling lane arrives where the innermost branch it is inside ends and waits for the other lanes
+    /// that entered it (#844). Do not use directly.
+    /// </summary>
+    /// <typeparam name="TFrame">The frame of the state machine.</typeparam>
+    /// <param name="root">Unused.</param>
+    /// <param name="frame">The frame the branch is in.</param>
+    /// <param name="site">The number of the branch in the body of its function.</param>
+    /// <param name="location">The place of the branch in the C# source, for the error message of a stall.</param>
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public static void __gsharp_warp_reconverge_arrive<TFrame>(int root, ref TFrame frame, int site, string location)
+        where TFrame : IManagedWarpFrame
+    {
+        var tid = LinearThreadId;
+        WarpReconverging[tid] = true;
+        WarpMayPass[tid] = false;
+        WarpReconvergeRound[tid] = s_warpRound;
+        WarpReconvergeLocation[tid] = location;
+    }
+
+    /// <summary>
+    /// Internal: the lanes that entered the branch with the calling lane have arrived or left; it leaves the branch
+    /// (#844). Do not use directly.
+    /// </summary>
+    /// <typeparam name="TFrame">The frame of the state machine.</typeparam>
+    /// <param name="root">Unused.</param>
+    /// <param name="frame">The frame the branch is in.</param>
+    /// <param name="site">The number of the branch in the body of its function.</param>
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public static void __gsharp_warp_reconverge_pass<TFrame>(int root, ref TFrame frame, int site)
+        where TFrame : IManagedWarpFrame
+    {
+        WarpReconverging[LinearThreadId] = false;
+        __gsharp_warp_region_leave(root, ref frame, site);
+    }
+
+    private static WarpInstance[] WarpRegions =>
+        s_warpRegions ??= new WarpInstance[WarpRegionCapacity * MaxThreadsPerBlock];
+
+    private static int[] WarpRegionDepth => s_warpRegionDepth ??= new int[MaxThreadsPerBlock];
+
+    private static bool[] WarpReconverging => s_warpReconverging ??= new bool[MaxThreadsPerBlock];
+
+    private static int[] WarpReconvergeRound => s_warpReconvergeRound ??= new int[MaxThreadsPerBlock];
+
+    private static string?[] WarpReconvergeLocation => s_warpReconvergeLocation ??= new string?[MaxThreadsPerBlock];
+
+    private static int[] WarpDecidedRound => s_warpDecidedRound ??= new int[MaxThreadsPerBlock / 32];
+
+    private static bool[] WarpMayPass => s_warpMayPass ??= new bool[MaxThreadsPerBlock];
+
+    // [WHY] Which waiting lanes of a warp go on is decided once per round, before any lane of the warp takes its step (the
+    // first call for the warp in the round): a lane that leaves the branch by a jump earlier in the same round must still
+    // hold back the lanes after it, so that every lane of the entry goes on in the same round (the native prelude does
+    // the same)
+    private static void DecideReconvergence(int threadIndex, int round)
+    {
+        var warp = threadIndex >> 5;
+        if (WarpDecidedRound[warp] == round)
+        {
+            return;
+        }
+
+        WarpDecidedRound[warp] = round;
+        var threads = BlockDimX * BlockDimY * BlockDimZ;
+        var reconverging = WarpReconverging;
+        for (var laneTid = warp * 32; laneTid < warp * 32 + 32 && laneTid < threads; laneTid++)
+        {
+            if (!WarpExited[laneTid] && reconverging[laneTid])
+            {
+                WarpMayPass[laneTid] = GetMissingReconvergeLanes(laneTid, round) == 0u;
+            }
+        }
+    }
+
+    // The other lanes of the warp of tid that have not exited and are inside the entry of the branch where tid waits, and
+    // have not arrived at its end before round. A lane that arrived in this round still counts: the lanes of an entry all
+    // go on in the same round (the native prelude computes the same)
+    private static uint GetMissingReconvergeLanes(int tid, int round)
+    {
+        var region = WarpRegions[WarpRegionCapacity * tid + WarpRegionDepth[tid] - 1];
+        var threads = BlockDimX * BlockDimY * BlockDimZ;
+        var warpBase = tid & ~31;
+        var missing = 0u;
+        for (var lane = 0; lane < 32; lane++)
+        {
+            var laneTid = warpBase + lane;
+            if (laneTid >= threads || laneTid == tid || WarpExited[laneTid])
+            {
+                continue;
+            }
+
+            var depth = WarpRegionDepth[laneTid];
+            for (var d = 0; d < depth; d++)
+            {
+                if (WarpRegions[WarpRegionCapacity * laneTid + d] != region)
+                {
+                    continue;
+                }
+
+                var arrived = WarpReconverging[laneTid] && d + 1 == depth && WarpReconvergeRound[laneTid] < round;
+                if (!arrived)
+                {
+                    missing |= 1u << lane;
+                }
+
+                break;
+            }
+        }
+
+        return missing;
+    }
 
     // The slot of the value that thread tid waits with: the one it published last
     private static int GetWaitSlot(int tid) => WarpRecordSlots * tid + (WarpRecordNext[tid] ^ 1);

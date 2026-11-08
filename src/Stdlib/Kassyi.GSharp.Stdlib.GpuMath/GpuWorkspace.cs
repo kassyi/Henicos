@@ -98,8 +98,15 @@ public class GpuWorkspace : IGpuResourceScope
         get;
     }
 
-    /// <summary>Gets the device address of <see cref="CorrectionStatus"/>, or <see cref="IntPtr.Zero"/> without one.</summary>
-    internal IntPtr CorrectionStatusPointer => CorrectionStatus?.DevicePointer ?? IntPtr.Zero;
+    /// <summary>
+    /// Gets the status words of <see cref="CorrectionStatus"/> as a kernel array argument, or a null array without one.
+    /// </summary>
+    /// <remarks>
+    /// Only a CPU fallback workspace has no status words, and it launches no kernel: its operations compute on the host.
+    /// The kernels therefore take the status as a non-nullable array, which their launchers check.
+    /// </remarks>
+    internal GSharpArrayProxy CorrectionStatusProxy =>
+        CorrectionStatus is { } status ? new GSharpArrayProxy(status.DevicePointer, GpuCorrectionStatus.DeviceWords) : default;
 
     /// <summary>
     /// Gets or sets the bit length threshold for algorithm selection in poly-algorithms like ModPow.

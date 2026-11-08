@@ -109,10 +109,10 @@ public partial class EmissionShapeTests
         Assert.True(start >= 0, "The Ptr launcher of ElidedKernel is not generated.");
         var launcher = generated[start..generated.IndexOf("#pragma warning restore CS8500", start, StringComparison.Ordinal)];
 
-        Assert.Contains("if (values == global::System.IntPtr.Zero)", launcher, StringComparison.Ordinal);
+        Assert.Contains("if (values.Data == global::System.IntPtr.Zero)", launcher, StringComparison.Ordinal);
         Assert.Contains("throw new global::System.ArgumentNullException(nameof(values));", launcher, StringComparison.Ordinal);
         Assert.Contains("throw new global::System.ArgumentNullException(nameof(o));", launcher, StringComparison.Ordinal);
-        Assert.DoesNotContain("nameof(bias)", launcher, StringComparison.Ordinal);
+        Assert.DoesNotContain("ArgumentNullException(nameof(bias))", launcher, StringComparison.Ordinal);
     }
 
     // The nullable annotation is the contract (#1409): a non-nullable field of a struct argument is read unchecked, a call

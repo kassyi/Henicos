@@ -71,6 +71,7 @@ Some C# definitions cost time on the GPU: bounds checks and division-by-zero che
 - The CPU paths accept every launch that the GPU accepts and reject what every GPU rejects ([launch limits](../02_architecture/01_aot_transpiler.md)). The run time, the speed or the memory of the machine never defines that contract.
 - A form whose GPU result the CPU cannot reproduce exactly is not supported on the CPU. G# works around technical obstacles, but not limits that come from the definition of the form itself.
 - The CPU paths are also checkers: they report the undefined behavior of §6.3 instead of hiding it.
+- Where the GPU leaves a value unspecified within bounds, the CPU paths return one value within them, as they do within the accuracy bounds of the approximate math functions. `Warp.ActiveMask()` is such a value: the GPU returns the calling lane, no lane that has exited, and any of the other lanes on the same path (from Volta on it may return fewer), and the CPU paths return the classic value, the lanes that took the same way through the thread-dependent branches since the warp last ran together ([Warp guide](../04_guides/01_warp_programming_guide.md)). A program whose result depends on which subset it gets is not portable between GPUs either.
 
 ## 6.6 Status
 

@@ -252,7 +252,7 @@ internal static class ObjectCreationHelper
                 if (Classify(typeSymbol, constructor, ref context, out _) == StructCreationKind.Braces &&
                     (constructor == null || IsInParameterOrder(constructor, argumentList)))
                 {
-                    TranspileArgumentListAsBraces(argumentList, ref context);
+                    TranspileArgumentListAsBraces(constructor, argumentList, ref context);
                 }
                 else
                 {
@@ -263,17 +263,7 @@ internal static class ObjectCreationHelper
                 context.Emitter.Writer.Append(';');
                 context.Emitter.Writer.Append(' ');
 
-                foreach (var expr in initializer.Expressions)
-                {
-                    if (expr is not AssignmentExpressionSyntax assignment)
-                    {
-                        continue;
-                    }
-
-                    context.Emitter.Writer.Append($"{GSharpInternalNames.Lowering.AggregateTemp}.");
-                    ComputedPropertyGetterCall.TranspileAssignment(assignment, " = ", ref context);
-                    context.Emitter.Writer.Append("; ");
-                }
+                ObjectInitializerAssignments.Append(initializer, lineBreaks: false, ref context);
 
                 context.Emitter.Writer.Append($"return {GSharpInternalNames.Lowering.AggregateTemp}; ");
             }
@@ -310,7 +300,7 @@ internal static class ObjectCreationHelper
 
     // <argument or temporary of each parameter>, or the default of an omitted one
     private static void AppendMatchedArguments(IMethodSymbol constructor, ArgumentSyntax?[] matched,
-        in EvaluationOrder.CallSequence sequence, ref TranspileContext context)
+        in EvaluationOrder.CallSequence sequence, ref TranspileContext context, bool convertToParameter = false)
     {
         for (var i = 0; i < constructor.Parameters.Length; i++)
         {
@@ -318,7 +308,7 @@ internal static class ObjectCreationHelper
             var parameter = constructor.Parameters[i];
             if (matched[i] is { } argument)
             {
-                sequence.AppendArgument(argument, parameter, ref context);
+                sequence.AppendArgument(argument, parameter, ref context, convertToParameter);
             }
             else
             {
@@ -342,14 +332,14 @@ internal static class ObjectCreationHelper
             using (context.Emitter.Writer.Braces())
             {
                 AppendMatchedArguments(constructor, ArgumentMatchingHelper.MatchArgumentsToParameters(arguments, constructor),
-                    in sequence, ref context);
+                    in sequence, ref context, convertToParameter: true);
             }
 
             return;
         }
 
         context.Emitter.Dialect.AppendType(ref context, typeSymbol);
-        TranspileArgumentListAsBraces(argumentList, ref context);
+        TranspileArgumentListAsBraces(constructor, argumentList, ref context);
     }
 
     // Whether the arguments are written one per parameter, in the parameter order
@@ -406,23 +396,28 @@ internal static class ObjectCreationHelper
         throw new InvalidOperationException("An argument of a constructor call does not match a parameter.");
     }
 
-    private static void TranspileArgumentListAsBraces(ArgumentListSyntax? argumentList, ref TranspileContext context)
+    // {<arguments in parameter order>}: an argument that C# converts implicitly to its parameter's primitive type is
+    // written converted, since a braced list rejects a narrowing conversion (Vector2{1.5f,(float)i}, #897)
+    private static void TranspileArgumentListAsBraces(IMethodSymbol? constructor, ArgumentListSyntax? argumentList,
+        ref TranspileContext context)
     {
         if (argumentList is { Arguments.Count: > 0 })
         {
             using (context.Emitter.Writer.Braces())
             {
-                var first = true;
-                foreach (var arg in argumentList.Arguments)
+                for (var i = 0; i < argumentList.Arguments.Count; i++)
                 {
-                    if (!first)
+                    context.Emitter.Writer.AppendIf(i > 0, ", ");
+                    var argument = argumentList.Arguments[i];
+                    if (constructor != null && i < constructor.Parameters.Length &&
+                        constructor.Parameters[i].RefKind == RefKind.None)
                     {
-                        context.Emitter.Writer
-                            .Append(", ");
+                        ArithmeticConversions.AppendArgument(argument, constructor.Parameters[i].Type, ref context);
                     }
-
-                    context.Visitor.Visit(arg);
-                    first = false;
+                    else
+                    {
+                        context.Visitor.Visit(argument);
+                    }
                 }
             }
         }

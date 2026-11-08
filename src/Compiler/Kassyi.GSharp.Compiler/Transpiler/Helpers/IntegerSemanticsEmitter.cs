@@ -356,7 +356,11 @@ internal static class IntegerSemanticsEmitter
 
     // Whether the value of an increment or assignment is read: not when it is a statement, a part of a for loop or the
     // body of a lambda that returns nothing (the body of Gpu.ForUnroll(0, 4, i => sum += i))
-    private static bool IsValueUsed(ExpressionSyntax node, SemanticModel model) => node.Parent switch
+    /// <summary>
+    /// Whether the value of the assignment or step <paramref name="node"/> is used: not as a statement, a <c>for</c>
+    /// incrementor or the body of a lambda that returns nothing.
+    /// </summary>
+    internal static bool IsValueUsed(ExpressionSyntax node, SemanticModel model) => node.Parent switch
     {
         ExpressionStatementSyntax or ForStatementSyntax => false,
         AnonymousFunctionExpressionSyntax lambda =>

@@ -121,6 +121,26 @@ public class UnsupportedConstructDiagnosticsTests
             propertyAndList.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id));
     }
 
+    // A kernel runs only through its launcher: the calls on lines 19 (a kernel), 25 (a device function) and 32 (a
+    // lambda in a kernel) are reported once each, at the call
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.SadPath)]
+    public async Task Test_KernelCalledFromDeviceCode_ReportsGsh0003AtTheCall(string dialect)
+    {
+        var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/KernelCallFromDeviceCode.cu.cs", dialect);
+
+        Assert.Equal(
+            [
+                (Analyzer, 19, 9, 19, 27),
+                (Analyzer, 25, 9, 25, 59),
+                (Analyzer, 32, 34, 32, 52)
+            ],
+            diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id));
+        Assert.Empty(diagnostics.Ranges(GSharpDiagnostics.DirectGpuKernelInvocation.Id));
+    }
+
     [Theory]
     [InlineData("Cpu")]
     [InlineData("Cuda")]
