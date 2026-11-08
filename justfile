@@ -4,13 +4,17 @@ export DiffEngine_Disabled := "true"
 # Test host heap cap of `just mutate`, in bytes (8 GB)
 mutate_heap_limit := "8589934592"
 
+# Every dotnet test of these recipes: a test host that dies (OutOfMemoryException, the heap hard limit of
+# tests/Directory.Build.props) leaves a mini dump in its TestResults directory
+blame_crash := "--blame-crash --blame-crash-dump-type mini"
+
 # Run normal tests excluding heavy stress and benchmark tests
 test *args="":
-    dotnet test --filter "Category!=Stress&Category!=Benchmark" {{args}}
+    dotnet test --filter "Category!=Stress&Category!=Benchmark" {{blame_crash}} {{args}}
 
 # Run tests with code coverage collection
 test-coverage *args="":
-    dotnet test -s coverage.runsettings --filter "Category!=Stress&Category!=Benchmark" {{args}}
+    dotnet test -s coverage.runsettings --filter "Category!=Stress&Category!=Benchmark" {{blame_crash}} {{args}}
 
 # Run the tests with coverage and list the lines changed since base that no test executed
 coverage-diff base="main":
@@ -18,7 +22,8 @@ coverage-diff base="main":
 
 # Differential tests: C# oracle vs managed vs native CPU (no GPU)
 test-differential-cpu *args="":
-    dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cpu/Kassyi.GSharp.Tests.Cpu.csproj --filter "Category=Differential&Category!=Stress" {{args}}
+    dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cpu/Kassyi.GSharp.Tests.Cpu.csproj \
+        --filter "Category=Differential&Category!=Stress" {{blame_crash}} {{args}}
 
 # Build Tests.Cpu with native sanitizers (ASan/UBSan on Linux, ASan on Windows) and run Differential + Execution tests
 test-sanitized *args="":
@@ -26,7 +31,8 @@ test-sanitized *args="":
 
 # Differential tests: C# oracle vs CUDA (agents: wrap in node scripts/agent/gpu-lock.js -- "...")
 test-differential-cuda *args="":
-    dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cuda/Kassyi.GSharp.Tests.Cuda.csproj --filter "Category=Differential&Category!=Stress" {{args}}
+    dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cuda/Kassyi.GSharp.Tests.Cuda.csproj \
+        --filter "Category=Differential&Category!=Stress" {{blame_crash}} {{args}}
 
 # Run differential kernel fuzzer (profile: M|C|G or managed|cpu|all)
 fuzz-diff profile="cpu" minutes="5" *args="":
@@ -47,7 +53,12 @@ test-stability count="10" continue_on_error="false" shuffle="true" seed="" *args
 
 # Run the tests of one TestCategory (values: the TestCategory enum), e.g. `just test-category Stress`
 test-category category *args="":
-    dotnet test --filter "Category={{category}}" {{args}}
+    dotnet test --filter "Category={{category}}" {{blame_crash}} {{args}}
+
+# e.g. `just test-memory Kassyi.GSharp.Tests.Cpu -c Release --filter "Category!=GpuExecution"`; test-memory.js --help
+# One run of a test project: its memory peak, the tests that raised it, dotnet-counters and a gcdump at the end
+test-memory project *args="":
+    node scripts/human/test-memory.js {{project}} {{args}}
 
 # Run compute benchmarks (sgemm, sha256, bs, reduce, all)
 bench suite="all" *args="":

@@ -196,7 +196,7 @@ internal static class UsingTranspiler
     {
         resourceType = null;
         var compilation = context.Query.SemanticModel.Compilation;
-        type = StructTranspiler.SubstituteTypeParameters(type, context.Emitter.CurrentStructType, compilation);
+        type = StructTypeSubstitution.SubstituteTypeParameters(type, context.Emitter.CurrentStructType, compilation);
 
         // An unresolved type is the C# compiler's error
         if (type is null or IErrorTypeSymbol)
@@ -220,7 +220,7 @@ internal static class UsingTranspiler
             return false;
         }
 
-        StructTranspiler.RegisterUsedStructIfApplicable(named, ref context);
+        StructOrdering.RegisterUsedStructIfApplicable(named, ref context);
         var isRecorded = context.Emitter.DisposedStructs
             .AsStackEnumerable()
             .Any(named, static (recorded, type) => recorded.IsEqualTo(type));
@@ -345,11 +345,7 @@ internal static class UsingTranspiler
         writer.Append($"::{GSharpInternalNames.Using.Dispose}() ");
 
         // [WHY] The struct may be declared in another file than the method, so its body is bound with a model of its own tree.
-        var query = context.Query;
-        var reporter = context.Reporter;
-        var model = query.SemanticModel.Compilation.GetSemanticModel(declaration.SyntaxTree);
-        context.Query = new Query(model, query.BclIntrinsicMap, query.UsedStructs);
-        context.Reporter = reporter.WithSemanticModel(model);
+        var saved = SemanticModelSwitch.Enter(ref context, declaration.SyntaxTree);
         var previousStructType = context.Emitter.CurrentStructType;
         context.Emitter.CurrentStructType = type;
 
@@ -374,8 +370,7 @@ internal static class UsingTranspiler
         {
             context.Emitter.CallableDepth--;
             context.Emitter.CurrentStructType = previousStructType;
-            context.Query = query;
-            context.Reporter = reporter;
+            saved.Restore(ref context);
         }
 
         context.Emitter.Writer.AppendLine("#endif").AppendLine();

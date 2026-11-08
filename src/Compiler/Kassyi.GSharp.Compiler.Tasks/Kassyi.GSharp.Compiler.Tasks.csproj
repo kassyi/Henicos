@@ -6,6 +6,10 @@
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
     <IsPackable>false</IsPackable>
+    <!-- Unused here; Tests.Integration sees the internal polyfills (InternalsVisibleTo), where it would clash with
+         System.Runtime's ModuleInitializerAttribute in the memory budget hooks of every test assembly (CS0433) -->
+    <_GSharpUnusedPolyfill>System.Runtime.CompilerServices.ModuleInitializerAttribute</_GSharpUnusedPolyfill>
+    <PolySharpExcludeGeneratedTypes>$(_GSharpUnusedPolyfill)</PolySharpExcludeGeneratedTypes>
   </PropertyGroup>
 
   <ItemGroup>

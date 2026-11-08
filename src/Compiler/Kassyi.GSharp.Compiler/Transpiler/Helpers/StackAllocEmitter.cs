@@ -25,7 +25,7 @@ internal static class StackAllocEmitter
 
         var number = ++context.Emitter.StackAllocCounter;
         context.Emitter.StackAllocStorages[node] = number;
-        StructTranspiler.RegisterUsedStructIfApplicable(allocation.ElementType, ref context);
+        StructOrdering.RegisterUsedStructIfApplicable(allocation.ElementType, ref context);
         context.Emitter.Dialect.AppendType(ref context, allocation.ElementType);
         context.Emitter.Writer.AppendLine($" {StoragePrefix}{number}[{allocation.Length}];");
     }

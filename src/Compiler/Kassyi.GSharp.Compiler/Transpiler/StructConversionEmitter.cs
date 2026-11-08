@@ -86,7 +86,115 @@ internal static class StructConversionEmitter
         }
     }
 
-    // Each conversion with a body as a function, then the members that StructTranspiler declares in the struct:
+    /// <summary>
+    /// Declares, inside the definition of the ref struct <paramref name="structSym"/>, the C++ member that carries
+    /// <paramref name="conversion"/>: the declaration of a member defined after the struct for a conversion with a body
+    /// here (<see cref="HasRefStructConversionBody"/>), or, for any other <c>implicit operator</c>, an inline member
+    /// that reads or writes the first field. A converting constructor first declares the default constructor once
+    /// (<paramref name="hasDefaultConstructor"/>).
+    /// </summary>
+    public static void WriteRefStructConversionMember(INamedTypeSymbol structSym, IMethodSymbol conversion,
+        ref bool hasDefaultConstructor, ref TranspileContext context)
+    {
+        if (HasRefStructConversionBody(conversion, context.Query.SemanticModel.Compilation))
+        {
+            WriteRefStructConversionDeclaration(structSym, ref context, conversion, ref hasDefaultConstructor);
+        }
+        else if (conversion.Name == WellKnownMemberNames.ImplicitConversionName)
+        {
+            WriteImplicitConversionOperator(structSym, ref context, conversion, ref hasDefaultConstructor);
+        }
+    }
+
+    // __device__ inline [explicit] S(<type> v); or __device__ inline [explicit] operator <type>() const;
+    // The member of a ref struct conversion with a body here; WriteRefStructConversions defines it after the struct,
+    // calling the function emitted from the body. The member stays because an operator macro passes a ref struct to a
+    // parameter of the type it converts to, and back, through these C++ conversions.
+    private static void WriteRefStructConversionDeclaration(INamedTypeSymbol structSym, ref TranspileContext context,
+        IMethodSymbol conversion, ref bool hasDefaultConstructor)
+    {
+        var writer = context.Emitter.Writer;
+        var explicitKeyword = conversion.Name == WellKnownMemberNames.ExplicitConversionName ? "explicit " : "";
+        if (conversion.ReturnType.IsEqualTo(structSym))
+        {
+            WriteDefaultConstructorOnce(structSym, ref context, ref hasDefaultConstructor);
+            writer.Append($"__device__ inline {explicitKeyword}").AppendFullyQualifiedCppName(structSym);
+            using (writer.Parentheses())
+            {
+                context.Emitter.Dialect.AppendType(ref context, conversion.Parameters[0].Type);
+                writer.Append(" v");
+            }
+
+            writer.AppendLine(";");
+            return;
+        }
+
+        writer.Append($"__device__ inline {explicitKeyword}operator ");
+        context.Emitter.Dialect.AppendType(ref context, conversion.ReturnType);
+        writer.AppendLine("() const;");
+    }
+
+    // __device__ inline S(<type> v) { this-><first member> = v; }
+    // or __device__ inline operator <type>() const { return this-><first member>; }
+    private static void WriteImplicitConversionOperator(INamedTypeSymbol structSym, ref TranspileContext context,
+        IMethodSymbol conv, ref bool hasDefaultConstructor)
+    {
+        var hasFirstMember = StructMemberEmitter.TryGetFirstMember(structSym, out var firstMember);
+        if (conv.ReturnType.IsEqualTo(structSym))
+        {
+            // Implicit constructor from param type, after the default constructor that the struct declares once
+            WriteDefaultConstructorOnce(structSym, ref context, ref hasDefaultConstructor);
+            context.Emitter.Writer.Append("__device__ inline ").AppendFullyQualifiedCppName(structSym);
+            using (context.Emitter.Writer.Parentheses())
+            {
+                context.Emitter.Dialect.AppendType(ref context, conv.Parameters[0].Type);
+                context.Emitter.Writer.Append(" v");
+            }
+
+            context.Emitter.Writer.Append(' ');
+            using (context.Emitter.Writer.Scope())
+            {
+                if (hasFirstMember)
+                {
+                    var name = StructMemberEmitter.GetMemberName(firstMember.Symbol, ref context);
+                    context.Emitter.Writer.AppendLine($"this->{name} = v;");
+                }
+            }
+
+            return;
+        }
+
+        // Implicit conversion operator to return type
+        context.Emitter.Writer.Append("__device__ inline operator ");
+        context.Emitter.Dialect.AppendType(ref context, conv.ReturnType);
+        context.Emitter.Writer.Append("() const ");
+        using (context.Emitter.Writer.Scope())
+        {
+            if (hasFirstMember)
+            {
+                var name = StructMemberEmitter.GetMemberName(firstMember.Symbol, ref context);
+                context.Emitter.Writer.Append($"return this->{name}");
+                context.Emitter.Writer.AppendLine(";");
+            }
+        }
+    }
+
+    // __device__ inline S() {}
+    // A constructor of its own takes away the implicit default constructor that S{} needs
+    private static void WriteDefaultConstructorOnce(INamedTypeSymbol structSym, ref TranspileContext context,
+        ref bool hasDefaultConstructor)
+    {
+        if (hasDefaultConstructor)
+        {
+            return;
+        }
+
+        context.Emitter.Writer.Append("__device__ inline ").AppendFullyQualifiedCppName(structSym).AppendLine("() {}");
+        hasDefaultConstructor = true;
+    }
+
+    // Each conversion with a body as a function, then the members that WriteRefStructConversionMember declares in the
+    // struct:
     // __device__ inline S::S(<type> v) { *this = <function>(v); }
     // __device__ inline S::operator <type>() const { return <function>(*this); }
     private static void WriteRefStructConversions(INamedTypeSymbol structSym, ref TranspileContext context)
@@ -135,11 +243,7 @@ internal static class StructConversionEmitter
     public static void WriteOperatorFunction(IMethodSymbol method, BaseMethodDeclarationSyntax declaration,
         ref TranspileContext context)
     {
-        var query = context.Query;
-        var reporter = context.Reporter;
-        var model = query.SemanticModel.Compilation.GetSemanticModel(declaration.SyntaxTree);
-        context.Query = new Query(model, query.BclIntrinsicMap, query.UsedStructs);
-        context.Reporter = reporter.WithSemanticModel(model);
+        var saved = SemanticModelSwitch.Enter(ref context, declaration.SyntaxTree);
         var previousCtorType = context.Emitter.StructConstructorType;
         var previousCallableDepth = context.Emitter.CallableDepth;
         context.Emitter.StructConstructorType = null;
@@ -163,8 +267,7 @@ internal static class StructConversionEmitter
         {
             context.Emitter.StructConstructorType = previousCtorType;
             context.Emitter.CallableDepth = previousCallableDepth;
-            context.Query = query;
-            context.Reporter = reporter;
+            saved.Restore(ref context);
         }
     }
 }

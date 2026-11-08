@@ -305,10 +305,10 @@ public class GpuBufferTests : TranspilerTestBase
 
     private static void SkipUnlessLargeMemoryAvailable()
     {
-        // The GC measures the memory load at each collection; collect so the value is current.
-        GC.Collect();
-        var info = GC.GetGCMemoryInfo();
-        var freeBytes = info.TotalAvailableMemoryBytes - info.MemoryLoadBytes;
+        // The buffers are native, so the machine's free memory decides. GC.GetGCMemoryInfo() would not: under the heap
+        // hard limit of the test hosts (tests/Directory.Build.props) its TotalAvailableMemoryBytes is that limit while
+        // MemoryLoadBytes stays the load of the machine, which skipped this test on every run.
+        var freeBytes = ProcessMemory.ReadAvailablePhysicalBytes();
         Skip.If(
             freeBytes < LargeRequiredFreeMemory,
             $"A copy of 2 GiB or more needs about 5 GiB of free memory; {freeBytes >> 20} MiB is free."

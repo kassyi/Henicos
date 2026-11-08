@@ -545,7 +545,8 @@ internal static class DeviceFunctionEffects
         DeviceExportTable.IsOutside(type, compilation) &&
         method switch
         {
-            { MethodKind: MethodKind.Constructor } => StructTranspiler.IsEmittedStructConstructor(method, compilation),
+            { MethodKind: MethodKind.Constructor } =>
+                StructConstructorEmitter.IsEmittedStructConstructor(method, compilation),
             { MethodKind: MethodKind.PropertyGet, AssociatedSymbol: IPropertySymbol property } =>
                 StructAbiMembers.IsComputedProperty(property),
             _ => false
