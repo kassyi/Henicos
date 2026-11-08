@@ -88,7 +88,8 @@ public class GpuBigNumberStackLinqFoldTests : IDisposable
         // mutant: SignedExpressions.cs SignedBinaryExpression.NumWords -> Left.NumWords read twice, uncached
         var width = Task.Run(() => signed.Node.NumWords);
         Assert.True(width.Wait(TimeSpan.FromSeconds(10)), "Reading the width of the folded expression did not finish.");
-        Assert.Equal(2, width.Result);
+        // A left fold of additions grows by one bit per addition: 64 + 999 bits
+        Assert.Equal(BigIntWidths.Words(64 + Count - 1), width.Result);
 
         // mutant: SignedExpressions.cs EvaluateLeft -> Left.Evaluate(workspace) (the test host crashes)
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();

@@ -111,10 +111,11 @@ public class CudaGraphExecutionTests
     {
         CudaCapability.EnsureGpuAvailable();
 
-        // The result goes to a target the test owns: the graph's own result buffer is released by Dispose.
+        // The result goes to a target the test owns: the graph's own result buffer is released by Dispose. A sum is one
+        // bit wider than its operands, so the target has one word more.
         using var workspace = new GpuWorkspace(64);
         using var operands = Operands.Create(workspace);
-        using var target = new GpuBigUInt(workspace, Words);
+        using var target = new GpuBigUInt(workspace, Words + 1);
         var graph = operands.Sum.CompileToGraph(workspace, target);
         using var gate = CudaTestEnvironment.InContext(() => StreamGate.Enqueue(workspace.Stream, GateHoldTime));
 

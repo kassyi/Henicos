@@ -11,6 +11,16 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 /// <para>
 /// <b>Zero-Allocation:</b> As a readonly struct wrapping an immutable AST node, chaining operators creates lightweight expression trees without allocating device buffers until evaluated.
 /// </para>
+/// <para>
+/// <b>Result widths:</b> a result never overflows. Every node has an upper bound of its result in bits, computed
+/// from its operands when the expression is built: <c>a + b</c> and <c>a - b</c> one bit more than the wider operand,
+/// <c>a * b</c> the sum, <c>a / b</c> the dividend, <c>a % b</c> the narrower operand. The result has the words of
+/// that bound (<see cref="IGpuBigIntExpression.NumWords"/>). Narrow it explicitly with <see cref="Fit"/>.
+/// </para>
+/// <para>
+/// <b>Synchronization:</b> adding or subtracting values whose effective signs differ reads two words from the device
+/// once (the sign of the result depends on the values); such an expression cannot be captured into a CUDA graph.
+/// </para>
 /// </remarks>
 public readonly struct GpuBigIntExpr : IDisposable
 {
@@ -113,11 +123,48 @@ public readonly struct GpuBigIntExpr : IDisposable
         => new(new SignedMinExpression(left.Node, right.Node));
 
     /// <summary>
+    /// Narrows this expression to <paramref name="words"/> words, checked: a magnitude that does not fit is a domain
+    /// error, as a C# <c>checked</c> narrowing. The sign is kept.
+    /// </summary>
+    /// <param name="words">The word count of the result, at least 1.</param>
+    /// <returns>A new <see cref="GpuBigIntExpr"/> whose result has <paramref name="words"/> words.</returns>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="words"/> is below 1.</exception>
+    /// <remarks>
+    /// <para>
+    /// The result of an expression is as wide as its static bound (a sum one bit wider than its wider operand, a
+    /// product as wide as both), so it never overflows. Use <c>Fit</c> to store it in a narrower buffer, for example
+    /// the old width of an operand.
+    /// </para>
+    /// <para>
+    /// <b>Domain error:</b> on the GPU it is reported as <see cref="OverflowException"/> at the next read of the
+    /// workspace stream (or by <see cref="GpuWorkspace.ThrowIfDeviceErrors"/>); in CPU fallback mode it is thrown when
+    /// the expression is evaluated.
+    /// </para>
+    /// <para>
+    /// There is no unchecked counterpart (<c>Truncate</c>) for signed expressions. <see cref="GpuBigInt"/> stores a
+    /// sign and a magnitude, so keeping the low words of the magnitude is not what a C# <c>unchecked</c> narrowing
+    /// does: that keeps the low bits of the two's complement and reads them as a signed number of the narrower width.
+    /// The two disagree whenever the kept magnitude reaches the sign bit: <c>unchecked((int)2147483648L)</c> is
+    /// <c>int.MinValue</c>, while the sign and the low word of the magnitude stay <c>+2147483648</c>. Truncate the
+    /// magnitude explicitly when that is what you mean.
+    /// </para>
+    /// </remarks>
+    public GpuBigIntExpr Fit(int words)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThan(words, 1);
+        return new GpuBigIntExpr(new SignedFitExpression(Node, words));
+    }
+
+    /// <summary>
     /// Evaluates this signed expression into the provided destination buffer.
     /// </summary>
-    /// <param name="destination">The pre-allocated GPU buffer to store the evaluated magnitude. It may be the magnitude of
-    /// an operand (<c>(a / b).Evaluate(a.Value)</c>): the root then computes into a temporary and copies the result.</param>
+    /// <param name="destination">The pre-allocated GPU buffer to store the evaluated magnitude, at least as wide as the
+    /// result (<see cref="IGpuBigIntExpression.NumWords"/>); its words above the result are cleared. It may be the
+    /// magnitude of an operand (<c>(a / b).Evaluate(a.Value)</c>): the root then computes into a temporary and copies
+    /// the result.</param>
     /// <returns>A new <see cref="GpuBigInt"/> instance wrapping the destination buffer with the evaluated sign.</returns>
+    /// <exception cref="ArgumentException"><paramref name="destination"/> is narrower than the result; nothing is
+    /// written. Narrow the expression with <see cref="Fit"/>.</exception>
     /// <exception cref="InvalidOperationException">The expression has been compiled into a CUDA graph that is alive.</exception>
     public GpuBigInt Evaluate(GpuBigUInt destination)
     {
@@ -155,6 +202,10 @@ public readonly struct GpuBigIntExpr : IDisposable
     /// <exception cref="InvalidOperationException">
     /// The expression, or any of its sub-expressions, is part of another CUDA graph that is currently alive, or
     /// the warm-up evaluation failed.
+    /// </exception>
+    /// <exception cref="NotSupportedException">
+    /// The expression adds or subtracts values whose effective signs differ: the sign of the result is read from the
+    /// device, which a capture cannot record.
     /// </exception>
     public GpuBigIntExecutableGraph CompileToGraph(GpuWorkspace workspace, GpuBigUInt? targetResult = null) =>
         Compile(workspace, targetResult, ownsExpression: true);
