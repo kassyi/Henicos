@@ -1,7 +1,3 @@
-using Kassyi.GSharp.Compiler.Analysis;
-using Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules;
-using Kassyi.GSharp.Compiler.Transpiler.Rules.MacroRules;
-
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
 /// <summary>
@@ -62,23 +58,31 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
         }
 
         Volatile.Write(ref visitor._isRented, 1);
+        visitor.Reset(dialect, semanticModel, reportFailure, bclIntrinsicMap);
+        return visitor;
+    }
 
-        visitor._usedStructs.Clear();
-        visitor._localVariableOverrides.Clear();
-        visitor._activeSwitchIds.Clear();
+    // Clears the pooled collections and starts a new context over them
+    private void Reset(
+        ITranspilerDialect dialect,
+        SemanticModel semanticModel,
+        Action<TranspileFailure>? reportFailure,
+        ImmutableDictionary<IMethodSymbol, IntrinsicMappingInfo>? bclIntrinsicMap)
+    {
+        _usedStructs.Clear();
+        _localVariableOverrides.Clear();
+        _activeSwitchIds.Clear();
 
-        visitor.Context = new TranspileContext(
+        Context = new TranspileContext(
             default, // Writer is injected by MethodTranspiler
-            visitor._usedStructs,
-            visitor._localVariableOverrides,
-            visitor._activeSwitchIds,
+            _usedStructs,
+            _localVariableOverrides,
+            _activeSwitchIds,
             semanticModel,
             reportFailure,
-            visitor,
+            this,
             bclIntrinsicMap ?? ImmutableDictionary<IMethodSymbol, IntrinsicMappingInfo>.Empty,
             dialect);
-
-        return visitor;
     }
 
     /// <summary>
@@ -104,31 +108,14 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
             return;
         }
 
-        // A part of a target that a step or compound assignment evaluated into a temporary (IntegerSemantics)
-        if (Context.Emitter.SpilledExpressions.Count > 0 &&
-            Context.Emitter.SpilledExpressions.TryGetValue(node, out var spilled))
-        {
-            EvaluationOrder.AppendTempName(Context.Emitter.Writer, spilled);
-            return;
-        }
-
         var previousNode = Context.Emitter.CurrentNode;
         Context.Emitter.CurrentNode = node;
 
         try
         {
-            // The source of a lowered foreach, which C# checks for null at the loop entry (#706)
-            if (node is ExpressionSyntax expression)
+            if (node is ExpressionSyntax expression && TryIntercept(expression))
             {
-                if (ArrayNullCheck.TryAppendAnnotatedCheck(expression, ref Context))
-                {
-                    return;
-                }
-
-                if (UserDefinedConversionHelper.TryAppendImplicitConversion(expression, ref Context))
-                {
-                    return;
-                }
+                return;
             }
 
             if (Context.RuleRegistry.GetRule(node.Kind()) is { } rule)
@@ -143,6 +130,20 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
         {
             Context.Emitter.CurrentNode = previousNode;
         }
+    }
+
+    // The special cases that run before the rule of the expression's kind (TranspilerRuleRegistry.ExpressionInterceptors)
+    private bool TryIntercept(ExpressionSyntax expression)
+    {
+        foreach (var interceptor in Context.RuleRegistry.ExpressionInterceptors)
+        {
+            if (interceptor.TryAppend(expression, ref Context))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /// <inheritdoc />
@@ -390,235 +391,10 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
     }
 
     public override void VisitIdentifierName(IdentifierNameSyntax node)
-    {
-        var symbol = Context.Query.SemanticModel.GetSymbol(node);
-        if (Context.Emitter.TryGetOverride(node.Identifier.Text, symbol, out var overrideValue))
-        {
-            overrideValue.WriteTo(this);
-            return;
-        }
-
-        // A Core intrinsic named without its type (using static Kassyi.GSharp.Core.Gpu) maps as Gpu.<name> does (#565);
-        // so does a Math or MathF member (using static System.Math), which ProhibitedApiRule allows when it is mapped (#899)
-        if (symbol is IMethodSymbol or IPropertySymbol or IFieldSymbol &&
-            symbol is { IsStatic: true, ContainingType: { } owner } &&
-            (owner.ContainingNamespace.IsCoreNamespace() || owner.IsSystemMathType()) &&
-            MemberAccessExpressionTranspilerRule.TryTranspileIntrinsic(symbol, ref Context))
-        {
-            return;
-        }
-
-        switch (symbol)
-        {
-            case IFieldSymbol { IsConst: true, HasConstantValue: true } field:
-
-                ConstantAtUse.Append(node, field.Type, field.ConstantValue, ref Context);
-
-                return;
-            case IParameterSymbol { RefKind: RefKind.Ref or RefKind.Out } or ILocalSymbol { IsRef: true }:
-            case IParameterSymbol { RefKind: RefKind.In or RefKind.RefReadOnlyParameter, ContainingSymbol: IMethodSymbol paramMethod }
-                when !paramMethod.HasAttribute(KnownAttributes.GpuKernel):
-                {
-                    using (Context.Emitter.Writer.Parentheses())
-                    {
-                        Context.Emitter.Writer.Append('*');
-                        CppNameResolver.AppendSymbolName(symbol, ref Context);
-                    }
-
-                    return;
-                }
-            default:
-                // [WHY] Lowering rewrites hoisted locals into references that carry the declarator's original span.
-                symbol ??= Context.Query.SemanticModel.GetDeclaredSymbol<ISymbol>(node);
-
-                if (symbol != null &&
-                    GpuCodeConstraints.IsHostStaticMemberReference(node, symbol, Context.Query.SemanticModel, Context.Emitter.Dialect))
-                {
-                    Context.Reporter.Fail(
-                        GSharpDiagnostics.StaticMemberAccessNotSupported,
-                        node,
-                        symbol.ContainingType?.Name ?? string.Empty,
-                        symbol.Name);
-                }
-
-                if (symbol is IMethodSymbol method)
-                {
-                    DynamicSharedMemoryEmitter.FailIfReferencedWithoutCall(node, method, ref Context);
-                }
-
-                if (SpanWriteClassifier.TryFailUninvoked(node, ref Context))
-                {
-                    return;
-                }
-
-                // A member function reads a captured primary constructor parameter from its hidden field (#495)
-                if (symbol is IParameterSymbol parameter &&
-                    CppNameResolver.IsCapturedParameterReference(parameter, ref Context))
-                {
-                    Context.Emitter.Writer.AppendCppName(CppName.Member(parameter.Name));
-                    break;
-                }
-
-                // In a lowered struct constructor function, unqualified instance members belong to __gsharp_self.
-                if (Context.Emitter.StructConstructorType is { } ctorType &&
-                    symbol is IFieldSymbol { IsStatic: false, IsConst: false } or IPropertySymbol { IsStatic: false } &&
-                    symbol.ContainingType != null &&
-                    symbol.ContainingType.OriginalDefinition.IsEqualTo(ctorType.OriginalDefinition) &&
-                    node.Parent is not AssignmentExpressionSyntax { Parent: InitializerExpressionSyntax })
-                {
-                    Context.Emitter.Writer.Append(GSharpInternalNames.Lowering.ConstructorSelf).Append('.');
-                }
-
-                Context.Emitter.Writer.AppendCppName(
-                    CppNameResolver.Resolve(
-                        symbol,
-                        node.Identifier.ValueText,
-                        Context.Emitter.Dialect,
-                        LoweringIdentity.GetRegion(node)));
-                ComputedPropertyGetterCall.AppendCallIfGetter(node, symbol, ref Context);
-                break;
-        }
-    }
+        => IdentifierNameTranspiler.Transpile(node, ref Context);
 
     public override void VisitLiteralExpression(LiteralExpressionSyntax node)
-    {
-        if (node.IsKind(SyntaxKind.DefaultLiteralExpression))
-        {
-            Context.Emitter.Writer.Append("{}");
-            return;
-        }
-
-        if (node.IsKind(SyntaxKind.NullLiteralExpression))
-        {
-            Context.Emitter.Writer.Append("nullptr");
-            return;
-        }
-
-        // C# long/ulong are always 64-bit, but C++ 'L'/'UL' are 32-bit under LLP64 (MSVC, Windows nvcc).
-        if (node.IsKind(SyntaxKind.NumericLiteralExpression) && node.Token.Value is long or ulong)
-        {
-            AppendInt64Literal(node.Token.Text, node.Token.Value is ulong);
-            return;
-        }
-
-        // An unsuffixed decimal C# literal from 2^31 to 2^32 - 1 is uint, but C++ gives a decimal literal the first of
-        // int, long and long long that holds it, a signed 64-bit type under LP64 (g++), so it carries the 'u' of its C#
-        // type. A hexadecimal or binary literal of that value is unsigned int in C++ as well.
-        if (node.IsKind(SyntaxKind.NumericLiteralExpression) &&
-            node.Token.Value is uint &&
-            IsUnsuffixedDecimal(node.Token.Text))
-        {
-            AppendUInt32Literal(node.Token.Text);
-            return;
-        }
-
-        // C# accepts "2f" and "2d", but C++ treats "2" as an integer literal (so "f" is an unknown suffix) and has no "d" suffix.
-        if (node.IsKind(SyntaxKind.NumericLiteralExpression) && node.Token.Value is float or double)
-        {
-            AppendFloatingPointLiteral(node.Token.Text, node.Token.Value is float);
-            return;
-        }
-
-        // A C# char is a UTF-16 code unit; the C++ character literal is a char in the source's encoding ('é' is two bytes).
-        if (node.IsKind(SyntaxKind.CharacterLiteralExpression) && node.Token.Value is char character)
-        {
-            Context.Emitter.Writer.Append(ConstexprLiteral.FormatCppChar(character));
-            return;
-        }
-
-        // A string with a non-ASCII character (a source file name in a CPU error message, a printf format) is written with
-        // octal escapes, so its UTF-8 bytes do not depend on the character sets of the C++ compiler; any other string is
-        // written as it is, its C# escapes being C++ escapes as well
-        if (node.IsKind(SyntaxKind.StringLiteralExpression) && HasNonAscii(node.Token.ValueText))
-        {
-            CppStringLiteral.Append(Context.Emitter.Writer, node.Token.ValueText);
-            return;
-        }
-
-        // C++ rejects '_' inside numbers (and "0x'FF"), so digit separators are dropped.
-        if (node.IsKind(SyntaxKind.NumericLiteralExpression))
-        {
-            AppendWithoutSeparators(node.Token.Text, node.Token.Text.Length);
-            return;
-        }
-
-        Context.Emitter.Writer.Append(node.Token.Text);
-    }
-
-    private static bool HasNonAscii(string value)
-    {
-        foreach (var c in value)
-        {
-            if (c > 0x7F)
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private void AppendWithoutSeparators(string text, int end)
-    {
-        for (var i = 0; i < end; i++)
-        {
-            if (text[i] != '_')
-            {
-                Context.Emitter.Writer.Append(text[i]);
-            }
-        }
-    }
-
-    private void AppendFloatingPointLiteral(string text, bool isSingle)
-    {
-        var end = text.Length;
-        while (end > 0 && text[end - 1] is 'f' or 'F' or 'd' or 'D')
-        {
-            end--;
-        }
-
-        var hasFraction = false;
-        for (var i = 0; i < end; i++)
-        {
-            hasFraction |= text[i] is '.' or 'e' or 'E';
-        }
-
-        AppendWithoutSeparators(text, end);
-
-        if (!hasFraction)
-        {
-            Context.Emitter.Writer.Append(".0");
-        }
-
-        if (isSingle)
-        {
-            Context.Emitter.Writer.Append('f');
-        }
-    }
-
-    // A decimal literal (not 0x / 0b) without the u or U suffix
-    private static bool IsUnsuffixedDecimal(string text) =>
-        !(text.Length > 1 && text[0] == '0' && text[1] is 'x' or 'X' or 'b' or 'B') &&
-        text[text.Length - 1] is not ('u' or 'U');
-
-    private void AppendUInt32Literal(string text)
-    {
-        AppendWithoutSeparators(text, text.Length);
-        Context.Emitter.Writer.Append('u');
-    }
-
-    private void AppendInt64Literal(string text, bool isUnsigned)
-    {
-        var end = text.Length;
-        while (end > 0 && text[end - 1] is 'u' or 'U' or 'l' or 'L')
-        {
-            end--;
-        }
-
-        AppendWithoutSeparators(text, end);
-
-        Context.Emitter.Writer.Append(isUnsigned ? "ull" : "ll");
-    }
+        => LiteralTranspiler.Transpile(node, Context.Emitter.Writer);
 
     public override void VisitDefaultExpression(DefaultExpressionSyntax node) =>
         Context.Emitter.Writer.Append("{}");
