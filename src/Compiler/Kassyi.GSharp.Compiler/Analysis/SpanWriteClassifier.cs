@@ -148,7 +148,7 @@ internal static class SpanWriteClassifier
 
         if (owner.SpecialType == SpecialType.System_Array)
         {
-            return ClassifySystemArrayMethod(original);
+            return SystemArrayMethods.Classify(original);
         }
 
         return SpanMemberKind.None;
@@ -312,102 +312,6 @@ internal static class SpanWriteClassifier
                     3 when IsInt32Value(parameters[1]) && IsInt32Value(parameters[2]) => SpanMemberKind.AsSpan2,
                     _ => SpanMemberKind.Unsupported,
                 };
-
-            default:
-                return SpanMemberKind.Unsupported;
-        }
-    }
-
-    private static SpanMemberKind ClassifySystemArrayMethod(IMethodSymbol original)
-    {
-        if (!original.IsStatic)
-        {
-            return SpanMemberKind.Unsupported;
-        }
-
-        var parameters = original.Parameters;
-        switch (original.Name)
-        {
-            case "Sort":
-                // Only Array.Sort<T>(T[]) and Array.Sort<TKey, TValue>(TKey[], TValue[]) are supported (#731 Q1=a).
-                if (original.TypeParameters.Length == 1 &&
-                    parameters.Length == 1 &&
-                    parameters[0].RefKind == RefKind.None &&
-                    IsRank1Array(parameters[0].Type))
-                {
-                    return SpanMemberKind.Sort;
-                }
-
-                if (original.TypeParameters.Length == 2 &&
-                    parameters.Length == 2 &&
-                    parameters[0].RefKind == RefKind.None &&
-                    IsRank1Array(parameters[0].Type) &&
-                    parameters[1].RefKind == RefKind.None &&
-                    IsRank1Array(parameters[1].Type))
-                {
-                    return SpanMemberKind.Sort;
-                }
-
-                return SpanMemberKind.Unsupported;
-
-            case "Fill" when original.TypeParameters.Length == 1 &&
-                             parameters.Length >= 2 &&
-                             parameters[0].RefKind == RefKind.None &&
-                             IsRank1Array(parameters[0].Type) &&
-                             parameters[1].RefKind == RefKind.None:
-                return parameters.Length switch
-                {
-                    2 => SpanMemberKind.ArrayFill2,
-                    4 when IsInt32Value(parameters[2]) && IsInt32Value(parameters[3]) => SpanMemberKind.ArrayFill4,
-                    _ => SpanMemberKind.Unsupported,
-                };
-
-            case "Clear" when original.TypeParameters.Length == 0 &&
-                              parameters.Length >= 1 &&
-                              parameters[0].RefKind == RefKind.None &&
-                              parameters[0].Type.SpecialType == SpecialType.System_Array:
-                return parameters.Length switch
-                {
-                    1 => SpanMemberKind.ArrayClear1,
-                    3 when IsInt32Value(parameters[1]) && IsInt32Value(parameters[2]) => SpanMemberKind.ArrayClear3,
-                    _ => SpanMemberKind.Unsupported,
-                };
-
-            case "Reverse" when original.TypeParameters.Length <= 1 &&
-                                parameters.Length >= 1 &&
-                                parameters[0].RefKind == RefKind.None &&
-                                (IsRank1Array(parameters[0].Type) || parameters[0].Type.SpecialType == SpecialType.System_Array):
-                return parameters.Length switch
-                {
-                    1 => SpanMemberKind.ArrayReverse1,
-                    3 when IsInt32Value(parameters[1]) && IsInt32Value(parameters[2]) => SpanMemberKind.ArrayReverse3,
-                    _ => SpanMemberKind.Unsupported,
-                };
-
-            case "Copy" when original.TypeParameters.Length == 0:
-                if (parameters.Length == 3 &&
-                    parameters[0].RefKind == RefKind.None &&
-                    parameters[0].Type.SpecialType == SpecialType.System_Array &&
-                    parameters[1].RefKind == RefKind.None &&
-                    parameters[1].Type.SpecialType == SpecialType.System_Array &&
-                    IsInt32Value(parameters[2]))
-                {
-                    return SpanMemberKind.ArrayCopy3;
-                }
-
-                if (parameters.Length == 5 &&
-                    parameters[0].RefKind == RefKind.None &&
-                    parameters[0].Type.SpecialType == SpecialType.System_Array &&
-                    IsInt32Value(parameters[1]) &&
-                    parameters[2].RefKind == RefKind.None &&
-                    parameters[2].Type.SpecialType == SpecialType.System_Array &&
-                    IsInt32Value(parameters[3]) &&
-                    IsInt32Value(parameters[4]))
-                {
-                    return SpanMemberKind.ArrayCopy5;
-                }
-
-                return SpanMemberKind.Unsupported;
 
             default:
                 return SpanMemberKind.Unsupported;
