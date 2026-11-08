@@ -86,85 +86,73 @@ public class BranchRewriter(SemanticModel? semanticModel = null) : CSharpSyntaxR
             return base.VisitIfStatement(node);
         }
 
-        var statements = ImmutableArray.CreateBuilder<StatementSyntax>();
         var id = _labelCounter++;
         var endLabelName = $"{GSharpInternalNames.Lowering.LabelPrefix}BranchEnd_{id}";
         var elseLabelName = $"{GSharpInternalNames.Lowering.LabelPrefix}BranchElse_{id}";
 
+        // !(<condition>)
         var condition = (ExpressionSyntax)Visit(node.Condition);
         var notCondition = SyntaxFactory.PrefixUnaryExpression(
             SyntaxKind.LogicalNotExpression,
             SyntaxFactory.ParenthesizedExpression(condition));
 
-        if (node.Else == null)
+        return node.Else is { } elseClause
+            ? LowerIfElse(node, elseClause, notCondition, elseLabelName, endLabelName)
+            : LowerIf(node, notCondition, endLabelName);
+    }
+
+    // { if (!(<condition>)) goto EndLabel; <then statements> EndLabel: ; }
+    private BlockSyntax LowerIf(IfStatementSyntax node, ExpressionSyntax notCondition, string endLabelName)
+    {
+        var statements = ImmutableArray.CreateBuilder<StatementSyntax>();
+        statements.Add(SyntaxFactory.IfStatement(notCondition, GotoLabel(endLabelName)));
+        AddInlined(statements, (StatementSyntax)Visit(node.Statement));
+        statements.Add(EmptyLabel(endLabelName));
+        return SyntaxFactory.Block(statements);
+    }
+
+    // { if (!(<condition>)) goto ElseLabel; <then statements> goto EndLabel;
+    //   ElseLabel: ; <else statements> EndLabel: ; }
+    private BlockSyntax LowerIfElse(
+        IfStatementSyntax node,
+        ElseClauseSyntax elseClause,
+        ExpressionSyntax notCondition,
+        string elseLabelName,
+        string endLabelName)
+    {
+        var statements = ImmutableArray.CreateBuilder<StatementSyntax>();
+        statements.Add(SyntaxFactory.IfStatement(notCondition, GotoLabel(elseLabelName)));
+        AddInlined(statements, (StatementSyntax)Visit(node.Statement));
+        statements.Add(GotoLabel(endLabelName));
+
+        // [WHY] We add the label to an empty statement and then inline the block to avoid creating an implicit local
+        // block scope.
+        var elseStmt = (StatementSyntax)Visit(elseClause.Statement);
+        statements.Add(EmptyLabel(elseLabelName));
+        AddInlined(statements, elseStmt);
+
+        statements.Add(EmptyLabel(endLabelName));
+        return SyntaxFactory.Block(statements);
+    }
+
+    // The statements of a block, or the statement itself
+    private static void AddInlined(ImmutableArray<StatementSyntax>.Builder statements, StatementSyntax statement)
+    {
+        if (statement is BlockSyntax block)
         {
-            // if (!condition) goto EndLabel;
-            var gotoEnd = SyntaxFactory.GotoStatement(
-                SyntaxKind.GotoStatement,
-                SyntaxFactory.IdentifierName(endLabelName));
-
-            var ifGoto = SyntaxFactory.IfStatement(notCondition, gotoEnd);
-            statements.Add(ifGoto);
-
-            var trueStmt = (StatementSyntax)Visit(node.Statement);
-            if (trueStmt is BlockSyntax trueBlock)
-            {
-                statements.AddRange(trueBlock.Statements);
-            }
-            else
-            {
-                statements.Add(trueStmt);
-            }
-
-            // EndLabel:
-            var endLabel = SyntaxFactory.LabeledStatement(endLabelName, SyntaxFactory.EmptyStatement());
-            statements.Add(endLabel);
+            statements.AddRange(block.Statements);
         }
         else
         {
-            // if (!condition) goto ElseLabel;
-            var gotoElse = SyntaxFactory.GotoStatement(
-                SyntaxKind.GotoStatement,
-                SyntaxFactory.IdentifierName(elseLabelName));
-
-            var ifGoto = SyntaxFactory.IfStatement(notCondition, gotoElse);
-            statements.Add(ifGoto);
-
-            var trueStmt = (StatementSyntax)Visit(node.Statement);
-            if (trueStmt is BlockSyntax trueBlock)
-            {
-                statements.AddRange(trueBlock.Statements);
-            }
-            else
-            {
-                statements.Add(trueStmt);
-            }
-
-            // goto EndLabel;
-            var gotoEnd = SyntaxFactory.GotoStatement(
-                SyntaxKind.GotoStatement,
-                SyntaxFactory.IdentifierName(endLabelName));
-            statements.Add(gotoEnd);
-
-            // ElseLabel:
-            var elseStmt = (StatementSyntax)Visit(node.Else.Statement);
-            if (elseStmt is BlockSyntax elseBlock)
-            {
-                // [WHY] We add the label to an empty statement and then inline the block to avoid creating an implicit local block scope.
-                statements.Add(SyntaxFactory.LabeledStatement(elseLabelName, SyntaxFactory.EmptyStatement()));
-                statements.AddRange(elseBlock.Statements);
-            }
-            else
-            {
-                statements.Add(SyntaxFactory.LabeledStatement(elseLabelName, SyntaxFactory.EmptyStatement()));
-                statements.Add(elseStmt);
-            }
-
-            // EndLabel:
-            var endLabel = SyntaxFactory.LabeledStatement(endLabelName, SyntaxFactory.EmptyStatement());
-            statements.Add(endLabel);
+            statements.Add(statement);
         }
-
-        return SyntaxFactory.Block(statements);
     }
+
+    // goto <label>;
+    private static GotoStatementSyntax GotoLabel(string label) =>
+        SyntaxFactory.GotoStatement(SyntaxKind.GotoStatement, SyntaxFactory.IdentifierName(label));
+
+    // <label>: ;
+    private static LabeledStatementSyntax EmptyLabel(string label) =>
+        SyntaxFactory.LabeledStatement(label, SyntaxFactory.EmptyStatement());
 }
