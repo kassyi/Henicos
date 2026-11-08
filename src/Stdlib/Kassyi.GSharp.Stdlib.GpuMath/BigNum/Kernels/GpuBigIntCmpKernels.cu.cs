@@ -161,7 +161,7 @@ public static partial class GpuBigIntCmpKernels
         /// The sign word of each element (non-zero = negative), or <see langword="null"/> for a scalar.
         /// </summary>
         [GpuReadOnly]
-        public uint[] Signs;
+        public uint[]? Signs;
 
         /// <summary>The number of words this side stores per element.</summary>
         public int NumWords;
