@@ -46,6 +46,10 @@ inline uint32_t __gsharp_warp_linear_tid() {
     return threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;
 }
 
+// Gpu.LaneId() and Gpu.WarpId(): a warp holds 32 consecutive linear thread indices of the block, as on the GPU (#845)
+inline int __gsharp_lane_id() { return (int)(__gsharp_warp_linear_tid() & 31u); }
+inline int __gsharp_warp_id() { return (int)(__gsharp_warp_linear_tid() >> 5); }
+
 // Reads the value that lane srcLane of the caller's warp published for this shuffle, after checking that the lane exists
 // in the block
 template<typename TContext, typename T>
@@ -216,6 +220,117 @@ inline uint32_t __gsharp_warp_match_all_read_sync(TContext* __gsharp_ctx, uint32
     }
     if (pred) *pred = allEqual ? 1 : 0;
     return allEqual ? active : 0u;
+}
+
+// The warp votes and reductions (#845): each lane publishes its predicate or value before the state boundary, and reads
+// those of the lanes of the mask after it. The lanes that take part are the lanes of the mask that exist in the block;
+// the caller must be one of them (CUDA leaves the result undefined otherwise). ManagedGpuContext computes the same.
+inline uint32_t __gsharp_warp_vote_lanes(uint32_t mask, const char* name, const char* location) {
+    uint32_t laneId = __gsharp_warp_linear_tid() & 31u;
+    if ((mask & (1u << laneId)) == 0u) {
+        char text[512];
+        std::snprintf(text, sizeof(text),
+                      "G#: %s at %s has mask 0x%08X without caller lane %u (CUDA leaves the result undefined)",
+                      name, location, mask, laneId);
+        __gsharp_trap(GSharpErrorCode::InvalidOperation, text);
+        return 0u;
+    }
+    return __activemask() & mask;
+}
+
+// The lanes of lanes whose published predicate is true
+template<typename TContext>
+inline uint32_t __gsharp_warp_ballot_lanes(TContext* __gsharp_ctx, uint32_t lanes, bool pred, const char* name,
+                                           const char* location) {
+    uint32_t tid = __gsharp_warp_linear_tid();
+    uint32_t result = 0u;
+    for (uint32_t srcLane = 0u; srcLane < 32u; srcLane++) {
+        if ((lanes & (1u << srcLane)) != 0u &&
+            __gsharp_warp_shuffle_read_lane(__gsharp_ctx, pred, tid, srcLane, name, location)) {
+            result |= (1u << srcLane);
+        }
+    }
+    return result;
+}
+
+template<typename TContext>
+inline uint32_t __gsharp_warp_ballot_read_sync(TContext* __gsharp_ctx, uint32_t mask, bool pred, const char* location) {
+    __gsharp_ctx->__gsharp_warp_shuffle_count++;
+    const char* name = "Warp.BallotSync";
+    return __gsharp_warp_ballot_lanes(__gsharp_ctx, __gsharp_warp_vote_lanes(mask, name, location), pred, name, location);
+}
+
+template<typename TContext>
+inline bool __gsharp_warp_all_read_sync(TContext* __gsharp_ctx, uint32_t mask, bool pred, const char* location) {
+    __gsharp_ctx->__gsharp_warp_shuffle_count++;
+    const char* name = "Warp.AllSync";
+    uint32_t lanes = __gsharp_warp_vote_lanes(mask, name, location);
+    return __gsharp_warp_ballot_lanes(__gsharp_ctx, lanes, pred, name, location) == lanes;
+}
+
+template<typename TContext>
+inline bool __gsharp_warp_any_read_sync(TContext* __gsharp_ctx, uint32_t mask, bool pred, const char* location) {
+    __gsharp_ctx->__gsharp_warp_shuffle_count++;
+    const char* name = "Warp.AnySync";
+    return __gsharp_warp_ballot_lanes(__gsharp_ctx, __gsharp_warp_vote_lanes(mask, name, location), pred, name,
+                                      location) != 0u;
+}
+
+// The published values of the lanes of the mask, combined in lane order
+template<typename TContext, typename T, typename TCombine>
+inline T __gsharp_warp_reduce_lanes(TContext* __gsharp_ctx, uint32_t mask, T val, const char* name,
+                                    const char* location, TCombine combine) {
+    __gsharp_ctx->__gsharp_warp_shuffle_count++;
+    uint32_t lanes = __gsharp_warp_vote_lanes(mask, name, location);
+    uint32_t tid = __gsharp_warp_linear_tid();
+    T result = val;
+    bool first = true;
+    for (uint32_t srcLane = 0u; srcLane < 32u; srcLane++) {
+        if ((lanes & (1u << srcLane)) != 0u) {
+            T laneVal = __gsharp_warp_shuffle_read_lane(__gsharp_ctx, val, tid, srcLane, name, location);
+            result = first ? laneVal : combine(result, laneVal);
+            first = false;
+        }
+    }
+    return result;
+}
+
+// The sum wraps around in 32 bits, as on the GPU, also for int
+template<typename TContext, typename T>
+inline T __gsharp_warp_reduce_add_read_sync(TContext* __gsharp_ctx, uint32_t mask, T val, const char* location) {
+    return __gsharp_warp_reduce_lanes(__gsharp_ctx, mask, val, "Warp.ReduceAddSync", location,
+                                      [](T a, T b) { return (T)((uint32_t)a + (uint32_t)b); });
+}
+
+// Compared with the sign of T: signed for int, unsigned for uint
+template<typename TContext, typename T>
+inline T __gsharp_warp_reduce_min_read_sync(TContext* __gsharp_ctx, uint32_t mask, T val, const char* location) {
+    return __gsharp_warp_reduce_lanes(__gsharp_ctx, mask, val, "Warp.ReduceMinSync", location,
+                                      [](T a, T b) { return b < a ? b : a; });
+}
+
+template<typename TContext, typename T>
+inline T __gsharp_warp_reduce_max_read_sync(TContext* __gsharp_ctx, uint32_t mask, T val, const char* location) {
+    return __gsharp_warp_reduce_lanes(__gsharp_ctx, mask, val, "Warp.ReduceMaxSync", location,
+                                      [](T a, T b) { return a < b ? b : a; });
+}
+
+template<typename TContext, typename T>
+inline T __gsharp_warp_reduce_and_read_sync(TContext* __gsharp_ctx, uint32_t mask, T val, const char* location) {
+    return __gsharp_warp_reduce_lanes(__gsharp_ctx, mask, val, "Warp.ReduceAndSync", location,
+                                      [](T a, T b) { return (T)(a & b); });
+}
+
+template<typename TContext, typename T>
+inline T __gsharp_warp_reduce_or_read_sync(TContext* __gsharp_ctx, uint32_t mask, T val, const char* location) {
+    return __gsharp_warp_reduce_lanes(__gsharp_ctx, mask, val, "Warp.ReduceOrSync", location,
+                                      [](T a, T b) { return (T)(a | b); });
+}
+
+template<typename TContext, typename T>
+inline T __gsharp_warp_reduce_xor_read_sync(TContext* __gsharp_ctx, uint32_t mask, T val, const char* location) {
+    return __gsharp_warp_reduce_lanes(__gsharp_ctx, mask, val, "Warp.ReduceXorSync", location,
+                                      [](T a, T b) { return (T)(a ^ b); });
 }
 
 template<typename T>
