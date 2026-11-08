@@ -96,6 +96,88 @@ public class GpuRadixConverterTests : IDisposable
         Assert.Equal(new BigInteger(word), value.ToBigInteger());
     }
 
+    // With isMostSignificant the text is the fixed-point value value / 10^(targetDigits - 1): exactly targetDigits - 1
+    // digits after the point and at least one before it, zero padded when the value is shorter, whether targetDigits
+    // takes the leaf path (up to 10000 digits) or splits on the GPU first. Without it the value is zero padded to
+    // targetDigits digits. The expected text is built from the BigInteger of the test.
+    // mutant: GpuRadixConverter.cs FormatLeafNode `if (str.Length < targetDigits)` -> `if (!isMostSignificant &&
+    // str.Length < targetDigits)` (the shorter values with isMostSignificant, rows 6 to 20000 and "0" with 12 and
+    // 10001: "1.2345" and a 10002-character "0.000...12345")
+    // mutant: FormatLeafNode `integerDigits = str.Length - (targetDigits - 1)` -> `integerDigits = 1` (the longer
+    // values, rows 1 and 3 and the 25000-digit value of the next test)
+    [SkippableTheory]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData("12345", 1, true)]
+    [InlineData("12345", 3, true)]
+    [InlineData("12345", 5, true)]
+    [InlineData("12345", 6, true)]
+    [InlineData("12345", 10, true)]
+    [InlineData("12345", 10000, true)]
+    [InlineData("12345", 10001, true)]
+    [InlineData("12345", 20000, true)]
+    [InlineData("0", 1, true)]
+    [InlineData("0", 12, true)]
+    [InlineData("0", 10001, true)]
+    [InlineData("12345", 10, false)]
+    [InlineData("12345", 20000, false)]
+    [InlineData("12345", 3, false)]
+    public void ConvertAndWrite_ShortOrLongValue_WritesTheSameFixedPointTextOnBothPaths(
+        string decimalValue,
+        int targetDigits,
+        bool isMostSignificant)
+    {
+        var expected = BigInteger.Parse(decimalValue);
+        using var value = GpuBigUInt.FromBigInteger(_context, expected);
+        using var sw = new StringWriter();
+
+        GpuRadixConverter.ConvertAndWrite(_context, value, targetDigits, sw, isMostSignificant);
+
+        Assert.Equal(FixedPointText(expected, targetDigits, isMostSignificant), sw.ToString());
+    }
+
+    // A value with more digits than targetDigits above the leaf threshold: the integer part takes the extra digits.
+    // mutant: FormatLeafNode `integerDigits = 1` (the integer part becomes one digit)
+    [SkippableFact]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.Boundary)]
+    public void ConvertAndWrite_ValueLongerThanTargetDigits_PutsTheExtraDigitsBeforeThePoint()
+    {
+        const int Digits = 25000;
+        const int TargetDigits = 20000;
+        var random = new Random(1332);
+        var digits = new char[Digits];
+        digits[0] = (char)('1' + random.Next(9));
+        for (var i = 1; i < Digits; i++)
+        {
+            digits[i] = (char)('0' + random.Next(10));
+        }
+
+        var expected = BigInteger.Parse(new string(digits));
+        using var value = GpuBigUInt.FromBigInteger(_context, expected);
+        using var sw = new StringWriter();
+
+        GpuRadixConverter.ConvertAndWrite(_context, value, TargetDigits, sw, isMostSignificant: true);
+
+        var text = sw.ToString();
+        Assert.Equal(FixedPointText(expected, TargetDigits, true), text);
+        // 5001 digits before the point, 19999 after it.
+        Assert.Equal(Digits - TargetDigits + 1, text.IndexOf('.'));
+    }
+
+    // value / 10^(targetDigits - 1) with exactly targetDigits - 1 fraction digits, or value padded to targetDigits.
+    private static string FixedPointText(BigInteger value, int targetDigits, bool isMostSignificant)
+    {
+        var text = value.ToString().PadLeft(targetDigits, '0');
+        if (!isMostSignificant)
+        {
+            return text;
+        }
+
+        var integerDigits = text.Length - (targetDigits - 1);
+        return text[..integerDigits] + "." + text[integerDigits..];
+    }
+
     [SkippableTheory]
     [Category(TestCategory.Stdlib)]
     [Scenario(TestScenario.Boundary)]
