@@ -174,8 +174,8 @@ methods:
         description: The shift amount in bits (0-31).
 
   - name: SyncGrid
-    nativeName: cg::this_grid().sync
-    summary: Synchronizes all threads across the entire cooperative grid (cg::this_grid().sync()).
+    nativeName: __gsharp_grid_sync
+    summary: Synchronizes all threads across the entire cooperative grid (__gsharp_grid_sync).
     returnType: void
 
   # ===========================================================================

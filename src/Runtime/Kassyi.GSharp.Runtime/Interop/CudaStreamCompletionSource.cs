@@ -303,6 +303,9 @@ internal sealed class CudaStreamCompletionSource : IValueTaskSource, IDisposable
         {
             // Before signaling, so that an awaiter resuming on the success path already observes the hook's effects.
             source._hook?.OnStreamCompleted();
+            // A kernel whose failing thread recorded an error and exited completes normally; reading the pinned
+            // host-mapped slot calls no CUDA API
+            DeviceErrorSlot.ThrowIfDeviceError();
             source.TryComplete(source._armedVersion, error: null);
         }
         catch (Exception ex)

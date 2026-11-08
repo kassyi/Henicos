@@ -120,7 +120,7 @@ public class ConcurrencyAndWarpTests : TranspilerTestBase
             nameof(ConcurrencyAndWarpTarget.CooperativeGroups), dialect: new GSharpCudaDialect());
 
         Assert.Empty(diagnostics);
-        Assert.Contains("cg::this_grid().sync();", cudaSource);
+        Assert.Contains("__gsharp_grid_sync();", cudaSource);
     }
 
     [Fact]
