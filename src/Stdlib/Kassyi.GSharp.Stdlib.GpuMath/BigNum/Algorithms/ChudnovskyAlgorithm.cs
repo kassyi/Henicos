@@ -90,10 +90,18 @@ public static partial class ChudnovskyAlgorithm
     /// <summary>
     /// Computes high-precision Pi using the Chudnovsky binary splitting algorithm on the GPU.
     /// </summary>
-    /// <param name="digits">The number of decimal digits to compute.</param>
+    /// <param name="digits">
+    /// The number of digits after the point, counted in the base of the output: decimal digits, or hexadecimal digits
+    /// when <paramref name="asHex"/> is <see langword="true"/>. The output has exactly that many, truncated (not
+    /// rounded).
+    /// </param>
     /// <param name="outputWriter">The text writer to output the computed Pi.</param>
     /// <param name="thresholdTerms">The threshold number of terms to switch to CPU fallback.</param>
-    /// <param name="asHex">If true, outputs in hexadecimal format instead of base 10.</param>
+    /// <param name="asHex">
+    /// If true, outputs in hexadecimal format instead of base 10, and checks the last digits of the output (up to 16)
+    /// against the BBP digit extraction.
+    /// </param>
+    /// <exception cref="InvalidOperationException">The hexadecimal output fails its BBP check.</exception>
     public static void ComputePi(int digits, TextWriter outputWriter, int thresholdTerms = 8192,
         bool asHex = false)
     {
@@ -106,8 +114,7 @@ public static partial class ChudnovskyAlgorithm
 
         if (asHex)
         {
-            var exactBits = (int)Math.Floor(digits * BitsPerDecimalDigit / 32) * 32;
-            totalDigits = exactBits + ExtraBits + MarginBits;
+            totalDigits = HexTargetBits(digits);
             totalTerms = (int)Math.Ceiling(totalDigits / BitsPerTerm) + 1;
         }
         else
@@ -173,8 +180,7 @@ public static partial class ChudnovskyAlgorithm
 
         if (asHex)
         {
-            var exactBits = (int)Math.Floor(digits * BitsPerDecimalDigit / 32) * 32;
-            var targetBits = exactBits + ExtraBits + MarginBits;
+            var targetBits = HexTargetBits(digits);
 
             Logger.Info("GPU-Pi", $"Computing Sqrt base (10005 * 2^{2 * targetBits})...");
 
@@ -265,7 +271,7 @@ public static partial class ChudnovskyAlgorithm
 
         if (asHex)
         {
-            WriteHexPiOutput(gpuPiExt, outputWriter);
+            WriteHexPiOutput(gpuPiExt, digits, outputWriter);
         }
         else
         {
@@ -276,7 +282,24 @@ public static partial class ChudnovskyAlgorithm
         Logger.Info("GPU-Pi", $"Base Conversion & Output: {radixStopwatch.ElapsedMilliseconds} ms");
     }
 
-    private static void WriteHexPiOutput(GpuBigUInt gpuPiExt, TextWriter hexWriter)
+    /// <summary>
+    /// Returns the bits of the fixed-point pi for <paramref name="digits"/> hexadecimal digits after the point: whole
+    /// words of fraction (8 digits each, rounded up) and the guard bits below them.
+    /// </summary>
+    private static int HexTargetBits(int digits) =>
+        checked((int)((digits + 7L) / 8 * 32) + ExtraBits + MarginBits);
+
+    /// <summary>
+    /// Returns the digits of the hexadecimal output that the BBP check covers: the last ones, up to 16, as their
+    /// 0-based position after the point and their count.
+    /// </summary>
+    internal static (int Offset, int Length) HexTail(int digits)
+    {
+        var length = Math.Min(digits, 16);
+        return (digits - length, length);
+    }
+
+    private static void WriteHexPiOutput(GpuBigUInt gpuPiExt, int digits, TextWriter hexWriter)
     {
         var hostData = gpuPiExt.ToHostArray();
 
@@ -292,39 +315,41 @@ public static partial class ChudnovskyAlgorithm
             actualTopIndex = 0;
         }
 
-        const int DropWords = (MarginBits + ExtraBits) / 32;
-        const int TruncationSafetyWords = 8;
-
-        const int CheckIndex = DropWords + TruncationSafetyWords;
-
-        // The tail words CheckIndex + 1 and CheckIndex start at fractional hex digit (actualTopIndex - CheckIndex - 2) * 8,
-        // which is non-negative only when word CheckIndex + 1 lies below the integer word.
-        if (CheckIndex + 2 <= actualTopIndex)
+        // The last printed digits lie ExtraBits + MarginBits above the bits the computation may get wrong; BBP
+        // extracts the same digits independently, for every digit count.
+        var (offset, length) = HexTail(digits);
+        Span<char> tail = stackalloc char[16];
+        for (var k = 0; k < length; k++)
         {
-            var computedHexTail =
-                hostData[CheckIndex + 1].ToString("X8") + hostData[CheckIndex].ToString("X8");
-            var offset = (actualTopIndex - CheckIndex - 2) * 8;
-
-            if (!PiVerifier.VerifyWithBbp(computedHexTail, offset))
-            {
-                throw new InvalidOperationException(
-                    $"BBP hexadecimal verification failed at offset {offset} (computed tail: {computedHexTail}).");
-            }
-        }
-        else if (!Console.IsOutputRedirected)
-        {
-            Logger.Error("Verification", "FAIL: Not enough valid words to verify with BBP safety margin.");
+            tail[k] = HexDigit(hostData, actualTopIndex, offset + k);
         }
 
-        // Output integer part and fraction separated by a radix point
+        var computedHexTail = new string(tail[..length]);
+        if (!PiVerifier.VerifyWithBbp(computedHexTail, offset))
+        {
+            throw new InvalidOperationException(
+                $"BBP hexadecimal verification failed at offset {offset} (computed tail: {computedHexTail}).");
+        }
+
+        // The integer part, the point and exactly digits fraction digits (truncated, as the decimal output)
         hexWriter.Write(hostData[actualTopIndex].ToString("X"));
         hexWriter.Write('.');
-        for (var i = actualTopIndex - 1; i >= DropWords; i--)
+        Span<char> word = stackalloc char[8];
+        for (var written = 0; written < digits; written += 8)
         {
-            hexWriter.Write(hostData[i].ToString("X8"));
+            hostData[actualTopIndex - 1 - written / 8].TryFormat(word, out _, "X8");
+            hexWriter.Write(word[..Math.Min(8, digits - written)]);
         }
 
         hexWriter.Flush();
+    }
+
+    // The hexadecimal digit at 0-based position index after the point; the fraction starts below the integer word.
+    private static char HexDigit(uint[] hostData, int integerWordIndex, int index)
+    {
+        var word = hostData[integerWordIndex - 1 - index / 8];
+        var nibble = (word >> (4 * (7 - index % 8))) & 0xFu;
+        return (char)(nibble < 10 ? '0' + nibble : 'A' + nibble - 10);
     }
 
     private static void WriteDecimalPiOutput(

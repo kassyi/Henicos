@@ -79,7 +79,7 @@ public static void ComputePi(
 #### Parameters
 
 `digits` _Int32_<br>
-The number of decimal digits to compute.
+The number of digits after the point, counted in the base of the output: decimal digits, or hexadecimal digits when `asHex` is `true` (for example `3.243F6A888` for 9). The output has exactly that many digits, truncated, not rounded.
 
 `outputWriter` _TextWriter_<br>
 The text writer to receive the computed $\pi$ representation.
@@ -88,7 +88,7 @@ The text writer to receive the computed $\pi$ representation.
 The leaf subtree threshold (number of hypergeometric terms) at or below which subtrees are evaluated on the CPU via `ComputeSubtree` before uploading and merging on the GPU via `HypergeometricTerms.Merge`. Defaults to `8192`.
 
 `asHex` _Boolean_<br>
-If `true`, outputs in hexadecimal format (`3.243F6A88...`) and automatically verifies trailing hexadecimal digits against [BbpAlgorithm](BbpAlgorithm.md); if `false`, outputs in base-10 format (`3.14159265...`) via `GpuRadixConverter`.
+If `true`, outputs in hexadecimal format (`3.243F6A88...`) and verifies the last digits of the output (up to 16, for every digit count) against [BbpAlgorithm](BbpAlgorithm.md); if `false`, outputs in base-10 format (`3.14159265...`) via `GpuRadixConverter`.
 
 #### Exceptions
 
@@ -97,6 +97,9 @@ If `true`, outputs in hexadecimal format (`3.243F6A88...`) and automatically ver
 
 `ArgumentOutOfRangeException`<br>
 `digits` or `thresholdTerms` is less than or equal to zero.
+
+`InvalidOperationException`<br>
+The hexadecimal output fails its BBP check.
 
 ## ComputeSubtree(Int32, Int32)
 
