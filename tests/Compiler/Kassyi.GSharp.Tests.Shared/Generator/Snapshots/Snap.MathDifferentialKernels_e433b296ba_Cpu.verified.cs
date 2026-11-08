@@ -147,7 +147,6 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 }
 ";
-public static readonly string MathOfSingleMatrixKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +MathOfSingleMatrixKernel_Source;
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MathDifferentialKernels__MathOfSingleMatrixKernel {
 public int __gsharp_state;
@@ -421,7 +420,6 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 }
 ";
-public static readonly string SingleRoundingAndUnaryMatrixKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +SingleRoundingAndUnaryMatrixKernel_Source;
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MathDifferentialKernels__SingleRoundingAndUnaryMatrixKernel {
 public int __gsharp_state;
@@ -690,7 +688,6 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 }
 ";
-public static readonly string DoubleRoundingAndUnaryMatrixKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +DoubleRoundingAndUnaryMatrixKernel_Source;
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MathDifferentialKernels__DoubleRoundingAndUnaryMatrixKernel {
 public int __gsharp_state;
@@ -962,7 +959,6 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 }
 ";
-public static readonly string SingleMaxMinClampMatrixKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +SingleMaxMinClampMatrixKernel_Source;
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MathDifferentialKernels__SingleMaxMinClampMatrixKernel {
 public int __gsharp_state;
@@ -1257,7 +1253,6 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 }
 ";
-public static readonly string DoubleMaxMinClampMatrixKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +DoubleMaxMinClampMatrixKernel_Source;
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MathDifferentialKernels__DoubleMaxMinClampMatrixKernel {
 public int __gsharp_state;
@@ -1556,7 +1551,6 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 }
 ";
-public static readonly string MixedFloatMaxMinMatrixKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +MixedFloatMaxMinMatrixKernel_Source;
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MathDifferentialKernels__MixedFloatMaxMinMatrixKernel {
 public int __gsharp_state;
@@ -1856,7 +1850,6 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 }
 ";
-public static readonly string Int32MathMatrixKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +Int32MathMatrixKernel_Source;
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MathDifferentialKernels__Int32MathMatrixKernel {
 public int __gsharp_state;
@@ -2161,7 +2154,6 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 }
 ";
-public static readonly string MathFIntArgumentMatrixKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +MathFIntArgumentMatrixKernel_Source;
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MathDifferentialKernels__MathFIntArgumentMatrixKernel {
 public int __gsharp_state;
@@ -2453,7 +2445,6 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 }
 ";
-public static readonly string SubnormalIeeeExactMatrixKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +SubnormalIeeeExactMatrixKernel_Source;
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MathDifferentialKernels__SubnormalIeeeExactMatrixKernel {
 public int __gsharp_state;
@@ -2769,7 +2760,6 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 }
 ";
-public static readonly string TranscendentalSpecialValuesKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +TranscendentalSpecialValuesKernel_Source;
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MathDifferentialKernels__TranscendentalSpecialValuesKernel {
 public int __gsharp_state;
@@ -3117,7 +3107,6 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 }
 ";
-public static readonly string BitOperationsMatrixKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +BitOperationsMatrixKernel_Source;
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MathDifferentialKernels__BitOperationsMatrixKernel {
 public int __gsharp_state;
@@ -3429,7 +3418,6 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 }
 ";
-public static readonly string FloatComparisonAndLargeTieMatrixKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +FloatComparisonAndLargeTieMatrixKernel_Source;
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MathDifferentialKernels__FloatComparisonAndLargeTieMatrixKernel {
 public int __gsharp_state;
@@ -3748,7 +3736,6 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 }
 ";
-public static readonly string MulAddExactAndContractionKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +MulAddExactAndContractionKernel_Source;
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MathDifferentialKernels__MulAddExactAndContractionKernel {
 public int __gsharp_state;
@@ -4035,7 +4022,6 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 }
 ";
-public static readonly string SingleTranscendentalMatrixKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +SingleTranscendentalMatrixKernel_Source;
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MathDifferentialKernels__SingleTranscendentalMatrixKernel {
 public int __gsharp_state;
@@ -4339,7 +4325,6 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 }
 ";
-public static readonly string DoubleAndPromotedSingleTranscendentalMatrixKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +DoubleAndPromotedSingleTranscendentalMatrixKernel_Source;
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MathDifferentialKernels__DoubleAndPromotedSingleTranscendentalMatrixKernel {
 public int __gsharp_state;
@@ -4656,7 +4641,6 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 }
 ";
-public static readonly string FastMathMatrixKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +FastMathMatrixKernel_Source;
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MathDifferentialKernels__FastMathMatrixKernel {
 public int __gsharp_state;

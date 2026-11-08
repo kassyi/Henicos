@@ -12,7 +12,6 @@ public const string Kernel_00_Source = @"__global__ void Kernel_00(int* a)
 {
 a[0]=1;
 }";
-public static readonly string Kernel_00_FullSource = "prelude" + Kernel_00_Source;
 public class __gsharp_context_FuzzBatchKernels__Kernel_u00
 {
 public int __gsharp_state;
@@ -29,7 +28,6 @@ public const string Kernel_01_Source = @"__global__ void Kernel_01(int* a)
 {
 a[0]=2;
 }";
-public static readonly string Kernel_01_FullSource = "prelude" + Kernel_01_Source;
 public static void __gsharp_statemachine_FuzzBatchKernels__Kernel_u01(int[] a)
 {
 a[0] = 2;

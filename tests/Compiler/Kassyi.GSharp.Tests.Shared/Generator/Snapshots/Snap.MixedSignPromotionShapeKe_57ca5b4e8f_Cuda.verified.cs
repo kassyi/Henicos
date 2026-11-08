@@ -100,7 +100,6 @@ __gsharp_id_3_values[6]=(long long)(__gsharp_id_6_u*2u)+(long long)__gsharp_id_7
 __gsharp_id_3_values[7]=(long long)__gsharp_id_7_n-(long long)__gsharp_id_6_u;
 }
 ";
-public static readonly string ConvertedKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ConvertedKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ConvertedKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__TestCases__Emission__MixedSignPromotionShapeKernels__ConvertedKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerConvertedKernel() => global::Kassyi.GSharp.Tests.TestCases.Emission.MixedSignPromotionShapeKernels.__gsharp_hfunc_ConvertedKernel.Resolve();
@@ -431,7 +430,6 @@ __gsharp_id_4_values[5]=__gsharp_id_5_u+(unsigned int)__gsharp_id_6_n;
 __gsharp_id_4_values[6]=__gsharp_id_5_u+__gsharp_id_7_b1;
 }
 ";
-public static readonly string UnchangedKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +UnchangedKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_UnchangedKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__TestCases__Emission__MixedSignPromotionShapeKernels__UnchangedKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerUnchangedKernel() => global::Kassyi.GSharp.Tests.TestCases.Emission.MixedSignPromotionShapeKernels.__gsharp_hfunc_UnchangedKernel.Resolve();

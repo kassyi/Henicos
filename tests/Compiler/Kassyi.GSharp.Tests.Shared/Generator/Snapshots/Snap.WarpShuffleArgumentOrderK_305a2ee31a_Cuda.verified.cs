@@ -278,7 +278,6 @@ __gsharp_id_0_result[(int)threadIdx.x]=__gsharp_id_3_r;
 __gsharp_id_1_afterV[(int)threadIdx.x]=__gsharp_id_2_v;
 }
 ";
-public static readonly string ShuffleDownPostIncrementKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ShuffleDownPostIncrementKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ShuffleDownPostIncrementKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleDownPostIncrementKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerShuffleDownPostIncrementKernel() => global::Kassyi.GSharp.Tests.Shared.Core.WarpShuffleArgumentOrderKernels.__gsharp_hfunc_ShuffleDownPostIncrementKernel.Resolve();
@@ -449,7 +448,6 @@ __gsharp_id_1_orderOut[4]=__gsharp_id_2_step;
 }
 }
 ";
-public static readonly string ShuffleNamedArgSideEffectOrderKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ShuffleNamedArgSideEffectOrderKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ShuffleNamedArgSideEffectOrderKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleNamedArgSideEffectOrderKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerShuffleNamedArgSideEffectOrderKernel() => global::Kassyi.GSharp.Tests.Shared.Core.WarpShuffleArgumentOrderKernels.__gsharp_hfunc_ShuffleNamedArgSideEffectOrderKernel.Resolve();
@@ -601,7 +599,6 @@ int __gsharp_id_1_v = (int)threadIdx.x;
 __gsharp_id_0_result[(int)threadIdx.x]=__shfl_down_sync(0xFFFFFFFFu,__gsharp_id_1_v,2U,32);
 }
 ";
-public static readonly string ShuffleDownConstantDeltaKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ShuffleDownConstantDeltaKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ShuffleDownConstantDeltaKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleDownConstantDeltaKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerShuffleDownConstantDeltaKernel() => global::Kassyi.GSharp.Tests.Shared.Core.WarpShuffleArgumentOrderKernels.__gsharp_hfunc_ShuffleDownConstantDeltaKernel.Resolve();
@@ -705,7 +702,6 @@ public const string DeviceFunctionShuffleConstantDeltaKernel_Source = @"extern "
 __gsharp_id_0_result[(int)threadIdx.x]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleDownByHalfOfHalf((int)threadIdx.x);
 }
 ";
-public static readonly string DeviceFunctionShuffleConstantDeltaKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +DeviceFunctionShuffleConstantDeltaKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_DeviceFunctionShuffleConstantDeltaKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__DeviceFunctionShuffleConstantDeltaKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerDeviceFunctionShuffleConstantDeltaKernel() => global::Kassyi.GSharp.Tests.Shared.Core.WarpShuffleArgumentOrderKernels.__gsharp_hfunc_DeviceFunctionShuffleConstantDeltaKernel.Resolve();
@@ -809,7 +805,6 @@ public const string SuspendingCallConstantArgumentKernel_Source = @"extern ""C""
 __gsharp_id_0_result[(int)threadIdx.x]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleDownBy((int)threadIdx.x,2U);
 }
 ";
-public static readonly string SuspendingCallConstantArgumentKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +SuspendingCallConstantArgumentKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_SuspendingCallConstantArgumentKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__SuspendingCallConstantArgumentKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerSuspendingCallConstantArgumentKernel() => global::Kassyi.GSharp.Tests.Shared.Core.WarpShuffleArgumentOrderKernels.__gsharp_hfunc_SuspendingCallConstantArgumentKernel.Resolve();
@@ -920,7 +915,6 @@ __gsharp_id_0_rounds[(int)threadIdx.x]=__gsharp_id_3_n;
 __gsharp_id_1_afterV[(int)threadIdx.x]=__gsharp_id_2_v;
 }
 ";
-public static readonly string ShuffleInWhileConditionKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ShuffleInWhileConditionKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ShuffleInWhileConditionKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleInWhileConditionKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerShuffleInWhileConditionKernel() => global::Kassyi.GSharp.Tests.Shared.Core.WarpShuffleArgumentOrderKernels.__gsharp_hfunc_ShuffleInWhileConditionKernel.Resolve();
@@ -1074,7 +1068,6 @@ __gsharp_id_0_viaCall[(int)threadIdx.x]=__gsharp_fn_Kassyi__GSharp__Tests__Share
 __gsharp_id_1_viaShuffle[(int)threadIdx.x]=__shfl_sync(0xFFFFFFFFu,(__gsharp_id_2_flag!=0?(float)__gsharp_id_3_i:(float)__gsharp_id_4_u),1,32);
 }
 ";
-public static readonly string TargetTypedArgumentKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +TargetTypedArgumentKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_TargetTypedArgumentKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__TargetTypedArgumentKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerTargetTypedArgumentKernel() => global::Kassyi.GSharp.Tests.Shared.Core.WarpShuffleArgumentOrderKernels.__gsharp_hfunc_TargetTypedArgumentKernel.Resolve();
@@ -1235,7 +1228,6 @@ return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrder
 __gsharp_id_1_afterI[(int)threadIdx.x]=__gsharp_id_2_i;
 }
 ";
-public static readonly string RefElementIndexWrittenLaterKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +RefElementIndexWrittenLaterKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_RefElementIndexWrittenLaterKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__RefElementIndexWrittenLaterKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerRefElementIndexWrittenLaterKernel() => global::Kassyi.GSharp.Tests.Shared.Core.WarpShuffleArgumentOrderKernels.__gsharp_hfunc_RefElementIndexWrittenLaterKernel.Resolve();

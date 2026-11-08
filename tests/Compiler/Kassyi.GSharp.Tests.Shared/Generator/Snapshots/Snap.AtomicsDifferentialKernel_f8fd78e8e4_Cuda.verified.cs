@@ -163,7 +163,6 @@ __gsharp_id_3_oldValuesOut[__gsharp_add_i32(__gsharp_id_14_o,5)]=(int)__gsharp_i
 __gsharp_id_4_oldULongOut[__gsharp_id_5_tid]=__gsharp_id_13_oldAddU64;
 }
 ";
-public static readonly string IntegerSameStepAtomicsKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +IntegerSameStepAtomicsKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_IntegerSameStepAtomicsKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__AtomicsDifferentialKernels__IntegerSameStepAtomicsKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerIntegerSameStepAtomicsKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.AtomicsDifferentialKernels.__gsharp_hfunc_IntegerSameStepAtomicsKernel.Resolve();
@@ -508,7 +507,6 @@ __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__AtomicsDifferentialKern
 atomicOr(&__gsharp_id_3_packets[__gsharp_id_5_bucket].__gsharp_mb_Flags,1u<<(__gsharp_id_4_tid&31&31));
 }
 ";
-public static readonly string IntegerArbitraryAtomicsInt32Kernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +IntegerArbitraryAtomicsInt32Kernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_IntegerArbitraryAtomicsInt32Kernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__AtomicsDifferentialKernels__IntegerArbitraryAtomicsInt32Kernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 private static bool __gsharp_layout_checked_IntegerArbitraryAtomicsInt32Kernel;
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
@@ -790,7 +788,6 @@ __gsharp_id_2_oldValuesUInt[__gsharp_mul_i32(__gsharp_id_3_tid,2)+0]=__gsharp_id
 __gsharp_id_2_oldValuesUInt[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_3_tid,2),1)]=__gsharp_id_5_oldCasUInt;
 }
 ";
-public static readonly string IntegerArbitraryAtomicsUInt32Kernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +IntegerArbitraryAtomicsUInt32Kernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_IntegerArbitraryAtomicsUInt32Kernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__AtomicsDifferentialKernels__IntegerArbitraryAtomicsUInt32Kernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerIntegerArbitraryAtomicsUInt32Kernel() => global::Kassyi.GSharp.Tests.Shared.Differential.AtomicsDifferentialKernels.__gsharp_hfunc_IntegerArbitraryAtomicsUInt32Kernel.Resolve();
@@ -1004,7 +1001,6 @@ __gsharp_id_2_oldValuesULong[__gsharp_mul_i32(__gsharp_id_3_tid,2)+0]=__gsharp_i
 __gsharp_id_2_oldValuesULong[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_3_tid,2),1)]=__gsharp_id_5_oldCasULong;
 }
 ";
-public static readonly string IntegerArbitraryAtomicsUInt64Kernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +IntegerArbitraryAtomicsUInt64Kernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_IntegerArbitraryAtomicsUInt64Kernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__AtomicsDifferentialKernels__IntegerArbitraryAtomicsUInt64Kernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerIntegerArbitraryAtomicsUInt64Kernel() => global::Kassyi.GSharp.Tests.Shared.Differential.AtomicsDifferentialKernels.__gsharp_hfunc_IntegerArbitraryAtomicsUInt64Kernel.Resolve();
@@ -1278,7 +1274,6 @@ atomicAdd(&__gsharp_id_2_globalSummary[3],__gsharp_id_19_blockDynTotal);
 }
 }
 ";
-public static readonly string IntegerSharedMemoryTwoStageAtomicsInt32Kernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +IntegerSharedMemoryTwoStageAtomicsInt32Kernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_IntegerSharedMemoryTwoStageAtomicsInt32Kernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__AtomicsDifferentialKernels__IntegerSharedMemoryTwoStageAtomicsInt32Kernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerIntegerSharedMemoryTwoStageAtomicsInt32Kernel() => global::Kassyi.GSharp.Tests.Shared.Differential.AtomicsDifferentialKernels.__gsharp_hfunc_IntegerSharedMemoryTwoStageAtomicsInt32Kernel.Resolve();
@@ -1513,7 +1508,6 @@ atomicMax(&__gsharp_id_2_globalSummary[0],__gsharp_id_10_blockMaxU);
 }
 }
 ";
-public static readonly string IntegerSharedMemoryTwoStageAtomicsUInt32Kernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +IntegerSharedMemoryTwoStageAtomicsUInt32Kernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_IntegerSharedMemoryTwoStageAtomicsUInt32Kernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__AtomicsDifferentialKernels__IntegerSharedMemoryTwoStageAtomicsUInt32Kernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerIntegerSharedMemoryTwoStageAtomicsUInt32Kernel() => global::Kassyi.GSharp.Tests.Shared.Differential.AtomicsDifferentialKernels.__gsharp_hfunc_IntegerSharedMemoryTwoStageAtomicsUInt32Kernel.Resolve();
@@ -1731,7 +1725,6 @@ atomicXor(&__gsharp_id_2_globalSummary[0],__gsharp_id_7_blockU64Xor);
 }
 }
 ";
-public static readonly string IntegerSharedMemoryTwoStageAtomicsUInt64Kernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +IntegerSharedMemoryTwoStageAtomicsUInt64Kernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_IntegerSharedMemoryTwoStageAtomicsUInt64Kernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__AtomicsDifferentialKernels__IntegerSharedMemoryTwoStageAtomicsUInt64Kernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerIntegerSharedMemoryTwoStageAtomicsUInt64Kernel() => global::Kassyi.GSharp.Tests.Shared.Differential.AtomicsDifferentialKernels.__gsharp_hfunc_IntegerSharedMemoryTwoStageAtomicsUInt64Kernel.Resolve();
@@ -1961,7 +1954,6 @@ __gsharp_id_2_returnsOut[__gsharp_add_i32(__gsharp_id_14_o,2)]=__gsharp_id_11_re
 __gsharp_id_2_returnsOut[__gsharp_add_i32(__gsharp_id_14_o,3)]=__gsharp_id_12_retCasMiss;
 }
 ";
-public static readonly string InterlockedInt32OverloadsKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +InterlockedInt32OverloadsKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_InterlockedInt32OverloadsKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__AtomicsDifferentialKernels__InterlockedInt32OverloadsKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerInterlockedInt32OverloadsKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.AtomicsDifferentialKernels.__gsharp_hfunc_InterlockedInt32OverloadsKernel.Resolve();
@@ -2226,7 +2218,6 @@ __gsharp_id_2_returnsOut[__gsharp_id_9_o+0]=__gsharp_id_6_retExch;
 __gsharp_id_2_returnsOut[__gsharp_add_i32(__gsharp_id_9_o,1)]=__gsharp_id_8_retCasHit;
 }
 ";
-public static readonly string InterlockedUInt32OverloadsKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +InterlockedUInt32OverloadsKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_InterlockedUInt32OverloadsKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__AtomicsDifferentialKernels__InterlockedUInt32OverloadsKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerInterlockedUInt32OverloadsKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.AtomicsDifferentialKernels.__gsharp_hfunc_InterlockedUInt32OverloadsKernel.Resolve();
@@ -2494,7 +2485,6 @@ __gsharp_id_2_returnsOut[__gsharp_add_i32(__gsharp_id_10_o,1)]=__gsharp_id_7_ret
 __gsharp_id_2_returnsOut[__gsharp_add_i32(__gsharp_id_10_o,2)]=__gsharp_id_9_retCasHit;
 }
 ";
-public static readonly string InterlockedInt64OverloadsKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +InterlockedInt64OverloadsKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_InterlockedInt64OverloadsKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__AtomicsDifferentialKernels__InterlockedInt64OverloadsKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerInterlockedInt64OverloadsKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.AtomicsDifferentialKernels.__gsharp_hfunc_InterlockedInt64OverloadsKernel.Resolve();
@@ -2759,7 +2749,6 @@ __gsharp_id_2_returnsOut[__gsharp_id_9_o+0]=__gsharp_id_6_retExch;
 __gsharp_id_2_returnsOut[__gsharp_add_i32(__gsharp_id_9_o,1)]=__gsharp_id_8_retCasHit;
 }
 ";
-public static readonly string InterlockedUInt64OverloadsKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +InterlockedUInt64OverloadsKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_InterlockedUInt64OverloadsKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__AtomicsDifferentialKernels__InterlockedUInt64OverloadsKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerInterlockedUInt64OverloadsKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.AtomicsDifferentialKernels.__gsharp_hfunc_InterlockedUInt64OverloadsKernel.Resolve();
@@ -3033,7 +3022,6 @@ __gsharp_id_2_output[__gsharp_add_i32(__gsharp_id_9_o,3)]=__gsharp_id_7_add32Wra
 __gsharp_id_2_output[__gsharp_add_i32(__gsharp_id_9_o,4)]=__gsharp_id_8_casNamedUpdated;
 }
 ";
-public static readonly string InterlockedReturnExpressionKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +InterlockedReturnExpressionKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_InterlockedReturnExpressionKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__AtomicsDifferentialKernels__InterlockedReturnExpressionKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerInterlockedReturnExpressionKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.AtomicsDifferentialKernels.__gsharp_hfunc_InterlockedReturnExpressionKernel.Resolve();
@@ -3287,7 +3275,6 @@ atomicAdd(&__gsharp_id_0_summaryFloats[3],__gsharp_id_14_blockDynSum);
 }
 }
 ";
-public static readonly string FloatExactPowersOfTwoAtomicKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +FloatExactPowersOfTwoAtomicKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_FloatExactPowersOfTwoAtomicKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__AtomicsDifferentialKernels__FloatExactPowersOfTwoAtomicKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 private static bool __gsharp_layout_checked_FloatExactPowersOfTwoAtomicKernel;
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
@@ -3636,7 +3623,6 @@ atomicAdd(&__gsharp_id_1_accumulators[2],__gsharp_id_6_blockTotal);
 }
 }
 ";
-public static readonly string FloatTwoStageRoundingBoundKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +FloatTwoStageRoundingBoundKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_FloatTwoStageRoundingBoundKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__AtomicsDifferentialKernels__FloatTwoStageRoundingBoundKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerFloatTwoStageRoundingBoundKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.AtomicsDifferentialKernels.__gsharp_hfunc_FloatTwoStageRoundingBoundKernel.Resolve();
@@ -3816,7 +3802,6 @@ __gsharp_id_1_specialOutputs[1]=__gsharp_id_4_sSubnormal[0];
 }
 }
 ";
-public static readonly string FloatSpecialValuesContentionKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +FloatSpecialValuesContentionKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_FloatSpecialValuesContentionKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__AtomicsDifferentialKernels__FloatSpecialValuesContentionKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerFloatSpecialValuesContentionKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.AtomicsDifferentialKernels.__gsharp_hfunc_FloatSpecialValuesContentionKernel.Resolve();
@@ -3982,7 +3967,6 @@ __gsharp_id_2_sharedState[2]=__gsharp_id_7_oldXor^(__gsharp_add_i32(__gsharp_mul
 atomicExch(&__gsharp_id_1_lockSlot[0],0);
 }
 ";
-public static readonly string BlockLeaderCasSpinlockKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +BlockLeaderCasSpinlockKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_BlockLeaderCasSpinlockKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__AtomicsDifferentialKernels__BlockLeaderCasSpinlockKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerBlockLeaderCasSpinlockKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.AtomicsDifferentialKernels.__gsharp_hfunc_BlockLeaderCasSpinlockKernel.Resolve();
@@ -4201,7 +4185,6 @@ while(atomicCAS(&__gsharp_id_0_head[0],__gsharp_id_5_curHead,__gsharp_id_6_nextH
 __gsharp_id_2_popped[__gsharp_id_3_tid]=__gsharp_id_5_curHead;
 }
 ";
-public static readonly string CooperativeCasLockFreeStackKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +CooperativeCasLockFreeStackKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_CooperativeCasLockFreeStackKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__AtomicsDifferentialKernels__CooperativeCasLockFreeStackKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerCooperativeCasLockFreeStackKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.AtomicsDifferentialKernels.__gsharp_hfunc_CooperativeCasLockFreeStackKernel.Resolve();

@@ -101,7 +101,6 @@ __gsharp_id_1_result[(int)blockIdx.x]=__gsharp_id_2_sum;
 }
 }
 ";
-public static readonly string IntParallelSum_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +IntParallelSum_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_IntParallelSum = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Runtime__ParallelReductionExecutionKernels__IntParallelSum", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerIntParallelSum() => global::Kassyi.GSharp.Tests.Shared.Runtime.ParallelReductionExecutionKernels.__gsharp_hfunc_IntParallelSum.Resolve();

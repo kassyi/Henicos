@@ -391,7 +391,6 @@ __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShiftRef __gsharp_id_5_r = __
 __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ShiftOps__Shift_o1(&__gsharp_id_3_ctx,__gsharp_id_5_r,__gsharp_id_4_x,3);
 }
 ";
-public static readonly string ShiftKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ShiftKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ShiftKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroOverloadKernels__ShiftKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerShiftKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroOverloadKernels.__gsharp_hfunc_ShiftKernel.Resolve();
@@ -588,7 +587,6 @@ __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReversedShiftRef __gsharp_id_
 __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ReversedShiftOps__Shift_o0(&__gsharp_id_3_ctx,__gsharp_id_5_r,__gsharp_id_4_x,3);
 }
 ";
-public static readonly string ReversedShiftKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ReversedShiftKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ReversedShiftKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroOverloadKernels__ReversedShiftKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerReversedShiftKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroOverloadKernels.__gsharp_hfunc_ReversedShiftKernel.Resolve();
@@ -773,7 +771,6 @@ __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PickRef __gsharp_id_5_c = __g
 __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__PickOps__Add_o1(__gsharp_id_5_c,__gsharp_id_3_a,__gsharp_id_4_b);
 }
 ";
-public static readonly string PickKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +PickKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_PickKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroOverloadKernels__PickKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerPickKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroOverloadKernels.__gsharp_hfunc_PickKernel.Resolve();
@@ -1005,7 +1002,6 @@ __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PickRef __gsharp_id_5_c = __g
 __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__PickOps__Add_o1(__gsharp_id_5_c,__gsharp_id_3_a,__gsharp_id_4_b);
 }
 ";
-public static readonly string CastPickKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +CastPickKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_CastPickKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroOverloadKernels__CastPickKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerCastPickKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroOverloadKernels.__gsharp_hfunc_CastPickKernel.Resolve();
@@ -1236,7 +1232,6 @@ __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ShrRef __gsharp_id_3_r = __gs
 __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ShrOps__Shr_o1(__gsharp_id_3_r,__gsharp_id_2_x,3);
 }
 ";
-public static readonly string ShrKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ShrKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ShrKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroOverloadKernels__ShrKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerShrKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroOverloadKernels.__gsharp_hfunc_ShrKernel.Resolve();
@@ -1412,7 +1407,6 @@ __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__SubRef __gsharp_id_5_c = __gs
 __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__SubOps__Sub_o1(__gsharp_id_5_c,__gsharp_id_3_a,__gsharp_id_4_b);
 }
 ";
-public static readonly string SubKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +SubKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_SubKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroOverloadKernels__SubKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerSubKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroOverloadKernels.__gsharp_hfunc_SubKernel.Resolve();
@@ -1657,7 +1651,6 @@ __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtxRef __gsharp_id_7_c = __gs
 __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__CtxOps__Add_o1(&__gsharp_id_4_ctx,__gsharp_id_7_c,__gsharp_id_5_a,__gsharp_id_6_b);
 }
 ";
-public static readonly string ContextOverloadKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ContextOverloadKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ContextOverloadKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroOverloadKernels__ContextOverloadKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerContextOverloadKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroOverloadKernels.__gsharp_hfunc_ContextOverloadKernel.Resolve();
@@ -1892,7 +1885,6 @@ __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ConstantShrRef __gsharp_id_3_
 __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ConstantShrOps__Shr_o1(__gsharp_id_3_r,__gsharp_id_2_x,3);
 }
 ";
-public static readonly string ConstantShrKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ConstantShrKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ConstantShrKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroOverloadKernels__ConstantShrKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerConstantShrKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroOverloadKernels.__gsharp_hfunc_ConstantShrKernel.Resolve();

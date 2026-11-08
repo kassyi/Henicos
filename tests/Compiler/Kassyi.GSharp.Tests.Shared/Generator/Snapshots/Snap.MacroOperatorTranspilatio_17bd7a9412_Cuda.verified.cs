@@ -185,7 +185,6 @@ __gsharp_fn_TestNamespace__DummyKernels__DummyUnaryOp(__gsharp_id_6_c,__gsharp_i
 __gsharp_fn_TestNamespace__DummyKernels__DummyShiftOp(__gsharp_id_0_ctx,__gsharp_id_6_c,__gsharp_id_4_a,5);
 }
 ";
-public static readonly string MacroKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +MacroKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_MacroKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_TestNamespace__TestKernels__MacroKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 private static bool __gsharp_layout_checked_MacroKernel;
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>

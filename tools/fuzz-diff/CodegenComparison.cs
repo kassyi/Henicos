@@ -84,8 +84,8 @@ internal static class CodegenComparison
 
     /// <summary>
     /// Splits a generated launcher file by kernel. The generator writes, per kernel, the constant
-    /// <c>{Kernel}_Source</c> with the kernel's native code, followed by that kernel's C# members (full-source
-    /// accessor, managed context and state machine, delegate, launcher); the next <c>_Source</c> constant starts the
+    /// <c>{Kernel}_Source</c> with the kernel's native code, followed by that kernel's C# members (managed
+    /// context and state machine, delegate, launcher); the next <c>_Source</c> constant starts the
     /// next kernel. Members before the first constant belong to no kernel and are not returned.
     /// </summary>
     internal static KernelSegments SplitByKernel(string generatedCSharp)
