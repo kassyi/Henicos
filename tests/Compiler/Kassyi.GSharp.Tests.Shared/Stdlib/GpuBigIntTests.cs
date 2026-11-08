@@ -256,9 +256,11 @@ public class GpuBigIntegerTests
         var evalNeg = negExpr.Evaluate(destNeg);
         Assert.True(evalNeg.IsNegative);
 
-        using var destNot = new GpuBigUInt(context, 4);
+        // ~0 == -1, one bit wider than the operand: 4 words + 1 bit needs 5 words
+        using var destNot = new GpuBigUInt(context, 5);
         var evalNot = notExpr.Evaluate(destNot);
-        Assert.False(evalNot.IsNegative);
+        Assert.True(evalNot.IsNegative);
+        Assert.Equal(System.Numerics.BigInteger.One, evalNot.Value.ToBigInteger());
     }
 
     [SkippableFact]

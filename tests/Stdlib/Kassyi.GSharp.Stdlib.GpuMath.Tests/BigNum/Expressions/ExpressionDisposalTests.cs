@@ -149,7 +149,8 @@ public sealed class ExpressionDisposalTests : IDisposable
 
         var leftVec = _array1.AsVectorizedEnumerable().SelectAdd(_scalar);
         var rightVec = _array2.AsVectorizedEnumerable().SelectAdd(_scalar);
-        var compound = -(leftVec.Where(leftVec.IsGreaterThan(_zero)).Count()) +
+        // Both terms are non-negative (-(~c) is c + 1), so the sum has one sign and can be captured
+        var compound = (leftVec.Where(leftVec.IsGreaterThan(_zero)).Count()) +
                        (-(~(rightVec.Where(rightVec.IsGreaterThan(_zero)).Count())));
 
         using (var graph = compound.CompileToGraph(_workspace))

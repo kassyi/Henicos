@@ -258,11 +258,11 @@ public sealed class ExpressionAliasingTests : IDisposable
         // The signed root (SignedBinaryExpression / SignedUnaryExpression) with its target in an operand: the value and
         // the sign equal BigInteger's (truncated division, the remainder takes the dividend's sign), and the other
         // operand keeps its value.
-        // A sum or difference is one bit wider than its operands, so its target is the buffer that holds an operand in
-        // its low words and has one word more
+        // A sum, a difference and ~ are one bit wider than their operands, so the target is the buffer that holds an
+        // operand in its low words and has one word more
         var a0 = negativeA ? -_a : _a;
         var b0 = negativeA ? _b : -_b;
-        var extra = op is SignedOp.Add or SignedOp.Sub ? 1 : 0;
+        var extra = op is SignedOp.Add or SignedOp.Sub or SignedOp.Not ? 1 : 0;
         using var aOwner = GpuBigUInt.FromBigInteger(_workspace, _a, Words + extra);
         using var bOwner = GpuBigUInt.FromBigInteger(_workspace, _b, Words + extra);
         var aMagnitude = Head(aOwner, Words);
@@ -281,8 +281,8 @@ public sealed class ExpressionAliasingTests : IDisposable
             SignedOp.Div => a0 / b0,
             SignedOp.Mod => a0 % b0,
             SignedOp.Negate => -a0,
-            // Not inverts the magnitude words and keeps the sign
-            _ => negativeA ? -((BigInteger.One << (Words * 32)) - 1 - _a) : (BigInteger.One << (Words * 32)) - 1 - _a
+            // ~x == -x - 1
+            _ => -a0 - 1
         };
         var message = $"{op} a<0 {negativeA} into {(target.DevicePointer == bMagnitude.DevicePointer ? "b" : "a")}, seed {Seed}";
         Assert.True(expected == result.Value.ToBigInteger(result.IsNegative), message);
@@ -306,8 +306,8 @@ public sealed class ExpressionAliasingTests : IDisposable
         // The guard itself (values can be right by chance in place): the same expression first into a separate target
         // sets the peak of live buffers it needs; into an operand the root takes one temporary more.
         // mutant: SignedBinaryExpression / SignedUnaryExpression without the overlap check
-        // A sum is one bit wider than its operands: its target holds the operand a in its low words
-        var extra = op == SignedOp.Add ? 1 : 0;
+        // A sum and ~ are one bit wider than their operands: the target holds the operand a in its low words
+        var extra = op is SignedOp.Add or SignedOp.Not ? 1 : 0;
         using var aOwner = GpuBigUInt.FromBigInteger(_workspace, _a, Words + extra);
         using var bMagnitude = GpuBigUInt.FromBigInteger(_workspace, _b, Words);
         using var separate = new GpuBigUInt(_workspace, Words + extra);

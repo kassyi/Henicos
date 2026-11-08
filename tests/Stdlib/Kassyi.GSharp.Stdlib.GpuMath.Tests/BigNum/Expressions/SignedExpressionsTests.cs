@@ -159,15 +159,9 @@ public class SignedExpressionsTests : IDisposable
 
         var expr = ~((GpuBigIntExpr)gpuA);
         using var gpuRes = expr.Evaluate(_context);
-        
-        // GPU Math BitwiseNot negates the underlying magnitude directly.
-        // It does not change the sign flag.
-        var targetBits = (~new BigInteger(Math.Abs(a))) & 0xFFFFFFFF;
-        
-        var res = ToBigInt(gpuRes);
-        var resAbs = Math.Abs((long)res);
-        Assert.Equal((long)targetBits, resAbs);
-        Assert.Equal(a < 0, gpuRes.IsNegative);
+
+        // ~x == -x - 1, as BigInteger, independent of the word count
+        Assert.Equal(~new BigInteger(a), ToBigInt(gpuRes));
     }
 
     [Theory]
