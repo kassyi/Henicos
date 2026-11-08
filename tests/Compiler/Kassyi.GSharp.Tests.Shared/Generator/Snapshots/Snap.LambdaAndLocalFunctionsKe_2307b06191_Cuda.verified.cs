@@ -95,7 +95,6 @@ return __gsharp_mul_i32(__gsharp_id_3_x,2);
 __gsharp_id_0_data[__gsharp_id_1_tid]=__gsharp_id_2_doubleValue(__gsharp_id_0_data[__gsharp_id_1_tid]);
 }
 ";
-public static readonly string NonCapturingLambdaKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +NonCapturingLambdaKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_NonCapturingLambdaKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__LambdaAndLocalFunctionsKernels__NonCapturingLambdaKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerNonCapturingLambdaKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.LambdaAndLocalFunctionsKernels.__gsharp_hfunc_NonCapturingLambdaKernel.Resolve();
@@ -204,7 +203,6 @@ return __gsharp_mul_i32(__gsharp_id_4_x,__gsharp_id_1_factor);
 __gsharp_id_0_data[__gsharp_id_2_tid]=__gsharp_id_3_multiply(__gsharp_id_0_data[__gsharp_id_2_tid]);
 }
 ";
-public static readonly string ValueCapturingLambdaKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ValueCapturingLambdaKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ValueCapturingLambdaKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__LambdaAndLocalFunctionsKernels__ValueCapturingLambdaKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerValueCapturingLambdaKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.LambdaAndLocalFunctionsKernels.__gsharp_hfunc_ValueCapturingLambdaKernel.Resolve();
@@ -317,7 +315,6 @@ return __gsharp_add_i32(__gsharp_id_3_a,__gsharp_id_4_b);
 __gsharp_id_0_data[__gsharp_id_1_tid]=__gsharp_id_2_LocalAdd(__gsharp_id_0_data[__gsharp_id_1_tid],100);
 }
 ";
-public static readonly string ImmediatelyEvaluatedLambdaKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ImmediatelyEvaluatedLambdaKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ImmediatelyEvaluatedLambdaKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__LambdaAndLocalFunctionsKernels__ImmediatelyEvaluatedLambdaKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerImmediatelyEvaluatedLambdaKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.LambdaAndLocalFunctionsKernels.__gsharp_hfunc_ImmediatelyEvaluatedLambdaKernel.Resolve();
@@ -427,7 +424,6 @@ return __gsharp_mul_i32(__gsharp_id_4_value,2);
 __gsharp_id_0_data[__gsharp_id_1_tid]=__gsharp_add_i32(__gsharp_id_3_calc(__gsharp_id_0_data[__gsharp_id_1_tid]),__gsharp_id_2_value);
 }
 ";
-public static readonly string ShadowedVariableCaptureKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ShadowedVariableCaptureKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ShadowedVariableCaptureKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__LambdaAndLocalFunctionsKernels__ShadowedVariableCaptureKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerShadowedVariableCaptureKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.LambdaAndLocalFunctionsKernels.__gsharp_hfunc_ShadowedVariableCaptureKernel.Resolve();
@@ -541,7 +537,6 @@ __gsharp_auto_result[__gsharp_global_tid] = __gsharp_id_1_LocalAdd(__gsharp_id_0
 return;
 }
 ";
-public static readonly string NestedReturnsKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +NestedReturnsKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_NestedReturnsKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__LambdaAndLocalFunctionsKernels__NestedReturnsKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerNestedReturnsKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.LambdaAndLocalFunctionsKernels.__gsharp_hfunc_NestedReturnsKernel.Resolve();

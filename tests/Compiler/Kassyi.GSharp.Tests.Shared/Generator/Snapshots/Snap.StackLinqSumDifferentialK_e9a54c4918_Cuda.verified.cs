@@ -291,7 +291,6 @@ __gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,5)]=__gsharp_fn_Kassyi__GSharp_
 __gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,6)]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__StackLinqSumDifferentialKernels__DeviceFloatSumTransitive(__gsharp_id_0_data);
 }
 ";
-public static readonly string FloatSumMatrixKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +FloatSumMatrixKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_FloatSumMatrixKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__StackLinqSumDifferentialKernels__FloatSumMatrixKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerFloatSumMatrixKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.StackLinqSumDifferentialKernels.__gsharp_hfunc_FloatSumMatrixKernel.Resolve();
@@ -524,7 +523,6 @@ __gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,5)]=__gsharp_fn_Kassyi__GSharp_
 __gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,6)]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__StackLinqSumDifferentialKernels__DeviceDoubleSumTransitive(__gsharp_id_0_data);
 }
 ";
-public static readonly string DoubleSumMatrixKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +DoubleSumMatrixKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_DoubleSumMatrixKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__StackLinqSumDifferentialKernels__DoubleSumMatrixKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerDoubleSumMatrixKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.StackLinqSumDifferentialKernels.__gsharp_hfunc_DoubleSumMatrixKernel.Resolve();

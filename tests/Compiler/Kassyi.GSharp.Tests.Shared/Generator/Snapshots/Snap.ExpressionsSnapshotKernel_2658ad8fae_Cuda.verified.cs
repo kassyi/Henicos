@@ -100,7 +100,6 @@ int __gsharp_id_8_tidX = (int)threadIdx.x;
 __gsharp_id_0_output[__gsharp_id_8_tidX]=__gsharp_add_i32(__gsharp_id_6_refArg,__gsharp_id_7_outArg);
 }
 ";
-public static readonly string BasicExpressionsKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +BasicExpressionsKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_BasicExpressionsKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__ExpressionsSnapshotKernels__BasicExpressionsKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerBasicExpressionsKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.ExpressionsSnapshotKernels.__gsharp_hfunc_BasicExpressionsKernel.Resolve();

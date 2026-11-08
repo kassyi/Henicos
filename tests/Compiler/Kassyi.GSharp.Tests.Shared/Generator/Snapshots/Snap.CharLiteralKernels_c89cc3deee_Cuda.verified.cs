@@ -97,7 +97,6 @@ __gsharp_id_1_text[0]=(char16_t)233;
 __gsharp_id_1_text[1]=(char16_t)65535;
 }
 ";
-public static readonly string CharLiteralKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +CharLiteralKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_CharLiteralKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__CharLiteralKernels__CharLiteralKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerCharLiteralKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.CharLiteralKernels.__gsharp_hfunc_CharLiteralKernel.Resolve();

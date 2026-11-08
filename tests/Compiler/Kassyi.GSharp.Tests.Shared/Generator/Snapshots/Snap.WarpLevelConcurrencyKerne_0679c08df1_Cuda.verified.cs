@@ -100,7 +100,6 @@ __gsharp_id_1_output[__gsharp_id_4_warpId]=__gsharp_id_5_val;
 }
 }
 ";
-public static readonly string WarpReduceSumKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +WarpReduceSumKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_WarpReduceSumKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Core__WarpLevelConcurrencyKernels__WarpReduceSumKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerWarpReduceSumKernel() => global::Kassyi.GSharp.Tests.Shared.Core.WarpLevelConcurrencyKernels.__gsharp_hfunc_WarpReduceSumKernel.Resolve();
@@ -260,7 +259,6 @@ __gsharp_id_4_val=__shfl_xor_sync(__gsharp_id_3_mask,__gsharp_id_4_val,1,32);
 __gsharp_id_1_output[__gsharp_id_2_tid]=__gsharp_id_4_val;
 }
 ";
-public static readonly string WarpPrimitivesKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +WarpPrimitivesKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_WarpPrimitivesKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Core__WarpLevelConcurrencyKernels__WarpPrimitivesKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerWarpPrimitivesKernel() => global::Kassyi.GSharp.Tests.Shared.Core.WarpLevelConcurrencyKernels.__gsharp_hfunc_WarpPrimitivesKernel.Resolve();

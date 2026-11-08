@@ -99,7 +99,6 @@ free(__gsharp_id_1_block);
 __gsharp_id_0_output[(int)threadIdx.x]=1;
 }
 ";
-public static readonly string MallocInKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +MallocInKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_MallocInKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__TestCases__Diagnostics__UnsafeMallocWarningKernels__MallocInKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerMallocInKernel() => global::Kassyi.GSharp.Tests.Shared.TestCases.Diagnostics.UnsafeMallocWarningKernels.__gsharp_hfunc_MallocInKernel.Resolve();
@@ -205,7 +204,6 @@ free(__gsharp_id_1_block);
 __gsharp_id_0_output[(int)threadIdx.x]=2;
 }
 ";
-public static readonly string SuppressedMalloc_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +SuppressedMalloc_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_SuppressedMalloc = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__TestCases__Diagnostics__UnsafeMallocWarningKernels__SuppressedMalloc", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerSuppressedMalloc() => global::Kassyi.GSharp.Tests.Shared.TestCases.Diagnostics.UnsafeMallocWarningKernels.__gsharp_hfunc_SuppressedMalloc.Resolve();
