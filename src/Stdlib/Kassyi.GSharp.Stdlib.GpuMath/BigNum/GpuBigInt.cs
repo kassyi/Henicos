@@ -51,6 +51,9 @@ public readonly struct GpuBigInt([TakesOwnership] GpuBigUInt value, bool isNegat
     public int GetBitLength() => Value.GetBitLength();
 
     /// <inheritdoc/>
+    static bool IGpuBigNumber<GpuBigInt>.AdditionIsExact => true;
+
+    /// <inheritdoc/>
     public static GpuBigInt Create([TakesOwnership] GpuBigUInt magnitude, int exponent, bool isNegative)
     {
         if (exponent != 0)
