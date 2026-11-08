@@ -332,7 +332,6 @@ __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroConditionalKerne
 __gsharp_id_1_result[__gsharp_mul_i32(2,__gsharp_id_2_i)]=__gsharp_id_3_c.__gsharp_mb_Value;
 }
 ";
-public static readonly string AndKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +AndKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_AndKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroConditionalKernels__AndKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerAndKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroConditionalKernels.__gsharp_hfunc_AndKernel.Resolve();
@@ -518,7 +517,6 @@ __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroConditionalKerne
 __gsharp_id_1_result[__gsharp_mul_i32(2,__gsharp_id_2_i)]=__gsharp_id_3_c.__gsharp_mb_Value;
 }
 ";
-public static readonly string OrKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +OrKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_OrKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroConditionalKernels__OrKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerOrKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroConditionalKernels.__gsharp_hfunc_OrKernel.Resolve();
@@ -738,7 +736,6 @@ __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroConditionalKerne
 __gsharp_id_1_result[__gsharp_add_i32(__gsharp_mul_i32(4,__gsharp_id_2_i),2)]=__gsharp_id_7_e.__gsharp_mb_Value;
 }
 ";
-public static readonly string NestedKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +NestedKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_NestedKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroConditionalKernels__NestedKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerNestedKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroConditionalKernels.__gsharp_hfunc_NestedKernel.Resolve();
@@ -958,7 +955,6 @@ __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroConditionalKerne
 __gsharp_id_1_result[__gsharp_add_i32(__gsharp_mul_i32(3,__gsharp_id_2_i),1)]=__gsharp_id_6_d.__gsharp_mb_Value;
 }
 ";
-public static readonly string ChainKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ChainKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ChainKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroConditionalKernels__ChainKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerChainKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroConditionalKernels.__gsharp_hfunc_ChainKernel.Resolve();
@@ -1143,7 +1139,6 @@ __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroConditionalKerne
 }
 }
 ";
-public static readonly string TargetOrderKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +TargetOrderKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_TargetOrderKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroConditionalKernels__TargetOrderKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 private static bool __gsharp_layout_checked_TargetOrderKernel;
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
@@ -1405,7 +1400,6 @@ __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroConditionalKerne
 __gsharp_id_1_result[__gsharp_add_i32(__gsharp_mul_i32(2,__gsharp_id_2_i),1)]=__gsharp_id_6_d.__gsharp_mb_Value;
 }
 ";
-public static readonly string RefStructKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +RefStructKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_RefStructKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroConditionalKernels__RefStructKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerRefStructKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroConditionalKernels.__gsharp_hfunc_RefStructKernel.Resolve();

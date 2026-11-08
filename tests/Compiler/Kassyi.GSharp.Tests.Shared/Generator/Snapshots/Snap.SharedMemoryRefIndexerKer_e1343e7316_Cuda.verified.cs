@@ -99,7 +99,6 @@ __gsharp_id_0_output[0]=__gsharp_id_2_counter[0];
 }
 }
 ";
-public static readonly string AtomicAddSharedMemoryKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +AtomicAddSharedMemoryKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_AtomicAddSharedMemoryKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryRefIndexerKernels__AtomicAddSharedMemoryKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerAtomicAddSharedMemoryKernel() => global::Kassyi.GSharp.Tests.Shared.Core.SharedMemoryRefIndexerKernels.__gsharp_hfunc_AtomicAddSharedMemoryKernel.Resolve();
@@ -214,7 +213,6 @@ __gsharp_mbarrier_wait(&__gsharp_id_2_bar[0],0);
 __gsharp_id_0_output[__gsharp_id_1_tid]=__gsharp_id_3_data[(__gsharp_add_i32(__gsharp_id_1_tid,1))%32];
 }
 ";
-public static readonly string MBarrierSharedMemoryKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +MBarrierSharedMemoryKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_MBarrierSharedMemoryKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryRefIndexerKernels__MBarrierSharedMemoryKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerMBarrierSharedMemoryKernel() => global::Kassyi.GSharp.Tests.Shared.Core.SharedMemoryRefIndexerKernels.__gsharp_hfunc_MBarrierSharedMemoryKernel.Resolve();

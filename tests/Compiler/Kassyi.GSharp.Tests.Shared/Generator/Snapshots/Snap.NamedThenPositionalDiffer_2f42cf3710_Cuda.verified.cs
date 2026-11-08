@@ -188,7 +188,6 @@ __gsharp_id_2_r[__gsharp_add_i32(__gsharp_id_6_o,3)]=__gsharp_fn_Kassyi__GSharp_
 __gsharp_id_2_r[__gsharp_add_i32(__gsharp_id_6_o,4)]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__NamedThenPositionalDifferentialKernels__AddOptional(__gsharp_id_4_x,{});
 }
 ";
-public static readonly string NamedThenPositionalKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +NamedThenPositionalKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_NamedThenPositionalKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__NamedThenPositionalDifferentialKernels__NamedThenPositionalKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerNamedThenPositionalKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.NamedThenPositionalDifferentialKernels.__gsharp_hfunc_NamedThenPositionalKernel.Resolve();
@@ -393,7 +392,6 @@ int __gsharp_id_5_y = __gsharp_id_1_ys[__gsharp_id_3_tid]&0x3FF;
 __gsharp_id_2_r[__gsharp_id_3_tid]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__NamedThenPositionalDifferentialKernels__SubAcrossBarrier(__gsharp_id_4_x,__gsharp_id_5_y);
 }
 ";
-public static readonly string NamedThenPositionalSuspendingCallKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +NamedThenPositionalSuspendingCallKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_NamedThenPositionalSuspendingCallKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__NamedThenPositionalDifferentialKernels__NamedThenPositionalSuspendingCallKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerNamedThenPositionalSuspendingCallKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.NamedThenPositionalDifferentialKernels.__gsharp_hfunc_NamedThenPositionalSuspendingCallKernel.Resolve();
