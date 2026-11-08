@@ -49,11 +49,7 @@ public class ContextHoister(
         _copiedParameters.Clear();
         var hoistedDecls = ImmutableArray.CreateBuilder<VariableDeclaratorSyntax>();
 
-        // [WHY] One-pass AST traversal to collect barriers and variables efficiently in O(N).
-        var analyzer = new HoistAnalyzer();
-        analyzer.Visit(block);
-
-        HasSplitPoint = analyzer.BarrierSpans.Count > 0;
+        HasSplitPoint = HoistedVariableAnalysis.Analyze(block, semanticModel, _plan, _hoistedVariables, hoistedDecls);
         if (!HasSplitPoint)
         {
             return (block, hoistedDecls);
@@ -64,134 +60,8 @@ public class ContextHoister(
             _copiedParameters.UnionWith(copiedParameters);
         }
 
-        var barrierCount = analyzer.BarrierSpans.Count;
-        var barrierStarts = new int[barrierCount];
-        for (var i = 0; i < barrierCount; i++)
-        {
-            barrierStarts[i] = analyzer.BarrierSpans[i].Start;
-        }
-
-        var splitLabelStarts = FindSplitLabelStarts(block);
-        var lastReferenceStarts = splitLabelStarts.Length > 0
-            ? FindLastReferenceStarts(block)
-            : null;
-
-        var variableCount = analyzer.Variables.Count;
-        var keys = new DeclarationKey[variableCount];
-        // [WHY] Binary search (O(V log B)) is used to determine if variables cross any synchronization barriers.
-        for (var v = 0; v < variableCount; v++)
-        {
-            var (decl, scopeEnd) = analyzer.Variables[v];
-            keys[v] = LoweringIdentity.ForDeclaration(decl, semanticModel);
-            var declEnd = decl.Span.End;
-
-            var isSharedMemory = decl.Parent is VariableDeclarationSyntax
-            {
-                Type: GenericNameSyntax { Identifier.ValueText: TypeConstants.SharedMemoryType }
-            };
-
-            // The result of a call that may suspend is written when the callee completes, after any number of resumes
-            var isSuspendingCallResult = decl.Initializer?.Value is InvocationExpressionSyntax initializerCall &&
-                                         BarrierHelper.IsSuspendingCall(initializerCall);
-
-            if (isSharedMemory || isSuspendingCallResult)
-            {
-                _hoistedVariables.Add(keys[v]);
-                continue;
-            }
-
-            // Binary search for the first barrier that comes after the declaration.
-            var index = Array.BinarySearch(barrierStarts, declEnd);
-            if (index < 0)
-            {
-                index = ~index;
-            }
-
-            // If a barrier is found after the declaration and before the end of the scope, it crosses.
-            if (index < barrierCount && barrierStarts[index] < scopeEnd)
-            {
-                _hoistedVariables.Add(keys[v]);
-                continue;
-            }
-
-            if (lastReferenceStarts != null &&
-                IsUsedAfterSplitLabel(splitLabelStarts, lastReferenceStarts, keys[v], declEnd, scopeEnd))
-            {
-                _hoistedVariables.Add(keys[v]);
-            }
-        }
-
-        // [WHY] Each declaration that crosses a barrier is hoisted on its own (DeclarationKey: symbol + region), so a
-        // sibling local of the same name that does not cross one stays a local. Without a semantic model the key is the
-        // name, and every declaration of a hoisted name moves into the context, which keeps the name-keyed rewrite
-        // consistent.
-        for (var v = 0; v < variableCount; v++)
-        {
-            if (_hoistedVariables.Contains(keys[v]))
-            {
-                hoistedDecls.Add(analyzer.Variables[v].Decl);
-            }
-        }
-
         var rewrittenBlock = (BlockSyntax)Visit(block);
         return (rewrittenBlock, hoistedDecls);
-    }
-
-    // [WHY] A label that starts a state ends the case block of its declaration, as a barrier does. Only a local that is
-    // used after such a label moves into the context (as pocl saves only the values used outside their region); the
-    // others stay locals. Lowering's own labels count too: a flattened switch starts a state at every section, and C#
-    // lets a section use a local that an earlier section declares after its last barrier (#708, #795).
-    private int[] FindSplitLabelStarts(BlockSyntax block)
-    {
-        var plan = _plan ?? StateLabelPlanner.Plan(block, semanticModel);
-        var starts = ImmutableArray.CreateBuilder<int>();
-        foreach (var statement in block.Statements)
-        {
-            if (statement is LabeledStatementSyntax labeled && plan.StartsState(labeled))
-            {
-                starts.Add(labeled.SpanStart);
-            }
-        }
-
-        return starts.ToArray();
-    }
-
-    // The start of the last reference to each declaration, in a value position
-    private Dictionary<DeclarationKey, int> FindLastReferenceStarts(BlockSyntax block)
-    {
-        var lastStarts = new Dictionary<DeclarationKey, int>();
-        foreach (var node in block.DescendantNodes())
-        {
-            if (node is not IdentifierNameSyntax identifier || IsNonValueIdentifierPosition(identifier))
-            {
-                continue;
-            }
-
-            var key = LoweringIdentity.ForReference(identifier, semanticModel);
-            if (!lastStarts.TryGetValue(key, out var last) || identifier.SpanStart > last)
-            {
-                lastStarts[key] = identifier.SpanStart;
-            }
-        }
-
-        return lastStarts;
-    }
-
-    // Whether a split label of the user lies between the declaration and the end of its scope, and the declaration is
-    // referenced after the first such label
-    private static bool IsUsedAfterSplitLabel(int[] splitLabelStarts, Dictionary<DeclarationKey, int> lastReferenceStarts,
-        DeclarationKey key, int declEnd, int scopeEnd)
-    {
-        var index = Array.BinarySearch(splitLabelStarts, declEnd);
-        if (index < 0)
-        {
-            index = ~index;
-        }
-
-        return index < splitLabelStarts.Length &&
-               splitLabelStarts[index] < scopeEnd &&
-               lastReferenceStarts.TryGetValue(key, out var lastReference) &&
-               lastReference > splitLabelStarts[index];
     }
 
     // [WHY] The declarators run in the order written, so a hoisted declarator's assignment stays in front of a later
@@ -385,7 +255,7 @@ public class ContextHoister(
 
     public override SyntaxNode? VisitIdentifierName(IdentifierNameSyntax node)
     {
-        if (IsNonValueIdentifierPosition(node))
+        if (HoistedVariableAnalysis.IsNonValueIdentifierPosition(node))
         {
             return base.VisitIdentifierName(node);
         }
@@ -397,21 +267,6 @@ public class ContextHoister(
 
         return base.VisitIdentifierName(node);
     }
-
-    // [WHY] Syntactic positions that name a member, type, label, or named argument/property rather than reading or
-    // writing a local variable must never be rewritten, even when lowering runs without a SemanticModel (Tier 2).
-    private static bool IsNonValueIdentifierPosition(IdentifierNameSyntax node) =>
-        node.Parent switch
-        {
-            MemberAccessExpressionSyntax memberAccess => memberAccess.Name == node,
-            MemberBindingExpressionSyntax memberBinding => memberBinding.Name == node,
-            QualifiedNameSyntax => true,
-            NameColonSyntax => true,
-            NameEqualsSyntax => true,
-            AssignmentExpressionSyntax { Parent: InitializerExpressionSyntax } assignment => assignment.Left == node,
-            GotoStatementSyntax => true,
-            _ => false
-        };
 
     private bool IsHoistedIdentifier(IdentifierNameSyntax node)
     {
@@ -458,39 +313,5 @@ public class ContextHoister(
         ).WithAdditionalAnnotations(spanAnnotations)
          .WithAdditionalAnnotations(spilledTypeAnnotations)
          .WithAdditionalAnnotations(original.GetAnnotations(LoweringAnnotations.ForEachArraySourceAnnotationKind));
-    }
-
-    private sealed class HoistAnalyzer : CSharpSyntaxWalker
-    {
-        public readonly ImmutableArray<TextSpan>.Builder BarrierSpans = ImmutableArray.CreateBuilder<TextSpan>();
-
-        public readonly ImmutableArray<(VariableDeclaratorSyntax Decl, int ScopeEnd)>.Builder Variables =
-            ImmutableArray.CreateBuilder<(VariableDeclaratorSyntax, int)>();
-
-        public override void VisitInvocationExpression(InvocationExpressionSyntax node)
-        {
-            if (BarrierHelper.IsPhaseBarrier(node))
-            {
-                BarrierSpans.Add(node.Span);
-            }
-
-            base.VisitInvocationExpression(node);
-        }
-
-        public override void VisitVariableDeclarator(VariableDeclaratorSyntax node)
-        {
-            // The resource of a using statement lives until the end of the statement. The analyzer rejects a barrier
-            // inside it (KernelBarrierValidator), so it never crosses one; a barrier after it leaves it a plain local.
-            if (node.Parent?.Parent is UsingStatementSyntax usingStatement)
-            {
-                Variables.Add((node, usingStatement.Span.End));
-            }
-            else if (node.FirstAncestorOrSelf<BlockSyntax>() is { } parentBlock)
-            {
-                Variables.Add((node, parentBlock.Span.End));
-            }
-
-            base.VisitVariableDeclarator(node);
-        }
     }
 }
