@@ -7,15 +7,25 @@
     <GSharpAllowsSystemLinq>true</GSharpAllowsSystemLinq>
   </PropertyGroup>
 
-  <!-- Memory budget of the test host (tests/memory-budgets.yml, one '<project name>: <MB>' line per test assembly; see
-       .agents/rules/test-execution.md). The watchdog of Kassyi.GSharp.Tests.Infrastructure (MemoryBudget) reads the
-       same file at run time. As a backstop against growth faster than its sampling, the managed heap is capped at twice
-       the budget (System.GC.HeapHardLimit, bytes). GSharpTestHeapHardLimit set from outside, as `just mutate` does,
-       takes precedence. -->
-  <PropertyGroup>
-    <_GSharpMemoryBudgetsFile>$(MSBuildThisFileDirectory)memory-budgets.yml</_GSharpMemoryBudgetsFile>
-    <_GSharpMemoryBudgetMegabytes Condition="Exists('$(_GSharpMemoryBudgetsFile)')">$([System.Text.RegularExpressions.Regex]::Match($([System.IO.File]::ReadAllText('$(_GSharpMemoryBudgetsFile)')), '(?m)^$(MSBuildProjectName):[ \t]*(\d+)').Groups[1].Value)</_GSharpMemoryBudgetMegabytes>
-    <GSharpTestHeapHardLimit Condition="'$(GSharpTestHeapHardLimit)' == '' and '$(_GSharpMemoryBudgetMegabytes)' != ''">$([MSBuild]::Multiply($(_GSharpMemoryBudgetMegabytes), 2097152))</GSharpTestHeapHardLimit>
+  <!-- Memory budget of the test host (tests/memory-budgets.yml, one '<project name>: <MB>[, stress <MB>]' line per
+       test assembly; see .agents/rules/test-execution.md). The watchdog of Kassyi.GSharp.Tests.Infrastructure
+       (MemoryBudget) reads the same file at run time. As a backstop against growth faster than its sampling, the
+       managed heap is capped at twice the larger budget (System.GC.HeapHardLimit, bytes). GSharpTestHeapHardLimit set
+       from outside, as `just mutate` does, takes precedence. -->
+  <PropertyGroup Condition="Exists('$(MSBuildThisFileDirectory)memory-budgets.yml')">
+    <_GSharpBudgetLine>(?m)^$(MSBuildProjectName):[ \t]*(\d+)</_GSharpBudgetLine>
+    <_GSharpStressLine>(?m)^$(MSBuildProjectName):[^\r\n#]*,[ \t]*stress[ \t]+(\d+)</_GSharpStressLine>
+    <_GSharpBudgetMegabytes>$([System.Text.RegularExpressions.Regex]::Match(
+      $([System.IO.File]::ReadAllText('$(MSBuildThisFileDirectory)memory-budgets.yml')),
+      $(_GSharpBudgetLine)).Groups[1].Value)</_GSharpBudgetMegabytes>
+    <_GSharpStressMegabytes>$([System.Text.RegularExpressions.Regex]::Match(
+      $([System.IO.File]::ReadAllText('$(MSBuildThisFileDirectory)memory-budgets.yml')),
+      $(_GSharpStressLine)).Groups[1].Value)</_GSharpStressMegabytes>
+    <_GSharpLargerBudget>$(_GSharpBudgetMegabytes)</_GSharpLargerBudget>
+    <_GSharpLargerBudget Condition="'$(_GSharpStressMegabytes)' != ''">$(_GSharpStressMegabytes)</_GSharpLargerBudget>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(GSharpTestHeapHardLimit)' == '' and '$(_GSharpLargerBudget)' != ''">
+    <GSharpTestHeapHardLimit>$([MSBuild]::Multiply($(_GSharpLargerBudget), 2097152))</GSharpTestHeapHardLimit>
   </PropertyGroup>
   <ItemGroup Condition="'$(GSharpTestHeapHardLimit)' != ''">
     <RuntimeHostConfigurationOption Include="System.GC.HeapHardLimit" Value="$(GSharpTestHeapHardLimit)" />
@@ -38,11 +48,17 @@
     <ProjectReference Include="$(MSBuildThisFileDirectory)Shared\Kassyi.GSharp.Tests.Generators\Kassyi.GSharp.Tests.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
-  <!-- Memory budget watchdog of every test assembly: the module initializer that starts it and the final check that runs
-       last (compiled in, since xUnit only discovers tests inside the test assembly), the per-test tracking that fails
-       the tests running at a breach, and the collection orderer that puts the final check last -->
-  <ItemGroup Condition="'$(IsTestProject)' == 'true' and '$(MSBuildProjectName)' != 'Kassyi.GSharp.Tests.Infrastructure' and '$(IsRoslynComponent)' != 'true' and '$(GSharpTestLibrary)' != 'true'">
-    <Compile Include="$(MSBuildThisFileDirectory)Shared\Kassyi.GSharp.Tests.Infrastructure\TestAssemblySources\MemoryBudgetHooks.cs" Link="MemoryBudgetHooks.cs" Visible="false" />
+  <!-- Memory budget watchdog of every test assembly: the module initializer that starts it and the final check that
+       runs last (compiled in, since xUnit only discovers tests inside the test assembly), the per-test tracking that
+       fails the tests running at a breach, and the collection orderer that puts the final check last -->
+  <PropertyGroup>
+    <_GSharpTestsInfra>$(MSBuildThisFileDirectory)Shared\Kassyi.GSharp.Tests.Infrastructure\</_GSharpTestsInfra>
+    <_GSharpMemoryBudgetHooks>$(_GSharpTestsInfra)TestAssemblySources\MemoryBudgetHooks.cs</_GSharpMemoryBudgetHooks>
+  </PropertyGroup>
+  <ItemGroup
+    Condition="'$(IsTestProject)' == 'true' and '$(MSBuildProjectName)' != 'Kassyi.GSharp.Tests.Infrastructure'
+               and '$(IsRoslynComponent)' != 'true' and '$(GSharpTestLibrary)' != 'true'">
+    <Compile Include="$(_GSharpMemoryBudgetHooks)" Link="MemoryBudgetHooks.cs" Visible="false" />
     <AssemblyAttribute Include="Kassyi.GSharp.Tests.Infrastructure.MemoryBudgetTrackingAttribute" />
     <AssemblyAttribute Include="Xunit.TestCollectionOrdererAttribute">
       <_Parameter1>Kassyi.GSharp.Tests.Infrastructure.MemoryBudgetCollectionOrderer</_Parameter1>

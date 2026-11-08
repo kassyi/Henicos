@@ -14,11 +14,12 @@ public class MemoryBudgetFileTests
     [Scenario(TestScenario.HappyPath)]
     public void Parse_ReadsEntriesCommentsAndBlankLines()
     {
-        const string Text = "# comment\r\n\r\nA.Tests: 1200 # measured\nB.Tests:300\n";
+        const string Text =
+            "# comment\r\n\r\nA.Tests: 1200 # measured\nB.Tests:300, stress 900\nC.Tests: 64 ,stress\t128\n";
 
-        IReadOnlyList<KeyValuePair<string, long>> entries = MemoryBudgetFile.Parse(Text);
+        IReadOnlyList<MemoryBudgetEntry> entries = MemoryBudgetFile.Parse(Text);
 
-        Assert.Equal([new("A.Tests", 1200L), new("B.Tests", 300L)], entries);
+        Assert.Equal([new("A.Tests", 1200, 0), new("B.Tests", 300, 900), new("C.Tests", 64, 128)], entries);
     }
 
     [Theory]
@@ -31,6 +32,11 @@ public class MemoryBudgetFileTests
     [InlineData("A.Tests: -5", "line 1")]
     [InlineData("A.Tests: 1.5", "line 1")]
     [InlineData("A.Tests: 1\nA.Tests: 2", "listed twice")]
+    [InlineData("A.Tests: 100, 200", "line 1")]
+    [InlineData("A.Tests: 100, stress", "line 1")]
+    [InlineData("A.Tests: 100, stress 0", "line 1")]
+    [InlineData("A.Tests: 100, stresses 200", "line 1")]
+    [InlineData("A.Tests: 100, stress 200, stress 300", "line 1")]
     public void Parse_RejectsMalformedLines(string text, string expected)
     {
         var ex = Assert.Throws<FormatException>(() => MemoryBudgetFile.Parse(text));
@@ -45,10 +51,11 @@ public class MemoryBudgetFileTests
     public void RepositoryFile_NamesExactlyTheTestProjects()
     {
         var budgeted = MemoryBudgetFile.Parse(File.ReadAllText(MemoryBudgetFile.FullPath))
-            .Select(static e => e.Key)
+            .Select(static e => e.Name)
             .Order(StringComparer.Ordinal)
             .ToList();
-        var testProjects = Directory.EnumerateFiles(RepositoryPaths.Combine("tests"), "*.csproj", SearchOption.AllDirectories)
+        var testProjects = Directory
+            .EnumerateFiles(RepositoryPaths.Combine("tests"), "*.csproj", SearchOption.AllDirectories)
             .Where(static p => File.ReadAllText(p).Contains("Microsoft.NET.Test.Sdk", StringComparison.Ordinal))
             .Select(static p => Path.GetFileNameWithoutExtension(p))
             .Order(StringComparer.Ordinal)

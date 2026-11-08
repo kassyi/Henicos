@@ -37,7 +37,8 @@ public static class ProcessMemory
     /// Reads the memory high-water mark of the current process.
     /// </summary>
     /// <returns>The peak in bytes.</returns>
-    /// <exception cref="IOException"><c>/proc/self/status</c> could not be read or has no <c>VmHWM</c> line (Linux).</exception>
+    /// <exception cref="IOException"><c>/proc/self/status</c> could not be read or has no <c>VmHWM</c> line
+    /// (Linux).</exception>
     public static long ReadPeakBytes()
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
@@ -55,10 +56,41 @@ public static class ProcessMemory
     }
 
     /// <summary>
+    /// Reads the physical memory of the machine that is free for new allocations.
+    /// </summary>
+    /// <returns>The available physical memory in bytes: <c>ullAvailPhys</c> of <c>GlobalMemoryStatusEx</c> on Windows,
+    /// <c>MemAvailable</c> of <c>/proc/meminfo</c> on Linux, and the GC's view elsewhere.</returns>
+    /// <remarks>
+    /// Unlike <see cref="GC.GetGCMemoryInfo()"/>, which under <c>System.GC.HeapHardLimit</c> reports the limit as the
+    /// total, this describes the machine, so it suits a test that allocates large native buffers.
+    /// </remarks>
+    /// <exception cref="IOException"><c>/proc/meminfo</c> could not be read or has no <c>MemAvailable</c> line
+    /// (Linux).</exception>
+    public static long ReadAvailablePhysicalBytes()
+    {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            var status = new MemoryStatusEx { Length = (uint)Marshal.SizeOf<MemoryStatusEx>() };
+            if (GlobalMemoryStatusEx(ref status))
+            {
+                return (long)status.AvailablePhysical;
+            }
+        }
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+            return ReadStatusKibibytes(File.ReadAllText("/proc/meminfo"), "MemAvailable:", "/proc/meminfo") * 1024;
+        }
+
+        GCMemoryInfo info = GC.GetGCMemoryInfo();
+        return info.TotalAvailableMemoryBytes - info.MemoryLoadBytes;
+    }
+
+    /// <summary>
     /// Reads the bytes allocated on the managed heap and not yet collected.
     /// </summary>
     /// <returns>The GC heap size in bytes.</returns>
-    /// <remarks><see cref="GC.GetGCMemoryInfo()"/> describes the last collection only, so it reads 0 before the first one.</remarks>
+    /// <remarks><see cref="GC.GetGCMemoryInfo()"/> describes the last collection only, so it reads 0 before the first
+    /// one.</remarks>
     public static long ReadGcHeapBytes() => GC.GetTotalMemory(forceFullCollection: false);
 
     /// <summary>
@@ -67,28 +99,31 @@ public static class ProcessMemory
     /// <param name="status">The content of <c>/proc/self/status</c>.</param>
     /// <returns>The peak resident set size in bytes.</returns>
     /// <exception cref="IOException">The text has no valid <c>VmHWM</c> line.</exception>
-    public static long ReadLinuxPeakResident(string status)
+    public static long ReadLinuxPeakResident(string status) =>
+        ReadStatusKibibytes(status, LinuxPeakField, LinuxStatusPath) * 1024;
+
+    // Reads "<field>	  123456 kB" from /proc/self/status or /proc/meminfo
+    private static long ReadStatusKibibytes(string text, string field, string path)
     {
-        foreach (ReadOnlySpan<char> line in status.AsSpan().EnumerateLines())
+        foreach (ReadOnlySpan<char> line in text.AsSpan().EnumerateLines())
         {
-            if (!line.StartsWith(LinuxPeakField, StringComparison.Ordinal))
+            if (!line.StartsWith(field, StringComparison.Ordinal))
             {
                 continue;
             }
 
-            // VmHWM:\t  123456 kB
-            ReadOnlySpan<char> value = line[LinuxPeakField.Length..].Trim();
+            ReadOnlySpan<char> value = line[field.Length..].Trim();
             int space = value.IndexOf(' ');
             ReadOnlySpan<char> number = space < 0 ? value : value[..space];
             if (long.TryParse(number, NumberStyles.None, CultureInfo.InvariantCulture, out long kibibytes))
             {
-                return kibibytes * 1024;
+                return kibibytes;
             }
 
             break;
         }
 
-        throw new IOException($"{LinuxStatusPath} has no valid {LinuxPeakField} line.");
+        throw new IOException($"{path} has no valid {field} line.");
     }
 
     private static long ReadWindowsPeakCommit()
@@ -109,6 +144,25 @@ public static class ProcessMemory
     [DllImport("kernel32.dll", EntryPoint = "K32GetProcessMemoryInfo")]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool GetProcessMemoryInfo(IntPtr process, ref ProcessMemoryCounters counters, uint size);
+
+    [DllImport("kernel32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool GlobalMemoryStatusEx(ref MemoryStatusEx status);
+
+    // MEMORYSTATUSEX of sysinfoapi.h
+    [StructLayout(LayoutKind.Sequential)]
+    private struct MemoryStatusEx
+    {
+        public uint Length;
+        public uint MemoryLoad;
+        public ulong TotalPhysical;
+        public ulong AvailablePhysical;
+        public ulong TotalPageFile;
+        public ulong AvailablePageFile;
+        public ulong TotalVirtual;
+        public ulong AvailableVirtual;
+        public ulong AvailableExtendedVirtual;
+    }
 
     // PROCESS_MEMORY_COUNTERS of psapi.h
     [StructLayout(LayoutKind.Sequential)]

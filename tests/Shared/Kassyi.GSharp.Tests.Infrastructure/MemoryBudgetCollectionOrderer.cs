@@ -5,7 +5,8 @@ namespace Kassyi.GSharp.Tests.Infrastructure;
 
 /// <summary>
 /// Orders test collections as xUnit does by default, but puts the final memory budget check
-/// (<see cref="MemoryBudget.FinalCollection"/>) last. <c>tests/Directory.Build.props</c> applies it to every test assembly.
+/// (<see cref="MemoryBudget.FinalCollection"/>) last. <c>tests/Directory.Build.props</c> applies it to every test
+/// assembly.
 /// </summary>
 /// <remarks>
 /// The final collection is declared with <c>DisableParallelization = true</c>, so xUnit v2 runs it after every parallel

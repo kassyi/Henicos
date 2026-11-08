@@ -19,7 +19,7 @@
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
     <!-- The memory budget watchdog runs in the net10.0 test hosts only -->
-    <Compile Remove="MemoryBudget*.cs;MemoryWatchdog.cs;ProcessMemory.cs" />
+    <Compile Remove="MemoryBudget*.cs;MemoryDump.cs;MemoryWatchdog.cs;ProcessMemory.cs" />
   </ItemGroup>
   <ItemGroup>
     <Using Include="Xunit" />

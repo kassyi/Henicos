@@ -31,6 +31,13 @@ public static class MemoryBudget
     public const string ReportVariable = "GSHARP_TEST_MEMORY_REPORT";
 
     /// <summary>
+    /// The environment variable that, set to <c>1</c>, makes the final check also write a memory snapshot
+    /// (<see cref="MemoryDump"/>) of what the run left on the heap, named in <c>&lt;assembly&gt;.snapshot.txt</c> of
+    /// the report.
+    /// </summary>
+    public const string DumpAtEndVariable = "GSHARP_TEST_MEMORY_DUMP_AT_END";
+
+    /// <summary>
     /// The name of the test collection of the final check. It runs after every other collection.
     /// </summary>
     public const string FinalCollection = "MemoryBudgetFinal";
@@ -39,6 +46,7 @@ public static class MemoryBudget
     private static readonly object s_gate = new();
     private static MemoryWatchdog? s_current;
     private static string s_assemblyName = string.Empty;
+    private static long s_stressBudgetBytes;
 
     /// <summary>
     /// Gets the watchdog of this process, or <see langword="null"/> before <see cref="Start"/>.
@@ -59,10 +67,10 @@ public static class MemoryBudget
             }
 
             string? error = null;
-            long budgetMegabytes = 0;
+            MemoryBudgetEntry budget = default;
             try
             {
-                budgetMegabytes = ReadBudgetMegabytes(assemblyName);
+                budget = ReadBudget(assemblyName);
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or FormatException)
             {
@@ -71,10 +79,12 @@ public static class MemoryBudget
 
             var watchdog = new MemoryWatchdog(
                 assemblyName,
-                budgetMegabytes * BytesPerMegabyte,
+                budget.Megabytes * BytesPerMegabyte,
                 ProcessMemory.PeakMetricName,
                 ProcessMemory.ReadPeakBytes,
-                ProcessMemory.ReadGcHeapBytes
+                ProcessMemory.ReadGcHeapBytes,
+                () => MemoryDump.Collect(assemblyName, "breach"),
+                MemoryDump.Timeout + TimeSpan.FromSeconds(10)
             );
             if (error is not null)
             {
@@ -82,6 +92,7 @@ public static class MemoryBudget
             }
 
             s_assemblyName = assemblyName;
+            s_stressBudgetBytes = budget.StressMegabytes * BytesPerMegabyte;
             Volatile.Write(ref s_current, watchdog);
             var thread = new Thread(() => SampleLoop(watchdog))
             {
@@ -89,6 +100,7 @@ public static class MemoryBudget
                 Name = "Memory budget watchdog",
             };
             thread.Start();
+            WriteProcessId(assemblyName);
         }
     }
 
@@ -101,33 +113,75 @@ public static class MemoryBudget
     {
         if (Current is not { } watchdog)
         {
-            return "The memory budget watchdog was not started (MemoryBudgetHooks.cs is missing from this test assembly).";
+            return "The memory budget watchdog was not started "
+                + "(MemoryBudgetHooks.cs is missing from this test assembly).";
         }
 
         string? failure = watchdog.WholeRunFailure();
         AppendReport(watchdog);
+        if (Environment.GetEnvironmentVariable(DumpAtEndVariable) == "1"
+            && Environment.GetEnvironmentVariable(ReportVariable) is { Length: > 0 } directory)
+        {
+            string snapshot = MemoryDump.Collect(s_assemblyName, "end");
+            File.WriteAllText(Path.Combine(directory, s_assemblyName + ".snapshot.txt"), snapshot);
+        }
+
         return failure;
     }
 
-    private static long ReadBudgetMegabytes(string assemblyName)
+    // <dir>/<assembly>.pid names the test host for `just test-memory`, which attaches dotnet-counters to it. The first
+    // process wins: a helper process that a test starts later and that loads the assembly too does not replace it.
+    private static void WriteProcessId(string assemblyName)
+    {
+        string? directory = Environment.GetEnvironmentVariable(ReportVariable);
+        if (string.IsNullOrEmpty(directory))
+        {
+            return;
+        }
+
+        Directory.CreateDirectory(directory);
+        string path = Path.Combine(directory, assemblyName + ".pid");
+        try
+        {
+            using var stream = new FileStream(path, FileMode.CreateNew, FileAccess.Write);
+            string pid = Environment.ProcessId.ToString(CultureInfo.InvariantCulture);
+            byte[] text = System.Text.Encoding.ASCII.GetBytes(pid);
+            stream.Write(text, 0, text.Length);
+        }
+        catch (IOException) when (File.Exists(path))
+        {
+            // Another process of the run wrote it first; see above
+            return;
+        }
+    }
+
+    /// <summary>
+    /// Switches the watchdog to the stress budget of the assembly; <see cref="MemoryBudgetTrackingAttribute"/> calls it
+    /// before the first Stress or Benchmark test starts.
+    /// </summary>
+    public static void EnterStressProfile() => Current?.EnterStressProfile(s_stressBudgetBytes);
+
+    // GSHARP_TEST_MEMORY_BUDGET_MB replaces both budgets; an assembly missing from the file gets none (Megabytes 0)
+    private static MemoryBudgetEntry ReadBudget(string assemblyName)
     {
         string? overrideText = Environment.GetEnvironmentVariable(BudgetVariable);
         if (!string.IsNullOrEmpty(overrideText))
         {
-            return long.TryParse(overrideText, NumberStyles.None, CultureInfo.InvariantCulture, out long value) && value > 0
-                ? value
+            bool valid = long.TryParse(overrideText, NumberStyles.None, CultureInfo.InvariantCulture, out long value);
+            return valid && value > 0
+                ? new MemoryBudgetEntry(assemblyName, value, 0)
                 : throw new FormatException($"{BudgetVariable} must be a positive number of MB, got '{overrideText}'.");
         }
 
-        foreach (KeyValuePair<string, long> entry in MemoryBudgetFile.Parse(File.ReadAllText(MemoryBudgetFile.FullPath)))
+        foreach (MemoryBudgetEntry entry in MemoryBudgetFile.Parse(File.ReadAllText(MemoryBudgetFile.FullPath)))
         {
-            if (entry.Key == assemblyName)
+            if (entry.Name == assemblyName)
             {
-                return entry.Value;
+                return entry;
             }
         }
 
-        return 0;
+        return default;
     }
 
     private static void SampleLoop(MemoryWatchdog watchdog)
@@ -146,7 +200,7 @@ public static class MemoryBudget
         }
     }
 
-    // Appends "<peak MB>\t<GC heap peak MB>\t<budget MB>\t<tests>\t<metric>" to <dir>/<assembly>.tsv when
+    // Appends "<peak MB>\t<GC heap peak MB>\t<budget MB>\t<tests>\t<profile>\t<metric>" to <dir>/<assembly>.tsv when
     // GSHARP_TEST_MEMORY_REPORT is set. Written from the final check rather than at process exit: the runner may end
     // the test host without raising ProcessExit.
     private static void AppendReport(MemoryWatchdog watchdog)
@@ -164,8 +218,21 @@ public static class MemoryBudget
             (watchdog.GcPeakBytes / BytesPerMegabyte).ToString(CultureInfo.InvariantCulture),
             (watchdog.BudgetBytes / BytesPerMegabyte).ToString(CultureInfo.InvariantCulture),
             watchdog.TestsStarted.ToString(CultureInfo.InvariantCulture),
+            watchdog.Profile,
             ProcessMemory.PeakMetricName
         );
         File.AppendAllText(Path.Combine(directory, s_assemblyName + ".tsv"), line + Environment.NewLine);
+
+        // <dir>/<assembly>.top.tsv: "# <peak MB>" per run, then "<growth MB>\t<GC heap MB>\t<test>" largest first
+        var top = new System.Text.StringBuilder();
+        top.Append("# ").Append(watchdog.PeakBytes / BytesPerMegabyte).AppendLine();
+        foreach (PeakGrowth growth in watchdog.TopGrowth)
+        {
+            top.Append(growth.GrowthBytes / BytesPerMegabyte).Append('\t')
+                .Append(growth.GcHeapBytes / BytesPerMegabyte).Append('\t')
+                .AppendLine(growth.TestName);
+        }
+
+        File.AppendAllText(Path.Combine(directory, s_assemblyName + ".top.tsv"), top.ToString());
     }
 }

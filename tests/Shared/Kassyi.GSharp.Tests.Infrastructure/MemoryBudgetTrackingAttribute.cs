@@ -15,8 +15,15 @@ namespace Kassyi.GSharp.Tests.Infrastructure;
 public sealed class MemoryBudgetTrackingAttribute : BeforeAfterTestAttribute
 {
     /// <inheritdoc/>
-    public override void Before(MethodInfo methodUnderTest) =>
+    public override void Before(MethodInfo methodUnderTest)
+    {
+        if (IsStressOrBenchmark(methodUnderTest))
+        {
+            MemoryBudget.EnterStressProfile();
+        }
+
         MemoryBudget.Current?.TestStarting(TestName(methodUnderTest));
+    }
 
     /// <inheritdoc/>
     public override void After(MethodInfo methodUnderTest)
@@ -25,6 +32,33 @@ public sealed class MemoryBudgetTrackingAttribute : BeforeAfterTestAttribute
         {
             throw new MemoryBudgetExceededException(failure);
         }
+    }
+
+    // [Category(TestCategory.Stress)] or [Category(TestCategory.Benchmark)] on the method or its class
+    private static bool IsStressOrBenchmark(MethodInfo method)
+    {
+        foreach (CategoryAttribute category in method.GetCustomAttributes<CategoryAttribute>())
+        {
+            if (category.Category is TestCategory.Stress or TestCategory.Benchmark)
+            {
+                return true;
+            }
+        }
+
+        if ((method.ReflectedType ?? method.DeclaringType) is not { } type)
+        {
+            return false;
+        }
+
+        foreach (CategoryAttribute category in type.GetCustomAttributes<CategoryAttribute>())
+        {
+            if (category.Category is TestCategory.Stress or TestCategory.Benchmark)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static string TestName(MethodInfo method) =>

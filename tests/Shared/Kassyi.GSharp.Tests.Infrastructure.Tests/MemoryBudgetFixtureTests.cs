@@ -25,7 +25,8 @@ public class MemoryBudgetFixtureTests
     public void AllocatesPastBudget()
     {
         string? text = Environment.GetEnvironmentVariable(AllocationVariable);
-        int megabytes = int.TryParse(text, NumberStyles.None, CultureInfo.InvariantCulture, out int value) ? value : DefaultMegabytes;
+        bool parsed = int.TryParse(text, NumberStyles.None, CultureInfo.InvariantCulture, out int value);
+        int megabytes = parsed ? value : DefaultMegabytes;
         long bytes = (long)megabytes * 1024 * 1024;
 
         long touched = 0;

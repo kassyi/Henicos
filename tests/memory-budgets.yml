@@ -1,21 +1,24 @@
 # Memory budget of the test host of each test assembly, in MB (1 MB = 1048576 bytes).
 #
 # The watchdog of Kassyi.GSharp.Tests.Infrastructure (MemoryBudget) fails the tests that run when the peak memory of
-# the test host passes this value, and a final check per assembly fails when the peak of the whole run passed it.
+# the test host passes the budget, and a final check per assembly fails when the peak of the whole run passed it.
 # The peak is the peak private memory (commit charge) on Windows and the peak resident memory (VmHWM) on Linux.
-# tests/Directory.Build.props caps the managed heap at twice the budget (System.GC.HeapHardLimit).
 #
-# Each value is 1.5 times the largest peak of three runs of the suite on Windows and Linux, rounded up to 64 MB.
-# How to measure and update: .agents/rules/test-execution.md (Memory budgets).
+# Format: '<test project name>: <MB>[, stress <MB>]', one line per test project, at column 0. The first value holds
+# for a run without Stress and Benchmark tests (just test); the stress value takes over when the first Stress or
+# Benchmark test starts (the CI filter Category!=GpuExecution runs them). tests/Directory.Build.props caps the managed
+# heap at twice the larger value (System.GC.HeapHardLimit).
 #
-# Format: one '<test project name>: <MB>' line per test project, at column 0.
+# Each value is 1.2 times the largest peak of that profile over three runs each of just test (Windows) and the CI
+# filter (Windows and Linux), rounded up to 64 MB. How to measure and update: .agents/rules/test-execution.md.
+# The stress budgets of Tests.Cpu and Tests.Cuda are set by one 2 GiB buffer test (about 4 GB of the peak).
 
-Henicos.Benchmarks.Tests: 704
-Kassyi.GSharp.Stdlib.GpuMath.Tests: 1920
-Kassyi.GSharp.Tests.Cpu: 8256
-Kassyi.GSharp.Tests.Cuda: 8320
-Kassyi.GSharp.Tests.Infrastructure.Tests: 448
-Kassyi.GSharp.Tests.Integration: 192
-Kassyi.GSharp.Tools.CollectEnv.Tests: 192
-Kassyi.GSharp.Tools.FuzzDiff.Tests: 1408
-Kassyi.ZeroAlloc.Linq.Tests: 192
+Henicos.Benchmarks.Tests: 576
+Kassyi.GSharp.Stdlib.GpuMath.Tests: 1536
+Kassyi.GSharp.Tests.Cpu: 2304, stress 6528
+Kassyi.GSharp.Tests.Cuda: 2496, stress 6784
+Kassyi.GSharp.Tests.Infrastructure.Tests: 320
+Kassyi.GSharp.Tests.Integration: 128
+Kassyi.GSharp.Tools.CollectEnv.Tests: 128
+Kassyi.GSharp.Tools.FuzzDiff.Tests: 1152
+Kassyi.ZeroAlloc.Linq.Tests: 128

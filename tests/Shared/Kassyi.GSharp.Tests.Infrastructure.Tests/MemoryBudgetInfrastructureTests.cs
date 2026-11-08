@@ -27,7 +27,10 @@ public class MemoryBudgetInfrastructureTests
 
         Assert.Equal(names.Length, ordered.Count);
         Assert.Equal(MemoryBudget.FinalCollection, ordered[^1].DisplayName);
-        Assert.Equal(names.Order(StringComparer.Ordinal), ordered.Select(static c => c.DisplayName).Order(StringComparer.Ordinal));
+        Assert.Equal(
+            names.Order(StringComparer.Ordinal),
+            ordered.Select(static c => c.DisplayName).Order(StringComparer.Ordinal)
+        );
     }
 
     [Fact]
@@ -49,7 +52,9 @@ public class MemoryBudgetInfrastructureTests
     [Scenario(TestScenario.SadPath)]
     public void LinuxStatus_WithoutPeakLine_Throws()
     {
-        Assert.Throws<IOException>(static () => ProcessMemory.ReadLinuxPeakResident("Name:\ttesthost\nVmRSS:\t 1 kB\n"));
+        const string Status = "Name:\ttesthost\nVmRSS:\t 1 kB\n";
+
+        Assert.Throws<IOException>(static () => ProcessMemory.ReadLinuxPeakResident(Status));
     }
 
     [Fact]
@@ -95,11 +100,27 @@ public class MemoryBudgetInfrastructureTests
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.HappyPath)]
-    public void HeapHardLimit_IsTwiceTheBudgetOfTheFile()
+    public void AvailablePhysicalMemory_DescribesTheMachine_NotTheHeapHardLimit()
     {
-        long budgetMegabytes = MemoryBudgetFile.Parse(File.ReadAllText(MemoryBudgetFile.FullPath))
-            .Single(static e => e.Key == "Kassyi.GSharp.Tests.Infrastructure.Tests")
-            .Value;
+        long available = ProcessMemory.ReadAvailablePhysicalBytes();
+        GCMemoryInfo info = GC.GetGCMemoryInfo();
+
+        // Under the heap hard limit of this host (896 MB), TotalAvailableMemoryBytes is the limit, so the GC's view of
+        // free
+        // memory (limit minus the machine's load) is unrelated to the machine; the operating system's value is not
+        Assert.True(available > 0, $"available {available}");
+        Assert.NotEqual(info.TotalAvailableMemoryBytes - info.MemoryLoadBytes, available);
+    }
+
+    [Fact]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.HappyPath)]
+    public void HeapHardLimit_IsTwiceTheLargerBudgetOfTheFile()
+    {
+        MemoryBudgetEntry entry = MemoryBudgetFile.Parse(File.ReadAllText(MemoryBudgetFile.FullPath))
+            .Single(static e => e.Name == "Kassyi.GSharp.Tests.Infrastructure.Tests");
+        long budgetMegabytes = Math.Max(entry.Megabytes, entry.StressMegabytes);
 
         // TotalAvailableMemoryBytes is the heap hard limit when one is set (tests/Directory.Build.props)
         long limit = GC.GetGCMemoryInfo().TotalAvailableMemoryBytes;
