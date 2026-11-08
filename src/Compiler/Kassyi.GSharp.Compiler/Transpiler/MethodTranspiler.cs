@@ -149,11 +149,9 @@ public static class MethodTranspiler
         var expanded = IteratorInliner.ExpandStandalone(
             plan.Declaration,
             plan.Symbol,
-            plan.SemanticModel,
+            new IteratorExpansionContext(plan.SemanticModel, dialect, iteratorContext.Reporter),
             ref iteratorContext.Emitter.IteratorExpansionCounter,
-            ref iteratorContext.Emitter.ArgumentTempCounter,
-            dialect,
-            iteratorContext.Reporter);
+            ref iteratorContext.Emitter.ArgumentTempCounter);
 
         try
         {
