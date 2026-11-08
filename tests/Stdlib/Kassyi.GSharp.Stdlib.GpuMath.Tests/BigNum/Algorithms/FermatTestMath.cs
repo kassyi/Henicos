@@ -39,6 +39,9 @@ internal static class FermatTestMath
         return (isProbablePrime, Low64(residue), Low64(check));
     }
 
+    /// <summary>Returns the signed form <c>|x| = min(x, N - x)</c> of a residue below <c>N</c>.</summary>
+    public static BigInteger Signed(BigInteger value, BigInteger modulus) => BigInteger.Min(value, modulus - value);
+
     /// <summary>Returns the low 64 bits of a non-negative value.</summary>
     public static ulong Low64(BigInteger value) => (ulong)(value & ulong.MaxValue);
 
