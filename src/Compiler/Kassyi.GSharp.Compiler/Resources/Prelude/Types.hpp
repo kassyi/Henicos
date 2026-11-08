@@ -16,7 +16,8 @@ enum class GSharpErrorCode : int32_t {
     NullReference = 6,
     DivideByZero = 7,
     Overflow = 8,
-    DataRace = 9
+    DataRace = 9,
+    SwitchExpression = 10
 };
 inline void __gsharp_trap(GSharpErrorCode code, const char* message);
 
