@@ -58,7 +58,7 @@ public class SyncIntrinsicClassifierTests
         [("Warp", "ReduceAndSync")] = new(SyncIntrinsicKind.WarpShuffle, SyncScope.Warp, true, true, WarpShuffleKind.ReduceAnd),
         [("Warp", "ReduceOrSync")] = new(SyncIntrinsicKind.WarpShuffle, SyncScope.Warp, true, true, WarpShuffleKind.ReduceOr),
         [("Warp", "ReduceXorSync")] = new(SyncIntrinsicKind.WarpShuffle, SyncScope.Warp, true, true, WarpShuffleKind.ReduceXor),
-        [("Warp", "ActiveMask")] = new(SyncIntrinsicKind.None, SyncScope.None, false, true),
+        [("Warp", "ActiveMask")] = new(SyncIntrinsicKind.WarpShuffle, SyncScope.Warp, true, true, WarpShuffleKind.ActiveMask),
         [("Wmma", "Fill")] = new(SyncIntrinsicKind.WarpCollective, SyncScope.Warp, false, true),
         [("Wmma", "Load")] = new(SyncIntrinsicKind.WarpCollective, SyncScope.Warp, false, true),
         [("Wmma", "MultiplyAccumulate")] = new(SyncIntrinsicKind.WarpCollective, SyncScope.Warp, false, true),

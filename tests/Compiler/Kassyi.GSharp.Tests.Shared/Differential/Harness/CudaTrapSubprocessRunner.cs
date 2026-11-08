@@ -12,8 +12,9 @@ using Xunit;
 namespace Kassyi.GSharp.Tests.Shared.Differential;
 
 /// <summary>
-/// Isolates CUDA device <c>trap;</c> fault seeds in a child process so that sticky
-/// <c>CUDA_ERROR_ILLEGAL_INSTRUCTION</c> errors never poison the parent <c>testhost</c> <c>CUcontext</c>.
+/// Isolates the CUDA fault seeds that may raise a real GPU fault (a CUDA exception cell that is a known divergence: an
+/// unchecked access to an illegal address) in a child process, so that the sticky error never poisons the parent
+/// <c>testhost</c> <c>CUcontext</c>. Every other fault seed runs in the test host.
 /// </summary>
 /// <remarks>
 /// Each child raises a real GPU fault, so <see cref="DifferentialRunner"/> starts one only when

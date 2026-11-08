@@ -174,8 +174,8 @@ methods:
         description: The shift amount in bits (0-31).
 
   - name: SyncGrid
-    nativeName: cg::this_grid().sync
-    summary: Synchronizes all threads across the entire cooperative grid (cg::this_grid().sync()).
+    nativeName: __gsharp_grid_sync
+    summary: Synchronizes all threads across the entire cooperative grid (__gsharp_grid_sync).
     returnType: void
 
   # ===========================================================================
@@ -187,7 +187,7 @@ methods:
     managed: ManagedGpuContext.ActiveMask
     summary: Returns a 32-bit mask of all currently active threads in the calling warp.
     returnType: uint
-    returnDescription: A 32-bit bitmask where bit i corresponds to active lane i. The CPU paths return every lane of the warp that exists in the block, which is the GPU result where every lane reaches the call; GSH0101 reports a call under a thread-dependent condition on the CPU dialects.
+    returnDescription: A 32-bit bitmask where bit i corresponds to active lane i. It holds the calling lane and no lane that has exited; which other lanes of the current path it holds is up to the GPU scheduler (from Volta on it may be fewer). The CPU paths return the lanes that took the same way through the thread-dependent branches since the warp last ran together, which is the value the GPU gives in practice.
 
   - name: ShuffleSync
     className: Warp

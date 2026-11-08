@@ -171,7 +171,7 @@ public GpuWorkspace Workspace { get; }
 | [IsOne()](#isone) | Determines whether the value of this instance is 1 (one). |
 | [IsZero()](#iszero) | Determines whether the value of this instance is 0 (zero). |
 | [ModInverse(GpuBigUIntView)](#modinversegpubiguintview) | Computes the modular multiplicative inverse of this instance modulo `modulus`. |
-| [PadTo(int)](#padtoint) | Allocates a new `GpuBigUInt` with the specified target word capacity and copies this instance's limbs into it. |
+| [PadTo(int)](#padtoint) | Allocates a new `GpuBigUInt` with the specified target word capacity and copies this instance's limbs into it; only widens. |
 | [SetIsNegative(bool)](#setisnegativebool) | Sets or clears the most significant bit in the highest word (used for two's complement sign tracking). |
 | [Square(int)](#squareint) | Computes the square of this number in-place on the GPU. |
 | [ToBigInteger(bool)](#tobigintegerbool) | Copies limb data from GPU device memory and reconstructs a .NET standard `BigInteger`. |
@@ -552,12 +552,17 @@ public GpuBigUInt PadTo(int targetWords);
 #### Parameters
 
 `targetWords` _int_<br>
-The target word capacity of the new buffer.
+The target word capacity of the new buffer, at least `NumWords`.
 
 #### Returns
 
 _GpuBigUInt_<br>
-A new `GpuBigUInt` padded or truncated to `targetWords`.
+A new `GpuBigUInt` padded with zero words to `targetWords`.
+
+#### Exceptions
+
+`ArgumentOutOfRangeException`<br>
+Thrown if `targetWords` is below `NumWords`: `PadTo` only widens. Narrow a value with `GpuBigUIntExpr.Fit` (checked) or `GpuBigUIntExpr.Truncate` (unchecked).
 
 ## SetIsNegative(bool)
 

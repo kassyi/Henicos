@@ -50,6 +50,42 @@ internal static class StackLinqHelper
              .AsStackEnumerable()
              .Any(static p => p.Name == "state"));
 
+    /// <summary>
+    /// Is it the overload of <c>Where</c>, <c>Select</c>, <c>Count</c>, <c>TakeWhile</c> or <c>SkipWhile</c> whose lambda
+    /// also takes the index of the element (<c>Where((x, i) => ...)</c>)? The device header has an <c>...At</c> function
+    /// for each; a fused loop does not pass the index.
+    /// </summary>
+    public static bool IsIndexedOverload(IMethodSymbol symbol) =>
+        symbol.Name is "Where" or "Select" or "Count" or "TakeWhile" or "SkipWhile" &&
+        symbol.Parameters.Length > 0 &&
+        symbol.Parameters[^1].Type is INamedTypeSymbol { DelegateInvokeMethod.Parameters.Length: 2 };
+
+    /// <summary>
+    /// The failure of an operator that needs an operation of a struct element type that GPU code does not call: a
+    /// <c>Sum</c> of elements that are not of a built-in arithmetic type (the generic <c>Sum</c> of an <c>AsParallel()</c>
+    /// sequence adds with the user-defined <c>+</c> of the type, GSH0060, from its <c>AdditiveIdentity</c>), and a
+    /// <c>Contains</c> of a struct (C# compares with <c>EqualityComparer&lt;T&gt;.Default</c>, an <c>Equals</c> that the
+    /// device does not reproduce).
+    /// </summary>
+    public static bool TryGetUnsupportedElementType(IMethodSymbol symbol, [NotNullWhen(true)] out string? failure)
+    {
+        switch (symbol.Name)
+        {
+            case "Sum" or "SumSequential" when !symbol.ReturnType.SpecialType.IsArithmetic():
+                failure =
+                    $"Sum over '{symbol.ReturnType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)}' (only built-in numeric types are summed in GPU code; use Aggregate with a [GpuDeviceFunction] that adds two values)";
+                return true;
+            case "Contains" when symbol.Parameters[^1].Type is var value &&
+                                 !value.SpecialType.IsPrimitiveValue() && value.TypeKind != TypeKind.Enum:
+                failure =
+                    $"Contains over '{value.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)}' (only built-in types and enums are compared in GPU code; use Any with a [GpuDeviceFunction] that compares two values)";
+                return true;
+            default:
+                failure = null;
+                return false;
+        }
+    }
+
     public static bool TryFindArgument(
         InvocationExpressionSyntax invocation,
         IMethodSymbol symbol,

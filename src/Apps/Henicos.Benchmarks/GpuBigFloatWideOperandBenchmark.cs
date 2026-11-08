@@ -108,6 +108,8 @@ public class GpuBigFloatWideOperandBenchmark : IDisposable
         var right = new GpuFloatOperand(Buffer(_wide).Handle, 0);
         GSharpKernelFloatProvider.Instance.Divide(ref context, in left, in right, Buffer(_result).Handle);
         CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(workspace.Stream));
+
+        global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfDeviceError();
     }
 
     /// <summary>The inverse square root of the wide radicand, rounded to <c>n</c> words.</summary>
@@ -119,6 +121,8 @@ public class GpuBigFloatWideOperandBenchmark : IDisposable
         var value = new GpuFloatOperand(Buffer(_wide).Handle, 0);
         GSharpKernelFloatProvider.Instance.Rsqrt(ref context, in value, Buffer(_result).Handle);
         CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(workspace.Stream));
+
+        global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfDeviceError();
     }
 
     public void Dispose()

@@ -3245,8 +3245,16 @@ __gsharp_warp_record __gsharp_warp_records[2] = {};
 uint32_t __gsharp_warp_record_next = 0;
 uint32_t __gsharp_warp_round = 0;
 bool __gsharp_warp_waiting = false;
+__gsharp_warp_instance __gsharp_warp_regions[16] = {};
+uint32_t __gsharp_warp_region_depth = 0;
+bool __gsharp_warp_reconverging = false;
+uint32_t __gsharp_warp_reconverge_round = 0;
+const char* __gsharp_warp_reconverge_location = nullptr;
+uint32_t __gsharp_warp_decided_round = 0;
+bool __gsharp_warp_may_pass = false;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
+uint32_t __gsharp_warp_visits[1] = {};
 GSharpArray<int> __gsharp_id_0_inputs;
 GSharpArray<int> __gsharp_id_1_scratch;
 GSharpArray<int> __gsharp_id_2_r;
@@ -3278,6 +3286,7 @@ if(__gsharp_ctx->__gsharp_id_4_globalTid>=__gsharp_ctx->__gsharp_id_0_inputs.len
 __gsharp_state = -1;return;
 }
 __gsharp_ctx->__gsharp_arg_temp_0=__gsharp_ctx->__gsharp_id_0_inputs[__gsharp_ctx->__gsharp_id_4_globalTid];
+__gsharp_warp_region_enter(__gsharp_root,__gsharp_ctx,0);
 goto __gsharp_switch_1_state_1;
 }
 case 1:
@@ -3288,6 +3297,14 @@ if(!__gsharp_fn_Kassyi__GSharp__Tests__DeviceLibrary__LibMath__Exchange(__gsharp
 __gsharp_state=1;
 return;
 }
+__gsharp_warp_reconverge_arrive(__gsharp_root,__gsharp_ctx,0,""CrossAssemblyDifferentialKernels.cs(222,25)"");
+__gsharp_state=2;
+return;
+}
+case 2:
+__gsharp_switch_1_state_2:
+{
+__gsharp_warp_reconverge_pass(__gsharp_root,__gsharp_ctx,0);
 int __gsharp_id_5_exchanged = __gsharp_ctx->__gsharp_call_temp_1;
 __gsharp_ctx->__gsharp_id_2_r[__gsharp_ctx->__gsharp_id_4_globalTid]=__gsharp_add_i32(__gsharp_id_5_exchanged,__gsharp_ctx->__gsharp_id_0_inputs[__gsharp_ctx->__gsharp_id_4_globalTid]);
 __gsharp_state=-1;
@@ -3380,7 +3397,7 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__CrossAssemblyDifferentialKernels__CrossAssemblyBarrierExchangeKernel {
+public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__CrossAssemblyDifferentialKernels__CrossAssemblyBarrierExchangeKernel : global::Kassyi.GSharp.Core.IManagedWarpFrame {
 public int __gsharp_state;
 public uint __gsharp_warp_path;
 public int[] inputs;
@@ -3391,6 +3408,10 @@ public int globalTid;
 public int __gsharp_arg_temp_0;
 public int __gsharp_call_temp_1;
 internal global::Kassyi.GSharp.Tests.DeviceLibrary.LibMath.__gsharp_frame_Kassyi__GSharp__Tests__DeviceLibrary__LibMath__Exchange __gsharp_call_frame_0 = new();
+public uint[] __gsharp_warp_visits = new uint[1];
+uint global::Kassyi.GSharp.Core.IManagedWarpFrame.WarpPath => __gsharp_warp_path;
+uint global::Kassyi.GSharp.Core.IManagedWarpFrame.AdvanceWarpVisit(int site) => ++__gsharp_warp_visits[site];
+uint global::Kassyi.GSharp.Core.IManagedWarpFrame.GetWarpVisit(int site) => __gsharp_warp_visits[site];
 public uint __gsharp_number_warp_paths(uint next) {
 __gsharp_warp_path = next++;
 next = __gsharp_call_frame_0.__gsharp_number_warp_paths(next);
@@ -3420,6 +3441,7 @@ return;
 }
 
 __gsharp_ctx.__gsharp_arg_temp_0 = __gsharp_ctx.inputs[__gsharp_ctx.globalTid];
+__gsharp_warp_region_enter(0, ref __gsharp_ctx, 0);
 goto case 1;
 }
 
@@ -3431,6 +3453,14 @@ __gsharp_ctx.__gsharp_state = 1;
 return;
 }
 
+__gsharp_warp_reconverge_arrive(0, ref __gsharp_ctx, 0, "CrossAssemblyDifferentialKernels.cs(222,25)");
+__gsharp_ctx.__gsharp_state = 2;
+return;
+}
+
+case 2:
+{
+__gsharp_warp_reconverge_pass(0, ref __gsharp_ctx, 0);
 int exchanged = __gsharp_ctx.__gsharp_call_temp_1;
 __gsharp_ctx.r[__gsharp_ctx.globalTid] = exchanged + __gsharp_ctx.inputs[__gsharp_ctx.globalTid];
 __gsharp_ctx.__gsharp_state = -1;

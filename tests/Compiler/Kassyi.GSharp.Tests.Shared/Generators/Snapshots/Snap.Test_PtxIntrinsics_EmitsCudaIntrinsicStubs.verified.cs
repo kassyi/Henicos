@@ -112,8 +112,8 @@ public static uint FunnelShiftLeft(uint lo, uint hi, uint shift) => Kassyi.GShar
 /// <returns>The least significant 32 bits of the shifted 64-bit pair.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("__funnelshift_r")]
 public static uint FunnelShiftRight(uint lo, uint hi, uint shift) => Kassyi.GSharp.Core.GpuOnlyException.Throw<uint>();
-/// <summary>Synchronizes all threads across the entire cooperative grid (cg::this_grid().sync()).</summary>
-[Kassyi.GSharp.Core.CudaIntrinsic("cg::this_grid().sync")]
+/// <summary>Synchronizes all threads across the entire cooperative grid (__gsharp_grid_sync).</summary>
+[Kassyi.GSharp.Core.CudaIntrinsic("__gsharp_grid_sync")]
 public static void SyncGrid() => Kassyi.GSharp.Core.GpuOnlyException.Throw();
 /// <summary>Counts the number of set bits (population count) in a 32-bit unsigned integer.</summary>
 /// <param name="val">The unsigned 32-bit integer.</param>
@@ -735,7 +735,7 @@ public static partial class Warp
 #pragma warning disable IDE0051 // Remove unused private members
 // ReSharper disable UnusedMember.Global
 /// <summary>Returns a 32-bit mask of all currently active threads in the calling warp.</summary>
-/// <returns>A 32-bit bitmask where bit i corresponds to active lane i. The CPU paths return every lane of the warp that exists in the block, which is the GPU result where every lane reaches the call; GSH0101 reports a call under a thread-dependent condition on the CPU dialects.</returns>
+/// <returns>A 32-bit bitmask where bit i corresponds to active lane i. It holds the calling lane and no lane that has exited; which other lanes of the current path it holds is up to the GPU scheduler (from Volta on it may be fewer). The CPU paths return the lanes that took the same way through the thread-dependent branches since the warp last ran together, which is the value the GPU gives in practice.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("__activemask")]
 public static uint ActiveMask() => Kassyi.GSharp.Core.ManagedGpuContext.ActiveMask();
 /// <summary>Exchanges a variable between threads within a warp.</summary>
