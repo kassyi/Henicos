@@ -61,6 +61,10 @@ public sealed class GpuBuffer<T> : IDisposable where T : unmanaged
     /// <summary>
     /// Allocates a new device buffer capable of holding <paramref name="length"/> elements.
     /// </summary>
+    /// <remarks>
+    /// The buffer is allocated in the context of the calling thread's active
+    /// <see cref="GpuKernelLoader.CudaContextScope"/>, or in the global context when no scope is active.
+    /// </remarks>
     /// <param name="length">Number of elements.</param>
     public unsafe GpuBuffer(int length)
     {
@@ -84,6 +88,7 @@ public sealed class GpuBuffer<T> : IDisposable where T : unmanaged
             return;
         }
 
+        using var scope = new GpuKernelLoader.CudaContextScope();
         CudaException.ThrowIfError(CudaDriverApi.cuCtxGetCurrent(out _owningContext));
         CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out _devicePointer, _byteSize));
     }
