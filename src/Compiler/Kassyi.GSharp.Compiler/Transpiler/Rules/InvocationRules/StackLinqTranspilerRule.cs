@@ -12,16 +12,22 @@ public sealed class StackLinqTranspilerRule : IInvocationTranspilerRule
             return false;
         }
 
-        var methodName = symbol.Name;
+        // The indexed overloads map to WhereAt / SelectAt / CountAt / TakeWhileAt / SkipWhileAt
+        var methodName = StackLinqHelper.IsIndexedOverload(symbol) ? symbol.Name + "At" : symbol.Name;
 
-        // Detect indexed overloads and map to WhereAt / SelectAt / CountAt
-        if (methodName is "Where" or "Select" or "Count")
+        // [WHY] An operator without a function in StackLinq.cuh would fail the C++ build without a G# diagnostic; the
+        // host-only operators are reported once, by ProhibitedApiRule
+        if (!IsDefinedOnDevice(methodName) && !StackLinqHelper.IsHostOnly(symbol))
         {
-            var lastParam = symbol.Parameters.Length > 0 ? symbol.Parameters[^1] : null;
-            if (lastParam?.Type is INamedTypeSymbol { DelegateInvokeMethod.Parameters.Length: 2 })
-            {
-                methodName += "At";
-            }
+            context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, node,
+                $"{methodName} (a StackLinq operator that GPU code does not implement)");
+            return true;
+        }
+
+        if (StackLinqHelper.TryGetUnsupportedElementType(symbol, out var elementFailure))
+        {
+            context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, node, elementFailure);
+            return true;
         }
 
         var sites = RegisterErrorSites(node, symbol, methodName, ref context);
@@ -36,6 +42,25 @@ public sealed class StackLinqTranspilerRule : IInvocationTranspilerRule
 
         return true;
     }
+
+    /// <summary>
+    /// The functions of <c>struct StackLinq</c> in <c>Resources/StackLinq.cuh</c> that an unfused call can name: the
+    /// StackLinq operators with the indexed overloads renamed (<c>WhereAt</c>).
+    /// </summary>
+    internal static IReadOnlyCollection<string> DeviceOperators => s_deviceOperators;
+
+    private static readonly HashSet<string> s_deviceOperators = new(StringComparer.Ordinal)
+    {
+        "AsStackEnumerable", "AsParallel",
+        "Where", "WhereAt", "Select", "SelectAt", "Take", "Skip", "TakeWhile", "TakeWhileAt", "SkipWhile",
+        "SkipWhileAt", "TakeLast", "SkipLast",
+        "Count", "CountAt", "Any", "All", "Contains",
+        "ElementAt", "ElementAtOrDefault", "First", "FirstOrDefault", "Single", "SingleOrDefault", "Last",
+        "LastOrDefault",
+        "Sum", "SumSequential", "Aggregate", "Max", "Min", "Average"
+    };
+
+    private static bool IsDefinedOnDevice(string methodName) => s_deviceOperators.Contains(methodName);
 
     // Registers the error sites of a trapping terminal; the ids are appended after its arguments (zero: no site)
     private static (uint First, uint Second) RegisterErrorSites(
@@ -61,6 +86,8 @@ public sealed class StackLinqTranspilerRule : IInvocationTranspilerRule
                 return (table.Register(node, model, memberName, "Sequence contains no matching element", "First.Predicate"), 0u);
             case "First":
                 return (table.Register(node, model, memberName, "Sequence contains no elements", "First"), 0u);
+            case "Last" when hasPredicate:
+                return (table.Register(node, model, memberName, "Sequence contains no matching element", "Last.Predicate"), 0u);
             case "Last":
             case "Aggregate" when !HasSeedParameter(symbol):
             case "Max":

@@ -314,4 +314,12 @@ public static partial class ParallelAggregateWarnings
         DataBox? box = ThreadIndex.X < 5 ? new DataBox { Elements = data } : null;
         result[ThreadIndex.X] = box?.Elements.AsStackEnumerable().AsParallel().Sum() ?? 0;
     }
+
+    // #1176: the AsParallel() sequence is stored in a local before its terminal
+    [GpuKernel]
+    public static void StoredInLocalKernel(int[] data, int[] result)
+    {
+        var parallel = data.AsStackEnumerable().AsParallel();
+        result[ThreadIndex.X] = parallel.Sum();
+    }
 }
