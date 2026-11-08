@@ -43,9 +43,9 @@ internal class VectorLogicalExpression(
         if (isAnd)
         {
             GpuBigIntCmpKernels.LaunchVectorAndKernelPtr(
-                leftResult.Flags.DevicePointer,
-                rightResult.Flags.DevicePointer,
-                _finalValues.DevicePointer,
+                leftResult.Flags.ToProxy(),
+                rightResult.Flags.ToProxy(),
+                _finalValues.ToProxy(),
                 capacity,
                 (uint)gridDimX, 1, 1,
                 (uint)blockDimX, 1, 1,
@@ -54,9 +54,9 @@ internal class VectorLogicalExpression(
         else
         {
             GpuBigIntCmpKernels.LaunchVectorOrKernelPtr(
-                leftResult.Flags.DevicePointer,
-                rightResult.Flags.DevicePointer,
-                _finalValues.DevicePointer,
+                leftResult.Flags.ToProxy(),
+                rightResult.Flags.ToProxy(),
+                _finalValues.ToProxy(),
                 capacity,
                 (uint)gridDimX, 1, 1,
                 (uint)blockDimX, 1, 1,
@@ -110,8 +110,8 @@ internal class VectorNotExpression([TakesOwnership] IGpuBoolVectorExpression sou
         var blockDimX = 256;
 
         GpuBigIntCmpKernels.LaunchVectorNotKernelPtr(
-            result.Flags.DevicePointer,
-            _finalValues.DevicePointer,
+            result.Flags.ToProxy(),
+            _finalValues.ToProxy(),
             capacity,
             (uint)gridDimX, 1, 1,
             (uint)blockDimX, 1, 1,
@@ -153,8 +153,8 @@ internal static class BoolVectorQuantifier
 
         var ctx = new GpuBigIntVectorKernels.AotContexts.VectorBoolReduction
         {
-            Flags = flags.Flags.DevicePointer,
-            Result = result.DevicePointer,
+            Flags = flags.Flags.ToProxy(),
+            Result = result.ToProxy(),
             Count = flags.Count.ToContext()
         };
 

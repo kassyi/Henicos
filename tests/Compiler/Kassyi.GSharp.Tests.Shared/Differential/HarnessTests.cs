@@ -903,7 +903,7 @@ public class HarnessTests
             {
                 using var scope = b.PinOrUpload();
                 HarnessProbeKernels.LaunchLastWriterKernelPtr(
-                    scope.Get("r"),
+                    scope.GetArray("r"),
                     gridDimX: s.GridX,
                     blockDimX: s.BlockX
                 );

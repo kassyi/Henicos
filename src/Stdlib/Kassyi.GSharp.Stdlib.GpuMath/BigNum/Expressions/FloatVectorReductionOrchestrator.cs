@@ -130,16 +130,16 @@ internal static class FloatVectorReductionOrchestrator
         {
             Input = new GpuBigIntVectorKernels.AotContexts.FloatVectorOperandReadOnly
             {
-                Limbs = input.Significands.DevicePointer,
-                Exponents = input.Exponents.DevicePointer,
-                Signs = input.Signs.DevicePointer,
+                Limbs = input.Significands.ToProxy(),
+                Exponents = input.Exponents.ToProxy(),
+                Signs = input.Signs.ToProxy(),
                 NumWords = numWords
             },
             Output = new GpuBigIntVectorKernels.AotContexts.FloatVectorOutput
             {
-                Limbs = output.Significands.DevicePointer,
-                Exponents = output.Exponents.DevicePointer,
-                Signs = output.Signs.DevicePointer,
+                Limbs = output.Significands.ToProxy(),
+                Exponents = output.Exponents.ToProxy(),
+                Signs = output.Signs.ToProxy(),
                 NumWords = numWords
             },
             BatchSize = pass.BatchSize,

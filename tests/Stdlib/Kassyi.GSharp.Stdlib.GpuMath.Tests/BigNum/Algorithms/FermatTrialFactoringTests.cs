@@ -72,8 +72,8 @@ public class FermatTrialFactoringTests
         FermatTrialFactoringKernels.LaunchSearchFactors32KernelPtr(
             startOdd: 3u,
             exp: (uint)exp,
-            results: resultsBuffer.DevicePointer,
-            resultCount: resultCountBuffer.DevicePointer,
+            results: resultsBuffer.ToProxy(),
+            resultCount: resultCountBuffer.ToProxy(),
             maxResults: MaxResults,
             gridDimX: 8,
             blockDimX: 256);
@@ -116,8 +116,8 @@ public class FermatTrialFactoringTests
         FermatTrialFactoringKernels.LaunchSearchFactors32KernelPtr(
             startOdd: startOdd,
             exp: exp,
-            results: resultsBuffer.DevicePointer,
-            resultCount: resultCountBuffer.DevicePointer,
+            results: resultsBuffer.ToProxy(),
+            resultCount: resultCountBuffer.ToProxy(),
             maxResults: MaxResults,
             gridDimX: 1,
             blockDimX: Threads);
@@ -173,8 +173,8 @@ public class FermatTrialFactoringTests
         FermatTrialFactoringKernels.SearchFactors32(
             startOdd,
             Exp,
-            resultsBuffer.DevicePointer,
-            resultCountBuffer.DevicePointer,
+            resultsBuffer.ToProxy(),
+            resultCountBuffer.ToProxy(),
             MaxResults,
             gridDimX,
             blockDimX);
@@ -223,8 +223,8 @@ public class FermatTrialFactoringTests
         FermatTrialFactoringKernels.LaunchSearchFactors32KernelPtr(
             startOdd: 3u,
             exp: Exp,
-            results: resultsBuffer.DevicePointer,
-            resultCount: resultCountBuffer.DevicePointer,
+            results: resultsBuffer.ToProxy(),
+            resultCount: resultCountBuffer.ToProxy(),
             maxResults: maxResults,
             gridDimX: 8,
             blockDimX: 256);
@@ -268,8 +268,14 @@ public class FermatTrialFactoringTests
         Assert.Equal("maxResults", tooMany.ParamName);
 
         var pointer = Assert.Throws<ArgumentOutOfRangeException>(() =>
-            FermatTrialFactoringKernels.SearchFactors32(3u, 14u, IntPtr.Zero, IntPtr.Zero, int.MinValue, 8, 256));
+            FermatTrialFactoringKernels.SearchFactors32(3u, 14u, default(GSharpArrayProxy), default, int.MinValue, 8, 256));
         Assert.Equal("maxResults", pointer.ParamName);
+
+        // The device buffers carry their lengths, so the pointer entry point rejects too many results as well
+        var pointerTooMany = Assert.Throws<ArgumentOutOfRangeException>(() =>
+            FermatTrialFactoringKernels.SearchFactors32(
+                3u, 14u, new GSharpArrayProxy(new IntPtr(0x1000), 1), new GSharpArrayProxy(new IntPtr(0x2000), 1), 2, 8, 256));
+        Assert.Equal("maxResults", pointerTooMany.ParamName);
 
         // Nothing ran: the count is untouched.
         Assert.Equal(0u, count[0]);

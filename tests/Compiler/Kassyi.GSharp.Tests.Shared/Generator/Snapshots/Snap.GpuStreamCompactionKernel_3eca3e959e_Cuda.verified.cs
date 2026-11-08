@@ -468,13 +468,37 @@ __gsharp_device_arrays.Free(hStream);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-public static unsafe void LaunchBlockExclusiveScanPtr(global::System.IntPtr output, global::System.IntPtr input, global::System.Int32 elementCount, global::System.IntPtr blockSums, global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuStreamCompactionKernels.AotContexts.ElementCount count, global::System.IntPtr total, global::System.Boolean flags, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchBlockExclusiveScanPtr(global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy output, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy input, global::System.Int32 elementCount, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy blockSums, global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuStreamCompactionKernels.AotContexts.ElementCount count, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy total, global::System.Boolean flags, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (output == global::System.IntPtr.Zero){
+if (output.Length < 0){
+throw new global::System.ArgumentOutOfRangeException(nameof(output), output.Length, "The array length must not be negative.");
+}
+if (output.Data == global::System.IntPtr.Zero){
 throw new global::System.ArgumentNullException(nameof(output));
 }
-if (input == global::System.IntPtr.Zero){
+if (output.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(output));
+}
+if (input.Length < 0){
+throw new global::System.ArgumentOutOfRangeException(nameof(input), input.Length, "The array length must not be negative.");
+}
+if (input.Data == global::System.IntPtr.Zero){
 throw new global::System.ArgumentNullException(nameof(input));
+}
+if (input.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(input));
+}
+if (blockSums.Length < 0){
+throw new global::System.ArgumentOutOfRangeException(nameof(blockSums), blockSums.Length, "The array length must not be negative.");
+}
+if (blockSums.Data == global::System.IntPtr.Zero || blockSums.Length == 0){
+blockSums = default;
+}
+if (total.Length < 0){
+throw new global::System.ArgumentOutOfRangeException(nameof(total), total.Length, "The array length must not be negative.");
+}
+if (total.Data == global::System.IntPtr.Zero || total.Length == 0){
+total = default;
 }
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "GpuStreamCompactionKernels.BlockExclusiveScan");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
@@ -486,31 +510,31 @@ try
 void** __gsharp_kernel_params = stackalloc void*[7];
 // Marshal device array: output
 global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
-__gsharp_proxy_0[0] = output;
-((int*)(__gsharp_proxy_0 + 1))[0] = 0; // Length is unknown for raw IntPtr
+__gsharp_proxy_0[0] = output.Data;
+((int*)(__gsharp_proxy_0 + 1))[0] = output.Length;
 ((int*)(__gsharp_proxy_0 + 1))[1] = 0;
 __gsharp_kernel_params[0] = __gsharp_proxy_0;
 // Marshal device array: input
 global::System.IntPtr* __gsharp_proxy_1 = stackalloc global::System.IntPtr[2];
-__gsharp_proxy_1[0] = input;
-((int*)(__gsharp_proxy_1 + 1))[0] = 0; // Length is unknown for raw IntPtr
+__gsharp_proxy_1[0] = input.Data;
+((int*)(__gsharp_proxy_1 + 1))[0] = input.Length;
 ((int*)(__gsharp_proxy_1 + 1))[1] = 0;
 __gsharp_kernel_params[1] = __gsharp_proxy_1;
 // Marshal scalar: elementCount
 __gsharp_kernel_params[2] = &elementCount;
 // Marshal device array: blockSums
 global::System.IntPtr* __gsharp_proxy_3 = stackalloc global::System.IntPtr[2];
-__gsharp_proxy_3[0] = blockSums;
-((int*)(__gsharp_proxy_3 + 1))[0] = 0; // Length is unknown for raw IntPtr
-((int*)(__gsharp_proxy_3 + 1))[1] = blockSums == global::System.IntPtr.Zero ? global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.NullReadsAsEmpty : 0;
+__gsharp_proxy_3[0] = blockSums.Data;
+((int*)(__gsharp_proxy_3 + 1))[0] = blockSums.Length;
+((int*)(__gsharp_proxy_3 + 1))[1] = blockSums.Data == global::System.IntPtr.Zero ? global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.NullReadsAsEmpty : 0;
 __gsharp_kernel_params[3] = __gsharp_proxy_3;
 // Marshal device struct: count
 __gsharp_kernel_params[4] = &count;
 // Marshal device array: total
 global::System.IntPtr* __gsharp_proxy_5 = stackalloc global::System.IntPtr[2];
-__gsharp_proxy_5[0] = total;
-((int*)(__gsharp_proxy_5 + 1))[0] = 0; // Length is unknown for raw IntPtr
-((int*)(__gsharp_proxy_5 + 1))[1] = total == global::System.IntPtr.Zero ? global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.NullReadsAsEmpty : 0;
+__gsharp_proxy_5[0] = total.Data;
+((int*)(__gsharp_proxy_5 + 1))[0] = total.Length;
+((int*)(__gsharp_proxy_5 + 1))[1] = total.Data == global::System.IntPtr.Zero ? global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.NullReadsAsEmpty : 0;
 __gsharp_kernel_params[5] = __gsharp_proxy_5;
 // Marshal scalar: flags
 __gsharp_kernel_params[6] = &flags;
@@ -661,13 +685,25 @@ if (__gsharp_d_1 != global::System.IntPtr.Zero && __gsharp_d_1 != __gsharp_d_0) 
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-public static unsafe void LaunchAddBlockSumsPtr(global::System.IntPtr output, global::System.IntPtr blockSums, global::System.Int32 elementCount, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchAddBlockSumsPtr(global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy output, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy blockSums, global::System.Int32 elementCount, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (output == global::System.IntPtr.Zero){
+if (output.Length < 0){
+throw new global::System.ArgumentOutOfRangeException(nameof(output), output.Length, "The array length must not be negative.");
+}
+if (output.Data == global::System.IntPtr.Zero){
 throw new global::System.ArgumentNullException(nameof(output));
 }
-if (blockSums == global::System.IntPtr.Zero){
+if (output.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(output));
+}
+if (blockSums.Length < 0){
+throw new global::System.ArgumentOutOfRangeException(nameof(blockSums), blockSums.Length, "The array length must not be negative.");
+}
+if (blockSums.Data == global::System.IntPtr.Zero){
 throw new global::System.ArgumentNullException(nameof(blockSums));
+}
+if (blockSums.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(blockSums));
 }
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "GpuStreamCompactionKernels.AddBlockSums");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
@@ -679,14 +715,14 @@ try
 void** __gsharp_kernel_params = stackalloc void*[3];
 // Marshal device array: output
 global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
-__gsharp_proxy_0[0] = output;
-((int*)(__gsharp_proxy_0 + 1))[0] = 0; // Length is unknown for raw IntPtr
+__gsharp_proxy_0[0] = output.Data;
+((int*)(__gsharp_proxy_0 + 1))[0] = output.Length;
 ((int*)(__gsharp_proxy_0 + 1))[1] = 0;
 __gsharp_kernel_params[0] = __gsharp_proxy_0;
 // Marshal device array: blockSums
 global::System.IntPtr* __gsharp_proxy_1 = stackalloc global::System.IntPtr[2];
-__gsharp_proxy_1[0] = blockSums;
-((int*)(__gsharp_proxy_1 + 1))[0] = 0; // Length is unknown for raw IntPtr
+__gsharp_proxy_1[0] = blockSums.Data;
+((int*)(__gsharp_proxy_1 + 1))[0] = blockSums.Length;
 ((int*)(__gsharp_proxy_1 + 1))[1] = 0;
 __gsharp_kernel_params[1] = __gsharp_proxy_1;
 // Marshal scalar: elementCount
@@ -935,19 +971,43 @@ if (__gsharp_d_3 != global::System.IntPtr.Zero && __gsharp_d_3 != __gsharp_d_0 &
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-public static unsafe void LaunchCompactBigUIntArrayPtr(global::System.IntPtr output, global::System.IntPtr input, global::System.IntPtr predicates, global::System.IntPtr scanResult, global::System.Int32 elementCount, global::System.Int32 wordsPerElement, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchCompactBigUIntArrayPtr(global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy output, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy input, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy predicates, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy scanResult, global::System.Int32 elementCount, global::System.Int32 wordsPerElement, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (output == global::System.IntPtr.Zero){
+if (output.Length < 0){
+throw new global::System.ArgumentOutOfRangeException(nameof(output), output.Length, "The array length must not be negative.");
+}
+if (output.Data == global::System.IntPtr.Zero){
 throw new global::System.ArgumentNullException(nameof(output));
 }
-if (input == global::System.IntPtr.Zero){
+if (output.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(output));
+}
+if (input.Length < 0){
+throw new global::System.ArgumentOutOfRangeException(nameof(input), input.Length, "The array length must not be negative.");
+}
+if (input.Data == global::System.IntPtr.Zero){
 throw new global::System.ArgumentNullException(nameof(input));
 }
-if (predicates == global::System.IntPtr.Zero){
+if (input.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(input));
+}
+if (predicates.Length < 0){
+throw new global::System.ArgumentOutOfRangeException(nameof(predicates), predicates.Length, "The array length must not be negative.");
+}
+if (predicates.Data == global::System.IntPtr.Zero){
 throw new global::System.ArgumentNullException(nameof(predicates));
 }
-if (scanResult == global::System.IntPtr.Zero){
+if (predicates.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(predicates));
+}
+if (scanResult.Length < 0){
+throw new global::System.ArgumentOutOfRangeException(nameof(scanResult), scanResult.Length, "The array length must not be negative.");
+}
+if (scanResult.Data == global::System.IntPtr.Zero){
 throw new global::System.ArgumentNullException(nameof(scanResult));
+}
+if (scanResult.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(scanResult));
 }
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "GpuStreamCompactionKernels.CompactBigUIntArray");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
@@ -959,26 +1019,26 @@ try
 void** __gsharp_kernel_params = stackalloc void*[6];
 // Marshal device array: output
 global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
-__gsharp_proxy_0[0] = output;
-((int*)(__gsharp_proxy_0 + 1))[0] = 0; // Length is unknown for raw IntPtr
+__gsharp_proxy_0[0] = output.Data;
+((int*)(__gsharp_proxy_0 + 1))[0] = output.Length;
 ((int*)(__gsharp_proxy_0 + 1))[1] = 0;
 __gsharp_kernel_params[0] = __gsharp_proxy_0;
 // Marshal device array: input
 global::System.IntPtr* __gsharp_proxy_1 = stackalloc global::System.IntPtr[2];
-__gsharp_proxy_1[0] = input;
-((int*)(__gsharp_proxy_1 + 1))[0] = 0; // Length is unknown for raw IntPtr
+__gsharp_proxy_1[0] = input.Data;
+((int*)(__gsharp_proxy_1 + 1))[0] = input.Length;
 ((int*)(__gsharp_proxy_1 + 1))[1] = 0;
 __gsharp_kernel_params[1] = __gsharp_proxy_1;
 // Marshal device array: predicates
 global::System.IntPtr* __gsharp_proxy_2 = stackalloc global::System.IntPtr[2];
-__gsharp_proxy_2[0] = predicates;
-((int*)(__gsharp_proxy_2 + 1))[0] = 0; // Length is unknown for raw IntPtr
+__gsharp_proxy_2[0] = predicates.Data;
+((int*)(__gsharp_proxy_2 + 1))[0] = predicates.Length;
 ((int*)(__gsharp_proxy_2 + 1))[1] = 0;
 __gsharp_kernel_params[2] = __gsharp_proxy_2;
 // Marshal device array: scanResult
 global::System.IntPtr* __gsharp_proxy_3 = stackalloc global::System.IntPtr[2];
-__gsharp_proxy_3[0] = scanResult;
-((int*)(__gsharp_proxy_3 + 1))[0] = 0; // Length is unknown for raw IntPtr
+__gsharp_proxy_3[0] = scanResult.Data;
+((int*)(__gsharp_proxy_3 + 1))[0] = scanResult.Length;
 ((int*)(__gsharp_proxy_3 + 1))[1] = 0;
 __gsharp_kernel_params[3] = __gsharp_proxy_3;
 // Marshal scalar: elementCount
@@ -1302,25 +1362,61 @@ __gsharp_device_arrays.Free(hStream);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-public static unsafe void LaunchCompactSignedVectorPtr(global::System.IntPtr outputValues, global::System.IntPtr outputSigns, global::System.IntPtr inputValues, global::System.IntPtr inputSigns, global::System.IntPtr predicates, global::System.IntPtr scanResult, global::System.Int32 elementCount, global::System.Int32 wordsPerElement, global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuStreamCompactionKernels.AotContexts.ElementCount count, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchCompactSignedVectorPtr(global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy outputValues, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy outputSigns, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy inputValues, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy inputSigns, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy predicates, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy scanResult, global::System.Int32 elementCount, global::System.Int32 wordsPerElement, global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuStreamCompactionKernels.AotContexts.ElementCount count, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (outputValues == global::System.IntPtr.Zero){
+if (outputValues.Length < 0){
+throw new global::System.ArgumentOutOfRangeException(nameof(outputValues), outputValues.Length, "The array length must not be negative.");
+}
+if (outputValues.Data == global::System.IntPtr.Zero){
 throw new global::System.ArgumentNullException(nameof(outputValues));
 }
-if (outputSigns == global::System.IntPtr.Zero){
+if (outputValues.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(outputValues));
+}
+if (outputSigns.Length < 0){
+throw new global::System.ArgumentOutOfRangeException(nameof(outputSigns), outputSigns.Length, "The array length must not be negative.");
+}
+if (outputSigns.Data == global::System.IntPtr.Zero){
 throw new global::System.ArgumentNullException(nameof(outputSigns));
 }
-if (inputValues == global::System.IntPtr.Zero){
+if (outputSigns.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(outputSigns));
+}
+if (inputValues.Length < 0){
+throw new global::System.ArgumentOutOfRangeException(nameof(inputValues), inputValues.Length, "The array length must not be negative.");
+}
+if (inputValues.Data == global::System.IntPtr.Zero){
 throw new global::System.ArgumentNullException(nameof(inputValues));
 }
-if (inputSigns == global::System.IntPtr.Zero){
+if (inputValues.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(inputValues));
+}
+if (inputSigns.Length < 0){
+throw new global::System.ArgumentOutOfRangeException(nameof(inputSigns), inputSigns.Length, "The array length must not be negative.");
+}
+if (inputSigns.Data == global::System.IntPtr.Zero){
 throw new global::System.ArgumentNullException(nameof(inputSigns));
 }
-if (predicates == global::System.IntPtr.Zero){
+if (inputSigns.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(inputSigns));
+}
+if (predicates.Length < 0){
+throw new global::System.ArgumentOutOfRangeException(nameof(predicates), predicates.Length, "The array length must not be negative.");
+}
+if (predicates.Data == global::System.IntPtr.Zero){
 throw new global::System.ArgumentNullException(nameof(predicates));
 }
-if (scanResult == global::System.IntPtr.Zero){
+if (predicates.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(predicates));
+}
+if (scanResult.Length < 0){
+throw new global::System.ArgumentOutOfRangeException(nameof(scanResult), scanResult.Length, "The array length must not be negative.");
+}
+if (scanResult.Data == global::System.IntPtr.Zero){
 throw new global::System.ArgumentNullException(nameof(scanResult));
+}
+if (scanResult.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(scanResult));
 }
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "GpuStreamCompactionKernels.CompactSignedVector");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
@@ -1332,38 +1428,38 @@ try
 void** __gsharp_kernel_params = stackalloc void*[9];
 // Marshal device array: outputValues
 global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
-__gsharp_proxy_0[0] = outputValues;
-((int*)(__gsharp_proxy_0 + 1))[0] = 0; // Length is unknown for raw IntPtr
+__gsharp_proxy_0[0] = outputValues.Data;
+((int*)(__gsharp_proxy_0 + 1))[0] = outputValues.Length;
 ((int*)(__gsharp_proxy_0 + 1))[1] = 0;
 __gsharp_kernel_params[0] = __gsharp_proxy_0;
 // Marshal device array: outputSigns
 global::System.IntPtr* __gsharp_proxy_1 = stackalloc global::System.IntPtr[2];
-__gsharp_proxy_1[0] = outputSigns;
-((int*)(__gsharp_proxy_1 + 1))[0] = 0; // Length is unknown for raw IntPtr
+__gsharp_proxy_1[0] = outputSigns.Data;
+((int*)(__gsharp_proxy_1 + 1))[0] = outputSigns.Length;
 ((int*)(__gsharp_proxy_1 + 1))[1] = 0;
 __gsharp_kernel_params[1] = __gsharp_proxy_1;
 // Marshal device array: inputValues
 global::System.IntPtr* __gsharp_proxy_2 = stackalloc global::System.IntPtr[2];
-__gsharp_proxy_2[0] = inputValues;
-((int*)(__gsharp_proxy_2 + 1))[0] = 0; // Length is unknown for raw IntPtr
+__gsharp_proxy_2[0] = inputValues.Data;
+((int*)(__gsharp_proxy_2 + 1))[0] = inputValues.Length;
 ((int*)(__gsharp_proxy_2 + 1))[1] = 0;
 __gsharp_kernel_params[2] = __gsharp_proxy_2;
 // Marshal device array: inputSigns
 global::System.IntPtr* __gsharp_proxy_3 = stackalloc global::System.IntPtr[2];
-__gsharp_proxy_3[0] = inputSigns;
-((int*)(__gsharp_proxy_3 + 1))[0] = 0; // Length is unknown for raw IntPtr
+__gsharp_proxy_3[0] = inputSigns.Data;
+((int*)(__gsharp_proxy_3 + 1))[0] = inputSigns.Length;
 ((int*)(__gsharp_proxy_3 + 1))[1] = 0;
 __gsharp_kernel_params[3] = __gsharp_proxy_3;
 // Marshal device array: predicates
 global::System.IntPtr* __gsharp_proxy_4 = stackalloc global::System.IntPtr[2];
-__gsharp_proxy_4[0] = predicates;
-((int*)(__gsharp_proxy_4 + 1))[0] = 0; // Length is unknown for raw IntPtr
+__gsharp_proxy_4[0] = predicates.Data;
+((int*)(__gsharp_proxy_4 + 1))[0] = predicates.Length;
 ((int*)(__gsharp_proxy_4 + 1))[1] = 0;
 __gsharp_kernel_params[4] = __gsharp_proxy_4;
 // Marshal device array: scanResult
 global::System.IntPtr* __gsharp_proxy_5 = stackalloc global::System.IntPtr[2];
-__gsharp_proxy_5[0] = scanResult;
-((int*)(__gsharp_proxy_5 + 1))[0] = 0; // Length is unknown for raw IntPtr
+__gsharp_proxy_5[0] = scanResult.Data;
+((int*)(__gsharp_proxy_5 + 1))[0] = scanResult.Length;
 ((int*)(__gsharp_proxy_5 + 1))[1] = 0;
 __gsharp_kernel_params[5] = __gsharp_proxy_5;
 // Marshal scalar: elementCount
@@ -1764,31 +1860,79 @@ __gsharp_device_arrays.Free(hStream);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-public static unsafe void LaunchCompactFloatVectorPtr(global::System.IntPtr outputSignificands, global::System.IntPtr outputExponents, global::System.IntPtr outputSigns, global::System.IntPtr inputSignificands, global::System.IntPtr inputExponents, global::System.IntPtr inputSigns, global::System.IntPtr predicates, global::System.IntPtr scanResult, global::System.Int32 elementCount, global::System.Int32 wordsPerElement, global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuStreamCompactionKernels.AotContexts.ElementCount count, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchCompactFloatVectorPtr(global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy outputSignificands, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy outputExponents, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy outputSigns, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy inputSignificands, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy inputExponents, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy inputSigns, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy predicates, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy scanResult, global::System.Int32 elementCount, global::System.Int32 wordsPerElement, global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuStreamCompactionKernels.AotContexts.ElementCount count, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (outputSignificands == global::System.IntPtr.Zero){
+if (outputSignificands.Length < 0){
+throw new global::System.ArgumentOutOfRangeException(nameof(outputSignificands), outputSignificands.Length, "The array length must not be negative.");
+}
+if (outputSignificands.Data == global::System.IntPtr.Zero){
 throw new global::System.ArgumentNullException(nameof(outputSignificands));
 }
-if (outputExponents == global::System.IntPtr.Zero){
+if (outputSignificands.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(outputSignificands));
+}
+if (outputExponents.Length < 0){
+throw new global::System.ArgumentOutOfRangeException(nameof(outputExponents), outputExponents.Length, "The array length must not be negative.");
+}
+if (outputExponents.Data == global::System.IntPtr.Zero){
 throw new global::System.ArgumentNullException(nameof(outputExponents));
 }
-if (outputSigns == global::System.IntPtr.Zero){
+if (outputExponents.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(outputExponents));
+}
+if (outputSigns.Length < 0){
+throw new global::System.ArgumentOutOfRangeException(nameof(outputSigns), outputSigns.Length, "The array length must not be negative.");
+}
+if (outputSigns.Data == global::System.IntPtr.Zero){
 throw new global::System.ArgumentNullException(nameof(outputSigns));
 }
-if (inputSignificands == global::System.IntPtr.Zero){
+if (outputSigns.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(outputSigns));
+}
+if (inputSignificands.Length < 0){
+throw new global::System.ArgumentOutOfRangeException(nameof(inputSignificands), inputSignificands.Length, "The array length must not be negative.");
+}
+if (inputSignificands.Data == global::System.IntPtr.Zero){
 throw new global::System.ArgumentNullException(nameof(inputSignificands));
 }
-if (inputExponents == global::System.IntPtr.Zero){
+if (inputSignificands.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(inputSignificands));
+}
+if (inputExponents.Length < 0){
+throw new global::System.ArgumentOutOfRangeException(nameof(inputExponents), inputExponents.Length, "The array length must not be negative.");
+}
+if (inputExponents.Data == global::System.IntPtr.Zero){
 throw new global::System.ArgumentNullException(nameof(inputExponents));
 }
-if (inputSigns == global::System.IntPtr.Zero){
+if (inputExponents.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(inputExponents));
+}
+if (inputSigns.Length < 0){
+throw new global::System.ArgumentOutOfRangeException(nameof(inputSigns), inputSigns.Length, "The array length must not be negative.");
+}
+if (inputSigns.Data == global::System.IntPtr.Zero){
 throw new global::System.ArgumentNullException(nameof(inputSigns));
 }
-if (predicates == global::System.IntPtr.Zero){
+if (inputSigns.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(inputSigns));
+}
+if (predicates.Length < 0){
+throw new global::System.ArgumentOutOfRangeException(nameof(predicates), predicates.Length, "The array length must not be negative.");
+}
+if (predicates.Data == global::System.IntPtr.Zero){
 throw new global::System.ArgumentNullException(nameof(predicates));
 }
-if (scanResult == global::System.IntPtr.Zero){
+if (predicates.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(predicates));
+}
+if (scanResult.Length < 0){
+throw new global::System.ArgumentOutOfRangeException(nameof(scanResult), scanResult.Length, "The array length must not be negative.");
+}
+if (scanResult.Data == global::System.IntPtr.Zero){
 throw new global::System.ArgumentNullException(nameof(scanResult));
+}
+if (scanResult.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(scanResult));
 }
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "GpuStreamCompactionKernels.CompactFloatVector");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
@@ -1800,50 +1944,50 @@ try
 void** __gsharp_kernel_params = stackalloc void*[11];
 // Marshal device array: outputSignificands
 global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
-__gsharp_proxy_0[0] = outputSignificands;
-((int*)(__gsharp_proxy_0 + 1))[0] = 0; // Length is unknown for raw IntPtr
+__gsharp_proxy_0[0] = outputSignificands.Data;
+((int*)(__gsharp_proxy_0 + 1))[0] = outputSignificands.Length;
 ((int*)(__gsharp_proxy_0 + 1))[1] = 0;
 __gsharp_kernel_params[0] = __gsharp_proxy_0;
 // Marshal device array: outputExponents
 global::System.IntPtr* __gsharp_proxy_1 = stackalloc global::System.IntPtr[2];
-__gsharp_proxy_1[0] = outputExponents;
-((int*)(__gsharp_proxy_1 + 1))[0] = 0; // Length is unknown for raw IntPtr
+__gsharp_proxy_1[0] = outputExponents.Data;
+((int*)(__gsharp_proxy_1 + 1))[0] = outputExponents.Length;
 ((int*)(__gsharp_proxy_1 + 1))[1] = 0;
 __gsharp_kernel_params[1] = __gsharp_proxy_1;
 // Marshal device array: outputSigns
 global::System.IntPtr* __gsharp_proxy_2 = stackalloc global::System.IntPtr[2];
-__gsharp_proxy_2[0] = outputSigns;
-((int*)(__gsharp_proxy_2 + 1))[0] = 0; // Length is unknown for raw IntPtr
+__gsharp_proxy_2[0] = outputSigns.Data;
+((int*)(__gsharp_proxy_2 + 1))[0] = outputSigns.Length;
 ((int*)(__gsharp_proxy_2 + 1))[1] = 0;
 __gsharp_kernel_params[2] = __gsharp_proxy_2;
 // Marshal device array: inputSignificands
 global::System.IntPtr* __gsharp_proxy_3 = stackalloc global::System.IntPtr[2];
-__gsharp_proxy_3[0] = inputSignificands;
-((int*)(__gsharp_proxy_3 + 1))[0] = 0; // Length is unknown for raw IntPtr
+__gsharp_proxy_3[0] = inputSignificands.Data;
+((int*)(__gsharp_proxy_3 + 1))[0] = inputSignificands.Length;
 ((int*)(__gsharp_proxy_3 + 1))[1] = 0;
 __gsharp_kernel_params[3] = __gsharp_proxy_3;
 // Marshal device array: inputExponents
 global::System.IntPtr* __gsharp_proxy_4 = stackalloc global::System.IntPtr[2];
-__gsharp_proxy_4[0] = inputExponents;
-((int*)(__gsharp_proxy_4 + 1))[0] = 0; // Length is unknown for raw IntPtr
+__gsharp_proxy_4[0] = inputExponents.Data;
+((int*)(__gsharp_proxy_4 + 1))[0] = inputExponents.Length;
 ((int*)(__gsharp_proxy_4 + 1))[1] = 0;
 __gsharp_kernel_params[4] = __gsharp_proxy_4;
 // Marshal device array: inputSigns
 global::System.IntPtr* __gsharp_proxy_5 = stackalloc global::System.IntPtr[2];
-__gsharp_proxy_5[0] = inputSigns;
-((int*)(__gsharp_proxy_5 + 1))[0] = 0; // Length is unknown for raw IntPtr
+__gsharp_proxy_5[0] = inputSigns.Data;
+((int*)(__gsharp_proxy_5 + 1))[0] = inputSigns.Length;
 ((int*)(__gsharp_proxy_5 + 1))[1] = 0;
 __gsharp_kernel_params[5] = __gsharp_proxy_5;
 // Marshal device array: predicates
 global::System.IntPtr* __gsharp_proxy_6 = stackalloc global::System.IntPtr[2];
-__gsharp_proxy_6[0] = predicates;
-((int*)(__gsharp_proxy_6 + 1))[0] = 0; // Length is unknown for raw IntPtr
+__gsharp_proxy_6[0] = predicates.Data;
+((int*)(__gsharp_proxy_6 + 1))[0] = predicates.Length;
 ((int*)(__gsharp_proxy_6 + 1))[1] = 0;
 __gsharp_kernel_params[6] = __gsharp_proxy_6;
 // Marshal device array: scanResult
 global::System.IntPtr* __gsharp_proxy_7 = stackalloc global::System.IntPtr[2];
-__gsharp_proxy_7[0] = scanResult;
-((int*)(__gsharp_proxy_7 + 1))[0] = 0; // Length is unknown for raw IntPtr
+__gsharp_proxy_7[0] = scanResult.Data;
+((int*)(__gsharp_proxy_7 + 1))[0] = scanResult.Length;
 ((int*)(__gsharp_proxy_7 + 1))[1] = 0;
 __gsharp_kernel_params[7] = __gsharp_proxy_7;
 // Marshal scalar: elementCount
@@ -1948,10 +2092,16 @@ if (__gsharp_d_0 != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.In
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-public static unsafe void LaunchMemsetZeroPtr(global::System.IntPtr output, global::System.Int32 totalWords, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchMemsetZeroPtr(global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy output, global::System.Int32 totalWords, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (output == global::System.IntPtr.Zero){
+if (output.Length < 0){
+throw new global::System.ArgumentOutOfRangeException(nameof(output), output.Length, "The array length must not be negative.");
+}
+if (output.Data == global::System.IntPtr.Zero){
 throw new global::System.ArgumentNullException(nameof(output));
+}
+if (output.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(output));
 }
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "GpuStreamCompactionKernels.MemsetZero");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
@@ -1963,8 +2113,8 @@ try
 void** __gsharp_kernel_params = stackalloc void*[2];
 // Marshal device array: output
 global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
-__gsharp_proxy_0[0] = output;
-((int*)(__gsharp_proxy_0 + 1))[0] = 0; // Length is unknown for raw IntPtr
+__gsharp_proxy_0[0] = output.Data;
+((int*)(__gsharp_proxy_0 + 1))[0] = output.Length;
 ((int*)(__gsharp_proxy_0 + 1))[1] = 0;
 __gsharp_kernel_params[0] = __gsharp_proxy_0;
 // Marshal scalar: totalWords
