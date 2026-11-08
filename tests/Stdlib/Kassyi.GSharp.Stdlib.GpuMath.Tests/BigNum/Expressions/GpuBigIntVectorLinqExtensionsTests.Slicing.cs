@@ -50,4 +50,66 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         Assert.Equal(30, hostResult[0]);
         Assert.Equal(40, hostResult[1]);
     }
+
+    [Fact]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.Boundary)]
+    public void SharedSubexpression_AtTwoOffsets_KeepsBothResults()
+    {
+        // e is read at offset 1 (Skip) and at offset 0 (Take): its second evaluation reuses the buffers of the first,
+        // so the node keeps the right result and evaluates the left one again.
+        // mutant: VectorOperandPair.Evaluate returning before the check ([0, 0, 0] and all false)
+        using var array = CreateArray(new BigInteger[] { 1, 2, 4, 8 });
+        using var scalar = CreateScalar(3);
+        var e = array.AsVectorizedEnumerable().SelectMultiply(scalar);
+        using var difference = e.Skip(1).ZipSubtract(e.Take(3));
+        using var greater = e.Skip(1).IsGreaterThan(e.Take(3));
+
+        var differences = ToHostArray(difference.Evaluate(_context));
+        var flags = greater.Evaluate(_context);
+        var flagsHost = new uint[3];
+        _context.Provider.CopyDeviceToHost(flagsHost, flags.DevicePointer, 3);
+
+        BigInteger[] expected = [3, 6, 12];
+        uint[] expectedFlags = [1, 1, 1];
+        Assert.Equal(expected, differences);
+        Assert.Equal(expectedFlags, flagsHost);
+    }
+
+    [Fact]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.Boundary)]
+    public void SharedSubexpression_InTheSourceAndThePredicateOfWhere_KeepsBothResults()
+    {
+        // The source reads e at offset 1 and the predicate at offset 0: source [6, 12, 24], predicate
+        // [3, 6, 12] > 5 = [F, T, T], so the selection is [12, 24].
+        // mutant: VectorWhereExpression.EvaluateCore evaluating the source before the predicate ([6, 12]: the
+        // predicate's evaluation of e overwrites the source values)
+        using var array = CreateArray(new BigInteger[] { 1, 2, 4, 8 });
+        using var scalar = CreateScalar(3);
+        using var five = CreateScalar(5);
+        var e = array.AsVectorizedEnumerable().SelectMultiply(scalar);
+        using var selected = e.Skip(1).Where(e.Take(3).IsGreaterThan(five));
+
+        var values = ToHostArray(selected.Evaluate(_context));
+
+        BigInteger[] expected = [12, 24];
+        Assert.Equal(expected, values);
+    }
+
+    [Fact]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.HappyPath)]
+    public void SharedSubexpression_AtOneOffset_IsReadOnBothSides()
+    {
+        using var array = CreateArray(new BigInteger[] { 1, -2, 4 });
+        using var scalar = CreateScalar(3);
+        var e = array.AsVectorizedEnumerable().SelectMultiply(scalar);
+        using var square = e.ZipMultiply(e);
+
+        var squares = ToHostArray(square.Evaluate(_context));
+
+        BigInteger[] expected = [9, 36, 144];
+        Assert.Equal(expected, squares);
+    }
 }

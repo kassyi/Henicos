@@ -85,6 +85,9 @@ internal sealed class FloatVectorCompareVectorExpression(
     private GpuBigUIntArray _finalValues;
     private bool _allocated;
 
+    // Evaluates the operands so that a shared sub-expression read at two offsets keeps both results
+    private readonly FloatVectorOperandPair _operands = new();
+
     public bool TryGetLength(out int length) => left.TryGetLength(out length);
 
     public BoolVectorEvaluation EvaluateCore(GpuWorkspace workspace)
@@ -94,8 +97,7 @@ internal sealed class FloatVectorCompareVectorExpression(
             throw new ArgumentException("Lengths must match");
         }
 
-        var leftEvaluated = DeviceCounted.Evaluate(left, workspace);
-        var rightEvaluated = DeviceCounted.Evaluate(right, workspace);
+        _operands.Evaluate(left, right, workspace, 0, null, out var leftEvaluated, out var rightEvaluated);
         var count = DeviceCounted.Combine(leftEvaluated.Count, rightEvaluated.Count);
         var leftResult = leftEvaluated.Storage;
         var rightResult = rightEvaluated.Storage;
@@ -152,6 +154,7 @@ internal sealed class FloatVectorCompareVectorExpression(
             _allocated = false;
         }
 
+        _operands.Dispose();
         left.Dispose();
         right.Dispose();
     }
