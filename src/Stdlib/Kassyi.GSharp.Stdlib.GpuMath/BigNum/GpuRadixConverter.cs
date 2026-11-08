@@ -49,7 +49,8 @@ public static class GpuRadixConverter
     /// <param name="isMostSignificant">
     /// <see langword="true"/> to write the fixed-point number <c>value / 10^(targetDigits - 1)</c>: exactly
     /// <c>targetDigits - 1</c> digits after the decimal point and at least one before it (for example <c>"3.1415"</c>
-    /// for 31415 and 5 digits, <c>"0.0012"</c> for 12 and 5 digits); <see langword="false"/> to write the digits
+    /// for 31415 and 5 digits, <c>"0.0012"</c> for 12 and 5 digits); with <paramref name="targetDigits"/> 1 there is no
+    /// fraction and no point is written, as the .NET format <c>"F0"</c>. <see langword="false"/> to write the digits
     /// alone.
     /// </param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="workspace"/> or <paramref name="writer"/> is <see langword="null"/>.</exception>
@@ -160,7 +161,8 @@ public static class GpuRadixConverter
             str = new string('0', targetDigits - str.Length) + str;
         }
 
-        if (!isMostSignificant)
+        // Without a fraction (targetDigits = 1) no point is written, as the "F0" format of .NET
+        if (!isMostSignificant || targetDigits == 1)
         {
             writer.Write(str);
             return;

@@ -97,14 +97,14 @@ public class GpuRadixConverterTests : IDisposable
     }
 
     // With isMostSignificant the text is the fixed-point value value / 10^(targetDigits - 1): exactly targetDigits - 1
-    // digits after the point and at least one before it, zero padded when the value is shorter, whether targetDigits
-    // takes the leaf path (up to 10000 digits) or splits on the GPU first. Without it the value is zero padded to
-    // targetDigits digits. The expected text is built from the BigInteger of the test.
+    // digits after the point (no point when that is 0) and at least one before it, zero padded when the value is
+    // shorter, whether targetDigits takes the leaf path (up to 10000 digits) or splits on the GPU first. Without it the
+    // value is zero padded to targetDigits digits. The expected text is built from the BigInteger of the test.
     // mutant: GpuRadixConverter.cs FormatLeafNode `if (str.Length < targetDigits)` -> `if (!isMostSignificant &&
     // str.Length < targetDigits)` (the shorter values with isMostSignificant, rows 6 to 20000 and "0" with 12 and
     // 10001: "1.2345" and a 10002-character "0.000...12345")
     // mutant: FormatLeafNode `integerDigits = str.Length - (targetDigits - 1)` -> `integerDigits = 1` (the longer
-    // values, rows 1 and 3 and the 25000-digit value of the next test)
+    // values, row 3 and the 25000-digit value of the next test)
     [SkippableTheory]
     [Category(TestCategory.Stdlib)]
     [Scenario(TestScenario.Boundary)]
@@ -165,11 +165,36 @@ public class GpuRadixConverterTests : IDisposable
         Assert.Equal(Digits - TargetDigits + 1, text.IndexOf('.'));
     }
 
-    // value / 10^(targetDigits - 1) with exactly targetDigits - 1 fraction digits, or value padded to targetDigits.
+    // The contract spelled out as literals, independent of the FixedPointText oracle: without a fraction
+    // (targetDigits = 1) no point is written, as the .NET "F0" format.
+    // mutant: GpuRadixConverter.cs FormatLeafNode `|| targetDigits == 1` removed (rows with 1 digit: "12345.", "3.")
+    [SkippableTheory]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(31415u, 5, "3.1415")]
+    [InlineData(12u, 5, "0.0012")]
+    [InlineData(12345u, 3, "123.45")]
+    [InlineData(12345u, 10, "0.000012345")]
+    [InlineData(12345u, 1, "12345")]
+    [InlineData(3u, 1, "3")]
+    [InlineData(0u, 1, "0")]
+    [InlineData(3u, 2, "0.3")]
+    public void ConvertAndWrite_MostSignificant_WritesTheDocumentedText(uint word, int targetDigits, string expected)
+    {
+        using var value = new GpuBigUInt(_context, new uint[] { word });
+        using var sw = new StringWriter();
+
+        GpuRadixConverter.ConvertAndWrite(_context, value, targetDigits, sw, isMostSignificant: true);
+
+        Assert.Equal(expected, sw.ToString());
+    }
+
+    // value / 10^(targetDigits - 1) with exactly targetDigits - 1 fraction digits (no point without a fraction), or
+    // value padded to targetDigits.
     private static string FixedPointText(BigInteger value, int targetDigits, bool isMostSignificant)
     {
         var text = value.ToString().PadLeft(targetDigits, '0');
-        if (!isMostSignificant)
+        if (!isMostSignificant || targetDigits == 1)
         {
             return text;
         }
