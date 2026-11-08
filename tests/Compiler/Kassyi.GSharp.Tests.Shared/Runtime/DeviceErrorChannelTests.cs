@@ -13,6 +13,11 @@ namespace Kassyi.GSharp.Tests.Shared.Runtime;
 /// <summary>
 /// Verifies the device runtime error channel and CPU/GPU exception parity (#729).
 /// </summary>
+#if GSHARP_CUDA
+// The process has one device error slot: a device error of a test that runs beside another one could be thrown by the
+// other test's synchronization
+[Collection(TestCollections.DeviceExclusive)]
+#endif
 public sealed class DeviceErrorChannelTests
 {
     public static TheoryData<GSharpErrorCode, Type> AllErrorCodesAndExceptionTypes() =>
@@ -261,6 +266,12 @@ public sealed class DeviceErrorChannelTests
         {
             Assert.DoesNotContain("cuStreamSynchronize", wrapperText);
         }
+
+        // The managed-array launcher reads the device error record in every build; the Ptr launcher only where it
+        // synchronizes, in the checked build
+        const string deviceErrorCheck = "global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfDeviceError();";
+        int checks = wrapperText.Split(deviceErrorCheck).Length - 1;
+        Assert.Equal(isCheckedBuild ? 2 : 1, checks);
     }
 
 #if !GSHARP_CUDA
@@ -530,230 +541,176 @@ public sealed class DeviceErrorChannelTests
 #else
     [SkippableFact]
     [Category(TestCategory.Runtime)]
-    [Category(TestCategory.GpuTrap)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_Cuda_SubprocessTrap_ThrowsStandardExceptionWithCoordinates()
+    public void Test_Cuda_Trap_ThrowsStandardExceptionWithCoordinates()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
 
-        if (IsTrapChild())
-        {
-            int[] data = [10, 20, 30];
-            int[] result = [0];
+        int[] data = [10, 20, 30];
+        int[] result = [0];
 
-            var ex = Assert.Throws<ArgumentOutOfRangeException>(() =>
-                DeviceErrorChannelKernels.LaunchCoordinate3DTrapKernel(
-                    data,
-                    targetTx: 2,
-                    targetTy: 1,
-                    targetTz: 1,
-                    targetBx: 1,
-                    targetBy: 2,
-                    targetBz: 1,
-                    result,
-                    gridDimX: 3,
-                    gridDimY: 4,
-                    gridDimZ: 2,
-                    blockDimX: 4,
-                    blockDimY: 3,
-                    blockDimZ: 2));
+        var ex = Assert.Throws<ArgumentOutOfRangeException>(() =>
+            DeviceErrorChannelKernels.LaunchCoordinate3DTrapKernel(
+                data,
+                targetTx: 2,
+                targetTy: 1,
+                targetTz: 1,
+                targetBx: 1,
+                targetBy: 2,
+                targetBz: 1,
+                result,
+                gridDimX: 3,
+                gridDimY: 4,
+                gridDimZ: 2,
+                blockDimX: 4,
+                blockDimY: 3,
+                blockDimZ: 2));
 
-            Assert.Contains("Index was out of range.", ex.Message);
-            Assert.Contains("in thread (2,1,1) of block (1,2,1)", ex.Message);
-            Assert.Equal(nameof(GSharpErrorCode.ArgumentOutOfRange), ex.Data["GSharp.ErrorCode"]);
-            Assert.Equal("(2,1,1)", ex.Data["GSharp.ThreadIndex"]);
-            Assert.Equal("(1,2,1)", ex.Data["GSharp.BlockIndex"]);
-            var cudaInner = Assert.IsType<CudaException>(ex.InnerException);
-            Assert.True(cudaInner.Result is CUresult.CudaErrorIllegalInstruction or CUresult.CudaErrorLaunchFailed);
-            return;
-        }
-
-        RunTrapTestInIsolatedProcess(nameof(Test_Cuda_SubprocessTrap_ThrowsStandardExceptionWithCoordinates));
+        Assert.Contains("Index was out of range.", ex.Message);
+        Assert.Contains("in thread (2,1,1) of block (1,2,1)", ex.Message);
+        Assert.Equal(nameof(GSharpErrorCode.ArgumentOutOfRange), ex.Data["GSharp.ErrorCode"]);
+        Assert.Equal("(2,1,1)", ex.Data["GSharp.ThreadIndex"]);
+        Assert.Equal("(1,2,1)", ex.Data["GSharp.BlockIndex"]);
+        Assert.Null(ex.InnerException);
     }
 
     [SkippableFact]
     [Category(TestCategory.Runtime)]
-    [Category(TestCategory.GpuTrap)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_Cuda_SubprocessConcurrentTrap_FirstWriterWinsWithoutRace()
+    public void Test_Cuda_ConcurrentTrap_FirstWriterWinsWithoutRace()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
 
-        if (IsTrapChild())
-        {
-            int[] data = [1, 2, 3, 4];
-            int[] result = new int[256];
+        int[] data = [1, 2, 3, 4];
+        int[] result = new int[256];
 
-            var ex = Assert.Throws<InvalidOperationException>(() =>
-                DeviceErrorChannelKernels.LaunchConcurrentTrapAllThreadsKernel(
-                    data, result, gridDimX: 4, blockDimX: 64));
+        var ex = Assert.Throws<InvalidOperationException>(() =>
+            DeviceErrorChannelKernels.LaunchConcurrentTrapAllThreadsKernel(
+                data, result, gridDimX: 4, blockDimX: 64));
 
-            Assert.Contains("Sequence contains no matching element", ex.Message);
-            Assert.Equal(nameof(GSharpErrorCode.InvalidOperation), ex.Data["GSharp.ErrorCode"]);
-            Assert.NotNull(ex.Data["GSharp.ThreadIndex"]);
-            Assert.NotNull(ex.Data["GSharp.BlockIndex"]);
-            var cudaInner = Assert.IsType<CudaException>(ex.InnerException);
-            Assert.True(cudaInner.Result is CUresult.CudaErrorIllegalInstruction or CUresult.CudaErrorLaunchFailed);
-            return;
-        }
-
-        RunTrapTestInIsolatedProcess(nameof(Test_Cuda_SubprocessConcurrentTrap_FirstWriterWinsWithoutRace));
+        Assert.Contains("Sequence contains no matching element", ex.Message);
+        Assert.Equal(nameof(GSharpErrorCode.InvalidOperation), ex.Data["GSharp.ErrorCode"]);
+        Assert.NotNull(ex.Data["GSharp.ThreadIndex"]);
+        Assert.NotNull(ex.Data["GSharp.BlockIndex"]);
+        Assert.Null(ex.InnerException);
     }
 
     [SkippableFact]
     [Category(TestCategory.Runtime)]
-    [Category(TestCategory.GpuTrap)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_Cuda_SubprocessTrap_CarriesSourceLocationAndMemberName()
+    public void Test_Cuda_Trap_CarriesSourceLocationAndMemberName()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
 
-        if (IsTrapChild())
-        {
-            int[] data = [10, 20, 30];
-            int[] result = [0];
+        int[] data = [10, 20, 30];
+        int[] result = [0];
 
-            var ex = Assert.Throws<ArgumentOutOfRangeException>(() =>
-                DeviceErrorChannelKernels.LaunchStackLinqElementAtKernel(data, 999, result, blockDimX: 1));
+        var ex = Assert.Throws<ArgumentOutOfRangeException>(() =>
+            DeviceErrorChannelKernels.LaunchStackLinqElementAtKernel(data, 999, result, blockDimX: 1));
 
-            Assert.Contains("Index was out of range.", ex.Message);
-            Assert.Contains("in StackLinqElementAtKernel at DeviceErrorChannelKernels.cu.cs", ex.Message);
-            Assert.Contains("in thread (0,0,0) of block (0,0,0)", ex.Message);
-            Assert.Equal(nameof(GSharpErrorCode.ArgumentOutOfRange), ex.Data["GSharp.ErrorCode"]);
-            Assert.Equal("StackLinqElementAtKernel", ex.Data["GSharp.MemberName"]);
-            Assert.NotNull(ex.Data["GSharp.SourceLocation"]);
-            Assert.StartsWith("DeviceErrorChannelKernels.cu.cs", ex.Data["GSharp.SourceLocation"]?.ToString());
-            Assert.Equal("(0,0,0)", ex.Data["GSharp.ThreadIndex"]);
-            Assert.Equal("(0,0,0)", ex.Data["GSharp.BlockIndex"]);
-            return;
-        }
-
-        RunTrapTestInIsolatedProcess(nameof(Test_Cuda_SubprocessTrap_CarriesSourceLocationAndMemberName));
+        Assert.Contains("Index was out of range.", ex.Message);
+        Assert.Contains("in StackLinqElementAtKernel at DeviceErrorChannelKernels.cu.cs", ex.Message);
+        Assert.Contains("in thread (0,0,0) of block (0,0,0)", ex.Message);
+        Assert.Equal(nameof(GSharpErrorCode.ArgumentOutOfRange), ex.Data["GSharp.ErrorCode"]);
+        Assert.Equal("StackLinqElementAtKernel", ex.Data["GSharp.MemberName"]);
+        Assert.NotNull(ex.Data["GSharp.SourceLocation"]);
+        Assert.StartsWith("DeviceErrorChannelKernels.cu.cs", ex.Data["GSharp.SourceLocation"]?.ToString());
+        Assert.Equal("(0,0,0)", ex.Data["GSharp.ThreadIndex"]);
+        Assert.Equal("(0,0,0)", ex.Data["GSharp.BlockIndex"]);
     }
 
     [SkippableFact]
     [Category(TestCategory.Runtime)]
-    [Category(TestCategory.GpuTrap)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_Cuda_SubprocessGrid100Blocks_BlockCoordinate37Preserved()
+    public void Test_Cuda_Grid100Blocks_BlockCoordinate37Preserved()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
 
-        if (IsTrapChild())
-        {
-            int[] data = [10, 20, 30];
-            int[] result = [0];
+        int[] data = [10, 20, 30];
+        int[] result = [0];
 
-            var ex = Assert.Throws<ArgumentOutOfRangeException>(() =>
-                DeviceErrorChannelKernels.LaunchBlockIndex100TrapKernel(data, targetBlock: 37, result, gridDimX: 100, blockDimX: 32));
+        var ex = Assert.Throws<ArgumentOutOfRangeException>(() =>
+            DeviceErrorChannelKernels.LaunchBlockIndex100TrapKernel(data, targetBlock: 37, result, gridDimX: 100, blockDimX: 32));
 
-            Assert.Equal(nameof(GSharpErrorCode.ArgumentOutOfRange), ex.Data["GSharp.ErrorCode"]);
-            Assert.Equal("(0,0,0)", ex.Data["GSharp.ThreadIndex"]);
-            Assert.Equal("(37,0,0)", ex.Data["GSharp.BlockIndex"]);
-            Assert.Contains("of block (37,0,0)", ex.Message);
-            return;
-        }
-
-        RunTrapTestInIsolatedProcess(nameof(Test_Cuda_SubprocessGrid100Blocks_BlockCoordinate37Preserved));
+        Assert.Equal(nameof(GSharpErrorCode.ArgumentOutOfRange), ex.Data["GSharp.ErrorCode"]);
+        Assert.Equal("(0,0,0)", ex.Data["GSharp.ThreadIndex"]);
+        Assert.Equal("(37,0,0)", ex.Data["GSharp.BlockIndex"]);
+        Assert.Contains("of block (37,0,0)", ex.Message);
     }
 
     [SkippableFact]
     [Category(TestCategory.Runtime)]
-    [Category(TestCategory.GpuTrap)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_Cuda_SubprocessTrap_StackLinqFirst_Empty_CarriesSourceLocationAndMemberName()
+    public void Test_Cuda_Trap_StackLinqFirst_Empty_CarriesSourceLocationAndMemberName()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
 
-        if (IsTrapChild())
-        {
-            int[] data = [1, 2, 3];
-            int[] result = [0];
+        int[] data = [1, 2, 3];
+        int[] result = [0];
 
-            var ex = Assert.Throws<InvalidOperationException>(() =>
-                DeviceErrorChannelKernels.LaunchStackLinqFirstEmptyKernel(data, result, blockDimX: 1));
+        var ex = Assert.Throws<InvalidOperationException>(() =>
+            DeviceErrorChannelKernels.LaunchStackLinqFirstEmptyKernel(data, result, blockDimX: 1));
 
-            Assert.Contains("Sequence contains no elements", ex.Message);
-            Assert.Contains("in StackLinqFirstEmptyKernel at DeviceErrorChannelKernels.cu.cs", ex.Message);
-            Assert.Contains("in thread (0,0,0) of block (0,0,0)", ex.Message);
-            Assert.Equal(nameof(GSharpErrorCode.InvalidOperation), ex.Data["GSharp.ErrorCode"]);
-            Assert.Equal("StackLinqFirstEmptyKernel", ex.Data["GSharp.MemberName"]);
-            Assert.NotNull(ex.Data["GSharp.SourceLocation"]);
-            Assert.StartsWith("DeviceErrorChannelKernels.cu.cs", ex.Data["GSharp.SourceLocation"]?.ToString());
-            Assert.Equal("(0,0,0)", ex.Data["GSharp.ThreadIndex"]);
-            Assert.Equal("(0,0,0)", ex.Data["GSharp.BlockIndex"]);
-            var cudaInner = Assert.IsType<CudaException>(ex.InnerException);
-            Assert.True(cudaInner.Result is CUresult.CudaErrorIllegalInstruction or CUresult.CudaErrorLaunchFailed);
-            return;
-        }
-
-        RunTrapTestInIsolatedProcess(nameof(Test_Cuda_SubprocessTrap_StackLinqFirst_Empty_CarriesSourceLocationAndMemberName));
+        Assert.Contains("Sequence contains no elements", ex.Message);
+        Assert.Contains("in StackLinqFirstEmptyKernel at DeviceErrorChannelKernels.cu.cs", ex.Message);
+        Assert.Contains("in thread (0,0,0) of block (0,0,0)", ex.Message);
+        Assert.Equal(nameof(GSharpErrorCode.InvalidOperation), ex.Data["GSharp.ErrorCode"]);
+        Assert.Equal("StackLinqFirstEmptyKernel", ex.Data["GSharp.MemberName"]);
+        Assert.NotNull(ex.Data["GSharp.SourceLocation"]);
+        Assert.StartsWith("DeviceErrorChannelKernels.cu.cs", ex.Data["GSharp.SourceLocation"]?.ToString());
+        Assert.Equal("(0,0,0)", ex.Data["GSharp.ThreadIndex"]);
+        Assert.Equal("(0,0,0)", ex.Data["GSharp.BlockIndex"]);
+        Assert.Null(ex.InnerException);
     }
 
     [SkippableFact]
     [Category(TestCategory.Runtime)]
-    [Category(TestCategory.GpuTrap)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_Cuda_SubprocessTrap_StackLinqSingle_MultipleElements_CarriesSourceLocationAndMemberName()
+    public void Test_Cuda_Trap_StackLinqSingle_MultipleElements_CarriesSourceLocationAndMemberName()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
 
-        if (IsTrapChild())
-        {
-            int[] data = [10, 20];
-            int[] result = [0];
+        int[] data = [10, 20];
+        int[] result = [0];
 
-            var ex = Assert.Throws<InvalidOperationException>(() =>
-                DeviceErrorChannelKernels.LaunchStackLinqSingleMultipleKernel(data, result, blockDimX: 1));
+        var ex = Assert.Throws<InvalidOperationException>(() =>
+            DeviceErrorChannelKernels.LaunchStackLinqSingleMultipleKernel(data, result, blockDimX: 1));
 
-            Assert.Contains("Sequence contains more than one element", ex.Message);
-            Assert.Contains("in StackLinqSingleMultipleKernel at DeviceErrorChannelKernels.cu.cs", ex.Message);
-            Assert.Contains("in thread (0,0,0) of block (0,0,0)", ex.Message);
-            Assert.Equal(nameof(GSharpErrorCode.InvalidOperation), ex.Data["GSharp.ErrorCode"]);
-            Assert.Equal("StackLinqSingleMultipleKernel", ex.Data["GSharp.MemberName"]);
-            Assert.NotNull(ex.Data["GSharp.SourceLocation"]);
-            Assert.StartsWith("DeviceErrorChannelKernels.cu.cs", ex.Data["GSharp.SourceLocation"]?.ToString());
-            Assert.Equal("(0,0,0)", ex.Data["GSharp.ThreadIndex"]);
-            Assert.Equal("(0,0,0)", ex.Data["GSharp.BlockIndex"]);
-            var cudaInner = Assert.IsType<CudaException>(ex.InnerException);
-            Assert.True(cudaInner.Result is CUresult.CudaErrorIllegalInstruction or CUresult.CudaErrorLaunchFailed);
-            return;
-        }
-
-        RunTrapTestInIsolatedProcess(nameof(Test_Cuda_SubprocessTrap_StackLinqSingle_MultipleElements_CarriesSourceLocationAndMemberName));
+        Assert.Contains("Sequence contains more than one element", ex.Message);
+        Assert.Contains("in StackLinqSingleMultipleKernel at DeviceErrorChannelKernels.cu.cs", ex.Message);
+        Assert.Contains("in thread (0,0,0) of block (0,0,0)", ex.Message);
+        Assert.Equal(nameof(GSharpErrorCode.InvalidOperation), ex.Data["GSharp.ErrorCode"]);
+        Assert.Equal("StackLinqSingleMultipleKernel", ex.Data["GSharp.MemberName"]);
+        Assert.NotNull(ex.Data["GSharp.SourceLocation"]);
+        Assert.StartsWith("DeviceErrorChannelKernels.cu.cs", ex.Data["GSharp.SourceLocation"]?.ToString());
+        Assert.Equal("(0,0,0)", ex.Data["GSharp.ThreadIndex"]);
+        Assert.Equal("(0,0,0)", ex.Data["GSharp.BlockIndex"]);
+        Assert.Null(ex.InnerException);
     }
 
     [SkippableFact]
     [Category(TestCategory.Runtime)]
-    [Category(TestCategory.GpuTrap)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_Cuda_SubprocessTrap_StackLinqMax_EmptySequence_CarriesSourceLocationAndMemberName()
+    public void Test_Cuda_Trap_StackLinqMax_EmptySequence_CarriesSourceLocationAndMemberName()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
 
-        if (IsTrapChild())
-        {
-            int[] data = [1, 2, 3];
-            int[] result = [0];
+        int[] data = [1, 2, 3];
+        int[] result = [0];
 
-            var ex = Assert.Throws<InvalidOperationException>(() =>
-                DeviceErrorChannelKernels.LaunchStackLinqMaxEmptyKernel(data, result, blockDimX: 1));
+        var ex = Assert.Throws<InvalidOperationException>(() =>
+            DeviceErrorChannelKernels.LaunchStackLinqMaxEmptyKernel(data, result, blockDimX: 1));
 
-            Assert.Contains("Sequence contains no elements", ex.Message);
-            Assert.Contains("in StackLinqMaxEmptyKernel at DeviceErrorChannelKernels.cu.cs", ex.Message);
-            Assert.Contains("in thread (0,0,0) of block (0,0,0)", ex.Message);
-            Assert.Equal(nameof(GSharpErrorCode.InvalidOperation), ex.Data["GSharp.ErrorCode"]);
-            Assert.Equal("StackLinqMaxEmptyKernel", ex.Data["GSharp.MemberName"]);
-            Assert.NotNull(ex.Data["GSharp.SourceLocation"]);
-            Assert.StartsWith("DeviceErrorChannelKernels.cu.cs", ex.Data["GSharp.SourceLocation"]?.ToString());
-            Assert.Equal("(0,0,0)", ex.Data["GSharp.ThreadIndex"]);
-            Assert.Equal("(0,0,0)", ex.Data["GSharp.BlockIndex"]);
-            var cudaInner = Assert.IsType<CudaException>(ex.InnerException);
-            Assert.True(cudaInner.Result is CUresult.CudaErrorIllegalInstruction or CUresult.CudaErrorLaunchFailed);
-            return;
-        }
-
-        RunTrapTestInIsolatedProcess(nameof(Test_Cuda_SubprocessTrap_StackLinqMax_EmptySequence_CarriesSourceLocationAndMemberName));
+        Assert.Contains("Sequence contains no elements", ex.Message);
+        Assert.Contains("in StackLinqMaxEmptyKernel at DeviceErrorChannelKernels.cu.cs", ex.Message);
+        Assert.Contains("in thread (0,0,0) of block (0,0,0)", ex.Message);
+        Assert.Equal(nameof(GSharpErrorCode.InvalidOperation), ex.Data["GSharp.ErrorCode"]);
+        Assert.Equal("StackLinqMaxEmptyKernel", ex.Data["GSharp.MemberName"]);
+        Assert.NotNull(ex.Data["GSharp.SourceLocation"]);
+        Assert.StartsWith("DeviceErrorChannelKernels.cu.cs", ex.Data["GSharp.SourceLocation"]?.ToString());
+        Assert.Equal("(0,0,0)", ex.Data["GSharp.ThreadIndex"]);
+        Assert.Equal("(0,0,0)", ex.Data["GSharp.BlockIndex"]);
+        Assert.Null(ex.InnerException);
     }
 
     [SkippableFact]
@@ -773,71 +730,45 @@ public sealed class DeviceErrorChannelTests
 
     [SkippableFact]
     [Category(TestCategory.Runtime)]
-    [Category(TestCategory.GpuTrap)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_Cuda_SubprocessTrap_SwitchExpressionWithoutMatchingArm_CarriesSourceLocation()
+    public void Test_Cuda_Trap_SwitchExpressionWithoutMatchingArm_CarriesSourceLocation()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
 
-        if (IsTrapChild())
-        {
-            int[] keys = [1, 2];
-            int[] result = new int[keys.Length];
+        int[] keys = [1, 2];
+        int[] result = new int[keys.Length];
 
-            var ex = Assert.Throws<SwitchExpressionException>(() =>
-                DeviceErrorChannelKernels.LaunchSwitchExpressionNoMatchKernel(keys, result, blockDimX: 2));
+        var ex = Assert.Throws<SwitchExpressionException>(() =>
+            DeviceErrorChannelKernels.LaunchSwitchExpressionNoMatchKernel(keys, result, blockDimX: 2));
 
-            Assert.Contains("Non-exhaustive switch expression failed to match its input.", ex.Message);
-            Assert.Equal(nameof(GSharpErrorCode.SwitchExpression), ex.Data["GSharp.ErrorCode"]);
-            Assert.Equal("SwitchExpressionNoMatchKernel", ex.Data["GSharp.MemberName"]);
-            Assert.Equal("DeviceErrorChannelKernels.cu.cs(97,21)", ex.Data["GSharp.SourceLocation"]);
-            Assert.Equal("(1,0,0)", ex.Data["GSharp.ThreadIndex"]);
-            var cudaInner = Assert.IsType<CudaException>(ex.InnerException);
-            Assert.True(cudaInner.Result is CUresult.CudaErrorIllegalInstruction or CUresult.CudaErrorLaunchFailed);
-            return;
-        }
-
-        RunTrapTestInIsolatedProcess(
-            nameof(Test_Cuda_SubprocessTrap_SwitchExpressionWithoutMatchingArm_CarriesSourceLocation));
+        Assert.Contains("Non-exhaustive switch expression failed to match its input.", ex.Message);
+        Assert.Equal(nameof(GSharpErrorCode.SwitchExpression), ex.Data["GSharp.ErrorCode"]);
+        Assert.Equal("SwitchExpressionNoMatchKernel", ex.Data["GSharp.MemberName"]);
+        Assert.Equal("DeviceErrorChannelKernels.cu.cs(97,21)", ex.Data["GSharp.SourceLocation"]);
+        Assert.Equal("(1,0,0)", ex.Data["GSharp.ThreadIndex"]);
+        Assert.Null(ex.InnerException);
     }
 
     [SkippableFact]
     [Category(TestCategory.Runtime)]
-    [Category(TestCategory.GpuTrap)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_Cuda_SubprocessTrap_SwitchExpressionWithoutMatchingArmInDeviceFunction_Throws()
+    public void Test_Cuda_Trap_SwitchExpressionWithoutMatchingArmInDeviceFunction_Throws()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
 
-        if (IsTrapChild())
-        {
-            int[] keys = [2];
-            int[] result = [0];
+        int[] keys = [2];
+        int[] result = [0];
 
-            var ex = Assert.Throws<SwitchExpressionException>(() =>
-                DeviceErrorChannelKernels.LaunchSwitchExpressionNoMatchInDeviceFunctionKernel(
-                    keys,
-                    result,
-                    blockDimX: 1
-                )
-            );
+        var ex = Assert.Throws<SwitchExpressionException>(() =>
+            DeviceErrorChannelKernels.LaunchSwitchExpressionNoMatchInDeviceFunctionKernel(
+                keys,
+                result,
+                blockDimX: 1
+            )
+        );
 
-            Assert.Equal(nameof(GSharpErrorCode.SwitchExpression), ex.Data["GSharp.ErrorCode"]);
-            var cudaInner = Assert.IsType<CudaException>(ex.InnerException);
-            Assert.True(cudaInner.Result is CUresult.CudaErrorIllegalInstruction or CUresult.CudaErrorLaunchFailed);
-            return;
-        }
-
-        RunTrapTestInIsolatedProcess(
-            nameof(Test_Cuda_SubprocessTrap_SwitchExpressionWithoutMatchingArmInDeviceFunction_Throws));
+        Assert.Equal(nameof(GSharpErrorCode.SwitchExpression), ex.Data["GSharp.ErrorCode"]);
+        Assert.Null(ex.InnerException);
     }
-
-    // The test runs in the child process that RunTrapTestInIsolatedProcess starts for it; a trap leaves the CUDA context
-    // of the process unusable, so it must not run in the test host
-    private static bool IsTrapChild([CallerMemberName] string testMethodName = "") =>
-        IsolatedTestProcess.IsChild(testMethodName);
-
-    private static void RunTrapTestInIsolatedProcess(string testMethodName) =>
-        CudaTrapRuns.RunIsolated(typeof(DeviceErrorChannelTests), testMethodName);
 #endif
 }

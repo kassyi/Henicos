@@ -656,6 +656,7 @@ throw new global::System.ArgumentNullException(nameof(particles));
 if (particles.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(particles));
 }
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ComprehensiveSpecKernel.ProcessPhysics");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 global::System.IntPtr __gsharp_hfunc = global::DebugReduc.ComprehensiveSpecKernel.__gsharp_hfunc_ProcessPhysics.Resolve();
@@ -734,6 +735,7 @@ fixed (global::System.Boolean* __gsharp_ptr_2 = &successFlag)
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)__gsharp_ptr_2, __gsharp_d_2, (global::System.IntPtr)__gsharp_size_2, hStream));
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
+global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfDeviceError();
 }
 finally
 {
@@ -749,6 +751,10 @@ if (__gsharp_d_2 != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.In
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchProcessPhysicsPtr(global::System.IntPtr particles, global::System.IntPtr totalMagnitude, global::System.IntPtr successFlag, global::DebugReduc.ComprehensiveSpecKernel.AotContexts.SpecTypes largeStructVal, global::System.Int32 particleCount, global::System.Int32 unrollFactor, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (particles == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(particles));
+}
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ComprehensiveSpecKernel.ProcessPhysics");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 global::System.IntPtr __gsharp_hfunc = global::DebugReduc.ComprehensiveSpecKernel.__gsharp_hfunc_ProcessPhysics.Resolve();
@@ -791,7 +797,7 @@ finally
 public const string CooperativePhysicsProcess_Source = @"extern ""C"" __global__ void __gsharp_k_DebugReduc__ComprehensiveSpecKernel__CooperativePhysicsProcess(GSharpArray<int> __gsharp_id_0_data){
 int __gsharp_id_1_tid = (int)threadIdx.x;
 __gsharp_id_0_data[__gsharp_id_1_tid]=__gsharp_id_1_tid;
-cg::this_grid().sync();
+__gsharp_grid_sync();
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_CooperativePhysicsProcess = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_DebugReduc__ComprehensiveSpecKernel__CooperativePhysicsProcess", global::Kassyi.GSharp.Generated.GSharpModuleContext_MegaTestCompilationBase.GetFatbin);
@@ -808,6 +814,7 @@ throw new global::System.ArgumentNullException(nameof(data));
 if (data.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(data));
 }
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ComprehensiveSpecKernel.CooperativePhysicsProcess");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 global::System.IntPtr __gsharp_hfunc = global::DebugReduc.ComprehensiveSpecKernel.__gsharp_hfunc_CooperativePhysicsProcess.Resolve();
@@ -850,6 +857,7 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
+global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfDeviceError();
 }
 finally
 {
@@ -863,6 +871,10 @@ if (__gsharp_d_0 != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.In
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchCooperativePhysicsProcessPtr(global::System.IntPtr data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (data == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(data));
+}
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ComprehensiveSpecKernel.CooperativePhysicsProcess");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 global::System.IntPtr __gsharp_hfunc = global::DebugReduc.ComprehensiveSpecKernel.__gsharp_hfunc_CooperativePhysicsProcess.Resolve();

@@ -1086,6 +1086,51 @@ public class HarnessTests
         Assert.False(excusedReport.HasFailures, excusedReport.ToString());
     }
 
+    [Fact]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_CudaFaultSeeds_RunInProcessOnTheDirectRunner()
+    {
+        // A failing CUDA thread exits instead of trapping, so a fault seed on the CUDA direct runner whose CUDA cell is
+        // not a known divergence runs in this process like on every other path, and its exception is matched against
+        // the policy (Test_CudaFaultSeeds_AreSkippedWithReasonUnlessTrapRunsAreEnabled covers a known divergence)
+        // mutant: DifferentialRunner.cs EvaluateExceptionExpectation drops the known-divergence condition of the CUDA gate
+        int launches = 0;
+        var faultCase = new DifferentialCase("HarnessTests.CudaFaultSeedKernel")
+        {
+            Shape = LaunchShapes.SingleThread(),
+            ExpectedException = static (_, _) => ExceptionPolicy.For<IndexOutOfRangeException>(
+                DiffPath.Managed | DiffPath.Cuda,
+                memberName: "CudaFaultSeedKernel"
+            ),
+            Inputs = static (_, _) => new DiffBuffers().Out<int>("r", 1, OutputPolicy.Exact),
+            Launch = (_, _) =>
+            {
+                launches++;
+                var ex = new IndexOutOfRangeException("Index was outside the bounds of the array.");
+                ex.Data["GSharp.MemberName"] = "CudaFaultSeedKernel";
+                throw ex;
+            },
+        };
+        DiffPathRunner[] paths =
+        [
+            new(DiffPath.Managed, DiffPaths.RunDirect),
+            new(DiffPath.Cuda, DiffPaths.DirectRunner),
+        ];
+
+        var report = DifferentialRunner.Evaluate(faultCase, [1, 2], paths, s_noEntries);
+
+        Assert.False(report.HasFailures, report.ToString());
+        Assert.Equal(4, launches);
+
+        // A launch that does not throw is a mismatch of its cell
+        var silentCase = faultCase with { Launch = static (_, _) => { } };
+        var silentReport = DifferentialRunner.Evaluate(silentCase, [1], paths, s_noEntries);
+        Assert.True(silentReport.HasFailures, silentReport.ToString());
+        Assert.Contains("no exception thrown", silentReport.ToString());
+    }
+
     [SkippableFact]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Unit)]

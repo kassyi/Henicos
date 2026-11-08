@@ -12,8 +12,10 @@ using Kassyi.GSharp.Runtime.Interop;
 /// <remarks>
 /// <para>
 /// <b>[SINGLE-SLOT DESIGN]:</b> A single host-mapped error slot is shared across all CUDA modules, streams, and contexts
-/// within the process. When a device trap occurs on any stream, the trapping warp elects a leader that atomically records
-/// the error code, site ID, module ID, and coordinates before trapping. Any subsequent host check
+/// within the process. When a device check fails on any stream, the failing warp elects a leader that atomically records
+/// the error code, site ID, module ID, and coordinates; the failing threads then exit and the kernel completes (a
+/// cooperative launch traps instead, and so does a thread that waits at an mbarrier while an error is recorded). Any
+/// subsequent host check
 /// (<see cref="ThrowIfDeviceError"/>, <see cref="CreateExceptionForDriverError"/>, or stream synchronization) consumes and
 /// resets the slot.
 /// </para>
@@ -49,6 +51,7 @@ public static unsafe class DeviceErrorSlot
             var allocResult = CudaDriverApi.cuMemHostAlloc(out var hostPtr, sizeof(GSharpDeviceErrorSlot), flags);
             if (allocResult != CUresult.CudaSuccess || hostPtr == IntPtr.Zero)
             {
+                ReportUnavailable($"cuMemHostAlloc returned {allocResult}");
                 return;
             }
 
@@ -56,6 +59,7 @@ public static unsafe class DeviceErrorSlot
             if (mapResult != CUresult.CudaSuccess)
             {
                 CudaDriverApi.cuMemFreeHost(hostPtr);
+                ReportUnavailable($"cuMemHostGetDevicePointer returned {mapResult}");
                 return;
             }
 
@@ -64,6 +68,12 @@ public static unsafe class DeviceErrorSlot
             s_deviceErrorSlotPtr = (ulong)devPtr;
         }
     }
+
+    // [WHY] Without the slot a failing device check traps instead of reporting its exception (Prelude.cu,
+    // __gsharp_trap_site): the error then surfaces as a CudaException that leaves the context unusable
+    private static void ReportUnavailable(string reason) =>
+        Logger.Warning(nameof(DeviceErrorSlot),
+            $"The device error slot could not be allocated ({reason}); a failing device check traps and fails the launch with a CudaException.");
 
     /// <summary>
     /// Injects the device error slot pointer and module ID into the loaded CUDA module's globals.

@@ -95,6 +95,7 @@ public sealed class KernelMemoryHandler : IGpuMemoryProvider
             // A pageable destination already makes the copy synchronous, but a page-locked one does not. Waiting
             // explicitly keeps the synchronous contract for both, and before 'fixed' unpins the array.
             CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(stream));
+            GpuKernelLoader.ThrowIfDeviceError();
         }
     }
 
@@ -123,7 +124,9 @@ public sealed class KernelMemoryHandler : IGpuMemoryProvider
         if (stream == IntPtr.Zero)
         {
             // Legacy null-stream copy: also waits for all work on every blocking stream of the context.
-            return InvokeCuda(() => CudaDriverApi.cuMemcpyDtoH_v2(ptr, source, 4), () => *pWord);
+            var word = InvokeCuda(() => CudaDriverApi.cuMemcpyDtoH_v2(ptr, source, 4), () => *pWord);
+            GpuKernelLoader.ThrowIfDeviceError();
+            return word;
         }
 
         // Ordered on 'stream' only. The destination is pageable stack memory, so the host must wait for the stream
@@ -131,6 +134,7 @@ public sealed class KernelMemoryHandler : IGpuMemoryProvider
         using var scope = new GpuKernelLoader.CudaContextScope();
         CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(ptr, source, 4, stream));
         CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(stream));
+        GpuKernelLoader.ThrowIfDeviceError();
         return *pWord;
     }
 
@@ -173,6 +177,7 @@ public sealed class KernelMemoryHandler : IGpuMemoryProvider
         }
 
         InvokeCuda(() => CudaDriverApi.cuStreamSynchronize(stream));
+        GpuKernelLoader.ThrowIfDeviceError();
     }
 
     /// <inheritdoc/>
