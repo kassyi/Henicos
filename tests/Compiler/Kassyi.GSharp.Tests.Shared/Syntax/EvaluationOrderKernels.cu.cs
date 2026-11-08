@@ -391,4 +391,68 @@ public static partial class EvaluationOrderKernels
         rotated[tid] = RotR(x, 2) ^ RotR(x, 13);
         sums[tid] = a[tid] + b[tid];
     }
+
+    // --- Writes that a callee makes without a ref argument at the call ---
+
+    // Writes its ref parameter only through the extension call c.Inc()
+    [GpuDeviceFunction]
+    public static int BumpThroughExtension(ref EoCell cell)
+    {
+        cell.Inc();
+        return 0;
+    }
+
+    // The second argument writes what the first reads: through a 'this ref' extension call inside the callee, through a
+    // by-value parameter that a local function or a lambda captures, and through a ': this(...)' constructor chain
+    [GpuKernel]
+    public static void HiddenWritesKernel(int[] log, int[] result, int p, int q)
+    {
+        EoCell cell = default;
+        result[0] = Sub(cell.X, BumpThroughExtension(ref cell));
+
+        int BumpP()
+        {
+            p++;
+            return 0;
+        }
+
+        result[1] = Sub(p, BumpP());
+
+        System.Func<int> bumpQ = () =>
+        {
+            q++;
+            return 0;
+        };
+        result[2] = Sub(q, bumpQ());
+
+        result[3] = Sub(log[0], new EoTick(log).V);
+    }
+}
+
+public struct EoCell
+{
+    public int X;
+}
+
+// Writes its receiver through 'this ref': the call changes the variable it is called on
+public static class EoCellExtensions
+{
+    [GpuDeviceFunction]
+    public static void Inc(this ref EoCell cell) => cell.X += 1;
+}
+
+// The second constructor writes memory only through the constructor it chains to
+public struct EoTick
+{
+    public int V;
+
+    public EoTick(int[] log, int v)
+    {
+        log[0] = v;
+        V = v;
+    }
+
+    public EoTick(int[] log) : this(log, 7)
+    {
+    }
 }

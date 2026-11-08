@@ -100,6 +100,108 @@ public class StackLinqPartitioningTests
         Assert.Empty(data.AsStackEnumerable().SkipWhile((_, _) => true).ToArray());
     }
 
+    // Once TakeWhile has ended, it stays ended, as System.Linq does: a later element that passes is not returned,
+    // and the predicate is not called again
+    [Fact]
+    public void TakeWhile_AfterTheFirstFalse_StaysFinished()
+    {
+        int[] data = [1, 5, 2];
+        var calls = 0;
+        var enumerator = data
+            .AsStackEnumerable()
+            .TakeWhile(x => { calls++; return x < 3; })
+            .Enumerator;
+
+        Assert.True(enumerator.TryGetNext(out var first));
+        Assert.Equal(1, first);
+        Assert.False(enumerator.TryGetNext(out _));
+        Assert.False(enumerator.TryGetNext(out _));
+        Assert.False(enumerator.TryGetNext(out _));
+        Assert.Equal(2, calls);
+    }
+
+    [Fact]
+    public void TakeWhile_Indexed_AfterTheFirstFalse_StaysFinished()
+    {
+        int[] data = [1, 5, 2];
+        var calls = 0;
+        var enumerator = data
+            .AsStackEnumerable()
+            .TakeWhile((x, _) => { calls++; return x < 3; })
+            .Enumerator;
+
+        Assert.True(enumerator.TryGetNext(out var first));
+        Assert.Equal(1, first);
+        Assert.False(enumerator.TryGetNext(out _));
+        Assert.False(enumerator.TryGetNext(out _));
+        Assert.False(enumerator.TryGetNext(out _));
+        Assert.Equal(2, calls);
+    }
+
+    // The source reports its end once and then yields again, so only TakeWhile's own finished state keeps the late
+    // element out
+    [Fact]
+    public void TakeWhile_SourceExhausted_StaysFinished()
+    {
+        var enumerator = new StackEnumerable<EndsThenResumesEnumerator, int>(new EndsThenResumesEnumerator())
+            .TakeWhile(static x => x < 3)
+            .Enumerator;
+
+        Assert.True(enumerator.TryGetNext(out var first));
+        Assert.Equal(1, first);
+        Assert.False(enumerator.TryGetNext(out _));
+        Assert.False(enumerator.TryGetNext(out _));
+    }
+
+    [Fact]
+    public void TakeWhile_Indexed_SourceExhausted_StaysFinished()
+    {
+        var enumerator = new StackEnumerable<EndsThenResumesEnumerator, int>(new EndsThenResumesEnumerator())
+            .TakeWhile(static (x, _) => x < 3)
+            .Enumerator;
+
+        Assert.True(enumerator.TryGetNext(out var first));
+        Assert.Equal(1, first);
+        Assert.False(enumerator.TryGetNext(out _));
+        Assert.False(enumerator.TryGetNext(out _));
+    }
+
+    // SelectMany asks its source again after it has reported the end
+    [Fact]
+    public void SelectMany_OverTakeWhile_AfterTheEnd_StaysFinished()
+    {
+        int[][] nested = [[1], [5], [2]];
+        var enumerator = nested
+            .AsStackEnumerable()
+            .TakeWhile(static inner => inner[0] < 3)
+            .SelectMany(static inner => inner.AsStackEnumerable())
+            .Enumerator;
+
+        Assert.True(enumerator.TryGetNext(out var first));
+        Assert.Equal(1, first);
+        Assert.False(enumerator.TryGetNext(out _));
+        Assert.False(enumerator.TryGetNext(out _));
+    }
+
+    // Yields 1, reports the end once, then yields 2 on every later call
+    private struct EndsThenResumesEnumerator : IStackEnumerator<int>
+    {
+        private int _calls;
+
+        public bool TryGetNext(out int current)
+        {
+            _calls++;
+            if (_calls == 2)
+            {
+                current = 0;
+                return false;
+            }
+
+            current = _calls == 1 ? 1 : 2;
+            return true;
+        }
+    }
+
     [Fact]
     public void ReadOnlySpan_And_Span_TakeLast_SkipLast_Coverage()
     {
