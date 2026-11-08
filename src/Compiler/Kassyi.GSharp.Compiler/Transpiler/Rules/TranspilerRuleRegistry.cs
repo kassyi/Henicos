@@ -1,5 +1,6 @@
 namespace Kassyi.GSharp.Compiler.Transpiler.Rules;
 using DeclarationRules;
+using ExpressionInterceptors;
 using ExpressionRules;
 using InvocationRules;
 using MacroRules;
@@ -16,6 +17,22 @@ internal sealed class TranspilerRuleRegistry
     /// Gets the registry populated with all default transpiler rules.
     /// </summary>
     public static TranspilerRuleRegistry Default { get; } = CreateDefault();
+
+    /// <summary>
+    /// The special cases tried on every expression before the rule of its kind, in order; the first that writes the
+    /// expression ends the visit.
+    /// </summary>
+    /// <remarks>
+    /// A spilled part of a target is written as its temporary before anything else looks at it; the uninvoked span
+    /// method check comes after the conversions, where the member access rule used to run it.
+    /// </remarks>
+    public ImmutableArray<IExpressionInterceptor> ExpressionInterceptors { get; } =
+        ImmutableArray.Create<IExpressionInterceptor>(
+            new SpilledExpressionInterceptor(),
+            new ArrayNullCheckInterceptor(),
+            new ImplicitConversionInterceptor(),
+            new UninvokedSpanMethodInterceptor()
+        );
 
     /// <summary>
     /// Specialized invocation transpiler rules, evaluated in order before falling back to standard call emission.

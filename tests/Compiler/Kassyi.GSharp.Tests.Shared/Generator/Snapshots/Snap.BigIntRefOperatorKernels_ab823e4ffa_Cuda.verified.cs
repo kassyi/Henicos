@@ -256,6 +256,7 @@ throw new global::System.ArgumentNullException(nameof(shiftedRight));
 if (shiftedRight.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(shiftedRight));
 }
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "BigIntRefOperatorKernels.ShiftKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Stdlib.BigIntRefOperatorKernels.__gsharp_hfunc_ShiftKernel.Resolve();
@@ -397,6 +398,7 @@ throw new global::System.ArgumentNullException(nameof(shiftedLeft));
 if (shiftedRight == global::System.IntPtr.Zero){
 throw new global::System.ArgumentNullException(nameof(shiftedRight));
 }
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "BigIntRefOperatorKernels.ShiftKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Stdlib.BigIntRefOperatorKernels.__gsharp_hfunc_ShiftKernel.Resolve();

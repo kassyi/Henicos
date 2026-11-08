@@ -12,10 +12,13 @@ internal enum SyncIntrinsicKind
     /// <summary><c>Gpu.SyncGrid()</c> and <c>Gpu.SyncGrid(body)</c>: every thread of the grid waits for the others.</summary>
     GridBarrier,
 
-    /// <summary><c>Warp.Shuffle*Sync</c>: reads the value of another lane named in the mask.</summary>
+    /// <summary>
+    /// <c>Warp.Shuffle*Sync</c>, <c>Gpu.Match*Sync</c>, and the votes and reductions of <c>Warp</c>: reads the values
+    /// of other lanes named in the mask, which the CPU paths exchange across a state boundary.
+    /// </summary>
     WarpShuffle,
 
-    /// <summary>A vote, reduction, match or WMMA operation that the lanes named in the mask (or the whole warp) take part in.</summary>
+    /// <summary>A WMMA operation that every lane of the warp takes part in.</summary>
     WarpCollective,
 
     /// <summary><c>Gpu.SyncWarp(mask)</c>: the lanes named in the mask wait for each other.</summary>
@@ -66,7 +69,34 @@ internal enum WarpShuffleKind
     MatchAny,
 
     /// <summary><c>Gpu.MatchAllSync</c>.</summary>
-    MatchAll
+    MatchAll,
+
+    /// <summary><c>Warp.BallotSync</c>.</summary>
+    Ballot,
+
+    /// <summary><c>Warp.AllSync</c>.</summary>
+    All,
+
+    /// <summary><c>Warp.AnySync</c>.</summary>
+    Any,
+
+    /// <summary><c>Warp.ReduceAddSync</c>.</summary>
+    ReduceAdd,
+
+    /// <summary><c>Warp.ReduceMinSync</c>.</summary>
+    ReduceMin,
+
+    /// <summary><c>Warp.ReduceMaxSync</c>.</summary>
+    ReduceMax,
+
+    /// <summary><c>Warp.ReduceAndSync</c>.</summary>
+    ReduceAnd,
+
+    /// <summary><c>Warp.ReduceOrSync</c>.</summary>
+    ReduceOr,
+
+    /// <summary><c>Warp.ReduceXorSync</c>.</summary>
+    ReduceXor
 }
 
 /// <summary>How the analyzers and the lowering treat a call to an intrinsic of <c>Kassyi.GSharp.Core</c>.</summary>
@@ -204,8 +234,15 @@ internal static class SyncIntrinsicClassifier
         "ShuffleDownSync" => Shuffle(WarpShuffleKind.Down),
         "ShuffleUpSync" => Shuffle(WarpShuffleKind.Up),
         "ShuffleXorSync" => Shuffle(WarpShuffleKind.Xor),
-        "BallotSync" or "AllSync" or "AnySync" or "ReduceAddSync" or "ReduceMinSync" or "ReduceMaxSync"
-            or "ReduceAndSync" or "ReduceOrSync" or "ReduceXorSync" => s_warpCollective,
+        "BallotSync" => Shuffle(WarpShuffleKind.Ballot),
+        "AllSync" => Shuffle(WarpShuffleKind.All),
+        "AnySync" => Shuffle(WarpShuffleKind.Any),
+        "ReduceAddSync" => Shuffle(WarpShuffleKind.ReduceAdd),
+        "ReduceMinSync" => Shuffle(WarpShuffleKind.ReduceMin),
+        "ReduceMaxSync" => Shuffle(WarpShuffleKind.ReduceMax),
+        "ReduceAndSync" => Shuffle(WarpShuffleKind.ReduceAnd),
+        "ReduceOrSync" => Shuffle(WarpShuffleKind.ReduceOr),
+        "ReduceXorSync" => Shuffle(WarpShuffleKind.ReduceXor),
         TypeConstants.ActiveMaskMethod => s_variantValue,
         _ => default
     };

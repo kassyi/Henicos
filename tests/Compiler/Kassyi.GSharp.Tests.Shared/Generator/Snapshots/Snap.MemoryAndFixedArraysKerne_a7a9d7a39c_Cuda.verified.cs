@@ -157,6 +157,7 @@ throw new global::System.ArgumentNullException(nameof(pointOutput));
 if (pointOutput.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(pointOutput));
 }
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MemoryAndFixedArraysKernels.SharedMemoryStaticKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.MemoryAndFixedArraysKernels.__gsharp_hfunc_SharedMemoryStaticKernel.Resolve();
@@ -296,6 +297,7 @@ throw new global::System.ArgumentNullException(nameof(floatOutput));
 if (pointOutput == global::System.IntPtr.Zero){
 throw new global::System.ArgumentNullException(nameof(pointOutput));
 }
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MemoryAndFixedArraysKernels.SharedMemoryStaticKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.MemoryAndFixedArraysKernels.__gsharp_hfunc_SharedMemoryStaticKernel.Resolve();

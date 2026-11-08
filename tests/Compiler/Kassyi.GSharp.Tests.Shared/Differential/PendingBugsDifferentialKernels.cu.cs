@@ -7,7 +7,7 @@ using Kassyi.ZeroAlloc.Linq;
 namespace Kassyi.GSharp.Tests.Shared.Differential;
 
 /// <summary>
-/// Differential kernels for open issues (#904, #1091) and regression coverage (#1080, StackLinq Take(0)).
+/// Differential kernels for open issues (#904) and regression coverage (#1080, #1091, StackLinq Take(0)).
 /// </summary>
 [SkipSnapshotConsistency("Pending bug verification")]
 public static partial class PendingBugsDifferentialKernels

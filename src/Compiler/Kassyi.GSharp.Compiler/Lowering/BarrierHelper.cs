@@ -46,7 +46,8 @@ internal static class BarrierHelper
     }
 
     /// <summary>
-    /// Determines whether the specified invocation is a warp shuffle (<c>Warp.Shuffle*Sync</c>, <c>Gpu.Match*Sync</c>).
+    /// Determines whether the specified invocation is a warp shuffle (<c>Warp.Shuffle*Sync</c>, <c>Gpu.Match*Sync</c>, the
+    /// votes and reductions of <c>Warp</c>).
     /// </summary>
     /// <remarks>
     /// Other <c>Warp</c> / <c>Gpu</c> members (<c>Gpu.WarpId()</c>, <c>Gpu.LaneId()</c>) are plain intrinsics and do not
@@ -69,6 +70,15 @@ internal static class BarrierHelper
                 LoweringAnnotations.ShuffleXorAnnotationData => WarpShuffleKind.Xor,
                 LoweringAnnotations.MatchAnyAnnotationData => WarpShuffleKind.MatchAny,
                 LoweringAnnotations.MatchAllAnnotationData => WarpShuffleKind.MatchAll,
+                LoweringAnnotations.BallotAnnotationData => WarpShuffleKind.Ballot,
+                LoweringAnnotations.AllAnnotationData => WarpShuffleKind.All,
+                LoweringAnnotations.AnyAnnotationData => WarpShuffleKind.Any,
+                LoweringAnnotations.ReduceAddAnnotationData => WarpShuffleKind.ReduceAdd,
+                LoweringAnnotations.ReduceMinAnnotationData => WarpShuffleKind.ReduceMin,
+                LoweringAnnotations.ReduceMaxAnnotationData => WarpShuffleKind.ReduceMax,
+                LoweringAnnotations.ReduceAndAnnotationData => WarpShuffleKind.ReduceAnd,
+                LoweringAnnotations.ReduceOrAnnotationData => WarpShuffleKind.ReduceOr,
+                LoweringAnnotations.ReduceXorAnnotationData => WarpShuffleKind.ReduceXor,
                 _ => WarpShuffleKind.None
             };
             return kind != WarpShuffleKind.None;

@@ -115,6 +115,7 @@ throw new global::System.ArgumentNullException(nameof(table));
 if (table.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(table));
 }
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LocalFunctionParameterKernels.ReadOnlyLocalFunctionParameterKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.LocalFunctionParameterKernels.__gsharp_hfunc_ReadOnlyLocalFunctionParameterKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Syntax.LocalFunctionParameterKernels.s_errorSites);
@@ -214,6 +215,7 @@ throw new global::System.ArgumentNullException(nameof(output));
 if (table == global::System.IntPtr.Zero){
 throw new global::System.ArgumentNullException(nameof(table));
 }
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LocalFunctionParameterKernels.ReadOnlyLocalFunctionParameterKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.LocalFunctionParameterKernels.__gsharp_hfunc_ReadOnlyLocalFunctionParameterKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Syntax.LocalFunctionParameterKernels.s_errorSites);

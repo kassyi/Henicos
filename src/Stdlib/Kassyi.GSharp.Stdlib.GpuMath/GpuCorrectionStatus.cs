@@ -5,9 +5,10 @@ using Kassyi.GSharp.Runtime;
 namespace Kassyi.GSharp.Stdlib.GpuMath;
 
 /// <summary>
-/// Carries the failures of on-device corrections to the host without adding a synchronization: two device words per
-/// <see cref="GpuWorkspace"/> (a failure count and the code of the last failure), read together with the reads that GpuMath
-/// already makes on the workspace stream.
+/// Carries the failures of on-device corrections and the domain errors of kernels to the host without adding a
+/// synchronization: four device words per <see cref="GpuWorkspace"/> (a failure count, the code of the last failure, a
+/// domain error count and the code of the last domain error), read together with the reads that GpuMath already makes
+/// on the workspace stream.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -17,6 +18,15 @@ namespace Kassyi.GSharp.Stdlib.GpuMath;
 /// second word when they
 /// cannot confirm their result within their step limit; that result is then wrong. The count only grows: nothing resets
 /// it. The host marks the status pending (<see cref="MarkPending"/>) right after launching such a kernel or a graph.
+/// </para>
+/// <para>
+/// <b>Domain errors:</b> a kernel whose result does not fit in the buffer the caller chose, or whose unsigned result is
+/// below zero, adds 1 to word <see cref="GpuDomainErrors.CountWord"/> and stores its code
+/// (<see cref="GpuDomainErrors.ScalarAddOverflow"/> and the codes after it) in word
+/// <see cref="GpuDomainErrors.CodeWord"/> (<see cref="GpuDomainErrors.Report"/>). The host marks the status pending
+/// after launching such a kernel. A new domain error count is thrown as <see cref="OverflowException"/> at the next
+/// read, in the same way as a correction failure; a read that finds both throws <see cref="AggregateException"/> with
+/// the two.
 /// </para>
 /// <para>
 /// <b>Readers:</b> <see cref="GSharpKernelProvider.CopyDeviceToHost"/>, <see cref="GSharpKernelProvider.ReadWord"/>,
@@ -53,8 +63,11 @@ namespace Kassyi.GSharp.Stdlib.GpuMath;
 /// </remarks>
 internal sealed class GpuCorrectionStatus : IDisposable
 {
-    /// <summary>The number of device words: the failure count and the code of the last failure.</summary>
-    public const int DeviceWords = 2;
+    /// <summary>
+    /// The number of device words: the failure count, the code of the last failure, the domain error count and the code
+    /// of the last domain error.
+    /// </summary>
+    public const int DeviceWords = 4;
 
     private static readonly ConcurrentDictionary<IntPtr, GpuCorrectionStatus> s_byStream = new();
     private static int s_discardedSlots;
@@ -66,6 +79,7 @@ internal sealed class GpuCorrectionStatus : IDisposable
     private readonly AsyncCheck _asyncCheck;
     private int _pending;
     private int _reported;
+    private int _reportedDomainErrors;
     private int _readsInFlight;
     private int _slotAbandoned;
     private int _slotReleased;
@@ -94,6 +108,9 @@ internal sealed class GpuCorrectionStatus : IDisposable
 
     /// <summary>Gets the largest failure count reported so far (for tests).</summary>
     internal int ReportedFailures => Volatile.Read(ref _reported);
+
+    /// <summary>Gets the largest domain error count reported so far (for tests).</summary>
+    internal int ReportedDomainErrors => Volatile.Read(ref _reportedDomainErrors);
 
     /// <summary>Gets a value indicating whether the slot has been returned or discarded (for tests).</summary>
     internal bool SlotReleased => Volatile.Read(ref _slotReleased) == 1;
@@ -171,33 +188,67 @@ internal sealed class GpuCorrectionStatus : IDisposable
     }
 
     /// <summary>
-    /// Ends a read begun with <see cref="BeginRead()"/> after its wait, and throws when the copied count is above the
-    /// largest count reported so far.
+    /// Ends a read begun with <see cref="BeginRead()"/> after its wait, and throws when a copied count is above the
+    /// largest count of its kind reported so far.
     /// </summary>
     /// <exception cref="InvalidOperationException">A correction did not converge since the previous report.</exception>
+    /// <exception cref="OverflowException">A kernel reported a domain error since the previous report.</exception>
+    /// <exception cref="AggregateException">Both happened since the previous report.</exception>
     public unsafe void EndRead()
     {
-        var count = (int)Volatile.Read(ref *(uint*)_slot);
-        var code = Volatile.Read(ref *((uint*)_slot + 1));
+        var words = (uint*)_slot;
+        var count = (int)Volatile.Read(ref words[0]);
+        var code = Volatile.Read(ref words[1]);
+        var domainCount = (int)Volatile.Read(ref words[GpuDomainErrors.CountWord]);
+        var domainCode = Volatile.Read(ref words[GpuDomainErrors.CodeWord]);
         FinishRead();
 
-        while (true)
-        {
-            var reported = Volatile.Read(ref _reported);
-            if (count <= reported)
-            {
-                return;
-            }
+        var correctionError = Claim(ref _reported, count)
+            ? new InvalidOperationException(
+                $"The on-device correction of {Describe(code)} did not converge within its step limit, so the " +
+                $"result of that call is wrong ({count} failure(s) on this workspace so far). The failure is " +
+                "reported at the first read of the workspace stream after the call.")
+            : null;
+        var domainError = Claim(ref _reportedDomainErrors, domainCount)
+            ? new OverflowException(
+                $"{DescribeDomainError(domainCode)} ({domainCount} domain error(s) on this workspace so far). The " +
+                "error is reported at the first read of the workspace stream after the call; the contents of that " +
+                "call's result buffer are unspecified.")
+            : null;
 
-            if (Interlocked.CompareExchange(ref _reported, count, reported) == reported)
-            {
-                break;
-            }
+        if (correctionError is not null && domainError is not null)
+        {
+            throw new AggregateException("A GPU operation failed on this workspace.", correctionError, domainError);
         }
 
-        throw new InvalidOperationException(
-            $"The on-device correction of {Describe(code)} did not converge within its step limit, so the result of that call is wrong " +
-            $"({count} failure(s) on this workspace so far). The failure is reported at the first read of the workspace stream after the call.");
+        if (correctionError is not null)
+        {
+            throw correctionError;
+        }
+
+        if (domainError is not null)
+        {
+            throw domainError;
+        }
+    }
+
+    // Raises the largest reported count of one kind to count; true when this call did, so that exactly one read reports
+    // each increase
+    private static bool Claim(ref int reported, int count)
+    {
+        while (true)
+        {
+            var current = Volatile.Read(ref reported);
+            if (count <= current)
+            {
+                return false;
+            }
+
+            if (Interlocked.CompareExchange(ref reported, count, current) == current)
+            {
+                return true;
+            }
+        }
     }
 
     /// <summary>
@@ -246,6 +297,18 @@ internal sealed class GpuCorrectionStatus : IDisposable
         GpuBigIntDivRemKernels.InverseSqrtCorrectionFailed => "GpuBigIntDivRem.InverseSqrt (InverseSqrtMega)",
         GpuBigIntDivRemKernels.SqrtCorrectionFailed => "GpuBigIntDivRem.SqrtFloor (SqrtFloorCorrectionKernel)",
         _ => $"an unknown operation (status {code})"
+    };
+
+    private static string DescribeDomainError(uint code) => code switch
+    {
+        GpuDomainErrors.ScalarAddOverflow =>
+            "GpuBigIntMath.Add(a, uint, r): the sum does not fit in a result buffer as wide as the operand; pass a " +
+            "wider buffer to get the exact value",
+        GpuDomainErrors.ScalarSubtractBelowZero => "GpuBigIntMath.Sub(a, uint, r): the difference is below zero",
+        GpuDomainErrors.ScalarMultiplyOverflow =>
+            "GpuBigIntMath.Mul(a, uint, r): the product does not fit in a result buffer as wide as the operand; " +
+            "pass a wider buffer to get the exact value",
+        _ => $"An operation reported the unknown domain error {code}"
     };
 
     private void FinishRead()
@@ -351,14 +414,16 @@ internal sealed class GpuCorrectionStatus : IDisposable
                 owner.EndRead();
                 _core.SetResult(true);
             }
-            catch (InvalidOperationException ex)
+            catch (Exception ex) when (ex is InvalidOperationException or OverflowException or AggregateException)
             {
                 _core.SetException(ex);
             }
         }
     }
 
-    /// <summary>Page-locked 8-byte slots carved from pages that live for the whole process.</summary>
+    /// <summary>
+    /// Page-locked slots of <see cref="DeviceWords"/> words carved from pages that live for the whole process.
+    /// </summary>
     private static unsafe class PinnedSlots
     {
         private const int SlotsPerPage = 512;

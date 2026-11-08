@@ -119,6 +119,7 @@ throw new global::System.ArgumentNullException(nameof(u64Data));
 if (u64Data.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(u64Data));
 }
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "BitOpsTestKernels.BitOpsKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.BitOpsTestKernels.__gsharp_hfunc_BitOpsKernel.Resolve();
@@ -216,6 +217,7 @@ throw new global::System.ArgumentNullException(nameof(u32Data));
 if (u64Data == global::System.IntPtr.Zero){
 throw new global::System.ArgumentNullException(nameof(u64Data));
 }
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "BitOpsTestKernels.BitOpsKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.BitOpsTestKernels.__gsharp_hfunc_BitOpsKernel.Resolve();

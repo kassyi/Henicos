@@ -3311,6 +3311,7 @@ throw new global::System.ArgumentNullException(nameof(modulus));
 if (modulus.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(modulus));
 }
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "GpuBigIntDivRemKernels.InitializeOneModuloKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntDivRemKernels.__gsharp_hfunc_InitializeOneModuloKernel.Resolve();
@@ -3410,6 +3411,7 @@ throw new global::System.ArgumentNullException(nameof(result));
 if (modulus == global::System.IntPtr.Zero){
 throw new global::System.ArgumentNullException(nameof(modulus));
 }
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "GpuBigIntDivRemKernels.InitializeOneModuloKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntDivRemKernels.__gsharp_hfunc_InitializeOneModuloKernel.Resolve();
@@ -3819,6 +3821,7 @@ throw new global::System.ArgumentNullException(nameof(ctx), "ctx.ReciprocalMod i
 if (ctx.Exponent.Words is null){
 throw new global::System.ArgumentNullException(nameof(ctx), "ctx.Exponent.Words is null, but the field is not nullable.");
 }
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "GpuBigIntDivRemKernels.ModPowNttMegaKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntDivRemKernels.__gsharp_hfunc_ModPowNttMegaKernel.Resolve(global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntDivRemKernels.s_errorSites);
@@ -3904,6 +3907,7 @@ throw new global::System.ArgumentNullException(nameof(ctx), "ctx.ReciprocalMod i
 if (ctx.Exponent.Words.Data == global::System.IntPtr.Zero){
 throw new global::System.ArgumentNullException(nameof(ctx), "ctx.Exponent.Words is null, but the field is not nullable.");
 }
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "GpuBigIntDivRemKernels.ModPowNttMegaKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntDivRemKernels.__gsharp_hfunc_ModPowNttMegaKernel.Resolve(global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntDivRemKernels.s_errorSites);

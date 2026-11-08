@@ -12,6 +12,7 @@ internal static class CpuHostLaunchEmitter
     private const string DllPath = GSharpInternalNames.Launcher.DllPath;
     private const string FunctionHandle = GSharpInternalNames.Launcher.FunctionHandle;
     private const string PinnedHandle = GSharpInternalNames.Launcher.PinnedHandle;
+    private const string GridBlockCount = GSharpInternalNames.Launcher.GridBlockCount;
 
     /// <summary>Emits the managed source, the delegate declaration and the launch wrapper of one kernel.</summary>
     public static void WriteKernelMembers(SourceWriter writer, in KernelEmission kernel, string assemblyName)
@@ -30,6 +31,7 @@ internal static class CpuHostLaunchEmitter
         {
             WrapperEmitter.WriteOutParameterDefaults(writer, kernel.Host);
             WrapperEmitter.WriteArrayArgumentChecks(writer, kernel.Host);
+            LaunchLimitEmitter.WriteCpuCheck(writer, kernel.Host);
             AutoResultEmitter.WriteAllocation(writer, kernel.Host);
             var sharing = ArraySharingPlan.ForCpu(kernel.Host);
             CpuArrayCopyEmitter.WriteKernelCopies(writer, sharing);
@@ -54,8 +56,8 @@ internal static class CpuHostLaunchEmitter
         writer.Append(KernelHostNames.GetDelegateTypeName(kernel));
         using (writer.Parentheses())
         {
-            writer.Append(
-                "uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, uint sharedMemBytes");
+            writer.Append("uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, ");
+            writer.Append($"uint sharedMemBytes, long {GridBlockCount}");
             foreach (var p in kernel.Host.Parameters)
             {
                 writer.Append(", ");
@@ -365,8 +367,10 @@ internal static class CpuHostLaunchEmitter
         writer.Append(FunctionHandle);
         using (writer.Parentheses())
         {
-            // The native launcher places the dynamic shared memory declarations in sharedMemBytes (#544)
-            writer.Append("gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes");
+            // The native launcher places the dynamic shared memory declarations in sharedMemBytes (#544) and runs the
+            // number of blocks that the launch check counted in 64 bits (#805)
+            writer.Append("gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, ");
+            writer.Append($"sharedMemBytes, {GridBlockCount}");
 
             foreach (var shape in kernel.Parameters)
             {

@@ -142,7 +142,8 @@ When the shuffle occurs inside a conditional block where some threads in the war
 [GpuKernel]
 public static void DivergentExecution(int val)
 {
-    // SAFE: ActiveMask dynamically computes who is actually executing this branch.
+    // On CUDA, ActiveMask computes who is actually executing this branch. The CPU dialects return every lane there
+    // (GSH0101); BallotSync before the branch (below) gives the same mask on every target.
     if (ThreadIndex.X % 2 == 0) // Only even threads enter
     {
         uint activeMask = Gpu.ActiveMask();
@@ -151,7 +152,21 @@ public static void DivergentExecution(int val)
 }
 ```
 
-> **On the CPU dialects**: the native C++ build and the managed path run the threads of a warp one after another, so `Warp.ActiveMask()` there returns every lane of the warp that exists in the block (all 32, or fewer in the last warp of a block whose size is not a multiple of 32). That is the GPU result where every lane reaches the call. Inside a branch like the one above the GPU returns fewer lanes, and [GSH0101](../03_bcl_api/diagnostics/GSH0101.md) warns about the call. It also warns after a thread-dependent early `return` (the bounds guard). It does not warn in the body of `Gpu.GridStrideLoop`: in its last round the threads whose index is past the end have left the loop, so there the GPU may return fewer lanes than the CPU paths. Moving the call before the branch gives the same result on both; `Warp.BallotSync` is not available on the CPU dialects yet.
+> **On the CPU dialects**: the native C++ build and the managed path run the threads of a warp one after another, so `Warp.ActiveMask()` there returns every lane of the warp that exists in the block (all 32, or fewer in the last warp of a block whose size is not a multiple of 32). That is the GPU result where every lane reaches the call. Inside a branch like the one above the GPU returns fewer lanes, and [GSH0101](../03_bcl_api/diagnostics/GSH0101.md) warns about the call. It also warns after a thread-dependent early `return` (the bounds guard). It does not warn in the body of `Gpu.GridStrideLoop`: in its last round the threads whose index is past the end have left the loop, so there the GPU may return fewer lanes than the CPU paths. A mask computed before the branch with `Warp.BallotSync` gives the same result on both:
+
+```csharp
+// Execution Context: G# Kernel (GPU or CPU)
+[GpuKernel]
+public static void DivergentExecutionOnEveryTarget(int val)
+{
+    // Every lane reaches the ballot, so every target computes the lanes that enter the branch
+    uint evenMask = Warp.BallotSync(0xFFFFFFFFu, ThreadIndex.X % 2 == 0);
+    if (ThreadIndex.X % 2 == 0)
+    {
+        int sumOfEvenLanes = Warp.ReduceAddSync(evenMask, val);
+    }
+}
+```
 
 #### Pattern 3: Partial Warp Processing (Tail Boundaries)
 
@@ -210,10 +225,11 @@ public static void DeadlockExample(int val)
 [GpuKernel]
 public static void SafeActiveMaskExample(int val)
 {
-    // ⭕ SAFE: Use Gpu.ActiveMask() in divergent branches
+    // ⭕ SAFE on CUDA: Gpu.ActiveMask() in a divergent branch. The CPU dialects return every lane there (GSH0101); a
+    // mask from Warp.BallotSync(0xFFFFFFFFu, ThreadIndex.X < 16) before the branch is the same on every target
     if (ThreadIndex.X < 16)
     {
-        uint mask = Gpu.ActiveMask(); // Automatically resolves to 0x0000FFFF
+        uint mask = Gpu.ActiveMask(); // Resolves to 0x0000FFFF on CUDA
         int partner = Gpu.ShuffleXorSync(mask, val, 1);
     }
 }

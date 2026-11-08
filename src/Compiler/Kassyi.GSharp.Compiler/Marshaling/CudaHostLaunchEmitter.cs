@@ -37,6 +37,7 @@ internal static class CudaHostLaunchEmitter
                 WrapperEmitter.WritePointerArgumentChecks(writer, kernel.Host);
             }
 
+            LaunchLimitEmitter.WriteCudaCheck(writer, kernel.Host);
             AutoResultEmitter.WriteAllocation(writer, kernel.Host);
 
             writer.AppendLine(

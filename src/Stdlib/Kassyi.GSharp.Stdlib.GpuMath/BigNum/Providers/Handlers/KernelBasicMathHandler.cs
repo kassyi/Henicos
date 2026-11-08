@@ -58,11 +58,12 @@ public sealed class KernelBasicMathHandler : IGpuBasicMathProvider
     public void Add(GpuWorkspace workspace, GpuBigUInt leftOperand, uint rightOperand,
         GpuBigUInt resultBuffer)
     {
-        var blockDim = Math.Min(1024, leftOperand.NumWords);
-
+        ScalarResultWidth.ThrowIfNarrower(leftOperand, resultBuffer);
         GpuBigIntScalarKernels.LaunchScalarAddKernelPtr(
             leftOperand.DevicePointer, rightOperand, resultBuffer.DevicePointer, leftOperand.NumWords,
-            gridDimX: 1, blockDimX: (uint)blockDim, hStream: workspace.Stream);
+            resultBuffer.NumWords, workspace.CorrectionStatusPointer,
+            gridDimX: 1, blockDimX: ScalarResultWidth.BlockSize(leftOperand), hStream: workspace.Stream);
+        workspace.CorrectionStatus?.MarkPending();
     }
 
 
@@ -70,11 +71,12 @@ public sealed class KernelBasicMathHandler : IGpuBasicMathProvider
     public void Sub(GpuWorkspace workspace, GpuBigUInt leftOperand, uint rightOperand,
         GpuBigUInt resultBuffer)
     {
-        var blockDim = Math.Min(1024, leftOperand.NumWords);
-
+        ScalarResultWidth.ThrowIfNarrower(leftOperand, resultBuffer);
         GpuBigIntScalarKernels.LaunchScalarSubKernelPtr(
             leftOperand.DevicePointer, rightOperand, resultBuffer.DevicePointer, leftOperand.NumWords,
-            gridDimX: 1, blockDimX: (uint)blockDim, hStream: workspace.Stream);
+            resultBuffer.NumWords, workspace.CorrectionStatusPointer,
+            gridDimX: 1, blockDimX: ScalarResultWidth.BlockSize(leftOperand), hStream: workspace.Stream);
+        workspace.CorrectionStatus?.MarkPending();
     }
 
     /// <inheritdoc/>

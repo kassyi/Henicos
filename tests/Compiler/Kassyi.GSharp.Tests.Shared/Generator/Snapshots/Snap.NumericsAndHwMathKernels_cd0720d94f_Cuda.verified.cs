@@ -120,6 +120,7 @@ throw new global::System.ArgumentNullException(nameof(u64Data));
 if (u64Data.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(u64Data));
 }
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "NumericsAndHwMathKernels.BitOperationsTestKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.NumericsAndHwMathKernels.__gsharp_hfunc_BitOperationsTestKernel.Resolve();
@@ -217,6 +218,7 @@ throw new global::System.ArgumentNullException(nameof(u32Data));
 if (u64Data == global::System.IntPtr.Zero){
 throw new global::System.ArgumentNullException(nameof(u64Data));
 }
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "NumericsAndHwMathKernels.BitOperationsTestKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.NumericsAndHwMathKernels.__gsharp_hfunc_BitOperationsTestKernel.Resolve();
@@ -300,6 +302,7 @@ throw new global::System.ArgumentNullException(nameof(i32Out));
 if (i32Out.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(i32Out));
 }
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "NumericsAndHwMathKernels.PtxIntrinsicsExpansionKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.NumericsAndHwMathKernels.__gsharp_hfunc_PtxIntrinsicsExpansionKernel.Resolve();
@@ -439,6 +442,7 @@ throw new global::System.ArgumentNullException(nameof(u64Out));
 if (i32Out == global::System.IntPtr.Zero){
 throw new global::System.ArgumentNullException(nameof(i32Out));
 }
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "NumericsAndHwMathKernels.PtxIntrinsicsExpansionKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.NumericsAndHwMathKernels.__gsharp_hfunc_PtxIntrinsicsExpansionKernel.Resolve();

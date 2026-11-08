@@ -13,11 +13,6 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
             symbol = context.Query.SemanticModel.GetSymbol(invocation);
         }
 
-        if (SpanWriteClassifier.TryFailUninvoked(node, ref context))
-        {
-            return;
-        }
-
         if (symbol is IPropertySymbol spanProperty && TryTranspileSpanProperty(node, spanProperty, ref context))
         {
             return;
@@ -181,7 +176,7 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
         IMethodSymbol extension,
         ref TranspileContext context)
     {
-        StructTranspiler.RegisterUsedStructIfApplicable(method.ReturnType, ref context);
+        StructOrdering.RegisterUsedStructIfApplicable(method.ReturnType, ref context);
         WriteReceiverCapture(receiver, extension, ref context);
         WriteLambdaParameters(method, ref context);
         context.Emitter.Writer.Append(' ');
@@ -215,7 +210,7 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
                 context.Emitter.Writer.AppendIf(i > 0, ", ");
                 var parameter = method.Parameters[i];
                 var parameterType = parameter.Type;
-                StructTranspiler.RegisterUsedStructIfApplicable(parameterType, ref context);
+                StructOrdering.RegisterUsedStructIfApplicable(parameterType, ref context);
                 context.Emitter.Dialect.AppendType(ref context, parameterType);
                 context.Emitter.Writer.AppendIf(parameter.RefKind != RefKind.None, "*");
                 context.Emitter.Writer.Append(' ');

@@ -53,6 +53,7 @@ throw new global::System.ArgumentNullException(nameof(src));
 if (src.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(src));
 }
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "GenericIntrinsicCallKernels.CopyAndReleaseKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.NativeApi.GenericIntrinsicCallKernels.__gsharp_hfunc_CopyAndReleaseKernel.Resolve();
@@ -150,6 +151,7 @@ throw new global::System.ArgumentNullException(nameof(dst));
 if (src == global::System.IntPtr.Zero){
 throw new global::System.ArgumentNullException(nameof(src));
 }
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "GenericIntrinsicCallKernels.CopyAndReleaseKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.NativeApi.GenericIntrinsicCallKernels.__gsharp_hfunc_CopyAndReleaseKernel.Resolve();

@@ -885,16 +885,19 @@ public class AtomicsDifferentialTests
             Inputs = static (_, s) =>
             {
                 int rows = s.ThreadCount;
-                var state64 = new long[rows * 3];
-                var state32 = new int[rows * 2];
+                var state64 = new long[rows * 5];
+                var state32 = new int[rows * 3];
                 for (int i = 0; i < rows; i++)
                 {
-                    state64[i * 3 + 0] = -10L;
-                    state64[i * 3 + 1] = -64L;
-                    state64[i * 3 + 2] = -10L;
+                    state64[i * 5 + 0] = -10L;
+                    state64[i * 5 + 1] = -64L;
+                    state64[i * 5 + 2] = -10L;
+                    state64[i * 5 + 3] = long.MaxValue;
+                    state64[i * 5 + 4] = -7L;
 
-                    state32[i * 2 + 0] = int.MaxValue;
-                    state32[i * 2 + 1] = 100;
+                    state32[i * 3 + 0] = int.MaxValue;
+                    state32[i * 3 + 1] = 100;
+                    state32[i * 3 + 2] = -1;
                 }
 
                 return new DiffBuffers()
@@ -918,19 +921,25 @@ public class AtomicsDifferentialTests
 
                 for (int tid = 0; tid < rows; tid++)
                 {
-                    state64[tid * 3 + 0] = -15L;
-                    state64[tid * 3 + 1] = 42L;
-                    state64[tid * 3 + 2] = 99L;
+                    state64[tid * 5 + 0] = -15L;
+                    state64[tid * 5 + 1] = 42L;
+                    state64[tid * 5 + 2] = 99L;
+                    state64[tid * 5 + 3] = long.MinValue;
+                    state64[tid * 5 + 4] = -9876543210L;
 
-                    state32[tid * 2 + 0] = int.MinValue;
-                    state32[tid * 2 + 1] = 555;
+                    state32[tid * 3 + 0] = int.MinValue;
+                    state32[tid * 3 + 1] = 555;
+                    state32[tid * 3 + 2] = int.MaxValue;
 
-                    int o = tid * 5;
+                    int o = tid * 8;
                     output[o + 0] = 1;  // -15L < 0L is true (1)
                     output[o + 1] = -1; // (-64L) >> 62 is -1 (arithmetic shift)
                     output[o + 2] = 1;  // -10L < 0L is true (1)
                     output[o + 3] = 1;  // unchecked(int.MaxValue + 1) == int.MinValue is true (1)
                     output[o + 4] = 555; // CompareExchange(ref slot, comparand: 100, value: 555) updates 100 -> 555
+                    output[o + 5] = 1;  // unchecked(long.MaxValue + 1L) == long.MinValue is true (1)
+                    output[o + 6] = 1;  // unchecked(-1 + int.MinValue) == int.MaxValue is true (1)
+                    output[o + 7] = 1;  // CompareExchange(comparand: -7L, value: -9876543210L) returns -7L; -7L < 0L (1)
                 }
             },
         };

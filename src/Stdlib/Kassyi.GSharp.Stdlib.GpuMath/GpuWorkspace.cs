@@ -231,6 +231,43 @@ public class GpuWorkspace : IGpuResourceScope
     public IDisposable ActivateContext() => new GpuKernelLoader.CudaContextScope(IsolatedContext.Handle);
 
     /// <summary>
+    /// Waits for the work queued on this workspace and throws the errors that its kernels reported since the previous
+    /// read of the workspace stream.
+    /// </summary>
+    /// <remarks>
+    /// Kernels report their errors without a synchronization; GpuMath throws them at the next read of the workspace
+    /// stream (a copy to the host, a comparison, a bit length). Call this method to check at a point of your choice,
+    /// for example after a sequence of operations whose results stay on the device. In CPU fallback mode the operations
+    /// throw at the call, and this method does nothing.
+    /// </remarks>
+    /// <exception cref="OverflowException">
+    /// A result did not fit in the buffer the caller chose, or an unsigned result was below zero (a domain error).
+    /// </exception>
+    /// <exception cref="InvalidOperationException">
+    /// An on-device correction did not converge, or the workspace stream is capturing a CUDA graph, which cannot wait.
+    /// </exception>
+    /// <exception cref="AggregateException">Both a domain error and a correction failure were reported.</exception>
+    public void ThrowIfDeviceErrors()
+    {
+        if (GpuKernelLoader.IsCpuFallbackMode)
+        {
+            return;
+        }
+
+        using (ActivateContext())
+        {
+            if (DeviceCounted.IsCapturing(this))
+            {
+                throw new InvalidOperationException(
+                    "The workspace stream is capturing a CUDA graph, which cannot wait for the device; check " +
+                    "after the graph is launched instead.");
+            }
+
+            Provider.SynchronizeStream(Stream);
+        }
+    }
+
+    /// <summary>
     /// Releases all device memory resources, temporary pooled buffers, and workspace handles held by this context.
     /// </summary>
     public void Dispose()

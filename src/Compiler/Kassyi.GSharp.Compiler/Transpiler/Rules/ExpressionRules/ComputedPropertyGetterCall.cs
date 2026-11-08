@@ -7,7 +7,7 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules;
 /// <c>s.__gsharp_mb_Value(x)</c>.
 /// </summary>
 /// <remarks>
-/// <c>StructTranspiler</c> emits the getter and setter as member functions under the C++ name of the property
+/// <c>StructPropertyEmitter</c> emits the getter and setter as member functions under the C++ name of the property
 /// (<see cref="CppNameResolver"/>), so the caller writes the receiver and the name as for any member, a <c>ref</c>
 /// receiver included. A computed property is defined by <see cref="StructAbiMembers.IsComputedProperty"/>.
 /// </remarks>

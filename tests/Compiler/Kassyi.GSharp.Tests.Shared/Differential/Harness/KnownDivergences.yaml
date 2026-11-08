@@ -196,21 +196,6 @@
       paths: [Managed, Native]
       columns: [observed]
 
-- issue: 1057
-  title: "[Bug]: Interlocked long overloads return unsigned long long in the generated C++, so signed uses of the result are wrong"
-  entries:
-    # Interlocked.Add, Exchange and CompareExchange(ref long) return unsigned long long in C++
-    - case: AtomicsDifferentialKernels.InterlockedReturnExpressionKernel
-      paths: [Native, Cuda]
-      columns: [add64_lt_zero, exch64_sar_sign, cas64_lt_zero]
-
-- issue: 1058
-  title: "[Bug]: __gsharp_atomicAdd(int*, int) adds in signed int, so a wrapping Interlocked.Add is undefined behavior on CUDA"
-  entries:
-    - case: AtomicsDifferentialKernels.InterlockedReturnExpressionKernel
-      paths: [Cuda]
-      columns: [add32_wrap_min]
-
 - issue: 1060
   title: "[Bug]: StackLinq ElementAtOrDefault with a negative index enumerates the source and runs upstream side effects"
   entries:
@@ -225,10 +210,3 @@
       paths: [Cuda]
       columns: [sharedRef, observed]
 
-- issue: 1091
-  title: "[Bug]: A warp shuffle in a Gpu.GridStrideLoop body is not split on the CPU paths: native returns the lane's own value, managed throws"
-  entries:
-    # Warp.ShuffleDownSync directly inside a Gpu.GridStrideLoop lambda is not split by StateMachineLowerer
-    - case: PendingBugsDifferentialKernels.GridStrideLoopUniformWarpShuffleKernel
-      paths: [Native]
-      columns: [iter0_down1, iter1_down1]

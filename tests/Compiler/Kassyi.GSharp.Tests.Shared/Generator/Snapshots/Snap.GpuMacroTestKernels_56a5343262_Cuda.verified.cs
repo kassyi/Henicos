@@ -118,6 +118,7 @@ throw new global::System.ArgumentNullException(nameof(outputBuffer));
 if (outputBuffer.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(outputBuffer));
 }
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "GpuMacroTestKernels.Kernel_MacroTest_FillAndSingle");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Stdlib.GpuMath.Tests.Kernels.GpuMacroTestKernels.__gsharp_hfunc_Kernel_MacroTest_FillAndSingle.Resolve();
@@ -182,6 +183,7 @@ public static unsafe void LaunchKernel_MacroTest_FillAndSinglePtr(global::System
 if (outputBuffer == global::System.IntPtr.Zero){
 throw new global::System.ArgumentNullException(nameof(outputBuffer));
 }
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "GpuMacroTestKernels.Kernel_MacroTest_FillAndSingle");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Stdlib.GpuMath.Tests.Kernels.GpuMacroTestKernels.__gsharp_hfunc_Kernel_MacroTest_FillAndSingle.Resolve();

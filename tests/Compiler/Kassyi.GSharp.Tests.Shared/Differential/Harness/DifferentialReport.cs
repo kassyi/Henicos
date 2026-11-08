@@ -96,6 +96,7 @@ public sealed class DifferentialReport
     private readonly List<PropertyFailure> _propertyFailures = [];
     private readonly List<StaleDivergence> _stale = [];
     private readonly List<LaunchShape> _executedShapes = [];
+    private readonly List<(int Seed, LaunchShape Shape)> _skippedCudaTraps = [];
 
     internal DifferentialReport(DifferentialCase testCase, IReadOnlyList<DiffPathRunner> paths, IReadOnlyList<int> seeds, string? testSeed)
     {
@@ -132,6 +133,12 @@ public sealed class DifferentialReport
     /// <summary>Gets the post-launch property check failures.</summary>
     public IReadOnlyList<PropertyFailure> PropertyFailures => _propertyFailures;
 
+    /// <summary>
+    /// Gets the seeds and shapes whose CUDA cell was not run because it raises a real GPU fault and
+    /// <see cref="CudaTrapGate.IsEnabled"/> is false.
+    /// </summary>
+    public IReadOnlyList<(int Seed, LaunchShape Shape)> SkippedCudaTraps => _skippedCudaTraps;
+
     /// <summary>Gets the registry entries that no longer reproduce.</summary>
     public IReadOnlyList<StaleDivergence> StaleDivergences => _stale;
 
@@ -157,6 +164,8 @@ public sealed class DifferentialReport
     internal void Add(PropertyFailure propertyFailure) => _propertyFailures.Add(propertyFailure);
 
     internal void Add(StaleDivergence stale) => _stale.Add(stale);
+
+    internal void AddSkippedCudaTrap(int seed, LaunchShape shape) => _skippedCudaTraps.Add((seed, shape));
 
     /// <inheritdoc/>
     public override string ToString()
@@ -246,6 +255,14 @@ public sealed class DifferentialReport
         if (known.Count > 0)
         {
             text.AppendLine($"  known divergences seen: {known.Count} cell{(known.Count == 1 ? "" : "s")} in {string.Join(", ", known.Select(static m => $"\"{m.ColumnName}\"").Distinct())}");
+        }
+
+        if (_skippedCudaTraps.Count > 0)
+        {
+            text.AppendLine(
+                $"  CUDA fault seeds not run: {_skippedCudaTraps.Count} (seeds {string.Join(", ", _skippedCudaTraps.Select(static t => t.Seed).Distinct())}); each " +
+                CudaTrapGate.SkipReason
+            );
         }
 
         if (failingSeeds.Count > 0)

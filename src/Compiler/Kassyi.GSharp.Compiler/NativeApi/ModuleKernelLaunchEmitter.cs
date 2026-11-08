@@ -89,6 +89,7 @@ internal static class ModuleKernelLaunchEmitter
         ImmutableArray<ModuleKernelLaunchParameter> parameters,
         bool packContext)
     {
+        WriteLaunchLimitCheck(writer, launcherName, parameters);
         writer.AppendLine("using var scope = new GpuKernelLoader.CudaContextScope();");
         writer.Append("var kernel = GpuKernelLoader.LoadAotKernel(s_fatbin_");
         AppendSanitizedIdentifier(writer, moduleName);
@@ -117,6 +118,39 @@ internal static class ModuleKernelLaunchEmitter
         EmitKernelLaunch(writer, parameters, packContext);
         EmitBufferOutputs(writer, parameters);
     }
+
+    // global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(<gridDimX or 1>, ..., <blockDimZ or 1>, "<launcher>");
+    // [WHY] A launch beyond the limits of every GPU is rejected with the same ArgumentOutOfRangeException as the
+    // launchers of [GpuKernel] methods (LaunchLimitEmitter, #799), before the context and the device allocations. A
+    // launcher without dimension parameters launches 1 x 1 x 1 blocks of 1 thread, which needs no check.
+    private static void WriteLaunchLimitCheck(SourceWriter writer, string launcherName,
+        ImmutableArray<ModuleKernelLaunchParameter> parameters)
+    {
+        var hasDimension = parameters
+            .AsStackEnumerable()
+            .Any(static p => IsDimensionParameter(p.Name));
+        if (!hasDimension)
+        {
+            return;
+        }
+
+        writer.Append("global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch");
+        using (writer.Parentheses())
+        {
+            writer.Append($"{GetLaunchParamOrValue(parameters, "gridDimX", "1")}, ");
+            writer.Append($"{GetLaunchParamOrValue(parameters, "gridDimY", "1")}, ");
+            writer.Append($"{GetLaunchParamOrValue(parameters, "gridDimZ", "1")}, ");
+            writer.Append($"{GetLaunchParamOrValue(parameters, "blockDimX", "1")}, ");
+            writer.Append($"{GetLaunchParamOrValue(parameters, "blockDimY", "1")}, ");
+            writer.Append($"{GetLaunchParamOrValue(parameters, "blockDimZ", "1")}, ");
+            AppendStringLiteral(writer, launcherName);
+        }
+
+        writer.AppendLine(";");
+    }
+
+    private static bool IsDimensionParameter(string name) =>
+        name is "gridDimX" or "gridDimY" or "gridDimZ" or "blockDimX" or "blockDimY" or "blockDimZ";
 
     /// <summary>
     /// Appends <paramref name="value"/> as an escaped C# regular string literal, including the quotes.

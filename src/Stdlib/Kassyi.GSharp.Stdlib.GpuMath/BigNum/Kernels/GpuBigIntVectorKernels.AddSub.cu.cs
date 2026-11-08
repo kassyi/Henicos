@@ -217,37 +217,29 @@ public static partial class GpuBigIntVectorKernels
         int bitOffsetB = 0;
         int outExp = eA;
 
+        // Magnitudes of the same effective sign are added and can carry out of the top word; opposite ones are
+        // subtracted and cannot, as in DeviceVectorAddSubAlignedCore.
+        uint signB = core.IsScalar ? core.ScalarSign : core.Right.Signs[batchIdx];
+        int carryBits = core.Left.Signs[batchIdx] == (signB ^ ctx.OpSign) ? 1 : 0;
+
+        // The operand with the larger exponent moves left into the headroom of the result, all of it but the bit that
+        // a sum needs for its carry; the other operand moves right for the rest of the difference. A difference that
+        // fits that room is exact; a larger one drops only bits below the result's last place.
         if (eA > eB)
         {
             int diff = eA - eB;
-            int headroomA = (core.Result.NumWords - core.Left.NumWords) * 32;
-            if (headroomA < 0) headroomA = 0;
-            if (diff <= headroomA)
-            {
-                bitOffsetA = diff;
-                outExp = eB;
-            }
-            else
-            {
-                bitOffsetB = -diff;
-                outExp = eA;
-            }
+            int shift = AlignmentShift(diff, core.Result.NumWords, core.Left.NumWords, carryBits);
+            bitOffsetA = shift;
+            bitOffsetB = -(diff - shift);
+            outExp = eA - shift;
         }
         else if (eB > eA)
         {
             int diff = eB - eA;
-            int headroomB = (core.Result.NumWords - core.Right.NumWords) * 32;
-            if (headroomB < 0) headroomB = 0;
-            if (diff <= headroomB)
-            {
-                bitOffsetB = diff;
-                outExp = eA;
-            }
-            else
-            {
-                bitOffsetA = -diff;
-                outExp = eB;
-            }
+            int shift = AlignmentShift(diff, core.Result.NumWords, core.Right.NumWords, carryBits);
+            bitOffsetB = shift;
+            bitOffsetA = -(diff - shift);
+            outExp = eB - shift;
         }
 
         if (tid == 0)
@@ -263,5 +255,14 @@ public static partial class GpuBigIntVectorKernels
             BitOffsetB = bitOffsetB
         };
         DeviceVectorAddSubAlignedCore(coreCtx, syncThreads);
+    }
+
+    // The left shift of the operand with the larger exponent: the exponent difference, at most the bits of the result
+    // above the operand less carryBits kept free for the carry (0 when the result is not wider than the operand).
+    [GpuDeviceFunction, GpuInline]
+    public static int AlignmentShift(int diff, int resultWords, int operandWords, int carryBits)
+    {
+        int room = resultWords > operandWords ? (resultWords - operandWords) * 32 - carryBits : 0;
+        return diff < room ? diff : room;
     }
 }

@@ -294,7 +294,7 @@ methods:
     parameters:
       - name: mask
         type: uint
-        description: The 32-bit thread participation bitmask.
+        description: The 32-bit thread participation bitmask. It must contain the calling lane; a mask without it is undefined on CUDA and an InvalidOperationException on the CPU paths.
       - name: predicate
         type: bool
         description: The boolean condition evaluated by each thread.
@@ -308,7 +308,7 @@ methods:
     parameters:
       - name: mask
         type: uint
-        description: The 32-bit thread participation bitmask.
+        description: The 32-bit thread participation bitmask. It must contain the calling lane; a mask without it is undefined on CUDA and an InvalidOperationException on the CPU paths.
       - name: predicate
         type: bool
         description: The boolean condition evaluated by each thread.
@@ -322,7 +322,7 @@ methods:
     parameters:
       - name: mask
         type: uint
-        description: The 32-bit thread participation bitmask.
+        description: The 32-bit thread participation bitmask. It must contain the calling lane; a mask without it is undefined on CUDA and an InvalidOperationException on the CPU paths.
       - name: predicate
         type: bool
         description: The boolean condition evaluated by each thread.
@@ -339,7 +339,7 @@ methods:
     parameters:
       - name: mask
         type: uint
-        description: The 32-bit thread participation bitmask.
+        description: The 32-bit thread participation bitmask. It must contain the calling lane; a mask without it is undefined on CUDA and an InvalidOperationException on the CPU paths.
       - name: val
         type: T
         description: The value contributed by this thread.
@@ -356,7 +356,7 @@ methods:
     parameters:
       - name: mask
         type: uint
-        description: The 32-bit thread participation bitmask.
+        description: The 32-bit thread participation bitmask. It must contain the calling lane; a mask without it is undefined on CUDA and an InvalidOperationException on the CPU paths.
       - name: val
         type: T
         description: The value contributed by this thread.
@@ -373,7 +373,7 @@ methods:
     parameters:
       - name: mask
         type: uint
-        description: The 32-bit thread participation bitmask.
+        description: The 32-bit thread participation bitmask. It must contain the calling lane; a mask without it is undefined on CUDA and an InvalidOperationException on the CPU paths.
       - name: val
         type: T
         description: The value contributed by this thread.
@@ -390,7 +390,7 @@ methods:
     parameters:
       - name: mask
         type: uint
-        description: The 32-bit thread participation bitmask.
+        description: The 32-bit thread participation bitmask. It must contain the calling lane; a mask without it is undefined on CUDA and an InvalidOperationException on the CPU paths.
       - name: val
         type: T
         description: The value contributed by this thread.
@@ -407,7 +407,7 @@ methods:
     parameters:
       - name: mask
         type: uint
-        description: The 32-bit thread participation bitmask.
+        description: The 32-bit thread participation bitmask. It must contain the calling lane; a mask without it is undefined on CUDA and an InvalidOperationException on the CPU paths.
       - name: val
         type: T
         description: The value contributed by this thread.
@@ -424,7 +424,7 @@ methods:
     parameters:
       - name: mask
         type: uint
-        description: The 32-bit thread participation bitmask.
+        description: The 32-bit thread participation bitmask. It must contain the calling lane; a mask without it is undefined on CUDA and an InvalidOperationException on the CPU paths.
       - name: val
         type: T
         description: The value contributed by this thread.
@@ -988,16 +988,18 @@ methods:
   # 9. Special Registers & Hardware IDs
   # ===========================================================================
   - name: LaneId
-    nativeName: __lane_id
+    nativeName: __gsharp_lane_id
+    managed: ManagedGpuContext.LaneId
     summary: Returns the lane ID of the calling thread within its warp (0-31).
     returnType: int
-    returnDescription: The lane index within the current warp.
+    returnDescription: The lane index within the current warp, the linear thread index in the block (x fastest) modulo 32, as the %laneid register of the GPU.
 
   - name: WarpId
-    nativeName: __warp_id
+    nativeName: __gsharp_warp_id
+    managed: ManagedGpuContext.WarpId
     summary: Returns the warp ID of the calling warp within its thread block.
     returnType: int
-    returnDescription: The warp index within the current thread block.
+    returnDescription: The warp index within the current thread block, the linear thread index in the block (x fastest) divided by 32. It is not the %warpid register, which names a hardware warp slot that may change while the thread runs.
 
   - name: SmId
     nativeName: __smid

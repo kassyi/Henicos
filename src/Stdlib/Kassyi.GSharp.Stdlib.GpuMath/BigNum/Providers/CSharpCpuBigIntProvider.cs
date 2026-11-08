@@ -196,16 +196,20 @@ public sealed class CSharpCpuBigIntProvider : IGpuExecutionProvider
     public void Add(GpuWorkspace workspace, GpuBigUInt leftOperand, uint rightOperand,
         GpuBigUInt resultBuffer)
     {
+        ScalarResultWidth.ThrowIfNarrower(leftOperand, resultBuffer);
         var val = Read(leftOperand.DevicePointer, leftOperand.NumWords) + rightOperand;
         Write(val, resultBuffer.DevicePointer, resultBuffer.NumWords);
+        ScalarResultWidth.ThrowIfOutOfDomain(val, leftOperand.NumWords, resultBuffer.NumWords, "GpuBigIntMath.Add");
     }
 
     /// <inheritdoc/>
     public void Sub(GpuWorkspace workspace, GpuBigUInt leftOperand, uint rightOperand,
         GpuBigUInt resultBuffer)
     {
+        ScalarResultWidth.ThrowIfNarrower(leftOperand, resultBuffer);
         var val = Read(leftOperand.DevicePointer, leftOperand.NumWords) - rightOperand;
         Write(val, resultBuffer.DevicePointer, resultBuffer.NumWords);
+        ScalarResultWidth.ThrowIfOutOfDomain(val, leftOperand.NumWords, resultBuffer.NumWords, "GpuBigIntMath.Sub");
     }
 
 
@@ -324,8 +328,10 @@ public sealed class CSharpCpuBigIntProvider : IGpuExecutionProvider
     public void Mul(GpuWorkspace workspace, GpuBigUInt leftOperand, uint rightOperand,
         GpuBigUInt resultBuffer)
     {
+        ScalarResultWidth.ThrowIfNarrower(leftOperand, resultBuffer);
         var val = Read(leftOperand.DevicePointer, leftOperand.NumWords) * rightOperand;
         Write(val, resultBuffer.DevicePointer, resultBuffer.NumWords);
+        ScalarResultWidth.ThrowIfOutOfDomain(val, leftOperand.NumWords, resultBuffer.NumWords, "GpuBigIntMath.Mul");
     }
 
     /// <inheritdoc/>

@@ -94,7 +94,16 @@ public static partial class FermatTrialFactoringKernels
         int maxResults)
     {
         var threadId = (uint)(BlockIndex.X * BlockDimension.X + ThreadIndex.X);
-        var k32 = startOdd + (threadId * 2u);
+
+        // The candidates are the odd k from 3 to 2^32 - 1. k = 1 divides every number, and a candidate past 2^32 - 1
+        // would wrap to a small odd number outside the range, 1 included.
+        var candidate = (ulong)startOdd + (2UL * threadId);
+        if (candidate < 3UL || candidate > 0xFFFFFFFFUL)
+        {
+            return;
+        }
+
+        var k32 = (uint)candidate;
 
         if (!PassesQuadraticAndSmallPrimeSieve(k32))
         {
@@ -103,9 +112,9 @@ public static partial class FermatTrialFactoringKernels
 
         ulong k = k32;
 
-        // N(x) = 2x^2 - x + 11. x = 2^{exp mod (k-1)} mod k
-        var ePrime = exp % (k32 - 1u);
-        var x = Device_ModPow64_Under32Bit(2UL, ePrime, k);
+        // N(x) = 2x^2 - x + 11 with x = 2^exp mod k. The exponent is not reduced modulo k - 1: Fermat's little theorem
+        // holds only for a prime k, and a composite k that passes the sieve would be reported as a factor.
+        var x = Device_ModPow64_Under32Bit(2UL, exp, k);
 
         var x2 = (x * x) % k;
         var term1 = (2UL * x2) % k;
@@ -115,7 +124,8 @@ public static partial class FermatTrialFactoringKernels
         if (nModK == 0UL)
         {
             var idx = Gpu.AtomicAdd(ref resultCount[0], 1U);
-            if (idx < (uint)maxResults)
+            // A non-positive maxResults stores nothing: converted to uint, a negative one would allow every index.
+            if (maxResults > 0 && idx < (uint)maxResults)
             {
                 results[idx] = k32;
             }

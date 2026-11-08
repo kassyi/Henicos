@@ -46,18 +46,15 @@ internal sealed class PietrzakProverSession : IChainLeafRecorder, IDisposable
 
     public FermatPrpProof FinalizeProof(ISquaringModulus modulus, PietrzakClaim endpoints)
     {
-        for (var slot = 0; slot < _schedule.TotalLeafSlots; slot++)
-        {
-            if (!_store.HasLeafSlot(slot))
-            {
-                throw new InvalidOperationException(
-                    $"Pietrzak finalization is missing leaf slot {slot} (iteration {_schedule.GetLeafIteration(slot)}).");
-            }
-        }
+        ThrowIfLeafMissing();
 
+        // The tree is folded on raw residues; what the proof states and hashes is in the signed form |x|, which the
+        // verifier recomputes up to sign.
         var math = new PietrzakArithmetic(modulus);
         var words = _schedule.ResidueWords;
-        var alpha = _schedule.DeriveMergeChallenge(endpoints.X, endpoints.Y);
+        var residueE = math.Abs(endpoints.X);
+        var residueK = math.Abs(endpoints.Y);
+        var alpha = _schedule.DeriveMergeChallenge(residueE, residueK);
         var leafCount = _schedule.SegmentLeafCount;
         var workBase = _schedule.TotalLeafSlots;
 
@@ -77,14 +74,15 @@ internal sealed class PietrzakProverSession : IChainLeafRecorder, IDisposable
             }
         }
 
-        var claim = new PietrzakClaim(currentX, math.MulPow128(endpoints.Y, alpha, endpoints.X));
+        var claim = new PietrzakClaim(math.Abs(currentX), math.Abs(math.MulPow128(residueK, alpha, residueE)));
         var witnesses = new ReadOnlyMemory<uint>[_schedule.ProofPower];
 
         for (var round = 0; round < _schedule.ProofPower; round++)
         {
             var half = 1 << (_schedule.ProofPower - 1 - round);
-            var witnessMu = new uint[words];
-            _store.ReadSlot(workBase + half, witnessMu);
+            var rawMu = new uint[words];
+            _store.ReadSlot(workBase + half, rawMu);
+            var witnessMu = math.Abs(rawMu);
             witnesses[round] = witnessMu;
 
             if (round == _schedule.ProofPower - 1)
@@ -93,7 +91,7 @@ internal sealed class PietrzakProverSession : IChainLeafRecorder, IDisposable
             }
 
             var challenge = _schedule.DeriveRoundChallenge(round, claim, witnessMu);
-            var nextY = math.MulPow128(witnessMu, challenge, claim.Y);
+            var nextY = math.Abs(math.MulPow128(witnessMu, challenge, claim.Y));
 
             for (var j = 0; j < half; j++)
             {
@@ -107,10 +105,10 @@ internal sealed class PietrzakProverSession : IChainLeafRecorder, IDisposable
                 }
             }
 
-            claim = new PietrzakClaim(currentX, nextY);
+            claim = new PietrzakClaim(math.Abs(currentX), nextY);
         }
 
-        return new FermatPrpProof(_schedule.Header, endpoints.X, endpoints.Y, witnesses);
+        return new FermatPrpProof(_schedule.Header, residueE, residueK, witnesses);
     }
 
     public void Flush() => _store.Flush();
@@ -120,6 +118,19 @@ internal sealed class PietrzakProverSession : IChainLeafRecorder, IDisposable
         if (_store != null)
         {
             _store.Dispose();
+        }
+    }
+
+    private void ThrowIfLeafMissing()
+    {
+        for (var slot = 0; slot < _schedule.TotalLeafSlots; slot++)
+        {
+            if (!_store.HasLeafSlot(slot))
+            {
+                var iteration = _schedule.GetLeafIteration(slot);
+                throw new InvalidOperationException(
+                    $"Pietrzak finalization is missing leaf slot {slot} (iteration {iteration}).");
+            }
         }
     }
 

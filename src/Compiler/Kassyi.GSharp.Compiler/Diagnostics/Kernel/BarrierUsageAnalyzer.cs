@@ -131,8 +131,9 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
         InvocationExpressionSyntax invocation)
     {
         var unsupportedContext = FindUnsupportedContext(invocation, context.SemanticModel, isWarpShuffle: false);
+        var shuffleContext = FindUnsupportedContext(invocation, context.SemanticModel, isWarpShuffle: true);
         var byReferenceArgument = FindNonVariableByReferenceArgument(invocation, context.SemanticModel);
-        if (unsupportedContext == null && byReferenceArgument == null)
+        if (unsupportedContext == null && shuffleContext == null && byReferenceArgument == null)
         {
             return;
         }
@@ -145,17 +146,19 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
 
         // [WHY] A shuffle takes its arguments by value, so only where it stands matters. CUDA runs the shuffle where it
         // stands, so a project built only for CUDA, which has no CPU path, accepts it there.
-        if (SyncIntrinsicClassifier.Classify(callee).Kind == SyncIntrinsicKind.WarpShuffle)
+        var intrinsic = SyncIntrinsicClassifier.Classify(callee);
+        if (intrinsic.Kind == SyncIntrinsicKind.WarpShuffle)
         {
             if (!BuildsCpuPaths(context.Options))
             {
                 return;
             }
 
-            if (FindUnsupportedContext(invocation, context.SemanticModel, isWarpShuffle: true) is { } shuffleContext)
+            if (shuffleContext != null)
             {
                 context.ReportDiagnostic(GSharpDiagnostics.SuspendingCallInUnsupportedContext,
-                    invocation.GetLocation(), callee.Name, shuffleContext, WarpShuffleCallee);
+                    invocation.GetLocation(), callee.Name, shuffleContext,
+                    IsVoteOrReduction(intrinsic.Shuffle) ? WarpVoteCallee : WarpShuffleCallee);
             }
 
             return;
@@ -192,9 +195,17 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
 
     private const string WarpShuffleCallee = "is a warp shuffle";
 
-    // isWarpShuffle: a Gpu.GridStrideLoop body is left out for a warp shuffle. The CPU paths do not split it either,
-    // but the Stdlib reduces with shuffles there; that body is #1091 (A warp shuffle in a Gpu.GridStrideLoop body is
-    // not split on the CPU paths: native returns the lane's own value, managed throws), which removes this exception.
+    private const string WarpVoteCallee = "is a warp vote or reduction";
+
+    private static bool IsVoteOrReduction(WarpShuffleKind kind) =>
+        kind is WarpShuffleKind.Ballot or WarpShuffleKind.All or WarpShuffleKind.Any or WarpShuffleKind.ReduceAdd
+            or WarpShuffleKind.ReduceMin or WarpShuffleKind.ReduceMax or WarpShuffleKind.ReduceAnd
+            or WarpShuffleKind.ReduceOr or WarpShuffleKind.ReduceXor;
+
+    // isWarpShuffle: a Gpu.GridStrideLoop body is allowed for a warp shuffle, which the CPU lowering turns into a loop
+    // (#1091). A using or fixed statement and the scope of a using declaration are reported for a warp shuffle only:
+    // the CPU lowering does not flatten them, so the shuffle would not split there (#1172); a call that suspends there
+    // is GSH0003 / GSH0043 (BarrierDivergenceChecks).
     private static string? FindUnsupportedContext(InvocationExpressionSyntax invocation, SemanticModel semanticModel,
         bool isWarpShuffle)
     {
@@ -205,8 +216,8 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
         {
             switch (ancestor)
             {
-                // The transpiler inlines the body (CUDA), and the lowering inlines a SyncGrid body and turns ForUnroll into a
-                // loop (CPU dialects, managed)
+                // The transpiler inlines the body (CUDA), and the lowering inlines a SyncGrid body and turns ForUnroll, and a
+                // GridStrideLoop whose body holds a warp shuffle, into a loop (CPU dialects, managed)
                 case AnonymousFunctionExpressionSyntax when IsInlinedMacroBody(ancestor, semanticModel):
                     break;
                 case AnonymousFunctionExpressionSyntax when isWarpShuffle &&
@@ -225,6 +236,13 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
                 case BinaryExpressionSyntax binary
                     when child == binary.Right && binary.IsKind(SyntaxKind.CoalesceExpression):
                     return "as the right operand of '??'";
+                case UsingStatementSyntax usingStatement when isWarpShuffle && child == usingStatement.Statement:
+                    return "in a using statement";
+                case FixedStatementSyntax fixedStatement when isWarpShuffle && child == fixedStatement.Statement:
+                    return "in a fixed statement";
+                case BlockSyntax block when isWarpShuffle &&
+                                            BarrierDivergenceChecks.IsInUsingDeclarationScope(block, invocation):
+                    return "in the scope of a using declaration";
             }
         }
 

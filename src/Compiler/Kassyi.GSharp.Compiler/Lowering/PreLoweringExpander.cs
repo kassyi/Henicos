@@ -1,9 +1,10 @@
 namespace Kassyi.GSharp.Compiler.Lowering;
 
 /// <summary>
-/// Expands macro statements before the state-machine lowering passes run: a <c>Gpu.ForUnroll</c> that contains phase
-/// barriers into a standard <c>for</c> loop, and a <c>Gpu.SyncGrid(body)</c> into the statements of its body with a
-/// <c>Gpu.SyncGrid()</c> in each gap (<see cref="SyncGridBody"/>).
+/// Expands macro statements before the state-machine lowering passes run: a <c>Gpu.ForUnroll</c> or
+/// <c>Gpu.GridStrideLoop</c> that contains phase barriers into a standard <c>for</c> loop, and a
+/// <c>Gpu.SyncGrid(body)</c> into the statements of its body with a <c>Gpu.SyncGrid()</c> in each gap
+/// (<see cref="SyncGridBody"/>).
 /// </summary>
 /// <remarks>
 /// The state machine splits only at barriers that are statements of the method (as Roslyn lifts every <c>await</c> to
@@ -35,8 +36,16 @@ public sealed class PreLoweringExpander(SemanticModel? semanticModel = null) : C
             return Visit(ExpandSyncGrid(node, syncGridBody));
         }
 
+        if (node.Expression is InvocationExpressionSyntax loop &&
+            TryClassifyMacro(loop, GpuMacroKind.GridStrideLoop, out var gridStrideCall) &&
+            ExpandGridStrideLoop(node, loop, gridStrideCall) is { } gridStrideLoop)
+        {
+            // Top-down expansion: nested macros in the body are expanded in turn
+            return Visit(gridStrideLoop);
+        }
+
         if (node.Expression is not InvocationExpressionSyntax invocation ||
-            !TryClassifyForUnroll(invocation, out var call))
+            !TryClassifyMacro(invocation, GpuMacroKind.ForUnroll, out var call))
         {
             return base.VisitExpressionStatement(node);
         }
@@ -384,40 +393,158 @@ public sealed class PreLoweringExpander(SemanticModel? semanticModel = null) : C
             _ => throw new InvalidOperationException($"Cannot expand a SyncGrid body element of kind '{node.Kind()}'.")
         };
 
-    private bool TryClassifyForUnroll(InvocationExpressionSyntax invocation, out GpuMacroCall call)
+    // The call as the semantic model resolves it; without one (the Tier 2 tests), by its spelling and argument count
+    private bool TryClassifyMacro(InvocationExpressionSyntax invocation, GpuMacroKind kind, out GpuMacroCall call)
     {
         if (semanticModel != null)
         {
             call = semanticModel.GetSymbol(invocation) is IMethodSymbol methodSymbol
                 ? GpuMacroClassifier.Classify(methodSymbol)
                 : default;
-            return call.Kind == GpuMacroKind.ForUnroll;
+            return call.Kind == kind;
         }
 
-        call = default;
-        var isForUnrollSyntax = invocation.Expression switch
+        var name = invocation.Expression switch
         {
             MemberAccessExpressionSyntax
             {
                 Expression: IdentifierNameSyntax { Identifier.ValueText: TypeConstants.GpuType },
-                Name.Identifier.ValueText: TypeConstants.GpuMacros.ForUnroll
-            } => true,
-            IdentifierNameSyntax { Identifier.ValueText: TypeConstants.GpuMacros.ForUnroll } => true,
-            _ => false
+                Name.Identifier.ValueText: var memberName
+            } => memberName,
+            IdentifierNameSyntax { Identifier.ValueText: var identifierName } => identifierName,
+            _ => null
         };
-        if (!isForUnrollSyntax)
+        call = (kind, name, invocation.ArgumentList.Arguments.Count) switch
         {
-            return false;
-        }
-
-        var argCount = invocation.ArgumentList.Arguments.Count;
-        call = argCount switch
-        {
-            3 => new GpuMacroCall(GpuMacroKind.ForUnroll, bodyOrdinal: 2),
-            4 => new GpuMacroCall(GpuMacroKind.ForUnroll, hasContext: true, bodyOrdinal: 3),
+            (GpuMacroKind.ForUnroll, TypeConstants.GpuMacros.ForUnroll, 3) =>
+                new GpuMacroCall(GpuMacroKind.ForUnroll, bodyOrdinal: 2),
+            (GpuMacroKind.ForUnroll, TypeConstants.GpuMacros.ForUnroll, 4) =>
+                new GpuMacroCall(GpuMacroKind.ForUnroll, hasContext: true, bodyOrdinal: 3),
+            (GpuMacroKind.GridStrideLoop, TypeConstants.GpuMacros.GridStrideLoop, 2) =>
+                new GpuMacroCall(GpuMacroKind.GridStrideLoop, bodyOrdinal: 1),
+            (GpuMacroKind.GridStrideLoop, TypeConstants.GpuMacros.GridStrideLoop, 3) =>
+                new GpuMacroCall(GpuMacroKind.GridStrideLoop, hasContext: true, bodyOrdinal: 2),
             _ => default
         };
-        return call.Kind == GpuMacroKind.ForUnroll;
+        return call.Kind == kind;
+    }
+
+    // [WHY] A grid-stride loop whose body splits the state machine (a warp shuffle, vote or reduction; a barrier there is
+    // GSH0037) becomes a for loop here, as ForUnroll does, so that the state machine splits its body like any loop body
+    // (#1091). It is the loop that GridStrideLoopMacroRule and the managed rewrite write, through the same prelude
+    // helpers: the count and the step are read once before the loop, and the unsigned index starts and steps at values
+    // that saturate at 2^31 (#712). The body is moved, not copied, so it keeps its original-span annotations and needs
+    // no region.
+    // {
+    //     uint __gsharp_lgsl_n_<id> = __gsharp_grid_stride_count(<count>);
+    //     uint __gsharp_lgsl_s_<id> = __gsharp_grid_stride_step();
+    //     for (uint __gsharp_lgsl_<id> = __gsharp_grid_stride_start(); __gsharp_lgsl_<id> < __gsharp_lgsl_n_<id>;
+    //          __gsharp_lgsl_<id> += __gsharp_lgsl_s_<id>)
+    //     {
+    //         int __gsharp_unroll_<id> = __gsharp_grid_stride_index(__gsharp_lgsl_<id>);
+    //         <body>
+    //     }
+    // }
+    private BlockSyntax? ExpandGridStrideLoop(ExpressionStatementSyntax node, InvocationExpressionSyntax invocation,
+        GpuMacroCall call)
+    {
+        var args = invocation.ArgumentList.Arguments;
+        if (call.GetBody(args) is not { } lambdaExpr ||
+            !ContainsBarrier(lambdaExpr.Body) ||
+            call.GetArgument(args, call.ValueOrdinal)?.Expression is not { } countArgument ||
+            GpuCodeConstraints.GetMacroLoopParameter(lambdaExpr, call.HasContext) is not { } loopParam ||
+            loopParam.Identifier.ValueText.Length == 0)
+        {
+            return null;
+        }
+
+        ParameterSyntax? contextParam = null;
+        ExpressionSyntax? contextArgExpr = null;
+        if (call.GetContext(args) is { } contextArgument &&
+            lambdaExpr is ParenthesizedLambdaExpressionSyntax { ParameterList.Parameters.Count: 2 } parenLambda)
+        {
+            contextParam = parenLambda.ParameterList.Parameters[0];
+            contextArgExpr = contextArgument.WithoutTrivia();
+        }
+
+        var id = _expansionCounter++;
+        var indexName = $"{GSharpInternalNames.Lowering.UnrollIndexPrefix}{id}";
+        var unsignedIndex = $"{GSharpInternalNames.Lowering.LoweredGridStrideIndexPrefix}{id}";
+        var count = $"{GSharpInternalNames.Lowering.LoweredGridStrideCountPrefix}{id}";
+        var step = $"{GSharpInternalNames.Lowering.LoweredGridStrideStepPrefix}{id}";
+        var annotations = ImmutableArray.CreateRange(
+            node.GetAnnotations(LoweringAnnotations.OriginalSpanAnnotationKind)
+        );
+
+        var substituter = new MacroLambdaSubstituter(semanticModel, loopParam, indexName, contextParam, contextArgExpr);
+        var body = ToBodyBlock(substituter.Visit(lambdaExpr.Body) ?? lambdaExpr.Body, annotations);
+
+        var countCall = CallPrelude(GSharpInternalNames.Prelude.GridStrideCount, countArgument.WithoutTrivia());
+        var countDeclaration = DeclareLocal(SyntaxKind.UIntKeyword, count, countCall, annotations);
+        var stepCall = CallPrelude(GSharpInternalNames.Prelude.GridStrideStep);
+        var stepDeclaration = DeclareLocal(SyntaxKind.UIntKeyword, step, stepCall, annotations);
+
+        // int __gsharp_unroll_<id> = __gsharp_grid_stride_index(__gsharp_lgsl_<id>);
+        // (a helper instead of a cast: a cast that the lowering builds has no type the emitters can resolve)
+        var indexValue = CallPrelude(GSharpInternalNames.Prelude.GridStrideIndex, SyntaxFactory.IdentifierName(unsignedIndex));
+        var indexDeclaration = DeclareLocal(SyntaxKind.IntKeyword, indexName, indexValue, annotations);
+        var loopBody = SyntaxFactory.Block(body.Statements.Insert(0, indexDeclaration))
+            .WithAdditionalAnnotations(annotations);
+
+        // uint __gsharp_lgsl_<id> = __gsharp_grid_stride_start()
+        var startDeclarator = SyntaxFactory.VariableDeclarator(SyntaxFactory.Identifier(unsignedIndex))
+            .WithInitializer(SyntaxFactory.EqualsValueClause(CallPrelude(GSharpInternalNames.Prelude.GridStrideStart)));
+        var startDeclaration = SyntaxFactory.VariableDeclaration(
+            SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.UIntKeyword)),
+            SyntaxFactory.SingletonSeparatedList(startDeclarator)
+        ).WithAdditionalAnnotations(annotations);
+
+        // __gsharp_lgsl_<id> < __gsharp_lgsl_n_<id>
+        var condition = SyntaxFactory.BinaryExpression(
+            SyntaxKind.LessThanExpression,
+            SyntaxFactory.IdentifierName(unsignedIndex),
+            SyntaxFactory.IdentifierName(count)
+        ).WithAdditionalAnnotations(annotations);
+
+        // __gsharp_lgsl_<id> += __gsharp_lgsl_s_<id>
+        var incrementor = SyntaxFactory.AssignmentExpression(
+            SyntaxKind.AddAssignmentExpression,
+            SyntaxFactory.IdentifierName(unsignedIndex),
+            SyntaxFactory.IdentifierName(step)
+        ).WithAdditionalAnnotations(annotations);
+
+        var forStatement = SyntaxFactory.ForStatement(
+            startDeclaration,
+            SyntaxFactory.SeparatedList<ExpressionSyntax>(),
+            condition,
+            SyntaxFactory.SingletonSeparatedList<ExpressionSyntax>(incrementor),
+            loopBody
+        ).WithAdditionalAnnotations(annotations);
+
+        return SyntaxFactory.Block(countDeclaration, stepDeclaration, forStatement)
+            .WithAdditionalAnnotations(annotations);
+    }
+
+    // <name>(<argument>?): a prelude helper, which the managed path reaches through using static ManagedGpuContext
+    private static InvocationExpressionSyntax CallPrelude(string name, ExpressionSyntax? argument = null) =>
+        SyntaxFactory.InvocationExpression(
+            SyntaxFactory.IdentifierName(name),
+            argument == null
+                ? SyntaxFactory.ArgumentList()
+                : SyntaxFactory.ArgumentList(SyntaxFactory.SingletonSeparatedList(SyntaxFactory.Argument(argument)))
+        );
+
+    // <type> <name> = <value>;
+    private static LocalDeclarationStatementSyntax DeclareLocal(SyntaxKind type, string name, ExpressionSyntax value,
+        ImmutableArray<SyntaxAnnotation> annotations)
+    {
+        var declarator = SyntaxFactory.VariableDeclarator(SyntaxFactory.Identifier(name))
+            .WithInitializer(SyntaxFactory.EqualsValueClause(value));
+        var declaration = SyntaxFactory.VariableDeclaration(
+            SyntaxFactory.PredefinedType(SyntaxFactory.Token(type)),
+            SyntaxFactory.SingletonSeparatedList(declarator)
+        ).WithAdditionalAnnotations(annotations);
+        return SyntaxFactory.LocalDeclarationStatement(declaration).WithAdditionalAnnotations(annotations);
     }
 
     private bool TryBuildBoundExpression(

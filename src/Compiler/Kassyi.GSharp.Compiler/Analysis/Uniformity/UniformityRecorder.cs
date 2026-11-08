@@ -9,27 +9,25 @@ namespace Kassyi.GSharp.Compiler.Analysis;
 /// and where the barriers and barrier-reaching calls are.
 /// </summary>
 /// <remarks>
+/// <para>
 /// A spliced lambda or local function body is opaque (<see cref="SplicedBody.IsOpaque"/>): its parameters are
 /// thread-variant, as its callers are not followed, and its events carry the body, as an assignment in it to a local
 /// declared outside it only adds to the variance. A local function body spliced where it is called runs with that call:
 /// its parameters get the variance of the arguments, and the value it returns becomes the result of the call. The index
 /// of a <c>Gpu.ForUnroll</c> body counts the same in every thread.
+/// </para>
+/// <para>
+/// The value indices are kept in <see cref="UniformityValues"/>, the bodies being built in
+/// <see cref="UniformityBodies"/>; the walk over what an operation writes is <see cref="UniformityWrites"/>'s.
+/// </para>
 /// </remarks>
 /// <param name="method">The analyzed method.</param>
 /// <param name="masks">Which parameters of <paramref name="method"/> receive a thread-variant argument.</param>
 internal sealed class UniformityRecorder(IMethodSymbol method, ArgumentMasks masks) : IFlowRecorder
 {
-    private readonly Dictionary<ISymbol, int> _symbols = new(SymbolEqualityComparer.Default);
-    private readonly Dictionary<(ControlFlowGraph Graph, CaptureId Id), int> _captures = new();
+    private readonly UniformityBodies _bodies = new();
 
-    // The result of each local function call whose body is spliced where it is called
-    private readonly Dictionary<SyntaxNode, int> _results = new();
-
-    // The bodies being built, innermost last
-    private readonly List<SplicedBody> _bodies = [];
-
-    // The bodies of the lambdas and local functions being built that may run at any time
-    private readonly ImmutableArray<SyntaxNode>.Builder _opaque = ImmutableArray.CreateBuilder<SyntaxNode>();
+    private UniformityValues? _values;
 
     private MemoryUniformity? _memory;
 
@@ -44,35 +42,30 @@ internal sealed class UniformityRecorder(IMethodSymbol method, ArgumentMasks mas
     /// <summary>The barriers and barrier-reaching calls of the graph.</summary>
     public Dictionary<SyntaxNode, BarrierSite> Sites { get; } = new();
 
-    /// <summary>The memory that the threads share, whose values follow the locals, parameters and flow captures.</summary>
+    /// <summary>
+    /// The memory that the threads share, whose values follow the locals, parameters and flow captures.
+    /// </summary>
     public MemoryUniformity Memory => _memory ??= new MemoryUniformity(this);
 
     /// <summary>The number of values: locals, parameters, flow captures, local function results and memory.</summary>
-    public int ValueCount => _symbols.Count + _captures.Count + _results.Count + Memory.Count;
+    public int ValueCount => Values.Count + Memory.Count;
+
+    private UniformityValues Values => _values ??= new UniformityValues(this);
 
     /// <summary>The value index of a local or parameter, when the graph writes it.</summary>
-    public bool TryGetValue(ISymbol symbol, out int index) => _symbols.TryGetValue(symbol, out index);
+    public bool TryGetValue(ISymbol symbol, out int index) => Values.TryGetValue(symbol, out index);
 
     /// <summary>
     /// The value index of the result of a local function call, when its body is spliced where it is called.
     /// </summary>
-    public bool TryGetResult(SyntaxNode call, out int index) => _results.TryGetValue(call, out index);
+    public bool TryGetResult(SyntaxNode call, out int index) => Values.TryGetResult(call, out index);
 
     /// <summary>The value index of a flow capture, when the graph writes it.</summary>
     public bool TryGetCapture(ControlFlowGraph graph, CaptureId id, out int index) =>
-        _captures.TryGetValue((graph, id), out index);
+        Values.TryGetCapture(graph, id, out index);
 
     /// <summary>The value index of a flow capture, given one on first use.</summary>
-    public int ValueOf(ControlFlowGraph graph, CaptureId id)
-    {
-        if (!_captures.TryGetValue((graph, id), out var index))
-        {
-            index = ValueCount;
-            _captures.Add((graph, id), index);
-        }
-
-        return index;
-    }
+    public int ValueOf(ControlFlowGraph graph, CaptureId id) => Values.ValueOf(graph, id);
 
     // Node 0 is the start: the parameters of the method get their variance from the masks
     public void OnNode(int node)
@@ -123,11 +116,12 @@ internal sealed class UniformityRecorder(IMethodSymbol method, ArgumentMasks mas
 
     public void OnFlowCapture(IFlowCaptureOperation capture, ControlFlowGraph graph, int node)
     {
-        AddWritten(ValueOf(graph, capture.Id), node);
+        UniformityWrites.AddWritten(Nodes[node], ValueOf(graph, capture.Id));
         AddWrite(capture, graph, node);
     }
 
-    public void OnObjectCreation(IObjectCreationOperation creation, int node) => RecordNode(NodesOf, creation.Syntax, node);
+    public void OnObjectCreation(IObjectCreationOperation creation, int node) =>
+        RecordNode(NodesOf, creation.Syntax, node);
 
     public void OnCall(IInvocationOperation invocation, int node)
     {
@@ -136,8 +130,8 @@ internal sealed class UniformityRecorder(IMethodSymbol method, ArgumentMasks mas
     }
 
     // A call that splits the state machine; a barrier, or a call that reaches one, is also a site of GSH0037. The gaps
-    // inside a Gpu.SyncGrid(body) are not split points here: the call is (a grid barrier). The memory, though, is synced
-    // in each gap, where the expansion places the grid sync, and not where the body starts.
+    // inside a Gpu.SyncGrid(body) are not split points here: the call is (a grid barrier). The memory, though, is
+    // synced in each gap, where the expansion places the grid sync, and not where the body starts.
     public void OnSplit(SplitPoint split, int node)
     {
         if (split.Kind == SplitKind.Gap)
@@ -162,7 +156,7 @@ internal sealed class UniformityRecorder(IMethodSymbol method, ArgumentMasks mas
         Sites[call] = new BarrierSite(scope, split.BarrierCall, graph);
         if (split.BarrierCall is { } invocation)
         {
-            Nodes[node].Events.Add(new UniformityEvent(UniformityEventKind.Site, invocation, graph, Opaque));
+            Nodes[node].Events.Add(new UniformityEvent(UniformityEventKind.Site, invocation, graph, _bodies.Opaque));
         }
         else if (split.Kind == SplitKind.Call)
         {
@@ -198,38 +192,29 @@ internal sealed class UniformityRecorder(IMethodSymbol method, ArgumentMasks mas
         if (body is { Call: { } call, CallGraph: { } callGraph })
         {
             BindArguments(call, callGraph, parameters, node);
-            ResultOf(call.Syntax);
+            Values.ResultOf(call.Syntax);
         }
 
-        if (body.IsOpaque)
-        {
-            _opaque.Add(body.Syntax);
-        }
-
-        _bodies.Add(body);
+        _bodies.Push(body);
     }
 
-    public void OnBodyExited(SplicedBody body, int node)
-    {
-        _bodies.RemoveAt(_bodies.Count - 1);
-        if (body.IsOpaque)
-        {
-            _opaque.RemoveAt(_opaque.Count - 1);
-        }
-    }
+    public void OnBodyExited(SplicedBody body, int node) => _bodies.Pop(body);
 
     // return <value> of a local function body spliced where it is called: the result of that call
     public void OnBodyReturn(IOperation value, ControlFlowGraph graph, int node)
     {
-        if (_bodies.Count == 0 || _bodies[_bodies.Count - 1] is not { Call: { } call })
+        if (_bodies.Innermost is not { Call: { } call })
         {
             return;
         }
 
-        var result = ResultOf(call.Syntax);
-        AddWritten(result, node);
-        Nodes[node].Events.Add(new UniformityEvent(UniformityEventKind.Bind, value, graph, Opaque, result));
+        var result = Values.ResultOf(call.Syntax);
+        UniformityWrites.AddWritten(Nodes[node], result);
+        Nodes[node].Events.Add(new UniformityEvent(UniformityEventKind.Bind, value, graph, _bodies.Opaque, result));
     }
+
+    public void OnTopOperation(IOperation operation, ControlFlowGraph graph, int node) =>
+        Nodes[node].Events.Add(new UniformityEvent(UniformityEventKind.Observe, operation, graph, _bodies.Opaque));
 
     // A by-value or ref parameter starts with the variance of its argument; an out parameter is written before it is
     // read
@@ -245,25 +230,23 @@ internal sealed class UniformityRecorder(IMethodSymbol method, ArgumentMasks mas
             }
 
             Nodes[node].Events.Add(new UniformityEvent(UniformityEventKind.Bind, argument.Value, callGraph, null,
-                ValueOf(parameters[ordinal])));
+                Values.ValueOf(parameters[ordinal])));
         }
     }
 
-    public void OnTopOperation(IOperation operation, ControlFlowGraph graph, int node) =>
-        Nodes[node].Events.Add(new UniformityEvent(UniformityEventKind.Observe, operation, graph, Opaque));
-
-    private SyntaxNode? Opaque => _opaque.Count > 0 ? _opaque[_opaque.Count - 1] : null;
-
     private void AddWrite(IOperation operation, ControlFlowGraph graph, int node)
     {
-        AllocateTargets(operation, node);
-        Nodes[node].Events.Add(new UniformityEvent(UniformityEventKind.Write, operation, graph, Opaque));
+        UniformityWrites.AllocateTargets(Values, Nodes[node], operation);
+        Nodes[node].Events.Add(new UniformityEvent(UniformityEventKind.Write, operation, graph, _bodies.Opaque));
     }
 
     private void Define(IParameterSymbol parameter, ThreadVariance variance, int node) =>
-        Nodes[node].Events.Add(new UniformityEvent(UniformityEventKind.Define, null, null, null, ValueOf(parameter), variance));
+        Nodes[node].Events.Add(
+            new UniformityEvent(UniformityEventKind.Define, null, null, null, Values.ValueOf(parameter), variance)
+        );
 
-    private static void RecordNode(Dictionary<SyntaxNode, ImmutableArray<int>.Builder> map, SyntaxNode syntax, int node)
+    private static void RecordNode(Dictionary<SyntaxNode, ImmutableArray<int>.Builder> map, SyntaxNode syntax,
+        int node)
     {
         if (!map.TryGetValue(syntax, out var nodes))
         {
@@ -275,72 +258,5 @@ internal sealed class UniformityRecorder(IMethodSymbol method, ArgumentMasks mas
         {
             nodes.Add(node);
         }
-    }
-
-    // Gives the locals and parameters that an operation writes a value index before the graph is solved
-    private void AllocateTargets(IOperation operation, int node)
-    {
-        switch (operation)
-        {
-            case IDeconstructionAssignmentOperation deconstruction: AllocateTargets(deconstruction.Target, node); break;
-            case IAssignmentOperation assignment: AllocateTargets(assignment.Target, node); break;
-            case IIncrementOrDecrementOperation increment: AllocateTargets(increment.Target, node); break;
-            case IInvocationOperation invocation: AllocateArguments(invocation, node); break;
-            case IDeclarationExpressionOperation declaration: AllocateTargets(declaration.Expression, node); break;
-            case ITupleOperation tuple: AllocateElements(tuple, node); break;
-            case ILocalReferenceOperation local: AddWritten(ValueOf(local.Local), node); break;
-            case IParameterReferenceOperation parameter: AddWritten(ValueOf(parameter.Parameter), node); break;
-            case IFieldReferenceOperation or IPropertyReferenceOperation when UniformitySolver.GetStructRoot(operation) is { } root:
-                AddWritten(ValueOf(root), node); break;
-        }
-    }
-
-    private void AllocateArguments(IInvocationOperation invocation, int node)
-    {
-        foreach (var argument in invocation.Arguments)
-        {
-            if (argument.Parameter?.RefKind is RefKind.Ref or RefKind.Out)
-            {
-                AllocateTargets(argument.Value, node);
-            }
-        }
-    }
-
-    private void AllocateElements(ITupleOperation tuple, int node)
-    {
-        foreach (var element in tuple.Elements)
-        {
-            AllocateTargets(element, node);
-        }
-    }
-
-    private void AddWritten(int value, int node)
-    {
-        if (!Nodes[node].Written.Contains(value))
-        {
-            Nodes[node].Written.Add(value);
-        }
-    }
-
-    private int ResultOf(SyntaxNode call)
-    {
-        if (!_results.TryGetValue(call, out var index))
-        {
-            index = ValueCount;
-            _results.Add(call, index);
-        }
-
-        return index;
-    }
-
-    private int ValueOf(ISymbol symbol)
-    {
-        if (!_symbols.TryGetValue(symbol, out var index))
-        {
-            index = ValueCount;
-            _symbols.Add(symbol, index);
-        }
-
-        return index;
     }
 }

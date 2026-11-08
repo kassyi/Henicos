@@ -507,6 +507,60 @@ public class NativeApiGeneratorTests
         Assert.Contains("0, IntPtr.Zero, kernelParams, IntPtr.Zero));", source);
     }
 
+    // The module launcher checks its dimensions against the limits of every GPU (#799) before the context, the
+    // function lookup and the device allocations; a dimension it does not take is the 1 it launches with
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_ModuleDefinition_WithLaunchDimensions_ChecksLaunchLimitsFirst()
+    {
+        const string Yaml = """
+            namespace: MyApp.Native
+            className: GridKernels
+            moduleName: ./native/grid.fatbin
+            methods:
+              - name: LaunchGrid
+                parameters:
+                  - { name: data, type: "float[]" }
+                  - { name: gridDimX, type: uint }
+                  - { name: blockDimX, type: uint }
+                  - { name: blockDimZ, type: uint }
+            """;
+
+        var result = RunGenerator(Api("grid.yml", Yaml));
+
+        Assert.Empty(result.Diagnostics);
+        var source = FindSource(result, "GridKernels");
+        const string Check = "global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(" +
+            "gridDimX, 1, 1, blockDimX, 1, blockDimZ, \"GridKernels.LaunchGrid\");";
+        var checkIndex = source.IndexOf(Check, StringComparison.Ordinal);
+        var scopeIndex = source.IndexOf("using var scope = new GpuKernelLoader.CudaContextScope();",
+            StringComparison.Ordinal);
+
+        Assert.NotEqual(-1, checkIndex);
+        Assert.True(checkIndex < scopeIndex, "The launch check must precede the context and the function lookup");
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_ModuleDefinition_WithoutLaunchDimensions_EmitsNoLaunchCheck()
+    {
+        const string Yaml = """
+            namespace: MyApp.Native
+            className: SingleThreadKernels
+            moduleName: ./native/single.fatbin
+            methods:
+              - name: LaunchSingle
+                parameters:
+                  - { name: data, type: "float[]" }
+                  - { name: sharedMemBytes, type: uint }
+            """;
+
+        var result = RunGenerator(Api("single.yml", Yaml));
+
+        Assert.Empty(result.Diagnostics);
+        Assert.DoesNotContain("LaunchLimits", FindSource(result, "SingleThreadKernels"));
+    }
+
     private sealed record TestFile(string Path, string Text, bool IsGSharpApi);
 
     private static TestFile Api(string path, string text) => new(path, text, IsGSharpApi: true);

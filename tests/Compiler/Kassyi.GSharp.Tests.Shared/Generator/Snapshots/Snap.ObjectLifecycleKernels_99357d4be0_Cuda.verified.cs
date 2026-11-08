@@ -157,6 +157,7 @@ throw new global::System.ArgumentNullException(nameof(states));
 if (states.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(states));
 }
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ObjectLifecycleKernels.Kernel_LifecycleUpdate");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.ObjectLifecycleKernels.__gsharp_hfunc_Kernel_LifecycleUpdate.Resolve();
@@ -220,6 +221,7 @@ public static unsafe void LaunchKernel_LifecycleUpdatePtr(global::System.IntPtr 
 if (states == global::System.IntPtr.Zero){
 throw new global::System.ArgumentNullException(nameof(states));
 }
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ObjectLifecycleKernels.Kernel_LifecycleUpdate");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.ObjectLifecycleKernels.__gsharp_hfunc_Kernel_LifecycleUpdate.Resolve();
@@ -312,6 +314,7 @@ throw new global::System.ArgumentNullException(nameof(outputStates));
 if (outputStates.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(outputStates));
 }
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ObjectLifecycleKernels.Kernel_FactoryInitialization");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.ObjectLifecycleKernels.__gsharp_hfunc_Kernel_FactoryInitialization.Resolve();
@@ -411,6 +414,7 @@ throw new global::System.ArgumentNullException(nameof(inputValues));
 if (outputStates == global::System.IntPtr.Zero){
 throw new global::System.ArgumentNullException(nameof(outputStates));
 }
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ObjectLifecycleKernels.Kernel_FactoryInitialization");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.ObjectLifecycleKernels.__gsharp_hfunc_Kernel_FactoryInitialization.Resolve();

@@ -136,6 +136,7 @@ throw new global::System.ArgumentNullException(nameof(carryBuffer));
 if (carryBuffer.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(carryBuffer));
 }
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "GpuBigIntKernels.ChunkAddKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.GpuBigIntKernels.__gsharp_hfunc_ChunkAddKernel.Resolve();
@@ -325,6 +326,7 @@ throw new global::System.ArgumentNullException(nameof(dResult));
 if (carryBuffer == global::System.IntPtr.Zero){
 throw new global::System.ArgumentNullException(nameof(carryBuffer));
 }
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "GpuBigIntKernels.ChunkAddKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.GpuBigIntKernels.__gsharp_hfunc_ChunkAddKernel.Resolve();

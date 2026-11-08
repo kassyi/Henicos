@@ -1,6 +1,7 @@
 using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Threading;
 using System.Threading.Tasks;
 using Kassyi.GSharp.Runtime;
 using Kassyi.GSharp.Runtime.Aot;
@@ -173,6 +174,53 @@ public class GpuBufferTests : TranspilerTestBase
     }
 
     [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.HappyPath)]
+    public void Constructor_OnThreadWithoutContext_AllocatesAndRestoresThread()
+    {
+        CudaCapability.EnsureGpuAvailable();
+
+        // A new OS thread has no current CUDA context and no active CudaContextScope.
+        Exception? failure = null;
+        var currentBefore = new IntPtr(-1);
+        var currentAfter = new IntPtr(-1);
+        var readBack = new float[256];
+        var thread = new Thread(() =>
+        {
+            try
+            {
+                CudaException.ThrowIfError(CudaDriverApi.cuCtxGetCurrent(out currentBefore));
+                using var buffer = new GpuBuffer<float>(readBack.Length);
+                CudaException.ThrowIfError(CudaDriverApi.cuCtxGetCurrent(out currentAfter));
+
+                var source = new float[readBack.Length];
+                for (var i = 0; i < source.Length; i++)
+                {
+                    source[i] = i * 0.5f;
+                }
+
+                buffer.CopyToDevice(source);
+                buffer.CopyToHost(readBack);
+            }
+            catch (Exception ex)
+            {
+                failure = ex;
+            }
+        });
+        thread.Start();
+        thread.Join();
+
+        Assert.Null(failure);
+        Assert.Equal(IntPtr.Zero, currentBefore);
+        Assert.Equal(IntPtr.Zero, currentAfter);
+        for (var i = 0; i < readBack.Length; i++)
+        {
+            Assert.Equal(i * 0.5f, readBack[i]);
+        }
+    }
+
+    [SkippableFact]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.SadPath)]
     public void Test_GpuBuffer_NegativeLength_ThrowsArgumentOutOfRangeException()
@@ -257,10 +305,10 @@ public class GpuBufferTests : TranspilerTestBase
 
     private static void SkipUnlessLargeMemoryAvailable()
     {
-        // The GC measures the memory load at each collection; collect so the value is current.
-        GC.Collect();
-        var info = GC.GetGCMemoryInfo();
-        var freeBytes = info.TotalAvailableMemoryBytes - info.MemoryLoadBytes;
+        // The buffers are native, so the machine's free memory decides. GC.GetGCMemoryInfo() would not: under the heap
+        // hard limit of the test hosts (tests/Directory.Build.props) its TotalAvailableMemoryBytes is that limit while
+        // MemoryLoadBytes stays the load of the machine, which skipped this test on every run.
+        var freeBytes = ProcessMemory.ReadAvailablePhysicalBytes();
         Skip.If(
             freeBytes < LargeRequiredFreeMemory,
             $"A copy of 2 GiB or more needs about 5 GiB of free memory; {freeBytes >> 20} MiB is free."

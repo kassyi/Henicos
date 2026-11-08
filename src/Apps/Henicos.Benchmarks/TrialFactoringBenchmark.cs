@@ -30,7 +30,7 @@ public class TrialFactoringBenchmark
             $"Testing odd numbers from 3 up to {maxP:N0} in batches of {BatchSize:N0}...");
 
         // Warm-up launch to ensure FATBIN module loading is excluded from steady-state kernel timing
-        FermatTrialFactoringKernels.LaunchSearchFactors32KernelPtr(
+        FermatTrialFactoringKernels.SearchFactors32(
             3u,
             (uint)e,
             resultsBuffer.DevicePointer,
@@ -50,7 +50,7 @@ public class TrialFactoringBenchmark
             var currentBatchSize = Math.Min(BatchSize, (maxP - startOdd) / 2 + 1);
             var gridX = (currentBatchSize + BlockSize - 1) / BlockSize;
 
-            FermatTrialFactoringKernels.LaunchSearchFactors32KernelPtr(
+            FermatTrialFactoringKernels.SearchFactors32(
                 startOdd,
                 (uint)e,
                 resultsBuffer.DevicePointer,

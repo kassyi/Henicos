@@ -151,6 +151,7 @@ throw new global::System.ArgumentNullException(nameof(results));
 if (results.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(results));
 }
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "FloatAtomicAddMatrixKernels.FloatAtomicAddMatrixKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.FloatAtomicAddMatrixKernels.__gsharp_hfunc_FloatAtomicAddMatrixKernel.Resolve();
@@ -290,6 +291,7 @@ throw new global::System.ArgumentNullException(nameof(right));
 if (results == global::System.IntPtr.Zero){
 throw new global::System.ArgumentNullException(nameof(results));
 }
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "FloatAtomicAddMatrixKernels.FloatAtomicAddMatrixKernel");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.FloatAtomicAddMatrixKernels.__gsharp_hfunc_FloatAtomicAddMatrixKernel.Resolve();

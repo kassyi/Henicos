@@ -7,27 +7,44 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels;
 [ExcludeFromCodeCoverage]
 public static partial class GpuBigIntScalarKernels
 {
+    /// <summary>
+    /// <c>result = a + s</c>. A result wider than <paramref name="numWords"/> receives the carry in word
+    /// <paramref name="numWords"/> and zeros above it; a result of <paramref name="numWords"/> words reports a carry as
+    /// <see cref="GpuDomainErrors.ScalarAddOverflow"/>. Launch one block whose size is a multiple of 32.
+    /// </summary>
     [GpuKernel]
-    public static void ScalarAddKernel(uint[] dA, uint s, uint[] dResult, int numWords)
+    public static void ScalarAddKernel(uint[] dA, uint s, uint[] dResult, int numWords, int resultWords,
+        uint[] status)
     {
-        Device_ScalarAddSubParallel(dA, s, dResult, numWords, 1, true);
+        DeviceScalarAddSub(dA, s, dResult, numWords, resultWords, 0, status, GpuDomainErrors.ScalarAddOverflow);
     }
 
+    /// <summary>
+    /// <c>result = a - s</c>. A result wider than <paramref name="numWords"/> receives zeros above the difference; a
+    /// borrow (<c>a &lt; s</c>) is reported as <see cref="GpuDomainErrors.ScalarSubtractBelowZero"/> at any width.
+    /// Launch one block whose size is a multiple of 32.
+    /// </summary>
     [GpuKernel]
-    public static void ScalarSubKernel(uint[] dA, uint s, uint[] dResult, int numWords)
+    public static void ScalarSubKernel(uint[] dA, uint s, uint[] dResult, int numWords, int resultWords,
+        uint[] status)
     {
-        Device_ScalarAddSubParallel(dA, s, dResult, numWords, -1, true);
+        DeviceScalarAddSub(dA, s, dResult, numWords, resultWords, 1, status,
+            GpuDomainErrors.ScalarSubtractBelowZero);
     }
 
+    // a + s (subtract = 0) or a - s (subtract = 1) over numWords words, then the word above them. The array a may be
+    // the result itself (x++): each thread reads its word before it writes it.
     [GpuDeviceFunction]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void Device_ScalarAddSubParallel(
-        [GpuReadOnly] uint[] a,
+    public static void DeviceScalarAddSub(
+        uint[] a,
         uint s,
         uint[] result,
         int numWords,
-        int sign,
-        bool syncThreads = true)
+        int resultWords,
+        int subtract,
+        uint[] status,
+        uint code)
     {
         int tid = ThreadIndex.X;
         int bDim = BlockDimension.X;
@@ -35,8 +52,10 @@ public static partial class GpuBigIntScalarKernels
         int warpId = tid / 32;
 
         SharedMemory<uint> sharedCarry = new SharedMemory<uint>(32);
+        SharedMemory<uint> topCarry = new SharedMemory<uint>(1);
 
-        uint blockCarryIn = sign == 1 ? 0u : 1u;
+        // a - s is a + ~s + 1
+        uint blockCarryIn = subtract == 1 ? 1u : 0u;
 
         for (int offset = 0; offset < numWords; offset += bDim)
         {
@@ -44,9 +63,8 @@ public static partial class GpuBigIntScalarKernels
             bool valid = idx < numWords;
 
             uint valA = valid ? a[idx] : 0u;
-            uint valB = (idx == 0) ? s : 0u;
-
-            if (sign == -1)
+            uint valB = idx == 0 ? s : 0u;
+            if (subtract == 1)
             {
                 valB = ~valB;
             }
@@ -55,76 +73,64 @@ public static partial class GpuBigIntScalarKernels
             uint g = (uint)(sum >> 32);
             uint p = (uint)sum == 0xFFFFFFFFu ? 1u : 0u;
 
-            var warpScan = GpuBigIntKernels.WarpScanGp(new GpuBigIntKernels.CarryState(g, p), laneId);
-            uint scanG = warpScan.Generate;
-            uint scanP = warpScan.Propagate;
-
-            if (laneId == 31)
-            {
-                sharedCarry[warpId] = GpuBigIntKernels.PackCarryState(warpScan);
-            }
-
-            Gpu.SyncThreads();
-
-            if (warpId == 0)
-            {
-                int numWarps = (bDim + 31) / 32;
-                var valState = laneId < numWarps ? GpuBigIntKernels.UnpackCarryState(sharedCarry[laneId]) : new GpuBigIntKernels.CarryState(0, 0);
-                var blockScan = GpuBigIntKernels.WarpScanGp(valState, laneId);
-
-                if (laneId < numWarps)
-                {
-                    sharedCarry[laneId] = GpuBigIntKernels.PackCarryState(blockScan);
-                }
-            }
-
-            Gpu.SyncThreads();
-
-            uint carryIn = blockCarryIn;
-
-            if (warpId > 0)
-            {
-                carryIn = GpuBigIntKernels.ApplyCarry(GpuBigIntKernels.UnpackCarryState(sharedCarry[warpId - 1]), carryIn);
-            }
-
-            uint prevScanG = Warp.ShuffleUpSync(0xFFFFFFFFu, scanG, 1);
-            uint prevScanP = Warp.ShuffleUpSync(0xFFFFFFFFu, scanP, 1);
-            if (laneId > 0)
-            {
-                carryIn = prevScanG | (prevScanP & carryIn);
-            }
+            uint carryIn = GpuBigIntVectorKernels.PropagateBlockCarry(g, p, blockCarryIn, sharedCarry, laneId, warpId,
+                bDim, out blockCarryIn);
 
             if (valid)
             {
                 result[idx] = (uint)sum + carryIn;
             }
 
-            blockCarryIn = GpuBigIntKernels.ApplyCarry(GpuBigIntKernels.UnpackCarryState(sharedCarry[((bDim + 31) / 32) - 1]), blockCarryIn);
+            // The carry out of the top word, taken from its own thread: the block carry of a partial last warp is not
+            // defined (its last lane does not exist)
+            if (idx == numWords - 1)
+            {
+                topCarry[0] = g | (p & carryIn);
+            }
 
             Gpu.SyncThreads();
         }
 
-        if (syncThreads)
+        // Adding: the carry out. Subtracting: 1 - carry out, the borrow.
+        uint carryOut = subtract == 1 ? 1u - topCarry[0] : topCarry[0];
+
+        for (int i = numWords + tid; i < resultWords; i += bDim)
         {
-            Gpu.SyncThreads();
+            result[i] = i == numWords && subtract == 0 ? carryOut : 0u;
+        }
+
+        bool fails = subtract == 1 ? carryOut != 0u : carryOut != 0u && resultWords == numWords;
+        if (fails && tid == 0)
+        {
+            GpuDomainErrors.Report(status, code);
         }
     }
 
+    /// <summary>
+    /// <c>result = a * s</c>. A result wider than <paramref name="numWords"/> receives the top word of the product in
+    /// word <paramref name="numWords"/> and zeros above it; a result of <paramref name="numWords"/> words reports a
+    /// non-zero top word as <see cref="GpuDomainErrors.ScalarMultiplyOverflow"/>. Launch one block whose size is a
+    /// multiple of 32.
+    /// </summary>
     [GpuKernel]
-    public static void ScalarMulKernel(uint[] dA, uint s, uint[] dResult, int numWords)
+    public static void ScalarMulKernel(uint[] dA, uint s, uint[] dResult, int numWords, int resultWords,
+        uint[] status)
     {
-        DeviceScalarMulParallel(dA, s, dResult, numWords, true);
+        DeviceScalarMul(dA, s, dResult, numWords, resultWords, status);
     }
 
-
+    // a * s over numWords words, then the top word. The array a may be the result itself: within a pass every thread
+    // reads before the block synchronizes and writes after it, and the high half of the product of the word before the
+    // pass is carried in shared memory instead of being read again.
     [GpuDeviceFunction]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void DeviceScalarMulParallel(
-        [GpuReadOnly] uint[] a,
+    public static void DeviceScalarMul(
+        uint[] a,
         uint s,
         uint[] result,
         int numWords,
-        bool syncThreads = true)
+        int resultWords,
+        uint[] status)
     {
         int tid = ThreadIndex.X;
         int bDim = BlockDimension.X;
@@ -132,7 +138,15 @@ public static partial class GpuBigIntScalarKernels
         int warpId = tid / 32;
 
         SharedMemory<uint> sharedCarry = new SharedMemory<uint>(32);
-        SharedMemory<uint> sharedH = new SharedMemory<uint>(32);
+        SharedMemory<uint> lastHigh = new SharedMemory<uint>(1);
+        SharedMemory<uint> topWord = new SharedMemory<uint>(1);
+
+        if (tid == 0)
+        {
+            lastHigh[0] = 0u;
+        }
+
+        Gpu.SyncThreads();
 
         uint blockCarryIn = 0u;
 
@@ -141,89 +155,52 @@ public static partial class GpuBigIntScalarKernels
             int idx = offset + tid;
             bool valid = idx < numWords;
 
-            uint valA = valid ? a[idx] : 0u;
-            ulong prod = (ulong)valA * s;
-            uint L = (uint)(prod & 0xFFFFFFFFul);
-            uint H = (uint)(prod >> 32);
+            ulong prod = (ulong)(valid ? a[idx] : 0u) * s;
+            uint low = (uint)prod;
+            uint high = (uint)(prod >> 32);
 
-            uint prevH = Warp.ShuffleUpSync(0xFFFFFFFFu, H, 1);
-
-            if (laneId == 31)
+            // The high half of the word below: from the same pass, or from the last thread of the previous pass
+            uint prevHigh = lastHigh[0];
+            if (tid > 0)
             {
-                sharedH[warpId] = H;
-            }
-            Gpu.SyncThreads();
-
-            if (laneId == 0)
-            {
-                if (warpId == 0)
-                {
-                    prevH = blockCarryIn;
-                }
-                else
-                {
-                    prevH = sharedH[warpId - 1];
-                }
+                prevHigh = idx - 1 < numWords ? (uint)(((ulong)a[idx - 1] * s) >> 32) : 0u;
             }
 
-            ulong sum = (ulong)L + prevH;
+            ulong sum = (ulong)low + prevHigh;
             uint g = (uint)(sum >> 32);
             uint p = (uint)sum == 0xFFFFFFFFu ? 1u : 0u;
 
-            var warpScan = GpuBigIntKernels.WarpScanGp(new GpuBigIntKernels.CarryState(g, p), laneId);
-            uint scanG = warpScan.Generate;
-            uint scanP = warpScan.Propagate;
-
-            if (laneId == 31)
-            {
-                sharedCarry[warpId] = GpuBigIntKernels.PackCarryState(warpScan);
-            }
-
-            Gpu.SyncThreads();
-
-            if (warpId == 0)
-            {
-                int numWarps = (bDim + 31) / 32;
-                var valState = laneId < numWarps ? GpuBigIntKernels.UnpackCarryState(sharedCarry[laneId]) : new GpuBigIntKernels.CarryState(0, 0);
-                var blockScan = GpuBigIntKernels.WarpScanGp(valState, laneId);
-
-                if (laneId < numWarps)
-                {
-                    sharedCarry[laneId] = GpuBigIntKernels.PackCarryState(blockScan);
-                }
-            }
-
-            Gpu.SyncThreads();
-
-            uint carryIn = 0u;
-
-            if (warpId > 0)
-            {
-                carryIn = GpuBigIntKernels.ApplyCarry(GpuBigIntKernels.UnpackCarryState(sharedCarry[warpId - 1]), carryIn);
-            }
-
-            uint prevScanG = Warp.ShuffleUpSync(0xFFFFFFFFu, scanG, 1);
-            uint prevScanP = Warp.ShuffleUpSync(0xFFFFFFFFu, scanP, 1);
-            if (laneId > 0)
-            {
-                carryIn = prevScanG | (prevScanP & carryIn);
-            }
+            uint carryIn = GpuBigIntVectorKernels.PropagateBlockCarry(g, p, blockCarryIn, sharedCarry, laneId, warpId,
+                bDim, out blockCarryIn);
 
             if (valid)
             {
                 result[idx] = (uint)sum + carryIn;
             }
 
-            uint lastH = sharedH[((bDim + 31) / 32) - 1];
-            uint waveCarry = GpuBigIntKernels.ApplyCarry(GpuBigIntKernels.UnpackCarryState(sharedCarry[((bDim + 31) / 32) - 1]), 0u);
-            blockCarryIn = lastH + waveCarry;
+            // high <= 2^32 - 2 because a word and s are at most 2^32 - 1, so adding the carry does not wrap
+            if (idx == numWords - 1)
+            {
+                topWord[0] = high + (g | (p & carryIn));
+            }
+
+            if (tid == bDim - 1)
+            {
+                lastHigh[0] = high;
+            }
 
             Gpu.SyncThreads();
         }
 
-        if (syncThreads)
+        uint top = topWord[0];
+        for (int i = numWords + tid; i < resultWords; i += bDim)
         {
-            Gpu.SyncThreads();
+            result[i] = i == numWords ? top : 0u;
+        }
+
+        if (top != 0u && resultWords == numWords && tid == 0)
+        {
+            GpuDomainErrors.Report(status, GpuDomainErrors.ScalarMultiplyOverflow);
         }
     }
 
@@ -249,4 +226,3 @@ public static partial class GpuBigIntScalarKernels
         }
     }
 }
-

@@ -47,9 +47,10 @@ internal static class ManagedFallbackEmitter
     // The contexts of every thread of the grid, the shared memory of the grid and the barrier waits
     private static void WriteManagedContextAllocation(SourceWriter writer, in KernelHostModel kernel)
     {
-        writer.AppendLine($"int {TotalBlocks} = (int)(gridDimX * gridDimY * gridDimZ);");
+        // The contexts of the grid live in one array, which bounds the threads of a launch on this path only (#1443)
+        LaunchLimitEmitter.WriteManagedCounts(writer, kernel);
         writer.AppendLine($"int {ThreadsPerBlock} = (int)(blockDimX * blockDimY * blockDimZ);");
-        writer.AppendLine($"var {Contexts} = new {kernel.ContextName}[{TotalBlocks} * {ThreadsPerBlock}];");
+        writer.AppendLine($"var {Contexts} = new {kernel.ContextName}[{ContextCount}];");
         // An unsafe context is a struct, so the array already holds one per thread
         if (!kernel.IsUnsafeContext)
         {

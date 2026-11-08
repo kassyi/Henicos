@@ -15,6 +15,7 @@ private static readonly Lazy<byte[]> s_fatbin___native_my_custom_kernels_fatbin 
 /// <param name="c">Matrix C.</param>
 public static void SgemmCustom(float[] a, float[] c, int n, uint gridDimX, uint blockDimX)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, 1, 1, blockDimX, 1, 1, "MyKernels.SgemmCustom");
 using var scope = new GpuKernelLoader.CudaContextScope();
 var kernel = GpuKernelLoader.LoadAotKernel(s_fatbin___native_my_custom_kernels_fatbin.Value, "sgemm_kernel_v1");
 using var d_a = new GpuBuffer<float>(a.Length);

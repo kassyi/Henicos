@@ -54,7 +54,8 @@ internal static class HostLauncherTranspiler
             ref context);
     }
 
-    // extern "C" __declspec(dllexport) void <launch export>(<launch dimensions>, <sharedMemBytes>, <kernel parameters>[, <result>* __restrict__ __gsharp_auto_result])
+    // extern "C" __declspec(dllexport) void <launch export>(<launch dimensions>, <sharedMemBytes>, <blocks>,
+    //     <kernel parameters>[, <result>* __restrict__ __gsharp_auto_result])
     private static void WriteLauncherSignature(in MethodEmissionPlan plan, IMethodSymbol methodSymbol,
         ITypeSymbol?[] structArguments, ref TranspileContext context)
     {
@@ -65,11 +66,14 @@ internal static class HostLauncherTranspiler
             .Append(GlobalCppNames.GetKernelDerivedName(LaunchExportPrefix, methodSymbol))
             .Append('(');
 
-        // Launch dimensions
+        // Launch dimensions, and the number of blocks that the managed wrapper counted in 64 bits
+        // (LaunchLimits.CheckLaunch): the CPU paths run every grid that the GPU runs, where a 32-bit product of the
+        // dimensions wraps (#805)
         context.Emitter.Writer.Append(
             $"uint32_t {GridDimX}, uint32_t {GridDimY}, uint32_t {GridDimZ}, ");
         context.Emitter.Writer.Append(
-            $"uint32_t {BlockDimX}, uint32_t {BlockDimY}, uint32_t {BlockDimZ}, uint32_t {SharedMemBytes}");
+            $"uint32_t {BlockDimX}, uint32_t {BlockDimY}, uint32_t {BlockDimZ}, uint32_t {SharedMemBytes}, ");
+        context.Emitter.Writer.Append($"int64_t {TotalBlocks}");
 
         WriteLauncherParameters(structArguments, method.ParameterList.Parameters, ref context);
 
@@ -92,8 +96,6 @@ internal static class HostLauncherTranspiler
             WriteStructArgumentCopies(structArguments, step.Method.ParameterList.Parameters, ref context);
             context.Emitter.Writer.AppendLine($"{HostLastError}.Reset();");
             context.Emitter.Writer.AppendLine($"GSharpErrorSlot {Error};");
-            context.Emitter.Writer.AppendLine(
-                $"int32_t {TotalBlocks} = (int32_t)({GridDimX} * {GridDimY} * {GridDimZ});");
             if (step.IsCooperative)
             {
                 WriteCooperativeGrid(contextName, step, ref context);
@@ -115,7 +117,7 @@ internal static class HostLauncherTranspiler
     {
         context.Emitter.Writer.AppendLine("#pragma omp parallel for schedule(dynamic)");
         context.Emitter.Writer.AppendLine(
-            $"for (int32_t {BlockLoopIndex} = 0; {BlockLoopIndex} < {TotalBlocks}; {BlockLoopIndex}++)");
+            $"for (int64_t {BlockLoopIndex} = 0; {BlockLoopIndex} < {TotalBlocks}; {BlockLoopIndex}++)");
         using (context.Emitter.Writer.Scope())
         {
             context.Emitter.Writer.AppendLine($"if ({Error}.HasError()) continue;");
@@ -190,7 +192,7 @@ internal static class HostLauncherTranspiler
             context.Emitter.Writer.Append(", ");
             if (i < structArguments.Length && structArguments[i] is { } structType)
             {
-                StructTranspiler.RegisterUsedStructIfApplicable(structType, ref context);
+                StructOrdering.RegisterUsedStructIfApplicable(structType, ref context);
                 context.Emitter.Writer.Append("const ");
                 context.Emitter.Dialect.AppendType(ref context, structType);
                 context.Emitter.Writer.Append($"* {StructArgumentPrefix}{i}");
@@ -234,10 +236,11 @@ internal static class HostLauncherTranspiler
         {
             context.Emitter.Writer.AppendLine(
                 $"std::vector<{contextName}> {GridContexts}((size_t){TotalBlocks} * {ThreadsPerBlock});");
-            context.Emitter.Writer.AppendLine($"std::vector<{SharedMemoryArena}> {BlockArenas}({TotalBlocks});");
-            context.Emitter.Writer.AppendLine($"std::vector<uint8_t> {BlockStatus}({TotalBlocks});");
             context.Emitter.Writer.AppendLine(
-                $"for (int32_t {BlockLoopIndex} = 0; {BlockLoopIndex} < {TotalBlocks}; {BlockLoopIndex}++)");
+                $"std::vector<{SharedMemoryArena}> {BlockArenas}((size_t){TotalBlocks});");
+            context.Emitter.Writer.AppendLine($"std::vector<uint8_t> {BlockStatus}((size_t){TotalBlocks});");
+            context.Emitter.Writer.AppendLine(
+                $"for (int64_t {BlockLoopIndex} = 0; {BlockLoopIndex} < {TotalBlocks}; {BlockLoopIndex}++)");
             using (context.Emitter.Writer.Scope())
             {
                 context.Emitter.Writer.AppendLine($"{BlockArenas}[{BlockLoopIndex}].reset({SharedMemBytes});");
@@ -286,7 +289,7 @@ internal static class HostLauncherTranspiler
     {
         context.Emitter.Writer.AppendLine("#pragma omp for schedule(dynamic)");
         context.Emitter.Writer.AppendLine(
-            $"for (int32_t {BlockLoopIndex} = 0; {BlockLoopIndex} < {TotalBlocks}; {BlockLoopIndex}++)");
+            $"for (int64_t {BlockLoopIndex} = 0; {BlockLoopIndex} < {TotalBlocks}; {BlockLoopIndex}++)");
         using (context.Emitter.Writer.Scope())
         {
             context.Emitter.Writer.AppendLine($"if ({Error}.HasError()) continue;");
@@ -340,11 +343,11 @@ internal static class HostLauncherTranspiler
 
     private static void WriteBlockCoordinates(ref TranspileContext context)
     {
-        context.Emitter.Writer.AppendLine($"int32_t {BlockX} = {BlockLoopIndex} % {GridDimX};");
+        context.Emitter.Writer.AppendLine($"int32_t {BlockX} = (int32_t)({BlockLoopIndex} % {GridDimX});");
         context.Emitter.Writer.AppendLine(
-            $"int32_t {BlockY} = ({BlockLoopIndex} / {GridDimX}) % {GridDimY};");
+            $"int32_t {BlockY} = (int32_t)(({BlockLoopIndex} / {GridDimX}) % {GridDimY});");
         context.Emitter.Writer.AppendLine(
-            $"int32_t {BlockZ} = {BlockLoopIndex} / ({GridDimX} * {GridDimY});");
+            $"int32_t {BlockZ} = (int32_t)({BlockLoopIndex} / ((int64_t){GridDimX} * {GridDimY}));");
     }
 
     private static void WriteBlockLoop(in KernelStep step, bool declaresThreadsPerBlock, ref TranspileContext context)

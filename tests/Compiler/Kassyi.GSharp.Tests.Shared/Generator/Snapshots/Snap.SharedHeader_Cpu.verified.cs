@@ -780,6 +780,9 @@ return threads >= 0x80000000ull ? 0x80000000u : (unsigned int)threads;
 }
 // The count of Gpu.GridStrideLoop, evaluated once; a negative count runs no iteration, as i < n does in C#
 __forceinline__ unsigned int __gsharp_grid_stride_count(int n) { return n < 0 ? 0u : (unsigned int)n; }
+// The int loop variable of the loop that the CPU lowering makes of a Gpu.GridStrideLoop (PreLoweringExpander); the
+// index is below the count, so below 2^31
+__forceinline__ int __gsharp_grid_stride_index(unsigned int index) { return (int)index; }
 
 namespace cg {
 struct grid_group {
@@ -1019,14 +1022,14 @@ error->Report(GSharpErrorCode::InvalidOperation, text);
 
 // Ends a phase of the grid: true when every block waits at a grid sync, so that the next phase starts; false when every
 // block has finished or the launch failed. A phase in which some blocks finished while others wait is reported
-inline bool __gsharp_end_grid_phase(GSharpErrorSlot* error, const uint8_t* status, int32_t totalBlocks,
+inline bool __gsharp_end_grid_phase(GSharpErrorSlot* error, const uint8_t* status, int64_t totalBlocks,
 uint32_t gridDimX, uint32_t gridDimY, const char* kernel) {
 if (error->HasError()) {
 return false;
 }
-int32_t firstFinished = -1;
+int64_t firstFinished = -1;
 bool anyWaiting = false;
-for (int32_t block = 0; block < totalBlocks; block++) {
+for (int64_t block = 0; block < totalBlocks; block++) {
 if (status[block] == __gsharp_block_at_grid_sync) {
 anyWaiting = true;
 } else if (firstFinished < 0) {
@@ -1036,7 +1039,7 @@ firstFinished = block;
 if (anyWaiting && firstFinished >= 0) {
 int32_t x = (int32_t)(firstFinished % gridDimX);
 int32_t y = (int32_t)((firstFinished / gridDimX) % gridDimY);
-int32_t z = (int32_t)(firstFinished / (gridDimX * gridDimY));
+int32_t z = (int32_t)(firstFinished / ((int64_t)gridDimX * gridDimY));
 char text[512];
 std::snprintf(text, sizeof(text),
 ""G#: block (%d,%d,%d) of %s finished while other blocks wait at Gpu.SyncGrid; on the GPU the grid sync never completes"",
@@ -1197,14 +1200,20 @@ __forceinline__ unsigned int atomicDec(unsigned int* address, unsigned int val) 
 __forceinline__ int __gsharp_atomicCAS(int* address, int val, int compare) { return atomicCAS(address, compare, val); }
 __forceinline__ unsigned int __gsharp_atomicCAS(unsigned int* address, unsigned int val, unsigned int compare) { return atomicCAS(address, compare, val); }
 __forceinline__ unsigned long long __gsharp_atomicCAS(unsigned long long* address, unsigned long long val, unsigned long long compare) { return atomicCAS(address, compare, val); }
+__forceinline__ long long __gsharp_atomicCAS(long long* address, long long val, long long compare) { return (long long)atomicCAS((unsigned long long*)address, (unsigned long long)compare, (unsigned long long)val); }
 
-__forceinline__ int __gsharp_atomicAdd(int* address, int val) { return atomicAdd(address, val) + val; }
+// Interlocked.Add returns the new value and wraps (unchecked), and the long overloads return long. C++ leaves signed
+// overflow undefined and the atomics have no long long overloads, so the sum is computed in the unsigned type and the
+// result of the unsigned atomic is converted back (modulo 2^n, as in IntegerSemantics.hpp).
+__forceinline__ int __gsharp_atomicAdd(int* address, int val) { return (int)((unsigned int)atomicAdd(address, val) + (unsigned int)val); }
 __forceinline__ unsigned int __gsharp_atomicAdd(unsigned int* address, unsigned int val) { return atomicAdd(address, val) + val; }
 __forceinline__ unsigned long long __gsharp_atomicAdd(unsigned long long* address, unsigned long long val) { return atomicAdd(address, val) + val; }
+__forceinline__ long long __gsharp_atomicAdd(long long* address, long long val) { return (long long)(atomicAdd((unsigned long long*)address, (unsigned long long)val) + (unsigned long long)val); }
 
 __forceinline__ int __gsharp_atomicExch(int* address, int val) { return atomicExch(address, val); }
 __forceinline__ unsigned int __gsharp_atomicExch(unsigned int* address, unsigned int val) { return atomicExch(address, val); }
 __forceinline__ unsigned long long __gsharp_atomicExch(unsigned long long* address, unsigned long long val) { return atomicExch(address, val); }
+__forceinline__ long long __gsharp_atomicExch(long long* address, long long val) { return (long long)atomicExch((unsigned long long*)address, (unsigned long long)val); }
 
 // --- Warp & Synchronization ---
 // The lanes of the calling thread's warp that exist in the block: all 32, or fewer in the last warp of a block whose size
@@ -1253,6 +1262,10 @@ return false;
 inline uint32_t __gsharp_warp_linear_tid() {
 return threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;
 }
+
+// Gpu.LaneId() and Gpu.WarpId(): a warp holds 32 consecutive linear thread indices of the block, as on the GPU (#845)
+inline int __gsharp_lane_id() { return (int)(__gsharp_warp_linear_tid() & 31u); }
+inline int __gsharp_warp_id() { return (int)(__gsharp_warp_linear_tid() >> 5); }
 
 // Reads the value that lane srcLane of the caller's warp published for this shuffle, after checking that the lane exists
 // in the block
@@ -1424,6 +1437,117 @@ break;
 }
 if (pred) *pred = allEqual ? 1 : 0;
 return allEqual ? active : 0u;
+}
+
+// The warp votes and reductions (#845): each lane publishes its predicate or value before the state boundary, and reads
+// those of the lanes of the mask after it. The lanes that take part are the lanes of the mask that exist in the block;
+// the caller must be one of them (CUDA leaves the result undefined otherwise). ManagedGpuContext computes the same.
+inline uint32_t __gsharp_warp_vote_lanes(uint32_t mask, const char* name, const char* location) {
+uint32_t laneId = __gsharp_warp_linear_tid() & 31u;
+if ((mask & (1u << laneId)) == 0u) {
+char text[512];
+std::snprintf(text, sizeof(text),
+""G#: %s at %s has mask 0x%08X without caller lane %u (CUDA leaves the result undefined)"",
+name, location, mask, laneId);
+__gsharp_trap(GSharpErrorCode::InvalidOperation, text);
+return 0u;
+}
+return __activemask() & mask;
+}
+
+// The lanes of lanes whose published predicate is true
+template<typename TContext>
+inline uint32_t __gsharp_warp_ballot_lanes(TContext* __gsharp_ctx, uint32_t lanes, bool pred, const char* name,
+const char* location) {
+uint32_t tid = __gsharp_warp_linear_tid();
+uint32_t result = 0u;
+for (uint32_t srcLane = 0u; srcLane < 32u; srcLane++) {
+if ((lanes & (1u << srcLane)) != 0u &&
+__gsharp_warp_shuffle_read_lane(__gsharp_ctx, pred, tid, srcLane, name, location)) {
+result |= (1u << srcLane);
+}
+}
+return result;
+}
+
+template<typename TContext>
+inline uint32_t __gsharp_warp_ballot_read_sync(TContext* __gsharp_ctx, uint32_t mask, bool pred, const char* location) {
+__gsharp_ctx->__gsharp_warp_shuffle_count++;
+const char* name = ""Warp.BallotSync"";
+return __gsharp_warp_ballot_lanes(__gsharp_ctx, __gsharp_warp_vote_lanes(mask, name, location), pred, name, location);
+}
+
+template<typename TContext>
+inline bool __gsharp_warp_all_read_sync(TContext* __gsharp_ctx, uint32_t mask, bool pred, const char* location) {
+__gsharp_ctx->__gsharp_warp_shuffle_count++;
+const char* name = ""Warp.AllSync"";
+uint32_t lanes = __gsharp_warp_vote_lanes(mask, name, location);
+return __gsharp_warp_ballot_lanes(__gsharp_ctx, lanes, pred, name, location) == lanes;
+}
+
+template<typename TContext>
+inline bool __gsharp_warp_any_read_sync(TContext* __gsharp_ctx, uint32_t mask, bool pred, const char* location) {
+__gsharp_ctx->__gsharp_warp_shuffle_count++;
+const char* name = ""Warp.AnySync"";
+return __gsharp_warp_ballot_lanes(__gsharp_ctx, __gsharp_warp_vote_lanes(mask, name, location), pred, name,
+location) != 0u;
+}
+
+// The published values of the lanes of the mask, combined in lane order
+template<typename TContext, typename T, typename TCombine>
+inline T __gsharp_warp_reduce_lanes(TContext* __gsharp_ctx, uint32_t mask, T val, const char* name,
+const char* location, TCombine combine) {
+__gsharp_ctx->__gsharp_warp_shuffle_count++;
+uint32_t lanes = __gsharp_warp_vote_lanes(mask, name, location);
+uint32_t tid = __gsharp_warp_linear_tid();
+T result = val;
+bool first = true;
+for (uint32_t srcLane = 0u; srcLane < 32u; srcLane++) {
+if ((lanes & (1u << srcLane)) != 0u) {
+T laneVal = __gsharp_warp_shuffle_read_lane(__gsharp_ctx, val, tid, srcLane, name, location);
+result = first ? laneVal : combine(result, laneVal);
+first = false;
+}
+}
+return result;
+}
+
+// The sum wraps around in 32 bits, as on the GPU, also for int
+template<typename TContext, typename T>
+inline T __gsharp_warp_reduce_add_read_sync(TContext* __gsharp_ctx, uint32_t mask, T val, const char* location) {
+return __gsharp_warp_reduce_lanes(__gsharp_ctx, mask, val, ""Warp.ReduceAddSync"", location,
+[](T a, T b) { return (T)((uint32_t)a + (uint32_t)b); });
+}
+
+// Compared with the sign of T: signed for int, unsigned for uint
+template<typename TContext, typename T>
+inline T __gsharp_warp_reduce_min_read_sync(TContext* __gsharp_ctx, uint32_t mask, T val, const char* location) {
+return __gsharp_warp_reduce_lanes(__gsharp_ctx, mask, val, ""Warp.ReduceMinSync"", location,
+[](T a, T b) { return b < a ? b : a; });
+}
+
+template<typename TContext, typename T>
+inline T __gsharp_warp_reduce_max_read_sync(TContext* __gsharp_ctx, uint32_t mask, T val, const char* location) {
+return __gsharp_warp_reduce_lanes(__gsharp_ctx, mask, val, ""Warp.ReduceMaxSync"", location,
+[](T a, T b) { return a < b ? b : a; });
+}
+
+template<typename TContext, typename T>
+inline T __gsharp_warp_reduce_and_read_sync(TContext* __gsharp_ctx, uint32_t mask, T val, const char* location) {
+return __gsharp_warp_reduce_lanes(__gsharp_ctx, mask, val, ""Warp.ReduceAndSync"", location,
+[](T a, T b) { return (T)(a & b); });
+}
+
+template<typename TContext, typename T>
+inline T __gsharp_warp_reduce_or_read_sync(TContext* __gsharp_ctx, uint32_t mask, T val, const char* location) {
+return __gsharp_warp_reduce_lanes(__gsharp_ctx, mask, val, ""Warp.ReduceOrSync"", location,
+[](T a, T b) { return (T)(a | b); });
+}
+
+template<typename TContext, typename T>
+inline T __gsharp_warp_reduce_xor_read_sync(TContext* __gsharp_ctx, uint32_t mask, T val, const char* location) {
+return __gsharp_warp_reduce_lanes(__gsharp_ctx, mask, val, ""Warp.ReduceXorSync"", location,
+[](T a, T b) { return (T)(a ^ b); });
 }
 
 template<typename T>
