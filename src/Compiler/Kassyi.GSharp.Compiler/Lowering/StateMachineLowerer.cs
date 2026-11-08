@@ -415,7 +415,21 @@ public class StateMachineLowerer(bool isDeviceFunction = false, SemanticModel? s
                 PredicateArgument: "pred",
                 HasWidth: false,
                 ThirdArgumentName: "pred"),
+            // The votes and reductions read the mask and the published predicate or value of every lane (#845)
+            [WarpShuffleKind.Ballot] = Vote(GSharpInternalNames.Prelude.WarpBallotRead),
+            [WarpShuffleKind.All] = Vote(GSharpInternalNames.Prelude.WarpAllRead),
+            [WarpShuffleKind.Any] = Vote(GSharpInternalNames.Prelude.WarpAnyRead),
+            [WarpShuffleKind.ReduceAdd] = Vote(GSharpInternalNames.Prelude.WarpReduceAddRead),
+            [WarpShuffleKind.ReduceMin] = Vote(GSharpInternalNames.Prelude.WarpReduceMinRead),
+            [WarpShuffleKind.ReduceMax] = Vote(GSharpInternalNames.Prelude.WarpReduceMaxRead),
+            [WarpShuffleKind.ReduceAnd] = Vote(GSharpInternalNames.Prelude.WarpReduceAndRead),
+            [WarpShuffleKind.ReduceOr] = Vote(GSharpInternalNames.Prelude.WarpReduceOrRead),
+            [WarpShuffleKind.ReduceXor] = Vote(GSharpInternalNames.Prelude.WarpReduceXorRead),
         };
+
+        // A vote or reduction: read(<root>, mask, <predicate or value>, "<place>")
+        private static ShuffleShape Vote(string readFunction) =>
+            new(readFunction, HasLane: false, PredicateArgument: null, HasWidth: false, ThirdArgumentName: null);
 
         public static ShuffleShape ForKind(WarpShuffleKind kind) =>
             s_shapes.TryGetValue(kind, out var shape)
@@ -478,6 +492,8 @@ public class StateMachineLowerer(bool isDeviceFunction = false, SemanticModel? s
     private const string ShuffleMaskParameter = "mask";
     private const string ShuffleValueParameter = "var";
     private const string MatchValueParameter = "value";
+    private const string VotePredicateParameter = "predicate";
+    private const string ReduceValueParameter = "val";
     private const string ShuffleWidthParameter = "width";
 
     // The argument of a shuffle for the parameter at position, which the call compiled with (so it is there)
@@ -500,7 +516,8 @@ public class StateMachineLowerer(bool isDeviceFunction = false, SemanticModel? s
             {
                 null => i,
                 ShuffleMaskParameter => ShuffleMaskPosition,
-                ShuffleValueParameter or MatchValueParameter => ShuffleValuePosition,
+                ShuffleValueParameter or MatchValueParameter or VotePredicateParameter or ReduceValueParameter =>
+                    ShuffleValuePosition,
                 ShuffleWidthParameter => ShuffleWidthPosition,
                 _ => ShuffleLanePosition
             };

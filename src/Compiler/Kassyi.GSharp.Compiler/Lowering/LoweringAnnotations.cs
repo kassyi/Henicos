@@ -53,6 +53,33 @@ public static class LoweringAnnotations
     /// <summary>Data of a <see cref="SyncIntrinsicAnnotationKind"/> annotation on <c>Gpu.MatchAllSync</c>.</summary>
     public const string MatchAllAnnotationData = "Shuffle:MatchAll";
 
+    /// <summary>Data of a <see cref="SyncIntrinsicAnnotationKind"/> annotation on <c>Warp.BallotSync</c>.</summary>
+    public const string BallotAnnotationData = "Shuffle:Ballot";
+
+    /// <summary>Data of a <see cref="SyncIntrinsicAnnotationKind"/> annotation on <c>Warp.AllSync</c>.</summary>
+    public const string AllAnnotationData = "Shuffle:All";
+
+    /// <summary>Data of a <see cref="SyncIntrinsicAnnotationKind"/> annotation on <c>Warp.AnySync</c>.</summary>
+    public const string AnyAnnotationData = "Shuffle:Any";
+
+    /// <summary>Data of a <see cref="SyncIntrinsicAnnotationKind"/> annotation on <c>Warp.ReduceAddSync</c>.</summary>
+    public const string ReduceAddAnnotationData = "Shuffle:ReduceAdd";
+
+    /// <summary>Data of a <see cref="SyncIntrinsicAnnotationKind"/> annotation on <c>Warp.ReduceMinSync</c>.</summary>
+    public const string ReduceMinAnnotationData = "Shuffle:ReduceMin";
+
+    /// <summary>Data of a <see cref="SyncIntrinsicAnnotationKind"/> annotation on <c>Warp.ReduceMaxSync</c>.</summary>
+    public const string ReduceMaxAnnotationData = "Shuffle:ReduceMax";
+
+    /// <summary>Data of a <see cref="SyncIntrinsicAnnotationKind"/> annotation on <c>Warp.ReduceAndSync</c>.</summary>
+    public const string ReduceAndAnnotationData = "Shuffle:ReduceAnd";
+
+    /// <summary>Data of a <see cref="SyncIntrinsicAnnotationKind"/> annotation on <c>Warp.ReduceOrSync</c>.</summary>
+    public const string ReduceOrAnnotationData = "Shuffle:ReduceOr";
+
+    /// <summary>Data of a <see cref="SyncIntrinsicAnnotationKind"/> annotation on <c>Warp.ReduceXorSync</c>.</summary>
+    public const string ReduceXorAnnotationData = "Shuffle:ReduceXor";
+
     /// <summary>
     /// Annotation kind that marks a <c>return</c> the state machine inserts to suspend (after storing the next state), as
     /// opposed to a <c>return</c> of the user's code. Emitters leave it as a plain suspension instead of finishing the
@@ -168,6 +195,15 @@ public static class LoweringAnnotations
                 WarpShuffleKind.Xor => ShuffleXorAnnotationData,
                 WarpShuffleKind.MatchAny => MatchAnyAnnotationData,
                 WarpShuffleKind.MatchAll => MatchAllAnnotationData,
+                WarpShuffleKind.Ballot => BallotAnnotationData,
+                WarpShuffleKind.All => AllAnnotationData,
+                WarpShuffleKind.Any => AnyAnnotationData,
+                WarpShuffleKind.ReduceAdd => ReduceAddAnnotationData,
+                WarpShuffleKind.ReduceMin => ReduceMinAnnotationData,
+                WarpShuffleKind.ReduceMax => ReduceMaxAnnotationData,
+                WarpShuffleKind.ReduceAnd => ReduceAndAnnotationData,
+                WarpShuffleKind.ReduceOr => ReduceOrAnnotationData,
+                WarpShuffleKind.ReduceXor => ReduceXorAnnotationData,
                 _ => null
             },
             _ => null

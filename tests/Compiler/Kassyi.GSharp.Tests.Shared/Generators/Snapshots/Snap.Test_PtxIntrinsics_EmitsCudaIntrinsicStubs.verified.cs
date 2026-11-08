@@ -502,13 +502,13 @@ public static long MultiplyAddWide(int a, int b, long c) => Kassyi.GSharp.Core.G
 [Kassyi.GSharp.Core.CudaIntrinsic("__gsharp_madc_cc")]
 public static ulong MultiplyAddWideWithCarry(uint a, uint b, ulong c, ref ulong carry) => Kassyi.GSharp.Core.GpuOnlyException.Throw<ulong>();
 /// <summary>Returns the lane ID of the calling thread within its warp (0-31).</summary>
-/// <returns>The lane index within the current warp.</returns>
-[Kassyi.GSharp.Core.CudaIntrinsic("__lane_id")]
-public static int LaneId() => Kassyi.GSharp.Core.GpuOnlyException.Throw<int>();
+/// <returns>The lane index within the current warp, the linear thread index in the block (x fastest) modulo 32, as the %laneid register of the GPU.</returns>
+[Kassyi.GSharp.Core.CudaIntrinsic("__gsharp_lane_id")]
+public static int LaneId() => Kassyi.GSharp.Core.ManagedGpuContext.LaneId();
 /// <summary>Returns the warp ID of the calling warp within its thread block.</summary>
-/// <returns>The warp index within the current thread block.</returns>
-[Kassyi.GSharp.Core.CudaIntrinsic("__warp_id")]
-public static int WarpId() => Kassyi.GSharp.Core.GpuOnlyException.Throw<int>();
+/// <returns>The warp index within the current thread block, the linear thread index in the block (x fastest) divided by 32. It is not the %warpid register, which names a hardware warp slot that may change while the thread runs.</returns>
+[Kassyi.GSharp.Core.CudaIntrinsic("__gsharp_warp_id")]
+public static int WarpId() => Kassyi.GSharp.Core.ManagedGpuContext.WarpId();
 /// <summary>Returns the streaming multiprocessor ID on which the calling thread is executing (%smid).</summary>
 /// <returns>The streaming multiprocessor ID.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("__smid")]
@@ -843,91 +843,91 @@ public static uint ShuffleXorSync(uint mask, uint var, int laneMask, int width =
 [Kassyi.GSharp.Core.CudaIntrinsic("__shfl_xor_sync")]
 public static float ShuffleXorSync(uint mask, float var, int laneMask, int width = 32) => Kassyi.GSharp.Core.GpuOnlyException.Throw<float>();
 /// <summary>Evaluates predicate for all active threads in the warp and returns an integer whose Nth bit is set if and only if predicate evaluates to non-zero for the Nth thread.</summary>
-/// <param name="mask">The 32-bit thread participation bitmask.</param>
+/// <param name="mask">The 32-bit thread participation bitmask. It must contain the calling lane; a mask without it is undefined on CUDA and an InvalidOperationException on the CPU paths.</param>
 /// <param name="predicate">The boolean condition evaluated by each thread.</param>
 /// <returns>A 32-bit bitmask of thread predicate evaluation results.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("__ballot_sync")]
 public static uint BallotSync(uint mask, bool predicate) => Kassyi.GSharp.Core.GpuOnlyException.Throw<uint>();
 /// <summary>Evaluates predicate for all active threads in the warp and returns non-zero if and only if predicate evaluates to non-zero for all of them.</summary>
-/// <param name="mask">The 32-bit thread participation bitmask.</param>
+/// <param name="mask">The 32-bit thread participation bitmask. It must contain the calling lane; a mask without it is undefined on CUDA and an InvalidOperationException on the CPU paths.</param>
 /// <param name="predicate">The boolean condition evaluated by each thread.</param>
 /// <returns>True if predicate evaluates to true for all participating threads.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("__all_sync")]
 public static bool AllSync(uint mask, bool predicate) => Kassyi.GSharp.Core.GpuOnlyException.Throw<bool>();
 /// <summary>Evaluates predicate for all active threads in the warp and returns non-zero if and only if predicate evaluates to non-zero for any of them.</summary>
-/// <param name="mask">The 32-bit thread participation bitmask.</param>
+/// <param name="mask">The 32-bit thread participation bitmask. It must contain the calling lane; a mask without it is undefined on CUDA and an InvalidOperationException on the CPU paths.</param>
 /// <param name="predicate">The boolean condition evaluated by each thread.</param>
 /// <returns>True if predicate evaluates to true for any participating thread.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("__any_sync")]
 public static bool AnySync(uint mask, bool predicate) => Kassyi.GSharp.Core.GpuOnlyException.Throw<bool>();
 /// <summary>Performs a hardware warp reduction sum operation.</summary>
-/// <param name="mask">The 32-bit thread participation bitmask.</param>
+/// <param name="mask">The 32-bit thread participation bitmask. It must contain the calling lane; a mask without it is undefined on CUDA and an InvalidOperationException on the CPU paths.</param>
 /// <param name="val">The value contributed by this thread.</param>
 /// <returns>The sum of val across participating threads.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("__reduce_add_sync")]
 public static int ReduceAddSync(uint mask, int val) => Kassyi.GSharp.Core.GpuOnlyException.Throw<int>();
 /// <summary>Performs a hardware warp reduction sum operation.</summary>
-/// <param name="mask">The 32-bit thread participation bitmask.</param>
+/// <param name="mask">The 32-bit thread participation bitmask. It must contain the calling lane; a mask without it is undefined on CUDA and an InvalidOperationException on the CPU paths.</param>
 /// <param name="val">The value contributed by this thread.</param>
 /// <returns>The sum of val across participating threads.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("__reduce_add_sync")]
 public static uint ReduceAddSync(uint mask, uint val) => Kassyi.GSharp.Core.GpuOnlyException.Throw<uint>();
 /// <summary>Performs a hardware warp reduction minimum operation.</summary>
-/// <param name="mask">The 32-bit thread participation bitmask.</param>
+/// <param name="mask">The 32-bit thread participation bitmask. It must contain the calling lane; a mask without it is undefined on CUDA and an InvalidOperationException on the CPU paths.</param>
 /// <param name="val">The value contributed by this thread.</param>
 /// <returns>The minimum of val across participating threads.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("__reduce_min_sync")]
 public static int ReduceMinSync(uint mask, int val) => Kassyi.GSharp.Core.GpuOnlyException.Throw<int>();
 /// <summary>Performs a hardware warp reduction minimum operation.</summary>
-/// <param name="mask">The 32-bit thread participation bitmask.</param>
+/// <param name="mask">The 32-bit thread participation bitmask. It must contain the calling lane; a mask without it is undefined on CUDA and an InvalidOperationException on the CPU paths.</param>
 /// <param name="val">The value contributed by this thread.</param>
 /// <returns>The minimum of val across participating threads.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("__reduce_min_sync")]
 public static uint ReduceMinSync(uint mask, uint val) => Kassyi.GSharp.Core.GpuOnlyException.Throw<uint>();
 /// <summary>Performs a hardware warp reduction maximum operation.</summary>
-/// <param name="mask">The 32-bit thread participation bitmask.</param>
+/// <param name="mask">The 32-bit thread participation bitmask. It must contain the calling lane; a mask without it is undefined on CUDA and an InvalidOperationException on the CPU paths.</param>
 /// <param name="val">The value contributed by this thread.</param>
 /// <returns>The maximum of val across participating threads.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("__reduce_max_sync")]
 public static int ReduceMaxSync(uint mask, int val) => Kassyi.GSharp.Core.GpuOnlyException.Throw<int>();
 /// <summary>Performs a hardware warp reduction maximum operation.</summary>
-/// <param name="mask">The 32-bit thread participation bitmask.</param>
+/// <param name="mask">The 32-bit thread participation bitmask. It must contain the calling lane; a mask without it is undefined on CUDA and an InvalidOperationException on the CPU paths.</param>
 /// <param name="val">The value contributed by this thread.</param>
 /// <returns>The maximum of val across participating threads.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("__reduce_max_sync")]
 public static uint ReduceMaxSync(uint mask, uint val) => Kassyi.GSharp.Core.GpuOnlyException.Throw<uint>();
 /// <summary>Performs a hardware warp reduction bitwise AND operation.</summary>
-/// <param name="mask">The 32-bit thread participation bitmask.</param>
+/// <param name="mask">The 32-bit thread participation bitmask. It must contain the calling lane; a mask without it is undefined on CUDA and an InvalidOperationException on the CPU paths.</param>
 /// <param name="val">The value contributed by this thread.</param>
 /// <returns>The bitwise AND of val across participating threads.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("__reduce_and_sync")]
 public static int ReduceAndSync(uint mask, int val) => Kassyi.GSharp.Core.GpuOnlyException.Throw<int>();
 /// <summary>Performs a hardware warp reduction bitwise AND operation.</summary>
-/// <param name="mask">The 32-bit thread participation bitmask.</param>
+/// <param name="mask">The 32-bit thread participation bitmask. It must contain the calling lane; a mask without it is undefined on CUDA and an InvalidOperationException on the CPU paths.</param>
 /// <param name="val">The value contributed by this thread.</param>
 /// <returns>The bitwise AND of val across participating threads.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("__reduce_and_sync")]
 public static uint ReduceAndSync(uint mask, uint val) => Kassyi.GSharp.Core.GpuOnlyException.Throw<uint>();
 /// <summary>Performs a hardware warp reduction bitwise OR operation.</summary>
-/// <param name="mask">The 32-bit thread participation bitmask.</param>
+/// <param name="mask">The 32-bit thread participation bitmask. It must contain the calling lane; a mask without it is undefined on CUDA and an InvalidOperationException on the CPU paths.</param>
 /// <param name="val">The value contributed by this thread.</param>
 /// <returns>The bitwise OR of val across participating threads.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("__reduce_or_sync")]
 public static int ReduceOrSync(uint mask, int val) => Kassyi.GSharp.Core.GpuOnlyException.Throw<int>();
 /// <summary>Performs a hardware warp reduction bitwise OR operation.</summary>
-/// <param name="mask">The 32-bit thread participation bitmask.</param>
+/// <param name="mask">The 32-bit thread participation bitmask. It must contain the calling lane; a mask without it is undefined on CUDA and an InvalidOperationException on the CPU paths.</param>
 /// <param name="val">The value contributed by this thread.</param>
 /// <returns>The bitwise OR of val across participating threads.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("__reduce_or_sync")]
 public static uint ReduceOrSync(uint mask, uint val) => Kassyi.GSharp.Core.GpuOnlyException.Throw<uint>();
 /// <summary>Performs a hardware warp reduction bitwise XOR operation.</summary>
-/// <param name="mask">The 32-bit thread participation bitmask.</param>
+/// <param name="mask">The 32-bit thread participation bitmask. It must contain the calling lane; a mask without it is undefined on CUDA and an InvalidOperationException on the CPU paths.</param>
 /// <param name="val">The value contributed by this thread.</param>
 /// <returns>The bitwise XOR of val across participating threads.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("__reduce_xor_sync")]
 public static int ReduceXorSync(uint mask, int val) => Kassyi.GSharp.Core.GpuOnlyException.Throw<int>();
 /// <summary>Performs a hardware warp reduction bitwise XOR operation.</summary>
-/// <param name="mask">The 32-bit thread participation bitmask.</param>
+/// <param name="mask">The 32-bit thread participation bitmask. It must contain the calling lane; a mask without it is undefined on CUDA and an InvalidOperationException on the CPU paths.</param>
 /// <param name="val">The value contributed by this thread.</param>
 /// <returns>The bitwise XOR of val across participating threads.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("__reduce_xor_sync")]

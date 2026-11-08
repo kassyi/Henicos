@@ -39,9 +39,9 @@ public static partial class WarpShuffleInUnsplitContextKernels
         data[ThreadIndex.X] = broadcast(data[ThreadIndex.X]);
     }
 
-    // Not reported yet: the CPU paths do not split a Gpu.GridStrideLoop body either, but the Stdlib reduces there
+    // Not reported: the CPU lowering turns a Gpu.GridStrideLoop body into a loop, which it splits
     [GpuKernel]
-    [SkipSnapshotConsistency("Sad Path")]
+    [SkipSnapshotConsistency("Happy Path")]
     public static void GridStrideLoopKernel(int[] data)
     {
         Gpu.GridStrideLoop(data.Length, i =>

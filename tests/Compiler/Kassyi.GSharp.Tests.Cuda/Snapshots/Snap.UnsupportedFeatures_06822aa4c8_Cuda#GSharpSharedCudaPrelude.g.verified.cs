@@ -604,6 +604,17 @@ return threads >= 0x80000000ull ? 0x80000000u : (unsigned int)threads;
 // The count of Gpu.GridStrideLoop, evaluated once; a negative count runs no iteration, as i < n does in C#
 __device__ __forceinline__ unsigned int __gsharp_grid_stride_count(int n) { return n < 0 ? 0u : (unsigned int)n; }
 
+// --- Gpu.LaneId / Gpu.WarpId ---
+// A warp holds 32 consecutive linear thread indices of the block (x fastest), so the lane is the index modulo 32 (the
+// %laneid register) and the warp its quotient. %warpid is not used: it names a hardware slot that may change while the
+// thread runs.
+__device__ __forceinline__ int __gsharp_lane_id() {
+return (int)(((threadIdx.z * blockDim.y + threadIdx.y) * blockDim.x + threadIdx.x) & 31u);
+}
+__device__ __forceinline__ int __gsharp_warp_id() {
+return (int)(((threadIdx.z * blockDim.y + threadIdx.y) * blockDim.x + threadIdx.x) >> 5);
+}
+
 // --- Bit Manipulation ---
 __device__ __forceinline__ unsigned int __gsharp_rotl32(unsigned int value, int offset) {
 offset &= 31;

@@ -210,14 +210,6 @@
       paths: [Cuda]
       columns: [sharedRef, observed]
 
-- issue: 1091
-  title: "[Bug]: A warp shuffle in a Gpu.GridStrideLoop body is not split on the CPU paths: native returns the lane's own value, managed throws"
-  entries:
-    # Warp.ShuffleDownSync directly inside a Gpu.GridStrideLoop lambda is not split by StateMachineLowerer
-    - case: PendingBugsDifferentialKernels.GridStrideLoopUniformWarpShuffleKernel
-      paths: [Native]
-      columns: [iter0_down1, iter1_down1]
-
 - issue: 1409
   title: "[Bug]: Reading an element of a null array in a CUDA kernel fails the launch instead of throwing NullReferenceException"
   entries:
