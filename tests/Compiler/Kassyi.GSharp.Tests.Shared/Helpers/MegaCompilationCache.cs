@@ -13,7 +13,8 @@ namespace Kassyi.GSharp.Tests.Shared.Helpers;
 /// <para>
 /// <b>Isolated</b> sources are test-case inputs excluded from the build (<c>TestCases/**</c> and the embedded
 /// <c>Transpiler/*Kernels.cu.cs</c> resources). They contain deliberately invalid code and duplicate type names, so each
-/// one gets its own compilation built from <see cref="BaseCompilation"/>.
+/// one gets its own compilation built from <see cref="BaseCompilation"/>. The cache keeps the
+/// <see cref="IsolatedCapacity"/> most recently used ones and, beyond them, only those a caller still holds.
 /// </para>
 /// </remarks>
 public static class MegaCompilationCache
@@ -25,42 +26,23 @@ public static class MegaCompilationCache
         var references = trustedAssemblies
             .Split(Path.PathSeparator)
             .Where(p => !string.IsNullOrWhiteSpace(p))
-            .Select(p =>
-            {
-                // To avoid MSB3026 (file lock by testhost.exe), load assemblies built by us (in the test output directory) in-memory.
-                // System and framework assemblies can be safely loaded from file to massively improve performance.
-                if (p.StartsWith(baseDir, StringComparison.OrdinalIgnoreCase))
-                {
-                    return (MetadataReference)MetadataReference.CreateFromImage(File.ReadAllBytes(p));
-                }
-
-                return (MetadataReference)MetadataReference.CreateFromFile(p);
-            })
+            // CreateFromFile copies the image into native memory and closes the file, so the test host neither locks the
+            // assemblies a later build overwrites (MSB3026) nor keeps tens of MB of images on the large object heap.
+            .Select(static p => (MetadataReference)MetadataReference.CreateFromFile(p))
             .ToList();
 
         // Ensure Core assembly is referenced (it might not be in trustedAssemblies if the test doesn't explicitly reference it)
         var coreDllPath = typeof(Kassyi.GSharp.Core.Gpu).Assembly.Location;
-        if (!references.Any(r => string.Equals(r.Display, coreDllPath, StringComparison.OrdinalIgnoreCase)))
-        {
-            references.Add(MetadataReference.CreateFromImage(File.ReadAllBytes(coreDllPath)));
-        }
+        AddIfMissing(references, coreDllPath);
 
         // Implicitly reference Math library if present in the same directory, to support standard library tests
         var mathDllPath =
             Path.Combine(Path.GetDirectoryName(coreDllPath) ?? baseDir, "Kassyi.GSharp.Stdlib.GpuMath.dll");
-        if (File.Exists(mathDllPath) &&
-            !references.Any(r => string.Equals(r.Display, mathDllPath, StringComparison.OrdinalIgnoreCase)))
-        {
-            references.Add(MetadataReference.CreateFromImage(File.ReadAllBytes(mathDllPath)));
-        }
+        AddIfMissing(references, mathDllPath);
 
         // Implicitly reference ZeroAlloc.Linq library if present
         var linqDllPath = Path.Combine(Path.GetDirectoryName(coreDllPath) ?? baseDir, "Kassyi.ZeroAlloc.Linq.dll");
-        if (File.Exists(linqDllPath) &&
-            !references.Any(r => string.Equals(r.Display, linqDllPath, StringComparison.OrdinalIgnoreCase)))
-        {
-            references.Add(MetadataReference.CreateFromImage(File.ReadAllBytes(linqDllPath)));
-        }
+        AddIfMissing(references, linqDllPath);
 
         var baseComp = CSharpCompilation.Create("MegaTestCompilationBase")
             .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary).WithAllowUnsafe(true))
@@ -68,6 +50,15 @@ public static class MegaCompilationCache
 
         return baseComp;
     });
+
+    private static void AddIfMissing(List<MetadataReference> references, string path)
+    {
+        if (File.Exists(path) &&
+            !references.Any(r => string.Equals(r.Display, path, StringComparison.OrdinalIgnoreCase)))
+        {
+            references.Add(MetadataReference.CreateFromFile(path));
+        }
+    }
 
     private static readonly CSharpParseOptions s_parseOptions = new(LanguageVersion.Preview);
 
@@ -99,8 +90,18 @@ public static class MegaCompilationCache
     private static readonly Lazy<(CSharpCompilation Compilation, Dictionary<string, SyntaxTree> Trees)> s_shared =
         new(CreateSharedCompilation, LazyThreadSafetyMode.ExecutionAndPublication);
 
-    private static readonly ConcurrentDictionary<string, Lazy<(CSharpCompilation, SyntaxTree)>> s_isolated =
-        new(StringComparer.OrdinalIgnoreCase);
+    /// <summary>The number of isolated compilations the cache keeps alive by itself.</summary>
+    /// <remarks>
+    /// Each one binds its test case against every reference, so keeping all of them (several hundred in a run) held
+    /// hundreds of MB for the whole run. The test classes that run at the same time use far fewer files than this.
+    /// </remarks>
+    public const int IsolatedCapacity = 32;
+
+    private static readonly RecentlyUsedWeakCache<string, CSharpCompilation> s_isolated =
+        new(IsolatedCapacity, StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Gets the number of isolated compilations the cache keeps alive by itself.</summary>
+    internal static int IsolatedRecentCount => s_isolated.RecentCount;
 
     /// <summary>Gets the reference-only compilation (no syntax trees) used as the base of every compilation.</summary>
     public static CSharpCompilation BaseCompilation => s_baseCompilation.Value;
@@ -127,8 +128,9 @@ public static class MegaCompilationCache
                 $"{fullPath} is neither a shared source under {s_sharedRoot} nor an isolated test-case input.");
         }
 
-        return s_isolated.GetOrAdd(fullPath, static p => new Lazy<(CSharpCompilation, SyntaxTree)>(
-            () => CreateIsolatedCompilation(p), LazyThreadSafetyMode.ExecutionAndPublication)).Value;
+        // The compilation holds the global usings tree and the test case, in that order (CreateIsolatedCompilation)
+        var compilation = s_isolated.GetOrAdd(fullPath, CreateIsolatedCompilation);
+        return (compilation, compilation.SyntaxTrees[1]);
     }
 
     public static (SemanticModel Model, IMethodSymbol MethodSymbol) GetMethodContext(
@@ -225,11 +227,8 @@ public static class MegaCompilationCache
         return (compilation, byPath);
     }
 
-    private static (CSharpCompilation, SyntaxTree) CreateIsolatedCompilation(string path)
-    {
-        var tree = ParseFile(path);
-        return (BaseCompilation.AddSyntaxTrees(s_globalUsingsTree, tree), tree);
-    }
+    private static CSharpCompilation CreateIsolatedCompilation(string path) =>
+        BaseCompilation.AddSyntaxTrees(s_globalUsingsTree, ParseFile(path));
 
     private static SyntaxTree ParseFile(string path)
     {

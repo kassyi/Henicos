@@ -65,6 +65,28 @@ public class MegaCompilationCacheTests
 
     [Fact]
     [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.Boundary)]
+    public void GetSourceContext_MoreTestCasesThanCapacity_KeepsOnlyTheCapacity()
+    {
+        var testCases = Directory.EnumerateFiles(RoslynTestUtility.GetTestCasesDirectory(GetThisFilePath()), "*.cs",
+                SearchOption.AllDirectories)
+            .Order(StringComparer.Ordinal)
+            .Take(MegaCompilationCache.IsolatedCapacity * 2)
+            .ToArray();
+        Assert.Equal(MegaCompilationCache.IsolatedCapacity * 2, testCases.Length);
+
+        foreach (var testCase in testCases)
+        {
+            var (compilation, tree) = MegaCompilationCache.GetSourceContext(testCase);
+            Assert.Equal(Path.GetFullPath(testCase), tree.FilePath, ignoreCase: true);
+            Assert.Contains(tree, compilation.SyntaxTrees);
+        }
+
+        Assert.Equal(MegaCompilationCache.IsolatedCapacity, MegaCompilationCache.IsolatedRecentCount);
+    }
+
+    [Fact]
+    [Category(TestCategory.Unit)]
     public void Compilation_HasNoDuplicateDefinitions()
     {
         // Guards the isolated-file rules against drift from Kassyi.GSharp.Tests.Shared.projitems:
