@@ -308,6 +308,10 @@ internal sealed class GpuCorrectionStatus : IDisposable
         GpuDomainErrors.ScalarMultiplyOverflow =>
             "GpuBigIntMath.Mul(a, uint, r): the product does not fit in a result buffer as wide as the operand; " +
             "pass a wider buffer to get the exact value",
+        GpuDomainErrors.AddOverflow => "A sum does not fit in its result buffer",
+        GpuDomainErrors.SubtractBelowZero => "An unsigned difference is below zero",
+        GpuDomainErrors.SubtractOverflow => "A difference does not fit in its result buffer",
+        GpuDomainErrors.FitOverflow => "A value does not fit in the word count it is fitted to",
         _ => $"An operation reported the unknown domain error {code}"
     };
 

@@ -27,6 +27,18 @@ public static partial class GpuDomainErrors
     /// <summary>The product of <c>GpuBigIntMath.Mul(a, uint, r)</c> does not fit in <c>r</c>.</summary>
     public const uint ScalarMultiplyOverflow = 3u;
 
+    /// <summary>A sum does not fit in the result buffer.</summary>
+    public const uint AddOverflow = 4u;
+
+    /// <summary>An unsigned difference is below zero.</summary>
+    public const uint SubtractBelowZero = 5u;
+
+    /// <summary>A difference does not fit in the result buffer.</summary>
+    public const uint SubtractOverflow = 6u;
+
+    /// <summary>A value does not fit in the word count it is fitted to.</summary>
+    public const uint FitOverflow = 7u;
+
     /// <summary>
     /// Counts one domain error and records its code. Called by one thread per failed operation.
     /// </summary>
