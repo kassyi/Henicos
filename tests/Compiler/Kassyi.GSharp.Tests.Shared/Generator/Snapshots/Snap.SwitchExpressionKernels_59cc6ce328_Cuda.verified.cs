@@ -596,7 +596,6 @@ __gsharp_trap_abort(GSharpErrorCode::SwitchExpression, 904882063u);
 }()),__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__SwitchExpressionKernels__NoDiscardArm(__gsharp_id_0_input[__gsharp_id_2_tid]));
 }
 ";
-public static readonly string NoDiscardArmSwitchKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +NoDiscardArmSwitchKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_NoDiscardArmSwitchKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__SwitchExpressionKernels__NoDiscardArmSwitchKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerNoDiscardArmSwitchKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.SwitchExpressionKernels.__gsharp_hfunc_NoDiscardArmSwitchKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Syntax.SwitchExpressionKernels.s_errorSites);
