@@ -32,6 +32,29 @@ public sealed class ConditionalExpressionTranspilerRule : SyntaxNodeTranspilerRu
             return;
         }
 
+        // A conditional of a Nullable<T> type whose branch is a T or null (c ? v : null): C++ has no common type of T and
+        // nullptr, so a branch of another type is converted to the nullable type, as C# converts it (#1143)
+        // (the type of a target-typed conditional is the type it converts to)
+        if ((context.Query.SemanticModel.GetTypeSymbol(node) ??
+             context.Query.SemanticModel.GetConvertedTypeSymbol(node)) is INamedTypeSymbol
+            {
+                OriginalDefinition.SpecialType: SpecialType.System_Nullable_T
+            } nullable &&
+            (NeedsNullableConversion(node.WhenTrue, nullable, ref context) ||
+             NeedsNullableConversion(node.WhenFalse, nullable, ref context)))
+        {
+            using (context.Emitter.Writer.Parentheses())
+            {
+                context.Visitor.Visit(node.Condition);
+                context.Emitter.Writer.Append('?');
+                AppendAsNullable(node.WhenTrue, nullable, ref context);
+                context.Emitter.Writer.Append(':');
+                AppendAsNullable(node.WhenFalse, nullable, ref context);
+            }
+
+            return;
+        }
+
         // A target-typed c ? u : n converts both branches to its type in C#; C++ gives it unsigned int (#671)
         if (context.Query.SemanticModel.GetSafeOperation(node) is
                 IConditionalOperation { WhenFalse: { } whenFalse } operation &&
@@ -51,6 +74,34 @@ public sealed class ConditionalExpressionTranspilerRule : SyntaxNodeTranspilerRu
         }
 
         TranspileBranches(node, ref context);
+    }
+
+    // The branch is null, default or a value of another type than the nullable type of the conditional
+    private static bool NeedsNullableConversion(ExpressionSyntax branch, ITypeSymbol nullable,
+        ref TranspileContext context) =>
+        IsNullOrDefault(branch) || !nullable.IsEqualTo(context.Query.SemanticModel.GetTypeSymbol(branch));
+
+    private static bool IsNullOrDefault(ExpressionSyntax branch) =>
+        IntegerSemanticsEmitter.Unparenthesize(branch)
+            .IsKind(SyntaxKind.NullLiteralExpression, SyntaxKind.DefaultLiteralExpression);
+
+    // <branch> of the nullable type; <T?>() for null or default, <T?>(<branch>) for a value of another type
+    private static void AppendAsNullable(ExpressionSyntax branch, ITypeSymbol nullable, ref TranspileContext context)
+    {
+        if (!NeedsNullableConversion(branch, nullable, ref context))
+        {
+            context.Visitor.Visit(branch);
+            return;
+        }
+
+        context.Emitter.Dialect.AppendType(ref context, nullable);
+        using (context.Emitter.Writer.Parentheses())
+        {
+            if (!IsNullOrDefault(branch))
+            {
+                context.Visitor.Visit(branch);
+            }
+        }
     }
 
     private static void TranspileBranches(ConditionalExpressionSyntax node, ref TranspileContext context)

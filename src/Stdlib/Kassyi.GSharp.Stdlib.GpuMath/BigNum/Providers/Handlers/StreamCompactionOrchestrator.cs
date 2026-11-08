@@ -100,6 +100,8 @@ public static class StreamCompactionOrchestrator
         }
 
         var numBlocks = (elementCount + MaxElementsPerBlock - 1) / MaxElementsPerBlock;
+        var output = new GSharpArrayProxy(outputPtr, elementCount);
+        var input = new GSharpArrayProxy(inputPtr, elementCount);
 
         if (numBlocks == 1)
         {
@@ -113,7 +115,7 @@ public static class StreamCompactionOrchestrator
             blockDim = BitOperations.RoundUpToPowerOf2(blockDim);
 
             GpuStreamCompactionKernels.LaunchBlockExclusiveScanPtr(
-                outputPtr, inputPtr, elementCount, IntPtr.Zero, count.ToScanContext(), totalPtr, flags, gridDimX: 1,
+                output, input, elementCount, default, count.ToScanContext(), TotalProxy(totalPtr), flags, gridDimX: 1,
                 blockDimX: blockDim, hStream: workspace.Stream);
             return;
         }
@@ -123,7 +125,7 @@ public static class StreamCompactionOrchestrator
 
         // 1. Scan each block individually and record block sums
         GpuStreamCompactionKernels.LaunchBlockExclusiveScanPtr(
-            outputPtr, inputPtr, elementCount, blockSums.DevicePointer, count.ToScanContext(), IntPtr.Zero, flags,
+            output, input, elementCount, blockSums.ToProxy(), count.ToScanContext(), default, flags,
             gridDimX: (uint)numBlocks, blockDimX: fullBlockDim, hStream: workspace.Stream);
 
         // 2. Recursively scan the block sums (all of them are inputs, and they are counts); its last level writes the
@@ -133,9 +135,13 @@ public static class StreamCompactionOrchestrator
 
         // 3. Add the scanned block sums back to the output
         GpuStreamCompactionKernels.LaunchAddBlockSumsPtr(
-            outputPtr, scannedBlockSums.DevicePointer, elementCount,
+            output, scannedBlockSums.ToProxy(), elementCount,
             gridDimX: (uint)numBlocks, blockDimX: 1024, hStream: workspace.Stream); // AddBlockSums uses 1 thread per element, up to 1024 per block
     }
+
+    // The one total word of a scan, or a null array when the caller wants no total
+    private static GSharpArrayProxy TotalProxy(IntPtr totalPtr) =>
+        totalPtr == IntPtr.Zero ? default : new GSharpArrayProxy(totalPtr, 1);
 
     /// <summary>
     /// Zero-fills the destination and scatters the selected elements of a vector (all components in one launch); only
@@ -159,7 +165,7 @@ public static class StreamCompactionOrchestrator
             var (pointer, wordsPerElement) = TKind.Component(output, c);
             var words = elementCount * wordsPerElement;
             GpuStreamCompactionKernels.LaunchMemsetZeroPtr(
-                pointer, words, gridDimX: (uint)((words + threadsPerBlock - 1) / threadsPerBlock),
+                new GSharpArrayProxy(pointer, words), words, gridDimX: (uint)((words + threadsPerBlock - 1) / threadsPerBlock),
                 blockDimX: threadsPerBlock, hStream: workspace.Stream);
         }
 
@@ -202,12 +208,13 @@ public static class StreamCompactionOrchestrator
         var memsetGridDim = (totalWords + scatterThreadsPerBlock - 1) / scatterThreadsPerBlock;
 
         GpuStreamCompactionKernels.LaunchMemsetZeroPtr(
-            request.OutputPtr, totalWords,
+            new GSharpArrayProxy(request.OutputPtr, totalWords), totalWords,
             gridDimX: (uint)memsetGridDim, blockDimX: scatterThreadsPerBlock, hStream: workspace.Stream);
 
         GpuStreamCompactionKernels.LaunchCompactBigUIntArrayPtr(
-            request.OutputPtr, request.InputPtr,
-            request.PredicatesPtr, request.ScanIndicesPtr,
+            new GSharpArrayProxy(request.OutputPtr, totalWords), new GSharpArrayProxy(request.InputPtr, totalWords),
+            new GSharpArrayProxy(request.PredicatesPtr, request.ElementCount),
+            new GSharpArrayProxy(request.ScanIndicesPtr, request.ElementCount),
             request.ElementCount, request.WordsPerElement,
             gridDimX: (uint)scatterGridDim, blockDimX: scatterThreadsPerBlock, hStream: workspace.Stream);
     }

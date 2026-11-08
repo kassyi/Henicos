@@ -395,7 +395,12 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
         => IdentifierNameTranspiler.Transpile(node, ref Context);
 
     public override void VisitLiteralExpression(LiteralExpressionSyntax node)
-        => LiteralTranspiler.Transpile(node, Context.Emitter.Writer);
+    {
+        if (!LiteralTranspiler.TryAppendArrayNull(node, ref Context))
+        {
+            LiteralTranspiler.Transpile(node, Context.Emitter.Writer);
+        }
+    }
 
     public override void VisitDefaultExpression(DefaultExpressionSyntax node) =>
         Context.Emitter.Writer.Append("{}");
@@ -427,7 +432,21 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
             Context.Emitter.Writer.Append(' ');
             for (var i = 0; i < elements.Count; i++)
             {
-                Visit(elements[i]);
+                // An element that C# converts to the element type is written converted: a braced list rejects a
+                // narrowing conversion (#897)
+                switch (elements[i])
+                {
+                    case ExpressionElementSyntax element:
+                        ArithmeticConversions.AppendElement(element.Expression, ref Context);
+                        break;
+                    case ExpressionSyntax expression:
+                        ArithmeticConversions.AppendElement(expression, ref Context);
+                        break;
+                    default:
+                        Visit(elements[i]);
+                        break;
+                }
+
                 if (i >= elements.Count - 1)
                 {
                     continue;

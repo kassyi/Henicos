@@ -56,7 +56,7 @@ public class WrapperAllocationTests : TranspilerTestBase
             // and all callees complete Tier-0 -> OSR -> Tier-1 PGO promotion before measurement.
             for (int warmup = 0; warmup < 5; warmup++)
             {
-                RunHotPathBatch(d_ioVal, d_outVal, d_arrayVal, constantVal);
+                RunHotPathBatch(d_ioVal, d_outVal, new GSharpArrayProxy(d_arrayVal, arrayVal.Length), constantVal);
             }
 
             // Measure allocations on hot path across up to 3 batches and take the minimum.
@@ -66,7 +66,7 @@ public class WrapperAllocationTests : TranspilerTestBase
             for (int attempt = 0; attempt < 3; attempt++)
             {
                 long bytesBefore = GC.GetAllocatedBytesForCurrentThread();
-                RunHotPathBatch(d_ioVal, d_outVal, d_arrayVal, constantVal: 10);
+                RunHotPathBatch(d_ioVal, d_outVal, new GSharpArrayProxy(d_arrayVal, arrayVal.Length), constantVal: 10);
                 long bytesAfter = GC.GetAllocatedBytesForCurrentThread();
                 allocated = Math.Min(allocated, bytesAfter - bytesBefore);
                 if (allocated == 0)
@@ -204,7 +204,7 @@ public class WrapperAllocationTests : TranspilerTestBase
         Assert.True(allocated <= 5648 + 48, $"Allocated {allocated} bytes, expected <= 5696 bytes");
 
     [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void RunHotPathBatch(IntPtr d_ioVal, IntPtr d_outVal, IntPtr d_arrayVal, uint constantVal)
+    private static void RunHotPathBatch(IntPtr d_ioVal, IntPtr d_outVal, GSharpArrayProxy d_arrayVal, uint constantVal)
     {
         for (int i = 0; i < 100; i++)
         {

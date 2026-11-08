@@ -130,6 +130,7 @@ public GpuWorkspace Workspace { get; }
 | [Dispose()](#dispose) | Releases the GPU global device memory resources allocated for the underlying buffer. |
 | [GetElement(int)](#getelementint) | Gets a [`GpuBigUIntView`](GpuBigUIntView.md) of the specified element without allocating a new buffer. |
 | [Slice(int, int)](#sliceint-int) | Creates a [`GpuBigUIntArrayView`](GpuBigUIntArrayView.md) of a range of the elements. |
+| [ToProxy()](#toproxy) | Returns the words of every element as a kernel array argument. |
 
 ## Dispose()
 
@@ -138,6 +139,20 @@ Releases the GPU global device memory resources allocated for the underlying buf
 ```csharp
 public void Dispose();
 ```
+
+## ToProxy()
+
+Returns the array argument that passes the words of every element to a `Launch{Kernel}Ptr` launcher or a shadow struct
+field: the kernel sees an array of [TotalWords](#totalwords) words.
+
+```csharp
+public GSharpArrayProxy ToProxy();
+```
+
+#### Exceptions
+
+`ObjectDisposedException`<br>
+The buffer has been freed.
 
 ## GetElement(int)
 
