@@ -27,7 +27,11 @@ public const string BadKernel_Source = @"#error ""(11,13): GSH0002: The string t
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_TestSpace__ErrorSpecKernel__BadKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_TestSpace__ErrorSpecKernel__BadKernel(__gsharp_context_TestSpace__ErrorSpecKernel__BadKernel __gsharp_ctx, ref int __gsharp_auto_result) {

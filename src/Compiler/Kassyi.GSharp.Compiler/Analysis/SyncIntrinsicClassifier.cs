@@ -13,16 +13,14 @@ internal enum SyncIntrinsicKind
     GridBarrier,
 
     /// <summary>
-    /// <c>Warp.Shuffle*Sync</c>, <c>Gpu.Match*Sync</c>, and the votes and reductions of <c>Warp</c>: reads the values
-    /// of other lanes named in the mask, which the CPU paths exchange across a state boundary.
+    /// <c>Warp.Shuffle*Sync</c>, <c>Gpu.Match*Sync</c>, the votes and reductions of <c>Warp</c>, and
+    /// <c>Gpu.SyncWarp(mask)</c>: the lanes named in the mask meet at the call and read each other's values (none for
+    /// <c>Gpu.SyncWarp</c>), which the CPU paths exchange across a state boundary.
     /// </summary>
     WarpShuffle,
 
     /// <summary>A WMMA operation that every lane of the warp takes part in.</summary>
     WarpCollective,
-
-    /// <summary><c>Gpu.SyncWarp(mask)</c>: the lanes named in the mask wait for each other.</summary>
-    WarpBarrier,
 
     /// <summary><c>Gpu.ThreadFence*</c>: orders the memory accesses of the calling thread; no thread waits.</summary>
     MemoryFence,
@@ -96,7 +94,10 @@ internal enum WarpShuffleKind
     ReduceOr,
 
     /// <summary><c>Warp.ReduceXorSync</c>.</summary>
-    ReduceXor
+    ReduceXor,
+
+    /// <summary><c>Gpu.SyncWarp</c>: the lanes of the mask meet, without a value.</summary>
+    SyncWarp
 }
 
 /// <summary>How the analyzers and the lowering treat a call to an intrinsic of <c>Kassyi.GSharp.Core</c>.</summary>
@@ -212,8 +213,8 @@ internal static class SyncIntrinsicClassifier
             new SyncIntrinsicInfo(SyncIntrinsicKind.GridBarrier, SyncScope.Grid, splitsStateMachine: true,
                 resultIsThreadVariant: false),
         "SyncWarp" =>
-            new SyncIntrinsicInfo(SyncIntrinsicKind.WarpBarrier, SyncScope.Warp, splitsStateMachine: false,
-                resultIsThreadVariant: false),
+            new SyncIntrinsicInfo(SyncIntrinsicKind.WarpShuffle, SyncScope.Warp, splitsStateMachine: true,
+                resultIsThreadVariant: false, WarpShuffleKind.SyncWarp),
         "MatchAnySync" => Shuffle(WarpShuffleKind.MatchAny),
         "MatchAllSync" => Shuffle(WarpShuffleKind.MatchAll),
         "ThreadFence" or "ThreadFenceBlock" or "ThreadFenceSystem" =>

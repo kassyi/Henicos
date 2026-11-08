@@ -379,7 +379,7 @@ internal static void Invoke(ref global::Kassyi.GSharp.Tests.Shared.Differential.
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Differential__LanguageConversionsAndMacrosDifferentialKernels__SuspendAndCombineMacro {
 internal int __gsharp_state;
-internal uint __gsharp_warp_exchange;
+internal uint __gsharp_warp_path;
 internal int[] scratch;
 internal int localTid;
 internal int x;
@@ -389,6 +389,10 @@ internal global::Kassyi.GSharp.Tests.Shared.Differential.DiffMacroNum a;
 internal global::Kassyi.GSharp.Tests.Shared.Differential.DiffMacroNum b;
 internal global::Kassyi.GSharp.Tests.Shared.Differential.DiffMacroNum pre;
 internal int neighbor;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__LanguageConversionsAndMacrosDifferentialKernels__SuspendAndCombineMacro(int[] __gsharp_in_scratch, int __gsharp_in_localTid, int __gsharp_in_x, int __gsharp_in_y, ref int totalCalls, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Differential__LanguageConversionsAndMacrosDifferentialKernels__SuspendAndCombineMacro __gsharp_ctx, ref int __gsharp_result) {

@@ -186,8 +186,6 @@ static_assert(offsetof(__gsharp_ty_DebugReduc__ComprehensiveSpecKernel__PhysicsS
 struct __gsharp_context_DebugReduc__ComprehensiveSpecKernel__ProcessPhysics {
 int __gsharp_state = 0;
 __gsharp_context_DebugReduc__ComprehensiveSpecKernel__ProcessPhysics* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 GSharpArray<__gsharp_ty_DebugReduc__PhysicsVector> __gsharp_id_0_particles;
@@ -444,7 +442,7 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public unsafe struct __gsharp_context_DebugReduc__ComprehensiveSpecKernel__ProcessPhysics {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
 public global::DebugReduc.PhysicsVector[] particles;
 public global::DebugReduc.SpecTypes largeStructVal;
 public int particleCount;
@@ -471,6 +469,10 @@ public global::DebugReduc.NestedPhysicsState nested;
 public float mag;
 public int i;
 public int counter;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_DebugReduc__ComprehensiveSpecKernel__ProcessPhysics(global::DebugReduc.PhysicsVector[] __gsharp_in_particles, ref float totalMagnitude, ref bool successFlag, global::DebugReduc.SpecTypes __gsharp_in_largeStructVal, int __gsharp_in_particleCount, int __gsharp_in_unrollFactor, __gsharp_context_DebugReduc__ComprehensiveSpecKernel__ProcessPhysics* __gsharp_ctx) {
@@ -778,8 +780,6 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dl
 public const string CooperativePhysicsProcess_Source = @"struct __gsharp_context_DebugReduc__ComprehensiveSpecKernel__CooperativePhysicsProcess {
 int __gsharp_state = 0;
 __gsharp_context_DebugReduc__ComprehensiveSpecKernel__CooperativePhysicsProcess* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 GSharpArray<int> __gsharp_id_0_data;
@@ -925,9 +925,13 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_DebugReduc__ComprehensiveSpecKernel__CooperativePhysicsProcess {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
 public int[] data;
 public int tid;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_DebugReduc__ComprehensiveSpecKernel__CooperativePhysicsProcess(int[] __gsharp_in_data, __gsharp_context_DebugReduc__ComprehensiveSpecKernel__CooperativePhysicsProcess __gsharp_ctx) {

@@ -253,51 +253,10 @@ public static partial class ManagedGpuContext
     // ReSharper disable once UnusedMember.Global -- Public API for code generators
     public static void ClearThreadContext() => IsActive = false;
 
-    // Mocks for Warp Shuffle operations in Managed Execution
+    // Mocks for Warp Shuffle operations in Managed Execution. The lanes meet at the same instance of a shuffle before they
+    // read each other's values (ManagedGpuContext.WarpRendezvous.cs)
 
     private const int MaxThreadsPerBlock = 1024;
-    private const int WarpExchangeSlotSize = 8; // Largest shuffled type (double / ulong)
-
-    [ThreadStatic]
-    private static byte[]? s_warpExchangeBuffer;
-
-    [ThreadStatic]
-    private static int[]? s_warpShuffleCounts;
-
-    // Two planes alternate per shuffle: a lane that has already published its next shuffle writes the other plane, so it
-    // never overwrites the value a lane scheduled after it in the same phase still has to read.
-    private static Span<byte> GetWarpExchangeBuffer()
-    {
-        s_warpExchangeBuffer ??= new byte[2 * MaxThreadsPerBlock * WarpExchangeSlotSize];
-        return s_warpExchangeBuffer;
-    }
-
-    private static int[] GetWarpShuffleCounts() => s_warpShuffleCounts ??= new int[MaxThreadsPerBlock];
-
-    private static int GetWarpExchangeOffset(int plane, int linearTid) =>
-        (plane * MaxThreadsPerBlock + linearTid) * WarpExchangeSlotSize;
-
-    /// <summary>Advances the shuffle count of the calling thread at the start of a shuffle or match read.</summary>
-    private static void AdvanceWarpShuffleCount(int linearTid) => GetWarpShuffleCounts()[linearTid]++;
-
-    /// <summary>
-    /// Resets the per-thread shuffle counts at the start of a block, so that every lane begins on the same exchange plane.
-    /// </summary>
-    // ReSharper disable once UnusedMember.Global -- Public API for code generators
-    public static void ResetWarpExchange() => Array.Clear(GetWarpShuffleCounts(), 0, MaxThreadsPerBlock);
-
-    /// <summary>
-    /// Internal mock for warp exchange assignment. Do not use directly.
-    /// </summary>
-    /// <typeparam name="T">The value type.</typeparam>
-    /// <param name="value">The value to assign.</param>
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public static void __gsharp_warp_exchange_assign<T>(T value) where T : unmanaged
-    {
-        var linearTid = ThreadIdxZ * BlockDimY * BlockDimX + ThreadIdxY * BlockDimX + ThreadIdxX;
-        var plane = GetWarpShuffleCounts()[linearTid] & 1;
-        Unsafe.WriteUnaligned(ref GetWarpExchangeBuffer()[GetWarpExchangeOffset(plane, linearTid)], value);
-    }
 
     // The shuffles that CUDA leaves undefined throw InvalidOperationException with the place of the shuffle (#666): a width
     // that is not 1, 2, 4, 8, 16 or 32, and a source lane that does not exist in the block (the last warp of a block whose
@@ -342,31 +301,14 @@ public static partial class ManagedGpuContext
         return lanes >= 32 ? 0xFFFFFFFFu : (1u << lanes) - 1u;
     }
 
-    // Reads the value that lane srcLane of the caller's warp published for its current shuffle, after checking that the
-    // lane exists in the block
-    private static T ReadShuffleLane<T>(int linearTid, int srcLane, string name, string location)
-        where T : unmanaged
-    {
-        var threads = BlockDimX * BlockDimY * BlockDimZ;
-        var warpBase = linearTid & ~31;
-        var srcTid = warpBase + srcLane;
-        if (srcTid >= threads)
-        {
-            throw new InvalidOperationException(
-                $"G#: {name} at {location} reads lane {srcLane} of warp {warpBase / 32}, which does not exist in a block of {threads} threads " +
-                MissingLaneHint);
-        }
-
-        var plane = (GetWarpShuffleCounts()[srcTid] - (srcLane <= (linearTid & 31) ? 1 : 0)) & 1;
-        return Unsafe.ReadUnaligned<T>(ref GetWarpExchangeBuffer()[GetWarpExchangeOffset(plane, srcTid)]);
-    }
-
     /// <summary>
     /// Internal mock for warp shuffle down. Do not use directly.
     /// </summary>
-    /// <typeparam name="TContext">The context type.</typeparam>
+    /// <typeparam name="TFrame">The frame of the state machine.</typeparam>
     /// <typeparam name="T">The value type.</typeparam>
-    /// <param name="ctx">The execution context.</param>
+    /// <param name="root">Unused: the managed path keeps the published values itself.</param>
+    /// <param name="frame">The frame the shuffle is in.</param>
+    /// <param name="site">The number of the shuffle in the body of its function.</param>
     /// <param name="mask">The thread mask.</param>
     /// <param name="val">The value to shuffle.</param>
     /// <param name="delta">The lane offset.</param>
@@ -375,12 +317,12 @@ public static partial class ManagedGpuContext
     /// <returns>The shuffled value.</returns>
     /// <exception cref="InvalidOperationException">The width or the source lane is undefined on CUDA.</exception>
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public static T __gsharp_warp_shuffle_read_down_sync<TContext, T>(TContext ctx, uint mask, T val, uint delta,
-        int width, string location) where T : unmanaged
+    public static T __gsharp_warp_shuffle_read_down_sync<TFrame, T>(int root, ref TFrame frame, int site, uint mask,
+        T val, uint delta, int width, string location) where TFrame : IManagedWarpFrame where T : unmanaged
     {
         const string Name = "Warp.ShuffleDownSync";
+        var instance = BeginWarpRead(ref frame, site);
         var linearTid = LinearThreadId;
-        AdvanceWarpShuffleCount(linearTid);
         CheckShuffleWidth(width, Name, location);
         var laneId = linearTid % 32;
         var logicalLane = laneId % width;
@@ -388,15 +330,17 @@ public static partial class ManagedGpuContext
         var srcLogicalLane = logicalLane + (int)(delta & 31u);
         return srcLogicalLane >= width
             ? val
-            : ReadShuffleLane<T>(linearTid, laneId - logicalLane + srcLogicalLane, Name, location);
+            : ReadShuffleLane<T>(linearTid, instance, mask, laneId - logicalLane + srcLogicalLane, Name, location);
     }
 
     /// <summary>
     /// Internal mock for warp shuffle up. Do not use directly.
     /// </summary>
-    /// <typeparam name="TContext">The context type.</typeparam>
+    /// <typeparam name="TFrame">The frame of the state machine.</typeparam>
     /// <typeparam name="T">The value type.</typeparam>
-    /// <param name="ctx">The execution context.</param>
+    /// <param name="root">Unused: the managed path keeps the published values itself.</param>
+    /// <param name="frame">The frame the shuffle is in.</param>
+    /// <param name="site">The number of the shuffle in the body of its function.</param>
     /// <param name="mask">The thread mask.</param>
     /// <param name="val">The value to shuffle.</param>
     /// <param name="delta">The lane offset.</param>
@@ -405,12 +349,12 @@ public static partial class ManagedGpuContext
     /// <returns>The shuffled value.</returns>
     /// <exception cref="InvalidOperationException">The width or the source lane is undefined on CUDA.</exception>
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public static T __gsharp_warp_shuffle_read_up_sync<TContext, T>(TContext ctx, uint mask, T val, uint delta,
-        int width, string location) where T : unmanaged
+    public static T __gsharp_warp_shuffle_read_up_sync<TFrame, T>(int root, ref TFrame frame, int site, uint mask,
+        T val, uint delta, int width, string location) where TFrame : IManagedWarpFrame where T : unmanaged
     {
         const string Name = "Warp.ShuffleUpSync";
+        var instance = BeginWarpRead(ref frame, site);
         var linearTid = LinearThreadId;
-        AdvanceWarpShuffleCount(linearTid);
         CheckShuffleWidth(width, Name, location);
         var laneId = linearTid % 32;
         var logicalLane = laneId % width;
@@ -418,15 +362,17 @@ public static partial class ManagedGpuContext
         var offset = (int)(delta & 31u);
         return logicalLane < offset
             ? val
-            : ReadShuffleLane<T>(linearTid, laneId - offset, Name, location);
+            : ReadShuffleLane<T>(linearTid, instance, mask, laneId - offset, Name, location);
     }
 
     /// <summary>
     /// Internal mock for warp shuffle XOR. Do not use directly.
     /// </summary>
-    /// <typeparam name="TContext">The context type.</typeparam>
+    /// <typeparam name="TFrame">The frame of the state machine.</typeparam>
     /// <typeparam name="T">The value type.</typeparam>
-    /// <param name="ctx">The execution context.</param>
+    /// <param name="root">Unused: the managed path keeps the published values itself.</param>
+    /// <param name="frame">The frame the shuffle is in.</param>
+    /// <param name="site">The number of the shuffle in the body of its function.</param>
     /// <param name="mask">The thread mask.</param>
     /// <param name="val">The value to shuffle.</param>
     /// <param name="delta">The lane XOR mask.</param>
@@ -435,12 +381,12 @@ public static partial class ManagedGpuContext
     /// <returns>The shuffled value.</returns>
     /// <exception cref="InvalidOperationException">The width or the source lane is undefined on CUDA.</exception>
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public static T __gsharp_warp_shuffle_read_xor_sync<TContext, T>(TContext ctx, uint mask, T val, int delta,
-        int width, string location) where T : unmanaged
+    public static T __gsharp_warp_shuffle_read_xor_sync<TFrame, T>(int root, ref TFrame frame, int site, uint mask,
+        T val, int delta, int width, string location) where TFrame : IManagedWarpFrame where T : unmanaged
     {
         const string Name = "Warp.ShuffleXorSync";
+        var instance = BeginWarpRead(ref frame, site);
         var linearTid = LinearThreadId;
-        AdvanceWarpShuffleCount(linearTid);
         CheckShuffleWidth(width, Name, location);
         var laneId = (uint)(linearTid % 32);
         // CUDA lets a group of width lanes read its own group and the earlier ones; a later group gives the caller's own
@@ -449,15 +395,17 @@ public static partial class ManagedGpuContext
         var srcLane = laneId ^ ((uint)delta & 31u);
         return srcLane > (laneId | ((uint)width - 1u))
             ? val
-            : ReadShuffleLane<T>(linearTid, (int)srcLane, Name, location);
+            : ReadShuffleLane<T>(linearTid, instance, mask, (int)srcLane, Name, location);
     }
 
     /// <summary>
     /// Internal mock for warp shuffle direct read. Do not use directly.
     /// </summary>
-    /// <typeparam name="TContext">The context type.</typeparam>
+    /// <typeparam name="TFrame">The frame of the state machine.</typeparam>
     /// <typeparam name="T">The value type.</typeparam>
-    /// <param name="ctx">The execution context.</param>
+    /// <param name="root">Unused: the managed path keeps the published values itself.</param>
+    /// <param name="frame">The frame the shuffle is in.</param>
+    /// <param name="site">The number of the shuffle in the body of its function.</param>
     /// <param name="mask">The thread mask.</param>
     /// <param name="val">The value to shuffle.</param>
     /// <param name="srcLane">The source lane ID; CUDA reads lane srcLane % width of the caller's segment.</param>
@@ -466,16 +414,17 @@ public static partial class ManagedGpuContext
     /// <returns>The shuffled value.</returns>
     /// <exception cref="InvalidOperationException">The width or the source lane is undefined on CUDA.</exception>
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public static T __gsharp_warp_shuffle_read_sync<TContext, T>(TContext ctx, uint mask, T val, int srcLane,
-        int width, string location) where T : unmanaged
+    public static T __gsharp_warp_shuffle_read_sync<TFrame, T>(int root, ref TFrame frame, int site, uint mask, T val,
+        int srcLane, int width, string location) where TFrame : IManagedWarpFrame where T : unmanaged
     {
         const string Name = "Warp.ShuffleSync";
+        var instance = BeginWarpRead(ref frame, site);
         var linearTid = LinearThreadId;
-        AdvanceWarpShuffleCount(linearTid);
         CheckShuffleWidth(width, Name, location);
         var laneId = linearTid % 32;
         var logicalLane = laneId % width;
-        return ReadShuffleLane<T>(linearTid, laneId - logicalLane + (srcLane & (width - 1)), Name, location);
+        return ReadShuffleLane<T>(linearTid, instance, mask, laneId - logicalLane + (srcLane & (width - 1)), Name,
+            location);
     }
 
     private static unsafe bool RawBitsEqual<T>(T a, T b) where T : unmanaged
@@ -508,38 +457,30 @@ public static partial class ManagedGpuContext
     /// <summary>
     /// Internal mock for <c>Gpu.MatchAnySync</c>. Do not use directly.
     /// </summary>
-    /// <typeparam name="TContext">The context type.</typeparam>
+    /// <typeparam name="TFrame">The frame of the state machine.</typeparam>
     /// <typeparam name="T">The value type.</typeparam>
-    /// <param name="ctx">The execution context.</param>
+    /// <param name="root">Unused: the managed path keeps the published values itself.</param>
+    /// <param name="frame">The frame the call is in.</param>
+    /// <param name="site">The number of the call in the body of its function.</param>
     /// <param name="mask">The participating lane mask.</param>
     /// <param name="val">The value to compare.</param>
     /// <param name="location">The place of the call in the C# source, for the error message.</param>
     /// <returns>The bitmask of participating lanes whose value equals <paramref name="val"/>.</returns>
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public static uint __gsharp_warp_match_any_read_sync<TContext, T>(TContext ctx, uint mask, T val, string location)
-        where T : unmanaged
+    public static uint __gsharp_warp_match_any_read_sync<TFrame, T>(int root, ref TFrame frame, int site, uint mask,
+        T val, string location) where TFrame : IManagedWarpFrame where T : unmanaged
     {
         const string Name = "Gpu.MatchAnySync";
+        var instance = BeginWarpRead(ref frame, site);
         var linearTid = LinearThreadId;
-        AdvanceWarpShuffleCount(linearTid);
-        var laneId = linearTid & 31;
-        if ((mask & (1u << laneId)) == 0u)
-        {
-            throw new InvalidOperationException(
-                $"G#: {Name} at {location} has mask 0x{mask:X8} without caller lane {laneId} (CUDA leaves the result undefined)");
-        }
-
-        var active = ActiveMask() & mask;
+        var lanes = GetVoteLanes(linearTid, instance, mask, Name, location);
         var result = 0u;
         for (var srcLane = 0; srcLane < 32; srcLane++)
         {
-            if ((active & (1u << srcLane)) != 0u)
+            if ((lanes & (1u << srcLane)) != 0u &&
+                RawBitsEqual(ReadShuffleLane<T>(linearTid, instance, mask, srcLane, Name, location), val))
             {
-                var laneVal = ReadShuffleLane<T>(linearTid, srcLane, Name, location);
-                if (RawBitsEqual(laneVal, val))
-                {
-                    result |= 1u << srcLane;
-                }
+                result |= 1u << srcLane;
             }
         }
 
@@ -549,44 +490,35 @@ public static partial class ManagedGpuContext
     /// <summary>
     /// Internal mock for <c>Gpu.MatchAllSync</c>. Do not use directly.
     /// </summary>
-    /// <typeparam name="TContext">The context type.</typeparam>
+    /// <typeparam name="TFrame">The frame of the state machine.</typeparam>
     /// <typeparam name="T">The value type.</typeparam>
-    /// <param name="ctx">The execution context.</param>
+    /// <param name="root">Unused: the managed path keeps the published values itself.</param>
+    /// <param name="frame">The frame the call is in.</param>
+    /// <param name="site">The number of the call in the body of its function.</param>
     /// <param name="mask">The participating lane mask.</param>
     /// <param name="val">The value to compare.</param>
     /// <param name="pred">Set to 1 when all participating lanes match, or 0 otherwise.</param>
     /// <param name="location">The place of the call in the C# source, for the error message.</param>
-    /// <returns><paramref name="mask"/> masked to active lanes when all participating lanes match, or 0 otherwise.</returns>
+    /// <returns>The participating lanes when all of them match, or 0 otherwise.</returns>
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public static uint __gsharp_warp_match_all_read_sync<TContext, T>(TContext ctx, uint mask, T val, ref int pred,
-        string location) where T : unmanaged
+    public static uint __gsharp_warp_match_all_read_sync<TFrame, T>(int root, ref TFrame frame, int site, uint mask,
+        T val, ref int pred, string location) where TFrame : IManagedWarpFrame where T : unmanaged
     {
         const string Name = "Gpu.MatchAllSync";
+        var instance = BeginWarpRead(ref frame, site);
         var linearTid = LinearThreadId;
-        AdvanceWarpShuffleCount(linearTid);
-        var laneId = linearTid & 31;
-        if ((mask & (1u << laneId)) == 0u)
-        {
-            throw new InvalidOperationException(
-                $"G#: {Name} at {location} has mask 0x{mask:X8} without caller lane {laneId} (CUDA leaves the result undefined)");
-        }
-
-        var active = ActiveMask() & mask;
+        var lanes = GetVoteLanes(linearTid, instance, mask, Name, location);
         var allEqual = true;
-        for (var srcLane = 0; srcLane < 32; srcLane++)
+        for (var srcLane = 0; srcLane < 32 && allEqual; srcLane++)
         {
-            if ((active & (1u << srcLane)) != 0u)
+            if ((lanes & (1u << srcLane)) != 0u &&
+                !RawBitsEqual(ReadShuffleLane<T>(linearTid, instance, mask, srcLane, Name, location), val))
             {
-                var laneVal = ReadShuffleLane<T>(linearTid, srcLane, Name, location);
-                if (!RawBitsEqual(laneVal, val))
-                {
-                    allEqual = false;
-                    break;
-                }
+                allEqual = false;
             }
         }
 
         pred = allEqual ? 1 : 0;
-        return allEqual ? active : 0u;
+        return allEqual ? lanes : 0u;
     }
 }

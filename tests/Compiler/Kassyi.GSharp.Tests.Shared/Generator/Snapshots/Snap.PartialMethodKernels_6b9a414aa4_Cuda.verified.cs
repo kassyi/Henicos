@@ -97,9 +97,13 @@ public partial class PartialMethodKernels
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__PartialMethodKernels__AddAfterBarrier {
 internal int __gsharp_state;
-internal uint __gsharp_warp_exchange;
+internal uint __gsharp_warp_path;
 internal int[] shared;
 internal int i;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__PartialMethodKernels__AddAfterBarrier(int[] __gsharp_in_shared, int __gsharp_in_i, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__PartialMethodKernels__AddAfterBarrier __gsharp_ctx, ref int __gsharp_result) {

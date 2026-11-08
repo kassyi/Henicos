@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Linq;
 using Kassyi.GSharp.Core;
 using Xunit;
 
@@ -162,14 +163,14 @@ public class PendingBugsDifferentialTests
         DifferentialRunner.Run(s_gridStrideLoopUniformWarpShuffle);
 
     // #1146: A full-mask Warp.ShuffleDownSync in the last, partial wave of a Gpu.GridStrideLoop is undefined on CUDA.
-    // Under semantics charter section 3, undefined behavior must be rejected with a diagnostic or run-time exception.
-    [SkippableFact(Skip = "Pending #1146: full-mask Warp.Shuffle*Sync in a partial wave of GridStrideLoop is undefined on CUDA and must be rejected.")]
+    // Under semantics charter section 3, undefined behavior must be rejected with a diagnostic or run-time exception:
+    // lane 15 of the last wave reads lane 16, which has exited. The release CUDA build does not check it.
+    [SkippableFact]
     [Scenario(TestScenario.SadPath)]
     public void Test_WarpShuffleDownInGridStrideLoop_PartialLastWave_RejectsFullMaskShuffle()
     {
-#if GSHARP_CUDA
-        CudaCapability.EnsureGpuAvailable();
-#endif
+        Skip.If(DiffPaths.Available.All(static p => p.Path == DiffPath.Cuda),
+            "The release CUDA build does not check a shuffle that reads a lane that has exited");
         const int activeCount = 80;
         var input = new int[activeCount];
         for (int i = 0; i < activeCount; i++)
@@ -188,6 +189,7 @@ public class PendingBugsDifferentialTests
             Assert.Contains("Warp.ShuffleDownSync", ex.Message);
             Assert.Contains("PendingBugsDifferentialKernels.cu.cs", ex.Message);
             Assert.Contains("154", ex.Message);
+            Assert.Contains("which has exited", ex.Message);
         }
     }
 

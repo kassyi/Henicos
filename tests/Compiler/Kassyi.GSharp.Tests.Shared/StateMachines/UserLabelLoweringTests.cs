@@ -22,7 +22,7 @@ public class UserLabelLoweringTests : StateMachineTestBase
             var text = lowered.LoweredBody.NormalizeWhitespace().ToFullString();
             // The label is state 1: it publishes the value, and the temporary is read in the state after the split
             var labelState = text.IndexOf("case 1:", StringComparison.Ordinal);
-            var publish = text.IndexOf("__gsharp_warp_exchange_assign", StringComparison.Ordinal);
+            var publish = text.IndexOf("__gsharp_warp_publish", StringComparison.Ordinal);
             var readState = text.IndexOf("case 2:", StringComparison.Ordinal);
             var temporary = text.IndexOf("var __gsharp_warp_temp_0", StringComparison.Ordinal);
             Assert.True(labelState >= 0 && labelState < publish && publish < readState && readState < temporary, text);

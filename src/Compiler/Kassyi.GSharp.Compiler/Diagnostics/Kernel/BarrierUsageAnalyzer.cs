@@ -158,7 +158,7 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
             {
                 context.ReportDiagnostic(GSharpDiagnostics.SuspendingCallInUnsupportedContext,
                     invocation.GetLocation(), callee.Name, shuffleContext,
-                    IsVoteOrReduction(intrinsic.Shuffle) ? WarpVoteCallee : WarpShuffleCallee);
+                    GetWarpCallee(intrinsic.Shuffle));
             }
 
             return;
@@ -196,6 +196,13 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
     private const string WarpShuffleCallee = "is a warp shuffle";
 
     private const string WarpVoteCallee = "is a warp vote or reduction";
+
+    private const string WarpBarrierCallee = "is a warp barrier";
+
+    private static string GetWarpCallee(WarpShuffleKind kind) =>
+        kind == WarpShuffleKind.SyncWarp ? WarpBarrierCallee
+        : IsVoteOrReduction(kind) ? WarpVoteCallee
+        : WarpShuffleCallee;
 
     private static bool IsVoteOrReduction(WarpShuffleKind kind) =>
         kind is WarpShuffleKind.Ballot or WarpShuffleKind.All or WarpShuffleKind.Any or WarpShuffleKind.ReduceAdd

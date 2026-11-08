@@ -261,8 +261,7 @@ internal sealed partial class ManagedExecutionRewriter(
             GSharpInternalNames.StateMachine.YieldedForBlockBarrier =>
                 SyntaxFactory.ParseExpression(ManagedBlockBarrierRequested).WithTriviaFrom(node),
             // __gsharp_ctx.<name> or __gsharp_ctx-><name>
-            GSharpInternalNames.StateMachine.State
-                or GSharpInternalNames.StateMachine.WarpExchange =>
+            GSharpInternalNames.StateMachine.State =>
                 SyntaxFactory.MemberAccessExpression(
                     _isUnsafe ? SyntaxKind.PointerMemberAccessExpression : SyntaxKind.SimpleMemberAccessExpression,
                     SyntaxFactory.IdentifierName(GSharpInternalNames.StateMachine.Context),
@@ -271,6 +270,27 @@ internal sealed partial class ManagedExecutionRewriter(
             // The generated file has none of the user's using directives
             _ => RouteOrQualify(node, base.VisitIdentifierName(node))
         };
+    }
+
+    // [WHY] A warp collective passes the frame it runs in (__gsharp_ctx) to the managed helpers, which read its path and
+    // visit counts through IManagedWarpFrame (#1468). A reference lets the helper update the counts of an unsafe
+    // context, a struct reached through a pointer, in place: ref __gsharp_ctx or ref *__gsharp_ctx
+    public override SyntaxNode? VisitArgument(ArgumentSyntax node)
+    {
+        if (node.Expression is not IdentifierNameSyntax
+            {
+                Identifier.ValueText: GSharpInternalNames.StateMachine.Context
+            } frame)
+        {
+            return base.VisitArgument(node);
+        }
+
+        ExpressionSyntax target = _isUnsafe
+            ? SyntaxFactory.PrefixUnaryExpression(SyntaxKind.PointerIndirectionExpression, frame.WithoutTrivia())
+            : frame.WithoutTrivia();
+        return SyntaxFactory.Argument(target)
+            .WithRefKindKeyword(SyntaxFactory.Token(SyntaxKind.RefKeyword).WithTrailingTrivia(SyntaxFactory.Space))
+            .WithTriviaFrom(node);
     }
 
     public override SyntaxNode? VisitGenericName(GenericNameSyntax node) =>

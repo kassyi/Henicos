@@ -95,9 +95,13 @@ public partial class NamedThenPositionalDifferentialKernels
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_frame_Kassyi__GSharp__Tests__Shared__Differential__NamedThenPositionalDifferentialKernels__SubAcrossBarrier {
 internal int __gsharp_state;
-internal uint __gsharp_warp_exchange;
+internal uint __gsharp_warp_path;
 internal int a;
 internal int b;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__NamedThenPositionalDifferentialKernels__SubAcrossBarrier(int __gsharp_in_a, int __gsharp_in_b, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Differential__NamedThenPositionalDifferentialKernels__SubAcrossBarrier __gsharp_ctx, ref int __gsharp_result) {
@@ -158,8 +162,6 @@ public static partial class AotContexts
 public const string NamedThenPositionalKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__NamedThenPositionalDifferentialKernels__NamedThenPositionalKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__NamedThenPositionalDifferentialKernels__NamedThenPositionalKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
@@ -267,7 +269,11 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__NamedThenPositionalDifferentialKernels__NamedThenPositionalKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__NamedThenPositionalDifferentialKernels__NamedThenPositionalKernel(int[] xs, int[] ys, int[] r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__NamedThenPositionalDifferentialKernels__NamedThenPositionalKernel __gsharp_ctx) {
@@ -435,8 +441,6 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dl
 public const string NamedThenPositionalSuspendingCallKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__NamedThenPositionalDifferentialKernels__NamedThenPositionalSuspendingCallKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__NamedThenPositionalDifferentialKernels__NamedThenPositionalSuspendingCallKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange[2] = {};
-uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 GSharpArray<int> __gsharp_id_0_xs;
@@ -558,7 +562,7 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__NamedThenPositionalDifferentialKernels__NamedThenPositionalSuspendingCallKernel {
 public int __gsharp_state;
-public uint __gsharp_warp_exchange;
+public uint __gsharp_warp_path;
 public int[] xs;
 public int[] ys;
 public int[] r;
@@ -567,6 +571,11 @@ public int x;
 public int y;
 public int __gsharp_call_temp_0;
 internal global::Kassyi.GSharp.Tests.Shared.Differential.NamedThenPositionalDifferentialKernels.__gsharp_frame_Kassyi__GSharp__Tests__Shared__Differential__NamedThenPositionalDifferentialKernels__SubAcrossBarrier __gsharp_call_frame_0 = new();
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+next = __gsharp_call_frame_0.__gsharp_number_warp_paths(next);
+return next;
+}
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__NamedThenPositionalDifferentialKernels__NamedThenPositionalSuspendingCallKernel(int[] __gsharp_in_xs, int[] __gsharp_in_ys, int[] __gsharp_in_r, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__NamedThenPositionalDifferentialKernels__NamedThenPositionalSuspendingCallKernel __gsharp_ctx) {
