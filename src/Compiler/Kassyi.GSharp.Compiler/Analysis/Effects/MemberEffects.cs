@@ -6,7 +6,7 @@ namespace Kassyi.GSharp.Compiler.Analysis;
 /// </summary>
 internal static class MemberEffects
 {
-    public static void AddIdentifier(ref ExpressionEffects.Walker walker, IdentifierNameSyntax identifier)
+    public static void AddIdentifier(ref EffectWalker walker, IdentifierNameSyntax identifier)
     {
         switch (walker.Model.GetSymbol(identifier))
         {
@@ -27,7 +27,7 @@ internal static class MemberEffects
     }
 
     // A property read by its name alone or through its type: memory unless it is an intrinsic
-    public static void AddPropertyRead(ref ExpressionEffects.Walker walker, IPropertySymbol property)
+    public static void AddPropertyRead(ref EffectWalker walker, IPropertySymbol property)
     {
         if (!IsIntrinsicProperty(property))
         {
@@ -35,14 +35,14 @@ internal static class MemberEffects
         }
     }
 
-    public static void AddPointerMember(ref ExpressionEffects.Walker walker, MemberAccessExpressionSyntax access)
+    public static void AddPointerMember(ref EffectWalker walker, MemberAccessExpressionSyntax access)
     {
         walker.AddValue(access.Expression);
         walker.Reads.Memory = true;
     }
 
     public static void AddInstanceProperty(
-        ref ExpressionEffects.Walker walker,
+        ref EffectWalker walker,
         MemberAccessExpressionSyntax access,
         IPropertySymbol property
     )
@@ -72,13 +72,13 @@ internal static class MemberEffects
     }
 
     // A member that does not resolve (a field that lowering synthesized): known by its name
-    public static void AddUnresolvedMember(ref ExpressionEffects.Walker walker, MemberAccessExpressionSyntax access)
+    public static void AddUnresolvedMember(ref EffectWalker walker, MemberAccessExpressionSyntax access)
     {
         walker.AddValue(access.Expression);
         walker.Reads.Add(access.Name.Identifier.ValueText);
     }
 
-    public static void AddElementAccess(ref ExpressionEffects.Walker walker, ElementAccessExpressionSyntax element)
+    public static void AddElementAccess(ref EffectWalker walker, ElementAccessExpressionSyntax element)
     {
         if (walker.Model.GetSymbol(element) is IPropertySymbol indexer &&
             MayMutateValueTypeReceiver(indexer, walker.Model.Compilation))

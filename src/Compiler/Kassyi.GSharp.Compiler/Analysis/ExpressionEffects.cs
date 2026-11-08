@@ -36,7 +36,7 @@ internal readonly struct ExpressionEffects(VariableSet reads, VariableSet writes
     /// <summary>The effects of evaluating <paramref name="expression"/> for its value.</summary>
     public static ExpressionEffects Of(ExpressionSyntax expression, SemanticModel model)
     {
-        var walker = new Walker(model);
+        var walker = new EffectWalker(model);
         walker.AddValue(expression);
         return new ExpressionEffects(walker.Reads, walker.Writes);
     }
@@ -48,7 +48,7 @@ internal readonly struct ExpressionEffects(VariableSet reads, VariableSet writes
     /// </summary>
     public static ExpressionEffects OfLocation(ExpressionSyntax expression, SemanticModel model, bool readsValue = false)
     {
-        var walker = new Walker(model);
+        var walker = new EffectWalker(model);
         var root = walker.AddLocation(expression);
         if (readsValue)
         {
@@ -64,7 +64,7 @@ internal readonly struct ExpressionEffects(VariableSet reads, VariableSet writes
     /// </summary>
     public static VariableSet RootOf(ExpressionSyntax expression, SemanticModel model)
     {
-        var walker = new Walker(model);
+        var walker = new EffectWalker(model);
         var root = walker.AddLocation(expression);
         var reads = default(VariableSet);
         foreach (var variable in root.Variables)
@@ -88,7 +88,7 @@ internal readonly struct ExpressionEffects(VariableSet reads, VariableSet writes
     /// </summary>
     public static ExpressionEffects OfCall(IMethodSymbol target, ISymbol? referenceArgument, SemanticModel model)
     {
-        var walker = new Walker(model);
+        var walker = new EffectWalker(model);
         CallEffects.AddCallOf(ref walker, target, referenceArgument);
         return new ExpressionEffects(walker.Reads, walker.Writes);
     }
@@ -100,234 +100,4 @@ internal readonly struct ExpressionEffects(VariableSet reads, VariableSet writes
     /// <summary>Whether this operand, evaluated before <paramref name="later"/>, could see or change what it does.</summary>
     public bool InterferesWith(in ExpressionEffects later) =>
         Writes.Overlaps(later.Reads) || Writes.Overlaps(later.Writes) || Reads.Overlaps(later.Writes);
-
-    // The variables (for a ref conditional) that a location belongs to: symbols or names, and whether it touches memory
-    internal readonly struct Root
-    {
-        public ImmutableArray<object> Variables { get; }
-
-        public bool IsMemory { get; }
-
-        public Root(object? variable, bool isMemory = false)
-        {
-            Variables = variable != null ? ImmutableArray.Create(variable) : ImmutableArray<object>.Empty;
-            IsMemory = isMemory || variable == null;
-        }
-
-        public Root(ImmutableArray<object> variables, bool isMemory)
-        {
-            Variables = variables;
-            IsMemory = isMemory || variables.IsEmpty;
-        }
-
-        public static Root Combine(Root whenTrue, Root whenFalse)
-        {
-            var isMemory = whenTrue.IsMemory || whenFalse.IsMemory;
-            var builder = ImmutableArray.CreateBuilder<object>(whenTrue.Variables.Length + whenFalse.Variables.Length);
-            builder.AddRange(whenTrue.Variables);
-            foreach (var v in whenFalse.Variables)
-            {
-                if (!builder.Contains(v))
-                {
-                    builder.Add(v);
-                }
-            }
-
-            return new Root(builder.ToImmutable(), isMemory);
-        }
-    }
-
-    // Collects the reads and writes of one expression. The bodies of the cases live in the effect families
-    // (OperatorEffects, MemberEffects, LocationEffects, CallEffects, CreationEffects), which take the walker by ref.
-    internal struct Walker(SemanticModel model)
-    {
-        public VariableSet Reads;
-        public VariableSet Writes;
-
-        public readonly SemanticModel Model => model;
-
-        public void AddRead(Root root)
-        {
-            foreach (var variable in root.Variables)
-            {
-                Reads.Add(variable);
-            }
-
-            if (root.IsMemory)
-            {
-                Reads.Memory = true;
-            }
-        }
-
-        public void AddWrite(Root root)
-        {
-            foreach (var variable in root.Variables)
-            {
-                Writes.Add(variable);
-            }
-
-            if (root.IsMemory)
-            {
-                Writes.Memory = true;
-            }
-        }
-
-        public void AddUnknown()
-        {
-            Reads.Memory = Reads.AllLocals = true;
-            Writes.Memory = Writes.AllLocals = true;
-        }
-
-        // Whether a call of method (an accessor or an operator, or none) writes memory, as DeviceFunctionEffects says
-        public readonly bool MayWriteMemory(IMethodSymbol? method) =>
-            method != null && DeviceFunctionEffects.Classify(method, model.Compilation) == DeviceFunctionEffect.Memory;
-
-        public void AddValue(ExpressionSyntax expression)
-        {
-            if (model.GetSafeConstantValue(expression).HasValue)
-            {
-                return;
-            }
-
-            OperatorEffects.AddConversions(ref this, expression);
-            switch (expression)
-            {
-                case LiteralExpressionSyntax or DefaultExpressionSyntax or SizeOfExpressionSyntax or
-                    TypeOfExpressionSyntax or LambdaExpressionSyntax or AnonymousMethodExpressionSyntax or
-                    DeclarationExpressionSyntax or BaseExpressionSyntax or PredefinedTypeSyntax:
-                    return;
-                case ParenthesizedExpressionSyntax or CastExpressionSyntax or CheckedExpressionSyntax:
-                    AddValue(GetOperand(expression));
-                    return;
-                case PostfixUnaryExpressionSyntax postfix:
-                    OperatorEffects.AddPostfix(ref this, postfix);
-                    return;
-                case PrefixUnaryExpressionSyntax prefix:
-                    OperatorEffects.AddPrefix(ref this, prefix);
-                    return;
-                case IdentifierNameSyntax identifier:
-                    MemberEffects.AddIdentifier(ref this, identifier);
-                    return;
-                case MemberAccessExpressionSyntax access:
-                    AddMemberAccess(access);
-                    return;
-                case ElementAccessExpressionSyntax element:
-                    MemberEffects.AddElementAccess(ref this, element);
-                    return;
-                case AssignmentExpressionSyntax assignment:
-                    OperatorEffects.AddAssignment(ref this, assignment);
-                    return;
-                case InvocationExpressionSyntax invocation:
-                    CallEffects.AddInvocation(ref this, invocation);
-                    return;
-                case BaseObjectCreationExpressionSyntax creation:
-                    CreationEffects.AddObjectCreation(ref this, creation);
-                    return;
-                case WithExpressionSyntax with:
-                    CreationEffects.AddWith(ref this, with);
-                    return;
-                case ThisExpressionSyntax:
-                    Reads.Memory = true;
-                    return;
-                case RefExpressionSyntax reference:
-                    AddRead(AddLocation(reference.Expression));
-                    return;
-                default:
-                    AddChildren(expression);
-                    return;
-            }
-        }
-
-        // The operand of a parenthesized, cast or checked expression, which evaluates to its operand alone
-        private static ExpressionSyntax GetOperand(ExpressionSyntax expression) => expression switch
-        {
-            ParenthesizedExpressionSyntax parenthesized => parenthesized.Expression,
-            CastExpressionSyntax cast => cast.Expression,
-            CheckedExpressionSyntax @checked => @checked.Expression,
-            _ => throw new InvalidOperationException($"Not a wrapping expression: {expression.Kind()}")
-        };
-
-        // Every expression under node, for the kinds whose operands are all evaluated (?:, binary operators, tuples,
-        // switch and with expressions, patterns, initializers, collection expressions ...)
-        public void AddChildren(SyntaxNode node)
-        {
-            foreach (var child in node.ChildNodes())
-            {
-                if (child is ExpressionSyntax expression)
-                {
-                    AddValue(expression);
-                }
-                else if (child is not TypeSyntax)
-                {
-                    AddChildren(child);
-                }
-            }
-        }
-
-        public void AddArgumentValues(SeparatedSyntaxList<ArgumentSyntax> arguments)
-        {
-            foreach (var argument in arguments)
-            {
-                AddValue(argument.Expression);
-            }
-        }
-
-        private void AddMemberAccess(MemberAccessExpressionSyntax access)
-        {
-            if (MemberEffects.IsFrameAccess(access))
-            {
-                AddRead(AddLocation(access));
-                return;
-            }
-
-            if (access.IsKind(SyntaxKind.PointerMemberAccessExpression))
-            {
-                MemberEffects.AddPointerMember(ref this, access);
-                return;
-            }
-
-            switch (model.GetSymbol(access) ?? model.GetSymbol(access.Name))
-            {
-                case IFieldSymbol:
-                    AddRead(AddLocation(access));
-                    return;
-                case IPropertySymbol { IsStatic: true } property:
-                    MemberEffects.AddPropertyRead(ref this, property);
-                    return;
-                case IPropertySymbol property:
-                    MemberEffects.AddInstanceProperty(ref this, access, property);
-                    return;
-                case IMethodSymbol { IsStatic: false }:
-                    AddValue(access.Expression);
-                    return;
-                case null:
-                    MemberEffects.AddUnresolvedMember(ref this, access);
-                    return;
-                default:
-                    return;
-            }
-        }
-
-        /// <summary>
-        /// Adds the reads that find the location of <paramref name="expression"/> (indices, receivers) and returns the
-        /// variable it belongs to, without reading or writing the location itself.
-        /// </summary>
-        public Root AddLocation(ExpressionSyntax expression) => expression switch
-        {
-            ParenthesizedExpressionSyntax parenthesized => AddLocation(parenthesized.Expression),
-            RefExpressionSyntax refExpression => AddLocation(refExpression.Expression),
-            ConditionalExpressionSyntax conditional => LocationEffects.AddConditional(ref this, conditional),
-            // A local of the state machine that lives in its frame: the local itself
-            MemberAccessExpressionSyntax frame when MemberEffects.IsFrameAccess(frame) => AddLocation(frame.Name),
-            DeclarationExpressionSyntax { Designation: SingleVariableDesignationSyntax designation } =>
-                LocationEffects.AddDeclaration(ref this, designation),
-            IdentifierNameSyntax identifier => LocationEffects.AddIdentifier(ref this, identifier),
-            MemberAccessExpressionSyntax access when access.IsKind(SyntaxKind.SimpleMemberAccessExpression) =>
-                LocationEffects.AddMember(ref this, access),
-            ElementAccessExpressionSyntax element => LocationEffects.AddElement(ref this, element),
-            PrefixUnaryExpressionSyntax indirection when indirection.IsKind(SyntaxKind.PointerIndirectionExpression) =>
-                LocationEffects.AddIndirection(ref this, indirection),
-            _ => LocationEffects.AddValue(ref this, expression)
-        };
-    }
 }

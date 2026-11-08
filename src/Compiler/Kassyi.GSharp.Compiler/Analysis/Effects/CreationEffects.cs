@@ -7,7 +7,7 @@ namespace Kassyi.GSharp.Compiler.Analysis;
 internal static class CreationEffects
 {
     public static void AddObjectCreation(
-        ref ExpressionEffects.Walker walker,
+        ref EffectWalker walker,
         BaseObjectCreationExpressionSyntax creation
     )
     {
@@ -33,14 +33,14 @@ internal static class CreationEffects
     }
 
     // The members that the initializer assigns belong to the copy
-    public static void AddWith(ref ExpressionEffects.Walker walker, WithExpressionSyntax with)
+    public static void AddWith(ref EffectWalker walker, WithExpressionSyntax with)
     {
         walker.AddValue(with.Expression);
         AddInitializer(ref walker, with.Initializer);
     }
 
     // The members that an object initializer assigns belong to the new object; only their values are evaluated
-    private static void AddInitializer(ref ExpressionEffects.Walker walker, InitializerExpressionSyntax initializer)
+    private static void AddInitializer(ref EffectWalker walker, InitializerExpressionSyntax initializer)
     {
         foreach (var expression in initializer.Expressions)
         {

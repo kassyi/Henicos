@@ -7,7 +7,7 @@ namespace Kassyi.GSharp.Compiler.Analysis;
 internal static class OperatorEffects
 {
     // A user-defined conversion of the value (implicit, or the operator of a cast) is a call
-    public static void AddConversions(ref ExpressionEffects.Walker walker, ExpressionSyntax expression)
+    public static void AddConversions(ref EffectWalker walker, ExpressionSyntax expression)
     {
         var model = walker.Model;
         if (model.GetSafeConversion(expression) is { IsUserDefined: true, MethodSymbol: { } conversion })
@@ -23,7 +23,7 @@ internal static class OperatorEffects
     }
 
     // A conversion operator reads what it may and writes what DeviceFunctionEffects says
-    private static void AddConversionCall(ref ExpressionEffects.Walker walker, IMethodSymbol conversion)
+    private static void AddConversionCall(ref EffectWalker walker, IMethodSymbol conversion)
     {
         walker.Reads.Memory = true;
         if (walker.MayWriteMemory(conversion))
@@ -32,7 +32,7 @@ internal static class OperatorEffects
         }
     }
 
-    public static void AddPostfix(ref ExpressionEffects.Walker walker, PostfixUnaryExpressionSyntax postfix)
+    public static void AddPostfix(ref EffectWalker walker, PostfixUnaryExpressionSyntax postfix)
     {
         if (postfix.IsKind(SyntaxKind.PostIncrementExpression, SyntaxKind.PostDecrementExpression))
         {
@@ -44,7 +44,7 @@ internal static class OperatorEffects
         }
     }
 
-    public static void AddPrefix(ref ExpressionEffects.Walker walker, PrefixUnaryExpressionSyntax prefix)
+    public static void AddPrefix(ref EffectWalker walker, PrefixUnaryExpressionSyntax prefix)
     {
         switch (prefix.Kind())
         {
@@ -64,7 +64,7 @@ internal static class OperatorEffects
         }
     }
 
-    private static void AddIncrement(ref ExpressionEffects.Walker walker, ExpressionSyntax operand)
+    private static void AddIncrement(ref EffectWalker walker, ExpressionSyntax operand)
     {
         var root = walker.AddLocation(operand);
         walker.AddRead(root);
@@ -82,7 +82,7 @@ internal static class OperatorEffects
         }
     }
 
-    public static void AddAssignment(ref ExpressionEffects.Walker walker, AssignmentExpressionSyntax assignment)
+    public static void AddAssignment(ref EffectWalker walker, AssignmentExpressionSyntax assignment)
     {
         if (assignment.Left is TupleExpressionSyntax tuple)
         {
@@ -107,7 +107,7 @@ internal static class OperatorEffects
     }
 
     private static void AddTupleAssignment(
-        ref ExpressionEffects.Walker walker,
+        ref EffectWalker walker,
         TupleExpressionSyntax tuple,
         ExpressionSyntax right
     )

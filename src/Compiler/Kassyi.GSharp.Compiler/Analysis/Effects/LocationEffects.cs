@@ -1,41 +1,41 @@
 namespace Kassyi.GSharp.Compiler.Analysis;
 
 /// <summary>
-/// The cases of <see cref="ExpressionEffects.Walker.AddLocation"/>: each adds the reads that find a location (indices,
+/// The cases of <see cref="EffectWalker.AddLocation"/>: each adds the reads that find a location (indices,
 /// receivers) and returns the variable the location belongs to, without reading or writing the location itself.
 /// </summary>
 internal static class LocationEffects
 {
-    public static ExpressionEffects.Root AddConditional(
-        ref ExpressionEffects.Walker walker,
+    public static EffectRoot AddConditional(
+        ref EffectWalker walker,
         ConditionalExpressionSyntax conditional
     )
     {
         walker.AddValue(conditional.Condition);
         var whenTrue = walker.AddLocation(conditional.WhenTrue);
         var whenFalse = walker.AddLocation(conditional.WhenFalse);
-        return ExpressionEffects.Root.Combine(whenTrue, whenFalse);
+        return EffectRoot.Combine(whenTrue, whenFalse);
     }
 
-    public static ExpressionEffects.Root AddDeclaration(
-        ref ExpressionEffects.Walker walker,
+    public static EffectRoot AddDeclaration(
+        ref EffectWalker walker,
         SingleVariableDesignationSyntax designation
     ) =>
         walker.Model.GetDeclaredSymbol<ILocalSymbol>(designation) is { } declared
             ? RootOfVariable(ref walker, declared)
-            : new ExpressionEffects.Root(designation.Identifier.ValueText);
+            : new EffectRoot(designation.Identifier.ValueText);
 
-    public static ExpressionEffects.Root AddIdentifier(
-        ref ExpressionEffects.Walker walker,
+    public static EffectRoot AddIdentifier(
+        ref EffectWalker walker,
         IdentifierNameSyntax identifier
     ) =>
         walker.Model.GetSymbol(identifier) is { } symbol
             ? RootOfSymbol(ref walker, symbol)
-            : new ExpressionEffects.Root(identifier.Identifier.ValueText);
+            : new EffectRoot(identifier.Identifier.ValueText);
 
     // A static member is memory; a field of a struct is part of the struct; a member of anything else is memory
-    public static ExpressionEffects.Root AddMember(
-        ref ExpressionEffects.Walker walker,
+    public static EffectRoot AddMember(
+        ref EffectWalker walker,
         MemberAccessExpressionSyntax access
     )
     {
@@ -43,7 +43,7 @@ internal static class LocationEffects
         var member = model.GetSymbol(access) ?? model.GetSymbol(access.Name);
         if (member is IFieldSymbol { IsStatic: true } or IPropertySymbol { IsStatic: true })
         {
-            return new ExpressionEffects.Root(null);
+            return new EffectRoot(null);
         }
 
         if (model.GetTypeSymbol(access.Expression) is { IsValueType: true } &&
@@ -53,12 +53,12 @@ internal static class LocationEffects
         }
 
         walker.AddValue(access.Expression);
-        return new ExpressionEffects.Root(null);
+        return new EffectRoot(null);
     }
 
     // An element of a struct (an inline array) is part of the struct; any other element is memory
-    public static ExpressionEffects.Root AddElement(
-        ref ExpressionEffects.Walker walker,
+    public static EffectRoot AddElement(
+        ref EffectWalker walker,
         ElementAccessExpressionSyntax element
     )
     {
@@ -73,37 +73,37 @@ internal static class LocationEffects
 
         walker.AddValue(element.Expression);
         walker.AddArgumentValues(element.ArgumentList.Arguments);
-        return new ExpressionEffects.Root(null);
+        return new EffectRoot(null);
     }
 
-    public static ExpressionEffects.Root AddIndirection(
-        ref ExpressionEffects.Walker walker,
+    public static EffectRoot AddIndirection(
+        ref EffectWalker walker,
         PrefixUnaryExpressionSyntax indirection
     )
     {
         walker.AddValue(indirection.Operand);
-        return new ExpressionEffects.Root(null);
+        return new EffectRoot(null);
     }
 
     // Any other expression: a value, whose location is memory
-    public static ExpressionEffects.Root AddValue(ref ExpressionEffects.Walker walker, ExpressionSyntax expression)
+    public static EffectRoot AddValue(ref EffectWalker walker, ExpressionSyntax expression)
     {
         walker.AddValue(expression);
-        return new ExpressionEffects.Root(null);
+        return new EffectRoot(null);
     }
 
     // A non-ref local or by-value parameter as itself (RootOfVariable), anything else as memory
-    public static ExpressionEffects.Root RootOfSymbol(ref ExpressionEffects.Walker walker, ISymbol symbol) =>
+    public static EffectRoot RootOfSymbol(ref EffectWalker walker, ISymbol symbol) =>
         symbol switch
         {
             ILocalSymbol { IsRef: false } local => RootOfVariable(ref walker, local),
             IParameterSymbol { RefKind: RefKind.None } parameter => RootOfVariable(ref walker, parameter),
-            _ => new ExpressionEffects.Root(null)
+            _ => new EffectRoot(null)
         };
 
     // A local or by-value parameter, or memory when it has another name (AliasedVariables)
-    private static ExpressionEffects.Root RootOfVariable(ref ExpressionEffects.Walker walker, ISymbol variable) =>
+    private static EffectRoot RootOfVariable(ref EffectWalker walker, ISymbol variable) =>
         AliasedVariables.Contains(variable, walker.Model.Compilation)
-            ? new ExpressionEffects.Root(null)
-            : new ExpressionEffects.Root(variable);
+            ? new EffectRoot(null)
+            : new EffectRoot(variable);
 }

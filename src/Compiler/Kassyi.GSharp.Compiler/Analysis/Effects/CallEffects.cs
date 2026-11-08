@@ -7,7 +7,7 @@ namespace Kassyi.GSharp.Compiler.Analysis;
 /// </summary>
 internal static class CallEffects
 {
-    public static void AddInvocation(ref ExpressionEffects.Walker walker, InvocationExpressionSyntax invocation)
+    public static void AddInvocation(ref EffectWalker walker, InvocationExpressionSyntax invocation)
     {
         if (walker.Model.GetSymbol(invocation) is not IMethodSymbol method)
         {
@@ -29,8 +29,8 @@ internal static class CallEffects
 
     // The receiver of an instance call is evaluated first (C# spec §12.6.6); a struct member reads and may write the
     // struct it is called on, which is returned as the receiver the call may write
-    private static ExpressionEffects.Root? AddReceiver(
-        ref ExpressionEffects.Walker walker,
+    private static EffectRoot? AddReceiver(
+        ref EffectWalker walker,
         InvocationExpressionSyntax invocation,
         IMethodSymbol method
     )
@@ -55,7 +55,7 @@ internal static class CallEffects
     // any local it captures, and writes what its body writes (a captured local counts as any local). Any other
     // delegate may do anything.
     private static void AddLocalCall(
-        ref ExpressionEffects.Walker walker,
+        ref EffectWalker walker,
         InvocationExpressionSyntax invocation,
         IMethodSymbol method
     )
@@ -106,10 +106,10 @@ internal static class CallEffects
     }
 
     public static void AddCall(
-        ref ExpressionEffects.Walker walker,
+        ref EffectWalker walker,
         IMethodSymbol method,
         SeparatedSyntaxList<ArgumentSyntax> arguments,
-        ExpressionEffects.Root? receiver
+        EffectRoot? receiver
     ) =>
         AddCall(
             ref walker,
@@ -120,14 +120,14 @@ internal static class CallEffects
         );
 
     private static void AddCall(
-        ref ExpressionEffects.Walker walker,
+        ref EffectWalker walker,
         IMethodSymbol method,
         SeparatedSyntaxList<ArgumentSyntax> arguments,
-        ExpressionEffects.Root? receiver,
+        EffectRoot? receiver,
         DeviceFunctionEffect effect
     )
     {
-        var references = ImmutableArray.CreateBuilder<ExpressionEffects.Root>();
+        var references = ImmutableArray.CreateBuilder<EffectRoot>();
         for (var i = 0; i < arguments.Count; i++)
         {
             var argument = arguments[i];
@@ -162,9 +162,9 @@ internal static class CallEffects
     }
 
     // A call of <method> with <reference> (a variable, or null) passed by ref, after its arguments
-    public static void AddCallOf(ref ExpressionEffects.Walker walker, IMethodSymbol method, ISymbol? reference)
+    public static void AddCallOf(ref EffectWalker walker, IMethodSymbol method, ISymbol? reference)
     {
-        var references = ImmutableArray.CreateBuilder<ExpressionEffects.Root>();
+        var references = ImmutableArray.CreateBuilder<EffectRoot>();
         if (reference != null)
         {
             // The callee reads and writes through the ref parameter
@@ -180,10 +180,10 @@ internal static class CallEffects
     // What the call itself reads and writes: memory unless it is pure math over scalars, and what
     // DeviceFunctionEffects says it writes (its ref / out arguments and receiver, or memory)
     private static void AddCallItself(
-        ref ExpressionEffects.Walker walker,
+        ref EffectWalker walker,
         IMethodSymbol method,
-        ImmutableArray<ExpressionEffects.Root>.Builder references,
-        ExpressionEffects.Root? receiver,
+        ImmutableArray<EffectRoot>.Builder references,
+        EffectRoot? receiver,
         DeviceFunctionEffect effect
     )
     {
