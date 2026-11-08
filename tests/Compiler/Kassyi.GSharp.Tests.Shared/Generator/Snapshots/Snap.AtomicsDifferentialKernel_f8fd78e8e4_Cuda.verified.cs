@@ -405,6 +405,7 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
+global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfDeviceError();
 }
 finally
 {
@@ -726,6 +727,7 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
+global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfDeviceError();
 }
 finally
 {
@@ -961,6 +963,7 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
+global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfDeviceError();
 }
 finally
 {
@@ -1185,6 +1188,7 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
+global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfDeviceError();
 }
 finally
 {
@@ -1471,6 +1475,7 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
+global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfDeviceError();
 }
 finally
 {
@@ -1714,6 +1719,7 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
+global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfDeviceError();
 }
 finally
 {
@@ -1942,6 +1948,7 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
+global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfDeviceError();
 }
 finally
 {
@@ -2230,6 +2237,7 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
+global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfDeviceError();
 }
 finally
 {
@@ -2508,6 +2516,7 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
+global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfDeviceError();
 }
 finally
 {
@@ -2789,6 +2798,7 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
+global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfDeviceError();
 }
 finally
 {
@@ -3067,6 +3077,7 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
+global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfDeviceError();
 }
 finally
 {
@@ -3317,6 +3328,7 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
+global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfDeviceError();
 }
 finally
 {
@@ -3695,6 +3707,7 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
+global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfDeviceError();
 }
 finally
 {
@@ -3902,6 +3915,7 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
+global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfDeviceError();
 }
 finally
 {
@@ -4089,6 +4103,7 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
+global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfDeviceError();
 }
 finally
 {
@@ -4306,6 +4321,7 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
+global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfDeviceError();
 }
 finally
 {
@@ -4381,7 +4397,7 @@ __gsharp_id_4_oldHead=__gsharp_id_0_head[0];
 __gsharp_id_1_next[__gsharp_id_3_tid]=__gsharp_id_4_oldHead;
 }
 while(atomicCAS(&__gsharp_id_0_head[0],__gsharp_id_4_oldHead,__gsharp_id_3_tid)!=__gsharp_id_4_oldHead);
-cg::this_grid().sync();
+__gsharp_grid_sync();
 int __gsharp_id_5_curHead;
 int __gsharp_id_6_nextHead;
 do
@@ -4534,6 +4550,7 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
+global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfDeviceError();
 }
 finally
 {

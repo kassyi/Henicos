@@ -87,10 +87,10 @@ public const string GlobalBarrierKernel_Source = @"extern ""C"" __global__ void 
 int __gsharp_id_1_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 int __gsharp_id_2_totalThreads = __gsharp_mul_i32((int)gridDim.x,(int)blockDim.x);
 __gsharp_id_0_buffer[__gsharp_id_1_tid]=__gsharp_add_i32(__gsharp_id_1_tid,1);
-cg::this_grid().sync();
+__gsharp_grid_sync();
 int __gsharp_id_3_nextId = (__gsharp_add_i32(__gsharp_id_1_tid,1))%__gsharp_id_2_totalThreads;
 int __gsharp_id_4_nextVal = __gsharp_id_0_buffer[__gsharp_id_3_nextId];
-cg::this_grid().sync();
+__gsharp_grid_sync();
 __gsharp_id_0_buffer[__gsharp_id_1_tid]=__gsharp_id_4_nextVal;
 }
 ";
@@ -151,6 +151,7 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
+global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfDeviceError();
 }
 finally
 {
@@ -215,7 +216,7 @@ if(__gsharp_id_6_localTid==0)
 {
 __gsharp_id_1_blockSums[(int)blockIdx.x]=__gsharp_id_5_shared[0];
 }
-cg::this_grid().sync();
+__gsharp_grid_sync();
 if((int)blockIdx.x==0&&__gsharp_id_6_localTid==0)
 {
 int __gsharp_id_8_sum = 0;
@@ -368,6 +369,7 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
+global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfDeviceError();
 }
 finally
 {

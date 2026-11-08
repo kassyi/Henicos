@@ -430,6 +430,7 @@ fixed (global::System.Boolean* __gsharp_ptr_2 = &successFlag)
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)__gsharp_ptr_2, __gsharp_d_2, (global::System.IntPtr)__gsharp_size_2, hStream));
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
+global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfDeviceError();
 }
 finally
 {
@@ -491,7 +492,7 @@ finally
 public const string CooperativePhysicsProcess_Source = @"extern ""C"" __global__ void __gsharp_k_DebugReduc__ComprehensiveSpecKernel__CooperativePhysicsProcess(GSharpArray<int> __gsharp_id_0_data){
 int __gsharp_id_1_tid = (int)threadIdx.x;
 __gsharp_id_0_data[__gsharp_id_1_tid]=__gsharp_id_1_tid;
-cg::this_grid().sync();
+__gsharp_grid_sync();
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_CooperativePhysicsProcess = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_DebugReduc__ComprehensiveSpecKernel__CooperativePhysicsProcess", global::Kassyi.GSharp.Generated.GSharpModuleContext_MegaTestCompilationBase.GetFatbin);
@@ -551,6 +552,7 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
+global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfDeviceError();
 }
 finally
 {

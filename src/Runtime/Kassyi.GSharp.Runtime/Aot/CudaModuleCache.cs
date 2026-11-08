@@ -190,8 +190,15 @@ internal static class CudaModuleCache
 
     private static IntPtr Load(IntPtr context, byte[] binaryData, FatbinImage? fatbin, uint moduleId)
     {
+        // [WHY] The slot is allocated in the global context, which lives until the process ends: memory allocated in a
+        // context that is destroyed later is freed with it while the modules of the other contexts still point to it,
+        // and every synchronization reads it
+        using (new GpuKernelLoader.CudaContextScope(GpuKernelLoader.GlobalContext))
+        {
+            DeviceErrorSlot.AllocateInCurrentContext();
+        }
+
         using var scope = new GpuKernelLoader.CudaContextScope(context);
-        DeviceErrorSlot.AllocateInCurrentContext();
 
         // Fatbins MUST be 8-byte aligned for cuModuleLoadDataEx
         unsafe

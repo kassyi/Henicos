@@ -356,7 +356,12 @@ public static class DifferentialRunner
             Exception? thrown = null;
             bool skippedBySampling = false;
 
-            if (path.Path == DiffPath.Cuda && ReferenceEquals(path.Run, DiffPaths.DirectRunner))
+            // [WHY] A failing CUDA thread records its error and exits, so a fault seed runs in this process like on the
+            // other paths. A CUDA exception cell that is a known divergence is the exception: CUDA does not check what C#
+            // checks there (a release build has no bounds or null check), so the launch may read or write an illegal
+            // address, a real GPU fault that leaves the context of the process unusable
+            if (path.Path == DiffPath.Cuda && ReferenceEquals(path.Run, DiffPaths.DirectRunner) &&
+                run.FindEntry(KnownDivergence.ExceptionColumn, path.Path, at.Shape) is not null)
             {
                 bool shouldRunSubprocess =
                     testCase.CudaTrapSampling == CudaTrapSampling.AllFaults ||
@@ -365,8 +370,8 @@ public static class DifferentialRunner
 
                 if (!CudaTrapGate.IsEnabled)
                 {
-                    // Every fault seed traps on CUDA, and a trap is a real GPU fault (#1457): the CUDA cell is compared
-                    // only by `just test-gpu-trap`, and the report lists the seeds left out
+                    // The CUDA cell is compared only by `just test-gpu-trap` (#1457), and the report lists the seeds left
+                    // out
                     run.Report.AddSkippedCudaTrap(at.Seed, at.Shape);
                     cells.Add(new PathCell(path.Path, $"skipped (CUDA fault seed {CudaTrapGate.SkipReason})", Differs: false, Known: null));
                     continue;
