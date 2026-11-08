@@ -100,7 +100,6 @@ int __gsharp_id_3_sum = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__Metho
 __gsharp_id_1_result[__gsharp_id_2_tid]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__MethodAttributesKernels__MultiAttributeMultiply(__gsharp_id_3_sum,2);
 }
 ";
-public static readonly string MethodAttributesKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +MethodAttributesKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_MethodAttributesKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__MethodAttributesKernels__MethodAttributesKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerMethodAttributesKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.MethodAttributesKernels.__gsharp_hfunc_MethodAttributesKernel.Resolve();

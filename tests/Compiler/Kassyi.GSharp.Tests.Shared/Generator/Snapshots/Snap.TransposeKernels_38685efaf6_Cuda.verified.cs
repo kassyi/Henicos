@@ -91,7 +91,6 @@ __gsharp_id_1_output[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_4_col,__gshar
 }
 }
 ";
-public static readonly string TransposeKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +TransposeKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_TransposeKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Henicos__Benchmarks__ComputeBenchmarks__TransposeKernels__TransposeKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerTransposeKernel() => global::Henicos.Benchmarks.ComputeBenchmarks.TransposeKernels.__gsharp_hfunc_TransposeKernel.Resolve();

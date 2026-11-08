@@ -125,7 +125,6 @@ atomicAdd(&__gsharp_id_8_dynamicReduction[__gsharp_id_3_tid],__gsharp_id_10_b);
 __gsharp_id_2_results[__gsharp_add_i32(__gsharp_id_11_o,8)]=__gsharp_id_8_dynamicReduction[__gsharp_id_3_tid];
 }
 ";
-public static readonly string FloatAtomicAddMatrixKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +FloatAtomicAddMatrixKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_FloatAtomicAddMatrixKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__FloatAtomicAddMatrixKernels__FloatAtomicAddMatrixKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerFloatAtomicAddMatrixKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.FloatAtomicAddMatrixKernels.__gsharp_hfunc_FloatAtomicAddMatrixKernel.Resolve();

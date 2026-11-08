@@ -164,7 +164,6 @@ __gsharp_id_24_sb11=(signed char)__gsharp_sub_i32(__gsharp_id_24_sb11,1);
 __gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,11)]=__gsharp_id_24_sb11;
 }
 ";
-public static readonly string SByteStepKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +SByteStepKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_SByteStepKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__NarrowStepDifferentialKernels__SByteStepKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerSByteStepKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.NarrowStepDifferentialKernels.__gsharp_hfunc_SByteStepKernel.Resolve();
@@ -389,7 +388,6 @@ __gsharp_id_24_b11=(unsigned char)__gsharp_sub_i32(__gsharp_id_24_b11,1);
 __gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,11)]=__gsharp_id_24_b11;
 }
 ";
-public static readonly string ByteStepKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ByteStepKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ByteStepKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__NarrowStepDifferentialKernels__ByteStepKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerByteStepKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.NarrowStepDifferentialKernels.__gsharp_hfunc_ByteStepKernel.Resolve();
@@ -614,7 +612,6 @@ __gsharp_id_24_s11=(short)__gsharp_sub_i32(__gsharp_id_24_s11,1);
 __gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,11)]=__gsharp_id_24_s11;
 }
 ";
-public static readonly string Int16StepKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +Int16StepKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_Int16StepKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__NarrowStepDifferentialKernels__Int16StepKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerInt16StepKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.NarrowStepDifferentialKernels.__gsharp_hfunc_Int16StepKernel.Resolve();
@@ -839,7 +836,6 @@ __gsharp_id_24_us11=(unsigned short)__gsharp_sub_i32(__gsharp_id_24_us11,1);
 __gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,11)]=__gsharp_id_24_us11;
 }
 ";
-public static readonly string UInt16StepKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +UInt16StepKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_UInt16StepKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__NarrowStepDifferentialKernels__UInt16StepKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerUInt16StepKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.NarrowStepDifferentialKernels.__gsharp_hfunc_UInt16StepKernel.Resolve();
@@ -1064,7 +1060,6 @@ __gsharp_id_24_c11=(char16_t)__gsharp_sub_i32(__gsharp_id_24_c11,1);
 __gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,11)]=__gsharp_id_24_c11;
 }
 ";
-public static readonly string CharStepKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +CharStepKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_CharStepKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__NarrowStepDifferentialKernels__CharStepKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerCharStepKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.NarrowStepDifferentialKernels.__gsharp_hfunc_CharStepKernel.Resolve();

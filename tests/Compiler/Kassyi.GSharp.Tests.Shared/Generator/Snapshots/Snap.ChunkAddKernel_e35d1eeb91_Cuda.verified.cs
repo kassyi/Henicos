@@ -104,7 +104,6 @@ __gsharp_id_9_localCarry=__gsharp_id_11_current>>32;
 __gsharp_id_3_carryBuffer[__gsharp_add_i32(__gsharp_id_6_chunkIdx,1)]=(long long)__gsharp_id_9_localCarry;
 }
 ";
-public static readonly string ChunkAddKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ChunkAddKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ChunkAddKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Stdlib__GpuMath__BigNum__GpuBigIntKernels__ChunkAddKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerChunkAddKernel() => global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.GpuBigIntKernels.__gsharp_hfunc_ChunkAddKernel.Resolve();

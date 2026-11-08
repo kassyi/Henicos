@@ -103,7 +103,6 @@ __gsharp_id_0_output[__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_9_row,__gshar
 }
 }
 ";
-public static readonly string MandelbrotKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +MandelbrotKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_MandelbrotKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Henicos__Benchmarks__ComputeBenchmarks__MandelbrotKernels__MandelbrotKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerMandelbrotKernel() => global::Henicos.Benchmarks.ComputeBenchmarks.MandelbrotKernels.__gsharp_hfunc_MandelbrotKernel.Resolve();

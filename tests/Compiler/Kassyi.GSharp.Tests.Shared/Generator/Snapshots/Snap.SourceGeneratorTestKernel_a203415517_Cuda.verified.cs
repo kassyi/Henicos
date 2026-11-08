@@ -86,7 +86,6 @@ public const string MyTestKernel_Source = @"extern ""C"" __global__ void __gshar
 __gsharp_id_2_c[0]=__gsharp_add_i32(__gsharp_id_0_a[0],__gsharp_id_1_b[0]);
 }
 ";
-public static readonly string MyTestKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +MyTestKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_MyTestKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Generator__SourceGeneratorTestKernels__MyTestKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerMyTestKernel() => global::Kassyi.GSharp.Tests.Shared.Generator.SourceGeneratorTestKernels.__gsharp_hfunc_MyTestKernel.Resolve();

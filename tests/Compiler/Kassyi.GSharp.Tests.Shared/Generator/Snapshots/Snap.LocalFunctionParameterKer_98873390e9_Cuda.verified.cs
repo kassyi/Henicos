@@ -91,7 +91,6 @@ return __gsharp_mul_i32(__gsharp_array_at(__gsharp_id_5_values, __gsharp_id_7_in
 __gsharp_id_0_output[__gsharp_id_3_tid]=__gsharp_id_4_Lookup(__gsharp_id_1_table,__gsharp_id_2_scale,__gsharp_id_3_tid);
 }
 ";
-public static readonly string ReadOnlyLocalFunctionParameterKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ReadOnlyLocalFunctionParameterKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ReadOnlyLocalFunctionParameterKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__LocalFunctionParameterKernels__ReadOnlyLocalFunctionParameterKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerReadOnlyLocalFunctionParameterKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.LocalFunctionParameterKernels.__gsharp_hfunc_ReadOnlyLocalFunctionParameterKernel.Resolve();

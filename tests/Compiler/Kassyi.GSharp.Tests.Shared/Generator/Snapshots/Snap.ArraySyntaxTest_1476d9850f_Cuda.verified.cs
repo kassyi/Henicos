@@ -89,7 +89,6 @@ int __gsharp_id_2_collectionExpr[3]={ 7, 8, 9 };
 int __gsharp_id_3_singleStackAlloc[1]={ 42 };
 }
 ";
-public static readonly string ImplicitArrayFormsKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ImplicitArrayFormsKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ImplicitArrayFormsKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Generator__ArraySyntaxTestKernels__ImplicitArrayFormsKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerImplicitArrayFormsKernel() => global::Kassyi.GSharp.Tests.Shared.Generator.ArraySyntaxTestKernels.__gsharp_hfunc_ImplicitArrayFormsKernel.Resolve();

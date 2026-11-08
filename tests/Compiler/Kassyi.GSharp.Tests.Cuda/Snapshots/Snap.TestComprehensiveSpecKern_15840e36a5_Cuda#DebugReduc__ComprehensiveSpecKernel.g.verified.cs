@@ -309,7 +309,6 @@ return;
 }
 }
 ";
-public static readonly string ProcessPhysics_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ProcessPhysics_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ProcessPhysics = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_DebugReduc__ComprehensiveSpecKernel__ProcessPhysics", global::Kassyi.GSharp.Generated.GSharpModuleContext_MegaTestCompilationBase.GetFatbin);
 private static bool __gsharp_layout_checked_ProcessPhysics;
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
@@ -490,7 +489,6 @@ __gsharp_id_0_data[__gsharp_id_1_tid]=__gsharp_id_1_tid;
 cg::this_grid().sync();
 }
 ";
-public static readonly string CooperativePhysicsProcess_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +CooperativePhysicsProcess_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_CooperativePhysicsProcess = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_DebugReduc__ComprehensiveSpecKernel__CooperativePhysicsProcess", global::Kassyi.GSharp.Generated.GSharpModuleContext_MegaTestCompilationBase.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerCooperativePhysicsProcess() => global::DebugReduc.ComprehensiveSpecKernel.__gsharp_hfunc_CooperativePhysicsProcess.Resolve();

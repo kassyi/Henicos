@@ -107,7 +107,6 @@ __gsharp_id_0_data[__gsharp_id_1_tid].__gsharp_mb_B*=2.0;
 __gsharp_id_0_data[__gsharp_id_1_tid].__gsharp_mb_C-=1.0f;
 }
 ";
-public static readonly string ModifyStructLayoutKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ModifyStructLayoutKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ModifyStructLayoutKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Core__StructLayoutKernels__ModifyStructLayoutKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 private static bool __gsharp_layout_checked_ModifyStructLayoutKernel;
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
@@ -267,7 +266,6 @@ __gsharp_id_0_data[__gsharp_id_1_tid].__gsharp_mb_Buffer[0]=(unsigned char)__gsh
 __gsharp_id_0_data[__gsharp_id_1_tid].__gsharp_mb_B=__gsharp_add_i32(__gsharp_id_0_data[__gsharp_id_1_tid].__gsharp_mb_B,3);
 }
 ";
-public static readonly string ModifyPackedInlineArrayKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ModifyPackedInlineArrayKernel_Source;
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ModifyPackedInlineArrayKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Core__StructLayoutKernels__ModifyPackedInlineArrayKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 private static bool __gsharp_layout_checked_ModifyPackedInlineArrayKernel;
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
