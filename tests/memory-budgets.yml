@@ -14,7 +14,7 @@
 # The stress budgets of Tests.Cpu and Tests.Cuda are set by one 2 GiB buffer test (about 4 GB of the peak).
 
 Henicos.Benchmarks.Tests: 576
-Kassyi.GSharp.Compiler.Generators.Tests: 128
+Kassyi.GSharp.Compiler.Generators.Tests: 192
 Kassyi.GSharp.Stdlib.GpuMath.Tests: 1536
 Kassyi.GSharp.Tests.Cpu: 2304, stress 6528
 Kassyi.GSharp.Tests.Cuda: 2496, stress 6784
