@@ -55,7 +55,7 @@ test-stability count="10" continue_on_error="false" shuffle="true" seed="" *args
 test-category category *args="":
     dotnet test --filter "Category={{category}}" {{blame_crash}} {{args}}
 
-# e.g. `just test-memory Kassyi.GSharp.Tests.Cpu -c Release --filter "Category!=GpuExecution"`; see test-memory.js --help
+# e.g. `just test-memory Kassyi.GSharp.Tests.Cpu -c Release --filter "Category!=GpuExecution"`; test-memory.js --help
 # One run of a test project: its memory peak, the tests that raised it, dotnet-counters and a gcdump at the end
 test-memory project *args="":
     node scripts/human/test-memory.js {{project}} {{args}}

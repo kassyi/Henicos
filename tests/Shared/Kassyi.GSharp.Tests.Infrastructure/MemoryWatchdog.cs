@@ -80,7 +80,8 @@ public sealed class MemoryWatchdog(
     /// <summary>
     /// Switches to the budget of runs that include Stress or Benchmark tests, before the first of them starts.
     /// </summary>
-    /// <param name="stressBudgetBytes">The stress budget in bytes; a value not above the current budget keeps it.</param>
+    /// <param name="stressBudgetBytes">The stress budget in bytes; a value not above the current budget keeps
+    /// it.</param>
     public void EnterStressProfile(long stressBudgetBytes)
     {
         lock (_gate)

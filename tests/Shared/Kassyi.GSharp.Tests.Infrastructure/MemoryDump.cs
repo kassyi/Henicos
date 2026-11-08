@@ -12,10 +12,9 @@ namespace Kassyi.GSharp.Tests.Infrastructure;
 /// <remarks>
 /// <see cref="DumpVariable"/> chooses the kind: <c>gcdump</c> (default) writes a managed heap snapshot with
 /// <c>dotnet-gcdump collect</c> and its <c>dotnet-gcdump report</c> (types by size) next to it; <c>full</c> writes a
-/// full
-/// process dump with <c>dotnet-dump collect --type Full</c>; <c>none</c> writes nothing. Output goes to
-/// <c>tmp/test-memory/&lt;assembly&gt;-&lt;time&gt;-&lt;pid&gt;/</c> of the repository, which CI uploads when a job
-/// fails.
+/// full process dump with <c>dotnet-dump collect --type Full</c>; <c>none</c> writes nothing. Output goes to a
+/// directory <c>&lt;assembly&gt;-&lt;time&gt;-&lt;pid&gt;</c> under <c>test-memory</c> in the repository's scratch
+/// directory, which CI uploads when a job fails.
 /// </remarks>
 public static class MemoryDump
 {

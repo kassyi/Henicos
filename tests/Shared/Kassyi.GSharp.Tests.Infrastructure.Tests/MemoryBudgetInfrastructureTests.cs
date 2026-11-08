@@ -105,8 +105,7 @@ public class MemoryBudgetInfrastructureTests
         long available = ProcessMemory.ReadAvailablePhysicalBytes();
         GCMemoryInfo info = GC.GetGCMemoryInfo();
 
-        // Under the heap hard limit of this host (896 MB), TotalAvailableMemoryBytes is the limit, so the GC's view of
-        // free
+        // Under the heap hard limit of this host, TotalAvailableMemoryBytes is the limit, so the GC's view of free
         // memory (limit minus the machine's load) is unrelated to the machine; the operating system's value is not
         Assert.True(available > 0, $"available {available}");
         Assert.NotEqual(info.TotalAvailableMemoryBytes - info.MemoryLoadBytes, available);

@@ -4,17 +4,16 @@ using System.Globalization;
 namespace Kassyi.GSharp.Tests.Infrastructure;
 
 /// <summary>
-/// Reads <c>tests/memory-budgets.yml</c>: one line <c>&lt;test assembly name&gt;: &lt;MB&gt;[, stress &lt;MB&gt;]</c>
-/// per
-/// test assembly, with <c>#</c> comments and blank lines.
+/// Reads <c>tests/memory-budgets.yml</c>: one line
+/// <c>&lt;test assembly name&gt;: &lt;MB&gt;[, stress &lt;MB&gt;]</c> per test assembly, with <c>#</c> comments and
+/// blank lines.
 /// </summary>
 /// <remarks>
 /// The first value is the budget of a run without Stress and Benchmark tests (<c>just test</c>); the optional
 /// <c>stress</c> value applies from the moment a Stress or Benchmark test starts (the CI filter
 /// <c>Category!=GpuExecution</c> runs them). Only this flat subset of YAML is accepted:
-/// <c>tests/Directory.Build.props</c>
-/// reads the same lines with regular expressions to set <c>System.GC.HeapHardLimit</c>, so the format must stay one
-/// entry per line at column 0.
+/// <c>tests/Directory.Build.props</c> reads the same lines with regular expressions to set
+/// <c>System.GC.HeapHardLimit</c>, so the format must stay one entry per line at column 0.
 /// </remarks>
 public static class MemoryBudgetFile
 {

@@ -44,7 +44,7 @@ resident memory (`VmHWM`) on Linux. Native allocations count.
   A tool that fails or does not finish in time is named in the message; the failing test waits at most about three
   minutes for it.
 - **Final check**: `MemoryBudgetFinalCheck.WholeRunPeak_StaysWithinBudget`, compiled into every test assembly, runs
-  after every other test (a collection with `DisableParallelization`, ordered last by `MemoryBudgetCollectionOrderer`) and
+  after every other test (a `DisableParallelization` collection, ordered last by `MemoryBudgetCollectionOrderer`) and
   fails when the peak of the run passed the budget, also between tests (fixtures, disposal). A run filtered to some
   categories skips it unless the filter keeps `Category=Unit`.
 - **Backstop**: `tests/Directory.Build.props` caps the managed heap at twice the larger budget
