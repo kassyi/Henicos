@@ -13,11 +13,6 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
             symbol = context.Query.SemanticModel.GetSymbol(invocation);
         }
 
-        if (SpanWriteClassifier.TryFailUninvoked(node, ref context))
-        {
-            return;
-        }
-
         if (symbol is IPropertySymbol spanProperty && TryTranspileSpanProperty(node, spanProperty, ref context))
         {
             return;
