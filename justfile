@@ -8,13 +8,13 @@ mutate_heap_limit := "8589934592"
 # tests/Directory.Build.props) leaves a mini dump in its TestResults directory
 blame_crash := "--blame-crash --blame-crash-dump-type mini"
 
-# Run normal tests excluding heavy stress and benchmark tests
+# Run normal tests excluding heavy stress and benchmark tests and the tests that raise a real GPU fault (GpuTrap)
 test *args="":
-    dotnet test --filter "Category!=Stress&Category!=Benchmark" {{blame_crash}} {{args}}
+    dotnet test --filter "Category!=Stress&Category!=Benchmark&Category!=GpuTrap" {{blame_crash}} {{args}}
 
 # Run tests with code coverage collection
 test-coverage *args="":
-    dotnet test -s coverage.runsettings --filter "Category!=Stress&Category!=Benchmark" {{blame_crash}} {{args}}
+    dotnet test -s coverage.runsettings --filter "Category!=Stress&Category!=Benchmark&Category!=GpuTrap" {{blame_crash}} {{args}}
 
 # Run the tests with coverage and list the lines changed since base that no test executed
 coverage-diff base="main":
@@ -33,6 +33,13 @@ test-sanitized *args="":
 test-differential-cuda *args="":
     dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cuda/Kassyi.GSharp.Tests.Cuda.csproj \
         --filter "Category=Differential&Category!=Stress" {{blame_crash}} {{args}}
+
+# Tests that raise a real GPU fault (CUDA trap), each in a child process, one at a time pause_ms apart, plus the
+# CUDA fault seeds of the differential tests (agents: wrap in node scripts/agent/gpu-lock.js -- "...")
+test-gpu-trap pause_ms="3000" *args="":
+    dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cuda/Kassyi.GSharp.Tests.Cuda.csproj \
+        --filter "(Category=GpuTrap|Category=Differential)&Category!=Stress" \
+        -e GSHARP_CUDA_TRAP_TESTS=1 -e GSHARP_CUDA_TRAP_PAUSE_MS={{pause_ms}} {{blame_crash}} {{args}}
 
 # Run differential kernel fuzzer (profile: M|C|G or managed|cpu|all)
 fuzz-diff profile="cpu" minutes="5" *args="":

@@ -6,16 +6,19 @@
 
 | Command | Scope |
 | ----- | ----- |
-| `just test` | All normal tests (excluding Stress) |
+| `just test` | All normal tests (excluding Stress, Benchmark and GpuTrap) |
 | `just test-category <Category> [args]` | One `TestCategory` enum value, e.g. `just test-category Stress` |
 | `just test-differential-cpu` | Differential tests on Tests.Cpu: each kernel on the managed and native paths against the sequential C# oracle (`Category=Differential`, no GPU) |
 | `just test-differential-cuda` | The same differential tests on Tests.Cuda against CUDA (uses the GPU; run through `gpu-lock.js`). Long runs: `just test-stability` (`scripts/human/test-stability.js`), whose `TEST_SEED` adds one input seed per iteration |
+| `just test-gpu-trap [pause_ms] [args]` | Tests.Cuda tests that raise a real GPU fault (`Category=GpuTrap`: a CUDA `trap;` in a child process) and the CUDA cells of the differential fault seeds, which every other run skips (#1457). Sets `GSHARP_CUDA_TRAP_TESTS=1`; the children run one at a time, `pause_ms` (default 3000) apart. Run through `gpu-lock.js`. On Windows each fault logs nvlddmkm Event 153, resets the GPU engine and writes a live kernel dump, and a series of them has frozen the machine, so run it only when a change touches the device error channel, the trap path or the differential exception harness |
 | `just fuzz-diff [profile] [minutes] *args` | Differential kernel fuzzer (`profile`: `M`/`managed`, `C`/`cpu` [default], or `G`/`all`; extra arguments such as `--allow-issue <n>` and `--swarm-focus <mode>` are passed to `fuzz-differential.js`; wraps GPU execution in `gpu-lock.js`) |
 | `just test-memory <project> [args]` | One run of a test project with the memory report, `dotnet-counters` and a gcdump at the end; prints the peak, the tests that raised it and the types left on the heap (see Memory budgets) |
 | `just coverage-diff [base]` | `just test` with coverage, then the lines changed since `base` (default `main`) that no test executed |
 | `just mutate [gpumath\|compiler\|compiler-cuda] [since]` | Stryker.NET mutation test of the host code (`gpumath`: `Kassyi.GSharp.Stdlib.GpuMath`, `compiler`: `Kassyi.GSharp.Compiler` with `Tests.Cpu` minus the Differential tests that only run kernels generated at build time and so execute no compiler code (the ones that run the generator in process, `SpillOrderMutatingGetterTests` and `MathDifferentialTests`, stay), `compiler-cuda`: the files of the same compiler that branch on the CUDA dialect, with the `Tests.Cuda` snapshots; Tests.Cpu already kills most mutants elsewhere), optionally only the files changed after `since`. Runs for hours and uses the GPU (`gpumath`); report in `tmp/stryker/<phase>`. Stryker does not write the AOT artifacts under `obj/` (generator-invariants §7), so the build is usable after the run as it is. The test host heap is capped at `mutate_heap_limit` of the justfile, 8 GB (`GSharpTestHeapHardLimit`, in bytes; set it to override), so a mutant that allocates without bound fails its tests instead of exhausting memory |
 
 The GPU is shared by every agent and worktree. Run any command that uses it (`just test-category Runtime`, a `dotnet test` of a GPU suite, a benchmark) as `node scripts/agent/gpu-lock.js -- "<command>"`; it waits for the lock `tmp/gpu-test-lock` and releases it when the command ends.
+
+A test that raises a real GPU fault carries `[Category(TestCategory.GpuTrap)]`, runs its launch in a child process (`CudaTrapRuns.RunIsolated`, or `CudaTrapGate.RunPaced` around the start of the child) and skips unless `GSHARP_CUDA_TRAP_TESTS=1`, so `just test`, CI and a plain `dotnet test` raise no fault. A differential case keeps its fault seeds in the default run; only their CUDA cell is skipped, and the report lists those seeds.
 
 Test assemblies discard console output (`TestConsole.Silence()`); set `GSHARP_TEST_VERBOSE=1` to see `Logger` / benchmark output.
 

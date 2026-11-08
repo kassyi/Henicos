@@ -56,7 +56,7 @@ function runTests(directory) {
     const args = [
         'test',
         '-s', path.join(repoRoot, 'coverage.runsettings'),
-        '--filter', 'Category!=Stress&Category!=Benchmark',
+        '--filter', 'Category!=Stress&Category!=Benchmark&Category!=GpuTrap',
         '--results-directory', directory,
     ];
     const env = { ...process.env, DiffEngine_Disabled: 'true' };

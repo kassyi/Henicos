@@ -19,7 +19,7 @@ const repoRoot = path.resolve(__dirname, '..', '..');
 // Same names as GSharpHostOs in Directory.Build.props.
 const hostOs = { win32: 'win', linux: 'linux', darwin: 'osx' }[process.platform] || 'unix';
 const cpuProject = path.join('tests', 'Compiler', 'Kassyi.GSharp.Tests.Cpu', 'Kassyi.GSharp.Tests.Cpu.csproj');
-const normalFilter = 'Category!=Stress&Category!=Benchmark';
+const normalFilter = 'Category!=Stress&Category!=Benchmark&Category!=GpuTrap';
 
 function printHelp() {
     console.log([

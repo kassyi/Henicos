@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using System.Diagnostics;
 using Kassyi.GSharp.Compiler;
 using Kassyi.GSharp.Core;
 using Kassyi.GSharp.Naming;
@@ -16,8 +15,6 @@ namespace Kassyi.GSharp.Tests.Shared.Runtime;
 /// </summary>
 public sealed class DeviceErrorChannelTests
 {
-    private const string TrapTestVariable = "GSHARP_TEST_CUDA_TRAP";
-
     public static TheoryData<GSharpErrorCode, Type> AllErrorCodesAndExceptionTypes() =>
         new()
         {
@@ -533,12 +530,13 @@ public sealed class DeviceErrorChannelTests
 #else
     [SkippableFact]
     [Category(TestCategory.Runtime)]
+    [Category(TestCategory.GpuTrap)]
     [Scenario(TestScenario.SadPath)]
     public void Test_Cuda_SubprocessTrap_ThrowsStandardExceptionWithCoordinates()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
 
-        if (Environment.GetEnvironmentVariable(TrapTestVariable) == "1")
+        if (IsTrapChild())
         {
             int[] data = [10, 20, 30];
             int[] result = [0];
@@ -575,12 +573,13 @@ public sealed class DeviceErrorChannelTests
 
     [SkippableFact]
     [Category(TestCategory.Runtime)]
+    [Category(TestCategory.GpuTrap)]
     [Scenario(TestScenario.SadPath)]
     public void Test_Cuda_SubprocessConcurrentTrap_FirstWriterWinsWithoutRace()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
 
-        if (Environment.GetEnvironmentVariable(TrapTestVariable) == "1")
+        if (IsTrapChild())
         {
             int[] data = [1, 2, 3, 4];
             int[] result = new int[256];
@@ -603,12 +602,13 @@ public sealed class DeviceErrorChannelTests
 
     [SkippableFact]
     [Category(TestCategory.Runtime)]
+    [Category(TestCategory.GpuTrap)]
     [Scenario(TestScenario.SadPath)]
     public void Test_Cuda_SubprocessTrap_CarriesSourceLocationAndMemberName()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
 
-        if (Environment.GetEnvironmentVariable(TrapTestVariable) == "1")
+        if (IsTrapChild())
         {
             int[] data = [10, 20, 30];
             int[] result = [0];
@@ -633,12 +633,13 @@ public sealed class DeviceErrorChannelTests
 
     [SkippableFact]
     [Category(TestCategory.Runtime)]
+    [Category(TestCategory.GpuTrap)]
     [Scenario(TestScenario.SadPath)]
     public void Test_Cuda_SubprocessGrid100Blocks_BlockCoordinate37Preserved()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
 
-        if (Environment.GetEnvironmentVariable(TrapTestVariable) == "1")
+        if (IsTrapChild())
         {
             int[] data = [10, 20, 30];
             int[] result = [0];
@@ -658,12 +659,13 @@ public sealed class DeviceErrorChannelTests
 
     [SkippableFact]
     [Category(TestCategory.Runtime)]
+    [Category(TestCategory.GpuTrap)]
     [Scenario(TestScenario.SadPath)]
     public void Test_Cuda_SubprocessTrap_StackLinqFirst_Empty_CarriesSourceLocationAndMemberName()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
 
-        if (Environment.GetEnvironmentVariable(TrapTestVariable) == "1")
+        if (IsTrapChild())
         {
             int[] data = [1, 2, 3];
             int[] result = [0];
@@ -690,12 +692,13 @@ public sealed class DeviceErrorChannelTests
 
     [SkippableFact]
     [Category(TestCategory.Runtime)]
+    [Category(TestCategory.GpuTrap)]
     [Scenario(TestScenario.SadPath)]
     public void Test_Cuda_SubprocessTrap_StackLinqSingle_MultipleElements_CarriesSourceLocationAndMemberName()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
 
-        if (Environment.GetEnvironmentVariable(TrapTestVariable) == "1")
+        if (IsTrapChild())
         {
             int[] data = [10, 20];
             int[] result = [0];
@@ -722,12 +725,13 @@ public sealed class DeviceErrorChannelTests
 
     [SkippableFact]
     [Category(TestCategory.Runtime)]
+    [Category(TestCategory.GpuTrap)]
     [Scenario(TestScenario.SadPath)]
     public void Test_Cuda_SubprocessTrap_StackLinqMax_EmptySequence_CarriesSourceLocationAndMemberName()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
 
-        if (Environment.GetEnvironmentVariable(TrapTestVariable) == "1")
+        if (IsTrapChild())
         {
             int[] data = [1, 2, 3];
             int[] result = [0];
@@ -769,12 +773,13 @@ public sealed class DeviceErrorChannelTests
 
     [SkippableFact]
     [Category(TestCategory.Runtime)]
+    [Category(TestCategory.GpuTrap)]
     [Scenario(TestScenario.SadPath)]
     public void Test_Cuda_SubprocessTrap_SwitchExpressionWithoutMatchingArm_CarriesSourceLocation()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
 
-        if (Environment.GetEnvironmentVariable(TrapTestVariable) == "1")
+        if (IsTrapChild())
         {
             int[] keys = [1, 2];
             int[] result = new int[keys.Length];
@@ -798,12 +803,13 @@ public sealed class DeviceErrorChannelTests
 
     [SkippableFact]
     [Category(TestCategory.Runtime)]
+    [Category(TestCategory.GpuTrap)]
     [Scenario(TestScenario.SadPath)]
     public void Test_Cuda_SubprocessTrap_SwitchExpressionWithoutMatchingArmInDeviceFunction_Throws()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
 
-        if (Environment.GetEnvironmentVariable(TrapTestVariable) == "1")
+        if (IsTrapChild())
         {
             int[] keys = [2];
             int[] result = [0];
@@ -826,28 +832,12 @@ public sealed class DeviceErrorChannelTests
             nameof(Test_Cuda_SubprocessTrap_SwitchExpressionWithoutMatchingArmInDeviceFunction_Throws));
     }
 
-    private static void RunTrapTestInIsolatedProcess(string testMethodName)
-    {
-        var testAssemblyPath = typeof(DeviceErrorChannelTests).Assembly.Location;
-        var psi = new ProcessStartInfo("dotnet")
-        {
-            UseShellExecute = false,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            CreateNoWindow = true
-        };
-        psi.ArgumentList.Add("vstest");
-        psi.ArgumentList.Add(testAssemblyPath);
-        psi.ArgumentList.Add($"--Tests:Kassyi.GSharp.Tests.Shared.Runtime.DeviceErrorChannelTests.{testMethodName}");
-        psi.Environment[TrapTestVariable] = "1";
-        psi.Environment["DiffEngine_Disabled"] = "true";
-        psi.Environment["CI"] = "true";
+    // The test runs in the child process that RunTrapTestInIsolatedProcess starts for it; a trap leaves the CUDA context
+    // of the process unusable, so it must not run in the test host
+    private static bool IsTrapChild([CallerMemberName] string testMethodName = "") =>
+        IsolatedTestProcess.IsChild(testMethodName);
 
-        using var proc = Process.Start(psi) ?? throw new InvalidOperationException("Failed to start dotnet vstest subprocess.");
-        var stdout = proc.StandardOutput.ReadToEnd();
-        var stderr = proc.StandardError.ReadToEnd();
-        Assert.True(proc.WaitForExit(60_000), $"Subprocess timed out.\nSTDOUT:\n{stdout}\nSTDERR:\n{stderr}");
-        Assert.True(proc.ExitCode == 0, $"Isolated CUDA trap test '{testMethodName}' failed with exit code {proc.ExitCode}.\nSTDOUT:\n{stdout}\nSTDERR:\n{stderr}");
-    }
+    private static void RunTrapTestInIsolatedProcess(string testMethodName) =>
+        CudaTrapRuns.RunIsolated(typeof(DeviceErrorChannelTests), testMethodName);
 #endif
 }

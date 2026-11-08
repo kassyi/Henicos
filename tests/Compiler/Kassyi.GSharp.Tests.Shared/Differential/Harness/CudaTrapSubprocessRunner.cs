@@ -15,6 +15,10 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 /// Isolates CUDA device <c>trap;</c> fault seeds in a child process so that sticky
 /// <c>CUDA_ERROR_ILLEGAL_INSTRUCTION</c> errors never poison the parent <c>testhost</c> <c>CUcontext</c>.
 /// </summary>
+/// <remarks>
+/// Each child raises a real GPU fault, so <see cref="DifferentialRunner"/> starts one only when
+/// <see cref="CudaTrapGate.IsEnabled"/> (<c>just test-gpu-trap</c>), one at a time through <see cref="CudaTrapGate.RunPaced{T}"/>.
+/// </remarks>
 public static class CudaTrapSubprocessRunner
 {
     /// <summary>Environment variable set on the isolated child process to select a single <c>Case#ShapeIndex:Seed</c> target.</summary>

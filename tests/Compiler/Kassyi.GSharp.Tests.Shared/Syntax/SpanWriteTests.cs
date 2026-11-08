@@ -12,7 +12,6 @@ public class SpanWriteTests : TranspilerTestBase
 {
     private const uint GridDimX = 1;
     private const uint BlockDimX = 1;
-    private const string TrapTestVariable = "GSHARP_TEST_CUDA_TRAP";
 
     public static TheoryData<bool> Paths => new() { false, true };
 
@@ -352,16 +351,26 @@ public class SpanWriteTests : TranspilerTestBase
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
+    [Category(TestCategory.GpuTrap)]
     [Scenario(TestScenario.SadPath)]
     public void Test_P4_CopyTo_DestinationTooShort_CudaTrapsWhenEnabled()
     {
-        Skip.If(!IsCudaDialect || Environment.GetEnvironmentVariable(TrapTestVariable) != "1",
-            $"Run alone with {TrapTestVariable}=1; a CUDA trap terminates the process context.");
+        Skip.IfNot(IsCudaDialect, "Checks the CUDA trap; the exception is checked on the CPU paths.");
+
+        // A CUDA trap leaves the context of the process unusable, so the launch runs in a child process of its own
+        if (!IsolatedTestProcess.IsChild(nameof(Test_P4_CopyTo_DestinationTooShort_CudaTrapsWhenEnabled)))
+        {
+            CudaTrapRuns.RunIsolated(typeof(SpanWriteTests), nameof(Test_P4_CopyTo_DestinationTooShort_CudaTrapsWhenEnabled));
+            return;
+        }
 
         int[] src = [1, 2, 3, 4];
         int[] dst = [90, 91, 92];
-        Assert.Throws<Kassyi.GSharp.Runtime.Interop.CudaException>(() =>
+        // The device error channel turns the trap into the exception the CPU paths throw, with the CUDA error inside
+        var ex = Assert.Throws<ArgumentException>(() =>
             SpanWriteKernels.LaunchCopyToDirectKernel(src, dst, gridDimX: GridDimX, blockDimX: BlockDimX));
+        var cudaEx = Assert.IsType<Kassyi.GSharp.Runtime.Interop.CudaException>(ex.InnerException);
+        Assert.True(cudaEx.Result is Kassyi.GSharp.Runtime.Interop.CUresult.CudaErrorIllegalInstruction or Kassyi.GSharp.Runtime.Interop.CUresult.CudaErrorLaunchFailed);
     }
 
     [SkippableTheory]
