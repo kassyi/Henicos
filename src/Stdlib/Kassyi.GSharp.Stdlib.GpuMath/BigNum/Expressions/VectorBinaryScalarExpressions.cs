@@ -155,7 +155,7 @@ internal sealed class VectorAddScalarExpression(
 internal sealed class VectorSubScalarExpression(
     [TakesOwnership] IGpuBigIntVectorExpression vector,
     [TakesOwnership] IGpuBigIntExpression scalar)
-    : VectorBinaryScalarExpressionBase(vector, scalar, Math.Max(vector.WordsPerElement, scalar.NumWords))
+    : VectorBinaryScalarExpressionBase(vector, scalar, Math.Max(vector.WordsPerElement, scalar.NumWords) + 1)
 {
     protected override void DispatchKernel(
         GpuWorkspace workspace,
