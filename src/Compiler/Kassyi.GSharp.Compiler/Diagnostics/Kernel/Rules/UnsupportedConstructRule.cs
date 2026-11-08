@@ -3,7 +3,8 @@ namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel.Rules;
 /// <summary>
 /// Reports the constructs that the transpiler cannot emit: <c>new</c> of a class (GSH0001), <see cref="string"/>
 /// (GSH0002), and function pointer variables, stack arrays of a dynamic size, unsupported switch expression arms,
-/// operator macros without a target and <c>checked</c> / <c>unchecked</c> (GSH0003).
+/// operator macros without a target, <c>checked</c> / <c>unchecked</c> and calls of a <c>[GpuKernel]</c> method
+/// (GSH0003).
 /// </summary>
 /// <remarks>
 /// The transpiler decides with the same <see cref="GpuCodeConstraints"/> members and emits nothing for these.
@@ -19,7 +20,8 @@ internal sealed class UnsupportedConstructRule :
     ISyntaxValidationRule<SwitchExpressionArmSyntax>,
     ISyntaxValidationRule<AssignmentExpressionSyntax>,
     ISyntaxValidationRule<CheckedExpressionSyntax>,
-    ISyntaxValidationRule<CheckedStatementSyntax>
+    ISyntaxValidationRule<CheckedStatementSyntax>,
+    ISyntaxValidationRule<InvocationExpressionSyntax>
 {
     public static readonly UnsupportedConstructRule Instance = new();
 
@@ -78,6 +80,17 @@ internal sealed class UnsupportedConstructRule :
 
     public void Analyze(CheckedStatementSyntax node, ref ValidationContext context) =>
         context.ReportDiagnostic(GSharpDiagnostics.UnsupportedSyntax, node, node.Kind().ToString());
+
+    // A kernel runs only through its launcher; in device code a call of it has no C++ form (#880)
+    public void Analyze(InvocationExpressionSyntax node, ref ValidationContext context)
+    {
+        if (context.SemanticModel.GetSymbol(node) is IMethodSymbol method &&
+            method.OriginalDefinition.HasAttribute(KnownAttributes.GpuKernel))
+        {
+            context.ReportDiagnostic(GSharpDiagnostics.UnsupportedSyntax, node,
+                GpuCodeConstraints.FormatKernelCalledFromDeviceCode(method));
+        }
+    }
 
     public void Analyze(BaseObjectCreationExpressionSyntax node, ref ValidationContext context)
     {

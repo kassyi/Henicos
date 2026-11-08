@@ -427,7 +427,21 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
             Context.Emitter.Writer.Append(' ');
             for (var i = 0; i < elements.Count; i++)
             {
-                Visit(elements[i]);
+                // An element that C# converts to the element type is written converted: a braced list rejects a
+                // narrowing conversion (#897)
+                switch (elements[i])
+                {
+                    case ExpressionElementSyntax element:
+                        ArithmeticConversions.AppendElement(element.Expression, ref Context);
+                        break;
+                    case ExpressionSyntax expression:
+                        ArithmeticConversions.AppendElement(expression, ref Context);
+                        break;
+                    default:
+                        Visit(elements[i]);
+                        break;
+                }
+
                 if (i >= elements.Count - 1)
                 {
                     continue;

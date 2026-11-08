@@ -3,9 +3,13 @@ using Microsoft.CodeAnalysis.Operations;
 namespace Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules;
 
 /// <summary>
-/// Transpiles postfix unary expressions (<c>x++</c>, <c>x--</c>) into target dialect syntax.
+/// Transpiles postfix unary expressions (<c>x++</c>, <c>x--</c>, <c>x!</c>) into target dialect syntax.
 /// </summary>
 /// <remarks>
+/// <para>
+/// The null-forgiving operator <c>x!</c> only tells the C# compiler that <c>x</c> is not null; it has no run-time
+/// meaning (C# spec §12.8.9), so only the operand is written (#880).
+/// </para>
 /// <para><b>Thread Safety:</b> This rule is stateless and thread-safe.</para>
 /// <para><b>Execution Target:</b> Host-only (Roslyn compiler environment).</para>
 /// </remarks>
@@ -21,6 +25,12 @@ public sealed class PostfixUnaryExpressionTranspilerRule : SyntaxNodeTranspilerR
     /// <inheritdoc />
     public override void Transpile(PostfixUnaryExpressionSyntax node, ref TranspileContext context)
     {
+        if (node.IsKind(SyntaxKind.SuppressNullableWarningExpression))
+        {
+            context.Visitor.Visit(node.Operand);
+            return;
+        }
+
         if ((node.IsKind(SyntaxKind.PostIncrementExpression) || node.IsKind(SyntaxKind.PostDecrementExpression)) &&
             ComputedPropertyGetterCall.IsComputedPropertyTarget(node.Operand, ref context))
         {

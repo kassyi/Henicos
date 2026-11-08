@@ -64,17 +64,7 @@ public sealed class WithExpressionTranspilerRule : SyntaxNodeTranspilerRuleBase<
             context.Visitor.Visit(node.Expression);
             context.Emitter.Writer.AppendLine(";");
 
-            foreach (var expression in node.Initializer.Expressions)
-            {
-                if (expression is not AssignmentExpressionSyntax assignment)
-                {
-                    continue;
-                }
-
-                context.Emitter.Writer.Append($"{GSharpInternalNames.Lowering.AggregateTemp}.");
-                ComputedPropertyGetterCall.TranspileAssignment(assignment, " = ", ref context);
-                context.Emitter.Writer.AppendLine(";");
-            }
+            ObjectInitializerAssignments.Append(node.Initializer, lineBreaks: true, ref context);
 
             context.Emitter.Writer.AppendLine($"return {GSharpInternalNames.Lowering.AggregateTemp};");
         }
