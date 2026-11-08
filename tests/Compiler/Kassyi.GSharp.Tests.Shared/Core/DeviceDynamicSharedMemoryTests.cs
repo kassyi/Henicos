@@ -123,18 +123,28 @@ public class DeviceDynamicSharedMemoryTests : TranspilerTestBase
 
 #if GSHARP_CUDA
     // [WHY] A trap leaves the CUDA context of the process unusable, so every later CUDA test in the same testhost would
-    // fail. The test runs only when this variable is 1, in a process of its own (#439).
-    private const string TrapTestVariable = "GSHARP_TEST_CUDA_TRAP";
-
-    [SkippableTheory]
-    [InlineData(-1)]
-    [InlineData(-32)]
+    // fail. Each case runs in a child process of its own (#439), and only in `just test-gpu-trap` (#1457).
+    [SkippableFact]
+    [Category(TestCategory.GpuTrap)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_NegativeCount_AfterRegion_Traps(int negative)
+    public void Test_NegativeCountMinusOne_AfterRegion_Traps() =>
+        RunNegativeCountTrap(-1, nameof(Test_NegativeCountMinusOne_AfterRegion_Traps));
+
+    [SkippableFact]
+    [Category(TestCategory.GpuTrap)]
+    [Scenario(TestScenario.SadPath)]
+    public void Test_NegativeCountMinus32_AfterRegion_Traps() =>
+        RunNegativeCountTrap(-32, nameof(Test_NegativeCountMinus32_AfterRegion_Traps));
+
+    private void RunNegativeCountTrap(int negative, string testMethodName)
     {
-        Skip.IfNot(Environment.GetEnvironmentVariable(TrapTestVariable) == "1",
-            $"Traps and leaves the CUDA context unusable; set {TrapTestVariable}=1 and run it alone");
         EnsureCapability(DialectCapabilities.SharedMemory);
+        if (!IsolatedTestProcess.IsChild(testMethodName))
+        {
+            CudaTrapRuns.RunIsolated(typeof(DeviceDynamicSharedMemoryTests), testMethodName);
+            return;
+        }
+
         var output = new int[DeviceDynamicSharedMemoryScenarios.Length];
 
         var ex = Assert.Throws<ArgumentOutOfRangeException>(() =>

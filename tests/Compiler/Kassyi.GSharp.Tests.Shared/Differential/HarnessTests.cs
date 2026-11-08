@@ -1086,6 +1086,51 @@ public class HarnessTests
         Assert.False(excusedReport.HasFailures, excusedReport.ToString());
     }
 
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_CudaFaultSeeds_AreSkippedWithReasonUnlessTrapRunsAreEnabled()
+    {
+        // A fault seed on the CUDA direct runner would start a child process that raises a real GPU fault (#1457); by
+        // default the cell is skipped, the report lists the seed with the reason, and a known CUDA exception entry is
+        // not reported stale
+        // mutant: DifferentialRunner.cs EvaluateExceptionExpectation drops the `!CudaTrapRuns.IsEnabled` gate
+        // mutant: DifferentialRunner.cs AddStaleEntries drops the skip of CUDA exception entries
+        Skip.If(CudaTrapRuns.IsEnabled, $"{CudaTrapRuns.EnableVariable}=1 runs the fault seeds.");
+        var faultCase = new DifferentialCase("HarnessTests.CudaFaultSeedKernel")
+        {
+            Shape = LaunchShapes.SingleThread(),
+            ExpectedException = static (_, _) => ExceptionPolicy.For<IndexOutOfRangeException>(
+                DiffPath.Managed | DiffPath.Cuda,
+                memberName: "CudaFaultSeedKernel"
+            ),
+            Inputs = static (_, _) => new DiffBuffers().Out<int>("r", 1, OutputPolicy.Exact),
+            Launch = static (_, _) =>
+            {
+                var ex = new IndexOutOfRangeException("Index was outside the bounds of the array.");
+                ex.Data["GSharp.MemberName"] = "CudaFaultSeedKernel";
+                throw ex;
+            },
+        };
+        DiffPathRunner[] paths =
+        [
+            new(DiffPath.Managed, DiffPaths.RunDirect),
+            new(DiffPath.Cuda, DiffPaths.DirectRunner),
+        ];
+        KnownDivergence[] cudaEntry =
+        [
+            new("HarnessTests.CudaFaultSeedKernel", KnownDivergence.ExceptionColumn, DiffPath.Cuda, Issue: 718),
+        ];
+
+        var report = DifferentialRunner.Evaluate(faultCase, [1, 2], paths, cudaEntry);
+
+        Assert.False(report.HasFailures, report.ToString());
+        Assert.Equal([1, 2], report.SkippedCudaTraps.Select(static t => t.Seed));
+        Assert.Contains("CUDA fault seeds not run: 2", report.ToString());
+        Assert.Contains("just test-gpu-trap", report.ToString());
+    }
+
     [Fact]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Unit)]

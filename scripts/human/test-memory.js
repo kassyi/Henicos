@@ -24,7 +24,7 @@ const helpText = [
     '                                         [--keep-budget] [-- <dotnet test args>...]',
     '',
     '  <project>       A test project: a path to its .csproj or its directory, or its name (found under tests/).',
-    '  --filter        The dotnet test filter. Default: Category!=Stress&Category!=Benchmark (as `just test`).',
+    '  --filter        The dotnet test filter. Default: Category!=Stress&Category!=Benchmark&Category!=GpuTrap (as `just test`).',
     '  -c              Build configuration. Default: Debug.',
     '  --no-build      Pass --no-build to dotnet test.',
     '  --keep-budget   Keep the budget of tests/memory-budgets.yml (a breach then fails tests and writes a snapshot).',
@@ -39,7 +39,7 @@ function fail(message) {
 function parseArgs(argv) {
     const options = {
         project: null,
-        filter: 'Category!=Stress&Category!=Benchmark',
+        filter: 'Category!=Stress&Category!=Benchmark&Category!=GpuTrap',
         configuration: 'Debug',
         noBuild: false,
         keepBudget: false,
