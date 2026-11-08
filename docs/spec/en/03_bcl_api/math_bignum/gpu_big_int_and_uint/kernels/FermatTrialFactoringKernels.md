@@ -26,7 +26,7 @@ public static partial class FermatTrialFactoringKernels
 | --- | --- |
 | [Device_ModPow64_Under32Bit(ulong, ulong, ulong)](#device_modpow64_under32bitulong-ulong-ulong) | A GPU device function (`[GpuDeviceFunction, GpuInline]`) that computes 64-bit modular exponentiation for moduli under 32 bits. |
 | [SearchFactors32(uint, uint, uint[], uint[], int, uint, uint)](#searchfactors32uint-uint-uint-uint-int-uint-uint) | Checks the arguments and launches `SearchFactors32Kernel` on arrays. |
-| [SearchFactors32(uint, uint, IntPtr, IntPtr, int, uint, uint, IntPtr)](#searchfactors32uint-uint-intptr-intptr-int-uint-uint-intptr) | Checks the arguments and launches `SearchFactors32Kernel` on device buffers. |
+| [SearchFactors32(uint, uint, GSharpArrayProxy, GSharpArrayProxy, int, uint, uint, IntPtr)](#searchfactors32uint-uint-gsharparrayproxy-gsharparrayproxy-int-uint-uint-intptr) | Checks the arguments and launches `SearchFactors32Kernel` on device buffers. |
 | [SearchFactors32Kernel(uint, uint, uint[], uint[], int)](#searchfactors32kerneluint-uint-uint-uint-int) | A GPU kernel (`[GpuKernel]`) that searches for 32-bit factors of a Fermat number. |
 
 ## Device_ModPow64_Under32Bit(ulong, ulong, ulong)
@@ -108,16 +108,16 @@ public static void SearchFactors32(
 `ArgumentOutOfRangeException`<br>
 `maxResults` is negative or greater than the length of `results`.
 
-## SearchFactors32(uint, uint, IntPtr, IntPtr, int, uint, uint, IntPtr)
+## SearchFactors32(uint, uint, GSharpArrayProxy, GSharpArrayProxy, int, uint, uint, IntPtr)
 
-Checks the arguments, then launches `SearchFactors32Kernel` on device buffers on `stream`. `results` must hold `maxResults` elements.
+Checks the arguments, then launches `SearchFactors32Kernel` on device buffers on `stream`. Pass the buffers with `GpuBuffer<uint>.ToProxy()`, which carries their lengths; `results` must hold `maxResults` elements.
 
 ```csharp
 public static void SearchFactors32(
     uint startOdd,
     uint exp,
-    IntPtr results,
-    IntPtr resultCount,
+    GSharpArrayProxy results,
+    GSharpArrayProxy resultCount,
     int maxResults,
     uint gridDimX,
     uint blockDimX,
@@ -127,7 +127,7 @@ public static void SearchFactors32(
 #### Exceptions
 
 `ArgumentOutOfRangeException`<br>
-`maxResults` is negative.
+`maxResults` is negative or greater than `results.Length`.
 
 ## Examples
 

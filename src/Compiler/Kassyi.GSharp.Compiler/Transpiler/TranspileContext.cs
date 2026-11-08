@@ -137,6 +137,12 @@ public struct Emitter(
     public Dictionary<SyntaxNode, int> StackAllocStorages { get; } = new();
 
     /// <summary>
+    /// The storage number (<c>__gsharp_discard_&lt;n&gt;</c>) of each discard <c>out</c> argument that the statement
+    /// prelude declared a variable for (DiscardOutArgument); the count is the next number.
+    /// </summary>
+    public Dictionary<SyntaxNode, int> DiscardStorages { get; } = new();
+
+    /// <summary>
     /// The temporary (<c>__gsharp_seq_&lt;n&gt;</c>) that a part of the target of a step or compound assignment was
     /// evaluated into, written in place of the part while the target is written (IntegerSemanticsEmitter).
     /// </summary>

@@ -13,15 +13,6 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules;
 /// </remarks>
 internal static class ComputedPropertyGetterCall
 {
-    /// <summary>The GSH0003 text for a compound assignment to a computed property.</summary>
-    public const string CompoundAssignmentToComputedProperty = "compound assignment to a computed property";
-
-    /// <summary>The GSH0003 text for an increment or decrement of a computed property.</summary>
-    public const string IncrementOrDecrementOfComputedProperty = "increment or decrement of a computed property";
-
-    /// <summary>The GSH0003 text for a chained assignment to a computed property whose value is consumed.</summary>
-    public const string ChainedAssignmentToComputedProperty = "chained assignment to a computed property";
-
     /// <summary>Whether <paramref name="symbol"/> is a computed property that is read through its getter.</summary>
     public static bool IsGetter(ISymbol? symbol, ITranspilerDialect dialect) =>
         symbol is IPropertySymbol { GetMethod: not null, ContainingType: { } type } property &&
@@ -43,7 +34,8 @@ internal static class ComputedPropertyGetterCall
 
     /// <summary>
     /// Appends <c>()</c> after the name of <paramref name="symbol"/> when <paramref name="node"/> reads it through its
-    /// getter.
+    /// getter: not the target of an assignment or a step, whose getter and setter calls the assignment writes
+    /// (<see cref="ComputedPropertyAssignment"/>).
     /// </summary>
     public static void AppendCallIfGetter(SyntaxNode node, ISymbol? symbol, ref TranspileContext context) =>
         context.Emitter.Writer.AppendIf(
@@ -52,7 +44,8 @@ internal static class ComputedPropertyGetterCall
 
     /// <summary>
     /// Emits <paramref name="assignment"/> as a setter call (<c>&lt;left&gt;(&lt;right&gt;)</c>) when its target is a
-    /// computed property, or as an ordinary assignment (<c>&lt;left&gt; = &lt;right&gt;</c>) otherwise.
+    /// computed property (through <see cref="ComputedPropertyAssignment"/> when its value is used), or as an ordinary
+    /// assignment (<c>&lt;left&gt; = &lt;right&gt;</c>) otherwise.
     /// </summary>
     public static void TranspileAssignment(AssignmentExpressionSyntax assignment, string equalsOperator,
         ref TranspileContext context)
@@ -61,9 +54,7 @@ internal static class ComputedPropertyGetterCall
         {
             if (!IsStatementOrInitializerAssignment(assignment))
             {
-                context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, assignment,
-                    ChainedAssignmentToComputedProperty);
-                context.Visitor.AppendUnsupportedPlaceholder(assignment);
+                ComputedPropertyAssignment.TranspileAssignment(assignment, ref context);
                 return;
             }
 
@@ -95,7 +86,23 @@ internal static class ComputedPropertyGetterCall
             ? model.GetSymbol(memberAccess.Name) ?? model.GetSymbol(memberAccess)
             : model.GetSymbol(left);
 
-    private static bool IsAssignmentTarget(SyntaxNode node) =>
-        node.Parent is AssignmentExpressionSyntax { RawKind: (int)SyntaxKind.SimpleAssignmentExpression } assignment &&
-        assignment.Left == node;
+    // The target of an assignment (compound included) or of an increment or decrement, inside parentheses or not
+    // (an element of the left side of a deconstruction, nested or not, as well)
+    private static bool IsAssignmentTarget(SyntaxNode node)
+    {
+        while (node.Parent is ParenthesizedExpressionSyntax or ArgumentSyntax { Parent: TupleExpressionSyntax })
+        {
+            node = node.Parent is ArgumentSyntax { Parent: { } tuple } ? tuple : node.Parent;
+        }
+
+        return node.Parent switch
+        {
+            AssignmentExpressionSyntax assignment => assignment.Left == node,
+            PrefixUnaryExpressionSyntax prefix => prefix.IsKind(
+                SyntaxKind.PreIncrementExpression, SyntaxKind.PreDecrementExpression),
+            PostfixUnaryExpressionSyntax postfix => postfix.IsKind(
+                SyntaxKind.PostIncrementExpression, SyntaxKind.PostDecrementExpression),
+            _ => false
+        };
+    }
 }

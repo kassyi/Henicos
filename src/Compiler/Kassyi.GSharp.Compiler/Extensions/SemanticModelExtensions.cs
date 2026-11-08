@@ -232,6 +232,15 @@ internal static class SemanticModelExtensions
     }
 
     /// <summary>
+    /// Whether <paramref name="expression"/> is a discard: <c>_</c> where no variable of that name is in scope, or a
+    /// declaration of one (<c>var _</c>, <c>int _</c>) in a deconstruction or an <c>out</c> argument.
+    /// </summary>
+    public static bool IsDiscard(this SemanticModel semanticModel, ExpressionSyntax expression) =>
+        expression is DeclarationExpressionSyntax { Designation: DiscardDesignationSyntax } ||
+        (expression is IdentifierNameSyntax { Identifier.ValueText: "_" } &&
+         semanticModel.GetSymbol(expression) is IDiscardSymbol);
+
+    /// <summary>
     /// Gets the resolved type symbol for the specified syntax node, or null if unresolvable.
     /// </summary>
     public static ITypeSymbol? GetTypeSymbol(this SemanticModel semanticModel, SyntaxNode node,

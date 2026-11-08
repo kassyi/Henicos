@@ -739,7 +739,7 @@ internal static class GpuBigFloatTranscendentals
     private static void DivideByUInt32Async(
         GpuWorkspace workspace, GpuBigUInt dividend, uint divisor, GpuBigUInt quotient, GpuBigUInt discardedRemainder) =>
         GpuBigIntScalarKernels.LaunchScalarDivByUInt32KernelPtr(
-            dividend.DevicePointer, divisor, quotient.DevicePointer, discardedRemainder.DevicePointer,
+            dividend.ToProxy(), divisor, quotient.ToProxy(), discardedRemainder.ToProxy(),
             dividend.NumWords, gridDimX: 1, blockDimX: 32, hStream: workspace.Stream);
 
     // A borrowed view of `words` words of `buffer` from word `offset`.

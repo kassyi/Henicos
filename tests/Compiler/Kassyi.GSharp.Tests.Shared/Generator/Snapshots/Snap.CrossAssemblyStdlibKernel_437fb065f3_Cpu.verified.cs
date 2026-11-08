@@ -430,8 +430,16 @@ __gsharp_warp_record __gsharp_warp_records[2] = {};
 uint32_t __gsharp_warp_record_next = 0;
 uint32_t __gsharp_warp_round = 0;
 bool __gsharp_warp_waiting = false;
+__gsharp_warp_instance __gsharp_warp_regions[16] = {};
+uint32_t __gsharp_warp_region_depth = 0;
+bool __gsharp_warp_reconverging = false;
+uint32_t __gsharp_warp_reconverge_round = 0;
+const char* __gsharp_warp_reconverge_location = nullptr;
+uint32_t __gsharp_warp_decided_round = 0;
+bool __gsharp_warp_may_pass = false;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
+uint32_t __gsharp_warp_visits[1] = {};
 GSharpArray<unsigned int> __gsharp_id_0_generate;
 GSharpArray<unsigned int> __gsharp_id_1_propagate;
 GSharpArray<unsigned int> __gsharp_id_2_result;
@@ -457,6 +465,7 @@ __gsharp_switch_1_state_0:
 {
 __gsharp_ctx->__gsharp_id_3_lane=(int)threadIdx.x;
 __gsharp_ctx->__gsharp_arg_temp_0=__gsharp_ctor_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntKernels__CarryState(__gsharp_ctx->__gsharp_id_0_generate[__gsharp_ctx->__gsharp_id_3_lane], __gsharp_ctx->__gsharp_id_1_propagate[__gsharp_ctx->__gsharp_id_3_lane]);
+__gsharp_warp_region_enter(__gsharp_root,__gsharp_ctx,0);
 goto __gsharp_switch_1_state_1;
 }
 case 1:
@@ -467,6 +476,14 @@ if(!__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntKerne
 __gsharp_state=1;
 return;
 }
+__gsharp_warp_reconverge_arrive(__gsharp_root,__gsharp_ctx,0,""CrossAssemblyStdlibKernels.cs(24,23)"");
+__gsharp_state=2;
+return;
+}
+case 2:
+__gsharp_switch_1_state_2:
+{
+__gsharp_warp_reconverge_pass(__gsharp_root,__gsharp_ctx,0);
 auto __gsharp_id_4_scanned = __gsharp_ctx->__gsharp_call_temp_1;
 __gsharp_ctx->__gsharp_id_2_result[__gsharp_ctx->__gsharp_id_3_lane]=__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntKernels__PackCarryState(__gsharp_id_4_scanned);
 __gsharp_state=-1;
@@ -559,7 +576,7 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Stdlib__CrossAssemblyStdlibKernels__WarpScanKernel {
+public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Stdlib__CrossAssemblyStdlibKernels__WarpScanKernel : global::Kassyi.GSharp.Core.IManagedWarpFrame {
 public int __gsharp_state;
 public uint __gsharp_warp_path;
 public uint[] generate;
@@ -569,6 +586,10 @@ public int lane;
 public global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntKernels.CarryState __gsharp_arg_temp_0;
 public global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntKernels.CarryState __gsharp_call_temp_1;
 internal global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntKernels.__gsharp_frame_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntKernels__WarpScanGp __gsharp_call_frame_0 = new();
+public uint[] __gsharp_warp_visits = new uint[1];
+uint global::Kassyi.GSharp.Core.IManagedWarpFrame.WarpPath => __gsharp_warp_path;
+uint global::Kassyi.GSharp.Core.IManagedWarpFrame.AdvanceWarpVisit(int site) => ++__gsharp_warp_visits[site];
+uint global::Kassyi.GSharp.Core.IManagedWarpFrame.GetWarpVisit(int site) => __gsharp_warp_visits[site];
 public uint __gsharp_number_warp_paths(uint next) {
 __gsharp_warp_path = next++;
 next = __gsharp_call_frame_0.__gsharp_number_warp_paths(next);
@@ -589,6 +610,7 @@ case 0:
 {
 __gsharp_ctx.lane = global::Kassyi.GSharp.Core.ThreadIndex.X;
 __gsharp_ctx.__gsharp_arg_temp_0 = new global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntKernels.CarryState(__gsharp_ctx.generate[__gsharp_ctx.lane], __gsharp_ctx.propagate[__gsharp_ctx.lane]);
+__gsharp_warp_region_enter(0, ref __gsharp_ctx, 0);
 goto case 1;
 }
 
@@ -600,6 +622,14 @@ __gsharp_ctx.__gsharp_state = 1;
 return;
 }
 
+__gsharp_warp_reconverge_arrive(0, ref __gsharp_ctx, 0, "CrossAssemblyStdlibKernels.cs(24,23)");
+__gsharp_ctx.__gsharp_state = 2;
+return;
+}
+
+case 2:
+{
+__gsharp_warp_reconverge_pass(0, ref __gsharp_ctx, 0);
 var scanned = __gsharp_ctx.__gsharp_call_temp_1;
 __gsharp_ctx.result[__gsharp_ctx.lane] = global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntKernels.PackCarryState(scanned);
 __gsharp_ctx.__gsharp_state = -1;

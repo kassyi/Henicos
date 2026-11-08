@@ -26,6 +26,8 @@ internal static class SuspensionAnalysis
 
     private static readonly ConditionalWeakTable<Compilation, ConcurrentDictionary<IMethodSymbol, bool>> s_warpShuffle = new();
 
+    private static readonly ConditionalWeakTable<Compilation, ConcurrentDictionary<IMethodSymbol, bool>> s_activeMask = new();
+
     // Which barriers a query looks for
     private enum BarrierSet
     {
@@ -39,7 +41,10 @@ internal static class SuspensionAnalysis
         Grid,
 
         // Warp.Shuffle*Sync and Gpu.Match*Sync
-        WarpShuffle
+        WarpShuffle,
+
+        // Warp.ActiveMask()
+        ActiveMask
     }
 
     /// <summary>Whether <paramref name="method"/> is a device function that reaches a phase barrier.</summary>
@@ -133,6 +138,33 @@ internal static class SuspensionAnalysis
                 new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default)));
     }
 
+    /// <summary>
+    /// Whether <paramref name="method"/> (a kernel or a device function) reaches <c>Warp.ActiveMask()</c>, directly or
+    /// through device functions it calls.
+    /// </summary>
+    /// <remarks>
+    /// [WHY] The CPU paths make the lanes of a warp that took different branches wait for each other where the branches
+    /// meet again, so that <c>Warp.ActiveMask()</c> sees the lanes that reach it together (#844); that costs launcher
+    /// rounds, so only such methods do it. A device function of another assembly does not record whether it reaches
+    /// <c>Warp.ActiveMask()</c>; one that suspends is taken as reaching it, so that the kernel context has room for its
+    /// branches.
+    /// </remarks>
+    public static bool ReachesActiveMask(IMethodSymbol method, Compilation compilation)
+    {
+        var definition = method.OriginalDefinition;
+        if (!TryGetMethodBody(definition, compilation, out _))
+        {
+            return DeviceExportTable.TryFindFunction(definition, compilation, out var imported) &&
+                   imported.Record.Suspends;
+        }
+
+        var cache = s_activeMask.GetValue(compilation,
+            static _ => new ConcurrentDictionary<IMethodSymbol, bool>(SymbolEqualityComparer.Default));
+        return cache.GetOrAdd(definition,
+            m => ReachesBarrier(m, BarrierSet.ActiveMask, compilation,
+                new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default)));
+    }
+
     /// <summary>Whether <paramref name="invocation"/>, a node of the tree of <paramref name="semanticModel"/>, calls a
     /// device function that reaches a phase barrier.</summary>
     public static bool IsSuspendingCall(InvocationExpressionSyntax invocation, SemanticModel semanticModel) =>
@@ -187,7 +219,8 @@ internal static class SuspensionAnalysis
             return DeviceExportTable.TryFindFunction(method, compilation, out var imported) &&
                    barriers switch
                    {
-                       BarrierSet.Splitting or BarrierSet.WarpShuffle => imported.Record.Suspends,
+                       BarrierSet.Splitting or BarrierSet.WarpShuffle or BarrierSet.ActiveMask =>
+                           imported.Record.Suspends,
                        BarrierSet.Block => imported.Record.ReachesBlockBarrier,
                        _ => false
                    };
@@ -226,6 +259,7 @@ internal static class SuspensionAnalysis
             BarrierSet.Block => intrinsic.Kind is SyncIntrinsicKind.BlockBarrier or SyncIntrinsicKind.GridBarrier,
             BarrierSet.Grid => intrinsic.Kind == SyncIntrinsicKind.GridBarrier,
             BarrierSet.WarpShuffle => intrinsic.Kind == SyncIntrinsicKind.WarpShuffle,
+            BarrierSet.ActiveMask => intrinsic.Shuffle == WarpShuffleKind.ActiveMask,
             _ => intrinsic.SplitsStateMachine
         };
 

@@ -32,8 +32,8 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
     {
         ScalarResultWidth.ThrowIfNarrower(leftOperand, resultBuffer);
         GpuBigIntScalarKernels.LaunchScalarMulKernelPtr(
-            leftOperand.DevicePointer, rightOperand, resultBuffer.DevicePointer, leftOperand.NumWords,
-            resultBuffer.NumWords, workspace.CorrectionStatusPointer,
+            leftOperand.ToProxy(), rightOperand, resultBuffer.ToProxy(), leftOperand.NumWords,
+            resultBuffer.NumWords, workspace.CorrectionStatusProxy,
             gridDimX: 1, blockDimX: ScalarResultWidth.BlockSize(leftOperand), hStream: workspace.Stream);
         workspace.CorrectionStatus?.MarkPending();
     }
@@ -264,7 +264,7 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
         var ctx = BuildSqrtContext(targetOperand, resultBuffer, constant3, n, marginWords, actualBits, marginBits,
             iterations, buffers, xSquared, axSquared, diff, nextXUnshifted, nextXShifted, carryBuffer);
         // The status words of the workspace whose stream runs the kernel, which its reads check.
-        ctx.CorrectionStatus = workspace.CorrectionStatusPointer;
+        ctx.CorrectionStatus = workspace.CorrectionStatusProxy;
 
         GpuBigIntSqrtKernels.LaunchInverseSqrtNewtonRaphsonMegaKernelPtr(
             ctx,
@@ -286,9 +286,9 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
         }
 
         // One block: the correction runs on block 0 with block-wide barriers, without a host synchronization.
-        GpuBigIntSqrtKernels.LaunchSqrtFloorCorrectionKernelPtr(operand.DevicePointer, rootSquared.DevicePointer,
-            root.DevicePointer, slack.DevicePointer, trial.DevicePointer, operand.NumWords, root.NumWords,
-            SqrtCorrectionMaxSteps, workspace.CorrectionStatusPointer, gridDimX: 1, blockDimX: 1024,
+        GpuBigIntSqrtKernels.LaunchSqrtFloorCorrectionKernelPtr(operand.ToProxy(), rootSquared.ToProxy(),
+            root.ToProxy(), slack.ToProxy(), trial.ToProxy(), operand.NumWords, root.NumWords,
+            SqrtCorrectionMaxSteps, workspace.CorrectionStatusProxy, gridDimX: 1, blockDimX: 1024,
             hStream: workspace.Stream);
         workspace.CorrectionStatus?.MarkPending();
     }
@@ -355,7 +355,7 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
         var ctx = BuildReciprocalContext(targetOperand, resultBuffer, constant, n, targetBits, iterations, buffers,
             currentProduct, diff, nextIter, carryBuffer);
         // The status words of the workspace whose stream runs the kernel, which its reads check.
-        ctx.CorrectionStatus = workspace.CorrectionStatusPointer;
+        ctx.CorrectionStatus = workspace.CorrectionStatusProxy;
 
         GpuBigIntDivRemKernels.LaunchReciprocalNewtonRaphsonMegaKernelPtr(
             ctx,
@@ -406,9 +406,9 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
             {
                 Operands = new GpuBigIntDivRemKernels.AotContexts.Operand
                 {
-                    TargetOperand = targetOperand.DevicePointer,
-                    ResultBuffer = resultBuffer.DevicePointer,
-                    Constant = constant.DevicePointer
+                    TargetOperand = targetOperand.ToProxy(),
+                    ResultBuffer = resultBuffer.ToProxy(),
+                    Constant = constant.ToProxy()
                 },
                 Dimensions = new GpuBigIntDivRemKernels.AotContexts.Dimension
                 {
@@ -431,33 +431,33 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
                 {
                     Iteration = new GpuBigIntDivRemKernels.AotContexts.IterationScratch
                     {
-                        CurrentProduct = currentProduct.DevicePointer,
-                        Diff = diff.DevicePointer,
-                        NextIter = nextIter.DevicePointer,
-                        NextXUnshifted = nextXUnshifted.DevicePointer,
-                        NextXShifted = nextXShifted.DevicePointer,
-                        AxSquared = axSquared.DevicePointer,
-                        XSquared = xSquared.DevicePointer,
-                        ModulusExpanded = modulusExpanded.DevicePointer
+                        CurrentProduct = currentProduct.ToProxy(),
+                        Diff = diff.ToProxy(),
+                        NextIter = nextIter.ToProxy(),
+                        NextXUnshifted = nextXUnshifted.ToProxy(),
+                        NextXShifted = nextXShifted.ToProxy(),
+                        AxSquared = axSquared.ToProxy(),
+                        XSquared = xSquared.ToProxy(),
+                        ModulusExpanded = modulusExpanded.ToProxy()
                     },
                     NttScratch = new GpuBigIntDivRemKernels.AotContexts.NttConvolutionScratch
                     {
-                        TmpBuf = buffers.TmpBuf.DevicePointer,
-                        NttBuf1A = buffers.Buf1A.DevicePointer,
-                        NttBuf2A = buffers.Buf2A.DevicePointer,
-                        NttBuf1B = buffers.Buf1B.DevicePointer,
-                        NttBuf2B = buffers.Buf2B.DevicePointer,
-                        UncarriedLow = buffers.UncarriedLow.DevicePointer,
-                        UncarriedHigh = buffers.UncarriedHigh.DevicePointer,
-                        BlockCarries = buffers.BlockCarries.DevicePointer
+                        TmpBuf = buffers.TmpBuf.ToProxy(),
+                        NttBuf1A = buffers.Buf1A.ToProxy(),
+                        NttBuf2A = buffers.Buf2A.ToProxy(),
+                        NttBuf1B = buffers.Buf1B.ToProxy(),
+                        NttBuf2B = buffers.Buf2B.ToProxy(),
+                        UncarriedLow = buffers.UncarriedLow.ToProxy(),
+                        UncarriedHigh = buffers.UncarriedHigh.ToProxy(),
+                        BlockCarries = buffers.BlockCarries.ToProxy()
                     }
                 },
-                CarryBuffer = IntPtr.Zero
+                CarryBuffer = default
             },
-            ReciprocalMod = reciprocalMod.DevicePointer,
+            ReciprocalMod = reciprocalMod.ToProxy(),
             Exponent = new GpuBigIntDivRemKernels.AotContexts.ExponentSlice
             {
-                Words = exponent.DevicePointer,
+                Words = exponent.ToProxy(),
                 TotalWords = exponent.NumWords,
                 StartWord = 0,
                 EndWord = 0
@@ -502,12 +502,13 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
 
     // --- 2-prime cooperative MegaKernel support ---
 
+    // The twiddle tables of one transform length, each as many words as the length
     internal sealed class TwiddleCache
     {
-        public IntPtr Forward1;
-        public IntPtr Forward2;
-        public IntPtr Inverse1;
-        public IntPtr Inverse2;
+        public GSharpArrayProxy Forward1;
+        public GSharpArrayProxy Forward2;
+        public GSharpArrayProxy Inverse1;
+        public GSharpArrayProxy Inverse2;
     }
 
     private static GpuBigIntSqrtKernels.AotContexts.NewtonRaphson BuildSqrtContext(
@@ -520,9 +521,9 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
         {
             Operands = new GpuBigIntSqrtKernels.AotContexts.Operand
             {
-                TargetOperand = targetOperand.DevicePointer,
-                ResultBuffer = resultBuffer.DevicePointer,
-                Constant3 = constant3.DevicePointer
+                TargetOperand = targetOperand.ToProxy(),
+                ResultBuffer = resultBuffer.ToProxy(),
+                Constant3 = constant3.ToProxy()
             },
             Dimensions = new GpuBigIntSqrtKernels.AotContexts.Dimension
             {
@@ -547,25 +548,26 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
             {
                 Iteration = new GpuBigIntSqrtKernels.AotContexts.IterationScratch
                 {
-                    XSquared = xSquared.DevicePointer,
-                    AxSquared = axSquared.DevicePointer,
-                    Diff = diff.DevicePointer,
-                    NextXUnshifted = nextXUnshifted.DevicePointer,
-                    NextXShifted = nextXShifted.DevicePointer
+                    XSquared = xSquared.ToProxy(),
+                    AxSquared = axSquared.ToProxy(),
+                    Diff = diff.ToProxy(),
+                    NextXUnshifted = nextXUnshifted.ToProxy(),
+                    NextXShifted = nextXShifted.ToProxy()
                 },
                 NttScratch = new GpuBigIntSqrtKernels.AotContexts.NttConvolutionScratch
                 {
-                    NttBuf1A = buffers.Buf1A.DevicePointer,
-                    NttBuf2A = buffers.Buf2A.DevicePointer,
-                    NttBuf1B = buffers.Buf1B.DevicePointer,
-                    NttBuf2B = buffers.Buf2B.DevicePointer,
-                    TmpBuf = buffers.TmpBuf.DevicePointer,
-                    UncarriedLow = buffers.UncarriedLow.DevicePointer,
-                    UncarriedHigh = buffers.UncarriedHigh.DevicePointer,
-                    BlockCarries = buffers.BlockCarries.DevicePointer
+                    NttBuf1A = buffers.Buf1A.ToProxy(),
+                    NttBuf2A = buffers.Buf2A.ToProxy(),
+                    NttBuf1B = buffers.Buf1B.ToProxy(),
+                    NttBuf2B = buffers.Buf2B.ToProxy(),
+                    TmpBuf = buffers.TmpBuf.ToProxy(),
+                    UncarriedLow = buffers.UncarriedLow.ToProxy(),
+                    UncarriedHigh = buffers.UncarriedHigh.ToProxy(),
+                    BlockCarries = buffers.BlockCarries.ToProxy()
                 }
             },
-            CarryBuffer = carryBuffer.DevicePointer
+            // Two words hold the one long of the carry
+            CarryBuffer = new GSharpArrayProxy(carryBuffer.DevicePointer, carryBuffer.NumWords / 2)
         };
     }
 
@@ -579,9 +581,9 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
         {
             Operands = new GpuBigIntDivRemKernels.AotContexts.Operand
             {
-                TargetOperand = targetOperand.DevicePointer,
-                ResultBuffer = resultBuffer.DevicePointer,
-                Constant = constant.DevicePointer
+                TargetOperand = targetOperand.ToProxy(),
+                ResultBuffer = resultBuffer.ToProxy(),
+                Constant = constant.ToProxy()
             },
             Dimensions = new GpuBigIntDivRemKernels.AotContexts.Dimension
             {
@@ -604,23 +606,24 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
             {
                 Iteration = new GpuBigIntDivRemKernels.AotContexts.IterationScratch
                 {
-                    CurrentProduct = currentProduct.DevicePointer,
-                    Diff = diff.DevicePointer,
-                    NextIter = nextIter.DevicePointer
+                    CurrentProduct = currentProduct.ToProxy(),
+                    Diff = diff.ToProxy(),
+                    NextIter = nextIter.ToProxy()
                 },
                 NttScratch = new GpuBigIntDivRemKernels.AotContexts.NttConvolutionScratch
                 {
-                    NttBuf1A = buffers.Buf1A.DevicePointer,
-                    NttBuf2A = buffers.Buf2A.DevicePointer,
-                    NttBuf1B = buffers.Buf1B.DevicePointer,
-                    NttBuf2B = buffers.Buf2B.DevicePointer,
-                    TmpBuf = buffers.TmpBuf.DevicePointer,
-                    UncarriedLow = buffers.UncarriedLow.DevicePointer,
-                    UncarriedHigh = buffers.UncarriedHigh.DevicePointer,
-                    BlockCarries = buffers.BlockCarries.DevicePointer
+                    NttBuf1A = buffers.Buf1A.ToProxy(),
+                    NttBuf2A = buffers.Buf2A.ToProxy(),
+                    NttBuf1B = buffers.Buf1B.ToProxy(),
+                    NttBuf2B = buffers.Buf2B.ToProxy(),
+                    TmpBuf = buffers.TmpBuf.ToProxy(),
+                    UncarriedLow = buffers.UncarriedLow.ToProxy(),
+                    UncarriedHigh = buffers.UncarriedHigh.ToProxy(),
+                    BlockCarries = buffers.BlockCarries.ToProxy()
                 }
             },
-            CarryBuffer = carryBuffer.DevicePointer
+            // Two words hold the one long of the carry
+            CarryBuffer = new GSharpArrayProxy(carryBuffer.DevicePointer, carryBuffer.NumWords / 2)
         };
     }
 
@@ -663,10 +666,10 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
 
             return new TwiddleCache
             {
-                Forward1 = dF1,
-                Forward2 = dF2,
-                Inverse1 = dI1,
-                Inverse2 = dI2
+                Forward1 = new GSharpArrayProxy(dF1, k.Length),
+                Forward2 = new GSharpArrayProxy(dF2, k.Length),
+                Inverse1 = new GSharpArrayProxy(dI1, k.Length),
+                Inverse2 = new GSharpArrayProxy(dI2, k.Length)
             };
         }));
 
@@ -808,7 +811,8 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
         }
     }
 
-    internal static void LaunchTranspose(GpuWorkspace workspace, IntPtr input, IntPtr output, int width, int height)
+    internal static void LaunchTranspose(GpuWorkspace workspace, GSharpArrayProxy input, GSharpArrayProxy output,
+        int width, int height)
     {
         var gridDimX = (uint)((width + 31) / 32);
         var gridDimY = (uint)((height + 31) / 32);

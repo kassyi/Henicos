@@ -316,8 +316,31 @@ public static partial class StackLinqExtensions
     public static TSource Last<TEnumerator, TSource>(
         this StackEnumerable<TEnumerator, TSource> source,
         Func<TSource, bool> predicate)
-        where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct =>
-        source.Where(predicate).Last();
+        where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct
+    {
+        ArgumentNullException.ThrowIfNull(predicate);
+        var enumerator = source.Enumerator;
+        while (enumerator.TryGetNext(out var current))
+        {
+            if (!predicate(current))
+            {
+                continue;
+            }
+
+            var result = current;
+            while (enumerator.TryGetNext(out current))
+            {
+                if (predicate(current))
+                {
+                    result = current;
+                }
+            }
+
+            return result;
+        }
+
+        throw new InvalidOperationException("Sequence contains no matching element");
+    }
 
     /// <summary>
     /// Returns the last element of a stack-allocated sequence.

@@ -6,7 +6,7 @@ using Kassyi.ZeroAlloc.Linq;
 
 namespace Kassyi.GSharp.Tests.Shared.TestCases.Analyzers.PendingBugs;
 
-// #1082: Host-only StackLinq terminal methods ToArray(), CopyTo(Span<T>), and SumSequential() inside a kernel.
+// #1082: ToArray() and CopyTo(Span<T>) have no device implementation; SumSequential() is supported.
 [SkipSnapshotConsistency("Pending bug verification")]
 public static partial class HostOnlyStackLinqProhibitedKernels
 {

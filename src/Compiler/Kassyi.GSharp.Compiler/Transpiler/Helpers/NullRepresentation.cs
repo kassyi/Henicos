@@ -66,7 +66,8 @@ internal static class NullRepresentation
         }
     }
 
-    // Parentheses, and casts from one array-like type to another ((int[])a), do not change whether a value is null
+    // Parentheses, the null-forgiving operator (a!) and casts from one array-like type to another ((int[])a) do not
+    // change whether a value is null
     private static ExpressionSyntax SkipNullPreservingConversions(ExpressionSyntax operand, SemanticModel model)
     {
         while (true)
@@ -75,6 +76,10 @@ internal static class NullRepresentation
             {
                 case ParenthesizedExpressionSyntax parenthesized:
                     operand = parenthesized.Expression;
+                    break;
+                case PostfixUnaryExpressionSyntax suppressed
+                    when suppressed.IsKind(SyntaxKind.SuppressNullableWarningExpression):
+                    operand = suppressed.Operand;
                     break;
                 case CastExpressionSyntax cast when IsNullComparable(model.GetTypeSymbol(cast)) &&
                                                     IsNullComparable(model.GetTypeSymbol(cast.Expression)):
@@ -89,7 +94,8 @@ internal static class NullRepresentation
     /// <summary>
     /// Emits <c>&lt;left&gt; ?? &lt;right&gt;</c>:
     /// <c>([&amp;]() { auto tmp = &lt;left&gt;; return tmp.HasValue ? tmp.Value : &lt;right&gt;; })()</c>, casting both
-    /// branches to the C# result type when the C++ conditional operator would otherwise promote or narrow.
+    /// branches to the C# result type when the C++ conditional operator would otherwise promote or narrow. An array
+    /// on the left is tested by its <c>data</c> pointer and is the result itself (#880).
     /// </summary>
     public static void AppendCoalesce(ExpressionSyntax left, ExpressionSyntax right, ref TranspileContext context,
         ITypeSymbol? resultType = null)
@@ -98,6 +104,12 @@ internal static class NullRepresentation
         var model = context.Query.SemanticModel;
         var leftType = model.GetTypeSymbol(left);
         var rightType = model.GetTypeSymbol(right);
+        if (leftType != null && leftType.IsArrayLikeType())
+        {
+            AppendArrayCoalesce(left, right, ref context);
+            return;
+        }
+
         var unwrappedLeft = leftType is INamedTypeSymbol
         {
             OriginalDefinition.SpecialType: SpecialType.System_Nullable_T, TypeArguments.Length: 1
@@ -133,6 +145,31 @@ internal static class NullRepresentation
         }
     }
 
+    // ([&]() { auto tmp = <left>; return tmp.data != nullptr ? tmp : <right>; }()); a non-empty stack array is never
+    // null (AppendNullTest), so it is the result and the right side is not evaluated, as in C#
+    private static void AppendArrayCoalesce(ExpressionSyntax left, ExpressionSyntax right, ref TranspileContext context)
+    {
+        const string temp = GSharpInternalNames.Lowering.CoalesceTemp;
+        var model = context.Query.SemanticModel;
+        var operand = SkipNullPreservingConversions(left, model);
+        if (StackArrayLocals.IsStackArrayReference(operand, model) &&
+            !(StackArrayLocals.TryGetLength(operand, model, out var length) && length == 0))
+        {
+            context.Visitor.Visit(left);
+            return;
+        }
+
+        using (context.Emitter.Writer.ImmediatelyInvokedLambda())
+        {
+            context.Emitter.Writer.Append($"auto {temp} = ");
+            context.Visitor.Visit(left);
+            context.Emitter.Writer.AppendLine(";");
+            context.Emitter.Writer.Append($"return {temp}.data != nullptr ? {temp} : ");
+            context.Visitor.Visit(right);
+            context.Emitter.Writer.AppendLine(";");
+        }
+    }
+
     private static void AppendStaticCast(ref TranspileContext context, ITypeSymbol type)
     {
         context.Emitter.Writer.Append("static_cast<");
@@ -146,24 +183,30 @@ internal static class NullRepresentation
     /// auto&amp; t = &lt;left&gt;; return !t.HasValue ? (t = &lt;right&gt;) : t.Value;
     /// })()</c>.
     /// </summary>
+    /// <remarks>
+    /// An array is tested by its <c>data</c> pointer and is the value itself (#880):
+    /// <c>return t.data == nullptr ? (t = &lt;right&gt;) : t;</c>.
+    /// </remarks>
     public static void AppendCoalesceAssignment(ExpressionSyntax left, ExpressionSyntax right,
         ref TranspileContext context)
     {
         const string target = GSharpInternalNames.Lowering.CoalesceTarget;
+        var isArray = context.Query.SemanticModel.GetTypeSymbol(left) is { } leftType && leftType.IsArrayLikeType();
         using (context.Emitter.Writer.ImmediatelyInvokedLambda("decltype(auto)"))
         {
             context.Emitter.Writer.Append($"auto& {target} = ");
             context.Visitor.Visit(left);
             context.Emitter.Writer.AppendLine(";");
 
-            context.Emitter.Writer.Append($"return !{target}.HasValue ? ");
+            context.Emitter.Writer.Append(
+                $"return {(isArray ? "" : "!")}{target}{(isArray ? ".data == nullptr" : ".HasValue")} ? ");
             using (context.Emitter.Writer.Parentheses())
             {
                 context.Emitter.Writer.Append($"{target} = ");
                 context.Visitor.Visit(right);
             }
 
-            context.Emitter.Writer.AppendLine($" : {target}.Value;");
+            context.Emitter.Writer.AppendLine($" : {target}{(isArray ? "" : ".Value")};");
         }
     }
 }
