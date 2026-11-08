@@ -36,9 +36,15 @@ internal class VectorWhereExpression(
                 DeviceElementCount.Static(0));
         }
 
+        // The predicate first: when the source and the predicate read one shared sub-expression at different offsets
+        // (e.Skip(1).Where(e.Take(3).IsGreaterThan(x))), the later evaluation overwrites that node's cache. The flags
+        // are in the predicate's own buffer, which a source evaluation leaves as it is (a bool vector is always read
+        // over its whole length, so evaluating a shared bool node again writes the same flags); the source evaluated
+        // second keeps its values.
+        var predicates = DeviceCounted.Evaluate(predicate, workspace);
         var evaluatedSource = DeviceCounted.Evaluate(source, workspace);
         var selected = _state.Select<IntVectorResultKind, GpuBigIntArrayView>(workspace, evaluatedSource.Storage,
-            evaluatedSource.Count, predicate, capacity, WordsPerElement, elementOffset, elementCount, out var count);
+            evaluatedSource.Count, predicates, capacity, WordsPerElement, elementOffset, elementCount, out var count);
         return new VectorEvaluation(selected, count);
     }
 
