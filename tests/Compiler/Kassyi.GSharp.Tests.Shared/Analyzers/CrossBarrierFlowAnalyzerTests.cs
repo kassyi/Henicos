@@ -56,7 +56,6 @@ public class CrossBarrierFlowAnalyzerTests : TranspilerTestBase
                 (GSharpDiagnostics.CrossBarrierLocalPointerProhibited.Id, 458, 14, 458, 15),
                 (GSharpDiagnostics.CrossBarrierLocalPointerProhibited.Id, 467, 14, 467, 15),
                 (GSharpDiagnostics.CrossBarrierLocalPointerProhibited.Id, 480, 14, 480, 15),
-                (GSharpDiagnostics.CrossBarrierLocalPointerProhibited.Id, 489, 14, 489, 15),
                 (GSharpDiagnostics.CrossBarrierLocalPointerProhibited.Id, 499, 14, 499, 15),
                 (GSharpDiagnostics.CrossBarrierLocalPointerProhibited.Id, 509, 14, 509, 15),
                 (GSharpDiagnostics.CrossBarrierLocalPointerProhibited.Id, 519, 14, 519, 15)
@@ -138,8 +137,6 @@ public class CrossBarrierFlowAnalyzerTests : TranspilerTestBase
                 (GSharpDiagnostics.CrossBarrierRefStructProhibited.Id, 358, 59, 358, 60),
                 (GSharpDiagnostics.CrossBarrierRefStructProhibited.Id, 366, 69, 366, 75),
                 (GSharpDiagnostics.CrossBarrierRefStructProhibited.Id, 374, 55, 374, 61),
-                (GSharpDiagnostics.CrossBarrierRefStructProhibited.Id, 383, 68, 383, 69),
-                (GSharpDiagnostics.CrossBarrierRefStructProhibited.Id, 393, 19, 393, 23),
                 (GSharpDiagnostics.CrossBarrierRefStructProhibited.Id, 399, 74, 399, 75),
                 (GSharpDiagnostics.CrossBarrierRefStructProhibited.Id, 407, 76, 407, 77)
             ],

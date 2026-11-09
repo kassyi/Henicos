@@ -186,12 +186,8 @@ internal static class BigIntWideOps
         }
 
         var workspace = a.Workspace;
-        if (DeviceCounted.IsCapturing(workspace))
-        {
-            throw new NotSupportedException(
-                "The sign of a sum of two values with different signs is read from the device, which a CUDA graph " +
-                "capture cannot record. Evaluate the expression without a graph, or give the operands the same sign.");
-        }
+        CaptureChecks.ThrowIfCapturing(workspace, "The sign of a sum of two values with different signs",
+            "Evaluate the expression without a graph, or give the operands the same sign.");
 
         using var flags = workspace.RentTemp(2);
         GpuBigIntWideKernels.LaunchMagnitudeDifferenceKernelPtr(

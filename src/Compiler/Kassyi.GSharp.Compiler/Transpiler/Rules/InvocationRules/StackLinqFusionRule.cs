@@ -163,31 +163,86 @@ public sealed class StackLinqFusionRule : IInvocationTranspilerRule
                 }
             }
 
-            terminalStrategy.EmitPostLoop(ref context, in terminalStage, ResultVar);
-
-            if (isGrid)
-            {
-                writer.Append(
-                    $"return {GSharpInternalNames.StackLinq.GridReduce}({ResultVar}, {GSharpInternalNames.StackLinq.Plus}{{}}, {GSharpInternalNames.StackLinq.GridScratch});");
-            }
-            else if (blockShared)
-            {
-                writer.Append(
-                    $"return {GSharpInternalNames.StackLinq.BlockReduce}({ResultVar}, {GSharpInternalNames.StackLinq.Plus}{{}});");
-            }
-            else if ((chain.Terminal == StackLinqOperator.Average &&
-                      terminalStage.Symbol.ReturnType.SpecialType == SpecialType.System_Single) ||
-                     (chain.Terminal == StackLinqOperator.Sum && SumStrategy.AccumulatesInDouble(in terminalStage)))
-            {
-                writer.Append($"return (float){ResultVar};");
-            }
-            else
-            {
-                writer.Append($"return {ResultVar};");
-            }
-
-            writer.AppendLine();
+            EmitFinalReturn(in chain, in terminalStage, terminalStrategy, strategy, ref context);
         }
+    }
+
+    // After the loop: the terminal's post-loop code, then the return of the lambda (combined over the block or the grid
+    // for a shared loop)
+    private static void EmitFinalReturn(
+        in StackLinqChain chain,
+        in LinqStage terminalStage,
+        IStackLinqTerminalStrategy terminalStrategy,
+        ParallelAggregateStrategy strategy,
+        ref TranspileContext context)
+    {
+        var writer = context.Emitter.Writer;
+        terminalStrategy.EmitPostLoop(ref context, in terminalStage, ResultVar);
+
+        var kind = ClassifyFinalReturn(
+            strategy == ParallelAggregateStrategy.Grid,
+            strategy != ParallelAggregateStrategy.PerThread,
+            in chain,
+            in terminalStage
+        );
+        switch (kind)
+        {
+            case FinalReturnKind.GridReduce:
+                writer.Append(
+                    $"return {GSharpInternalNames.StackLinq.GridReduce}(" +
+                    $"{ResultVar}, {GSharpInternalNames.StackLinq.Plus}{{}}, " +
+                    $"{GSharpInternalNames.StackLinq.GridScratch});");
+                break;
+            case FinalReturnKind.BlockReduce:
+                writer.Append(
+                    $"return {GSharpInternalNames.StackLinq.BlockReduce}(" +
+                    $"{ResultVar}, {GSharpInternalNames.StackLinq.Plus}{{}});");
+                break;
+            case FinalReturnKind.FloatCast:
+                writer.Append($"return (float){ResultVar};");
+                break;
+            case FinalReturnKind.Plain:
+                writer.Append($"return {ResultVar};");
+                break;
+            default:
+                throw new InvalidOperationException($"Unknown {nameof(FinalReturnKind)}: {kind}");
+        }
+
+        writer.AppendLine();
+    }
+
+    private enum FinalReturnKind
+    {
+        GridReduce,
+        BlockReduce,
+        FloatCast,
+        Plain,
+    }
+
+    private static FinalReturnKind ClassifyFinalReturn(
+        bool isGrid,
+        bool blockShared,
+        in StackLinqChain chain,
+        in LinqStage terminalStage)
+    {
+        if (isGrid)
+        {
+            return FinalReturnKind.GridReduce;
+        }
+
+        if (blockShared)
+        {
+            return FinalReturnKind.BlockReduce;
+        }
+
+        if ((chain.Terminal == StackLinqOperator.Average &&
+             terminalStage.Symbol.ReturnType.SpecialType == SpecialType.System_Single) ||
+            (chain.Terminal == StackLinqOperator.Sum && SumStrategy.AccumulatesInDouble(in terminalStage)))
+        {
+            return FinalReturnKind.FloatCast;
+        }
+
+        return FinalReturnKind.Plain;
     }
 
     // The source, then each stage argument and the terminal's initial value, in the C# order
