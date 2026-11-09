@@ -19,7 +19,8 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Rules.MacroRules;
 /// </remarks>
 internal sealed class SyncGridMacroRule : IMacroTranspilerRule
 {
-    private const string GridSync = "__gsharp_grid_sync();";
+    // The syncs of a body are Deterministic (GridSyncMode)
+    private const string GridSync = GSharpInternalNames.Prelude.GridSync + "();";
 
     public bool TryTranspile(
         InvocationExpressionSyntax invocation,

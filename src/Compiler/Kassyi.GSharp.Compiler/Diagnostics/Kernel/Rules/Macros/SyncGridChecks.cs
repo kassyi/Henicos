@@ -1,8 +1,8 @@
 namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel.Rules.Macros;
 
 /// <summary>
-/// Checks <c>Gpu.SyncGrid</c>: the body is a lambda, the kernel is cooperative, and the statements of the body can be
-/// split at the grid syncs.
+/// Checks <c>Gpu.SyncGrid</c>: the body is a lambda, the mode is a constant member of <c>GridSyncMode</c>, the kernel
+/// is cooperative, and the statements of the body can be split at the grid syncs.
 /// </summary>
 internal static class SyncGridChecks
 {
@@ -26,6 +26,11 @@ internal static class SyncGridChecks
             }
         }
 
+        if (!call.HasBody)
+        {
+            CheckMode(invocation, call, ref context);
+        }
+
         if (context.MethodSymbol.HasAttribute(KnownAttributes.GpuKernel) &&
             !context.MethodSymbol.IsCooperativeKernel())
         {
@@ -43,6 +48,31 @@ internal static class SyncGridChecks
             var statements = SyncGridBody.Flatten(body, context.SemanticModel);
             CheckGuardedStatements(statements, ref context);
             CheckReturnsWithValue(statements, ref context);
+        }
+    }
+
+    // [WHY] The CUDA build picks the barrier from the mode at compile time (GridSyncBarriers): a mode that is not a
+    // constant, or names no member, has no barrier. Reported on every dialect alike, so that a kernel builds for all
+    private static void CheckMode(
+        InvocationExpressionSyntax invocation,
+        GpuMacroCall call,
+        ref ValidationContext context)
+    {
+        switch (GridSyncBarriers.Get(invocation, call, context.SemanticModel, out var modeArgument))
+        {
+            case GridSyncBarrier.NotConstant when modeArgument is not null:
+                context.ReportDiagnostic(
+                    GSharpDiagnostics.MacroArgumentMustBeConstant,
+                    modeArgument,
+                    GridSyncBarriers.ModeParameter,
+                    GridSyncBarriers.MacroName);
+                break;
+            case GridSyncBarrier.Undefined when modeArgument is not null:
+                context.ReportDiagnostic(
+                    GSharpDiagnostics.UnsupportedSyntax,
+                    modeArgument,
+                    GridSyncBarriers.UndefinedMode);
+                break;
         }
     }
 
