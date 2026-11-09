@@ -28,6 +28,7 @@ public class UniformityMemoryAndGapDiagnosticsTests
     [InlineData("Cpu", "AutoPropertyKernel", 171)]
     [InlineData("Cpu", "MutatingMethodKernel", 185)]
     [InlineData("Cpu", "SetterKernel", 233)]
+    [InlineData("Cpu", "IndexerSetterKernel", 312)]
     [InlineData("Cuda", "ArrayFieldKernel", 26)]
     [InlineData("Cuda", "CompoundFieldKernel", 39)]
     [InlineData("Cuda", "IncrementFieldKernel", 52)]
@@ -38,6 +39,7 @@ public class UniformityMemoryAndGapDiagnosticsTests
     [InlineData("Cuda", "AutoPropertyKernel", 171)]
     [InlineData("Cuda", "MutatingMethodKernel", 185)]
     [InlineData("Cuda", "SetterKernel", 233)]
+    [InlineData("Cuda", "IndexerSetterKernel", 312)]
     [Scenario(TestScenario.SadPath)]
     public async Task Test_PartOfAnElementWritten_ReportsGsh0083AtTheBarrier(string dialect, string kernel, int line)
     {
@@ -56,10 +58,14 @@ public class UniformityMemoryAndGapDiagnosticsTests
     [InlineData("Cpu", "LocalFieldKernel")]
     [InlineData("Cpu", "ReadonlyMethodKernel")]
     [InlineData("Cpu", "ReadonlySetterKernel")]
+    [InlineData("Cpu", "PropertyValueCallKernel")]
+    [InlineData("Cpu", "AutoPropertyValueCallKernel")]
     [InlineData("Cuda", "FieldWriteThenBarrierKernel")]
     [InlineData("Cuda", "LocalFieldKernel")]
     [InlineData("Cuda", "ReadonlyMethodKernel")]
     [InlineData("Cuda", "ReadonlySetterKernel")]
+    [InlineData("Cuda", "PropertyValueCallKernel")]
+    [InlineData("Cuda", "AutoPropertyValueCallKernel")]
     [Scenario(TestScenario.HappyPath)]
     public async Task Test_ElementNotWrittenSinceTheBarrier_ReportsNothing(string dialect, string kernel)
     {

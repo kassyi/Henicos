@@ -250,3 +250,68 @@ public static partial class ElementFieldWriteKernels
         Gpu.SyncThreads();
     }
 }
+
+public struct HolderPair
+{
+    public int X;
+    private MutablePair _inner;
+
+    public MutablePair Inner
+    {
+        get { return _inner; }
+        set { _inner = value; }
+    }
+
+    public MutablePair AutoInner { get; set; }
+
+    public int this[int index]
+    {
+        get { return X + index; }
+        set { X = value - index; }
+    }
+}
+
+public static partial class ElementFieldWriteKernels
+{
+    // A mutating call on the value of a property runs on the copy its getter returns: no diagnostic
+    [GpuKernel]
+    [SkipSnapshotConsistency("Diagnostics case")]
+    public static void PropertyValueCallKernel(HolderPair[] a)
+    {
+        a[ThreadIndex.X].Inner.Bump();
+        if (a[0].X == 0)
+        {
+            Gpu.SyncThreads();
+        }
+
+        Gpu.SyncThreads();
+    }
+
+    // The same through an auto-property, whose getter returns a copy of its backing field: no diagnostic
+    [GpuKernel]
+    [SkipSnapshotConsistency("Diagnostics case")]
+    public static void AutoPropertyValueCallKernel(HolderPair[] a)
+    {
+        a[ThreadIndex.X].AutoInner.Bump();
+        if (a[0].X == 0)
+        {
+            Gpu.SyncThreads();
+        }
+
+        Gpu.SyncThreads();
+    }
+
+    // An indexer setter run on an element: it writes the element
+    [GpuKernel]
+    [SkipSnapshotConsistency("Diagnostics case")]
+    public static void IndexerSetterKernel(HolderPair[] a)
+    {
+        a[ThreadIndex.X][0] = 1;
+        if (a[0].X == 0)
+        {
+            Gpu.SyncThreads();
+        }
+
+        Gpu.SyncThreads();
+    }
+}

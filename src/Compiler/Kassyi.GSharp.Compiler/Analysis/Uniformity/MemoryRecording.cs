@@ -14,7 +14,7 @@ internal static class MemoryRecording
     // any memory
     public static void Bind(MemoryValues values, MemoryReferences references, ILocalSymbol refLocal, IOperation value)
     {
-        value = ContainingLocation(value);
+        value = ContainingFieldLocation(value);
         if (IsLocation(value))
         {
             AllocateLocation(values, value);
@@ -70,7 +70,7 @@ internal static class MemoryRecording
     {
         foreach (var argument in invocation.Arguments)
         {
-            var value = ContainingLocation(argument.Value);
+            var value = ContainingFieldLocation(argument.Value);
             if (argument.Parameter is { RefKind: RefKind.Ref or RefKind.Out } parameter && IsLocation(value))
             {
                 AllocateLocation(values, value);
@@ -79,7 +79,8 @@ internal static class MemoryRecording
         }
     }
 
-    // a[i].Bump(): a member of a struct that is not readonly runs on the element itself and may write it through this
+    // a[i].Bump(), a[i].Inner.Bump(): a member of a struct that is not readonly runs on the element itself (through
+    // fields) and may write it through this; a[i].P.Bump() runs on the copy the getter of P returns
     private static void AddReceiverLocationTarget(MemoryValues values, IMethodSymbol method, IOperation instance,
         ImmutableArray<MemoryCallTarget>.Builder targets)
     {
@@ -89,7 +90,7 @@ internal static class MemoryRecording
             return;
         }
 
-        var location = ContainingLocation(instance);
+        var location = ContainingFieldLocation(instance);
         if (IsLocation(location))
         {
             AllocateLocation(values, location);
