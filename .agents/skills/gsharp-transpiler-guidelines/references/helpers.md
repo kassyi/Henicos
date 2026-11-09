@@ -14,6 +14,7 @@ Script conventions and the catalog of agent scripts are in [agent-scripts.md](..
 | Intent | Use | Do not write |
 | ----- | ----- | ----- |
 | Is this a kernel or a device function? | `GpuExecutionSpace.IsGpuFunction` | `HasAttribute(GpuKernel) \|\| HasAttribute(GpuDeviceFunction)` |
+| Does a call name a method of the project that has no device definition (no `[GpuDeviceFunction]`, not mapped, not removed by C#), and the reason of GSH0107; does C# remove a call for `[Conditional]` | `UnemittedMethodCall.GetReason`, `UnemittedMethodCall.GetDisplayName`; `ConditionalCalls.IsRemoved` | the attribute and mapping checks written again in a rule |
 | Is this position inside device code (lambdas and local functions included)? | `GpuExecutionSpace.IsWithinGpuFunction` on `GetEnclosingSymbol(...)` | a hand-written `ContainingSymbol` loop |
 | Does a symbol carry a G# attribute? | `.HasAttribute` with a `KnownAttributes` constant (also checks the declaring namespace, `KnownAttributes.IsDeclaredInOwnerNamespace`) | `AttributeClass?.Name == "GpuKernelAttribute"` |
 | Get the attribute data | `.GetAttribute` | `GetAttributes()` plus a loop |
