@@ -15,7 +15,8 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Helpers;
 /// when such a null is read; G# throws at the boundary, earlier, and only for a null in a non-nullable place.
 /// </para>
 /// <para>
-/// The proof (<see cref="IsProvenNonNull"/>): an array is non-null when it is a parameter of that kind that nothing in
+/// The proof (<see cref="IsProvenNonNull"/>): an array is non-null when it is a stack array (a local array of a constant
+/// size), a parameter of that kind that nothing in
 /// its method writes, a non-nullable array field of a proven struct, or a local that nothing writes after an
 /// initializer that is proven. A proven struct is a by-value struct parameter that nothing writes, a struct field of a
 /// proven struct, or a local that nothing writes after an initializer that is a proven struct. An element of an array
@@ -28,6 +29,13 @@ internal static class NonNullProof
     public static bool IsProvenNonNull(ExpressionSyntax expression, SemanticModel model)
     {
         expression = SkipParentheses(expression);
+
+        // A stack array is storage of the thread (a C array on the device), never null (#1543)
+        if (StackArrayLocals.IsStackArrayReference(expression, model))
+        {
+            return true;
+        }
+
         switch (expression)
         {
             case ConditionalExpressionSyntax conditional:
