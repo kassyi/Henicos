@@ -67,7 +67,7 @@ The destination buffer in GPU device memory receiving the sum.
 #### Exceptions
 
 `ArgumentException`<br>
-Thrown when `leftOperand`, `rightOperand`, and `resultBuffer` do not have the same word length (`NumWords`).
+Thrown when `resultBuffer` is narrower than the wider operand; nothing is written. A buffer as wide as the wider operand is the checked form: a carry out of it is a domain error (`OverflowException` at the next read of the workspace stream).
 
 ## Add(GpuBigUIntView, uint, GpuBigUIntView)
 
@@ -145,7 +145,7 @@ The destination buffer in GPU device memory receiving the difference.
 #### Exceptions
 
 `ArgumentException`<br>
-Thrown when `leftOperand`, `rightOperand`, and `resultBuffer` do not have the same word length (`NumWords`).
+Thrown when `resultBuffer` is narrower than `leftOperand`; nothing is written. A difference below zero (also from non-zero words of a wider `rightOperand`) is a domain error.
 
 ## Sub(GpuBigUIntView, uint, GpuBigUIntView)
 
@@ -183,12 +183,12 @@ The multiplicand operand.
 The multiplier operand.
 
 `resultBuffer` _[GpuBigUInt](GpuBigUInt.md)_<br>
-The destination buffer in GPU device memory receiving the product. Must have a word capacity equal to `leftOperand.NumWords + rightOperand.NumWords`.
+The destination buffer in GPU device memory receiving the product. Must have at least `leftOperand.NumWords + rightOperand.NumWords` words; the words above the product are cleared.
 
 #### Exceptions
 
 `ArgumentException`<br>
-Thrown when `resultBuffer.NumWords` is not equal to `leftOperand.NumWords + rightOperand.NumWords`.
+Thrown when `resultBuffer` is narrower than `leftOperand.NumWords + rightOperand.NumWords` words; nothing is written.
 
 ## Mul(GpuBigUIntView, uint, GpuBigUIntView)
 
@@ -231,7 +231,7 @@ The destination buffer in GPU device memory receiving the GCD.
 #### Exceptions
 
 `ArgumentException`<br>
-Thrown when buffer word lengths do not match.
+Thrown when `resultBuffer` is narrower than the narrower operand (the gcd is at most it); the operands may have different widths; nothing is written.
 
 ## ModInverse(GpuBigUIntView, GpuBigUIntView, GpuBigUIntView)
 
@@ -255,7 +255,7 @@ The destination buffer in GPU device memory receiving the modular inverse.
 #### Exceptions
 
 `ArgumentException`<br>
-Thrown when buffer word lengths do not match.
+Thrown when `resultBuffer` is narrower than `modulus`; `value` may have any width (a wider one is reduced modulo `modulus` first); nothing is written.
 
 `ArithmeticException`<br>
 Thrown when the modular inverse does not exist ($\gcd(\text{value}, \text{modulus}) \neq 1$).
@@ -282,7 +282,7 @@ The destination buffer receiving the shifted value.
 #### Exceptions
 
 `ArgumentException`<br>
-Thrown when `leftOperand` and `resultBuffer` do not have the same word length (`NumWords`).
+Thrown when `resultBuffer` is narrower than `leftOperand`; nothing is written. A buffer narrower than `32 * leftOperand.NumWords + shiftBits` bits is the checked form: a shifted-out set bit is a domain error. A negative `shiftBits` shifts right.
 
 ## ShiftRight(GpuBigUIntView, int, GpuBigUIntView)
 
@@ -306,7 +306,7 @@ The destination buffer receiving the shifted value.
 #### Exceptions
 
 `ArgumentException`<br>
-Thrown when `leftOperand` and `resultBuffer` do not have the same word length (`NumWords`).
+Thrown when `resultBuffer` is narrower than the bits that remain, `max(32 * leftOperand.NumWords - shiftBits, 1)` rounded up to words; nothing is written. A negative `shiftBits` shifts left; `int.MinValue` throws `ArgumentOutOfRangeException`.
 
 ## BitwiseAnd(GpuBigUIntView, GpuBigUIntView, GpuBigUIntView)
 
@@ -330,7 +330,7 @@ The destination buffer receiving the bitwise AND result.
 #### Exceptions
 
 `ArgumentException`<br>
-Thrown when `leftOperand`, `rightOperand`, and `resultBuffer` do not have the same word length (`NumWords`).
+Thrown when `resultBuffer` is narrower than the narrower operand; nothing is written.
 
 ## BitwiseOr(GpuBigUIntView, GpuBigUIntView, GpuBigUIntView)
 
@@ -354,7 +354,7 @@ The destination buffer receiving the bitwise OR result.
 #### Exceptions
 
 `ArgumentException`<br>
-Thrown when `leftOperand`, `rightOperand`, and `resultBuffer` do not have the same word length (`NumWords`).
+Thrown when `resultBuffer` is narrower than the wider operand; nothing is written.
 
 ## BitwiseXor(GpuBigUIntView, GpuBigUIntView, GpuBigUIntView)
 
@@ -378,7 +378,7 @@ The destination buffer receiving the bitwise XOR result.
 #### Exceptions
 
 `ArgumentException`<br>
-Thrown when `leftOperand`, `rightOperand`, and `resultBuffer` do not have the same word length (`NumWords`).
+Thrown when `resultBuffer` is narrower than the wider operand; nothing is written.
 
 ## BitwiseNot(GpuBigUIntView, GpuBigUIntView)
 
@@ -421,11 +421,6 @@ The second value to compare.
 
 _bool_<br>
 `true` if `leftOperand` is strictly less than `rightOperand`; otherwise, `false`.
-
-#### Exceptions
-
-`ArgumentException`<br>
-Thrown when buffer word lengths do not match.
 
 ## Pow10(GpuWorkspace, int)
 

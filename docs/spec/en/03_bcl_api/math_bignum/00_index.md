@@ -68,6 +68,51 @@ G# enforces a strict Zero-Allocation rule inside GPU kernels. The `Stdlib.Math` 
 >
 > The _true_ power of GSharp's BigNum implementation lies in the **Host-Orchestrated** model. By using `GpuWorkspace`, you unlock truly arbitrary precision (capable of handling numbers with millions of bits) that seamlessly coordinates distributed computations across thousands of GPU threads without truncation.
 
+## Result Widths and Domain Errors
+
+The host-orchestrated big integers never overflow while memory lasts. Every result has a width that holds its exact
+value; the only failures are an allocation that fails, a result buffer narrower than the method's minimum
+(`ArgumentException`, before anything runs), and a domain error.
+
+**Expressions** (`GpuBigUIntExpr`, `GpuBigIntExpr`, vector expressions, StackLinq reductions) compute, when they are
+built, an upper bound of each result in bits from the bounds of their operands. The result has that bound rounded up to
+32-bit words (at least one word). A leaf of `n` words has the bound `32 n`.
+
+| Operation | Bound in bits |
+| :--- | :--- |
+| `a + b` (unsigned; signed magnitudes), signed `a - b` | `max(a, b) + 1` |
+| unsigned `a - b` | `a` (a result below zero is a domain error) |
+| `a * b` | `a + b` |
+| `a / b`, `a % b` | `a`, `min(a, b)` |
+| `a << k`, `a >> k` | `a + k`, `max(a - k, 1)`; a negative count shifts the other way, as `BigInteger` |
+| signed `~a` | `a + 1` (the value is `-a - 1`) |
+| unsigned `a & b`; `a \| b`, `a ^ b`; `~a` | `min(a, b)`; `max(a, b)`; every bit of the words of `a` |
+| `Sqrt(a)` | `ceil(a / 2)` |
+| `Fit(words)`, `Truncate(words)` | `32 * words` (checked: a value that does not fit is a domain error; truncating: the low words) |
+| vector `ZipAdd` / `SelectAdd`, `ZipMultiply` / `SelectMultiply` | `max(a, b) + 1`, `a + b` per element (`IGpuBigIntVectorExpression.BitsPerElement`) |
+| vector `Sum` of `Capacity` elements | `BitsPerElement + ceil(log2 Capacity)` |
+| StackLinq `Sum` (balanced tree) of `K` elements; `Aggregate` with `+` | `32 N + ceil(log2 K)`; `32 N + K - 1` |
+
+Bounds are tracked in bits, so a chain of additions grows by one bit per addition and by one word only every 32
+additions. Nothing trims a result to its actual size: sizes are fixed before a CUDA graph capture, and the memory pool is
+keyed by exact word counts. A target wider than the result receives the value and zeros above it; a narrower one is
+rejected. To narrow explicitly, write `Fit` (checked) or `Truncate` (modular).
+
+**Direct methods** (`GpuBigIntMath`, `GpuBigIntDivRem`) write into the caller's buffers. Operands may have different
+widths (a missing word reads as zero). A result buffer at or above the bound receives the exact value and zeros above it.
+Add, subtract and shift left into a buffer of the operand width are the checked form: a carry, a borrow or a shifted-out
+bit is a domain error, never dropped. See [GpuBigIntMath](gpu_big_int_and_uint/GpuBigIntMath.md) for the minimum of each
+method.
+
+**Domain errors** (an unsigned result below zero, a checked narrowing or an in-place `++` / `--` that does not fit)
+are detected on the device and reported as `OverflowException` at the next host read of the workspace stream (a value
+read, `SynchronizeStream`, a graph's completion wait) without adding a synchronization, or at once by
+`GpuWorkspace.ThrowIfDeviceErrors()`. In CPU fallback mode they are thrown by the call. The contents of the result
+buffer of a call that reported one are unspecified.
+
+The fixed-width types (`GpuBigUInt<TSize>`, `GpuUInt128`, `GpuUInt256`, `GpuUInt512`, the kernel-side `GpuBigIntRef`)
+are outside this rule: like `UInt128`, they wrap.
+
 ## See also
 
 ### Architecture

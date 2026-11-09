@@ -141,7 +141,7 @@ The destination buffer receiving the remainder. It may be either operand, or ove
 #### Exceptions
 
 `ArgumentException`<br>
-Thrown when the operands and result buffer do not have the same number of words.
+Thrown when `resultBuffer` is narrower than the narrower operand (`Mod`) or `leftOperand` (`Div`); the operands may have different widths; nothing is written.
 
 `DivideByZeroException`<br>
 Thrown when the divisor (`rightOperand`) is zero.
