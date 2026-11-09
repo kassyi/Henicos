@@ -46,7 +46,7 @@ internal class GpuBigIntLeafExpression(GpuBigInt value) : IGpuBigIntExpression, 
     }
 }
 
-// An operator node of this file: its operands are evaluated by SignedTree, which walks the tree without recursion
+// A signed operator node: its operands are evaluated by SignedTree, which walks the tree without recursion
 internal interface ISignedOperator : IGpuBigIntExpression
 {
     // 1 or 2
@@ -159,311 +159,6 @@ internal abstract class SignedBinaryExpression(
     protected abstract GpuBigInt Execute(GpuBigInt a, GpuBigInt b, GpuBigUInt resultBuffer);
 }
 
-// Walks of a signed expression tree with a stack on the heap instead of the call stack. An expression built in a loop
-// (e = x + e, or a left fold) is as deep as the loop along either operand; a walk that recursed once per level would
-// end the process with a stack overflow.
-internal static class SignedTree
-{
-    // The node evaluated into the target, or into a rented buffer. Operands are evaluated before the node that uses
-    // them, the left one first, as a recursive evaluation does; a caller's target is checked against the width before
-    // anything is evaluated.
-    public static GpuBigInt Evaluate(ISignedOperator root, GpuWorkspace workspace, GpuBigUInt? targetResult)
-    {
-        var frames = new PooledStack<Frame>();
-        var values = new PooledStack<SignedValue>();
-        try
-        {
-            Push(ref frames, root, targetResult);
-            while (frames.Count > 0)
-            {
-                var frame = frames.Peek();
-                if (frame.Node is not ISignedOperator node)
-                {
-                    // A leaf, or a node implemented elsewhere, evaluates itself
-                    frames.Pop();
-                    values.Push(SignedValue.FromHost(frame.Node.Evaluate(workspace, frame.Target)));
-                    continue;
-                }
-
-                if (frame.Next < node.OperandCount)
-                {
-                    frames.Peek().Next = frame.Next + 1;
-                    var operandTarget = node.PassesTargetToOperand ? frame.Target : null;
-                    Push(ref frames, node.GetOperand(frame.Next), operandTarget);
-                    continue;
-                }
-
-                // The operands go to Apply, which releases them
-                frames.Pop();
-                var second = node.OperandCount == 2 ? values.Pop() : default;
-                var first = values.Pop();
-                values.Push(node.Apply(workspace, first, second, frame.Target));
-            }
-
-            // The value of the root; a device sign is read once, here
-            return values.Pop().ToHost();
-        }
-        catch (Exception failure)
-        {
-            ReleaseAll(ref values, failure);
-            throw;
-        }
-        finally
-        {
-            frames.Dispose();
-            values.Dispose();
-        }
-    }
-
-    // Disposes every node below root that holds resources (a node implemented elsewhere, such as a vector reduction);
-    // the operator nodes of this file hold none. A node that throws does not stop the others; the exceptions are thrown
-    // together at the end.
-    public static void Dispose(ISignedOperator root)
-    {
-        var pending = new PooledStack<IGpuBigIntExpression>();
-        List<Exception>? errors = null;
-        try
-        {
-            pending.Push(root);
-            while (pending.Count > 0)
-            {
-                var node = pending.Pop();
-                DisposeOrExpand(node, ref pending, ref errors);
-            }
-        }
-        finally
-        {
-            pending.Dispose();
-        }
-
-        if (errors is not null)
-        {
-            if (errors.Count == 1)
-            {
-                System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(errors[0]).Throw();
-            }
-
-            throw new AggregateException(errors);
-        }
-    }
-
-    // An operator node pushes its operands (right to left, so that the left operand is disposed first, as a recursive
-    // walk did); any other node is disposed, and an exception it throws is collected instead of stopping the walk
-    private static void DisposeOrExpand(IGpuBigIntExpression node, ref PooledStack<IGpuBigIntExpression> pending,
-        ref List<Exception>? errors)
-    {
-        if (node is ISignedOperator op)
-        {
-            for (var i = op.OperandCount - 1; i >= 0; i--)
-            {
-                pending.Push(op.GetOperand(i));
-            }
-
-            return;
-        }
-
-        try
-        {
-            (node as IDisposable)?.Dispose();
-        }
-        catch (Exception ex)
-        {
-            (errors ??= []).Add(ex);
-        }
-    }
-
-    // The operands with their host signs, for a node that computes with host signs. Releases both when one carries a
-    // device sign, which such a node cannot use.
-    public static (GpuBigInt First, GpuBigInt Second) HostOperands(SignedValue first, SignedValue second)
-    {
-        if (first.Sign.IsDevice || second.Sign.IsDevice)
-        {
-            try
-            {
-                first.Dispose();
-            }
-            finally
-            {
-                second.Dispose();
-            }
-
-            throw new InvalidOperationException("An operand's sign is on the device; this node needs a host sign.");
-        }
-
-        return (first.ToHost(), second.ToHost());
-    }
-
-    // Every node of the tree below root, root included
-    public static void Collect(IGpuBigIntExpression root, HashSet<IGpuBigIntExpression> nodes)
-    {
-        var pending = new PooledStack<IGpuBigIntExpression>();
-        try
-        {
-            pending.Push(root);
-            while (pending.Count > 0)
-            {
-                var node = pending.Pop();
-                if (!nodes.Add(node) || node is not ISignedOperator op)
-                {
-                    continue;
-                }
-
-                for (var i = 0; i < op.OperandCount; i++)
-                {
-                    pending.Push(op.GetOperand(i));
-                }
-            }
-        }
-        finally
-        {
-            pending.Dispose();
-        }
-    }
-
-    // A caller's target narrower than the node is rejected before any operand is evaluated; a node that passes its
-    // target on leaves the check to its operand
-    private static void Push(ref PooledStack<Frame> frames, IGpuBigIntExpression node, GpuBigUInt? target)
-    {
-        if (node is ISignedOperator { PassesTargetToOperand: false })
-        {
-            SignedRoot.ThrowIfNarrower(target, node.NumWords);
-        }
-
-        frames.Push(new Frame(node, target));
-    }
-
-    // Releases the values evaluated before a failure. A release that throws does not stop the others; its exception is
-    // thrown together with the failure.
-    private static void ReleaseAll(ref PooledStack<SignedValue> values, Exception failure)
-    {
-        List<Exception>? errors = null;
-        while (values.Count > 0)
-        {
-            try
-            {
-                values.Pop().Dispose();
-            }
-            catch (Exception ex)
-            {
-                (errors ??= [failure]).Add(ex);
-            }
-        }
-
-        if (errors is not null)
-        {
-            throw new AggregateException(errors);
-        }
-    }
-
-    // A node to evaluate, the target it writes into, and the index of the next operand to evaluate
-    private struct Frame(IGpuBigIntExpression node, GpuBigUInt? target)
-    {
-        public readonly IGpuBigIntExpression Node = node;
-        public readonly GpuBigUInt? Target = target;
-        public int Next;
-    }
-
-    // A stack in an array rented from ArrayPool, grown by doubling
-    private struct PooledStack<T>()
-    {
-        private T[] _items = ArrayPool<T>.Shared.Rent(16);
-
-        public int Count { get; private set; }
-
-        public ref T Peek() => ref _items[Count - 1];
-
-        public void Push(T item)
-        {
-            if (Count == _items.Length)
-            {
-                var grown = ArrayPool<T>.Shared.Rent(_items.Length * 2);
-                Array.Copy(_items, grown, Count);
-                ArrayPool<T>.Shared.Return(_items, clearArray: true);
-                _items = grown;
-            }
-
-            _items[Count++] = item;
-        }
-
-        public T Pop()
-        {
-            var item = _items[--Count];
-            Array.Clear(_items, Count, 1); // T may hold references
-            return item;
-        }
-
-        public void Dispose()
-        {
-            ArrayPool<T>.Shared.Return(_items, clearArray: true);
-            _items = [];
-            Count = 0;
-        }
-    }
-}
-
-// The result buffer of a signed root: the first NumWords words of the caller's target, through a temporary when the
-// target overlaps an operand, with the target's words above the result cleared
-internal static class SignedRoot
-{
-    // A caller's target narrower than the bound would lose words
-    public static void ThrowIfNarrower(GpuBigUInt? target, int numWords)
-    {
-        if (target is { } t && t.NumWords < numWords)
-        {
-            throw new ArgumentException(
-                $"Destination buffer must have at least {numWords} words; it has {t.NumWords}. The result of an " +
-                "expression is as wide as its bound; narrow it explicitly with Fit.", nameof(target));
-        }
-    }
-
-    // The first numWords words of target, borrowed
-    public static GpuBigUInt Head(GpuBigUInt target, int numWords) =>
-        numWords == target.NumWords ? target : new GpuBigUInt(target.Workspace, target.Handle.Slice(0, numWords));
-
-    // Clears the words of target above the first numWords (a memset, which a CUDA graph capture records)
-    public static void ClearAbove(GpuBigUInt target, int numWords)
-    {
-        if (target.NumWords > numWords)
-        {
-            target.Workspace.Provider.ClearMemoryAsync(IntPtr.Add(target.DevicePointer, numWords * sizeof(uint)),
-                target.NumWords - numWords, target.Workspace.Stream);
-        }
-    }
-
-    // An owned temporary of numWords words when the target overlaps an operand; otherwise the default value, which owns
-    // nothing
-    public static GpuBigUInt StagingFor(GpuWorkspace workspace, GpuBigUInt? target, int numWords, GpuBigInt operand0,
-        GpuBigInt operand1)
-    {
-        if (target is not { } t ||
-            (!DeviceRanges.Overlaps(t.Handle, operand0.Value.Handle) &&
-             !DeviceRanges.Overlaps(t.Handle, operand1.Value.Handle)))
-        {
-            return default;
-        }
-
-        return workspace.RentTemp(numWords);
-    }
-
-    // The value in the buffer the caller sees: copied from the temporary when one was used; a caller's target gets its
-    // words above the result cleared and is returned whole
-    public static GpuBigInt Deliver(GpuBigInt value, GpuBigUInt staging, GpuBigUInt result, GpuBigUInt? target)
-    {
-        if (!staging.Handle.IsDefault)
-        {
-            result.CopyFrom(staging);
-        }
-
-        if (target is not { } t)
-        {
-            return new GpuBigInt(result, value.IsNegative);
-        }
-
-        ClearAbove(t, result.NumWords);
-        return new GpuBigInt(t, value.IsNegative);
-    }
-}
-
 // a + b and a - b. Same effective signs add the magnitudes into max + 1 bits, which never overflows; different signs
 // subtract them in one kernel that also negates on a borrow, and read the borrow and zero flags once (the sign of the
 // result depends on the values). A zero result is +0.
@@ -521,6 +216,7 @@ internal class SignedDivExpression(IGpuBigIntExpression left, IGpuBigIntExpressi
 
     protected override GpuBigInt Execute(GpuBigInt a, GpuBigInt b, GpuBigUInt resultBuffer)
     {
+        CaptureChecks.ThrowIfCapturing(resultBuffer.Workspace, CaptureChecks.DivisionReads);
         using var remainder = resultBuffer.Workspace.RentTemp(b.Value.NumWords);
         GpuBigIntDivRem.DivRem(a.Value, b.Value, resultBuffer, remainder);
         return new GpuBigInt(resultBuffer, a.IsNegative ^ b.IsNegative);
@@ -536,6 +232,7 @@ internal class SignedModExpression(IGpuBigIntExpression left, IGpuBigIntExpressi
     {
         // The remainder is below |b| and at most |a|, so the low words of the divisor-wide remainder hold it
         var workspace = resultBuffer.Workspace;
+        CaptureChecks.ThrowIfCapturing(workspace, CaptureChecks.DivisionReads);
         using var quotient = workspace.RentTemp(a.Value.NumWords);
         using var remainder = workspace.RentTemp(b.Value.NumWords);
         GpuBigIntDivRem.DivRem(a.Value, b.Value, quotient, remainder);
@@ -702,7 +399,7 @@ internal class SignedMaxExpression(IGpuBigIntExpression left, IGpuBigIntExpressi
     public override SignedOperation Operation => SignedOperation.Max;
 
     protected override GpuBigInt Execute(GpuBigInt a, GpuBigInt b, GpuBigUInt resultBuffer) =>
-        SignedSelect.Copy(a.CompareTo(b) >= 0 ? a : b, resultBuffer);
+        SignedSelect.Copy(SignedSelect.Compare(a, b) >= 0 ? a : b, resultBuffer);
 }
 
 internal class SignedMinExpression(IGpuBigIntExpression left, IGpuBigIntExpression right)
@@ -711,18 +408,5 @@ internal class SignedMinExpression(IGpuBigIntExpression left, IGpuBigIntExpressi
     public override SignedOperation Operation => SignedOperation.Min;
 
     protected override GpuBigInt Execute(GpuBigInt a, GpuBigInt b, GpuBigUInt resultBuffer) =>
-        SignedSelect.Copy(a.CompareTo(b) <= 0 ? a : b, resultBuffer);
-}
-
-internal static class SignedSelect
-{
-    // The chosen operand in resultBuffer, which is at least as wide as either operand's words; the words above it are
-    // cleared
-    public static GpuBigInt Copy(GpuBigInt chosen, GpuBigUInt resultBuffer)
-    {
-        var words = chosen.Value.NumWords;
-        resultBuffer.CopyFrom(chosen.Value, numWords: words);
-        SignedRoot.ClearAbove(resultBuffer, words);
-        return new GpuBigInt(resultBuffer, chosen.IsNegative);
-    }
+        SignedSelect.Copy(SignedSelect.Compare(a, b) <= 0 ? a : b, resultBuffer);
 }
