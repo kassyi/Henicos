@@ -88,6 +88,20 @@ public class StructOrderingTests : TranspilerTestBase
         Assert.Equal(["StructBodyEdge_Initialized", "StructBodyEdge_Inner", "StructBodyEdge_Read"], names);
     }
 
+    // A type named only for a constant, as the receiver of a static member or inside nameof is not a dependency
+    [Fact]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.SadPath)]
+    public void Test_StructBodyDependencies_LeavesOutTypesNamedOnlyForConstantsStaticMembersAndNameof()
+    {
+        var user = GetLocalTypeSymbol("StructBodyEdge_NamesOnly");
+
+        var names = StructBodyDependencies.Get(user, GetLocalCompilation())
+            .Select(static t => t.Name);
+
+        Assert.Equal(["StructBodyEdge_Inner"], names);
+    }
+
     // A generic struct's body types come with its type arguments substituted
     [Fact]
     [Category(TestCategory.Unit)]
@@ -185,5 +199,25 @@ struct StructBodyEdge_Holder<T>
     {
         T value = default;
         V = v + (value.Equals(default(T)) ? 0 : 1);
+    }
+}
+
+struct StructBodyEdge_HostOnly
+{
+    public const int Value = 7;
+    public string Name;
+
+    public static int Twice(int x) => x * 2;
+}
+
+struct StructBodyEdge_NamesOnly
+{
+    public int V;
+
+    public StructBodyEdge_NamesOnly(int v)
+    {
+        V = v + StructBodyEdge_HostOnly.Value + StructBodyEdge_HostOnly.Twice(v);
+        V += nameof(StructBodyEdge_HostOnly).Length;
+        V += new StructBodyEdge_Inner(v).V;
     }
 }

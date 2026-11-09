@@ -89,6 +89,24 @@ public struct BodyDepChainTop
     }
 }
 
+// A struct the device cannot define (reference type fields), named by a constructor only for its constant
+public struct BodyDepHostConfig
+{
+    public const int DefaultValue = 7;
+    public string Name;
+    public object Payload;
+}
+
+public struct BodyDepConstantUser
+{
+    public int X;
+
+    public BodyDepConstantUser(int x)
+    {
+        X = x + BodyDepHostConfig.DefaultValue;
+    }
+}
+
 /// <summary>
 /// Differential kernels for structs that only the constructor, member initializer or computed property of another
 /// struct creates: the kernel never names them, so their definitions and constructor functions come from the bodies
@@ -103,6 +121,7 @@ public static partial class StructBodyDependencyDifferentialKernels
         "outer_scaled",
         "generic_box_v",
         "chain_top_v",
+        "constant_user_x",
     ];
 
     [GpuKernel]
@@ -119,11 +138,12 @@ public static partial class StructBodyDependencyDifferentialKernels
         var box = new BodyDepBox<long>(x);
         var top = new BodyDepChainTop(x);
 
-        int o = tid * 5;
+        int o = tid * 6;
         r[o + 0] = outer.V;
         r[o + 1] = outer.Seed;
         r[o + 2] = outer.Scaled;
         r[o + 3] = box.V;
         r[o + 4] = top.Value;
+        r[o + 5] = new BodyDepConstantUser(x).X;
     }
 }

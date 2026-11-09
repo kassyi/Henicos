@@ -1,3 +1,5 @@
+using Microsoft.CodeAnalysis.Operations;
+
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
 /// <summary>
@@ -80,7 +82,11 @@ internal static class StructBodyDependencies
                     StructAbiMembers.IsComputedProperty(propertySymbol))
                 {
                     AddTypes(property.ExpressionBody, model, types);
-                    AddTypes(property.AccessorList, model, types);
+                    foreach (var accessor in property.AccessorList?.Accessors ?? default)
+                    {
+                        AddTypes(accessor.Body, model, types);
+                        AddTypes(accessor.ExpressionBody, model, types);
+                    }
                 }
 
                 break;
@@ -107,22 +113,35 @@ internal static class StructBodyDependencies
         }
     }
 
-    // The type and converted type of every expression under body (a type name, a creation, a default literal)
+    // The types of the values and variables that the emitted code of body handles: the type of every operation (a
+    // creation, a default value, a conversion, a call result, a local) and of every local it declares
+    // [WHY] Operations rather than syntax: a type named only for a constant (Other.Value), as the receiver of a static
+    // member (Other.Helper(x)) or inside nameof needs no definition, and a host-only struct named so must not get one
     private static void AddTypes(SyntaxNode? body, SemanticModel model, HashSet<ITypeSymbol> types)
     {
-        if (body == null)
+        if (body != null && model.GetOperation(body) is { } operation)
+        {
+            AddOperationTypes(operation, types);
+        }
+    }
+
+    private static void AddOperationTypes(IOperation operation, HashSet<ITypeSymbol> types)
+    {
+        // A constant (nameof included) is written as its value
+        if (operation.ConstantValue.HasValue)
         {
             return;
         }
 
-        foreach (var node in body.DescendantNodesAndSelf())
+        AddIfStructLike(operation.Type, types);
+        if (operation is IVariableDeclaratorOperation declarator)
         {
-            if (node is ExpressionSyntax expression)
-            {
-                var info = model.GetTypeInfo(expression);
-                AddIfStructLike(info.Type, types);
-                AddIfStructLike(info.ConvertedType, types);
-            }
+            AddIfStructLike(declarator.Symbol.Type, types);
+        }
+
+        foreach (var child in operation.ChildOperations)
+        {
+            AddOperationTypes(child, types);
         }
     }
 

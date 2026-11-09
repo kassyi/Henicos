@@ -170,6 +170,22 @@ __gsharp_self.__gsharp_mb_Value=__gsharp_ctor_Kassyi__GSharp__Tests__Shared__Dif
 return __gsharp_self;
 }
 #endif
+#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__BodyDepConstantUser__
+#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__BodyDepConstantUser__
+struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__BodyDepConstantUser
+{
+int __gsharp_mb_X;
+}
+;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__BodyDepConstantUser)==4,""Kassyi.GSharp.Tests.Shared.Differential.BodyDepConstantUser: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__BodyDepConstantUser)==4,""Kassyi.GSharp.Tests.Shared.Differential.BodyDepConstantUser: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__BodyDepConstantUser,__gsharp_mb_X)==0,""Kassyi.GSharp.Tests.Shared.Differential.BodyDepConstantUser.X: offset"");
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__BodyDepConstantUser __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Differential__BodyDepConstantUser(int __gsharp_id_0_x) {
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__BodyDepConstantUser __gsharp_self{};
+__gsharp_self.__gsharp_mb_X=__gsharp_add_i32(__gsharp_id_0_x,7);
+return __gsharp_self;
+}
+#endif
 struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__StructBodyDependencyDifferentialKernels__StructCreatedOnlyInBodiesKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__StructBodyDependencyDifferentialKernels__StructCreatedOnlyInBodiesKernel* __gsharp_all_contexts = nullptr;
@@ -195,12 +211,13 @@ int __gsharp_id_3_x = __gsharp_id_0_inputs[__gsharp_id_2_tid]&0xFFFF;
 auto __gsharp_id_4_outer = __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Differential__BodyDepOuter(__gsharp_id_3_x);
 auto __gsharp_id_5_box = __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Differential__BodyDepBox_g1_bSystem__Int64_e(__gsharp_id_3_x);
 auto __gsharp_id_6_top = __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Differential__BodyDepChainTop(__gsharp_id_3_x);
-int __gsharp_id_7_o = __gsharp_mul_i32(__gsharp_id_2_tid,5);
+int __gsharp_id_7_o = __gsharp_mul_i32(__gsharp_id_2_tid,6);
 __gsharp_id_1_r[__gsharp_id_7_o+0]=__gsharp_id_4_outer.__gsharp_mb_V;
 __gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_7_o,1)]=__gsharp_id_4_outer.__gsharp_mb_Seed;
 __gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_7_o,2)]=__gsharp_id_4_outer.__gsharp_mb_Scaled();
 __gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_7_o,3)]=__gsharp_id_5_box.__gsharp_mb_V;
 __gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_7_o,4)]=__gsharp_id_6_top.__gsharp_mb_Value;
+__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_7_o,5)]=__gsharp_ctor_Kassyi__GSharp__Tests__Shared__Differential__BodyDepConstantUser(__gsharp_id_3_x).__gsharp_mb_X;
 __gsharp_state=-1;
 return;
 }
@@ -308,12 +325,13 @@ int x = inputs[tid] & 0xFFFF;
 var outer = new global::Kassyi.GSharp.Tests.Shared.Differential.BodyDepOuter(x);
 var box = new global::Kassyi.GSharp.Tests.Shared.Differential.BodyDepBox<long>(x);
 var top = new global::Kassyi.GSharp.Tests.Shared.Differential.BodyDepChainTop(x);
-int o = tid * 5;
+int o = tid * 6;
 r[o + 0] = outer.V;
 r[o + 1] = outer.Seed;
 r[o + 2] = outer.Scaled;
 r[o + 3] = box.V;
 r[o + 4] = top.Value;
+r[o + 5] = new global::Kassyi.GSharp.Tests.Shared.Differential.BodyDepConstantUser(x).X;
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
