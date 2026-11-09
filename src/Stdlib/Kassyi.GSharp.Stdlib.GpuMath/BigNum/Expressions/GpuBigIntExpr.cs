@@ -340,17 +340,11 @@ public readonly struct GpuBigIntExpr : IDisposable
             throw;
         }
 
-        // A signed operator node keeps a sign that a kernel writes on the device: the graph records that kernel and
-        // reads the word after each launch, instead of fixing the sign of the capture
         GpuBigInt result;
         SignSource sign;
         try
         {
-            var value = Node is ISignedOperator root
-                ? SignedTree.EvaluateSigned(root, workspace, targetResult)
-                : SignedValue.FromHost(Node.Evaluate(workspace, targetResult));
-            result = new GpuBigInt(value.Magnitude, value.Sign.HostNegative);
-            sign = value.Sign;
+            result = EvaluateForCapture(workspace, targetResult, out sign);
         }
         catch (Exception original)
         {
@@ -402,6 +396,17 @@ public readonly struct GpuBigIntExpr : IDisposable
 
         return new GpuBigIntExecutableGraph(workspace, graph, graphExec, result, owned, sign, captured, Node,
             ownsExpression);
+    }
+
+    // The evaluation inside the capture. A signed operator node keeps a sign that a kernel writes on the device: the
+    // graph records that kernel and reads the word after each launch, instead of fixing the sign of the capture.
+    private GpuBigInt EvaluateForCapture(GpuWorkspace workspace, GpuBigUInt? targetResult, out SignSource sign)
+    {
+        var value = Node is ISignedOperator root
+            ? SignedTree.EvaluateSigned(root, workspace, targetResult)
+            : SignedValue.FromHost(Node.Evaluate(workspace, targetResult));
+        sign = value.Sign;
+        return new GpuBigInt(value.Magnitude, value.Sign.HostNegative);
     }
 
     // A capture ended but no executable graph came of it: destroy the partial graph, return the deferred buffers and an
@@ -644,7 +649,11 @@ public readonly struct GpuBigIntExecutableGraph : IDisposable
     /// </param>
     /// <returns>A <see cref="ValueTask"/> that completes when the graph has finished.</returns>
     /// <exception cref="ObjectDisposedException">The graph, an operand or the target has been disposed.</exception>
-    /// <remarks>Does not allocate in steady state.</remarks>
+    /// <remarks>
+    /// Does not allocate in steady state, unless the result's sign is decided on the device: it is read in a
+    /// continuation after the wait. Disposing the graph while the task is pending is safe; the task completes and
+    /// the sign is not read.
+    /// </remarks>
     public ValueTask ExecuteAsync(CancellationToken cancellationToken = default)
     {
         var handles = GetLiveHandles();
@@ -655,7 +664,9 @@ public readonly struct GpuBigIntExecutableGraph : IDisposable
         }
 
         handles.Workspace.Provider.LaunchGraph(handles.GraphExec, handles.Workspace.Stream);
-        return CompleteAsync(handles, cancellationToken);
+        return handles.HasDeviceSign
+            ? CompleteAsync(handles, cancellationToken)
+            : handles.Workspace.Provider.SynchronizeStreamAsync(handles.Workspace.Stream, cancellationToken);
     }
 
     // The wait for the launch, then the read of a device sign (one word, after the stream is idle)
@@ -724,16 +735,32 @@ public readonly struct GpuBigIntExecutableGraph : IDisposable
         public GpuBigIntView Result => new(_result.Value, Volatile.Read(ref _negative) != 0);
 
         // After a launch: a sign the graph writes on the device is read (one word); a host sign does not change
+        // A graph disposed while ExecuteAsync waited has retired its word: the continuation keeps the previous sign
+        // (Result cannot be read after Dispose anyway) instead of faulting the awaited task.
         public void ReadSign()
         {
-            if (!_signWord.IsDefault)
+            if (_signWord.IsDefault || IsDestroyed)
+            {
+                return;
+            }
+
+            try
             {
                 var word = new GpuBigUInt(Workspace, _signWord.Borrow());
                 Volatile.Write(ref _negative, SignedDeviceOps.ReadNegative(Workspace, SignSource.Device(word)) ? 1 : 0);
             }
+            catch (ObjectDisposedException) when (IsDestroyed)
+            {
+                // Destroy ran between the check above and the read: the word is gone, and so is the graph whose
+                // Result would show the sign; the previous sign stays
+                return;
+            }
         }
 
         public bool IsDestroyed => Volatile.Read(ref _destroyed) != 0;
+
+        // Whether the result's sign is a device word the graph writes
+        public bool HasDeviceSign => !_signWord.IsDefault;
 
         public GpuBigInt DetachResult()
         {

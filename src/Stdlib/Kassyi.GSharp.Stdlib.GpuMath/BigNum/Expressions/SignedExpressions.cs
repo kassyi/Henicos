@@ -158,7 +158,7 @@ internal abstract class SignedBinaryExpression(
 
     // A child result is owned (a rented intermediate) or borrowed (a leaf); Dispose returns only the former. Nested, so
     // that a release that throws (a failed capture refuses the clear) does not skip the others.
-    private static void Release(SignedValue leftResult, SignedValue rightResult, GpuBigUInt staging,
+    internal static void Release(SignedValue leftResult, SignedValue rightResult, GpuBigUInt staging,
         GpuBigUInt? unusedResultBuffer)
     {
         try
@@ -581,7 +581,10 @@ internal class SignedModExpression(IGpuBigIntExpression left, IGpuBigIntExpressi
         using var remainder = workspace.RentTemp(b.Value.NumWords);
         GpuBigIntDivRem.DivRem(a.Value, b.Value, quotient, remainder);
         resultBuffer.CopyFrom(remainder, numWords: resultBuffer.NumWords);
-        return new GpuBigInt(resultBuffer, a.IsNegative && !resultBuffer.IsZero());
+
+        // The magnitude only: the sign comes from the plan (+ for a non-negative dividend, RemainderSignKernel
+        // otherwise), so nothing is read here
+        return new GpuBigInt(resultBuffer, isNegative: false);
     }
 }
 
@@ -685,29 +688,13 @@ internal abstract class SignedUnaryExpression(IGpuBigIntExpression target, long 
         }
         finally
         {
-            // An owned intermediate goes back to the pool; a borrowed leaf result is left alone. Nested, so that a
-            // release that throws does not skip the others.
             try
             {
                 sign.Dispose();
             }
             finally
             {
-                try
-                {
-                    first.Dispose();
-                }
-                finally
-                {
-                    try
-                    {
-                        staging.Dispose();
-                    }
-                    finally
-                    {
-                        rented?.Dispose();
-                    }
-                }
+                SignedBinaryExpression.Release(first, default, staging, rented);
             }
         }
     }

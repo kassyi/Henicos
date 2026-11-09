@@ -80,6 +80,76 @@ public sealed class SignedDeviceSignTests : IDisposable
         Assert.True(sum.Value.IsZero());
     }
 
+    // Max and Min of operands of different word counts whose low words are equal: only the wider operand's high word
+    // decides (a + b of two 2-word leaves has 3 words). Negative leaves invert the choice. Min(-0, +1) is +0.
+    // mutant: GpuBigIntSignedKernels.cu.cs SignedSelectKernel `aWords > bWords ? aWords : bWords` -> the smaller
+    // (a tie of the low words takes a); and `&& nonZero[0] != 0u` removed (Min of -0 keeps the minus flag)
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void MaxMin_DecidedByTheWiderOperandsHighWord()
+    {
+        var top = SignedCases.AllOnes(64);
+        foreach (var sign in new[] { 1, -1 })
+        {
+            using var a = SignedCases.Value(_workspace, sign * top, 2);
+            using var b = SignedCases.Value(_workspace, sign * top, 2);
+            using var c = SignedCases.Value(_workspace, sign * (top - 1), 2);
+            GpuBigIntExpr ea = a, eb = b, ec = c;
+            var (x, z) = (sign * top, sign * (top - 1));
+
+            Check(GpuBigIntExpr.Min(ea + eb, ec), BigInteger.Min(x + x, z), $"Min(a + b, c), sign {sign}");
+            Check(GpuBigIntExpr.Max(ec, ea + eb), BigInteger.Max(z, x + x), $"Max(c, a + b), sign {sign}");
+            Check(GpuBigIntExpr.Max(ea + eb, ec), BigInteger.Max(x + x, z), $"Max(a + b, c), sign {sign}");
+        }
+
+        using var zero = new GpuBigInt(new GpuBigUInt(_workspace, [0u, 0u]), isNegative: true);
+        using var one = SignedCases.Value(_workspace, 1, 1);
+        using var min = GpuBigIntExpr.Min(zero, one).Evaluate(_workspace);
+        Assert.True(min.Value.IsZero());
+        Assert.False(min.IsNegative);
+    }
+
+    // The same high-word decision replayed by a graph: Min(a + b, c) with low words that tie
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Graph_MinDecidedByAHighWord_Replays()
+    {
+        var top = SignedCases.AllOnes(64);
+        using var a = SignedCases.Value(_workspace, top, 2);
+        using var b = SignedCases.Value(_workspace, top, 2);
+        using var c = SignedCases.Value(_workspace, top - 1, 2);
+        using var graph = GpuBigIntExpr.Min((GpuBigIntExpr)a + b, c).CompileToGraph(_workspace);
+        foreach (var (x, y, z) in new[] { (top, top, top - 1), ((BigInteger)1, (BigInteger)2, (BigInteger)5) })
+        {
+            Write(a, x);
+            Write(b, y);
+            Write(c, z);
+            graph.Execute();
+            using var owned = graph.Result.ToOwned();
+            Assert.Equal(BigInteger.Min(x + y, z), SignedCases.Read(owned));
+        }
+    }
+
+    // Disposing the graph while ExecuteAsync waits: the task completes, the sign word is not read
+    // mutant: GpuBigIntExpr.cs GraphHandles.ReadSign without the IsDestroyed return (the task faults with
+    // ObjectDisposedException)
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public async Task ExecuteAsync_ThenDispose_CompletesTheTask()
+    {
+        // Operands of 2^20 words: the one-block kernels of the graph run for milliseconds, so Dispose comes before the
+        // wait ends
+        const int Words = 1 << 20;
+        using var a = SignedCases.Value(_workspace, 5, Words);
+        using var b = SignedCases.Value(_workspace, -9, Words);
+        var expression = GpuBigIntExpr.Max((GpuBigIntExpr)a + b, (GpuBigIntExpr)b - a);
+        var graph = expression.CompileToGraph(_workspace);
+        var task = graph.ExecuteAsync();
+        graph.Dispose();
+        await task;
+        Assert.True(task.IsCompletedSuccessfully);
+    }
+
     public static TheoryData<string> GraphShapes() =>
         new() { "a + b", "a - b", "Max(a, b)", "Min(a, b)", "~b", "(a + b) * c", "-(a + b)", "Max(a + b, c)" };
 
