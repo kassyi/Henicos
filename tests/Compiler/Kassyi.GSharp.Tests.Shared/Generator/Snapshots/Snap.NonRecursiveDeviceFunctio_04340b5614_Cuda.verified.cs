@@ -274,7 +274,8 @@ public partial class NonRecursiveDeviceFunctionBarrierKernels
 public static partial class AotContexts
 {
 }
-public const string DeviceFunctionBarrierKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__NonRecursiveDeviceFunctionBarrierKernels__DeviceFunctionBarrierKernel(GSharpArray<int> __gsharp_id_0_input, GSharpArray<int> __gsharp_id_1_output, int __gsharp_id_2_length, int __gsharp_id_3_usePrimary){
+public const string DeviceFunctionBarrierKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__NonRecursiveDeviceFunctionBarrierKernels__DeviceFunctionBarrierKernel(GSharpArray<int> __gsharp_id_0_input, GSharpArray<int> __gsharp_id_1_output, int __gsharp_id_2_length, int __gsharp_id_3_usePrimary, unsigned int __gsharp_epoch){
+__gsharp_launch_epoch = __gsharp_epoch;
 int __gsharp_id_4_tid = (int)threadIdx.x;
 __gsharp_id_1_output[__gsharp_id_4_tid]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__NonRecursiveDeviceFunctionBarrierKernels__ExchangeTwice(__gsharp_id_0_input[__gsharp_id_4_tid],__gsharp_id_2_length);
 if(__gsharp_id_3_usePrimary!=0)
@@ -310,9 +311,10 @@ global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.TestCa
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "NonRecursiveDeviceFunctionBarrierKernels.DeviceFunctionBarrierKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 global::System.IntPtr __gsharp_d_1 = global::System.IntPtr.Zero;
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, true);
 try
 {
-void** __gsharp_kernel_params = stackalloc void*[4];
+void** __gsharp_kernel_params = stackalloc void*[5];
 // Marshal array: input
 int __gsharp_size_0 = checked(input.Length * sizeof(global::System.Int32));
 global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
@@ -358,6 +360,7 @@ __gsharp_kernel_params[1] = __gsharp_proxy_1;
 __gsharp_kernel_params[2] = &length;
 // Marshal scalar: usePrimary
 __gsharp_kernel_params[3] = &usePrimary;
+__gsharp_kernel_params[4] = &__gsharp_epoch;
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
 __gsharp_hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim
@@ -385,10 +388,12 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
-global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfDeviceError();
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ThrowIfLaunchError(__gsharp_epoch);
 }
 finally
 {
+global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ReleaseLaunchEpoch(__gsharp_epoch);
 if (__gsharp_d_0 != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_0, hStream);
 if (__gsharp_d_1 != global::System.IntPtr.Zero && __gsharp_d_1 != __gsharp_d_0) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_1, hStream);
 }
@@ -423,9 +428,10 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.TestCases.Analyzers.BarrierUsage.NonRecursiveDeviceFunctionBarrierKernels.__gsharp_hfunc_DeviceFunctionBarrierKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "NonRecursiveDeviceFunctionBarrierKernels.DeviceFunctionBarrierKernel");
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, false);
 try
 {
-void** __gsharp_kernel_params = stackalloc void*[4];
+void** __gsharp_kernel_params = stackalloc void*[5];
 // Marshal device array: input
 global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
 __gsharp_proxy_0[0] = input.Data;
@@ -442,6 +448,7 @@ __gsharp_kernel_params[1] = __gsharp_proxy_1;
 __gsharp_kernel_params[2] = &length;
 // Marshal scalar: usePrimary
 __gsharp_kernel_params[3] = &usePrimary;
+__gsharp_kernel_params[4] = &__gsharp_epoch;
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
 __gsharp_hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim
