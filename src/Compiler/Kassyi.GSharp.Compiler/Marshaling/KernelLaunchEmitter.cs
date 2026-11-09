@@ -51,7 +51,8 @@ internal static class KernelLaunchEmitter
     {
         // One table for the whole launch, so that every array argument, struct argument and converted element finds the
         // arrays the others already copied (#707, #721)
-        writer.AppendLineIf(plan.UsesTable, $"var {DeviceArrays} = new {StructMarshalingEmitter.DeviceArrayRegionsType}();");
+        writer.AppendLineIf(plan.UsesTable,
+            $"var {DeviceArrays} = new {StructMarshalingEmitter.DeviceArrayRegionsType}();");
         foreach (var shape in kernel.Parameters)
         {
             if (isDevicePtr)
@@ -66,7 +67,9 @@ internal static class KernelLaunchEmitter
 
             if (shape.IsArray || shape.IsByRef)
             {
-                writer.AppendLine($"{IntPtrType} {KernelHostNames.GetLocal(LauncherLocal.DevicePointer, shape)} = {IntPtrType}.Zero;");
+                writer.AppendLine(
+                    $"{IntPtrType} {KernelHostNames.GetLocal(LauncherLocal.DevicePointer, shape)} = " +
+                    $"{IntPtrType}.Zero;");
             }
         }
 
@@ -105,10 +108,21 @@ internal static class KernelLaunchEmitter
             "CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));");
         // A failing device thread records its error and exits, and the kernel completes: the launcher reads the record
         // of its own epoch once the stream has synchronized (copy-back or checked build). A launch with neither leaves
-        // it to the next synchronization of the stream.
+        // it to the next synchronization of the stream. A managed-array launcher whose copy-back may copy nothing
+        // synchronizes first, so that it finds its record.
+        writer.AppendLineIf(!isDevicePtr && !isCheckedBuild && !CopyBackAlwaysSynchronizes(kernel),
+            $"{CudaExceptionType}.ThrowIfError({CudaDriverApiType}.cuStreamSynchronize(hStream));");
         writer.AppendLineIf(ReadsOwnRecord(isDevicePtr, isCheckedBuild),
             $"{LaunchErrorRecordsType}.ThrowIfLaunchError({LaunchEpoch});");
     }
+
+    // Whether the copy-back of the managed-array launcher synchronizes the stream in every launch: a ref / out scalar
+    // or a by-ref struct is copied back in every launch, an array or the auto result only when it is not empty
+    private static bool CopyBackAlwaysSynchronizes(in KernelHostModel kernel) =>
+        kernel.Parameters
+            .AsStackEnumerable()
+            .Any(static shape => shape.Kind == KernelParameterKind.RefScalar ||
+                (shape.Kind == KernelParameterKind.CustomStruct && shape.IsByRef && !shape.IsDirectCudaValueStruct));
 
     // void** __gsharp_kernel_params = stackalloc void*[<parameters>[ + auto result][ + grid scratch] + epoch];
     // Returns the number of slots.
@@ -185,7 +199,9 @@ internal static class KernelLaunchEmitter
 
         if (kernel.GridScratchSlotBytes > 0)
         {
-            writer.AppendLine($"if ({DeviceGridScratch} != {IntPtrType}.Zero) {CudaDriverApiType}.cuMemFreeAsync({DeviceGridScratch}, hStream);");
+            writer.AppendLine(
+                $"if ({DeviceGridScratch} != {IntPtrType}.Zero) " +
+                $"{CudaDriverApiType}.cuMemFreeAsync({DeviceGridScratch}, hStream);");
         }
 
         AutoResultEmitter.WriteCudaFree(writer, kernel);

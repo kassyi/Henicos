@@ -216,8 +216,8 @@ Launcher:
     Stepped: __gsharp_stepped
     # Managed host launch wrappers (#406): fixed locals, per-kernel member prefixes, and per-parameter local prefixes
     KernelParams: __gsharp_kernel_params
-    # The epoch of a CUDA launch (LaunchErrorRecords.NextLaunchEpoch): the launcher's local and the hidden last parameter
-    # of the CUDA kernel, which the kernel stores into the Prelude's LaunchEpoch
+    # The epoch of a CUDA launch (LaunchErrorRecords.NextLaunchEpoch): the launcher's local and the hidden last
+    # parameter of the CUDA kernel, which the kernel stores into the Prelude's LaunchEpoch
     Epoch: __gsharp_epoch
     FunctionHandle: __gsharp_hfunc
     ArchSuffix: __gsharp_arch_suffix

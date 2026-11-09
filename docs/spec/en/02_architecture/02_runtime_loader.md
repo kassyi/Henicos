@@ -125,6 +125,12 @@ A launch through a generated launcher records its error under its own launch epo
 
 - A cooperative kernel whose grid barrier, or a kernel whose mbarrier, waits for a block or thread that failed relies on the shared slot to stop waiting. If another thread's synchronization consumes the slot before a waiter first looks at it (within about a millisecond of the failure), the waiter keeps waiting until the driver resets the GPU (TDR).
 - Its error can be thrown by the synchronization of any stream, not only the one the graph was launched on.
+- Two such launches that fail before a synchronization consumes the first error find the shared slot taken; the second one traps (a GPU fault that ends the context) rather than losing its error.
+
+Further limits:
+
+- When 256 launches whose launchers read their own record are in flight at once, the next launch runs with epoch 0, as a captured launch does.
+- Once every 2^32 launches the epoch counter wraps around and the host clears the abort words of every loaded module. The clear is not ordered with launches on non-blocking streams: a launch that failed and is still running at that moment can lose its abort word, and its grid barrier or mbarrier waiters keep waiting until the driver resets the GPU (TDR).
 
 ### 2.6.3 Native CPU Consistency
 
