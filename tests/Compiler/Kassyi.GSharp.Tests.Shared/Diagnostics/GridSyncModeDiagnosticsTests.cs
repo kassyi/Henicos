@@ -11,6 +11,12 @@ namespace Kassyi.GSharp.Tests.Shared.Diagnostics;
 [Category(TestCategory.Compiler)]
 public class GridSyncModeDiagnosticsTests
 {
+    private const string NotConstantMessage =
+        "The argument 'mode' of macro 'Gpu.SyncGrid' must be a compile-time constant";
+
+    private const string UndefinedModeMessage =
+        "The syntax 'a GridSyncMode value that names no member of the enum' is not supported in GSharp GPU kernels";
+
     [Theory]
     [InlineData("Cpu")]
     [InlineData("Cuda")]
@@ -18,10 +24,14 @@ public class GridSyncModeDiagnosticsTests
     public async Task Test_ModeThatIsNotConstant_ReportsGsh0012AtTheArgument(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Analyzers/GridSyncModeSadPath.cs", dialect);
+        string id = GSharpDiagnostics.MacroArgumentMustBeConstant.Id;
 
         Assert.Equal(
-            [(Analyzer, 15, 22, 15, 26), (Analyzer, 16, 22, 16, 27)],
-            diagnostics.Ranges(GSharpDiagnostics.MacroArgumentMustBeConstant.Id, "'Gpu.SyncGrid'"));
+            [
+                new ReportedDiagnostic(Analyzer, id, 15, 22, 15, 26, NotConstantMessage),
+                new ReportedDiagnostic(Analyzer, id, 16, 22, 16, 27, NotConstantMessage)
+            ],
+            diagnostics.Where(d => d.Id == id).ToArray());
     }
 
     [Theory]
@@ -31,9 +41,10 @@ public class GridSyncModeDiagnosticsTests
     public async Task Test_ModeThatNamesNoMember_ReportsGsh0003AtTheArgument(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Analyzers/GridSyncModeSadPath.cs", dialect);
+        string id = GSharpDiagnostics.UnsupportedSyntax.Id;
 
         Assert.Equal(
-            [(Analyzer, 17, 22, 17, 37)],
-            diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "GridSyncMode"));
+            [new ReportedDiagnostic(Analyzer, id, 17, 22, 17, 37, UndefinedModeMessage)],
+            diagnostics.Where(d => d.Id == id).ToArray());
     }
 }

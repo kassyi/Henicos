@@ -86,7 +86,9 @@ public sealed class GridSyncModeTests
     [Scenario(TestScenario.HappyPath)]
     public void Test_FastInsideBody_OrdersTheWritesOfEveryBlock()
     {
+#if GSHARP_CUDA
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
+#endif
         int threads = Blocks * BlockSize;
         var values = new int[threads];
         var result = new int[threads];
@@ -103,7 +105,9 @@ public sealed class GridSyncModeTests
     [Scenario(TestScenario.HappyPath)]
     public void Test_EveryModeSpelling_OrdersTheWritesOfEveryBlock()
     {
+#if GSHARP_CUDA
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
+#endif
         int threads = Blocks * BlockSize;
         var values = new int[threads];
         var result = new int[threads];
@@ -121,7 +125,9 @@ public sealed class GridSyncModeTests
     [Scenario(TestScenario.HappyPath)]
     public void Test_FastBarrier_ThousandRounds_AreExact()
     {
+#if GSHARP_CUDA
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
+#endif
         const int Rounds = 1000;
         int threads = Blocks * BlockSize;
         var buffer = new int[2 * threads];

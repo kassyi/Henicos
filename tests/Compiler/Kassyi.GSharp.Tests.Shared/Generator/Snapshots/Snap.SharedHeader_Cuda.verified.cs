@@ -1046,6 +1046,8 @@ return total;
 static_assert(sizeof(cg::details::grid_workspace) == 8u && __builtin_offsetof(cg::details::grid_workspace, barrier) == 4u,
 ""G#: the layout of cooperative_groups' grid workspace changed; __gsharp_grid_sync uses its barrier word"");
 
+// Gpu.SyncGrid() and Gpu.SyncGrid(GridSyncMode.Deterministic). Its wait loop (from the add to the end of the polls) is
+// copied in __gsharp_grid_sync_fast: change both together.
 __device__ __forceinline__ void __gsharp_grid_sync() {
 // The elected rank, or __GSHARP_WAIT_LEAVE once the arriving thread saw that the launch failed
 __shared__ unsigned int leader;
@@ -1106,7 +1108,10 @@ __gsharp_exit_thread();
 // Gpu.SyncGrid(GridSyncMode.Fast): the barrier above, but the arriving thread arrives first and reads the abort word
 // after its add. [WHY] A function of its own rather than a template parameter of the barrier above: sharing the code
 // raised the registers of the cooperative GpuMath megakernels (ReciprocalNewtonRaphsonMega from 48 to 70, which no
-// longer fits a cooperative launch of its grid), so the Deterministic barrier keeps its code as it is
+// longer fits a cooperative launch of its grid), so the Deterministic barrier keeps its code as it is. The wait loop is
+// a copy of the one in __gsharp_grid_sync: change both together. [WHY] Not a shared __forceinline__ function: one
+// keeps the registers of every kernel, but changes the machine code of the Deterministic barrier in every kernel that
+// uses it (branch layout and register assignment), so the copy stays.
 __device__ __forceinline__ void __gsharp_grid_sync_fast() {
 // The elected rank, or __GSHARP_WAIT_LEAVE once the arriving thread saw that the launch failed
 __shared__ unsigned int leader;
