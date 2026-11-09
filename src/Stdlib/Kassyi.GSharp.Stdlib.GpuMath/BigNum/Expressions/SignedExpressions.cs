@@ -216,25 +216,7 @@ internal static class SignedTree
             while (pending.Count > 0)
             {
                 var node = pending.Pop();
-                if (node is ISignedOperator op)
-                {
-                    // Pushed right to left, so that the left operand is disposed first, as a recursive walk did
-                    for (var i = op.OperandCount - 1; i >= 0; i--)
-                    {
-                        pending.Push(op.GetOperand(i));
-                    }
-
-                    continue;
-                }
-
-                try
-                {
-                    (node as IDisposable)?.Dispose();
-                }
-                catch (Exception ex)
-                {
-                    (errors ??= []).Add(ex);
-                }
+                DisposeOrExpand(node, ref pending, ref errors);
             }
         }
         finally
@@ -250,6 +232,31 @@ internal static class SignedTree
             }
 
             throw new AggregateException(errors);
+        }
+    }
+
+    // An operator node pushes its operands (right to left, so that the left operand is disposed first, as a recursive
+    // walk did); any other node is disposed, and an exception it throws is collected instead of stopping the walk
+    private static void DisposeOrExpand(IGpuBigIntExpression node, ref PooledStack<IGpuBigIntExpression> pending,
+        ref List<Exception>? errors)
+    {
+        if (node is ISignedOperator op)
+        {
+            for (var i = op.OperandCount - 1; i >= 0; i--)
+            {
+                pending.Push(op.GetOperand(i));
+            }
+
+            return;
+        }
+
+        try
+        {
+            (node as IDisposable)?.Dispose();
+        }
+        catch (Exception ex)
+        {
+            (errors ??= []).Add(ex);
         }
     }
 

@@ -3149,8 +3149,8 @@ __gsharp_ctx.n = __gsharp_ctx.input.Length;
 __gsharp_ctx.v = __gsharp_ctx.tid < __gsharp_ctx.n ? (__gsharp_ctx.input[__gsharp_ctx.tid] & 0xFF) + 1 : 1;
 __gsharp_ctx.valInt = __gsharp_ctx.v * 10 + __gsharp_ctx.lane;
 __gsharp_ctx.valUint = __gsharp_ctx.v * 1000 + __gsharp_ctx.lane;
-__gsharp_ctx.writeInt = global::Kassyi.GSharp.Core.ManagedGpuContext.EndTypeKeyScope(global::Kassyi.GSharp.Core.ManagedGpuContext.BeginTypeKeyScope<global::Kassyi.GSharp.Tests.Shared.Differential.SharedSlot<int>>(), new global::Kassyi.GSharp.Tests.Shared.Differential.SharedSlot<int>(true, __gsharp_ctx.lane, __gsharp_ctx.valInt));
-__gsharp_ctx.writeUint = global::Kassyi.GSharp.Core.ManagedGpuContext.EndTypeKeyScope(global::Kassyi.GSharp.Core.ManagedGpuContext.BeginTypeKeyScope<global::Kassyi.GSharp.Tests.Shared.Differential.SharedSlot<uint>>(), new global::Kassyi.GSharp.Tests.Shared.Differential.SharedSlot<uint>(true, __gsharp_ctx.lane, __gsharp_ctx.valUint));
+__gsharp_ctx.writeInt = global::Kassyi.GSharp.Core.ManagedGpuContext.EndTypeKeyScope<global::Kassyi.GSharp.Tests.Shared.Differential.SharedSlot<int>>(global::Kassyi.GSharp.Core.ManagedGpuContext.BeginTypeKeyScope<global::Kassyi.GSharp.Tests.Shared.Differential.SharedSlot<int>>(), new global::Kassyi.GSharp.Tests.Shared.Differential.SharedSlot<int>(true, __gsharp_ctx.lane, __gsharp_ctx.valInt));
+__gsharp_ctx.writeUint = global::Kassyi.GSharp.Core.ManagedGpuContext.EndTypeKeyScope<global::Kassyi.GSharp.Tests.Shared.Differential.SharedSlot<uint>>(global::Kassyi.GSharp.Core.ManagedGpuContext.BeginTypeKeyScope<global::Kassyi.GSharp.Tests.Shared.Differential.SharedSlot<uint>>(), new global::Kassyi.GSharp.Tests.Shared.Differential.SharedSlot<uint>(true, __gsharp_ctx.lane, __gsharp_ctx.valUint));
 __gsharp_ctx.writeZeros = __gsharp_ctx.writeInt.Value + __gsharp_ctx.writeUint.Value;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
@@ -3160,8 +3160,8 @@ return;
 case 1:
 {
 int mirrorLane = 31 - __gsharp_ctx.lane;
-var readInt = global::Kassyi.GSharp.Core.ManagedGpuContext.EndTypeKeyScope(global::Kassyi.GSharp.Core.ManagedGpuContext.BeginTypeKeyScope<global::Kassyi.GSharp.Tests.Shared.Differential.SharedSlot<int>>(), new global::Kassyi.GSharp.Tests.Shared.Differential.SharedSlot<int>(false, mirrorLane, 0));
-var readUint = global::Kassyi.GSharp.Core.ManagedGpuContext.EndTypeKeyScope(global::Kassyi.GSharp.Core.ManagedGpuContext.BeginTypeKeyScope<global::Kassyi.GSharp.Tests.Shared.Differential.SharedSlot<uint>>(), new global::Kassyi.GSharp.Tests.Shared.Differential.SharedSlot<uint>(false, mirrorLane, 0));
+var readInt = global::Kassyi.GSharp.Core.ManagedGpuContext.EndTypeKeyScope<global::Kassyi.GSharp.Tests.Shared.Differential.SharedSlot<int>>(global::Kassyi.GSharp.Core.ManagedGpuContext.BeginTypeKeyScope<global::Kassyi.GSharp.Tests.Shared.Differential.SharedSlot<int>>(), new global::Kassyi.GSharp.Tests.Shared.Differential.SharedSlot<int>(false, mirrorLane, 0));
+var readUint = global::Kassyi.GSharp.Core.ManagedGpuContext.EndTypeKeyScope<global::Kassyi.GSharp.Tests.Shared.Differential.SharedSlot<uint>>(global::Kassyi.GSharp.Core.ManagedGpuContext.BeginTypeKeyScope<global::Kassyi.GSharp.Tests.Shared.Differential.SharedSlot<uint>>(), new global::Kassyi.GSharp.Tests.Shared.Differential.SharedSlot<uint>(false, mirrorLane, 0));
 if (__gsharp_ctx.tid < __gsharp_ctx.n)
 {
 int o = __gsharp_ctx.tid * 2;
