@@ -29,6 +29,36 @@ public struct MutGetCounter
 #pragma warning restore CS8656
 }
 
+public struct MutGetBox<T>
+    where T : unmanaged
+{
+    public int N;
+    public T Tag;
+
+    public int Next
+    {
+        get
+        {
+            N++;
+            return N;
+        }
+    }
+
+#pragma warning disable CS8656 // The implicit copy of this is the behavior under test
+    public readonly int PeekNext => Next + Next;
+#pragma warning restore CS8656
+}
+
+public struct MutGetPair<T>
+    where T : unmanaged
+{
+    public MutGetBox<T> Inner;
+
+#pragma warning disable CS8656 // The implicit copy of the field is the behavior under test
+    public readonly int PeekInner => Inner.Next + Inner.Next;
+#pragma warning restore CS8656
+}
+
 public struct MutGetHolder
 {
     public readonly MutGetCounter Ro;
@@ -92,6 +122,10 @@ public static partial class StructMutatingGetterDifferentialKernels
         "foreach_reads",
         "after_foreach",
         "const_getter",
+        "generic_readonly_member_peek",
+        "generic_after_peek",
+        "generic_field_peek",
+        "generic_field_after",
     ];
 
     [GpuDeviceFunction]
@@ -110,7 +144,7 @@ public static partial class StructMutatingGetterDifferentialKernels
         }
 
         int x = inputs[tid] & 0xFFF;
-        int o = tid * 19;
+        int o = tid * 23;
 
         var t = new MutGetTicker(x);
         r[o + 0] = t.Next;
@@ -149,5 +183,12 @@ public static partial class StructMutatingGetterDifferentialKernels
         r[o + 16] = sum;
         r[o + 17] = counters[0].N + counters[1].N;
         r[o + 18] = c.Doubled;
+
+        var box = new MutGetBox<float> { N = x, Tag = 1.5f };
+        r[o + 19] = box.PeekNext;
+        r[o + 20] = box.N;
+        var pair = new MutGetPair<float> { Inner = box };
+        r[o + 21] = pair.PeekInner;
+        r[o + 22] = pair.Inner.N;
     }
 }

@@ -95,7 +95,7 @@ public partial class StructMutatingGetterDifferentialKernels
 {
 private static readonly global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[] s_errorSites = new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[]
 {
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(92354756u, "StructMutatingGetterDifferentialKernels.cs", 63, 9, "Dispose", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(462587878u, "StructMutatingGetterDifferentialKernels.cs", 93, 9, "Dispose", "G#: a null array is read"),
 };
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -188,10 +188,48 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__MutGetGuard,__gsharp_mb_Slot)==16,""Kassyi.GSharp.Tests.Shared.Differential.MutGetGuard.Slot: offset"");
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__MutGetGuard,__gsharp_mb_State)==20,""Kassyi.GSharp.Tests.Shared.Differential.MutGetGuard.State: offset"");
 #endif
+#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__MutGetBox_g1_bSystem__Single_e__
+#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__MutGetBox_g1_bSystem__Single_e__
+struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__MutGetBox_g1_bSystem__Single_e
+{
+int __gsharp_mb_N;
+float __gsharp_mb_Tag;
+__device__ inline int __gsharp_mb_Next() {
+__gsharp_mb_N=__gsharp_add_i32(__gsharp_mb_N,1);
+return __gsharp_mb_N;
+}
+__device__ inline int __gsharp_mb_PeekNext() const {
+return __gsharp_add_i32(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__MutGetBox_g1_bSystem__Single_e((*this)).__gsharp_mb_Next(),__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__MutGetBox_g1_bSystem__Single_e((*this)).__gsharp_mb_Next());
+}
+}
+;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__MutGetBox_g1_bSystem__Single_e)==8,""Kassyi.GSharp.Tests.Shared.Differential.MutGetBox<System.Single>: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__MutGetBox_g1_bSystem__Single_e)==4,""Kassyi.GSharp.Tests.Shared.Differential.MutGetBox<System.Single>: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__MutGetBox_g1_bSystem__Single_e,__gsharp_mb_N)==0,""Kassyi.GSharp.Tests.Shared.Differential.MutGetBox<System.Single>.N: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__MutGetBox_g1_bSystem__Single_e,__gsharp_mb_Tag)==4,""Kassyi.GSharp.Tests.Shared.Differential.MutGetBox<System.Single>.Tag: offset"");
+#endif
+#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__MutGetPair_g1_bSystem__Single_e__
+#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__MutGetPair_g1_bSystem__Single_e__
+struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__MutGetPair_g1_bSystem__Single_e
+{
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__MutGetBox_g1_bSystem__Single_e __gsharp_mb_Inner;
+__device__ inline int __gsharp_mb_PeekInner() const {
+return ([&]() {
+auto __gsharp_seq_4 = __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__MutGetBox_g1_bSystem__Single_e(__gsharp_mb_Inner).__gsharp_mb_Next();
+auto __gsharp_seq_5 = __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__MutGetBox_g1_bSystem__Single_e(__gsharp_mb_Inner).__gsharp_mb_Next();
+return __gsharp_add_i32(__gsharp_seq_4,__gsharp_seq_5);
+}());
+}
+}
+;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__MutGetPair_g1_bSystem__Single_e)==8,""Kassyi.GSharp.Tests.Shared.Differential.MutGetPair<System.Single>: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__MutGetPair_g1_bSystem__Single_e)==4,""Kassyi.GSharp.Tests.Shared.Differential.MutGetPair<System.Single>: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__MutGetPair_g1_bSystem__Single_e,__gsharp_mb_Inner)==0,""Kassyi.GSharp.Tests.Shared.Differential.MutGetPair<System.Single>.Inner: offset"");
+#endif
 #ifndef __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__MutGetGuard__
 #define __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__MutGetGuard__
 __device__ inline void __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__MutGetGuard::__gsharp_dispose() {
-__gsharp_array_at(__gsharp_mb_Log, __gsharp_mb_Slot, 92354756u)=__gsharp_mb_State;
+__gsharp_array_at(__gsharp_mb_Log, __gsharp_mb_Slot, 462587878u)=__gsharp_mb_State;
 }
 #endif
 struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__StructMutatingGetterDifferentialKernels__MutatingGetterKernel {
@@ -216,7 +254,7 @@ if(__gsharp_id_2_tid>=__gsharp_id_0_inputs.length)
 __gsharp_state = -1;return;
 }
 int __gsharp_id_3_x = __gsharp_id_0_inputs[__gsharp_id_2_tid]&0xFFF;
-int __gsharp_id_4_o = __gsharp_mul_i32(__gsharp_id_2_tid,19);
+int __gsharp_id_4_o = __gsharp_mul_i32(__gsharp_id_2_tid,23);
 auto __gsharp_id_5_t = __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Differential__MutGetTicker(__gsharp_id_3_x);
 __gsharp_id_1_r[__gsharp_id_4_o+0]=__gsharp_id_5_t.__gsharp_mb_Next();
 __gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_4_o,1)]=__gsharp_id_5_t.__gsharp_mb_Next();
@@ -262,6 +300,16 @@ return __gsharp_add_i32(__gsharp_seq_2,__gsharp_seq_3);
 __gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_4_o,16)]=__gsharp_id_10_sum;
 __gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_4_o,17)]=__gsharp_add_i32(__gsharp_id_9_counters[0].__gsharp_mb_N,__gsharp_id_9_counters[1].__gsharp_mb_N);
 __gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_4_o,18)]=__gsharp_id_6_c.__gsharp_mb_Doubled();
+auto __gsharp_id_12_box = ([&]() {
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__MutGetBox_g1_bSystem__Single_e __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_N = __gsharp_id_3_x; __gsharp_tmp.__gsharp_mb_Tag = 1.5f; return __gsharp_tmp; }
+());
+__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_4_o,19)]=__gsharp_id_12_box.__gsharp_mb_PeekNext();
+__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_4_o,20)]=__gsharp_id_12_box.__gsharp_mb_N;
+auto __gsharp_id_13_pair = ([&]() {
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__MutGetPair_g1_bSystem__Single_e __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Inner = __gsharp_id_12_box; return __gsharp_tmp; }
+());
+__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_4_o,21)]=__gsharp_id_13_pair.__gsharp_mb_PeekInner();
+__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_4_o,22)]=__gsharp_id_13_pair.__gsharp_mb_Inner.__gsharp_mb_N;
 __gsharp_state=-1;
 return;
 }
@@ -366,7 +414,7 @@ return;
 }
 
 int x = inputs[tid] & 0xFFF;
-int o = tid * 19;
+int o = tid * 23;
 var t = new global::Kassyi.GSharp.Tests.Shared.Differential.MutGetTicker(x);
 r[o + 0] = t.Next;
 r[o + 1] = t.Next;
@@ -411,6 +459,19 @@ sum += e.Next + (e.Next * 5);
 r[o + 16] = sum;
 r[o + 17] = counters[0].N + counters[1].N;
 r[o + 18] = c.Doubled;
+var box = new global::Kassyi.GSharp.Tests.Shared.Differential.MutGetBox<float>
+{
+N = x,
+Tag = 1.5f
+};
+r[o + 19] = box.PeekNext;
+r[o + 20] = box.N;
+var pair = new global::Kassyi.GSharp.Tests.Shared.Differential.MutGetPair<float>
+{
+Inner = box
+};
+r[o + 21] = pair.PeekInner;
+r[o + 22] = pair.Inner.N;
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }

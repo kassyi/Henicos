@@ -319,12 +319,12 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
     private static void TranspileMemberAccess(MemberAccessExpressionSyntax node, ISymbol? memberSymbol,
         ref TranspileContext context)
     {
-        var member = PlanMemberName(node, memberSymbol, context.Query.SemanticModel, context.Emitter.Dialect);
-        if (member is { Shape: MemberNameShape.Resolved, Symbol: IPropertySymbol property } &&
-            ComputedPropertyGetterCall.CallsOnCopy(node, property, ref context))
+        var member = PlanMemberName(node, memberSymbol, context.Query.SemanticModel, context.Emitter.Dialect,
+            context.Emitter.CurrentStructType);
+        if (member.CopyType is { } copyType)
         {
             // <struct type>(<receiver>): the copy of a readonly receiver that C# calls the getter on (#610)
-            context.Emitter.Dialect.AppendType(ref context, property.ContainingType);
+            context.Emitter.Dialect.AppendType(ref context, copyType);
             using (context.Emitter.Writer.Parentheses())
             {
                 AppendMemberReceiver(node, memberSymbol, ref context);
@@ -380,14 +380,19 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
     /// <see cref="MemberNameShape.DialectMethodCall"/>).
     /// </param>
     /// <param name="Symbol">The member symbol, for the getter call of <see cref="MemberNameShape.Resolved"/>.</param>
+    /// <param name="CopyType">
+    /// The struct type of the copy of the receiver that the getter is called on
+    /// (<c>ComputedPropertyGetterCall.PlanCopyType</c>), or <see langword="null"/> for the receiver itself.
+    /// </param>
     private readonly record struct MemberNamePlan(
         MemberNameShape Shape,
         CppName CppName,
         string MappedName,
-        ISymbol? Symbol)
+        ISymbol? Symbol,
+        INamedTypeSymbol? CopyType = null)
     {
-        public static MemberNamePlan Resolved(CppName name, ISymbol? symbol) =>
-            new(MemberNameShape.Resolved, name, string.Empty, symbol);
+        public static MemberNamePlan Resolved(CppName name, ISymbol? symbol, INamedTypeSymbol? copyType) =>
+            new(MemberNameShape.Resolved, name, string.Empty, symbol, copyType);
 
         public static MemberNamePlan ForEachArrayLength(CppName name) =>
             new(MemberNameShape.ForEachArrayLength, name, string.Empty, null);
@@ -405,7 +410,7 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
     }
 
     private static MemberNamePlan PlanMemberName(MemberAccessExpressionSyntax node, ISymbol? memberSymbol,
-        SemanticModel semanticModel, ITranspilerDialect dialect)
+        SemanticModel semanticModel, ITranspilerDialect dialect, INamedTypeSymbol? currentStruct)
     {
         // [WHY] Members of structs that G# emits are resolved before the dialect mapping, which would otherwise rewrite
         // a user field named Length or Count as if it were an array length.
@@ -417,7 +422,11 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
         var name = CppNameResolver.Resolve(symbol, node.Name.Identifier.ValueText, dialect);
         if (name.Kind != CppNameKind.Verbatim)
         {
-            return MemberNamePlan.Resolved(name, symbol);
+            return MemberNamePlan.Resolved(
+                name,
+                symbol,
+                ComputedPropertyGetterCall.PlanCopyType(node, symbol, semanticModel, dialect, currentStruct)
+            );
         }
 
         if (name.Name == "Length" &&

@@ -45,26 +45,48 @@ internal static class ComputedPropertyGetterCall
         DeviceFunctionEffects.Classify(getter, compilation) == DeviceFunctionEffect.None;
 
     /// <summary>
-    /// Whether <paramref name="node"/> reads <paramref name="symbol"/> through a getter that may change its receiver
-    /// (not <see cref="IsConstGetter"/>) on a receiver that C# reads as a readonly variable: an <c>in</c> or
+    /// The struct type of the copy that <paramref name="node"/> calls the getter of <paramref name="symbol"/> on, or
+    /// <see langword="null"/> when it calls on the receiver itself. A copy is made when the getter may change its
+    /// receiver (not <see cref="IsConstGetter"/>) and C# reads the receiver as a readonly variable: an <c>in</c> or
     /// <c>ref readonly</c> parameter, a <c>readonly</c> field outside a constructor of its type, a <c>ref readonly</c>
     /// local or result, <c>this</c> in a <c>readonly</c> member, or a field of one of those. C# then calls the getter
     /// on a copy, which the caller writes as <c>&lt;type&gt;(&lt;receiver&gt;)</c>.
     /// </summary>
+    /// <param name="node">The member access or the name (implicit <c>this</c>) that reads the property.</param>
+    /// <param name="symbol">The member that <paramref name="node"/> names.</param>
+    /// <param name="model">The model of the transpilation.</param>
+    /// <param name="dialect">The dialect.</param>
+    /// <param name="currentStruct">
+    /// The struct whose definition is being written: its type arguments replace the type parameters of the type, which
+    /// a member of a generic struct names open (<c>Box&lt;T&gt;</c>, #610).
+    /// </param>
     /// <remarks>
     /// A <c>using</c> or <c>foreach</c> variable is not copied: C# calls on the variable itself, as a struct enumerator
     /// in a <c>using</c> relies on.
     /// </remarks>
-    public static bool CallsOnCopy(SyntaxNode node, ISymbol? symbol, ref TranspileContext context)
+    public static INamedTypeSymbol? PlanCopyType(SyntaxNode node, ISymbol? symbol, SemanticModel model,
+        ITranspilerDialect dialect, INamedTypeSymbol? currentStruct)
     {
-        var model = context.Query.SemanticModel;
-        return !IsAssignmentTarget(node) &&
-               IsGetter(symbol, context.Emitter.Dialect) &&
-               symbol is IPropertySymbol property &&
-               !IsConstGetter(property, model.Compilation) &&
-               model.GetSafeOperation(node) is IPropertyReferenceOperation { Instance: { } receiver } &&
-               IsReadOnlyVariable(receiver);
+        if (IsAssignmentTarget(node) ||
+            !IsGetter(symbol, dialect) ||
+            symbol is not IPropertySymbol property ||
+            IsConstGetter(property, model.Compilation) ||
+            model.GetSafeOperation(node) is not IPropertyReferenceOperation { Instance: { } receiver } ||
+            !IsReadOnlyVariable(receiver))
+        {
+            return null;
+        }
+
+        return StructTypeSubstitution.SubstituteTypeParameters(property.ContainingType, currentStruct,
+            model.Compilation) as INamedTypeSymbol;
     }
+
+    /// <summary>
+    /// <c>PlanCopyType</c> with the model, dialect and current struct of <paramref name="context"/>.
+    /// </summary>
+    public static INamedTypeSymbol? PlanCopyType(SyntaxNode node, ISymbol? symbol, ref TranspileContext context) =>
+        PlanCopyType(node, symbol, context.Query.SemanticModel, context.Emitter.Dialect,
+            context.Emitter.CurrentStructType);
 
     // [WHY] The cases where C# copies the receiver of a call of a member that is not readonly (Roslyn's
     // Binder.CheckValueKind / IsReadOnly of the receiver): a value (a call result) is a temporary in C++ as well

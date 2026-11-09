@@ -21,7 +21,7 @@ internal static class StructPropertyEmitter
     // [WHY] The getter keeps the C++ name of the property (CppNameResolver), so the implicit `A` and `Sum` in a getter
     // body resolve to the members of the struct, and a read elsewhere only appends the call
     // (ComputedPropertyGetterCall). A getter that may change its struct is not const (#610); C# calls it on a copy of a
-    // readonly receiver, which the call writes (ComputedPropertyGetterCall.CallsOnCopy).
+    // readonly receiver, which the call writes (ComputedPropertyGetterCall.PlanCopyType).
     private static void WriteComputedPropertyGetter(IPropertySymbol property, ref TranspileContext context)
     {
         // A struct from metadata or from another compilation has no getter body to bind here.
