@@ -57,41 +57,14 @@ internal static class TransferPlannerTestHelper
         ImmutableHashSet<string> ancestors, string where, List<string> failures)
     {
         type = type.UnwrapNullableArrayLike() ?? type;
-        var compared = 1;
-
         if (type.TryGetArrayLikeElementType(out var element))
         {
-            // An array of an unsupported element is the element's plan itself
-            switch (plan)
-            {
-                case TransferPlan.ArrayView view:
-                    return compared + ComparePlan(view.Element, element, dialect, ancestors, $"{where}[]", failures);
-                case TransferPlan.Unsupported when plan == TransferPlanner.Plan(element, dialect):
-                    return compared;
-                default:
-                    failures.Add($"{where}: {plan}, expected ArrayView or the element's Unsupported");
-                    return compared;
-            }
+            return CompareArrayPlan(plan, element, dialect, ancestors, where, failures);
         }
 
         if (type is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } nullableType)
         {
-            // Unsupported when the value is, or holds a managed reference (#976 F2: the value converts through
-            // GetValueOrDefault, but an array inside a Nullable stays a diagnostic)
-            var valueType = nullableType.TypeArguments[0];
-            var valuePlan = TransferPlanner.Plan(valueType, dialect);
-            switch (plan)
-            {
-                case TransferPlan.Nullable nullable when valueType.IsUnmanagedType:
-                    return compared + ComparePlan(nullable.Value, valueType, dialect, ancestors, $"{where}?", failures);
-                case TransferPlan.Unsupported when valuePlan is TransferPlan.Unsupported
-                    ? plan == valuePlan
-                    : !valueType.IsUnmanagedType:
-                    return compared;
-                default:
-                    failures.Add($"{where}: {plan}, expected Nullable or Unsupported");
-                    return compared;
-            }
+            return CompareNullablePlan(plan, nullableType, dialect, ancestors, where, failures);
         }
 
         if (type is not INamedTypeSymbol { TypeKind: TypeKind.Struct } structType ||
@@ -102,9 +75,52 @@ internal static class TransferPlannerTestHelper
                 failures.Add($"{where}: {plan.GetType().Name}, expected a leaf Blit");
             }
 
-            return compared;
+            return 1;
         }
 
+        return CompareStructPlan(plan, structType, dialect, ancestors, where, failures);
+    }
+
+    // An array of an unsupported element is the element's plan itself
+    private static int CompareArrayPlan(TransferPlan plan, ITypeSymbol element, ITranspilerDialect dialect,
+        ImmutableHashSet<string> ancestors, string where, List<string> failures)
+    {
+        switch (plan)
+        {
+            case TransferPlan.ArrayView view:
+                return 1 + ComparePlan(view.Element, element, dialect, ancestors, $"{where}[]", failures);
+            case TransferPlan.Unsupported when plan == TransferPlanner.Plan(element, dialect):
+                return 1;
+            default:
+                failures.Add($"{where}: {plan}, expected ArrayView or the element's Unsupported");
+                return 1;
+        }
+    }
+
+    // Unsupported when the value is, or holds a managed reference (#976 F2: the value converts through
+    // GetValueOrDefault, but an array inside a Nullable stays a diagnostic)
+    private static int CompareNullablePlan(TransferPlan plan, INamedTypeSymbol nullableType,
+        ITranspilerDialect dialect, ImmutableHashSet<string> ancestors, string where, List<string> failures)
+    {
+        var valueType = nullableType.TypeArguments[0];
+        var valuePlan = TransferPlanner.Plan(valueType, dialect);
+        switch (plan)
+        {
+            case TransferPlan.Nullable nullable when valueType.IsUnmanagedType:
+                return 1 + ComparePlan(nullable.Value, valueType, dialect, ancestors, $"{where}?", failures);
+            case TransferPlan.Unsupported when valuePlan is TransferPlan.Unsupported
+                ? plan == valuePlan
+                : !valueType.IsUnmanagedType:
+                return 1;
+            default:
+                failures.Add($"{where}: {plan}, expected Nullable or Unsupported");
+                return 1;
+        }
+    }
+
+    private static int CompareStructPlan(TransferPlan plan, INamedTypeSymbol structType, ITranspilerDialect dialect,
+        ImmutableHashSet<string> ancestors, string where, List<string> failures)
+    {
         var csharpType = structType.GetFullyQualifiedCsharpName();
         if (ancestors.Contains(csharpType))
         {
@@ -113,54 +129,77 @@ internal static class TransferPlannerTestHelper
                 failures.Add($"{where}: {plan.GetType().Name}, expected StructRef");
             }
 
-            return compared;
+            return 1;
         }
 
         var layout = TypeLayoutCalculator.GetStructLayout(structType, dialect);
         if (layout.Unsupported is { } unsupported)
         {
-            var expectedId = unsupported.IsMissingDeviceType ? "GSH0079" : "GSH0078";
-            var expectedTypeName = unsupported.FieldType is { } fieldType
-                ? TypeLayoutCalculator.FormatTypeName(fieldType)
-                : null;
-            if (plan is not TransferPlan.Unsupported actual ||
-                actual.DiagnosticId != expectedId ||
-                actual.Reason != unsupported.Reason ||
-                actual.FieldPath != unsupported.FieldPath ||
-                actual.FieldTypeName != expectedTypeName)
-            {
-                failures.Add($"{where}: {plan}, expected Unsupported({expectedId}, {unsupported.Reason}, " +
-                    $"{unsupported.FieldPath}, {expectedTypeName})");
-            }
-
-            return compared;
+            CompareUnsupportedLayout(plan, unsupported, where, failures);
+            return 1;
         }
 
-        // The layout model accepts the struct, but a member's own plan (a Nullable, an array) is unsupported: the
-        // struct is unsupported with that member's reason
+        if (TryCompareUnsupportedMember(plan, layout, dialect, where, failures))
+        {
+            return 1;
+        }
+
+        return 1 + CompareMemberPlans(plan, layout, dialect, ancestors.Add(csharpType), where, failures);
+    }
+
+    private static void CompareUnsupportedLayout(TransferPlan plan, UnsupportedLayout unsupported, string where,
+        List<string> failures)
+    {
+        var expectedId = unsupported.IsMissingDeviceType ? "GSH0079" : "GSH0078";
+        var expectedTypeName = unsupported.FieldType is { } fieldType
+            ? TypeLayoutCalculator.FormatTypeName(fieldType)
+            : null;
+        if (plan is not TransferPlan.Unsupported actual ||
+            actual.DiagnosticId != expectedId ||
+            actual.Reason != unsupported.Reason ||
+            actual.FieldPath != unsupported.FieldPath ||
+            actual.FieldTypeName != expectedTypeName)
+        {
+            failures.Add($"{where}: {plan}, expected Unsupported({expectedId}, {unsupported.Reason}, " +
+                $"{unsupported.FieldPath}, {expectedTypeName})");
+        }
+    }
+
+    // The layout model accepts the struct, but a member's own plan (a Nullable, an array) is unsupported: the struct is
+    // unsupported with that member's reason. Returns whether such a member exists (and was compared).
+    private static bool TryCompareUnsupportedMember(TransferPlan plan, StructLayoutInfo layout,
+        ITranspilerDialect dialect, string where, List<string> failures)
+    {
         var unsupportedMember = layout.DeviceFields
             .Select(f => (f.Member, Plan: TransferPlanner.Plan(f.Member.Type, dialect)))
             .FirstOrDefault(static m => m.Plan is TransferPlan.Unsupported);
-        if (unsupportedMember.Plan is TransferPlan.Unsupported memberProblem)
+        if (unsupportedMember.Plan is not TransferPlan.Unsupported memberProblem)
         {
-            var expectedPath = memberProblem.FieldTypeName is null ? null
-                : memberProblem.FieldPath is null ? unsupportedMember.Member.Name
-                : unsupportedMember.Member.Kind == StructAbiMemberKind.InlineArrayElement ? memberProblem.FieldPath
-                : $"{unsupportedMember.Member.Name}.{memberProblem.FieldPath}";
-            if (plan is not TransferPlan.Unsupported actual ||
-                actual.DiagnosticId != (expectedPath is null ? "GSH0078" : "GSH0079") ||
-                !actual.Reason.EndsWith($": {memberProblem.Reason}", StringComparison.Ordinal) ||
-                actual.FieldPath != expectedPath ||
-                actual.FieldTypeName != memberProblem.FieldTypeName)
-            {
-                failures.Add(
-                    $"{where}: {plan}, expected the Unsupported of member '{unsupportedMember.Member.Name}' " +
-                    $"({memberProblem})");
-            }
-
-            return compared;
+            return false;
         }
 
+        var expectedPath = memberProblem.FieldTypeName is null ? null
+            : memberProblem.FieldPath is null ? unsupportedMember.Member.Name
+            : unsupportedMember.Member.Kind == StructAbiMemberKind.InlineArrayElement ? memberProblem.FieldPath
+            : $"{unsupportedMember.Member.Name}.{memberProblem.FieldPath}";
+        if (plan is not TransferPlan.Unsupported actual ||
+            actual.DiagnosticId != (expectedPath is null ? "GSH0078" : "GSH0079") ||
+            !actual.Reason.EndsWith($": {memberProblem.Reason}", StringComparison.Ordinal) ||
+            actual.FieldPath != expectedPath ||
+            actual.FieldTypeName != memberProblem.FieldTypeName)
+        {
+            failures.Add(
+                $"{where}: {plan}, expected the Unsupported of member '{unsupportedMember.Member.Name}' " +
+                $"({memberProblem})");
+        }
+
+        return true;
+    }
+
+    // The member plans of a Blit or Convert against the device fields of the layout; returns the plans compared below
+    private static int CompareMemberPlans(TransferPlan plan, StructLayoutInfo layout, ITranspilerDialect dialect,
+        ImmutableHashSet<string> inner, string where, List<string> failures)
+    {
         EquatableArray<MemberPlan> members;
         switch (plan)
         {
@@ -172,16 +211,16 @@ internal static class TransferPlannerTestHelper
                 break;
             default:
                 failures.Add($"{where}: {plan.GetType().Name}, expected the kind of {layout.Transfer}");
-                return compared;
+                return 0;
         }
 
         if (members.Length != layout.DeviceFields.Length)
         {
             failures.Add($"{where}: {members.Length} member plans for {layout.DeviceFields.Length} fields");
-            return compared;
+            return 0;
         }
 
-        var inner = ancestors.Add(csharpType);
+        var compared = 0;
         for (var i = 0; i < members.Length; i++)
         {
             var field = layout.DeviceFields[i];
