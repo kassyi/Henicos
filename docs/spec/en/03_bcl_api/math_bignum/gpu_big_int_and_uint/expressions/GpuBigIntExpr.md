@@ -79,7 +79,7 @@ If the capture fails, the capture is ended and every buffer it took is returned 
 Thrown if warm-up evaluation fails prior to beginning CUDA Graph capture, or if the expression is already owned by a graph that is alive.
 
 `NotSupportedException`<br>
-Thrown if the expression adds or subtracts values whose effective signs differ: the sign of the result is read from the device, which a capture cannot record.
+Thrown if the expression contains a node whose result depends on a value read from the device, which a capture cannot record: an addition or subtraction of values whose effective signs differ (the sign of the result), `Max` and `Min` (the comparison), `/` and `%` (the bit lengths of the operands), and `~` of a negative value. The capture is refused before the read, so the workspace stays usable.
 
 ## Evaluate(GpuBigUInt)
 
