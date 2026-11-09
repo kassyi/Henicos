@@ -23,13 +23,20 @@ internal abstract class VectorReductionExpressionBase : IGpuBigIntExpression, ID
     private readonly uint[] _headerHost = new uint[2];
     private GpuBigUInt? _header;
 
-    public int NumWords => _vector.WordsPerElement;
+    /// <summary>The width of the result: the elements' width, or the bound of the sum (Sum).</summary>
+    public virtual int NumWords => ElementWords;
+
+    /// <summary>The words of one element of the vector.</summary>
+    protected int ElementWords => _vector.WordsPerElement;
+
+    /// <summary>The vector reduced.</summary>
+    protected IGpuBigIntVectorExpression Vector => _vector;
 
     /// <summary>
     /// The width of the accumulator: one word more than the elements, so that the magnitude of every element, and of
     /// any sum of fewer than 2^31 elements, fits in two's complement.
     /// </summary>
-    private int AccumulatorWords => NumWords + 1;
+    private int AccumulatorWords => ElementWords + 1;
 
     protected abstract bool UseOffsetBinary { get; }
 
@@ -52,7 +59,6 @@ internal abstract class VectorReductionExpressionBase : IGpuBigIntExpression, ID
     /// <exception cref="ArgumentException">
     /// <paramref name="targetResult"/> does not have <see cref="NumWords"/> words.
     /// </exception>
-    /// <exception cref="OverflowException">The final sum does not fit in <see cref="NumWords"/> words.</exception>
     /// <exception cref="InvalidOperationException">The vector is empty and the reduction is Max or Min.</exception>
     /// <exception cref="NotSupportedException">The workspace stream is capturing a CUDA graph.</exception>
     public GpuBigInt Evaluate(GpuWorkspace workspace, GpuBigUInt? targetResult = null)
@@ -110,11 +116,11 @@ internal abstract class VectorReductionExpressionBase : IGpuBigIntExpression, ID
         }
 
         var evaluated = DeviceCounted.Evaluate(_vector, workspace);
-        if (evaluated.Storage.WordsPerElement != NumWords)
+        if (evaluated.Storage.WordsPerElement != ElementWords)
         {
-            // The kernels read the elements, and size the accumulator and the result, with NumWords.
+            // The kernels read the elements and size the accumulator with the element width.
             throw new InvalidOperationException(
-                $"The vector evaluated to {evaluated.Storage.WordsPerElement} words per element, not {NumWords}.");
+                $"The vector evaluated to {evaluated.Storage.WordsPerElement} words per element, not {ElementWords}.");
         }
 
         return evaluated;
@@ -133,7 +139,8 @@ internal abstract class VectorReductionExpressionBase : IGpuBigIntExpression, ID
 
         if ((_headerHost[0] & 2u) != 0u)
         {
-            throw new OverflowException($"The sum does not fit in {NumWords} words.");
+            // The result is as wide as the bound of the reduction; the finalize kernel never sets this bit for it
+            throw new InvalidOperationException($"The reduction does not fit in {NumWords} words.");
         }
 
         return new GpuBigInt(destination, (_headerHost[0] & 1u) != 0u);
@@ -198,7 +205,7 @@ internal abstract class VectorReductionExpressionBase : IGpuBigIntExpression, ID
             {
                 Limbs = source.Values.ToProxy(),
                 Signs = source.Signs.ToProxy(),
-                NumWords = NumWords
+                NumWords = ElementWords
             },
             Dest = _buffers[0].ToProxy(),
             DestWords = AccumulatorWords,
@@ -293,9 +300,20 @@ internal abstract class VectorReductionExpressionBase : IGpuBigIntExpression, ID
     }
 }
 
+// The sum of up to Capacity elements of b bits has at most b + ceil(log2 Capacity) bits (.NET Enumerable.Sum of
+// BigInteger cannot overflow either); the result has the words of that bound, which the accumulator (one word more
+// than the elements) always holds, so the sum never overflows.
 internal sealed class VectorSumReductionExpression([TakesOwnership] IGpuBigIntVectorExpression vector)
-    : VectorReductionExpressionBase(vector)
+    : VectorReductionExpressionBase(vector), IBitBoundedExpression
 {
+    public long Bits => Vector.BitsPerElement + CeilLog2(Vector.Capacity);
+
+    public override int NumWords => BigIntWidths.Words(Bits);
+
+    // ceil(log2 n) for n >= 1; 0 for a capacity of 0 or 1
+    private static int CeilLog2(int n) =>
+        n <= 1 ? 0 : 32 - System.Numerics.BitOperations.LeadingZeroCount((uint)(n - 1));
+
     protected override bool UseOffsetBinary => false;
 
     protected override bool EmptyIsError => false;

@@ -115,6 +115,14 @@ public static partial class GpuBigIntVectorKernels
 
         SharedMemory<uint> sharedCarry = new SharedMemory<uint>(32);
         SharedMemory<uint> topCarry = new SharedMemory<uint>(1);
+        SharedMemory<uint> nonZero = new SharedMemory<uint>(1);
+        if (tid == 0)
+        {
+            nonZero[0] = 0u;
+        }
+
+        Gpu.SyncThreads();
+
         uint blockCarryIn = differentSigns ? 1u : 0u;
         int baseA = batchIdx * op.Left.NumWords;
         int baseB = (op.IsScalar ? 0 : batchIdx) * op.Right.NumWords;
@@ -137,9 +145,14 @@ public static partial class GpuBigIntVectorKernels
             uint p = (uint)sum == 0xFFFFFFFFu ? 1u : 0u;
 
             uint carryIn = PropagateBlockCarry(g, p, blockCarryIn, sharedCarry, laneId, warpId, bDim, out blockCarryIn);
+            uint word = (uint)sum + carryIn;
             if (valid)
             {
-                op.Result.Limbs[baseResult + idx] = (uint)sum + carryIn;
+                op.Result.Limbs[baseResult + idx] = word;
+                if (word != 0u)
+                {
+                    nonZero[0] = 1u;
+                }
             }
 
             // The carry out of the top word, taken from its own thread: the block carry of a partial warp is not
@@ -165,8 +178,9 @@ public static partial class GpuBigIntVectorKernels
                 // |A| + ~|B| + 1 carries out exactly when |A| >= |B|; a borrow means |B| is larger and the
                 // result holds |A| - |B| modulo the width, which is negated below. The top bit of the result
                 // says nothing about the sign once the difference reaches it.
+                // A difference of zero (equal magnitudes) is +0, as BigInteger has no negative zero.
                 bool borrowed = topCarry[0] == 0u;
-                op.Result.Signs[batchIdx] = borrowed ? effSignB : op.Left.Signs[batchIdx];
+                op.Result.Signs[batchIdx] = borrowed ? effSignB : nonZero[0] == 0u ? 0u : op.Left.Signs[batchIdx];
                 needsNegate[0] = borrowed ? 1u : 0u;
             }
         }
