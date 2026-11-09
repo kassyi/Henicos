@@ -347,6 +347,11 @@ internal static class Ntt35ConvolutionLauncher
         GpuBigUInt resultBuffer)
     {
         var writeWords = Math.Min(outWords, resultBuffer.NumWords);
+
+        // A result buffer wider than the product gets zeros above it, as the single-block kernel writes them: a reused
+        // buffer would otherwise keep its old words there (a memset, which a CUDA graph capture records)
+        SignedRoot.ClearAbove(resultBuffer, writeWords);
+
         var primes = PrimeModulusSpec.All;
         var ctx = new Ntt35CarryKernels.AotContexts.Ntt35ResolveCarries
         {
