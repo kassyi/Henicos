@@ -292,6 +292,10 @@ Prelude:
     LaunchEpoch: { Value: __gsharp_launch_epoch, Prelude: ../Prelude.cu }
     ErrorModuleId: { Value: __gsharp_error_module_id, Prelude: ../Prelude.cu }
     BuiltinMessageId: { Value: __gsharp_builtin_message_id, Prelude: ../Prelude.cu }
+    # The CUDA grid barrier of Gpu.SyncGrid(GridSyncMode): Deterministic (also the syncs of a Gpu.SyncGrid(body))
+    # and Fast
+    GridSync: { Value: __gsharp_grid_sync, Prelude: ../Prelude.cu }
+    GridSyncFast: { Value: __gsharp_grid_sync_fast, Prelude: ../Prelude.cu }
     SetThreadIndex: { Value: __gsharp_set_thread_idx, Prelude: ThreadAndMemory.hpp }
     # Gpu.GridStrideLoop: declared by ThreadAndMemory.hpp for the CPU dialects and by the CUDA prelude, and by
     # ManagedGpuContext for the loop that the CPU lowering expands (PreLoweringExpander)
