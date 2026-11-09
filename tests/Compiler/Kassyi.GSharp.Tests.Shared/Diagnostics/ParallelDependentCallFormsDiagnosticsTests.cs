@@ -22,14 +22,14 @@ public class ParallelDependentCallFormsDiagnosticsTests
 
         Assert.Equal(
             [
-                (Analyzer, 84, 20, 84, 30),
-                (Analyzer, 85, 20, 85, 34),
-                (Analyzer, 86, 22, 86, 27),
-                (Analyzer, 88, 20, 88, 29),
-                (Analyzer, 89, 20, 89, 26),
+                (Analyzer, 85, 20, 85, 30),
+                (Analyzer, 86, 20, 86, 34),
+                (Analyzer, 87, 22, 87, 27),
+                (Analyzer, 89, 20, 89, 29),
                 (Analyzer, 90, 20, 90, 26),
-                (Analyzer, 91, 27, 91, 31),
-                (Analyzer, 92, 29, 92, 32)
+                (Analyzer, 91, 20, 91, 26),
+                (Analyzer, 92, 27, 92, 31),
+                (Analyzer, 93, 29, 93, 32)
             ],
             diagnostics.Ranges(GSharpDiagnostics.ParallelDependentCallFromSingleThreadContext.Id));
     }

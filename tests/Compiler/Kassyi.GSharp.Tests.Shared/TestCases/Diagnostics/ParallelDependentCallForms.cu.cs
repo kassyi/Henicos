@@ -76,6 +76,7 @@ public struct Buf
 public static partial class ParallelFormsKernels
 {
     [GpuKernel(Cooperative = true)]
+    [SkipSnapshotConsistency("Diagnostics case")]
     public static void FormsKernel(int[] data, int[] o)
     {
         Buf buf = new Buf { Data = data };
