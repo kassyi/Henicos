@@ -83,7 +83,8 @@ public partial class AutoAllocateReturnTest
 public static partial class AotContexts
 {
 }
-public const string ComputeMag_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__TestCases__AutoAllocateReturnTest__ComputeMag(float* __restrict__ __gsharp_id_0_a, float* __restrict__ __gsharp_auto_result){
+public const string ComputeMag_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__TestCases__AutoAllocateReturnTest__ComputeMag(float* __restrict__ __gsharp_id_0_a, float* __restrict__ __gsharp_auto_result, unsigned int __gsharp_epoch){
+__gsharp_launch_epoch = __gsharp_epoch;
 unsigned int __gsharp_global_tid = (blockIdx.z * gridDim.y * gridDim.x + blockIdx.y * gridDim.x + blockIdx.x) * (blockDim.x * blockDim.y * blockDim.z) + threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;
 int __gsharp_id_1_tid = (int)threadIdx.x;
 __gsharp_auto_result[__gsharp_global_tid] = __gsharp_id_0_a[__gsharp_id_1_tid]*2.0f;
@@ -106,9 +107,10 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.TestCases.AutoAllocateReturnTest.__gsharp_hfunc_ComputeMag.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "AutoAllocateReturnTest.ComputeMag");
 global::System.IntPtr d___gsharp_auto_result = global::System.IntPtr.Zero;
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.NextLaunchEpoch(hStream);
 try
 {
-void** __gsharp_kernel_params = stackalloc void*[2];
+void** __gsharp_kernel_params = stackalloc void*[3];
 // Marshal scalar: a
 __gsharp_kernel_params[0] = &a;
 // Marshal auto result array
@@ -118,6 +120,7 @@ if (__gsharp_auto_result_size > 0)
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out d___gsharp_auto_result, (global::System.IntPtr)__gsharp_auto_result_size, hStream));
 __gsharp_kernel_params[1] = &d___gsharp_auto_result;
 }
+__gsharp_kernel_params[2] = &__gsharp_epoch;
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
 __gsharp_hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim
@@ -135,7 +138,7 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
-global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfDeviceError();
+global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfLaunchError(__gsharp_epoch);
 }
 finally
 {
@@ -158,9 +161,10 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.TestCases.AutoAllocateReturnTest.__gsharp_hfunc_ComputeMag.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "AutoAllocateReturnTest.ComputeMag");
 global::System.IntPtr d___gsharp_auto_result = global::System.IntPtr.Zero;
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.NextLaunchEpoch(hStream);
 try
 {
-void** __gsharp_kernel_params = stackalloc void*[2];
+void** __gsharp_kernel_params = stackalloc void*[3];
 // Marshal scalar: a
 __gsharp_kernel_params[0] = &a;
 // Marshal auto result array
@@ -170,6 +174,7 @@ if (__gsharp_auto_result_size > 0)
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out d___gsharp_auto_result, (global::System.IntPtr)__gsharp_auto_result_size, hStream));
 __gsharp_kernel_params[1] = &d___gsharp_auto_result;
 }
+__gsharp_kernel_params[2] = &__gsharp_epoch;
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
 __gsharp_hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim
@@ -196,7 +201,8 @@ if (d___gsharp_auto_result != global::System.IntPtr.Zero) global::Kassyi.GSharp.
 return __gsharp_auto_result;
 }
 #pragma warning restore CS8500
-public const string ComputeInt_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__TestCases__AutoAllocateReturnTest__ComputeInt(int* __restrict__ __gsharp_id_0_a, int __gsharp_id_1_b, int* __restrict__ __gsharp_auto_result){
+public const string ComputeInt_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__TestCases__AutoAllocateReturnTest__ComputeInt(int* __restrict__ __gsharp_id_0_a, int __gsharp_id_1_b, int* __restrict__ __gsharp_auto_result, unsigned int __gsharp_epoch){
+__gsharp_launch_epoch = __gsharp_epoch;
 unsigned int __gsharp_global_tid = (blockIdx.z * gridDim.y * gridDim.x + blockIdx.y * gridDim.x + blockIdx.x) * (blockDim.x * blockDim.y * blockDim.z) + threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;
 __gsharp_auto_result[__gsharp_global_tid] = __gsharp_add_i32(__gsharp_id_0_a[0],__gsharp_id_1_b);
 return;
@@ -218,9 +224,10 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.TestCases.AutoAllocateReturnTest.__gsharp_hfunc_ComputeInt.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "AutoAllocateReturnTest.ComputeInt");
 global::System.IntPtr d___gsharp_auto_result = global::System.IntPtr.Zero;
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.NextLaunchEpoch(hStream);
 try
 {
-void** __gsharp_kernel_params = stackalloc void*[3];
+void** __gsharp_kernel_params = stackalloc void*[4];
 // Marshal scalar: a
 __gsharp_kernel_params[0] = &a;
 // Marshal scalar: b
@@ -232,6 +239,7 @@ if (__gsharp_auto_result_size > 0)
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out d___gsharp_auto_result, (global::System.IntPtr)__gsharp_auto_result_size, hStream));
 __gsharp_kernel_params[2] = &d___gsharp_auto_result;
 }
+__gsharp_kernel_params[3] = &__gsharp_epoch;
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
 __gsharp_hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim
@@ -249,7 +257,7 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
-global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfDeviceError();
+global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfLaunchError(__gsharp_epoch);
 }
 finally
 {
@@ -272,9 +280,10 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.TestCases.AutoAllocateReturnTest.__gsharp_hfunc_ComputeInt.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "AutoAllocateReturnTest.ComputeInt");
 global::System.IntPtr d___gsharp_auto_result = global::System.IntPtr.Zero;
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.NextLaunchEpoch(hStream);
 try
 {
-void** __gsharp_kernel_params = stackalloc void*[3];
+void** __gsharp_kernel_params = stackalloc void*[4];
 // Marshal scalar: a
 __gsharp_kernel_params[0] = &a;
 // Marshal scalar: b
@@ -286,6 +295,7 @@ if (__gsharp_auto_result_size > 0)
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out d___gsharp_auto_result, (global::System.IntPtr)__gsharp_auto_result_size, hStream));
 __gsharp_kernel_params[2] = &d___gsharp_auto_result;
 }
+__gsharp_kernel_params[3] = &__gsharp_epoch;
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
 __gsharp_hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim

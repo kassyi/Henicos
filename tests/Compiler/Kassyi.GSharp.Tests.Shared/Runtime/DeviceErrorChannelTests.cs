@@ -13,11 +13,6 @@ namespace Kassyi.GSharp.Tests.Shared.Runtime;
 /// <summary>
 /// Verifies the device runtime error channel and CPU/GPU exception parity (#729).
 /// </summary>
-#if GSHARP_CUDA
-// The process has one device error slot: a device error of a test that runs beside another one could be thrown by the
-// other test's synchronization
-[Collection(TestCollections.DeviceExclusive)]
-#endif
 public sealed class DeviceErrorChannelTests
 {
     public static TheoryData<GSharpErrorCode, Type> AllErrorCodesAndExceptionTypes() =>
@@ -267,11 +262,14 @@ public sealed class DeviceErrorChannelTests
             Assert.DoesNotContain("cuStreamSynchronize", wrapperText);
         }
 
-        // The managed-array launcher reads the device error record in every build; the Ptr launcher only where it
-        // synchronizes, in the checked build
-        const string deviceErrorCheck = "global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfDeviceError();";
+        // The managed-array launcher reads the device error record of its own launch in every build; the Ptr launcher
+        // only where it synchronizes, in the checked build. Both take an epoch for the launch and pass it last.
+        const string deviceErrorCheck = "global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfLaunchError(__gsharp_epoch);";
         int checks = wrapperText.Split(deviceErrorCheck).Length - 1;
         Assert.Equal(isCheckedBuild ? 2 : 1, checks);
+        Assert.DoesNotContain("ThrowIfDeviceError", wrapperText);
+        const string epochTaken = "uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.NextLaunchEpoch(hStream);";
+        Assert.Equal(2, wrapperText.Split(epochTaken).Length - 1);
     }
 
 #if !GSHARP_CUDA

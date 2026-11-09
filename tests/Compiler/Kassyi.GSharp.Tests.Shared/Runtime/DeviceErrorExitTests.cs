@@ -8,14 +8,11 @@ namespace Kassyi.GSharp.Tests.Shared.Runtime;
 /// <summary>
 /// A CUDA thread that fails a device check records the error and exits: the threads that do not fail run to the end,
 /// also through block barriers, the launch throws the recorded exception, and the context stays usable. An mbarrier
-/// waiter that sees the recorded error traps. The grid barrier has its own tests (<see cref="GridBarrierTests"/>).
+/// waiter leaves the wait when a thread of its launch failed. The grid barrier has its own tests
+/// (<see cref="GridBarrierTests"/>).
 /// </summary>
 [TestTarget(ExecutionTarget.GpuExecution)]
 [Category(TestCategory.Runtime)]
-#if GSHARP_CUDA
-// A device error goes to the one error slot of the process, which a test running beside this one could read first
-[Collection(TestCollections.DeviceExclusive)]
-#endif
 public sealed class DeviceErrorExitTests
 {
     private const int Untouched = -7;
@@ -43,9 +40,6 @@ public sealed class DeviceErrorExitTests
         int[] next = Filled(keys.Length);
         DeviceErrorExitKernels.LaunchWriteUnlessFailKernel(keys, next, blockDimX: (uint)keys.Length);
         Assert.Equal([0, -1, 2, -3], next);
-
-        // Nothing is left in the slot for a later synchronization
-        GpuKernelLoader.SynchronizeDevice();
     }
 
     [SkippableFact]
@@ -100,53 +94,53 @@ public sealed class DeviceErrorExitTests
         }
     }
 
-    // [WHY] An mbarrier waits for a fixed number of arrivals, which a thread that exited never makes; the waiters see the
-    // recorded error and trap: a real GPU fault, run in a child process of its own and only in `just test-gpu-trap`
+    // [WHY] An mbarrier waits for a fixed number of arrivals, which a thread that exited never makes; the waiters read the
+    // abort word of their launch, which the failing thread set, and exit too. The timeout fails the test instead of
+    // waiting for a hang that the driver would end only by resetting the GPU.
     [SkippableFact]
-    [Category(TestCategory.GpuTrap)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_MBarrierWait_AfterFailingThread_Traps()
+    public async Task Test_MBarrierWait_AfterFailingThread_WaitersLeaveAndLaunchThrows()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
-        if (!IsolatedTestProcess.IsChild(nameof(Test_MBarrierWait_AfterFailingThread_Traps)))
-        {
-            CudaTrapRuns.RunIsolated(typeof(DeviceErrorExitTests), nameof(Test_MBarrierWait_AfterFailingThread_Traps));
-            return;
-        }
-
         var keys = new int[32];
         keys[5] = DeviceErrorExitKernels.FailKey;
         int[] result = Filled(keys.Length);
-        var ex = Assert.Throws<SwitchExpressionException>(() =>
-            DeviceErrorExitKernels.LaunchMBarrierFailKernel(keys, result, blockDimX: (uint)keys.Length));
+
+        var launch = Task.Run(() => Assert.Throws<SwitchExpressionException>(() =>
+            DeviceErrorExitKernels.LaunchMBarrierFailKernel(keys, result, blockDimX: (uint)keys.Length)));
+        var ex = await launch.WaitAsync(TimeSpan.FromSeconds(30));
+
         Assert.Equal("(5,0,0)", ex.Data["GSharp.ThreadIndex"]);
-        var cudaEx = Assert.IsType<CudaException>(ex.InnerException);
-        Assert.True(cudaEx.Result is CUresult.CudaErrorIllegalInstruction or CUresult.CudaErrorLaunchFailed);
+        Assert.Null(ex.InnerException);
+        // Every thread waits at the mbarrier before it writes, so none writes
+        Assert.All(result, static value => Assert.Equal(Untouched, value));
     }
 
-    // [WHY] Without the error slot (the host could not allocate it) a failing thread has nowhere to record its error, so
-    // it traps instead of exiting with no exception: a real GPU fault, run in a child process of its own and only in
-    // `just test-gpu-trap`
+    // [WHY] Without the error records (the host could not allocate them) a failing thread has nowhere to record its
+    // error, so it traps instead of exiting with no exception: a real GPU fault, run in a child process of its own and
+    // only in `just test-gpu-trap`
     [SkippableFact]
     [Category(TestCategory.GpuTrap)]
     [Scenario(TestScenario.SadPath)]
-    public unsafe void Test_WithoutErrorSlot_FailingThreadTraps()
+    public unsafe void Test_WithoutErrorRecords_FailingThreadTraps()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
-        if (!IsolatedTestProcess.IsChild(nameof(Test_WithoutErrorSlot_FailingThreadTraps)))
+        if (!IsolatedTestProcess.IsChild(nameof(Test_WithoutErrorRecords_FailingThreadTraps)))
         {
-            CudaTrapRuns.RunIsolated(typeof(DeviceErrorExitTests), nameof(Test_WithoutErrorSlot_FailingThreadTraps));
+            CudaTrapRuns.RunIsolated(typeof(DeviceErrorExitTests), nameof(Test_WithoutErrorRecords_FailingThreadTraps));
             return;
         }
 
-        // The module's pointer to the slot, as a failed allocation leaves it
+        // The module's pointers to the records, as a failed allocation leaves them
         var module = Kassyi.GSharp.Generated.GSharpModuleContext_Kassyi_GSharp_Tests_Cuda.GetOrLoadModule();
         using (new GpuKernelLoader.CudaContextScope())
         {
-            CudaException.ThrowIfError(
-                CudaDriverApi.cuModuleGetGlobal_v2(out var slotGlobal, out _, module, "__gsharp_error_slot"));
-            ulong none = 0;
-            CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(slotGlobal, (IntPtr)(&none), sizeof(ulong)));
+            foreach (var name in (ReadOnlySpan<string>)["__gsharp_error_slot", "__gsharp_launch_errors"])
+            {
+                CudaException.ThrowIfError(CudaDriverApi.cuModuleGetGlobal_v2(out var global, out _, module, name));
+                ulong none = 0;
+                CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(global, (IntPtr)(&none), sizeof(ulong)));
+            }
         }
 
         int[] keys = [0, DeviceErrorExitKernels.FailKey, 1, 0];

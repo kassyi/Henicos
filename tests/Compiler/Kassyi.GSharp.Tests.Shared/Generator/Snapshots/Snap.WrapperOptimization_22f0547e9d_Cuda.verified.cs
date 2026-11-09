@@ -115,7 +115,8 @@ static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__TestCases__MyCu
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__TestCases__MyCustomStruct,__gsharp_mb_A)==0,""Kassyi.GSharp.Tests.Shared.TestCases.MyCustomStruct.A: offset"");
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__TestCases__MyCustomStruct,__gsharp_mb_B)==4,""Kassyi.GSharp.Tests.Shared.TestCases.MyCustomStruct.B: offset"");
 #endif
-extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__TestCases__WrapperOptimizationKernels__ComplexSignatureKernel(int* __gsharp_id_0_scalarRef, float* __gsharp_id_1_scalarOut, GSharpArray<int> __gsharp_id_2_arrayVal, __gsharp_ty_Kassyi__GSharp__Tests__Shared__TestCases__MyCustomStruct* __gsharp_id_3_structRef, unsigned int __gsharp_id_4_constantVal){
+extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__TestCases__WrapperOptimizationKernels__ComplexSignatureKernel(int* __gsharp_id_0_scalarRef, float* __gsharp_id_1_scalarOut, GSharpArray<int> __gsharp_id_2_arrayVal, __gsharp_ty_Kassyi__GSharp__Tests__Shared__TestCases__MyCustomStruct* __gsharp_id_3_structRef, unsigned int __gsharp_id_4_constantVal, unsigned int __gsharp_epoch){
+__gsharp_launch_epoch = __gsharp_epoch;
 (*__gsharp_id_1_scalarOut)=0;
 if((long long)(*__gsharp_id_0_scalarRef)>(long long)__gsharp_id_4_constantVal)
 {
@@ -159,9 +160,10 @@ global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 global::System.IntPtr __gsharp_d_1 = global::System.IntPtr.Zero;
 global::System.IntPtr __gsharp_d_2 = global::System.IntPtr.Zero;
 global::System.IntPtr __gsharp_d_3 = global::System.IntPtr.Zero;
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.NextLaunchEpoch(hStream);
 try
 {
-void** __gsharp_kernel_params = stackalloc void*[5];
+void** __gsharp_kernel_params = stackalloc void*[6];
 // Marshal ref/out scalar: scalarRef
 int __gsharp_size_0 = sizeof(global::System.Int32);
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
@@ -204,6 +206,7 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 __gsharp_kernel_params[3] = &__gsharp_d_3;
 // Marshal scalar: constantVal
 __gsharp_kernel_params[4] = &constantVal;
+__gsharp_kernel_params[5] = &__gsharp_epoch;
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
 __gsharp_hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim
@@ -239,7 +242,7 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)(&__gsharp_native_3), __gsharp_d_3, (global::System.IntPtr)__gsharp_size_3, hStream));
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 global::Kassyi.GSharp.Tests.Shared.TestCases.WrapperOptimizationKernels.AotContexts.Unmarshal_MyCustomStruct(ref structRef, ref __gsharp_native_3, hStream);
-global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfDeviceError();
+global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfLaunchError(__gsharp_epoch);
 }
 finally
 {
@@ -270,9 +273,10 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.TestCases.WrapperOptimizationKernels.__gsharp_hfunc_ComplexSignatureKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "WrapperOptimizationKernels.ComplexSignatureKernel");
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.NextLaunchEpoch(hStream);
 try
 {
-void** __gsharp_kernel_params = stackalloc void*[5];
+void** __gsharp_kernel_params = stackalloc void*[6];
 // Marshal device scalar: scalarRef
 __gsharp_kernel_params[0] = &scalarRef;
 // Marshal device scalar: scalarOut
@@ -287,6 +291,7 @@ __gsharp_kernel_params[2] = __gsharp_proxy_2;
 __gsharp_kernel_params[3] = &structRef;
 // Marshal scalar: constantVal
 __gsharp_kernel_params[4] = &constantVal;
+__gsharp_kernel_params[5] = &__gsharp_epoch;
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
 __gsharp_hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim

@@ -95,17 +95,24 @@ public partial class EmissionShapeTests
         const string Kernel = "__gsharp_k_" + Ns + "SignatureShapeKernels__";
         const string Context = "__gsharp_context_" + Ns + "SignatureShapeKernels__";
 
+        // A CUDA kernel takes the epoch of its launch after everything else and stores it first
         AssertContainsLines(cuda,
-            $"{Kernel}ExpressionResultKernel(int* __restrict__ __gsharp_auto_result){{",
+            $"{Kernel}ExpressionResultKernel(int* __restrict__ __gsharp_auto_result, unsigned int __gsharp_epoch){{",
+            "__gsharp_launch_epoch = __gsharp_epoch;",
             "unsigned int __gsharp_global_tid = (blockIdx.z * gridDim.y * gridDim.x + blockIdx.y * gridDim.x + blockIdx.x) * (blockDim.x * blockDim.y * blockDim.z) + threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;",
             "__gsharp_auto_result[__gsharp_global_tid] = 7;",
             "return;",
             "}");
         Assert.Contains(
-            $"{Kernel}BlockResultKernel(GSharpArray<int> __gsharp_id_0_input, int* __restrict__ __gsharp_auto_result){{",
+            $"{Kernel}BlockResultKernel(GSharpArray<int> __gsharp_id_0_input, int* __restrict__ __gsharp_auto_result, unsigned int __gsharp_epoch){{",
             cuda,
             StringComparison.Ordinal);
-        Assert.Contains($"{Kernel}GridSyncResultKernel(int* __restrict__ __gsharp_auto_result){{", cuda, StringComparison.Ordinal);
+        Assert.Contains(
+            $"{Kernel}GridSyncResultKernel(int* __restrict__ __gsharp_auto_result, unsigned int __gsharp_epoch){{",
+            cuda,
+            StringComparison.Ordinal);
+        // The CPU dialects take no epoch
+        Assert.DoesNotContain("__gsharp_epoch", cpu, StringComparison.Ordinal);
         Assert.Contains(
             $"{Kernel}ExpressionResultKernel({Context}ExpressionResultKernel* __gsharp_ctx, int* __restrict__ __gsharp_auto_result){{",
             cpu,

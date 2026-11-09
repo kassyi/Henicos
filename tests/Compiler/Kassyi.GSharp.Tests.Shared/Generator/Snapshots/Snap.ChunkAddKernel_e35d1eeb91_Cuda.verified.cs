@@ -82,7 +82,8 @@ public partial class GpuBigIntKernels
 public static partial class AotContexts
 {
 }
-public const string ChunkAddKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Stdlib__GpuMath__BigNum__GpuBigIntKernels__ChunkAddKernel(GSharpArray<unsigned int> __gsharp_id_0_dA, GSharpArray<unsigned int> __gsharp_id_1_dB, GSharpArray<unsigned int> __gsharp_id_2_dResult, GSharpArray<long long> __gsharp_id_3_carryBuffer, int __gsharp_id_4_numWords, int __gsharp_id_5_chunkSize){
+public const string ChunkAddKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Stdlib__GpuMath__BigNum__GpuBigIntKernels__ChunkAddKernel(GSharpArray<unsigned int> __gsharp_id_0_dA, GSharpArray<unsigned int> __gsharp_id_1_dB, GSharpArray<unsigned int> __gsharp_id_2_dResult, GSharpArray<long long> __gsharp_id_3_carryBuffer, int __gsharp_id_4_numWords, int __gsharp_id_5_chunkSize, unsigned int __gsharp_epoch){
+__gsharp_launch_epoch = __gsharp_epoch;
 int __gsharp_id_6_chunkIdx = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 int __gsharp_id_7_start = __gsharp_mul_i32(__gsharp_id_6_chunkIdx,__gsharp_id_5_chunkSize);
 if(__gsharp_id_7_start>=__gsharp_id_4_numWords)
@@ -145,9 +146,10 @@ global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 global::System.IntPtr __gsharp_d_1 = global::System.IntPtr.Zero;
 global::System.IntPtr __gsharp_d_2 = global::System.IntPtr.Zero;
 global::System.IntPtr __gsharp_d_3 = global::System.IntPtr.Zero;
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.NextLaunchEpoch(hStream);
 try
 {
-void** __gsharp_kernel_params = stackalloc void*[6];
+void** __gsharp_kernel_params = stackalloc void*[7];
 // Marshal array: dA
 int __gsharp_size_0 = checked(dA.Length * sizeof(global::System.UInt32));
 global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
@@ -253,6 +255,7 @@ __gsharp_kernel_params[3] = __gsharp_proxy_3;
 __gsharp_kernel_params[4] = &numWords;
 // Marshal scalar: chunkSize
 __gsharp_kernel_params[5] = &chunkSize;
+__gsharp_kernel_params[6] = &__gsharp_epoch;
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
 __gsharp_hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim
@@ -298,7 +301,7 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
-global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfDeviceError();
+global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfLaunchError(__gsharp_epoch);
 }
 finally
 {
@@ -356,9 +359,10 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.GpuBigIntKernels.__gsharp_hfunc_ChunkAddKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "GpuBigIntKernels.ChunkAddKernel");
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.NextLaunchEpoch(hStream);
 try
 {
-void** __gsharp_kernel_params = stackalloc void*[6];
+void** __gsharp_kernel_params = stackalloc void*[7];
 // Marshal device array: dA
 global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
 __gsharp_proxy_0[0] = dA.Data;
@@ -387,6 +391,7 @@ __gsharp_kernel_params[3] = __gsharp_proxy_3;
 __gsharp_kernel_params[4] = &numWords;
 // Marshal scalar: chunkSize
 __gsharp_kernel_params[5] = &chunkSize;
+__gsharp_kernel_params[6] = &__gsharp_epoch;
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
 __gsharp_hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim

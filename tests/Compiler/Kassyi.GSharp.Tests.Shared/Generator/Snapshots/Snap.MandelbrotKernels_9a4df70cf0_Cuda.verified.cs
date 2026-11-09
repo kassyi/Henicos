@@ -82,7 +82,8 @@ public partial class MandelbrotKernels
 public static partial class AotContexts
 {
 }
-public const string MandelbrotKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Henicos__Benchmarks__ComputeBenchmarks__MandelbrotKernels__MandelbrotKernel(GSharpArray<int> __gsharp_id_0_output, int __gsharp_id_1_width, int __gsharp_id_2_height, int __gsharp_id_3_maxIter, float __gsharp_id_4_xMin, float __gsharp_id_5_xMax, float __gsharp_id_6_yMin, float __gsharp_id_7_yMax){
+public const string MandelbrotKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Henicos__Benchmarks__ComputeBenchmarks__MandelbrotKernels__MandelbrotKernel(GSharpArray<int> __gsharp_id_0_output, int __gsharp_id_1_width, int __gsharp_id_2_height, int __gsharp_id_3_maxIter, float __gsharp_id_4_xMin, float __gsharp_id_5_xMax, float __gsharp_id_6_yMin, float __gsharp_id_7_yMax, unsigned int __gsharp_epoch){
+__gsharp_launch_epoch = __gsharp_epoch;
 auto __gsharp_id_8_col = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 auto __gsharp_id_9_row = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.y,(int)blockDim.y),(int)threadIdx.y);
 if(__gsharp_id_8_col<__gsharp_id_1_width&&__gsharp_id_9_row<__gsharp_id_2_height)
@@ -123,9 +124,10 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 global::System.IntPtr __gsharp_hfunc = global::Henicos.Benchmarks.ComputeBenchmarks.MandelbrotKernels.__gsharp_hfunc_MandelbrotKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "MandelbrotKernels.MandelbrotKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.NextLaunchEpoch(hStream);
 try
 {
-void** __gsharp_kernel_params = stackalloc void*[8];
+void** __gsharp_kernel_params = stackalloc void*[9];
 // Marshal array: output
 int __gsharp_size_0 = checked(output.Length * sizeof(global::System.Int32));
 global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
@@ -153,6 +155,7 @@ __gsharp_kernel_params[5] = &xMax;
 __gsharp_kernel_params[6] = &yMin;
 // Marshal scalar: yMax
 __gsharp_kernel_params[7] = &yMax;
+__gsharp_kernel_params[8] = &__gsharp_epoch;
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
 __gsharp_hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim
@@ -171,7 +174,7 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
-global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfDeviceError();
+global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfLaunchError(__gsharp_epoch);
 }
 finally
 {
@@ -199,9 +202,10 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 global::System.IntPtr __gsharp_hfunc = global::Henicos.Benchmarks.ComputeBenchmarks.MandelbrotKernels.__gsharp_hfunc_MandelbrotKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "MandelbrotKernels.MandelbrotKernel");
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.NextLaunchEpoch(hStream);
 try
 {
-void** __gsharp_kernel_params = stackalloc void*[8];
+void** __gsharp_kernel_params = stackalloc void*[9];
 // Marshal device array: output
 global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
 __gsharp_proxy_0[0] = output.Data;
@@ -222,6 +226,7 @@ __gsharp_kernel_params[5] = &xMax;
 __gsharp_kernel_params[6] = &yMin;
 // Marshal scalar: yMax
 __gsharp_kernel_params[7] = &yMax;
+__gsharp_kernel_params[8] = &__gsharp_epoch;
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
 __gsharp_hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim

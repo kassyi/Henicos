@@ -220,7 +220,8 @@ static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__GpuBig
 static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__GpuBigIntRef)==8,""Kassyi.GSharp.Stdlib.GpuMath.BigNum.GpuBigIntRef: alignment"");
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__GpuBigIntRef,__gsharp_mb_Data)==0,""Kassyi.GSharp.Stdlib.GpuMath.BigNum.GpuBigIntRef.Data: offset"");
 #endif
-extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Stdlib__BigIntRefOperatorKernels__ShiftKernel(GSharpArray<unsigned int> __gsharp_id_0_input, GSharpArray<unsigned int> __gsharp_id_1_shiftedLeft, GSharpArray<unsigned int> __gsharp_id_2_shiftedRight, int __gsharp_id_3_numberOfWords){
+extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Stdlib__BigIntRefOperatorKernels__ShiftKernel(GSharpArray<unsigned int> __gsharp_id_0_input, GSharpArray<unsigned int> __gsharp_id_1_shiftedLeft, GSharpArray<unsigned int> __gsharp_id_2_shiftedRight, int __gsharp_id_3_numberOfWords, unsigned int __gsharp_epoch){
+__gsharp_launch_epoch = __gsharp_epoch;
 __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__GpuBigIntContext __gsharp_id_4_ctx = {};
 __gsharp_id_4_ctx.__gsharp_mb_NumberOfWords=__gsharp_id_3_numberOfWords;
 __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__GpuBigIntRef __gsharp_id_5_x = __gsharp_id_0_input;
@@ -264,9 +265,10 @@ global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfun
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 global::System.IntPtr __gsharp_d_1 = global::System.IntPtr.Zero;
 global::System.IntPtr __gsharp_d_2 = global::System.IntPtr.Zero;
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.NextLaunchEpoch(hStream);
 try
 {
-void** __gsharp_kernel_params = stackalloc void*[4];
+void** __gsharp_kernel_params = stackalloc void*[5];
 // Marshal array: input
 int __gsharp_size_0 = checked(input.Length * sizeof(global::System.UInt32));
 global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
@@ -338,6 +340,7 @@ __gsharp_proxy_2[0] = __gsharp_d_2;
 __gsharp_kernel_params[2] = __gsharp_proxy_2;
 // Marshal scalar: numberOfWords
 __gsharp_kernel_params[3] = &numberOfWords;
+__gsharp_kernel_params[4] = &__gsharp_epoch;
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
 __gsharp_hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim
@@ -374,7 +377,7 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
-global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfDeviceError();
+global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfLaunchError(__gsharp_epoch);
 }
 finally
 {
@@ -422,9 +425,10 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Stdlib.BigIntRefOperatorKernels.__gsharp_hfunc_ShiftKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "BigIntRefOperatorKernels.ShiftKernel");
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.NextLaunchEpoch(hStream);
 try
 {
-void** __gsharp_kernel_params = stackalloc void*[4];
+void** __gsharp_kernel_params = stackalloc void*[5];
 // Marshal device array: input
 global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
 __gsharp_proxy_0[0] = input.Data;
@@ -445,6 +449,7 @@ __gsharp_proxy_2[0] = shiftedRight.Data;
 __gsharp_kernel_params[2] = __gsharp_proxy_2;
 // Marshal scalar: numberOfWords
 __gsharp_kernel_params[3] = &numberOfWords;
+__gsharp_kernel_params[4] = &__gsharp_epoch;
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
 __gsharp_hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim

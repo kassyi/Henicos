@@ -21,7 +21,8 @@ public partial class GEN_35_MacroTranspiler_InGpuKernel
 public static partial class AotContexts
 {
 }
-public const string MyKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__TestCases__Transpiler__GEN_u35_uMacroTranspiler_uInGpuKernel__MyKernel(){
+public const string MyKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__TestCases__Transpiler__GEN_u35_uMacroTranspiler_uInGpuKernel__MyKernel(unsigned int __gsharp_epoch){
+__gsharp_launch_epoch = __gsharp_epoch;
 int __gsharp_id_0_sum = 0;
 // [GpuUnroll] start=0, count=3
 {
@@ -155,9 +156,11 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.TestCases.Transpiler.GEN_35_MacroTranspiler_InGpuKernel.__gsharp_hfunc_MyKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "GEN_35_MacroTranspiler_InGpuKernel.MyKernel");
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.NextLaunchEpoch(hStream);
 try
 {
-void** __gsharp_kernel_params = stackalloc void*[0];
+void** __gsharp_kernel_params = stackalloc void*[1];
+__gsharp_kernel_params[0] = &__gsharp_epoch;
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchCooperativeKernel(
 __gsharp_hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim
@@ -166,7 +169,7 @@ sharedMemBytes, // Shared mem
 hStream, // Stream
 __gsharp_kernel_params
 ));
-global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfDeviceError();
+global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfLaunchError(__gsharp_epoch);
 }
 finally
 {
@@ -184,9 +187,11 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.TestCases.Transpiler.GEN_35_MacroTranspiler_InGpuKernel.__gsharp_hfunc_MyKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "GEN_35_MacroTranspiler_InGpuKernel.MyKernel");
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.NextLaunchEpoch(hStream);
 try
 {
-void** __gsharp_kernel_params = stackalloc void*[0];
+void** __gsharp_kernel_params = stackalloc void*[1];
+__gsharp_kernel_params[0] = &__gsharp_epoch;
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchCooperativeKernel(
 __gsharp_hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim

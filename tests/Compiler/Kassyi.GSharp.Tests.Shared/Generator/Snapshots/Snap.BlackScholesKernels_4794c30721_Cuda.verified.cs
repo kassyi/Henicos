@@ -412,7 +412,8 @@ static_assert(offsetof(__gsharp_ty_Henicos__Benchmarks__ComputeBenchmarks__Black
 static_assert(offsetof(__gsharp_ty_Henicos__Benchmarks__ComputeBenchmarks__BlackScholesKernels__BlackScholesContext,__gsharp_mb_PutResult)==72,""Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.BlackScholesContext.PutResult: offset"");
 static_assert(offsetof(__gsharp_ty_Henicos__Benchmarks__ComputeBenchmarks__BlackScholesKernels__BlackScholesContext,__gsharp_mb_N)==88,""Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.BlackScholesContext.N: offset"");
 #endif
-extern ""C"" __global__ void __gsharp_k_Henicos__Benchmarks__ComputeBenchmarks__BlackScholesKernels__BlackScholesKernel(__gsharp_ty_Henicos__Benchmarks__ComputeBenchmarks__BlackScholesKernels__BlackScholesContext __gsharp_id_0_ctx){
+extern ""C"" __global__ void __gsharp_k_Henicos__Benchmarks__ComputeBenchmarks__BlackScholesKernels__BlackScholesKernel(__gsharp_ty_Henicos__Benchmarks__ComputeBenchmarks__BlackScholesKernels__BlackScholesContext __gsharp_id_0_ctx, unsigned int __gsharp_epoch){
+__gsharp_launch_epoch = __gsharp_epoch;
 {
 unsigned int __gsharp_gsl_n_0 = __gsharp_grid_stride_count(__gsharp_id_0_ctx.__gsharp_mb_N);
 unsigned int __gsharp_gsl_s_0 = __gsharp_grid_stride_step();
@@ -444,13 +445,15 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 global::System.IntPtr __gsharp_hfunc = global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.__gsharp_hfunc_BlackScholesKernel.Resolve(global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "BlackScholesKernels.BlackScholesKernel");
 var __gsharp_device_arrays = new global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions();
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.NextLaunchEpoch(hStream);
 try
 {
-void** __gsharp_kernel_params = stackalloc void*[1];
+void** __gsharp_kernel_params = stackalloc void*[2];
 global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.AotContexts.BlackScholes __gsharp_native_0 = default;
 global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.AotContexts.Marshal_BlackScholesKernels_BlackScholesContext(ref ctx, ref __gsharp_native_0, __gsharp_device_arrays, hStream);
 // Marshal scalar struct: ctx
 __gsharp_kernel_params[0] = &__gsharp_native_0;
+__gsharp_kernel_params[1] = &__gsharp_epoch;
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
 __gsharp_hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim
@@ -461,7 +464,7 @@ __gsharp_kernel_params,
 global::System.IntPtr.Zero // Extra
 ));
 global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.AotContexts.Unmarshal_BlackScholesKernels_BlackScholesContext(ref ctx, ref __gsharp_native_0, hStream);
-global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfDeviceError();
+global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfLaunchError(__gsharp_epoch);
 }
 finally
 {
@@ -480,11 +483,13 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 global::System.IntPtr __gsharp_hfunc = global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.__gsharp_hfunc_BlackScholesKernel.Resolve(global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "BlackScholesKernels.BlackScholesKernel");
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.NextLaunchEpoch(hStream);
 try
 {
-void** __gsharp_kernel_params = stackalloc void*[1];
+void** __gsharp_kernel_params = stackalloc void*[2];
 // Marshal device struct: ctx
 __gsharp_kernel_params[0] = &ctx;
+__gsharp_kernel_params[1] = &__gsharp_epoch;
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
 __gsharp_hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim
