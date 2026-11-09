@@ -165,29 +165,63 @@ public sealed class StackLinqFusionRule : IInvocationTranspilerRule
 
             terminalStrategy.EmitPostLoop(ref context, in terminalStage, ResultVar);
 
-            if (isGrid)
+            switch (ClassifyFinalReturn(isGrid, blockShared, in chain, in terminalStage))
             {
-                writer.Append(
-                    $"return {GSharpInternalNames.StackLinq.GridReduce}({ResultVar}, {GSharpInternalNames.StackLinq.Plus}{{}}, {GSharpInternalNames.StackLinq.GridScratch});");
-            }
-            else if (blockShared)
-            {
-                writer.Append(
-                    $"return {GSharpInternalNames.StackLinq.BlockReduce}({ResultVar}, {GSharpInternalNames.StackLinq.Plus}{{}});");
-            }
-            else if ((chain.Terminal == StackLinqOperator.Average &&
-                      terminalStage.Symbol.ReturnType.SpecialType == SpecialType.System_Single) ||
-                     (chain.Terminal == StackLinqOperator.Sum && SumStrategy.AccumulatesInDouble(in terminalStage)))
-            {
-                writer.Append($"return (float){ResultVar};");
-            }
-            else
-            {
-                writer.Append($"return {ResultVar};");
+                case FinalReturnKind.GridReduce:
+                    writer.Append(
+                        $"return {GSharpInternalNames.StackLinq.GridReduce}(" +
+                        $"{ResultVar}, {GSharpInternalNames.StackLinq.Plus}{{}}, " +
+                        $"{GSharpInternalNames.StackLinq.GridScratch});");
+                    break;
+                case FinalReturnKind.BlockReduce:
+                    writer.Append(
+                        $"return {GSharpInternalNames.StackLinq.BlockReduce}(" +
+                        $"{ResultVar}, {GSharpInternalNames.StackLinq.Plus}{{}});");
+                    break;
+                case FinalReturnKind.FloatCast:
+                    writer.Append($"return (float){ResultVar};");
+                    break;
+                case FinalReturnKind.Plain:
+                    writer.Append($"return {ResultVar};");
+                    break;
             }
 
             writer.AppendLine();
         }
+    }
+
+    private enum FinalReturnKind
+    {
+        GridReduce,
+        BlockReduce,
+        FloatCast,
+        Plain,
+    }
+
+    private static FinalReturnKind ClassifyFinalReturn(
+        bool isGrid,
+        bool blockShared,
+        in StackLinqChain chain,
+        in LinqStage terminalStage)
+    {
+        if (isGrid)
+        {
+            return FinalReturnKind.GridReduce;
+        }
+
+        if (blockShared)
+        {
+            return FinalReturnKind.BlockReduce;
+        }
+
+        if ((chain.Terminal == StackLinqOperator.Average &&
+             terminalStage.Symbol.ReturnType.SpecialType == SpecialType.System_Single) ||
+            (chain.Terminal == StackLinqOperator.Sum && SumStrategy.AccumulatesInDouble(in terminalStage)))
+        {
+            return FinalReturnKind.FloatCast;
+        }
+
+        return FinalReturnKind.Plain;
     }
 
     // The source, then each stage argument and the terminal's initial value, in the C# order

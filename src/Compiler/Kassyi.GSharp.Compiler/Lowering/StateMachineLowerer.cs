@@ -104,24 +104,54 @@ public class StateMachineLowerer(bool isDeviceFunction = false, SemanticModel? s
         }
     }
 
+    private enum SplitPointKind
+    {
+        SuspendingCall,
+        Reconvergence,
+        WarpShuffle,
+        Barrier,
+    }
+
+    private static SplitPointKind ClassifySplitPoint(
+        InvocationExpressionSyntax splitPoint,
+        out WarpShuffleKind shuffleKind)
+    {
+        shuffleKind = default;
+        if (BarrierHelper.IsSuspendingCall(splitPoint))
+        {
+            return SplitPointKind.SuspendingCall;
+        }
+
+        if (BarrierHelper.IsReconvergence(splitPoint))
+        {
+            return SplitPointKind.Reconvergence;
+        }
+
+        if (BarrierHelper.TryGetWarpShuffle(splitPoint, out shuffleKind))
+        {
+            return SplitPointKind.WarpShuffle;
+        }
+
+        return SplitPointKind.Barrier;
+    }
+
     private void LowerSplitPoint(StatementSyntax stmt, InvocationExpressionSyntax splitPoint,
         IReadOnlyDictionary<DeclarationKey, int> labelStates, SectionBuilder sections)
     {
-        if (BarrierHelper.IsSuspendingCall(splitPoint))
+        switch (ClassifySplitPoint(splitPoint, out var shuffleKind))
         {
-            LowerSuspendingCall(stmt, splitPoint, sections);
-        }
-        else if (BarrierHelper.IsReconvergence(splitPoint))
-        {
-            LowerReconvergence(stmt, splitPoint, sections);
-        }
-        else if (BarrierHelper.TryGetWarpShuffle(splitPoint, out var shuffleKind))
-        {
-            LowerWarpShuffle(stmt, splitPoint, shuffleKind, labelStates, sections);
-        }
-        else
-        {
-            LowerBarrier(splitPoint, sections);
+            case SplitPointKind.SuspendingCall:
+                LowerSuspendingCall(stmt, splitPoint, sections);
+                break;
+            case SplitPointKind.Reconvergence:
+                LowerReconvergence(stmt, splitPoint, sections);
+                break;
+            case SplitPointKind.WarpShuffle:
+                LowerWarpShuffle(stmt, splitPoint, shuffleKind, labelStates, sections);
+                break;
+            case SplitPointKind.Barrier:
+                LowerBarrier(splitPoint, sections);
+                break;
         }
     }
 
