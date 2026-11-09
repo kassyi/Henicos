@@ -60,15 +60,21 @@ public readonly record struct GSharpErrorSite(
     string DefaultMessage);
 
 /// <summary>
-/// Represents the 24-byte pinned host-mapped device error slot shared with CUDA modules (#729).
+/// Represents a 32-byte pinned host-mapped device error record shared with CUDA modules (#729).
 /// </summary>
-[StructLayout(LayoutKind.Sequential)]
+[StructLayout(LayoutKind.Sequential, Size = 32)]
 public struct GSharpDeviceErrorSlot
 {
     /// <summary>
     /// Low 16 bits: <see cref="GSharpErrorCode"/>; bit 16 (<c>0x10000u</c>): payload write completion flag.
     /// </summary>
     public uint Code;
+
+    /// <summary>
+    /// The epoch of the launch that recorded the error (<see cref="GpuKernelLoader.NextLaunchEpoch"/>), or 0 for a
+    /// launch without one, such as a launch captured into a CUDA graph.
+    /// </summary>
+    public uint Epoch;
 
     /// <summary>
     /// Local compile-time site ID (1-based), or builtin prelude message ID when high bit is set (<c>0x80000000u</c>).
