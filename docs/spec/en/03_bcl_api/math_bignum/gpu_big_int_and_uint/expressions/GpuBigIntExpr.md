@@ -79,7 +79,7 @@ If the capture fails, the capture is ended and every buffer it took is returned 
 Thrown if warm-up evaluation fails prior to beginning CUDA Graph capture, or if the expression is already owned by a graph that is alive.
 
 `NotSupportedException`<br>
-Thrown if the expression contains a node whose result depends on a value read from the device, which a capture cannot record: an addition or subtraction of values whose effective signs differ (the sign of the result), `Max` and `Min` (the comparison), `/` and `%` (the bit lengths of the operands), and `~` of a negative value. The capture is refused before the read, so the workspace stays usable.
+Thrown if the expression divides or takes a remainder (`/`, `%`): their sizes are read from the device, which a capture cannot record. The capture is refused before the read, so the workspace stays usable. Every other node is captured: a sign that depends on the values (a difference, the operand `Max` or `Min` chooses, `~` of a negative value) is written on the device, and the graph reads it after each launch (`Result` has the sign of the last launch).
 
 ## Evaluate(GpuBigUInt)
 
@@ -256,7 +256,7 @@ A new `GpuBigIntExpr` representing the Min AST node.
 | `operator +(GpuBigIntExpr, GpuBigIntExpr)` | Constructs a lazy addition expression with deferred sign resolution. |
 | `operator -(GpuBigIntExpr, GpuBigIntExpr)` | Constructs a lazy subtraction expression with deferred sign resolution. |
 | `operator -(GpuBigIntExpr)` | Constructs a lazy negation expression. |
-| `operator ~(GpuBigIntExpr)` | Constructs a lazy bitwise NOT expression: `~x == -x - 1`, as `BigInteger`, one bit wider than the operand. A negative operand reads one flag from the device, so its `~` cannot be captured into a CUDA graph. |
+| `operator ~(GpuBigIntExpr)` | Constructs a lazy bitwise NOT expression: `~x == -x - 1`, as `BigInteger`, one bit wider than the operand. For a negative operand the sign is decided on the device (a negative zero gives -1), so it can be captured into a CUDA graph. |
 
 ## Remarks
 

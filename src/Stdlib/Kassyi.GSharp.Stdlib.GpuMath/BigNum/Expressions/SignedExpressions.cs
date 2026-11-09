@@ -95,16 +95,14 @@ internal abstract class SignedBinaryExpression(
 
     public abstract SignedOperation Operation { get; }
 
+    // The sign is planned first (SignPlanner): a host sign computes as before; a sign that depends on the values, or on
+    // an operand's device sign, is written by a kernel into a device word, so nothing is read on the host here.
     public SignedValue Apply(GpuWorkspace workspace, SignedValue first, SignedValue second, GpuBigUInt? targetResult)
     {
-        var (a, b) = SignedTree.HostOperands(first, second);
-        return SignedValue.FromHost(ApplyHost(workspace, a, b, targetResult));
-    }
-
-    private GpuBigInt ApplyHost(GpuWorkspace workspace, GpuBigInt first, GpuBigInt second, GpuBigUInt? targetResult)
-    {
+        var plan = SignPlanner.For(Operation, first.Sign, second.Sign);
         GpuBigUInt staging = default;
         GpuBigUInt? rented = null;
+        SignSource sign = default;
 
         try
         {
@@ -114,21 +112,53 @@ internal abstract class SignedBinaryExpression(
 
             // The kernels take __restrict__ pointers: a target that overlaps an operand gets the result through a
             // temporary
-            staging = SignedRoot.StagingFor(workspace, targetResult, NumWords, first, second);
-            var value = Execute(first, second, staging.Handle.IsDefault ? result : staging);
-            value = SignedRoot.Deliver(value, staging, result, targetResult);
+            staging = SignedRoot.StagingFor(workspace, targetResult, NumWords, first.Magnitude, second.Magnitude);
+            var buffer = staging.Handle.IsDefault ? result : staging;
+            if (plan.IsHost)
+            {
+                Execute(SignedTree.WithHostSign(first), SignedTree.WithHostSign(second), buffer);
+                sign = SignSource.Host(plan.HostNegative);
+            }
+            else
+            {
+                sign = ExecuteDevice(workspace, first, second, buffer, plan);
+            }
+
+            var value = new SignedValue(SignedRoot.Deliver(staging, result, targetResult), sign);
+            sign = default; // Handed to the value
             rented = null; // Evaluated successfully, do not return the result buffer
             return value;
         }
         finally
         {
-            Release(first, second, staging, rented);
+            try
+            {
+                sign.Dispose();
+            }
+            finally
+            {
+                Release(first, second, staging, rented);
+            }
         }
+    }
+
+    // The magnitude with operands taken as non-negative (it does not depend on the signs, and no sign is read), and the
+    // sign from the planned kernel. Add / Subtract, Max / Min and ~ override it with a kernel that does both.
+    protected virtual SignSource ExecuteDevice(GpuWorkspace workspace, SignedValue a, SignedValue b,
+        GpuBigUInt resultBuffer, SignPlan plan)
+    {
+        Execute(new GpuBigInt(a.Magnitude, false), new GpuBigInt(b.Magnitude, false), resultBuffer);
+        return plan.Kernel switch
+        {
+            SignKernel.Xor => SignedDeviceOps.Xor(workspace, a.Sign, b.Sign),
+            SignKernel.RemainderSign => SignedDeviceOps.RemainderSign(resultBuffer, a.Sign),
+            _ => throw new InvalidOperationException($"{GetType().Name} has no device sign kernel {plan.Kernel}.")
+        };
     }
 
     // A child result is owned (a rented intermediate) or borrowed (a leaf); Dispose returns only the former. Nested, so
     // that a release that throws (a failed capture refuses the clear) does not skip the others.
-    private static void Release(GpuBigInt leftResult, GpuBigInt rightResult, GpuBigUInt staging,
+    private static void Release(SignedValue leftResult, SignedValue rightResult, GpuBigUInt staging,
         GpuBigUInt? unusedResultBuffer)
     {
         try
@@ -169,6 +199,27 @@ internal static class SignedTree
     // anything is evaluated.
     public static GpuBigInt Evaluate(ISignedOperator root, GpuWorkspace workspace, GpuBigUInt? targetResult)
     {
+        // The root's sign, when a kernel wrote it, is read once here (the only read of the evaluation)
+        var value = EvaluateSigned(root, workspace, targetResult);
+        try
+        {
+            return new GpuBigInt(value.Magnitude, SignedDeviceOps.ReadNegative(workspace, value.Sign));
+        }
+        catch
+        {
+            value.Magnitude.Dispose();
+            throw;
+        }
+        finally
+        {
+            value.Sign.Dispose();
+        }
+    }
+
+    // The value of the root with its sign as planned: a device sign stays on the device (a CUDA graph capture records
+    // the kernels that write it, and the graph reads it after each launch)
+    public static SignedValue EvaluateSigned(ISignedOperator root, GpuWorkspace workspace, GpuBigUInt? targetResult)
+    {
         var frames = new PooledStack<Frame>();
         var values = new PooledStack<SignedValue>();
         try
@@ -200,8 +251,7 @@ internal static class SignedTree
                 values.Push(node.Apply(workspace, first, second, frame.Target));
             }
 
-            // The value of the root; a device sign is read once, here
-            return values.Pop().ToHost();
+            return values.Pop();
         }
         catch (Exception failure)
         {
@@ -272,26 +322,9 @@ internal static class SignedTree
         }
     }
 
-    // The operands with their host signs, for a node that computes with host signs. Releases both when one carries a
-    // device sign, which such a node cannot use.
-    public static (GpuBigInt First, GpuBigInt Second) HostOperands(SignedValue first, SignedValue second)
-    {
-        if (first.Sign.IsDevice || second.Sign.IsDevice)
-        {
-            try
-            {
-                first.Dispose();
-            }
-            finally
-            {
-                second.Dispose();
-            }
-
-            throw new InvalidOperationException("An operand's sign is on the device; this node needs a host sign.");
-        }
-
-        return (first.ToHost(), second.ToHost());
-    }
+    // An operand of a host sign plan with its host sign (a device sign, which such a plan does not depend on, as +)
+    public static GpuBigInt WithHostSign(SignedValue value) =>
+        new(value.Magnitude, !value.Sign.IsDevice && value.Sign.HostNegative);
 
     // Every node of the tree below root, root included
     public static void Collect(IGpuBigIntExpression root, HashSet<IGpuBigIntExpression> nodes)
@@ -432,12 +465,12 @@ internal static class SignedRoot
 
     // An owned temporary of numWords words when the target overlaps an operand; otherwise the default value, which owns
     // nothing
-    public static GpuBigUInt StagingFor(GpuWorkspace workspace, GpuBigUInt? target, int numWords, GpuBigInt operand0,
-        GpuBigInt operand1)
+    public static GpuBigUInt StagingFor(GpuWorkspace workspace, GpuBigUInt? target, int numWords, GpuBigUInt operand0,
+        GpuBigUInt operand1)
     {
         if (target is not { } t ||
-            (!DeviceRanges.Overlaps(t.Handle, operand0.Value.Handle) &&
-             !DeviceRanges.Overlaps(t.Handle, operand1.Value.Handle)))
+            (!DeviceRanges.Overlaps(t.Handle, operand0.Handle) &&
+             !DeviceRanges.Overlaps(t.Handle, operand1.Handle)))
         {
             return default;
         }
@@ -447,7 +480,7 @@ internal static class SignedRoot
 
     // The value in the buffer the caller sees: copied from the temporary when one was used; a caller's target gets its
     // words above the result cleared and is returned whole
-    public static GpuBigInt Deliver(GpuBigInt value, GpuBigUInt staging, GpuBigUInt result, GpuBigUInt? target)
+    public static GpuBigUInt Deliver(GpuBigUInt staging, GpuBigUInt result, GpuBigUInt? target)
     {
         if (!staging.Handle.IsDefault)
         {
@@ -456,25 +489,31 @@ internal static class SignedRoot
 
         if (target is not { } t)
         {
-            return new GpuBigInt(result, value.IsNegative);
+            return result;
         }
 
         ClearAbove(t, result.NumWords);
-        return new GpuBigInt(t, value.IsNegative);
+        return t;
     }
 }
 
-// a + b and a - b. Same effective signs add the magnitudes into max + 1 bits, which never overflows; different signs
-// subtract them in one kernel that also negates on a borrow, and read the borrow and zero flags once (the sign of the
-// result depends on the values). A zero result is +0.
+// a + b and a - b. Same effective host signs add the magnitudes into max + 1 bits, which never overflows; different
+// signs (or a device sign) go to one kernel that subtracts, negates on a borrow and writes the sign into a device word.
+// A zero difference is +0.
 internal abstract class SignedAddSubExpression(IGpuBigIntExpression left, IGpuBigIntExpression right, bool subtract)
     : SignedBinaryExpression(left, right, BigIntWidths.Add)
 {
+    // Same effective host signs (the host plan): the magnitudes add, nothing is read
     protected override GpuBigInt Execute(GpuBigInt a, GpuBigInt b, GpuBigUInt resultBuffer)
     {
-        var negative = BigIntWideOps.AddSigned(a.Value, a.IsNegative, b.Value, b.IsNegative ^ subtract, resultBuffer);
-        return new GpuBigInt(resultBuffer, negative);
+        BigIntWideOps.AddSubtract(a.Value, b.Value, resultBuffer, subtract: false);
+        return new GpuBigInt(resultBuffer, a.IsNegative);
     }
+
+    // Different signs, or a device sign: one kernel adds or subtracts by the effective signs and writes the sign
+    protected override SignSource ExecuteDevice(GpuWorkspace workspace, SignedValue a, SignedValue b,
+        GpuBigUInt resultBuffer, SignPlan plan) =>
+        SignedDeviceOps.AddSubtract(a, b, subtract, resultBuffer);
 }
 
 internal sealed class SignedAddExpression(IGpuBigIntExpression left, IGpuBigIntExpression right)
@@ -568,11 +607,23 @@ internal class SignedNegateExpression(IGpuBigIntExpression target) : ISignedOper
 
     public SignedOperation Operation => SignedOperation.Negate;
 
-    // The magnitude of the operand with the sign flipped; nothing is launched
+    // The magnitude of the operand with the sign flipped: a host sign on the host, a device sign by a one-thread XOR
     public SignedValue Apply(GpuWorkspace workspace, SignedValue first, SignedValue second, GpuBigUInt? targetResult)
     {
-        var (a, _) = SignedTree.HostOperands(first, second);
-        return new SignedValue(a.Value, SignSource.Host(!a.IsNegative));
+        if (!first.Sign.IsDevice)
+        {
+            return new SignedValue(first.Magnitude, SignSource.Host(!first.Sign.HostNegative));
+        }
+
+        try
+        {
+            return new SignedValue(first.Magnitude,
+                SignedDeviceOps.Xor(workspace, first.Sign, SignSource.Host(true)));
+        }
+        finally
+        {
+            first.Sign.Dispose();
+        }
     }
 }
 
@@ -599,16 +650,14 @@ internal abstract class SignedUnaryExpression(IGpuBigIntExpression target, long 
 
     public abstract SignedOperation Operation { get; }
 
+    // As SignedBinaryExpression.Apply: the sign is planned, a host sign computes as before, a device sign is written by
+    // a kernel
     public SignedValue Apply(GpuWorkspace workspace, SignedValue first, SignedValue second, GpuBigUInt? targetResult)
     {
-        var (a, b) = SignedTree.HostOperands(first, second);
-        return SignedValue.FromHost(ApplyHost(workspace, a, b, targetResult));
-    }
-
-    private GpuBigInt ApplyHost(GpuWorkspace workspace, GpuBigInt first, GpuBigInt second, GpuBigUInt? targetResult)
-    {
+        var plan = SignPlanner.For(Operation, first.Sign);
         GpuBigUInt staging = default;
         GpuBigUInt? rented = null;
+        SignSource sign = default;
 
         try
         {
@@ -617,9 +666,20 @@ internal abstract class SignedUnaryExpression(IGpuBigIntExpression target, long 
                 : (rented = workspace.RentTemp(NumWords)).Value;
 
             // As in SignedBinaryExpression: a target that overlaps the operand gets the result through a temporary
-            staging = SignedRoot.StagingFor(workspace, targetResult, NumWords, first, default);
-            var value = Execute(first, staging.Handle.IsDefault ? result : staging);
-            value = SignedRoot.Deliver(value, staging, result, targetResult);
+            staging = SignedRoot.StagingFor(workspace, targetResult, NumWords, first.Magnitude, default);
+            var buffer = staging.Handle.IsDefault ? result : staging;
+            if (plan.IsHost)
+            {
+                Execute(SignedTree.WithHostSign(first), buffer);
+                sign = SignSource.Host(plan.HostNegative);
+            }
+            else
+            {
+                sign = ExecuteDevice(workspace, first, buffer, plan);
+            }
+
+            var value = new SignedValue(SignedRoot.Deliver(staging, result, targetResult), sign);
+            sign = default;
             rented = null;
             return value;
         }
@@ -629,20 +689,38 @@ internal abstract class SignedUnaryExpression(IGpuBigIntExpression target, long 
             // release that throws does not skip the others.
             try
             {
-                first.Dispose();
+                sign.Dispose();
             }
             finally
             {
                 try
                 {
-                    staging.Dispose();
+                    first.Dispose();
                 }
                 finally
                 {
-                    rented?.Dispose();
+                    try
+                    {
+                        staging.Dispose();
+                    }
+                    finally
+                    {
+                        rented?.Dispose();
+                    }
                 }
             }
         }
+    }
+
+    // A device sign plan: the magnitude with the operand taken as non-negative and the sign forwarded (Fit); ~
+    // overrides it with its kernel
+    protected virtual SignSource ExecuteDevice(GpuWorkspace workspace, SignedValue operand, GpuBigUInt resultBuffer,
+        SignPlan plan)
+    {
+        Execute(new GpuBigInt(operand.Magnitude, false), resultBuffer);
+        return plan.Kernel == SignKernel.Forward
+            ? SignedDeviceOps.Xor(workspace, operand.Sign, SignSource.Host(false))
+            : throw new InvalidOperationException($"{GetType().Name} has no device sign kernel {plan.Kernel}.");
     }
 
     // The operation on the evaluated operand into resultBuffer, which has exactly NumWords words
@@ -654,30 +732,23 @@ internal abstract class SignedUnaryExpression(IGpuBigIntExpression target, long 
 }
 
 // ~x == -x - 1, as BigInteger and C# int: -(|x| + 1) for a non-negative x, |x| - 1 for a negative one. The result is
-// one bit wider than x (GMP mpz_com). A negative x reads the borrow of |x| - 1 from the device, once: a magnitude of
-// zero with the negative flag (-0) is 0, and ~0 is -1.
+// one bit wider than x (GMP mpz_com). For a negative x the kernel tells -0 (whose ~ is -1) apart on the device.
 internal class SignedBitwiseNotExpression(IGpuBigIntExpression target)
     : SignedUnaryExpression(target, BigIntWidths.SignedNot(OperandBits(target)))
 {
     public override SignedOperation Operation => SignedOperation.Not;
 
+    // A non-negative host x (the host plan): -(|x| + 1); the result is wider than the bound of x, so the carry is kept
     protected override GpuBigInt Execute(GpuBigInt targetEval, GpuBigUInt resultBuffer)
     {
-        if (!targetEval.IsNegative)
-        {
-            // The result is wider than the bound of x, so the carry of |x| + 1 is kept
-            GpuBigIntMath.Add(targetEval.Value, 1u, resultBuffer);
-            return new GpuBigInt(resultBuffer, isNegative: true);
-        }
-
-        var workspace = resultBuffer.Workspace;
-        using var one = workspace.RentTemp(1);
-        workspace.Provider.WriteWord(one.DevicePointer, 0, 1u, workspace.Stream);
-        var (negated, _) = BigIntWideOps.SubtractMagnitudes(targetEval.Value, one, resultBuffer);
-
-        // |x| - 1 borrowed only for -0: the result is then |0 - 1| = 1 with a minus sign
-        return new GpuBigInt(resultBuffer, isNegative: negated);
+        GpuBigIntMath.Add(targetEval.Value, 1u, resultBuffer);
+        return new GpuBigInt(resultBuffer, isNegative: true);
     }
+
+    // A negative or device-signed x: one kernel computes |x| - 1 (or -1 for -0) or |x| + 1 and writes the sign
+    protected override SignSource ExecuteDevice(GpuWorkspace workspace, SignedValue operand, GpuBigUInt resultBuffer,
+        SignPlan plan) =>
+        SignedDeviceOps.Not(operand, resultBuffer);
 }
 
 // x.Fit(words): the value in words words, checked: a magnitude that does not fit is a domain error (C# checked
@@ -704,7 +775,11 @@ internal class SignedMaxExpression(IGpuBigIntExpression left, IGpuBigIntExpressi
     public override SignedOperation Operation => SignedOperation.Max;
 
     protected override GpuBigInt Execute(GpuBigInt a, GpuBigInt b, GpuBigUInt resultBuffer) =>
-        SignedSelect.Copy(SignedSelect.Compare(a, b) >= 0 ? a : b, resultBuffer);
+        throw SignedSelect.NotOnTheHost();
+
+    protected override SignSource ExecuteDevice(GpuWorkspace workspace, SignedValue a, SignedValue b,
+        GpuBigUInt resultBuffer, SignPlan plan) =>
+        SignedDeviceOps.Select(a, b, max: true, resultBuffer);
 }
 
 internal class SignedMinExpression(IGpuBigIntExpression left, IGpuBigIntExpression right)
@@ -713,27 +788,18 @@ internal class SignedMinExpression(IGpuBigIntExpression left, IGpuBigIntExpressi
     public override SignedOperation Operation => SignedOperation.Min;
 
     protected override GpuBigInt Execute(GpuBigInt a, GpuBigInt b, GpuBigUInt resultBuffer) =>
-        SignedSelect.Copy(SignedSelect.Compare(a, b) <= 0 ? a : b, resultBuffer);
+        throw SignedSelect.NotOnTheHost();
+
+    protected override SignSource ExecuteDevice(GpuWorkspace workspace, SignedValue a, SignedValue b,
+        GpuBigUInt resultBuffer, SignPlan plan) =>
+        SignedDeviceOps.Select(a, b, max: false, resultBuffer);
 }
 
+// Max and Min compare the operands on the device (SignedDeviceOps.Select); the plan never puts them on the host
 internal static class SignedSelect
 {
-    // The comparison that chooses the operand of Max and Min is read from the device
-    public static int Compare(GpuBigInt a, GpuBigInt b)
-    {
-        SignedCapture.ThrowIfCapturing(a.Workspace, "The operand that Max and Min choose");
-        return a.CompareTo(b);
-    }
-
-    // The chosen operand in resultBuffer, which is at least as wide as either operand's words; the words above it are
-    // cleared
-    public static GpuBigInt Copy(GpuBigInt chosen, GpuBigUInt resultBuffer)
-    {
-        var words = chosen.Value.NumWords;
-        resultBuffer.CopyFrom(chosen.Value, numWords: words);
-        SignedRoot.ClearAbove(resultBuffer, words);
-        return new GpuBigInt(resultBuffer, chosen.IsNegative);
-    }
+    public static InvalidOperationException NotOnTheHost() =>
+        new("Max and Min choose their operand on the device; their sign plan is never a host plan.");
 }
 
 // The nodes whose result depends on a value read from the device refuse a CUDA graph capture before the read: a capture
