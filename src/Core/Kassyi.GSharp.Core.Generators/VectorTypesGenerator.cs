@@ -72,14 +72,20 @@ public class VectorTypesGenerator : IIncrementalGenerator
 
         EmitXmlDocumentation(sw, in type, dim, totalSize, align);
         EmitStructHeader(sw, in type, dim);
-        EmitStructMembers(sw, in type, dim);
+        using (sw.Scope())
+        {
+            EmitStructMembers(sw, in type, dim);
+        }
 
-        sw.AppendLine("}");
         sw.AppendLine();
     }
 
-    private static int CalculateAlignment(int elementSize, int dim) =>
-        dim == 3 ? elementSize : (dim == 2 ? elementSize * 2 : (elementSize * 4 > 16 ? 16 : elementSize * 4));
+    private static int CalculateAlignment(int elementSize, int dim) => dim switch
+    {
+        2 => elementSize * 2,
+        3 => elementSize,
+        _ => Math.Min(elementSize * 4, 16),
+    };
 
     private static void EmitXmlDocumentation(
         SourceWriter sw,
@@ -98,22 +104,15 @@ public class VectorTypesGenerator : IIncrementalGenerator
         string cudaType = type.CudaType + dim;
         sw.AppendLine("/// <summary>");
         sw.AppendLine(
-            $"/// Represents a {dim}-component vector of {type.Desc} values " +
+            $"/// Represents a {dim}-component vector of {type.Description} values " +
             $"corresponding to the CUDA native <c>{cudaType}</c> type.");
         sw.AppendLine("/// </summary>");
     }
 
     private static void EmitXmlDocParams(SourceWriter sw, int dim)
     {
-        if (dim >= 2)
-        {
-            sw.AppendLine("/// <param name=\"x\">The X component of the vector.</param>");
-        }
-
-        if (dim >= 2)
-        {
-            sw.AppendLine("/// <param name=\"y\">The Y component of the vector.</param>");
-        }
+        sw.AppendLine("/// <param name=\"x\">The X component of the vector.</param>");
+        sw.AppendLine("/// <param name=\"y\">The Y component of the vector.</param>");
 
         if (dim >= 3)
         {
@@ -156,7 +155,6 @@ public class VectorTypesGenerator : IIncrementalGenerator
         }
 
         sw.AppendLine(")");
-        sw.AppendLine("{");
     }
 
     private static void EmitStructMembers(SourceWriter sw, in VectorTypeDefinition type, int dim)
@@ -187,5 +185,5 @@ public class VectorTypesGenerator : IIncrementalGenerator
         string Type,
         int Size,
         string CudaType,
-        string Desc);
+        string Description);
 }
