@@ -108,29 +108,55 @@ public class StackLinqAllocationAndGuardTests
     }
 
     [Fact]
-    public void ArgumentNullExceptions_ShouldThrowOnNullInputs()
+    public void AsStackEnumerable_NullSource_ThrowsArgumentNullException()
     {
-        // [WHY] Intentionally pass null to verify ArgumentNullException guard on source collections and delegates.
+        // [WHY] Intentionally pass null to verify ArgumentNullException guard on source collections.
         int[] nullArray = null!;
-        // [WHY] Intentionally pass null to verify ArgumentNullException guard on List<T> overload.
         List<int> nullList = null!;
-        int[] data = { 1, 2, 3 };
 
         Assert.Throws<ArgumentNullException>(() => nullArray.AsStackEnumerable());
         Assert.Throws<ArgumentNullException>(() => nullList.AsStackEnumerable());
+    }
 
-        // [WHY] Intentionally pass null delegates to verify ArgumentNullException guards across all LINQ operators.
+    [Fact]
+    public void Where_NullPredicate_ThrowsArgumentNullException()
+    {
+        int[] data = { 1, 2, 3 };
         AssertThrowsArgNull(() => data.AsStackEnumerable().Where((Func<int, bool>)null!));
         AssertThrowsArgNull(() => data.AsStackEnumerable().Where((Func<int, int, bool>)null!));
+    }
+
+    [Fact]
+    public void Select_NullSelector_ThrowsArgumentNullException()
+    {
+        int[] data = { 1, 2, 3 };
         AssertThrowsArgNull(() => data.AsStackEnumerable().Select((Func<int, int>)null!));
         AssertThrowsArgNull(() => data.AsStackEnumerable().Select((Func<int, int, int>)null!));
+    }
+
+    [Fact]
+    public void TakeWhile_SkipWhile_NullPredicate_ThrowsArgumentNullException()
+    {
+        int[] data = { 1, 2, 3 };
         AssertThrowsArgNull(() => data.AsStackEnumerable().TakeWhile((Func<int, bool>)null!));
         AssertThrowsArgNull(() => data.AsStackEnumerable().TakeWhile((Func<int, int, bool>)null!));
         AssertThrowsArgNull(() => data.AsStackEnumerable().SkipWhile((Func<int, bool>)null!));
         AssertThrowsArgNull(() => data.AsStackEnumerable().SkipWhile((Func<int, int, bool>)null!));
+    }
+
+    [Fact]
+    public void Aggregate_Count_NullDelegate_ThrowsArgumentNullException()
+    {
+        int[] data = { 1, 2, 3 };
         AssertThrowsArgNull(() => data.AsStackEnumerable().Aggregate(0, null!));
         AssertThrowsArgNull(() => data.AsStackEnumerable().Count((Func<int, bool>)null!));
         AssertThrowsArgNull(() => data.AsStackEnumerable().Count((Func<int, int, bool>)null!));
+    }
+
+    [Fact]
+    public void PredicatesAndElements_NullDelegate_ThrowsArgumentNullException()
+    {
+        int[] data = { 1, 2, 3 };
         AssertThrowsArgNull(() => data.AsStackEnumerable().Any(null!));
         AssertThrowsArgNull(() => data.AsStackEnumerable().All(null!));
         AssertThrowsArgNull(() => data.AsStackEnumerable().First(null!));

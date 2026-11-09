@@ -150,48 +150,58 @@ public class StackLinqSumTests
         Assert.Equal(expectedDouble, actualDouble, precision: 5);
     }
 
-    [Fact]
-    public void Simd_Sum_ShouldMatchStandardLinq()
+    [Theory]
+    [InlineData(64)]
+    [InlineData(67)]
+    [InlineData(7)]
+    [InlineData(0)]
+    public void Simd_Sum_Int_ShouldMatchStandardLinq(int length)
     {
-        // 64 elements to trigger Vector<T> hardware acceleration paths
+        int[] data = Enumerable.Range(1, length).ToArray();
+        Span<int> span = data;
+        int expected = data.Sum();
+        Assert.Equal(expected, data.AsStackEnumerable().Sum());
+        Assert.Equal(expected, span.AsStackEnumerable().Sum());
+    }
+
+    [Theory]
+    [InlineData(64)]
+    [InlineData(67)]
+    [InlineData(7)]
+    [InlineData(0)]
+    public void Simd_Sum_Float_ShouldMatchStandardLinq(int length)
+    {
+        float[] data = Enumerable.Range(1, length).Select(i => (float)i).ToArray();
+        Span<float> span = data;
+        float expected = data.Sum();
+        Assert.Equal(expected, data.AsStackEnumerable().Sum());
+        Assert.Equal(expected, span.AsStackEnumerable().Sum());
+    }
+
+    [Theory]
+    [InlineData(64)]
+    [InlineData(67)]
+    [InlineData(7)]
+    [InlineData(0)]
+    public void Simd_Sum_Double_ShouldMatchStandardLinq(int length)
+    {
+        double[] data = Enumerable.Range(1, length).Select(i => (double)i).ToArray();
+        Span<double> span = data;
+        double expected = data.Sum();
+        Assert.Equal(expected, data.AsStackEnumerable().Sum(), precision: 5);
+        Assert.Equal(expected, span.AsStackEnumerable().Sum(), precision: 5);
+    }
+
+    [Fact]
+    public void Simd_Sum_ChainedWhere_ShouldMatchStandardLinq()
+    {
         int[] intData = Enumerable.Range(1, 64).ToArray();
-        Span<int> intSpan = intData;
-        int expectedInt = intData.Sum();
-        Assert.Equal(expectedInt, intData.AsStackEnumerable().Sum());
-        Assert.Equal(expectedInt, intSpan.AsStackEnumerable().Sum());
-        Assert.Equal(expectedInt, intData.AsStackEnumerable().Where(_ => true).Sum());
+        Assert.Equal(intData.Sum(), intData.AsStackEnumerable().Where(_ => true).Sum());
 
         float[] floatData = Enumerable.Range(1, 64).Select(i => (float)i).ToArray();
-        Span<float> floatSpan = floatData;
-        float expectedFloat = floatData.Sum();
-        Assert.Equal(expectedFloat, floatData.AsStackEnumerable().Sum());
-        Assert.Equal(expectedFloat, floatSpan.AsStackEnumerable().Sum());
-        Assert.Equal(expectedFloat, floatData.AsStackEnumerable().Where(_ => true).Sum());
+        Assert.Equal(floatData.Sum(), floatData.AsStackEnumerable().Where(_ => true).Sum());
 
         double[] doubleData = Enumerable.Range(1, 64).Select(i => (double)i).ToArray();
-        Span<double> doubleSpan = doubleData;
-        double expectedDouble = doubleData.Sum();
-        Assert.Equal(expectedDouble, doubleData.AsStackEnumerable().Sum());
-        Assert.Equal(expectedDouble, doubleSpan.AsStackEnumerable().Sum());
-        Assert.Equal(expectedDouble, doubleData.AsStackEnumerable().Where(_ => true).Sum());
-
-        // Non-multiple lengths (67, 7, 0) to verify SIMD vector loop + scalar remainder tail loop
-        foreach (int length in new[] { 67, 7, 0 })
-        {
-            int[] intTail = Enumerable.Range(1, length).ToArray();
-            Span<int> intTailSpan = intTail;
-            Assert.Equal(intTail.Sum(), intTail.AsStackEnumerable().Sum());
-            Assert.Equal(intTail.Sum(), intTailSpan.AsStackEnumerable().Sum());
-
-            float[] floatTail = Enumerable.Range(1, length).Select(i => (float)i).ToArray();
-            Span<float> floatTailSpan = floatTail;
-            Assert.Equal(floatTail.Sum(), floatTail.AsStackEnumerable().Sum());
-            Assert.Equal(floatTail.Sum(), floatTailSpan.AsStackEnumerable().Sum());
-
-            double[] doubleTail = Enumerable.Range(1, length).Select(i => (double)i).ToArray();
-            Span<double> doubleTailSpan = doubleTail;
-            Assert.Equal(doubleTail.Sum(), doubleTail.AsStackEnumerable().Sum(), precision: 5);
-            Assert.Equal(doubleTail.Sum(), doubleTailSpan.AsStackEnumerable().Sum(), precision: 5);
-        }
+        Assert.Equal(doubleData.Sum(), doubleData.AsStackEnumerable().Where(_ => true).Sum());
     }
 }
