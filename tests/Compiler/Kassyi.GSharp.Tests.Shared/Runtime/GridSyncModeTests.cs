@@ -5,9 +5,9 @@ namespace Kassyi.GSharp.Tests.Shared.Runtime;
 
 /// <summary>
 /// <c>Gpu.SyncGrid(GridSyncMode)</c>: the CUDA build calls the Deterministic barrier for the default and for
-/// <see cref="GridSyncMode.Deterministic"/>, and the Fast barrier for every constant spelling of
-/// <see cref="GridSyncMode.Fast"/>; both barriers order the writes of every block, on every path; and with Fast, a
-/// thread that fails before the barrier still makes the launch throw without leaving a block waiting.
+/// <see cref="Kassyi.GSharp.Core.GridSyncMode.Deterministic"/>, and the Fast barrier for every constant spelling of
+/// <see cref="Kassyi.GSharp.Core.GridSyncMode.Fast"/>; both barriers order the writes of every block, on every path;
+/// and with Fast, a thread that fails before the barrier still makes the launch throw without leaving a block waiting.
 /// </summary>
 [TestTarget(ExecutionTarget.GpuExecution)]
 [Category(TestCategory.Runtime)]
@@ -57,10 +57,7 @@ public sealed class GridSyncModeTests
             nameof(GridSyncModeKernels.EveryModeSpellingKernel), isDevice: false, dialect: new GSharpCudaDialect());
 
         Assert.Empty(failures);
-        var barriers = source.Split('\n')
-            .Select(static line => line.Trim())
-            .Where(static line => line.StartsWith("__gsharp_grid_sync", StringComparison.Ordinal))
-            .ToArray();
+        var barriers = GridBarriers(source);
         Assert.Equal([DeterministicBarrier, DeterministicBarrier, FastBarrier, FastBarrier, FastBarrier], barriers);
     }
 
@@ -75,10 +72,7 @@ public sealed class GridSyncModeTests
             nameof(GridSyncModeKernels.FastInsideBodyKernel), isDevice: false, dialect: new GSharpCudaDialect());
 
         Assert.Empty(failures);
-        var barriers = source.Split('\n')
-            .Select(static line => line.Trim())
-            .Where(static line => line.StartsWith("__gsharp_grid_sync", StringComparison.Ordinal))
-            .ToArray();
+        var barriers = GridBarriers(source);
         Assert.Equal([DeterministicBarrier, FastBarrier, DeterministicBarrier], barriers);
     }
 
@@ -196,6 +190,22 @@ public sealed class GridSyncModeTests
         }
     }
 #endif
+
+    // The grid barrier calls of the generated source, in order, each line without its indentation
+    private static string[] GridBarriers(string source)
+    {
+        var barriers = new List<string>();
+        foreach (var line in source.AsSpan().EnumerateLines())
+        {
+            var trimmed = line.Trim();
+            if (trimmed.StartsWith("__gsharp_grid_sync", StringComparison.Ordinal))
+            {
+                barriers.Add(trimmed.ToString());
+            }
+        }
+
+        return [.. barriers];
+    }
 
     private static int Occurrences(string source, string text)
     {
