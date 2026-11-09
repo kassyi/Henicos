@@ -202,3 +202,51 @@ public static partial class ElementFieldWriteKernels
         Gpu.SyncThreads();
     }
 }
+
+public struct SetterPair
+{
+    public int X;
+
+    public int Q
+    {
+        get { return X; }
+        set { X = value; }
+    }
+
+    public int R
+    {
+        get { return X; }
+        readonly set { }
+    }
+}
+
+public static partial class ElementFieldWriteKernels
+{
+    // A property setter with a body, run on an element: it writes the element
+    [GpuKernel]
+    [SkipSnapshotConsistency("Diagnostics case")]
+    public static void SetterKernel(SetterPair[] a)
+    {
+        a[ThreadIndex.X].Q = 1;
+        if (a[0].X == 0)
+        {
+            Gpu.SyncThreads();
+        }
+
+        Gpu.SyncThreads();
+    }
+
+    // A readonly setter cannot write the element: no diagnostic
+    [GpuKernel]
+    [SkipSnapshotConsistency("Diagnostics case")]
+    public static void ReadonlySetterKernel(SetterPair[] a)
+    {
+        a[ThreadIndex.X].R = 1;
+        if (a[0].X == 0)
+        {
+            Gpu.SyncThreads();
+        }
+
+        Gpu.SyncThreads();
+    }
+}

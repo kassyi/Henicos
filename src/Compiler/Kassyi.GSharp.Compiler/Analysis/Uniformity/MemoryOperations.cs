@@ -50,7 +50,10 @@ internal static class MemoryOperations
         return target;
     }
 
-    // The struct value whose storage holds target: the instance of a field, or of an auto-property (its backing field)
+    // The struct value whose storage holds target: the instance of a field, or of an auto-property (its backing field).
+    // A property with a setter that is not readonly counts as well: writing it runs the setter on the instance, which
+    // may write any field of it, so the instance is taken as written (the safe side; a setter that writes nothing of
+    // this is taken as a write too)
     private static IOperation? GetStructInstance(IOperation target) => target switch
     {
         IFieldReferenceOperation { Field.IsStatic: false, Instance: { Type.IsValueType: true } instance } => instance,
@@ -58,7 +61,7 @@ internal static class MemoryOperations
         {
             Property: { IsStatic: false, IsIndexer: false } property,
             Instance: { Type.IsValueType: true } instance
-        } when IsAutoProperty(property) => instance,
+        } when IsAutoProperty(property) || property.SetMethod is { IsReadOnly: false } => instance,
         _ => null
     };
 

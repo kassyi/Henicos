@@ -5,9 +5,9 @@ namespace Kassyi.GSharp.Tests.Shared.Diagnostics;
 
 /// <summary>
 /// The uniformity analysis records a write of a field or auto-property of an array, span or shared-memory element,
-/// and a call of a mutating struct member on one, as a write of that element (#1272), and takes a gap of a
-/// <c>Gpu.SyncGrid(body)</c> for a point where the threads that skip a divergent block barrier wait while the others
-/// wait at the barrier (#982).
+/// and a call of a mutating struct member or a property setter on one, as a write of that element (#1272), and takes
+/// a gap of a <c>Gpu.SyncGrid(body)</c> for a point where the threads that skip a divergent block barrier wait while
+/// the others wait at the barrier (#982).
 /// </summary>
 [Category(TestCategory.Compiler)]
 public class UniformityMemoryAndGapDiagnosticsTests
@@ -27,6 +27,7 @@ public class UniformityMemoryAndGapDiagnosticsTests
     [InlineData("Cpu", "ElementKernel", 137)]
     [InlineData("Cpu", "AutoPropertyKernel", 171)]
     [InlineData("Cpu", "MutatingMethodKernel", 185)]
+    [InlineData("Cpu", "SetterKernel", 233)]
     [InlineData("Cuda", "ArrayFieldKernel", 26)]
     [InlineData("Cuda", "CompoundFieldKernel", 39)]
     [InlineData("Cuda", "IncrementFieldKernel", 52)]
@@ -36,6 +37,7 @@ public class UniformityMemoryAndGapDiagnosticsTests
     [InlineData("Cuda", "ElementKernel", 137)]
     [InlineData("Cuda", "AutoPropertyKernel", 171)]
     [InlineData("Cuda", "MutatingMethodKernel", 185)]
+    [InlineData("Cuda", "SetterKernel", 233)]
     [Scenario(TestScenario.SadPath)]
     public async Task Test_PartOfAnElementWritten_ReportsGsh0083AtTheBarrier(string dialect, string kernel, int line)
     {
@@ -48,14 +50,16 @@ public class UniformityMemoryAndGapDiagnosticsTests
     }
 
     // A barrier between the write and the read, a field of a local copy of the element, a readonly member called on
-    // the element: nothing written since the last barrier, no diagnostic
+    // the element, a readonly setter run on it: nothing written since the last barrier, no diagnostic
     [Theory]
     [InlineData("Cpu", "FieldWriteThenBarrierKernel")]
     [InlineData("Cpu", "LocalFieldKernel")]
     [InlineData("Cpu", "ReadonlyMethodKernel")]
+    [InlineData("Cpu", "ReadonlySetterKernel")]
     [InlineData("Cuda", "FieldWriteThenBarrierKernel")]
     [InlineData("Cuda", "LocalFieldKernel")]
     [InlineData("Cuda", "ReadonlyMethodKernel")]
+    [InlineData("Cuda", "ReadonlySetterKernel")]
     [Scenario(TestScenario.HappyPath)]
     public async Task Test_ElementNotWrittenSinceTheBarrier_ReportsNothing(string dialect, string kernel)
     {
