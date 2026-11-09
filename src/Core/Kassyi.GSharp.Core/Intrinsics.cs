@@ -158,16 +158,37 @@ public static partial class Gpu
     }
 
     /// <summary>
-    /// Executes the provided action, automatically inserting a grid synchronization (<see cref="SyncGrid()"/>)
-    /// between the top-level statements of the action body.
+    /// Synchronizes all threads across the entire cooperative grid: no thread goes on until every thread of the grid
+    /// has reached the barrier, and the writes before it are visible to every thread after it.
+    /// </summary>
+    /// <param name="mode">
+    /// What the barrier does after a thread of the launch failed (<see cref="GridSyncMode"/>); a compile-time constant.
+    /// Both modes throw the recorded exception and leave no thread waiting. <see cref="GridSyncMode.Deterministic"/>,
+    /// the default, lets no thread run the code after a barrier reached after the failure;
+    /// <see cref="GridSyncMode.Fast"/> saves a read on each barrier and may let the other blocks run one more interval
+    /// first. The native CPU build and the managed path treat both modes alike.
+    /// </param>
+    /// <remarks>
+    /// Only a <c>[GpuKernel(Cooperative = true)]</c> kernel may reach it (GSH0030), and every thread of the grid must
+    /// reach it.
+    /// </remarks>
+    /// <exception cref="GpuOnlyException">Thrown when evaluated on the host CPU outside of a kernel.</exception>
+    [CudaIntrinsic("__gsharp_grid_sync")]
+    public static void SyncGrid(GridSyncMode mode = GridSyncMode.Deterministic) => GpuOnlyException.Throw();
+
+    /// <summary>
+    /// Executes the provided action, automatically inserting a grid synchronization
+    /// (<see cref="SyncGrid(GridSyncMode)"/>, <see cref="GridSyncMode.Deterministic"/>) between the top-level
+    /// statements of the action body.
     /// </summary>
     /// <param name="body">The action containing statements separated by automatic grid synchronization.</param>
     /// <remarks>
     /// <para>
     /// A nested block (<c>for</c>, <c>if</c>, a loop macro, a local function) is one statement: nothing inside it is
     /// synchronized unless it contains its own <c>Gpu.SyncGrid</c> call. No synchronization is inserted after the last
-    /// statement, next to an explicit <see cref="SyncGrid()"/>, or around an empty statement or a local function
-    /// declaration. On the CPU dialects the body runs as the states of the kernel's state machine, one state per gap.
+    /// statement, next to an explicit <see cref="SyncGrid(GridSyncMode)"/>, or around an empty statement or a local
+    /// function declaration. On the CPU dialects the body runs as the states of the kernel's state machine, one state
+    /// per gap.
     /// </para>
     /// <para>
     /// A <c>return</c> in the body ends the body for the thread, as it ends the lambda in C#; the thread still takes part
