@@ -21,6 +21,7 @@ public class StackAllocFixedArrayTarget
         output[0] = total;
     }
 
+    [Kassyi.GSharp.Core.GpuDeviceFunction]
     public static int ConsumeSpanHelper(ReadOnlySpan<int> values)
     {
         return values[0] + values.Length;
@@ -77,10 +78,9 @@ public class StackAllocFixedArrayTests : TranspilerTestBase
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<StackAllocFixedArrayTarget>(
             nameof(StackAllocFixedArrayTarget.StackAllocAsMethodArgument), isDevice: false, dialect: CurrentDialect);
 
-        // The stackalloc span is passed as written; the helper has no [GpuDeviceFunction], so its call is GSH0107
-        var failure = Assert.Single(diagnostics);
-        Assert.Equal(GSharpDiagnostics.UnmarkedMethodCalledFromGpuCode.Id, failure.Descriptor.Id);
-        Assert.Contains("'StackAllocFixedArrayTarget.ConsumeSpanHelper'", failure.Format(), StringComparison.Ordinal);
+        Assert.Empty(diagnostics);
+        // The stackalloc span is passed to the device function as it is
+        Assert.Matches(@"ConsumeSpanHelper\(__gsharp_id_\d+_localSpan\)", cudaSource);
         Assert.False(string.IsNullOrEmpty(cudaSource));
 
         int[] hostOutput = [0];

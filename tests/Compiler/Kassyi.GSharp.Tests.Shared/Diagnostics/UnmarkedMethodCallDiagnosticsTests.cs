@@ -36,6 +36,26 @@ public class UnmarkedMethodCallDiagnosticsTests
             diagnostics.Ranges(GSharpDiagnostics.UnmarkedMethodCalledFromGpuCode.Id));
     }
 
+    // Calls that lowering copies into the kernel: the iterator body (line 26) and the foreach body (line 35); and
+    // method groups that the device code would name: a StackLinq stage (line 42) and a delegate (line 43)
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.SadPath)]
+    public async Task Test_LoweredCallOrMethodGroupOfUnmarkedMethod_ReportsGsh0107AtTheName(string dialect)
+    {
+        var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/UnmarkedMethodCallLowered.cs", dialect);
+
+        Assert.Equal(
+            [
+                (Analyzer, 26, 30, 26, 40),
+                (Analyzer, 35, 30, 35, 43),
+                (Analyzer, 42, 59, 42, 67),
+                (Analyzer, 43, 32, 43, 39)
+            ],
+            diagnostics.Ranges(GSharpDiagnostics.UnmarkedMethodCalledFromGpuCode.Id));
+    }
+
     [Theory]
     [InlineData("'Box.Make'", "add [GpuDeviceFunction]")]
     [InlineData("'Helpers.Twice'", "add [GpuDeviceFunction]")]

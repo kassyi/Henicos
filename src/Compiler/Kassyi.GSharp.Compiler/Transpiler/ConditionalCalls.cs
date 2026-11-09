@@ -13,8 +13,8 @@ internal static class ConditionalCalls
 {
     private const string ConditionalAttributeName = "System.Diagnostics.ConditionalAttribute";
 
-    /// <summary>Whether C# removes <paramref name="call"/> of <paramref name="method"/>.</summary>
-    public static bool IsRemoved(IMethodSymbol method, SyntaxNode call)
+    /// <summary>Whether C# removes a call of <paramref name="method"/> written in <paramref name="tree"/>.</summary>
+    public static bool IsRemoved(IMethodSymbol method, SyntaxTree tree)
     {
         var declared = method;
         while (declared.OverriddenMethod is { } overridden)
@@ -32,7 +32,7 @@ internal static class ConditionalCalls
             }
 
             hasCondition = true;
-            if (IsDefinedAt(symbol, call))
+            if (IsDefinedIn(symbol, tree))
             {
                 return false;
             }
@@ -41,10 +41,10 @@ internal static class ConditionalCalls
         return hasCondition;
     }
 
-    private static bool IsDefinedAt(string symbol, SyntaxNode call)
+    private static bool IsDefinedIn(string symbol, SyntaxTree tree)
     {
         var defined = false;
-        if (call.SyntaxTree.Options is CSharpParseOptions options)
+        if (tree.Options is CSharpParseOptions options)
         {
             // [WHY] A loop: the names are a lazy IEnumerable<string>, which the embedded StackLinq does not take
             foreach (var name in options.PreprocessorSymbolNames)
@@ -54,15 +54,15 @@ internal static class ConditionalCalls
         }
 
         // [WHY] C# allows #define and #undef only before the first token of the file, so the leading trivia of the
-        // root holds all of them, and all come before the call
-        foreach (var trivia in call.SyntaxTree.GetRoot().GetLeadingTrivia())
+        // root holds all of them, and all come before the call; one in an inactive #if branch does not count
+        foreach (var trivia in tree.GetRoot().GetLeadingTrivia())
         {
             switch (trivia.GetStructure())
             {
-                case DefineDirectiveTriviaSyntax define when define.Name.ValueText == symbol:
+                case DefineDirectiveTriviaSyntax { IsActive: true } define when define.Name.ValueText == symbol:
                     defined = true;
                     break;
-                case UndefDirectiveTriviaSyntax undefine when undefine.Name.ValueText == symbol:
+                case UndefDirectiveTriviaSyntax { IsActive: true } undefine when undefine.Name.ValueText == symbol:
                     defined = false;
                     break;
             }

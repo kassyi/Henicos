@@ -27,11 +27,13 @@ public interface IConstantProvider_OpTest
 public struct ConstantImpl_OpTest : IConstantProvider_OpTest
 {
     public int Value;
+    [Kassyi.GSharp.Core.GpuDeviceFunction]
     public static int GetMagic() => 77;
 }
 
 public class OperatorsAndInterfacesTarget
 {
+    [Kassyi.GSharp.Core.GpuDeviceFunction]
     public static int GetMagicHelper() => ConstantImpl_OpTest.GetMagic();
 
     public static void ConversionOperators(float[] output)
@@ -127,11 +129,7 @@ public class OperatorsAndInterfacesTests : TranspilerTestBase
     {
         var (_, diagnostics) = RoslynTestUtility.TranspileMethod<OperatorsAndInterfacesTarget>(
             nameof(OperatorsAndInterfacesTarget.StaticAbstractMembers), isDevice: false, dialect: CurrentDialect);
-
-        // The helper has no [GpuDeviceFunction], so its call is GSH0107
-        var failure = Assert.Single(diagnostics);
-        Assert.Equal(GSharpDiagnostics.UnmarkedMethodCalledFromGpuCode.Id, failure.Descriptor.Id);
-        Assert.Contains("'OperatorsAndInterfacesTarget.GetMagicHelper'", failure.Format(), StringComparison.Ordinal);
+        Assert.Empty(diagnostics);
 
         var items = new ConstantImpl_OpTest[1];
         OperatorsAndInterfacesTarget.StaticAbstractMembers(items);
