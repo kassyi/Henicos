@@ -2,7 +2,7 @@ using System.Text;
 
 namespace Kassyi.GSharp.Compiler.Tasks;
 
-internal static class NvccOutputParser
+public static class NvccOutputParser
 {
     private static bool HasSpill(string line)
     {

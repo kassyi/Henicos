@@ -68,14 +68,25 @@ internal sealed class YamlMapping(int line) : YamlNode(line)
 }
 
 /// <summary>
-/// Reflection-free parser for the YAML subset used by G# native API definitions.
+/// Reflection-free, zero-dependency parser for the YAML subset used by G# native API definitions,
+/// dialect configurations, and compiler-internal metadata.
 /// </summary>
 /// <remarks>
+/// <para>
+/// Why this parser exists instead of a NuGet dependency such as YamlDotNet:
+/// 1. Reflection ban: Roslyn source generators and analyzers fundamentally prohibit reflection for compile-time speed.
+/// 2. Zero analyzer dependencies: Loading third-party dependencies into the compiler and IDE host processes risks
+///    assembly version conflicts and overhead.
+/// 3. Precise line-numbered diagnostics: Syntax errors and schema violations report exact 1-based source lines
+///    via <see cref="NativeApiReadException"/> and <see cref="YamlNode.Line"/>.
+/// </para>
+/// <para>
 /// Supported: block mappings and sequences (including indentless sequences), single-line flow
 /// collections (<c>[a, b]</c>, <c>{ k: v }</c>), plain / single-quoted / double-quoted scalars,
 /// literal (<c>|</c>) and folded (<c>&gt;</c>) block scalars, comments and a leading <c>---</c> marker.
 /// Anchors, aliases, tags, multi-line flow collections and multiple documents are rejected with a
 /// <see cref="NativeApiReadException"/> carrying the offending line.
+/// </para>
 /// </remarks>
 internal sealed class YamlSubsetParser
 {
