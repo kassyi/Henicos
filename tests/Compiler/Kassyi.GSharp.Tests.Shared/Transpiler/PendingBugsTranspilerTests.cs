@@ -81,9 +81,10 @@ public class PendingBugsTranspilerTests : TranspilerTestBase
         Assert.All(called, static name => Assert.Contains(name, StackLinqTranspilerRule.DeviceOperators));
     }
 
-    // #1086: Expect an unfused StackLinq query with a capturing lambda stored in a local to compile on native C++ without C2338 static_assert failure or report a diagnostic.
+    // #1086: an unfused StackLinq query with a capturing lambda stored in a local is an auto local holding the
+    // StackLinq.cuh templates; no C# enumerator struct is defined for it
     [Fact]
-    [Scenario(TestScenario.SadPath)]
+    [Scenario(TestScenario.HappyPath)]
     public void Test_UnfusedStackLinqQueryWithCapturingLambdaInLocal_EmitsValidEnumeratorWithoutMismatchedSizeCheck()
     {
         var (_, tree, model) =
@@ -99,6 +100,12 @@ public class PendingBugsTranspilerTests : TranspilerTestBase
             methodDecl, model, failures.Add, isDevice: false, new StandardCppDialect(), out _);
 
         Assert.Empty(failures);
+        Assert.Matches(
+            @"auto __gsharp_id_\d+_query = Kassyi::ZeroAlloc::Linq::StackLinq::Take\(" +
+            @"Kassyi::ZeroAlloc::Linq::StackLinq::Select\(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable\(",
+            cppSource);
+        Assert.Matches(@"Kassyi::ZeroAlloc::Linq::StackLinq::Sum\(__gsharp_id_\d+_query\)", cppSource);
+        Assert.DoesNotContain("__gsharp_ty_Kassyi__ZeroAlloc__Linq", cppSource, StringComparison.Ordinal);
         Assert.DoesNotContain(": size\");", cppSource, StringComparison.Ordinal);
     }
 
