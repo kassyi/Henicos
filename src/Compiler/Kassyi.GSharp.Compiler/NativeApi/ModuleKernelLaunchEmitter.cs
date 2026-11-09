@@ -254,8 +254,8 @@ internal static class ModuleKernelLaunchEmitter
         writer.AppendLine();
     }
 
-    private static void EmitKernelLaunch(SourceWriter writer, ImmutableArray<ModuleKernelLaunchParameter> parameters,
-        bool packContext)
+    private static void EmitKernelLaunch(
+        SourceWriter writer, ImmutableArray<ModuleKernelLaunchParameter> parameters, bool packContext)
     {
         var kernelArgsCount = parameters
             .AsStackEnumerable()
@@ -266,63 +266,91 @@ internal static class ModuleKernelLaunchEmitter
         writer.AppendLine("unsafe");
         using (writer.Scope())
         {
-            if (packContext)
-            {
-                writer.AppendLine("var kernelParams = stackalloc void*[1];");
-                writer.AppendLine("kernelParams[0] = &ctx;");
-            }
-            else
-            {
-                foreach (var param in parameters)
-                {
-                    if (IsLaunchParameter(param.Name))
-                    {
-                        continue;
-                    }
-
-                    writer.AppendLine(param.IsArray
-                        ? $"var p_{param.Name} = d_{param.Name}.DevicePointer;"
-                        : $"var p_{param.Name} = {param.Name};");
-                }
-
-                if (kernelArgsCount > 0)
-                {
-                    writer.AppendLine($"var kernelParams = stackalloc void*[{kernelArgsCount}];");
-                    var paramIndex = 0;
-                    foreach (var param in parameters)
-                    {
-                        if (IsLaunchParameter(param.Name))
-                        {
-                            continue;
-                        }
-
-                        writer.AppendLine($"kernelParams[{paramIndex}] = &p_{param.Name};");
-                        paramIndex++;
-                    }
-                }
-                else
-                {
-                    writer.AppendLine("void** kernelParams = null;");
-                }
-            }
-
+            EmitKernelParametersSetup(writer, parameters, kernelArgsCount, packContext);
             writer.AppendLine();
-
-            var gridX = GetLaunchParamOrValue(parameters, "gridDimX", "1");
-            var gridY = GetLaunchParamOrValue(parameters, "gridDimY", "1");
-            var gridZ = GetLaunchParamOrValue(parameters, "gridDimZ", "1");
-            var blockX = GetLaunchParamOrValue(parameters, "blockDimX", "1");
-            var blockY = GetLaunchParamOrValue(parameters, "blockDimY", "1");
-            var blockZ = GetLaunchParamOrValue(parameters, "blockDimZ", "1");
-            var sharedMem = GetLaunchParamOrValue(parameters, "sharedMemBytes", "0");
-
-            writer.AppendLine("CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(");
-            writer.AppendLine("kernel,");
-            writer.AppendLine($"{gridX}, {gridY}, {gridZ},");
-            writer.AppendLine($"{blockX}, {blockY}, {blockZ},");
-            writer.AppendLine($"{sharedMem}, {stream}, kernelParams, IntPtr.Zero));");
+            EmitCuLaunchKernelCall(writer, parameters, stream);
         }
 
+        EmitLaunchSynchronization(writer, parameters);
+    }
+
+    private static void EmitKernelParametersSetup(
+        SourceWriter writer,
+        ImmutableArray<ModuleKernelLaunchParameter> parameters,
+        int kernelArgsCount,
+        bool packContext)
+    {
+        if (packContext)
+        {
+            writer.AppendLine("var kernelParams = stackalloc void*[1];");
+            writer.AppendLine("kernelParams[0] = &ctx;");
+            return;
+        }
+
+        EmitUnpackedKernelParameters(writer, parameters, kernelArgsCount);
+    }
+
+    private static void EmitUnpackedKernelParameters(
+        SourceWriter writer,
+        ImmutableArray<ModuleKernelLaunchParameter> parameters,
+        int kernelArgsCount)
+    {
+        foreach (var param in parameters)
+        {
+            if (IsLaunchParameter(param.Name))
+            {
+                continue;
+            }
+
+            writer.AppendLine(param.IsArray
+                ? $"var p_{param.Name} = d_{param.Name}.DevicePointer;"
+                : $"var p_{param.Name} = {param.Name};");
+        }
+
+        if (kernelArgsCount == 0)
+        {
+            writer.AppendLine("void** kernelParams = null;");
+            return;
+        }
+
+        writer.AppendLine($"var kernelParams = stackalloc void*[{kernelArgsCount}];");
+        var paramIndex = 0;
+        foreach (var param in parameters)
+        {
+            if (IsLaunchParameter(param.Name))
+            {
+                continue;
+            }
+
+            writer.AppendLine($"kernelParams[{paramIndex}] = &p_{param.Name};");
+            paramIndex++;
+        }
+    }
+
+    private static void EmitCuLaunchKernelCall(
+        SourceWriter writer,
+        ImmutableArray<ModuleKernelLaunchParameter> parameters,
+        string stream)
+    {
+        var gridX = GetLaunchParamOrValue(parameters, "gridDimX", "1");
+        var gridY = GetLaunchParamOrValue(parameters, "gridDimY", "1");
+        var gridZ = GetLaunchParamOrValue(parameters, "gridDimZ", "1");
+        var blockX = GetLaunchParamOrValue(parameters, "blockDimX", "1");
+        var blockY = GetLaunchParamOrValue(parameters, "blockDimY", "1");
+        var blockZ = GetLaunchParamOrValue(parameters, "blockDimZ", "1");
+        var sharedMem = GetLaunchParamOrValue(parameters, "sharedMemBytes", "0");
+
+        writer.AppendLine("CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(");
+        writer.AppendLine("kernel,");
+        writer.AppendLine($"{gridX}, {gridY}, {gridZ},");
+        writer.AppendLine($"{blockX}, {blockY}, {blockZ},");
+        writer.AppendLine($"{sharedMem}, {stream}, kernelParams, IntPtr.Zero));");
+    }
+
+    private static void EmitLaunchSynchronization(
+        SourceWriter writer,
+        ImmutableArray<ModuleKernelLaunchParameter> parameters)
+    {
         writer.AppendLine();
         if (HasLaunchParameter(parameters, "stream"))
         {
