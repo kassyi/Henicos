@@ -94,42 +94,7 @@ new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(575444957u, "StackLinqUnfu
 public static partial class AotContexts
 {
 }
-public const string UnfusedOperatorKernel_Source = @"#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__ZeroAlloc__Linq__SpanEnumerator_g1_bSystem__Int32_e__
-#define __GSHARP_STRUCT___gsharp_ty_Kassyi__ZeroAlloc__Linq__SpanEnumerator_g1_bSystem__Int32_e__
-struct __gsharp_ty_Kassyi__ZeroAlloc__Linq__SpanEnumerator_g1_bSystem__Int32_e
-{
-GSharpArray<int> __gsharp_mb__source;
-int __gsharp_mb__index;
-}
-;
-static_assert(sizeof(__gsharp_ty_Kassyi__ZeroAlloc__Linq__SpanEnumerator_g1_bSystem__Int32_e)==24,""Kassyi.ZeroAlloc.Linq.SpanEnumerator<System.Int32>: size"");
-static_assert(alignof(__gsharp_ty_Kassyi__ZeroAlloc__Linq__SpanEnumerator_g1_bSystem__Int32_e)==8,""Kassyi.ZeroAlloc.Linq.SpanEnumerator<System.Int32>: alignment"");
-static_assert(offsetof(__gsharp_ty_Kassyi__ZeroAlloc__Linq__SpanEnumerator_g1_bSystem__Int32_e,__gsharp_mb__source)==0,""Kassyi.ZeroAlloc.Linq.SpanEnumerator<System.Int32>._source: offset"");
-static_assert(offsetof(__gsharp_ty_Kassyi__ZeroAlloc__Linq__SpanEnumerator_g1_bSystem__Int32_e,__gsharp_mb__index)==16,""Kassyi.ZeroAlloc.Linq.SpanEnumerator<System.Int32>._index: offset"");
-#endif
-#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__ZeroAlloc__Linq__StackEnumerable_g2_bKassyi__ZeroAlloc__Linq__SpanEnumerator_g1_bSystem__Int32_e_bSystem__Int32_e__
-#define __GSHARP_STRUCT___gsharp_ty_Kassyi__ZeroAlloc__Linq__StackEnumerable_g2_bKassyi__ZeroAlloc__Linq__SpanEnumerator_g1_bSystem__Int32_e_bSystem__Int32_e__
-struct __gsharp_ty_Kassyi__ZeroAlloc__Linq__StackEnumerable_g2_bKassyi__ZeroAlloc__Linq__SpanEnumerator_g1_bSystem__Int32_e_bSystem__Int32_e
-{
-__gsharp_ty_Kassyi__ZeroAlloc__Linq__SpanEnumerator_g1_bSystem__Int32_e __gsharp_mb_Enumerator;
-}
-;
-static_assert(sizeof(__gsharp_ty_Kassyi__ZeroAlloc__Linq__StackEnumerable_g2_bKassyi__ZeroAlloc__Linq__SpanEnumerator_g1_bSystem__Int32_e_bSystem__Int32_e)==24,""Kassyi.ZeroAlloc.Linq.StackEnumerable<Kassyi.ZeroAlloc.Linq.SpanEnumerator<System.Int32>, System.Int32>: size"");
-static_assert(alignof(__gsharp_ty_Kassyi__ZeroAlloc__Linq__StackEnumerable_g2_bKassyi__ZeroAlloc__Linq__SpanEnumerator_g1_bSystem__Int32_e_bSystem__Int32_e)==8,""Kassyi.ZeroAlloc.Linq.StackEnumerable<Kassyi.ZeroAlloc.Linq.SpanEnumerator<System.Int32>, System.Int32>: alignment"");
-static_assert(offsetof(__gsharp_ty_Kassyi__ZeroAlloc__Linq__StackEnumerable_g2_bKassyi__ZeroAlloc__Linq__SpanEnumerator_g1_bSystem__Int32_e_bSystem__Int32_e,__gsharp_mb_Enumerator)==0,""Kassyi.ZeroAlloc.Linq.StackEnumerable<Kassyi.ZeroAlloc.Linq.SpanEnumerator<System.Int32>, System.Int32>.Enumerator: offset"");
-#endif
-#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__ZeroAlloc__Linq__ParallelStackEnumerable_g2_bKassyi__ZeroAlloc__Linq__SpanEnumerator_g1_bSystem__Int32_e_bSystem__Int32_e__
-#define __GSHARP_STRUCT___gsharp_ty_Kassyi__ZeroAlloc__Linq__ParallelStackEnumerable_g2_bKassyi__ZeroAlloc__Linq__SpanEnumerator_g1_bSystem__Int32_e_bSystem__Int32_e__
-struct __gsharp_ty_Kassyi__ZeroAlloc__Linq__ParallelStackEnumerable_g2_bKassyi__ZeroAlloc__Linq__SpanEnumerator_g1_bSystem__Int32_e_bSystem__Int32_e
-{
-__gsharp_ty_Kassyi__ZeroAlloc__Linq__SpanEnumerator_g1_bSystem__Int32_e __gsharp_mb_Enumerator;
-}
-;
-static_assert(sizeof(__gsharp_ty_Kassyi__ZeroAlloc__Linq__ParallelStackEnumerable_g2_bKassyi__ZeroAlloc__Linq__SpanEnumerator_g1_bSystem__Int32_e_bSystem__Int32_e)==24,""Kassyi.ZeroAlloc.Linq.ParallelStackEnumerable<Kassyi.ZeroAlloc.Linq.SpanEnumerator<System.Int32>, System.Int32>: size"");
-static_assert(alignof(__gsharp_ty_Kassyi__ZeroAlloc__Linq__ParallelStackEnumerable_g2_bKassyi__ZeroAlloc__Linq__SpanEnumerator_g1_bSystem__Int32_e_bSystem__Int32_e)==8,""Kassyi.ZeroAlloc.Linq.ParallelStackEnumerable<Kassyi.ZeroAlloc.Linq.SpanEnumerator<System.Int32>, System.Int32>: alignment"");
-static_assert(offsetof(__gsharp_ty_Kassyi__ZeroAlloc__Linq__ParallelStackEnumerable_g2_bKassyi__ZeroAlloc__Linq__SpanEnumerator_g1_bSystem__Int32_e_bSystem__Int32_e,__gsharp_mb_Enumerator)==0,""Kassyi.ZeroAlloc.Linq.ParallelStackEnumerable<Kassyi.ZeroAlloc.Linq.SpanEnumerator<System.Int32>, System.Int32>.Enumerator: offset"");
-#endif
-extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__StackLinqUnfusedDifferentialKernels__UnfusedOperatorKernel(GSharpArray<int> __gsharp_id_0_xs, GSharpArray<long long> __gsharp_id_1_r){
+public const string UnfusedOperatorKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__StackLinqUnfusedDifferentialKernels__UnfusedOperatorKernel(GSharpArray<int> __gsharp_id_0_xs, GSharpArray<long long> __gsharp_id_1_r){
 int __gsharp_id_2_t = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 int __gsharp_id_3_baseIdx = __gsharp_mul_i32(__gsharp_id_2_t,4);
 if(__gsharp_add_i32(__gsharp_id_3_baseIdx,4)>__gsharp_id_0_xs.length)
@@ -867,31 +832,7 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string UnfusedLastPredicateNoMatchKernel_Source = @"#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__ZeroAlloc__Linq__SpanEnumerator_g1_bSystem__Int32_e__
-#define __GSHARP_STRUCT___gsharp_ty_Kassyi__ZeroAlloc__Linq__SpanEnumerator_g1_bSystem__Int32_e__
-struct __gsharp_ty_Kassyi__ZeroAlloc__Linq__SpanEnumerator_g1_bSystem__Int32_e
-{
-GSharpArray<int> __gsharp_mb__source;
-int __gsharp_mb__index;
-}
-;
-static_assert(sizeof(__gsharp_ty_Kassyi__ZeroAlloc__Linq__SpanEnumerator_g1_bSystem__Int32_e)==24,""Kassyi.ZeroAlloc.Linq.SpanEnumerator<System.Int32>: size"");
-static_assert(alignof(__gsharp_ty_Kassyi__ZeroAlloc__Linq__SpanEnumerator_g1_bSystem__Int32_e)==8,""Kassyi.ZeroAlloc.Linq.SpanEnumerator<System.Int32>: alignment"");
-static_assert(offsetof(__gsharp_ty_Kassyi__ZeroAlloc__Linq__SpanEnumerator_g1_bSystem__Int32_e,__gsharp_mb__source)==0,""Kassyi.ZeroAlloc.Linq.SpanEnumerator<System.Int32>._source: offset"");
-static_assert(offsetof(__gsharp_ty_Kassyi__ZeroAlloc__Linq__SpanEnumerator_g1_bSystem__Int32_e,__gsharp_mb__index)==16,""Kassyi.ZeroAlloc.Linq.SpanEnumerator<System.Int32>._index: offset"");
-#endif
-#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__ZeroAlloc__Linq__StackEnumerable_g2_bKassyi__ZeroAlloc__Linq__SpanEnumerator_g1_bSystem__Int32_e_bSystem__Int32_e__
-#define __GSHARP_STRUCT___gsharp_ty_Kassyi__ZeroAlloc__Linq__StackEnumerable_g2_bKassyi__ZeroAlloc__Linq__SpanEnumerator_g1_bSystem__Int32_e_bSystem__Int32_e__
-struct __gsharp_ty_Kassyi__ZeroAlloc__Linq__StackEnumerable_g2_bKassyi__ZeroAlloc__Linq__SpanEnumerator_g1_bSystem__Int32_e_bSystem__Int32_e
-{
-__gsharp_ty_Kassyi__ZeroAlloc__Linq__SpanEnumerator_g1_bSystem__Int32_e __gsharp_mb_Enumerator;
-}
-;
-static_assert(sizeof(__gsharp_ty_Kassyi__ZeroAlloc__Linq__StackEnumerable_g2_bKassyi__ZeroAlloc__Linq__SpanEnumerator_g1_bSystem__Int32_e_bSystem__Int32_e)==24,""Kassyi.ZeroAlloc.Linq.StackEnumerable<Kassyi.ZeroAlloc.Linq.SpanEnumerator<System.Int32>, System.Int32>: size"");
-static_assert(alignof(__gsharp_ty_Kassyi__ZeroAlloc__Linq__StackEnumerable_g2_bKassyi__ZeroAlloc__Linq__SpanEnumerator_g1_bSystem__Int32_e_bSystem__Int32_e)==8,""Kassyi.ZeroAlloc.Linq.StackEnumerable<Kassyi.ZeroAlloc.Linq.SpanEnumerator<System.Int32>, System.Int32>: alignment"");
-static_assert(offsetof(__gsharp_ty_Kassyi__ZeroAlloc__Linq__StackEnumerable_g2_bKassyi__ZeroAlloc__Linq__SpanEnumerator_g1_bSystem__Int32_e_bSystem__Int32_e,__gsharp_mb_Enumerator)==0,""Kassyi.ZeroAlloc.Linq.StackEnumerable<Kassyi.ZeroAlloc.Linq.SpanEnumerator<System.Int32>, System.Int32>.Enumerator: offset"");
-#endif
-extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__StackLinqUnfusedDifferentialKernels__UnfusedLastPredicateNoMatchKernel(GSharpArray<int> __gsharp_id_0_xs, GSharpArray<int> __gsharp_id_1_thresholds, GSharpArray<int> __gsharp_id_2_dst, int __gsharp_id_3_rows){
+public const string UnfusedLastPredicateNoMatchKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__StackLinqUnfusedDifferentialKernels__UnfusedLastPredicateNoMatchKernel(GSharpArray<int> __gsharp_id_0_xs, GSharpArray<int> __gsharp_id_1_thresholds, GSharpArray<int> __gsharp_id_2_dst, int __gsharp_id_3_rows){
 int __gsharp_id_4_t = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 if(__gsharp_id_4_t>=__gsharp_id_3_rows)
 {

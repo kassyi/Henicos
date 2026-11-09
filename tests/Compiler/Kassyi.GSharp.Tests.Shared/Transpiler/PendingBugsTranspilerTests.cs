@@ -82,7 +82,7 @@ public class PendingBugsTranspilerTests : TranspilerTestBase
     }
 
     // #1086: Expect an unfused StackLinq query with a capturing lambda stored in a local to compile on native C++ without C2338 static_assert failure or report a diagnostic.
-    [Fact(Skip = "#1086: Unfused StackLinq query with capturing lambda in local emits mismatched size check.")]
+    [Fact]
     [Scenario(TestScenario.SadPath)]
     public void Test_UnfusedStackLinqQueryWithCapturingLambdaInLocal_EmitsValidEnumeratorWithoutMismatchedSizeCheck()
     {
