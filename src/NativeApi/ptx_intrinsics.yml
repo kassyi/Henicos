@@ -187,7 +187,12 @@ methods:
     managed: ManagedGpuContext.ActiveMask
     summary: Returns a 32-bit mask of all currently active threads in the calling warp.
     returnType: uint
-    returnDescription: A 32-bit bitmask where bit i corresponds to active lane i. It holds the calling lane and no lane that has exited; which other lanes of the current path it holds is up to the GPU scheduler (from Volta on it may be fewer). The CPU paths return the lanes that took the same way through the thread-dependent branches since the warp last ran together, which is the value the GPU gives in practice.
+    returnDescription: >-
+      A 32-bit bitmask where bit i corresponds to active lane i. It holds the calling lane and no lane
+      that has exited; which other lanes of the current path it holds is up to the GPU scheduler
+      (from Volta on it may be fewer). The CPU paths return the lanes that took the same way through
+      the thread-dependent branches since the warp last ran together, which is the value the GPU gives
+      in practice.
 
   - name: ShuffleSync
     className: Warp
@@ -197,7 +202,9 @@ methods:
       placeholder: T
       types: [int, uint, float]
     returnType: T
-    returnDescription: The value of var held by lane srcLane % width of the caller's segment. Reading a lane that does not exist in the block is undefined on CUDA and an InvalidOperationException on the CPU paths.
+    returnDescription: >-
+      The value of var held by lane srcLane % width of the caller's segment. Reading a lane that
+      does not exist in the block is undefined on CUDA and an InvalidOperationException on the CPU paths.
     parameters:
       - name: mask
         type: uint
@@ -210,7 +217,10 @@ methods:
         description: The source lane index (0-31) whose value is broadcasted.
       - name: width
         type: int
-        description: The sub-warp width in threads, 1, 2, 4, 8, 16 or 32 (default 32); any other width is undefined on CUDA, reported as GSH0095 when constant, and an InvalidOperationException on the CPU paths.
+        description: >-
+          The sub-warp width in threads, 1, 2, 4, 8, 16 or 32 (default 32); any other width is
+          undefined on CUDA, reported as GSH0095 when constant, and an InvalidOperationException
+          on the CPU paths.
         defaultValue: 32
 
   - name: ShuffleDownSync
@@ -221,7 +231,10 @@ methods:
       placeholder: T
       types: [int, uint, float, double]
     returnType: T
-    returnDescription: The value from the lane delta above the caller, or the caller's own value when that lane is outside the caller's segment. Reading a lane that does not exist in the block is undefined on CUDA and an InvalidOperationException on the CPU paths.
+    returnDescription: >-
+      The value from the lane delta above the caller, or the caller's own value when that lane is
+      outside the caller's segment. Reading a lane that does not exist in the block is undefined on
+      CUDA and an InvalidOperationException on the CPU paths.
     parameters:
       - name: mask
         type: uint
@@ -231,10 +244,15 @@ methods:
         description: The source value to shift.
       - name: delta
         type: uint
-        description: The positive lane index offset to shift down by. Only its low 5 bits are used, as on the GPU (33 shifts by 1).
+        description: >-
+          The positive lane index offset to shift down by. Only its low 5 bits are used, as on the
+          GPU (33 shifts by 1).
       - name: width
         type: int
-        description: The sub-warp width in threads, 1, 2, 4, 8, 16 or 32 (default 32); any other width is undefined on CUDA, reported as GSH0095 when constant, and an InvalidOperationException on the CPU paths.
+        description: >-
+          The sub-warp width in threads, 1, 2, 4, 8, 16 or 32 (default 32); any other width is
+          undefined on CUDA, reported as GSH0095 when constant, and an InvalidOperationException
+          on the CPU paths.
         defaultValue: 32
 
   - name: ShuffleUpSync
@@ -245,7 +263,10 @@ methods:
       placeholder: T
       types: [int, uint, float]
     returnType: T
-    returnDescription: The value from the lane delta below the caller, or the caller's own value when that lane is outside the caller's segment. Reading a lane that does not exist in the block is undefined on CUDA and an InvalidOperationException on the CPU paths.
+    returnDescription: >-
+      The value from the lane delta below the caller, or the caller's own value when that lane is
+      outside the caller's segment. Reading a lane that does not exist in the block is undefined on
+      CUDA and an InvalidOperationException on the CPU paths.
     parameters:
       - name: mask
         type: uint
@@ -255,10 +276,15 @@ methods:
         description: The source value to shift.
       - name: delta
         type: uint
-        description: The positive lane index offset to shift up by. Only its low 5 bits are used, as on the GPU (33 shifts by 1).
+        description: >-
+          The positive lane index offset to shift up by. Only its low 5 bits are used, as on the
+          GPU (33 shifts by 1).
       - name: width
         type: int
-        description: The sub-warp width in threads, 1, 2, 4, 8, 16 or 32 (default 32); any other width is undefined on CUDA, reported as GSH0095 when constant, and an InvalidOperationException on the CPU paths.
+        description: >-
+          The sub-warp width in threads, 1, 2, 4, 8, 16 or 32 (default 32); any other width is
+          undefined on CUDA, reported as GSH0095 when constant, and an InvalidOperationException
+          on the CPU paths.
         defaultValue: 32
 
   - name: ShuffleXorSync
@@ -269,7 +295,11 @@ methods:
       placeholder: T
       types: [int, uint, float]
     returnType: T
-    returnDescription: The value from the lane laneMask XOR the caller when that lane is in the caller's group of width lanes or an earlier group, or the caller's own value when it is in a later group. Reading a lane that does not exist in the block is undefined on CUDA and an InvalidOperationException on the CPU paths.
+    returnDescription: >-
+      The value from the lane laneMask XOR the caller when that lane is in the caller's group of
+      width lanes or an earlier group, or the caller's own value when it is in a later group. Reading
+      a lane that does not exist in the block is undefined on CUDA and an InvalidOperationException on
+      the CPU paths.
     parameters:
       - name: mask
         type: uint
@@ -279,22 +309,31 @@ methods:
         description: The source value to exchange.
       - name: laneMask
         type: int
-        description: The bitmask used to XOR against the calling thread's lane ID. Only its low 5 bits are used, as on the GPU (-1 acts as 31).
+        description: >-
+          The bitmask used to XOR against the calling thread's lane ID. Only its low 5 bits are used,
+          as on the GPU (-1 acts as 31).
       - name: width
         type: int
-        description: The sub-warp width in threads, 1, 2, 4, 8, 16 or 32 (default 32); any other width is undefined on CUDA, reported as GSH0095 when constant, and an InvalidOperationException on the CPU paths.
+        description: >-
+          The sub-warp width in threads, 1, 2, 4, 8, 16 or 32 (default 32); any other width is
+          undefined on CUDA, reported as GSH0095 when constant, and an InvalidOperationException
+          on the CPU paths.
         defaultValue: 32
 
   - name: BallotSync
     className: Warp
     nativeName: __ballot_sync
-    summary: Evaluates predicate for all active threads in the warp and returns an integer whose Nth bit is set if and only if predicate evaluates to non-zero for the Nth thread.
+    summary: >-
+      Evaluates predicate for all active threads in the warp and returns an integer whose Nth bit is
+      set if and only if predicate evaluates to non-zero for the Nth thread.
     returnType: uint
     returnDescription: A 32-bit bitmask of thread predicate evaluation results.
     parameters:
       - name: mask
         type: uint
-        description: The 32-bit thread participation bitmask. It must contain the calling lane; a mask without it is undefined on CUDA and an InvalidOperationException on the CPU paths.
+        description: >-
+          The 32-bit thread participation bitmask. It must contain the calling lane; a mask
+          without it is undefined on CUDA and an InvalidOperationException on the CPU paths.
       - name: predicate
         type: bool
         description: The boolean condition evaluated by each thread.
@@ -302,13 +341,17 @@ methods:
   - name: AllSync
     className: Warp
     nativeName: __all_sync
-    summary: Evaluates predicate for all active threads in the warp and returns non-zero if and only if predicate evaluates to non-zero for all of them.
+    summary: >-
+      Evaluates predicate for all active threads in the warp and returns non-zero if and only if
+      predicate evaluates to non-zero for all of them.
     returnType: bool
     returnDescription: True if predicate evaluates to true for all participating threads.
     parameters:
       - name: mask
         type: uint
-        description: The 32-bit thread participation bitmask. It must contain the calling lane; a mask without it is undefined on CUDA and an InvalidOperationException on the CPU paths.
+        description: >-
+          The 32-bit thread participation bitmask. It must contain the calling lane; a mask
+          without it is undefined on CUDA and an InvalidOperationException on the CPU paths.
       - name: predicate
         type: bool
         description: The boolean condition evaluated by each thread.
@@ -316,13 +359,17 @@ methods:
   - name: AnySync
     className: Warp
     nativeName: __any_sync
-    summary: Evaluates predicate for all active threads in the warp and returns non-zero if and only if predicate evaluates to non-zero for any of them.
+    summary: >-
+      Evaluates predicate for all active threads in the warp and returns non-zero if and only if
+      predicate evaluates to non-zero for any of them.
     returnType: bool
     returnDescription: True if predicate evaluates to true for any participating thread.
     parameters:
       - name: mask
         type: uint
-        description: The 32-bit thread participation bitmask. It must contain the calling lane; a mask without it is undefined on CUDA and an InvalidOperationException on the CPU paths.
+        description: >-
+          The 32-bit thread participation bitmask. It must contain the calling lane; a mask
+          without it is undefined on CUDA and an InvalidOperationException on the CPU paths.
       - name: predicate
         type: bool
         description: The boolean condition evaluated by each thread.
@@ -339,7 +386,9 @@ methods:
     parameters:
       - name: mask
         type: uint
-        description: The 32-bit thread participation bitmask. It must contain the calling lane; a mask without it is undefined on CUDA and an InvalidOperationException on the CPU paths.
+        description: >-
+          The 32-bit thread participation bitmask. It must contain the calling lane; a mask
+          without it is undefined on CUDA and an InvalidOperationException on the CPU paths.
       - name: val
         type: T
         description: The value contributed by this thread.
@@ -356,7 +405,9 @@ methods:
     parameters:
       - name: mask
         type: uint
-        description: The 32-bit thread participation bitmask. It must contain the calling lane; a mask without it is undefined on CUDA and an InvalidOperationException on the CPU paths.
+        description: >-
+          The 32-bit thread participation bitmask. It must contain the calling lane; a mask
+          without it is undefined on CUDA and an InvalidOperationException on the CPU paths.
       - name: val
         type: T
         description: The value contributed by this thread.
@@ -373,7 +424,9 @@ methods:
     parameters:
       - name: mask
         type: uint
-        description: The 32-bit thread participation bitmask. It must contain the calling lane; a mask without it is undefined on CUDA and an InvalidOperationException on the CPU paths.
+        description: >-
+          The 32-bit thread participation bitmask. It must contain the calling lane; a mask
+          without it is undefined on CUDA and an InvalidOperationException on the CPU paths.
       - name: val
         type: T
         description: The value contributed by this thread.
@@ -390,7 +443,9 @@ methods:
     parameters:
       - name: mask
         type: uint
-        description: The 32-bit thread participation bitmask. It must contain the calling lane; a mask without it is undefined on CUDA and an InvalidOperationException on the CPU paths.
+        description: >-
+          The 32-bit thread participation bitmask. It must contain the calling lane; a mask
+          without it is undefined on CUDA and an InvalidOperationException on the CPU paths.
       - name: val
         type: T
         description: The value contributed by this thread.
@@ -407,7 +462,9 @@ methods:
     parameters:
       - name: mask
         type: uint
-        description: The 32-bit thread participation bitmask. It must contain the calling lane; a mask without it is undefined on CUDA and an InvalidOperationException on the CPU paths.
+        description: >-
+          The 32-bit thread participation bitmask. It must contain the calling lane; a mask
+          without it is undefined on CUDA and an InvalidOperationException on the CPU paths.
       - name: val
         type: T
         description: The value contributed by this thread.
@@ -424,7 +481,9 @@ methods:
     parameters:
       - name: mask
         type: uint
-        description: The 32-bit thread participation bitmask. It must contain the calling lane; a mask without it is undefined on CUDA and an InvalidOperationException on the CPU paths.
+        description: >-
+          The 32-bit thread participation bitmask. It must contain the calling lane; a mask
+          without it is undefined on CUDA and an InvalidOperationException on the CPU paths.
       - name: val
         type: T
         description: The value contributed by this thread.
@@ -775,7 +834,9 @@ methods:
 
   - name: Lop3
     nativeName: __gsharp_lop3
-    summary: Computes an arbitrary 3-input bitwise logic operation defined by an 8-bit lookup table (LUT) using the PTX lop3 instruction.
+    summary: >-
+      Computes an arbitrary 3-input bitwise logic operation defined by an 8-bit lookup table (LUT)
+      using the PTX lop3 instruction.
     returnType: uint
     returnDescription: The result of the 3-input logic function.
     parameters:
@@ -843,7 +904,9 @@ methods:
 
   - name: Sad4
     nativeName: __gsharp_vabsdiff4
-    summary: Computes the SIMD sum of absolute differences of 4 packed unsigned bytes and accumulates with c (PTX vabsdiff4).
+    summary: >-
+      Computes the SIMD sum of absolute differences of 4 packed unsigned bytes and accumulates with c
+      (PTX vabsdiff4).
     returnType: uint
     returnDescription: The sum of byte differences accumulated with c.
     parameters:
@@ -862,7 +925,9 @@ methods:
   # ===========================================================================
   - name: MatchAnySync
     nativeName: __match_any_sync
-    summary: Performs a broadcast-and-compare operation across threads in a warp, returning a mask of threads holding the same value.
+    summary: >-
+      Performs a broadcast-and-compare operation across threads in a warp, returning a mask of threads
+      holding the same value.
     typeTemplate:
       placeholder: T
       types: [int, uint, long, ulong, float, double]
@@ -878,7 +943,9 @@ methods:
 
   - name: MatchAllSync
     nativeName: __match_all_sync
-    summary: Tests whether all threads in mask hold the same value, returning the mask if true and updating the predicate flag.
+    summary: >-
+      Tests whether all threads in mask hold the same value, returning the mask if true and updating
+      the predicate flag.
     typeTemplate:
       placeholder: T
       types: [int, uint, long, ulong, float, double]
@@ -992,14 +1059,19 @@ methods:
     managed: ManagedGpuContext.LaneId
     summary: Returns the lane ID of the calling thread within its warp (0-31).
     returnType: int
-    returnDescription: The lane index within the current warp, the linear thread index in the block (x fastest) modulo 32, as the %laneid register of the GPU.
+    returnDescription: >-
+      The lane index within the current warp, the linear thread index in the block (x fastest) modulo
+      32, as the %laneid register of the GPU.
 
   - name: WarpId
     nativeName: __gsharp_warp_id
     managed: ManagedGpuContext.WarpId
     summary: Returns the warp ID of the calling warp within its thread block.
     returnType: int
-    returnDescription: The warp index within the current thread block, the linear thread index in the block (x fastest) divided by 32. It is not the %warpid register, which names a hardware warp slot that may change while the thread runs.
+    returnDescription: >-
+      The warp index within the current thread block, the linear thread index in the block (x fastest)
+      divided by 32. It is not the %warpid register, which names a hardware warp slot that may change
+      while the thread runs.
 
   - name: SmId
     nativeName: __smid
@@ -1086,7 +1158,11 @@ methods:
 
   - name: CopyAsync
     nativeName: __gsharp_cp_async
-    summary: Issues an uncommitted asynchronous copy from global memory to shared memory on the calling thread (PTX cp.async). Batch issued copies with CopyAsyncCommitGroup and wait with CopyAsyncWaitGroup or CopyAsyncWaitAll; call SyncThreads before other threads read sharedDst. Reading or writing sharedDst, or writing globalSrc, before completion is a data race.
+    summary: >-
+      Issues an uncommitted asynchronous copy from global memory to shared memory on the calling thread
+      (PTX cp.async). Batch issued copies with CopyAsyncCommitGroup and wait with CopyAsyncWaitGroup or
+      CopyAsyncWaitAll; call SyncThreads before other threads read sharedDst. Reading or writing
+      sharedDst, or writing globalSrc, before completion is a data race.
     typeTemplate:
       placeholder: T
       types: [int, uint, float, long, ulong, double, System.Numerics.Vector2, System.Numerics.Vector4]
@@ -1097,26 +1173,37 @@ methods:
         description: The destination element in shared memory.
       - name: globalSrc
         type: ref readonly T
-        description: The source element in global memory (must refer to a variable or element in global memory, not a temporary value).
+        description: >-
+          The source element in global memory (must refer to a variable or element in global memory,
+          not a temporary value).
 
   - name: CopyAsyncCommitGroup
     nativeName: __gsharp_cp_async_commit_group
-    summary: Batches all prior uncommitted CopyAsync operations issued by the calling thread into a new commit group (PTX cp.async.commit_group).
+    summary: >-
+      Batches all prior uncommitted CopyAsync operations issued by the calling thread into a new
+      commit group (PTX cp.async.commit_group).
     returnType: void
     parameters: []
 
   - name: CopyAsyncWaitGroup
     nativeName: __gsharp_cp_async_wait_group
-    summary: Waits until at most pendingGroups committed CopyAsync groups of the calling thread remain pending (PTX cp.async.wait_group; 0 waits for all committed groups of the calling thread). Call SyncThreads after waiting if other threads read the copied shared memory.
+    summary: >-
+      Waits until at most pendingGroups committed CopyAsync groups of the calling thread remain pending
+      (PTX cp.async.wait_group; 0 waits for all committed groups of the calling thread). Call
+      SyncThreads after waiting if other threads read the copied shared memory.
     returnType: void
     parameters:
       - name: pendingGroups
         type: int
-        description: Maximum number of committed groups of the calling thread allowed to remain pending (must be a compile-time constant in 0..7).
+        description: >-
+          Maximum number of committed groups of the calling thread allowed to remain pending (must be
+          a compile-time constant in 0..7).
 
   - name: CopyAsyncWaitAll
     nativeName: __gsharp_cp_async_wait_all
-    summary: Waits until all prior CopyAsync operations issued by the calling thread have completed (PTX cp.async.wait_all). Call SyncThreads after waiting if other threads read the copied shared memory.
+    summary: >-
+      Waits until all prior CopyAsync operations issued by the calling thread have completed (PTX
+      cp.async.wait_all). Call SyncThreads after waiting if other threads read the copied shared memory.
     returnType: void
     parameters: []
 
