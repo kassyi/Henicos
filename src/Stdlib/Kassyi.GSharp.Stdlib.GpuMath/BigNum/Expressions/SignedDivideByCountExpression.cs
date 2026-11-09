@@ -11,6 +11,7 @@ internal sealed class SignedDivideByCountExpression(IGpuBigIntExpression sum, ui
     protected override GpuBigInt Execute(GpuBigInt targetEval, GpuBigUInt resultBuffer)
     {
         var workspace = resultBuffer.Workspace;
+        CaptureChecks.ThrowIfCapturing(workspace, CaptureChecks.DivisionReads);
         using var divisor = workspace.RentTemp(1);
         using var remainder = workspace.RentTemp(1);
         workspace.Provider.WriteWord(divisor.DevicePointer, 0, Count, workspace.Stream);

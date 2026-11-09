@@ -209,8 +209,9 @@ public readonly struct GpuBigIntExpr : IDisposable
     /// the warm-up evaluation failed.
     /// </exception>
     /// <exception cref="NotSupportedException">
-    /// The expression adds or subtracts values whose effective signs differ: the sign of the result is read from the
-    /// device, which a capture cannot record.
+    /// The expression contains a node whose result depends on a value read from the device, which a capture cannot
+    /// record: an addition or subtraction of values whose effective signs differ, <c>Max</c> and <c>Min</c>,
+    /// <c>/</c>, <c>%</c> and the StackLinq <c>Average</c>, and <c>~</c> of a negative value.
     /// </exception>
     public GpuBigIntExecutableGraph CompileToGraph(GpuWorkspace workspace, GpuBigUInt? targetResult = null) =>
         Compile(workspace, targetResult, ownsExpression: true);
@@ -417,7 +418,7 @@ public readonly struct GpuBigIntExpr : IDisposable
 
     // The failure path of a capture (O14): end the capture, drop the partial graph and give back the deferred buffers.
     // When that succeeds, the caller rethrows the original exception; when a step fails too, both are thrown together.
-    private static void AbortCapture(GpuWorkspace workspace, DefaultGpuMemoryManager manager, CaptureDeferral deferral,
+    internal static void AbortCapture(GpuWorkspace workspace, DefaultGpuMemoryManager manager, CaptureDeferral deferral,
         Exception original)
     {
         List<Exception>? cleanupErrors = null;
