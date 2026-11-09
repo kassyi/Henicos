@@ -65,6 +65,91 @@ public sealed class DirectMethodWidthTests : IDisposable
     [Scenario(TestScenario.Boundary)]
     public void Shifts_FollowTheirBounds(int aWords) => DirectCases.Shifts(_workspace, aWords);
 
+    // A failed division leaves a wider quotient buffer as it was: the words above the quotient are cleared after it
+    // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntMath.cs DivideByUInt32Core with
+    // `ResultBuffers.ClearAbove` before the division (words 1 and 2 of the buffer are cleared)
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void DivideByUInt32_ByZero_LeavesAWiderQuotientUntouched()
+    {
+        using var a = new GpuBigUInt(_workspace, [100u]);
+        uint[] filled = [0xDEADBEEFu, 0xDEADBEEFu, 0x80000000u];
+        using var q = new GpuBigUInt(_workspace, filled);
+
+        Assert.Throws<DivideByZeroException>(() => GpuBigIntMath.DivideByUInt32(a, 0u, q));
+        Assert.Equal(filled, q.ToHostArray());
+    }
+
+    // A quotient buffer whose high word is the dividend: the result is that of separate buffers
+    // mutant: the same, and the staging temporary removed (the quotient is 0, the remainder 0)
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void DivideByUInt32_IntoABufferThatHoldsTheDividend_IsExact()
+    {
+        using var q = new GpuBigUInt(_workspace, [0u, 100u]);
+        var dividend = new GpuBigUInt(_workspace, q.Handle.Slice(1, 1));
+
+        var remainder = GpuBigIntMath.DivideByUInt32(dividend, 7u, q);
+        Assert.Equal(2u, remainder);
+        Assert.Equal(new BigInteger(14), q.ToBigInteger());
+    }
+
+    // The callers of the unchecked shift drop only zero bits. Debug builds (the test runs) check each call on the
+    // device, so a broken claim is an OverflowException here: divisors whose leading zeros are 0, 31 and 63 bits, the
+    // moduli 1 and 2^(32 n - 1) on both ModPow paths, and square roots around the word boundaries.
+    [Theory]
+    [InlineData(2)]
+    [InlineData(4)]
+    [InlineData(40)]
+    [Scenario(TestScenario.Boundary)]
+    public void UncheckedShiftCallers_DropOnlyZeroBits(int words)
+    {
+        var top = 32 * words;
+        foreach (var bits in new[] { top, top - 31, top - 63 })
+        {
+            var b = BigInteger.One << (bits - 1) | 3;
+            var a = (BigInteger.One << (2 * top - 1)) - 12345;
+            using var gpuA = new GpuBigUInt(_workspace, DirectLimbs(a, 2 * words));
+            using var gpuB = new GpuBigUInt(_workspace, DirectLimbs(b, words));
+            using var q = new GpuBigUInt(_workspace, 2 * words);
+            using var r = new GpuBigUInt(_workspace, words);
+            GpuBigIntDivRem.DivRem(gpuA, gpuB, q, r);
+            _workspace.ThrowIfDeviceErrors();
+            Assert.Equal(a / b, q.ToBigInteger());
+            Assert.Equal(a % b, r.ToBigInteger());
+        }
+
+        foreach (var modulus in new[] { BigInteger.One, BigInteger.One << (top - 1), (BigInteger.One << top) - 1 })
+        {
+            var baseValue = (BigInteger.One << (top - 2)) + 7;
+            using var gpuBase = new GpuBigUInt(_workspace, DirectLimbs(baseValue % modulus, words));
+            using var exponent = new GpuBigUInt(_workspace, DirectLimbs(65537, words));
+            using var gpuModulus = new GpuBigUInt(_workspace, DirectLimbs(modulus, words));
+            using var result = new GpuBigUInt(_workspace, words);
+            GpuBigIntDivRem.ModPow(gpuBase, exponent, gpuModulus, result);
+            _workspace.ThrowIfDeviceErrors();
+            Assert.Equal(BigInteger.ModPow(baseValue, 65537, modulus), result.ToBigInteger());
+        }
+
+        foreach (var bits in new[] { 33, 64, top - 1, top })
+        {
+            var value = (BigInteger.One << bits) - 1;
+            using var gpuValue = new GpuBigUInt(_workspace, DirectLimbs(value, words));
+            using var root = new GpuBigUInt(_workspace, words);
+            GpuBigIntDivRem.Sqrt(gpuValue, root);
+            _workspace.ThrowIfDeviceErrors();
+            var s = root.ToBigInteger();
+            Assert.True(s * s <= value && (s + 1) * (s + 1) > value, $"sqrt of {bits} bits");
+        }
+    }
+
+    private static uint[] DirectLimbs(BigInteger value, int words)
+    {
+        var limbs = new uint[words];
+        value.WriteLimbs(limbs);
+        return limbs;
+    }
+
     // The internal unchecked shift of the normalization paths: the value shifted by its leading zeros is exact in the
     // operand width and nothing is reported; another width or a negative count is rejected
     [Theory]

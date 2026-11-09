@@ -15,20 +15,6 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 /// </remarks>
 public static class GpuBigIntMath
 {
-    // A result buffer narrower than the method's minimum would lose words: rejected before anything is launched
-    private static void ThrowIfResultNarrower(GpuBigUInt resultBuffer, int minimumWords, string method)
-    {
-        if (resultBuffer.NumWords < minimumWords)
-        {
-            throw new ArgumentException(
-                $"{method}: the result buffer must have at least {minimumWords} words; it has {resultBuffer.NumWords}.",
-                nameof(resultBuffer));
-        }
-    }
-
-    // The first words of a wider result buffer, which the method writes; SignedRoot.ClearAbove zeros the rest
-    private static GpuBigUInt Head(GpuBigUInt resultBuffer, int words) => SignedRoot.Head(resultBuffer, words);
-
     [ExcludeFromCodeCoverage] private static void ThrowIfSizeMismatch(GpuBigUInt leftOperand, GpuBigUInt resultBuffer)
     {
         if (leftOperand.NumWords != resultBuffer.NumWords)
@@ -57,7 +43,7 @@ public static class GpuBigIntMath
     private static void AddCore(GpuBigUInt leftOperand, GpuBigUInt rightOperand,
         GpuBigUInt resultBuffer)
     {
-        ThrowIfResultNarrower(resultBuffer, Math.Max(leftOperand.NumWords, rightOperand.NumWords), nameof(Add));
+        ResultBuffers.ThrowIfNarrower(resultBuffer, Math.Max(leftOperand.NumWords, rightOperand.NumWords), nameof(Add));
         BigIntWideOps.AddSubtract(leftOperand, rightOperand, resultBuffer, subtract: false);
     }
 
@@ -128,7 +114,7 @@ public static class GpuBigIntMath
     private static bool AddSignedMagnitudeCore(GpuBigUInt leftOperand, bool leftNegative,
         GpuBigUInt rightOperand, bool rightNegative, GpuBigUInt resultBuffer)
     {
-        ThrowIfResultNarrower(resultBuffer, Math.Max(leftOperand.NumWords, rightOperand.NumWords),
+        ResultBuffers.ThrowIfNarrower(resultBuffer, Math.Max(leftOperand.NumWords, rightOperand.NumWords),
             nameof(AddSignedMagnitude));
         if (leftNegative == rightNegative ||
             (!DeviceRanges.Overlaps(resultBuffer.Handle, leftOperand.Handle) &&
@@ -163,7 +149,7 @@ public static class GpuBigIntMath
     private static void SubCore(GpuBigUInt leftOperand, GpuBigUInt rightOperand,
         GpuBigUInt resultBuffer)
     {
-        ThrowIfResultNarrower(resultBuffer, leftOperand.NumWords, nameof(Sub));
+        ResultBuffers.ThrowIfNarrower(resultBuffer, leftOperand.NumWords, nameof(Sub));
         BigIntWideOps.AddSubtract(leftOperand, rightOperand, resultBuffer, subtract: true);
     }
 
@@ -223,10 +209,10 @@ public static class GpuBigIntMath
         GpuBigUInt resultBuffer)
     {
         var productWords = leftOperand.NumWords + rightOperand.NumWords;
-        ThrowIfResultNarrower(resultBuffer, productWords, nameof(Mul));
+        ResultBuffers.ThrowIfNarrower(resultBuffer, productWords, nameof(Mul));
         leftOperand.Workspace.Provider.Mul(leftOperand.Workspace, leftOperand, rightOperand,
-            Head(resultBuffer, productWords));
-        SignedRoot.ClearAbove(resultBuffer, productWords);
+            ResultBuffers.Head(resultBuffer, productWords));
+        ResultBuffers.ClearAbove(resultBuffer, productWords);
     }
 
     /// <summary>
@@ -325,10 +311,28 @@ public static class GpuBigIntMath
     // DivideByUInt32 on the owned type; the public method above takes views and borrows them
     private static uint DivideByUInt32Core(GpuBigUInt dividend, uint divisor, GpuBigUInt quotientBuffer)
     {
-        ThrowIfResultNarrower(quotientBuffer, dividend.NumWords, nameof(DivideByUInt32));
-        SignedRoot.ClearAbove(quotientBuffer, dividend.NumWords);
-        return dividend.Workspace.Provider.DivideByUInt32(dividend.Workspace, dividend, divisor,
-            Head(quotientBuffer, dividend.NumWords));
+        var words = dividend.NumWords;
+        ResultBuffers.ThrowIfNarrower(quotientBuffer, words, nameof(DivideByUInt32));
+        var workspace = dividend.Workspace;
+        uint remainder;
+
+        // A quotient buffer that overlaps the dividend gets the quotient through a temporary, as for separate buffers;
+        // the words above the quotient are cleared after the division, so a failed one leaves the buffer as it was
+        if (quotientBuffer.DevicePointer != dividend.DevicePointer &&
+            DeviceRanges.Overlaps(quotientBuffer.Handle, dividend.Handle))
+        {
+            using var staging = workspace.RentTemp(words);
+            remainder = workspace.Provider.DivideByUInt32(workspace, dividend, divisor, staging);
+            ResultBuffers.Head(quotientBuffer, words).CopyFrom(staging);
+        }
+        else
+        {
+            remainder = workspace.Provider.DivideByUInt32(workspace, dividend, divisor,
+                ResultBuffers.Head(quotientBuffer, words));
+        }
+
+        ResultBuffers.ClearAbove(quotientBuffer, words);
+        return remainder;
     }
 
     /// <summary>
@@ -351,7 +355,7 @@ public static class GpuBigIntMath
         GpuBigUInt resultBuffer)
     {
         var words = Math.Max(leftOperand.NumWords, rightOperand.NumWords);
-        ThrowIfResultNarrower(resultBuffer, Math.Min(leftOperand.NumWords, rightOperand.NumWords), nameof(Gcd));
+        ResultBuffers.ThrowIfNarrower(resultBuffer, Math.Min(leftOperand.NumWords, rightOperand.NumWords), nameof(Gcd));
 
         // The kernels take equal widths: the narrower operand is widened, and the gcd, at most the narrower operand,
         // is computed in the wider width and copied into the result buffer when that is narrower
@@ -359,7 +363,7 @@ public static class GpuBigIntMath
         using GpuBigUInt? leftWide = leftOperand.NumWords == words ? null : leftOperand.PadTo(words);
         using GpuBigUInt? rightWide = rightOperand.NumWords == words ? null : rightOperand.PadTo(words);
         using GpuBigUInt? gcdWide = resultBuffer.NumWords >= words ? null : workspace.RentTemp(words);
-        var target = gcdWide ?? Head(resultBuffer, words);
+        var target = gcdWide ?? ResultBuffers.Head(resultBuffer, words);
         workspace.Provider.Gcd(workspace, leftWide ?? leftOperand, rightWide ?? rightOperand, target);
         if (gcdWide is { } gcd)
         {
@@ -367,7 +371,7 @@ public static class GpuBigIntMath
         }
         else
         {
-            SignedRoot.ClearAbove(resultBuffer, words);
+            ResultBuffers.ClearAbove(resultBuffer, words);
         }
     }
 
@@ -392,7 +396,7 @@ public static class GpuBigIntMath
     private static void ModInverseCore(GpuBigUInt value, GpuBigUInt modulus, GpuBigUInt resultBuffer)
     {
         var words = modulus.NumWords;
-        ThrowIfResultNarrower(resultBuffer, words, nameof(ModInverse));
+        ResultBuffers.ThrowIfNarrower(resultBuffer, words, nameof(ModInverse));
 
         // The kernels take the modulus width: a narrower value is widened, a wider one is reduced first (the inverse of
         // v is the inverse of v mod m)
@@ -410,8 +414,9 @@ public static class GpuBigIntMath
                 GpuBigIntDivRem.Mod(value, modulus, reduced.Value);
             }
 
-            workspace.Provider.ModInverse(workspace, reduced ?? value, modulus, Head(resultBuffer, words));
-            SignedRoot.ClearAbove(resultBuffer, words);
+            workspace.Provider.ModInverse(workspace, reduced ?? value, modulus,
+                ResultBuffers.Head(resultBuffer, words));
+            ResultBuffers.ClearAbove(resultBuffer, words);
         }
         finally
         {
@@ -424,7 +429,8 @@ public static class GpuBigIntMath
     /// </summary>
     /// <param name="leftOperand">The big integer to shift.</param>
     /// <param name="shiftBits">The number of bit positions to shift left; a negative count shifts right, as
-    /// <see cref="BigInteger"/>. Bits shifted out of the buffer are dropped.</param>
+    /// <see cref="BigInteger"/>. A set bit shifted out of a result narrower than the shifted value is a domain
+    /// error.</param>
     /// <param name="resultBuffer">The destination buffer receiving the shifted value.</param>
     /// <exception cref="ArgumentException"><paramref name="resultBuffer"/> is narrower than <paramref
     /// name="leftOperand"/>; nothing is written. A buffer narrower than the shifted value is the checked form: a
@@ -453,6 +459,11 @@ public static class GpuBigIntMath
                 $"{leftOperand.NumWords}, result: {resultBuffer.NumWords} words.", nameof(resultBuffer));
         }
 
+#if DEBUG
+        // Debug builds check each caller's claim: a set bit shifted out is reported as a domain error at the next read
+        BigIntWideOps.CheckFitsBits(leftOperand,
+            Math.Max(0L, (long)BigIntWidths.BitsPerWord * leftOperand.NumWords - shiftBits));
+#endif
         leftOperand.Workspace.Provider.ShiftLeft(leftOperand.Workspace, leftOperand, shiftBits, resultBuffer);
     }
 
@@ -473,7 +484,7 @@ public static class GpuBigIntMath
             return;
         }
 
-        ThrowIfResultNarrower(resultBuffer, leftOperand.NumWords, nameof(ShiftLeft));
+        ResultBuffers.ThrowIfNarrower(resultBuffer, leftOperand.NumWords, nameof(ShiftLeft));
 
         // Below the bound (32 a + k bits) the call is the checked form: a bit of the source shifted past the result is
         // a domain error. Checked before the shift, which may write the source in place.
@@ -497,7 +508,8 @@ public static class GpuBigIntMath
     /// </summary>
     /// <param name="leftOperand">The big integer to shift.</param>
     /// <param name="shiftBits">The number of bit positions to shift right; a negative count shifts left, as
-    /// <see cref="BigInteger"/>. Bits shifted out of the buffer are dropped.</param>
+    /// <see cref="BigInteger"/>. Bits shifted below the lowest word are dropped (division by a power of two,
+    /// rounded down); a negative count is checked as <see cref="ShiftLeft"/>.</param>
     /// <param name="resultBuffer">The destination buffer receiving the shifted value.</param>
     /// <exception cref="ArgumentException"><paramref name="resultBuffer"/> is narrower than the bits that remain (<c>32
     /// * leftOperand.NumWords - shiftBits</c>, at least one word), or <paramref name="shiftBits"/> is <see
@@ -527,7 +539,7 @@ public static class GpuBigIntMath
 
         // The result has at most 32 a - k bits, at least one word
         var bound = Math.Max((long)BigIntWidths.BitsPerWord * leftOperand.NumWords - shiftBits, 1L);
-        ThrowIfResultNarrower(resultBuffer, BigIntWidths.Words(bound), nameof(ShiftRight));
+        ResultBuffers.ThrowIfNarrower(resultBuffer, BigIntWidths.Words(bound), nameof(ShiftRight));
         if (resultBuffer.NumWords == leftOperand.NumWords)
         {
             leftOperand.Workspace.Provider.ShiftRight(leftOperand.Workspace, leftOperand, shiftBits, resultBuffer);
@@ -661,7 +673,8 @@ public static class GpuBigIntMath
     private static void BitwiseAndCore(GpuBigUInt leftOperand, GpuBigUInt rightOperand,
         GpuBigUInt resultBuffer)
     {
-        ThrowIfResultNarrower(resultBuffer, Math.Min(leftOperand.NumWords, rightOperand.NumWords), nameof(BitwiseAnd));
+        ResultBuffers.ThrowIfNarrower(resultBuffer, Math.Min(leftOperand.NumWords, rightOperand.NumWords),
+            nameof(BitwiseAnd));
         BigIntWideOps.Bitwise(leftOperand, rightOperand, resultBuffer, GpuBigIntWideKernels.BitwiseAnd);
     }
 
@@ -688,7 +701,8 @@ public static class GpuBigIntMath
     private static void BitwiseOrCore(GpuBigUInt leftOperand, GpuBigUInt rightOperand,
         GpuBigUInt resultBuffer)
     {
-        ThrowIfResultNarrower(resultBuffer, Math.Max(leftOperand.NumWords, rightOperand.NumWords), nameof(BitwiseOr));
+        ResultBuffers.ThrowIfNarrower(resultBuffer, Math.Max(leftOperand.NumWords, rightOperand.NumWords),
+            nameof(BitwiseOr));
         BigIntWideOps.Bitwise(leftOperand, rightOperand, resultBuffer, GpuBigIntWideKernels.BitwiseOr);
     }
 
@@ -715,7 +729,8 @@ public static class GpuBigIntMath
     private static void BitwiseXorCore(GpuBigUInt leftOperand, GpuBigUInt rightOperand,
         GpuBigUInt resultBuffer)
     {
-        ThrowIfResultNarrower(resultBuffer, Math.Max(leftOperand.NumWords, rightOperand.NumWords), nameof(BitwiseXor));
+        ResultBuffers.ThrowIfNarrower(resultBuffer, Math.Max(leftOperand.NumWords, rightOperand.NumWords),
+            nameof(BitwiseXor));
         BigIntWideOps.Bitwise(leftOperand, rightOperand, resultBuffer, GpuBigIntWideKernels.BitwiseXor);
     }
 

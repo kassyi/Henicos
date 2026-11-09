@@ -113,18 +113,28 @@ public static partial class GpuBigIntWideKernels
 
         if (tid == 0 && !modular)
         {
-            if (sub && topCarry[0] == 0u)
-            {
-                GpuDomainErrors.Report(status, GpuDomainErrors.SubtractBelowZero);
-            }
-            else if (sub && highWords[0] != 0u)
-            {
-                GpuDomainErrors.Report(status, GpuDomainErrors.SubtractOverflow);
-            }
-            else if (!sub && (topCarry[0] != 0u || highWords[0] != 0u))
-            {
-                GpuDomainErrors.Report(status, GpuDomainErrors.AddOverflow);
-            }
+            ReportAddSubtract(status, sub, topCarry[0], highWords[0]);
+        }
+    }
+
+    /// <summary>
+    /// Reports the domain error of <see cref="AddSubWideKernel"/>, if any: a borrow out of the top word (a difference
+    /// below zero), a non-zero word above the result (a value that does not fit), or a carry out of a sum.
+    /// </summary>
+    [GpuDeviceFunction]
+    public static void ReportAddSubtract(uint[] status, bool subtract, uint topCarry, uint highWords)
+    {
+        if (subtract && topCarry == 0u)
+        {
+            GpuDomainErrors.Report(status, GpuDomainErrors.SubtractBelowZero);
+        }
+        else if (subtract && highWords != 0u)
+        {
+            GpuDomainErrors.Report(status, GpuDomainErrors.SubtractOverflow);
+        }
+        else if (!subtract && (topCarry != 0u || highWords != 0u))
+        {
+            GpuDomainErrors.Report(status, GpuDomainErrors.AddOverflow);
         }
     }
 

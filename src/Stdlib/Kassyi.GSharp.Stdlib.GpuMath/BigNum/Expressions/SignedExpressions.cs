@@ -384,18 +384,10 @@ internal static class SignedRoot
     }
 
     // The first numWords words of target, borrowed
-    public static GpuBigUInt Head(GpuBigUInt target, int numWords) =>
-        numWords == target.NumWords ? target : new GpuBigUInt(target.Workspace, target.Handle.Slice(0, numWords));
+    public static GpuBigUInt Head(GpuBigUInt target, int numWords) => ResultBuffers.Head(target, numWords);
 
     // Clears the words of target above the first numWords (a memset, which a CUDA graph capture records)
-    public static void ClearAbove(GpuBigUInt target, int numWords)
-    {
-        if (target.NumWords > numWords)
-        {
-            target.Workspace.Provider.ClearMemoryAsync(IntPtr.Add(target.DevicePointer, numWords * sizeof(uint)),
-                target.NumWords - numWords, target.Workspace.Stream);
-        }
-    }
+    public static void ClearAbove(GpuBigUInt target, int numWords) => ResultBuffers.ClearAbove(target, numWords);
 
     // An owned temporary of numWords words when the target overlaps an operand; otherwise the default value, which owns
     // nothing

@@ -137,7 +137,7 @@ public static partial class GpuBigIntDivRem
         // The root has half the operand's bits; the Heron steps run in the operand's width, so another width goes
         // through a temporary
         var words = leftOperand.NumWords;
-        ThrowIfResultNarrower(resultBuffer, BigIntWidths.Words(BigIntWidths.Sqrt(BigIntWidths.OfWords(words))),
+        ResultBuffers.ThrowIfNarrower(resultBuffer, BigIntWidths.Words(BigIntWidths.Sqrt(BigIntWidths.OfWords(words))),
             nameof(Sqrt));
         if (resultBuffer.NumWords != words)
         {
@@ -145,7 +145,7 @@ public static partial class GpuBigIntDivRem
             SqrtCore(leftOperand, root);
             var copied = Math.Min(words, resultBuffer.NumWords);
             resultBuffer.CopyFrom(root, numWords: copied);
-            SignedRoot.ClearAbove(resultBuffer, copied);
+            ResultBuffers.ClearAbove(resultBuffer, copied);
             return;
         }
 

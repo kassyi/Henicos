@@ -17,27 +17,15 @@ public static partial class GpuBigIntDivRem
         GpuBigUInt RemainderExtended,
         GpuBigUInt BPaddedExtended);
 
-    // [WHY] Validates buffer lengths at the host boundary before GPU kernel dispatch to avoid silent CUDA out-of-bounds writes.
-    [ExcludeFromCodeCoverage]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    // A result buffer narrower than the method's minimum would lose words: rejected before anything is launched
-    private static void ThrowIfResultNarrower(GpuBigUInt resultBuffer, int minimumWords, string method)
-    {
-        if (resultBuffer.NumWords < minimumWords)
-        {
-            throw new ArgumentException(
-                $"{method}: the result buffer must have at least {minimumWords} words; it has {resultBuffer.NumWords}.",
-                nameof(resultBuffer));
-        }
-    }
-
+    // ModPow takes its base, modulus and result in one width
     private static void ThrowIfSizeMismatch(GpuBigUInt leftOperand, GpuBigUInt rightOperand,
         GpuBigUInt resultBuffer)
     {
         if (leftOperand.NumWords != rightOperand.NumWords || leftOperand.NumWords != resultBuffer.NumWords)
         {
             throw new ArgumentException(
-                $"All buffers must have the same size. a: {leftOperand.NumWords}, b: {rightOperand.NumWords}, result: {resultBuffer.NumWords} words.");
+                $"All buffers must have the same size. a: {leftOperand.NumWords}, b: {rightOperand.NumWords}, " +
+                $"result: {resultBuffer.NumWords} words.");
         }
     }
 
@@ -681,10 +669,10 @@ public static partial class GpuBigIntDivRem
     {
         // The quotient is at most the dividend; operands of any widths
         var words = leftOperand.NumWords;
-        ThrowIfResultNarrower(resultBuffer, words, nameof(Div));
+        ResultBuffers.ThrowIfNarrower(resultBuffer, words, nameof(Div));
         using var tempR = leftOperand.Workspace.RentTemp(rightOperand.NumWords);
-        DivRem(leftOperand, rightOperand, SignedRoot.Head(resultBuffer, words), tempR);
-        SignedRoot.ClearAbove(resultBuffer, words);
+        DivRem(leftOperand, rightOperand, ResultBuffers.Head(resultBuffer, words), tempR);
+        ResultBuffers.ClearAbove(resultBuffer, words);
     }
 
     /// <summary>
@@ -711,13 +699,13 @@ public static partial class GpuBigIntDivRem
         // The remainder is below the divisor and at most the dividend; operands of any widths. DivRem writes a
         // remainder as wide as the divisor: a narrower result buffer gets its low words, which hold it.
         var workspace = leftOperand.Workspace;
-        ThrowIfResultNarrower(resultBuffer, Math.Min(leftOperand.NumWords, rightOperand.NumWords), nameof(Mod));
+        ResultBuffers.ThrowIfNarrower(resultBuffer, Math.Min(leftOperand.NumWords, rightOperand.NumWords), nameof(Mod));
         var divisorWords = rightOperand.NumWords;
         using var tempQ = workspace.RentTemp(leftOperand.NumWords);
         if (resultBuffer.NumWords >= divisorWords)
         {
-            DivRem(leftOperand, rightOperand, tempQ, SignedRoot.Head(resultBuffer, divisorWords));
-            SignedRoot.ClearAbove(resultBuffer, divisorWords);
+            DivRem(leftOperand, rightOperand, tempQ, ResultBuffers.Head(resultBuffer, divisorWords));
+            ResultBuffers.ClearAbove(resultBuffer, divisorWords);
             return;
         }
 
