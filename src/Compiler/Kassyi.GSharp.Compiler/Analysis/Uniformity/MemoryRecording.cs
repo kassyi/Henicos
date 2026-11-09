@@ -9,17 +9,19 @@ namespace Kassyi.GSharp.Compiler.Analysis;
 /// </summary>
 internal static class MemoryRecording
 {
-    // ref int r = ref <location>: a location of memory is followed; a variable of the thread (a local, a by-value
-    // parameter, a field of either) is not memory; anything else (a pointer) may be any memory
+    // ref int r = ref <location>: a location of memory (or a field of one) is followed; a variable of the thread (a
+    // local, a by-value parameter, the receiver, a field of either) is not memory; anything else (a pointer) may be
+    // any memory
     public static void Bind(MemoryValues values, MemoryReferences references, ILocalSymbol refLocal, IOperation value)
     {
-        value = Unwrap(value);
+        value = ContainingLocation(value);
         if (IsLocation(value))
         {
             AllocateLocation(values, value);
             references.AddSource(refLocal, value);
         }
-        else if (value is not (ILocalReferenceOperation or IParameterReferenceOperation or IFieldReferenceOperation))
+        else if (value is not (ILocalReferenceOperation or IParameterReferenceOperation or IFieldReferenceOperation or
+                 IInstanceReferenceOperation))
         {
             references.AddUnknownTarget(refLocal);
         }
@@ -48,7 +50,7 @@ internal static class MemoryRecording
         var targets = ImmutableArray.CreateBuilder<MemoryCallTarget>();
         foreach (var argument in invocation.Arguments)
         {
-            var value = Unwrap(argument.Value);
+            var value = ContainingLocation(argument.Value);
             if (argument.Parameter is { RefKind: RefKind.Ref or RefKind.Out } parameter && IsLocation(value))
             {
                 AllocateLocation(values, value);

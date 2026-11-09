@@ -64,12 +64,13 @@ internal sealed class MemoryUniformity(UniformityRecorder recorder)
 
     /// <summary>
     /// <paramref name="target"/> written. A write is an assignment, compound assignment, increment or deconstruction
-    /// whose target is a location of memory: an element (<c>arr[i]</c>, <c>span[i]</c>, <c>shared[i]</c>), a ref local
-    /// bound to one, a <c>ref</c> / <c>out</c> parameter, or the result of a device function that returns by reference.
+    /// whose target is a location of memory: an element (<c>arr[i]</c>, <c>span[i]</c>, <c>shared[i]</c>) or a field of
+    /// one (<c>arr[i].X</c>), a ref local bound to one, a <c>ref</c> / <c>out</c> parameter, or the result of a device
+    /// function that returns by reference.
     /// </summary>
     public void AddWrite(IOperation target, int node)
     {
-        target = Unwrap(target);
+        target = ContainingLocation(target);
         if (target is ITupleOperation tuple)
         {
             foreach (var element in tuple.Elements)

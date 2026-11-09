@@ -37,6 +37,23 @@ internal static class MemoryOperations
         return symbol != null && IsMemoryType(GetMemoryType(symbol)) ? symbol : null;
     }
 
+    // The location that writing target changes: a field of a struct location (a[i].X, a[i].Inner.X, r.X of a ref local)
+    // is part of that location, so it is written with it (#1272)
+    public static IOperation ContainingLocation(IOperation target)
+    {
+        target = Unwrap(target);
+        while (target is IFieldReferenceOperation
+               {
+                   Field.IsStatic: false,
+                   Instance: { Type.IsValueType: true } instance
+               })
+        {
+            target = Unwrap(instance);
+        }
+
+        return target;
+    }
+
     public static IOperation Unwrap(IOperation operation)
     {
         while (true)

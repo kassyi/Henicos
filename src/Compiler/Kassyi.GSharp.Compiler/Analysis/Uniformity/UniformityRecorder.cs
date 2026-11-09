@@ -129,13 +129,16 @@ internal sealed class UniformityRecorder(IMethodSymbol method, ArgumentMasks mas
         Memory.AddCall(invocation, node);
     }
 
-    // A call that splits the state machine; a barrier, or a call that reaches one, is also a site of GSH0037. The gaps
-    // inside a Gpu.SyncGrid(body) are not split points here: the call is (a grid barrier). The memory, though, is
-    // synced in each gap, where the expansion places the grid sync, and not where the body starts.
+    // A call that splits the state machine; a barrier, or a call that reaches one, is also a site of GSH0037. A gap
+    // inside a Gpu.SyncGrid(body) is not a site: the call is (a grid barrier). Every thread of the grid waits at the
+    // grid sync that the expansion places in the gap, so it is a point where the threads that skipped a divergent
+    // barrier wait while the others wait at that barrier (#982), and the memory is synced there, not where the body
+    // starts.
     public void OnSplit(SplitPoint split, int node)
     {
         if (split.Kind == SplitKind.Gap)
         {
+            Nodes[node].HasSplit = true;
             Memory.AddSync(SyncScope.Grid, node);
             return;
         }
