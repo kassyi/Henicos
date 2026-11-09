@@ -15,12 +15,15 @@ public class StructOrderingTests : TranspilerTestBase
             .First(t => t.Name == name);
     }
 
+    private static Compilation GetLocalCompilation([CallerFilePath] string callerFilePath = "") =>
+        MegaCompilationCache.GetSourceContext(callerFilePath).Item1;
+
     [Fact]
     [Category(TestCategory.Unit)]
     public void Test_TopologicallySortedStructs_EmptyStruct()
     {
         var structSym = GetLocalTypeSymbol("EmptyStruct");
-        var sorted = StructOrdering.GetTopologicallySortedStructs([structSym]);
+        var sorted = StructOrdering.GetTopologicallySortedStructs([structSym], GetLocalCompilation());
 
         Assert.Single(sorted);
         Assert.Equal("EmptyStruct", sorted[0].Name);
@@ -35,7 +38,7 @@ public class StructOrderingTests : TranspilerTestBase
         var symC = GetLocalTypeSymbol("StructEdgeCases_StructC");
         var symD = GetLocalTypeSymbol("StructEdgeCases_StructD");
 
-        var sorted = StructOrdering.GetTopologicallySortedStructs([symA, symB, symC, symD]);
+        var sorted = StructOrdering.GetTopologicallySortedStructs([symA, symB, symC, symD], GetLocalCompilation());
 
         Assert.Equal(4, sorted.Length);
         // Order must be D -> C -> B -> A (dependents last)
@@ -50,10 +53,56 @@ public class StructOrderingTests : TranspilerTestBase
     public void Test_TopologicallySortedStructs_ExcludesSystemTypes()
     {
         var structSym = GetLocalTypeSymbol(nameof(MyStruct));
-        var sorted = StructOrdering.GetTopologicallySortedStructs([structSym]);
+        var sorted = StructOrdering.GetTopologicallySortedStructs([structSym], GetLocalCompilation());
 
         Assert.Single(sorted);
         Assert.Equal(nameof(MyStruct), sorted[0].Name);
+    }
+
+    // A struct that only the constructor of another struct creates comes before it (#1158)
+    [Fact]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_TopologicallySortedStructs_PutsAStructCreatedInAConstructorFirst()
+    {
+        var outer = GetLocalTypeSymbol("StructBodyEdge_Outer");
+        var inner = GetLocalTypeSymbol("StructBodyEdge_Inner");
+
+        var sorted = StructOrdering.GetTopologicallySortedStructs([outer, inner], GetLocalCompilation());
+
+        Assert.Equal(["StructBodyEdge_Inner", "StructBodyEdge_Outer"], sorted.Select(static s => s.Name));
+    }
+
+    // The types of every emitted body: a constructor, a computed property, a field initializer; not a method
+    [Fact]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_StructBodyDependencies_ListsTheStructsOfTheEmittedBodiesOnly()
+    {
+        var outer = GetLocalTypeSymbol("StructBodyEdge_Outer");
+
+        var names = StructBodyDependencies.Get(outer, GetLocalCompilation())
+            .Select(static t => t.Name)
+            .OrderBy(static n => n, StringComparer.Ordinal);
+
+        Assert.Equal(["StructBodyEdge_Initialized", "StructBodyEdge_Inner", "StructBodyEdge_Read"], names);
+    }
+
+    // A generic struct's body types come with its type arguments substituted
+    [Fact]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_StructBodyDependencies_SubstitutesTheTypeArgumentsOfAGenericStruct()
+    {
+        var holder = GetLocalTypeSymbol("StructBodyEdge_Holder");
+        var inner = GetLocalTypeSymbol("StructBodyEdge_Inner");
+        var constructed = holder.Construct(inner);
+
+        var types = StructBodyDependencies.Get(constructed, GetLocalCompilation());
+
+        Assert.Contains(types, t => SymbolEqualityComparer.Default.Equals(t, inner));
+        Assert.DoesNotContain(types, static t => t is ITypeParameterSymbol);
+        Assert.DoesNotContain(types, t => SymbolEqualityComparer.Default.Equals(t, constructed));
     }
 }
 
@@ -86,3 +135,55 @@ struct MyStruct
     public System.DateTime time;
 }
 
+struct StructBodyEdge_Inner
+{
+    public int V;
+
+    public StructBodyEdge_Inner(int v)
+    {
+        V = v;
+    }
+}
+
+struct StructBodyEdge_Initialized
+{
+    public int V;
+}
+
+struct StructBodyEdge_Read
+{
+    public int V;
+}
+
+struct StructBodyEdge_OnlyInAMethod
+{
+    public int V;
+}
+
+struct StructBodyEdge_Outer
+{
+    public int V;
+    public int W = new StructBodyEdge_Initialized().V;
+
+    public StructBodyEdge_Outer(int v)
+    {
+        var inner = new StructBodyEdge_Inner(v);
+        V = inner.V;
+    }
+
+    public int Read => default(StructBodyEdge_Read).V + V;
+
+    public static int NotEmitted() => new StructBodyEdge_OnlyInAMethod().V;
+}
+
+struct StructBodyEdge_Holder<T>
+    where T : struct
+{
+    public int V;
+
+    public StructBodyEdge_Holder(int v)
+    {
+        T value = default;
+        V = v + (value.Equals(default(T)) ? 0 : 1);
+    }
+}
