@@ -113,6 +113,15 @@ internal static class MethodSignatureTranspiler
             {
                 context.Emitter.Writer.AppendIf(written, ", ");
                 context.Emitter.Writer.Append($"unsigned char* __restrict__ {GSharpInternalNames.StackLinq.GridScratch}");
+                written = true;
+            }
+
+            // The epoch of the launch, last: the record and the abort word of a failing thread (Prelude.cu,
+            // __gsharp_launch_epoch), which the CUDA launcher passes (KernelLaunchEmitter)
+            if (context.Emitter.Dialect.IsCuda)
+            {
+                context.Emitter.Writer.AppendIf(written, ", ");
+                context.Emitter.Writer.Append($"unsigned int {GSharpInternalNames.Launcher.Epoch}");
             }
         }
     }

@@ -11,6 +11,9 @@ internal static class KernelLaunchEmitter
     private const string DeviceArrays = GSharpInternalNames.Launcher.DeviceArrays;
 
     private const string KernelParams = GSharpInternalNames.Launcher.KernelParams;
+
+    // The epoch of the launch, passed as the hidden last kernel parameter
+    private const string LaunchEpoch = GSharpInternalNames.Launcher.Epoch;
     private const string FunctionHandle = GSharpInternalNames.Launcher.FunctionHandle;
     private const string CudaDriverApiType = HostTypeNames.CudaDriverApi;
     private const string CudaExceptionType = HostTypeNames.CudaException;
@@ -63,6 +66,10 @@ internal static class KernelLaunchEmitter
         AutoResultEmitter.WriteCudaDeclaration(writer, kernel);
 
         writer.AppendLineIf(kernel.GridScratchSlotBytes > 0, $"{IntPtrType} {DeviceGridScratch} = {IntPtrType}.Zero;");
+
+        // [WHY] Taken before anything is allocated: it throws the unconsumed error of an earlier launch whose record this
+        // launch reuses
+        writer.AppendLine($"uint {LaunchEpoch} = {GpuKernelLoaderType}.NextLaunchEpoch(hStream);");
     }
 
     /// <summary>Emits argument marshaling, device memory transfers, kernel launch, and result copyback.</summary>
@@ -72,7 +79,9 @@ internal static class KernelLaunchEmitter
         var kernelParamCount = WriteKernelParamsDeclaration(writer, kernel);
         WriteParameterMarshals(writer, plan, isDevicePtr);
         AutoResultEmitter.WriteCudaMarshal(writer, kernel, kernel.Parameters.Length);
-        WriteGridScratchAllocation(writer, kernel, kernelParamCount);
+        // The epoch is the last slot, the grid scratch the one before it
+        WriteGridScratchAllocation(writer, kernel, kernelParamCount - 2);
+        writer.AppendLine($"{KernelParams}[{kernelParamCount - 1}] = &{LaunchEpoch};");
         writer.AppendLine();
 
         WriteLaunchKernelCall(writer, kernel.IsCooperative);
@@ -85,17 +94,17 @@ internal static class KernelLaunchEmitter
         AutoResultEmitter.WriteCudaCopyBack(writer, kernel);
         writer.AppendLineIf(isCheckedBuild,
             "CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));");
-        // A failing device thread records its error and exits, and the kernel completes: the launcher reads the record
-        // once the stream has synchronized (copy-back or checked build). A launch with neither leaves it to the next
-        // synchronization of the stream.
-        writer.AppendLineIf(isCheckedBuild || !isDevicePtr, $"{GpuKernelLoaderType}.ThrowIfDeviceError();");
+        // A failing device thread records its error and exits, and the kernel completes: the launcher reads the record of
+        // its own epoch once the stream has synchronized (copy-back or checked build). A launch with neither leaves it to
+        // the next synchronization of the stream.
+        writer.AppendLineIf(isCheckedBuild || !isDevicePtr, $"{GpuKernelLoaderType}.ThrowIfLaunchError({LaunchEpoch});");
     }
 
-    // void** __gsharp_kernel_params = stackalloc void*[<parameters>[ + auto result][ + grid scratch]];
+    // void** __gsharp_kernel_params = stackalloc void*[<parameters>[ + auto result][ + grid scratch] + epoch];
     // Returns the number of slots.
     private static int WriteKernelParamsDeclaration(SourceWriter writer, in KernelHostModel kernel)
     {
-        var kernelParamCount = kernel.Parameters.Length;
+        var kernelParamCount = kernel.Parameters.Length + 1;
 
         if (kernel.ReturnsValue)
         {
@@ -136,7 +145,7 @@ internal static class KernelLaunchEmitter
     }
 
     // One slot per block for its partial result and one for the total, freed after the launch (WriteCleanup)
-    private static void WriteGridScratchAllocation(SourceWriter writer, in KernelHostModel kernel, int kernelParamCount)
+    private static void WriteGridScratchAllocation(SourceWriter writer, in KernelHostModel kernel, int slot)
     {
         if (kernel.GridScratchSlotBytes <= 0)
         {
@@ -147,7 +156,7 @@ internal static class KernelLaunchEmitter
         writer.AppendLine(
             $"{CudaExceptionType}.ThrowIfError({CudaDriverApiType}.cuMemAllocAsync(" +
             $"out {DeviceGridScratch}, ({IntPtrType})(((long)gridDimX * gridDimY * gridDimZ + 1) * {kernel.GridScratchSlotBytes}), hStream));");
-        writer.AppendLine($"{KernelParams}[{kernelParamCount - 1}] = &{DeviceGridScratch};");
+        writer.AppendLine($"{KernelParams}[{slot}] = &{DeviceGridScratch};");
     }
 
     /// <summary>Emits cleanup code to asynchronously free allocated device memory buffers.</summary>
