@@ -3,7 +3,8 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum.Expressions;
 
 // Properties of the device-side signs of the signed nodes, against a BigInteger oracle computed from the host inputs:
 // - +, -, Max, Min, ~, *, -x and Fit on values whose signs depend on the values (differences that borrow or cancel,
-//   operands of either sign) give the oracle's value, and a zero result is +0;
+//   operands of either sign) give the oracle's value; a difference that cancels is +0, while Max and Min return the
+//   chosen operand with its sign flag (a chosen -0 stays -0, which equals 0);
 // - an expression of those nodes is captured into a CUDA graph, and each replay with new operand magnitudes (whose
 //   order flips the signs of the differences) gives the oracle's value, its sign included (Result after Execute and
 //   ExecuteAsync);
