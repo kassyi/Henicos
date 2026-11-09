@@ -116,13 +116,10 @@ internal abstract class SignedBinaryExpression(
             var buffer = staging.Handle.IsDefault ? result : staging;
             if (plan.Chosen != ChosenOperand.None)
             {
-                // Max / Min of different host signs: the plan names the operand, which is copied without a comparison;
-                // Min copies the negative one, whose sign is + when it is -0
-                var chosen = plan.Chosen == ChosenOperand.First ? first : second;
-                SignedSelect.Copy(chosen.Magnitude, buffer);
-                sign = plan.IsHost
-                    ? SignSource.Host(plan.HostNegative)
-                    : SignedDeviceOps.SignUnlessZero(buffer, chosen.Sign);
+                // Max / Min of different host signs: the plan names the operand, which is copied with its sign flag
+                // and without a comparison
+                SignedSelect.Copy(plan.Chosen == ChosenOperand.First ? first.Magnitude : second.Magnitude, buffer);
+                sign = SignSource.Host(plan.HostNegative);
             }
             else if (plan.IsHost)
             {
@@ -161,7 +158,7 @@ internal abstract class SignedBinaryExpression(
         return plan.Kernel switch
         {
             SignKernel.Xor => SignedDeviceOps.Xor(workspace, a.Sign, b.Sign),
-            SignKernel.SignUnlessZero => SignedDeviceOps.SignUnlessZero(resultBuffer, a.Sign),
+            SignKernel.RemainderSign => SignedDeviceOps.RemainderSign(resultBuffer, a.Sign),
             _ => throw new InvalidOperationException($"{GetType().Name} has no device sign kernel {plan.Kernel}.")
         };
     }
@@ -284,7 +281,7 @@ internal class SignedModExpression(IGpuBigIntExpression left, IGpuBigIntExpressi
         GpuBigIntDivRem.DivRem(a.Value, b.Value, quotient, remainder);
         resultBuffer.CopyFrom(remainder, numWords: resultBuffer.NumWords);
 
-        // The magnitude only: the sign comes from the plan (+ for a non-negative dividend, SignUnlessZeroKernel
+        // The magnitude only: the sign comes from the plan (+ for a non-negative dividend, RemainderSignKernel
         // otherwise), so nothing is read here
         return new GpuBigInt(resultBuffer, isNegative: false);
     }
@@ -468,7 +465,7 @@ internal class SignedMaxExpression(IGpuBigIntExpression left, IGpuBigIntExpressi
 
     protected override SignSource ExecuteDevice(GpuWorkspace workspace, SignedValue a, SignedValue b,
         GpuBigUInt resultBuffer, SignPlan plan) =>
-        SignedDeviceOps.Select(a, b, max: true, resultBuffer);
+        SignedDeviceOps.Select(a, b, max: true, resultBuffer, plan);
 }
 
 internal class SignedMinExpression(IGpuBigIntExpression left, IGpuBigIntExpression right)
@@ -481,5 +478,5 @@ internal class SignedMinExpression(IGpuBigIntExpression left, IGpuBigIntExpressi
 
     protected override SignSource ExecuteDevice(GpuWorkspace workspace, SignedValue a, SignedValue b,
         GpuBigUInt resultBuffer, SignPlan plan) =>
-        SignedDeviceOps.Select(a, b, max: false, resultBuffer);
+        SignedDeviceOps.Select(a, b, max: false, resultBuffer, plan);
 }

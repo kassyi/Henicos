@@ -225,6 +225,10 @@ The second signed expression operand.
 _GpuBigIntExpr_<br>
 A new `GpuBigIntExpr` representing the Max AST node.
 
+#### Remarks
+
+The result is one of the operands, its sign flag included. Of two equal values either may be returned, so the max of `+0` and `-0` may be `-0`, a zero with the minus flag, which equals 0.
+
 ## Min(GpuBigIntExpr, GpuBigIntExpr)
 
 Constructs a lazy expression that resolves to the minimum of two signed big integer expressions.
@@ -245,6 +249,10 @@ The second signed expression operand.
 
 _GpuBigIntExpr_<br>
 A new `GpuBigIntExpr` representing the Min AST node.
+
+#### Remarks
+
+The result is one of the operands, its sign flag included. Of two equal values either may be returned, so the min of `+0` and `-0` may be `-0`, a zero with the minus flag, which equals 0.
 
 ## Operators
 

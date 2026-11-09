@@ -105,8 +105,9 @@ public static partial class GpuBigIntSignedKernels
 
     /// <summary>
     /// <c>result = Max(a, b)</c> (<paramref name="pickMax"/> = 1) or <c>Min(a, b)</c> (0) of signed values: the chosen
-    /// operand's magnitude in the first words of the result, zeros above it, and its sign. Equal values choose
-    /// <paramref name="a"/>; <c>-0</c> equals <c>+0</c>.
+    /// operand's magnitude in the first words of the result, zeros above it, and its sign flag as it is (the result
+    /// is one of the operands, so <c>-0</c> stays <c>-0</c>). Equal values choose <paramref name="a"/>; <c>-0</c>
+    /// equals <c>+0</c>.
     /// </summary>
     [GpuKernel]
     public static void SignedSelectKernel([GpuReadOnly] uint[] a, int aWords, [GpuReadOnly] uint[] aSign,
@@ -146,8 +147,10 @@ public static partial class GpuBigIntSignedKernels
 
         if (tid == 0)
         {
-            bool negativeA = ReadSign(aSign, aHostSign) != 0u && nonZero[0] != 0u;
-            bool negativeB = ReadSign(bSign, bHostSign) != 0u && nonZero[1] != 0u;
+            uint flagA = ReadSign(aSign, aHostSign);
+            uint flagB = ReadSign(bSign, bHostSign);
+            bool negativeA = flagA != 0u && nonZero[0] != 0u;
+            bool negativeB = flagB != 0u && nonZero[1] != 0u;
 
             // The signed comparison of a and b: -1, 0 or 1
             int compare;
@@ -174,7 +177,7 @@ public static partial class GpuBigIntSignedKernels
 
             bool takeA = pickMax == 1 ? compare >= 0 : compare <= 0;
             chooseA[0] = takeA ? 1u : 0u;
-            resultSign[0] = (takeA ? negativeA : negativeB) ? 1u : 0u;
+            resultSign[0] = takeA ? flagA : flagB;
         }
 
         Gpu.SyncThreads();
@@ -257,12 +260,11 @@ public static partial class GpuBigIntSignedKernels
     }
 
     /// <summary>
-    /// The sign of a value already in place: the operand's sign when <paramref name="value"/> is not zero, 0 otherwise
-    /// (a remainder takes the dividend's sign; Min of different host signs, the negative operand's).
+    /// The sign of a remainder: the dividend's sign when <paramref name="remainder"/> is not zero, 0 otherwise.
     /// </summary>
     [GpuKernel]
-    public static void SignUnlessZeroKernel([GpuReadOnly] uint[] value, int words, [GpuReadOnly] uint[] operandSign,
-        int operandHostSign, uint[] resultSign)
+    public static void RemainderSignKernel([GpuReadOnly] uint[] remainder, int words, [GpuReadOnly] uint[] dividendSign,
+        int dividendHostSign, uint[] resultSign)
     {
         int tid = ThreadIndex.X;
         int bDim = BlockDimension.X;
@@ -276,7 +278,7 @@ public static partial class GpuBigIntSignedKernels
 
         for (int i = tid; i < words; i += bDim)
         {
-            if (value[i] != 0u)
+            if (remainder[i] != 0u)
             {
                 nonZero[0] = 1u;
             }
@@ -286,7 +288,7 @@ public static partial class GpuBigIntSignedKernels
 
         if (tid == 0)
         {
-            resultSign[0] = nonZero[0] == 0u ? 0u : ReadSign(operandSign, operandHostSign);
+            resultSign[0] = nonZero[0] == 0u ? 0u : ReadSign(dividendSign, dividendHostSign);
         }
     }
 

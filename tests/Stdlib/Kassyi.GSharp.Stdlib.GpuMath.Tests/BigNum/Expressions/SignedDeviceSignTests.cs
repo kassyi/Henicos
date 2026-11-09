@@ -81,9 +81,12 @@ public sealed class SignedDeviceSignTests : IDisposable
     }
 
     // Max and Min of operands of different word counts whose low words are equal: only the wider operand's high word
-    // decides (a + b of two 2-word leaves has 3 words). Negative leaves invert the choice. Min(-0, +1) is +0.
+    // decides (a + b of two 2-word leaves has 3 words). Negative leaves invert the choice. Max and Min return one of
+    // the operands, its sign flag included: Min(-0, +1) is the -0 operand (planned on the host), and Max(-0, a - b)
+    // with a < b is the -0 operand too (chosen by the kernel, whose comparison takes -0 as 0).
     // mutant: GpuBigIntSignedKernels.cu.cs SignedSelectKernel `aWords > bWords ? aWords : bWords` -> the smaller
-    // (a tie of the low words takes a); and `&& nonZero[0] != 0u` removed (Min of -0 keeps the minus flag)
+    // (a tie of the low words takes a); and `takeA ? flagA : flagB` -> `(takeA ? negativeA : negativeB) ? 1u : 0u`
+    // (the kernel turns -0 into +0)
     [Fact]
     [Scenario(TestScenario.Boundary)]
     public void MaxMin_DecidedByTheWiderOperandsHighWord()
@@ -106,7 +109,13 @@ public sealed class SignedDeviceSignTests : IDisposable
         using var one = SignedCases.Value(_workspace, 1, 1);
         using var min = GpuBigIntExpr.Min(zero, one).Evaluate(_workspace);
         Assert.True(min.Value.IsZero());
-        Assert.False(min.IsNegative);
+        Assert.True(min.IsNegative);
+
+        // a - b with a < b has a device sign, so the kernel chooses: Max(-0, -1) is the -0 operand
+        using var two = SignedCases.Value(_workspace, 2, 1);
+        using var max = GpuBigIntExpr.Max(zero, (GpuBigIntExpr)one - two).Evaluate(_workspace);
+        Assert.True(max.Value.IsZero());
+        Assert.True(max.IsNegative);
     }
 
     // The same high-word decision replayed by a graph: Min(a + b, c) with low words that tie

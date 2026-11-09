@@ -27,27 +27,44 @@ internal static class SignedDeviceOps
         return SignSource.Device(word);
     }
 
-    // Max(a, b) or Min(a, b) into result (at least as wide as the wider magnitude); equal values choose a
-    public static SignSource Select(SignedValue a, SignedValue b, bool max, GpuBigUInt result)
+    // Max or Min: one kernel compares the operands (-0 equals +0, equal values choose a) and copies the chosen one's
+    // magnitude and sign flag. With a host sign (operands of the same host sign) the kernel's sign goes to a scratch
+    // word that is returned at once, and the result keeps the host sign: no word to read at the root.
+    public static SignSource Select(SignedValue a, SignedValue b, bool max, GpuBigUInt result, SignPlan plan)
     {
         var workspace = result.Workspace;
         if (GpuKernelLoader.IsCpuFallbackMode)
         {
             var (left, right) = (Read(a), Read(b));
-            var value = max ? (left >= right ? left : right) : (left <= right ? left : right);
-            Write(BigInteger.Abs(value), result);
-            return SignSource.Host(value.Sign < 0);
+            var chosen = (max ? left >= right : left <= right) ? a : b;
+            Write(chosen.Magnitude.ToBigInteger(), result);
+            return SignSource.Host(chosen.Sign.HostNegative);
         }
 
         var word = workspace.RentTemp(1);
-        var (aWord, aHost) = Arguments(a.Sign, word);
-        var (bWord, bHost) = Arguments(b.Sign, word);
-        GpuBigIntSignedKernels.LaunchSignedSelectKernelPtr(
-            a.Magnitude.ToProxy(), a.Magnitude.NumWords, aWord, aHost,
-            b.Magnitude.ToProxy(), b.Magnitude.NumWords, bWord, bHost, max ? 1 : 0,
-            result.ToProxy(), result.NumWords, word.ToProxy(),
-            gridDimX: 1, blockDimX: BigIntWideOps.SingleBlockSize(result.NumWords), hStream: workspace.Stream);
-        return SignSource.Device(word);
+        try
+        {
+            var (aWord, aHost) = Arguments(a.Sign, word);
+            var (bWord, bHost) = Arguments(b.Sign, word);
+            GpuBigIntSignedKernels.LaunchSignedSelectKernelPtr(
+                a.Magnitude.ToProxy(), a.Magnitude.NumWords, aWord, aHost,
+                b.Magnitude.ToProxy(), b.Magnitude.NumWords, bWord, bHost, max ? 1 : 0,
+                result.ToProxy(), result.NumWords, word.ToProxy(),
+                gridDimX: 1, blockDimX: BigIntWideOps.SingleBlockSize(result.NumWords), hStream: workspace.Stream);
+        }
+        catch
+        {
+            word.Dispose();
+            throw;
+        }
+
+        if (!plan.HostSign)
+        {
+            return SignSource.Device(word);
+        }
+
+        word.Dispose();
+        return SignSource.Host(plan.HostNegative);
     }
 
     // ~x (-x - 1) into result (at least one word wider than the magnitude)
@@ -70,21 +87,20 @@ internal static class SignedDeviceOps
         return SignSource.Device(word);
     }
 
-    // The sign of a value already in place: the operand's, or + for a zero value (a remainder and its dividend, or the
-    // operand Min copied)
-    public static SignSource SignUnlessZero(GpuBigUInt value, SignSource operand)
+    // The sign of a remainder already in place: the dividend's, or + for a zero remainder
+    public static SignSource RemainderSign(GpuBigUInt remainder, SignSource dividend)
     {
-        var workspace = value.Workspace;
+        var workspace = remainder.Workspace;
         if (GpuKernelLoader.IsCpuFallbackMode)
         {
-            return SignSource.Host(operand.HostNegative && !value.ToBigInteger().IsZero);
+            return SignSource.Host(dividend.HostNegative && !remainder.ToBigInteger().IsZero);
         }
 
         var word = workspace.RentTemp(1);
-        var (oWord, oHost) = Arguments(operand, word);
-        GpuBigIntSignedKernels.LaunchSignUnlessZeroKernelPtr(
-            value.ToProxy(), value.NumWords, oWord, oHost, word.ToProxy(),
-            gridDimX: 1, blockDimX: BigIntWideOps.SingleBlockSize(value.NumWords), hStream: workspace.Stream);
+        var (dWord, dHost) = Arguments(dividend, word);
+        GpuBigIntSignedKernels.LaunchRemainderSignKernelPtr(
+            remainder.ToProxy(), remainder.NumWords, dWord, dHost, word.ToProxy(),
+            gridDimX: 1, blockDimX: BigIntWideOps.SingleBlockSize(remainder.NumWords), hStream: workspace.Stream);
         return SignSource.Device(word);
     }
 

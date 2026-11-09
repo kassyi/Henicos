@@ -117,6 +117,10 @@ public readonly struct GpuBigIntExpr : IDisposable
     /// <param name="left">The first signed expression operand.</param>
     /// <param name="right">The second signed expression operand.</param>
     /// <returns>A new <see cref="GpuBigIntExpr"/> representing the Max AST node.</returns>
+    /// <remarks>
+    /// The result is one of the operands, its sign flag included. Of two equal values either may be returned, so the
+    /// max of <c>+0</c> and <c>-0</c> may be <c>-0</c>, a zero with the minus flag, which equals 0.
+    /// </remarks>
     public static GpuBigIntExpr Max(GpuBigIntExpr left, GpuBigIntExpr right)
         => new(new SignedMaxExpression(left.Node, right.Node));
 
@@ -126,6 +130,10 @@ public readonly struct GpuBigIntExpr : IDisposable
     /// <param name="left">The first signed expression operand.</param>
     /// <param name="right">The second signed expression operand.</param>
     /// <returns>A new <see cref="GpuBigIntExpr"/> representing the Min AST node.</returns>
+    /// <remarks>
+    /// The result is one of the operands, its sign flag included. Of two equal values either may be returned, so the
+    /// min of <c>+0</c> and <c>-0</c> may be <c>-0</c>, a zero with the minus flag, which equals 0.
+    /// </remarks>
     public static GpuBigIntExpr Min(GpuBigIntExpr left, GpuBigIntExpr right)
         => new(new SignedMinExpression(left.Node, right.Node));
 
