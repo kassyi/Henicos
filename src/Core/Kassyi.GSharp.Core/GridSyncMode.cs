@@ -27,7 +27,10 @@ public enum GridSyncMode
     /// each barrier. After a thread of the launch failed, a barrier that a block of the failing launch completes lets
     /// the other blocks run one more interval, up to their next grid barrier, mbarrier wait or the end of the kernel,
     /// before they leave. The exception and its record are the same as with <see cref="Deterministic"/>; only the
-    /// writes of that extra interval may differ from run to run.
+    /// writes of that extra interval may differ from run to run. The code of that interval may read data that the
+    /// failing block never wrote, so a loop whose count comes from such data can run for a long time before the block
+    /// reaches the point where it leaves; use <see cref="Deterministic"/> when the code after the barrier depends on
+    /// that.
     /// </summary>
     Fast
 }
