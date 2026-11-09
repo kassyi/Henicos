@@ -7,14 +7,30 @@ namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel.Rules.Macros;
 internal static class SyncGridChecks
 {
     /// <summary>
-    /// Reports a body that is not a lambda, a non-cooperative kernel, and statements the split cannot keep.
+    /// Reports a body that is not a lambda, a mode that is not a constant member, a non-cooperative kernel, and
+    /// statements the split cannot keep.
     /// </summary>
     public static void CheckSyncGrid(
         InvocationExpressionSyntax invocation,
         GpuMacroCall call,
         ref ValidationContext context)
     {
-        if (call.HasBody && !GpuCodeConstraints.TryGetSyncGridBody(invocation, out _))
+        if (call.HasBody)
+        {
+            CheckBody(invocation, ref context);
+        }
+        else
+        {
+            CheckMode(invocation, call, ref context);
+        }
+
+        CheckCooperative(invocation, ref context);
+    }
+
+    // Gpu.SyncGrid(body): the body is a lambda, and its statements can be split at the grid syncs
+    private static void CheckBody(InvocationExpressionSyntax invocation, ref ValidationContext context)
+    {
+        if (!GpuCodeConstraints.TryGetSyncGridBody(invocation, out var body))
         {
             var args = invocation.ArgumentList.Arguments;
             if (args.Count >= 1)
@@ -24,13 +40,21 @@ internal static class SyncGridChecks
                     args[0],
                     GpuCodeConstraints.SyncGridRequiresLambda);
             }
+
+            return;
         }
 
-        if (!call.HasBody)
+        // A body flattened into an enclosing body is checked with the statements of that body
+        if (!SyncGridBody.IsFlattenedIntoEnclosingBody(invocation, context.SemanticModel))
         {
-            CheckMode(invocation, call, ref context);
+            var statements = SyncGridBody.Flatten(body, context.SemanticModel);
+            CheckGuardedStatements(statements, ref context);
+            CheckReturnsWithValue(statements, ref context);
         }
+    }
 
+    private static void CheckCooperative(InvocationExpressionSyntax invocation, ref ValidationContext context)
+    {
         if (context.MethodSymbol.HasAttribute(KnownAttributes.GpuKernel) &&
             !context.MethodSymbol.IsCooperativeKernel())
         {
@@ -38,16 +62,6 @@ internal static class SyncGridChecks
                 GSharpDiagnostics.SyncGridRequiresCooperativeKernel,
                 invocation,
                 context.MethodSymbol.Name);
-        }
-
-        // A body flattened into an enclosing body is checked with the statements of that body
-        if (call.HasBody &&
-            GpuCodeConstraints.TryGetSyncGridBody(invocation, out var body) &&
-            !SyncGridBody.IsFlattenedIntoEnclosingBody(invocation, context.SemanticModel))
-        {
-            var statements = SyncGridBody.Flatten(body, context.SemanticModel);
-            CheckGuardedStatements(statements, ref context);
-            CheckReturnsWithValue(statements, ref context);
         }
     }
 
