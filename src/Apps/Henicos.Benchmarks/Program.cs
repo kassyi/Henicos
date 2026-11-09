@@ -300,7 +300,7 @@ internal class Program
         return 0;
     }
 
-    private static bool TryParseGpuPiArgs(
+    internal static bool TryParseGpuPiArgs(
         string[] args,
         out int targetDigits,
         out string? outPath,

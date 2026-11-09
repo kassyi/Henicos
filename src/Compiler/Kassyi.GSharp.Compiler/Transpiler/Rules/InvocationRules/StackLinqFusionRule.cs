@@ -163,31 +163,52 @@ public sealed class StackLinqFusionRule : IInvocationTranspilerRule
                 }
             }
 
-            terminalStrategy.EmitPostLoop(ref context, in terminalStage, ResultVar);
-
-            switch (ClassifyFinalReturn(isGrid, blockShared, in chain, in terminalStage))
-            {
-                case FinalReturnKind.GridReduce:
-                    writer.Append(
-                        $"return {GSharpInternalNames.StackLinq.GridReduce}(" +
-                        $"{ResultVar}, {GSharpInternalNames.StackLinq.Plus}{{}}, " +
-                        $"{GSharpInternalNames.StackLinq.GridScratch});");
-                    break;
-                case FinalReturnKind.BlockReduce:
-                    writer.Append(
-                        $"return {GSharpInternalNames.StackLinq.BlockReduce}(" +
-                        $"{ResultVar}, {GSharpInternalNames.StackLinq.Plus}{{}});");
-                    break;
-                case FinalReturnKind.FloatCast:
-                    writer.Append($"return (float){ResultVar};");
-                    break;
-                case FinalReturnKind.Plain:
-                    writer.Append($"return {ResultVar};");
-                    break;
-            }
-
-            writer.AppendLine();
+            EmitFinalReturn(in chain, in terminalStage, terminalStrategy, strategy, ref context);
         }
+    }
+
+    // After the loop: the terminal's post-loop code, then the return of the lambda (combined over the block or the grid
+    // for a shared loop)
+    private static void EmitFinalReturn(
+        in StackLinqChain chain,
+        in LinqStage terminalStage,
+        IStackLinqTerminalStrategy terminalStrategy,
+        ParallelAggregateStrategy strategy,
+        ref TranspileContext context)
+    {
+        var writer = context.Emitter.Writer;
+        terminalStrategy.EmitPostLoop(ref context, in terminalStage, ResultVar);
+
+        var kind = ClassifyFinalReturn(
+            strategy == ParallelAggregateStrategy.Grid,
+            strategy != ParallelAggregateStrategy.PerThread,
+            in chain,
+            in terminalStage
+        );
+        switch (kind)
+        {
+            case FinalReturnKind.GridReduce:
+                writer.Append(
+                    $"return {GSharpInternalNames.StackLinq.GridReduce}(" +
+                    $"{ResultVar}, {GSharpInternalNames.StackLinq.Plus}{{}}, " +
+                    $"{GSharpInternalNames.StackLinq.GridScratch});");
+                break;
+            case FinalReturnKind.BlockReduce:
+                writer.Append(
+                    $"return {GSharpInternalNames.StackLinq.BlockReduce}(" +
+                    $"{ResultVar}, {GSharpInternalNames.StackLinq.Plus}{{}});");
+                break;
+            case FinalReturnKind.FloatCast:
+                writer.Append($"return (float){ResultVar};");
+                break;
+            case FinalReturnKind.Plain:
+                writer.Append($"return {ResultVar};");
+                break;
+            default:
+                throw new InvalidOperationException($"Unknown {nameof(FinalReturnKind)}: {kind}");
+        }
+
+        writer.AppendLine();
     }
 
     private enum FinalReturnKind

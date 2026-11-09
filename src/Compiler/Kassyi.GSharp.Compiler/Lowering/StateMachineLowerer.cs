@@ -138,7 +138,8 @@ public class StateMachineLowerer(bool isDeviceFunction = false, SemanticModel? s
     private void LowerSplitPoint(StatementSyntax stmt, InvocationExpressionSyntax splitPoint,
         IReadOnlyDictionary<DeclarationKey, int> labelStates, SectionBuilder sections)
     {
-        switch (ClassifySplitPoint(splitPoint, out var shuffleKind))
+        var kind = ClassifySplitPoint(splitPoint, out var shuffleKind);
+        switch (kind)
         {
             case SplitPointKind.SuspendingCall:
                 LowerSuspendingCall(stmt, splitPoint, sections);
@@ -152,6 +153,8 @@ public class StateMachineLowerer(bool isDeviceFunction = false, SemanticModel? s
             case SplitPointKind.Barrier:
                 LowerBarrier(splitPoint, sections);
                 break;
+            default:
+                throw new InvalidOperationException($"Unknown {nameof(SplitPointKind)}: {kind}");
         }
     }
 
