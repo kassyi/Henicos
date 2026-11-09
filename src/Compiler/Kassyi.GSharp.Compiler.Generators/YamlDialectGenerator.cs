@@ -16,30 +16,11 @@ public static class YamlDialectGenerator
             throw new GeneratorInputException(inputDir, 0, "The dialect YAML directory does not exist.");
         }
 
-        var paths = Directory.GetFiles(inputDir, "*.*", SearchOption.AllDirectories);
-        Array.Sort(paths, StringComparer.Ordinal);
-
-        var dialectDefinitions = new List<DialectDefinition>();
+        var dialectDefinitions = ReadDefinitions(inputDir);
         var defMap = new Dictionary<string, DialectDefinition>(StringComparer.Ordinal);
-        // Names that differ only in case would write the same file on a case-insensitive file system.
-        var byFileName = new Dictionary<string, DialectDefinition>(StringComparer.OrdinalIgnoreCase);
-        foreach (var path in paths)
+        foreach (var def in dialectDefinitions)
         {
-            if (!path.EndsWith(".yml", StringComparison.OrdinalIgnoreCase) &&
-                !path.EndsWith(".yaml", StringComparison.OrdinalIgnoreCase))
-            {
-                continue;
-            }
-
-            var def = DialectDefinition.Parse(File.ReadAllText(path), path);
-            if (byFileName.TryGetValue(def.Name, out var other))
-            {
-                throw new GeneratorInputException(path, def.Line, $"The dialect '{def.Name}' is also defined in {other.Path} ('{other.Name}').");
-            }
-
-            dialectDefinitions.Add(def);
             defMap.Add(def.Name, def);
-            byFileName.Add(def.Name, def);
         }
 
         foreach (var def in dialectDefinitions)
@@ -53,6 +34,43 @@ public static class YamlDialectGenerator
             sources.Add($"{def.Name}Dialect.g.cs", GenerateDialectClass(def, defMap));
         }
 
+        WriteSources(outputDir, sources);
+    }
+
+    // The dialect files under inputDir in ordinal path order; a name defined twice (also in another case) is an error.
+    private static List<DialectDefinition> ReadDefinitions(string inputDir)
+    {
+        var paths = Directory.GetFiles(inputDir, "*.*", SearchOption.AllDirectories);
+        Array.Sort(paths, StringComparer.Ordinal);
+
+        var dialectDefinitions = new List<DialectDefinition>();
+        // Names that differ only in case would write the same file on a case-insensitive file system.
+        var byFileName = new Dictionary<string, DialectDefinition>(StringComparer.OrdinalIgnoreCase);
+        foreach (var path in paths)
+        {
+            if (!path.EndsWith(".yml", StringComparison.OrdinalIgnoreCase) &&
+                !path.EndsWith(".yaml", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            var def = DialectDefinition.Parse(File.ReadAllText(path), path);
+            if (byFileName.TryGetValue(def.Name, out var other))
+            {
+                throw new GeneratorInputException(path, def.Line,
+                    $"The dialect '{def.Name}' is also defined in {other.Path} ('{other.Name}').");
+            }
+
+            dialectDefinitions.Add(def);
+            byFileName.Add(def.Name, def);
+        }
+
+        return dialectDefinitions;
+    }
+
+    // Writes every source and deletes the *Dialect.g.cs files that no dialect wrote this time.
+    private static void WriteSources(string outputDir, Dictionary<string, string> sources)
+    {
         Directory.CreateDirectory(outputDir);
         foreach (var stale in Directory.GetFiles(outputDir, "*Dialect.g.cs"))
         {
@@ -130,102 +148,145 @@ public static class YamlDialectGenerator
         using (writer.Scope())
         {
             writer.Line($"public override string Name => {CSharpStringLiteral.Quote(def.Name + "Dialect")};");
-
-            var backend = GetInheritedValue(def, definitions, d => d.Backend);
-            // CheckInheritance has rejected any other value.
-            var isCuda = backend == "Cuda";
-            writer.Line($"public override bool IsCuda => {(isCuda ? "true" : "false")};");
-
-            // Capabilities
-            var capabilities = GetInheritedValue(def, definitions, d => d.Capabilities);
-            if (capabilities != null)
-            {
-                writer.Line($"public override Kassyi.GSharp.Compiler.Transpiler.Dialects.DialectCapabilities Capabilities => {FormatCapabilityFlags(capabilities)};");
-            }
-
-            // Layout (ArrayView / Pointer)
-            if (def.Layout.TryGetValue("ArrayView", out var arrayViewLayout))
-            {
-                writer.Line($"public override TypeLayout ArrayViewLayout => new TypeLayout({arrayViewLayout.Size}, {arrayViewLayout.Align});");
-            }
-
-            if (def.Layout.TryGetValue("Pointer", out var pointerLayout))
-            {
-                writer.Line($"public override TypeLayout PointerLayout => new TypeLayout({pointerLayout.Size}, {pointerLayout.Align});");
-            }
-
-            // Types
-            if (def.Types.Count > 0)
-            {
-                writer.Line("public override bool TryMapType(string fullyQualifiedName, out string mappedType)");
-                using (writer.Scope())
-                {
-                    writer.Line("switch (fullyQualifiedName)");
-                    using (writer.Scope())
-                    {
-                        foreach (var kvp in def.Types)
-                        {
-                            writer.Line($"case {CSharpStringLiteral.Quote(kvp.Key)}: mappedType = {CSharpStringLiteral.Quote(kvp.Value.CppType)}; return true;");
-                        }
-                    }
-
-                    writer.Line("return base.TryMapType(fullyQualifiedName, out mappedType);");
-                }
-
-                var hasAnyLayout = false;
-                foreach (var kvp in def.Types)
-                {
-                    if (kvp.Value.HasLayout)
-                    {
-                        hasAnyLayout = true;
-                        break;
-                    }
-                }
-
-                if (hasAnyLayout)
-                {
-                    writer.Line("public override bool TryGetMappedTypeLayout(string fullyQualifiedName, out TypeLayout layout)");
-                    using (writer.Scope())
-                    {
-                        writer.Line("switch (fullyQualifiedName)");
-                        using (writer.Scope())
-                        {
-                            foreach (var kvp in def.Types)
-                            {
-                                if (kvp.Value.Size is { } size && kvp.Value.Align is { } align)
-                                {
-                                    writer.Line($"case {CSharpStringLiteral.Quote(kvp.Key)}: layout = new TypeLayout({size}, {align}); return true;");
-                                }
-                            }
-                        }
-
-                        writer.Line("return base.TryGetMappedTypeLayout(fullyQualifiedName, out layout);");
-                    }
-                }
-            }
-
-            // Intrinsics
-            if (def.Intrinsics.Count > 0)
-            {
-                writer.Line(
-                    "protected override bool TryMapIntrinsicCore(string signature, out string mappedExpression)");
-                using (writer.Scope())
-                {
-                    writer.Line("switch (signature)");
-                    using (writer.Scope())
-                    {
-                        foreach (var kvp in def.Intrinsics)
-                        {
-                            writer.Line($"case {CSharpStringLiteral.Quote(kvp.Key)}: mappedExpression = {CSharpStringLiteral.Quote(kvp.Value)}; return true;");
-                        }
-                    }
-
-                    writer.Line("return base.TryMapIntrinsicCore(signature, out mappedExpression);");
-                }
-            }
+            EmitBackendAndCapabilities(writer, def, definitions);
+            EmitLayoutProperties(writer, def);
+            EmitTypeMappings(writer, def);
+            EmitIntrinsicMappings(writer, def);
         }
 
         return writer.ToString();
+    }
+
+    private static void EmitBackendAndCapabilities(
+        SourceWriter writer,
+        DialectDefinition def,
+        Dictionary<string, DialectDefinition> definitions)
+    {
+        var backend = GetInheritedValue(def, definitions, static d => d.Backend);
+        // CheckInheritance has rejected any other value.
+        var isCuda = backend == "Cuda";
+        writer.Line($"public override bool IsCuda => {(isCuda ? "true" : "false")};");
+
+        // Capabilities
+        var capabilities = GetInheritedValue(def, definitions, static d => d.Capabilities);
+        if (capabilities != null)
+        {
+            writer.Line(
+                $"public override Kassyi.GSharp.Compiler.Transpiler.Dialects.DialectCapabilities Capabilities => " +
+                $"{FormatCapabilityFlags(capabilities)};");
+        }
+    }
+
+    private static void EmitLayoutProperties(SourceWriter writer, DialectDefinition def)
+    {
+        // Layout (ArrayView / Pointer)
+        if (def.Layout.TryGetValue("ArrayView", out var arrayViewLayout))
+        {
+            var size = arrayViewLayout.Size;
+            var align = arrayViewLayout.Align;
+            writer.Line($"public override TypeLayout ArrayViewLayout => new TypeLayout({size}, {align});");
+        }
+
+        if (def.Layout.TryGetValue("Pointer", out var pointerLayout))
+        {
+            var size = pointerLayout.Size;
+            var align = pointerLayout.Align;
+            writer.Line($"public override TypeLayout PointerLayout => new TypeLayout({size}, {align});");
+        }
+    }
+
+    private static void EmitTypeMappings(SourceWriter writer, DialectDefinition def)
+    {
+        if (def.Types.Count == 0)
+        {
+            return;
+        }
+
+        EmitTryMapType(writer, def);
+        EmitTryGetMappedTypeLayout(writer, def);
+    }
+
+    private static void EmitTryMapType(SourceWriter writer, DialectDefinition def)
+    {
+        writer.Line("public override bool TryMapType(string fullyQualifiedName, out string mappedType)");
+        using (writer.Scope())
+        {
+            writer.Line("switch (fullyQualifiedName)");
+            using (writer.Scope())
+            {
+                foreach (var kvp in def.Types)
+                {
+                    var key = CSharpStringLiteral.Quote(kvp.Key);
+                    var val = CSharpStringLiteral.Quote(kvp.Value.CppType);
+                    writer.Line($"case {key}: mappedType = {val}; return true;");
+                }
+            }
+
+            writer.Line("return base.TryMapType(fullyQualifiedName, out mappedType);");
+        }
+    }
+
+    private static void EmitTryGetMappedTypeLayout(SourceWriter writer, DialectDefinition def)
+    {
+        var hasAnyLayout = false;
+        foreach (var kvp in def.Types)
+        {
+            if (kvp.Value.HasLayout)
+            {
+                hasAnyLayout = true;
+                break;
+            }
+        }
+
+        if (!hasAnyLayout)
+        {
+            return;
+        }
+
+        writer.Line("public override bool TryGetMappedTypeLayout(string fullyQualifiedName, out TypeLayout layout)");
+        using (writer.Scope())
+        {
+            writer.Line("switch (fullyQualifiedName)");
+            using (writer.Scope())
+            {
+                foreach (var kvp in def.Types)
+                {
+                    if (kvp.Value.Size is { } size && kvp.Value.Align is { } align)
+                    {
+                        var key = CSharpStringLiteral.Quote(kvp.Key);
+                        writer.Line($"case {key}: layout = new TypeLayout({size}, {align}); return true;");
+                    }
+                }
+            }
+
+            writer.Line("return base.TryGetMappedTypeLayout(fullyQualifiedName, out layout);");
+        }
+    }
+
+    private static void EmitIntrinsicMappings(SourceWriter writer, DialectDefinition def)
+    {
+        if (def.Intrinsics.Count == 0)
+        {
+            return;
+        }
+
+        writer.Line(
+            "protected override bool TryMapIntrinsicCore(string signature, out string mappedExpression)");
+        using (writer.Scope())
+        {
+            writer.Line("switch (signature)");
+            using (writer.Scope())
+            {
+                foreach (var kvp in def.Intrinsics)
+                {
+                    var key = CSharpStringLiteral.Quote(kvp.Key);
+                    var val = CSharpStringLiteral.Quote(kvp.Value);
+                    writer.Line($"case {key}: mappedExpression = {val}; return true;");
+                }
+            }
+
+            writer.Line("return base.TryMapIntrinsicCore(signature, out mappedExpression);");
+        }
     }
 
     // Converts YAML flags such as "HardwareAtomics, SharedMemory" (',' or '|' separated) into a C# flags OR expression.
