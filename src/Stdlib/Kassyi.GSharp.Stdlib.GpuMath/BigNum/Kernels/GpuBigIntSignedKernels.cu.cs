@@ -257,11 +257,12 @@ public static partial class GpuBigIntSignedKernels
     }
 
     /// <summary>
-    /// The sign of a remainder: the dividend's sign when <paramref name="remainder"/> is not zero, 0 otherwise.
+    /// The sign of a value already in place: the operand's sign when <paramref name="value"/> is not zero, 0 otherwise
+    /// (a remainder takes the dividend's sign; Min of different host signs, the negative operand's).
     /// </summary>
     [GpuKernel]
-    public static void RemainderSignKernel([GpuReadOnly] uint[] remainder, int words, [GpuReadOnly] uint[] dividendSign,
-        int dividendHostSign, uint[] resultSign)
+    public static void SignUnlessZeroKernel([GpuReadOnly] uint[] value, int words, [GpuReadOnly] uint[] operandSign,
+        int operandHostSign, uint[] resultSign)
     {
         int tid = ThreadIndex.X;
         int bDim = BlockDimension.X;
@@ -275,7 +276,7 @@ public static partial class GpuBigIntSignedKernels
 
         for (int i = tid; i < words; i += bDim)
         {
-            if (remainder[i] != 0u)
+            if (value[i] != 0u)
             {
                 nonZero[0] = 1u;
             }
@@ -285,7 +286,7 @@ public static partial class GpuBigIntSignedKernels
 
         if (tid == 0)
         {
-            resultSign[0] = nonZero[0] == 0u ? 0u : ReadSign(dividendSign, dividendHostSign);
+            resultSign[0] = nonZero[0] == 0u ? 0u : ReadSign(operandSign, operandHostSign);
         }
     }
 

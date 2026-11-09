@@ -349,8 +349,6 @@ public static partial class M1DiffWarpExtraKernels
     [GpuKernel]
     public static void GenericStructNestedInnerSharedMemoryKernel(int[] input, int[] output)
     {
-        // Names InnerSharedMemory in the kernel so that its constructor is emitted; without it the native build fails (#1158)
-        InnerSharedMemory dummy = default;
         int tid = ThreadIndex.X + BlockIndex.X * BlockDimension.X;
         int lane = ThreadIndex.X & 31;
         int n = input.Length;

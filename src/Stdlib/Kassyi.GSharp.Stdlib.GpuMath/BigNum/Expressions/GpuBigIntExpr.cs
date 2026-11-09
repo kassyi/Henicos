@@ -211,8 +211,8 @@ public readonly struct GpuBigIntExpr : IDisposable
     /// the warm-up evaluation failed.
     /// </exception>
     /// <exception cref="NotSupportedException">
-    /// The expression divides or takes a remainder (<c>/</c>, <c>%</c>): their sizes are read from the device, which a
-    /// capture cannot record.
+    /// The expression divides or takes a remainder (<c>/</c>, <c>%</c>, and the StackLinq <c>Average</c>, which
+    /// divides by the count): their sizes are read from the device, which a capture cannot record.
     /// </exception>
     public GpuBigIntExecutableGraph CompileToGraph(GpuWorkspace workspace, GpuBigUInt? targetResult = null) =>
         Compile(workspace, targetResult, ownsExpression: true);
@@ -439,7 +439,7 @@ public readonly struct GpuBigIntExpr : IDisposable
 
     // The failure path of a capture (O14): end the capture, drop the partial graph and give back the deferred buffers.
     // When that succeeds, the caller rethrows the original exception; when a step fails too, both are thrown together.
-    private static void AbortCapture(GpuWorkspace workspace, DefaultGpuMemoryManager manager, CaptureDeferral deferral,
+    internal static void AbortCapture(GpuWorkspace workspace, DefaultGpuMemoryManager manager, CaptureDeferral deferral,
         Exception original)
     {
         List<Exception>? cleanupErrors = null;

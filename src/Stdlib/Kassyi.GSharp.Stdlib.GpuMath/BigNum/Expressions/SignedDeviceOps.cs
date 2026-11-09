@@ -70,20 +70,21 @@ internal static class SignedDeviceOps
         return SignSource.Device(word);
     }
 
-    // The sign of a remainder already in place: the dividend's, or + for a zero remainder
-    public static SignSource RemainderSign(GpuBigUInt remainder, SignSource dividend)
+    // The sign of a value already in place: the operand's, or + for a zero value (a remainder and its dividend, or the
+    // operand Min copied)
+    public static SignSource SignUnlessZero(GpuBigUInt value, SignSource operand)
     {
-        var workspace = remainder.Workspace;
+        var workspace = value.Workspace;
         if (GpuKernelLoader.IsCpuFallbackMode)
         {
-            return SignSource.Host(dividend.HostNegative && !remainder.ToBigInteger().IsZero);
+            return SignSource.Host(operand.HostNegative && !value.ToBigInteger().IsZero);
         }
 
         var word = workspace.RentTemp(1);
-        var (dWord, dHost) = Arguments(dividend, word);
-        GpuBigIntSignedKernels.LaunchRemainderSignKernelPtr(
-            remainder.ToProxy(), remainder.NumWords, dWord, dHost, word.ToProxy(),
-            gridDimX: 1, blockDimX: BigIntWideOps.SingleBlockSize(remainder.NumWords), hStream: workspace.Stream);
+        var (oWord, oHost) = Arguments(operand, word);
+        GpuBigIntSignedKernels.LaunchSignUnlessZeroKernelPtr(
+            value.ToProxy(), value.NumWords, oWord, oHost, word.ToProxy(),
+            gridDimX: 1, blockDimX: BigIntWideOps.SingleBlockSize(value.NumWords), hStream: workspace.Stream);
         return SignSource.Device(word);
     }
 

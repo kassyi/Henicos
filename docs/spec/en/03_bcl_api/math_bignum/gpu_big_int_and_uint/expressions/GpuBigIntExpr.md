@@ -79,7 +79,7 @@ If the capture fails, the capture is ended and every buffer it took is returned 
 Thrown if warm-up evaluation fails prior to beginning CUDA Graph capture, or if the expression is already owned by a graph that is alive.
 
 `NotSupportedException`<br>
-Thrown if the expression divides or takes a remainder (`/`, `%`): their sizes are read from the device, which a capture cannot record. The capture is refused before the read, so the workspace stays usable. Every other node is captured: a sign that depends on the values (a difference, the operand `Max` or `Min` chooses, `~` of a negative value) is written on the device, and the graph reads it after each launch (`Result` has the sign of the last launch).
+Thrown if the expression divides or takes a remainder (`/`, `%`, and the StackLinq `Average`, which divides by the count): their sizes are read from the device, which a capture cannot record. The capture is refused before the read, so the workspace stays usable. Every other node is captured: a sign that depends on the values (a difference, the operand `Max` or `Min` chooses, `~` of a value whose sign is on the device or negative) is written on the device, and the graph reads it after each launch (`Result` has the sign of the last launch).
 
 ## Evaluate(GpuBigUInt)
 
