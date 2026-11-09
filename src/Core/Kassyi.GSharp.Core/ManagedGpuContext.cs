@@ -253,8 +253,8 @@ public static partial class ManagedGpuContext
     // ReSharper disable once UnusedMember.Global -- Public API for code generators
     public static void ClearThreadContext() => IsActive = false;
 
-    // Mocks for Warp Shuffle operations in Managed Execution. The lanes meet at the same instance of a shuffle before they
-    // read each other's values (ManagedGpuContext.WarpRendezvous.cs)
+    // Mocks for Warp Shuffle operations in Managed Execution. The lanes meet at the same instance of a shuffle
+    // before they read each other's values (ManagedGpuContext.WarpRendezvous.cs)
 
     private const int MaxThreadsPerBlock = 1024;
 
@@ -287,8 +287,9 @@ public static partial class ManagedGpuContext
     /// </summary>
     /// <returns>All 32 lanes, or fewer in the last warp of a block whose size is not a multiple of 32.</returns>
     /// <remarks>
-    /// A call in a kernel or device function does not get here: the lowering makes it a meeting of the lanes that reach it
-    /// together (<see cref="__gsharp_warp_active_mask_read{TFrame}"/>, #844), and GSH0062 reports one where it cannot.
+    /// A call in a kernel or device function does not get here: the lowering makes it a meeting of the lanes
+    /// that reach it together (<see cref="__gsharp_warp_active_mask_read{TFrame}"/>, #844), and GSH0062 reports one
+    /// where it cannot.
     /// </remarks>
     internal static uint ActiveMask()
     {

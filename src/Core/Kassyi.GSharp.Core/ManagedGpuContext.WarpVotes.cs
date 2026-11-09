@@ -3,10 +3,10 @@ using System.Numerics;
 
 namespace Kassyi.GSharp.Core;
 
-// The managed forms of Gpu.LaneId(), Gpu.WarpId() and the warp votes and reductions (#845). For a vote, each lane publishes
-// its predicate or value through __gsharp_warp_publish before a state boundary; after it, every lane reads the values that
-// the lanes of the mask published for the same instance of the call (#1468). The native CPU prelude (WarpAndHints.hpp)
-// computes the same.
+// The managed forms of Gpu.LaneId(), Gpu.WarpId() and the warp votes and reductions (#845).
+// For a vote, each lane publishes its predicate or value through __gsharp_warp_publish before a state boundary;
+// after it, every lane reads the values that the lanes of the mask published for the same instance of the call
+// (#1468). The native CPU prelude (WarpAndHints.hpp) computes the same.
 public static partial class ManagedGpuContext
 {
     /// <summary>
@@ -127,7 +127,8 @@ public static partial class ManagedGpuContext
         return BallotLanes(linearTid, instance, mask, lanes, Name, location) != 0u;
     }
 
-    /// <summary>Internal mock for <c>Warp.ReduceAddSync</c>: the sum, wrapping around like the GPU. Do not use directly.</summary>
+    /// <summary>Internal mock for <c>Warp.ReduceAddSync</c>: the sum, wrapping around like the GPU.
+    /// Do not use directly.</summary>
     /// <typeparam name="TFrame">The frame of the state machine.</typeparam>
     /// <typeparam name="T"><see cref="int"/> or <see cref="uint"/>.</typeparam>
     /// <param name="root">Unused: the managed path keeps the published values itself.</param>
@@ -139,7 +140,8 @@ public static partial class ManagedGpuContext
     /// <returns>The sum of the values of the lanes of the mask.</returns>
     /// <exception cref="InvalidOperationException">The mask does not contain the caller's lane.</exception>
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public static T __gsharp_warp_reduce_add_read_sync<TFrame, T>(int root, ref TFrame frame, int site, uint mask, T val,
+    public static T __gsharp_warp_reduce_add_read_sync<TFrame, T>(
+        int root, ref TFrame frame, int site, uint mask, T val,
         string location) where TFrame : IManagedWarpFrame where T : unmanaged, IBinaryInteger<T> =>
         ReduceLanes(ref frame, site, mask, val, "Warp.ReduceAddSync", location, static (a, b) => unchecked(a + b));
 
@@ -155,7 +157,8 @@ public static partial class ManagedGpuContext
     /// <returns>The smallest value of the lanes of the mask.</returns>
     /// <exception cref="InvalidOperationException">The mask does not contain the caller's lane.</exception>
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public static T __gsharp_warp_reduce_min_read_sync<TFrame, T>(int root, ref TFrame frame, int site, uint mask, T val,
+    public static T __gsharp_warp_reduce_min_read_sync<TFrame, T>(
+        int root, ref TFrame frame, int site, uint mask, T val,
         string location) where TFrame : IManagedWarpFrame where T : unmanaged, IBinaryInteger<T> =>
         ReduceLanes(ref frame, site, mask, val, "Warp.ReduceMinSync", location, T.Min);
 
@@ -171,7 +174,8 @@ public static partial class ManagedGpuContext
     /// <returns>The largest value of the lanes of the mask.</returns>
     /// <exception cref="InvalidOperationException">The mask does not contain the caller's lane.</exception>
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public static T __gsharp_warp_reduce_max_read_sync<TFrame, T>(int root, ref TFrame frame, int site, uint mask, T val,
+    public static T __gsharp_warp_reduce_max_read_sync<TFrame, T>(
+        int root, ref TFrame frame, int site, uint mask, T val,
         string location) where TFrame : IManagedWarpFrame where T : unmanaged, IBinaryInteger<T> =>
         ReduceLanes(ref frame, site, mask, val, "Warp.ReduceMaxSync", location, T.Max);
 
@@ -187,7 +191,8 @@ public static partial class ManagedGpuContext
     /// <returns>The bitwise AND of the values of the lanes of the mask.</returns>
     /// <exception cref="InvalidOperationException">The mask does not contain the caller's lane.</exception>
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public static T __gsharp_warp_reduce_and_read_sync<TFrame, T>(int root, ref TFrame frame, int site, uint mask, T val,
+    public static T __gsharp_warp_reduce_and_read_sync<TFrame, T>(
+        int root, ref TFrame frame, int site, uint mask, T val,
         string location) where TFrame : IManagedWarpFrame where T : unmanaged, IBinaryInteger<T> =>
         ReduceLanes(ref frame, site, mask, val, "Warp.ReduceAndSync", location, static (a, b) => a & b);
 
@@ -219,7 +224,8 @@ public static partial class ManagedGpuContext
     /// <returns>The bitwise XOR of the values of the lanes of the mask.</returns>
     /// <exception cref="InvalidOperationException">The mask does not contain the caller's lane.</exception>
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public static T __gsharp_warp_reduce_xor_read_sync<TFrame, T>(int root, ref TFrame frame, int site, uint mask, T val,
+    public static T __gsharp_warp_reduce_xor_read_sync<TFrame, T>(
+        int root, ref TFrame frame, int site, uint mask, T val,
         string location) where TFrame : IManagedWarpFrame where T : unmanaged, IBinaryInteger<T> =>
         ReduceLanes(ref frame, site, mask, val, "Warp.ReduceXorSync", location, static (a, b) => a ^ b);
 }
