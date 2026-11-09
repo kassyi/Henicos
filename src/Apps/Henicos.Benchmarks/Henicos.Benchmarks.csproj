@@ -17,6 +17,7 @@
   <ItemGroup>
     <CompilerVisibleProperty Include="GSharpTargetDialect" />
     <CompilerVisibleProperty Include="MSBuildProjectDirectory" />
+    <InternalsVisibleTo Include="Henicos.Benchmarks.Tests" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Compiler\Kassyi.GSharp.Compiler\Kassyi.GSharp.Compiler.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="true" />
