@@ -49,10 +49,6 @@ internal static class ArrayNullCheck
     private static bool MayBeNull(ExpressionSyntax expression, SemanticModel semanticModel)
     {
         expression = SkipParentheses(expression);
-        if (StackArrayLocals.IsStackArrayReference(expression, semanticModel))
-        {
-            return false;
-        }
 
         // c ? a : b is null only when the branch it takes is (a null literal branch may be)
         if (expression is ConditionalExpressionSyntax conditional)
@@ -60,7 +56,7 @@ internal static class ArrayNullCheck
             return MayBeNull(conditional.WhenTrue, semanticModel) || MayBeNull(conditional.WhenFalse, semanticModel);
         }
 
-        // A non-nullable array that a launch or a call has checked (#1409)
+        // A stack array (#1543), or a non-nullable array that a launch or a call has checked (#1409)
         if (NonNullProof.IsProvenNonNull(expression, semanticModel))
         {
             return false;
