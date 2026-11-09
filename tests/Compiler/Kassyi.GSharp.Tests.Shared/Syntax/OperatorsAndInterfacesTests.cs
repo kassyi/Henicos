@@ -27,11 +27,13 @@ public interface IConstantProvider_OpTest
 public struct ConstantImpl_OpTest : IConstantProvider_OpTest
 {
     public int Value;
+    [Kassyi.GSharp.Core.GpuDeviceFunction]
     public static int GetMagic() => 77;
 }
 
 public class OperatorsAndInterfacesTarget
 {
+    [Kassyi.GSharp.Core.GpuDeviceFunction]
     public static int GetMagicHelper() => ConstantImpl_OpTest.GetMagic();
 
     public static void ConversionOperators(float[] output)
