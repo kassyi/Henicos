@@ -1,4 +1,3 @@
-using System.ComponentModel;
 using Kassyi.GSharp.Runtime.Fatbin;
 
 namespace Kassyi.GSharp.Runtime.Aot;
@@ -213,33 +212,12 @@ public static unsafe class GpuKernelLoader
     /// </summary>
     /// <param name="innerException">Optional inner <see cref="CudaException"/> from the CUDA driver.</param>
     /// <remarks>
-    /// <b>[NOTE]:</b> This consumes the error of any launch, also of a launch on another stream that has not been
-    /// synchronized yet; a generated launcher consumes only the error of its own launch.
+    /// <b>[NOTE]:</b> This consumes the error of any launch whose launcher is not about to read it itself, also of a
+    /// launch on another stream that has not been synchronized yet; a generated launcher consumes only the error of its
+    /// own launch (<see cref="LaunchErrorRecords"/>).
     /// </remarks>
     public static void ThrowIfDeviceError(Exception? innerException = null) =>
         DeviceErrorSlot.ThrowIfDeviceError(innerException);
-
-    /// <summary>
-    /// Takes the epoch of a kernel launch on <paramref name="stream"/>, which a generated launcher passes to the kernel as
-    /// its hidden last parameter: the kernel records a device error under it.
-    /// </summary>
-    /// <param name="stream">The stream the kernel is launched on.</param>
-    /// <returns>A new nonzero epoch, or 0 when the stream is being captured into a CUDA graph.</returns>
-    /// <exception cref="Exception">
-    /// A device error of an earlier launch that no synchronization has consumed yet is recorded where this launch would
-    /// record its own: that error is thrown, before the launch.
-    /// </exception>
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public static uint NextLaunchEpoch(IntPtr stream) => DeviceErrorSlot.NextLaunchEpoch(stream);
-
-    /// <summary>
-    /// Throws the device error that the launch with <paramref name="launchEpoch"/> recorded, if any, once the launch has
-    /// completed; the records of other launches stay for their own launchers and synchronizations. For epoch 0 it throws
-    /// any recorded device error, like <see cref="ThrowIfDeviceError"/>.
-    /// </summary>
-    /// <param name="launchEpoch">The epoch that <see cref="NextLaunchEpoch"/> returned for the launch.</param>
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public static void ThrowIfLaunchError(uint launchEpoch) => DeviceErrorSlot.ThrowIfLaunchError(launchEpoch);
 
     /// <summary>
     /// Creates a managed exception for a non-success <see cref="CUresult"/>, translating any recorded device trap slot into the matching standard .NET exception.

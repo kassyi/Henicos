@@ -71,7 +71,7 @@ public struct GSharpDeviceErrorSlot
     public uint Code;
 
     /// <summary>
-    /// The epoch of the launch that recorded the error (<see cref="GpuKernelLoader.NextLaunchEpoch"/>), or 0 for a
+    /// The epoch of the launch that recorded the error (<see cref="LaunchErrorRecords.NextLaunchEpoch"/>), or 0 for a
     /// launch without one, such as a launch captured into a CUDA graph.
     /// </summary>
     public uint Epoch;
@@ -407,23 +407,15 @@ public static class GSharpErrorMapper
         bool preserveRawMessageWhenNoSite)
     {
         var hasSite = TryGetSite(siteId, moduleId, out var site);
-        string baseMessage;
-        if (!string.IsNullOrEmpty(explicitMessage))
+        // The explicit message, else the message of the site, else the builtin message of the prelude, else the default
+        var baseMessage = siteId switch
         {
-            baseMessage = explicitMessage;
-        }
-        else if (hasSite && !string.IsNullOrEmpty(site.DefaultMessage))
-        {
-            baseMessage = site.DefaultMessage;
-        }
-        else if ((siteId & BuiltinSiteFlag) != 0u && s_builtinMessages.TryGetValue(siteId, out var builtinMsg))
-        {
-            baseMessage = builtinMsg;
-        }
-        else
-        {
-            baseMessage = GetDefaultMessage(code);
-        }
+            _ when !string.IsNullOrEmpty(explicitMessage) => explicitMessage,
+            _ when hasSite && !string.IsNullOrEmpty(site.DefaultMessage) => site.DefaultMessage,
+            _ when (siteId & BuiltinSiteFlag) != 0u && s_builtinMessages.TryGetValue(siteId, out var builtinMsg) =>
+                builtinMsg,
+            _ => GetDefaultMessage(code),
+        };
 
         var (tx, ty, tz) = UnpackThreadIndex(threadLinear);
         var threadCoord = $"({tx},{ty},{tz})";
