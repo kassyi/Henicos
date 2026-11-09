@@ -89,6 +89,30 @@ public static partial class CrossAssemblyDifferentialKernels
         r[o + 1] = alpha.Probe;
     }
 
+    // A fixed buffer of a struct from metadata, sized by a constant (#1283)
+    [GpuKernel]
+    public static unsafe void CrossAssemblyConstantSizedFixedBufferKernel(int[] xs, int[] ys, int[] r)
+    {
+        int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        if (tid >= xs.Length)
+        {
+            return;
+        }
+
+        LibConstantSizedPacket p = default;
+        p.Head = ys[tid];
+        p.Tail = ys[tid] ^ 0x5A5A;
+        for (int k = 0; k < LibConstantSizedPacket.Size; k++)
+        {
+            p.Items[k] = xs[tid] + k;
+        }
+
+        int o = tid * 3;
+        r[o + 0] = p.Items[LibConstantSizedPacket.Size - 1];
+        r[o + 1] = p.Head;
+        r[o + 2] = p.Tail;
+    }
+
     [GpuKernel]
     public static void CrossAssemblyFloat3FunctionsKernel(int[] xs, int[] ys, int[] r)
     {
