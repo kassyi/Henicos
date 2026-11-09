@@ -7,12 +7,7 @@ namespace Kassyi.GSharp.Tests.Shared.Syntax;
 /// <c>System.Array</c> write and slice members (#731), comparing G# execution (native CPU, managed CPU, and CUDA)
 /// directly against .NET's BCL implementations.
 /// </summary>
-#if GSHARP_CUDA
-// A device error goes to the one error slot of the process, which a test running beside this one could read first
-[Collection(TestCollections.DeviceExclusive)]
-#else
 [Collection(TestCollections.GlobalStateSequential)]
-#endif
 public class SpanWriteTests : TranspilerTestBase
 {
     private const uint GridDimX = 1;

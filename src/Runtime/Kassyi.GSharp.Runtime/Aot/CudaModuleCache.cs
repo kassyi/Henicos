@@ -114,6 +114,33 @@ internal static class CudaModuleCache
     }
 
     /// <summary>
+    /// Clears the abort words of every loaded module (<c>__gsharp_launch_abort</c> of the CUDA prelude), when the
+    /// counter of launch epochs wraps around and an epoch comes back (<see cref="LaunchErrorRecords"/>).
+    /// </summary>
+    /// <remarks>
+    /// [WHY] A word that still held an epoch from 2^32 launches earlier would make the waiters of the new launch with
+    /// that epoch leave a barrier. A launch that runs while the counter wraps can lose its own word, which takes 2^32
+    /// launches to come about.
+    /// </remarks>
+    public static void ClearLaunchAbortWords()
+    {
+        foreach (var entry in s_modules)
+        {
+            if (!entry.Value.IsValueCreated)
+            {
+                continue;
+            }
+
+            using var scope = new GpuKernelLoader.CudaContextScope(entry.Key.Context);
+            if (CudaDriverApi.cuModuleGetGlobal_v2(out var words, out var bytes, entry.Value.Value,
+                    "__gsharp_launch_abort") == CUresult.CudaSuccess)
+            {
+                CudaException.ThrowIfError(CudaDriverApi.cuMemsetD8_v2(words, 0, (IntPtr)(long)bytes));
+            }
+        }
+    }
+
+    /// <summary>
     /// Drops the modules, functions and number of <paramref name="context"/>, which is about to be destroyed; its
     /// modules go with it.
     /// </summary>

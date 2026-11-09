@@ -10,10 +10,6 @@ namespace Kassyi.GSharp.Tests.Shared.Core;
 /// </summary>
 [TestTarget(ExecutionTarget.GpuExecution)]
 [Category(TestCategory.Syntax)]
-#if GSHARP_CUDA
-// A device error goes to the one error slot of the process, which a test running beside this one could read first
-[Collection(TestCollections.DeviceExclusive)]
-#endif
 public class DeviceDynamicSharedMemoryTests : TranspilerTestBase
 {
     private static readonly Action<Action> s_runNative = launch => launch();

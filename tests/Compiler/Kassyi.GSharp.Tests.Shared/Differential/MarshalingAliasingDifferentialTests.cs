@@ -13,12 +13,7 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 
 [Category(TestCategory.Differential)]
 [TestTarget(ExecutionTarget.GpuExecution)]
-#if GSHARP_CUDA
-// A device error goes to the one error slot of the process, which a test running beside this one could read first
-[Collection(TestCollections.DeviceExclusive)]
-#else
 [Collection(TestCollections.GlobalStateSequential)]
-#endif
 public sealed class MarshalingAliasingDifferentialTests
 {
     private static readonly IElementComparer<DiffVec2Padded> Vec2PaddedComparer =
