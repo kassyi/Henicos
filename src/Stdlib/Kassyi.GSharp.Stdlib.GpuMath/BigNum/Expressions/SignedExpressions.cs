@@ -57,10 +57,13 @@ internal interface ISignedOperator : IGpuBigIntExpression
     // Whether the operand is evaluated into the node's own target (a negation only flips the sign of its operand)
     bool PassesTargetToOperand { get; }
 
+    // The operation, for the sign planner (SignPlanner)
+    SignedOperation Operation { get; }
+
     // The node applied to its evaluated operands, which the call owns and releases (also when it fails); second is the
     // default value for a unary node. The target, when given, is at least NumWords wide (checked before the operands
     // were evaluated).
-    GpuBigInt Apply(GpuWorkspace workspace, GpuBigInt first, GpuBigInt second, GpuBigUInt? targetResult);
+    SignedValue Apply(GpuWorkspace workspace, SignedValue first, SignedValue second, GpuBigUInt? targetResult);
 }
 
 // The bound of every node is computed when the node is built, from the bounds its operands computed when they were
@@ -90,7 +93,15 @@ internal abstract class SignedBinaryExpression(
     public GpuBigInt Evaluate(GpuWorkspace workspace, GpuBigUInt? targetResult = null) =>
         SignedTree.Evaluate(this, workspace, targetResult);
 
-    public GpuBigInt Apply(GpuWorkspace workspace, GpuBigInt first, GpuBigInt second, GpuBigUInt? targetResult)
+    public abstract SignedOperation Operation { get; }
+
+    public SignedValue Apply(GpuWorkspace workspace, SignedValue first, SignedValue second, GpuBigUInt? targetResult)
+    {
+        var (a, b) = SignedTree.HostOperands(first, second);
+        return SignedValue.FromHost(ApplyHost(workspace, a, b, targetResult));
+    }
+
+    private GpuBigInt ApplyHost(GpuWorkspace workspace, GpuBigInt first, GpuBigInt second, GpuBigUInt? targetResult)
     {
         GpuBigUInt staging = default;
         GpuBigUInt? rented = null;
@@ -162,14 +173,22 @@ internal abstract class SignedAddSubExpression(IGpuBigIntExpression left, IGpuBi
 }
 
 internal sealed class SignedAddExpression(IGpuBigIntExpression left, IGpuBigIntExpression right)
-    : SignedAddSubExpression(left, right, subtract: false);
+    : SignedAddSubExpression(left, right, subtract: false)
+{
+    public override SignedOperation Operation => SignedOperation.Add;
+}
 
 internal sealed class SignedSubExpression(IGpuBigIntExpression left, IGpuBigIntExpression right)
-    : SignedAddSubExpression(left, right, subtract: true);
+    : SignedAddSubExpression(left, right, subtract: true)
+{
+    public override SignedOperation Operation => SignedOperation.Subtract;
+}
 
 internal class SignedMulExpression(IGpuBigIntExpression left, IGpuBigIntExpression right)
     : SignedBinaryExpression(left, right, BigIntWidths.Multiply)
 {
+    public override SignedOperation Operation => SignedOperation.Multiply;
+
     protected override GpuBigInt Execute(GpuBigInt a, GpuBigInt b, GpuBigUInt resultBuffer)
     {
         // The product kernels write the sum of the operand words; the bound may need fewer (a node narrower than its
@@ -193,6 +212,8 @@ internal class SignedMulExpression(IGpuBigIntExpression left, IGpuBigIntExpressi
 internal class SignedDivExpression(IGpuBigIntExpression left, IGpuBigIntExpression right)
     : SignedBinaryExpression(left, right, BigIntWidths.Divide)
 {
+    public override SignedOperation Operation => SignedOperation.Divide;
+
     protected override GpuBigInt Execute(GpuBigInt a, GpuBigInt b, GpuBigUInt resultBuffer)
     {
         CaptureChecks.ThrowIfCapturing(resultBuffer.Workspace, CaptureChecks.DivisionReads);
@@ -205,6 +226,8 @@ internal class SignedDivExpression(IGpuBigIntExpression left, IGpuBigIntExpressi
 internal class SignedModExpression(IGpuBigIntExpression left, IGpuBigIntExpression right)
     : SignedBinaryExpression(left, right, BigIntWidths.Remainder)
 {
+    public override SignedOperation Operation => SignedOperation.Remainder;
+
     protected override GpuBigInt Execute(GpuBigInt a, GpuBigInt b, GpuBigUInt resultBuffer)
     {
         // The remainder is below |b| and at most |a|, so the low words of the divisor-wide remainder hold it
@@ -238,8 +261,14 @@ internal class SignedNegateExpression(IGpuBigIntExpression target) : ISignedOper
     public GpuBigInt Evaluate(GpuWorkspace workspace, GpuBigUInt? targetResult = null) =>
         SignedTree.Evaluate(this, workspace, targetResult);
 
-    public GpuBigInt Apply(GpuWorkspace workspace, GpuBigInt first, GpuBigInt second, GpuBigUInt? targetResult) =>
-        new(first.Value, !first.IsNegative);
+    public SignedOperation Operation => SignedOperation.Negate;
+
+    // The magnitude of the operand with the sign flipped; nothing is launched
+    public SignedValue Apply(GpuWorkspace workspace, SignedValue first, SignedValue second, GpuBigUInt? targetResult)
+    {
+        var (a, _) = SignedTree.HostOperands(first, second);
+        return new SignedValue(a.Value, SignSource.Host(!a.IsNegative));
+    }
 }
 
 // A unary operation into a buffer of its own. The bound is given by the derived node when it is built.
@@ -263,7 +292,15 @@ internal abstract class SignedUnaryExpression(IGpuBigIntExpression target, long 
     public GpuBigInt Evaluate(GpuWorkspace workspace, GpuBigUInt? targetResult = null) =>
         SignedTree.Evaluate(this, workspace, targetResult);
 
-    public GpuBigInt Apply(GpuWorkspace workspace, GpuBigInt first, GpuBigInt second, GpuBigUInt? targetResult)
+    public abstract SignedOperation Operation { get; }
+
+    public SignedValue Apply(GpuWorkspace workspace, SignedValue first, SignedValue second, GpuBigUInt? targetResult)
+    {
+        var (a, b) = SignedTree.HostOperands(first, second);
+        return SignedValue.FromHost(ApplyHost(workspace, a, b, targetResult));
+    }
+
+    private GpuBigInt ApplyHost(GpuWorkspace workspace, GpuBigInt first, GpuBigInt second, GpuBigUInt? targetResult)
     {
         GpuBigUInt staging = default;
         GpuBigUInt? rented = null;
@@ -317,6 +354,8 @@ internal abstract class SignedUnaryExpression(IGpuBigIntExpression target, long 
 internal class SignedBitwiseNotExpression(IGpuBigIntExpression target)
     : SignedUnaryExpression(target, BigIntWidths.SignedNot(OperandBits(target)))
 {
+    public override SignedOperation Operation => SignedOperation.Not;
+
     protected override GpuBigInt Execute(GpuBigInt targetEval, GpuBigUInt resultBuffer)
     {
         if (!targetEval.IsNegative)
@@ -341,6 +380,8 @@ internal class SignedBitwiseNotExpression(IGpuBigIntExpression target)
 internal sealed class SignedFitExpression(IGpuBigIntExpression target, int words)
     : SignedUnaryExpression(target, BigIntWidths.OfWords(words))
 {
+    public override SignedOperation Operation => SignedOperation.Fit;
+
     protected override GpuBigInt Execute(GpuBigInt targetEval, GpuBigUInt resultBuffer)
     {
         var magnitude = targetEval.Value;
@@ -355,6 +396,8 @@ internal sealed class SignedFitExpression(IGpuBigIntExpression target, int words
 internal class SignedMaxExpression(IGpuBigIntExpression left, IGpuBigIntExpression right)
     : SignedBinaryExpression(left, right, Math.Max)
 {
+    public override SignedOperation Operation => SignedOperation.Max;
+
     protected override GpuBigInt Execute(GpuBigInt a, GpuBigInt b, GpuBigUInt resultBuffer) =>
         SignedSelect.Copy(SignedSelect.Compare(a, b) >= 0 ? a : b, resultBuffer);
 }
@@ -362,6 +405,8 @@ internal class SignedMaxExpression(IGpuBigIntExpression left, IGpuBigIntExpressi
 internal class SignedMinExpression(IGpuBigIntExpression left, IGpuBigIntExpression right)
     : SignedBinaryExpression(left, right, Math.Max)
 {
+    public override SignedOperation Operation => SignedOperation.Min;
+
     protected override GpuBigInt Execute(GpuBigInt a, GpuBigInt b, GpuBigUInt resultBuffer) =>
         SignedSelect.Copy(SignedSelect.Compare(a, b) <= 0 ? a : b, resultBuffer);
 }

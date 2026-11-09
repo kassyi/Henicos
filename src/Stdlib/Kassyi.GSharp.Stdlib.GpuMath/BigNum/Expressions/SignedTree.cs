@@ -11,7 +11,7 @@ internal static class SignedTree
     public static GpuBigInt Evaluate(ISignedOperator root, GpuWorkspace workspace, GpuBigUInt? targetResult)
     {
         var frames = new PooledStack<Frame>();
-        var values = new PooledStack<GpuBigInt>();
+        var values = new PooledStack<SignedValue>();
         try
         {
             Push(ref frames, root, targetResult);
@@ -22,7 +22,7 @@ internal static class SignedTree
                 {
                     // A leaf, or a node implemented elsewhere, evaluates itself
                     frames.Pop();
-                    values.Push(frame.Node.Evaluate(workspace, frame.Target));
+                    values.Push(SignedValue.FromHost(frame.Node.Evaluate(workspace, frame.Target)));
                     continue;
                 }
 
@@ -41,7 +41,8 @@ internal static class SignedTree
                 values.Push(node.Apply(workspace, first, second, frame.Target));
             }
 
-            return values.Pop();
+            // The value of the root; a device sign is read once, here
+            return values.Pop().ToHost();
         }
         catch (Exception failure)
         {
@@ -112,6 +113,27 @@ internal static class SignedTree
         }
     }
 
+    // The operands with their host signs, for a node that computes with host signs. Releases both when one carries a
+    // device sign, which such a node cannot use.
+    public static (GpuBigInt First, GpuBigInt Second) HostOperands(SignedValue first, SignedValue second)
+    {
+        if (first.Sign.IsDevice || second.Sign.IsDevice)
+        {
+            try
+            {
+                first.Dispose();
+            }
+            finally
+            {
+                second.Dispose();
+            }
+
+            throw new InvalidOperationException("An operand's sign is on the device; this node needs a host sign.");
+        }
+
+        return (first.ToHost(), second.ToHost());
+    }
+
     // Every node of the tree below root, root included
     public static void Collect(IGpuBigIntExpression root, HashSet<IGpuBigIntExpression> nodes)
     {
@@ -153,7 +175,7 @@ internal static class SignedTree
 
     // Releases the values evaluated before a failure. A release that throws does not stop the others; its exception is
     // thrown together with the failure.
-    private static void ReleaseAll(ref PooledStack<GpuBigInt> values, Exception failure)
+    private static void ReleaseAll(ref PooledStack<SignedValue> values, Exception failure)
     {
         List<Exception>? errors = null;
         while (values.Count > 0)

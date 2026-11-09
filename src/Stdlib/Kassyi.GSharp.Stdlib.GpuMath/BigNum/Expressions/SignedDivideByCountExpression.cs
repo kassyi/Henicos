@@ -8,6 +8,9 @@ internal sealed class SignedDivideByCountExpression(IGpuBigIntExpression sum, ui
 {
     internal uint Count { get; } = count > 0 ? count : throw new ArgumentOutOfRangeException(nameof(count));
 
+    // A quotient by a positive host count: planned as a division whose divisor sign is +
+    public override SignedOperation Operation => SignedOperation.Divide;
+
     protected override GpuBigInt Execute(GpuBigInt targetEval, GpuBigUInt resultBuffer)
     {
         var workspace = resultBuffer.Workspace;
