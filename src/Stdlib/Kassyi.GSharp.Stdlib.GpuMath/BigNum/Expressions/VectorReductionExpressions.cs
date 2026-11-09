@@ -87,7 +87,7 @@ internal abstract class VectorReductionExpressionBase : IGpuBigIntExpression, ID
             throw new ArgumentException($"Destination buffer must have {NumWords} words.", nameof(targetResult));
         }
 
-        CaptureChecks.ThrowIfCapturing(workspace, "The sign and emptiness of a vector Sum, Max or Min",
+        CaptureChecks.ThrowIfCapturing(workspace, "The result header of a vector Sum, Max or Min",
             "Evaluate them directly; Count can be captured.");
 
         if (_passes.Count == 0 && EmptyIsError)
