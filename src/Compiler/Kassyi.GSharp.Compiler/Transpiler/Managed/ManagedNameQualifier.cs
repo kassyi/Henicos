@@ -1,5 +1,3 @@
-using Microsoft.CodeAnalysis.Operations;
-
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
 /// <summary>
@@ -52,8 +50,8 @@ internal static class ManagedNameQualifier
     /// The reduced form finds the method through the <c>using</c> of its namespace, which the generated file does not
     /// have (CS1061). The static call evaluates the receiver and then the arguments, as the reduced form does. A
     /// <c>ref this</c> receiver is passed with <c>ref</c>; an <c>in this</c> receiver with <c>in</c> when it is a
-    /// variable of the parameter type, and without a modifier otherwise, where <c>in</c> would not compile (CS8156) and
-    /// C# copies the value into a temporary in both forms.
+    /// variable of the parameter type, and without a modifier otherwise (a value, a field of a value, another type),
+    /// where <c>in</c> would not compile (CS8156, CS1612) and C# copies the value into a temporary in both forms.
     /// </para>
     /// </remarks>
     public static ExpressionSyntax? TryRewriteInvocation(InvocationExpressionSyntax node,
@@ -234,10 +232,11 @@ internal static class ManagedNameQualifier
         symbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
 #pragma warning restore RS0030
 
+    // [WHY] A field of a value (MakeCell().Inner) is a value, which in cannot take (CS1612, #1214); the lowering
+    // decides the same question with the same test (SpilledArguments.IsPassedByReference)
     private static bool IsVariableOfType(ExpressionSyntax receiver, ITypeSymbol type, SemanticModel semanticModel) =>
         semanticModel.GetSafeOperation(receiver) is { } operation &&
-        operation is ILocalReferenceOperation or IParameterReferenceOperation or IFieldReferenceOperation
-            or IArrayElementReferenceOperation &&
+        operation.IsVariable() &&
         operation.Type.IsEqualTo(type);
 
     private sealed class Rewriter(SemanticModel semanticModel) : CSharpSyntaxRewriter
