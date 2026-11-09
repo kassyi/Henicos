@@ -171,6 +171,25 @@ internal static class AverageCases
             Assert.Equal(sumTree.Node.NumWords, result.Value.NumWords);
             average.Dispose();
             sumTree.Dispose();
+
+            // The generic Average of IGpuBigNumber (a one-word count for an exact integer type) gives the same value
+            using var generic = GenericAverage(elements);
+            var genericMagnitude = generic.Value.ToBigInteger();
+            Assert.Equal(BigInteger.Divide(sum, count), generic.IsNegative ? -genericMagnitude : genericMagnitude);
+
+            // The same values negated: the sum changes sign, and the quotient truncates toward zero
+            var negated = Leaves(workspace, values.Select(static v => (-v.Value, v.Words)).ToArray());
+            try
+            {
+                using var negatedAverage = GenericAverage(negated);
+                var negatedMagnitude = negatedAverage.Value.ToBigInteger();
+                Assert.Equal(BigInteger.Divide(-sum, count),
+                    negatedAverage.IsNegative ? -negatedMagnitude : negatedMagnitude);
+            }
+            finally
+            {
+                Dispose(negated);
+            }
         }
         finally
         {
@@ -178,7 +197,12 @@ internal static class AverageCases
         }
     }
 
-    public static void Unsigned(GpuWorkspace workspace, int count)
+    // The Average of the generic IGpuBigNumber extensions, which GpuBigInt's own Average otherwise hides
+    private static T GenericAverage<T>(T[] values)
+        where T : struct, IGpuBigNumber<T> =>
+        values.AsStackEnumerable().AsParallel().Average();
+
+        public static void Unsigned(GpuWorkspace workspace, int count)
     {
         var values = Values(count, 1350 + count);
         var elements = new GpuBigUInt[count];

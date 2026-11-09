@@ -195,47 +195,19 @@ public static class GpuBigIntStackLinqExtensions
     /// <typeparam name="TEnumerator">The type of the source enumerator.</typeparam>
     /// <param name="source">A parallel sequence of values to calculate the average of.</param>
     /// <returns>A deferred expression tree representing the parallel average.</returns>
+    /// <remarks>
+    /// The sum divided by the count, truncated toward zero as C# integer division; the quotient has the width of the
+    /// sum. A negative sum whose quotient truncates to zero keeps the minus flag (<c>-0</c>), as signed division does.
+    /// </remarks>
     public static GpuBigIntExpr Average<TEnumerator>(
         this ParallelStackEnumerable<TEnumerator, GpuBigInt> source)
         where TEnumerator : struct, IStackEnumerator<GpuBigInt>, allows ref struct
     {
-        var enumerator = source.Enumerator;
-        if (!enumerator.TryGetNext(out var first))
-        {
-            throw new InvalidOperationException("Sequence contains no elements");
-        }
+        var sumTree = StackLinqReductionCore.ReduceBalancedTree<TEnumerator, GpuBigInt, GpuBigIntExpr>(
+            source.Enumerator, static x => x, static (a, b) => a + b, out var count);
 
-        var pool = ArrayPool<GpuBigIntExpr>.Shared;
-        var capacity = 16;
-        var buffer = pool.Rent(capacity);
-        var count = 0;
-
-        try
-        {
-            buffer[count++] = first;
-            while (enumerator.TryGetNext(out var value))
-            {
-                if (count == capacity)
-                {
-                    var newCapacity = capacity * 2;
-                    var newBuffer = pool.Rent(newCapacity);
-                    Array.Copy(buffer, newBuffer, count);
-                    pool.Return(buffer, clearArray: true);
-                    buffer = newBuffer;
-                    capacity = newCapacity;
-                }
-                buffer[count++] = value;
-            }
-
-            var sumTree = StackLinqReductionCore.BuildBalancedTree(buffer.AsSpan(0, count), static (a, b) => a + b);
-
-            // The count is a one-word value the node writes when it is evaluated: no buffer outlives the expression
-            return new GpuBigIntExpr(new SignedDivideByCountExpression(sumTree.Node, (uint)count));
-        }
-        finally
-        {
-            pool.Return(buffer, clearArray: true);
-        }
+        // The count is a one-word value the node writes when it is evaluated: no buffer outlives the expression
+        return new GpuBigIntExpr(new SignedDivideByCountExpression(sumTree.Node, (uint)count));
     }
 
     /// <summary>
