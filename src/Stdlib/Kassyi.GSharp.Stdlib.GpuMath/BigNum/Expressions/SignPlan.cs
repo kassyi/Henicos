@@ -82,7 +82,8 @@ internal enum SignKernel
     // The host knows the sign: SignPlan.HostNegative
     None,
 
-    // The result takes the operand's device word as it is (Fit of a value with a device sign)
+    // No launch: the result takes over the operand's device word as it is (Fit of a value with a device sign), so the
+    // sign moves with the word's ownership
     Forward,
 
     // The sign word of the result is the XOR of the operands' (or of the operand and 1, for -x)
@@ -97,18 +98,34 @@ internal enum SignKernel
     // The sign of a remainder: the dividend's when the remainder is not zero, + otherwise
     RemainderSign,
 
-    // ~x of a negative x: |x| - 1 with +, or -1 for a negative zero
-    NotOfNegative
+    // ~x == -x - 1 by the operand's sign: -(|x| + 1) for +, |x| - 1 for -, and -1 for a negative zero
+    Not
+}
+
+// The operand a host plan of Max or Min takes as the result, when the host signs alone decide it
+internal enum ChosenOperand
+{
+    None,
+    First,
+    Second
 }
 
 // The decision for the sign of one node, made from the kinds of its operands' signs before anything is launched
-internal readonly record struct SignPlan(SignKernel Kernel, bool HostNegative)
+internal readonly record struct SignPlan(
+    SignKernel Kernel,
+    bool HostNegative,
+    ChosenOperand Chosen = ChosenOperand.None
+)
 {
     public bool IsHost => Kernel == SignKernel.None;
 
     public static SignPlan Host(bool negative) => new(SignKernel.None, negative);
 
     public static SignPlan Device(SignKernel kernel) => new(kernel, HostNegative: false);
+
+    // Max or Min of operands with different host signs: the operand with the given sign, for every value, without a
+    // comparison
+    public static SignPlan Choose(ChosenOperand operand, bool negative) => new(SignKernel.None, negative, operand);
 }
 
 // The sign rules of the signed nodes (C# and BigInteger semantics), with the host deciding only what it knows without
@@ -116,55 +133,72 @@ internal readonly record struct SignPlan(SignKernel Kernel, bool HostNegative)
 // writes a device word.
 internal static class SignPlanner
 {
-    public static SignPlan For(SignedOperation operation, SignSource first, SignSource second = default)
-    {
-        switch (operation)
+    public static SignPlan For(SignedOperation operation, SignSource first, SignSource second = default) =>
+        operation switch
         {
-            case SignedOperation.Add:
-            case SignedOperation.Subtract:
-                // Magnitudes of the same effective sign add with that sign; different signs subtract, and the borrow
-                // (a value) decides the sign
-                if (first.IsDevice || second.IsDevice)
-                {
-                    return SignPlan.Device(SignKernel.AddSubtract);
-                }
+            SignedOperation.Add => PlanAddSubtract(first, second, subtract: false),
+            SignedOperation.Subtract => PlanAddSubtract(first, second, subtract: true),
+            SignedOperation.Multiply or SignedOperation.Divide => PlanProductSign(first, second),
+            SignedOperation.Remainder => PlanRemainder(first),
+            SignedOperation.Negate => PlanNegate(first),
+            SignedOperation.Not => PlanNot(first),
+            SignedOperation.Max => PlanSelect(first, second, max: true),
+            SignedOperation.Min => PlanSelect(first, second, max: false),
+            SignedOperation.Fit => PlanFit(first),
+            _ => throw new ArgumentOutOfRangeException(nameof(operation), operation, "Unknown signed operation.")
+        };
 
-                var effectiveSecond = second.HostNegative ^ (operation == SignedOperation.Subtract);
-                return first.HostNegative == effectiveSecond
-                    ? SignPlan.Host(first.HostNegative)
-                    : SignPlan.Device(SignKernel.AddSubtract);
-
-            case SignedOperation.Multiply:
-            case SignedOperation.Divide:
-                return first.IsDevice || second.IsDevice
-                    ? SignPlan.Device(SignKernel.Xor)
-                    : SignPlan.Host(first.HostNegative ^ second.HostNegative);
-
-            case SignedOperation.Remainder:
-                // The sign of the dividend, but + for a zero remainder (a value); a non-negative dividend gives +
-                return !first.IsDevice && !first.HostNegative
-                    ? SignPlan.Host(false)
-                    : SignPlan.Device(SignKernel.RemainderSign);
-
-            case SignedOperation.Negate:
-                return first.IsDevice ? SignPlan.Device(SignKernel.Xor) : SignPlan.Host(!first.HostNegative);
-
-            case SignedOperation.Not:
-                // ~x == -x - 1: negative for a non-negative x; for a negative x, + unless x is -0
-                return !first.IsDevice && !first.HostNegative
-                    ? SignPlan.Host(true)
-                    : SignPlan.Device(SignKernel.NotOfNegative);
-
-            case SignedOperation.Max:
-            case SignedOperation.Min:
-                // Which operand is chosen is a value
-                return SignPlan.Device(SignKernel.Select);
-
-            case SignedOperation.Fit:
-                return first.IsDevice ? SignPlan.Device(SignKernel.Forward) : SignPlan.Host(first.HostNegative);
-
-            default:
-                throw new ArgumentOutOfRangeException(nameof(operation), operation, "Unknown signed operation.");
+    // Magnitudes of the same effective sign add with that sign; different signs subtract, and the borrow (a value)
+    // decides the sign
+    private static SignPlan PlanAddSubtract(SignSource first, SignSource second, bool subtract)
+    {
+        if (first.IsDevice || second.IsDevice)
+        {
+            return SignPlan.Device(SignKernel.AddSubtract);
         }
+
+        var effectiveSecond = second.HostNegative ^ subtract;
+        return first.HostNegative == effectiveSecond
+            ? SignPlan.Host(first.HostNegative)
+            : SignPlan.Device(SignKernel.AddSubtract);
     }
+
+    // A product or quotient: the XOR of the operand signs
+    private static SignPlan PlanProductSign(SignSource first, SignSource second) =>
+        first.IsDevice || second.IsDevice
+            ? SignPlan.Device(SignKernel.Xor)
+            : SignPlan.Host(first.HostNegative ^ second.HostNegative);
+
+    // The sign of the dividend, but + for a zero remainder (a value); a non-negative dividend gives +
+    private static SignPlan PlanRemainder(SignSource dividend) =>
+        !dividend.IsDevice && !dividend.HostNegative
+            ? SignPlan.Host(false)
+            : SignPlan.Device(SignKernel.RemainderSign);
+
+    private static SignPlan PlanNegate(SignSource operand) =>
+        operand.IsDevice ? SignPlan.Device(SignKernel.Xor) : SignPlan.Host(!operand.HostNegative);
+
+    // ~x == -x - 1: negative for a non-negative x; for a negative x, + unless x is -0 (a value)
+    private static SignPlan PlanNot(SignSource operand) =>
+        !operand.IsDevice && !operand.HostNegative
+            ? SignPlan.Host(true)
+            : SignPlan.Device(SignKernel.Not);
+
+    // Different host signs decide Max and Min for every value: Max is the non-negative operand, Min the negative one.
+    // Otherwise which operand is chosen is a value.
+    private static SignPlan PlanSelect(SignSource first, SignSource second, bool max)
+    {
+        if (first.IsDevice || second.IsDevice || first.HostNegative == second.HostNegative)
+        {
+            return SignPlan.Device(SignKernel.Select);
+        }
+
+        // The chosen operand is the negative one for Min and the other one for Max
+        var chosenNegative = !max;
+        var chosen = first.HostNegative == chosenNegative ? ChosenOperand.First : ChosenOperand.Second;
+        return SignPlan.Choose(chosen, chosenNegative);
+    }
+
+    private static SignPlan PlanFit(SignSource operand) =>
+        operand.IsDevice ? SignPlan.Device(SignKernel.Forward) : SignPlan.Host(operand.HostNegative);
 }
