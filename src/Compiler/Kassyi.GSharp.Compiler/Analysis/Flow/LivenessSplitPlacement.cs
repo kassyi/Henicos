@@ -50,7 +50,10 @@ internal static class LivenessSplitPlacement
     }
 
     // Whether a use outside the call is in the left operand of a binary expression whose right operand holds the call,
-    // which the lowering evaluates before the split (SpilledArguments.IsSpilledLeftOperand, #1535)
+    // which the lowering evaluates before the split (SpilledArguments.IsSpilledLeftOperand, #1535). Not covered: a
+    // split in an arm of a ?: / && / || inside the right operand, which ConditionalEvaluationRewriter rewrites first, so
+    // the left operand still runs after it there; that order is the open part of #991 (Suspending call arguments still
+    // misordered on CPU)
     private static bool IsInSpilledLeftOperand(SemanticModel model, SyntaxNode call, SyntaxNode use)
     {
         if (use.SyntaxTree != call.SyntaxTree)

@@ -110,10 +110,9 @@ internal static class SpilledArguments
     /// Whether the left operand of <paramref name="binary"/>, whose right operand holds a call that splits, is
     /// evaluated into a temporary before the split, as C# evaluates it before the right operand (#1535). Not for
     /// <c>&amp;&amp;</c>, <c>||</c> and <c>??</c>, whose right operand runs only on one branch, nor for a left operand
-    /// that can be read
-    /// after the split: a literal, a constant, or a variable that the right operand does not write (an unaliased local
-    /// or by-value parameter; a span or other ref struct, which no temporary keeps across the split, unless the right
-    /// operand writes it).
+    /// that can be read after the split: a literal, a constant, or a variable that the right operand does not write (an
+    /// unaliased local or by-value parameter; a span or other ref struct, which no temporary keeps across the split,
+    /// unless the right operand writes it).
     /// </summary>
     public static bool IsSpilledLeftOperand(BinaryExpressionSyntax binary, SemanticModel? model)
     {
