@@ -28,6 +28,15 @@ public static partial class GpuBigIntWideKernels
     /// </summary>
     public const int ModuloMode = 2;
 
+    // The block's shared memory of one carry chain of AddWords, one array that the kernel declares and passes as one
+    // argument: the carry of each warp (words 0 to 31), the carry out of the top word, and the flag of a non-zero word
+    // above the result
+    private const int CarryChainWords = 34;
+
+    private const int ChainTopCarry = 32;
+
+    private const int ChainHighWords = 33;
+
     /// <summary>
     /// <c>result = a + b</c> (<paramref name="subtract"/> = 0) or <c>a - b</c> (1) over <paramref name="resultWords"/>
     /// words. The sum or difference is computed over every word of the operands, so a result that does not fit in
@@ -43,10 +52,8 @@ public static partial class GpuBigIntWideKernels
     public static void AddSubWideKernel(uint[] a, int aWords, uint[] b, int bWords, uint[] result, int resultWords,
         int subtract, uint[] status)
     {
-        SharedMemory<uint> sharedCarry = new SharedMemory<uint>(32);
-        SharedMemory<uint> topCarry = new SharedMemory<uint>(1);
-        SharedMemory<uint> highWords = new SharedMemory<uint>(1);
-        ClearFlag(highWords);
+        SharedMemory<uint> chain = new SharedMemory<uint>(CarryChainWords);
+        ClearFlag(chain, ChainHighWords);
 
         bool sub = (subtract & 1) == 1;
         bool modular = (subtract & ModuloMode) != 0;
@@ -58,11 +65,11 @@ public static partial class GpuBigIntWideKernels
             words = resultWords;
         }
 
-        AddWords(a, aWords, b, bWords, sub, result, resultWords, words, sharedCarry, topCarry, highWords);
+        AddWords(a, aWords, b, bWords, sub, result, resultWords, words, chain);
 
         if (ThreadIndex.X == 0 && !modular)
         {
-            ReportAddSubtract(status, sub, topCarry[0], highWords[0]);
+            ReportAddSubtract(status, sub, chain[ChainTopCarry], chain[ChainHighWords]);
         }
     }
 
@@ -156,21 +163,19 @@ public static partial class GpuBigIntWideKernels
     public static void MagnitudeDifferenceKernel([GpuReadOnly] uint[] a, int aWords, [GpuReadOnly] uint[] b,
         int bWords, uint[] result, int resultWords, uint[] flags)
     {
-        SharedMemory<uint> sharedCarry = new SharedMemory<uint>(32);
-        SharedMemory<uint> topCarry = new SharedMemory<uint>(1);
-        SharedMemory<uint> highWords = new SharedMemory<uint>(1);
+        SharedMemory<uint> chain = new SharedMemory<uint>(CarryChainWords);
         SharedMemory<uint> nonZero = new SharedMemory<uint>(1);
-        ClearFlag(highWords);
-        ClearFlag(nonZero);
+        ClearFlag(chain, ChainHighWords);
+        ClearFlag(nonZero, 0);
 
         // a - b over the result's words, which hold both operands
-        AddWords(a, aWords, b, bWords, true, result, resultWords, resultWords, sharedCarry, topCarry, highWords);
+        AddWords(a, aWords, b, bWords, true, result, resultWords, resultWords, chain);
 
         // No carry out of a + ~b + 1 is a borrow: b > a, and the result holds a - b modulo the width
-        bool borrowed = topCarry[0] == 0u;
+        bool borrowed = chain[ChainTopCarry] == 0u;
         if (borrowed)
         {
-            NegateWords(result, resultWords, sharedCarry);
+            NegateWords(result, resultWords, chain);
         }
 
         MarkNonZero(result, resultWords, nonZero);
@@ -185,14 +190,14 @@ public static partial class GpuBigIntWideKernels
     /// <summary>
     /// One carry chain over <paramref name="words"/> words: <c>a + b</c>, or <c>a + ~b + 1</c> (<c>a - b</c>) when
     /// <paramref name="complementB"/> is set, a missing word of an operand reading as zero. Writes the words below
-    /// <paramref name="resultWords"/>, sets <c>highWords[0]</c> when a word at or above them is not zero, and leaves
-    /// the carry out of the top word in <c>topCarry[0]</c>, taken from its own thread (the block carry of a partial
-    /// last warp is not defined). Every thread of the block calls it.
+    /// <paramref name="resultWords"/>, sets word 33 of <paramref name="chain"/> when a word at or above them is not
+    /// zero, and leaves the carry out of the top word in word 32, taken from its own thread (the block carry of a
+    /// partial last warp is not defined); words 0 to 31 hold the carries of the warps. Every thread of the block calls
+    /// it.
     /// </summary>
     [GpuDeviceFunction]
     public static void AddWords([GpuReadOnly] uint[] a, int aWords, [GpuReadOnly] uint[] b, int bWords,
-        bool complementB, uint[] result, int resultWords, int words, SharedMemory<uint> sharedCarry,
-        SharedMemory<uint> topCarry, SharedMemory<uint> highWords)
+        bool complementB, uint[] result, int resultWords, int words, SharedMemory<uint> chain)
     {
         int tid = ThreadIndex.X;
         int bDim = BlockDimension.X;
@@ -214,8 +219,8 @@ public static partial class GpuBigIntWideKernels
             uint g = (uint)(sum >> 32);
             uint p = (uint)sum == 0xFFFFFFFFu ? 1u : 0u;
 
-            uint carryIn = GpuBigIntVectorKernels.PropagateBlockCarry(g, p, blockCarryIn, sharedCarry, laneId, warpId,
-                bDim, out blockCarryIn);
+            uint carryIn = GpuBigIntVectorKernels.PropagateBlockCarry(g, p, blockCarryIn, chain, laneId, warpId, bDim,
+                out blockCarryIn);
 
             uint word = (uint)sum + carryIn;
             if (idx < resultWords)
@@ -224,12 +229,12 @@ public static partial class GpuBigIntWideKernels
             }
             else if (idx < words && word != 0u)
             {
-                highWords[0] = 1u;
+                chain[ChainHighWords] = 1u;
             }
 
             if (idx == words - 1)
             {
-                topCarry[0] = g | (p & carryIn);
+                chain[ChainTopCarry] = g | (p & carryIn);
             }
 
             Gpu.SyncThreads();
@@ -281,13 +286,14 @@ public static partial class GpuBigIntWideKernels
         Gpu.SyncThreads();
     }
 
-    /// <summary>Clears <c>flag[0]</c> from thread 0 and synchronizes the block.</summary>
+    /// <summary>Clears word <paramref name="index"/> of <paramref name="flag"/> from thread 0 and synchronizes the
+    /// block.</summary>
     [GpuDeviceFunction]
-    public static void ClearFlag(SharedMemory<uint> flag)
+    public static void ClearFlag(SharedMemory<uint> flag, int index)
     {
         if (ThreadIndex.X == 0)
         {
-            flag[0] = 0u;
+            flag[index] = 0u;
         }
 
         Gpu.SyncThreads();
