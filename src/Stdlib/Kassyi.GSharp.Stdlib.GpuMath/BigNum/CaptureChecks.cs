@@ -2,7 +2,9 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 
 // An operation that reads a value from the device refuses a CUDA graph capture before the read: a capture cannot
 // record a host read (the read would invalidate it with a driver error), and the graph would replay the choice made for
-// the values of the capture. Every such operation goes through this check, so that the refusal has one form.
+// the values of the capture. Every such operation goes through this check, so that the refusal has one form, except the
+// length of a filtered vector (DeviceCounted.ThrowIfCapturing), which keeps its InvalidOperationException. The subject
+// "what" is singular: the message reads "<what> is read from the device".
 internal static class CaptureChecks
 {
     // DivRem reads the bit lengths of its operands (and % the zero test of its remainder)
