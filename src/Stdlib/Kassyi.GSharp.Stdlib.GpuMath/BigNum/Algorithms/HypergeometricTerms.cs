@@ -66,7 +66,12 @@ public readonly struct HypergeometricTerms([TakesOwnership] GpuBigInt p, [TakesO
     /// <returns>A new <see cref="HypergeometricTerms"/> state where $P = P_l P_r$, $Q = Q_l Q_r$, and $T = T_l Q_r + P_l T_r$.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="workspace"/> is <see langword="null"/>.</exception>
     /// <remarks>
-    /// <para><b>Performance:</b> Dispatches high-throughput GPU multiplication and signed addition kernels.</para>
+    /// <para><b>Result widths:</b> <see cref="P"/> and <see cref="Q"/> have the sum of the word counts of their
+    /// factors; <see cref="T"/> has one word more than the wider of its two products, so the sum never loses its
+    /// carry.</para>
+    /// <para><b>Performance:</b> Dispatches high-throughput GPU multiplication and signed addition kernels. When the
+    /// two products of <see cref="T"/> have different signs, the sign of <see cref="T"/> is read from the device
+    /// once.</para>
     /// </remarks>
     public static HypergeometricTerms Merge(GpuWorkspace workspace, HypergeometricTerms left, HypergeometricTerms right)
     {
@@ -91,23 +96,19 @@ public readonly struct HypergeometricTerms([TakesOwnership] GpuBigInt p, [TakesO
 
             // T = Tl * Qr + Pl * Tr
             var wordsA = left.T.Value.NumWords + right.Q.NumWords;
-            using var rawTermA = new GpuBigUInt(workspace, wordsA);
-            GpuBigIntMath.Mul(left.T.Value, right.Q, rawTermA);
+            using var termA = new GpuBigUInt(workspace, wordsA);
+            GpuBigIntMath.Mul(left.T.Value, right.Q, termA);
             var signA = left.T.IsNegative;
 
             var wordsB = left.P.Value.NumWords + right.T.Value.NumWords;
-            using var rawTermB = new GpuBigUInt(workspace, wordsB);
-            GpuBigIntMath.Mul(left.P.Value, right.T.Value, rawTermB);
+            using var termB = new GpuBigUInt(workspace, wordsB);
+            GpuBigIntMath.Mul(left.P.Value, right.T.Value, termB);
             var signB = left.P.IsNegative ^ right.T.IsNegative;
 
-            var maxTWords = Math.Max(wordsA, wordsB);
-            using GpuBigUInt? padA = wordsA == maxTWords ? null : rawTermA.PadTo(maxTWords);
-            using GpuBigUInt? padB = wordsB == maxTWords ? null : rawTermB.PadTo(maxTWords);
-            var termA = padA ?? rawTermA;
-            var termB = padB ?? rawTermB;
-
-            resultT = new GpuBigUInt(workspace, maxTWords);
-            var tNegative = GpuBigIntMath.AddSignedMagnitude(termA, signA, termB, signB, resultT);
+            // A sum of two magnitudes needs one bit more than the wider of them: the carry is kept
+            var tBits = BigIntWidths.Add(BigIntWidths.OfWords(wordsA), BigIntWidths.OfWords(wordsB));
+            resultT = new GpuBigUInt(workspace, BigIntWidths.Words(tBits));
+            var tNegative = BigIntWideOps.AddSigned(termA, signA, termB, signB, resultT);
 
             return new HypergeometricTerms(
                 new GpuBigInt(resultP, pNegative),
