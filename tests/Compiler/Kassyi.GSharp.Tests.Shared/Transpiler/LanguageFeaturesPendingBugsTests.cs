@@ -98,7 +98,8 @@ public class LanguageFeaturesPendingBugsTests
         Assert.Contains("__gsharp_managed_Dispose", code, StringComparison.Ordinal);
     }
 
-    [Fact(Skip = "Pending #610: Mutating struct property getter emitted as const member function in C++")]
+    // #610: a getter that writes its struct is not a const member function
+    [Fact]
     public void Test_MutatingStructPropertyGetter_OmitsConstQualifier()
     {
         string source = RoslynTestUtility.ReadTestCase("Transpiler/LanguageFeaturesPending/MutatingStructPropertyGetterCase.cs");
