@@ -1,0 +1,188 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+
+/// <summary>
+/// Rewrites one StackLinq file for netstandard2.0: no <c>allows ref struct</c> (it needs .NET 9 runtime support), so
+/// the ref structs become plain structs; members that only work with span enumerators, parallel enumeration or generic
+/// math are dropped; the types become internal in <see cref="ExportedNamespace"/>.
+/// </summary>
+internal sealed class NetStandardRewriter() : CSharpSyntaxRewriter(visitIntoStructuredTrivia: false)
+{
+    // A different namespace keeps the copy apart from the real assembly in projects that reference both
+    private const string ExportedNamespace = "Kassyi.ZeroAlloc.Linq.Embedded";
+
+    // Types that hold a span, so they must stay ref structs and cannot be type arguments without 'allows ref struct'
+    private static readonly HashSet<string> s_droppedTypes = ["SpanEnumerator", "ParallelStackEnumerable"];
+
+    // A member or an if branch that mentions one of these cannot build for netstandard2.0. The build check of Program
+    // runs against the net10.0 platform, so an API that netstandard2.0 lacks (Vector.Sum) surfaces when the G# compiler
+    // builds the copy; add its type here.
+    private static readonly HashSet<string> s_droppedReferences =
+    [
+        "SpanEnumerator", "ParallelStackEnumerable", "CollectionsMarshal", "IAdditionOperators", "IAdditiveIdentity",
+        "Vector"
+    ];
+
+    public static bool DeclaresType(SyntaxNode root)
+    {
+        foreach (var node in root.DescendantNodes())
+        {
+            if (node is BaseTypeDeclarationSyntax)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public override SyntaxNode? VisitFileScopedNamespaceDeclaration(FileScopedNamespaceDeclarationSyntax node) =>
+        base.VisitFileScopedNamespaceDeclaration(
+            node.WithName(SyntaxFactory.ParseName(ExportedNamespace).WithTriviaFrom(node.Name))
+        );
+
+    public override SyntaxNode? VisitStructDeclaration(StructDeclarationSyntax node)
+    {
+        if (s_droppedTypes.Contains(node.Identifier.ValueText))
+        {
+            return null;
+        }
+
+        // Every struct left holds enumerators and delegates only (span holders are dropped above), so all of them
+        // become plain structs: StackEnumerable too, which SelectMany's selector returns through Func<T, TResult>
+        return base.VisitStructDeclaration(node) is StructDeclarationSyntax visited
+            ? visited.WithModifiers(Remove(MakeInternal(visited.Modifiers), SyntaxKind.RefKeyword))
+            : null;
+    }
+
+    public override SyntaxNode? VisitClassDeclaration(ClassDeclarationSyntax node) =>
+        base.VisitClassDeclaration(node) is ClassDeclarationSyntax visited
+            ? visited.WithModifiers(MakeInternal(visited.Modifiers))
+            : null;
+
+    public override SyntaxNode? VisitInterfaceDeclaration(InterfaceDeclarationSyntax node) =>
+        base.VisitInterfaceDeclaration(node) is InterfaceDeclarationSyntax visited
+            ? visited.WithModifiers(MakeInternal(visited.Modifiers))
+            : null;
+
+    public override SyntaxNode? VisitMethodDeclaration(MethodDeclarationSyntax node) =>
+        KeepIfBuildable(base.VisitMethodDeclaration(node));
+
+    public override SyntaxNode? VisitConstructorDeclaration(ConstructorDeclarationSyntax node) =>
+        KeepIfBuildable(base.VisitConstructorDeclaration(node));
+
+    public override SyntaxNode? VisitPropertyDeclaration(PropertyDeclarationSyntax node) =>
+        KeepIfBuildable(base.VisitPropertyDeclaration(node));
+
+    public override SyntaxNode? VisitFieldDeclaration(FieldDeclarationSyntax node) =>
+        KeepIfBuildable(base.VisitFieldDeclaration(node));
+
+    // where T : struct, IStackEnumerator<T>, allows ref struct  ->  where T : struct, IStackEnumerator<T>
+    public override SyntaxNode? VisitTypeParameterConstraintClause(TypeParameterConstraintClauseSyntax node)
+    {
+        var kept = new List<TypeParameterConstraintSyntax>(node.Constraints.Count);
+        foreach (var constraint in node.Constraints)
+        {
+            if (constraint is not AllowsConstraintClauseSyntax)
+            {
+                kept.Add(constraint);
+            }
+        }
+
+        if (kept.Count == 0)
+        {
+            return null;
+        }
+
+        return kept.Count == node.Constraints.Count
+            ? node
+            : node.WithConstraints(SyntaxFactory.SeparatedList(kept)).NormalizeWhitespace().WithTriviaFrom(node);
+    }
+
+    // if (typeof(TEnumerator) == typeof(SpanEnumerator<T>)) { <fast path> } else <rest>  ->  <rest>
+    public override SyntaxNode? VisitIfStatement(IfStatementSyntax node)
+    {
+        if (!ReferencesDroppedSymbol(node.Condition))
+        {
+            return base.VisitIfStatement(node);
+        }
+
+        return node.Else is null ? null : Visit(node.Else.Statement).WithTriviaFrom(node);
+    }
+
+    // ArgumentNullException.ThrowIfNull(x);  ->  if (x is null) throw new ArgumentNullException(nameof(x));
+    public override SyntaxNode? VisitExpressionStatement(ExpressionStatementSyntax node)
+    {
+        if (node.Expression is not InvocationExpressionSyntax
+            {
+                Expression: MemberAccessExpressionSyntax
+                {
+                    Expression: IdentifierNameSyntax { Identifier.ValueText: "ArgumentNullException" },
+                    Name.Identifier.ValueText: "ThrowIfNull"
+                },
+                ArgumentList.Arguments: [{ Expression: IdentifierNameSyntax argument }]
+            })
+        {
+            return base.VisitExpressionStatement(node);
+        }
+
+        var name = argument.Identifier.ValueText;
+        return SyntaxFactory
+            .ParseStatement($"if ({name} is null) throw new ArgumentNullException(nameof({name}));")
+            .WithTriviaFrom(node);
+    }
+
+    // XML documentation may cite members that the export drops
+    public override SyntaxTrivia VisitTrivia(SyntaxTrivia trivia) =>
+        trivia.IsKind(SyntaxKind.SingleLineDocumentationCommentTrivia) ||
+        trivia.IsKind(SyntaxKind.MultiLineDocumentationCommentTrivia)
+            ? default
+            : base.VisitTrivia(trivia);
+
+    // A member that still mentions a dropped symbol after the rewrite cannot build for netstandard2.0
+    private static SyntaxNode? KeepIfBuildable(SyntaxNode? rewritten) =>
+        rewritten is null || ReferencesDroppedSymbol(rewritten) ? null : rewritten;
+
+    private static bool ReferencesDroppedSymbol(SyntaxNode node)
+    {
+        foreach (var descendant in node.DescendantNodes())
+        {
+            if (descendant is SimpleNameSyntax name && s_droppedReferences.Contains(name.Identifier.ValueText))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static SyntaxTokenList MakeInternal(SyntaxTokenList modifiers)
+    {
+        for (var i = 0; i < modifiers.Count; i++)
+        {
+            if (modifiers[i].IsKind(SyntaxKind.PublicKeyword))
+            {
+                return modifiers.Replace(
+                    modifiers[i],
+                    SyntaxFactory.Token(SyntaxKind.InternalKeyword).WithTriviaFrom(modifiers[i])
+                );
+            }
+        }
+
+        return modifiers;
+    }
+
+    private static SyntaxTokenList Remove(SyntaxTokenList modifiers, SyntaxKind kind)
+    {
+        for (var i = 0; i < modifiers.Count; i++)
+        {
+            if (modifiers[i].IsKind(kind))
+            {
+                return modifiers.RemoveAt(i);
+            }
+        }
+
+        return modifiers;
+    }
+}

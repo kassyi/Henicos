@@ -42,7 +42,9 @@ internal static class StructTypeSubstitution
                 : compilation.CreatePointerTypeSymbol(pointedAt);
         }
 
-        if (typeSymbol is INamedTypeSymbol { IsGenericType: true } namedType && !namedType.IsDefinition)
+        // [WHY] A definition counts as well: inside its own members, a generic struct names itself as the open
+        // Box<T>, whose type arguments are its type parameters
+        if (typeSymbol is INamedTypeSymbol { IsGenericType: true } namedType)
         {
             return SubstituteTypeArguments(namedType, currentStruct, compilation);
         }
