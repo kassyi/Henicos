@@ -13,7 +13,8 @@ public readonly record struct GpuThreadContext(
     int GridDimX, int GridDimY, int GridDimZ);
 
 /// <summary>
-/// Provides a managed execution context for evaluating GPU kernels directly on the .NET host CPU without native toolchains.
+/// Provides a managed execution context for evaluating GPU kernels directly on the .NET host CPU without native
+/// toolchains.
 /// </summary>
 public static partial class ManagedGpuContext
 {
@@ -101,8 +102,8 @@ public static partial class ManagedGpuContext
     /// only.
     /// </summary>
     /// <remarks>
-    /// The managed launcher steps one GPU thread at a time on one host thread, so a request set during a step belongs to
-    /// that GPU thread, however deep the call that set it.
+    /// The managed launcher steps one GPU thread at a time on one host thread, so a request set during a step belongs
+    /// to that GPU thread, however deep the call that set it.
     /// </remarks>
     [ThreadStatic]
     [EditorBrowsable(EditorBrowsableState.Never)]
@@ -113,9 +114,9 @@ public static partial class ManagedGpuContext
     private const ulong GridStrideLimit = 0x80000000ul;
 
     /// <summary>
-    /// The first index of the calling thread in <c>Gpu.GridStrideLoop</c>: its linear rank in the launch, in the order of
-    /// cooperative groups <c>grid.thread_rank()</c> (x fastest, blocks in the same order), saturated at 2^31. The same
-    /// computation as <c>__gsharp_grid_stride_start</c> of the C++ preludes. For generated code and the Core
+    /// The first index of the calling thread in <c>Gpu.GridStrideLoop</c>: its linear rank in the launch, in the order
+    /// of cooperative groups <c>grid.thread_rank()</c> (x fastest, blocks in the same order), saturated at 2^31. The
+    /// same computation as <c>__gsharp_grid_stride_start</c> of the C++ preludes. For generated code and the Core
     /// implementation only.
     /// </summary>
     /// <returns>The rank of the thread, or 2^31 when it is 2^31 or more.</returns>
@@ -135,8 +136,9 @@ public static partial class ManagedGpuContext
     }
 
     /// <summary>
-    /// The step of <c>Gpu.GridStrideLoop</c>: the number of threads in the launch, saturated at 2^31. The same computation
-    /// as <c>__gsharp_grid_stride_step</c> of the C++ preludes. For generated code and the Core implementation only.
+    /// The step of <c>Gpu.GridStrideLoop</c>: the number of threads in the launch, saturated at 2^31. The same
+    /// computation as <c>__gsharp_grid_stride_step</c> of the C++ preludes. For generated code and the Core
+    /// implementation only.
     /// </summary>
     /// <returns>The number of threads, or 2^31 when it is 2^31 or more.</returns>
     [EditorBrowsable(EditorBrowsableState.Never)]
@@ -153,8 +155,8 @@ public static partial class ManagedGpuContext
     }
 
     /// <summary>
-    /// The count of <c>Gpu.GridStrideLoop</c>, evaluated once: a negative count runs no iteration, as <c>i &lt; n</c> does
-    /// in C#. The same as <c>__gsharp_grid_stride_count</c> of the C++ preludes. For generated code and the Core
+    /// The count of <c>Gpu.GridStrideLoop</c>, evaluated once: a negative count runs no iteration, as <c>i &lt; n</c>
+    /// does in C#. The same as <c>__gsharp_grid_stride_count</c> of the C++ preludes. For generated code and the Core
     /// implementation only.
     /// </summary>
     /// <param name="count">The count argument of the loop.</param>
@@ -176,8 +178,9 @@ public static partial class ManagedGpuContext
     public static bool BlockBarrierRequested;
 
     // The managed launcher of a cooperative kernel runs the grid in phases, each ending when every block has reached
-    // Gpu.SyncGrid (#664). The GPU never completes a grid sync that a block, or thread 0 of a block, does not reach, and a
-    // grid sync in a launch that is not cooperative is undefined there; the CPU paths report each with the same text.
+    // Gpu.SyncGrid (#664). The GPU never completes a grid sync that a block, or thread 0 of a block, does not reach,
+    // and a grid sync in a launch that is not cooperative is undefined there; the CPU paths report each with the same
+    // text.
 
     /// <summary>
     /// Creates the exception for a block that finished while the other blocks of a cooperative kernel wait at
@@ -189,11 +192,13 @@ public static partial class ManagedGpuContext
     /// <param name="gridDimY">The number of blocks in Y.</param>
     /// <returns>The exception to throw.</returns>
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public static InvalidOperationException BlockFinishedAtGridSync(string kernel, int blockIndex, uint gridDimX, uint gridDimY)
+    public static InvalidOperationException BlockFinishedAtGridSync(
+        string kernel, int blockIndex, uint gridDimX, uint gridDimY)
     {
         var block = (uint)blockIndex;
         return new InvalidOperationException(
-            $"G#: block ({block % gridDimX},{block / gridDimX % gridDimY},{block / (gridDimX * gridDimY)}) of {kernel} " +
+            $"G#: block ({block % gridDimX},{block / gridDimX % gridDimY}," +
+            $"{block / (gridDimX * gridDimY)}) of {kernel} " +
             "finished while other blocks wait at Gpu.SyncGrid; on the GPU the grid sync never completes");
     }
 
@@ -207,8 +212,10 @@ public static partial class ManagedGpuContext
     /// <param name="blockZ">The block's index in Z.</param>
     /// <returns>The exception to throw.</returns>
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public static InvalidOperationException RepresentativeFinishedAtGridSync(string kernel, int blockX, int blockY, int blockZ) =>
-        new($"G#: thread (0,0,0) of block ({blockX},{blockY},{blockZ}) of {kernel} finished while other threads of its " +
+    public static InvalidOperationException RepresentativeFinishedAtGridSync(
+        string kernel, int blockX, int blockY, int blockZ) =>
+        new($"G#: thread (0,0,0) of block ({blockX},{blockY},{blockZ}) of {kernel} " +
+            "finished while other threads of its " +
             "block wait at Gpu.SyncGrid; on the GPU the grid sync never completes");
 
     /// <summary>
@@ -258,25 +265,27 @@ public static partial class ManagedGpuContext
 
     private const int MaxThreadsPerBlock = 1024;
 
-    // The shuffles that CUDA leaves undefined throw InvalidOperationException with the place of the shuffle (#666): a width
-    // that is not 1, 2, 4, 8, 16 or 32, and a source lane that does not exist in the block (the last warp of a block whose
-    // size is not a multiple of 32). A source outside the caller's segment is defined: up and down return the caller's own
-    // value, xor reads an earlier segment and returns the caller's own value for a later one, idx reads lane
-    // srcLane % width of the segment (#692). The native CPU prelude (WarpAndHints.hpp) applies
-    // the same rules.
+    // The shuffles that CUDA leaves undefined throw InvalidOperationException with the place of the shuffle (#666): a
+    // width that is not 1, 2, 4, 8, 16 or 32, and a source lane that does not exist in the block (the last warp of a
+    // block whose size is not a multiple of 32). A source outside the caller's segment is defined: up and down return
+    // the caller's own value, xor reads an earlier segment and returns the caller's own value for a later one, idx
+    // reads lane srcLane % width of the segment (#692). The native CPU prelude (WarpAndHints.hpp) applies the same
+    // rules.
     private static void CheckShuffleWidth(int width, string name, string location)
     {
         if (width is not (1 or 2 or 4 or 8 or 16 or 32))
         {
             throw new InvalidOperationException(
-                $"G#: {name} at {location} has width {width}; the width must be 1, 2, 4, 8, 16 or 32 (CUDA leaves the result undefined)");
+                $"G#: {name} at {location} has width {width}; " +
+                "the width must be 1, 2, 4, 8, 16 or 32 (CUDA leaves the result undefined)");
         }
     }
 
-    // How to avoid reading a lane that does not exist; a mask that leaves the lane out does not stop the read (the native
-    // prelude, WarpAndHints.hpp, writes the same text)
+    // How to avoid reading a lane that does not exist; a mask that leaves the lane out does not stop the read
+    // (the native prelude, WarpAndHints.hpp, writes the same text)
     private const string MissingLaneHint =
-        "(CUDA leaves the value undefined. Keep the source lane within the block by limiting delta, srcLane or laneMask, or launch a multiple of 32 threads; the mask does not limit which lane is read)";
+        "(CUDA leaves the value undefined. Keep the source lane within the block by limiting delta, " +
+        "srcLane or laneMask, or launch a multiple of 32 threads; the mask does not limit which lane is read)";
 
     private static int LinearThreadId => ThreadIdxZ * BlockDimY * BlockDimX + ThreadIdxY * BlockDimX + ThreadIdxX;
 
@@ -390,9 +399,9 @@ public static partial class ManagedGpuContext
         var linearTid = LinearThreadId;
         CheckShuffleWidth(width, Name, location);
         var laneId = (uint)(linearTid % 32);
-        // CUDA lets a group of width lanes read its own group and the earlier ones; a later group gives the caller's own
-        // value (PTX shfl.bfly reads lane j when j <= maxLane, the last lane of the caller's group). PTX uses only the
-        // low 5 bits of the lane mask
+        // CUDA lets a group of width lanes read its own group and the earlier ones; a later group gives the caller's
+        // own value (PTX shfl.bfly reads lane j when j <= maxLane, the last lane of the caller's group). PTX uses only
+        // the low 5 bits of the lane mask
         var srcLane = laneId ^ ((uint)delta & 31u);
         return srcLane > (laneId | ((uint)width - 1u))
             ? val
