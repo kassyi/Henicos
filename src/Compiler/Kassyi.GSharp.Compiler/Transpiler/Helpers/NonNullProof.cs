@@ -15,12 +15,12 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Helpers;
 /// when such a null is read; G# throws at the boundary, earlier, and only for a null in a non-nullable place.
 /// </para>
 /// <para>
-/// The proof (<see cref="IsProvenNonNull"/>): an array is non-null when it is a stack array (a local array of a constant
-/// size), a parameter of that kind that nothing in
-/// its method writes, a non-nullable array field of a proven struct, or a local that nothing writes after an
-/// initializer that is proven. A proven struct is a by-value struct parameter that nothing writes, a struct field of a
-/// proven struct, or a local that nothing writes after an initializer that is a proven struct. An element of an array
-/// is never proven: the launchers do not walk the elements.
+/// The proof (<see cref="IsProvenNonNull"/>): an array is non-null when it is a stack array (a local array of a
+/// constant size), a parameter of that kind that nothing in its method writes, a non-nullable array field of a proven
+/// struct, or a local that nothing writes after an initializer that is proven. A proven struct is a by-value struct
+/// parameter that nothing writes, a struct field of a proven struct, or a local that nothing writes after an
+/// initializer that is a proven struct. An element of an array is never proven: the launchers do not walk the
+/// elements.
 /// </para>
 /// </remarks>
 internal static class NonNullProof
@@ -36,27 +36,35 @@ internal static class NonNullProof
             return true;
         }
 
-        switch (expression)
+        return expression switch
         {
-            case ConditionalExpressionSyntax conditional:
-                return IsProvenNonNull(conditional.WhenTrue, model) && IsProvenNonNull(conditional.WhenFalse, model);
-            case MemberAccessExpressionSyntax { RawKind: (int)SyntaxKind.SimpleMemberAccessExpression } access:
-                return model.GetSymbol(access) is IFieldSymbol { IsStatic: false, ContainingType.IsValueType: true } field &&
-                       IsNonNullableArray(field.Type, field.NullableAnnotation) &&
-                       IsProvenStruct(access.Expression, model);
-            case IdentifierNameSyntax identifier:
-                return model.GetSymbol(identifier) switch
-                {
-                    IParameterSymbol parameter => IsNonNullableArray(parameter.Type, parameter.NullableAnnotation) &&
-                                                  IsCheckedParameter(parameter, model.Compilation),
-                    ILocalSymbol local => IsUnwrittenLocal(local, model.Compilation, out var initializer, out var initializerModel) &&
-                                          IsProvenNonNull(initializer, initializerModel),
-                    _ => false
-                };
-            default:
-                return false;
-        }
+            ConditionalExpressionSyntax conditional =>
+                IsProvenNonNull(conditional.WhenTrue, model) && IsProvenNonNull(conditional.WhenFalse, model),
+            MemberAccessExpressionSyntax { RawKind: (int)SyntaxKind.SimpleMemberAccessExpression } access =>
+                IsProvenField(access, model),
+            IdentifierNameSyntax identifier => IsProvenIdentifier(identifier, model),
+            _ => false
+        };
     }
+
+    // s.Data: a non-nullable array field of a proven struct
+    private static bool IsProvenField(MemberAccessExpressionSyntax access, SemanticModel model) =>
+        model.GetSymbol(access) is IFieldSymbol { IsStatic: false, ContainingType.IsValueType: true } field &&
+        IsNonNullableArray(field.Type, field.NullableAnnotation) &&
+        IsProvenStruct(access.Expression, model);
+
+    // A non-nullable array parameter that the launch or the call checked, or an unwritten local with a proven
+    // initializer
+    private static bool IsProvenIdentifier(IdentifierNameSyntax identifier, SemanticModel model) =>
+        model.GetSymbol(identifier) switch
+        {
+            IParameterSymbol parameter => IsNonNullableArray(parameter.Type, parameter.NullableAnnotation) &&
+                                          IsCheckedParameter(parameter, model.Compilation),
+            ILocalSymbol local => IsUnwrittenLocal(local, model.Compilation, out var initializer,
+                                      out var initializerModel) &&
+                                  IsProvenNonNull(initializer, initializerModel),
+            _ => false
+        };
 
     /// <summary>
     /// Whether <paramref name="expression"/>, of a struct type, holds an array in every non-nullable array field it
@@ -133,22 +141,27 @@ internal static class NonNullProof
 
         foreach (var member in structType.GetMembers())
         {
-            if (member is not IFieldSymbol { IsStatic: false, IsConst: false } field)
+            if (member is IFieldSymbol { IsStatic: false, IsConst: false } field)
             {
-                continue;
-            }
-
-            if (IsNonNullableArray(field.Type, field.NullableAnnotation))
-            {
-                paths.Add(prefix.Add(field));
-            }
-            else if (field.Type.IsValueType)
-            {
-                CollectFields(field.Type, prefix.Add(field), paths, visiting);
+                AddFieldPath(field, prefix, paths, visiting);
             }
         }
 
         visiting.Remove(structType);
+    }
+
+    // A non-nullable array field ends a path; a struct field is followed into its own fields
+    private static void AddFieldPath(IFieldSymbol field, ImmutableArray<IFieldSymbol> prefix,
+        ImmutableArray<ImmutableArray<IFieldSymbol>>.Builder paths, HashSet<ITypeSymbol> visiting)
+    {
+        if (IsNonNullableArray(field.Type, field.NullableAnnotation))
+        {
+            paths.Add(prefix.Add(field));
+        }
+        else if (field.Type.IsValueType)
+        {
+            CollectFields(field.Type, prefix.Add(field), paths, visiting);
+        }
     }
 
     /// <summary>
