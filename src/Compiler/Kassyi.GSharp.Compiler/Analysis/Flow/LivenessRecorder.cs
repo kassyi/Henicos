@@ -193,16 +193,27 @@ internal sealed class LivenessRecorder : IFlowRecorder
         _log.EventsOf(node).Add(LivenessEvent.Split);
     }
 
-    /// <summary>Records out parameter assignment writes after a call returns.</summary>
+    /// <summary>
+    /// Records the writes of the <c>out</c> arguments after a call returns: a local, or a tracked parameter, which is
+    /// written whole and changed (#1003).
+    /// </summary>
     public void OnCallReturned(IInvocationOperation invocation, ControlFlowGraph graph, int node)
     {
         var syntax = invocation == _splitCall ? null : invocation.Syntax;
         foreach (var argument in invocation.Arguments)
         {
-            if (argument is
-                { Parameter.RefKind: RefKind.Out, Value: ILocalReferenceOperation { Local: { IsRef: false } local } })
+            switch (argument)
             {
-                _log.AddAssigned(local, syntax, node, replaces: true);
+                case
+                {
+                    Parameter.RefKind: RefKind.Out, Value: ILocalReferenceOperation { Local: { IsRef: false } local }
+                }:
+                    _log.AddAssigned(local, syntax, node, replaces: true);
+                    break;
+                case { Parameter.RefKind: RefKind.Out, Value: IParameterReferenceOperation { Parameter: var parameter } }
+                    when IsTrackedParameter(parameter):
+                    _log.AddParameterAssigned(_log.Index(parameter), syntax, node);
+                    break;
             }
         }
     }

@@ -29,9 +29,13 @@ internal static class SplicedCallWalker
 
         foreach (var argument in invocation.Arguments)
         {
-            // M(out local): the callee writes the local when it returns (OnCallReturned)
+            // M(out local), M(out parameter): the callee writes the variable when it returns (OnCallReturned)
             if (argument is not
-                { Parameter.RefKind: RefKind.Out, Value: ILocalReferenceOperation { Local.IsRef: false } })
+                {
+                    Parameter.RefKind: RefKind.Out,
+                    Value: ILocalReferenceOperation { Local.IsRef: false } or
+                    IParameterReferenceOperation { Parameter.RefKind: RefKind.None }
+                })
             {
                 SplicedOperationWalker.Walk(context, argument.Value, graph);
             }
