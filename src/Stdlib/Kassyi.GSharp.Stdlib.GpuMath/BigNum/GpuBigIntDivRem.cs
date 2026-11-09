@@ -237,7 +237,8 @@ public static partial class GpuBigIntDivRem
         var lz = n * 32 - bActualBits;
 
         using var bNorm = new GpuBigUInt(rightOperand.Workspace, n);
-        GpuBigIntMath.ShiftLeft(rightOperand, lz, bNorm);
+        // lz is the count of leading zero bits of b in its n words: only zero bits are shifted out
+        GpuBigIntMath.ShiftLeftUnchecked(rightOperand, lz, bNorm);
 
         var marginBits = 512;
         var marginWords = marginBits / 32;
@@ -250,7 +251,9 @@ public static partial class GpuBigIntDivRem
         Reciprocal(bNorm, reciprocalNorm, targetBits, marginWords);
 
         using var reciprocalOfB = new GpuBigUInt(rightOperand.Workspace, targetWords);
-        GpuBigIntMath.ShiftLeft(reciprocalNorm, lz, reciprocalOfB);
+        // The reciprocal is at most 2^(targetBits - 32n + 1) (bNorm has its top bit set), so shifted by lz it is at
+        // most 2^(targetBits - bBits + 1) <= 2^targetBits, which the targetWords words (one word to spare) hold
+        GpuBigIntMath.ShiftLeftUnchecked(reciprocalNorm, lz, reciprocalOfB);
 
         Reduce(leftOperand, rightOperand, reciprocalOfB, targetBits, aActualWords, quotientBuffer, remainderBuffer);
     }
@@ -614,12 +617,15 @@ public static partial class GpuBigIntDivRem
             if (rBits > bBits + 1)
             {
                 var shift = rBits - bBits - 1;
-                GpuBigIntMath.ShiftLeft(ctx.BPaddedExtended, shift, shiftedB);
+                // b shifted by rBits - bBits - 1 has rBits - 1 bits, below the width of the remainder it is compared
+                // with (both buffers have EvalWords words)
+                GpuBigIntMath.ShiftLeftUnchecked(ctx.BPaddedExtended, shift, shiftedB);
 
                 if (GpuBigIntMath.IsLessThan(ctx.RemainderExtended, shiftedB))
                 {
                     shift--;
-                    GpuBigIntMath.ShiftLeft(ctx.BPaddedExtended, shift, shiftedB);
+                    // One bit less than the shift above, which fits
+                    GpuBigIntMath.ShiftLeftUnchecked(ctx.BPaddedExtended, shift, shiftedB);
                 }
 
                 GpuBigIntMath.Sub(ctx.RemainderExtended, shiftedB, tempRem);

@@ -198,7 +198,8 @@ public static partial class GpuBigIntDivRem
 
         using var aNorm = new GpuBigUInt(leftOperand.Workspace, n);
         aNorm.Clear();
-        GpuBigIntMath.ShiftLeft(leftOperand, lz, aNorm);
+        // lz is at most the count of leading zero bits of a in its n words: only zero bits are shifted out
+        GpuBigIntMath.ShiftLeftUnchecked(leftOperand, lz, aNorm);
 
         var marginWords = 16;
         using var xResult = new GpuBigUInt(leftOperand.Workspace, n + marginWords);

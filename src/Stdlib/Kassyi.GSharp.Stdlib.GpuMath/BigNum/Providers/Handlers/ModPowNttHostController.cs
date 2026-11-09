@@ -20,7 +20,8 @@ internal static class ModPowNttHostController
 
         var lz = n * 32 - bActualBits;
         using var bNorm = new GpuBigUInt(workspace, n);
-        GpuBigIntMath.ShiftLeft(mod, lz, bNorm);
+        // lz is the count of leading zero bits of the modulus in its n words: only zero bits are shifted out
+        GpuBigIntMath.ShiftLeftUnchecked(mod, lz, bNorm);
 
         // Maximum size of operand A during ModPow is (2 * n) words (product of two n-word numbers).
         var maxABits = 2 * n * 32;

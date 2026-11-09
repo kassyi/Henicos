@@ -64,6 +64,29 @@ public sealed class DirectMethodWidthTests : IDisposable
     [InlineData(64)]
     [Scenario(TestScenario.Boundary)]
     public void Shifts_FollowTheirBounds(int aWords) => DirectCases.Shifts(_workspace, aWords);
+
+    // The internal unchecked shift of the normalization paths: the value shifted by its leading zeros is exact in the
+    // operand width and nothing is reported; another width or a negative count is rejected
+    [Theory]
+    [InlineData(1)]
+    [InlineData(33)]
+    [Scenario(TestScenario.Boundary)]
+    public void UncheckedShift_NormalizesInTheOperandWidth(int aWords)
+    {
+        var value = BigInteger.One << (32 * aWords - 7) | 5;
+        var limbs = new uint[aWords];
+        value.WriteLimbs(limbs);
+        using var a = new GpuBigUInt(_workspace, limbs);
+        using var r = new GpuBigUInt(_workspace, aWords);
+
+        GpuBigIntMath.ShiftLeftUnchecked(a, 6, r);
+        _workspace.ThrowIfDeviceErrors();
+        Assert.Equal(value << 6, r.ToBigInteger());
+
+        using var wider = new GpuBigUInt(_workspace, aWords + 1);
+        Assert.Throws<ArgumentException>(() => GpuBigIntMath.ShiftLeftUnchecked(a, 6, wider));
+        Assert.Throws<ArgumentException>(() => GpuBigIntMath.ShiftLeftUnchecked(a, -1, r));
+    }
 }
 
 /// <summary>Direct-method result widths on the CPU fallback.</summary>

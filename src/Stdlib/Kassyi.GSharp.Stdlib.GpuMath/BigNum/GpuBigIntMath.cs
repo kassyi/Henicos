@@ -436,6 +436,26 @@ public static class GpuBigIntMath
     ) =>
         ShiftLeftCore(leftOperand.AsBorrowedBigUInt(), shiftBits, resultBuffer.AsBorrowedBigUInt());
 
+    /// <summary>
+    /// <c>resultBuffer = leftOperand &lt;&lt; shiftBits</c> in the operand's width without the check of the bits
+    /// shifted out, for internal callers whose shift provably drops only zero bits (a normalization by the leading
+    /// zeros, or a value whose bit length the caller bounded). Each call site states why its bits fit.
+    /// </summary>
+    /// <param name="leftOperand">The operand.</param>
+    /// <param name="shiftBits">The shift, at least 0.</param>
+    /// <param name="resultBuffer">The result, as wide as <paramref name="leftOperand"/>.</param>
+    internal static void ShiftLeftUnchecked(GpuBigUInt leftOperand, int shiftBits, GpuBigUInt resultBuffer)
+    {
+        if (shiftBits < 0 || resultBuffer.NumWords != leftOperand.NumWords)
+        {
+            throw new ArgumentException(
+                $"An unchecked shift takes a non-negative count and equal widths. shift: {shiftBits}, a: " +
+                $"{leftOperand.NumWords}, result: {resultBuffer.NumWords} words.", nameof(resultBuffer));
+        }
+
+        leftOperand.Workspace.Provider.ShiftLeft(leftOperand.Workspace, leftOperand, shiftBits, resultBuffer);
+    }
+
     // ShiftLeft on the owned type; the public method above takes views and borrows them
     private static void ShiftLeftCore(GpuBigUInt leftOperand, int shiftBits, GpuBigUInt resultBuffer)
     {
