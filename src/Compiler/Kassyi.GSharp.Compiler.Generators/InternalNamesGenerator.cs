@@ -95,7 +95,8 @@ public static class InternalNamesGenerator
         var value = (key as YamlScalarNode)?.Value ?? string.Empty;
         return SyntaxFacts.IsValidIdentifier(value)
             ? value
-            : throw new GeneratorInputException(yamlPath, (int)key.Start.Line, $"'{value}' is not a valid C# identifier.");
+            : throw new GeneratorInputException(
+                yamlPath, (int)key.Start.Line, $"'{value}' is not a valid C# identifier.");
     }
 
     private static string? Scalar(YamlMappingNode mapping, string key) =>
@@ -139,7 +140,8 @@ public static class InternalNamesGenerator
         }
     }
 
-    private static void CheckDeclared(string yamlPath, string path, string value, string directory, string file, string label)
+    private static void CheckDeclared(
+        string yamlPath, string path, string value, string directory, string file, string label)
     {
         var filePath = Path.Combine(directory, file);
         if (!File.Exists(filePath) || !ContainsIdentifier(File.ReadAllText(filePath), value))
@@ -204,7 +206,9 @@ public static class InternalNamesGenerator
                 var entry = all[i];
                 var prelude = entry.PreludeFile is null ? "null" : CSharpStringLiteral.Quote(entry.PreludeFile);
                 var separator = i == all.Count - 1 ? ");" : ",";
-                writer.Line($"({CSharpStringLiteral.Quote(entry.Group + "." + entry.Name)}, {entry.Group}.{entry.Name}, {prelude}){separator}");
+                writer.Line(
+                    $"({CSharpStringLiteral.Quote(entry.Group + "." + entry.Name)}, " +
+                    $"{entry.Group}.{entry.Name}, {prelude}){separator}");
             }
         }
 

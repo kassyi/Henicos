@@ -48,7 +48,9 @@ public static partial class DiagnosticGenerator
     };
 
     /// <summary>Reads diagnostic definitions from the input JSON file and emits generated source files.</summary>
-    /// <exception cref="GeneratorInputException">The file does not exist or is not a JSON array of diagnostics.</exception>
+    /// <exception cref="GeneratorInputException">
+    /// The file does not exist or is not a JSON array of diagnostics.
+    /// </exception>
     public static void Run(string inputFile, string outputDir)
     {
         if (!File.Exists(inputFile))
@@ -59,7 +61,8 @@ public static partial class DiagnosticGenerator
         List<DiagnosticDefinition>? diagnostics;
         try
         {
-            diagnostics = JsonSerializer.Deserialize<List<DiagnosticDefinition>>(File.ReadAllText(inputFile), s_jsonOptions);
+            diagnostics = JsonSerializer.Deserialize<List<DiagnosticDefinition>>(
+                File.ReadAllText(inputFile), s_jsonOptions);
         }
         catch (JsonException ex)
         {
@@ -69,7 +72,8 @@ public static partial class DiagnosticGenerator
 
         if (diagnostics is null)
         {
-            throw new GeneratorInputException(inputFile, 0, "The file must hold a JSON array of diagnostics, not null.");
+            throw new GeneratorInputException(
+                inputFile, 0, "The file must hold a JSON array of diagnostics, not null.");
         }
 
         Directory.CreateDirectory(outputDir);
@@ -187,7 +191,8 @@ public static partial class DiagnosticGenerator
         // 3. Severity (Error): written as DiagnosticSeverity.<value>
         if (diag.DefaultSeverity is not ("Hidden" or "Info" or "Warning" or "Error"))
         {
-            writer.Line($"#error Invalid defaultSeverity '{diag.DefaultSeverity}' in diagnostics.json (ID: {diag.Id}). Expected Hidden, Info, Warning or Error.");
+            writer.Line($"#error Invalid defaultSeverity '{diag.DefaultSeverity}' in diagnostics.json " +
+                $"(ID: {diag.Id}). Expected Hidden, Info, Warning or Error.");
         }
 
         // 4. Name Validation & Duplication (Error)

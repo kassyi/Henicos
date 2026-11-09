@@ -40,7 +40,8 @@ public static class PreludeGenerator
 
         var content = ReadText(rootPath) + "\n";
         var includeChain = new List<string> { rootPath };
-        return RemoveIndentation(ResolveEmbeddedIncludes(resourcesDir, rootPath, content, isCuda, atDocumentEnd: true, includeChain));
+        return RemoveIndentation(ResolveEmbeddedIncludes(
+            resourcesDir, rootPath, content, isCuda, atDocumentEnd: true, includeChain));
     }
 
     // Generated code is left-aligned (transpiler-emission §3); the resources stay indented for reading. They contain no
@@ -90,7 +91,8 @@ public static class PreludeGenerator
             var pathEnd = content.IndexOfAny(['"', '\n'], pathStart);
             if (pathEnd < 0 || content[pathEnd] != '"')
             {
-                throw new GeneratorInputException(file, line, "The #include directive has no closing quote on its line.");
+                throw new GeneratorInputException(
+                    file, line, "The #include directive has no closing quote on its line.");
             }
 
             var relativeInclude = string.Create(pathEnd - pathStart, (content, pathStart), static (span, state) =>
@@ -106,12 +108,14 @@ public static class PreludeGenerator
             if (!File.Exists(includedFilePath))
             {
                 throw new GeneratorInputException(file, line,
-                    $"Cannot find the included file '{content[pathStart..pathEnd]}' ({includedFilePath}); prelude includes are relative to the resources directory.");
+                    $"Cannot find the included file '{content[pathStart..pathEnd]}' ({includedFilePath}); " +
+                    "prelude includes are relative to the resources directory.");
             }
 
             if (includeChain.FindIndex(p => s_pathComparer.Equals(p, includedFilePath)) >= 0)
             {
-                throw new GeneratorInputException(file, line, $"Include cycle: {DescribeCycle(includeChain, includedFilePath)}.");
+                throw new GeneratorInputException(
+                    file, line, $"Include cycle: {DescribeCycle(includeChain, includedFilePath)}.");
             }
 
             var includedAtDocumentEnd = atDocumentEnd && content.AsSpan(pathEnd + 1).Trim().IsEmpty;

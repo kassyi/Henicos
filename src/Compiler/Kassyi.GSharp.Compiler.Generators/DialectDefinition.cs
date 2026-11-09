@@ -42,7 +42,8 @@ public class DialectDefinition
         get; set;
     }
 
-    /// <summary>Gets or sets the 1-based line of the <c>Dialect</c> key, for errors about the dialect as a whole.</summary>
+    /// <summary>Gets or sets the 1-based line of the <c>Dialect</c> key,
+    /// for errors about the dialect as a whole.</summary>
     public int Line
     {
         get; set;
@@ -51,7 +52,8 @@ public class DialectDefinition
     /// <summary>Gets or sets the file the dialect was read from, for errors.</summary>
     public string Path { get; set; } = string.Empty;
 
-    private static readonly string[] s_topLevelKeys = ["Dialect", "Inherits", "Backend", "Capabilities", "Types", "Layout", "Intrinsics"];
+    private static readonly string[] s_topLevelKeys =
+        ["Dialect", "Inherits", "Backend", "Capabilities", "Types", "Layout", "Intrinsics"];
 
     /// <summary>
     /// Parses a <see cref="DialectDefinition"/> from YAML text using <see cref="YamlSubsetParser"/>.
@@ -196,7 +198,8 @@ public class DialectDefinition
         if (value is null)
         {
             return required
-                ? throw new GeneratorInputException(path, mapping.Line, $"The '{key}' key is missing; it names the dialect.")
+                ? throw new GeneratorInputException(
+                    path, mapping.Line, $"The '{key}' key is missing; it names the dialect.")
                 : null;
         }
 
