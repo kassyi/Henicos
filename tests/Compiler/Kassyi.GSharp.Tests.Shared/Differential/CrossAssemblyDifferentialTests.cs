@@ -84,6 +84,18 @@ public class CrossAssemblyDifferentialTests
         static (xs, ys, r, gx, bx) => CrossAssemblyDifferentialKernels.LaunchCrossAssemblyTransitiveStructKernel(xs, ys, r, gridDimX: gx, blockDimX: bx),
         CrossAssemblyDifferentialKernels.CrossAssemblyTransitiveStructKernel);
 
+    private static readonly DifferentialCase s_constantSizedFixedBuffer = CreateStructCase(
+        nameof(CrossAssemblyDifferentialKernels.CrossAssemblyConstantSizedFixedBufferKernel),
+        ["items_last", "head", "tail"],
+        static (xs, ys, r, gx, bx) =>
+            CrossAssemblyDifferentialKernels.LaunchCrossAssemblyConstantSizedFixedBufferKernel(
+                xs,
+                ys,
+                r,
+                gridDimX: gx,
+                blockDimX: bx),
+        CrossAssemblyDifferentialKernels.CrossAssemblyConstantSizedFixedBufferKernel);
+
     private static readonly DifferentialCase s_float3Functions = CreateStructCase(
         nameof(CrossAssemblyDifferentialKernels.CrossAssemblyFloat3FunctionsKernel),
         ["length3_sq", "dot3_val"],
@@ -240,6 +252,10 @@ public class CrossAssemblyDifferentialTests
 
     [SkippableFact]
     public void Test_CrossAssemblyTransitiveStruct_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_transitiveStruct);
+
+    [SkippableFact]
+    public void Test_CrossAssemblyConstantSizedFixedBuffer_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_constantSizedFixedBuffer);
 
     [SkippableFact]
     public void Test_CrossAssemblyFloat3Functions_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_float3Functions);

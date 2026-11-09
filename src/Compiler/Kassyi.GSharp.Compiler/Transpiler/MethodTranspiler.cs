@@ -442,6 +442,13 @@ public static class MethodTranspiler
     {
         using (context.Emitter.Writer.Scope())
         {
+            // __gsharp_launch_epoch = __gsharp_epoch;  (a CUDA kernel, before anything that can fail)
+            if (plan.Kind == MethodEmissionKind.Kernel && plan.Symbol != null && context.Emitter.Dialect.IsCuda)
+            {
+                context.Emitter.Writer.AppendLine(
+                    $"{GSharpInternalNames.Prelude.LaunchEpoch} = {GSharpInternalNames.Launcher.Epoch};");
+            }
+
             DynamicSharedMemoryEmitter.WriteKernelPrologue(in plan, ref context);
 
             if (plan.HasAutoResult)
