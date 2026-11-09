@@ -1,22 +1,17 @@
 using System.Runtime.CompilerServices;
 using Kassyi.GSharp.Runtime.Aot;
 using Kassyi.GSharp.Runtime.Interop;
-using Kassyi.GSharp.Tests.Shared.Helpers;
 
 namespace Kassyi.GSharp.Tests.Shared.Runtime;
 
 /// <summary>
-/// The CUDA grid barrier (<c>Gpu.SyncGrid</c>): the threads of a block that have not exited arrive for it, so threads,
-/// warps or thread (0,0,0) that failed and exited before it do not stop the others; a block whose threads all exited
-/// makes the waiters trap instead of hang; repeated barriers over the largest cooperative grid stay exact; and the writes
-/// before a barrier are visible to every block after it.
+/// The CUDA grid barrier (<c>Gpu.SyncGrid</c>): once a thread of the launch failed, every block leaves the barrier
+/// instead of running the code after it, whether threads, warps, thread (0,0,0) or a whole block failed; repeated
+/// barriers over the largest cooperative grid stay exact; and the writes before a barrier are visible to every block
+/// after it.
 /// </summary>
 [TestTarget(ExecutionTarget.GpuExecution)]
 [Category(TestCategory.Runtime)]
-#if GSHARP_CUDA
-// A device error goes to the one error slot of the process, which a test running beside this one could read first
-[Collection(TestCollections.DeviceExclusive)]
-#endif
 public sealed class GridBarrierTests
 {
     private const int Untouched = -7;
@@ -27,13 +22,10 @@ public sealed class GridBarrierTests
     // CUDA_ERROR_COOPERATIVE_LAUNCH_TOO_LARGE
     private const int CooperativeLaunchTooLarge = 720;
 
-    // The sum each surviving thread of GridSyncAfterFailKernel adds up: the next block writes round + 1 in every round
-    private const int AfterFailSum = Rounds * (Rounds + 1) / 2;
-
 #if GSHARP_CUDA
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_PartOfEveryWarpAndThreadZeroFail_OthersPassGridBarriers()
+    public void Test_PartOfEveryWarpAndThreadZeroFail_EveryBlockLeavesTheBarrier()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
         // Every third thread fails, thread 0 of every block among them, so the arriving thread of each block is elected
@@ -49,7 +41,7 @@ public sealed class GridBarrierTests
 
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_WholeWarpsFail_OthersPassGridBarriers()
+    public void Test_WholeWarpsFail_EveryBlockLeavesTheBarrier()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
         // Threads 32 to 95 of every block, two whole warps, fail; in block 2 the first warp fails as well, thread 1 aside
@@ -69,6 +61,28 @@ public sealed class GridBarrierTests
         }
 
         AssertGridSyncAfterFail(keys);
+    }
+
+    // [WHY] Block 0 still has threads that reach the barrier after its thread 5 failed. Its arriving thread sees the
+    // abort word and does not arrive, so the barrier does not complete and the healthy blocks that wait at it leave as
+    // well; an arrival would complete the barrier and let them run the code after it. The timeout fails the test
+    // instead of waiting for a hang that the driver would end only by resetting the GPU.
+    [SkippableFact]
+    [Scenario(TestScenario.SadPath)]
+    public async Task Test_OneThreadFailsInOneBlock_NoBlockPassesTheBarrier()
+    {
+        Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
+        var keys = new int[Blocks * BlockSize];
+        keys[5] = GridBarrierKernels.FailKey;
+        int[] result = Filled(keys.Length);
+
+        var launch = Task.Run(() => Assert.Throws<SwitchExpressionException>(() =>
+            GridBarrierKernels.LaunchWholeBlockFailsBeforeGridSyncKernel(keys, result, gridDimX: Blocks,
+                blockDimX: BlockSize)));
+        var ex = await launch.WaitAsync(TimeSpan.FromSeconds(30));
+
+        Assert.Equal("(5,0,0)", ex.Data["GSharp.ThreadIndex"]);
+        Assert.All(result, static value => Assert.Equal(Untouched, value));
     }
 
     [SkippableFact]
@@ -143,22 +157,16 @@ public sealed class GridBarrierTests
         }
     }
 
-    // [WHY] A block whose threads all failed never arrives at the grid barrier; the waiters see the recorded error and
-    // trap instead of waiting forever: a real GPU fault, run in a child process of its own (with the timeout of
-    // IsolatedTestProcess, so a hang fails the test) and only in `just test-gpu-trap`
+    // [WHY] A block whose threads all failed never arrives at the grid barrier; the waiters read the abort word of
+    // their launch, which the failing threads set, and the threads of their blocks exit after the barrier instead of
+    // running the code after it. The timeout fails the test instead of waiting for a hang that the driver would end
+    // only by resetting the GPU. A host synchronization that consumes the record first does not keep the waiters
+    // waiting (LaunchEpochTests in Tests.Cuda, which delays the barrier).
     [SkippableFact]
-    [Category(TestCategory.GpuTrap)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_WholeBlockFailsBeforeGridBarrier_WaitersTrapInsteadOfHanging()
+    public async Task Test_WholeBlockFailsBeforeGridBarrier_WaitersLeaveAndLaunchThrows()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
-        if (!IsolatedTestProcess.IsChild(nameof(Test_WholeBlockFailsBeforeGridBarrier_WaitersTrapInsteadOfHanging)))
-        {
-            CudaTrapRuns.RunIsolated(typeof(GridBarrierTests),
-                nameof(Test_WholeBlockFailsBeforeGridBarrier_WaitersTrapInsteadOfHanging));
-            return;
-        }
-
         // Every thread of block 1 fails
         var keys = new int[Blocks * BlockSize];
         for (int t = 0; t < BlockSize; t++)
@@ -167,64 +175,15 @@ public sealed class GridBarrierTests
         }
 
         int[] result = Filled(keys.Length);
-        var ex = Assert.Throws<SwitchExpressionException>(() =>
+        var launch = Task.Run(() => Assert.Throws<SwitchExpressionException>(() =>
             GridBarrierKernels.LaunchWholeBlockFailsBeforeGridSyncKernel(keys, result, gridDimX: Blocks,
-                blockDimX: BlockSize));
+                blockDimX: BlockSize)));
+        var ex = await launch.WaitAsync(TimeSpan.FromSeconds(30));
+
         Assert.Equal("(1,0,0)", ex.Data["GSharp.BlockIndex"]);
-        var cudaEx = Assert.IsType<CudaException>(ex.InnerException);
-        Assert.True(cudaEx.Result is CUresult.CudaErrorIllegalInstruction or CUresult.CudaErrorLaunchFailed);
-    }
-
-    // [WHY] A host synchronization may consume and clear the error slot while the waiters of a block that never arrives
-    // still wait; a waiter that saw the error keeps it and traps instead of waiting forever. A real GPU fault, run in a
-    // child process of its own (with the timeout of IsolatedTestProcess, so a hang fails the test) and only in
-    // `just test-gpu-trap`
-    [SkippableFact]
-    [Category(TestCategory.GpuTrap)]
-    [Scenario(TestScenario.SadPath)]
-    public void Test_SlotConsumedWhileBlockNeverArrives_WaitersStillTrap()
-    {
-        Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
-        if (!IsolatedTestProcess.IsChild(nameof(Test_SlotConsumedWhileBlockNeverArrives_WaitersStillTrap)))
-        {
-            CudaTrapRuns.RunIsolated(typeof(GridBarrierTests), nameof(Test_SlotConsumedWhileBlockNeverArrives_WaitersStillTrap));
-            return;
-        }
-
-        var keys = new int[Blocks * BlockSize];
-        for (int t = 0; t < BlockSize; t++)
-        {
-            keys[BlockSize + t] = GridBarrierKernels.FailKey;
-        }
-
-        int[] result = Filled(keys.Length);
-
-        // From 20 ms after the start, well after the waiters first looked at the slot (every 1024 polls), another thread
-        // consumes the record, as the synchronization of another stream would
-        GSharpDeviceErrorSlot consumed = default;
-        bool consumedAny = false;
-        var consumer = new Thread(() =>
-        {
-            Thread.Sleep(20);
-            var deadline = DateTime.UtcNow.AddSeconds(5);
-            while (!consumedAny && DateTime.UtcNow < deadline)
-            {
-                consumedAny = DeviceErrorSlot.TryConsumeSlot(out consumed);
-                Thread.Sleep(1);
-            }
-        });
-        consumer.Start();
-
-        var ex = Assert.ThrowsAny<Exception>(() =>
-            GridBarrierKernels.LaunchWholeBlockFailsBeforeGridSyncKernel(keys, result, gridDimX: Blocks,
-                blockDimX: BlockSize));
-        consumer.Join();
-
-        Assert.True(consumedAny, "the consumer found no record");
-        Assert.Equal(1u, consumed.BlockX);
-        // The record is gone, so the launch reports the trap of the waiters alone
-        var cudaEx = Assert.IsType<CudaException>(ex);
-        Assert.True(cudaEx.Result is CUresult.CudaErrorIllegalInstruction or CUresult.CudaErrorLaunchFailed);
+        Assert.Null(ex.InnerException);
+        // The barrier never completes, so no thread writes after it
+        Assert.All(result, static value => Assert.Equal(Untouched, value));
     }
 
     private static void AssertGridSyncAfterFail(int[] keys)
@@ -237,10 +196,10 @@ public sealed class GridBarrierTests
                 blockDimX: BlockSize));
         Assert.Null(ex.InnerException);
 
-        for (int i = 0; i < keys.Length; i++)
-        {
-            Assert.Equal(keys[i] == GridBarrierKernels.FailKey ? Untouched : AfterFailSum, result[i]);
-        }
+        // The threads failed before the first barrier, so every block leaves it: no surviving thread gets to its write.
+        // A launch without an epoch (captured into a graph) still passes the barriers with the surviving threads
+        // (LaunchEpochTests in Tests.Cuda).
+        Assert.All(result, static value => Assert.Equal(Untouched, value));
     }
 
     private static int MultiprocessorCount()

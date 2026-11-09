@@ -13,11 +13,6 @@ namespace Kassyi.GSharp.Tests.Shared.Runtime;
 /// <summary>
 /// Verifies the device runtime error channel and CPU/GPU exception parity (#729).
 /// </summary>
-#if GSHARP_CUDA
-// The process has one device error slot: a device error of a test that runs beside another one could be thrown by the
-// other test's synchronization
-[Collection(TestCollections.DeviceExclusive)]
-#endif
 public sealed class DeviceErrorChannelTests
 {
     public static TheoryData<GSharpErrorCode, Type> AllErrorCodesAndExceptionTypes() =>
@@ -258,20 +253,25 @@ public sealed class DeviceErrorChannelTests
         var wrapperTree = Assert.Single(runResult.GeneratedTrees, t => t.FilePath.EndsWith("SampleKernels.g.cs", StringComparison.Ordinal));
         var wrapperText = wrapperTree.GetText().ToString();
 
-        if (isCheckedBuild)
-        {
-            Assert.Contains("CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));", wrapperText);
-        }
-        else
-        {
-            Assert.DoesNotContain("cuStreamSynchronize", wrapperText);
-        }
+        // The checked build synchronizes after both launches. In the release build only the managed-array launcher does,
+        // since this kernel has no copy-back that would synchronize, so that it reads its own record; the Ptr launcher
+        // leaves the error to the next synchronization of the stream.
+        const string Synchronize = "cuStreamSynchronize(hStream));";
+        Assert.Equal(isCheckedBuild ? 2 : 1, wrapperText.Split(Synchronize).Length - 1);
 
-        // The managed-array launcher reads the device error record in every build; the Ptr launcher only where it
-        // synchronizes, in the checked build
-        const string deviceErrorCheck = "global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfDeviceError();";
-        int checks = wrapperText.Split(deviceErrorCheck).Length - 1;
-        Assert.Equal(isCheckedBuild ? 2 : 1, checks);
+        // The managed-array launcher reads the device error record of its own launch in every build; the Ptr launcher
+        // only where it synchronizes, in the checked build. Both take an epoch for the launch and pass it last; a
+        // launcher that reads its record owns the epoch until it does, and releases it in its finally block.
+        const string Records = "global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.";
+        int readers = isCheckedBuild ? 2 : 1;
+        Assert.Equal(readers, Count(wrapperText, $"{Records}ThrowIfLaunchError(__gsharp_epoch);"));
+        Assert.Equal(readers, Count(wrapperText, $"{Records}ReleaseLaunchEpoch(__gsharp_epoch);"));
+        Assert.DoesNotContain("ThrowIfDeviceError", wrapperText);
+        Assert.Equal(readers, Count(wrapperText, $"uint __gsharp_epoch = {Records}NextLaunchEpoch(hStream, true);"));
+        Assert.Equal(2 - readers,
+            Count(wrapperText, $"uint __gsharp_epoch = {Records}NextLaunchEpoch(hStream, false);"));
+
+        static int Count(string text, string part) => text.Split(part).Length - 1;
     }
 
 #if !GSHARP_CUDA
