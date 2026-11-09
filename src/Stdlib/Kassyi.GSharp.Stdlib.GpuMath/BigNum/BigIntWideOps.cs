@@ -101,6 +101,34 @@ internal static class BigIntWideOps
     }
 
     /// <summary>
+    /// The sum of two signed values given as sign and magnitude: <c>|result| = |(±a) + (±b)|</c>. Magnitudes of the
+    /// same sign are added (<see cref="AddSubtract"/>, no read); different signs are subtracted in one kernel, which
+    /// reads the borrow and zero flags once (<see cref="SubtractMagnitudes"/>).
+    /// </summary>
+    /// <param name="a">The magnitude of the first value.</param>
+    /// <param name="aNegative">Whether the first value is negative.</param>
+    /// <param name="b">The magnitude of the second value.</param>
+    /// <param name="bNegative">Whether the second value is negative.</param>
+    /// <param name="result">
+    /// The result buffer. One word wider than the wider operand always holds the sum; it must not overlap the operands.
+    /// </param>
+    /// <returns>Whether the sum is negative. A sum of different signs that is zero is not negative.</returns>
+    /// <exception cref="NotSupportedException">
+    /// The signs differ and the workspace stream is capturing a CUDA graph.
+    /// </exception>
+    public static bool AddSigned(GpuBigUInt a, bool aNegative, GpuBigUInt b, bool bNegative, GpuBigUInt result)
+    {
+        if (aNegative == bNegative)
+        {
+            AddSubtract(a, b, result, subtract: false);
+            return aNegative;
+        }
+
+        var (negated, isZero) = SubtractMagnitudes(a, b, result);
+        return !isZero && (negated ? bNegative : aNegative);
+    }
+
+    /// <summary>
     /// <c>result = |a - b|</c>, and whether <c>b &gt; a</c> and whether the result is zero: the magnitude and the sign
     /// information of a sum of two values with different signs. Reads two words from the device, once.
     /// </summary>
