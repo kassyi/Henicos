@@ -1,0 +1,214 @@
+using System;
+using static Kassyi.GSharp.Tests.Shared.Syntax.SpanSortTestHelpers;
+
+namespace Kassyi.GSharp.Tests.Shared.Syntax;
+
+/// <summary>
+/// <c>MemoryExtensions.Sort</c> for primitive types in device code (#625).
+/// </summary>
+[Collection(TestCollections.GlobalStateSequential)]
+public class SpanSortPrimitiveTests : TranspilerTestBase
+{
+    public static TheoryData<int, SortPattern, bool> IntCases() => SpanSortTestHelpers.IntCases();
+
+    public static TheoryData<int, bool> TypedCases() => SpanSortTestHelpers.TypedCases();
+
+    public static TheoryData<bool> Paths() => SpanSortTestHelpers.Paths();
+
+    private void Run(bool managed, Action launch) => SpanSortTestHelpers.Run(IsCudaDialect, managed, launch);
+
+    [SkippableTheory]
+    [MemberData(nameof(IntCases))]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Syntax)]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_SortInt_MatchesDotNet(int length, SortPattern pattern, bool managed)
+    {
+        var input = SortInputs.Int(length, pattern, seed: 625 + length);
+        var data = (int[])input.Clone();
+
+        Run(managed, () => SpanSortKernels.LaunchSortIntKernel(data, gridDimX: GridDimX, blockDimX: BlockDimX));
+
+        // mutant: Sort.hpp __gsharp_sort_insertion `j >= 0` -> `j > 0`
+        // (the first element never moves; descending, length 4)
+        AssertSameAsDotNet(input, data, $"int length {length} {pattern}");
+    }
+
+    // The input that McIlroy's adversary builds against the .NET introsort exhausts the depth limit,
+    // so the heap sort runs
+    [SkippableTheory]
+    [InlineData(64, false)]
+    [InlineData(1000, false)]
+    [InlineData(64, true)]
+    [InlineData(1000, true)]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Syntax)]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_SortInt_DepthLimitInput_UsesHeapSortAndMatchesDotNet(int length, bool managed)
+    {
+        var input = SortInputs.HeapSortKiller(length);
+        var data = (int[])input.Clone();
+
+        Run(managed, () => SpanSortKernels.LaunchSortIntKernel(data, gridDimX: GridDimX, blockDimX: BlockDimX));
+
+        // mutant: Sort.hpp __gsharp_sort_down_heap `child < n` -> `child <= n` (reads past the heap; order breaks)
+        AssertSameAsDotNet(input, data, $"heap sort input of length {length}");
+    }
+
+    [SkippableTheory]
+    [MemberData(nameof(TypedCases))]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Syntax)]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_SortLong_MatchesDotNet(int length, bool managed)
+    {
+        var random = new Random(6251 + length);
+        var input = new long[length];
+        for (var i = 0; i < length; i++)
+        {
+            input[i] = random.NextInt64(long.MinValue, long.MaxValue) >> random.Next(0, 63);
+        }
+
+        var data = (long[])input.Clone();
+        Run(managed, () => SpanSortKernels.LaunchSortLongKernel(data, gridDimX: GridDimX, blockDimX: BlockDimX));
+
+        AssertSameAsDotNet(input, data, $"long length {length}");
+    }
+
+    [SkippableTheory]
+    [MemberData(nameof(TypedCases))]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Syntax)]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_SortUInt_MatchesDotNet(int length, bool managed)
+    {
+        var random = new Random(6252 + length);
+        var input = new uint[length];
+        for (var i = 0; i < length; i++)
+        {
+            // Values above int.MaxValue order differently as signed integers
+            input[i] = (uint)random.NextInt64(0, uint.MaxValue + 1L);
+        }
+
+        var data = (uint[])input.Clone();
+        Run(managed, () => SpanSortKernels.LaunchSortUIntKernel(data, gridDimX: GridDimX, blockDimX: BlockDimX));
+
+        AssertSameAsDotNet(input, data, $"uint length {length}");
+    }
+
+    [SkippableTheory]
+    [MemberData(nameof(TypedCases))]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Syntax)]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_SortChar_MatchesDotNet(int length, bool managed)
+    {
+        var random = new Random(6253 + length);
+        var input = new char[length];
+        for (var i = 0; i < length; i++)
+        {
+            input[i] = (char)random.Next(0, char.MaxValue + 1);
+        }
+
+        var data = (char[])input.Clone();
+        Run(managed, () => SpanSortKernels.LaunchSortCharKernel(data, gridDimX: GridDimX, blockDimX: BlockDimX));
+
+        AssertSameAsDotNet(input, data, $"char length {length}");
+    }
+
+    [SkippableTheory]
+    [MemberData(nameof(TypedCases))]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Syntax)]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_SortEnum_OrdersByUnderlyingValue(int length, bool managed)
+    {
+        SortRank[] ranks = [SortRank.High, SortRank.Low, SortRank.Middle];
+        var random = new Random(6254 + length);
+        var input = new SortRank[length];
+        for (var i = 0; i < length; i++)
+        {
+            input[i] = ranks[random.Next(ranks.Length)];
+        }
+
+        var data = (SortRank[])input.Clone();
+        Run(managed, () => SpanSortKernels.LaunchSortEnumKernel(data, gridDimX: GridDimX, blockDimX: BlockDimX));
+
+        AssertSameAsDotNet(input, data, $"enum length {length}");
+    }
+
+    [SkippableTheory]
+    [MemberData(nameof(TypedCases))]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Syntax)]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_SortFloat_NaNFirstAndSignedZerosInDotNetOrder(int length, bool managed)
+    {
+        var input = SortInputs.Single(length, seed: 6255 + length);
+        var data = (float[])input.Clone();
+
+        Run(managed, () => SpanSortKernels.LaunchSortFloatKernel(data, gridDimX: GridDimX, blockDimX: BlockDimX));
+
+        // mutant: Sort.hpp __gsharp_sort_default without __gsharp_sort_move_nans_to_front (NaN is not first)
+        AssertSameBits(input, data, BitConverter.SingleToInt32Bits, $"float length {length}");
+    }
+
+    [SkippableTheory]
+    [MemberData(nameof(TypedCases))]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Syntax)]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_SortDouble_NaNFirstAndSignedZerosInDotNetOrder(int length, bool managed)
+    {
+        var input = SortInputs.Double(length, seed: 6256 + length);
+        var data = (double[])input.Clone();
+
+        Run(managed, () => SpanSortKernels.LaunchSortDoubleKernel(data, gridDimX: GridDimX, blockDimX: BlockDimX));
+
+        AssertSameBits(input, data, BitConverter.DoubleToInt64Bits, $"double length {length}");
+    }
+
+    [SkippableTheory]
+    [InlineData(new[] { float.NaN, 1f, float.NaN, -0f, 0f, float.NegativeInfinity, float.PositiveInfinity, 2f }, false)]
+    [InlineData(new[] { float.NaN, 1f, float.NaN, -0f, 0f, float.NegativeInfinity, float.PositiveInfinity, 2f }, true)]
+    [InlineData(new[] { float.NaN, float.NaN, float.NaN }, false)]
+    [InlineData(new[] { float.NaN, float.NaN, float.NaN }, true)]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Syntax)]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_SortFloat_SpecialValues(float[] input, bool managed)
+    {
+        var data = (float[])input.Clone();
+
+        Run(managed, () => SpanSortKernels.LaunchSortFloatKernel(data, gridDimX: GridDimX, blockDimX: BlockDimX));
+
+        AssertSameBits(input, data, BitConverter.SingleToInt32Bits, "special values");
+    }
+
+    // Each of the 64 threads sorts a different segment at the same time
+    [SkippableTheory]
+    [MemberData(nameof(Paths))]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Syntax)]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_SortSegments_EveryThreadSortsItsOwnBuffer(bool managed)
+    {
+        const int Segments = (int)(GridDimX * BlockDimX);
+        const int Length = SpanSortKernels.SegmentLength;
+        var random = new Random(6257);
+        var input = new int[Segments * Length];
+        for (var i = 0; i < input.Length; i++)
+        {
+            input[i] = random.Next(-50, 50);
+        }
+
+        var data = (int[])input.Clone();
+        Run(managed, () => SpanSortKernels.LaunchSortSegmentsKernel(data, gridDimX: GridDimX, blockDimX: BlockDimX));
+
+        for (var s = 0; s < Segments; s++)
+        {
+            AssertSameAsDotNet(input.AsSpan(s * Length, Length).ToArray(), data.AsSpan(s * Length, Length).ToArray(),
+                $"segment {s}");
+        }
+    }
+}
