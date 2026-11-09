@@ -46,111 +46,72 @@ internal class GpuBigIntLeafExpression(GpuBigInt value) : IGpuBigIntExpression, 
     }
 }
 
-internal abstract class SignedBinaryExpression(IGpuBigIntExpression left, IGpuBigIntExpression right)
-    : IGpuBigIntExpression, IBitBoundedExpression, IDisposable
+// An operator node of this file: its operands are evaluated by SignedTree, which walks the tree without recursion
+internal interface ISignedOperator : IGpuBigIntExpression
+{
+    // 1 or 2
+    int OperandCount { get; }
+
+    IGpuBigIntExpression GetOperand(int index);
+
+    // Whether the operand is evaluated into the node's own target (a negation only flips the sign of its operand)
+    bool PassesTargetToOperand { get; }
+
+    // The node applied to its evaluated operands, which the call owns and releases (also when it fails); second is the
+    // default value for a unary node. The target, when given, is at least NumWords wide (checked before the operands
+    // were evaluated).
+    GpuBigInt Apply(GpuWorkspace workspace, GpuBigInt first, GpuBigInt second, GpuBigUInt? targetResult);
+}
+
+// The bound of every node is computed when the node is built, from the bounds its operands computed when they were
+// built: reading it never walks the tree, however deep a loop made it.
+internal abstract class SignedBinaryExpression(
+    IGpuBigIntExpression left,
+    IGpuBigIntExpression right,
+    Func<long, long, long> bound
+) : ISignedOperator, IBitBoundedExpression, IDisposable
 {
     internal IGpuBigIntExpression Left { get; } = left ?? throw new ArgumentNullException(nameof(left));
     internal IGpuBigIntExpression Right { get; } = right ?? throw new ArgumentNullException(nameof(right));
 
-    public void Dispose()
-    {
-        try
-        {
-            (Left as IDisposable)?.Dispose();
-        }
-        finally
-        {
-            (Right as IDisposable)?.Dispose();
-        }
-    }
-
-    // The bound, computed once: the children never change, and a left fold builds chains as deep as the sequence,
-    // where reading the children's bounds again at every level (and at every Evaluate) would cost 2^depth steps.
-    private long _bits = -1;
-
-    public long Bits =>
-        _bits >= 0 ? _bits : _bits = ComputeBits(IBitBoundedExpression.Of(Left), IBitBoundedExpression.Of(Right));
+    // After Left and Right, which reject a null operand first
+    public long Bits { get; } = bound(IBitBoundedExpression.Of(left), IBitBoundedExpression.Of(right));
 
     public int NumWords => BigIntWidths.Words(Bits);
 
-    // The bound of the result from the bounds of the operands (BigIntWidths)
-    protected abstract long ComputeBits(long left, long right);
+    public int OperandCount => 2;
 
-    public GpuBigInt Evaluate(GpuWorkspace workspace, GpuBigUInt? targetResult = null)
+    public bool PassesTargetToOperand => false;
+
+    public IGpuBigIntExpression GetOperand(int index) => index == 0 ? Left : Right;
+
+    public void Dispose() => SignedTree.Dispose(this);
+
+    public GpuBigInt Evaluate(GpuWorkspace workspace, GpuBigUInt? targetResult = null) =>
+        SignedTree.Evaluate(this, workspace, targetResult);
+
+    public GpuBigInt Apply(GpuWorkspace workspace, GpuBigInt first, GpuBigInt second, GpuBigUInt? targetResult)
     {
-        SignedRoot.ThrowIfNarrower(targetResult, NumWords);
-        return Combine(workspace, EvaluateLeft(workspace), targetResult);
-    }
-
-    // The left operand. A left fold builds a chain of binary nodes along Left as deep as the sequence; the chain is
-    // evaluated bottom-up in a loop, so that its length does not become the depth of the call stack. The order is that
-    // of the recursion: the innermost left operand first, then each right operand before the node that uses it.
-    private GpuBigInt EvaluateLeft(GpuWorkspace workspace)
-    {
-        if (Left is not SignedBinaryExpression)
-        {
-            return Left.Evaluate(workspace);
-        }
-
-        var depth = 0;
-        var node = Left;
-        while (node is SignedBinaryExpression inner)
-        {
-            depth++;
-            node = inner.Left;
-        }
-
-        var chain = ArrayPool<SignedBinaryExpression>.Shared.Rent(depth);
-        try
-        {
-            var count = 0;
-            node = Left;
-            while (node is SignedBinaryExpression inner)
-            {
-                chain[count++] = inner;
-                node = inner.Left;
-            }
-
-            var accumulated = node.Evaluate(workspace);
-            for (var i = count - 1; i >= 0; i--)
-            {
-                accumulated = chain[i].Combine(workspace, accumulated, targetResult: null);
-            }
-
-            return accumulated;
-        }
-        finally
-        {
-            ArrayPool<SignedBinaryExpression>.Shared.Return(chain, clearArray: true);
-        }
-    }
-
-    // This node applied to its evaluated left operand, which the call owns and releases (also when it fails), and to
-    // its right operand
-    private GpuBigInt Combine(GpuWorkspace workspace, GpuBigInt leftResult, GpuBigUInt? targetResult)
-    {
-        GpuBigInt rightResult = default;
         GpuBigUInt staging = default;
         GpuBigUInt? rented = null;
 
         try
         {
-            rightResult = Right.Evaluate(workspace);
             var result = targetResult.HasValue
                 ? SignedRoot.Head(targetResult.Value, NumWords)
                 : (rented = workspace.RentTemp(NumWords)).Value;
 
             // The kernels take __restrict__ pointers: a target that overlaps an operand gets the result through a
             // temporary
-            staging = SignedRoot.StagingFor(workspace, targetResult, NumWords, leftResult, rightResult);
-            var value = Execute(leftResult, rightResult, staging.Handle.IsDefault ? result : staging);
+            staging = SignedRoot.StagingFor(workspace, targetResult, NumWords, first, second);
+            var value = Execute(first, second, staging.Handle.IsDefault ? result : staging);
             value = SignedRoot.Deliver(value, staging, result, targetResult);
             rented = null; // Evaluated successfully, do not return the result buffer
             return value;
         }
         finally
         {
-            Release(leftResult, rightResult, staging, rented);
+            Release(first, second, staging, rented);
         }
     }
 
@@ -185,6 +146,226 @@ internal abstract class SignedBinaryExpression(IGpuBigIntExpression left, IGpuBi
 
     // a op b into resultBuffer, which has exactly NumWords words
     protected abstract GpuBigInt Execute(GpuBigInt a, GpuBigInt b, GpuBigUInt resultBuffer);
+}
+
+// Walks of a signed expression tree with a stack on the heap instead of the call stack. An expression built in a loop
+// (e = x + e, or a left fold) is as deep as the loop along either operand; a walk that recursed once per level would
+// end the process with a stack overflow.
+internal static class SignedTree
+{
+    // The node evaluated into the target, or into a rented buffer. Operands are evaluated before the node that uses
+    // them, the left one first, as a recursive evaluation does; a caller's target is checked against the width before
+    // anything is evaluated.
+    public static GpuBigInt Evaluate(ISignedOperator root, GpuWorkspace workspace, GpuBigUInt? targetResult)
+    {
+        var frames = new PooledStack<Frame>();
+        var values = new PooledStack<GpuBigInt>();
+        try
+        {
+            Push(ref frames, root, targetResult);
+            while (frames.Count > 0)
+            {
+                var frame = frames.Peek();
+                if (frame.Node is not ISignedOperator node)
+                {
+                    // A leaf, or a node implemented elsewhere, evaluates itself
+                    frames.Pop();
+                    values.Push(frame.Node.Evaluate(workspace, frame.Target));
+                    continue;
+                }
+
+                if (frame.Next < node.OperandCount)
+                {
+                    frames.Peek().Next = frame.Next + 1;
+                    var operandTarget = node.PassesTargetToOperand ? frame.Target : null;
+                    Push(ref frames, node.GetOperand(frame.Next), operandTarget);
+                    continue;
+                }
+
+                // The operands go to Apply, which releases them
+                frames.Pop();
+                var second = node.OperandCount == 2 ? values.Pop() : default;
+                var first = values.Pop();
+                values.Push(node.Apply(workspace, first, second, frame.Target));
+            }
+
+            return values.Pop();
+        }
+        catch (Exception failure)
+        {
+            ReleaseAll(ref values, failure);
+            throw;
+        }
+        finally
+        {
+            frames.Dispose();
+            values.Dispose();
+        }
+    }
+
+    // Disposes every node below root that holds resources (a node implemented elsewhere, such as a vector reduction);
+    // the operator nodes of this file hold none. A node that throws does not stop the others; the exceptions are thrown
+    // together at the end.
+    public static void Dispose(ISignedOperator root)
+    {
+        var pending = new PooledStack<IGpuBigIntExpression>();
+        List<Exception>? errors = null;
+        try
+        {
+            pending.Push(root);
+            while (pending.Count > 0)
+            {
+                var node = pending.Pop();
+                DisposeOrExpand(node, ref pending, ref errors);
+            }
+        }
+        finally
+        {
+            pending.Dispose();
+        }
+
+        if (errors is not null)
+        {
+            if (errors.Count == 1)
+            {
+                System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(errors[0]).Throw();
+            }
+
+            throw new AggregateException(errors);
+        }
+    }
+
+    // An operator node pushes its operands (right to left, so that the left operand is disposed first, as a recursive
+    // walk did); any other node is disposed, and an exception it throws is collected instead of stopping the walk
+    private static void DisposeOrExpand(IGpuBigIntExpression node, ref PooledStack<IGpuBigIntExpression> pending,
+        ref List<Exception>? errors)
+    {
+        if (node is ISignedOperator op)
+        {
+            for (var i = op.OperandCount - 1; i >= 0; i--)
+            {
+                pending.Push(op.GetOperand(i));
+            }
+
+            return;
+        }
+
+        try
+        {
+            (node as IDisposable)?.Dispose();
+        }
+        catch (Exception ex)
+        {
+            (errors ??= []).Add(ex);
+        }
+    }
+
+    // Every node of the tree below root, root included
+    public static void Collect(IGpuBigIntExpression root, HashSet<IGpuBigIntExpression> nodes)
+    {
+        var pending = new PooledStack<IGpuBigIntExpression>();
+        try
+        {
+            pending.Push(root);
+            while (pending.Count > 0)
+            {
+                var node = pending.Pop();
+                if (!nodes.Add(node) || node is not ISignedOperator op)
+                {
+                    continue;
+                }
+
+                for (var i = 0; i < op.OperandCount; i++)
+                {
+                    pending.Push(op.GetOperand(i));
+                }
+            }
+        }
+        finally
+        {
+            pending.Dispose();
+        }
+    }
+
+    // A caller's target narrower than the node is rejected before any operand is evaluated; a node that passes its
+    // target on leaves the check to its operand
+    private static void Push(ref PooledStack<Frame> frames, IGpuBigIntExpression node, GpuBigUInt? target)
+    {
+        if (node is ISignedOperator { PassesTargetToOperand: false })
+        {
+            SignedRoot.ThrowIfNarrower(target, node.NumWords);
+        }
+
+        frames.Push(new Frame(node, target));
+    }
+
+    // Releases the values evaluated before a failure. A release that throws does not stop the others; its exception is
+    // thrown together with the failure.
+    private static void ReleaseAll(ref PooledStack<GpuBigInt> values, Exception failure)
+    {
+        List<Exception>? errors = null;
+        while (values.Count > 0)
+        {
+            try
+            {
+                values.Pop().Dispose();
+            }
+            catch (Exception ex)
+            {
+                (errors ??= [failure]).Add(ex);
+            }
+        }
+
+        if (errors is not null)
+        {
+            throw new AggregateException(errors);
+        }
+    }
+
+    // A node to evaluate, the target it writes into, and the index of the next operand to evaluate
+    private struct Frame(IGpuBigIntExpression node, GpuBigUInt? target)
+    {
+        public readonly IGpuBigIntExpression Node = node;
+        public readonly GpuBigUInt? Target = target;
+        public int Next;
+    }
+
+    // A stack in an array rented from ArrayPool, grown by doubling
+    private struct PooledStack<T>()
+    {
+        private T[] _items = ArrayPool<T>.Shared.Rent(16);
+
+        public int Count { get; private set; }
+
+        public ref T Peek() => ref _items[Count - 1];
+
+        public void Push(T item)
+        {
+            if (Count == _items.Length)
+            {
+                var grown = ArrayPool<T>.Shared.Rent(_items.Length * 2);
+                Array.Copy(_items, grown, Count);
+                ArrayPool<T>.Shared.Return(_items, clearArray: true);
+                _items = grown;
+            }
+
+            _items[Count++] = item;
+        }
+
+        public T Pop()
+        {
+            var item = _items[--Count];
+            Array.Clear(_items, Count, 1); // T may hold references
+            return item;
+        }
+
+        public void Dispose()
+        {
+            ArrayPool<T>.Shared.Return(_items, clearArray: true);
+            _items = [];
+            Count = 0;
+        }
+    }
 }
 
 // The result buffer of a signed root: the first NumWords words of the caller's target, through a temporary when the
@@ -254,10 +435,8 @@ internal static class SignedRoot
 // subtract them in one kernel that also negates on a borrow, and read the borrow and zero flags once (the sign of the
 // result depends on the values). A zero result is +0.
 internal abstract class SignedAddSubExpression(IGpuBigIntExpression left, IGpuBigIntExpression right, bool subtract)
-    : SignedBinaryExpression(left, right)
+    : SignedBinaryExpression(left, right, BigIntWidths.Add)
 {
-    protected override long ComputeBits(long left, long right) => BigIntWidths.Add(left, right);
-
     protected override GpuBigInt Execute(GpuBigInt a, GpuBigInt b, GpuBigUInt resultBuffer)
     {
         var negative = BigIntWideOps.AddSigned(a.Value, a.IsNegative, b.Value, b.IsNegative ^ subtract, resultBuffer);
@@ -272,10 +451,8 @@ internal sealed class SignedSubExpression(IGpuBigIntExpression left, IGpuBigIntE
     : SignedAddSubExpression(left, right, subtract: true);
 
 internal class SignedMulExpression(IGpuBigIntExpression left, IGpuBigIntExpression right)
-    : SignedBinaryExpression(left, right)
+    : SignedBinaryExpression(left, right, BigIntWidths.Multiply)
 {
-    protected override long ComputeBits(long left, long right) => BigIntWidths.Multiply(left, right);
-
     protected override GpuBigInt Execute(GpuBigInt a, GpuBigInt b, GpuBigUInt resultBuffer)
     {
         // The product kernels write the sum of the operand words; the bound may need fewer (a node narrower than its
@@ -297,10 +474,8 @@ internal class SignedMulExpression(IGpuBigIntExpression left, IGpuBigIntExpressi
 }
 
 internal class SignedDivExpression(IGpuBigIntExpression left, IGpuBigIntExpression right)
-    : SignedBinaryExpression(left, right)
+    : SignedBinaryExpression(left, right, BigIntWidths.Divide)
 {
-    protected override long ComputeBits(long left, long right) => BigIntWidths.Divide(left, right);
-
     protected override GpuBigInt Execute(GpuBigInt a, GpuBigInt b, GpuBigUInt resultBuffer)
     {
         using var remainder = resultBuffer.Workspace.RentTemp(b.Value.NumWords);
@@ -310,10 +485,8 @@ internal class SignedDivExpression(IGpuBigIntExpression left, IGpuBigIntExpressi
 }
 
 internal class SignedModExpression(IGpuBigIntExpression left, IGpuBigIntExpression right)
-    : SignedBinaryExpression(left, right)
+    : SignedBinaryExpression(left, right, BigIntWidths.Remainder)
 {
-    protected override long ComputeBits(long left, long right) => BigIntWidths.Remainder(left, right);
-
     protected override GpuBigInt Execute(GpuBigInt a, GpuBigInt b, GpuBigUInt resultBuffer)
     {
         // The remainder is below |b| and at most |a|, so the low words of the divisor-wide remainder hold it
@@ -326,49 +499,65 @@ internal class SignedModExpression(IGpuBigIntExpression left, IGpuBigIntExpressi
     }
 }
 
-internal class SignedNegateExpression(IGpuBigIntExpression target)
-    : IGpuBigIntExpression, IBitBoundedExpression, IDisposable
+// -x: the operand evaluated into the node's own target, with the sign flipped
+internal class SignedNegateExpression(IGpuBigIntExpression target) : ISignedOperator, IBitBoundedExpression, IDisposable
 {
     internal IGpuBigIntExpression Target { get; } = target ?? throw new ArgumentNullException(nameof(target));
-    public int NumWords => Target.NumWords;
-    public long Bits => IBitBoundedExpression.Of(Target);
 
-    public void Dispose() => (Target as IDisposable)?.Dispose();
+    public long Bits { get; } = IBitBoundedExpression.Of(target);
 
-    public GpuBigInt Evaluate(GpuWorkspace workspace, GpuBigUInt? targetResult = null)
-    {
-        var innerResult = Target.Evaluate(workspace, targetResult);
-        return new GpuBigInt(innerResult.Value, !innerResult.IsNegative);
-    }
-}
-
-internal abstract class SignedUnaryExpression(IGpuBigIntExpression target)
-    : IGpuBigIntExpression, IBitBoundedExpression, IDisposable
-{
-    internal IGpuBigIntExpression Target { get; } = target ?? throw new ArgumentNullException(nameof(target));
-    public virtual long Bits => IBitBoundedExpression.Of(Target);
     public int NumWords => BigIntWidths.Words(Bits);
 
-    public void Dispose() => (Target as IDisposable)?.Dispose();
+    public int OperandCount => 1;
 
-    public GpuBigInt Evaluate(GpuWorkspace workspace, GpuBigUInt? targetResult = null)
+    public bool PassesTargetToOperand => true;
+
+    public IGpuBigIntExpression GetOperand(int index) => Target;
+
+    public void Dispose() => SignedTree.Dispose(this);
+
+    public GpuBigInt Evaluate(GpuWorkspace workspace, GpuBigUInt? targetResult = null) =>
+        SignedTree.Evaluate(this, workspace, targetResult);
+
+    public GpuBigInt Apply(GpuWorkspace workspace, GpuBigInt first, GpuBigInt second, GpuBigUInt? targetResult) =>
+        new(first.Value, !first.IsNegative);
+}
+
+// A unary operation into a buffer of its own. The bound is given by the derived node when it is built.
+internal abstract class SignedUnaryExpression(IGpuBigIntExpression target, long bits)
+    : ISignedOperator, IBitBoundedExpression, IDisposable
+{
+    internal IGpuBigIntExpression Target { get; } = target ?? throw new ArgumentNullException(nameof(target));
+
+    public long Bits { get; } = bits;
+
+    public int NumWords => BigIntWidths.Words(Bits);
+
+    public int OperandCount => 1;
+
+    public bool PassesTargetToOperand => false;
+
+    public IGpuBigIntExpression GetOperand(int index) => Target;
+
+    public void Dispose() => SignedTree.Dispose(this);
+
+    public GpuBigInt Evaluate(GpuWorkspace workspace, GpuBigUInt? targetResult = null) =>
+        SignedTree.Evaluate(this, workspace, targetResult);
+
+    public GpuBigInt Apply(GpuWorkspace workspace, GpuBigInt first, GpuBigInt second, GpuBigUInt? targetResult)
     {
-        SignedRoot.ThrowIfNarrower(targetResult, NumWords);
-
-        GpuBigInt targetEval = default;
         GpuBigUInt staging = default;
         GpuBigUInt? rented = null;
 
         try
         {
-            targetEval = Target.Evaluate(workspace);
             var result = targetResult.HasValue
                 ? SignedRoot.Head(targetResult.Value, NumWords)
                 : (rented = workspace.RentTemp(NumWords)).Value;
 
             // As in SignedBinaryExpression: a target that overlaps the operand gets the result through a temporary
-            staging = SignedRoot.StagingFor(workspace, targetResult, NumWords, targetEval, default);
-            var value = Execute(targetEval, staging.Handle.IsDefault ? result : staging);
+            staging = SignedRoot.StagingFor(workspace, targetResult, NumWords, first, default);
+            var value = Execute(first, staging.Handle.IsDefault ? result : staging);
             value = SignedRoot.Deliver(value, staging, result, targetResult);
             rented = null;
             return value;
@@ -379,7 +568,7 @@ internal abstract class SignedUnaryExpression(IGpuBigIntExpression target)
             // release that throws does not skip the others.
             try
             {
-                targetEval.Dispose();
+                first.Dispose();
             }
             finally
             {
@@ -397,15 +586,18 @@ internal abstract class SignedUnaryExpression(IGpuBigIntExpression target)
 
     // The operation on the evaluated operand into resultBuffer, which has exactly NumWords words
     protected abstract GpuBigInt Execute(GpuBigInt targetEval, GpuBigUInt resultBuffer);
+
+    // The bound of the operand, rejecting a null operand before reading it
+    protected static long OperandBits(IGpuBigIntExpression target) =>
+        IBitBoundedExpression.Of(target ?? throw new ArgumentNullException(nameof(target)));
 }
 
 // ~x == -x - 1, as BigInteger and C# int: -(|x| + 1) for a non-negative x, |x| - 1 for a negative one. The result is
 // one bit wider than x (GMP mpz_com). A negative x reads the borrow of |x| - 1 from the device, once: a magnitude of
 // zero with the negative flag (-0) is 0, and ~0 is -1.
-internal class SignedBitwiseNotExpression(IGpuBigIntExpression target) : SignedUnaryExpression(target)
+internal class SignedBitwiseNotExpression(IGpuBigIntExpression target)
+    : SignedUnaryExpression(target, BigIntWidths.SignedNot(OperandBits(target)))
 {
-    public override long Bits => BigIntWidths.SignedNot(IBitBoundedExpression.Of(Target));
-
     protected override GpuBigInt Execute(GpuBigInt targetEval, GpuBigUInt resultBuffer)
     {
         if (!targetEval.IsNegative)
@@ -427,10 +619,9 @@ internal class SignedBitwiseNotExpression(IGpuBigIntExpression target) : SignedU
 
 // x.Fit(words): the value in words words, checked: a magnitude that does not fit is a domain error (C# checked
 // narrowing). The sign is kept.
-internal sealed class SignedFitExpression(IGpuBigIntExpression target, int words) : SignedUnaryExpression(target)
+internal sealed class SignedFitExpression(IGpuBigIntExpression target, int words)
+    : SignedUnaryExpression(target, BigIntWidths.OfWords(words))
 {
-    public override long Bits => BigIntWidths.OfWords(words);
-
     protected override GpuBigInt Execute(GpuBigInt targetEval, GpuBigUInt resultBuffer)
     {
         var magnitude = targetEval.Value;
@@ -443,19 +634,15 @@ internal sealed class SignedFitExpression(IGpuBigIntExpression target, int words
 }
 
 internal class SignedMaxExpression(IGpuBigIntExpression left, IGpuBigIntExpression right)
-    : SignedBinaryExpression(left, right)
+    : SignedBinaryExpression(left, right, Math.Max)
 {
-    protected override long ComputeBits(long left, long right) => Math.Max(left, right);
-
     protected override GpuBigInt Execute(GpuBigInt a, GpuBigInt b, GpuBigUInt resultBuffer) =>
         SignedSelect.Copy(a.CompareTo(b) >= 0 ? a : b, resultBuffer);
 }
 
 internal class SignedMinExpression(IGpuBigIntExpression left, IGpuBigIntExpression right)
-    : SignedBinaryExpression(left, right)
+    : SignedBinaryExpression(left, right, Math.Max)
 {
-    protected override long ComputeBits(long left, long right) => Math.Max(left, right);
-
     protected override GpuBigInt Execute(GpuBigInt a, GpuBigInt b, GpuBigUInt resultBuffer) =>
         SignedSelect.Copy(a.CompareTo(b) <= 0 ? a : b, resultBuffer);
 }
