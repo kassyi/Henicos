@@ -454,7 +454,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_SuspendingCallerKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "DeviceDynamicSharedMemoryKernels.SuspendingCallerKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
-uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.NextLaunchEpoch(hStream);
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, true);
 try
 {
 void** __gsharp_kernel_params = stackalloc void*[3];
@@ -496,10 +496,11 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
-global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfLaunchError(__gsharp_epoch);
+global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ThrowIfLaunchError(__gsharp_epoch);
 }
 finally
 {
+global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ReleaseLaunchEpoch(__gsharp_epoch);
 if (__gsharp_d_0 != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_0, hStream);
 }
 }
@@ -524,7 +525,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_SuspendingCallerKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "DeviceDynamicSharedMemoryKernels.SuspendingCallerKernel");
-uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.NextLaunchEpoch(hStream);
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, false);
 try
 {
 void** __gsharp_kernel_params = stackalloc void*[3];
@@ -590,7 +591,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_HelperOnlyKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "DeviceDynamicSharedMemoryKernels.HelperOnlyKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
-uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.NextLaunchEpoch(hStream);
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, true);
 try
 {
 void** __gsharp_kernel_params = stackalloc void*[3];
@@ -632,10 +633,11 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
-global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfLaunchError(__gsharp_epoch);
+global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ThrowIfLaunchError(__gsharp_epoch);
 }
 finally
 {
+global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ReleaseLaunchEpoch(__gsharp_epoch);
 if (__gsharp_d_0 != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_0, hStream);
 }
 }
@@ -660,7 +662,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_HelperOnlyKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "DeviceDynamicSharedMemoryKernels.HelperOnlyKernel");
-uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.NextLaunchEpoch(hStream);
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, false);
 try
 {
 void** __gsharp_kernel_params = stackalloc void*[3];
@@ -731,7 +733,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_HelperAndCallerKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "DeviceDynamicSharedMemoryKernels.HelperAndCallerKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
-uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.NextLaunchEpoch(hStream);
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, true);
 try
 {
 void** __gsharp_kernel_params = stackalloc void*[3];
@@ -773,10 +775,11 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
-global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfLaunchError(__gsharp_epoch);
+global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ThrowIfLaunchError(__gsharp_epoch);
 }
 finally
 {
+global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ReleaseLaunchEpoch(__gsharp_epoch);
 if (__gsharp_d_0 != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_0, hStream);
 }
 }
@@ -801,7 +804,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_HelperAndCallerKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "DeviceDynamicSharedMemoryKernels.HelperAndCallerKernel");
-uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.NextLaunchEpoch(hStream);
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, false);
 try
 {
 void** __gsharp_kernel_params = stackalloc void*[3];
@@ -872,7 +875,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_PlainCallerKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "DeviceDynamicSharedMemoryKernels.PlainCallerKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
-uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.NextLaunchEpoch(hStream);
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, true);
 try
 {
 void** __gsharp_kernel_params = stackalloc void*[3];
@@ -914,10 +917,11 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
-global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfLaunchError(__gsharp_epoch);
+global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ThrowIfLaunchError(__gsharp_epoch);
 }
 finally
 {
+global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ReleaseLaunchEpoch(__gsharp_epoch);
 if (__gsharp_d_0 != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_0, hStream);
 }
 }
@@ -942,7 +946,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_PlainCallerKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "DeviceDynamicSharedMemoryKernels.PlainCallerKernel");
-uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.NextLaunchEpoch(hStream);
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, false);
 try
 {
 void** __gsharp_kernel_params = stackalloc void*[3];
@@ -1010,7 +1014,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_SuspendingPersistKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "DeviceDynamicSharedMemoryKernels.SuspendingPersistKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
-uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.NextLaunchEpoch(hStream);
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, true);
 try
 {
 void** __gsharp_kernel_params = stackalloc void*[3];
@@ -1052,10 +1056,11 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
-global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfLaunchError(__gsharp_epoch);
+global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ThrowIfLaunchError(__gsharp_epoch);
 }
 finally
 {
+global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ReleaseLaunchEpoch(__gsharp_epoch);
 if (__gsharp_d_0 != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_0, hStream);
 }
 }
@@ -1080,7 +1085,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_SuspendingPersistKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "DeviceDynamicSharedMemoryKernels.SuspendingPersistKernel");
-uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.NextLaunchEpoch(hStream);
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, false);
 try
 {
 void** __gsharp_kernel_params = stackalloc void*[3];
@@ -1148,7 +1153,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_PlainPersistKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "DeviceDynamicSharedMemoryKernels.PlainPersistKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
-uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.NextLaunchEpoch(hStream);
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, true);
 try
 {
 void** __gsharp_kernel_params = stackalloc void*[3];
@@ -1190,10 +1195,11 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
-global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfLaunchError(__gsharp_epoch);
+global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ThrowIfLaunchError(__gsharp_epoch);
 }
 finally
 {
+global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ReleaseLaunchEpoch(__gsharp_epoch);
 if (__gsharp_d_0 != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_0, hStream);
 }
 }
@@ -1218,7 +1224,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_PlainPersistKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "DeviceDynamicSharedMemoryKernels.PlainPersistKernel");
-uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.NextLaunchEpoch(hStream);
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, false);
 try
 {
 void** __gsharp_kernel_params = stackalloc void*[3];
@@ -1275,7 +1281,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_StaticPersistKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "DeviceDynamicSharedMemoryKernels.StaticPersistKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
-uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.NextLaunchEpoch(hStream);
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, true);
 try
 {
 void** __gsharp_kernel_params = stackalloc void*[2];
@@ -1315,10 +1321,11 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
-global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfLaunchError(__gsharp_epoch);
+global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ThrowIfLaunchError(__gsharp_epoch);
 }
 finally
 {
+global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ReleaseLaunchEpoch(__gsharp_epoch);
 if (__gsharp_d_0 != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_0, hStream);
 }
 }
@@ -1343,7 +1350,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_StaticPersistKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "DeviceDynamicSharedMemoryKernels.StaticPersistKernel");
-uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.NextLaunchEpoch(hStream);
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, false);
 try
 {
 void** __gsharp_kernel_params = stackalloc void*[2];
@@ -1413,7 +1420,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_GrowAfterCallerKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "DeviceDynamicSharedMemoryKernels.GrowAfterCallerKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
-uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.NextLaunchEpoch(hStream);
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, true);
 try
 {
 void** __gsharp_kernel_params = stackalloc void*[4];
@@ -1457,10 +1464,11 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
-global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfLaunchError(__gsharp_epoch);
+global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ThrowIfLaunchError(__gsharp_epoch);
 }
 finally
 {
+global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ReleaseLaunchEpoch(__gsharp_epoch);
 if (__gsharp_d_0 != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_0, hStream);
 }
 }
@@ -1485,7 +1493,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_GrowAfterCallerKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "DeviceDynamicSharedMemoryKernels.GrowAfterCallerKernel");
-uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.NextLaunchEpoch(hStream);
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, false);
 try
 {
 void** __gsharp_kernel_params = stackalloc void*[4];
@@ -1556,7 +1564,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_RecursiveKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "DeviceDynamicSharedMemoryKernels.RecursiveKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
-uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.NextLaunchEpoch(hStream);
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, true);
 try
 {
 void** __gsharp_kernel_params = stackalloc void*[3];
@@ -1598,10 +1606,11 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
-global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfLaunchError(__gsharp_epoch);
+global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ThrowIfLaunchError(__gsharp_epoch);
 }
 finally
 {
+global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ReleaseLaunchEpoch(__gsharp_epoch);
 if (__gsharp_d_0 != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_0, hStream);
 }
 }
@@ -1626,7 +1635,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_RecursiveKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "DeviceDynamicSharedMemoryKernels.RecursiveKernel");
-uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.NextLaunchEpoch(hStream);
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, false);
 try
 {
 void** __gsharp_kernel_params = stackalloc void*[3];
@@ -1712,7 +1721,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_NestedScopeKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "DeviceDynamicSharedMemoryKernels.NestedScopeKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
-uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.NextLaunchEpoch(hStream);
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, true);
 try
 {
 void** __gsharp_kernel_params = stackalloc void*[3];
@@ -1754,10 +1763,11 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
-global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfLaunchError(__gsharp_epoch);
+global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ThrowIfLaunchError(__gsharp_epoch);
 }
 finally
 {
+global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ReleaseLaunchEpoch(__gsharp_epoch);
 if (__gsharp_d_0 != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_0, hStream);
 }
 }
@@ -1782,7 +1792,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_NestedScopeKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "DeviceDynamicSharedMemoryKernels.NestedScopeKernel");
-uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.NextLaunchEpoch(hStream);
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, false);
 try
 {
 void** __gsharp_kernel_params = stackalloc void*[3];
@@ -1857,7 +1867,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_ZeroThenGrowKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "DeviceDynamicSharedMemoryKernels.ZeroThenGrowKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
-uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.NextLaunchEpoch(hStream);
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, true);
 try
 {
 void** __gsharp_kernel_params = stackalloc void*[4];
@@ -1901,10 +1911,11 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
-global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfLaunchError(__gsharp_epoch);
+global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ThrowIfLaunchError(__gsharp_epoch);
 }
 finally
 {
+global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ReleaseLaunchEpoch(__gsharp_epoch);
 if (__gsharp_d_0 != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_0, hStream);
 }
 }
@@ -1929,7 +1940,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_ZeroThenGrowKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "DeviceDynamicSharedMemoryKernels.ZeroThenGrowKernel");
-uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.NextLaunchEpoch(hStream);
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, false);
 try
 {
 void** __gsharp_kernel_params = stackalloc void*[4];
@@ -2002,7 +2013,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_MiddleCallerKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "DeviceDynamicSharedMemoryKernels.MiddleCallerKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
-uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.NextLaunchEpoch(hStream);
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, true);
 try
 {
 void** __gsharp_kernel_params = stackalloc void*[3];
@@ -2044,10 +2055,11 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
-global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfLaunchError(__gsharp_epoch);
+global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ThrowIfLaunchError(__gsharp_epoch);
 }
 finally
 {
+global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ReleaseLaunchEpoch(__gsharp_epoch);
 if (__gsharp_d_0 != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_0, hStream);
 }
 }
@@ -2072,7 +2084,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_MiddleCallerKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "DeviceDynamicSharedMemoryKernels.MiddleCallerKernel");
-uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.NextLaunchEpoch(hStream);
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, false);
 try
 {
 void** __gsharp_kernel_params = stackalloc void*[3];
@@ -2138,7 +2150,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_NoParameterCallerKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "DeviceDynamicSharedMemoryKernels.NoParameterCallerKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
-uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.NextLaunchEpoch(hStream);
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, true);
 try
 {
 void** __gsharp_kernel_params = stackalloc void*[2];
@@ -2178,10 +2190,11 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
-global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfLaunchError(__gsharp_epoch);
+global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ThrowIfLaunchError(__gsharp_epoch);
 }
 finally
 {
+global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ReleaseLaunchEpoch(__gsharp_epoch);
 if (__gsharp_d_0 != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_0, hStream);
 }
 }
@@ -2206,7 +2219,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_NoParameterCallerKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "DeviceDynamicSharedMemoryKernels.NoParameterCallerKernel");
-uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.NextLaunchEpoch(hStream);
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, false);
 try
 {
 void** __gsharp_kernel_params = stackalloc void*[2];
@@ -2284,7 +2297,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_NestedFunctionCallerKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "DeviceDynamicSharedMemoryKernels.NestedFunctionCallerKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
-uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.NextLaunchEpoch(hStream);
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, true);
 try
 {
 void** __gsharp_kernel_params = stackalloc void*[3];
@@ -2326,10 +2339,11 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
-global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfLaunchError(__gsharp_epoch);
+global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ThrowIfLaunchError(__gsharp_epoch);
 }
 finally
 {
+global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ReleaseLaunchEpoch(__gsharp_epoch);
 if (__gsharp_d_0 != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_0, hStream);
 }
 }
@@ -2354,7 +2368,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_NestedFunctionCallerKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "DeviceDynamicSharedMemoryKernels.NestedFunctionCallerKernel");
-uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.NextLaunchEpoch(hStream);
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, false);
 try
 {
 void** __gsharp_kernel_params = stackalloc void*[3];
@@ -2426,7 +2440,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_NegativeCountKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "DeviceDynamicSharedMemoryKernels.NegativeCountKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
-uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.NextLaunchEpoch(hStream);
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, true);
 try
 {
 void** __gsharp_kernel_params = stackalloc void*[4];
@@ -2470,10 +2484,11 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
-global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfLaunchError(__gsharp_epoch);
+global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ThrowIfLaunchError(__gsharp_epoch);
 }
 finally
 {
+global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ReleaseLaunchEpoch(__gsharp_epoch);
 if (__gsharp_d_0 != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_0, hStream);
 }
 }
@@ -2498,7 +2513,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_NegativeCountKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "DeviceDynamicSharedMemoryKernels.NegativeCountKernel");
-uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.NextLaunchEpoch(hStream);
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, false);
 try
 {
 void** __gsharp_kernel_params = stackalloc void*[4];

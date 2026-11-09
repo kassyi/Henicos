@@ -94,8 +94,8 @@ public sealed class DeviceErrorExitTests
         }
     }
 
-    // [WHY] An mbarrier waits for a fixed number of arrivals, which a thread that exited never makes; the waiters read the
-    // abort word of their launch, which the failing thread set, and exit too. The timeout fails the test instead of
+    // [WHY] An mbarrier waits for a fixed number of arrivals, which a thread that exited never makes; the waiters read
+    // the abort word of their launch, which the failing thread set, and exit too. The timeout fails the test instead of
     // waiting for a hang that the driver would end only by resetting the GPU.
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]

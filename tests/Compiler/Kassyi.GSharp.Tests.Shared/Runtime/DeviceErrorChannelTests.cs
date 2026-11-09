@@ -263,13 +263,18 @@ public sealed class DeviceErrorChannelTests
         }
 
         // The managed-array launcher reads the device error record of its own launch in every build; the Ptr launcher
-        // only where it synchronizes, in the checked build. Both take an epoch for the launch and pass it last.
-        const string deviceErrorCheck = "global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfLaunchError(__gsharp_epoch);";
-        int checks = wrapperText.Split(deviceErrorCheck).Length - 1;
-        Assert.Equal(isCheckedBuild ? 2 : 1, checks);
+        // only where it synchronizes, in the checked build. Both take an epoch for the launch and pass it last; a
+        // launcher that reads its record owns the epoch until it does, and releases it in its finally block.
+        const string Records = "global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.";
+        int readers = isCheckedBuild ? 2 : 1;
+        Assert.Equal(readers, Count(wrapperText, $"{Records}ThrowIfLaunchError(__gsharp_epoch);"));
+        Assert.Equal(readers, Count(wrapperText, $"{Records}ReleaseLaunchEpoch(__gsharp_epoch);"));
         Assert.DoesNotContain("ThrowIfDeviceError", wrapperText);
-        const string epochTaken = "uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.NextLaunchEpoch(hStream);";
-        Assert.Equal(2, wrapperText.Split(epochTaken).Length - 1);
+        Assert.Equal(readers, Count(wrapperText, $"uint __gsharp_epoch = {Records}NextLaunchEpoch(hStream, true);"));
+        Assert.Equal(2 - readers,
+            Count(wrapperText, $"uint __gsharp_epoch = {Records}NextLaunchEpoch(hStream, false);"));
+
+        static int Count(string text, string part) => text.Split(part).Length - 1;
     }
 
 #if !GSHARP_CUDA

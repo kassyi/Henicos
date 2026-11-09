@@ -445,7 +445,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 global::System.IntPtr __gsharp_hfunc = global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.__gsharp_hfunc_BlackScholesKernel.Resolve(global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "BlackScholesKernels.BlackScholesKernel");
 var __gsharp_device_arrays = new global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions();
-uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.NextLaunchEpoch(hStream);
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, true);
 try
 {
 void** __gsharp_kernel_params = stackalloc void*[2];
@@ -464,10 +464,11 @@ __gsharp_kernel_params,
 global::System.IntPtr.Zero // Extra
 ));
 global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.AotContexts.Unmarshal_BlackScholesKernels_BlackScholesContext(ref ctx, ref __gsharp_native_0, hStream);
-global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfLaunchError(__gsharp_epoch);
+global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ThrowIfLaunchError(__gsharp_epoch);
 }
 finally
 {
+global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ReleaseLaunchEpoch(__gsharp_epoch);
 __gsharp_device_arrays.Free(hStream);
 }
 }
@@ -483,7 +484,7 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 global::System.IntPtr __gsharp_hfunc = global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.__gsharp_hfunc_BlackScholesKernel.Resolve(global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "BlackScholesKernels.BlackScholesKernel");
-uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.NextLaunchEpoch(hStream);
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, false);
 try
 {
 void** __gsharp_kernel_params = stackalloc void*[2];

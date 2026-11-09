@@ -4,8 +4,8 @@ namespace Kassyi.GSharp.Tests.Cuda;
 
 /// <summary>
 /// Kernels for <see cref="LaunchEpochTests"/>. They spend a given number of clock cycles of the multiprocessor
-/// (<c>Gpu.Clock64</c>, CUDA only) after a thread may fail, so that a test can order a failure against the end of another
-/// launch or a host synchronization. A thread fails when its key is <see cref="FailKey"/>.
+/// (<c>Gpu.Clock64</c>, CUDA only) after a thread may fail, so that a test can order a failure against the end of
+/// another launch or a host synchronization. A thread fails when its key is <see cref="FailKey"/>.
 /// </summary>
 public static partial class LaunchEpochKernels
 {
@@ -41,6 +41,15 @@ public static partial class LaunchEpochKernels
 
         Gpu.SyncGrid();
         result[tid] = value;
+    }
+
+    // Every thread but <failingThread> writes its index
+    [GpuKernel]
+    public static void FillUnlessFailKernel(int failingThread, int[] result)
+    {
+        int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        int key = tid == failingThread ? FailKey : 0;
+        result[tid] = key switch { 0 => tid };
     }
 #pragma warning restore CS8509
 }

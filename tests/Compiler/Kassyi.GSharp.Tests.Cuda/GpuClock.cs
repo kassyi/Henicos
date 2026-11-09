@@ -15,7 +15,8 @@ internal static class GpuClock
         using var scope = new GpuKernelLoader.CudaContextScope();
         CudaException.ThrowIfError(CudaDriverApi.cuCtxGetDevice(out var device));
         CudaException.ThrowIfError(
-            CudaDriverApi.cuDeviceGetAttribute(out var rate, (CudaDriverApi.CuDeviceAttribute)ClockRateAttribute, device)
+            CudaDriverApi.cuDeviceGetAttribute(out var rate, (CudaDriverApi.CuDeviceAttribute)ClockRateAttribute,
+                device)
         );
         return rate;
     }

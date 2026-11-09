@@ -104,7 +104,8 @@ public partial class EmissionShapeTests
             "return;",
             "}");
         Assert.Contains(
-            $"{Kernel}BlockResultKernel(GSharpArray<int> __gsharp_id_0_input, int* __restrict__ __gsharp_auto_result, unsigned int __gsharp_epoch){{",
+            $"{Kernel}BlockResultKernel(GSharpArray<int> __gsharp_id_0_input, " +
+            "int* __restrict__ __gsharp_auto_result, unsigned int __gsharp_epoch){",
             cuda,
             StringComparison.Ordinal);
         Assert.Contains(

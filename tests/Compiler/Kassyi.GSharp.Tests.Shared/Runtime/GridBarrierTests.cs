@@ -5,10 +5,10 @@ using Kassyi.GSharp.Runtime.Interop;
 namespace Kassyi.GSharp.Tests.Shared.Runtime;
 
 /// <summary>
-/// The CUDA grid barrier (<c>Gpu.SyncGrid</c>): the threads of a block that have not exited arrive for it, so threads,
-/// warps or thread (0,0,0) that failed and exited before it do not stop the others; a block whose threads all exited
-/// makes the waiters leave instead of hang; repeated barriers over the largest cooperative grid stay exact; and the
-/// writes before a barrier are visible to every block after it.
+/// The CUDA grid barrier (<c>Gpu.SyncGrid</c>): once a thread of the launch failed, every block leaves the barrier
+/// instead of running the code after it, whether threads, warps, thread (0,0,0) or a whole block failed; repeated
+/// barriers over the largest cooperative grid stay exact; and the writes before a barrier are visible to every block
+/// after it.
 /// </summary>
 [TestTarget(ExecutionTarget.GpuExecution)]
 [Category(TestCategory.Runtime)]
@@ -21,9 +21,6 @@ public sealed class GridBarrierTests
 
     // CUDA_ERROR_COOPERATIVE_LAUNCH_TOO_LARGE
     private const int CooperativeLaunchTooLarge = 720;
-
-    // The sum each surviving thread of GridSyncAfterFailKernel adds up: the next block writes round + 1 in every round
-    private const int AfterFailSum = Rounds * (Rounds + 1) / 2;
 
 #if GSHARP_CUDA
     [SkippableFact]
@@ -138,11 +135,11 @@ public sealed class GridBarrierTests
         }
     }
 
-    // [WHY] A block whose threads all failed never arrives at the grid barrier; the waiters read the abort word of their
-    // launch, which the failing threads set, and the threads of their blocks exit after the barrier instead of running
-    // the code after it. The timeout fails the test instead of waiting for a hang that the driver would end only by
-    // resetting the GPU. A host synchronization that consumes the record first does not keep the waiters waiting
-    // (GridBarrierTimingTests in Tests.Cuda, which delays the barrier).
+    // [WHY] A block whose threads all failed never arrives at the grid barrier; the waiters read the abort word of
+    // their launch, which the failing threads set, and the threads of their blocks exit after the barrier instead of
+    // running the code after it. The timeout fails the test instead of waiting for a hang that the driver would end
+    // only by resetting the GPU. A host synchronization that consumes the record first does not keep the waiters
+    // waiting (LaunchEpochTests in Tests.Cuda, which delays the barrier).
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]
     public async Task Test_WholeBlockFailsBeforeGridBarrier_WaitersLeaveAndLaunchThrows()
@@ -177,10 +174,10 @@ public sealed class GridBarrierTests
                 blockDimX: BlockSize));
         Assert.Null(ex.InnerException);
 
-        for (int i = 0; i < keys.Length; i++)
-        {
-            Assert.Equal(keys[i] == GridBarrierKernels.FailKey ? Untouched : AfterFailSum, result[i]);
-        }
+        // The threads failed before the first barrier, so every block leaves it: no surviving thread gets to its write.
+        // A launch without an epoch (captured into a graph) still passes the barriers with the surviving threads
+        // (LaunchEpochTests in Tests.Cuda).
+        Assert.All(result, static value => Assert.Equal(Untouched, value));
     }
 
     private static int MultiprocessorCount()
