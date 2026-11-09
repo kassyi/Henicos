@@ -19,15 +19,32 @@ Synchronizes all threads across a cooperative thread grid.
 
 | Name | Description |
 | --- | --- |
-| [SyncGrid()](#syncgrid) | Synchronizes all threads across a cooperative thread grid. |
+| [SyncGrid(GridSyncMode)](#syncgridgridsyncmode) | Synchronizes all threads across a cooperative thread grid. |
 | [SyncGrid(Action)](#syncgrid-action) | Synchronizes all threads across a cooperative thread grid and automatically handles synchronization barriers across the provided block of statements. |
 
-## SyncGrid()
+## SyncGrid(GridSyncMode)
 
 Synchronizes all threads across a cooperative thread grid.
 
 ```csharp
-public static void SyncGrid();
+public static void SyncGrid(GridSyncMode mode = GridSyncMode.Deterministic);
+```
+
+#### Parameters
+
+`mode` _GridSyncMode_<br>
+What the barrier does after a thread of the launch failed. Must be a compile-time constant ([GSH0012](../diagnostics/GSH0012.md)); a constant that names no member of `GridSyncMode` is [GSH0003](../diagnostics/GSH0003.md).
+
+| Mode | After a thread of the launch failed |
+| :--- | :--- |
+| `Deterministic` (default) | A block reads the failure signal before it arrives. A grid barrier reached after the failure does not complete, so no thread runs the code after it. |
+| `Fast` | A block reads the failure signal after it arrives, which saves about 0.3 µs per barrier (about a quarter of a barrier of a full grid). The arrival of a block of the failing launch can complete the barrier, and the other blocks then run the code after it up to their next grid barrier, mbarrier wait or the end of the kernel, where they leave. |
+
+In both modes the launch throws the recorded exception and no thread is left waiting at the barrier; only the results written in the extra interval of `Fast` may differ from run to run ([Semantics Charter §6.3](../../01_language/06_semantics.md#63-undefined-behavior-is-an-error)). The CUDA build calls a different barrier for each mode and emits no run-time branch. The native CPU build and the managed path run a cooperative kernel in grid phases and treat both modes alike.
+
+```csharp
+Gpu.SyncGrid();                    // Deterministic
+Gpu.SyncGrid(GridSyncMode.Fast);   // Fast
 ```
 
 #### Exceptions
@@ -55,7 +72,7 @@ Thrown when evaluated on the host CPU.
 
 ## Remarks
 
-The `Gpu.SyncGrid` method acts as a barrier at which all threads in a cooperative grid must wait before any thread is allowed to proceed. This is transpiled to `cg::this_grid().sync();` using the Cooperative Groups API in CUDA C++.
+The `Gpu.SyncGrid` method acts as a barrier at which all threads in a cooperative grid must wait before any thread is allowed to proceed. On sm_70 and later it is transpiled to the G# grid barrier of the prelude (`__gsharp_grid_sync();`, or `__gsharp_grid_sync_fast();` for `GridSyncMode.Fast`), which uses the barrier counter of the Cooperative Groups grid workspace; before sm_70 both are `cg::this_grid().sync();`. The barriers that `Gpu.SyncGrid(Action)` inserts are `Deterministic`.
 
 - **Lambda Expression Requirement**: The `Gpu.SyncGrid(Action)` overload strictly requires an inline lambda expression. Passing a delegate variable or method group will result in a compiler error. See [GSH0003](../diagnostics/GSH0003.md) for details.
 - **Cooperative Kernel Requirement**: `SyncGrid` requires the kernel to be launched as a cooperative kernel. Using this method in a non-cooperative kernel will result in a compiler error. See [GSH0030](../diagnostics/GSH0030.md) for details. GSH0030 checks the body of the kernel only; a grid sync that a non-cooperative kernel reaches through a device function is an error at run time on the CPU paths (see [On the CPU Paths](#on-the-cpu-paths)).
