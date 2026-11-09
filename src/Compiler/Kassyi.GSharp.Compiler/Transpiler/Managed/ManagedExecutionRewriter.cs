@@ -142,11 +142,17 @@ internal sealed partial class ManagedExecutionRewriter(
                     )
                 )
             );
+            // <context>.EndTypeKeyScope<<struct>>(<context>.BeginTypeKeyScope<<struct>>(), <creation>)
+            // The type argument is spelled: a target-typed new(...) has no type of its own as an argument, so C# could
+            // not infer it (CS0411, #1255)
             return SyntaxFactory.InvocationExpression(
                 SyntaxFactory.MemberAccessExpression(
                     SyntaxKind.SimpleMemberAccessExpression,
                     contextType,
-                    SyntaxFactory.IdentifierName("EndTypeKeyScope")
+                    SyntaxFactory.GenericName(
+                        SyntaxFactory.Identifier("EndTypeKeyScope"),
+                        SyntaxFactory.TypeArgumentList(SyntaxFactory.SingletonSeparatedList(typeSyntax))
+                    )
                 ),
                 SyntaxFactory.ArgumentList(
                     SyntaxFactory.SeparatedList<ArgumentSyntax>(
