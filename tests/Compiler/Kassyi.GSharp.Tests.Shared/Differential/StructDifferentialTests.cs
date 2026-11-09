@@ -212,6 +212,27 @@ public class StructDifferentialTests
             b.Get<int>("dst")),
     };
 
+    private static readonly DifferentialCase s_constantSizedFixedBuffer = new(
+        $"{nameof(StructDifferentialKernels)}.{nameof(StructDifferentialKernels.ConstantSizedFixedBufferKernel)}")
+    {
+        Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
+        Inputs = static (rng, rows) =>
+        {
+            var inputs = DiffValues.Int32(rng, rows);
+            return new DiffBuffers()
+                .In("inputs", inputs)
+                .Out<int>("r", rows, StructDifferentialKernels.ConstantSizedFixedBufferColumns, OutputPolicy.Exact);
+        },
+        Launch = static (b, s) => StructDifferentialKernels.LaunchConstantSizedFixedBufferKernel(
+            b.Get<int>("inputs"),
+            b.Get<int>("r"),
+            gridDimX: s.GridX,
+            blockDimX: s.BlockX),
+        Oracle = static (b, _) => StructDifferentialKernels.ConstantSizedFixedBufferKernel(
+            b.Get<int>("inputs"),
+            b.Get<int>("r")),
+    };
+
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
@@ -267,4 +288,12 @@ public class StructDifferentialTests
     [Scenario(TestScenario.Boundary)]
     public void Test_DefaultOfConvertingStruct_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_repro1103Default);
+
+    // A fixed buffer sized by a constant of a struct declared in another file (#1283)
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Differential)]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_ConstantSizedFixedBufferOfStructInAnotherFile_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_constantSizedFixedBuffer);
 }
