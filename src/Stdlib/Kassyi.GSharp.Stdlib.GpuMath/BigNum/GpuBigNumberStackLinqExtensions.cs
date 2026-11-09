@@ -576,8 +576,8 @@ public static class GpuBigNumberStackLinqExtensions
             return Clone(sum);
         }
 
-        // An integer divides by a one-word count (its division takes operands of any widths); a float keeps the width of
-        // the sum, which sets the precision of its quotient
+        // An integer divides by a one-word count (its division takes operands of any widths); a float keeps the
+        // width of the sum, which sets the precision of its quotient
         var countWords = T.AdditionIsExact ? 1 : sum.Magnitude.NumWords;
         using var countVal = CreateFromUInt32<T>(sum.Workspace, countWords, (uint)count);
         return sum / countVal;
