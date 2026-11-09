@@ -23,11 +23,19 @@ public static partial class GpuBigIntWideKernels
     public const int BitwiseNot = 3;
 
     /// <summary>
+    /// Added to the operation of <see cref="AddSubWideKernel"/>: the result is taken modulo its width and not
+    /// reported (an algorithm that works in two's complement on purpose).
+    /// </summary>
+    public const int ModuloMode = 2;
+
+    /// <summary>
     /// <c>result = a + b</c> (<paramref name="subtract"/> = 0) or <c>a - b</c> (1) over <paramref name="resultWords"/>
     /// words. The sum or difference is computed over every word of the operands, so a result that does not fit in
     /// <paramref name="resultWords"/> words (<see cref="GpuDomainErrors.AddOverflow"/>,
     /// <see cref="GpuDomainErrors.SubtractOverflow"/>) and a difference below zero
-    /// (<see cref="GpuDomainErrors.SubtractBelowZero"/>) are reported, never dropped. Launch one block whose size is a
+    /// (<see cref="GpuDomainErrors.SubtractBelowZero"/>) are reported, never dropped. With
+    /// <see cref="ModuloMode"/> added to <paramref name="subtract"/> the result is the sum or difference modulo
+    /// <c>2^(32 resultWords)</c>, and nothing is reported. Launch one block whose size is a
     /// multiple of 32. The result may be <paramref name="a"/> or <paramref name="b"/> itself, but must not only partly
     /// overlap them.
     /// </summary>
@@ -57,8 +65,11 @@ public static partial class GpuBigIntWideKernels
             words = resultWords;
         }
 
+        bool sub = (subtract & 1) == 1;
+        bool modular = (subtract & ModuloMode) != 0;
+
         // a - b is a + ~b + 1
-        uint blockCarryIn = subtract == 1 ? 1u : 0u;
+        uint blockCarryIn = sub ? 1u : 0u;
 
         for (int offset = 0; offset < words; offset += bDim)
         {
@@ -67,7 +78,7 @@ public static partial class GpuBigIntWideKernels
 
             uint valA = idx < aWords ? a[idx] : 0u;
             uint valB = idx < bWords ? b[idx] : 0u;
-            if (subtract == 1)
+            if (sub)
             {
                 valB = ~valB;
             }
@@ -100,17 +111,17 @@ public static partial class GpuBigIntWideKernels
             Gpu.SyncThreads();
         }
 
-        if (tid == 0)
+        if (tid == 0 && !modular)
         {
-            if (subtract == 1 && topCarry[0] == 0u)
+            if (sub && topCarry[0] == 0u)
             {
                 GpuDomainErrors.Report(status, GpuDomainErrors.SubtractBelowZero);
             }
-            else if (subtract == 1 && highWords[0] != 0u)
+            else if (sub && highWords[0] != 0u)
             {
                 GpuDomainErrors.Report(status, GpuDomainErrors.SubtractOverflow);
             }
-            else if (subtract == 0 && (topCarry[0] != 0u || highWords[0] != 0u))
+            else if (!sub && (topCarry[0] != 0u || highWords[0] != 0u))
             {
                 GpuDomainErrors.Report(status, GpuDomainErrors.AddOverflow);
             }
@@ -140,11 +151,13 @@ public static partial class GpuBigIntWideKernels
     }
 
     /// <summary>
-    /// Reports <see cref="GpuDomainErrors.FitOverflow"/> once when a word of <paramref name="a"/> at or above
-    /// <paramref name="words"/> is not zero. Launch one block.
+    /// Reports <see cref="GpuDomainErrors.FitOverflow"/> once when a bit of <paramref name="a"/> at or above a bit
+    /// position is set: a bit of word <paramref name="firstWord"/> in <paramref name="firstMask"/>, or any bit of a
+    /// word above it. Launch one block.
     /// </summary>
     [GpuKernel]
-    public static void FitCheckKernel([GpuReadOnly] uint[] a, int aWords, int words, uint[] status)
+    public static void FitCheckKernel([GpuReadOnly] uint[] a, int aWords, int firstWord, uint firstMask,
+        uint[] status)
     {
         int tid = ThreadIndex.X;
         int bDim = BlockDimension.X;
@@ -157,9 +170,10 @@ public static partial class GpuBigIntWideKernels
 
         Gpu.SyncThreads();
 
-        for (int i = words + tid; i < aWords; i += bDim)
+        for (int i = firstWord + tid; i < aWords; i += bDim)
         {
-            if (a[i] != 0u)
+            uint mask = i == firstWord ? firstMask : 0xFFFFFFFFu;
+            if ((a[i] & mask) != 0u)
             {
                 highWords[0] = 1u;
             }

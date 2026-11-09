@@ -33,8 +33,10 @@ internal static class ModPowNttHostController
         using var reciprocalNorm = new GpuBigUInt(workspace, targetWords);
         GpuBigIntDivRem.Reciprocal(bNorm, reciprocalNorm, targetBits, marginWords);
 
+        // Truncated on purpose: the reciprocal of a modulus of 1 is 2^targetBits, one bit wider than the buffer the
+        // kernel reads; any power modulo 1 is 0, whatever the reciprocal. Every other modulus fits.
         using var reciprocalOfB = new GpuBigUInt(workspace, targetWords);
-        GpuBigIntMath.ShiftLeft(reciprocalNorm, lz, reciprocalOfB);
+        GpuBigIntMath.ShiftAndResize(reciprocalNorm, lz, reciprocalOfB);
 
         // 2. Square and Multiply MegaKernel (Zero-Sync GPU Offloading) - Chunked for TDR avoidance
         GSharpKernelProvider.Instance.KernelAdvancedMath.ExecuteModPowNttMegaKernel(
