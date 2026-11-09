@@ -1,0 +1,244 @@
+#nullable enable
+
+using System;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Xunit;
+using static Kassyi.GSharp.Tests.Shared.Generators.NativeApiGeneratorTestHelper;
+
+namespace Kassyi.GSharp.Tests.Shared.Generators;
+
+[Category(TestCategory.Compiler)]
+public class NativeApiModuleGeneratorTests
+{
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public Task Test_ModuleDefinition_GeneratesKernelLaunchers()
+    {
+        var result = RunGenerator(Api("kernels.yml", ModuleYaml));
+
+        Assert.Empty(result.Diagnostics);
+        return VerifyGenerated(result, nameof(Test_ModuleDefinition_GeneratesKernelLaunchers));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public Task Test_ModuleDefinition_WithDefaultValue_GeneratesDefaultedParameters()
+    {
+        const string Yaml = """
+            namespace: MyApp.Native
+            className: DefaultedKernels
+            moduleName: ./native/defaulted.fatbin
+            methods:
+              - name: Scale
+                parameters:
+                  - { name: data, type: "float[]" }
+                  - { name: factor, type: float, defaultValue: 2.0f }
+            """;
+
+        var result = RunGenerator(Api("defaulted.yml", Yaml));
+
+        Assert.Empty(result.Diagnostics);
+        return VerifyGenerated(result, nameof(Test_ModuleDefinition_WithDefaultValue_GeneratesDefaultedParameters));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_GeneratedSources_CompileWithoutErrors()
+    {
+        var compilation = CreateCompilation();
+        var driver = CreateDriver(Api("mylib.yml", LibraryYaml), Api("kernels.yml", ModuleYaml));
+
+        driver.RunGeneratorsAndUpdateCompilation(compilation, out var output, out var generatorDiagnostics);
+
+        Assert.Empty(generatorDiagnostics);
+        var errors = output.GetDiagnostics()
+            .Where(d => d.Severity == DiagnosticSeverity.Error)
+            .Select(d => d.ToString())
+            .ToArray();
+        Assert.True(errors.Length == 0, string.Join(Environment.NewLine, errors));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_ModuleDefinition_WithStreamParameter_EmitsCuStreamSynchronize()
+    {
+        const string Yaml = """
+            namespace: MyApp.Native
+            className: StreamKernels
+            moduleName: ./native/stream.fatbin
+            methods:
+              - name: LaunchWithStream
+                parameters:
+                  - { name: data, type: "float[]" }
+                  - { name: stream, type: IntPtr }
+            """;
+
+        var result = RunGenerator(Api("stream.yml", Yaml));
+
+        Assert.Empty(result.Diagnostics);
+        var source = FindSource(result, "StreamKernels");
+        Assert.Contains("CudaDriverApi.cuStreamSynchronize(stream)", source);
+        Assert.DoesNotContain("cuCtxSynchronize", source);
+        Assert.Contains(", stream, kernelParams,", source);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_ModuleDefinition_WithoutStreamParameter_EmitsCuCtxSynchronize()
+    {
+        const string Yaml = """
+            namespace: MyApp.Native
+            className: NoStreamKernels
+            moduleName: ./native/nostream.fatbin
+            methods:
+              - name: LaunchWithoutStream
+                parameters:
+                  - { name: data, type: "float[]" }
+            """;
+
+        var result = RunGenerator(Api("nostream.yml", Yaml));
+
+        Assert.Empty(result.Diagnostics);
+        var source = FindSource(result, "NoStreamKernels");
+        Assert.Contains("CudaDriverApi.cuCtxSynchronize()", source);
+        Assert.DoesNotContain("cuStreamSynchronize", source);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_ModuleDefinition_WithStreamParameterAndArray_StreamSynchronizePrecedesCopyToHost()
+    {
+        const string Yaml = """
+            namespace: MyApp.Native
+            className: CopyOutKernels
+            moduleName: ./native/copyout.fatbin
+            methods:
+              - name: LaunchCopyOutStream
+                parameters:
+                  - { name: data, type: "float[]" }
+                  - { name: stream, type: IntPtr }
+            """;
+
+        var result = RunGenerator(Api("copyout.yml", Yaml));
+
+        Assert.Empty(result.Diagnostics);
+        var source = FindSource(result, "CopyOutKernels");
+        var syncIndex = source.IndexOf("CudaDriverApi.cuStreamSynchronize(stream)");
+        var copyIndex = source.IndexOf(".CopyToHost(");
+
+        Assert.NotEqual(-1, syncIndex);
+        Assert.NotEqual(-1, copyIndex);
+        Assert.True(syncIndex < copyIndex, "cuStreamSynchronize(stream) must appear before CopyToHost");
+    }
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_ModuleDefinition_WithSharedMemBytes_PreparesDynamicSharedMemoryBeforeAllocations()
+    {
+        const string Yaml = """
+            namespace: MyApp.Native
+            className: SharedKernels
+            moduleName: ./native/shared.fatbin
+            methods:
+              - name: LaunchShared
+                parameters:
+                  - { name: data, type: "float[]" }
+                  - { name: blockDimX, type: uint }
+                  - { name: sharedMemBytes, type: uint }
+            """;
+
+        var result = RunGenerator(Api("shared.yml", Yaml));
+
+        Assert.Empty(result.Diagnostics);
+        var source = FindSource(result, "SharedKernels");
+        const string Prepare = "global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(" +
+            "kernel, sharedMemBytes, \"SharedKernels.LaunchShared\");";
+        var loadIndex = source.IndexOf("var kernel = GpuKernelLoader.LoadAotKernel(", StringComparison.Ordinal);
+        var prepareIndex = source.IndexOf(Prepare, StringComparison.Ordinal);
+        var allocationIndex = source.IndexOf("new GpuBuffer<float>(", StringComparison.Ordinal);
+
+        Assert.NotEqual(-1, loadIndex);
+        Assert.True(loadIndex < prepareIndex, "Prepare must follow the function lookup");
+        Assert.True(prepareIndex < allocationIndex, "Prepare must precede the device allocations");
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_ModuleDefinition_WithoutSharedMemBytes_DoesNotPrepareDynamicSharedMemory()
+    {
+        const string Yaml = """
+            namespace: MyApp.Native
+            className: NoSharedKernels
+            moduleName: ./native/noshared.fatbin
+            methods:
+              - name: LaunchNoShared
+                parameters:
+                  - { name: data, type: "float[]" }
+            """;
+
+        var result = RunGenerator(Api("noshared.yml", Yaml));
+
+        Assert.Empty(result.Diagnostics);
+        var source = FindSource(result, "NoSharedKernels");
+        Assert.DoesNotContain("DynamicSharedMemoryOptIn", source);
+        Assert.Contains("0, IntPtr.Zero, kernelParams, IntPtr.Zero));", source);
+    }
+
+    // The module launcher checks its dimensions against the limits of every GPU (#799) before the context, the
+    // function lookup and the device allocations; a dimension it does not take is the 1 it launches with
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_ModuleDefinition_WithLaunchDimensions_ChecksLaunchLimitsFirst()
+    {
+        const string Yaml = """
+            namespace: MyApp.Native
+            className: GridKernels
+            moduleName: ./native/grid.fatbin
+            methods:
+              - name: LaunchGrid
+                parameters:
+                  - { name: data, type: "float[]" }
+                  - { name: gridDimX, type: uint }
+                  - { name: blockDimX, type: uint }
+                  - { name: blockDimZ, type: uint }
+            """;
+
+        var result = RunGenerator(Api("grid.yml", Yaml));
+
+        Assert.Empty(result.Diagnostics);
+        var source = FindSource(result, "GridKernels");
+        const string Check = "global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(" +
+            "gridDimX, 1, 1, blockDimX, 1, blockDimZ, \"GridKernels.LaunchGrid\");";
+        var checkIndex = source.IndexOf(Check, StringComparison.Ordinal);
+        var scopeIndex = source.IndexOf("using var scope = new GpuKernelLoader.CudaContextScope();",
+            StringComparison.Ordinal);
+
+        Assert.NotEqual(-1, checkIndex);
+        Assert.True(checkIndex < scopeIndex, "The launch check must precede the context and the function lookup");
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_ModuleDefinition_WithoutLaunchDimensions_EmitsNoLaunchCheck()
+    {
+        const string Yaml = """
+            namespace: MyApp.Native
+            className: SingleThreadKernels
+            moduleName: ./native/single.fatbin
+            methods:
+              - name: LaunchSingle
+                parameters:
+                  - { name: data, type: "float[]" }
+                  - { name: sharedMemBytes, type: uint }
+            """;
+
+        var result = RunGenerator(Api("single.yml", Yaml));
+
+        Assert.Empty(result.Diagnostics);
+        Assert.DoesNotContain("LaunchLimits", FindSource(result, "SingleThreadKernels"));
+    }
+}
