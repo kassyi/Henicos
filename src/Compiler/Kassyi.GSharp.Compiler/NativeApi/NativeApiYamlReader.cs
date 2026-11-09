@@ -72,7 +72,8 @@ internal static class NativeApiYamlReader
         var root = YamlSubsetParser.Parse(text);
         if (root is not YamlMapping mapping)
         {
-            throw Schema(root.Line, "The document root must be a mapping containing 'namespace', 'className' and 'methods'.");
+            throw Schema(root.Line,
+                "The document root must be a mapping containing 'namespace', 'className' and 'methods'.");
         }
 
         var definition = new NativeApiDefinition
@@ -86,11 +87,29 @@ internal static class NativeApiYamlReader
         ValidateNamespace(mapping, definition.Namespace);
         ValidateIdentifier(mapping, "className", definition.ClassName);
         definition.ClassNameLine = LineOf(mapping, "className");
+        ReadBindingTarget(mapping, definition);
 
+        if (mapping.TryGetValue("methods", out var methodsNode) && !IsNull(methodsNode))
+        {
+            definition.Methods = ReadSequence(methodsNode, "methods", definition.BindingKind, ReadMethod);
+        }
+
+        if (mapping.TryGetValue("classes", out var classesNode) && !IsNull(classesNode))
+        {
+            definition.Classes = ReadClasses(classesNode, definition);
+        }
+
+        return definition;
+    }
+
+    // A definition binds a host library (libraryName, optionally libraryNames per platform) or a device module
+    private static void ReadBindingTarget(YamlMapping mapping, NativeApiDefinition definition)
+    {
         if (definition.LibraryName is not null && definition.ModuleName is not null)
         {
             throw Schema(LineOf(mapping, "moduleName"),
-                "'moduleName' cannot be combined with 'libraryName'; a definition binds either a host library or a device module.");
+                "'moduleName' cannot be combined with 'libraryName'; " +
+                "a definition binds either a host library or a device module.");
         }
 
         if (mapping.TryGetValue("libraryNames", out var libraryNamesNode))
@@ -102,29 +121,24 @@ internal static class NativeApiYamlReader
 
             definition.LibraryNames = ReadLibraryNames(libraryNamesNode);
         }
+    }
 
-        if (mapping.TryGetValue("methods", out var methodsNode) && !IsNull(methodsNode))
+    // Reads each item of the sequence under 'key' with readItem, which gets state as its second argument
+    private static ImmutableArray<T> ReadSequence<T, TState>(
+        YamlNode node, string key, TState state, Func<YamlNode, TState, T> readItem)
+    {
+        if (node is not YamlSequence sequence)
         {
-            if (methodsNode is not YamlSequence methods)
-            {
-                throw Schema(methodsNode.Line, "'methods' must be a sequence.");
-            }
-
-            var builder = ImmutableArray.CreateBuilder<ApiMethodDefinition>(methods.Items.Count);
-            foreach (var item in methods.Items)
-            {
-                builder.Add(ReadMethod(item, definition.BindingKind));
-            }
-
-            definition.Methods = builder.MoveToImmutable();
+            throw Schema(node.Line, $"'{key}' must be a sequence.");
         }
 
-        if (mapping.TryGetValue("classes", out var classesNode) && !IsNull(classesNode))
+        var builder = ImmutableArray.CreateBuilder<T>(sequence.Items.Count);
+        foreach (var item in sequence.Items)
         {
-            definition.Classes = ReadClasses(classesNode, definition);
+            builder.Add(readItem(item, state));
         }
 
-        return definition;
+        return builder.MoveToImmutable();
     }
 
     private static ImmutableArray<ClassDocumentationDefinition> ReadClasses(YamlNode node, NativeApiDefinition definition)
@@ -281,7 +295,8 @@ internal static class NativeApiYamlReader
 
         if (mapping.TryGetValue("parameters", out var parametersNode) && !IsNull(parametersNode))
         {
-            method.Parameters = ReadMethodParameters(parametersNode, bindingKind, method.Name);
+            method.Parameters = ReadSequence(parametersNode, "parameters", (Kind: bindingKind, Method: method.Name),
+                static (item, state) => ReadParameter(item, state.Kind, state.Method));
         }
 
         if (method.XmlDoc is not null && HasPlainTextDocumentation(method))
@@ -290,23 +305,6 @@ internal static class NativeApiYamlReader
                 $"'xmlDoc' of method '{method.Name}' replaces 'summary', 'returnDescription' and " +
                 "the 'description' keys; write the whole documentation in 'xmlDoc'.");
         }
-    }
-
-    private static ImmutableArray<ParameterDefinition> ReadMethodParameters(
-        YamlNode parametersNode, NativeApiBindingKind bindingKind, string methodName)
-    {
-        if (parametersNode is not YamlSequence parameters)
-        {
-            throw Schema(parametersNode.Line, "'parameters' must be a sequence.");
-        }
-
-        var builder = ImmutableArray.CreateBuilder<ParameterDefinition>(parameters.Items.Count);
-        foreach (var item in parameters.Items)
-        {
-            builder.Add(ReadParameter(item, bindingKind, methodName));
-        }
-
-        return builder.MoveToImmutable();
     }
 
     private static bool HasPlainTextDocumentation(ApiMethodDefinition method)
@@ -455,12 +453,17 @@ internal static class NativeApiYamlReader
             ? value
             : throw Schema(mapping.Line, $"'{key}' is required.");
 
-    private static string? OptionalScalar(YamlMapping mapping, string key) =>
-        !mapping.TryGetValue(key, out var node) || IsNull(node)
-            ? null
-            : node is YamlScalar scalar
-                ? Normalize(scalar.Value)
-                : throw Schema(node.Line, $"'{key}' must be a scalar value.");
+    private static string? OptionalScalar(YamlMapping mapping, string key)
+    {
+        if (!mapping.TryGetValue(key, out var node) || IsNull(node))
+        {
+            return null;
+        }
+
+        return node is YamlScalar scalar
+            ? Normalize(scalar.Value)
+            : throw Schema(node.Line, $"'{key}' must be a scalar value.");
+    }
 
     private static bool OptionalBoolean(YamlMapping mapping, string key) =>
         OptionalScalar(mapping, key) switch

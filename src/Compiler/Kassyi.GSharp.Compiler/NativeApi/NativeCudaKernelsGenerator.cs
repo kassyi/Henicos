@@ -9,10 +9,10 @@ public class NativeCudaKernelsGenerator : IIncrementalGenerator
             .Where(static file => file.Path.EndsWith(".cu"));
 
         var kernelNames = cuFiles
-            .Select(static (file, cancellationToken) => ExtractKernelNames(file, cancellationToken))
+            .Select(ExtractKernelNames)
             .Collect();
 
-        context.RegisterSourceOutput(kernelNames, static (spc, arrays) => EmitNativeCudaKernels(spc, arrays));
+        context.RegisterSourceOutput(kernelNames, EmitNativeCudaKernels);
     }
 
     private static ImmutableArray<string> ExtractKernelNames(AdditionalText file, CancellationToken cancellationToken)
