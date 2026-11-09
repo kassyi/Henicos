@@ -351,16 +351,59 @@ public partial class GpuBigIntVectorLinqExtensionsTests
     [Theory]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.SadPath)]
+    [InlineData(1)]
     [InlineData(7)]
-    [InlineData(10)]
-    public void Reduction_DestinationOfOtherWidth_ThrowsArgumentException(int destinationWords)
+    public void Reduction_NarrowerDestination_ThrowsArgumentException(int destinationWords)
     {
         using var array = CreateArray([1, 2]);
-        using var destination = new GpuBigUInt(_context, destinationWords);
+        uint[] filled = [.. Enumerable.Repeat(0xDEADBEEFu, destinationWords)];
+        using var destination = new GpuBigUInt(_context, filled);
 
-        // Sum of two 8-word elements has 9 words, Max 8: 7 and 10 fit neither
+        // Sum of two 8-word elements has 9 words, Max 8: a narrower destination is rejected and not touched
+        // mutant: VectorReductionExpressions.cs ThrowIfCannotEvaluate `target.NumWords < NumWords` -> `false`
         Assert.Throws<ArgumentException>(() => array.AsVectorizedEnumerable().Sum().Evaluate(destination));
         Assert.Throws<ArgumentException>(() => array.AsVectorizedEnumerable().Max().Evaluate(destination));
+        Assert.Equal(filled, destination.ToHostArray());
+    }
+
+    [Fact]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.Boundary)]
+    public void Reduction_WiderDestination_GetsZerosAboveTheResult()
+    {
+        // A destination wider than the result, as for the scalar expressions: the magnitude in the first words, zeros
+        // above them
+        // mutant: VectorReductionExpressions.cs Evaluate without `SignedRoot.ClearAbove(destination, NumWords)`
+        using var array = CreateSignedArray([-5, -7], 2);
+        foreach (var (name, expr, expected) in new[]
+        {
+            ("Sum", array.AsVectorizedEnumerable().Sum(), (BigInteger)(-12)),
+            ("Max", array.AsVectorizedEnumerable().Max(), (BigInteger)(-5))
+        })
+        {
+            using var destination = new GpuBigUInt(_context, [.. Enumerable.Repeat(0xDEADBEEFu, 6)]);
+            var result = expr.Evaluate(destination);
+            Assert.True(expected.Sign < 0 == result.IsNegative, name);
+            Assert.True(result.Value.NumWords == 6, name);
+            var limbs = new uint[6];
+            BigInteger.Abs(expected).WriteLimbs(limbs);
+            Assert.Equal(limbs, destination.ToHostArray());
+            expr.Dispose();
+        }
+    }
+
+    [Fact]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.Boundary)]
+    public void MaxMin_ReportTheElementBitBound()
+    {
+        // Max and Min choose an element, so their bound is the element's: a ZipAdd of two one-word vectors has 33 bits
+        // mutant: VectorReductionExpressions.cs base `Bits => _vector.BitsPerElement` -> `32L * ElementWords`
+        using var ones = CreateArray([1, 2], 1);
+        var sum = ones.AsVectorizedEnumerable().ZipAdd(ones.AsVectorizedEnumerable());
+        var max = sum.Max();
+        Assert.Equal(33L, ((IBitBoundedExpression)max.Node).Bits);
+        max.Dispose();
     }
 
     [Fact]

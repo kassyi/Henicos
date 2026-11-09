@@ -190,8 +190,9 @@ public static class GpuBigIntVectorLinqExtensions
     /// The sum of an empty vector is +0, as in <c>System.Linq</c>.
     /// </remarks>
     /// <exception cref="ArgumentException">
-    /// Thrown on evaluation into a destination that does not have the words of the result
-    /// (<see cref="IGpuBigIntExpression.NumWords"/>); the destination is not touched.
+    /// Thrown on evaluation into a destination narrower than the result
+    /// (<see cref="IGpuBigIntExpression.NumWords"/>); the destination is not touched. A wider destination receives
+    /// the magnitude in its first words and zeros above them.
     /// </exception>
     public static GpuBigIntExpr Sum(this IGpuBigIntVectorExpression source) => new(new VectorSumReductionExpression(source));
 
@@ -207,8 +208,9 @@ public static class GpuBigIntVectorLinqExtensions
     /// the device.
     /// </remarks>
     /// <exception cref="ArgumentException">
-    /// Thrown on evaluation into a destination that does not have
-    /// <see cref="IGpuBigIntVectorExpression.WordsPerElement"/> words; the destination is not touched.
+    /// Thrown on evaluation into a destination narrower than
+    /// <see cref="IGpuBigIntVectorExpression.WordsPerElement"/> words; the destination is not touched. A wider
+    /// destination receives the magnitude in its first words and zeros above them.
     /// </exception>
     /// <exception cref="InvalidOperationException">
     /// Thrown on evaluation when the vector is empty, as in <c>System.Linq</c>. The vector is not evaluated, nothing
@@ -228,8 +230,9 @@ public static class GpuBigIntVectorLinqExtensions
     /// the device.
     /// </remarks>
     /// <exception cref="ArgumentException">
-    /// Thrown on evaluation into a destination that does not have
-    /// <see cref="IGpuBigIntVectorExpression.WordsPerElement"/> words; the destination is not touched.
+    /// Thrown on evaluation into a destination narrower than
+    /// <see cref="IGpuBigIntVectorExpression.WordsPerElement"/> words; the destination is not touched. A wider
+    /// destination receives the magnitude in its first words and zeros above them.
     /// </exception>
     /// <exception cref="InvalidOperationException">
     /// Thrown on evaluation when the vector is empty, as in <c>System.Linq</c>. The vector is not evaluated, nothing
