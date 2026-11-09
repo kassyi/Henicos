@@ -346,9 +346,9 @@ public sealed class GraphOwnershipTests : IDisposable
     [Scenario(TestScenario.SadPath)]
     public void CaptureFailure_ReturnsEverythingItLeased()
     {
-        // A modulo reads its result back to the host, which a capture cannot record, so the capture fails after the
-        // warm-up succeeded. The failure path ends the capture and gives back every buffer it deferred (G8); the end of
-        // an invalidated capture fails as well, so both errors are reported together (O14).
+        // A modulo reads from the device, which a capture cannot record; it refuses the capture before the read, so the
+        // capture fails after the warm-up succeeded and after the addition below it was recorded. The failure path
+        // ends the capture and gives back every buffer it deferred (G8), and rethrows the original exception.
         // mutant: CompileToGraph without ReturnDeferred on the failure path (DeferredBuffers stays above 0)
         // The workspace uses the shared context: kernels launched in an isolated context would leave function handles
         // of a destroyed context behind for the next test.
@@ -358,13 +358,10 @@ public sealed class GraphOwnershipTests : IDisposable
             () => ((((GpuBigIntExpr)_a + _b) % _c) + _a).CompileToGraph(_workspace));
         var failed = _workspace.GetMemoryStatistics();
 
-        // The host read-back invalidates the capture, so ending the capture fails as well: both errors, the original
-        // first. (When the cleanup succeeds, the implementation rethrows the original with `throw;`; that branch is
-        // checked by reading AbortCapture, since a capture cannot be made to fail without invalidating it.)
-        var aggregate = Assert.IsType<AggregateException>(error);
-        Assert.Equal(2, aggregate.InnerExceptions.Count);
-        Assert.IsType<CudaException>(aggregate.InnerExceptions[0]);
-        Assert.IsType<CudaException>(aggregate.InnerExceptions[1]);
+        // Nothing invalidated the capture, so ending it succeeds and the original exception is rethrown. (When the
+        // cleanup fails too, both errors are reported together in an AggregateException (O14); that branch is checked
+        // by reading AbortCapture, since no expression reads from the device during a capture any more.)
+        Assert.IsType<NotSupportedException>(error);
         Assert.Equal((start.DeferredBuffers, start.LiveBuffers), (failed.DeferredBuffers, failed.LiveBuffers));
 
         // The stream is usable again after the failed capture

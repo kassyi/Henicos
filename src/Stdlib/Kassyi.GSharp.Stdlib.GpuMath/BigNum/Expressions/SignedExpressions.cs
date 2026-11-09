@@ -478,6 +478,7 @@ internal class SignedDivExpression(IGpuBigIntExpression left, IGpuBigIntExpressi
 {
     protected override GpuBigInt Execute(GpuBigInt a, GpuBigInt b, GpuBigUInt resultBuffer)
     {
+        SignedCapture.ThrowIfCapturing(resultBuffer.Workspace, SignedCapture.DivisionReads);
         using var remainder = resultBuffer.Workspace.RentTemp(b.Value.NumWords);
         GpuBigIntDivRem.DivRem(a.Value, b.Value, resultBuffer, remainder);
         return new GpuBigInt(resultBuffer, a.IsNegative ^ b.IsNegative);
@@ -491,6 +492,7 @@ internal class SignedModExpression(IGpuBigIntExpression left, IGpuBigIntExpressi
     {
         // The remainder is below |b| and at most |a|, so the low words of the divisor-wide remainder hold it
         var workspace = resultBuffer.Workspace;
+        SignedCapture.ThrowIfCapturing(workspace, SignedCapture.DivisionReads);
         using var quotient = workspace.RentTemp(a.Value.NumWords);
         using var remainder = workspace.RentTemp(b.Value.NumWords);
         GpuBigIntDivRem.DivRem(a.Value, b.Value, quotient, remainder);
@@ -637,18 +639,25 @@ internal class SignedMaxExpression(IGpuBigIntExpression left, IGpuBigIntExpressi
     : SignedBinaryExpression(left, right, Math.Max)
 {
     protected override GpuBigInt Execute(GpuBigInt a, GpuBigInt b, GpuBigUInt resultBuffer) =>
-        SignedSelect.Copy(a.CompareTo(b) >= 0 ? a : b, resultBuffer);
+        SignedSelect.Copy(SignedSelect.Compare(a, b) >= 0 ? a : b, resultBuffer);
 }
 
 internal class SignedMinExpression(IGpuBigIntExpression left, IGpuBigIntExpression right)
     : SignedBinaryExpression(left, right, Math.Max)
 {
     protected override GpuBigInt Execute(GpuBigInt a, GpuBigInt b, GpuBigUInt resultBuffer) =>
-        SignedSelect.Copy(a.CompareTo(b) <= 0 ? a : b, resultBuffer);
+        SignedSelect.Copy(SignedSelect.Compare(a, b) <= 0 ? a : b, resultBuffer);
 }
 
 internal static class SignedSelect
 {
+    // The comparison that chooses the operand of Max and Min is read from the device
+    public static int Compare(GpuBigInt a, GpuBigInt b)
+    {
+        SignedCapture.ThrowIfCapturing(a.Workspace, "The operand that Max and Min choose");
+        return a.CompareTo(b);
+    }
+
     // The chosen operand in resultBuffer, which is at least as wide as either operand's words; the words above it are
     // cleared
     public static GpuBigInt Copy(GpuBigInt chosen, GpuBigUInt resultBuffer)
@@ -657,5 +666,24 @@ internal static class SignedSelect
         resultBuffer.CopyFrom(chosen.Value, numWords: words);
         SignedRoot.ClearAbove(resultBuffer, words);
         return new GpuBigInt(resultBuffer, chosen.IsNegative);
+    }
+}
+
+// The nodes whose result depends on a value read from the device refuse a CUDA graph capture before the read: a capture
+// cannot record a host read (the read would invalidate it with a driver error), and the graph would replay the choice
+// made for the values of the capture.
+internal static class SignedCapture
+{
+    // DivRem reads the bit lengths of its operands (and % the zero test of its remainder)
+    public const string DivisionReads = "The size of a quotient or remainder";
+
+    public static void ThrowIfCapturing(GpuWorkspace workspace, string what)
+    {
+        if (DeviceCounted.IsCapturing(workspace))
+        {
+            throw new NotSupportedException(
+                what + " is read from the device, which a CUDA graph capture cannot record. Evaluate the expression " +
+                "without a graph.");
+        }
     }
 }
