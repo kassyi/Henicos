@@ -554,32 +554,9 @@ internal static class GraphOwnership
         }
     }
 
-    private static void CollectSubtree(IGpuBigIntExpression node, HashSet<IGpuBigIntExpression> nodes)
-    {
-        if (!nodes.Add(node))
-        {
-            return;
-        }
-
-        AddChildren(node, nodes);
-    }
-
-    private static void AddChildren(IGpuBigIntExpression node, HashSet<IGpuBigIntExpression> into)
-    {
-        switch (node)
-        {
-            case SignedBinaryExpression binary:
-                CollectSubtree(binary.Left, into);
-                CollectSubtree(binary.Right, into);
-                break;
-            case SignedNegateExpression negate:
-                CollectSubtree(negate.Target, into);
-                break;
-            case SignedUnaryExpression unary:
-                CollectSubtree(unary.Target, into);
-                break;
-        }
-    }
+    // Without recursion: an expression built in a loop is as deep as the loop
+    private static void CollectSubtree(IGpuBigIntExpression node, HashSet<IGpuBigIntExpression> nodes) =>
+        SignedTree.Collect(node, nodes);
 }
 
 /// <summary>

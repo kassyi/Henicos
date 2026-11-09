@@ -14,11 +14,6 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 [TestTarget(ExecutionTarget.GpuExecution)]
 [Category(TestCategory.Differential)]
 [Scenario(TestScenario.Boundary)]
-#if GSHARP_CUDA
-// The fault seeds record device errors in the one error slot of the process, which a test running beside this one
-// could read first
-[Collection(TestCollections.DeviceExclusive)]
-#endif
 public class BoundsAndMemoryDifferentialTests
 {
     private const int DefaultRows = 64;
