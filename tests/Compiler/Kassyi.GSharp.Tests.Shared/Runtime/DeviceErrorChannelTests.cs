@@ -253,14 +253,11 @@ public sealed class DeviceErrorChannelTests
         var wrapperTree = Assert.Single(runResult.GeneratedTrees, t => t.FilePath.EndsWith("SampleKernels.g.cs", StringComparison.Ordinal));
         var wrapperText = wrapperTree.GetText().ToString();
 
-        if (isCheckedBuild)
-        {
-            Assert.Contains("CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));", wrapperText);
-        }
-        else
-        {
-            Assert.DoesNotContain("cuStreamSynchronize", wrapperText);
-        }
+        // The checked build synchronizes after both launches. In the release build only the managed-array launcher does,
+        // since this kernel has no copy-back that would synchronize, so that it reads its own record; the Ptr launcher
+        // leaves the error to the next synchronization of the stream.
+        const string Synchronize = "cuStreamSynchronize(hStream));";
+        Assert.Equal(isCheckedBuild ? 2 : 1, wrapperText.Split(Synchronize).Length - 1);
 
         // The managed-array launcher reads the device error record of its own launch in every build; the Ptr launcher
         // only where it synchronizes, in the checked build. Both take an epoch for the launch and pass it last; a

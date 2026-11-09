@@ -1020,10 +1020,13 @@ return total;
 // (0,0,0) failed and exited never arrives and the grid waits forever. Here the threads of the block that have not
 // exited elect the arriving thread (the lowest linear index among them); __syncthreads waits only for those threads
 // (sm_70+). A block whose threads all exited never arrives either, so the arriving thread looks at the abort word of its
-// launch when it arrives and while it waits (__gsharp_wait_check). Once a thread of the launch failed, the arriving
-// thread marks the block (its elected rank becomes __GSHARP_WAIT_LEAVE) and joins the last __syncthreads with the other
-// threads, which orders the mark before their read; every thread of the block then exits, so no block runs the code
-// after the barrier, whether it was waiting or arrived late.
+// launch before it arrives and while it waits (__gsharp_wait_check). Once a thread of the launch failed, a block that
+// reaches the barrier does not arrive, so the barrier does not complete, and every block that waits at it leaves too:
+// the arriving thread marks the block (its elected rank becomes __GSHARP_WAIT_LEAVE) and joins the last __syncthreads
+// with the other threads, which orders the mark before their read, and every thread of the block exits. After a
+// failure the other threads run to their next grid barrier, mbarrier wait or the end of the kernel; a grid barrier
+// reached after the failure does not complete. (A block that arrived just before the abort word was set can complete
+// the barrier for the waiting blocks.)
 // The arrival counter is the one cooperative_groups uses: the barrier word of the grid workspace that the driver gives
 // every cooperative launch, starting at 0. Each barrier adds exactly 2^31 to it (block 0 adds 2^31 - (blocks - 1),
 // every other block 1), so a barrier is complete when bit 31 has flipped since the thread's own arrival, and no state
@@ -1046,19 +1049,19 @@ __syncthreads();
 atomicMin(&leader, rank);
 __syncthreads();
 if (rank == leader) {
-unsigned int* arrived = &cg::details::get_grid_workspace()->barrier;
-const unsigned int blocks = gridDim.x * gridDim.y * gridDim.z;
-const unsigned int add = blockIdx.x + blockIdx.y + blockIdx.z == 0u ? 0x80000000u - (blocks - 1u) : 1u;
-// The abort word is read before the arrival and compared after it, so that its latency overlaps the atomic
+// A block whose launch failed does not arrive (the release add would wait for this load anyway)
 const unsigned int epoch = __gsharp_launch_epoch;
 const unsigned int* abortWord = __gsharp_launch_abort_word(epoch);
 const unsigned int aborted =
 abortWord != nullptr ? *reinterpret_cast<const volatile unsigned int*>(abortWord) : 0u;
-unsigned int old;
-asm volatile(""atom.add.release.gpu.u32 %0,[%1],%2;"" : ""=r""(old) : ""l""(arrived), ""r""(add) : ""memory"");
 if (aborted != 0u && aborted == epoch) {
 *reinterpret_cast<volatile unsigned int*>(&leader) = __GSHARP_WAIT_LEAVE;
 } else {
+unsigned int* arrived = &cg::details::get_grid_workspace()->barrier;
+const unsigned int blocks = gridDim.x * gridDim.y * gridDim.z;
+const unsigned int add = blockIdx.x + blockIdx.y + blockIdx.z == 0u ? 0x80000000u - (blocks - 1u) : 1u;
+unsigned int old;
+asm volatile(""atom.add.release.gpu.u32 %0,[%1],%2;"" : ""=r""(old) : ""l""(arrived), ""r""(add) : ""memory"");
 unsigned int current;
 unsigned int seen = old;
 unsigned int polls = 0u;
@@ -1082,8 +1085,8 @@ break;
 }
 }
 }
-// The arriving thread joins this __syncthreads also when it marked the block, so the barrier orders its store before
-// the read below
+// The arriving thread joins this __syncthreads also when it marked the block, so the barrier orders its store
+// before the read below
 __syncthreads();
 // [WHY] A thread that is already at the next barrier may have written 0xFFFFFFFF before a slower one reads here,
 // which is not the leave value either; a block that leaves never writes leader again. The read is volatile so that

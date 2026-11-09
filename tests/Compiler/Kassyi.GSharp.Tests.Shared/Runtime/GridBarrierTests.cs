@@ -25,7 +25,7 @@ public sealed class GridBarrierTests
 #if GSHARP_CUDA
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_PartOfEveryWarpAndThreadZeroFail_OthersPassGridBarriers()
+    public void Test_PartOfEveryWarpAndThreadZeroFail_EveryBlockLeavesTheBarrier()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
         // Every third thread fails, thread 0 of every block among them, so the arriving thread of each block is elected
@@ -41,7 +41,7 @@ public sealed class GridBarrierTests
 
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_WholeWarpsFail_OthersPassGridBarriers()
+    public void Test_WholeWarpsFail_EveryBlockLeavesTheBarrier()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
         // Threads 32 to 95 of every block, two whole warps, fail; in block 2 the first warp fails as well, thread 1 aside
@@ -61,6 +61,28 @@ public sealed class GridBarrierTests
         }
 
         AssertGridSyncAfterFail(keys);
+    }
+
+    // [WHY] Block 0 still has threads that reach the barrier after its thread 5 failed. Its arriving thread sees the
+    // abort word and does not arrive, so the barrier does not complete and the healthy blocks that wait at it leave as
+    // well; an arrival would complete the barrier and let them run the code after it. The timeout fails the test
+    // instead of waiting for a hang that the driver would end only by resetting the GPU.
+    [SkippableFact]
+    [Scenario(TestScenario.SadPath)]
+    public async Task Test_OneThreadFailsInOneBlock_NoBlockPassesTheBarrier()
+    {
+        Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
+        var keys = new int[Blocks * BlockSize];
+        keys[5] = GridBarrierKernels.FailKey;
+        int[] result = Filled(keys.Length);
+
+        var launch = Task.Run(() => Assert.Throws<SwitchExpressionException>(() =>
+            GridBarrierKernels.LaunchWholeBlockFailsBeforeGridSyncKernel(keys, result, gridDimX: Blocks,
+                blockDimX: BlockSize)));
+        var ex = await launch.WaitAsync(TimeSpan.FromSeconds(30));
+
+        Assert.Equal("(5,0,0)", ex.Data["GSharp.ThreadIndex"]);
+        Assert.All(result, static value => Assert.Equal(Untouched, value));
     }
 
     [SkippableFact]

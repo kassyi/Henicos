@@ -464,6 +464,7 @@ __gsharp_kernel_params,
 global::System.IntPtr.Zero // Extra
 ));
 global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.AotContexts.Unmarshal_BlackScholesKernels_BlackScholesContext(ref ctx, ref __gsharp_native_0, hStream);
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ThrowIfLaunchError(__gsharp_epoch);
 }
 finally
