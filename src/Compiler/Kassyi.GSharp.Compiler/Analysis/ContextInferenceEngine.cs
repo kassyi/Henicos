@@ -1,5 +1,17 @@
+using Microsoft.CodeAnalysis.Operations;
+
 namespace Kassyi.GSharp.Compiler.Analysis;
 
+/// <summary>
+/// Decides whether a method depends on parallel execution: it reaches <c>Gpu.GridStrideLoop</c> or <c>Gpu.SyncGrid</c>,
+/// or reads <c>ThreadIndex</c> / <c>BlockIndex</c>, itself or through any method it calls (GSH0035).
+/// </summary>
+/// <remarks>
+/// The calls are read from the operations of the body (<see cref="OperationCalls"/>), so every form that calls a method
+/// counts: an invocation, a constructor (also <c>new()</c> and <c>new T()</c>), a property or indexer accessor, a
+/// user-defined operator or conversion. A constructor also runs the instance member initializers of its type. A
+/// constructed generic member is read as its construction (<see cref="TypeArgumentMap"/>).
+/// </remarks>
 public static class ContextInferenceEngine
 {
     public static bool IsParallelDependent(IMethodSymbol? methodSymbol, ConcurrentDictionary<IMethodSymbol, bool> cache, Compilation compilation)
@@ -60,9 +72,8 @@ public static class ContextInferenceEngine
             return true;
         }
 
-        // AST Check: Get Syntax Reference
-        if (!methodSymbol.TryGetDeclaringSyntax<SyntaxNode>(out var syntaxNode) ||
-            !compilation.ContainsSyntaxTree(syntaxNode.SyntaxTree))
+        var bodies = GetBodies(methodSymbol, compilation);
+        if (bodies.IsEmpty)
         {
             // No source available. Fallback to false.
             cache[methodSymbol] = false;
@@ -76,10 +87,7 @@ public static class ContextInferenceEngine
         bool result;
         try
         {
-            var semanticModel = compilation.GetSemanticModel(syntaxNode.SyntaxTree);
-            var walker = new DependencyWalker(semanticModel, cache, compilation, state);
-            walker.Visit(syntaxNode);
-            result = walker.HasParallelDependency;
+            result = ReachesParallelDependency(bodies, TypeArgumentMap.Of(methodSymbol), cache, compilation, state);
         }
         finally
         {
@@ -98,128 +106,110 @@ public static class ContextInferenceEngine
         return result;
     }
 
-    private class DependencyWalker(
-        SemanticModel semanticModel,
-        ConcurrentDictionary<IMethodSymbol, bool> cache,
-        Compilation compilation,
-        EvaluationState state)
-        : CSharpSyntaxWalker
+    private static bool ReachesParallelDependency(ImmutableArray<IOperation> bodies, TypeArgumentMap typeArguments,
+        ConcurrentDictionary<IMethodSymbol, bool> cache, Compilation compilation, EvaluationState state)
     {
-        public bool HasParallelDependency
+        var called = ImmutableArray.CreateBuilder<IMethodSymbol>();
+        foreach (var body in bodies)
         {
-            get; private set;
+            foreach (var operation in body.DescendantsAndSelf())
+            {
+                if (IsThreadIntrinsic(operation))
+                {
+                    return true;
+                }
+
+                called.Clear();
+                OperationCalls.Add(operation, typeArguments, called);
+                foreach (var method in called)
+                {
+                    if (EvaluateParallelDependency(method, cache, compilation, state))
+                    {
+                        return true;
+                    }
+                }
+            }
         }
 
-        public override void VisitMemberAccessExpression(MemberAccessExpressionSyntax node)
+        return false;
+    }
+
+    // ThreadIndex.X, BlockIndex.Y, ...
+    private static bool IsThreadIntrinsic(IOperation operation) =>
+        operation is IPropertyReferenceOperation
         {
-            if (HasParallelDependency)
-            {
-                return;
-            }
+            Property.ContainingType: { Name: "ThreadIndex" or "BlockIndex" } type
+        } &&
+        type.ContainingNamespace.IsCoreNamespace();
 
-            var symbol = semanticModel.GetSymbol(node);
-
-            // Check for thread intrinsics usage (ThreadIndex.X, BlockIndex.Y, ...)
-            if (symbol is IPropertySymbol { ContainingType: { Name: "ThreadIndex" or "BlockIndex" } type } &&
-                type.ContainingNamespace.IsCoreNamespace())
+    // The operations that run when the method is called: the body of a method, accessor or local function; for a
+    // constructor, its initializer and body and the instance member initializers of its type, except for the implicit
+    // parameterless constructor of a struct, which is default(T) and runs nothing. Only syntax of the compilation
+    // counts.
+    private static ImmutableArray<IOperation> GetBodies(IMethodSymbol method, Compilation compilation)
+    {
+        var bodies = ImmutableArray.CreateBuilder<IOperation>();
+        var definition = method.OriginalDefinition;
+        if (definition.MethodKind == MethodKind.Constructor)
+        {
+            if (definition is not { IsImplicitlyDeclared: true, Parameters.Length: 0, ContainingType.IsValueType: true })
             {
-                HasParallelDependency = true;
-                return;
-            }
-
-            // Check property getter dependencies
-            if (symbol is IPropertySymbol { GetMethod: not null } propSymbol)
-            {
-                if (EvaluateParallelDependency(propSymbol.GetMethod, cache, compilation, state))
+                foreach (var reference in definition.ContainingType.DeclaringSyntaxReferences)
                 {
-                    HasParallelDependency = true;
-                    return;
+                    if (reference.GetSyntax() is TypeDeclarationSyntax declaration)
+                    {
+                        AddInstanceInitializers(declaration, compilation, bodies);
+                    }
                 }
             }
 
-            base.VisitMemberAccessExpression(node);
+            if (definition.TryGetDeclaringSyntax<ConstructorDeclarationSyntax>(out var constructor))
+            {
+                AddOperation(constructor, compilation, bodies);
+            }
+
+            return bodies.ToImmutable();
         }
 
-        public override void VisitInvocationExpression(InvocationExpressionSyntax node)
+        if (definition.TryGetDeclaringSyntax<SyntaxNode>(out var syntax) &&
+            syntax is BaseMethodDeclarationSyntax or AccessorDeclarationSyntax or LocalFunctionStatementSyntax or
+                ArrowExpressionClauseSyntax)
         {
-            if (HasParallelDependency)
-            {
-                return;
-            }
-
-            if (semanticModel.GetSymbol(node) is IMethodSymbol symbol)
-            {
-                if (EvaluateParallelDependency(symbol, cache, compilation, state))
-                {
-                    HasParallelDependency = true;
-                    return;
-                }
-            }
-            base.VisitInvocationExpression(node);
+            AddOperation(syntax, compilation, bodies);
         }
 
-        public override void VisitObjectCreationExpression(ObjectCreationExpressionSyntax node)
-        {
-            if (HasParallelDependency)
-            {
-                return;
-            }
+        return bodies.ToImmutable();
+    }
 
-            if (semanticModel.GetSymbol(node) is IMethodSymbol symbol)
+    private static void AddInstanceInitializers(TypeDeclarationSyntax declaration, Compilation compilation,
+        ImmutableArray<IOperation>.Builder bodies)
+    {
+        foreach (var member in declaration.Members)
+        {
+            switch (member)
             {
-                if (EvaluateParallelDependency(symbol, cache, compilation, state))
-                {
-                    HasParallelDependency = true;
-                    return;
-                }
+                case FieldDeclarationSyntax field when !field.Modifiers.Any(SyntaxKind.StaticKeyword) &&
+                                                       !field.Modifiers.Any(SyntaxKind.ConstKeyword):
+                    foreach (var variable in field.Declaration.Variables)
+                    {
+                        AddOperation(variable.Initializer, compilation, bodies);
+                    }
+
+                    break;
+                case PropertyDeclarationSyntax property when !property.Modifiers.Any(SyntaxKind.StaticKeyword):
+                    AddOperation(property.Initializer, compilation, bodies);
+                    break;
             }
-            base.VisitObjectCreationExpression(node);
         }
+    }
 
-        public override void VisitBinaryExpression(BinaryExpressionSyntax node)
+    private static void AddOperation(SyntaxNode? syntax, Compilation compilation,
+        ImmutableArray<IOperation>.Builder bodies)
+    {
+        if (syntax != null && compilation.ContainsSyntaxTree(syntax.SyntaxTree) &&
+            compilation.GetCachedSemanticModel(syntax.SyntaxTree).GetOperation(syntax) is { } operation)
         {
-            if (HasParallelDependency)
-            {
-                return;
-            }
-
-            if (semanticModel.GetSymbol(node) is IMethodSymbol { MethodKind: MethodKind.UserDefinedOperator } symbol)
-            {
-                if (EvaluateParallelDependency(symbol, cache, compilation, state))
-                {
-                    HasParallelDependency = true;
-                    return;
-                }
-            }
-            base.VisitBinaryExpression(node);
-        }
-
-        public override void VisitAssignmentExpression(AssignmentExpressionSyntax node)
-        {
-            if (HasParallelDependency)
-            {
-                return;
-            }
-
-            if (semanticModel.GetSymbol(node) is IMethodSymbol { MethodKind: MethodKind.UserDefinedOperator } symbol)
-            {
-                if (EvaluateParallelDependency(symbol, cache, compilation, state))
-                {
-                    HasParallelDependency = true;
-                    return;
-                }
-            }
-
-            if (semanticModel.GetSymbol(node.Left) is IPropertySymbol { SetMethod: not null } propertySymbol)
-            {
-                if (EvaluateParallelDependency(propertySymbol.SetMethod, cache, compilation, state))
-                {
-                    HasParallelDependency = true;
-                    return;
-                }
-            }
-
-            base.VisitAssignmentExpression(node);
+            bodies.Add(operation);
         }
     }
 }
