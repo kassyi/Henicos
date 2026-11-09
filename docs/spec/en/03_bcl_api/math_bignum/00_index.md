@@ -88,15 +88,18 @@ built, an upper bound of each result in bits from the bounds of their operands. 
 | signed `~a` | `a + 1` (the value is `-a - 1`) |
 | unsigned `a & b`; `a \| b`, `a ^ b`; `~a` | `min(a, b)`; `max(a, b)`; every bit of the words of `a` |
 | `Sqrt(a)` | `ceil(a / 2)` |
-| `Fit(words)`, `Truncate(words)` | `32 * words` (checked: a value that does not fit is a domain error; truncating: the low words) |
+| `Fit(words)`; `Truncate(words)` (unsigned only) | `32 * words` (checked: a value that does not fit is a domain error; truncating: the low words) |
 | vector `ZipAdd` / `SelectAdd`, `ZipMultiply` / `SelectMultiply` | `max(a, b) + 1`, `a + b` per element (`IGpuBigIntVectorExpression.BitsPerElement`) |
 | vector `Sum` of `Capacity` elements | `BitsPerElement + ceil(log2 Capacity)` |
 | StackLinq `Sum` (balanced tree) of `K` elements; `Aggregate` with `+` | `32 N + ceil(log2 K)`; `32 N + K - 1` |
+| StackLinq `Average` | the bound of its `Sum` (truncated toward zero; a zero quotient may keep the minus flag) |
 
 Bounds are tracked in bits, so a chain of additions grows by one bit per addition and by one word only every 32
 additions. Nothing trims a result to its actual size: sizes are fixed before a CUDA graph capture, and the memory pool is
-keyed by exact word counts. A target wider than the result receives the value and zeros above it; a narrower one is
-rejected. To narrow explicitly, write `Fit` (checked) or `Truncate` (modular).
+keyed by exact word counts. A scalar target (also of a vector `Sum`, `Max` or `Min`) wider than the result receives the
+value and zeros above it; a narrower one is rejected before anything is written. The element array a vector expression
+is evaluated into must have exactly its `WordsPerElement`, which is the array's layout. To narrow explicitly, write `Fit` (checked) or, for an unsigned expression, `Truncate` (modular); a signed
+`Truncate` is not defined, because keeping the low words of a magnitude is not what a C# `unchecked` narrowing does.
 
 **Direct methods** (`GpuBigIntMath`, `GpuBigIntDivRem`) write into the caller's buffers. Operands may have different
 widths (a missing word reads as zero). A result buffer at or above the bound receives the exact value and zeros above it.

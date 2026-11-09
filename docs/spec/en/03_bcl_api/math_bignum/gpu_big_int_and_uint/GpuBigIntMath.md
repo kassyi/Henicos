@@ -123,6 +123,11 @@ The destination buffer receiving the resulting magnitude.
 _bool_<br>
 `true` if the resulting sum is negative; otherwise, `false`. A zero magnitude must be passed as non-negative; with that, a zero sum is never negative, so operands of equal magnitude and opposite signs return `false`.
 
+#### Exceptions
+
+`ArgumentException`<br>
+Thrown when `resultBuffer` is narrower than the wider operand; nothing is written. A buffer one word wider than the wider operand always holds the sum; a buffer as wide as the wider operand is the checked form (a carry of a same-sign sum is a domain error).
+
 ## Sub(GpuBigUIntView, GpuBigUIntView, GpuBigUIntView)
 
 Computes arbitrary-precision subtraction (`leftOperand - rightOperand`) on the GPU.
