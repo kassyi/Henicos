@@ -102,39 +102,64 @@ public static partial class GpuBigIntVectorKernels
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void DeviceVectorAddSubAlignedCore(VectorAddSubContext ctx, bool syncThreads = true)
     {
-        int tid = ThreadIndex.X;
-        int bDim = BlockDimension.X;
-        int batchIdx = BlockIndex.X;
-        int laneId = tid % 32;
-        int warpId = tid / 32;
-
         var op = ctx.Op;
-        uint sSign = op.IsScalar ? op.ScalarSign : op.Right.Signs[batchIdx];
-        uint effSignB = sSign ^ ctx.OpSign;
-        bool differentSigns = (op.Left.Signs[batchIdx] != effSignB);
+        int batchIdx = BlockIndex.X;
+        uint effSignB = (op.IsScalar ? op.ScalarSign : op.Right.Signs[batchIdx]) ^ ctx.OpSign;
+        bool differentSigns = op.Left.Signs[batchIdx] != effSignB;
 
         SharedMemory<uint> sharedCarry = new SharedMemory<uint>(32);
         SharedMemory<uint> topCarry = new SharedMemory<uint>(1);
         SharedMemory<uint> nonZero = new SharedMemory<uint>(1);
-        if (tid == 0)
+        SharedMemory<uint> needsNegate = new SharedMemory<uint>(1);
+        if (ThreadIndex.X == 0)
         {
             nonZero[0] = 0u;
         }
 
         Gpu.SyncThreads();
 
-        uint blockCarryIn = differentSigns ? 1u : 0u;
+        AddAlignedMagnitudes(ctx, differentSigns, sharedCarry, topCarry, nonZero);
+        if (ThreadIndex.X == 0)
+        {
+            needsNegate[0] = WriteAddSubSign(op, batchIdx, differentSigns, effSignB, topCarry[0], nonZero[0]) ? 1u : 0u;
+        }
+
+        Gpu.SyncThreads();
+
+        if (needsNegate[0] == 1u)
+        {
+            NegateElement(op.Result.Limbs, batchIdx * op.Result.NumWords, op.Result.NumWords, sharedCarry);
+        }
+
+        if (syncThreads)
+        {
+            Gpu.SyncThreads();
+        }
+    }
+
+    // |A| + |B|, or |A| + ~|B| + 1 when the effective signs differ, of the aligned operands of this block's element
+    // into its result words; leaves the carry out of the top word (from its own thread: the block carry of a partial
+    // warp is not defined) in topCarry[0] and sets nonZero[0] when a result word is not zero
+    [GpuDeviceFunction]
+    public static void AddAlignedMagnitudes(VectorAddSubContext ctx, bool differentSigns,
+        SharedMemory<uint> sharedCarry, SharedMemory<uint> topCarry, SharedMemory<uint> nonZero)
+    {
+        int tid = ThreadIndex.X;
+        int bDim = BlockDimension.X;
+        int batchIdx = BlockIndex.X;
+        var op = ctx.Op;
+        int words = op.Result.NumWords;
         int baseA = batchIdx * op.Left.NumWords;
         int baseB = (op.IsScalar ? 0 : batchIdx) * op.Right.NumWords;
-        int baseResult = batchIdx * op.Result.NumWords;
+        int baseResult = batchIdx * words;
 
-        for (int offset = 0; offset < op.Result.NumWords; offset += bDim)
+        uint blockCarryIn = differentSigns ? 1u : 0u;
+        for (int offset = 0; offset < words; offset += bDim)
         {
             int idx = offset + tid;
-            bool valid = idx < op.Result.NumWords;
+            bool valid = idx < words;
             uint valA = valid ? GetVectorShiftedWord(op.Left.Limbs, baseA, op.Left.NumWords, idx, ctx.BitOffsetA) : 0u;
             uint valB = valid ? GetVectorShiftedWord(op.Right.Limbs, baseB, op.Right.NumWords, idx, ctx.BitOffsetB) : 0u;
-
             if (differentSigns)
             {
                 valB = ~valB;
@@ -144,7 +169,8 @@ public static partial class GpuBigIntVectorKernels
             uint g = (uint)(sum >> 32);
             uint p = (uint)sum == 0xFFFFFFFFu ? 1u : 0u;
 
-            uint carryIn = PropagateBlockCarry(g, p, blockCarryIn, sharedCarry, laneId, warpId, bDim, out blockCarryIn);
+            uint carryIn = PropagateBlockCarry(g, p, blockCarryIn, sharedCarry, tid % 32, tid / 32, bDim,
+                out blockCarryIn);
             uint word = (uint)sum + carryIn;
             if (valid)
             {
@@ -155,62 +181,55 @@ public static partial class GpuBigIntVectorKernels
                 }
             }
 
-            // The carry out of the top word, taken from its own thread: the block carry of a partial warp is not
-            // defined (its last lane does not exist).
-            if (idx == op.Result.NumWords - 1)
+            if (idx == words - 1)
             {
                 topCarry[0] = g | (p & carryIn);
             }
 
             Gpu.SyncThreads();
         }
+    }
 
-        SharedMemory<uint> needsNegate = new SharedMemory<uint>(1);
-        if (tid == 0)
+    // The sign of element batchIdx, written from thread 0; returns whether the result must be negated. Same signs keep
+    // the left sign. Different ones: |A| + ~|B| + 1 carries out exactly when |A| >= |B|; a borrow means |B| is larger,
+    // the result holds |A| - |B| modulo the width (to negate) and takes B's effective sign. A difference of zero (equal
+    // magnitudes) is +0, as BigInteger has no negative zero.
+    [GpuDeviceFunction]
+    public static bool WriteAddSubSign(VectorBinaryOperationContext op, int batchIdx, bool differentSigns,
+        uint effSignB, uint topCarry, uint nonZero)
+    {
+        if (!differentSigns)
         {
-            if (!differentSigns)
-            {
-                op.Result.Signs[batchIdx] = op.Left.Signs[batchIdx];
-                needsNegate[0] = 0;
-            }
-            else
-            {
-                // |A| + ~|B| + 1 carries out exactly when |A| >= |B|; a borrow means |B| is larger and the
-                // result holds |A| - |B| modulo the width, which is negated below. The top bit of the result
-                // says nothing about the sign once the difference reaches it.
-                // A difference of zero (equal magnitudes) is +0, as BigInteger has no negative zero.
-                bool borrowed = topCarry[0] == 0u;
-                op.Result.Signs[batchIdx] = borrowed ? effSignB : nonZero[0] == 0u ? 0u : op.Left.Signs[batchIdx];
-                needsNegate[0] = borrowed ? 1u : 0u;
-            }
+            op.Result.Signs[batchIdx] = op.Left.Signs[batchIdx];
+            return false;
         }
 
-        Gpu.SyncThreads();
+        bool borrowed = topCarry == 0u;
+        op.Result.Signs[batchIdx] = borrowed ? effSignB : nonZero == 0u ? 0u : op.Left.Signs[batchIdx];
+        return borrowed;
+    }
 
-        if (needsNegate[0] == 1u)
+    // ~x + 1 over the words words of one element starting at baseIndex, each thread reading and writing its own words
+    [GpuDeviceFunction]
+    public static void NegateElement(uint[] limbs, int baseIndex, int words, SharedMemory<uint> sharedCarry)
+    {
+        int tid = ThreadIndex.X;
+        int bDim = BlockDimension.X;
+        uint blockCarryIn = 1u;
+        for (int offset = 0; offset < words; offset += bDim)
         {
-            blockCarryIn = 1u;
-            for (int offset = 0; offset < op.Result.NumWords; offset += bDim)
+            int idx = offset + tid;
+            bool valid = idx < words;
+            uint value = valid ? ~limbs[baseIndex + idx] : 0u;
+            uint p = value == 0xFFFFFFFFu ? 1u : 0u;
+
+            uint carryIn = PropagateBlockCarry(0u, p, blockCarryIn, sharedCarry, tid % 32, tid / 32, bDim,
+                out blockCarryIn);
+            if (valid)
             {
-                int idx = offset + tid;
-                bool valid = idx < op.Result.NumWords;
-                uint valA = valid ? ~op.Result.Limbs[baseResult + idx] : 0u;
-
-                uint g = 0u;
-                uint p = valA == 0xFFFFFFFFu ? 1u : 0u;
-
-                uint carryIn = PropagateBlockCarry(g, p, blockCarryIn, sharedCarry, laneId, warpId, bDim, out blockCarryIn);
-                if (valid)
-                {
-                    op.Result.Limbs[baseResult + idx] = valA + carryIn;
-                }
-
-                Gpu.SyncThreads();
+                limbs[baseIndex + idx] = value + carryIn;
             }
-        }
 
-        if (syncThreads)
-        {
             Gpu.SyncThreads();
         }
     }
