@@ -84,11 +84,7 @@ internal readonly struct TypeArgumentMap
         if (method.ContainingType is { IsGenericType: true } containing &&
             Substitute(containing) is INamedTypeSymbol constructed && !constructed.IsEqualTo(containing))
         {
-            var member = constructed.GetMembers(method.Name)
-                .AsStackEnumerable()
-                .OfType<IMethodSymbol>()
-                .FirstOrDefault(method.OriginalDefinition, static (m, d) => m.OriginalDefinition.IsEqualTo(d));
-            if (member == null)
+            if (FindConstructedMember(constructed, method) is not { } member)
             {
                 return method;
             }
@@ -108,6 +104,13 @@ internal readonly struct TypeArgumentMap
 
         return result;
     }
+
+    // The member of constructed that method, a member of another construction of the same type, stands for
+    private static IMethodSymbol? FindConstructedMember(INamedTypeSymbol constructed, IMethodSymbol method) =>
+        constructed.GetMembers(method.Name)
+            .AsStackEnumerable()
+            .OfType<IMethodSymbol>()
+            .FirstOrDefault(method.OriginalDefinition, static (m, d) => m.OriginalDefinition.IsEqualTo(d));
 
     private static ITypeSymbol[] Copy(ImmutableArray<ITypeSymbol> types)
     {

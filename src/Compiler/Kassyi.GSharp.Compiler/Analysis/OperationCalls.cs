@@ -21,12 +21,6 @@ internal static class OperationCalls
     {
         switch (operation)
         {
-            case IInvocationOperation invocation:
-                AddMethod(invocation.TargetMethod, typeArguments, methods);
-                break;
-            case IObjectCreationOperation { Constructor: { } constructor }:
-                AddMethod(constructor, typeArguments, methods);
-                break;
             case ITypeParameterObjectCreationOperation { Type: { } created }:
                 if (typeArguments.Substitute(created) is INamedTypeSymbol { TypeKind: TypeKind.Struct } type &&
                     FindParameterlessConstructor(type) is { } parameterless)
@@ -38,25 +32,28 @@ internal static class OperationCalls
             case IPropertyReferenceOperation property:
                 AddAccessors(property, typeArguments, methods);
                 break;
-            case IUnaryOperation { OperatorMethod: { } unary }:
-                AddMethod(unary, typeArguments, methods);
-                break;
-            case IBinaryOperation { OperatorMethod: { } binary }:
-                AddMethod(binary, typeArguments, methods);
-                break;
             case ICompoundAssignmentOperation compound:
                 AddNonNull(compound.OperatorMethod, typeArguments, methods);
                 AddNonNull(compound.InConversion.MethodSymbol, typeArguments, methods);
                 AddNonNull(compound.OutConversion.MethodSymbol, typeArguments, methods);
                 break;
-            case IIncrementOrDecrementOperation { OperatorMethod: { } increment }:
-                AddMethod(increment, typeArguments, methods);
-                break;
-            case IConversionOperation { OperatorMethod: { } conversion }:
-                AddMethod(conversion, typeArguments, methods);
+            default:
+                AddNonNull(GetCalledMethod(operation), typeArguments, methods);
                 break;
         }
     }
+
+    // The one method that an invocation, a constructor call or a user-defined operator or conversion calls
+    private static IMethodSymbol? GetCalledMethod(IOperation operation) => operation switch
+    {
+        IInvocationOperation invocation => invocation.TargetMethod,
+        IObjectCreationOperation creation => creation.Constructor,
+        IUnaryOperation unary => unary.OperatorMethod,
+        IBinaryOperation binary => binary.OperatorMethod,
+        IIncrementOrDecrementOperation increment => increment.OperatorMethod,
+        IConversionOperation conversion => conversion.OperatorMethod,
+        _ => null
+    };
 
     // The getter of a property that is read, the setter of one that is assigned, both for a compound assignment,
     // increment or ??=
@@ -90,13 +87,9 @@ internal static class OperationCalls
     {
         if (method != null)
         {
-            AddMethod(method, typeArguments, methods);
+            methods.Add(typeArguments.Substitute(method));
         }
     }
-
-    private static void AddMethod(IMethodSymbol method, TypeArgumentMap typeArguments,
-        ImmutableArray<IMethodSymbol>.Builder methods) =>
-        methods.Add(typeArguments.Substitute(method));
 
     /// <summary>
     /// The parameterless constructor of <paramref name="type"/> that <c>new T()</c> runs: a declared one, or the

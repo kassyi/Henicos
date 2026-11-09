@@ -19,6 +19,8 @@ public static class ParallelFormsHelpers
             return 0;
         }
     }
+
+    public static int Plain => 7;
 }
 
 public struct PTid
@@ -28,6 +30,16 @@ public struct PTid
     public PTid()
     {
         X = ThreadIndex.X;
+    }
+}
+
+public struct PPlain
+{
+    public int X;
+
+    public PPlain()
+    {
+        X = 3;
     }
 }
 
@@ -77,21 +89,102 @@ public static partial class ParallelFormsKernels
 {
     [GpuKernel(Cooperative = true)]
     [SkipSnapshotConsistency("Diagnostics case")]
-    public static void FormsKernel(int[] data, int[] o)
+    public static void ExplicitNewKernel(int[] o)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            o[0] = new PTid().X;
+        }
+    }
+
+    [GpuKernel(Cooperative = true)]
+    [SkipSnapshotConsistency("Diagnostics case")]
+    public static void GenericNewKernel(int[] o)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            o[0] = new HT<PTid>().V.X;
+        }
+    }
+
+    [GpuKernel(Cooperative = true)]
+    [SkipSnapshotConsistency("Diagnostics case")]
+    public static void TargetTypedNewKernel(int[] o)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            PTid t = new();
+            o[0] = t.X;
+        }
+    }
+
+    [GpuKernel(Cooperative = true)]
+    [SkipSnapshotConsistency("Diagnostics case")]
+    public static void BarePropertyKernel(int[] data, int[] o)
     {
         Buf buf = new Buf { Data = data };
         if (ThreadIndex.X == 0)
         {
-            o[0] = new PTid().X;
-            o[1] = new HT<PTid>().V.X;
-            PTid t = new();
-            o[2] = t.X;
-            o[3] = buf.Run();
-            o[4] = Scaled;
-            o[5] = buf[1];
+            o[0] = buf.Run();
+        }
+    }
+
+    [GpuKernel(Cooperative = true)]
+    [SkipSnapshotConsistency("Diagnostics case")]
+    public static void UsingStaticKernel(int[] o)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            o[0] = Scaled;
+        }
+    }
+
+    [GpuKernel(Cooperative = true)]
+    [SkipSnapshotConsistency("Diagnostics case")]
+    public static void IndexerKernel(int[] data, int[] o)
+    {
+        Buf buf = new Buf { Data = data };
+        if (ThreadIndex.X == 0)
+        {
+            o[0] = buf[1];
+        }
+    }
+
+    [GpuKernel(Cooperative = true)]
+    [SkipSnapshotConsistency("Diagnostics case")]
+    public static void UnaryOperatorKernel(int[] data, int[] o)
+    {
+        Buf buf = new Buf { Data = data };
+        if (ThreadIndex.X == 0)
+        {
             Buf negated = -buf;
+            o[0] = negated.Data.Length;
+        }
+    }
+
+    [GpuKernel(Cooperative = true)]
+    [SkipSnapshotConsistency("Diagnostics case")]
+    public static void ConversionKernel(int[] data, int[] o)
+    {
+        Buf buf = new Buf { Data = data };
+        if (ThreadIndex.X == 0)
+        {
             int converted = buf;
-            o[6] = converted + negated.Data.Length;
+            o[0] = converted;
+        }
+    }
+
+    // Correct code in the same branch: a plain getter, a construction that reaches no parallel dependency (also through
+    // new T()), and nameof of a parallel-dependent property
+    [GpuKernel(Cooperative = true)]
+    [SkipSnapshotConsistency("Diagnostics case")]
+    public static void CorrectCodeKernel(int[] o)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            o[0] = Plain;
+            o[1] = new HT<PPlain>().V.X;
+            o[2] = nameof(ParallelFormsHelpers.Scaled).Length;
         }
     }
 }

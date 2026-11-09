@@ -55,72 +55,60 @@ public class ParallelDependentCallAnalyzer : DiagnosticAnalyzer
         Walk(context, inferenceCache, body, singleThread: false, ImmutableArray.CreateBuilder<IMethodSymbol>());
     }
 
-    private static void Walk(SyntaxNodeAnalysisContext context, ConcurrentDictionary<IMethodSymbol, bool> inferenceCache,
-        IOperation operation, bool singleThread, ImmutableArray<IMethodSymbol>.Builder called)
+    private static void Walk(
+        SyntaxNodeAnalysisContext context,
+        ConcurrentDictionary<IMethodSymbol, bool> inferenceCache,
+        IOperation operation,
+        bool singleThread,
+        ImmutableArray<IMethodSymbol>.Builder called)
     {
-        if (singleThread)
+        // The argument of nameof is not run
+        if (operation is INameOfOperation)
         {
-            called.Clear();
-            OperationCalls.Add(operation, TypeArgumentMap.None, called);
-            foreach (var method in called)
-            {
-                if (ContextInferenceEngine.IsParallelDependent(method, inferenceCache, context.Compilation))
-                {
-                    context.ReportDiagnostic(
-                        GSharpDiagnostics.ParallelDependentCallFromSingleThreadContext,
-                        operation.Syntax,
-                        method.Name);
-                }
-            }
+            return;
         }
 
-        var inner = singleThread || StartsSingleThread(operation, context.SemanticModel);
+        if (singleThread)
+        {
+            ReportCalls(context, inferenceCache, operation, called);
+        }
+
+        var inner = singleThread || StartsSingleThread(operation);
         foreach (var child in operation.ChildOperations)
         {
             Walk(context, inferenceCache, child, inner, called);
         }
     }
 
+    // GSH0035 at operation for each parallel-dependent method it calls
+    private static void ReportCalls(
+        SyntaxNodeAnalysisContext context,
+        ConcurrentDictionary<IMethodSymbol, bool> inferenceCache,
+        IOperation operation,
+        ImmutableArray<IMethodSymbol>.Builder called)
+    {
+        called.Clear();
+        OperationCalls.Add(operation, TypeArgumentMap.None, called);
+        foreach (var method in called)
+        {
+            if (ContextInferenceEngine.IsParallelDependent(method, inferenceCache, context.Compilation))
+            {
+                context.ReportDiagnostic(
+                    GSharpDiagnostics.ParallelDependentCallFromSingleThreadContext,
+                    operation.Syntax,
+                    method.Name);
+            }
+        }
+    }
+
     // Gpu.SingleThread(...) (its body runs on one thread; the body of SyncGrid runs on every thread with a grid sync
     // between statements, so it is not a single-thread context), or if (ThreadIndex.X == 0) ...
-    private static bool StartsSingleThread(IOperation operation, SemanticModel model) => operation switch
+    private static bool StartsSingleThread(IOperation operation) => operation switch
     {
         IInvocationOperation invocation =>
             GpuMacroClassifier.Classify(invocation.TargetMethod).Kind is GpuMacroKind.SingleThread,
-        IConditionalOperation { Syntax: IfStatementSyntax ifStatement } =>
-            IsSingleThreadDivergentCondition(ifStatement.Condition, model),
+        IConditionalOperation { Syntax: IfStatementSyntax, Condition: var condition } =>
+            ThreadIntrinsics.IsSingleThreadCondition(condition),
         _ => false
     };
-
-    private static bool IsSingleThreadDivergentCondition(ExpressionSyntax condition, SemanticModel model)
-    {
-        if (condition is not BinaryExpressionSyntax binary || !binary.IsKind(SyntaxKind.EqualsExpression))
-        {
-            return false;
-        }
-
-        ExpressionSyntax targetExpr;
-        if (isZeroLiteral(binary.Left))
-        {
-            targetExpr = binary.Right;
-        }
-        else if (isZeroLiteral(binary.Right))
-        {
-            targetExpr = binary.Left;
-        }
-        else
-        {
-            return false;
-        }
-
-        return targetExpr.DescendantNodesAndSelf()
-            .AsStackEnumerable()
-            .Any(model, static (node, m) =>
-                node is MemberAccessExpressionSyntax &&
-                m.GetSymbol(node) is IPropertySymbol { ContainingType: { Name: "ThreadIndex" or "BlockIndex" } type } &&
-                type.ContainingNamespace.IsCoreNamespace());
-
-        static bool isZeroLiteral(ExpressionSyntax expr) =>
-            expr is LiteralExpressionSyntax { Token.ValueText: "0" };
-    }
 }
