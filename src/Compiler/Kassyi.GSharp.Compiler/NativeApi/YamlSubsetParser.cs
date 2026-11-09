@@ -315,25 +315,28 @@ internal sealed class YamlSubsetParser
             {
                 var line = parser._lines[parser._index];
                 var lineIndent = CountLeadingSpaces(line);
-                var isBlank = lineIndent == line.Length;
-                if (!isBlank)
+                if (lineIndent == line.Length)
                 {
-                    if (lineIndent <= ownerIndent)
-                    {
-                        break;
-                    }
-
-                    if (blockIndent < 0)
-                    {
-                        blockIndent = lineIndent;
-                    }
-                    else if (lineIndent < blockIndent)
-                    {
-                        throw Error(parser._index, "Block scalar line is less indented than the first line.");
-                    }
+                    collected.Add(string.Empty);
+                    parser._index++;
+                    continue;
                 }
 
-                collected.Add(isBlank ? string.Empty : line[blockIndent..]);
+                if (lineIndent <= ownerIndent)
+                {
+                    break;
+                }
+
+                if (blockIndent < 0)
+                {
+                    blockIndent = lineIndent;
+                }
+                else if (lineIndent < blockIndent)
+                {
+                    throw Error(parser._index, "Block scalar line is less indented than the first line.");
+                }
+
+                collected.Add(line[blockIndent..]);
                 parser._index++;
             }
 

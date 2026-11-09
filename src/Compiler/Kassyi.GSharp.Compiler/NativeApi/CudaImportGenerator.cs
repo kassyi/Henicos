@@ -292,12 +292,9 @@ public class CudaImportGenerator : IIncrementalGenerator
 
         foreach (var namedArg in attributeData.NamedArguments)
         {
-            if (namedArg.Key == "EntryPoint")
+            if (namedArg is { Key: "EntryPoint", Value.Value: string argValue })
             {
-                if (namedArg.Value.Value is string argValue)
-                {
-                    entryPoint = argValue;
-                }
+                entryPoint = argValue;
             }
             else if (namedArg is { Key: "PackContext", Value.Value: bool boolValue })
             {
