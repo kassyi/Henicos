@@ -179,10 +179,17 @@ internal static class FuzzWorkspaceReducer
         {
             CandidateKernelName = "Candidate_00",
             CandidateKernelMethodSource = FuzzSyntaxHelpers.RenderFullNode(exactMethod),
+            CandidateCasePropertySource = FuzzSpeculativeBatchBuilder.RenderCandidateCaseProperty(
+                exactMethod,
+                FuzzReducer.GetDeviceFunctionMethods(root),
+                fuzzSeed,
+                inputSeed),
         };
         var singleBatch = specBatch with
         {
-            KernelsSource = FuzzSyntaxHelpers.RenderFullNode(root.ReplaceNode(kernel, exactMethod)),
+            KernelsSource = FuzzSplitOracle.WithOracleTwins(
+                FuzzSyntaxHelpers.RenderFullNode(root.ReplaceNode(kernel, exactMethod))),
+            CasesSource = FuzzSpeculativeBatchBuilder.BuildSpeculativeCasesCompilationUnit([exactCand], fuzzSeed),
             Candidates = [exactCand],
         };
 

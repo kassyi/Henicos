@@ -223,7 +223,7 @@ internal static class FuzzOptionTable
     {
         if (value.Length == 0 || !FuzzSwarmConfig.TryParseFocus(value, out _))
         {
-            return "--swarm-focus requires 'default', 'coalesce-assign-value', or 'tuple-deconstruct-complex'.";
+            return FuzzSwarmConfig.FocusErrorMessage;
         }
 
         values.SwarmFocus = value;

@@ -31,6 +31,7 @@ public sealed class ScalarFuzzGenerator
     private readonly FuzzOptions _options;
     private readonly KnownIssueFilter _issueFilter;
     private readonly IReadOnlyList<DeviceFunctionSpec> _deviceFunctions;
+    private readonly IReadOnlyList<string> _splitHelperSources;
 
     /// <summary>Initializes a new instance of the <see cref="ScalarFuzzGenerator"/> class.</summary>
     public ScalarFuzzGenerator(FuzzOptions? options = null)
@@ -38,6 +39,7 @@ public sealed class ScalarFuzzGenerator
         _options = options ?? new FuzzOptions();
         _issueFilter = new KnownIssueFilter(_options.Profile, _options.AllowedIssues);
         _deviceFunctions = FuzzDeviceFunctionEmitter.BuildDeviceFunctionDag(_options.FuzzSeed, _options.KernelClassName);
+        _splitHelperSources = FuzzSplitKernelEmitter.BuildHelperSources(_options.FuzzSeed);
     }
 
     /// <summary>Gets the active <see cref="KnownIssueFilter"/> configured for this generator.</summary>
@@ -45,6 +47,12 @@ public sealed class ScalarFuzzGenerator
 
     /// <summary>Gets the topological <c>[GpuDeviceFunction]</c> DAG generated for this batch.</summary>
     public IReadOnlyList<DeviceFunctionSpec> DeviceFunctions => _deviceFunctions;
+
+    /// <summary>
+    /// Gets the device functions that split kernels call (<see cref="FuzzSplitKernelEmitter.BuildHelperSources"/>); a
+    /// batch declares them only when it has a split kernel.
+    /// </summary>
+    public IReadOnlyList<string> SplitHelperSources => _splitHelperSources;
 
     /// <summary>
     /// Generates a full batch of <see cref="FuzzOptions.BatchSize"/> kernels (plus metamorphic variants when
@@ -57,6 +65,7 @@ public sealed class ScalarFuzzGenerator
         var masterRng = new FuzzRandom(_options.FuzzSeed);
         var kernels = new List<GeneratedKernelSpec>(batchSize * (1 + metaVariants));
         var extraDeviceFunctions = new List<string>();
+        bool hasSplitKernel = false;
 
         for (int i = 0; i < batchSize; i++)
         {
@@ -66,13 +75,23 @@ public sealed class ScalarFuzzGenerator
                 : 1 + (i * 8 / batchSize);
             size = Math.Clamp(size, 1, 8);
             string kernelName = string.Create(CultureInfo.InvariantCulture, $"Kernel_{i:D2}");
+            var splitForms = FuzzSplitKernelEmitter.ChooseForms(kernelSeed, _options.SwarmFocus);
+            if (splitForms != FuzzSplitForms.None)
+            {
+                // No metamorphic variants: a variant is checked against its base kernel run as plain C#, which cannot
+                // run a shuffle.
+                kernels.Add(GenerateSplitKernel(kernelName, kernelSeed, size, splitForms));
+                hasSplitKernel = true;
+                continue;
+            }
+
             var baseSpec = GenerateSingleKernel(kernelName, kernelSeed, size);
             kernels.Add(baseSpec);
 
             AddMetamorphicVariants(baseSpec, metaVariants, kernels, extraDeviceFunctions);
         }
 
-        string kernelsSource = BuildKernelsCompilationUnit(kernels, extraDeviceFunctions);
+        string kernelsSource = BuildKernelsCompilationUnit(kernels, extraDeviceFunctions, hasSplitKernel);
         string casesSource = BuildCasesCompilationUnit(kernels);
 
         ValidateSyntaxTree(kernelsSource, "FuzzBatchKernels.cu.cs");
@@ -130,6 +149,14 @@ public sealed class ScalarFuzzGenerator
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(kernelName);
         size = Math.Clamp(size, 1, 8);
+        if (FuzzSplitKernelEmitter.IsSplitFocus(_options.SwarmFocus))
+        {
+            return GenerateSplitKernel(
+                kernelName,
+                kernelSeed,
+                size,
+                FuzzSplitKernelEmitter.ChooseForms(kernelSeed, _options.SwarmFocus));
+        }
 
         var rng = new FuzzRandom(kernelSeed);
         var swarm = FuzzSwarmConfig.Create(rng, _options.SwarmFocus);
@@ -187,6 +214,60 @@ public sealed class ScalarFuzzGenerator
             state.Statements.ToArray());
     }
 
+    /// <summary>
+    /// Generates a split kernel with the split points of <paramref name="forms"/> and its <c>DifferentialCase</c>,
+    /// which launches every lane of two full blocks and checks the kernel against its oracle twin (<see
+    /// cref="FuzzSplitOracle"/>). The batch must declare <see cref="SplitHelperSources"/>.
+    /// </summary>
+    public GeneratedKernelSpec GenerateSplitKernel(string kernelName, ulong kernelSeed, int size, FuzzSplitForms forms)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(kernelName);
+        if (forms == FuzzSplitForms.None)
+        {
+            throw new ArgumentException("A split kernel needs at least one split form.", nameof(forms));
+        }
+
+        size = Math.Clamp(size, 1, 8);
+        var rng = new FuzzRandom(kernelSeed);
+        var state = new KernelGenerationState(
+            rng,
+            size,
+            Math.Clamp(_options.InterferenceProbability, 0.25, 0.60),
+            _issueFilter,
+            FuzzSwarmConfig.Create(rng),
+            _options.KernelClassName,
+            _deviceFunctions);
+
+        FuzzSplitKernelEmitter.EmitSplitStatements(state, forms);
+
+        string kernelMethod = FuzzSplitKernelEmitter.RenderKernelMethod(kernelName, kernelSeed, size, forms, state);
+        string caseHeader = string.Create(
+            CultureInfo.InvariantCulture,
+            $"// fuzz-seed: {FuzzRandom.FormatSeed(kernelSeed)}");
+        string caseProperty = FuzzCaseEmitter.RenderDifferentialCaseProperty(
+            _options.KernelClassName,
+            kernelName,
+            _options.InputSeed,
+            caseHeader,
+            split: true);
+
+        var localNames = new List<string>(state.Locals.Count);
+        foreach (var local in state.Locals)
+        {
+            localNames.Add(local.Name);
+        }
+
+        return new GeneratedKernelSpec(
+            kernelName,
+            kernelSeed,
+            size,
+            kernelMethod,
+            caseProperty,
+            localNames,
+            state.Statements.ToArray(),
+            forms);
+    }
+
     /// <summary>Builds a division or remainder expression with an inline ternary guard on the divisor.</summary>
     public static string BuildGuardedDivisionOrModulo(
         FuzzScalarKind promotedKind,
@@ -240,7 +321,7 @@ public sealed class ScalarFuzzGenerator
         }
     }
 
-    private static void InitializeScalarLocals(KernelGenerationState state)
+    internal static void InitializeScalarLocals(KernelGenerationState state)
     {
         FuzzScalarKind[] baseTypes =
         [
@@ -446,7 +527,7 @@ public sealed class ScalarFuzzGenerator
         state.Statements.Add($"{target.Name} = {fallbackRhs};");
     }
 
-    private static void EmitAssignmentStatement(KernelGenerationState state, ScalarLocalVariable target)
+    internal static void EmitAssignmentStatement(KernelGenerationState state, ScalarLocalVariable target)
     {
         string rhs = FuzzScalarExpressionEmitter.GenerateExpression(state, target.Type, depth: 0, maxDepth: 2 + (state.Size / 3));
         if (string.Equals(rhs, target.Name, StringComparison.Ordinal))
@@ -501,7 +582,7 @@ public sealed class ScalarFuzzGenerator
         state.Locals.Add(new ScalarLocalVariable(newName, newType));
     }
 
-    private static void EmitCompoundAssignmentStatement(KernelGenerationState state, ScalarLocalVariable target)
+    internal static void EmitCompoundAssignmentStatement(KernelGenerationState state, ScalarLocalVariable target)
     {
         var rng = state.Rng;
         string[] ops = ["+=", "-=", "*=", "/=", "%=", "&=", "|=", "^=", "<<=", ">>=", ">>>="];
@@ -555,7 +636,8 @@ public sealed class ScalarFuzzGenerator
 
     private string BuildKernelsCompilationUnit(
         IReadOnlyList<GeneratedKernelSpec> kernels,
-        IReadOnlyList<string> extraDeviceFunctions)
+        IReadOnlyList<string> extraDeviceFunctions,
+        bool hasSplitKernel)
     {
         using var writer = new SourceWriter();
         FuzzCaseEmitter.AppendKernelsFileHeader(writer, _options.Namespace);
@@ -574,6 +656,15 @@ public sealed class ScalarFuzzGenerator
                 writer.AppendLine();
             }
 
+            if (hasSplitKernel)
+            {
+                foreach (string helper in _splitHelperSources)
+                {
+                    writer.AppendLine(helper);
+                    writer.AppendLine();
+                }
+            }
+
             for (int i = 0; i < kernels.Count; i++)
             {
                 if (i > 0)
@@ -585,7 +676,7 @@ public sealed class ScalarFuzzGenerator
             }
         }
 
-        return writer.ToString();
+        return hasSplitKernel ? FuzzSplitOracle.WithOracleTwins(writer.ToString()) : writer.ToString();
     }
 
     private string BuildCasesCompilationUnit(IReadOnlyList<GeneratedKernelSpec> kernels)

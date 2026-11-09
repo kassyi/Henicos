@@ -2,6 +2,22 @@
   "version": 1,
   "issues": [
     {
+      "issue": 991,
+      "kind": "avoid",
+      "summary": "The CPU paths evaluate arguments and operands around a split point (warp shuffle or suspending call) out of C# order",
+      "profiles": ["M", "C", "G"],
+      "paths": ["Managed", "Native"],
+      "avoidedShape": "In split kernels: a warp shuffle or suspending call in an arm of ?: or on the right of || or && after an operand with a side effect, a shuffle whose argument writes a variable that an earlier argument of the enclosing call read, and a compound assignment whose right side holds a split point and writes, or may write, the assigned variable."
+    },
+    {
+      "issue": 1554,
+      "kind": "avoid",
+      "summary": "A stack array live across a barrier fails the native CPU build with #error GSH0001 and no C# diagnostic",
+      "profiles": ["C", "G"],
+      "paths": ["Native"],
+      "avoidedShape": "A stack array local (int[] arr = new int[4]) in a split kernel; split kernels keep their values in scalar and struct locals only."
+    },
+    {
       "issue": 1079,
       "kind": "avoid",
       "summary": "8/16-bit integer and char increment/decrement expression value returns widened int or post-increment value",
