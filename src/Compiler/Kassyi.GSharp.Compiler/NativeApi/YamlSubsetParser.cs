@@ -284,147 +284,220 @@ internal sealed class YamlSubsetParser
 #pragma warning disable RS0030 // Input parsing: decodes a YAML scalar character by character
     private YamlScalar ParseBlockScalar(string rest, int cursor, int ownerIndent, int lineNumber)
     {
-        var folded = rest[cursor] == '>';
-        var chomping = ' ';
-        var position = cursor + 1;
-        if (position < rest.Length && rest[position] is '-' or '+')
-        {
-            chomping = rest[position];
-            position++;
-        }
-
+        BlockScalarParser.ParseHeader(rest, cursor, out var folded, out var chomping, out var position);
         EnsureLineEnd(rest, position, lineNumber);
+        var lines = BlockScalarParser.CollectLines(this, ownerIndent, out var trailingBlanks);
+        var text = BlockScalarParser.Assemble(lines, trailingBlanks, folded, chomping);
+        return new YamlScalar(lineNumber, text);
+    }
 
-        var collected = ImmutableArray.CreateBuilder<string>();
-        var blockIndent = -1;
-        while (_index < _lines.Length)
+    private static class BlockScalarParser
+    {
+        public static void ParseHeader(
+            string rest, int cursor, out bool folded, out char chomping, out int position)
         {
-            var line = _lines[_index];
-            var lineIndent = CountLeadingSpaces(line);
-            var isBlank = lineIndent == line.Length;
-            if (!isBlank)
+            folded = rest[cursor] == '>';
+            chomping = ' ';
+            position = cursor + 1;
+            if (position < rest.Length && rest[position] is '-' or '+')
             {
-                if (lineIndent <= ownerIndent)
-                {
-                    break;
-                }
-
-                if (blockIndent < 0)
-                {
-                    blockIndent = lineIndent;
-                }
-                else if (lineIndent < blockIndent)
-                {
-                    throw Error(_index, "Block scalar line is less indented than the first line.");
-                }
-            }
-
-            collected.Add(isBlank ? string.Empty : line[blockIndent..]);
-            _index++;
-        }
-
-        var trailingBlanks = 0;
-        for (var i = collected.Count - 1; i >= 0 && collected[i].Length == 0; i--)
-        {
-            trailingBlanks++;
-        }
-
-        var builder = new StringBuilder();
-        var contentCount = collected.Count - trailingBlanks;
-        for (var i = 0; i < contentCount; i++)
-        {
-            if (i > 0)
-            {
-                var separateWithSpace = folded && collected[i].Length > 0 && collected[i - 1].Length > 0 &&
-                                        collected[i][0] != ' ' && collected[i - 1][0] != ' ';
-                builder.Append(separateWithSpace ? ' ' : '\n');
-            }
-
-            builder.Append(collected[i]);
-        }
-
-        if (contentCount > 0 && chomping != '-')
-        {
-            builder.Append('\n');
-            if (chomping == '+')
-            {
-                builder.Append('\n', trailingBlanks);
+                chomping = rest[position];
+                position++;
             }
         }
 
-        return new YamlScalar(lineNumber, builder.ToString());
+        public static ImmutableArray<string> CollectLines(
+            YamlSubsetParser parser, int ownerIndent, out int trailingBlanks)
+        {
+            var collected = ImmutableArray.CreateBuilder<string>();
+            var blockIndent = -1;
+            while (parser._index < parser._lines.Length)
+            {
+                var line = parser._lines[parser._index];
+                var lineIndent = CountLeadingSpaces(line);
+                var isBlank = lineIndent == line.Length;
+                if (!isBlank)
+                {
+                    if (lineIndent <= ownerIndent)
+                    {
+                        break;
+                    }
+
+                    if (blockIndent < 0)
+                    {
+                        blockIndent = lineIndent;
+                    }
+                    else if (lineIndent < blockIndent)
+                    {
+                        throw Error(parser._index, "Block scalar line is less indented than the first line.");
+                    }
+                }
+
+                collected.Add(isBlank ? string.Empty : line[blockIndent..]);
+                parser._index++;
+            }
+
+            trailingBlanks = 0;
+            for (var i = collected.Count - 1; i >= 0 && collected[i].Length == 0; i--)
+            {
+                trailingBlanks++;
+            }
+
+            return collected.ToImmutable();
+        }
+
+        public static string Assemble(
+            ImmutableArray<string> lines, int trailingBlanks, bool folded, char chomping)
+        {
+            var builder = new StringBuilder();
+            var contentCount = lines.Length - trailingBlanks;
+            for (var i = 0; i < contentCount; i++)
+            {
+                if (i > 0)
+                {
+                    var separateWithSpace = folded && lines[i].Length > 0 && lines[i - 1].Length > 0 &&
+                                            lines[i][0] != ' ' && lines[i - 1][0] != ' ';
+                    builder.Append(separateWithSpace ? ' ' : '\n');
+                }
+
+                builder.Append(lines[i]);
+            }
+
+            if (contentCount > 0 && chomping != '-')
+            {
+                builder.Append('\n');
+                if (chomping == '+')
+                {
+                    builder.Append('\n', trailingBlanks);
+                }
+            }
+
+            return builder.ToString();
+        }
     }
 #pragma warning restore RS0030
 
     private YamlNode ParseFlow(string text, ref int position, int lineNumber)
     {
         var open = text[position];
-        var close = open == '[' ? ']' : '}';
-        position++;
-
-        YamlSequence? sequence = open == '[' ? new YamlSequence(lineNumber) : null;
-        YamlMapping? mapping = open == '{' ? new YamlMapping(lineNumber) : null;
-
-        position = SkipSpaces(text, position);
-        if (position < text.Length && text[position] == close)
+        if (open == '[')
         {
-            position++;
-            return (YamlNode?)sequence ?? mapping ?? throw Error(lineNumber - 1, "Invalid flow collection.");
+            return FlowParser.ParseSequence(this, text, ref position, lineNumber);
         }
 
-        while (true)
+        if (open == '{')
         {
+            return FlowParser.ParseMapping(this, text, ref position, lineNumber);
+        }
+
+        throw Error(lineNumber - 1, "Invalid flow collection.");
+    }
+
+    private static class FlowParser
+    {
+        public static YamlSequence ParseSequence(
+            YamlSubsetParser parser, string text, ref int position, int lineNumber)
+        {
+            position++;
+            var sequence = new YamlSequence(lineNumber);
             position = SkipSpaces(text, position);
-            if (position >= text.Length)
+            if (position < text.Length && text[position] == ']')
             {
-                throw Error(lineNumber - 1, $"Unterminated flow collection; expected '{close}'.");
+                position++;
+                return sequence;
             }
 
-            if (mapping is not null)
+            while (true)
             {
-                var key = ParseFlowKey(text, ref position, lineNumber);
-                if (mapping.TryGetValue(key, out _))
+                position = SkipSpaces(text, position);
+                if (position >= text.Length)
                 {
-                    throw Error(lineNumber - 1, $"Duplicate key '{key}'.");
+                    throw Error(lineNumber - 1, "Unterminated flow collection; expected ']'.");
                 }
+
+                sequence.Items.Add(parser.ParseFlowItem(text, ref position, lineNumber));
 
                 position = SkipSpaces(text, position);
-                YamlNode value;
-                if (position < text.Length && text[position] is ',' or '}')
+                if (position >= text.Length)
                 {
-                    value = new YamlScalar(lineNumber, string.Empty, isNull: true);
-                }
-                else
-                {
-                    value = ParseFlowItem(text, ref position, lineNumber);
+                    throw Error(lineNumber - 1, "Unterminated flow collection; expected ']'.");
                 }
 
-                mapping.Entries.Add(new KeyValuePair<string, YamlNode>(key, value));
+                if (text[position] == ',')
+                {
+                    position++;
+                    continue;
+                }
+
+                if (text[position] == ']')
+                {
+                    position++;
+                    return sequence;
+                }
+
+                throw Error(lineNumber - 1, "Expected ',' or ']' in flow collection.");
             }
-            else
+        }
+
+        public static YamlMapping ParseMapping(
+            YamlSubsetParser parser, string text, ref int position, int lineNumber)
+        {
+            position++;
+            var mapping = new YamlMapping(lineNumber);
+            position = SkipSpaces(text, position);
+            if (position < text.Length && text[position] == '}')
             {
-                sequence?.Items.Add(ParseFlowItem(text, ref position, lineNumber));
+                position++;
+                return mapping;
+            }
+
+            while (true)
+            {
+                position = SkipSpaces(text, position);
+                if (position >= text.Length)
+                {
+                    throw Error(lineNumber - 1, "Unterminated flow collection; expected '}'.");
+                }
+
+                ParseMappingEntry(parser, mapping, text, ref position, lineNumber);
+
+                position = SkipSpaces(text, position);
+                if (position >= text.Length)
+                {
+                    throw Error(lineNumber - 1, "Unterminated flow collection; expected '}'.");
+                }
+
+                if (text[position] == ',')
+                {
+                    position++;
+                    continue;
+                }
+
+                if (text[position] == '}')
+                {
+                    position++;
+                    return mapping;
+                }
+
+                throw Error(lineNumber - 1, "Expected ',' or '}' in flow collection.");
+            }
+        }
+
+        private static void ParseMappingEntry(
+            YamlSubsetParser parser, YamlMapping mapping, string text, ref int position, int lineNumber)
+        {
+            var key = parser.ParseFlowKey(text, ref position, lineNumber);
+            if (mapping.TryGetValue(key, out _))
+            {
+                throw Error(lineNumber - 1, $"Duplicate key '{key}'.");
             }
 
             position = SkipSpaces(text, position);
-            if (position >= text.Length)
-            {
-                throw Error(lineNumber - 1, $"Unterminated flow collection; expected '{close}'.");
-            }
+            var value = position < text.Length && text[position] is ',' or '}'
+                ? new YamlScalar(lineNumber, string.Empty, isNull: true)
+                : parser.ParseFlowItem(text, ref position, lineNumber);
 
-            if (text[position] == ',')
-            {
-                position++;
-                continue;
-            }
-
-            if (text[position] == close)
-            {
-                position++;
-                return (YamlNode?)sequence ?? mapping ?? throw Error(lineNumber - 1, "Invalid flow collection.");
-            }
-
-            throw Error(lineNumber - 1, $"Expected ',' or '{close}' in flow collection.");
+            mapping.Entries.Add(new KeyValuePair<string, YamlNode>(key, value));
         }
     }
 
@@ -653,14 +726,7 @@ internal sealed class YamlSubsetParser
 
             if (position < line.Length && line[position] != '#')
             {
-                for (var i = 0; i < position; i++)
-                {
-                    if (line[i] == '\t')
-                    {
-                        throw Error(_index, "Tabs are not allowed for indentation.");
-                    }
-                }
-
+                EnsureNoIndentationTabs(line, position, _index);
                 return true;
             }
 
@@ -668,6 +734,17 @@ internal sealed class YamlSubsetParser
         }
 
         return false;
+    }
+
+    private void EnsureNoIndentationTabs(string line, int position, int lineIndex)
+    {
+        for (var i = 0; i < position; i++)
+        {
+            if (line[i] == '\t')
+            {
+                throw Error(lineIndex, "Tabs are not allowed for indentation.");
+            }
+        }
     }
 
     private int Indent(int index)

@@ -188,20 +188,16 @@ internal static class NativeApiYamlReader
         return false;
     }
 
-    private static NativeLibraryNames ReadLibraryNames(YamlNode node)
-    {
-        if (node is not YamlMapping mapping)
-        {
-            throw Schema(node.Line, "'libraryNames' must be a mapping of platform ('windows', 'linux', 'osx') to candidate names.");
-        }
-
-        return new NativeLibraryNames
-        {
-            Windows = ReadStringList(mapping, "windows"),
-            Linux = ReadStringList(mapping, "linux"),
-            OSX = ReadStringList(mapping, "osx")
-        };
-    }
+    private static NativeLibraryNames ReadLibraryNames(YamlNode node) =>
+        node is YamlMapping mapping
+            ? new NativeLibraryNames
+            {
+                Windows = ReadStringList(mapping, "windows"),
+                Linux = ReadStringList(mapping, "linux"),
+                OSX = ReadStringList(mapping, "osx")
+            }
+            : throw Schema(node.Line,
+                "'libraryNames' must be a mapping of platform ('windows', 'linux', 'osx') to candidate names.");
 
     private static ApiMethodDefinition ReadMethod(YamlNode node, NativeApiBindingKind bindingKind)
     {
@@ -225,6 +221,14 @@ internal static class NativeApiYamlReader
             ReturnDescription = OptionalScalar(mapping, "returnDescription"),
         };
 
+        ValidateMethod(mapping, method, bindingKind);
+        ReadMethodComponents(mapping, method, bindingKind);
+        return method;
+    }
+
+    private static void ValidateMethod(
+        YamlMapping mapping, ApiMethodDefinition method, NativeApiBindingKind bindingKind)
+    {
         ValidateIdentifier(mapping, "name", method.Name);
         if (method.ClassName is not null && !IsValidDottedName(method.ClassName))
         {
@@ -236,7 +240,8 @@ internal static class NativeApiYamlReader
             (bindingKind != NativeApiBindingKind.Intrinsic || !IsValidDottedName(method.ManagedName)))
         {
             throw Schema(LineOf(mapping, "managed"),
-                $"'managed' value '{method.ManagedName}' must be a dotted member name of Kassyi.GSharp.Core on an intrinsic.");
+                $"'managed' value '{method.ManagedName}' must be a dotted member name " +
+                "of Kassyi.GSharp.Core on an intrinsic.");
         }
 
         if (method.StringMarshalling is not null)
@@ -247,9 +252,14 @@ internal static class NativeApiYamlReader
         if (bindingKind == NativeApiBindingKind.Module && method.ReturnType != "void")
         {
             throw Schema(LineOf(mapping, "returnType"),
-                $"'returnType' must be 'void' for module (kernel) bindings, but method '{method.Name}' declares '{method.ReturnType}'.");
+                $"'returnType' must be 'void' for module (kernel) bindings, but method '{method.Name}' " +
+                $"declares '{method.ReturnType}'.");
         }
+    }
 
+    private static void ReadMethodComponents(
+        YamlMapping mapping, ApiMethodDefinition method, NativeApiBindingKind bindingKind)
+    {
         if (mapping.TryGetValue("typeTemplate", out var templateNode) && !IsNull(templateNode))
         {
             if (templateNode is not YamlMapping template)
@@ -271,27 +281,32 @@ internal static class NativeApiYamlReader
 
         if (mapping.TryGetValue("parameters", out var parametersNode) && !IsNull(parametersNode))
         {
-            if (parametersNode is not YamlSequence parameters)
-            {
-                throw Schema(parametersNode.Line, "'parameters' must be a sequence.");
-            }
-
-            var builder = ImmutableArray.CreateBuilder<ParameterDefinition>(parameters.Items.Count);
-            foreach (var item in parameters.Items)
-            {
-                builder.Add(ReadParameter(item, bindingKind, method.Name));
-            }
-
-            method.Parameters = builder.MoveToImmutable();
+            method.Parameters = ReadMethodParameters(parametersNode, bindingKind, method.Name);
         }
 
         if (method.XmlDoc is not null && HasPlainTextDocumentation(method))
         {
             throw Schema(LineOf(mapping, "xmlDoc"),
-                $"'xmlDoc' of method '{method.Name}' replaces 'summary', 'returnDescription' and the 'description' keys; write the whole documentation in 'xmlDoc'.");
+                $"'xmlDoc' of method '{method.Name}' replaces 'summary', 'returnDescription' and " +
+                "the 'description' keys; write the whole documentation in 'xmlDoc'.");
+        }
+    }
+
+    private static ImmutableArray<ParameterDefinition> ReadMethodParameters(
+        YamlNode parametersNode, NativeApiBindingKind bindingKind, string methodName)
+    {
+        if (parametersNode is not YamlSequence parameters)
+        {
+            throw Schema(parametersNode.Line, "'parameters' must be a sequence.");
         }
 
-        return method;
+        var builder = ImmutableArray.CreateBuilder<ParameterDefinition>(parameters.Items.Count);
+        foreach (var item in parameters.Items)
+        {
+            builder.Add(ReadParameter(item, bindingKind, methodName));
+        }
+
+        return builder.MoveToImmutable();
     }
 
     private static bool HasPlainTextDocumentation(ApiMethodDefinition method)
@@ -435,46 +450,26 @@ internal static class NativeApiYamlReader
         return builder.MoveToImmutable();
     }
 
-    private static string RequireScalar(YamlMapping mapping, string key)
-    {
-        var value = OptionalScalar(mapping, key);
-        if (value is null || value.Length == 0)
+    private static string RequireScalar(YamlMapping mapping, string key) =>
+        OptionalScalar(mapping, key) is { Length: > 0 } value
+            ? value
+            : throw Schema(mapping.Line, $"'{key}' is required.");
+
+    private static string? OptionalScalar(YamlMapping mapping, string key) =>
+        !mapping.TryGetValue(key, out var node) || IsNull(node)
+            ? null
+            : node is YamlScalar scalar
+                ? Normalize(scalar.Value)
+                : throw Schema(node.Line, $"'{key}' must be a scalar value.");
+
+    private static bool OptionalBoolean(YamlMapping mapping, string key) =>
+        OptionalScalar(mapping, key) switch
         {
-            throw Schema(mapping.Line, $"'{key}' is required.");
-        }
-
-        return value;
-    }
-
-    private static string? OptionalScalar(YamlMapping mapping, string key)
-    {
-        if (!mapping.TryGetValue(key, out var node) || IsNull(node))
-        {
-            return null;
-        }
-
-        return node is YamlScalar scalar
-            ? Normalize(scalar.Value)
-            : throw Schema(node.Line, $"'{key}' must be a scalar value.");
-    }
-
-    private static bool OptionalBoolean(YamlMapping mapping, string key)
-    {
-        var value = OptionalScalar(mapping, key);
-        if (value is null)
-        {
-            return false;
-        }
-
-        if (string.Equals(value, "true", StringComparison.OrdinalIgnoreCase))
-        {
-            return true;
-        }
-
-        return string.Equals(value, "false", StringComparison.OrdinalIgnoreCase)
-            ? false
-            : throw Schema(LineOf(mapping, key), $"'{key}' must be 'true' or 'false'.");
-    }
+            null => false,
+            var s when string.Equals(s, "true", StringComparison.OrdinalIgnoreCase) => true,
+            var s when string.Equals(s, "false", StringComparison.OrdinalIgnoreCase) => false,
+            _ => throw Schema(LineOf(mapping, key), $"'{key}' must be 'true' or 'false'.")
+        };
 
     private static void ValidateNamespace(YamlMapping mapping, string value)
     {
