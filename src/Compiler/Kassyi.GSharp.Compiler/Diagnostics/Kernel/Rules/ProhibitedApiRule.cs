@@ -6,8 +6,8 @@ namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel.Rules;
 /// Reports, in GPU code (GSH0003): the members of <c>System.Math</c> and <c>System.MathF</c> that the project's dialect
 /// does not map to a native function (constants such as <c>Math.PI</c> and the calls of mapped members are allowed; a
 /// mapped member used as a method group is not, as its native function is an overload set that converts to no delegate),
-/// every member of <c>System.Threading.Interlocked</c> and <c>System.Numerics.BitOperations</c> (#570), and the host-only StackLinq
-/// operators.
+/// the members of <c>System.Threading.Interlocked</c> and <c>System.Numerics.BitOperations</c> that no
+/// <c>[BclIntrinsicMap]</c> maps (and a mapped one used as a method group, #570), and the host-only StackLinq operators.
 /// </summary>
 internal sealed class ProhibitedApiRule :
     ISyntaxValidationRule<MemberAccessExpressionSyntax>,
@@ -98,16 +98,9 @@ internal sealed class ProhibitedApiRule :
                     $"{symbol.ContainingType.Name}.{FormatMember(symbol)} (used as a method group)");
             }
         }
-        else if (symbol is
-                 {
-                     ContainingType.Name: TypeConstants.InterlockedType or TypeConstants.BitOperationsType
-                 } &&
-                 (symbol.ContainingNamespace.IsSystemThreading() || symbol.ContainingNamespace.IsSystemOrNumerics()))
+        else if (IsInterlockedOrBitOperations(symbol))
         {
-            context.ReportDiagnostic(
-                GSharpDiagnostics.UnsupportedSyntax,
-                locationNode,
-                $"{symbol.ContainingType.Name}.{symbol.Name}");
+            AnalyzeMappedBclMember(symbol, locationNode, ref context);
         }
         else if (symbol is IMethodSymbol method && StackLinqHelper.IsHostOnly(method))
         {
@@ -115,6 +108,33 @@ internal sealed class ProhibitedApiRule :
                 GSharpDiagnostics.UnsupportedSyntax,
                 locationNode,
                 $"{method.Name} (host-only StackLinq operator)");
+        }
+    }
+
+    private static bool IsInterlockedOrBitOperations(ISymbol symbol) =>
+        symbol is { ContainingType.Name: TypeConstants.InterlockedType or TypeConstants.BitOperationsType } &&
+        (symbol.ContainingNamespace.IsSystemThreading() || symbol.ContainingNamespace.IsSystemOrNumerics());
+
+    // [WHY] The transpiler converts the members of Interlocked and BitOperations that [BclIntrinsicMap] lists (Core
+    // BclMappings.cs, read by BclIntrinsicMapBuilder) per overload; the rule reads the same table, so a member is
+    // rejected exactly when it has no mapping (#570). A mapped method used as a method group has no function to
+    // convert to a delegate, as for Math.
+    private static void AnalyzeMappedBclMember(ISymbol symbol, SyntaxNode locationNode, ref ValidationContext context)
+    {
+        var map = BclIntrinsicMapBuilder.GetOrBuildMap(context.SemanticModel.Compilation);
+        if (symbol is not IMethodSymbol method || !map.ContainsKey(method.OriginalDefinition))
+        {
+            context.ReportDiagnostic(
+                GSharpDiagnostics.UnsupportedSyntax,
+                locationNode,
+                $"{symbol.ContainingType.Name}.{FormatMember(symbol)} (no G# mapping)");
+        }
+        else if (!IsInvoked(locationNode))
+        {
+            context.ReportDiagnostic(
+                GSharpDiagnostics.UnsupportedSyntax,
+                locationNode,
+                $"{symbol.ContainingType.Name}.{FormatMember(symbol)} (used as a method group)");
         }
     }
 
