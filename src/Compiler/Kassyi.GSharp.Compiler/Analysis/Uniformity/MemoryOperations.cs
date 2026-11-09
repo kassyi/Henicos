@@ -37,22 +37,35 @@ internal static class MemoryOperations
         return symbol != null && IsMemoryType(GetMemoryType(symbol)) ? symbol : null;
     }
 
-    // The location that writing target changes: a field of a struct location (a[i].X, a[i].Inner.X, r.X of a ref local)
-    // is part of that location, so it is written with it (#1272)
+    // The location that writing target changes: a field or auto-property of a struct location (a[i].X, a[i].Inner.X,
+    // a[i].P, r.X of a ref local) is part of that location, so it is written with it (#1272)
     public static IOperation ContainingLocation(IOperation target)
     {
         target = Unwrap(target);
-        while (target is IFieldReferenceOperation
-               {
-                   Field.IsStatic: false,
-                   Instance: { Type.IsValueType: true } instance
-               })
+        while (GetStructInstance(target) is { } instance)
         {
             target = Unwrap(instance);
         }
 
         return target;
     }
+
+    // The struct value whose storage holds target: the instance of a field, or of an auto-property (its backing field)
+    private static IOperation? GetStructInstance(IOperation target) => target switch
+    {
+        IFieldReferenceOperation { Field.IsStatic: false, Instance: { Type.IsValueType: true } instance } => instance,
+        IPropertyReferenceOperation
+        {
+            Property: { IsStatic: false, IsIndexer: false } property,
+            Instance: { Type.IsValueType: true } instance
+        } when IsAutoProperty(property) => instance,
+        _ => null
+    };
+
+    private static bool IsAutoProperty(IPropertySymbol property) =>
+        property.ContainingType.GetMembers()
+            .AsStackEnumerable()
+            .Any(property, static (member, p) => member is IFieldSymbol field && field.AssociatedSymbol.IsEqualTo(p));
 
     public static IOperation Unwrap(IOperation operation)
     {

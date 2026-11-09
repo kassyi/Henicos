@@ -42,24 +42,16 @@ internal static class MemoryRecording
         }
     }
 
-    // What a call may write: its by-reference locations, the memory of its receiver and arguments, and the fields of a
-    // struct argument or receiver, nested structs included
+    // What a call may write: its by-reference locations, the element a struct member is called on, the memory of its
+    // receiver and arguments, and the fields of a struct argument or receiver, nested structs included
     public static ImmutableArray<MemoryCallTarget> CollectCallTargets(MemoryValues values,
         IInvocationOperation invocation)
     {
         var targets = ImmutableArray.CreateBuilder<MemoryCallTarget>();
-        foreach (var argument in invocation.Arguments)
-        {
-            var value = ContainingLocation(argument.Value);
-            if (argument.Parameter is { RefKind: RefKind.Ref or RefKind.Out } parameter && IsLocation(value))
-            {
-                AllocateLocation(values, value);
-                targets.Add(new MemoryCallTarget(MemoryCallTargetKind.ByReference, value, Ordinal: parameter.Ordinal));
-            }
-        }
-
+        AddByReferenceTargets(values, invocation, targets);
         if (invocation.Instance is { } instance)
         {
+            AddReceiverLocationTarget(values, invocation.TargetMethod, instance, targets);
             AddReferenceTarget(values, instance, MemoryCallTargetKind.Receiver, ordinal: -1, targets);
         }
 
@@ -70,6 +62,39 @@ internal static class MemoryRecording
         }
 
         return targets.ToImmutable();
+    }
+
+    // M(ref a[i]), M(out a[i].X): the location the callee writes through its parameter
+    private static void AddByReferenceTargets(MemoryValues values, IInvocationOperation invocation,
+        ImmutableArray<MemoryCallTarget>.Builder targets)
+    {
+        foreach (var argument in invocation.Arguments)
+        {
+            var value = ContainingLocation(argument.Value);
+            if (argument.Parameter is { RefKind: RefKind.Ref or RefKind.Out } parameter && IsLocation(value))
+            {
+                AllocateLocation(values, value);
+                targets.Add(new MemoryCallTarget(MemoryCallTargetKind.ByReference, value, Ordinal: parameter.Ordinal));
+            }
+        }
+    }
+
+    // a[i].Bump(): a member of a struct that is not readonly runs on the element itself and may write it through this
+    private static void AddReceiverLocationTarget(MemoryValues values, IMethodSymbol method, IOperation instance,
+        ImmutableArray<MemoryCallTarget>.Builder targets)
+    {
+        if (method is not { IsStatic: false, IsReadOnly: false, ContainingType.IsValueType: true } ||
+            method.ContainingType.IsReadOnly)
+        {
+            return;
+        }
+
+        var location = ContainingLocation(instance);
+        if (IsLocation(location))
+        {
+            AllocateLocation(values, location);
+            targets.Add(new MemoryCallTarget(MemoryCallTargetKind.ReceiverLocation, location, Ordinal: -1));
+        }
     }
 
     // Gives the memories that a location names directly a value index, before the graph is solved; the locals it
@@ -88,20 +113,25 @@ internal static class MemoryRecording
                 values.MemoryOf(parameter);
                 break;
             case IInvocationOperation invocation:
-                foreach (var argument in invocation.Arguments)
-                {
-                    var value = Unwrap(argument.Value);
-                    if (IsLocation(value))
-                    {
-                        AllocateLocation(values, value);
-                    }
-                    else
-                    {
-                        AllocateReference(values, value);
-                    }
-                }
-
+                AllocateArguments(values, invocation);
                 break;
+        }
+    }
+
+    // The arguments of a call that returns by reference: the locations and memory it may return a reference into
+    private static void AllocateArguments(MemoryValues values, IInvocationOperation invocation)
+    {
+        foreach (var argument in invocation.Arguments)
+        {
+            var value = Unwrap(argument.Value);
+            if (IsLocation(value))
+            {
+                AllocateLocation(values, value);
+            }
+            else
+            {
+                AllocateReference(values, value);
+            }
         }
     }
 
@@ -120,8 +150,7 @@ internal static class MemoryRecording
         }
     }
 
-    // Each field of a struct (and of the structs it holds) that reaches memory; an auto-property is named by the
-    // property, as its readers name it
+    // Each field of a struct (and of the structs it holds) that reaches memory
     private static void AddFieldTargets(MemoryValues values, INamedTypeSymbol type,
         ImmutableArray<MemoryCallTarget>.Builder targets, HashSet<ITypeSymbol> visited)
     {
@@ -132,20 +161,26 @@ internal static class MemoryRecording
 
         foreach (var member in type.GetMembers())
         {
-            if (member is not IFieldSymbol { IsStatic: false } field)
+            if (member is IFieldSymbol { IsStatic: false } field)
             {
-                continue;
+                AddFieldTarget(values, field, targets, visited);
             }
+        }
+    }
 
-            if (IsMemoryType(field.Type))
-            {
-                var name = field.AssociatedSymbol is IPropertySymbol property ? property : (ISymbol)field;
-                targets.Add(new MemoryCallTarget(MemoryCallTargetKind.Field, null, values.MemoryOf(name)));
-            }
-            else if (field.Type is INamedTypeSymbol { IsValueType: true, IsRefLikeType: false } nested)
-            {
-                AddFieldTargets(values, nested, targets, visited);
-            }
+    // A field that holds memory is a target (an auto-property is named by the property, as its readers name it); a
+    // struct field is followed into its own fields
+    private static void AddFieldTarget(MemoryValues values, IFieldSymbol field,
+        ImmutableArray<MemoryCallTarget>.Builder targets, HashSet<ITypeSymbol> visited)
+    {
+        if (IsMemoryType(field.Type))
+        {
+            var name = field.AssociatedSymbol is IPropertySymbol property ? property : (ISymbol)field;
+            targets.Add(new MemoryCallTarget(MemoryCallTargetKind.Field, null, values.MemoryOf(name)));
+        }
+        else if (field.Type is INamedTypeSymbol { IsValueType: true, IsRefLikeType: false } nested)
+        {
+            AddFieldTargets(values, nested, targets, visited);
         }
     }
 

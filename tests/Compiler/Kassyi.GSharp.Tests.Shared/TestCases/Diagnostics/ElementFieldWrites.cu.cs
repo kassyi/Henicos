@@ -140,3 +140,65 @@ public static partial class ElementFieldWriteKernels
         Gpu.SyncThreads();
     }
 }
+
+public struct MutablePair
+{
+    public int X;
+
+    public int P { get; set; }
+
+    public void Bump()
+    {
+        X++;
+    }
+
+    public readonly int Peek()
+    {
+        return X;
+    }
+}
+
+public static partial class ElementFieldWriteKernels
+{
+    // An auto-property of an element written: its backing field is part of the element
+    [GpuKernel]
+    [SkipSnapshotConsistency("Diagnostics case")]
+    public static void AutoPropertyKernel(MutablePair[] a)
+    {
+        a[ThreadIndex.X].P = 1;
+        if (a[0].P == 0)
+        {
+            Gpu.SyncThreads();
+        }
+
+        Gpu.SyncThreads();
+    }
+
+    // A struct member that writes this, called on an element
+    [GpuKernel]
+    [SkipSnapshotConsistency("Diagnostics case")]
+    public static void MutatingMethodKernel(MutablePair[] a)
+    {
+        a[ThreadIndex.X].Bump();
+        if (a[0].X == 0)
+        {
+            Gpu.SyncThreads();
+        }
+
+        Gpu.SyncThreads();
+    }
+
+    // A readonly member called on an element writes nothing: no diagnostic
+    [GpuKernel]
+    [SkipSnapshotConsistency("Diagnostics case")]
+    public static void ReadonlyMethodKernel(MutablePair[] a, int[] result)
+    {
+        result[ThreadIndex.X] = a[ThreadIndex.X].Peek();
+        if (a[0].X == 0)
+        {
+            Gpu.SyncThreads();
+        }
+
+        Gpu.SyncThreads();
+    }
+}
