@@ -17,7 +17,8 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 /// contain <c>__</c> (GSH0055), so the name collides with nothing the user writes. Roslyn's Inline Method refactoring
 /// settles the same conflict the same way, by renaming the inlined local rather than the caller's. Only the shadowing
 /// locals are renamed, so the generated code keeps the user's names everywhere else. A local of a lambda or local
-/// function nested in the body stays as it is: it remains in a function of its own, where shadowing is legal.
+/// function nested in the body stays as it is: it remains in a function of its own, where shadowing is legal. A local
+/// function that the body declares is renamed like a local.
 /// </para>
 /// </remarks>
 internal static class ManagedShadowedLocals
@@ -25,8 +26,9 @@ internal static class ManagedShadowedLocals
     private static readonly StandardCppDialect s_cppDialect = new();
 
     /// <summary>
-    /// The names of the locals and parameters in scope at the user's source of <paramref name="call"/>, the macro call
-    /// (a node of the user's tree or of a body lowered from it); empty when the call maps to no source.
+    /// The names of the locals, local functions and parameters in scope at the user's source of
+    /// <paramref name="call"/>, the macro call (a node of the user's tree or of a body lowered from it); empty when the
+    /// call maps to no source.
     /// </summary>
     /// <remarks>
     /// A local is in scope in its whole block, also before its declaration, so a local declared after the call counts
@@ -43,15 +45,16 @@ internal static class ManagedShadowedLocals
         semanticModel.Compilation.GetCachedSemanticModel(original.SyntaxTree)
             .LookupSymbols(original.SpanStart)
             .AsStackEnumerable()
-            .Where(static symbol => symbol is ILocalSymbol or IParameterSymbol or IRangeVariableSymbol)
+            .Where(static symbol => symbol is ILocalSymbol or IParameterSymbol or IRangeVariableSymbol ||
+                IsLocalFunction(symbol))
             .Select(static symbol => symbol.Name)
             .AddTo(names);
         return names;
     }
 
     /// <summary>
-    /// <paramref name="body"/> (the body of a macro lambda) with each local it declares whose name is in
-    /// <paramref name="namesInScope"/> renamed, at its declaration and at every reference.
+    /// <paramref name="body"/> (the body of a macro lambda) with each local or local function it declares whose name is
+    /// in <paramref name="namesInScope"/> renamed, at its declaration and at every reference.
     /// </summary>
     public static TNode Rename<TNode>(TNode body, HashSet<string> namesInScope, SemanticModel semanticModel)
         where TNode : SyntaxNode
@@ -66,7 +69,8 @@ internal static class ManagedShadowedLocals
         {
             if (IsLocalDeclaration(declaration) &&
                 namesInScope.Contains(GetDeclaredIdentifier(declaration).ValueText) &&
-                LoweringIdentity.ForDeclaration(declaration, semanticModel) is { Symbol: ILocalSymbol local } key)
+                LoweringIdentity.ForDeclaration(declaration, semanticModel) is { Symbol: { } local } key &&
+                (local is ILocalSymbol || IsLocalFunction(local)))
             {
                 renames[key] = CppNameResolver.Resolve(local, local.Name, s_cppDialect, key.Region).ToString();
             }
@@ -78,12 +82,16 @@ internal static class ManagedShadowedLocals
               ?? throw new InvalidOperationException("Renaming the shadowing locals of a macro body removed a node.");
     }
 
+    private static bool IsLocalFunction(ISymbol symbol) =>
+        symbol is IMethodSymbol { MethodKind: MethodKind.LocalFunction };
+
+    // The declarations of a nested function are its own; the local function itself is a declaration of the body
     private static bool IsNestedFunction(SyntaxNode node) =>
         node is AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax;
 
     private static bool IsLocalDeclaration(SyntaxNode node) =>
         node is VariableDeclaratorSyntax or SingleVariableDesignationSyntax or ForEachStatementSyntax
-            or CatchDeclarationSyntax;
+            or CatchDeclarationSyntax or LocalFunctionStatementSyntax;
 
     private static SyntaxToken GetDeclaredIdentifier(SyntaxNode declaration) => declaration switch
     {
@@ -91,6 +99,7 @@ internal static class ManagedShadowedLocals
         SingleVariableDesignationSyntax designation => designation.Identifier,
         ForEachStatementSyntax forEach => forEach.Identifier,
         CatchDeclarationSyntax catchDeclaration => catchDeclaration.Identifier,
+        LocalFunctionStatementSyntax localFunction => localFunction.Identifier,
         _ => default
     };
 
@@ -99,18 +108,32 @@ internal static class ManagedShadowedLocals
     private sealed class Rewriter(Dictionary<DeclarationKey, string> renames, SemanticModel semanticModel)
         : CSharpSyntaxRewriter
     {
-        public override SyntaxNode? VisitVariableDeclarator(VariableDeclaratorSyntax node) =>
-            base.VisitVariableDeclarator(node) is VariableDeclaratorSyntax visited && TryGetName(node, out var name)
+        public override SyntaxNode? VisitVariableDeclarator(VariableDeclaratorSyntax node)
+        {
+            var visited = (VariableDeclaratorSyntax?)base.VisitVariableDeclarator(node);
+            return visited is not null && TryGetName(node, out var name)
                 ? visited.WithIdentifier(Rename(visited.Identifier, name))
-                : base.VisitVariableDeclarator(node);
+                : visited;
+        }
 
         public override SyntaxNode? VisitSingleVariableDesignation(SingleVariableDesignationSyntax node) =>
             TryGetName(node, out var name) ? node.WithIdentifier(Rename(node.Identifier, name)) : node;
 
-        public override SyntaxNode? VisitForEachStatement(ForEachStatementSyntax node) =>
-            base.VisitForEachStatement(node) is ForEachStatementSyntax visited && TryGetName(node, out var name)
+        public override SyntaxNode? VisitForEachStatement(ForEachStatementSyntax node)
+        {
+            var visited = (ForEachStatementSyntax?)base.VisitForEachStatement(node);
+            return visited is not null && TryGetName(node, out var name)
                 ? visited.WithIdentifier(Rename(visited.Identifier, name))
-                : base.VisitForEachStatement(node);
+                : visited;
+        }
+
+        public override SyntaxNode? VisitLocalFunctionStatement(LocalFunctionStatementSyntax node)
+        {
+            var visited = (LocalFunctionStatementSyntax?)base.VisitLocalFunctionStatement(node);
+            return visited is not null && TryGetName(node, out var name)
+                ? visited.WithIdentifier(Rename(visited.Identifier, name))
+                : visited;
+        }
 
         public override SyntaxNode? VisitCatchDeclaration(CatchDeclarationSyntax node) =>
             TryGetName(node, out var name) ? node.WithIdentifier(Rename(node.Identifier, name)) : node;

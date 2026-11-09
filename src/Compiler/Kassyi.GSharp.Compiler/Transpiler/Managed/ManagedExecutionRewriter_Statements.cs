@@ -132,62 +132,86 @@ internal sealed partial class ManagedExecutionRewriter
         }
 
         var number = _nextUnrollId;
-        var indexName = NextLoopVariableName();
-        var unsignedIndexName = $"{GSharpInternalNames.Lowering.GridStrideIndexPrefix}{number}";
-        var countName = $"{GSharpInternalNames.Lowering.GridStrideCountPrefix}{number}";
-        var stepName = $"{GSharpInternalNames.Lowering.GridStrideStepPrefix}{number}";
+        var names = new GridStrideNames(
+            NextLoopVariableName(),
+            $"{GSharpInternalNames.Lowering.GridStrideIndexPrefix}{number}",
+            $"{GSharpInternalNames.Lowering.GridStrideCountPrefix}{number}",
+            $"{GSharpInternalNames.Lowering.GridStrideStepPrefix}{number}"
+        );
         // Visit the count so that context accesses in it are rewritten like the rest of the body
         var countExpr = Visit(countArg) as ExpressionSyntax ?? countArg;
+        var (countDeclaration, stepDeclaration) = DeclareGridStrideBounds(names, countExpr);
 
-        var countDeclaration = DeclareLocal(
+        var substituter = CreateSubstituter(call.GetContext(arguments), lambda, loopParameter, names.Index);
+        var body = VisitLoopBody(lambda, substituter, namesInScope);
+        var loop = CreateGridStrideFor(names, body.Statements.Insert(0, DeclareGridStrideIndex(names)));
+
+        return SyntaxFactory.Block(countDeclaration, stepDeclaration, loop);
+    }
+
+    // The names of a grid-stride loop: the int index the body reads, the unsigned index the loop steps, the count and
+    // the step
+    private readonly record struct GridStrideNames(string Index, string UnsignedIndex, string Count, string Step);
+
+    // uint <count> = ManagedGpuContext.GridStrideCount(<count expression>);
+    // uint <step> = ManagedGpuContext.GridStrideStep();
+    private static (StatementSyntax Count, StatementSyntax Step) DeclareGridStrideBounds(in GridStrideNames names,
+        ExpressionSyntax countExpr)
+    {
+        var count = DeclareLocal(
             SyntaxKind.UIntKeyword,
-            countName,
+            names.Count,
             SyntaxFactory.InvocationExpression(
                 ManagedGpuContextMember("GridStrideCount"),
                 SyntaxFactory.ArgumentList(SyntaxFactory.SingletonSeparatedList(SyntaxFactory.Argument(countExpr)))
             )
         );
-        var stepDeclaration = DeclareLocal(
+        var step = DeclareLocal(
             SyntaxKind.UIntKeyword,
-            stepName,
+            names.Step,
             SyntaxFactory.InvocationExpression(ManagedGpuContextMember("GridStrideStep"))
         );
+        return (count, step);
+    }
 
-        var substituter = CreateSubstituter(call.GetContext(arguments), lambda, loopParameter, indexName);
-        var body = VisitLoopBody(lambda, substituter, namesInScope);
-        // int <index> = (int)<unsigned index>;
-        var indexDeclaration = DeclareLocal(
+    // int <index> = (int)<unsigned index>;
+    private static StatementSyntax DeclareGridStrideIndex(in GridStrideNames names) =>
+        DeclareLocal(
             SyntaxKind.IntKeyword,
-            indexName,
+            names.Index,
             SyntaxFactory.CastExpression(
                 SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.IntKeyword)),
-                SyntaxFactory.IdentifierName(unsignedIndexName)
+                SyntaxFactory.IdentifierName(names.UnsignedIndex)
             )
         );
 
-        var loop = SyntaxFactory.ForStatement(
+    // for (uint <unsigned index> = ManagedGpuContext.GridStrideStart(); <unsigned index> < <count>;
+    //      <unsigned index> += <step>) { <statements> }
+    private static ForStatementSyntax CreateGridStrideFor(in GridStrideNames names,
+        SyntaxList<StatementSyntax> statements)
+    {
+        var index = SyntaxFactory.IdentifierName(names.UnsignedIndex);
+        return SyntaxFactory.ForStatement(
             DeclareVariable(
                 SyntaxKind.UIntKeyword,
-                unsignedIndexName,
+                names.UnsignedIndex,
                 SyntaxFactory.InvocationExpression(ManagedGpuContextMember("GridStrideStart"))
             ),
             SyntaxFactory.SeparatedList<ExpressionSyntax>(),
             SyntaxFactory.BinaryExpression(
                 SyntaxKind.LessThanExpression,
-                SyntaxFactory.IdentifierName(unsignedIndexName),
-                SyntaxFactory.IdentifierName(countName)
+                index,
+                SyntaxFactory.IdentifierName(names.Count)
             ),
             SyntaxFactory.SingletonSeparatedList<ExpressionSyntax>(
                 SyntaxFactory.AssignmentExpression(
                     SyntaxKind.AddAssignmentExpression,
-                    SyntaxFactory.IdentifierName(unsignedIndexName),
-                    SyntaxFactory.IdentifierName(stepName)
+                    index,
+                    SyntaxFactory.IdentifierName(names.Step)
                 )
             ),
-            SyntaxFactory.Block(body.Statements.Insert(0, indexDeclaration))
+            SyntaxFactory.Block(statements)
         );
-
-        return SyntaxFactory.Block(countDeclaration, stepDeclaration, loop);
     }
 
     // global::Kassyi.GSharp.Core.ManagedGpuContext.<name>

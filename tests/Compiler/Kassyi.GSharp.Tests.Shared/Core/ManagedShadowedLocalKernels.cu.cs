@@ -80,6 +80,27 @@ public static partial class ManagedShadowedLocalKernels
         }
     }
 
+    // A local function of the lambda named like a local of the kernel, and a lambda local named like a local function
+    // of the kernel: result[i] = 3i + 10; thread 0 then adds 1 (v) + 100 (Hundred())
+    [GpuKernel]
+    public static void LocalFunctionKernel(int[] result, int n)
+    {
+        // Declared before its use: the native output does not hoist a local function (C3861 otherwise)
+        static int Hundred() => 100;
+
+        int v = 1;
+        Gpu.GridStrideLoop(n, i =>
+        {
+            int v() => i * 3;
+            int Hundred = 10;
+            result[i] = v() + Hundred;
+        });
+        if (ThreadIndex.X == 0)
+        {
+            result[0] += v + Hundred();
+        }
+    }
+
     [GpuDeviceFunction]
     public static bool TryThousand(out int value)
     {

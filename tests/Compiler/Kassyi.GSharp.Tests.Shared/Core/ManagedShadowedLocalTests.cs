@@ -28,11 +28,14 @@ public class ManagedShadowedLocalTests : TranspilerTestBase
     // i + 10 + 100i + 1000; result[0] also gets the later local (3)
     private static readonly int[] s_nestedAndLaterExpected = [1013, 1111, 1212, 1313];
 
+    // 3i + 10; result[0] also gets 1 + 100
+    private static readonly int[] s_localFunctionExpected = [111, 13, 16, 19];
+
     // 2i (7 for i = 0, from Gpu.SingleThread) + the method's v (3)
     private static readonly int[] s_managedVersionExpected = [10, 5, 7, 9];
 
     public static TheoryData<string> Kernels => ["GridStrideLoop", "SingleThread", "ForUnroll", "NestedAndLater",
-        "ManagedVersion"];
+        "LocalFunction", "ManagedVersion"];
 
     [Theory]
     [MemberData(nameof(Kernels))]
@@ -89,6 +92,12 @@ public class ManagedShadowedLocalTests : TranspilerTestBase
                 var result = new int[Count];
                 ManagedShadowedLocalKernels.LaunchNestedAndLaterKernel(result, Count, blockDimX: Count);
                 return (result, s_nestedAndLaterExpected);
+            }
+            case "LocalFunction":
+            {
+                var result = new int[Count];
+                ManagedShadowedLocalKernels.LaunchLocalFunctionKernel(result, Count, blockDimX: Count);
+                return (result, s_localFunctionExpected);
             }
             case "ManagedVersion":
             {
