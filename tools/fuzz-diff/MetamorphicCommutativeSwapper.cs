@@ -23,11 +23,30 @@ internal static class MetamorphicCommutativeSwapper
             return root;
         }
 
+        var candidates = CollectSwappableCandidates(method, semanticModel);
+        if (candidates.Count == 0)
+        {
+            return root;
+        }
+
         var rng = new FuzzRandom(seed ^ 0xA11CE006UL);
+        var chosen = candidates[rng.NextBelow(candidates.Count)];
+        var swapped = chosen
+            .WithLeft(chosen.Right.WithoutTrivia().WithTriviaFrom(chosen.Left))
+            .WithRight(chosen.Left.WithoutTrivia().WithTriviaFrom(chosen.Right));
+
+        var updatedMethod = method.ReplaceNode(chosen, swapped);
+        return root.ReplaceNode(method, updatedMethod);
+    }
+
+    private static List<BinaryExpressionSyntax> CollectSwappableCandidates(
+        MethodDeclarationSyntax method,
+        SemanticModel semanticModel)
+    {
         var scope = EffectScope.ForKernel(method, semanticModel);
         var candidates = new List<BinaryExpressionSyntax>();
 
-        foreach (var stmt in method.Body.Statements)
+        foreach (var stmt in method.Body!.Statements)
         {
             if (!MetamorphicPurity.TryGetTopLevelPureRhsExpression(stmt, scope, out var rhsRoot))
             {
@@ -36,67 +55,63 @@ internal static class MetamorphicCommutativeSwapper
 
             foreach (var node in rhsRoot.DescendantNodesAndSelf())
             {
-                if (node is not BinaryExpressionSyntax bin || !IsCommutativeBinaryKind(bin.Kind()))
+                if (node is BinaryExpressionSyntax bin &&
+                    IsSwappableBinaryExpression(bin, scope, semanticModel))
                 {
-                    continue;
+                    candidates.Add(bin);
                 }
-
-                if (semanticModel.GetSymbolInfo(bin).Symbol is IMethodSymbol { MethodKind: MethodKind.UserDefinedOperator })
-                {
-                    continue;
-                }
-
-                if (!MetamorphicTypeResolver.TryResolveSupportedValueType(bin.Left, semanticModel, out var leftType, out _) ||
-                    !MetamorphicTypeResolver.TryResolveSupportedValueType(bin.Right, semanticModel, out var rightType, out _) ||
-                    !MetamorphicTypeResolver.TryResolveExpressionType(bin, semanticModel, out var resultType) ||
-                    !SymbolEqualityComparer.Default.Equals(leftType, rightType))
-                {
-                    continue;
-                }
-
-                // Never swap floating-point operands: when both operands are NaN with distinct payloads,
-                // swapping `a + b` or `a * b` can change the propagated NaN payload bits under exact/checksum comparison.
-                if (MetamorphicTypeResolver.IsFloatingPointType(leftType) ||
-                    MetamorphicTypeResolver.IsFloatingPointType(resultType))
-                {
-                    continue;
-                }
-
-                if ((bin.IsKind(SyntaxKind.AddExpression) || bin.IsKind(SyntaxKind.MultiplyExpression)) &&
-                    (!MetamorphicTypeResolver.Is32Or64BitIntegerType(leftType) ||
-                     !SymbolEqualityComparer.Default.Equals(leftType, resultType)))
-                {
-                    continue;
-                }
-
-                if (!MetamorphicPurity.IsPure(bin.Left, scope) || !MetamorphicPurity.IsPure(bin.Right, scope))
-                {
-                    continue;
-                }
-
-                string leftText = FuzzSyntaxHelpers.RenderNodeText(bin.Left);
-                string rightText = FuzzSyntaxHelpers.RenderNodeText(bin.Right);
-                if (string.Equals(leftText, rightText, StringComparison.Ordinal))
-                {
-                    continue;
-                }
-
-                candidates.Add(bin);
             }
         }
 
-        if (candidates.Count == 0)
+        return candidates;
+    }
+
+    private static bool IsSwappableBinaryExpression(
+        BinaryExpressionSyntax bin,
+        EffectScope scope,
+        SemanticModel semanticModel)
+    {
+        if (!IsCommutativeBinaryKind(bin.Kind()))
         {
-            return root;
+            return false;
         }
 
-        var chosen = candidates[rng.NextBelow(candidates.Count)];
-        var swapped = chosen
-            .WithLeft(chosen.Right.WithoutTrivia().WithTriviaFrom(chosen.Left))
-            .WithRight(chosen.Left.WithoutTrivia().WithTriviaFrom(chosen.Right));
+        if (semanticModel.GetSymbolInfo(bin).Symbol is IMethodSymbol { MethodKind: MethodKind.UserDefinedOperator })
+        {
+            return false;
+        }
 
-        var updatedMethod = method.ReplaceNode(chosen, swapped);
-        return root.ReplaceNode(method, updatedMethod);
+        if (!MetamorphicTypeResolver.TryResolveSupportedValueType(bin.Left, semanticModel, out var leftType, out _) ||
+            !MetamorphicTypeResolver.TryResolveSupportedValueType(bin.Right, semanticModel, out var rightType, out _) ||
+            !MetamorphicTypeResolver.TryResolveExpressionType(bin, semanticModel, out var resultType) ||
+            !SymbolEqualityComparer.Default.Equals(leftType, rightType))
+        {
+            return false;
+        }
+
+        // Never swap floating-point operands: when both operands are NaN with distinct payloads,
+        // swapping `a + b` or `a * b` can change the propagated NaN payload bits under exact/checksum comparison.
+        if (MetamorphicTypeResolver.IsFloatingPointType(leftType) ||
+            MetamorphicTypeResolver.IsFloatingPointType(resultType))
+        {
+            return false;
+        }
+
+        if ((bin.IsKind(SyntaxKind.AddExpression) || bin.IsKind(SyntaxKind.MultiplyExpression)) &&
+            (!MetamorphicTypeResolver.Is32Or64BitIntegerType(leftType) ||
+             !SymbolEqualityComparer.Default.Equals(leftType, resultType)))
+        {
+            return false;
+        }
+
+        if (!MetamorphicPurity.IsPure(bin.Left, scope) || !MetamorphicPurity.IsPure(bin.Right, scope))
+        {
+            return false;
+        }
+
+        string leftText = FuzzSyntaxHelpers.RenderNodeText(bin.Left);
+        string rightText = FuzzSyntaxHelpers.RenderNodeText(bin.Right);
+        return !string.Equals(leftText, rightText, StringComparison.Ordinal);
     }
 
     private static bool IsCommutativeBinaryKind(SyntaxKind kind) =>

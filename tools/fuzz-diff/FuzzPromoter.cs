@@ -52,20 +52,8 @@ public static class FuzzPromoter
         var selectedMethod = SelectKernelMethod(root, kernelMethods, targetKernelName)
             ?? throw new InvalidOperationException("No kernel method found in reducedKernelSource.");
 
-        bool hasKernelSeed = TryExtractKernelSeed(selectedMethod, out ulong extractedKernelSeed);
-        ulong effectiveSeed = hasKernelSeed ? extractedKernelSeed : fuzzSeed;
-        string seedHex = FuzzRandom.FormatSeed(effectiveSeed);
-        string shortSeedHex = string.Create(CultureInfo.InvariantCulture, $"{effectiveSeed:X8}");
-
-        bool needsMethodDisambiguator = !hasKernelSeed &&
-            (!string.IsNullOrWhiteSpace(targetKernelName) || kernelMethods.Count > 1);
-        string methodSuffix = needsMethodDisambiguator
-            ? $"_{SanitizeIdentifier(selectedMethod.Identifier.ValueText)}"
-            : string.Empty;
-
-        string reproClassName = $"FuzzRepro_{shortSeedHex}{methodSuffix}_Kernels";
-        string reproMethodName = $"Repro_{shortSeedHex}{methodSuffix}";
-        string reproFileStem = $"Repro_{seedHex}{methodSuffix}";
+        var (reproClassName, reproMethodName, reproFileStem, seedHex) =
+            ResolveReproNames(selectedMethod, fuzzSeed, targetKernelName, kernelMethods.Count);
 
         var renamedMethod = selectedMethod.WithIdentifier(SyntaxFactory.Identifier(reproMethodName));
 
@@ -102,6 +90,29 @@ public static class FuzzPromoter
             caseSnippetContent,
             knownDivergenceEntry,
             reproFileStem);
+    }
+
+    private static (string ClassName, string MethodName, string FileStem, string SeedHex) ResolveReproNames(
+        MethodDeclarationSyntax selectedMethod,
+        ulong fuzzSeed,
+        string? targetKernelName,
+        int totalKernelCount)
+    {
+        bool hasKernelSeed = TryExtractKernelSeed(selectedMethod, out ulong extractedKernelSeed);
+        ulong effectiveSeed = hasKernelSeed ? extractedKernelSeed : fuzzSeed;
+        string seedHex = FuzzRandom.FormatSeed(effectiveSeed);
+        string shortSeedHex = string.Create(CultureInfo.InvariantCulture, $"{effectiveSeed:X8}");
+
+        bool needsMethodDisambiguator = !hasKernelSeed &&
+            (!string.IsNullOrWhiteSpace(targetKernelName) || totalKernelCount > 1);
+        string methodSuffix = needsMethodDisambiguator
+            ? $"_{SanitizeIdentifier(selectedMethod.Identifier.ValueText)}"
+            : string.Empty;
+
+        string reproClassName = $"FuzzRepro_{shortSeedHex}{methodSuffix}_Kernels";
+        string reproMethodName = $"Repro_{shortSeedHex}{methodSuffix}";
+        string reproFileStem = $"Repro_{seedHex}{methodSuffix}";
+        return (reproClassName, reproMethodName, reproFileStem, seedHex);
     }
 
     /// <summary>
@@ -259,6 +270,17 @@ public static class FuzzPromoter
         var rewrittenMethod = (MethodDeclarationSyntax)rewriter.Visit(renamedMethod);
         string methodText = FuzzSyntaxHelpers.RenderFullNode(rewrittenMethod).AsSpan().TrimEnd().ToString();
 
+        var rewrittenHelpers = CollectUsedRewrittenHelpers(root, rewriter, methodText);
+        AppendDeclarationsAndClass(writer, reproClassName, methodText, rewrittenHelpers);
+
+        return writer.ToString();
+    }
+
+    private static List<string> CollectUsedRewrittenHelpers(
+        CompilationUnitSyntax root,
+        BatchClassQualifierRewriter rewriter,
+        string methodText)
+    {
         var helperDecls = FuzzSyntaxHelpers.GetDeviceFunctionMethods(root);
         bool anyHelperUsed = false;
         foreach (var h in helperDecls)
@@ -280,6 +302,15 @@ public static class FuzzPromoter
             }
         }
 
+        return rewrittenHelpers;
+    }
+
+    private static void AppendDeclarationsAndClass(
+        SourceWriter writer,
+        string reproClassName,
+        string methodText,
+        List<string> rewrittenHelpers)
+    {
         bool usesEnum = methodText.Contains("FuzzEnum", StringComparison.Ordinal) ||
                         ContainsInAny(rewrittenHelpers, static h => h.Contains("FuzzEnum", StringComparison.Ordinal));
         if (usesEnum)
@@ -306,8 +337,6 @@ public static class FuzzPromoter
 
             AppendNormalizedLines(writer, methodText);
         }
-
-        return writer.ToString();
     }
 
     private static bool ContainsInAny(IReadOnlyList<string> items, Func<string, bool> predicate)

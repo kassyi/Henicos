@@ -42,6 +42,19 @@ public sealed class GenCommand : IFuzzCommand
         return Execute(options!);
     }
 
+    private static readonly Dictionary<string, FuzzOptionSpec> s_options = FuzzOptionTable.CreateTable(
+        new("--fuzz-seed", FuzzOptionTable.Value(FuzzOptionTable.ParseFuzzSeed)),
+        new("--input-seed", FuzzOptionTable.Value(FuzzOptionTable.ParseInputSeed)),
+        new("--batch-size", FuzzOptionTable.Value(FuzzOptionTable.ParseBatchSize)),
+        new("--size", FuzzOptionTable.Value(FuzzOptionTable.ParseSize)),
+        new("--profile", FuzzOptionTable.Value(FuzzOptionTable.ParseProfileCode)),
+        new("--allow-issue", FuzzOptionTable.Value(FuzzOptionTable.ParseAllowIssue)),
+        new("--swarm-focus", FuzzOptionTable.Value(FuzzOptionTable.ParseSwarmFocus)),
+        new("--metamorphic", FuzzOptionTable.Flag(static v => v.Metamorphic = true)),
+        new("--out-dir", FuzzOptionTable.Value(FuzzOptionTable.ParseOutDir)),
+        new("--repo-root", FuzzOptionTable.Value(FuzzOptionTable.ParseRepoRoot)),
+        new("--cuda-arch", FuzzOptionTable.Value(FuzzOptionTable.ParseCudaArch)));
+
     /// <summary>Parses command-line arguments into a <see cref="GenCommandOptions"/> record.</summary>
     public static bool TryParseOptions(
         ReadOnlySpan<string> args,
@@ -50,151 +63,42 @@ public sealed class GenCommand : IFuzzCommand
         out string? error)
     {
         options = null;
-        showHelp = false;
-        error = null;
-
-        ulong fuzzSeed = 1UL;
-        int? inputSeed = null;
-        int batchSize = 64;
-        int size = 4;
-        string profile = "C";
-        var allowedIssues = new HashSet<int>();
-        FuzzSwarmFocus swarmFocus = FuzzSwarmFocus.Default;
-        bool metamorphic = false;
-        string outDir = Path.Combine("tmp", "differential-fuzz", "Generated");
-        string? repoRoot = null;
-        string? cudaArch = null;
-
-        for (int i = 0; i < args.Length; i++)
+        var values = new FuzzOptionValues
         {
-            string arg = args[i];
-            switch (arg)
-            {
-                case "--help" or "-h":
-                    showHelp = true;
-                    return true;
+            BatchSize = 64,
+            Size = 4,
+            ProfileCode = "C",
+            OutDir = Path.Combine("tmp", "differential-fuzz", "Generated"),
+        };
 
-                case "--fuzz-seed":
-                    if (i + 1 >= args.Length || !FuzzRandom.TryParseSeed(args[++i], out fuzzSeed))
-                    {
-                        error = "--fuzz-seed requires a valid 64-bit integer (decimal or 0x hex).";
-                        return false;
-                    }
+        if (!FuzzOptionTable.TryParse(args, s_options, values, out showHelp, out error) || showHelp)
+        {
+            return showHelp;
+        }
 
-                    break;
-
-                case "--input-seed":
-                    if (i + 1 >= args.Length || !int.TryParse(args[++i], NumberStyles.Integer, CultureInfo.InvariantCulture, out int parsedInputSeed))
-                    {
-                        error = "--input-seed requires a 32-bit integer.";
-                        return false;
-                    }
-
-                    inputSeed = parsedInputSeed;
-                    break;
-
-                case "--batch-size":
-                    if (i + 1 >= args.Length || !int.TryParse(args[++i], NumberStyles.Integer, CultureInfo.InvariantCulture, out batchSize) || batchSize is < 1 or > 256)
-                    {
-                        error = "--batch-size requires an integer in [1, 256].";
-                        return false;
-                    }
-
-                    break;
-
-                case "--size":
-                    if (i + 1 >= args.Length || !int.TryParse(args[++i], NumberStyles.Integer, CultureInfo.InvariantCulture, out size) || size is < 1 or > 8)
-                    {
-                        error = "--size requires an integer in [1, 8].";
-                        return false;
-                    }
-
-                    break;
-
-                case "--profile":
-                    if (i + 1 >= args.Length)
-                    {
-                        error = "--profile requires M|C|G.";
-                        return false;
-                    }
-
-                    profile = KnownIssueFilter.NormalizeProfile(args[++i]);
-                    break;
-
-                case "--allow-issue":
-                    if (i + 1 >= args.Length ||
-                        !int.TryParse(args[++i].AsSpan().TrimStart('#'), NumberStyles.Integer, CultureInfo.InvariantCulture, out int issueNum) ||
-                        issueNum <= 0)
-                    {
-                        error = "--allow-issue requires a positive integer issue number.";
-                        return false;
-                    }
-
-                    allowedIssues.Add(issueNum);
-                    break;
-
-                case "--swarm-focus":
-                    if (i + 1 >= args.Length || !FuzzSwarmConfig.TryParseFocus(args[++i], out swarmFocus))
-                    {
-                        error = "--swarm-focus requires 'default', 'coalesce-assign-value', or 'tuple-deconstruct-complex'.";
-                        return false;
-                    }
-
-                    break;
-
-                case "--metamorphic":
-                    metamorphic = true;
-                    break;
-
-                case "--out-dir":
-                    if (i + 1 >= args.Length)
-                    {
-                        error = "--out-dir requires a directory path.";
-                        return false;
-                    }
-
-                    outDir = args[++i];
-                    break;
-
-                case "--repo-root":
-                    if (i + 1 >= args.Length)
-                    {
-                        error = "--repo-root requires a directory path.";
-                        return false;
-                    }
-
-                    repoRoot = args[++i];
-                    break;
-
-                case "--cuda-arch":
-                    if (i + 1 >= args.Length)
-                    {
-                        error = "--cuda-arch requires a value.";
-                        return false;
-                    }
-
-                    cudaArch = args[++i];
-                    break;
-
-                default:
-                    error = $"Unknown option '{arg}'.";
-                    return false;
-            }
+        FuzzSwarmFocus swarmFocus = FuzzSwarmFocus.Default;
+        if (values.SwarmFocus is not null)
+        {
+            FuzzSwarmConfig.TryParseFocus(values.SwarmFocus, out swarmFocus);
         }
 
         var fuzzOptions = new FuzzOptions
         {
-            FuzzSeed = fuzzSeed,
-            InputSeed = inputSeed,
-            BatchSize = batchSize,
-            Size = size,
-            Profile = profile,
-            AllowedIssues = allowedIssues,
+            FuzzSeed = values.FuzzSeed,
+            InputSeed = values.InputSeed,
+            BatchSize = values.BatchSize,
+            Size = values.Size,
+            Profile = values.ProfileCode,
+            AllowedIssues = new HashSet<int>(values.AllowedIssues),
             SwarmFocus = swarmFocus,
-            Metamorphic = metamorphic,
+            Metamorphic = values.Metamorphic,
         };
 
-        options = new GenCommandOptions(fuzzOptions, outDir, repoRoot, cudaArch);
+        options = new GenCommandOptions(
+            fuzzOptions,
+            values.OutDir ?? Path.Combine("tmp", "differential-fuzz", "Generated"),
+            values.RepoRoot,
+            values.CudaArch);
         return true;
     }
 

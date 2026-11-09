@@ -50,6 +50,16 @@ public sealed class PromoteCommand : IFuzzCommand
         return Execute(options!);
     }
 
+    private static readonly Dictionary<string, FuzzOptionSpec> s_options = FuzzOptionTable.CreateTable(
+        new("--source", FuzzOptionTable.Value(FuzzOptionTable.ParseSourcePath)),
+        new("--fuzz-seed", FuzzOptionTable.Value(FuzzOptionTable.ParseFuzzSeed)),
+        new("--input-seed", FuzzOptionTable.Value(FuzzOptionTable.ParseInputSeed)),
+        new("--failing-paths", FuzzOptionTable.Value(FuzzOptionTable.ParseFailingPaths)),
+        new("--failure-kind", FuzzOptionTable.Value(FuzzOptionTable.ParseFailureKind)),
+        new("--column", FuzzOptionTable.Value(FuzzOptionTable.ParseColumn)),
+        new("--findings-dir", FuzzOptionTable.Value(FuzzOptionTable.ParseFindingsDir)),
+        new("--kernel", FuzzOptionTable.Value(FuzzOptionTable.ParseKernelName)));
+
     /// <summary>Parses command-line arguments into a <see cref="PromoteCommandOptions"/> record.</summary>
     public static bool TryParseOptions(
         ReadOnlySpan<string> args,
@@ -58,126 +68,34 @@ public sealed class PromoteCommand : IFuzzCommand
         out string? error)
     {
         options = null;
-        showHelp = false;
-        error = null;
-
-        string? sourcePath = null;
-        ulong fuzzSeed = 1UL;
-        int inputSeed = 0;
-        string failingPaths = "Native,Cuda";
-        string failureKind = "CellMismatch";
-        string column = "hash";
-        string findingsDir = Path.Combine("tmp", "differential-fuzz", "findings");
-        string? kernelName = null;
-
-        for (int i = 0; i < args.Length; i++)
+        var values = new FuzzOptionValues
         {
-            string arg = args[i];
-            switch (arg)
-            {
-                case "--help" or "-h":
-                    showHelp = true;
-                    return true;
+            FailingPaths = "Native,Cuda",
+            FailureKind = "CellMismatch",
+            Column = "hash",
+            FindingsDir = Path.Combine("tmp", "differential-fuzz", "findings"),
+        };
 
-                case "--source":
-                    if (i + 1 >= args.Length)
-                    {
-                        error = "--source requires a file path.";
-                        return false;
-                    }
-
-                    sourcePath = args[++i];
-                    break;
-
-                case "--fuzz-seed":
-                    if (i + 1 >= args.Length || !FuzzRandom.TryParseSeed(args[++i], out fuzzSeed))
-                    {
-                        error = "--fuzz-seed requires a 64-bit integer.";
-                        return false;
-                    }
-
-                    break;
-
-                case "--input-seed":
-                    if (i + 1 >= args.Length || !int.TryParse(args[++i], NumberStyles.Integer, CultureInfo.InvariantCulture, out inputSeed))
-                    {
-                        error = "--input-seed requires an integer.";
-                        return false;
-                    }
-
-                    break;
-
-                case "--failing-paths":
-                    if (i + 1 >= args.Length)
-                    {
-                        error = "--failing-paths requires a value.";
-                        return false;
-                    }
-
-                    failingPaths = args[++i];
-                    break;
-
-                case "--failure-kind":
-                    if (i + 1 >= args.Length)
-                    {
-                        error = "--failure-kind requires a value.";
-                        return false;
-                    }
-
-                    failureKind = args[++i];
-                    break;
-
-                case "--column":
-                    if (i + 1 >= args.Length)
-                    {
-                        error = "--column requires a column name.";
-                        return false;
-                    }
-
-                    column = args[++i];
-                    break;
-
-                case "--findings-dir":
-                    if (i + 1 >= args.Length)
-                    {
-                        error = "--findings-dir requires a directory path.";
-                        return false;
-                    }
-
-                    findingsDir = args[++i];
-                    break;
-
-                case "--kernel":
-                    if (i + 1 >= args.Length)
-                    {
-                        error = "--kernel requires a kernel method name.";
-                        return false;
-                    }
-
-                    kernelName = args[++i];
-                    break;
-
-                default:
-                    error = $"Unknown option '{arg}'.";
-                    return false;
-            }
+        if (!FuzzOptionTable.TryParse(args, s_options, values, out showHelp, out error) || showHelp)
+        {
+            return showHelp;
         }
 
-        if (string.IsNullOrWhiteSpace(sourcePath) || !File.Exists(sourcePath))
+        if (string.IsNullOrWhiteSpace(values.SourcePath) || !File.Exists(values.SourcePath))
         {
             error = "--source requires an existing .cu.cs file.";
             return false;
         }
 
         options = new PromoteCommandOptions(
-            sourcePath,
-            fuzzSeed,
-            inputSeed,
-            failingPaths,
-            failureKind,
-            column,
-            findingsDir,
-            kernelName);
+            values.SourcePath,
+            values.FuzzSeed,
+            values.InputSeed ?? 0,
+            values.FailingPaths,
+            values.FailureKind,
+            values.Column,
+            values.FindingsDir ?? Path.Combine("tmp", "differential-fuzz", "findings"),
+            values.KernelName);
         return true;
     }
 

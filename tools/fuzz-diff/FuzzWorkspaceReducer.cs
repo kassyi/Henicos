@@ -16,6 +16,30 @@ internal static class FuzzWorkspaceReducer
 {
     private static readonly UTF8Encoding s_utf8NoBom = new(encoderShouldEmitUTF8Identifier: false);
 
+    private sealed record class WorkspaceReductionContext(
+        ulong FuzzSeed,
+        int InputSeed,
+        string Profile,
+        string WorkDir,
+        string? RepoRoot,
+        FuzzFailureSignature ExpectedSignature,
+        bool NoGpuLock);
+
+    private sealed record class BatchRunConfig(
+        string FullWorkDir,
+        string? RepoRoot,
+        SpeculativeCandidateBatch Batch,
+        bool IsCudaProject,
+        bool NoGpuLock,
+        bool ManagedOnly,
+        FuzzFailureSignature ExpectedSignature);
+
+    private readonly record struct FuzzEventResult(
+        string KernelName,
+        List<string> Paths,
+        string FailureKind,
+        string Column);
+
     internal static (string ReducedSource, int Iterations) ReduceWorkspaceWithSpeculativeBatches(
         string initialSource,
         ulong fuzzSeed,
@@ -26,49 +50,69 @@ internal static class FuzzWorkspaceReducer
         FuzzFailureSignature expectedSignature,
         bool noGpuLock)
     {
-        string current = initialSource;
+        var ctx = new WorkspaceReductionContext(
+            fuzzSeed, inputSeed, profile, workDir, repoRoot, expectedSignature, noGpuLock);
         int iterations = 0;
+        var (afterHoisting, hoistIter) = TryApplyInitialHoisting(initialSource, ctx);
+        iterations += hoistIter;
 
-        string hoisted = FuzzReducer.HoistLocalsToDefault(initialSource);
-        if (!string.Equals(hoisted, initialSource, StringComparison.Ordinal))
+        var (afterRounds, roundIter) = RunSpeculativeRounds(afterHoisting, ctx);
+        iterations += roundIter;
+
+        var (afterPruning, pruneIter) = TryPruneUnusedHoistedLocals(afterRounds, ctx);
+        iterations += pruneIter;
+
+        return (afterPruning, iterations);
+    }
+
+    private static (string Current, int Iterations) TryApplyInitialHoisting(
+        string current,
+        WorkspaceReductionContext ctx)
+    {
+        string hoisted = FuzzReducer.HoistLocalsToDefault(current);
+        if (string.Equals(hoisted, current, StringComparison.Ordinal))
         {
-            iterations++;
-            if (EvaluateSingleCandidateInWorkspace(hoisted, fuzzSeed, inputSeed, profile, workDir, repoRoot, expectedSignature, noGpuLock))
-            {
-                current = hoisted;
-            }
+            return (current, 0);
         }
 
-        IReadOnlyList<IReadOnlyList<int>>? priorSuccessRemovals = null;
+        bool reproduced = EvaluateSingleCandidateInWorkspace(
+            hoisted,
+            ctx.FuzzSeed,
+            ctx.InputSeed,
+            ctx.Profile,
+            ctx.WorkDir,
+            ctx.RepoRoot,
+            ctx.ExpectedSignature,
+            ctx.NoGpuLock);
+        return (reproduced ? hoisted : current, 1);
+    }
 
+    private static (string Current, int Iterations) RunSpeculativeRounds(
+        string current,
+        WorkspaceReductionContext ctx)
+    {
+        int iterations = 0;
+        IReadOnlyList<IReadOnlyList<int>>? priorSuccessRemovals = null;
         for (int round = 0; round < 14; round++)
         {
             var specBatch = FuzzReducer.GenerateSpeculativeBatchCandidates(
                 current,
-                fuzzSeed,
-                inputSeed,
+                ctx.FuzzSeed,
+                ctx.InputSeed,
                 maxCandidates: 16,
                 priorSuccessfulRemovals: priorSuccessRemovals);
 
             iterations++;
             var failingCandidateNames = EvaluateSpeculativeBatchInWorkspace(
                 specBatch,
-                workDir,
-                repoRoot,
-                useCuda: profile == "G",
-                noGpuLock,
-                expectedSignature,
-                managedOnly: profile == "M");
+                ctx.WorkDir,
+                ctx.RepoRoot,
+                useCuda: ctx.Profile == "G",
+                ctx.NoGpuLock,
+                ctx.ExpectedSignature,
+                managedOnly: ctx.Profile == "M");
 
-            var winningRemovals = new List<IReadOnlyList<int>>();
-            foreach (var cand in specBatch.Candidates)
-            {
-                if (failingCandidateNames.Contains(cand.CandidateKernelName) && cand.RemovedStatementIndices.Count > 0)
-                {
-                    winningRemovals.Add(cand.RemovedStatementIndices);
-                }
-            }
-
+            var winningRemovals = CollectWinningRemovals(specBatch, failingCandidateNames);
             var best = FuzzReducer.SelectBestSpeculativeCandidate(
                 specBatch,
                 cand => failingCandidateNames.Contains(cand.CandidateKernelName));
@@ -88,27 +132,65 @@ internal static class FuzzWorkspaceReducer
             priorSuccessRemovals = winningRemovals.Count >= 2 ? winningRemovals : null;
         }
 
-        string allPruned = FuzzReducer.PruneUnusedHoistedLocals(current, static _ => true);
-        if (!string.Equals(allPruned, current, StringComparison.Ordinal))
+        return (current, iterations);
+    }
+
+    private static List<IReadOnlyList<int>> CollectWinningRemovals(
+        SpeculativeCandidateBatch specBatch,
+        IReadOnlySet<string> failingCandidateNames)
+    {
+        var winningRemovals = new List<IReadOnlyList<int>>();
+        foreach (var cand in specBatch.Candidates)
         {
-            iterations++;
-            if (EvaluateSingleCandidateInWorkspace(allPruned, fuzzSeed, inputSeed, profile, workDir, repoRoot, expectedSignature, noGpuLock))
+            if (failingCandidateNames.Contains(cand.CandidateKernelName) && cand.RemovedStatementIndices.Count > 0)
             {
-                current = allPruned;
-            }
-            else
-            {
-                current = FuzzReducer.PruneUnusedHoistedLocals(
-                    current,
-                    cand =>
-                    {
-                        iterations++;
-                        return EvaluateSingleCandidateInWorkspace(cand, fuzzSeed, inputSeed, profile, workDir, repoRoot, expectedSignature, noGpuLock);
-                    });
+                winningRemovals.Add(cand.RemovedStatementIndices);
             }
         }
 
-        return (current, iterations);
+        return winningRemovals;
+    }
+
+    private static (string Current, int Iterations) TryPruneUnusedHoistedLocals(
+        string current,
+        WorkspaceReductionContext ctx)
+    {
+        string allPruned = FuzzReducer.PruneUnusedHoistedLocals(current, static _ => true);
+        if (string.Equals(allPruned, current, StringComparison.Ordinal))
+        {
+            return (current, 0);
+        }
+
+        if (EvaluateSingleCandidateInWorkspace(
+            allPruned,
+            ctx.FuzzSeed,
+            ctx.InputSeed,
+            ctx.Profile,
+            ctx.WorkDir,
+            ctx.RepoRoot,
+            ctx.ExpectedSignature,
+            ctx.NoGpuLock))
+        {
+            return (allPruned, 1);
+        }
+
+        int iter = 1;
+        string pruned = FuzzReducer.PruneUnusedHoistedLocals(
+            current,
+            cand =>
+            {
+                iter++;
+                return EvaluateSingleCandidateInWorkspace(
+                    cand,
+                    ctx.FuzzSeed,
+                    ctx.InputSeed,
+                    ctx.Profile,
+                    ctx.WorkDir,
+                    ctx.RepoRoot,
+                    ctx.ExpectedSignature,
+                    ctx.NoGpuLock);
+            });
+        return (pruned, iter);
     }
 
     internal static bool RunExternalShellPredicate(string command)
@@ -207,8 +289,24 @@ internal static class FuzzWorkspaceReducer
         FuzzFailureSignature expectedSignature,
         bool managedOnly = false)
     {
-        var failing = new HashSet<string>(StringComparer.Ordinal);
         string fullWorkDir = Path.GetFullPath(workDir);
+        WriteSpeculativeBatchArtifacts(fullWorkDir, repoRoot, batch, useCuda);
+
+        var perKernelFailures = new Dictionary<string, (HashSet<string> Paths, string FailureKind, string Column)>(
+            StringComparer.Ordinal);
+        var baseConfig = new BatchRunConfig(
+            fullWorkDir, repoRoot, batch, IsCudaProject: false, noGpuLock, managedOnly, expectedSignature);
+        RunSpeculativePasses(baseConfig, useCuda, perKernelFailures);
+
+        return CollectMatchingFailingCandidates(perKernelFailures, expectedSignature);
+    }
+
+    private static void WriteSpeculativeBatchArtifacts(
+        string fullWorkDir,
+        string? repoRoot,
+        SpeculativeCandidateBatch batch,
+        bool useCuda)
+    {
         string genDir = Path.Combine(fullWorkDir, "Generated");
         Directory.CreateDirectory(genDir);
 
@@ -220,39 +318,36 @@ internal static class FuzzWorkspaceReducer
             string? cudaArch = useCuda ? DetectHostCudaArchForReducer() : null;
             FuzzBatchWorkspaceWriter.WriteProjectScaffolds(fullWorkDir, genDir, Path.GetFullPath(repoRoot), cudaArch);
         }
+    }
 
-        bool needsCpuPass = !useCuda ||
-                            expectedSignature.FailingPathsMask.Contains("Managed", StringComparison.OrdinalIgnoreCase) ||
-                            expectedSignature.FailingPathsMask.Contains("Native", StringComparison.OrdinalIgnoreCase);
-
-        var perKernelFailures = new Dictionary<string, (HashSet<string> Paths, string FailureKind, string Column)>(StringComparer.Ordinal);
+    private static void RunSpeculativePasses(
+        BatchRunConfig baseConfig,
+        bool useCuda,
+        Dictionary<string, (HashSet<string> Paths, string FailureKind, string Column)> perKernelFailures)
+    {
+        var mask = baseConfig.ExpectedSignature.FailingPathsMask;
+        bool hasManaged = mask.Contains("Managed", StringComparison.OrdinalIgnoreCase);
+        bool hasNative = mask.Contains("Native", StringComparison.OrdinalIgnoreCase);
+        bool needsCpuPass = !useCuda || hasManaged || hasNative;
 
         if (needsCpuPass)
         {
-            RunBatchProjectAndCollectEvents(
-                fullWorkDir,
-                repoRoot,
-                batch,
-                isCudaProject: false,
-                noGpuLock: true,
-                managedOnly: managedOnly,
-                expectedSignature,
-                perKernelFailures);
+            var cpuConfig = baseConfig with { IsCudaProject = false, NoGpuLock = true };
+            RunBatchProjectAndCollectEvents(cpuConfig, perKernelFailures);
         }
 
         if (useCuda)
         {
-            RunBatchProjectAndCollectEvents(
-                fullWorkDir,
-                repoRoot,
-                batch,
-                isCudaProject: true,
-                noGpuLock: noGpuLock,
-                managedOnly: false,
-                expectedSignature,
-                perKernelFailures);
+            var cudaConfig = baseConfig with { IsCudaProject = true, ManagedOnly = false };
+            RunBatchProjectAndCollectEvents(cudaConfig, perKernelFailures);
         }
+    }
 
+    private static HashSet<string> CollectMatchingFailingCandidates(
+        Dictionary<string, (HashSet<string> Paths, string FailureKind, string Column)> perKernelFailures,
+        FuzzFailureSignature expectedSignature)
+    {
+        var failing = new HashSet<string>(StringComparer.Ordinal);
         foreach (var (kernelName, info) in perKernelFailures)
         {
             string mergedPaths = string.Join(",", info.Paths);
@@ -266,22 +361,40 @@ internal static class FuzzWorkspaceReducer
     }
 
     private static void RunBatchProjectAndCollectEvents(
-        string fullWorkDir,
-        string? repoRoot,
-        SpeculativeCandidateBatch batch,
-        bool isCudaProject,
-        bool noGpuLock,
-        bool managedOnly,
-        FuzzFailureSignature expectedSignature,
+        BatchRunConfig config,
         Dictionary<string, (HashSet<string> Paths, string FailureKind, string Column)> perKernelFailures)
     {
-        string hostOs = OperatingSystem.IsWindows() ? "win" : OperatingSystem.IsLinux() ? "linux" : OperatingSystem.IsMacOS() ? "osx" : "unix";
-        string projName = isCudaProject ? "FuzzBatch.Cuda" : "FuzzBatch.Cpu";
-        string csproj = Path.Combine(fullWorkDir, $"{projName}.csproj");
-        string dll = Path.Combine(fullWorkDir, "bin", hostOs, projName, "Debug", "net10.0", $"{projName}.dll");
+        string hostOs = OperatingSystem.IsWindows()
+            ? "win"
+            : OperatingSystem.IsLinux() ? "linux" : OperatingSystem.IsMacOS() ? "osx" : "unix";
+        string projName = config.IsCudaProject ? "FuzzBatch.Cuda" : "FuzzBatch.Cpu";
+        string csproj = Path.Combine(config.FullWorkDir, $"{projName}.csproj");
+        string dll = Path.Combine(
+            config.FullWorkDir, "bin", hostOs, projName, "Debug", "net10.0", $"{projName}.dll");
 
-        string skipCpu = (!isCudaProject && managedOnly) ? "-p:GSharpSkipCpuCompilation=true" : "-p:GSharpSkipCpuCompilation=false";
-        string assetsPath = Path.Combine(fullWorkDir, "obj", hostOs, projName, "project.assets.json");
+        if (!BuildBatchProject(config, csproj, hostOs, projName, perKernelFailures))
+        {
+            return;
+        }
+
+        if (TryExecuteBatchProcess(
+            config, dll, perKernelFailures, out string stdout, out int runCode))
+        {
+            ParseFailureEvents(config, stdout, runCode, perKernelFailures);
+        }
+    }
+
+    private static bool BuildBatchProject(
+        BatchRunConfig config,
+        string csproj,
+        string hostOs,
+        string projName,
+        Dictionary<string, (HashSet<string> Paths, string FailureKind, string Column)> perKernelFailures)
+    {
+        string skipCpu = (!config.IsCudaProject && config.ManagedOnly)
+            ? "-p:GSharpSkipCpuCompilation=true"
+            : "-p:GSharpSkipCpuCompilation=false";
+        string assetsPath = Path.Combine(config.FullWorkDir, "obj", hostOs, projName, "project.assets.json");
         string noRestore = File.Exists(assetsPath) ? "--no-restore" : string.Empty;
         int buildCode = RunDotnetProcess(
             $"build \"{csproj}\" -c Debug -m:1 -nodeReuse:false --no-dependencies {noRestore} {skipCpu}",
@@ -289,122 +402,177 @@ internal static class FuzzWorkspaceReducer
             out _,
             out bool buildTimedOut,
             timeoutMs: 240_000);
-        if (buildCode != 0)
+        if (buildCode == 0)
         {
-            if (!buildTimedOut &&
-                batch.Candidates.Count == 1 &&
-                string.Equals(expectedSignature.FailureKind, "compile_error", StringComparison.OrdinalIgnoreCase))
-            {
-                string candName = batch.Candidates[0].CandidateKernelName;
-                string dialectPath = isCudaProject ? "Cuda" : (managedOnly ? "Managed" : "Native");
-                MergeCandidateFailure(perKernelFailures, candName, [dialectPath], "compile_error", expectedSignature.Column);
-            }
-
-            return;
+            return true;
         }
 
+        if (!buildTimedOut &&
+            config.Batch.Candidates.Count == 1 &&
+            string.Equals(config.ExpectedSignature.FailureKind, "compile_error", StringComparison.OrdinalIgnoreCase))
+        {
+            string candName = config.Batch.Candidates[0].CandidateKernelName;
+            string dialectPath = config.IsCudaProject
+                ? "Cuda"
+                : (config.ManagedOnly ? "Managed" : "Native");
+            MergeCandidateFailure(
+                perKernelFailures, candName, [dialectPath], "compile_error", config.ExpectedSignature.Column);
+        }
+
+        return false;
+    }
+
+    private static bool TryExecuteBatchProcess(
+        BatchRunConfig config,
+        string dll,
+        Dictionary<string, (HashSet<string> Paths, string FailureKind, string Column)> perKernelFailures,
+        out string stdout,
+        out int runCode)
+    {
         string runArgs = $"exec \"{dll}\"";
-        if (managedOnly)
+        if (config.ManagedOnly)
         {
             runArgs += " --managed-only";
         }
 
-        if (batch.InputSeed is { } s)
+        if (config.Batch.InputSeed is { } s)
         {
             runArgs += string.Create(CultureInfo.InvariantCulture, $" --input-seed {s}");
         }
 
-        string stdout;
         bool runTimedOut;
-        int runCode;
-        if (isCudaProject && !noGpuLock && !string.IsNullOrWhiteSpace(repoRoot))
+        if (config.IsCudaProject && !config.NoGpuLock && !string.IsNullOrWhiteSpace(config.RepoRoot))
         {
-            string lockScript = Path.Combine(Path.GetFullPath(repoRoot), "scripts", "agent", "gpu-lock.js");
-            runCode = RunProcess("node", $"\"{lockScript}\" -- \"dotnet {runArgs}\"", out stdout, out _, out runTimedOut, timeoutMs: 120_000);
+            string lockScript = Path.Combine(Path.GetFullPath(config.RepoRoot), "scripts", "agent", "gpu-lock.js");
+            string lockArgs = $"\"{lockScript}\" -- \"dotnet {runArgs}\"";
+            runCode = RunProcess("node", lockArgs, out stdout, out _, out runTimedOut, timeoutMs: 120_000);
         }
         else
         {
             runCode = RunDotnetProcess(runArgs, out stdout, out _, out runTimedOut, timeoutMs: 120_000);
         }
 
-        if (runTimedOut && batch.Candidates.Count == 1)
+        if (runTimedOut && config.Batch.Candidates.Count == 1)
         {
-            string candName = batch.Candidates[0].CandidateKernelName;
-            string[] paths = isCudaProject ? ["Cuda"] : (managedOnly ? ["Managed"] : ["Managed", "Native"]);
-            MergeCandidateFailure(perKernelFailures, candName, paths, "hang", expectedSignature.Column);
-            return;
+            string candName = config.Batch.Candidates[0].CandidateKernelName;
+            string[] paths = config.IsCudaProject
+                ? ["Cuda"]
+                : (config.ManagedOnly ? ["Managed"] : ["Managed", "Native"]);
+            MergeCandidateFailure(
+                perKernelFailures, candName, paths, "hang", config.ExpectedSignature.Column);
+            return false;
         }
 
+        return !runTimedOut;
+    }
+
+    private static void ParseFailureEvents(
+        BatchRunConfig config,
+        string stdout,
+        int runCode,
+        Dictionary<string, (HashSet<string> Paths, string FailureKind, string Column)> perKernelFailures)
+    {
         bool anyEvent = false;
         foreach (string line in FuzzSyntaxHelpers.SplitNonEmpty(stdout, "\r\n"))
         {
-            ReadOnlySpan<char> trimmed = line.AsSpan().Trim();
-            if (trimmed.Length < 2 || trimmed[0] != '{' || trimmed[^1] != '}')
+            if (TryParseEventLine(line, config.IsCudaProject, config.ManagedOnly, out var ev))
             {
-                continue;
-            }
-
-            try
-            {
-                using var doc = JsonDocument.Parse(trimmed.ToString());
-                var root = doc.RootElement;
-                if (!root.TryGetProperty("status", out var statusProp))
-                {
-                    continue;
-                }
-
-                string? status = statusProp.GetString();
-                if (status is not ("failed" or "harness_error"))
-                {
-                    continue;
-                }
-
-                if (!root.TryGetProperty("kernel", out var kernelProp) || kernelProp.GetString() is not { } kName)
-                {
-                    continue;
-                }
-
                 anyEvent = true;
-                var paths = new List<string>();
-                if (root.TryGetProperty("failingPaths", out var pathsProp) && pathsProp.ValueKind == JsonValueKind.Array)
-                {
-                    foreach (var elem in pathsProp.EnumerateArray())
-                    {
-                        if (elem.GetString() is { } p && !string.IsNullOrWhiteSpace(p))
-                        {
-                            paths.Add(p);
-                        }
-                    }
-                }
-
-                if (paths.Count == 0)
-                {
-                    paths.Add(isCudaProject ? "Cuda" : (managedOnly ? "Managed" : "Native"));
-                }
-
-                string fKind = root.TryGetProperty("failureKind", out var kindProp) && kindProp.GetString() is { } fk
-                    ? fk
-                    : (status == "harness_error" ? "HarnessException" : "CellMismatch");
-                string col = root.TryGetProperty("column", out var colProp) && colProp.GetString() is { } c
-                    ? c
-                    : "hash";
-
-                MergeCandidateFailure(perKernelFailures, kName, paths, fKind, col);
-            }
-            // smell-scan: ignore swallowed-exception -- the runner also prints lines that only look like JSON; they
-            // carry no candidate result
-            catch (JsonException ex)
-            {
-                Trace.WriteLine($"Skipping a non-event output line: {ex.Message}");
+                MergeCandidateFailure(perKernelFailures, ev.KernelName, ev.Paths, ev.FailureKind, ev.Column);
             }
         }
 
-        if (!anyEvent && runCode != 0 && batch.Candidates.Count == 1)
+        if (!anyEvent && runCode != 0 && config.Batch.Candidates.Count == 1)
         {
-            string candName = batch.Candidates[0].CandidateKernelName;
-            string[] paths = isCudaProject ? ["Cuda"] : (managedOnly ? ["Managed"] : ["Native"]);
-            MergeCandidateFailure(perKernelFailures, candName, paths, "crash", expectedSignature.Column);
+            string candName = config.Batch.Candidates[0].CandidateKernelName;
+            string[] paths = config.IsCudaProject
+                ? ["Cuda"]
+                : (config.ManagedOnly ? ["Managed"] : ["Native"]);
+            MergeCandidateFailure(
+                perKernelFailures, candName, paths, "crash", config.ExpectedSignature.Column);
         }
+    }
+
+    private static bool TryParseEventLine(
+        string line,
+        bool isCudaProject,
+        bool managedOnly,
+        out FuzzEventResult result)
+    {
+        result = default;
+        ReadOnlySpan<char> trimmed = line.AsSpan().Trim();
+        if (trimmed.Length < 2 || trimmed[0] != '{' || trimmed[^1] != '}')
+        {
+            return false;
+        }
+
+        try
+        {
+            using var doc = JsonDocument.Parse(trimmed.ToString());
+            return TryExtractEventFields(doc.RootElement, isCudaProject, managedOnly, out result);
+        }
+        catch (JsonException ex)
+        {
+            Trace.WriteLine($"Skipping a non-event output line: {ex.Message}");
+            return false;
+        }
+    }
+
+    private static bool TryExtractEventFields(
+        JsonElement root,
+        bool isCudaProject,
+        bool managedOnly,
+        out FuzzEventResult result)
+    {
+        result = default;
+        if (!root.TryGetProperty("status", out var statusProp))
+        {
+            return false;
+        }
+
+        string? status = statusProp.GetString();
+        if (status is not ("failed" or "harness_error"))
+        {
+            return false;
+        }
+
+        if (!root.TryGetProperty("kernel", out var kernelProp) || kernelProp.GetString() is not { } kName)
+        {
+            return false;
+        }
+
+        var paths = ExtractFailingPaths(root, isCudaProject, managedOnly);
+        string failureKind = root.TryGetProperty("failureKind", out var kindProp) && kindProp.GetString() is { } fk
+            ? fk
+            : (status == "harness_error" ? "HarnessException" : "CellMismatch");
+        string column = root.TryGetProperty("column", out var colProp) && colProp.GetString() is { } c
+            ? c
+            : "hash";
+
+        result = new FuzzEventResult(kName, paths, failureKind, column);
+        return true;
+    }
+
+    private static List<string> ExtractFailingPaths(JsonElement root, bool isCudaProject, bool managedOnly)
+    {
+        var paths = new List<string>();
+        if (root.TryGetProperty("failingPaths", out var pathsProp) && pathsProp.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var elem in pathsProp.EnumerateArray())
+            {
+                if (elem.GetString() is { } p && !string.IsNullOrWhiteSpace(p))
+                {
+                    paths.Add(p);
+                }
+            }
+        }
+
+        if (paths.Count == 0)
+        {
+            paths.Add(isCudaProject ? "Cuda" : (managedOnly ? "Managed" : "Native"));
+        }
+
+        return paths;
     }
 
     private static void MergeCandidateFailure(

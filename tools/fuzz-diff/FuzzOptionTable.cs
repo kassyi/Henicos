@@ -43,6 +43,30 @@ internal sealed class FuzzOptionValues
     internal List<string> Dialects { get; } = CompareCommand.DefaultDialects();
 
     internal int ReduceMinutes { get; set; } = CompareCommand.DefaultReduceMinutes;
+
+    internal int Size { get; set; } = 4;
+
+    internal string ProfileCode { get; set; } = "C";
+
+    internal string? SourcePath { get; set; }
+
+    internal string? KernelName { get; set; }
+
+    internal string? TestCmd { get; set; }
+
+    internal string? OutPath { get; set; }
+
+    internal string FailingPaths { get; set; } = "Native,Cuda";
+
+    internal string FailureKind { get; set; } = "CellMismatch";
+
+    internal string Column { get; set; } = "hash";
+
+    internal string? FindingsDir { get; set; }
+
+    internal string? CudaArch { get; set; }
+
+    internal bool Json { get; set; }
 }
 
 /// <summary>One option of a command: whether it takes a value, and the step that applies it.</summary>
@@ -83,6 +107,18 @@ internal static class FuzzOptionTable
         }
 
         foreach (var row in ownRows)
+        {
+            table.Add(row.Key, row.Value);
+        }
+
+        return table;
+    }
+
+    /// <summary>Builds an option table with only the specified rows.</summary>
+    internal static Dictionary<string, FuzzOptionSpec> CreateTable(params KeyValuePair<string, FuzzOptionSpec>[] rows)
+    {
+        var table = new Dictionary<string, FuzzOptionSpec>(StringComparer.Ordinal);
+        foreach (var row in rows)
         {
             table.Add(row.Key, row.Value);
         }
@@ -158,7 +194,7 @@ internal static class FuzzOptionTable
         return equals >= 0 ? (arg[..equals], arg[(equals + 1)..]) : (arg, null);
     }
 
-    private static string? ParseBatches(FuzzOptionValues values, string value)
+    internal static string? ParseBatches(FuzzOptionValues values, string value)
     {
         if (!int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int batches) || batches <= 0)
         {
@@ -169,7 +205,7 @@ internal static class FuzzOptionTable
         return null;
     }
 
-    private static string? ParseBatchSize(FuzzOptionValues values, string value)
+    internal static string? ParseBatchSize(FuzzOptionValues values, string value)
     {
         if (!int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int size) ||
             size is < 1 or > MaxBatchSize)
@@ -181,7 +217,7 @@ internal static class FuzzOptionTable
         return null;
     }
 
-    private static string? ParseFuzzSeed(FuzzOptionValues values, string value)
+    internal static string? ParseFuzzSeed(FuzzOptionValues values, string value)
     {
         if (!FuzzRandom.TryParseSeed(value, out ulong seed))
         {
@@ -192,7 +228,7 @@ internal static class FuzzOptionTable
         return null;
     }
 
-    private static string? ParseInputSeed(FuzzOptionValues values, string value)
+    internal static string? ParseInputSeed(FuzzOptionValues values, string value)
     {
         if (!int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int seed))
         {
@@ -203,7 +239,7 @@ internal static class FuzzOptionTable
         return null;
     }
 
-    private static string? ParseAllowIssue(FuzzOptionValues values, string value)
+    internal static string? ParseAllowIssue(FuzzOptionValues values, string value)
     {
         var digits = value.AsSpan().TrimStart('#');
         if (!int.TryParse(digits, NumberStyles.Integer, CultureInfo.InvariantCulture, out int issue) || issue <= 0)
@@ -219,7 +255,7 @@ internal static class FuzzOptionTable
         return null;
     }
 
-    private static string? ParseSwarmFocus(FuzzOptionValues values, string value)
+    internal static string? ParseSwarmFocus(FuzzOptionValues values, string value)
     {
         if (value.Length == 0 || !FuzzSwarmConfig.TryParseFocus(value, out _))
         {
@@ -227,6 +263,96 @@ internal static class FuzzOptionTable
         }
 
         values.SwarmFocus = value;
+        return null;
+    }
+
+    internal static string? ParseSize(FuzzOptionValues values, string value)
+    {
+        if (!int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int size) ||
+            size is < 1 or > 8)
+        {
+            return "--size requires an integer in [1, 8].";
+        }
+
+        values.Size = size;
+        return null;
+    }
+
+    internal static string? ParseProfileCode(FuzzOptionValues values, string value)
+    {
+        values.ProfileCode = KnownIssueFilter.NormalizeProfile(value);
+        return null;
+    }
+
+    internal static string? ParseSourcePath(FuzzOptionValues values, string value)
+    {
+        values.SourcePath = value;
+        return null;
+    }
+
+    internal static string? ParseKernelName(FuzzOptionValues values, string value)
+    {
+        values.KernelName = value;
+        return null;
+    }
+
+    internal static string? ParseTestCmd(FuzzOptionValues values, string value)
+    {
+        values.TestCmd = value;
+        return null;
+    }
+
+    internal static string? ParseOutPath(FuzzOptionValues values, string value)
+    {
+        values.OutPath = value;
+        return null;
+    }
+
+    internal static string? ParseOutDir(FuzzOptionValues values, string value)
+    {
+        values.OutDir = value;
+        return null;
+    }
+
+    internal static string? ParseWorkDir(FuzzOptionValues values, string value)
+    {
+        values.WorkDir = value;
+        return null;
+    }
+
+    internal static string? ParseRepoRoot(FuzzOptionValues values, string value)
+    {
+        values.RepoRoot = value;
+        return null;
+    }
+
+    internal static string? ParseCudaArch(FuzzOptionValues values, string value)
+    {
+        values.CudaArch = value;
+        return null;
+    }
+
+    internal static string? ParseFailingPaths(FuzzOptionValues values, string value)
+    {
+        values.FailingPaths = value;
+        return null;
+    }
+
+    internal static string? ParseFailureKind(FuzzOptionValues values, string value)
+    {
+        values.FailureKind = value;
+        return null;
+    }
+
+    internal static string? ParseColumn(FuzzOptionValues values, string value)
+    {
+        values.Column = value;
+        return null;
+    }
+
+    internal static string? ParseFindingsDir(FuzzOptionValues values, string value)
+    {
+        values.FindingsDir = value;
         return null;
     }
 }

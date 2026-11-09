@@ -20,14 +20,6 @@ public sealed class ScalarFuzzGenerator
     /// <summary>The 64-bit FNV-1a prime multiplier.</summary>
     public const ulong FnvPrime = FuzzChecksumEmitter.FnvPrime;
 
-    private const string EnumDeclarationsBlock =
-        """
-        public enum FuzzEnumByte : byte { Zero = 0, One = 1, Two = 2, Bit = 0x10, High = 0x80, Mask = 0x55, Alt = 0xAA, Edge = byte.MaxValue }
-        public enum FuzzEnumShort : short { Zero = 0, One = 1, Two = 2, Bit = 0x0100, High = -256, Mask = 0x1234, Alt = -1, Edge = short.MinValue }
-        public enum FuzzEnumInt : int { Zero = 0, One = 1, Two = 2, Bit = 0x00010000, High = -65536, Mask = 0x13579BDF, Alt = -1, Edge = int.MinValue }
-        public enum FuzzEnumULong : ulong { Zero = 0UL, One = 1UL, Two = 2UL, Bit = 0x0000000100000000UL, High = 0x8000000000000000UL, Mask = 0x5555555555555555UL, Alt = 0xAAAAAAAAAAAAAAAAUL, Edge = ulong.MaxValue }
-        """;
-
     private readonly FuzzOptions _options;
     private readonly KnownIssueFilter _issueFilter;
     private readonly IReadOnlyList<DeviceFunctionSpec> _deviceFunctions;
@@ -143,10 +135,10 @@ public sealed class ScalarFuzzGenerator
             _options.KernelClassName,
             _deviceFunctions);
 
-        InitializeScalarLocals(state);
+        FuzzScalarLocalEmitter.InitializeScalarLocals(state);
         FuzzCompositeExpressionEmitter.InitializeCompositeLocals(state);
 
-        EmitCoreScalarStatements(state);
+        FuzzScalarStatementEmitter.EmitCoreScalarStatements(state);
         FuzzCompositeExpressionEmitter.EmitCoreCompositeStatements(state);
         FuzzControlFlowEmitter.EmitCoreControlFlowStatements(state);
         FuzzDeviceFunctionEmitter.EmitCoreDeviceFunctionCalls(state);
@@ -154,7 +146,7 @@ public sealed class ScalarFuzzGenerator
         int extraStatements = 2 + size * 2;
         for (int s = 0; s < extraStatements; s++)
         {
-            EmitRandomStatement(state);
+            FuzzScalarStatementEmitter.EmitRandomStatement(state);
             if (s % 3 == 2)
             {
                 FuzzChecksumEmitter.EmitChecksumFoldSubset(state);
@@ -164,7 +156,8 @@ public sealed class ScalarFuzzGenerator
         FuzzChecksumEmitter.EmitChecksumFoldAll(state);
 
         string kernelMethod = RenderKernelMethod(kernelName, kernelSeed, size, state);
-        string caseHeader = string.Create(CultureInfo.InvariantCulture, $"// fuzz-seed: {FuzzRandom.FormatSeed(kernelSeed)}");
+        string caseHeader = string.Create(
+            CultureInfo.InvariantCulture, $"// fuzz-seed: {FuzzRandom.FormatSeed(kernelSeed)}");
         string caseProperty = FuzzCaseEmitter.RenderDifferentialCaseProperty(
             _options.KernelClassName,
             kernelName,
@@ -187,18 +180,9 @@ public sealed class ScalarFuzzGenerator
             state.Statements.ToArray());
     }
 
-    /// <summary>Builds a division or remainder expression with an inline ternary guard on the divisor.</summary>
-    public static string BuildGuardedDivisionOrModulo(
-        FuzzScalarKind promotedKind,
-        string leftExpr,
-        string rightExpr,
-        bool isModulo,
-        bool leftIsSimpleLocal) =>
-        FuzzScalarExpressionEmitter.BuildGuardedDivisionOrModulo(promotedKind, leftExpr, rightExpr, isModulo, leftIsSimpleLocal);
-
     /// <summary>Appends the device enum declarations used by generated kernels to <paramref name="writer"/>.</summary>
     public static void AppendEnumDeclarations(SourceWriter writer) =>
-        writer.AppendLine(EnumDeclarationsBlock);
+        FuzzScalarLocalEmitter.AppendEnumDeclarations(writer);
 
     /// <summary>
     /// Emits <paramref name="count"/> generated statements into <paramref name="writer"/> at the next control-flow depth
@@ -208,324 +192,8 @@ public sealed class ScalarFuzzGenerator
         KernelGenerationState state,
         SourceWriter writer,
         int count,
-        bool inSwitchSection = false)
-    {
-        if (state.ControlFlowDepth >= 2 || count <= 0)
-        {
-            return;
-        }
-
-        var nestedBuffer = new List<string>(count * 2);
-        var savedBuffer = state.SwapStatementsBuffer(nestedBuffer);
-        bool savedInSwitch = state.InSwitchSection;
-        state.ControlFlowDepth++;
-        state.InSwitchSection = savedInSwitch || inSwitchSection;
-        try
-        {
-            for (int i = 0; i < count; i++)
-            {
-                EmitRandomStatement(state);
-            }
-        }
-        finally
-        {
-            state.InSwitchSection = savedInSwitch;
-            state.ControlFlowDepth--;
-            state.SwapStatementsBuffer(savedBuffer);
-        }
-
-        foreach (string stmt in nestedBuffer)
-        {
-            writer.AppendLine(stmt);
-        }
-    }
-
-    private static void InitializeScalarLocals(KernelGenerationState state)
-    {
-        FuzzScalarKind[] baseTypes =
-        [
-            FuzzScalarKind.SByte,
-            FuzzScalarKind.Byte,
-            FuzzScalarKind.Int16,
-            FuzzScalarKind.UInt16,
-            FuzzScalarKind.Int32,
-            FuzzScalarKind.UInt32,
-            FuzzScalarKind.Int64,
-            FuzzScalarKind.UInt64,
-            FuzzScalarKind.Boolean,
-            FuzzScalarKind.Char,
-            FuzzScalarKind.EnumByte,
-            FuzzScalarKind.EnumShort,
-            FuzzScalarKind.EnumInt,
-            FuzzScalarKind.EnumULong,
-        ];
-
-        var activeTypes = new List<FuzzTypeInfo>(baseTypes.Length);
-        foreach (var kind in baseTypes)
-        {
-            activeTypes.Add(FuzzTypeInfo.Get(kind));
-        }
-
-        for (int i = activeTypes.Count - 1; i > 0; i--)
-        {
-            int j = state.Rng.NextBelow(i + 1);
-            (activeTypes[i], activeTypes[j]) = (activeTypes[j], activeTypes[i]);
-        }
-
-        foreach (var typeInfo in activeTypes)
-        {
-            string varName = $"v{state.Locals.Count}";
-            string initExpr = BuildInputInitializationExpression(state.Rng, typeInfo, state.Locals.Count);
-            state.Statements.Add($"{typeInfo.Keyword} {varName} = {initExpr};");
-            state.Locals.Add(new ScalarLocalVariable(varName, typeInfo));
-        }
-    }
-
-    private static string BuildInputInitializationExpression(FuzzRandom rng, FuzzTypeInfo type, int index)
-    {
-        string src = (index % 3) switch { 0 => "inA[gid]", 1 => "inB[gid]", _ => "inC[gid]" };
-        string alt = ((index + 1) % 3) switch { 0 => "inA[gid]", 1 => "inB[gid]", _ => "inC[gid]" };
-
-        return type.Kind switch
-        {
-            FuzzScalarKind.SByte => $"(sbyte){src}",
-            FuzzScalarKind.Byte => $"(byte){src}",
-            FuzzScalarKind.Int16 => $"(short){src}",
-            FuzzScalarKind.UInt16 => $"(ushort){src}",
-            FuzzScalarKind.Int32 => src,
-            FuzzScalarKind.UInt32 => $"(uint){src}",
-            FuzzScalarKind.Int64 => rng.NextBool() ? $"(((long){src} << 32) ^ (uint){alt})" : $"(long){src}",
-            FuzzScalarKind.UInt64 => rng.NextBool() ? $"(((ulong)(uint){src} << 32) | (uint){alt})" : $"(ulong){src}",
-            FuzzScalarKind.Boolean => $"((({src} ^ {alt}) & 1) != 0)",
-            FuzzScalarKind.Char => $"(char){src}",
-            FuzzScalarKind.EnumByte => $"(FuzzEnumByte)(byte){src}",
-            FuzzScalarKind.EnumShort => $"(FuzzEnumShort)(short){src}",
-            FuzzScalarKind.EnumInt => $"(FuzzEnumInt){src}",
-            FuzzScalarKind.EnumULong => $"(FuzzEnumULong)(ulong){src}",
-            _ => src,
-        };
-    }
-
-    private static void EmitCoreScalarStatements(KernelGenerationState state)
-    {
-        var rng = state.Rng;
-        var int32Local = state.FindLocal(FuzzScalarKind.Int32);
-        var uint32Local = state.FindLocal(FuzzScalarKind.UInt32);
-        var int64Local = state.FindLocal(FuzzScalarKind.Int64);
-        var uint64Local = state.FindLocal(FuzzScalarKind.UInt64);
-
-        string shiftOp32 = rng.NextBelow(3) switch { 0 => "<<", 1 => ">>", _ => ">>>" };
-        string shiftOp64 = rng.NextBelow(3) switch { 0 => "<<", 1 => ">>", _ => ">>>" };
-        string dynamicShiftCount = rng.NextBool() ? "inC[gid]" : $"(inC[gid] + {rng.NextRange(32, 95)})";
-        state.Statements.Add($"{int32Local.Name} = ({int32Local.Name} {shiftOp32} {dynamicShiftCount}) ^ (int)({uint32Local.Name} >>> inC[gid]);");
-        state.Statements.Add($"{int64Local.Name} = ({int64Local.Name} {shiftOp64} {dynamicShiftCount}) + (long)({uint64Local.Name} << inC[gid]);");
-
-        var (interfTarget, interfAux) = state.PickDistinctPair(FuzzScalarKind.Int32, FuzzScalarKind.Int32);
-        string stepDelta = FuzzScalarExpressionEmitter.FormatLiteral(interfTarget.Type, rng.NextRange(1, 7));
-        string binOp = rng.NextBelow(3) switch { 0 => "+", 1 => "-", _ => "^" };
-        string three = FuzzScalarExpressionEmitter.FormatLiteral(interfTarget.Type, 3);
-        state.Statements.Add(
-            rng.NextBool()
-                ? $"{interfAux.Name} = ((({interfTarget.Name} += {stepDelta}) {binOp} ({interfTarget.Name} * {three})));"
-                : $"{interfAux.Name} = ((({interfTarget.Name} * {three}) {binOp} ({interfTarget.Name} += {stepDelta})));");
-
-        FuzzScalarKind narrowKind = rng.NextBelow(4) switch
-        {
-            0 => FuzzScalarKind.SByte,
-            1 => FuzzScalarKind.Byte,
-            2 => FuzzScalarKind.Int16,
-            _ => FuzzScalarKind.UInt16,
-        };
-        var narrowLocal = state.FindLocal(narrowKind);
-        string narrowType = narrowLocal.Type.Keyword;
-        string narrowRhs = $"(({narrowType})(({int32Local.Name} += 5) + 129))";
-        string narrowCompoundOp = rng.NextBelow(4) switch { 0 => "+=", 1 => "-=", 2 => "*=", _ => "^=" };
-        state.Statements.Add($"{narrowLocal.Name} {narrowCompoundOp} {narrowRhs};");
-        state.Statements.Add($"{narrowLocal.Name}++;");
-        state.Statements.Add($"--{narrowLocal.Name};");
-
-        if (!state.IssueFilter.AvoidNarrowIncDecValue)
-        {
-            state.Statements.Add($"{int32Local.Name} = ({int32Local.Name} ^ (++{narrowLocal.Name}) ^ ({narrowLocal.Name}--));");
-        }
-
-        string signedDivExpr = FuzzScalarExpressionEmitter.BuildGuardedDivisionOrModulo(
-            FuzzScalarKind.Int32, "inA[gid]", "inB[gid]", isModulo: rng.NextBool(), leftIsSimpleLocal: true);
-        state.Statements.Add($"{int32Local.Name} = ({int32Local.Name} + {signedDivExpr});");
-
-        string unsignedDivExpr = FuzzScalarExpressionEmitter.BuildGuardedDivisionOrModulo(
-            FuzzScalarKind.UInt32, uint32Local.Name, "(uint)inB[gid]", isModulo: rng.NextBool(), leftIsSimpleLocal: true);
-        state.Statements.Add($"{uint32Local.Name} = ({uint32Local.Name} ^ {unsignedDivExpr});");
-
-        if (!state.IssueFilter.AvoidMsvcNegatedConstantDivision)
-        {
-            state.Statements.Add($"{int32Local.Name} = ({int32Local.Name} ^ ((-{int32Local.Name}) / 3));");
-        }
-
-        var enumByteLocal = state.FindLocal(FuzzScalarKind.EnumByte);
-        var enumShortLocal = state.FindLocal(FuzzScalarKind.EnumShort);
-        var enumIntLocal = state.FindLocal(FuzzScalarKind.EnumInt);
-        state.Statements.Add($"{enumByteLocal.Name} = ~{enumByteLocal.Name} | FuzzEnumByte.Bit;");
-        state.Statements.Add($"{enumShortLocal.Name} = ({enumShortLocal.Name} ^ FuzzEnumShort.Mask) & ~FuzzEnumShort.One;");
-        state.Statements.Add($"{enumIntLocal.Name} = ({enumByteLocal.Name} < FuzzEnumByte.High) ? ({enumIntLocal.Name} | FuzzEnumInt.Alt) : ~{enumIntLocal.Name};");
-    }
-
-    /// <summary>
-    /// One kind of random statement. A draw <c>choice</c> in [0, 100) selects the first row, in table order, whose
-    /// <see cref="Below"/> exceeds it and whose <see cref="CanEmit"/> holds; a row whose condition fails passes the draw
-    /// on to the next row, so the probability of a kind is <c>Below</c> minus the <c>Below</c> of the row above only
-    /// where every condition holds.
-    /// </summary>
-    private sealed record StatementKind(
-        int Below,
-        Func<KernelGenerationState, ScalarLocalVariable, bool> CanEmit,
-        Action<KernelGenerationState, ScalarLocalVariable> Emit);
-
-    private static readonly Func<KernelGenerationState, ScalarLocalVariable, bool> s_always = static (_, _) => true;
-
-    private static bool IsArithmeticTarget(KernelGenerationState state, ScalarLocalVariable target) =>
-        !target.Type.IsEnum && target.Type.Kind != FuzzScalarKind.Boolean;
-
-    private static readonly StatementKind[] s_statementKinds =
-    [
-        new(25, s_always, EmitAssignmentStatement),
-        new(42, IsArithmeticTarget, EmitCompoundAssignmentStatement),
-        new(
-            52,
-            s_always,
-            static (state, _) => FuzzCompositeExpressionEmitter.EmitTupleDeconstructionStatement(state)),
-        new(
-            62,
-            s_always,
-            static (state, _) => FuzzCompositeExpressionEmitter.EmitNullableStatement(state)),
-        new(
-            70,
-            s_always,
-            static (state, _) => FuzzCompositeExpressionEmitter.EmitSpanStatement(state)),
-        new(
-            78,
-            s_always,
-            static (state, _) => FuzzCompositeExpressionEmitter.EmitRefTernaryStatement(state)),
-        new(
-            86,
-            static (state, _) => state.Swarm.DeviceCallWeight > 1 && !state.InSwitchSection,
-            static (state, _) => FuzzDeviceFunctionEmitter.EmitRandomDeviceFunctionCall(state)),
-        new(
-            92,
-            static (state, _) => state.ControlFlowDepth < 2
-                && (state.Swarm.ControlFlowWeight > 1 || state.Swarm.LoopWeight > 1),
-            static (state, _) => EmitControlFlowStatement(state)),
-        new(96, IsArithmeticTarget, EmitIncrementStatement),
-        new(
-            int.MaxValue,
-            static (state, _) => state.ControlFlowDepth == 0,
-            static (state, _) => EmitNewLocalStatement(state)),
-    ];
-
-    private static void EmitRandomStatement(KernelGenerationState state)
-    {
-        var rng = state.Rng;
-        var target = rng.Choose(state.Locals);
-        if (state.ProtectedLoopVariables.Contains(target.Name))
-        {
-            target = state.FindLocal(FuzzScalarKind.Int32);
-        }
-
-        int choice = rng.NextBelow(100);
-
-        foreach (var kind in s_statementKinds)
-        {
-            if (choice < kind.Below && kind.CanEmit(state, target))
-            {
-                kind.Emit(state, target);
-                return;
-            }
-        }
-
-        string fallbackRhs = FuzzScalarExpressionEmitter.GenerateLeafExpression(state, target.Type);
-        state.Statements.Add($"{target.Name} = {fallbackRhs};");
-    }
-
-    private static void EmitAssignmentStatement(KernelGenerationState state, ScalarLocalVariable target)
-    {
-        string rhs = FuzzScalarExpressionEmitter.GenerateExpression(state, target.Type, depth: 0, maxDepth: 2 + (state.Size / 3));
-        if (string.Equals(rhs, target.Name, StringComparison.Ordinal))
-        {
-            rhs = FuzzScalarExpressionEmitter.GenerateLeafExpression(state, target.Type);
-        }
-
-        state.Statements.Add($"{target.Name} = {rhs};");
-    }
-
-    private static void EmitControlFlowStatement(KernelGenerationState state)
-    {
-        var rng = state.Rng;
-        int cfKind = state.InSwitchSection ? rng.NextBelow(2) : rng.NextBelow(3);
-        if (cfKind == 0)
-        {
-            FuzzControlFlowEmitter.EmitIfElseStatement(state);
-        }
-        else if (cfKind == 1)
-        {
-            FuzzControlFlowEmitter.EmitBoundedLoopStatement(state);
-        }
-        else
-        {
-            FuzzControlFlowEmitter.EmitSwitchStatementWithAcyclicGoto(state);
-        }
-    }
-
-    private static void EmitIncrementStatement(KernelGenerationState state, ScalarLocalVariable target)
-    {
-        var rng = state.Rng;
-        bool canUseIncDecValue = !target.Type.IsNarrowIntegral || !state.IssueFilter.AvoidNarrowIncDecValue;
-        if (canUseIncDecValue)
-        {
-            string stepOp = rng.NextBool() ? "++" : "--";
-            string stepExpr = rng.NextBool() ? $"{stepOp}{target.Name}" : $"{target.Name}{stepOp}";
-            var receiver = state.FindLocal(target.Type.Kind);
-            state.Statements.Add($"{receiver.Name} = ({target.Type.Keyword})({stepExpr});");
-        }
-        else
-        {
-            state.Statements.Add($"{target.Name}++;");
-        }
-    }
-
-    private static void EmitNewLocalStatement(KernelGenerationState state)
-    {
-        var newType = state.Rng.Choose(FuzzTypeInfo.All);
-        string newName = $"v{state.Locals.Count}";
-        string init = FuzzScalarExpressionEmitter.GenerateExpression(state, newType, depth: 0, maxDepth: 2);
-        state.Statements.Add($"{newType.Keyword} {newName} = {init};");
-        state.Locals.Add(new ScalarLocalVariable(newName, newType));
-    }
-
-    private static void EmitCompoundAssignmentStatement(KernelGenerationState state, ScalarLocalVariable target)
-    {
-        var rng = state.Rng;
-        string[] ops = ["+=", "-=", "*=", "/=", "%=", "&=", "|=", "^=", "<<=", ">>=", ">>>="];
-        string op = ops[rng.NextBelow(ops.Length)];
-
-        if (op is "<<=" or ">>=" or ">>>=")
-        {
-            string countExpr = FuzzScalarExpressionEmitter.GenerateShiftCountExpression(state, depth: 1, maxDepth: 2);
-            state.Statements.Add($"{target.Name} {op} {countExpr};");
-            return;
-        }
-
-        if (op is "/=" or "%=")
-        {
-            string rawDivisor = FuzzScalarExpressionEmitter.GenerateLeafExpression(state, target.Type);
-            string guardedDivisor = FuzzScalarExpressionEmitter.WrapDivisorForCompoundAssignment(target.Name, target.Type, rawDivisor);
-            state.Statements.Add($"{target.Name} {op} {guardedDivisor};");
-            return;
-        }
-
-        string rhs = FuzzScalarExpressionEmitter.GenerateExpression(state, target.Type, depth: 1, maxDepth: 2);
-        string typedRhs = FuzzScalarExpressionEmitter.EnsureType(rhs, target.Type);
-        state.Statements.Add($"{target.Name} {op} {typedRhs};");
-    }
+        bool inSwitchSection = false) =>
+        FuzzScalarStatementEmitter.EmitNestedStatements(state, writer, count, inSwitchSection);
 
     private static string RenderKernelMethod(string kernelName, ulong kernelSeed, int size, KernelGenerationState state)
     {
