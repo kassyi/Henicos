@@ -1,9 +1,16 @@
+using Microsoft.CodeAnalysis.Operations;
+
 namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel;
 
 /// <summary>
-/// Roslyn analyzer that infers the execution context (parallel vs single-thread) of method calls 
+/// Roslyn analyzer that infers the execution context (parallel vs single-thread) of method calls
 /// and reports GSH0035 if parallel-dependent logic is invoked from a single-thread context.
 /// </summary>
+/// <remarks>
+/// A single-thread context is the body of <c>Gpu.SingleThread</c> and an <c>if</c> whose condition compares a thread or
+/// block index with 0. Every method that an operation there calls is checked, whatever the syntax that calls it
+/// (<see cref="OperationCalls"/>).
+/// </remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public class ParallelDependentCallAnalyzer : DiagnosticAnalyzer
 {
@@ -40,166 +47,68 @@ public class ParallelDependentCallAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        var walker = new ContextWalker(context, inferenceCache);
-        walker.Visit(methodDeclaration);
+        if (context.SemanticModel.GetOperation(methodDeclaration, context.CancellationToken) is not { } body)
+        {
+            return;
+        }
+
+        Walk(context, inferenceCache, body, singleThread: false, ImmutableArray.CreateBuilder<IMethodSymbol>());
     }
 
-    private class ContextWalker(
+    private static void Walk(
         SyntaxNodeAnalysisContext context,
-        ConcurrentDictionary<IMethodSymbol, bool> inferenceCache)
-        : CSharpSyntaxWalker
+        ConcurrentDictionary<IMethodSymbol, bool> inferenceCache,
+        IOperation operation,
+        bool singleThread,
+        ImmutableArray<IMethodSymbol>.Builder called)
     {
-        private int _singleThreadDepth;
-
-        public override void VisitInvocationExpression(InvocationExpressionSyntax node)
+        // The argument of nameof is not run
+        if (operation is INameOfOperation)
         {
-            var symbol = context.SemanticModel.GetSymbol(node) as IMethodSymbol;
-            // The body of SyncGrid runs on every thread with a grid sync between statements, so it is not a single-thread context
-            var isSingleThreadMacro = symbol != null &&
-                                      GpuMacroClassifier.Classify(symbol).Kind is GpuMacroKind.SingleThread;
-
-            if (isSingleThreadMacro)
-            {
-                _singleThreadDepth++;
-                base.VisitInvocationExpression(node);
-                _singleThreadDepth--;
-                return;
-            }
-
-            if (_singleThreadDepth > 0 && symbol != null)
-            {
-                CheckAndReportIfParallelDependent(node, symbol);
-            }
-
-            base.VisitInvocationExpression(node);
+            return;
         }
 
-        public override void VisitObjectCreationExpression(ObjectCreationExpressionSyntax node)
+        if (singleThread)
         {
-            if (_singleThreadDepth > 0)
-            {
-                if (context.SemanticModel.GetSymbol(node) is IMethodSymbol symbol)
-                {
-                    CheckAndReportIfParallelDependent(node, symbol);
-                }
-            }
-
-            base.VisitObjectCreationExpression(node);
+            ReportCalls(context, inferenceCache, operation, called);
         }
 
-        public override void VisitBinaryExpression(BinaryExpressionSyntax node)
+        var inner = singleThread || StartsSingleThread(operation);
+        foreach (var child in operation.ChildOperations)
         {
-            if (_singleThreadDepth > 0)
-            {
-                if (context.SemanticModel.GetSymbol(node) is IMethodSymbol
-                    {
-                        MethodKind: MethodKind.UserDefinedOperator
-                    } symbol)
-                {
-                    CheckAndReportIfParallelDependent(node, symbol);
-                }
-            }
-
-            base.VisitBinaryExpression(node);
+            Walk(context, inferenceCache, child, inner, called);
         }
+    }
 
-        public override void VisitAssignmentExpression(AssignmentExpressionSyntax node)
+    // GSH0035 at operation for each parallel-dependent method it calls
+    private static void ReportCalls(
+        SyntaxNodeAnalysisContext context,
+        ConcurrentDictionary<IMethodSymbol, bool> inferenceCache,
+        IOperation operation,
+        ImmutableArray<IMethodSymbol>.Builder called)
+    {
+        called.Clear();
+        OperationCalls.Add(operation, TypeArgumentMap.None, called);
+        foreach (var method in called)
         {
-            if (_singleThreadDepth > 0)
-            {
-                if (context.SemanticModel.GetSymbol(node) is IMethodSymbol
-                    {
-                        MethodKind: MethodKind.UserDefinedOperator
-                    } symbol)
-                {
-                    CheckAndReportIfParallelDependent(node, symbol);
-                }
-
-                // Check property setter
-                if (context.SemanticModel.GetSymbol(node.Left) is IPropertySymbol
-                    {
-                        SetMethod: not null
-                    } propertySymbol)
-                {
-                    CheckAndReportIfParallelDependent(node, propertySymbol.SetMethod);
-                }
-            }
-
-            base.VisitAssignmentExpression(node);
-        }
-
-        public override void VisitMemberAccessExpression(MemberAccessExpressionSyntax node)
-        {
-            if (_singleThreadDepth > 0)
-            {
-                // Check property getter
-                if (context.SemanticModel.GetSymbol(node) is IPropertySymbol { GetMethod: not null } propertySymbol)
-                {
-                    CheckAndReportIfParallelDependent(node, propertySymbol.GetMethod);
-                }
-            }
-
-            base.VisitMemberAccessExpression(node);
-        }
-
-        public override void VisitIfStatement(IfStatementSyntax node)
-        {
-            var isDivergentSingleThread = IsSingleThreadDivergentCondition(node.Condition);
-
-            if (isDivergentSingleThread)
-            {
-                _singleThreadDepth++;
-            }
-
-            base.VisitIfStatement(node);
-
-            if (isDivergentSingleThread)
-            {
-                _singleThreadDepth--;
-            }
-        }
-
-        private bool IsSingleThreadDivergentCondition(ExpressionSyntax condition)
-        {
-            if (condition is not BinaryExpressionSyntax binary || !binary.IsKind(SyntaxKind.EqualsExpression))
-            {
-                return false;
-            }
-
-            ExpressionSyntax targetExpr;
-            if (isZeroLiteral(binary.Left))
-            {
-                targetExpr = binary.Right;
-            }
-            else if (isZeroLiteral(binary.Right))
-            {
-                targetExpr = binary.Left;
-            }
-            else
-            {
-                return false;
-            }
-
-            return targetExpr.DescendantNodesAndSelf()
-                .AsStackEnumerable()
-                .Any(context.SemanticModel, static (node, model) =>
-                    node is MemberAccessExpressionSyntax &&
-                    model.GetSymbol(node) is IPropertySymbol { ContainingType: { Name: "ThreadIndex" or "BlockIndex" } type } &&
-                    type.ContainingNamespace.IsCoreNamespace());
-
-            static bool isZeroLiteral(ExpressionSyntax expr) =>
-                expr is LiteralExpressionSyntax { Token.ValueText: "0" };
-        }
-
-        private void CheckAndReportIfParallelDependent(SyntaxNode node, IMethodSymbol methodSymbol)
-        {
-            if (ContextInferenceEngine.IsParallelDependent(methodSymbol, inferenceCache, context.Compilation))
+            if (ContextInferenceEngine.IsParallelDependent(method, inferenceCache, context.Compilation))
             {
                 context.ReportDiagnostic(
                     GSharpDiagnostics.ParallelDependentCallFromSingleThreadContext,
-                    node,
-                    methodSymbol.Name);
+                    operation.Syntax,
+                    method.Name);
             }
         }
     }
+
+    // Gpu.SingleThread(...) (its body runs on one thread; the body of SyncGrid runs on every thread with a grid sync
+    // between statements, so it is not a single-thread context), or if (ThreadIndex.X == 0) ...
+    private static bool StartsSingleThread(IOperation operation) => operation switch
+    {
+        IInvocationOperation invocation =>
+            GpuMacroClassifier.Classify(invocation.TargetMethod).Kind is GpuMacroKind.SingleThread,
+        IConditionalOperation { Syntax: IfStatementSyntax, Condition: var condition } =>
+            ThreadIntrinsics.IsSingleThreadCondition(condition),
+        _ => false
+    };
 }
