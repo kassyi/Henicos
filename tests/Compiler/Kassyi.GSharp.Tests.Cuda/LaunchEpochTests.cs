@@ -27,6 +27,10 @@ public sealed class LaunchEpochTests
     // A launch reuses the record of the launch this many epochs before it
     private const int LaunchRecords = (int)LaunchErrorRecords.Records;
 
+    // The grid of the graph barrier tests
+    private const int GraphBlocks = 4;
+    private const int GraphThreads = 128;
+
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
     public unsafe void Test_RecordStillBeingWritten_IsNotConsumed()
@@ -330,64 +334,9 @@ public sealed class LaunchEpochTests
     public void Test_LaunchCapturedIntoGraph_SurvivingThreadsPassEveryGridBarrier()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
-        const int Blocks = 4;
-        const int Threads = 128;
-        const int Rounds = 64;
-        // Each surviving thread adds up round + 1 of the next block in every round
-        const int Sum = Rounds * (Rounds + 1) / 2;
-
-        // Every third thread fails, thread 0 of every block among them; in block 2 a whole warp but thread 1 fails too
-        var keys = new int[Blocks * Threads];
-        for (int i = 0; i < keys.Length; i++)
-        {
-            keys[i] = i % Threads % 3 == 0 ? GridBarrierKernels.FailKey : i % 2;
-        }
-
-        for (int t = 2; t < 32; t++)
-        {
-            keys[2 * Threads + t] = GridBarrierKernels.FailKey;
-        }
-
-        using var scope = new GpuKernelLoader.CudaContextScope();
-        using var stream = new CudaStream();
-        using var dKeys = new GpuBuffer<int>(keys.Length);
-        using var dValues = new GpuBuffer<int>(Blocks);
-        using var dResult = new GpuBuffer<int>(keys.Length);
-        dKeys.CopyToDevice(keys);
-        dResult.CopyToDevice(Filled(keys.Length));
-
-        // CU_STREAM_CAPTURE_MODE_THREAD_LOCAL = 1
-        CudaException.ThrowIfError(CudaDriverApi.cuStreamBeginCapture(stream.Handle, 1));
-        IntPtr graph;
-        try
-        {
-            GridBarrierKernels.LaunchGridSyncAfterFailKernelPtr(dKeys.ToProxy(),
-                Rounds, dValues.ToProxy(), dResult.ToProxy(), gridDimX: Blocks, blockDimX: Threads,
-                hStream: stream.Handle);
-        }
-        finally
-        {
-            CudaException.ThrowIfError(CudaDriverApi.cuStreamEndCapture(stream.Handle, out graph));
-        }
-
-        CudaException.ThrowIfError(CudaDriverApi.cuGraphInstantiate(out var exec, graph, IntPtr.Zero, IntPtr.Zero, 0));
-        try
-        {
-            CudaException.ThrowIfError(CudaDriverApi.cuGraphLaunch(exec, stream.Handle));
-            Assert.Throws<SwitchExpressionException>(stream.Synchronize);
-        }
-        finally
-        {
-            CudaDriverApi.cuGraphExecDestroy(exec);
-            CudaDriverApi.cuGraphDestroy(graph);
-        }
-
-        var result = new int[keys.Length];
-        dResult.CopyToHost(result);
-        for (int i = 0; i < keys.Length; i++)
-        {
-            Assert.Equal(keys[i] == GridBarrierKernels.FailKey ? Untouched : Sum, result[i]);
-        }
+        AssertSurvivorsPassEveryBarrierOfGraph(GridBarrierKernels.FailKey,
+            static (keys, rounds, values, result, stream) => GridBarrierKernels.LaunchGridSyncAfterFailKernelPtr(keys,
+                rounds, values, result, gridDimX: GraphBlocks, blockDimX: GraphThreads, hStream: stream));
     }
 
     // [WHY] The same for the Fast barrier, which arrives before it reads the abort word: without an epoch there is no
@@ -397,28 +346,36 @@ public sealed class LaunchEpochTests
     public void Test_LaunchCapturedIntoGraph_SurvivingThreadsPassEveryFastGridBarrier()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
-        const int Blocks = 4;
-        const int Threads = 128;
+        AssertSurvivorsPassEveryBarrierOfGraph(GridSyncModeKernels.FailKey,
+            static (keys, rounds, values, result, stream) => GridSyncModeKernels.LaunchFastSyncAfterFailKernelPtr(keys,
+                rounds, values, result, gridDimX: GraphBlocks, blockDimX: GraphThreads, hStream: stream));
+    }
+
+    // Captures <launch> of a kernel that runs 64 rounds of two grid barriers into a graph, with every third
+    // thread failing (thread 0 of every block among them, and in block 2 a whole warp but thread 1), replays it once
+    // and checks that the synchronization throws and that every surviving thread wrote the full sum
+    private static void AssertSurvivorsPassEveryBarrierOfGraph(int failKey,
+        Action<GSharpArrayProxy, int, GSharpArrayProxy, GSharpArrayProxy, IntPtr> launch)
+    {
         const int Rounds = 64;
         // Each surviving thread adds up round + 1 of the next block in every round
         const int Sum = Rounds * (Rounds + 1) / 2;
 
-        // Every third thread fails, thread 0 of every block among them; in block 2 a whole warp but thread 1 fails too
-        var keys = new int[Blocks * Threads];
+        var keys = new int[GraphBlocks * GraphThreads];
         for (int i = 0; i < keys.Length; i++)
         {
-            keys[i] = i % Threads % 3 == 0 ? GridSyncModeKernels.FailKey : i % 2;
+            keys[i] = i % GraphThreads % 3 == 0 ? failKey : i % 2;
         }
 
         for (int t = 2; t < 32; t++)
         {
-            keys[2 * Threads + t] = GridSyncModeKernels.FailKey;
+            keys[2 * GraphThreads + t] = failKey;
         }
 
         using var scope = new GpuKernelLoader.CudaContextScope();
         using var stream = new CudaStream();
         using var dKeys = new GpuBuffer<int>(keys.Length);
-        using var dValues = new GpuBuffer<int>(Blocks);
+        using var dValues = new GpuBuffer<int>(GraphBlocks);
         using var dResult = new GpuBuffer<int>(keys.Length);
         dKeys.CopyToDevice(keys);
         dResult.CopyToDevice(Filled(keys.Length));
@@ -428,9 +385,7 @@ public sealed class LaunchEpochTests
         IntPtr graph;
         try
         {
-            GridSyncModeKernels.LaunchFastSyncAfterFailKernelPtr(dKeys.ToProxy(),
-                Rounds, dValues.ToProxy(), dResult.ToProxy(), gridDimX: Blocks, blockDimX: Threads,
-                hStream: stream.Handle);
+            launch(dKeys.ToProxy(), Rounds, dValues.ToProxy(), dResult.ToProxy(), stream.Handle);
         }
         finally
         {
@@ -453,7 +408,7 @@ public sealed class LaunchEpochTests
         dResult.CopyToHost(result);
         for (int i = 0; i < keys.Length; i++)
         {
-            Assert.Equal(keys[i] == GridSyncModeKernels.FailKey ? Untouched : Sum, result[i]);
+            Assert.Equal(keys[i] == failKey ? Untouched : Sum, result[i]);
         }
     }
 
