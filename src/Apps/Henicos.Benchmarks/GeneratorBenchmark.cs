@@ -1,8 +1,11 @@
+extern alias GSharpCompiler;
+
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
-using Kassyi.GSharp.Compiler;
-using Kassyi.GSharp.Compiler.Diagnostics.Kernel;
+using GSharpCompiler::Kassyi.GSharp.Compiler;
+using GSharpCompiler::Kassyi.GSharp.Compiler.Diagnostics.Kernel;
+using GSharpCompiler::Kassyi.GSharp.Compiler.Ir.Building;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -13,7 +16,8 @@ namespace Henicos.Benchmarks;
 /// <summary>
 /// In-process CPU benchmarks measuring the G# source generator (<see cref="GpuKernelGenerator"/>) and kernel analyzers
 /// (<see cref="GpuKernelAnalyzer"/>, <see cref="KernelClassAnalyzer"/>, <see cref="BarrierUsageAnalyzer"/>,
-/// <see cref="ParallelDependentCallAnalyzer"/>) on the fixed benchmark kernel suite in <c>GeneratorInputs</c>.
+/// <see cref="ParallelDependentCallAnalyzer"/>) on the fixed benchmark kernel suite in <c>GeneratorInputs</c>, and the
+/// build of the compiler's intermediate representation (<see cref="IrBuilder"/>) of every GPU method of the suite.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -120,7 +124,7 @@ public class GeneratorBenchmark
         VerifyGeneratorRun(compilation, cuda, "Cuda");
         VerifyGeneratorRun(compilation, cpu, "Cpu");
 
-        _prepared = new Prepared(compilation, cuda, cpu, analyzerOptions);
+        _prepared = new Prepared(compilation, cuda, cpu, analyzerOptions, FindGpuMethods(compilation));
 
         // Pre-warm Roslyn symbol tables and Tier-1 JIT compilation so in-process benchmarks measure steady-state execution.
         for (var i = 0; i < 6; i++)
@@ -128,6 +132,7 @@ public class GeneratorBenchmark
             _ = RunGenerator_Cuda();
             _ = RunGenerator_Cpu();
             _ = RunAnalyzers();
+            _ = BuildIr_Warm();
         }
     }
 
@@ -145,6 +150,60 @@ public class GeneratorBenchmark
             state.AnalyzerOptions);
         var diagnostics = compilationWithAnalyzers.GetAnalyzerDiagnosticsAsync().GetAwaiter().GetResult();
         return diagnostics.Length;
+    }
+
+    /// <summary>
+    /// Builds the IR of every GPU method of the suite on the compilation the generator already bound, so that the
+    /// operations come from the shared semantic models: the cost the IR adds to a generator run.
+    /// </summary>
+    [Benchmark]
+    public int BuildIr_Warm() => BuildIr(State.Compilation, State.GpuMethods);
+
+    /// <summary>
+    /// Builds the IR of every GPU method of the suite on a new compilation of the same trees, so that the build binds
+    /// the bodies itself: the upper bound of the cost.
+    /// </summary>
+    [Benchmark]
+    public int BuildIr_Cold()
+    {
+        var compilation = CSharpCompilation.Create("GeneratorBenchmarkIrCompilation", State.Compilation.SyntaxTrees,
+            State.Compilation.References, State.Compilation.Options);
+        return BuildIr(compilation, FindGpuMethods(compilation));
+    }
+
+    private static int BuildIr(Compilation compilation, ImmutableArray<IMethodSymbol> methods)
+    {
+        var built = 0;
+        foreach (var method in methods)
+        {
+            if (IrBuilder.TryBuild(method, compilation, CancellationToken.None) is not null)
+            {
+                built++;
+            }
+        }
+
+        return built;
+    }
+
+    // The [GpuKernel] and [GpuDeviceFunction] methods declared in the trees, found by their attribute names
+    private static ImmutableArray<IMethodSymbol> FindGpuMethods(Compilation compilation)
+    {
+        var methods = ImmutableArray.CreateBuilder<IMethodSymbol>();
+        foreach (var tree in compilation.SyntaxTrees)
+        {
+            var model = compilation.GetSemanticModel(tree);
+            foreach (var node in tree.GetRoot().DescendantNodes())
+            {
+                if (node is MethodDeclarationSyntax method &&
+                    (IsKernel(method) || HasAttribute(method, "GpuDeviceFunction")) &&
+                    model.GetDeclaredSymbol(method) is { } symbol)
+                {
+                    methods.Add(symbol);
+                }
+            }
+        }
+
+        return methods.ToImmutable();
     }
 
     private int RunGenerator(AnalyzerConfigOptionsProvider options)
@@ -248,16 +307,16 @@ public class GeneratorBenchmark
             : throw new InvalidOperationException(
                 $"The {dialect} generator run did not produce {hintName}. Produced: {string.Join(", ", sources.Keys)}");
 
-    private static bool IsKernel(MethodDeclarationSyntax method)
+    private static bool IsKernel(MethodDeclarationSyntax method) => HasAttribute(method, "GpuKernel");
+
+    private static bool HasAttribute(MethodDeclarationSyntax method, string name)
     {
         foreach (var list in method.AttributeLists)
         {
             foreach (var attribute in list.Attributes)
             {
-                if (attribute.Name is IdentifierNameSyntax
-                    {
-                        Identifier.ValueText: "GpuKernel" or "GpuKernelAttribute"
-                    })
+                if (attribute.Name is IdentifierNameSyntax { Identifier.ValueText: var text } &&
+                    (text == name || text == name + "Attribute"))
                 {
                     return true;
                 }
@@ -323,7 +382,8 @@ public class GeneratorBenchmark
         CSharpCompilation Compilation,
         AnalyzerConfigOptionsProvider Cuda,
         AnalyzerConfigOptionsProvider Cpu,
-        CompilationWithAnalyzersOptions AnalyzerOptions);
+        CompilationWithAnalyzersOptions AnalyzerOptions,
+        ImmutableArray<IMethodSymbol> GpuMethods);
 
     private sealed class BenchmarkAnalyzerConfigOptionsProvider(string targetDialect) : AnalyzerConfigOptionsProvider
     {
