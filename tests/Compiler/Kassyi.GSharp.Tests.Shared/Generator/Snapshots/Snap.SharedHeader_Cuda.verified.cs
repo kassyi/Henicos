@@ -1020,13 +1020,20 @@ return total;
 // (0,0,0) failed and exited never arrives and the grid waits forever. Here the threads of the block that have not
 // exited elect the arriving thread (the lowest linear index among them); __syncthreads waits only for those threads
 // (sm_70+). A block whose threads all exited never arrives either, so the arriving thread looks at the abort word of its
-// launch before it arrives and while it waits (__gsharp_wait_check). Once a thread of the launch failed, a block that
-// reaches the barrier does not arrive, so the barrier does not complete, and every block that waits at it leaves too:
-// the arriving thread marks the block (its elected rank becomes __GSHARP_WAIT_LEAVE) and joins the last __syncthreads
-// with the other threads, which orders the mark before their read, and every thread of the block exits. After a
-// failure the other threads run to their next grid barrier, mbarrier wait or the end of the kernel; a grid barrier
-// reached after the failure does not complete. (A block that arrived just before the abort word was set can complete
-// the barrier for the waiting blocks.)
+// launch while it waits (__gsharp_wait_check), and once more when it reaches the barrier. When it sees that a thread of
+// the launch failed, it marks the block (its elected rank becomes __GSHARP_WAIT_LEAVE) and joins the last
+// __syncthreads with the other threads, which orders the mark before their read, and every thread of the block exits.
+// After a failure the other threads run to their next grid barrier, mbarrier wait or the end of the kernel.
+// Gpu.SyncGrid(GridSyncMode) picks where the arriving thread reads the word when it reaches the barrier:
+// - Deterministic (__gsharp_grid_sync, also the syncs of a Gpu.SyncGrid(body)): before it arrives. A block that reaches
+//   the barrier after the failure does not arrive, so the barrier does not complete and every block that waits at it
+//   leaves too. (A block that arrived just before the abort word was set can complete the barrier for the waiting
+//   blocks.) The release add waits for the load: 1.38 us per barrier against 1.05 us for Fast (288 blocks of 256
+//   threads, RTX 3070 Ti).
+// - Fast (__gsharp_grid_sync_fast): after it arrives, so the load does not delay the add. The arrival of a block of the
+//   failing launch can complete the barrier, and the other blocks then run the code after it up to their next grid
+//   barrier, mbarrier wait or the end of the kernel, where they leave.
+// Both modes leave no block waiting: a waiter leaves within 1024 polls of the failure.
 // The arrival counter is the one cooperative_groups uses: the barrier word of the grid workspace that the driver gives
 // every cooperative launch, starting at 0. Each barrier adds exactly 2^31 to it (block 0 adds 2^31 - (blocks - 1),
 // every other block 1), so a barrier is complete when bit 31 has flipped since the thread's own arrival, and no state
@@ -1095,8 +1102,63 @@ if (*reinterpret_cast<volatile unsigned int*>(&leader) == __GSHARP_WAIT_LEAVE) {
 __gsharp_exit_thread();
 }
 }
+
+// Gpu.SyncGrid(GridSyncMode.Fast): the barrier above, but the arriving thread arrives first and reads the abort word
+// after its add. [WHY] A function of its own rather than a template parameter of the barrier above: sharing the code
+// raised the registers of the cooperative GpuMath megakernels (ReciprocalNewtonRaphsonMega from 48 to 70, which no
+// longer fits a cooperative launch of its grid), so the Deterministic barrier keeps its code as it is
+__device__ __forceinline__ void __gsharp_grid_sync_fast() {
+// The elected rank, or __GSHARP_WAIT_LEAVE once the arriving thread saw that the launch failed
+__shared__ unsigned int leader;
+const unsigned int rank = threadIdx.x + blockDim.x * (threadIdx.y + blockDim.y * threadIdx.z);
+// Every thread writes the same value, and no thread reads it before the barrier below
+leader = 0xFFFFFFFFu;
+__syncthreads();
+atomicMin(&leader, rank);
+__syncthreads();
+if (rank == leader) {
+unsigned int* arrived = &cg::details::get_grid_workspace()->barrier;
+const unsigned int blocks = gridDim.x * gridDim.y * gridDim.z;
+const unsigned int add = blockIdx.x + blockIdx.y + blockIdx.z == 0u ? 0x80000000u - (blocks - 1u) : 1u;
+unsigned int old;
+asm volatile(""atom.add.release.gpu.u32 %0,[%1],%2;"" : ""=r""(old) : ""l""(arrived), ""r""(add) : ""memory"");
+// The block has arrived; it leaves without waiting when its launch failed
+const unsigned int epoch = __gsharp_launch_epoch;
+const unsigned int* abortWord = __gsharp_launch_abort_word(epoch);
+const unsigned int aborted =
+abortWord != nullptr ? *reinterpret_cast<const volatile unsigned int*>(abortWord) : 0u;
+if (aborted != 0u && aborted == epoch) {
+*reinterpret_cast<volatile unsigned int*>(&leader) = __GSHARP_WAIT_LEAVE;
+} else {
+unsigned int current;
+unsigned int seen = old;
+unsigned int polls = 0u;
+unsigned long long errorSeen = 0ull;
+for (;;) {
+asm volatile(""ld.acquire.gpu.u32 %0,[%1];"" : ""=r""(current) : ""l""(arrived) : ""memory"");
+if (((old ^ current) & 0x80000000u) != 0u) {
+break;
+}
+if (current != seen) {
+seen = current;
+__gsharp_wait_note_progress(&errorSeen);
+} else if ((++polls & 1023u) == 0u) {
+__gsharp_wait_check(&errorSeen, &leader);
+if (*reinterpret_cast<volatile unsigned int*>(&leader) == __GSHARP_WAIT_LEAVE) {
+break;
+}
+}
+}
+}
+}
+__syncthreads();
+if (*reinterpret_cast<volatile unsigned int*>(&leader) == __GSHARP_WAIT_LEAVE) {
+__gsharp_exit_thread();
+}
+}
 #else
 __device__ __forceinline__ void __gsharp_grid_sync() { cg::this_grid().sync(); }
+__device__ __forceinline__ void __gsharp_grid_sync_fast() { cg::this_grid().sync(); }
 #endif
 
 // --- AsParallel() aggregates (Grid strategy, cooperative kernels) ---
