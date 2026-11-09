@@ -193,33 +193,18 @@ internal static class StructMemberEmitter
     }
 
     // <type> <name>[<size>];
+    // [WHY] The size is the field's FixedSize (StructAbiMember.ElementCount), the value Roslyn bound: the size
+    // expression may name a constant that the device code does not declare, and a struct from metadata has no syntax.
     private static void WriteFixedBuffer(ref TranspileContext context, StructAbiMember member, IFieldSymbol field)
     {
-        field.TryGetDeclaringSyntax<VariableDeclaratorSyntax>(out var syntax);
-
-        ExpressionSyntax? sizeExp = null;
-        if (syntax?.ArgumentList is { Arguments.Count: > 0 } argList)
+        context.Emitter.Dialect.AppendType(ref context, member.Type);
+        context.Emitter.Writer.Append($" {GetMemberName(field, ref context)}");
+        using (context.Emitter.Writer.Brackets())
         {
-            sizeExp = argList.Arguments[0].Expression;
+            context.Emitter.Writer.Append(member.ElementCount);
         }
 
-        if (sizeExp != null)
-        {
-            context.Emitter.Dialect.AppendType(ref context, member.Type);
-            context.Emitter.Writer.Append($" {GetMemberName(field, ref context)}");
-            using (context.Emitter.Writer.Brackets())
-            {
-                context.Visitor.Visit(sizeExp);
-            }
-
-            context.Emitter.Writer.AppendLine(";");
-        }
-        else
-        {
-            context.Emitter.Dialect.AppendType(ref context, member.Type);
-            context.Emitter.Writer.AppendLine(
-                $"* {GetMemberName(field, ref context)}; // ERROR: fixed size not found");
-        }
+        context.Emitter.Writer.AppendLine(";");
     }
 
     private static void WriteMemberDeclaration(ITypeSymbol type, string name, ISymbol memberSymbol,
