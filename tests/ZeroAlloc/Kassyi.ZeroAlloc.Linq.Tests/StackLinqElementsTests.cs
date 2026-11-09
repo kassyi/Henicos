@@ -105,12 +105,11 @@ public class StackLinqElementsTests
     }
 
     [Fact]
-    public void NegativeIndexAndCount_Boundaries_ShouldMatchStandardLinq()
+    public void ElementAt_NegativeIndex_ThrowsArgumentOutOfRangeException()
     {
         int[] data = { 10, 20, 30, 40, 50 };
         Span<int> span = data;
 
-        // ElementAt(-1) throws ArgumentOutOfRangeException on Array, Span, and Chained enumerators
         Assert.Throws<ArgumentOutOfRangeException>(() => data.AsStackEnumerable().ElementAt(-1));
         Assert.Throws<ArgumentOutOfRangeException>(() => data.AsStackEnumerable().Where(x => x > 10).ElementAt(-1));
 
@@ -123,18 +122,37 @@ public class StackLinqElementsTests
         {
             spanElementAtThrew = true;
         }
-        Assert.True(spanElementAtThrew);
 
-        // ElementAtOrDefault(-1) returns default (0)
+        Assert.True(spanElementAtThrew);
+    }
+
+    [Fact]
+    public void ElementAtOrDefault_NegativeIndex_ReturnsDefault()
+    {
+        int[] data = { 10, 20, 30, 40, 50 };
+        Span<int> span = data;
+
         Assert.Equal(0, data.AsStackEnumerable().ElementAtOrDefault(-1));
         Assert.Equal(0, span.AsStackEnumerable().ElementAtOrDefault(-1));
         Assert.Equal(0, data.AsStackEnumerable().Where(x => x > 10).ElementAtOrDefault(-1));
+    }
 
-        // TakeLast(-1) returns empty
+    [Fact]
+    public void TakeLast_NegativeCount_ReturnsEmpty()
+    {
+        int[] data = { 10, 20, 30, 40, 50 };
+        Span<int> span = data;
+
         Assert.Empty(data.AsStackEnumerable().TakeLast(-1).ToArray());
         Assert.Empty(span.AsStackEnumerable().TakeLast(-1).ToArray());
+    }
 
-        // SkipLast(-1) returns full sequence
+    [Fact]
+    public void SkipLast_NegativeCount_ReturnsFullSequence()
+    {
+        int[] data = { 10, 20, 30, 40, 50 };
+        Span<int> span = data;
+
         Assert.Equal(data, data.AsStackEnumerable().SkipLast(-1).ToArray());
         Assert.Equal(data, span.AsStackEnumerable().SkipLast(-1).ToArray());
     }
