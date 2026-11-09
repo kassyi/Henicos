@@ -29,12 +29,14 @@ internal sealed partial class ManagedExecutionRewriter
             return base.VisitExpressionStatement(node);
         }
 
+        // Read on the call in its tree: the copy that binds to the source has no ancestors
+        var namesInScope = ManagedShadowedLocals.GetNamesInScope(invocation, semanticModel);
         invocation = BindCopiesToSource(invocation);
         StatementSyntax? rewritten = call.Kind switch
         {
-            GpuMacroKind.ForUnroll => RewriteForUnroll(invocation, call),
-            GpuMacroKind.GridStrideLoop => RewriteGridStrideLoop(invocation, call),
-            _ => RewriteSingleThread(invocation)
+            GpuMacroKind.ForUnroll => RewriteForUnroll(invocation, call, namesInScope),
+            GpuMacroKind.GridStrideLoop => RewriteGridStrideLoop(invocation, call, namesInScope),
+            _ => RewriteSingleThread(invocation, namesInScope)
         };
         return rewritten?.WithTriviaFrom(node) ?? base.VisitExpressionStatement(node);
     }
@@ -66,7 +68,7 @@ internal sealed partial class ManagedExecutionRewriter
     // { if (<six indices are 0>) <body with each return as goto __gsharp_st_end_<n>;> __gsharp_st_end_<n>: ; }
     // A body that is not a lambda (a method group) stays a call of the implementation in Kassyi.GSharp.Core, which
     // checks the same condition
-    private StatementSyntax? RewriteSingleThread(InvocationExpressionSyntax invocation)
+    private StatementSyntax? RewriteSingleThread(InvocationExpressionSyntax invocation, HashSet<string> namesInScope)
     {
         var arguments = invocation.ArgumentList.Arguments;
         if (arguments.Count != 1 || arguments[0].Expression is not LambdaExpressionSyntax lambda)
@@ -85,7 +87,7 @@ internal sealed partial class ManagedExecutionRewriter
         BlockSyntax body;
         try
         {
-            body = VisitLoopBody(lambda, substituter: null);
+            body = VisitLoopBody(lambda, substituter: null, namesInScope);
         }
         finally
         {
@@ -119,7 +121,8 @@ internal sealed partial class ManagedExecutionRewriter
     // count and the step are read once, and the index is unsigned with a start and step that saturate at 2^31 (#712).
     // The loop variable has a name of its own, like the one of ForUnroll: the lambda parameter may be named like a local
     // of the kernel, which the loop would otherwise hide (CS0136)
-    private BlockSyntax? RewriteGridStrideLoop(InvocationExpressionSyntax invocation, GpuMacroCall call)
+    private BlockSyntax? RewriteGridStrideLoop(InvocationExpressionSyntax invocation, GpuMacroCall call,
+        HashSet<string> namesInScope)
     {
         var arguments = invocation.ArgumentList.Arguments;
         if (!TryGetLoopMacroBody(arguments, call, out var lambda, out var loopParameter) ||
@@ -151,7 +154,7 @@ internal sealed partial class ManagedExecutionRewriter
         );
 
         var substituter = CreateSubstituter(call.GetContext(arguments), lambda, loopParameter, indexName);
-        var body = VisitLoopBody(lambda, substituter);
+        var body = VisitLoopBody(lambda, substituter, namesInScope);
         // int <index> = (int)<unsigned index>;
         var indexDeclaration = DeclareLocal(
             SyntaxKind.IntKeyword,
@@ -211,7 +214,8 @@ internal sealed partial class ManagedExecutionRewriter
     // The loop variable has a name of its own, so that it never meets a local that the lambda parameter is named like.
     // The sum is unchecked, as in the C# method and in the C++ loop: a sum beyond int.MaxValue wraps around and the
     // loop runs no iteration, where a constant sum would not compile
-    private ForStatementSyntax? RewriteForUnroll(InvocationExpressionSyntax invocation, GpuMacroCall call)
+    private ForStatementSyntax? RewriteForUnroll(InvocationExpressionSyntax invocation, GpuMacroCall call,
+        HashSet<string> namesInScope)
     {
         var arguments = invocation.ArgumentList.Arguments;
         if (!TryGetLoopMacroBody(arguments, call, out var lambda, out var loopParameter) ||
@@ -228,7 +232,7 @@ internal sealed partial class ManagedExecutionRewriter
         var indexName = NextLoopVariableName();
 
         var substituter = CreateSubstituter(call.GetContext(arguments), lambda, loopParameter, indexName);
-        var body = VisitLoopBody(lambda, substituter);
+        var body = VisitLoopBody(lambda, substituter, namesInScope);
 
         var declaration = SyntaxFactory.VariableDeclaration(
             SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.IntKeyword)),
@@ -311,10 +315,13 @@ internal sealed partial class ManagedExecutionRewriter
         return new MacroLambdaSubstituter(semanticModel, loopParameter, loopName, contextParameter, contextArgument);
     }
 
-    // The body of the macro lambda as a block. A return in it is not rewritten as the kernel's return
-    private BlockSyntax VisitLoopBody(LambdaExpressionSyntax lambda, MacroLambdaSubstituter? substituter)
+    // The body of the macro lambda as a block, its locals that shadow a name of <namesInScope> renamed
+    // (ManagedShadowedLocals). A return in it is not rewritten as the kernel's return
+    private BlockSyntax VisitLoopBody(LambdaExpressionSyntax lambda, MacroLambdaSubstituter? substituter,
+        HashSet<string> namesInScope)
     {
-        var substituted = substituter is null ? lambda.Body : substituter.Visit(lambda.Body) ?? lambda.Body;
+        var renamed = ManagedShadowedLocals.Rename(lambda.Body, namesInScope, semanticModel);
+        var substituted = substituter is null ? renamed : substituter.Visit(renamed) ?? renamed;
         var block = substituted as BlockSyntax ??
                     SyntaxFactory.Block(SyntaxFactory.ExpressionStatement((ExpressionSyntax)substituted));
 
