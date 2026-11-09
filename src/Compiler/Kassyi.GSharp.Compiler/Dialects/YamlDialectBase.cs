@@ -21,20 +21,7 @@ public abstract class YamlDialectBase : ITranspilerDialect
 
         if (typeSymbol is ITypeParameterSymbol typeParam)
         {
-            if (context.Emitter.CurrentNode is { } currentNode)
-            {
-                context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, currentNode,
-                    "unsubstituted type parameter");
-            }
-            else
-            {
-                var location = typeParam.Locations.AsStackEnumerable()
-                                   .FirstOrDefault(static loc => loc.IsInSource) ?? Location.None;
-                context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, location,
-                    "unsubstituted type parameter");
-            }
-
-            context.Emitter.Writer.Append("/*unsupported:TypeParameter*/");
+            ReportUnsubstitutedTypeParameter(ref context, typeParam);
             return;
         }
 
@@ -43,43 +30,8 @@ public abstract class YamlDialectBase : ITranspilerDialect
             typeSymbol = enumUnderlyingType;
         }
 
-        if (typeSymbol.TryGetArrayLikeElementType(out var elementType))
+        if (TryAppendSpecialType(ref context, typeSymbol))
         {
-            context.Emitter.Writer.Append("GSharpArray<");
-            AppendType(ref context, elementType);
-            context.Emitter.Writer.Append(">");
-            return;
-        }
-
-        if (IsCuda && typeSymbol.TypeKind == TypeKind.Delegate)
-        {
-            context.Emitter.Writer.Append("auto");
-            return;
-        }
-
-        if (typeSymbol is IFunctionPointerTypeSymbol)
-        {
-            // [WHY] Function pointers have no type-then-name C++ spelling and host pointers are invalid on the device.
-            // Declaration sites report GSH0003; this placeholder only keeps the emitted signature well-formed.
-            context.Emitter.Writer.Append("void*");
-            return;
-        }
-
-        if (typeSymbol is IPointerTypeSymbol pointer)
-        {
-            AppendType(ref context, pointer.PointedAtType);
-            context.Emitter.Writer.Append("*");
-            return;
-        }
-
-        if (WmmaTypeSyntaxHelper.TryAppendType(ref context, typeSymbol))
-        {
-            return;
-        }
-
-        if (TryMapType(GetTypeMappingKey(typeSymbol), out var mappedType))
-        {
-            context.Emitter.Writer.Append(mappedType);
             return;
         }
 
@@ -92,6 +44,77 @@ public abstract class YamlDialectBase : ITranspilerDialect
             return;
         }
 
+        AppendGenericArguments(ref context, namedType);
+    }
+
+    private static void ReportUnsubstitutedTypeParameter(ref TranspileContext context, ITypeParameterSymbol typeParam)
+    {
+        if (context.Emitter.CurrentNode is { } currentNode)
+        {
+            context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, currentNode,
+                "unsubstituted type parameter");
+        }
+        else
+        {
+            var location = typeParam.Locations
+                .AsStackEnumerable()
+                .FirstOrDefault(static loc => loc.IsInSource) ?? Location.None;
+            context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, location,
+                "unsubstituted type parameter");
+        }
+
+        context.Emitter.Writer.Append("/*unsupported:TypeParameter*/");
+    }
+
+    // The forms written without the type's C++ name: arrays, delegates, pointers, WMMA fragments, dialect-mapped types
+    private bool TryAppendSpecialType(ref TranspileContext context, ITypeSymbol typeSymbol)
+    {
+        if (typeSymbol.TryGetArrayLikeElementType(out var elementType))
+        {
+            context.Emitter.Writer.Append("GSharpArray<");
+            AppendType(ref context, elementType);
+            context.Emitter.Writer.Append(">");
+            return true;
+        }
+
+        if (IsCuda && typeSymbol.TypeKind == TypeKind.Delegate)
+        {
+            context.Emitter.Writer.Append("auto");
+            return true;
+        }
+
+        if (typeSymbol is IFunctionPointerTypeSymbol)
+        {
+            // [WHY] Function pointers have no type-then-name C++ spelling and host pointers are invalid on the device.
+            // Declaration sites report GSH0003; this placeholder only keeps the emitted signature well-formed.
+            context.Emitter.Writer.Append("void*");
+            return true;
+        }
+
+        if (typeSymbol is IPointerTypeSymbol pointer)
+        {
+            AppendType(ref context, pointer.PointedAtType);
+            context.Emitter.Writer.Append("*");
+            return true;
+        }
+
+        return WmmaTypeSyntaxHelper.TryAppendType(ref context, typeSymbol) ||
+               TryAppendMappedType(ref context, typeSymbol);
+    }
+
+    private bool TryAppendMappedType(ref TranspileContext context, ITypeSymbol typeSymbol)
+    {
+        if (!TryMapType(GetTypeMappingKey(typeSymbol), out var mappedType))
+        {
+            return false;
+        }
+
+        context.Emitter.Writer.Append(mappedType);
+        return true;
+    }
+
+    private void AppendGenericArguments(ref TranspileContext context, INamedTypeSymbol namedType)
+    {
         context.Emitter.Writer.Append("<");
         for (var i = 0; i < namedType.TypeArguments.Length; i++)
         {

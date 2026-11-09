@@ -35,6 +35,12 @@ internal static class StructOrdering
         }
 
         RegisterConversionTypes(namedStruct, ref context);
+
+        // A struct that only a constructor or accessor body of this struct names (#1158)
+        foreach (var bodyType in StructBodyDependencies.Get(namedStruct, context.Query.SemanticModel.Compilation))
+        {
+            RegisterUsedStructIfApplicable(bodyType, ref context);
+        }
     }
 
     // The other type of a conversion that is emitted from its body (a ref struct's included) is named there
@@ -63,18 +69,20 @@ internal static class StructOrdering
     /// first in C++.
     /// </summary>
     public static ImmutableArray<INamedTypeSymbol> GetTopologicallySortedStructs(ref TranspileContext context)
-        => GetTopologicallySortedStructs(context.Query.UsedStructs);
+        => GetTopologicallySortedStructs(context.Query.UsedStructs, context.Query.SemanticModel.Compilation);
 
     /// <summary>
-    /// Topologically sorts referenced structs so that dependent nested structs are declared first in C++.
+    /// Topologically sorts referenced structs so that dependent nested structs are declared first in C++: the
+    /// structs of the fields, type arguments and conversions, and the structs that the emitted bodies name
+    /// (<see cref="StructBodyDependencies"/>), whose constructors those bodies call.
     /// </summary>
     public static ImmutableArray<INamedTypeSymbol> GetTopologicallySortedStructs(
-        IEnumerable<INamedTypeSymbol> usedStructs)
+        IEnumerable<INamedTypeSymbol> usedStructs, Compilation compilation)
     {
         // [WHY] CUDA C++ requires full struct definitions in dependency order before value-type usage as fields.
         var structSet = usedStructs as ISet<INamedTypeSymbol> ??
                         new HashSet<INamedTypeSymbol>(usedStructs, SymbolEqualityComparer.Default);
-        var state = new SortState(structSet);
+        var state = new SortState(structSet, compilation);
         foreach (var s in structSet)
         {
             Visit(s, state);
@@ -120,6 +128,14 @@ internal static class StructOrdering
             }
         }
 
+        // [WHY] A body that creates another struct calls its constructor function, which C++ needs declared first. A
+        // cycle of bodies (each constructor creating the other struct) is cut where it closes; the function written
+        // first then calls one that is not declared yet
+        foreach (var bodyType in StructBodyDependencies.Get(s, state.Compilation))
+        {
+            VisitDependency(bodyType, s, state);
+        }
+
         state.Visiting.Remove(s);
         state.Visited.Add(s);
         state.Result.Add(s);
@@ -135,9 +151,10 @@ internal static class StructOrdering
     }
 
     // The structs to sort, the structs done and on the current path, and the sorted result
-    private sealed class SortState(ISet<INamedTypeSymbol> structSet)
+    private sealed class SortState(ISet<INamedTypeSymbol> structSet, Compilation compilation)
     {
         public ISet<INamedTypeSymbol> StructSet { get; } = structSet;
+        public Compilation Compilation { get; } = compilation;
         public HashSet<INamedTypeSymbol> Visited { get; } = new(SymbolEqualityComparer.Default);
         public HashSet<INamedTypeSymbol> Visiting { get; } = new(SymbolEqualityComparer.Default);
         public ImmutableArray<INamedTypeSymbol>.Builder Result { get; } =
