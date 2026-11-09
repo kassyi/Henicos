@@ -439,15 +439,8 @@ internal abstract class SignedAddSubExpression(IGpuBigIntExpression left, IGpuBi
 {
     protected override GpuBigInt Execute(GpuBigInt a, GpuBigInt b, GpuBigUInt resultBuffer)
     {
-        var bNegative = b.IsNegative ^ subtract;
-        if (a.IsNegative == bNegative)
-        {
-            BigIntWideOps.AddSubtract(a.Value, b.Value, resultBuffer, subtract: false);
-            return new GpuBigInt(resultBuffer, a.IsNegative);
-        }
-
-        var (negated, isZero) = BigIntWideOps.SubtractMagnitudes(a.Value, b.Value, resultBuffer);
-        return new GpuBigInt(resultBuffer, !isZero && (negated ? bNegative : a.IsNegative));
+        var negative = BigIntWideOps.AddSigned(a.Value, a.IsNegative, b.Value, b.IsNegative ^ subtract, resultBuffer);
+        return new GpuBigInt(resultBuffer, negative);
     }
 }
 
