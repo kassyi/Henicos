@@ -1,5 +1,10 @@
+#define UNMARKED_TRACE_ON
 using System;
+using System.Diagnostics;
+using System.Numerics;
 using Kassyi.GSharp.Core;
+
+[assembly: BclIntrinsicMap("UnmarkedMethodCallTest.HostBits", "Lzc", ["System.UInt32"], "__gsharp_lzc_32")]
 
 namespace UnmarkedMethodCallTest
 {
@@ -28,6 +33,17 @@ namespace UnmarkedMethodCallTest
 
         [GpuDeviceFunction]
         public static int Thrice(int v) => v * 3;
+
+        [Conditional("UNMARKED_NEVER_DEFINED")]
+        public static void TraceOff(int[] r) { r[0] = 1; }
+
+        [Conditional("UNMARKED_TRACE_ON")]
+        public static void TraceOn(int[] r) { r[0] = 2; }
+    }
+
+    public static class HostBits
+    {
+        public static int Lzc(uint x) => BitOperations.LeadingZeroCount(x);
     }
 
     public static partial class UnmarkedMethodCallKernels
@@ -40,6 +56,9 @@ namespace UnmarkedMethodCallTest
             output[0] = Helpers.Twice(box.Value);
             output[1] = GBox<int>.Make(3).Value;
             output[2] = Box.Marked(1) + Helpers.Thrice(2) + Math.Abs(output[3]) + Math.Max(output[4], 2);
+            output[5] = HostBits.Lzc((uint)output[6]);
+            Helpers.TraceOff(output);
+            Helpers.TraceOn(output);
         }
 
         [GpuDeviceFunction]

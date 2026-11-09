@@ -77,7 +77,10 @@ public class StackAllocFixedArrayTests : TranspilerTestBase
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<StackAllocFixedArrayTarget>(
             nameof(StackAllocFixedArrayTarget.StackAllocAsMethodArgument), isDevice: false, dialect: CurrentDialect);
 
-        Assert.Empty(diagnostics);
+        // The stackalloc span is passed as written; the helper has no [GpuDeviceFunction], so its call is GSH0107
+        var failure = Assert.Single(diagnostics);
+        Assert.Equal(GSharpDiagnostics.UnmarkedMethodCalledFromGpuCode.Id, failure.Descriptor.Id);
+        Assert.Contains("'StackAllocFixedArrayTarget.ConsumeSpanHelper'", failure.Format(), StringComparison.Ordinal);
         Assert.False(string.IsNullOrEmpty(cudaSource));
 
         int[] hostOutput = [0];

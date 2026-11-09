@@ -127,7 +127,11 @@ public class OperatorsAndInterfacesTests : TranspilerTestBase
     {
         var (_, diagnostics) = RoslynTestUtility.TranspileMethod<OperatorsAndInterfacesTarget>(
             nameof(OperatorsAndInterfacesTarget.StaticAbstractMembers), isDevice: false, dialect: CurrentDialect);
-        Assert.Empty(diagnostics);
+
+        // The helper has no [GpuDeviceFunction], so its call is GSH0107
+        var failure = Assert.Single(diagnostics);
+        Assert.Equal(GSharpDiagnostics.UnmarkedMethodCalledFromGpuCode.Id, failure.Descriptor.Id);
+        Assert.Contains("'OperatorsAndInterfacesTarget.GetMagicHelper'", failure.Format(), StringComparison.Ordinal);
 
         var items = new ConstantImpl_OpTest[1];
         OperatorsAndInterfacesTarget.StaticAbstractMembers(items);
