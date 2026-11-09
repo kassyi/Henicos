@@ -106,6 +106,43 @@ internal static class SpilledArguments
              : IsUnaliasedVariable(identifier, model) &&
                !IsWrittenByOtherArgument(identifier, arguments, index, model)));
 
+    /// <summary>
+    /// Whether the left operand of <paramref name="binary"/>, whose right operand holds a call that splits, is
+    /// evaluated into a temporary before the split, as C# evaluates it before the right operand (#1535). Not for
+    /// <c>&amp;&amp;</c>, <c>||</c> and <c>??</c>, whose right operand runs only on one branch, nor for a left operand
+    /// that can be read
+    /// after the split: a literal, a constant, or a variable that the right operand does not write (an unaliased local
+    /// or by-value parameter; a span or other ref struct, which no temporary keeps across the split, unless the right
+    /// operand writes it).
+    /// </summary>
+    public static bool IsSpilledLeftOperand(BinaryExpressionSyntax binary, SemanticModel? model)
+    {
+        if (binary.IsKind(SyntaxKind.LogicalAndExpression, SyntaxKind.LogicalOrExpression,
+                SyntaxKind.CoalesceExpression))
+        {
+            return false;
+        }
+
+        var left = binary.Left;
+        if (left is LiteralExpressionSyntax || (model != null && model.GetSafeConstantValue(left).HasValue))
+        {
+            return false;
+        }
+
+        if (left is not IdentifierNameSyntax identifier)
+        {
+            return true;
+        }
+
+        if (model == null)
+        {
+            return WritesByName(binary.Right, identifier.Identifier.ValueText);
+        }
+
+        var written = ExpressionEffects.Of(identifier, model).InterferesWith(ExpressionEffects.Of(binary.Right, model));
+        return IsRefLike(identifier, model) ? written : written || !IsUnaliasedVariable(identifier, model);
+    }
+
     // [WHY] A span or another ref struct cannot be kept in a temporary across the split (it is declared again on every
     // resume, ResumeLocals), so evaluating it into one does not fix its value. It stays in place, and the cross-barrier
     // rule (GSH0039) reports it when it is changed before the split and read by the call when it resumes; only a write
@@ -192,7 +229,7 @@ internal static class SpilledArguments
 
     // Without a semantic model: whether argument holds a ref / out argument, an assignment or an increment of the
     // variable named name
-    private static bool WritesByName(ArgumentSyntax argument, string name) =>
+    private static bool WritesByName(SyntaxNode argument, string name) =>
         argument
             .DescendantNodes()
             .AsStackEnumerable()

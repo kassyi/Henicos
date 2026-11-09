@@ -25,7 +25,14 @@ internal static class LivenessSplitPlacement
             var (flowEvent, syntax) = statement[i];
             if (syntax.SyntaxTree != call.Syntax.SyntaxTree || !call.Syntax.Span.Contains(syntax.Span))
             {
-                statement[kept++] = (flowEvent, syntax);
+                if (IsInSpilledLeftOperand(model, call.Syntax, syntax))
+                {
+                    events.Add(flowEvent);
+                }
+                else
+                {
+                    statement[kept++] = (flowEvent, syntax);
+                }
             }
             else if (flowEvent.Kind == LivenessEventKind.Change || IsEvaluatedBeforeSplit(model, call, syntax))
             {
@@ -40,6 +47,28 @@ internal static class LivenessSplitPlacement
         statement.Count = kept;
         events.Add(LivenessEvent.Split);
         events.AddRange(after);
+    }
+
+    // Whether a use outside the call is in the left operand of a binary expression whose right operand holds the call,
+    // which the lowering evaluates before the split (SpilledArguments.IsSpilledLeftOperand, #1535)
+    private static bool IsInSpilledLeftOperand(SemanticModel model, SyntaxNode call, SyntaxNode use)
+    {
+        if (use.SyntaxTree != call.SyntaxTree)
+        {
+            return false;
+        }
+
+        for (var node = call.Parent; node is ExpressionSyntax or ArgumentSyntax; node = node.Parent)
+        {
+            if (node is BinaryExpressionSyntax binary &&
+                binary.Right.Span.Contains(call.Span) &&
+                binary.Left.Span.Contains(use.Span))
+            {
+                return SpilledArguments.IsSpilledLeftOperand(binary, model);
+            }
+        }
+
+        return false;
     }
 
     // Whether a syntax use inside call is evaluated once before the call splits via SpilledArguments
