@@ -3,8 +3,8 @@ using Xunit;
 namespace Kassyi.GSharp.Tests.Shared.Syntax;
 
 /// <summary>
-/// Execution of <see cref="OutSpanParameterKernels"/>: a span parameter overwritten through an <c>out</c> argument after
-/// a barrier or a shuffle reads the new span, as C# does (#1003).
+/// Execution of <see cref="OutSpanParameterKernels"/>: a span parameter overwritten through an <c>out</c> argument
+/// after a barrier or a shuffle reads the new span, as C# does (#1003).
 /// </summary>
 [Category(TestCategory.Syntax)]
 [TestTarget(ExecutionTarget.GpuExecution)]

@@ -3,40 +3,14 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.TestCases.Diagnostics;
 
+// The shapes that are accepted are compiled and run in Syntax/OutSpanParameterKernels.cu.cs; this case holds the one
+// that stays rejected
 public static partial class OutSpanOverwriteKernels
 {
-    private const uint FullMask = 0xFFFFFFFFu;
-
     [GpuDeviceFunction]
     public static void Fill(int[] buffer, out Span<int> s)
     {
         s = buffer;
-    }
-
-    [GpuDeviceFunction]
-    public static int FillAndReturn(int[] buffer, out Span<int> s)
-    {
-        s = buffer;
-        return 1;
-    }
-
-    // Overwritten through out after the barrier, before any read: not live across it
-    [GpuDeviceFunction]
-    public static int ReassignedAfterBarrier(int[] buffer, Span<int> s)
-    {
-        s = s.Slice(1);
-        Gpu.SyncThreads();
-        Fill(buffer, out s);
-        return s[0];
-    }
-
-    // Overwritten through out after a shuffle of the same statement
-    [GpuDeviceFunction]
-    public static int ReassignedAfterShuffle(int[] buffer, Span<int> s)
-    {
-        s = s.Slice(1);
-        int a = Warp.ShuffleSync(FullMask, 0, 0) + FillAndReturn(buffer, out s);
-        return a + s[0];
     }
 
     // Read after the barrier before it is overwritten: live across it (GSH0039)
@@ -54,8 +28,6 @@ public static partial class OutSpanOverwriteKernels
     [SkipSnapshotConsistency("Diagnostics case")]
     public static void OutSpanOverwriteKernel(int[] input, int[] buffer, int[] result)
     {
-        int tid = ThreadIndex.X;
-        result[tid] = ReassignedAfterBarrier(buffer, input) + ReassignedAfterShuffle(buffer, input) +
-                      ReadBeforeOverwrite(buffer, input);
+        result[ThreadIndex.X] = ReadBeforeOverwrite(buffer, input);
     }
 }
