@@ -203,31 +203,42 @@ public class StackLinqPartitioningTests
     }
 
     [Fact]
-    public void ReadOnlySpan_And_Span_TakeLast_SkipLast_Coverage()
+    public void ReadOnlySpan_SumAndElementAt_ShouldMatchExpected()
     {
         int[] data = { 10, 20, 30, 40, 50 };
         ReadOnlySpan<int> roSpan = data;
-        Span<int> span = data;
-
-        // ReadOnlySpan wrapping
         Assert.Equal(150, roSpan.AsStackEnumerable().Sum());
         Assert.Equal(30, roSpan.AsStackEnumerable().ElementAt(2));
+    }
 
-        // Span TakeLast / SkipLast
-        Assert.Equal(new[] { 40, 50 }, span.AsStackEnumerable().TakeLast(2).ToArray());
-        Assert.Empty(span.AsStackEnumerable().TakeLast(0).ToArray());
-        Assert.Equal(data, span.AsStackEnumerable().TakeLast(10).ToArray());
+    [Theory]
+    [InlineData(2, new[] { 40, 50 })]
+    [InlineData(0, new int[0])]
+    [InlineData(10, new[] { 10, 20, 30, 40, 50 })]
+    public void Span_TakeLast_ShouldReturnExpectedElements(int count, int[] expected)
+    {
+        int[] data = { 10, 20, 30, 40, 50 };
+        Span<int> span = data;
+        Assert.Equal(expected, span.AsStackEnumerable().TakeLast(count).ToArray());
+    }
 
-        Assert.Equal(new[] { 10, 20, 30 }, span.AsStackEnumerable().SkipLast(2).ToArray());
-        Assert.Equal(data, span.AsStackEnumerable().SkipLast(0).ToArray());
-        Assert.Empty(span.AsStackEnumerable().SkipLast(10).ToArray());
+    [Theory]
+    [InlineData(2, new[] { 10, 20, 30 })]
+    [InlineData(0, new[] { 10, 20, 30, 40, 50 })]
+    [InlineData(10, new int[0])]
+    public void Span_SkipLast_ShouldReturnExpectedElements(int count, int[] expected)
+    {
+        int[] data = { 10, 20, 30, 40, 50 };
+        Span<int> span = data;
+        Assert.Equal(expected, span.AsStackEnumerable().SkipLast(count).ToArray());
+    }
 
-        // Span Single & Last optimizations
+    [Fact]
+    public void Span_SingleAndSingleOrDefault_Optimizations_ShouldReturnCorrectResult()
+    {
         Span<int> singleSpan = stackalloc int[] { 42 };
         Assert.Equal(42, singleSpan.AsStackEnumerable().Single());
         Assert.Equal(42, singleSpan.AsStackEnumerable().SingleOrDefault());
-        Assert.Equal(42, singleSpan.AsStackEnumerable().Last());
-        Assert.Equal(42, singleSpan.AsStackEnumerable().LastOrDefault());
 
         Span<int> emptySpan = Span<int>.Empty;
         bool singleThrew = false;
@@ -239,10 +250,19 @@ public class StackLinqPartitioningTests
         {
             singleThrew = true;
         }
+
         Assert.True(singleThrew);
-
         Assert.Equal(0, emptySpan.AsStackEnumerable().SingleOrDefault());
+    }
 
+    [Fact]
+    public void Span_LastAndLastOrDefault_Optimizations_ShouldReturnCorrectResult()
+    {
+        Span<int> singleSpan = stackalloc int[] { 42 };
+        Assert.Equal(42, singleSpan.AsStackEnumerable().Last());
+        Assert.Equal(42, singleSpan.AsStackEnumerable().LastOrDefault());
+
+        Span<int> emptySpan = Span<int>.Empty;
         bool lastThrew = false;
         try
         {
@@ -252,8 +272,8 @@ public class StackLinqPartitioningTests
         {
             lastThrew = true;
         }
-        Assert.True(lastThrew);
 
+        Assert.True(lastThrew);
         Assert.Equal(0, emptySpan.AsStackEnumerable().LastOrDefault());
         Assert.Equal(0, emptySpan.AsStackEnumerable().ElementAtOrDefault(5));
     }
