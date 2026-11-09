@@ -21,7 +21,7 @@ public abstract class YamlDialectBase : ITranspilerDialect
 
         if (typeSymbol is ITypeParameterSymbol typeParam)
         {
-            HandleUnsubstitutedTypeParameter(ref context, typeParam);
+            ReportUnsubstitutedTypeParameter(ref context, typeParam);
             return;
         }
 
@@ -47,7 +47,7 @@ public abstract class YamlDialectBase : ITranspilerDialect
         AppendGenericArguments(ref context, namedType);
     }
 
-    private static void HandleUnsubstitutedTypeParameter(ref TranspileContext context, ITypeParameterSymbol typeParam)
+    private static void ReportUnsubstitutedTypeParameter(ref TranspileContext context, ITypeParameterSymbol typeParam)
     {
         if (context.Emitter.CurrentNode is { } currentNode)
         {
@@ -56,8 +56,9 @@ public abstract class YamlDialectBase : ITranspilerDialect
         }
         else
         {
-            var location = typeParam.Locations.AsStackEnumerable()
-                               .FirstOrDefault(static loc => loc.IsInSource) ?? Location.None;
+            var location = typeParam.Locations
+                .AsStackEnumerable()
+                .FirstOrDefault(static loc => loc.IsInSource) ?? Location.None;
             context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, location,
                 "unsubstituted type parameter");
         }
@@ -65,6 +66,7 @@ public abstract class YamlDialectBase : ITranspilerDialect
         context.Emitter.Writer.Append("/*unsupported:TypeParameter*/");
     }
 
+    // The forms written without the type's C++ name: arrays, delegates, pointers, WMMA fragments, dialect-mapped types
     private bool TryAppendSpecialType(ref TranspileContext context, ITypeSymbol typeSymbol)
     {
         if (typeSymbol.TryGetArrayLikeElementType(out var elementType))

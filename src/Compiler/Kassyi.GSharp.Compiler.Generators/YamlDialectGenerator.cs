@@ -16,30 +16,11 @@ public static class YamlDialectGenerator
             throw new GeneratorInputException(inputDir, 0, "The dialect YAML directory does not exist.");
         }
 
-        var paths = Directory.GetFiles(inputDir, "*.*", SearchOption.AllDirectories);
-        Array.Sort(paths, StringComparer.Ordinal);
-
-        var dialectDefinitions = new List<DialectDefinition>();
+        var dialectDefinitions = ReadDefinitions(inputDir);
         var defMap = new Dictionary<string, DialectDefinition>(StringComparer.Ordinal);
-        // Names that differ only in case would write the same file on a case-insensitive file system.
-        var byFileName = new Dictionary<string, DialectDefinition>(StringComparer.OrdinalIgnoreCase);
-        foreach (var path in paths)
+        foreach (var def in dialectDefinitions)
         {
-            if (!path.EndsWith(".yml", StringComparison.OrdinalIgnoreCase) &&
-                !path.EndsWith(".yaml", StringComparison.OrdinalIgnoreCase))
-            {
-                continue;
-            }
-
-            var def = DialectDefinition.Parse(File.ReadAllText(path), path);
-            if (byFileName.TryGetValue(def.Name, out var other))
-            {
-                throw new GeneratorInputException(path, def.Line, $"The dialect '{def.Name}' is also defined in {other.Path} ('{other.Name}').");
-            }
-
-            dialectDefinitions.Add(def);
             defMap.Add(def.Name, def);
-            byFileName.Add(def.Name, def);
         }
 
         foreach (var def in dialectDefinitions)
@@ -53,6 +34,43 @@ public static class YamlDialectGenerator
             sources.Add($"{def.Name}Dialect.g.cs", GenerateDialectClass(def, defMap));
         }
 
+        WriteSources(outputDir, sources);
+    }
+
+    // The dialect files under inputDir in ordinal path order; a name defined twice (also in another case) is an error.
+    private static List<DialectDefinition> ReadDefinitions(string inputDir)
+    {
+        var paths = Directory.GetFiles(inputDir, "*.*", SearchOption.AllDirectories);
+        Array.Sort(paths, StringComparer.Ordinal);
+
+        var dialectDefinitions = new List<DialectDefinition>();
+        // Names that differ only in case would write the same file on a case-insensitive file system.
+        var byFileName = new Dictionary<string, DialectDefinition>(StringComparer.OrdinalIgnoreCase);
+        foreach (var path in paths)
+        {
+            if (!path.EndsWith(".yml", StringComparison.OrdinalIgnoreCase) &&
+                !path.EndsWith(".yaml", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            var def = DialectDefinition.Parse(File.ReadAllText(path), path);
+            if (byFileName.TryGetValue(def.Name, out var other))
+            {
+                throw new GeneratorInputException(path, def.Line,
+                    $"The dialect '{def.Name}' is also defined in {other.Path} ('{other.Name}').");
+            }
+
+            dialectDefinitions.Add(def);
+            byFileName.Add(def.Name, def);
+        }
+
+        return dialectDefinitions;
+    }
+
+    // Writes every source and deletes the *Dialect.g.cs files that no dialect wrote this time.
+    private static void WriteSources(string outputDir, Dictionary<string, string> sources)
+    {
         Directory.CreateDirectory(outputDir);
         foreach (var stale in Directory.GetFiles(outputDir, "*Dialect.g.cs"))
         {
@@ -139,15 +157,18 @@ public static class YamlDialectGenerator
         return writer.ToString();
     }
 
-    private static void EmitBackendAndCapabilities(SourceWriter writer, DialectDefinition def, Dictionary<string, DialectDefinition> definitions)
+    private static void EmitBackendAndCapabilities(
+        SourceWriter writer,
+        DialectDefinition def,
+        Dictionary<string, DialectDefinition> definitions)
     {
-        var backend = GetInheritedValue(def, definitions, d => d.Backend);
+        var backend = GetInheritedValue(def, definitions, static d => d.Backend);
         // CheckInheritance has rejected any other value.
         var isCuda = backend == "Cuda";
         writer.Line($"public override bool IsCuda => {(isCuda ? "true" : "false")};");
 
         // Capabilities
-        var capabilities = GetInheritedValue(def, definitions, d => d.Capabilities);
+        var capabilities = GetInheritedValue(def, definitions, static d => d.Capabilities);
         if (capabilities != null)
         {
             writer.Line(
