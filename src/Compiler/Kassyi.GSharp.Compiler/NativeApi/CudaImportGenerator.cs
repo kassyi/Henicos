@@ -23,41 +23,46 @@ public class CudaImportGenerator : IIncrementalGenerator
             .Where(static m => m.HasValue)
             .Select(static (m, _) => m.GetValueOrDefault());
 
-        var classGroups = methodDeclarations.Collect().SelectMany(static (items, _) =>
-        {
-            var groups = new Dictionary<string, ImmutableArray<CudaImportMethodModel>.Builder>(StringComparer.Ordinal);
-            var order = ImmutableArray.CreateBuilder<string>();
-
-            foreach (var item in items)
-            {
-                if (!groups.TryGetValue(item.ClassKey, out var builder))
-                {
-                    builder = ImmutableArray.CreateBuilder<CudaImportMethodModel>();
-                    groups[item.ClassKey] = builder;
-                    order.Add(item.ClassKey);
-                }
-
-                builder.Add(item);
-            }
-
-            var result = ImmutableArray.CreateBuilder<CudaImportClassModel>(order.Count);
-            foreach (var key in order)
-            {
-                var builder = groups[key];
-                var first = builder[0];
-                var lastDot = key.LastIndexOf('.');
-                var className = lastDot >= 0 ? key[(lastDot + 1)..] : key;
-                result.Add(new CudaImportClassModel(
-                    first.NamespaceName,
-                    className,
-                    first.ClassHeader,
-                    builder.ToImmutable().AsEquatableArray()));
-            }
-
-            return result.ToImmutable();
-        });
+        var classGroups = methodDeclarations
+            .Collect()
+            .SelectMany(static (items, _) => GroupByClass(items));
 
         context.RegisterSourceOutput(classGroups, GenerateCudaImportForClass);
+    }
+
+    // One model per containing class, in the order the classes first appear, each with its methods in input order
+    private static ImmutableArray<CudaImportClassModel> GroupByClass(ImmutableArray<CudaImportMethodModel> items)
+    {
+        var groups = new Dictionary<string, ImmutableArray<CudaImportMethodModel>.Builder>(StringComparer.Ordinal);
+        var order = ImmutableArray.CreateBuilder<string>();
+
+        foreach (var item in items)
+        {
+            if (!groups.TryGetValue(item.ClassKey, out var builder))
+            {
+                builder = ImmutableArray.CreateBuilder<CudaImportMethodModel>();
+                groups[item.ClassKey] = builder;
+                order.Add(item.ClassKey);
+            }
+
+            builder.Add(item);
+        }
+
+        var result = ImmutableArray.CreateBuilder<CudaImportClassModel>(order.Count);
+        foreach (var key in order)
+        {
+            var builder = groups[key];
+            var first = builder[0];
+            var lastDot = key.LastIndexOf('.');
+            var className = lastDot >= 0 ? key[(lastDot + 1)..] : key;
+            result.Add(new CudaImportClassModel(
+                first.NamespaceName,
+                className,
+                first.ClassHeader,
+                builder.ToImmutable().AsEquatableArray()));
+        }
+
+        return result.ToImmutable();
     }
 
     private static bool HasPartialModifier(MethodDeclarationSyntax method) =>
@@ -87,30 +92,13 @@ public class CudaImportGenerator : IIncrementalGenerator
             return null;
         }
 
-        ExtractAttributeArguments(attributeData, methodSyntax, methodSymbol.Name, out var moduleName, out var entryPoint, out var packContext);
+        ExtractAttributeArguments(attributeData, methodSyntax, methodSymbol.Name,
+            out var moduleName, out var entryPoint, out var packContext);
 
         var parameters = CreateLaunchParameters(methodSymbol).AsEquatableArray();
-
-        string namespaceName;
-        if (containingClass.ContainingNamespace == null || containingClass.ContainingNamespace.IsGlobalNamespace)
-        {
-            namespaceName = string.Empty;
-        }
-        else
-        {
-            using var nsWriter = new SourceWriter();
-            nsWriter.AppendNamespace(containingClass.ContainingNamespace);
-            namespaceName = nsWriter.ToString();
-        }
-
-        using var classWriter = new SourceWriter();
-        EmitClassDeclaration(classWriter, containingClass);
-        var classHeader = classWriter.ToString();
-
-        using var sigWriter = new SourceWriter();
-        EmitMethodSignature(sigWriter, methodSyntax, methodSymbol);
-        var signature = sigWriter.ToString();
-
+        var namespaceName = GetNamespaceName(containingClass);
+        var classHeader = RenderClassHeader(containingClass);
+        var signature = RenderMethodSignature(methodSyntax, methodSymbol);
         var className = containingClass.Name;
         var classKey = string.IsNullOrEmpty(namespaceName) ? className : $"{namespaceName}.{className}";
 
@@ -124,6 +112,32 @@ public class CudaImportGenerator : IIncrementalGenerator
             packContext,
             signature,
             parameters);
+    }
+
+    private static string GetNamespaceName(INamedTypeSymbol containingClass)
+    {
+        if (containingClass.ContainingNamespace == null || containingClass.ContainingNamespace.IsGlobalNamespace)
+        {
+            return string.Empty;
+        }
+
+        using var nsWriter = new SourceWriter();
+        nsWriter.AppendNamespace(containingClass.ContainingNamespace);
+        return nsWriter.ToString();
+    }
+
+    private static string RenderClassHeader(INamedTypeSymbol containingClass)
+    {
+        using var classWriter = new SourceWriter();
+        EmitClassDeclaration(classWriter, containingClass);
+        return classWriter.ToString();
+    }
+
+    private static string RenderMethodSignature(MethodDeclarationSyntax methodSyntax, IMethodSymbol methodSymbol)
+    {
+        using var sigWriter = new SourceWriter();
+        EmitMethodSignature(sigWriter, methodSyntax, methodSymbol);
+        return sigWriter.ToString();
     }
 
     private static void GenerateCudaImportForClass(SourceProductionContext context, CudaImportClassModel classGroup)
@@ -264,30 +278,33 @@ public class CudaImportGenerator : IIncrementalGenerator
         out string entryPoint,
         out bool packContext)
     {
-        moduleName = "unknown_module";
-        entryPoint = defaultEntryPoint;
-        packContext = false;
+        moduleName = ExtractModuleName(attributeData);
+        entryPoint = ReadNamedArguments(attributeData, out packContext) ??
+                     ResolveEntryPointFromSyntax(methodSyntax, defaultEntryPoint);
+    }
 
-        if (attributeData.ConstructorArguments.Length > 0)
+    private static string ExtractModuleName(AttributeData attributeData)
+    {
+        if (attributeData.ConstructorArguments.Length > 0 &&
+            attributeData.ConstructorArguments[0].Value is string argValue)
         {
-            if (attributeData.ConstructorArguments[0].Value is string argValue)
-            {
-                moduleName = argValue;
-            }
+            return argValue;
         }
 
-        var entryPointResolved = false;
+        return "unknown_module";
+    }
+
+    // The EntryPoint the semantic model resolved (null when it could not), and PackContext
+    private static string? ReadNamedArguments(AttributeData attributeData, out bool packContext)
+    {
+        string? entryPoint = null;
+        packContext = false;
+
         foreach (var namedArg in attributeData.NamedArguments)
         {
-            if (namedArg.Key == "EntryPoint")
+            if (namedArg is { Key: "EntryPoint", Value.Value: string argValue })
             {
-                if (namedArg.Value.Value is not string argValue)
-                {
-                    continue;
-                }
-
                 entryPoint = argValue;
-                entryPointResolved = true;
             }
             else if (namedArg is { Key: "PackContext", Value.Value: bool boolValue })
             {
@@ -295,38 +312,41 @@ public class CudaImportGenerator : IIncrementalGenerator
             }
         }
 
-        if (!entryPointResolved)
-        {
-            // Fallback to syntax tree parsing if the constant couldn't be resolved by the SemanticModel
-            // (e.g. because it is generated by another generator in the same pass)
-            var attributeSyntax = FindCudaImportAttribute(methodSyntax);
-            if (attributeSyntax?.ArgumentList == null)
-            {
-                return;
-            }
+        return entryPoint;
+    }
 
-            if (attributeSyntax.ArgumentList.Arguments
-                    .AsStackEnumerable()
-                    .TryFirst(static arg => arg.NameEquals?.Name.Identifier.ValueText == "EntryPoint", out var arg))
-            {
-                entryPoint = arg.Expression switch
-                {
-                    LiteralExpressionSyntax entryLit when entryLit.IsKind(SyntaxKind.StringLiteralExpression) =>
-                        entryLit.Token.ValueText,
-                    InvocationExpressionSyntax
-                    {
-                        Expression: IdentifierNameSyntax { Identifier.ValueText: "nameof" },
-                        ArgumentList.Arguments.Count: > 0
-                    } nameofInvocation when
-                        nameofInvocation.ArgumentList.Arguments[0].Expression is IdentifierNameSyntax targetId =>
-                        targetId
-                            .Identifier.ValueText,
-                    MemberAccessExpressionSyntax memberAccess => memberAccess.Name.Identifier.ValueText,
-                    IdentifierNameSyntax idSyntax => idSyntax.Identifier.ValueText,
-                    _ => entryPoint
-                };
-            }
+    private static string ResolveEntryPointFromSyntax(MethodDeclarationSyntax methodSyntax, string fallback)
+    {
+        // Fallback to syntax tree parsing if the constant couldn't be resolved by the SemanticModel
+        // (e.g. because it is generated by another generator in the same pass)
+        var attributeSyntax = FindCudaImportAttribute(methodSyntax);
+        if (attributeSyntax?.ArgumentList == null)
+        {
+            return fallback;
         }
+
+        if (!attributeSyntax.ArgumentList.Arguments
+                .AsStackEnumerable()
+                .TryFirst(static arg => arg.NameEquals?.Name.Identifier.ValueText == "EntryPoint", out var arg))
+        {
+            return fallback;
+        }
+
+        return arg.Expression switch
+        {
+            LiteralExpressionSyntax entryLit when entryLit.IsKind(SyntaxKind.StringLiteralExpression) =>
+                entryLit.Token.ValueText,
+            InvocationExpressionSyntax
+            {
+                Expression: IdentifierNameSyntax { Identifier.ValueText: "nameof" },
+                ArgumentList.Arguments.Count: > 0
+            } nameofInvocation when
+                nameofInvocation.ArgumentList.Arguments[0].Expression is IdentifierNameSyntax targetId =>
+                targetId.Identifier.ValueText,
+            MemberAccessExpressionSyntax memberAccess => memberAccess.Name.Identifier.ValueText,
+            IdentifierNameSyntax idSyntax => idSyntax.Identifier.ValueText,
+            _ => fallback
+        };
     }
 
     private static AttributeSyntax? FindCudaImportAttribute(MethodDeclarationSyntax methodSyntax) =>
