@@ -57,7 +57,7 @@ public class ParallelDependentCallFormsDiagnosticsTests
         string kernel)
     {
         var source = RoslynTestUtility.ReadTestCase(TestCase);
-        var declaration = CSharpSyntaxTree.ParseText(source).GetRoot()
+        var declaration = RoslynTestUtility.CreateCompilation(source).SyntaxTrees.Last().GetRoot()
             .DescendantNodes()
             .OfType<MethodDeclarationSyntax>()
             .Single(method => method.Identifier.ValueText == kernel)
