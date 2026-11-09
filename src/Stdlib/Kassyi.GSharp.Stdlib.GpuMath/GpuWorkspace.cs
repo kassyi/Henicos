@@ -263,7 +263,7 @@ public class GpuWorkspace : IGpuResourceScope
 
         using (ActivateContext())
         {
-            if (DeviceCounted.IsCapturing(this))
+            if (CaptureChecks.IsCapturing(this))
             {
                 throw new InvalidOperationException(
                     "The workspace stream is capturing a CUDA graph, which cannot wait for the device; check " +
