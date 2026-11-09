@@ -99,6 +99,14 @@ internal static class IdentifierNameTranspiler
             return;
         }
 
+        // <struct type>((*this)).<getter>(): a readonly member calls a getter that may change the struct on a copy
+        // (#610)
+        if (symbol is IPropertySymbol property && ComputedPropertyGetterCall.CallsOnCopy(node, property, ref context))
+        {
+            context.Emitter.Dialect.AppendType(ref context, property.ContainingType);
+            context.Emitter.Writer.Append("((*this)).");
+        }
+
         context.Emitter.Writer.AppendCppName(name);
         ComputedPropertyGetterCall.AppendCallIfGetter(node, symbol, ref context);
     }

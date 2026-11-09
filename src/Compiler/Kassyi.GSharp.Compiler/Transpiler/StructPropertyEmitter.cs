@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules;
+
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
 /// <summary>
@@ -15,10 +17,11 @@ internal static class StructPropertyEmitter
         WriteComputedPropertySetter(property, ref context);
     }
 
-    // __device__ inline <type> <property name>() const { <getter body> }
+    // __device__ inline <type> <property name>() [const] { <getter body> }
     // [WHY] The getter keeps the C++ name of the property (CppNameResolver), so the implicit `A` and `Sum` in a getter
     // body resolve to the members of the struct, and a read elsewhere only appends the call
-    // (ComputedPropertyGetterCall).
+    // (ComputedPropertyGetterCall). A getter that may change its struct is not const (#610); C# calls it on a copy of a
+    // readonly receiver, which the call writes (ComputedPropertyGetterCall.CallsOnCopy).
     private static void WriteComputedPropertyGetter(IPropertySymbol property, ref TranspileContext context)
     {
         // A struct from metadata or from another compilation has no getter body to bind here.
@@ -34,7 +37,7 @@ internal static class StructPropertyEmitter
         context.Emitter.Dialect.AppendType(ref context, property.Type);
         context.Emitter.Writer.Append(' ')
             .AppendCppName(CppNameResolver.Resolve(property, property.Name, context.Emitter.Dialect))
-            .Append("() const ");
+            .Append(ComputedPropertyGetterCall.IsConstGetter(property, compilation) ? "() const " : "() ");
 
         TranspilePropertyAccessorBody(declaration.SyntaxTree, block, expression, isVoidExpression: false, ref context);
     }

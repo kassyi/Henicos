@@ -320,7 +320,21 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
         ref TranspileContext context)
     {
         var member = PlanMemberName(node, memberSymbol, context.Query.SemanticModel, context.Emitter.Dialect);
-        AppendMemberReceiver(node, memberSymbol, ref context);
+        if (member is { Shape: MemberNameShape.Resolved, Symbol: IPropertySymbol property } &&
+            ComputedPropertyGetterCall.CallsOnCopy(node, property, ref context))
+        {
+            // <struct type>(<receiver>): the copy of a readonly receiver that C# calls the getter on (#610)
+            context.Emitter.Dialect.AppendType(ref context, property.ContainingType);
+            using (context.Emitter.Writer.Parentheses())
+            {
+                AppendMemberReceiver(node, memberSymbol, ref context);
+            }
+        }
+        else
+        {
+            AppendMemberReceiver(node, memberSymbol, ref context);
+        }
+
         context.Emitter.Writer.Append(node.IsKind(SyntaxKind.PointerMemberAccessExpression) ? "->" : ".");
         WriteMemberName(node, member, ref context);
     }
