@@ -228,15 +228,9 @@ public static class GpuBigIntStackLinqExtensions
             }
 
             var sumTree = StackLinqReductionCore.BuildBalancedTree(buffer.AsSpan(0, count), static (a, b) => a + b);
-            
-            var workspace = first.Value.Workspace;
-            var numWords = first.Value.NumWords;
-            var uintBuffer = new uint[numWords];
-            uintBuffer[0] = (uint)count;
-            var countBuffer = new GpuBigUInt(workspace, uintBuffer); 
-            var countExpr = (GpuBigIntExpr)new GpuBigInt(countBuffer, false);
 
-            return sumTree / countExpr;
+            // The count is a one-word value the node writes when it is evaluated: no buffer outlives the expression
+            return new GpuBigIntExpr(new SignedDivideByCountExpression(sumTree.Node, (uint)count));
         }
         finally
         {
