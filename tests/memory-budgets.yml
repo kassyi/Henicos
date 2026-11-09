@@ -21,5 +21,5 @@ Kassyi.GSharp.Tests.Cuda: 2496, stress 6784
 Kassyi.GSharp.Tests.Infrastructure.Tests: 320
 Kassyi.GSharp.Tests.Integration: 128
 Kassyi.GSharp.Tools.CollectEnv.Tests: 128
-Kassyi.GSharp.Tools.FuzzDiff.Tests: 1152
+Kassyi.GSharp.Tools.FuzzDiff.Tests: 1728
 Kassyi.ZeroAlloc.Linq.Tests: 128
