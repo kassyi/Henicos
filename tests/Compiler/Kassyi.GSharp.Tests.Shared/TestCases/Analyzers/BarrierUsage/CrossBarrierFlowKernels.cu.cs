@@ -482,7 +482,7 @@ public static partial class CrossBarrierFlowKernels
         outData[0] = *r;
     }
 
-    // GSH0041: ternary expression whose branch reads stack pointer before Broadcast (#1004)
+    // Not reported: the left operand, which reads the stack pointer, runs before the Broadcast split (#1535)
     [GpuDeviceFunction]
     public static unsafe int ConditionalReadStackPointerBeforeBroadcast(bool c)
     {
