@@ -29,12 +29,14 @@ internal sealed partial class ManagedExecutionRewriter
             return base.VisitExpressionStatement(node);
         }
 
+        // Read on the call in its tree: the copy that binds to the source has no ancestors
+        var namesInScope = ManagedShadowedLocals.GetNamesInScope(invocation, semanticModel);
         invocation = BindCopiesToSource(invocation);
         StatementSyntax? rewritten = call.Kind switch
         {
-            GpuMacroKind.ForUnroll => RewriteForUnroll(invocation, call),
-            GpuMacroKind.GridStrideLoop => RewriteGridStrideLoop(invocation, call),
-            _ => RewriteSingleThread(invocation)
+            GpuMacroKind.ForUnroll => RewriteForUnroll(invocation, call, namesInScope),
+            GpuMacroKind.GridStrideLoop => RewriteGridStrideLoop(invocation, call, namesInScope),
+            _ => RewriteSingleThread(invocation, namesInScope)
         };
         return rewritten?.WithTriviaFrom(node) ?? base.VisitExpressionStatement(node);
     }
@@ -66,7 +68,7 @@ internal sealed partial class ManagedExecutionRewriter
     // { if (<six indices are 0>) <body with each return as goto __gsharp_st_end_<n>;> __gsharp_st_end_<n>: ; }
     // A body that is not a lambda (a method group) stays a call of the implementation in Kassyi.GSharp.Core, which
     // checks the same condition
-    private StatementSyntax? RewriteSingleThread(InvocationExpressionSyntax invocation)
+    private StatementSyntax? RewriteSingleThread(InvocationExpressionSyntax invocation, HashSet<string> namesInScope)
     {
         var arguments = invocation.ArgumentList.Arguments;
         if (arguments.Count != 1 || arguments[0].Expression is not LambdaExpressionSyntax lambda)
@@ -85,7 +87,7 @@ internal sealed partial class ManagedExecutionRewriter
         BlockSyntax body;
         try
         {
-            body = VisitLoopBody(lambda, substituter: null);
+            body = VisitLoopBody(lambda, substituter: null, namesInScope);
         }
         finally
         {
@@ -119,7 +121,8 @@ internal sealed partial class ManagedExecutionRewriter
     // count and the step are read once, and the index is unsigned with a start and step that saturate at 2^31 (#712).
     // The loop variable has a name of its own, like the one of ForUnroll: the lambda parameter may be named like a local
     // of the kernel, which the loop would otherwise hide (CS0136)
-    private BlockSyntax? RewriteGridStrideLoop(InvocationExpressionSyntax invocation, GpuMacroCall call)
+    private BlockSyntax? RewriteGridStrideLoop(InvocationExpressionSyntax invocation, GpuMacroCall call,
+        HashSet<string> namesInScope)
     {
         var arguments = invocation.ArgumentList.Arguments;
         if (!TryGetLoopMacroBody(arguments, call, out var lambda, out var loopParameter) ||
@@ -129,62 +132,86 @@ internal sealed partial class ManagedExecutionRewriter
         }
 
         var number = _nextUnrollId;
-        var indexName = NextLoopVariableName();
-        var unsignedIndexName = $"{GSharpInternalNames.Lowering.GridStrideIndexPrefix}{number}";
-        var countName = $"{GSharpInternalNames.Lowering.GridStrideCountPrefix}{number}";
-        var stepName = $"{GSharpInternalNames.Lowering.GridStrideStepPrefix}{number}";
+        var names = new GridStrideNames(
+            NextLoopVariableName(),
+            $"{GSharpInternalNames.Lowering.GridStrideIndexPrefix}{number}",
+            $"{GSharpInternalNames.Lowering.GridStrideCountPrefix}{number}",
+            $"{GSharpInternalNames.Lowering.GridStrideStepPrefix}{number}"
+        );
         // Visit the count so that context accesses in it are rewritten like the rest of the body
         var countExpr = Visit(countArg) as ExpressionSyntax ?? countArg;
+        var (countDeclaration, stepDeclaration) = DeclareGridStrideBounds(names, countExpr);
 
-        var countDeclaration = DeclareLocal(
+        var substituter = CreateSubstituter(call.GetContext(arguments), lambda, loopParameter, names.Index);
+        var body = VisitLoopBody(lambda, substituter, namesInScope);
+        var loop = CreateGridStrideFor(names, body.Statements.Insert(0, DeclareGridStrideIndex(names)));
+
+        return SyntaxFactory.Block(countDeclaration, stepDeclaration, loop);
+    }
+
+    // The names of a grid-stride loop: the int index the body reads, the unsigned index the loop steps, the count and
+    // the step
+    private readonly record struct GridStrideNames(string Index, string UnsignedIndex, string Count, string Step);
+
+    // uint <count> = ManagedGpuContext.GridStrideCount(<count expression>);
+    // uint <step> = ManagedGpuContext.GridStrideStep();
+    private static (StatementSyntax Count, StatementSyntax Step) DeclareGridStrideBounds(in GridStrideNames names,
+        ExpressionSyntax countExpr)
+    {
+        var count = DeclareLocal(
             SyntaxKind.UIntKeyword,
-            countName,
+            names.Count,
             SyntaxFactory.InvocationExpression(
                 ManagedGpuContextMember("GridStrideCount"),
                 SyntaxFactory.ArgumentList(SyntaxFactory.SingletonSeparatedList(SyntaxFactory.Argument(countExpr)))
             )
         );
-        var stepDeclaration = DeclareLocal(
+        var step = DeclareLocal(
             SyntaxKind.UIntKeyword,
-            stepName,
+            names.Step,
             SyntaxFactory.InvocationExpression(ManagedGpuContextMember("GridStrideStep"))
         );
+        return (count, step);
+    }
 
-        var substituter = CreateSubstituter(call.GetContext(arguments), lambda, loopParameter, indexName);
-        var body = VisitLoopBody(lambda, substituter);
-        // int <index> = (int)<unsigned index>;
-        var indexDeclaration = DeclareLocal(
+    // int <index> = (int)<unsigned index>;
+    private static StatementSyntax DeclareGridStrideIndex(in GridStrideNames names) =>
+        DeclareLocal(
             SyntaxKind.IntKeyword,
-            indexName,
+            names.Index,
             SyntaxFactory.CastExpression(
                 SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.IntKeyword)),
-                SyntaxFactory.IdentifierName(unsignedIndexName)
+                SyntaxFactory.IdentifierName(names.UnsignedIndex)
             )
         );
 
-        var loop = SyntaxFactory.ForStatement(
+    // for (uint <unsigned index> = ManagedGpuContext.GridStrideStart(); <unsigned index> < <count>;
+    //      <unsigned index> += <step>) { <statements> }
+    private static ForStatementSyntax CreateGridStrideFor(in GridStrideNames names,
+        SyntaxList<StatementSyntax> statements)
+    {
+        var index = SyntaxFactory.IdentifierName(names.UnsignedIndex);
+        return SyntaxFactory.ForStatement(
             DeclareVariable(
                 SyntaxKind.UIntKeyword,
-                unsignedIndexName,
+                names.UnsignedIndex,
                 SyntaxFactory.InvocationExpression(ManagedGpuContextMember("GridStrideStart"))
             ),
             SyntaxFactory.SeparatedList<ExpressionSyntax>(),
             SyntaxFactory.BinaryExpression(
                 SyntaxKind.LessThanExpression,
-                SyntaxFactory.IdentifierName(unsignedIndexName),
-                SyntaxFactory.IdentifierName(countName)
+                index,
+                SyntaxFactory.IdentifierName(names.Count)
             ),
             SyntaxFactory.SingletonSeparatedList<ExpressionSyntax>(
                 SyntaxFactory.AssignmentExpression(
                     SyntaxKind.AddAssignmentExpression,
-                    SyntaxFactory.IdentifierName(unsignedIndexName),
-                    SyntaxFactory.IdentifierName(stepName)
+                    index,
+                    SyntaxFactory.IdentifierName(names.Step)
                 )
             ),
-            SyntaxFactory.Block(body.Statements.Insert(0, indexDeclaration))
+            SyntaxFactory.Block(statements)
         );
-
-        return SyntaxFactory.Block(countDeclaration, stepDeclaration, loop);
     }
 
     // global::Kassyi.GSharp.Core.ManagedGpuContext.<name>
@@ -211,7 +238,8 @@ internal sealed partial class ManagedExecutionRewriter
     // The loop variable has a name of its own, so that it never meets a local that the lambda parameter is named like.
     // The sum is unchecked, as in the C# method and in the C++ loop: a sum beyond int.MaxValue wraps around and the
     // loop runs no iteration, where a constant sum would not compile
-    private ForStatementSyntax? RewriteForUnroll(InvocationExpressionSyntax invocation, GpuMacroCall call)
+    private ForStatementSyntax? RewriteForUnroll(InvocationExpressionSyntax invocation, GpuMacroCall call,
+        HashSet<string> namesInScope)
     {
         var arguments = invocation.ArgumentList.Arguments;
         if (!TryGetLoopMacroBody(arguments, call, out var lambda, out var loopParameter) ||
@@ -228,7 +256,7 @@ internal sealed partial class ManagedExecutionRewriter
         var indexName = NextLoopVariableName();
 
         var substituter = CreateSubstituter(call.GetContext(arguments), lambda, loopParameter, indexName);
-        var body = VisitLoopBody(lambda, substituter);
+        var body = VisitLoopBody(lambda, substituter, namesInScope);
 
         var declaration = SyntaxFactory.VariableDeclaration(
             SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.IntKeyword)),
@@ -311,10 +339,13 @@ internal sealed partial class ManagedExecutionRewriter
         return new MacroLambdaSubstituter(semanticModel, loopParameter, loopName, contextParameter, contextArgument);
     }
 
-    // The body of the macro lambda as a block. A return in it is not rewritten as the kernel's return
-    private BlockSyntax VisitLoopBody(LambdaExpressionSyntax lambda, MacroLambdaSubstituter? substituter)
+    // The body of the macro lambda as a block, its locals that shadow a name of <namesInScope> renamed
+    // (ManagedShadowedLocals). A return in it is not rewritten as the kernel's return
+    private BlockSyntax VisitLoopBody(LambdaExpressionSyntax lambda, MacroLambdaSubstituter? substituter,
+        HashSet<string> namesInScope)
     {
-        var substituted = substituter is null ? lambda.Body : substituter.Visit(lambda.Body) ?? lambda.Body;
+        var renamed = ManagedShadowedLocals.Rename(lambda.Body, namesInScope, semanticModel);
+        var substituted = substituter is null ? renamed : substituter.Visit(renamed) ?? renamed;
         var block = substituted as BlockSyntax ??
                     SyntaxFactory.Block(SyntaxFactory.ExpressionStatement((ExpressionSyntax)substituted));
 
