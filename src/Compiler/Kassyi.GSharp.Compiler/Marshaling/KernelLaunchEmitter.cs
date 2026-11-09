@@ -18,7 +18,14 @@ internal static class KernelLaunchEmitter
     private const string CudaDriverApiType = HostTypeNames.CudaDriverApi;
     private const string CudaExceptionType = HostTypeNames.CudaException;
     private const string IntPtrType = HostTypeNames.IntPtr;
-    private const string GpuKernelLoaderType = HostTypeNames.GpuKernelLoader;
+    private const string LaunchErrorRecordsType = HostTypeNames.LaunchErrorRecords;
+
+    /// <summary>
+    /// Whether the launcher reads the device error record of its launch itself: the managed-array launcher after its
+    /// copy-back, and every launcher of the checked build after its stream synchronization. Such a launcher owns its
+    /// launch epoch until it reads the record or the launch ends (LaunchErrorRecords).
+    /// </summary>
+    internal static bool ReadsOwnRecord(bool isDevicePtr, bool isCheckedBuild) => isCheckedBuild || !isDevicePtr;
 
     internal enum CopyDirection
     {
@@ -40,7 +47,7 @@ internal static class KernelLaunchEmitter
 
     /// <summary>Emits local variable declarations for device pointers and tracking lists.</summary>
     internal static void WriteVariablesInitialization(SourceWriter writer, in KernelHostModel kernel,
-        in ArraySharingPlan plan, bool isDevicePtr)
+        in ArraySharingPlan plan, bool isDevicePtr, bool readsOwnRecord)
     {
         // One table for the whole launch, so that every array argument, struct argument and converted element finds the
         // arrays the others already copied (#707, #721)
@@ -67,9 +74,11 @@ internal static class KernelLaunchEmitter
 
         writer.AppendLineIf(kernel.GridScratchSlotBytes > 0, $"{IntPtrType} {DeviceGridScratch} = {IntPtrType}.Zero;");
 
-        // [WHY] Taken before anything is allocated: it throws the unconsumed error of an earlier launch whose record this
-        // launch reuses
-        writer.AppendLine($"uint {LaunchEpoch} = {GpuKernelLoaderType}.NextLaunchEpoch(hStream);");
+        // [WHY] Taken before anything is allocated: it throws the unconsumed error of an earlier launch whose record
+        // this launch reuses
+        writer.AppendLine(
+            $"uint {LaunchEpoch} = {LaunchErrorRecordsType}.NextLaunchEpoch(" +
+            $"hStream, {(readsOwnRecord ? "true" : "false")});");
     }
 
     /// <summary>Emits argument marshaling, device memory transfers, kernel launch, and result copyback.</summary>
@@ -94,10 +103,11 @@ internal static class KernelLaunchEmitter
         AutoResultEmitter.WriteCudaCopyBack(writer, kernel);
         writer.AppendLineIf(isCheckedBuild,
             "CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));");
-        // A failing device thread records its error and exits, and the kernel completes: the launcher reads the record of
-        // its own epoch once the stream has synchronized (copy-back or checked build). A launch with neither leaves it to
-        // the next synchronization of the stream.
-        writer.AppendLineIf(isCheckedBuild || !isDevicePtr, $"{GpuKernelLoaderType}.ThrowIfLaunchError({LaunchEpoch});");
+        // A failing device thread records its error and exits, and the kernel completes: the launcher reads the record
+        // of its own epoch once the stream has synchronized (copy-back or checked build). A launch with neither leaves
+        // it to the next synchronization of the stream.
+        writer.AppendLineIf(ReadsOwnRecord(isDevicePtr, isCheckedBuild),
+            $"{LaunchErrorRecordsType}.ThrowIfLaunchError({LaunchEpoch});");
     }
 
     // void** __gsharp_kernel_params = stackalloc void*[<parameters>[ + auto result][ + grid scratch] + epoch];
@@ -161,8 +171,11 @@ internal static class KernelLaunchEmitter
 
     /// <summary>Emits cleanup code to asynchronously free allocated device memory buffers.</summary>
     internal static void WriteCleanup(SourceWriter writer, in KernelHostModel kernel, in ArraySharingPlan plan,
-        bool isDevicePtr)
+        bool isDevicePtr, bool readsOwnRecord)
     {
+        // A launch that ends before its launcher read the record (an argument copy failed) leaves the record to the
+        // next synchronization; after ThrowIfLaunchError this does nothing
+        writer.AppendLineIf(readsOwnRecord, $"{LaunchErrorRecordsType}.ReleaseLaunchEpoch({LaunchEpoch});");
         for (var i = 0; i < kernel.Parameters.Length; i++)
         {
             WriteParameterFree(writer, plan, i, isDevicePtr);
