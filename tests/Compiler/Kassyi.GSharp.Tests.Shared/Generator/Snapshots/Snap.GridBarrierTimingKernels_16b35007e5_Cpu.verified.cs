@@ -44,8 +44,8 @@ public partial class GridBarrierTimingKernels
 private static readonly global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[] s_errorSites = new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[]
 {
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(218134691u, "GridBarrierTimingKernels.cs", 21, 21, "SlowBlockAfterFailKernel", "Non-exhaustive switch expression failed to match its input."),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1250252795u, "GridBarrierTimingKernels.cs", 41, 21, "LateFailingBlockFastKernel", "Non-exhaustive switch expression failed to match its input."),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1688980655u, "GridBarrierTimingKernels.cs", 52, 21, "LateFailingBlockDeterministicKernel", "Non-exhaustive switch expression failed to match its input."),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(564351815u, "GridBarrierTimingKernels.cs", 42, 21, "LateFailingBlockTwoFastBarriersKernel", "Non-exhaustive switch expression failed to match its input."),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(847195943u, "GridBarrierTimingKernels.cs", 56, 21, "LateFailingBlockDeterministicKernel", "Non-exhaustive switch expression failed to match its input."),
 };
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -429,18 +429,19 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dl
 }
 }
 #pragma warning restore CS8500
-public const string LateFailingBlockFastKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Cuda__GridBarrierTimingKernels__LateFailingBlockFastKernel {
+public const string LateFailingBlockTwoFastBarriersKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Cuda__GridBarrierTimingKernels__LateFailingBlockTwoFastBarriersKernel {
 int __gsharp_state = 0;
-__gsharp_context_Kassyi__GSharp__Tests__Cuda__GridBarrierTimingKernels__LateFailingBlockFastKernel* __gsharp_all_contexts = nullptr;
+__gsharp_context_Kassyi__GSharp__Tests__Cuda__GridBarrierTimingKernels__LateFailingBlockTwoFastBarriersKernel* __gsharp_all_contexts = nullptr;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 GSharpArray<int> __gsharp_id_0_keys;
 long long __gsharp_id_1_cycles;
-GSharpArray<int> __gsharp_id_2_result;
-int __gsharp_id_3_tid;
-int __gsharp_id_4_value;
+GSharpArray<int> __gsharp_id_2_between;
+GSharpArray<int> __gsharp_id_3_result;
+int __gsharp_id_4_tid;
+int __gsharp_id_5_value;
 };
-extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Cuda__GridBarrierTimingKernels__LateFailingBlockFastKernel(GSharpArray<int> __gsharp_in___gsharp_id_0_keys, long long __gsharp_in___gsharp_id_1_cycles, GSharpArray<int> __gsharp_in___gsharp_id_2_result, __gsharp_context_Kassyi__GSharp__Tests__Cuda__GridBarrierTimingKernels__LateFailingBlockFastKernel* __gsharp_ctx){
+extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Cuda__GridBarrierTimingKernels__LateFailingBlockTwoFastBarriersKernel(GSharpArray<int> __gsharp_in___gsharp_id_0_keys, long long __gsharp_in___gsharp_id_1_cycles, GSharpArray<int> __gsharp_in___gsharp_id_2_between, GSharpArray<int> __gsharp_in___gsharp_id_3_result, __gsharp_context_Kassyi__GSharp__Tests__Cuda__GridBarrierTimingKernels__LateFailingBlockTwoFastBarriersKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
@@ -448,22 +449,23 @@ auto* __gsharp_root = __gsharp_ctx;
 if(__gsharp_state==0){
 __gsharp_ctx->__gsharp_id_0_keys=__gsharp_in___gsharp_id_0_keys;
 __gsharp_ctx->__gsharp_id_1_cycles=__gsharp_in___gsharp_id_1_cycles;
-__gsharp_ctx->__gsharp_id_2_result=__gsharp_in___gsharp_id_2_result;
+__gsharp_ctx->__gsharp_id_2_between=__gsharp_in___gsharp_id_2_between;
+__gsharp_ctx->__gsharp_id_3_result=__gsharp_in___gsharp_id_3_result;
 }
 switch(__gsharp_state)
 {
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_3_tid=__gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
+__gsharp_ctx->__gsharp_id_4_tid=__gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 __gsharp_fn_Kassyi__GSharp__Tests__Cuda__GridBarrierTimingKernels__SpinInFirstBlock(__gsharp_ctx->__gsharp_id_1_cycles);
-__gsharp_ctx->__gsharp_id_4_value=([&]() {
-switch(__gsharp_ctx->__gsharp_id_0_keys[__gsharp_ctx->__gsharp_id_3_tid])
+__gsharp_ctx->__gsharp_id_5_value=([&]() {
+switch(__gsharp_ctx->__gsharp_id_0_keys[__gsharp_ctx->__gsharp_id_4_tid])
 {
-case 0: return __gsharp_ctx->__gsharp_id_3_tid;
-case 1: return __gsharp_neg_i32(__gsharp_ctx->__gsharp_id_3_tid);
+case 0: return __gsharp_ctx->__gsharp_id_4_tid;
+case 1: return __gsharp_neg_i32(__gsharp_ctx->__gsharp_id_4_tid);
 }
-__gsharp_trap_abort(GSharpErrorCode::SwitchExpression, 1250252795u);
+__gsharp_trap_abort(GSharpErrorCode::SwitchExpression, 564351815u);
 }());
 __gsharp_yielded_for_grid_sync=true;
 __gsharp_state=1;
@@ -472,7 +474,15 @@ return;
 case 1:
 __gsharp_switch_1_state_1:
 {
-__gsharp_ctx->__gsharp_id_2_result[__gsharp_ctx->__gsharp_id_3_tid]=__gsharp_ctx->__gsharp_id_4_value;
+__gsharp_ctx->__gsharp_id_2_between[__gsharp_ctx->__gsharp_id_4_tid]=__gsharp_ctx->__gsharp_id_5_value;
+__gsharp_yielded_for_grid_sync=true;
+__gsharp_state=2;
+return;
+}
+case 2:
+__gsharp_switch_1_state_2:
+{
+__gsharp_ctx->__gsharp_id_3_result[__gsharp_ctx->__gsharp_id_4_tid]=__gsharp_ctx->__gsharp_id_5_value;
 __gsharp_state=-1;
 return;
 }
@@ -481,20 +491,20 @@ return;
 #undef __gsharp_yielded_for_grid_sync
 #undef __gsharp_yielded_for_block_barrier
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Tests__Cuda__GridBarrierTimingKernels__LateFailingBlockFastKernel(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, uint32_t __gsharp_shared_mem_bytes, int64_t __gsharp_total_blocks, GSharpArray<int> __gsharp_id_0_keys, long long __gsharp_id_1_cycles, GSharpArray<int> __gsharp_id_2_result)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Tests__Cuda__GridBarrierTimingKernels__LateFailingBlockTwoFastBarriersKernel(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, uint32_t __gsharp_shared_mem_bytes, int64_t __gsharp_total_blocks, GSharpArray<int> __gsharp_id_0_keys, long long __gsharp_id_1_cycles, GSharpArray<int> __gsharp_id_2_between, GSharpArray<int> __gsharp_id_3_result)
 {
 __gsharp_host_last_error.Reset();
 GSharpErrorSlot __gsharp_launch_error;
 int32_t __gsharp_threads_per_block = (int32_t)(__gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z);
 try
 {
-std::vector<__gsharp_context_Kassyi__GSharp__Tests__Cuda__GridBarrierTimingKernels__LateFailingBlockFastKernel> __gsharp_grid_contexts((size_t)__gsharp_total_blocks * __gsharp_threads_per_block);
+std::vector<__gsharp_context_Kassyi__GSharp__Tests__Cuda__GridBarrierTimingKernels__LateFailingBlockTwoFastBarriersKernel> __gsharp_grid_contexts((size_t)__gsharp_total_blocks * __gsharp_threads_per_block);
 std::vector<__gsharp_block_smem> __gsharp_block_arenas((size_t)__gsharp_total_blocks);
 std::vector<uint8_t> __gsharp_block_status((size_t)__gsharp_total_blocks);
 for (int64_t __gsharp_block_index = 0; __gsharp_block_index < __gsharp_total_blocks; __gsharp_block_index++)
 {
 __gsharp_block_arenas[__gsharp_block_index].reset(__gsharp_shared_mem_bytes);
-__gsharp_context_Kassyi__GSharp__Tests__Cuda__GridBarrierTimingKernels__LateFailingBlockFastKernel* __gsharp_contexts = __gsharp_grid_contexts.data() + (size_t)__gsharp_block_index * __gsharp_threads_per_block;
+__gsharp_context_Kassyi__GSharp__Tests__Cuda__GridBarrierTimingKernels__LateFailingBlockTwoFastBarriersKernel* __gsharp_contexts = __gsharp_grid_contexts.data() + (size_t)__gsharp_block_index * __gsharp_threads_per_block;
 for (int32_t __gsharp_thread_index = 0; __gsharp_thread_index < __gsharp_threads_per_block; __gsharp_thread_index++)
 {
 __gsharp_contexts[__gsharp_thread_index].__gsharp_all_contexts = __gsharp_contexts;
@@ -515,7 +525,7 @@ int32_t __gsharp_bx = (int32_t)(__gsharp_block_index % __gsharp_grid_dim_x);
 int32_t __gsharp_by = (int32_t)((__gsharp_block_index / __gsharp_grid_dim_x) % __gsharp_grid_dim_y);
 int32_t __gsharp_bz = (int32_t)(__gsharp_block_index / ((int64_t)__gsharp_grid_dim_x * __gsharp_grid_dim_y));
 __gsharp_bind_smem(&__gsharp_block_arenas[__gsharp_block_index]);
-__gsharp_context_Kassyi__GSharp__Tests__Cuda__GridBarrierTimingKernels__LateFailingBlockFastKernel* __gsharp_contexts = __gsharp_grid_contexts.data() + (size_t)__gsharp_block_index * __gsharp_threads_per_block;
+__gsharp_context_Kassyi__GSharp__Tests__Cuda__GridBarrierTimingKernels__LateFailingBlockTwoFastBarriersKernel* __gsharp_contexts = __gsharp_grid_contexts.data() + (size_t)__gsharp_block_index * __gsharp_threads_per_block;
 for (int32_t __gsharp_thread_index = 0; __gsharp_thread_index < __gsharp_threads_per_block; __gsharp_thread_index++)
 {
 __gsharp_contexts[__gsharp_thread_index].__gsharp_yielded_for_grid_sync = false;
@@ -536,7 +546,7 @@ uint32_t __gsharp_ctx_tid = __gsharp_tz * __gsharp_block_dim_y * __gsharp_block_
 if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_state != -1 && !__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_block_barrier && !__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_grid_sync)
 {
 __gsharp_set_thread_idx(__gsharp_tx, __gsharp_ty, __gsharp_tz, __gsharp_bx, __gsharp_by, __gsharp_bz, __gsharp_block_dim_x, __gsharp_block_dim_y, __gsharp_block_dim_z, __gsharp_grid_dim_x, __gsharp_grid_dim_y, __gsharp_grid_dim_z);
-__gsharp_k_Kassyi__GSharp__Tests__Cuda__GridBarrierTimingKernels__LateFailingBlockFastKernel(__gsharp_id_0_keys, __gsharp_id_1_cycles, __gsharp_id_2_result, &__gsharp_contexts[__gsharp_ctx_tid]);
+__gsharp_k_Kassyi__GSharp__Tests__Cuda__GridBarrierTimingKernels__LateFailingBlockTwoFastBarriersKernel(__gsharp_id_0_keys, __gsharp_id_1_cycles, __gsharp_id_2_between, __gsharp_id_3_result, &__gsharp_contexts[__gsharp_ctx_tid]);
 if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_grid_sync)
 {
 __gsharp_grid_sync_reached = true;
@@ -562,7 +572,7 @@ __gsharp_any_active = true;
 __gsharp_block_status[__gsharp_block_index] = __gsharp_grid_sync_reached ? __gsharp_block_at_grid_sync : __gsharp_block_finished;
 if (__gsharp_grid_sync_reached && __gsharp_contexts[0].__gsharp_state == -1)
 {
-__gsharp_report_representative_finished(&__gsharp_launch_error, __gsharp_bx, __gsharp_by, __gsharp_bz, ""GridBarrierTimingKernels.LateFailingBlockFastKernel"");
+__gsharp_report_representative_finished(&__gsharp_launch_error, __gsharp_bx, __gsharp_by, __gsharp_bz, ""GridBarrierTimingKernels.LateFailingBlockTwoFastBarriersKernel"");
 }
 }
 catch (const __gsharp_step_abort&) {}
@@ -573,7 +583,7 @@ __gsharp_launch_error.Report(GSharpErrorCode::InvalidOperation, ""G#: the native
 }
 #pragma omp single
 {
-__gsharp_next_grid_phase = __gsharp_end_grid_phase(&__gsharp_launch_error, __gsharp_block_status.data(), __gsharp_total_blocks, __gsharp_grid_dim_x, __gsharp_grid_dim_y, ""GridBarrierTimingKernels.LateFailingBlockFastKernel"");
+__gsharp_next_grid_phase = __gsharp_end_grid_phase(&__gsharp_launch_error, __gsharp_block_status.data(), __gsharp_total_blocks, __gsharp_grid_dim_x, __gsharp_grid_dim_y, ""GridBarrierTimingKernels.LateFailingBlockTwoFastBarriersKernel"");
 }
 }
 __gsharp_bind_smem(nullptr);
@@ -589,11 +599,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public class __gsharp_context_Kassyi__GSharp__Tests__Cuda__GridBarrierTimingKernels__LateFailingBlockFastKernel {
+public class __gsharp_context_Kassyi__GSharp__Tests__Cuda__GridBarrierTimingKernels__LateFailingBlockTwoFastBarriersKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_path;
 public int[] keys;
 public long cycles;
+public int[] between;
 public int[] result;
 public int tid;
 public int value;
@@ -603,10 +614,11 @@ return next;
 }
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Cuda__GridBarrierTimingKernels__LateFailingBlockFastKernel(int[] __gsharp_in_keys, long __gsharp_in_cycles, int[] __gsharp_in_result, __gsharp_context_Kassyi__GSharp__Tests__Cuda__GridBarrierTimingKernels__LateFailingBlockFastKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Cuda__GridBarrierTimingKernels__LateFailingBlockTwoFastBarriersKernel(int[] __gsharp_in_keys, long __gsharp_in_cycles, int[] __gsharp_in_between, int[] __gsharp_in_result, __gsharp_context_Kassyi__GSharp__Tests__Cuda__GridBarrierTimingKernels__LateFailingBlockTwoFastBarriersKernel __gsharp_ctx) {
 if (__gsharp_ctx.__gsharp_state == 0) {
 __gsharp_ctx.keys = __gsharp_in_keys;
 __gsharp_ctx.cycles = __gsharp_in_cycles;
+__gsharp_ctx.between = __gsharp_in_between;
 __gsharp_ctx.result = __gsharp_in_result;
 }
 {
@@ -628,6 +640,14 @@ return;
 
 case 1:
 {
+__gsharp_ctx.between[__gsharp_ctx.tid] = __gsharp_ctx.value;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
+__gsharp_ctx.__gsharp_state = 2;
+return;
+}
+
+case 2:
+{
 __gsharp_ctx.result[__gsharp_ctx.tid] = __gsharp_ctx.value;
 __gsharp_ctx.__gsharp_state = -1;
 return;
@@ -637,11 +657,11 @@ return;
 }
 
 [global::System.Runtime.InteropServices.UnmanagedFunctionPointer(global::System.Runtime.InteropServices.CallingConvention.Cdecl, CharSet = global::System.Runtime.InteropServices.CharSet.Unicode)]
-private unsafe delegate void __gsharp_delegate_LateFailingBlockFastKernel(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, uint sharedMemBytes, long __gsharp_launch_block_count, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy keys, global::System.Int64 cycles, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy result);
+private unsafe delegate void __gsharp_delegate_LateFailingBlockTwoFastBarriersKernel(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, uint sharedMemBytes, long __gsharp_launch_block_count, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy keys, global::System.Int64 cycles, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy between, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy result);
 #pragma warning disable CS8500
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-public static unsafe void LaunchLateFailingBlockFastKernel(global::System.Int32[] keys, global::System.Int64 cycles, global::System.Int32[] result, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchLateFailingBlockTwoFastBarriersKernel(global::System.Int32[] keys, global::System.Int64 cycles, global::System.Int32[] between, global::System.Int32[] result, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (keys is null){
 throw new global::System.ArgumentNullException(nameof(keys));
@@ -649,25 +669,31 @@ throw new global::System.ArgumentNullException(nameof(keys));
 if (keys.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(keys));
 }
+if (between is null){
+throw new global::System.ArgumentNullException(nameof(between));
+}
+if (between.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(between));
+}
 if (result is null){
 throw new global::System.ArgumentNullException(nameof(result));
 }
 if (result.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(result));
 }
-long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "GridBarrierTimingKernels.LateFailingBlockFastKernel");
+long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "GridBarrierTimingKernels.LateFailingBlockTwoFastBarriersKernel");
 var __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
 var __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);
 if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(__gsharp_dll_path))
 {
-int __gsharp_context_count = global::Kassyi.GSharp.Runtime.LaunchLimits.GetManagedContextCount(__gsharp_launch_block_count, blockDimX, blockDimY, blockDimZ, "GridBarrierTimingKernels.LateFailingBlockFastKernel");
+int __gsharp_context_count = global::Kassyi.GSharp.Runtime.LaunchLimits.GetManagedContextCount(__gsharp_launch_block_count, blockDimX, blockDimY, blockDimZ, "GridBarrierTimingKernels.LateFailingBlockTwoFastBarriersKernel");
 int __gsharp_total_blocks = (int)__gsharp_launch_block_count;
 int __gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);
-var __gsharp_contexts = new __gsharp_context_Kassyi__GSharp__Tests__Cuda__GridBarrierTimingKernels__LateFailingBlockFastKernel[__gsharp_context_count];
+var __gsharp_contexts = new __gsharp_context_Kassyi__GSharp__Tests__Cuda__GridBarrierTimingKernels__LateFailingBlockTwoFastBarriersKernel[__gsharp_context_count];
 for (int __gsharp_context_index = 0; __gsharp_context_index < __gsharp_contexts.Length; __gsharp_context_index++)
 {
-__gsharp_contexts[__gsharp_context_index] = new __gsharp_context_Kassyi__GSharp__Tests__Cuda__GridBarrierTimingKernels__LateFailingBlockFastKernel();
+__gsharp_contexts[__gsharp_context_index] = new __gsharp_context_Kassyi__GSharp__Tests__Cuda__GridBarrierTimingKernels__LateFailingBlockTwoFastBarriersKernel();
 }
 global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks, sharedMemBytes, true);
 var __gsharp_thread_at_block_barrier = new bool[__gsharp_contexts.Length];
@@ -718,7 +744,7 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1 && !__gsharp_thr
 __gsharp_any_grid_active = true;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = false;
-__gsharp_statemachine_Kassyi__GSharp__Tests__Cuda__GridBarrierTimingKernels__LateFailingBlockFastKernel(keys, cycles, result, __gsharp_contexts[__gsharp_linear_tid]);
+__gsharp_statemachine_Kassyi__GSharp__Tests__Cuda__GridBarrierTimingKernels__LateFailingBlockTwoFastBarriersKernel(keys, cycles, between, result, __gsharp_contexts[__gsharp_linear_tid]);
 if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 __gsharp_thread_at_grid_sync[__gsharp_linear_tid] = true;
@@ -750,7 +776,7 @@ if (__gsharp_block_at_grid_sync_flag)
 {
 if (__gsharp_contexts[__gsharp_block_index * __gsharp_threads_per_block].__gsharp_state == -1)
 {
-throw global::Kassyi.GSharp.Core.ManagedGpuContext.RepresentativeFinishedAtGridSync("GridBarrierTimingKernels.LateFailingBlockFastKernel", __gsharp_bx, __gsharp_by, __gsharp_bz);
+throw global::Kassyi.GSharp.Core.ManagedGpuContext.RepresentativeFinishedAtGridSync("GridBarrierTimingKernels.LateFailingBlockTwoFastBarriersKernel", __gsharp_bx, __gsharp_by, __gsharp_bz);
 }
 __gsharp_any_block_at_grid_sync = true;
 }
@@ -766,7 +792,7 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;
 }
 if (__gsharp_any_block_at_grid_sync && __gsharp_first_finished_block >= 0)
 {
-throw global::Kassyi.GSharp.Core.ManagedGpuContext.BlockFinishedAtGridSync("GridBarrierTimingKernels.LateFailingBlockFastKernel", __gsharp_first_finished_block, gridDimX, gridDimY);
+throw global::Kassyi.GSharp.Core.ManagedGpuContext.BlockFinishedAtGridSync("GridBarrierTimingKernels.LateFailingBlockTwoFastBarriersKernel", __gsharp_first_finished_block, gridDimX, gridDimY);
 }
 }
 }
@@ -776,15 +802,16 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.EndGrid();
 }
 return;
 }
-var __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_LateFailingBlockFastKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Cuda__GridBarrierTimingKernels__LateFailingBlockFastKernel", __gsharp_dll_path);
+var __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_LateFailingBlockTwoFastBarriersKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Cuda__GridBarrierTimingKernels__LateFailingBlockTwoFastBarriersKernel", __gsharp_dll_path);
 if (s_errorSites.Length > 0)
 {
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
 }
 fixed (global::System.Int32* __gsharp_p_0 = keys)
-fixed (global::System.Int32* __gsharp_p_2 = result)
+fixed (global::System.Int32* __gsharp_p_2 = between)
+fixed (global::System.Int32* __gsharp_p_3 = result)
 {
-__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_0, Length = keys.Length }, cycles, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_2, Length = result.Length });
+__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_0, Length = keys.Length }, cycles, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_2, Length = between.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_3, Length = result.Length });
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
 }
 }
@@ -823,7 +850,7 @@ switch(__gsharp_ctx->__gsharp_id_0_keys[__gsharp_ctx->__gsharp_id_3_tid])
 case 0: return __gsharp_ctx->__gsharp_id_3_tid;
 case 1: return __gsharp_neg_i32(__gsharp_ctx->__gsharp_id_3_tid);
 }
-__gsharp_trap_abort(GSharpErrorCode::SwitchExpression, 1688980655u);
+__gsharp_trap_abort(GSharpErrorCode::SwitchExpression, 847195943u);
 }());
 __gsharp_yielded_for_grid_sync=true;
 __gsharp_state=1;
