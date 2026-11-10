@@ -16,7 +16,7 @@ public class CpuDialectPreludeTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_CpuDialect_StackLinqCall_IsDeclaredByCpuPrelude()
+    public void CpuDialect_StackLinqCall_IsDeclaredByCpuPrelude()
     {
         var text = GeneratedText("Generators/GpuKernel_StackLinqUnfused.cu.cs", "Cpu");
 
@@ -29,7 +29,7 @@ public class CpuDialectPreludeTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_CpuDialect_MemoryExtensionsSort_DoesNotEmitThrustDevicePolicy()
+    public void CpuDialect_MemoryExtensionsSort_DoesNotEmitThrustDevicePolicy()
     {
         var text = GeneratedText("Generators/GpuKernel_StackLinqUnfused.cu.cs", "Cpu");
 
@@ -38,7 +38,7 @@ public class CpuDialectPreludeTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_CudaDialect_StackLinqCall_Control()
+    public void CudaDialect_StackLinqCall_Control()
     {
         var text = GeneratedText("Generators/GpuKernel_StackLinqUnfused.cu.cs", "Cuda");
 

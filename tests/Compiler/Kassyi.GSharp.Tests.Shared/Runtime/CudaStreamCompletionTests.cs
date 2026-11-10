@@ -58,7 +58,7 @@ public class CudaStreamCompletionTests
     [SkippableFact]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.HappyPath)]
-    public async Task WaitAsync_StreamOfAnotherContext_WaitsForThatStream_AndRestoresCurrentContext()
+    public async Task WaitAsync_StreamOfAnotherContext_WaitsForStreamAndRestoresCurrentContext()
     {
         CudaCapability.EnsureGpuAvailable();
 
@@ -138,7 +138,7 @@ public class CudaStreamCompletionTests
     [SkippableFact]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.HappyPath)]
-    public async Task WaitAsync_ManyConcurrentAwaits_OnIndependentStreams_AllComplete()
+    public async Task WaitAsync_ManyConcurrentAwaitsOnIndependentStreams_AllCompleteSuccessfully()
     {
         CudaCapability.EnsureGpuAvailable();
 
@@ -323,7 +323,7 @@ public class CudaStreamCompletionTests
     [Fact]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.SadPath)]
-    public async Task CudaEventTimer_SynchronizeAsync_AfterDispose_Throws()
+    public async Task SynchronizeAsync_DisposedEventTimer_ThrowsObjectDisposedException()
     {
         var timer = CudaTestEnvironment.InContext(static () => new CudaEventTimer());
         timer.Dispose();
@@ -360,7 +360,7 @@ public class CudaStreamCompletionTests
     [SkippableFact]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.SadPath)]
-    public async Task ContextDestroy_WithArmedWait_FaultsAwaiter_AndWatchdogNeverTouchesContext()
+    public async Task WaitAsync_ContextDestroyWithArmedWait_FaultsAwaiterAndWatchdogNeverTouchesContext()
     {
         CudaCapability.EnsureGpuAvailable();
 
@@ -399,7 +399,7 @@ public class CudaStreamCompletionTests
     [SkippableFact]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.Boundary)]
-    public async Task WaitAsync_ContextDestroyedRightAfterCompletion_Repeatedly_DoesNotTouchDestroyedContext()
+    public async Task WaitAsync_ContextDestroyedRightAfterCompletionRepeatedly_DoesNotTouchDestroyedContext()
     {
         CudaCapability.EnsureGpuAvailable();
 
@@ -436,7 +436,8 @@ public class CudaStreamCompletionTests
     [SkippableFact]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.Boundary)]
-    public async Task ContextDestroy_RacingHostCallback_Repeatedly_FaultsOrCompletes_WithoutTouchingDestroyedContext()
+    public async Task
+        WaitAsync_ContextDestroyRacingHostCallbackRepeatedly_FaultsOrCompletesWithoutTouchingDestroyedContext()
     {
         CudaCapability.EnsureGpuAvailable();
 

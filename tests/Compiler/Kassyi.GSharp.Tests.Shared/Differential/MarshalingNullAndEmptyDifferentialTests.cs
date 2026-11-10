@@ -62,18 +62,18 @@ public sealed class MarshalingNullAndEmptyDifferentialTests
 
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_NullAndEmptyArrays_NonNullableNull_ThrowsArgumentNullException() =>
+    public void NullAndEmptyArrays_NonNullableNull_ThrowsArgumentNullException() =>
         DifferentialRunner.Run(s_nonNullableArrayNull);
 
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_NullAndEmptyArrays_NonNullableEmpty_ThrowsArgumentException() =>
+    public void NullAndEmptyArrays_NonNullableEmpty_ThrowsArgumentException() =>
         DifferentialRunner.Run(s_nonNullableArrayEmpty);
 
 #if GSHARP_CUDA
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_NullAndEmptyArrays_NonNullableDirectLaunchThrowsOnCuda()
+    public void NullAndEmptyArrays_NonNullableDirectLaunch_ThrowsOnCuda()
     {
         CudaCapability.EnsureGpuAvailable();
         int[] dummyOut = new int[1];
@@ -151,17 +151,17 @@ public sealed class MarshalingNullAndEmptyDifferentialTests
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_NullAndEmptyArrays_NullableTopLevelBothNull_MatchesSequentialOracle() =>
+    public void NullAndEmptyArrays_NullableTopLevelBothNull_MatchesSequentialOracle() =>
         DifferentialRunner.Run(s_nullableTopLevelBothNull);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_NullAndEmptyArrays_NullableTopLevelBothEmpty_MatchesSequentialOracle() =>
+    public void NullAndEmptyArrays_NullableTopLevelBothEmpty_MatchesSequentialOracle() =>
         DifferentialRunner.Run(s_nullableTopLevelBothEmpty);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_NullAndEmptyArrays_NullableTopLevelPopulated_MatchesSequentialOracle() =>
+    public void NullAndEmptyArrays_NullableTopLevelPopulated_MatchesSequentialOracle() =>
         DifferentialRunner.Run(s_nullableTopLevelPopulated);
 
     // --- Struct field null array vs empty array (#706 EmptyArrayData + ArrayPool reuse) ---
@@ -235,17 +235,17 @@ public sealed class MarshalingNullAndEmptyDifferentialTests
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_NullAndEmptyArrays_StructFieldWarmupPopulated_MatchesSequentialOracle() =>
+    public void NullAndEmptyArrays_StructFieldWarmupPopulated_MatchesSequentialOracle() =>
         DifferentialRunner.Run(s_structFieldWarmupPopulated);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_NullAndEmptyArrays_StructFieldNullVsEmpty_MatchesSequentialOracle() =>
+    public void NullAndEmptyArrays_StructFieldNullVsEmpty_MatchesSequentialOracle() =>
         DifferentialRunner.Run(s_structFieldNullVsEmpty);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_NullAndEmptyArrays_StructFieldEmptyVsNull_MatchesSequentialOracle() =>
+    public void NullAndEmptyArrays_StructFieldEmptyVsNull_MatchesSequentialOracle() =>
         DifferentialRunner.Run(s_structFieldEmptyVsNull);
 
     // --- Struct field null array dereference throws NullReferenceException (#706) ---
@@ -283,6 +283,6 @@ public sealed class MarshalingNullAndEmptyDifferentialTests
 
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_NullAndEmptyArrays_StructFieldNullDereference_ThrowsNullReferenceException() =>
+    public void NullAndEmptyArrays_StructFieldNullDereference_ThrowsNullReferenceException() =>
         DifferentialRunner.Run(s_structFieldNullDereference);
 }

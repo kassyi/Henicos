@@ -4,7 +4,7 @@ public class TranspilerInfrastructureTests
 :  TranspilerTestBase{
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void Test_ForwardDeclarations_And_MutualCalls()
+    public void ForwardDeclarations_MutuallyRecursiveFunctions_TranspilesAndExecutes()
     {
         int[] counts = [1, 2, 3];
         int[] vals = [5, 5, 5];
@@ -22,7 +22,7 @@ public class TranspilerInfrastructureTests
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void Test_OverloadedFunctions_DeduplicationAndForwardDecl()
+    public void OverloadedFunctions_OverloadSet_DeduplicatesAndEmitsForwardDeclarations()
     {
         int[] inputA = [3, 4];
         int[] inputB = [5, 6];
@@ -44,7 +44,7 @@ public class TranspilerInfrastructureTests
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void Test_PinnedArrayTransfer_EmptyAndHugeArrays()
+    public void PinnedArrayTransfer_EmptyAndOversizedArrays_ThrowsArgumentException()
     {
         // 1. Empty array transfer: the launcher rejects it instead of skipping the launch
         int[] emptyData = [];

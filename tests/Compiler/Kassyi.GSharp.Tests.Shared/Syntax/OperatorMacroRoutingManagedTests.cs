@@ -16,7 +16,7 @@ public class OperatorMacroRoutingManagedTests : TranspilerTestBase
 {
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_OperatorMacroReachedThroughACall_IsExpanded()
+    public void Route_ManagedOperatorMacroReachedThroughCall_IsExpanded()
     {
         var result = new int[3];
 
@@ -27,7 +27,7 @@ public class OperatorMacroRoutingManagedTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_RecursiveFunction_ExpandsOnEveryLevel()
+    public void Route_ManagedRecursiveFunction_ExpandsOnEveryLevel()
     {
         var result = new int[2];
 
@@ -38,7 +38,7 @@ public class OperatorMacroRoutingManagedTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_ExtensionFunction_ExpandsInItsReducedCall()
+    public void Route_ManagedExtensionFunction_ExpandsInReducedCall()
     {
         var result = new int[2];
 
@@ -49,7 +49,7 @@ public class OperatorMacroRoutingManagedTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_FunctionCalledFromALambda_Expands()
+    public void Route_ManagedFunctionCalledFromLambda_Expands()
     {
         var result = new int[1];
 
@@ -60,7 +60,7 @@ public class OperatorMacroRoutingManagedTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_ExtensionMethodGroup_ExpandsAndCapturesReceiverByValue()
+    public void Route_ManagedExtensionMethodGroup_ExpandsAndCapturesReceiverByValue()
     {
         var result = new int[2];
 
@@ -71,7 +71,7 @@ public class OperatorMacroRoutingManagedTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_NestedInPartialOuterClass_Expands()
+    public void Route_ManagedNestedInPartialOuterClass_Expands()
     {
         var result = new int[2];
 

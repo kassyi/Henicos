@@ -15,7 +15,7 @@ public class GpuBigIntCoreAdvancedMathTests
 
     [SkippableFact]
     [Category(TestCategory.Compiler)]
-    public void Test_DirectSquarePointwiseKernel()
+    public void Square_DirectPointwiseKernel_MatchesBigIntegerReference()
     {
         CudaCapability.EnsureGpuAvailable();
         using var ctx = new GpuWorkspace(16, GpuExecutionEngine.GSharpAot);
@@ -32,7 +32,7 @@ public class GpuBigIntCoreAdvancedMathTests
 
     [SkippableTheory]
     [InlineData(GpuExecutionEngine.GSharpAot)]
-    public void Test_DivRem_Mod_ModPow_Correctness(GpuExecutionEngine engine)
+    public void DivRemModModPow_RandomLargeOperands_MatchesBigIntegerReference(GpuExecutionEngine engine)
     {
         CudaCapability.EnsureGpuAvailable();
         using var context = new GpuWorkspace(TestSizeWords * 3, engine);
@@ -66,7 +66,7 @@ public class GpuBigIntCoreAdvancedMathTests
 
     [SkippableTheory]
     [InlineData(GpuExecutionEngine.GSharpAot)]
-    public void Test_DivRem_EdgeCases(GpuExecutionEngine engine)
+    public void DivRem_SmallerEqualPowerOfTwoAndZeroDividend_ReturnsQuotientAndRemainder(GpuExecutionEngine engine)
     {
         CudaCapability.EnsureGpuAvailable();
         using var context = new GpuWorkspace(TestSizeWords * 3, engine);
@@ -138,7 +138,7 @@ public class GpuBigIntCoreAdvancedMathTests
 
     [SkippableTheory]
     [InlineData(GpuExecutionEngine.GSharpAot)]
-    public void Test_Square_Correctness(GpuExecutionEngine engine)
+    public void Square_RandomLargeOperands_MatchesBigIntegerReference(GpuExecutionEngine engine)
     {
         CudaCapability.EnsureGpuAvailable();
         using var context = new GpuWorkspace(TestSizeWords * 4, engine);
@@ -161,7 +161,7 @@ public class GpuBigIntCoreAdvancedMathTests
 
     [SkippableTheory]
     [InlineData(GpuExecutionEngine.GSharpAot)]
-    public void Test_Function_ModInverse_Correctness(GpuExecutionEngine engine)
+    public void ModInverse_CoprimeOperands_MatchesBigIntegerReference(GpuExecutionEngine engine)
     {
         CudaCapability.EnsureGpuAvailable();
         using var context = new GpuWorkspace(TestSizeWords * 2, engine);
@@ -197,7 +197,7 @@ public class GpuBigIntCoreAdvancedMathTests
 
     [SkippableTheory]
     [InlineData(GpuExecutionEngine.GSharpAot)]
-    public void Test_Function_ModInverse_NotCoprime_Throws(GpuExecutionEngine engine)
+    public void ModInverse_NotCoprimeOperands_ThrowsArithmeticException(GpuExecutionEngine engine)
     {
         CudaCapability.EnsureGpuAvailable();
         using var context = new GpuWorkspace(TestSizeWords * 2, engine);
@@ -219,7 +219,7 @@ public class GpuBigIntCoreAdvancedMathTests
 
     [SkippableTheory]
     [InlineData(GpuExecutionEngine.GSharpAot)]
-    public void Test_Sqrt_Correctness(GpuExecutionEngine engine)
+    public void Sqrt_RandomLargeOperands_MatchesBigIntegerReference(GpuExecutionEngine engine)
     {
         CudaCapability.EnsureGpuAvailable();
         var sizeWords = 16;
@@ -245,7 +245,7 @@ public class GpuBigIntCoreAdvancedMathTests
 
     [SkippableTheory]
     [InlineData(GpuExecutionEngine.GSharpAot)]
-    public void Test_Sqrt_EdgeCases(GpuExecutionEngine engine)
+    public void Sqrt_ZeroAndExtrema_MatchesExpectedRoots(GpuExecutionEngine engine)
     {
         CudaCapability.EnsureGpuAvailable();
         using var context = new GpuWorkspace(TestSizeWords * 4, engine);
@@ -281,7 +281,7 @@ public class GpuBigIntCoreAdvancedMathTests
 
     [SkippableTheory]
     [InlineData(GpuExecutionEngine.GSharpAot)]
-    public void Test_ModPow_Correctness(GpuExecutionEngine engine)
+    public void ModPow_RandomLargeOperands_MatchesBigIntegerReference(GpuExecutionEngine engine)
     {
         CudaCapability.EnsureGpuAvailable();
         using var context = new GpuWorkspace(TestSizeWords * 13, engine);
@@ -314,7 +314,7 @@ public class GpuBigIntCoreAdvancedMathTests
 
     [SkippableTheory]
     [InlineData(GpuExecutionEngine.GSharpAot)]
-    public void Test_ModPow_EdgeCases(GpuExecutionEngine engine)
+    public void ModPow_ModulusOneZeroBaseAndZeroExponent_ReturnsExpectedResult(GpuExecutionEngine engine)
     {
         CudaCapability.EnsureGpuAvailable();
         using var context = new GpuWorkspace(TestSizeWords * 13, engine);

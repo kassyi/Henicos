@@ -16,7 +16,7 @@ public class GpuBigFloatStackLinqTests : GpuBigFloatWorkspaceTestBase
     [Fact]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.HappyPath)]
-    public void GpuBigFloat_ScalarOperators_And_Comparisons_WorkCorrectly()
+    public void ScalarOperations_ArithmeticAndComparisons_ProduceExpectedResults()
     {
         using var a = CreateFloat(20);
         using var b = CreateFloat(4);
@@ -47,7 +47,7 @@ public class GpuBigFloatStackLinqTests : GpuBigFloatWorkspaceTestBase
     [Fact]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.HappyPath)]
-    public void StackEnumerable_SelectArithmetic_And_Reductions_CalculateCorrectResults()
+    public void Select_ArithmeticAndReductions_CalculatesCorrectResults()
     {
         using var f0 = CreateFloat(10);
         using var f1 = CreateFloat(20);
@@ -131,7 +131,7 @@ public class GpuBigFloatStackLinqTests : GpuBigFloatWorkspaceTestBase
     [Fact]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.HappyPath)]
-    public void StackEnumerable_GenericUnification_GpuBigUInt_And_GpuBigUFloat_CalculateCorrectResults()
+    public void GenericUnification_GpuBigUIntAndGpuBigUFloat_CalculatesCorrectResults()
     {
         using var u0 = new GpuBigUInt(Context, [10u, 0u, 0u, 0u]);
         using var u1 = new GpuBigUInt(Context, [20u, 0u, 0u, 0u]);

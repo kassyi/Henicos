@@ -15,7 +15,7 @@ public class GpuBigIntCoreNumberTheoryTests
 
     [SkippableFact]
     [Category(TestCategory.Stdlib)]
-    public void Test_ParallelGcdLargeDigits()
+    public void Gcd_ParallelLargeDigits_MatchesBigIntegerReference()
     {
         CudaCapability.EnsureGpuAvailable();
         // Issue #112 & #117: Test large GCD to trigger pipeline stalls / TDR issues.
@@ -56,7 +56,7 @@ public class GpuBigIntCoreNumberTheoryTests
     [InlineData(4294967294u, 4294967294u, 4294967295u)] // Max valid residues -> 4294967293
     [InlineData(4294967293u, 1u, 4294967295u)]
     [InlineData(4294967294u, 1u, 4294967295u)] // Wraps to 0
-    public void Test_ModAdd_BoundaryConditions(uint a, uint b, uint p)
+    public void ModAdd_ExtremaConditions_MatchesModularSum(uint a, uint b, uint p)
     {
         CudaCapability.EnsureGpuAvailable();
         var expected = (uint)(((ulong)a + b) % p);
@@ -66,7 +66,7 @@ public class GpuBigIntCoreNumberTheoryTests
 
     [SkippableTheory]
     [InlineData(GpuExecutionEngine.GSharpAot)]
-    public void Test_Gcd_Correctness(GpuExecutionEngine engine)
+    public void Gcd_RandomLargeOperands_MatchesBigIntegerGcd(GpuExecutionEngine engine)
     {
         CudaCapability.EnsureGpuAvailable();
         using var context = new GpuWorkspace(TestSizeWords * 2, engine);
@@ -94,7 +94,7 @@ public class GpuBigIntCoreNumberTheoryTests
 
     [SkippableTheory]
     [InlineData(GpuExecutionEngine.GSharpAot)]
-    public void Test_Gcd_EmptyCollection_ThrowsException(GpuExecutionEngine engine)
+    public void Gcd_EmptyCollection_ThrowsException(GpuExecutionEngine engine)
     {
         CudaCapability.EnsureGpuAvailable();
         using var context = new GpuWorkspace(10, engine);
@@ -125,7 +125,7 @@ public class GpuBigIntCoreNumberTheoryTests
     [InlineData(GpuExecutionEngine.GSharpAot, uint.MaxValue, uint.MaxValue)]
     [InlineData(GpuExecutionEngine.GSharpAot, uint.MaxValue, 1u)]
     [InlineData(GpuExecutionEngine.GSharpAot, 0x80000000u, 0x55555555u)]
-    public void Test_Gcd_SingleElement_ReturnsCorrectGcd(GpuExecutionEngine engine, uint valA, uint valB)
+    public void Gcd_SingleWordOperands_ReturnsExpectedGcd(GpuExecutionEngine engine, uint valA, uint valB)
     {
         CudaCapability.EnsureGpuAvailable();
         using var context = new GpuWorkspace(10, engine);
@@ -154,7 +154,7 @@ public class GpuBigIntCoreNumberTheoryTests
     [InlineData(0x80000000u, 0x80000000u, 4253024257u, 41943039u)] // 2^32 % 4253024257 = 41943039
     [InlineData(4293918720u, 4293918720u, 4293918721u, 4293918719u)] // Near uint.MaxValue prime
     [InlineData(0xC0000000u, 0xC0000000u, 4293918721u, 2148532223u)] // 6442450944 - 4293918721 = 2148532223
-    public void Test_ModAdd_OverflowSafe(uint a, uint b, uint prime, uint expected)
+    public void ModAdd_OverflowOperands_MatchesModularSum(uint a, uint b, uint prime, uint expected)
     {
         CudaCapability.EnsureGpuAvailable();
         var actual = NttPrimeArithmetic.ModAdd(a, b, prime);
@@ -162,7 +162,7 @@ public class GpuBigIntCoreNumberTheoryTests
     }
 
     [SkippableFact]
-    public void Test_NttCarryResolver_ZeroLengthBuffers_ThrowsArgumentException()
+    public void NttCarryResolver_ZeroLengthBuffers_ThrowsArgumentException()
     {
         CudaCapability.EnsureGpuAvailable();
         var low = Array.Empty<uint>();
@@ -182,7 +182,7 @@ public class GpuBigIntCoreNumberTheoryTests
     }
 
     [SkippableFact]
-    public void Test_NttCarryResolver_SingleWord_ValidatesCarryCalculation()
+    public void NttCarryResolver_SingleWordBuffer_ComputesExpectedCarry()
     {
         CudaCapability.EnsureGpuAvailable();
         var low = new uint[] { 0x12345678, 0x9ABCDEF0 };

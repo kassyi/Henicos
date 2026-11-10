@@ -63,7 +63,7 @@ public class FermatAlgorithmTests
     [SkippableTheory]
     [Scenario(TestScenario.Boundary)]
     [MemberData(nameof(BoundaryExponents))]
-    public void Run_WordBoundaryExponents_MatchBigInteger(int e, uint @base)
+    public void Run_WordAlignedExponents_MatchesBigInteger(int e, uint @base)
     {
         CudaCapability.EnsureGpuAvailable();
         using var scope = new GpuKernelLoader.CudaContextScope();

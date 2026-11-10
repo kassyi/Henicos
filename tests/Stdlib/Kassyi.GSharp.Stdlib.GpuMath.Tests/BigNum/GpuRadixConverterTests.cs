@@ -22,7 +22,7 @@ public class GpuRadixConverterTests : IDisposable
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_ConvertAndWrite()
+    public void ConvertAndWrite_SmallFloat_ProducesExpectedDecimalString()
     {
         CudaCapability.EnsureGpuAvailable();
 
@@ -36,7 +36,7 @@ public class GpuRadixConverterTests : IDisposable
     }
 
     [SkippableFact]
-    public void Test_ConvertAndWrite_Large()
+    public void ConvertAndWrite_LargePrecision_ProducesExpectedDigits()
     {
         CudaCapability.EnsureGpuAvailable();
 

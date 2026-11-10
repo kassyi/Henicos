@@ -9,7 +9,7 @@ public class CopyAsyncWaitGroupAnalyzerTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_CopyAsyncWaitGroup_NonConstantOrOutOfRange_ReportsGSH0074OnArgument()
+    public async Task CopyAsyncWaitGroup_NonConstantOrOutOfRange_ReportsGSH0074OnArgument()
     {
         var diagnostics = (await RoslynTestUtility
             .TestAnalyzer("Analyzers/CopyAsyncWaitGroup_SadPath.cs", s_analyzer)
@@ -37,7 +37,7 @@ public class CopyAsyncWaitGroupAnalyzerTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_CopyAsync_InvalidDestinationOrNonGlobalSource_ReportsGSH0075OnArgument()
+    public async Task CopyAsync_InvalidDestinationOrNonGlobalSource_ReportsGSH0075OnArgument()
     {
         var diagnostics = (await RoslynTestUtility
             .TestAnalyzer("Analyzers/CopyAsyncWaitGroup_SadPath.cs", s_analyzer)

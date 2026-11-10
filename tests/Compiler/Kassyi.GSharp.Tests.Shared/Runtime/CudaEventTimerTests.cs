@@ -12,7 +12,7 @@ public class CudaEventTimerTests : TranspilerTestBase
     [SkippableFact]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.HappyPath)]
-    public void EventTimer_Lifecycle_And_Synchronization_Works()
+    public void EventTimer_LifecycleAndSynchronization_ReportsElapsedMilliseconds()
     {
         using var _ctxScope = new GpuKernelLoader.CudaContextScope();
         using var timer = new CudaEventTimer();
@@ -31,7 +31,7 @@ public class CudaEventTimerTests : TranspilerTestBase
     [SkippableFact]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.SadPath)]
-    public void EventTimer_Throws_ObjectDisposedException_When_Used_After_Dispose()
+    public void EventTimer_UsedAfterDispose_ThrowsObjectDisposedException()
     {
         using var _ctxScope = new GpuKernelLoader.CudaContextScope();
         var timer = new CudaEventTimer();
@@ -50,7 +50,7 @@ public class CudaEventTimerTests : TranspilerTestBase
     [SkippableFact]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.SadPath)]
-    public async Task EventTimer_Throws_InvalidOperationException_When_Called_Out_Of_Order()
+    public async Task EventTimer_CalledOutOfOrder_ThrowsInvalidOperationException()
     {
         using var _ctxScope = new GpuKernelLoader.CudaContextScope();
         using var timer = new CudaEventTimer();

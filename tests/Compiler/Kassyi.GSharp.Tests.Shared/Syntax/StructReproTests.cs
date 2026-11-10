@@ -12,7 +12,7 @@ public class StructReproTests : TranspilerTestBase
     [SkippableFact]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_GenericStruct_IntThenFloat()
+    public void GenericStruct_IntTypeParameterInstantiatedFirst_ReadsBackIntAndFloatFields()
     {
         var ints = new int[1];
         var floats = new float[1];
@@ -24,7 +24,7 @@ public class StructReproTests : TranspilerTestBase
     [SkippableFact]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_GenericStruct_FloatThenInt()
+    public void GenericStruct_FloatTypeParameterInstantiatedFirst_ReadsBackIntAndFloatFields()
     {
         var ints = new int[1];
         var floats = new float[1];
@@ -36,7 +36,7 @@ public class StructReproTests : TranspilerTestBase
     [SkippableFact]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_GenericStruct_Nested()
+    public void GenericStruct_NestedGenericStructInstantiation_ReadsBackTheNestedFields()
     {
         var ints = new int[1];
         var floats = new float[1];
@@ -48,7 +48,7 @@ public class StructReproTests : TranspilerTestBase
     [SkippableFact]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_GenericStruct_ArrayField()
+    public void GenericStruct_ArrayFieldInstantiation_ReadsBackTheArrayFieldValues()
     {
         int[] ints = [0, 3, 4];
         float[] floats = [0f, 1.5f, 2.5f];
@@ -60,7 +60,7 @@ public class StructReproTests : TranspilerTestBase
     [SkippableFact]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_StructUsedOnlyAsReturnType()
+    public void ReturnOnlyStruct_UsedOnlyAsReturnType_ReturnsTheStoredField()
     {
         var output = new int[1];
         StructReproKernels.LaunchReturnOnlyStructKernel(output, blockDimX: 1);
@@ -70,7 +70,7 @@ public class StructReproTests : TranspilerTestBase
     [SkippableFact]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_StructReturnedAndWrittenAsLocal()
+    public void ReturnAndLocalStruct_ReturnedAndAssignedToLocalVariable_ReturnsTheStoredField()
     {
         var output = new int[1];
         StructReproKernels.LaunchReturnAndLocalStructKernel(output, blockDimX: 1);
@@ -80,7 +80,7 @@ public class StructReproTests : TranspilerTestBase
     [SkippableFact]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_LocalAcrossBarrierWithOtherNameThanMember_Control()
+    public void BarrierLocal_DifferentNameThanStructMember_PreservesLocalValueAcrossBarrier()
     {
         var output = new int[1];
         StructReproKernels.LaunchBarrierLocalDifferentNameKernel(output, blockDimX: 1);
@@ -91,7 +91,7 @@ public class StructReproTests : TranspilerTestBase
     [SkippableFact]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_InitAccessorBody_RunsInObjectInitializer()
+    public void InitAccessor_ObjectInitializerInvocation_RunsAccessorBodyAndSetsValues()
     {
         var output = new int[2];
         StructReproKernels.LaunchInitBodyKernel(output, blockDimX: 1);
@@ -101,7 +101,7 @@ public class StructReproTests : TranspilerTestBase
     [SkippableFact]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_SetAndInitAccessorBodies_RunInWithAndAssignment()
+    public void PropertyAccessors_WithExpressionAndPropertyAssignment_RunsAccessorBodiesAndSetsValues()
     {
         var output = new int[3];
         StructReproKernels.LaunchSetAndWithAccessorBodyKernel(output, blockDimX: 1);
@@ -113,7 +113,7 @@ public class StructReproTests : TranspilerTestBase
     [InlineData("Cuda")]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_UnsubstitutedTypeParameter_ReportsGsh0003AtMemberType(string dialect)
+    public async Task CompileDiagnostics_UnsubstitutedTypeParameter_ReportsGsh0003Diagnostic(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(
             "Diagnostics/ComputedPropertyGetterFailure.cu.cs", dialect);

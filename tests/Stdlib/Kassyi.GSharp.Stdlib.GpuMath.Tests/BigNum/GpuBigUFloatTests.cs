@@ -22,7 +22,7 @@ public class GpuBigUFloatTests : IDisposable
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Normalize_And_Divide()
+    public void NormalizeAndDivide_UnnormalizedInputs_ProducesExpectedExponentAndQuotient()
     {
         CudaCapability.EnsureGpuAvailable();
 
@@ -37,7 +37,7 @@ public class GpuBigUFloatTests : IDisposable
     }
 
     [SkippableFact]
-    public void Test_Expressions()
+    public void Evaluate_ArithmeticExpressions_ProducesExpectedResults()
     {
         CudaCapability.EnsureGpuAvailable();
 
@@ -141,7 +141,7 @@ public class GpuBigUFloatTests : IDisposable
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_DirectArithmetic_And_Comparison()
+    public void ArithmeticAndComparison_DirectOperations_ProducesExpectedValuesAndBooleans()
     {
         CudaCapability.EnsureGpuAvailable();
 

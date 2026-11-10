@@ -43,7 +43,7 @@ public class ModPowPolyAlgorithmTests : IDisposable
     [InlineData(1024)] // Boundary of PolyAlgorithmThreshold (uses ModPowNttHostController MegaKernel)
     [InlineData(2048)] // Crosses over to ModPowZeroSyncController
     [InlineData(4096)] // Crosses over to ModPowZeroSyncController
-    public void Test_ModPow_CrossOver_Verification(int bitLength)
+    public void ModPow_PolyAlgorithmCrossOver_MatchesBigIntegerReference(int bitLength)
     {
         CudaCapability.EnsureGpuAvailable();
 
@@ -97,7 +97,7 @@ public class ModPowPolyAlgorithmTests : IDisposable
     [InlineData(99)]
     [InlineData(100)]
     [InlineData(200)]
-    public void Test_ModPow_NttPath_CarryChunksOfLaunchBlock(int numWords)
+    public void ModPow_NttPathCarryChunksOfLaunchBlock_MatchesBigIntegerReference(int numWords)
     {
         CudaCapability.EnsureGpuAvailable();
 
@@ -138,7 +138,7 @@ public class ModPowPolyAlgorithmTests : IDisposable
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_ModPow_EdgeCases()
+    public void ModPow_ZeroOneAndExtrema_MatchesBigIntegerOrThrowsExpectedExceptions()
     {
         CudaCapability.EnsureGpuAvailable();
         

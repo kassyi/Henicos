@@ -22,7 +22,7 @@ public class GpuBigIntegerTests : IDisposable
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Construct_WorksCorrectly()
+    public void Construct_WithSignAndMagnitude_PreservesProperties()
     {
         CudaCapability.EnsureGpuAvailable();
         using var gpuBigInt = new GpuBigUInt(_context, 4);

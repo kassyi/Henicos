@@ -330,26 +330,26 @@ public class IntegerMinValueOverflowDifferentialTests
     };
 
     [SkippableFact]
-    public void Test_Int32MinValueDivide_MatchesTheReferenceOnEveryPath() =>
+    public void IntegerOverflow_Int32MinValueDivide_MatchesTheReferenceOnEveryPath() =>
         DifferentialRunner.Run(s_int32MinValueDivide);
 
     [SkippableFact]
-    public void Test_Int32MinValueRemainder_MatchesTheReferenceOnEveryPath() =>
+    public void IntegerOverflow_Int32MinValueRemainder_MatchesTheReferenceOnEveryPath() =>
         DifferentialRunner.Run(s_int32MinValueRemainder);
 
     [SkippableFact]
-    public void Test_Int64MinValueDivide_MatchesTheReferenceOnEveryPath() =>
+    public void IntegerOverflow_Int64MinValueDivide_MatchesTheReferenceOnEveryPath() =>
         DifferentialRunner.Run(s_int64MinValueDivide);
 
     [SkippableFact]
-    public void Test_Int64MinValueRemainder_MatchesTheReferenceOnEveryPath() =>
+    public void IntegerOverflow_Int64MinValueRemainder_MatchesTheReferenceOnEveryPath() =>
         DifferentialRunner.Run(s_int64MinValueRemainder);
 
     [SkippableFact]
-    public void Test_ShortMinValueDivide_MatchesTheOracleOnEveryPath() =>
+    public void IntegerOverflow_ShortMinValueDivide_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_shortMinValueDivide);
 
     [SkippableFact]
-    public void Test_SByteMinValueDivide_MatchesTheOracleOnEveryPath() =>
+    public void IntegerOverflow_SByteMinValueDivide_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_sbyteMinValueDivide);
 }

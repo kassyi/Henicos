@@ -16,102 +16,102 @@ public class ResumeLocalManagedTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_SpanUsedOnlyBeforeBarrier_KeepsItsMemory() =>
+    public void StackAllocSpan_ManagedUsedOnlyBeforeBarrier_KeepsItsMemory() =>
         ResumeLocalScenarios.SpanBeforeBarrier(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_SpanUsedOnlyOnTheOtherBranch_KeepsItsMemory() =>
+    public void StackAllocSpan_ManagedUsedOnlyOnOtherBranch_KeepsItsMemory() =>
         ResumeLocalScenarios.SpanInOtherBranch(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_InitializerReadsEarlierLocal_RunsWhereDeclared() =>
+    public void LocalInitializer_ManagedReadsEarlierLocal_RunsWhereDeclared() =>
         ResumeLocalScenarios.ViewAfterLocal(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_StackAllocInLoop_StartsZeroedEveryIteration() =>
+    public void StackAllocInLoop_ManagedLoopIteration_StartsZeroedEveryIteration() =>
         ResumeLocalScenarios.StackAllocInLoop(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_StackAllocOfConstLocalSize_KeepsItsMemory() =>
+    public void StackAllocConstSize_ManagedConstLocalSize_KeepsItsMemory() =>
         ResumeLocalScenarios.ConstSize(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_StackAllocPointer_CanBeIncremented() =>
+    public void StackAllocPointer_ManagedPointerIncrement_CanBeIncremented() =>
         ResumeLocalScenarios.MovingPointer(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_StackAllocPointerBeforeBarrier_CanBeIncremented() =>
+    public void StackAllocPointer_ManagedIncrementBeforeBarrier_CanBeIncremented() =>
         ResumeLocalScenarios.MovingPointerBeforeBarrier(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_ReadOnlyStackAllocWithElements_KeepsItsValues() =>
+    public void ReadOnlyStackAlloc_ManagedWithElements_KeepsItsValues() =>
         ResumeLocalScenarios.ReadOnlyElements(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_SpanInFlattenedSiblingScope_KeepsItsMemory() =>
+    public void StackAllocSpan_ManagedFlattenedSiblingScope_KeepsItsMemory() =>
         ResumeLocalScenarios.SiblingScopeSpan(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_SameNameSpansInSiblingScopes_KeepTheirMemory() =>
+    public void SameNameSpans_ManagedSiblingScopes_KeepTheirMemory() =>
         ResumeLocalScenarios.SameNameSpans(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_StackAllocPointerUsedOnlyBeforeBarrier_KeepsItsMemory() =>
+    public void StackAllocPointer_ManagedUsedOnlyBeforeBarrier_KeepsItsMemory() =>
         ResumeLocalScenarios.PointerBeforeBarrier(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_LengthOfConstExpressionSize_IsItsValue() =>
+    public void ConstExpressionSize_ManagedLengthEvaluation_EvaluatesToConstValue() =>
         ResumeLocalScenarios.ConstSizeLength(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_ZeroLengthStackAllocPointer_Runs() =>
+    public void ZeroLengthStackAllocPointer_ManagedInvocation_ExecutesSuccessfully() =>
         ResumeLocalScenarios.ZeroLengthPointer(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_ZeroLengthStackAllocPointerBeforeBarrier_Runs() =>
+    public void ZeroLengthStackAllocPointer_ManagedBeforeBarrier_ExecutesSuccessfully() =>
         ResumeLocalScenarios.ZeroLengthPointerBeforeBarrier(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_StackAllocPointerWithElements_KeepsItsValues() =>
+    public void StackAllocPointer_ManagedInitializedWithElements_KeepsItsValues() =>
         ResumeLocalScenarios.PointerElements(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_StackAllocPointerWithoutElements_StartsZeroed() =>
+    public void StackAllocPointer_ManagedWithoutElements_StartsZeroed() =>
         ResumeLocalScenarios.PointerZeroed(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_ZeroLengthStackAllocSpan_Runs() =>
+    public void ZeroLengthStackAllocSpan_ManagedInvocation_ExecutesSuccessfully() =>
         ResumeLocalScenarios.ZeroLengthSpan(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_ZeroLengthStackAllocSpanBeforeBarrier_Runs() =>
+    public void ZeroLengthStackAllocSpan_ManagedBeforeBarrier_ExecutesSuccessfully() =>
         ResumeLocalScenarios.ZeroLengthSpanBeforeBarrier(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_StackAllocPointerCapturedByDelegateRunBeforeBarrier_KeepsItsMemory() =>
+    public void StackAllocPointer_ManagedCapturedByDelegateRunBeforeBarrier_KeepsItsMemory() =>
         ResumeLocalScenarios.LambdaBeforeBarrier(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_StackAllocPointerCapturedByStackLinqLambdaBeforeBarrier_KeepsItsMemory() =>
+    public void StackAllocPointer_ManagedCapturedByStackLinqLambdaBeforeBarrier_KeepsItsMemory() =>
         ResumeLocalScenarios.StackLinqBeforeBarrier(s_runManaged);
 
     private static void RunManaged(Action launch)

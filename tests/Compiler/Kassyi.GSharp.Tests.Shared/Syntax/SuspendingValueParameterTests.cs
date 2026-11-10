@@ -15,39 +15,40 @@ public class SuspendingValueParameterTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_StructFieldWrite_SurvivesBarrier() => AssertStructFieldWrite();
+    public void SuspendingValueParameter_StructFieldWrite_SurvivesBarrier() => AssertStructFieldWrite();
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_NestedFieldWrite_SurvivesBarrier() => AssertNestedFieldWrite();
+    public void SuspendingValueParameter_NestedFieldWrite_SurvivesBarrier() => AssertNestedFieldWrite();
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_RefExtensionReceiverWrite_SurvivesBarrier() => AssertRefExtensionWrite();
+    public void SuspendingValueParameter_RefExtensionReceiverWrite_SurvivesBarrier() => AssertRefExtensionWrite();
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_InlineArrayElementWrite_SurvivesBarrier() => AssertInlineArrayElementWrite();
+    public void SuspendingValueParameter_InlineArrayElementWrite_SurvivesBarrier() => AssertInlineArrayElementWrite();
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_PrefixIncrementOfField_SurvivesBarrier() => AssertPrefixIncrementField();
+    public void SuspendingValueParameter_PrefixIncrementOfField_SurvivesBarrier() => AssertPrefixIncrementField();
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_FieldPassedByRef_SurvivesBarrier() => AssertRefFieldArgument();
+    public void SuspendingValueParameter_FieldPassedByRef_SurvivesBarrier() => AssertRefFieldArgument();
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_ArrayElementWrite_IsVisibleAfterBarrierAndToCaller() => AssertArrayElementWrite();
+    public void SuspendingValueParameter_ArrayElementWrite_IsVisibleAfterBarrierAndToCaller() =>
+        AssertArrayElementWrite();
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_DeconstructingSwapOfFields_SurvivesBarrier() => AssertTupleSwapFields();
+    public void SuspendingValueParameter_DeconstructingSwapOfFields_SurvivesBarrier() => AssertTupleSwapFields();
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_DeconstructingSwapOfScalars_SurvivesBarrier() => AssertTupleSwapScalars();
+    public void SuspendingValueParameter_DeconstructingSwapOfScalars_SurvivesBarrier() => AssertTupleSwapScalars();
 
     internal static void AssertTupleSwapFields()
     {

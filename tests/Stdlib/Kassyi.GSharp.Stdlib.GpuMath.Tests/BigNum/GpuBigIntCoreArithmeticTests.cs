@@ -15,7 +15,7 @@ public class GpuBigIntCoreArithmeticTests
 
     [SkippableTheory]
     [InlineData(GpuExecutionEngine.GSharpAot)]
-    public void Test_Add_Correctness(GpuExecutionEngine engine)
+    public void Add_RandomOperands_MatchesBigIntegerSum(GpuExecutionEngine engine)
     {
         CudaCapability.EnsureGpuAvailable();
         // A sum is one bit wider than its operands
@@ -31,7 +31,7 @@ public class GpuBigIntCoreArithmeticTests
 
     [SkippableTheory]
     [InlineData(GpuExecutionEngine.GSharpAot)]
-    public void Test_Add_CarryPropagation_AllOnes(GpuExecutionEngine engine)
+    public void Add_CarryPropagationAllOnes_MatchesBigIntegerSum(GpuExecutionEngine engine)
     {
         CudaCapability.EnsureGpuAvailable();
         using var context = new GpuWorkspace(TestSizeWords * 2 + 8, engine); // Extra capacity just in case
@@ -61,7 +61,7 @@ public class GpuBigIntCoreArithmeticTests
 
     [SkippableTheory]
     [InlineData(GpuExecutionEngine.GSharpAot)]
-    public void Test_Sub_Correctness(GpuExecutionEngine engine)
+    public void Subtract_RandomOperands_MatchesBigIntegerDifference(GpuExecutionEngine engine)
     {
         CudaCapability.EnsureGpuAvailable();
         RunBinaryOpTest(
@@ -80,7 +80,7 @@ public class GpuBigIntCoreArithmeticTests
 
     [SkippableTheory]
     [InlineData(GpuExecutionEngine.GSharpAot)]
-    public void Test_Scalar_Correctness(GpuExecutionEngine engine)
+    public void ScalarArithmetic_AddAndSubtract_MatchesBigIntegerReference(GpuExecutionEngine engine)
     {
         CudaCapability.EnsureGpuAvailable();
         using var context = new GpuWorkspace(TestSizeWords * 2, engine);
@@ -124,7 +124,7 @@ public class GpuBigIntCoreArithmeticTests
 
     [SkippableTheory]
     [InlineData(GpuExecutionEngine.GSharpAot)]
-    public void Test_Mul_Correctness(GpuExecutionEngine engine)
+    public void Multiply_RandomOperands_MatchesBigIntegerProduct(GpuExecutionEngine engine)
     {
         CudaCapability.EnsureGpuAvailable();
 
@@ -140,7 +140,7 @@ public class GpuBigIntCoreArithmeticTests
 
     [SkippableTheory]
     [InlineData(GpuExecutionEngine.GSharpAot)]
-    public void Test_Div_Correctness(GpuExecutionEngine engine)
+    public void Divide_RandomOperands_MatchesBigIntegerQuotient(GpuExecutionEngine engine)
     {
         CudaCapability.EnsureGpuAvailable();
         var sizeWords = 16;
@@ -160,7 +160,7 @@ public class GpuBigIntCoreArithmeticTests
 
     [SkippableTheory]
     [InlineData(GpuExecutionEngine.GSharpAot)]
-    public void Test_ModuloOperator_Correctness(GpuExecutionEngine engine)
+    public void Modulo_RandomOperands_MatchesBigIntegerRemainder(GpuExecutionEngine engine)
     {
         CudaCapability.EnsureGpuAvailable();
         using var context = new GpuWorkspace(TestSizeWords * 3, engine);
@@ -182,7 +182,7 @@ public class GpuBigIntCoreArithmeticTests
 
     [SkippableTheory]
     [InlineData(GpuExecutionEngine.GSharpAot)]
-    public void Test_Bitwise_Correctness(GpuExecutionEngine engine)
+    public void BitwiseOperations_RandomOperands_MatchesBitwiseReference(GpuExecutionEngine engine)
     {
         CudaCapability.EnsureGpuAvailable();
         using var context = new GpuWorkspace(TestSizeWords * 2, engine);
@@ -219,7 +219,7 @@ public class GpuBigIntCoreArithmeticTests
     [InlineData(GpuExecutionEngine.GSharpAot, 8200)] // Edge case: shift > total bits
     [InlineData(GpuExecutionEngine.GSharpAot, 31)] // Edge case: intra-word boundary
     [InlineData(GpuExecutionEngine.GSharpAot, 32)] // Edge case: exact word boundary
-    public void Test_ShiftLeft_Correctness(GpuExecutionEngine engine, int shiftBits)
+    public void ShiftLeft_VaryingShiftBits_MatchesBigIntegerShift(GpuExecutionEngine engine, int shiftBits)
     {
         CudaCapability.EnsureGpuAvailable();
         using var context = new GpuWorkspace(TestSizeWords * 2, engine);
@@ -245,7 +245,7 @@ public class GpuBigIntCoreArithmeticTests
     [InlineData(GpuExecutionEngine.GSharpAot, 8200)] // Edge case: shift > total bits
     [InlineData(GpuExecutionEngine.GSharpAot, 31)] // Edge case: intra-word boundary
     [InlineData(GpuExecutionEngine.GSharpAot, 32)] // Edge case: exact word boundary
-    public void Test_ShiftRight_Correctness(GpuExecutionEngine engine, int shiftBits)
+    public void ShiftRight_VaryingShiftBits_MatchesBigIntegerShift(GpuExecutionEngine engine, int shiftBits)
     {
         CudaCapability.EnsureGpuAvailable();
         using var context = new GpuWorkspace(TestSizeWords * 2, engine);
@@ -265,7 +265,7 @@ public class GpuBigIntCoreArithmeticTests
     [SkippableTheory]
     [InlineData(GpuExecutionEngine.GSharpAot)]
     [Category(TestCategory.Syntax)]
-    public void Test_Operator_IncrementDecrement(GpuExecutionEngine engine)
+    public void IncrementDecrement_PreAndPostOperators_ProducesExpectedValuesAndCarries(GpuExecutionEngine engine)
     {
         CudaCapability.EnsureGpuAvailable();
         using var workspace = new GpuWorkspace(4, engine);

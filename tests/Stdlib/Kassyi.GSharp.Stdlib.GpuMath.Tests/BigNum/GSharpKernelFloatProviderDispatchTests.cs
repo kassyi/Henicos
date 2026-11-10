@@ -27,7 +27,7 @@ public class GSharpKernelFloatProviderDispatchTests
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Stdlib)]
     [Scenario(TestScenario.HappyPath)]
-    public void GpuModeNeverCallsFallback()
+    public void Dispatch_GpuMode_NeverInvokesFallback()
     {
         CudaCapability.EnsureGpuAvailable();
         using var scope = new GpuKernelLoader.CudaContextScope();
@@ -50,7 +50,7 @@ public class GSharpKernelFloatProviderDispatchTests
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Stdlib)]
     [Scenario(TestScenario.HappyPath)]
-    public void CpuFallbackModeCallsFallbackOnce()
+    public void Dispatch_CpuFallbackMode_InvokesFallbackOnce()
     {
         // ForceCpuFallback is AsyncLocal, so the override cannot leak into other tests.
         GpuKernelLoader.ForceCpuFallback = true;

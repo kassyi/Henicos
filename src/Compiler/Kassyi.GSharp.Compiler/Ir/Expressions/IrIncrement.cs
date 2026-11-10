@@ -26,4 +26,10 @@ internal sealed class IrIncrement(IrExpression target, bool isPrefix, bool isDec
 
     /// <summary>Whether the step is in a <see langword="checked"/> context.</summary>
     public bool IsChecked { get; } = isChecked;
+
+    /// <summary>This node with the given children; this node itself when they are the same.</summary>
+    public IrIncrement Update(IrExpression target) =>
+        target == Target
+            ? this
+            : new IrIncrement(target, IsPrefix, IsDecrement, OperatorMethod, IsChecked, Category, Source);
 }

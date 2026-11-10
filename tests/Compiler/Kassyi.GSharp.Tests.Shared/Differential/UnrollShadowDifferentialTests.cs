@@ -33,5 +33,5 @@ public class UnrollShadowDifferentialTests
     };
 
     [SkippableFact]
-    public void Test_UnrollShadow_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_unrollShadow);
+    public void LoopUnroll_ShadowVariable_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_unrollShadow);
 }

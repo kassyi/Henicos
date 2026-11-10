@@ -14,7 +14,7 @@ public class SpanSortPairsTests : SpanKernelPathTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_SortPairs_MatchesDotNet(int length, bool managed)
+    public void SortPairs_StandardIntPairs_MatchesDotNetOrder(int length, bool managed)
     {
         var keys = SortInputs.Int(length, SortPattern.FewDistinct, seed: 6263 + length);
         var items = Enumerable.Range(0, length).ToArray();
@@ -35,7 +35,7 @@ public class SpanSortPairsTests : SpanKernelPathTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_SortPairsFloat_MovesItemsWithNaNAndSignedZeros(int length, bool managed)
+    public void SortPairs_SingleKeysWithNaNAndSignedZeros_MovesItemsWithNaNAndSignedZeros(int length, bool managed)
     {
         var keys = SortInputs.Single(length, seed: 6264 + length);
         var items = Enumerable.Range(0, length).ToArray();
@@ -58,7 +58,7 @@ public class SpanSortPairsTests : SpanKernelPathTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_SortPairsComparerStruct_MatchesDotNet(int length, bool managed)
+    public void SortPairs_CustomComparerStruct_MatchesDotNetOrder(int length, bool managed)
     {
         var keys = SortInputs.Int(length, SortPattern.Random, seed: 6265 + length);
         var items = Enumerable.Range(0, length).ToArray();
@@ -79,7 +79,7 @@ public class SpanSortPairsTests : SpanKernelPathTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_SortPairsComparison_MatchesDotNet(int length, bool managed)
+    public void SortPairs_ComparisonCallback_MatchesDotNetOrder(int length, bool managed)
     {
         const int Mask = 6;
         var keys = SortInputs.Int(length, SortPattern.Random, seed: 6266 + length);
@@ -101,7 +101,7 @@ public class SpanSortPairsTests : SpanKernelPathTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_SortPairsComparableStruct_MatchesDotNet(int length, bool managed)
+    public void SortPairs_ComparableKeysStruct_MatchesDotNetOrder(int length, bool managed)
     {
         var random = new Random(6267 + length);
         var keys = new SortRecord[length];
@@ -128,7 +128,7 @@ public class SpanSortPairsTests : SpanKernelPathTestBase
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_SortPairs_LengthMismatch_ThrowsArgumentException(bool managed)
+    public void SortPairs_MismatchedKeysAndItemsLength_ThrowsArgumentException(bool managed)
     {
         Skip.If(IsCudaDialect,
             "A CUDA trap loses its code and spoils the context; the exception is checked on the CPU paths.");
@@ -150,7 +150,7 @@ public class SpanSortPairsTests : SpanKernelPathTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_SortPairs_DepthLimitInputWithEqualKeys_MatchesDotNet(int length, bool managed)
+    public void SortPairs_HeapSortKillerInputWithEqualKeys_MatchesDotNetOrder(int length, bool managed)
     {
         var keys = Array.ConvertAll(SortInputs.HeapSortKiller(length), static v => v / 2);
         var items = Enumerable.Range(0, length).ToArray();
@@ -180,7 +180,7 @@ public class SpanSortPairsTests : SpanKernelPathTestBase
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_SortPairsComparable_InconsistentCompareTo_ThrowsArgumentExceptionAsDotNet(int length, bool managed)
+    public void SortPairs_InconsistentCompareToStructKeys_ThrowsArgumentException(int length, bool managed)
     {
         Skip.If(IsCudaDialect,
             "A CUDA trap loses its code and spoils the context; the exception is checked on the CPU paths.");

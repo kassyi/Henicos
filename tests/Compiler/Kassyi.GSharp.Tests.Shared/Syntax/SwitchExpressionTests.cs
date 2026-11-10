@@ -10,7 +10,7 @@ public class SwitchExpressionTests : TranspilerTestBase
     [InlineData(0, -1)]
     [InlineData(-5, -1)]
     [InlineData(100, -1)]
-    public void Test_SimpleConstantSwitch_Execution(int inputVal, int expectedVal)
+    public void SwitchExpression_SimpleConstantArms_EvaluatesTheMatchingArm(int inputVal, int expectedVal)
     {
         int[] input = [inputVal];
         int[] output = [0];
@@ -26,7 +26,9 @@ public class SwitchExpressionTests : TranspilerTestBase
     [InlineData(1, 3.14159f)]
     [InlineData(2, 2.71828f)]
     [InlineData(99, -1.0f)]
-    public void Test_FloatingPointReturnSwitch_Execution(int mode, float expectedVal)
+    public void SwitchExpression_FloatingPointReturnArms_EvaluatesTheMatchingArm(
+        int mode,
+        float expectedVal)
     {
         int[] input = [mode];
         float[] output = [0.0f];
@@ -45,7 +47,9 @@ public class SwitchExpressionTests : TranspilerTestBase
     [InlineData(int.MaxValue, 5)]
     [InlineData(10, 0)]
     [InlineData(-100, 0)]
-    public void Test_MultipleArmsBoundarySwitch_Execution(int inputVal, int expectedVal)
+    public void SwitchExpression_MultipleArmsEdgeValues_EvaluatesTheMatchingArm(
+        int inputVal,
+        int expectedVal)
     {
         int[] input = [inputVal];
         int[] output = [0];
