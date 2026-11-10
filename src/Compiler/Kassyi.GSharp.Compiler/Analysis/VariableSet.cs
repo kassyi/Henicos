@@ -68,6 +68,49 @@ internal struct VariableSet
                    .Any(other, static (variable, set) => set.Contains(variable));
     }
 
+    /// <summary>Whether every variable of this set is a variable of <paramref name="other"/>.</summary>
+    public readonly bool IsSubsetOf(in VariableSet other)
+    {
+        if ((Memory && !other.Memory) || (AllLocals && !other.AllLocals))
+        {
+            return false;
+        }
+
+        return other.AllLocals ||
+               _variables == null ||
+               _variables
+                   .AsStackEnumerable()
+                   .All(other, static (variable, set) => set.Contains(variable));
+    }
+
+    /// <summary>The members of the set, for test messages: <c>{memory, all-locals, x, y}</c>.</summary>
+    public override readonly string ToString()
+    {
+        var writer = new SourceWriter();
+        writer.Append("{");
+        var separator = "";
+        if (Memory)
+        {
+            writer.Append("memory");
+            separator = ", ";
+        }
+
+        if (AllLocals)
+        {
+            writer.Append($"{separator}all-locals");
+            separator = ", ";
+        }
+
+        foreach (var variable in _variables ?? (IEnumerable<object>)[])
+        {
+            writer.Append($"{separator}{(variable as ISymbol)?.Name ?? variable.ToString()}");
+            separator = ", ";
+        }
+
+        writer.Append("}");
+        return writer.ToString();
+    }
+
     /// <summary>Whether the set names <paramref name="variable"/> (a symbol or a name).</summary>
     public readonly bool Contains(object variable) =>
         _variables != null &&
