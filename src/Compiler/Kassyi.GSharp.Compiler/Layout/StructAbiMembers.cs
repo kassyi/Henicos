@@ -264,10 +264,23 @@ internal static class StructAbiMembers
          field.Name.Length == property.Name.Length + BackingFieldSuffix.Length + 1 &&
          string.CompareOrdinal(field.Name, 1, property.Name, 0, property.Name.Length) == 0);
 
-    private static bool HasBackingField(ImmutableArray<ISymbol> members, IPropertySymbol property) =>
+    /// <summary>
+    /// The backing field of <paramref name="property"/>, if it has one, also in a struct from metadata.
+    /// </summary>
+    public static bool TryGetBackingField(IPropertySymbol property, [NotNullWhen(true)] out IFieldSymbol? field)
+    {
+        field = FindBackingField(property.ContainingType.GetMembers(), property);
+        return field != null;
+    }
+
+    private static IFieldSymbol? FindBackingField(ImmutableArray<ISymbol> members, IPropertySymbol property) =>
         members
             .AsStackEnumerable()
-            .Any(property, static (member, p) => member is IFieldSymbol field && IsBackingFieldOf(field, p));
+            .OfType<IFieldSymbol>()
+            .FirstOrDefault(property, static (field, p) => IsBackingFieldOf(field, p));
+
+    private static bool HasBackingField(ImmutableArray<ISymbol> members, IPropertySymbol property) =>
+        FindBackingField(members, property) != null;
 
     /// <summary>A <c>foreach</c>-able view of the members that allocates nothing.</summary>
     internal readonly struct MemberSet(INamedTypeSymbol structType, bool includeComputedProperties)
