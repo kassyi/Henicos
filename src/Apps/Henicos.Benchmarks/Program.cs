@@ -286,39 +286,9 @@ internal class Program
 
     private static int RunGpuPi(string[] args)
     {
-        var targetDigits = 10000;
-        string? outPath = null;
-        var thresholdTerms = 8192;
-        var asHex = false;
-
-        for (var i = 0; i < args.Length; i++)
+        if (!TryParseGpuPiArgs(args, out var targetDigits, out var outPath, out var thresholdTerms, out var asHex))
         {
-            var arg = args[i];
-
-            if (arg.Equals("--out", StringComparison.OrdinalIgnoreCase) && i + 1 < args.Length)
-            {
-                outPath = args[++i];
-            }
-            else if (arg.Equals("--threshold", StringComparison.OrdinalIgnoreCase) && i + 1 < args.Length)
-            {
-                if (int.TryParse(args[++i], out var thresh) && thresh > 0)
-                {
-                    thresholdTerms = thresh;
-                }
-                else
-                {
-                    Logger<Program>.Error("Error: --threshold must be a positive integer greater than zero.");
-                    return 1;
-                }
-            }
-            else if (arg.Equals("--hex", StringComparison.OrdinalIgnoreCase))
-            {
-                asHex = true;
-            }
-            else if (!arg.StartsWith('-') && i == 0)
-            {
-                targetDigits = ParseDigits(arg);
-            }
+            return 1;
         }
 
         using TextWriter writer = outPath != null
@@ -326,7 +296,70 @@ internal class Program
             : new HeadTailTrackerWriter();
 
         ChudnovskyAlgorithm.ComputePi(targetDigits, writer, thresholdTerms, asHex);
+        LogGpuPiResult(writer, outPath, asHex);
+        return 0;
+    }
 
+    internal static bool TryParseGpuPiArgs(
+        string[] args,
+        out int targetDigits,
+        out string? outPath,
+        out int thresholdTerms,
+        out bool asHex)
+    {
+        targetDigits = 10000;
+        outPath = null;
+        thresholdTerms = 8192;
+        asHex = false;
+
+        for (var i = 0; i < args.Length; i++)
+        {
+            var arg = args[i];
+#pragma warning disable RS0030 // CLI argument normalization
+            switch (arg.ToLowerInvariant())
+#pragma warning restore RS0030
+            {
+                case "--out" when i + 1 < args.Length:
+                    outPath = args[++i];
+                    break;
+                case "--threshold" when i + 1 < args.Length:
+                    if (!TryParseThreshold(args[++i], out thresholdTerms))
+                    {
+                        return false;
+                    }
+
+                    break;
+                case "--hex":
+                    asHex = true;
+                    break;
+                default:
+                    if (!arg.StartsWith('-') && i == 0)
+                    {
+                        targetDigits = ParseDigits(arg);
+                    }
+
+                    break;
+            }
+        }
+
+        return true;
+    }
+
+    private static bool TryParseThreshold(string arg, out int threshold)
+    {
+        if (int.TryParse(arg, out var thresh) && thresh > 0)
+        {
+            threshold = thresh;
+            return true;
+        }
+
+        Logger<Program>.Error("Error: --threshold must be a positive integer greater than zero.");
+        threshold = 0;
+        return false;
+    }
+
+    private static void LogGpuPiResult(TextWriter writer, string? outPath, bool asHex)
+    {
         if (outPath == null && writer is HeadTailTrackerWriter ht)
         {
             if (asHex)
@@ -343,8 +376,6 @@ internal class Program
         {
             Logger<Program>.Info(asHex ? "Hex output dumped to file." : "Decimal output dumped to file.");
         }
-
-        return 0;
     }
 
     private static int RunCpuPi(string[] args)

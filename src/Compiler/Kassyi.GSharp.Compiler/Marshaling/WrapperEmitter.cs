@@ -362,57 +362,63 @@ internal static class WrapperEmitter
                 continue;
             }
 
-            var name = shape.Identifier;
-            if (shape.IsOptional)
-            {
-                writer.Append("if ");
-                using (writer.Parentheses())
-                {
-                    writer.Append($"{name} is {{ {shape.LengthMember}: 0 }}");
-                }
-
-                using (writer.Scope())
-                {
-                    writer.AppendLine($"{name} = null;");
-                }
-            }
-            else if (shape.Container == ArrayContainerKind.Array)
-            {
-                writer.Append("if ");
-                using (writer.Parentheses())
-                {
-                    writer.Append($"{name} is null");
-                }
-
-                using (writer.Scope())
-                {
-                    writer.AppendLine($"throw new global::System.ArgumentNullException(nameof({name}));");
-                }
-
-                WriteEmptyArrayCheck(writer, $"{name}.Length", name);
-            }
-            else if (shape.Container == ArrayContainerKind.ImmutableArray)
-            {
-                writer.Append("if ");
-                using (writer.Parentheses())
-                {
-                    writer.Append($"{name}.IsDefault");
-                }
-
-                using (writer.Scope())
-                {
-                    writer.AppendLine($"throw new global::System.ArgumentNullException(nameof({name}));");
-                }
-
-                WriteEmptyArrayCheck(writer, $"{name}.Length", name);
-            }
-            else
-            {
-                WriteEmptyArrayCheck(writer, shape.LengthExpression, name);
-            }
+            WriteParameterArrayCheck(writer, in shape);
         }
 
         WriteStructFieldChecks(writer, kernel, isPointer: false);
+    }
+
+    private static void WriteParameterArrayCheck(SourceWriter writer, in KernelParameterShape shape)
+    {
+        var name = shape.Identifier;
+        if (shape.IsOptional)
+        {
+            WriteOptionalArrayCheck(writer, name, shape.LengthMember);
+            return;
+        }
+
+        switch (shape.Container)
+        {
+            case ArrayContainerKind.Array:
+                WriteNullCheck(writer, name, $"{name} is null");
+                WriteEmptyArrayCheck(writer, $"{name}.Length", name);
+                break;
+            case ArrayContainerKind.ImmutableArray:
+                WriteNullCheck(writer, name, $"{name}.IsDefault");
+                WriteEmptyArrayCheck(writer, $"{name}.Length", name);
+                break;
+            default:
+                WriteEmptyArrayCheck(writer, shape.LengthExpression, name);
+                break;
+        }
+    }
+
+    private static void WriteOptionalArrayCheck(SourceWriter writer, string name, string lengthMember)
+    {
+        writer.Append("if ");
+        using (writer.Parentheses())
+        {
+            writer.Append($"{name} is {{ {lengthMember}: 0 }}");
+        }
+
+        using (writer.Scope())
+        {
+            writer.AppendLine($"{name} = null;");
+        }
+    }
+
+    private static void WriteNullCheck(SourceWriter writer, string name, string condition)
+    {
+        writer.Append("if ");
+        using (writer.Parentheses())
+        {
+            writer.Append(condition);
+        }
+
+        using (writer.Scope())
+        {
+            writer.AppendLine($"throw new global::System.ArgumentNullException(nameof({name}));");
+        }
     }
 
     // if (<name>.<field path> is null) { throw new ArgumentNullException(nameof(<name>), "<name>.<field path> is null, ..."); }

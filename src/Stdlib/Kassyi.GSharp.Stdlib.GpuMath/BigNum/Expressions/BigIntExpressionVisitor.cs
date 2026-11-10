@@ -212,7 +212,7 @@ public ref struct BigIntExpressionVisitor(GpuBigIntExecutionContext context, Sco
         var copied = Math.Min(node.Words, operand.NumWords);
         using var resultBuffer = new GpuBigUInt(workspace, result.Handle.Borrow());
         resultBuffer.CopyFrom(operand, numWords: copied);
-        SignedRoot.ClearAbove(resultBuffer, copied);
+        ResultBuffers.ClearAbove(resultBuffer, copied);
         return result;
     }
 }

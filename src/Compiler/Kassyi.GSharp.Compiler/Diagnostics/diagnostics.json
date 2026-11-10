@@ -841,6 +841,15 @@
     "isEnabledByDefault": true
   },
   {
+    "name": "UnmarkedMethodCalledFromGpuCode",
+    "id": "GSH0107",
+    "title": "A method without [GpuDeviceFunction] is called from GPU code",
+    "messageFormat": "The method '{0}' is called from GPU code but is not compiled for the GPU: {1}",
+    "category": "GSharpTranspiler",
+    "defaultSeverity": "Error",
+    "isEnabledByDefault": true
+  },
+  {
     "name": "StackLinqChainTooDeep",
     "id": "SLQ0001",
     "title": "StackLinq method chain is too deep",
