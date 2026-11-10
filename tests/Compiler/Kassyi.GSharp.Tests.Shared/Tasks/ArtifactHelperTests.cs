@@ -33,11 +33,11 @@ public class ArtifactHelperTests
     [InlineData(null)]
     [InlineData("")]
     [InlineData("   ")]
-    public void Test_ProcessArtifact_WithDefaultKey_EmitsWarning(string? envValue)
+    public void Test_TryProcessArtifact_WithDefaultKey_EmitsWarning(string? envValue)
     {
         using var ctx = new ArtifactTestContext(envValue);
 
-        Assert.True(ctx.ProcessArtifact());
+        Assert.True(ctx.TryProcessArtifact());
 
         var resultData = ctx.ReadResult();
         Assert.Equal(3 + Ed25519.SignatureSize, resultData.Length);
@@ -50,13 +50,13 @@ public class ArtifactHelperTests
     [Fact]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_ProcessArtifact_WithHexKey()
+    public void Test_TryProcessArtifact_WithHexKey()
     {
         // 32-byte hex key = 64 characters
         var hexKey = new string('A', 64);
         using var ctx = new ArtifactTestContext(hexKey);
 
-        Assert.True(ctx.ProcessArtifact());
+        Assert.True(ctx.TryProcessArtifact());
 
         var resultData = ctx.ReadResult();
         Assert.Equal(3 + Ed25519.SignatureSize, resultData.Length);
@@ -67,13 +67,13 @@ public class ArtifactHelperTests
     [Fact]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_ProcessArtifact_WithBase64Key()
+    public void Test_TryProcessArtifact_WithBase64Key()
     {
         // 32-byte base64 key
         var base64Key = Convert.ToBase64String(new byte[32]);
         using var ctx = new ArtifactTestContext(base64Key);
 
-        Assert.True(ctx.ProcessArtifact());
+        Assert.True(ctx.TryProcessArtifact());
 
         var resultData = ctx.ReadResult();
         Assert.Equal(3 + Ed25519.SignatureSize, resultData.Length);
@@ -88,11 +88,11 @@ public class ArtifactHelperTests
     [InlineData("000000000000000000000000000000000000000000000000000000000000000g")]
     [InlineData("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA!=")]
     [InlineData("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")]
-    public void Test_ProcessArtifact_WithInvalidKey_ReportsGS0003AndLeavesFileUnchanged(string envValue)
+    public void Test_TryProcessArtifact_WithInvalidKey_ReportsGS0003AndLeavesFileUnchanged(string envValue)
     {
         using var ctx = new ArtifactTestContext(envValue);
 
-        Assert.False(ctx.ProcessArtifact());
+        Assert.False(ctx.TryProcessArtifact());
 
         Assert.Single(ctx.BuildEngine.LoggedErrors);
         Assert.Equal(ArtifactHelper.InvalidSigningKeyErrorCode, Assert.Single(ctx.BuildEngine.LoggedErrorCodes));
@@ -118,7 +118,7 @@ public class ArtifactHelperTests
             Log = new TaskLoggingHelper(BuildEngine, "MockTask");
         }
 
-        public bool ProcessArtifact() => ArtifactHelper.ProcessArtifact(TempFile, Log);
+        public bool TryProcessArtifact() => ArtifactHelper.TryProcessArtifact(TempFile, Log);
 
         public byte[] ReadResult() => File.ReadAllBytes(TempFile);
 
