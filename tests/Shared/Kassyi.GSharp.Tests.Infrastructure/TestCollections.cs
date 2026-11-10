@@ -29,6 +29,12 @@ public static class TestCollections
     public const string DeviceExclusive = "DeviceExclusive";
 
     /// <summary>
+    /// Runs the bounds and memory differential test classes one after another, as the single class they were split from
+    /// ran its tests; the collection still runs in parallel with every other collection.
+    /// </summary>
+    public const string BoundsAndMemoryDifferential = "BoundsAndMemoryDifferential";
+
+    /// <summary>
     /// Runs the tests that compile, transpile or parse the whole test corpus or the whole standard library one after
     /// another, so that their large transient heaps do not add up; the collection still runs in parallel with every
     /// other collection.
