@@ -61,7 +61,7 @@ internal static class StructMarshalMethodEmitter
     {
         // GSH0078 reports the member; the shadow struct leaves it out
         if (NativeStructEmitter.IsUnrepresentableReference(member) ||
-            StructBlockCopyEmitter.WriteBlockCopy(writer, member, toNative: true, dialect))
+            StructBlockCopyEmitter.TryWriteBlockCopy(writer, member, toNative: true, dialect))
         {
             return;
         }

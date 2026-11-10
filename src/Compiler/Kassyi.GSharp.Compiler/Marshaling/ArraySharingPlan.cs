@@ -95,14 +95,14 @@ internal readonly struct ArraySharingPlan
     public bool CopiesIn(int index)
     {
         var shape = _parameters[index];
-        return shape.CopyIn || Transfer(shape).ConvertedElementHasArrayFields;
+        return shape.IsCopyIn || Transfer(shape).ConvertedElementHasArrayFields;
     }
 
     /// <summary>Whether the launcher copies the array of parameter <paramref name="index"/> back: not <c>[In]</c>, not a read-only container.</summary>
     public bool CopiesBack(int index)
     {
         var shape = _parameters[index];
-        return shape.CopyOut && !shape.IsReadOnlyContainer;
+        return shape.IsCopyOut && !shape.IsReadOnlyContainer;
     }
 
     /// <summary>
@@ -167,7 +167,7 @@ internal readonly struct ArraySharingPlan
     {
         var shape = _parameters[index];
         return shape.IsArray &&
-            (shape.IsReadOnlyContainer ? shape.Cpu.ConvertedElementCopyArraysMethodName is not null : !shape.CopyOut);
+            (shape.IsReadOnlyContainer ? shape.Cpu.ConvertedElementCopyArraysMethodName is not null : !shape.IsCopyOut);
     }
 
     /// <summary>
@@ -220,7 +220,8 @@ internal readonly struct ArraySharingPlan
     }
 
     /// <summary>The <see cref="IsWritableHolder"/> or <see cref="IsFieldHolder"/> of parameter <paramref name="index"/>.</summary>
-    public bool IsUncopiedHolder(int index, int other) => IsWritableHolder(index, other) || IsFieldHolder(index, other);
+    public bool IsZeroCopyHolder(int index, int other) =>
+        IsWritableHolder(index, other) || IsFieldHolder(index, other);
 
     private ParameterTransfer Transfer(in KernelParameterShape shape) => _isCuda ? shape.Cuda : shape.Cpu;
 }

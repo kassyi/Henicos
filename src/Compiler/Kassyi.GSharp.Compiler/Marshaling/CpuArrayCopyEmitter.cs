@@ -62,8 +62,8 @@ internal static class CpuArrayCopyEmitter
             return;
         }
 
-        var hasCondition = WriteEarlierCopyReuse(writer, plan, index);
-        var guarded = WriteUncopiedHolderGuard(writer, plan, index, hasCondition);
+        var hasCondition = TryWriteEarlierCopyReuse(writer, plan, index);
+        var guarded = TryWriteUncopiedHolderGuard(writer, plan, index, hasCondition);
         if (!guarded && !hasCondition)
         {
             WriteKernelCopy(writer, shape);
@@ -80,7 +80,7 @@ internal static class CpuArrayCopyEmitter
     // if (ReferenceEquals(<name>, <earlier [In]>_source)) { <name> = <earlier [In]>; } else if (...) ...
     // Returns whether it wrote a condition. An array of another element type that is the same object (int[] / uint[]) is
     // cast through object.
-    private static bool WriteEarlierCopyReuse(SourceWriter writer, in ArraySharingPlan plan, int index)
+    private static bool TryWriteEarlierCopyReuse(SourceWriter writer, in ArraySharingPlan plan, int index)
     {
         var shape = plan.Parameters[index];
         var hasCondition = false;
@@ -109,14 +109,14 @@ internal static class CpuArrayCopyEmitter
 
     // [else ]if (!ReferenceEquals(<name>, <writable T[]>) && !HoldsArray_<S>(<struct or elements>, <name>) && ...)
     // Returns whether it wrote the condition: whether any holder the kernel gets uncopied may hold the array
-    // (ArraySharingPlan.IsUncopiedHolder).
-    private static bool WriteUncopiedHolderGuard(SourceWriter writer, in ArraySharingPlan plan, int index,
+    // (ArraySharingPlan.IsZeroCopyHolder).
+    private static bool TryWriteUncopiedHolderGuard(SourceWriter writer, in ArraySharingPlan plan, int index,
         bool hasCondition)
     {
         var any = false;
         for (var k = 0; k < plan.Parameters.Length; k++)
         {
-            any |= plan.IsUncopiedHolder(index, k);
+            any |= plan.IsZeroCopyHolder(index, k);
         }
 
         if (!any)

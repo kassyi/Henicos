@@ -50,7 +50,7 @@ internal static class StructUnmarshalMethodEmitter
     private static void WriteUnmarshalMember(SourceWriter writer, StructAbiMember member, ITranspilerDialect dialect)
     {
         if (NativeStructEmitter.IsUnrepresentableReference(member) ||
-            StructBlockCopyEmitter.WriteBlockCopy(writer, member, toNative: false, dialect))
+            StructBlockCopyEmitter.TryWriteBlockCopy(writer, member, toNative: false, dialect))
         {
             return;
         }
