@@ -107,8 +107,12 @@ public static partial class DiagnosticGenerator
                 descriptorNames.Add(name);
             }
 
-            writer.Line("/// <summary>Gets an immutable array containing all diagnostic descriptors defined in diagnostics.json.</summary>");
-            writer.Line("public static readonly ImmutableArray<DiagnosticDescriptor> All = ImmutableArray.Create<DiagnosticDescriptor>(");
+            writer.Line(
+                "/// <summary>Gets an immutable array containing all diagnostic descriptors defined in " +
+                "diagnostics.json.</summary>");
+            writer.Line(
+                "public static readonly ImmutableArray<DiagnosticDescriptor> All = " +
+                "ImmutableArray.Create<DiagnosticDescriptor>(");
             using (writer.Scope("", ");"))
             {
                 for (var i = 0; i < descriptorNames.Count; i++)
@@ -181,7 +185,8 @@ public static partial class DiagnosticGenerator
         }
         else if (!IsValidId(diag.Id))
         {
-            writer.Line($"#error Invalid diagnostic ID format '{diag.Id}' in diagnostics.json. Expected 3 alphanumeric characters followed by 4 digits (e.g. GSH0001).");
+            writer.Line($"#error Invalid diagnostic ID format '{diag.Id}' in diagnostics.json. " +
+                $"Expected 3 alphanumeric characters followed by 4 digits (e.g. GSH0001).");
         }
         else if (!seenIds.Add(diag.Id))
         {
@@ -202,7 +207,8 @@ public static partial class DiagnosticGenerator
         }
         else if (!SyntaxFacts.IsValidIdentifier(diag.Name))
         {
-            writer.Line($"#error Invalid diagnostic Name '{diag.Name}' in diagnostics.json. It must be a valid C# identifier.");
+            writer.Line($"#error Invalid diagnostic Name '{diag.Name}' in diagnostics.json. " +
+                $"It must be a valid C# identifier.");
         }
         else if (!seenNames.Add(diag.Name))
         {

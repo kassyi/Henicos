@@ -1,6 +1,8 @@
 namespace Kassyi.GSharp.Compiler.Generators;
 
-/// <summary>Represents a mapped type entry in a YAML dialect definition, with optional byte size and alignment.</summary>
+/// <summary>
+/// Represents a mapped type entry in a YAML dialect definition, with optional byte size and alignment.
+/// </summary>
 public readonly record struct DialectTypeMapping(string CppType, int? Size = null, int? Align = null)
 {
     public bool HasLayout => Size.HasValue && Align.HasValue;
@@ -9,7 +11,9 @@ public readonly record struct DialectTypeMapping(string CppType, int? Size = nul
 /// <summary>Represents a byte size and alignment pair in a YAML dialect definition.</summary>
 public readonly record struct DialectLayoutEntry(int Size, int Align);
 
-/// <summary>Represents a YAML dialect definition describing intrinsic and type mapping rules for target backends.</summary>
+/// <summary>
+/// Represents a YAML dialect definition describing intrinsic and type mapping rules for target backends.
+/// </summary>
 public class DialectDefinition
 {
     /// <summary>Gets or sets the dialect name.</summary>
@@ -42,8 +46,9 @@ public class DialectDefinition
         get; set;
     }
 
-    /// <summary>Gets or sets the 1-based line of the <c>Dialect</c> key,
-    /// for errors about the dialect as a whole.</summary>
+    /// <summary>
+    /// Gets or sets the 1-based line of the <c>Dialect</c> key, for errors about the dialect as a whole.
+    /// </summary>
     public int Line
     {
         get; set;

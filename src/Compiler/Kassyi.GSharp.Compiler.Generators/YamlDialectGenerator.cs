@@ -125,7 +125,7 @@ public static class YamlDialectGenerator
                 {
                     throw new GeneratorInputException(def.Path, def.Line,
                         $"The capability '{name}' of the dialect '{def.Name}' " +
-                        $"is not a valid DialectCapabilities name.");
+                        "is not a valid DialectCapabilities name.");
                 }
             }
         }
