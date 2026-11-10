@@ -6,6 +6,13 @@ internal sealed partial class ManagedExecutionRewriter
 {
     public override SyntaxNode? VisitExpressionStatement(ExpressionStatementSyntax node)
     {
+        // [WHY] The generated file decides [Conditional] again with none of the #undef directives of the user's file
+        // (#1540)
+        if (RemovedCalls.IsRemovedCall(node.Expression, semanticModel))
+        {
+            return RemovedCallEraser.ToEmptyStatement(node);
+        }
+
         if (node.Expression is InvocationExpressionSyntax inlinePtx &&
             DialectCallSupport.IsUnsupportedInlinePtxCall(inlinePtx, semanticModel, HostDialects.Cpu))
         {
@@ -40,6 +47,12 @@ internal sealed partial class ManagedExecutionRewriter
         };
         return rewritten?.WithTriviaFrom(node) ?? base.VisitExpressionStatement(node);
     }
+
+    // A for loop without the initializers and incrementors that are calls C# removes (#1540)
+    public override SyntaxNode? VisitForStatement(ForStatementSyntax node) =>
+        base.VisitForStatement(node) is ForStatementSyntax visited
+            ? RemovedCallEraser.WithoutRemovedCalls(node, visited, semanticModel)
+            : null;
 
     // The macro as the semantic model resolves it. A call that does not resolve is left alone, as in
     // PreLoweringExpander: the call is then not guessed from its name, and the unrewritten macro fails where it runs

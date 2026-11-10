@@ -317,12 +317,14 @@ internal sealed partial class ManagedExecutionRewriter(
     public override SyntaxNode? VisitAnonymousMethodExpression(AnonymousMethodExpressionSyntax node) =>
         VisitNestedCallable(node, base.VisitAnonymousMethodExpression);
 
+    // A lambda or local function whose expression body is a call that C# removes gets an empty body (#1540)
     private SyntaxNode? VisitNestedCallable<TNode>(TNode node, Func<TNode, SyntaxNode?> baseVisitor)
+        where TNode : SyntaxNode
     {
         _inLambdaOrLocalFuncCount++;
         try
         {
-            return baseVisitor(node);
+            return RemovedCallEraser.WithEmptyBodyIfRemoved(node, baseVisitor(node), semanticModel);
         }
         finally
         {

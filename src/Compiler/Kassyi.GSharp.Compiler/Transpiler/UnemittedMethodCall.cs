@@ -33,7 +33,7 @@ internal static class UnemittedMethodCall
     /// The reason that <paramref name="call"/> of <paramref name="called"/> (an invocation, or a method group that
     /// device code names) cannot be emitted, or
     /// <see langword="null"/> when the callee is emitted, mapped or declared outside the compilation, or when C#
-    /// removes the call (<c>[Conditional]</c> without its symbol defined at the call).
+    /// removes the call (<see cref="RemovedCalls"/>).
     /// </summary>
     public static string? GetReason(IMethodSymbol called, SyntaxNode call, SemanticModel model,
         ITranspilerDialect dialect)
@@ -41,7 +41,7 @@ internal static class UnemittedMethodCall
         // [WHY] A call copied into a lowered tree (an inlined iterator or foreach body, a state machine) is decided as
         // well, on the file it was written in, which its original-span annotation names; a call that lowering
         // synthesized has no written call to report
-        if (GetUserTree(call, model) is not { } userTree)
+        if (RemovedCalls.GetUserTree(call, model) is not { } userTree)
         {
             return null;
         }
@@ -54,11 +54,10 @@ internal static class UnemittedMethodCall
             method.HasAttribute(KnownAttributes.CudaImport) ||
             method.HasAttribute(KnownAttributes.GpuOperatorMacro) ||
             method.ContainingType?.HasAttribute(KnownAttributes.CudaIntrinsicPattern) == true ||
-            method.IsPartialWithoutImplementation() ||
+            RemovedCalls.IsRemoved(method, userTree) ||
             !IsDeclaredIn(method, model.Compilation) ||
             dialect.TryMapIntrinsic(called, out _) ||
-            BclIntrinsicMapBuilder.GetOrBuildMap(model.Compilation).ContainsKey(method) ||
-            ConditionalCalls.IsRemoved(method, userTree))
+            BclIntrinsicMapBuilder.GetOrBuildMap(model.Compilation).ContainsKey(method))
         {
             return null;
         }
@@ -116,13 +115,6 @@ internal static class UnemittedMethodCall
         var method = (called.ReducedFrom ?? called).OriginalDefinition;
         return method.ContainingType is { } type ? type.Name + "." + method.Name : method.Name;
     }
-
-    // The tree the call was written in: the model's own tree, or the one the original-span annotation of a lowered
-    // node names
-    private static SyntaxTree? GetUserTree(SyntaxNode call, SemanticModel model) =>
-        call.SyntaxTree == model.SyntaxTree
-            ? call.SyntaxTree
-            : model.GetOriginalNode(call)?.SyntaxTree;
 
     private static bool IsDeclaredIn(IMethodSymbol method, Compilation compilation) =>
         method.DeclaringSyntaxReferences
