@@ -16,7 +16,7 @@ internal static class SignedSelect
     {
         var words = chosen.Value.NumWords;
         resultBuffer.CopyFrom(chosen.Value, numWords: words);
-        SignedRoot.ClearAbove(resultBuffer, words);
+        ResultBuffers.ClearAbove(resultBuffer, words);
         return new GpuBigInt(resultBuffer, chosen.IsNegative);
     }
 }
