@@ -3,27 +3,8 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum.Expressions;
 using static Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum.Expressions.GpuBigFloatTestHelpers;
 
 [TestTarget(ExecutionTarget.GpuExecution)]
-public class GpuBigFloatVectorLinqTests : IDisposable
+public class GpuBigFloatVectorLinqTests : GpuBigFloatWorkspaceTestBase
 {
-    private readonly GpuKernelLoader.CudaContextScope _scope;
-    private readonly GpuWorkspace _context;
-
-    public GpuBigFloatVectorLinqTests()
-    {
-        CudaCapability.EnsureGpuAvailable();
-        _scope = new GpuKernelLoader.CudaContextScope();
-        _context = new GpuWorkspace(1024 * 1024, GpuExecutionEngine.GSharpAot);
-    }
-
-    public void Dispose()
-    {
-        _context.Dispose();
-        _scope.Dispose();
-    }
-
-    private GpuBigFloat CreateFloat(long value, int exponent = 0, int numWords = 4) =>
-        GpuBigFloatTestHelpers.CreateFloat(_context, value, exponent, numWords);
-
     [Fact]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.HappyPath)]
@@ -31,8 +12,8 @@ public class GpuBigFloatVectorLinqTests : IDisposable
     {
         const int length = 4;
         const int words = 4;
-        using var leftVec = new GpuBigFloatArray(_context, length, words);
-        using var rightVec = new GpuBigFloatArray(_context, length, words);
+        using var leftVec = new GpuBigFloatArray(Context, length, words);
+        using var rightVec = new GpuBigFloatArray(Context, length, words);
 
         double[] leftVals = [12.0, -24.0, 36.0, 48.0];
         double[] rightVals = [3.0, 6.0, -9.0, 12.0];
@@ -48,7 +29,7 @@ public class GpuBigFloatVectorLinqTests : IDisposable
 
         // SelectDivide
         using var selectDivExpr = leftVec.AsVectorizedEnumerable().SelectDivide(scalar);
-        var selectDivRes = selectDivExpr.Evaluate(_context);
+        var selectDivRes = selectDivExpr.Evaluate(Context);
         for (var i = 0; i < length; i++)
         {
             Assert.Equal(leftVals[i] / 3.0, ToDouble(selectDivRes.GetElement(i)), precision: 8);
@@ -56,7 +37,7 @@ public class GpuBigFloatVectorLinqTests : IDisposable
 
         // ZipDivide
         using var zipDivExpr = leftVec.AsVectorizedEnumerable().ZipDivide(rightVec.AsVectorizedEnumerable());
-        var zipDivRes = zipDivExpr.Evaluate(_context);
+        var zipDivRes = zipDivExpr.Evaluate(Context);
         for (var i = 0; i < length; i++)
         {
             Assert.Equal(leftVals[i] / rightVals[i], ToDouble(zipDivRes.GetElement(i)), precision: 8);
@@ -64,10 +45,10 @@ public class GpuBigFloatVectorLinqTests : IDisposable
 
         // ZipAdd + Sum / Max / Min / Average
         using var zipAddExpr = leftVec.AsVectorizedEnumerable().ZipAdd(rightVec.AsVectorizedEnumerable());
-        using var totalSum = zipAddExpr.Sum(_context);
-        using var maxVal = leftVec.AsVectorizedEnumerable().Max(_context);
-        using var minVal = leftVec.AsVectorizedEnumerable().Min(_context);
-        using var avgVal = leftVec.AsVectorizedEnumerable().Average(_context);
+        using var totalSum = zipAddExpr.Sum(Context);
+        using var maxVal = leftVec.AsVectorizedEnumerable().Max(Context);
+        using var minVal = leftVec.AsVectorizedEnumerable().Min(Context);
+        using var avgVal = leftVec.AsVectorizedEnumerable().Average(Context);
 
         // (12+3) + (-24+6) + (36-9) + (48+12) = 15 - 18 + 27 + 60 = 84
         Assert.Equal(84.0, ToDouble(totalSum), precision: 8);
@@ -78,8 +59,8 @@ public class GpuBigFloatVectorLinqTests : IDisposable
         // Skip + Take + EvaluateTo
         using var slicedExpr = leftVec.AsVectorizedEnumerable().Skip(1).Take(2).SelectMultiply(scalar);
         Assert.Equal(2, slicedExpr.Count());
-        using var destArray = new GpuBigFloatArray(_context, 2, slicedExpr.WordsPerElement);
-        slicedExpr.EvaluateTo(_context, destArray);
+        using var destArray = new GpuBigFloatArray(Context, 2, slicedExpr.WordsPerElement);
+        slicedExpr.EvaluateTo(Context, destArray);
         Assert.Equal(-72.0, ToDouble(destArray.GetElement(0)), precision: 8);
         Assert.Equal(108.0, ToDouble(destArray.GetElement(1)), precision: 8);
     }
@@ -91,8 +72,8 @@ public class GpuBigFloatVectorLinqTests : IDisposable
     {
         const int length = 5;
         const int words = 4;
-        using var vec = new GpuBigFloatArray(_context, length, words);
-        using var otherVec = new GpuBigFloatArray(_context, length, words);
+        using var vec = new GpuBigFloatArray(Context, length, words);
+        using var otherVec = new GpuBigFloatArray(Context, length, words);
 
         // Values: [10.0, -5.0, 20.0 (5 * 2^2), 0.0, 50.0]
         using var v0 = CreateFloat(10, exponent: 0);
@@ -124,30 +105,30 @@ public class GpuBigFloatVectorLinqTests : IDisposable
         // Scalar comparisons (note v2 = 5 * 2^2 == 20 * 2^0)
         using var eqExpr = vec.AsVectorizedEnumerable().IsEqualTo(scalar20);
         var eqHost = new uint[length];
-        var eqDev = eqExpr.Evaluate(_context);
-        _context.Provider.CopyDeviceToHost(eqHost, eqDev.DevicePointer, length);
+        var eqDev = eqExpr.Evaluate(Context);
+        Context.Provider.CopyDeviceToHost(eqHost, eqDev.DevicePointer, length);
 
         Assert.Equal([0u, 0u, 1u, 0u, 0u], eqHost);
 
         // Vector-to-vector comparisons: vec >= otherVec -> [10==10(1), -5>=-2(0), 20>=15(1), 0==0(1), 50>=100(0)]
         using var gteVecExpr = vec.AsVectorizedEnumerable().IsGreaterThanOrEqualTo(otherVec.AsVectorizedEnumerable());
         var gteHost = new uint[length];
-        var gteDev = gteVecExpr.Evaluate(_context);
-        _context.Provider.CopyDeviceToHost(gteHost, gteDev.DevicePointer, length);
+        var gteDev = gteVecExpr.Evaluate(Context);
+        Context.Provider.CopyDeviceToHost(gteHost, gteDev.DevicePointer, length);
 
         Assert.Equal([1u, 0u, 1u, 1u, 0u], gteHost);
 
         // Where (> 0) -> [10.0, 20.0, 50.0] (the count, 3, is known on the device), Sum = 80.0
         using var filteredSum = vec.AsVectorizedEnumerable()
             .Where(vec.AsVectorizedEnumerable().IsGreaterThan(scalarZero))
-            .Sum(_context);
+            .Sum(Context);
         Assert.Equal(80.0, ToDouble(filteredSum), precision: 8);
 
         // Where (> 0) + Take(2) -> [10.0, 20.0]
         using var filteredTakeExpr = vec.AsVectorizedEnumerable()
             .Where(vec.AsVectorizedEnumerable().IsGreaterThan(scalarZero))
             .Take(2);
-        var filteredTakeRes = filteredTakeExpr.Evaluate(_context);
+        var filteredTakeRes = filteredTakeExpr.Evaluate(Context);
         Assert.Equal(10.0, ToDouble(filteredTakeRes.GetElement(0)), precision: 8);
         Assert.Equal(20.0, ToDouble(filteredTakeRes.GetElement(1)), precision: 8);
     }
@@ -172,16 +153,16 @@ public class GpuBigFloatVectorLinqTests : IDisposable
         Assert.IsType<InvalidOperationException>(expectedMin);
         Assert.IsType<InvalidOperationException>(expectedAverage);
 
-        using var empty = new GpuBigFloatArray(_context, 0, 4);
+        using var empty = new GpuBigFloatArray(Context, 0, 4);
 
-        var max = Assert.Throws<InvalidOperationException>(() => empty.AsVectorizedEnumerable().Max(_context));
-        var min = Assert.Throws<InvalidOperationException>(() => empty.AsVectorizedEnumerable().Min(_context));
-        var average = Assert.Throws<InvalidOperationException>(() => empty.AsVectorizedEnumerable().Average(_context));
+        var max = Assert.Throws<InvalidOperationException>(() => empty.AsVectorizedEnumerable().Max(Context));
+        var min = Assert.Throws<InvalidOperationException>(() => empty.AsVectorizedEnumerable().Min(Context));
+        var average = Assert.Throws<InvalidOperationException>(() => empty.AsVectorizedEnumerable().Average(Context));
         Assert.Equal(expectedMax.Message, max.Message);
         Assert.Equal(expectedMin.Message, min.Message);
         Assert.Equal(expectedAverage.Message, average.Message);
 
-        using var sum = empty.AsVectorizedEnumerable().Sum(_context);
+        using var sum = empty.AsVectorizedEnumerable().Sum(Context);
         Assert.Equal(reference.Sum(), ToDouble(sum));
         Assert.False(sum.IsNegative);
         Assert.Equal(reference.Length, empty.AsVectorizedEnumerable().Count());
@@ -199,7 +180,7 @@ public class GpuBigFloatVectorLinqTests : IDisposable
         // mutant: FloatVectorReductionOrchestrator.cs `if (source.Length == 0)` -> `if (source.Length < 0)`
         // input: none alone, the empty SelectAdd now launches nothing; with the first mutant as well, Sum fails
         double[] values = [3, -4, 5];
-        using var vec = new GpuBigFloatArray(_context, values.Length, 4);
+        using var vec = new GpuBigFloatArray(Context, values.Length, 4);
         for (var i = 0; i < values.Length; i++)
         {
             using var element = CreateFloat((long)values[i]);
@@ -211,17 +192,17 @@ public class GpuBigFloatVectorLinqTests : IDisposable
 
         using (var direct = vec.AsVectorizedEnumerable().Skip(values.Length).SelectAdd(one))
         {
-            Assert.Equal(0, direct.Evaluate(_context).Length);
+            Assert.Equal(0, direct.Evaluate(Context).Length);
         }
 
         using var expr = vec.AsVectorizedEnumerable().Skip(values.Length).SelectAdd(one);
-        using var sum = expr.Sum(_context);
+        using var sum = expr.Sum(Context);
         Assert.Equal(reference.Sum(), ToDouble(sum));
         Assert.False(sum.IsNegative);
         Assert.IsType<InvalidOperationException>(Record.Exception(() => reference.Average()));
-        Assert.Throws<InvalidOperationException>(() => expr.Max(_context));
-        Assert.Throws<InvalidOperationException>(() => expr.Min(_context));
-        Assert.Throws<InvalidOperationException>(() => expr.Average(_context));
+        Assert.Throws<InvalidOperationException>(() => expr.Max(Context));
+        Assert.Throws<InvalidOperationException>(() => expr.Min(Context));
+        Assert.Throws<InvalidOperationException>(() => expr.Average(Context));
     }
 
     [Fact]
@@ -240,8 +221,8 @@ public class GpuBigFloatVectorLinqTests : IDisposable
         // mutant: FloatVectorCompareExpressions.cs FloatVectorCompareVectorExpression
         // `if (Length == 0)` -> `if (Length < 0)`
         // input: the vector comparison
-        using var empty = new GpuBigFloatArray(_context, 0, 4);
-        using var other = new GpuBigFloatArray(_context, 0, 4);
+        using var empty = new GpuBigFloatArray(Context, 0, 4);
+        using var other = new GpuBigFloatArray(Context, 0, 4);
         using var scalar = CreateFloat(3);
         var reference = Array.Empty<double>();
 
@@ -249,11 +230,11 @@ public class GpuBigFloatVectorLinqTests : IDisposable
         using var vectorCompare = empty.AsVectorizedEnumerable().IsEqualTo(other.AsVectorizedEnumerable());
         using var divide = empty.AsVectorizedEnumerable().SelectDivideByUInt32(3u);
 
-        Assert.Equal(reference.Select(static v => v < 3).Count(), scalarCompare.Evaluate(_context).Length);
+        Assert.Equal(reference.Select(static v => v < 3).Count(), scalarCompare.Evaluate(Context).Length);
         Assert.Equal(
             reference.Zip(reference, static (a, b) => a == b).Count(),
-            vectorCompare.Evaluate(_context).Length);
-        Assert.Equal(reference.Select(static v => v / 3).Count(), divide.Evaluate(_context).Length);
+            vectorCompare.Evaluate(Context).Length);
+        Assert.Equal(reference.Select(static v => v / 3).Count(), divide.Evaluate(Context).Length);
     }
 
     [Fact]
@@ -263,16 +244,16 @@ public class GpuBigFloatVectorLinqTests : IDisposable
     {
         // The float comparison takes the signs from its own sign arrays; a negative zero (sign 1, significand 0) must
         // compare equal to zero, as the integer comparison does. Expected values: -0.0 == 0.0 in IEEE / System.Double.
-        using var vec = new GpuBigFloatArray(_context, 2, 4);
-        using var other = new GpuBigFloatArray(_context, 2, 4);
-        using var negativeZero = new GpuBigFloat(new GpuBigUInt(_context, new uint[4]), 0, isNegative: true);
+        using var vec = new GpuBigFloatArray(Context, 2, 4);
+        using var other = new GpuBigFloatArray(Context, 2, 4);
+        using var negativeZero = new GpuBigFloat(new GpuBigUInt(Context, new uint[4]), 0, isNegative: true);
         using var zero = CreateFloat(0);
         vec.SetElement(0, negativeZero);
         vec.SetElement(1, zero);
         other.SetElement(0, zero);
         other.SetElement(1, negativeZero);
         var signsHost = new uint[2];
-        _context.Provider.CopyDeviceToHost(signsHost, vec.Signs.DevicePointer, 2);
+        Context.Provider.CopyDeviceToHost(signsHost, vec.Signs.DevicePointer, 2);
         Assert.Equal([1u, 0u], signsHost); // the negative zero is really stored with sign 1
 
         using var eqVector = vec.AsVectorizedEnumerable().IsEqualTo(other.AsVectorizedEnumerable());
@@ -281,9 +262,9 @@ public class GpuBigFloatVectorLinqTests : IDisposable
         var eqVectorHost = new uint[2];
         var ltVectorHost = new uint[2];
         var eqScalarHost = new uint[2];
-        _context.Provider.CopyDeviceToHost(eqVectorHost, eqVector.Evaluate(_context).DevicePointer, 2);
-        _context.Provider.CopyDeviceToHost(ltVectorHost, ltVector.Evaluate(_context).DevicePointer, 2);
-        _context.Provider.CopyDeviceToHost(eqScalarHost, eqScalar.Evaluate(_context).DevicePointer, 2);
+        Context.Provider.CopyDeviceToHost(eqVectorHost, eqVector.Evaluate(Context).DevicePointer, 2);
+        Context.Provider.CopyDeviceToHost(ltVectorHost, ltVector.Evaluate(Context).DevicePointer, 2);
+        Context.Provider.CopyDeviceToHost(eqScalarHost, eqScalar.Evaluate(Context).DevicePointer, 2);
 
         Assert.Equal([-0.0 == 0.0 ? 1u : 0u, 0.0 == -0.0 ? 1u : 0u], eqVectorHost);
         Assert.Equal([-0.0 < 0.0 ? 1u : 0u, 0.0 < -0.0 ? 1u : 0u], ltVectorHost);
@@ -297,7 +278,7 @@ public class GpuBigFloatVectorLinqTests : IDisposable
     {
         const int length = 300; // Crosses 256-element chunk boundary (2 passes)
         const int words = 4;
-        using var vec = new GpuBigFloatArray(_context, length, words);
+        using var vec = new GpuBigFloatArray(Context, length, words);
         double expectedSum = 0;
         double expectedMax = double.MinValue;
         double expectedMin = double.MaxValue;
@@ -315,9 +296,9 @@ public class GpuBigFloatVectorLinqTests : IDisposable
             vec.SetElement(i, elem);
         }
 
-        using var gpuSum = vec.AsVectorizedEnumerable().Sum(_context);
-        using var gpuMax = vec.AsVectorizedEnumerable().Max(_context);
-        using var gpuMin = vec.AsVectorizedEnumerable().Min(_context);
+        using var gpuSum = vec.AsVectorizedEnumerable().Sum(Context);
+        using var gpuMax = vec.AsVectorizedEnumerable().Max(Context);
+        using var gpuMin = vec.AsVectorizedEnumerable().Min(Context);
 
         Assert.Equal(expectedSum, ToDouble(gpuSum), precision: 8);
         Assert.Equal(expectedMax, ToDouble(gpuMax), precision: 8);
@@ -331,7 +312,7 @@ public class GpuBigFloatVectorLinqTests : IDisposable
     {
         const int length = 3;
         const int words = 4;
-        using var vec = new GpuBigFloatArray(_context, length, words);
+        using var vec = new GpuBigFloatArray(Context, length, words);
         double[] vals = [10.0, 20.0, 30.0];
         for (var i = 0; i < length; i++)
         {
@@ -339,16 +320,16 @@ public class GpuBigFloatVectorLinqTests : IDisposable
             vec.SetElement(i, f);
         }
 
-        using var uintScalar = new GpuBigUInt(_context, [5u, 0u, 0u, 0u]);
-        using var intScalar = new GpuBigInt(new GpuBigUInt(_context, [4u, 0u, 0u, 0u]), isNegative: true);
-        using var ufloatScalar = new GpuBigUFloat(new GpuBigUInt(_context, [3u, 0u, 0u, 0u]), 1); // 3 * 2^1 = 6.0
+        using var uintScalar = new GpuBigUInt(Context, [5u, 0u, 0u, 0u]);
+        using var intScalar = new GpuBigInt(new GpuBigUInt(Context, [4u, 0u, 0u, 0u]), isNegative: true);
+        using var ufloatScalar = new GpuBigUFloat(new GpuBigUInt(Context, [3u, 0u, 0u, 0u]), 1); // 3 * 2^1 = 6.0
 
         using var addUIntExpr = vec.AsVectorizedEnumerable().SelectAdd(uintScalar);
-        var addUIntRes = addUIntExpr.Evaluate(_context);
+        var addUIntRes = addUIntExpr.Evaluate(Context);
         using var mulIntExpr = vec.AsVectorizedEnumerable().SelectMultiply(intScalar);
-        var mulIntRes = mulIntExpr.Evaluate(_context);
+        var mulIntRes = mulIntExpr.Evaluate(Context);
         using var subUFloatExpr = vec.AsVectorizedEnumerable().SelectSubtract(ufloatScalar);
-        var subUFloatRes = subUFloatExpr.Evaluate(_context);
+        var subUFloatRes = subUFloatExpr.Evaluate(Context);
 
         for (var i = 0; i < length; i++)
         {
@@ -365,8 +346,8 @@ public class GpuBigFloatVectorLinqTests : IDisposable
     {
         const int length = 3;
         const int words = 4;
-        using var vec = new GpuBigFloatArray(_context, length, words);
-        using var expVec = new GpuBigFloatArray(_context, length, words);
+        using var vec = new GpuBigFloatArray(Context, length, words);
+        using var expVec = new GpuBigFloatArray(Context, length, words);
 
         double[] vals = [4.0, 9.0, 16.0];
         double[] exps = [2.0, 0.5, 1.0];
@@ -385,7 +366,7 @@ public class GpuBigFloatVectorLinqTests : IDisposable
 
         // 1. SelectSqrt
         using var sqrtExpr = vec.AsVectorizedEnumerable().SelectSqrt();
-        var sqrtRes = sqrtExpr.Evaluate(_context);
+        var sqrtRes = sqrtExpr.Evaluate(Context);
         for (var i = 0; i < length; i++)
         {
             Assert.Equal(Math.Sqrt(vals[i]), ToDouble(sqrtRes.GetElement(i)), precision: 6);
@@ -393,7 +374,7 @@ public class GpuBigFloatVectorLinqTests : IDisposable
 
         // 2. SelectRsqrt
         using var rsqrtExpr = vec.AsVectorizedEnumerable().SelectRsqrt();
-        var rsqrtRes = rsqrtExpr.Evaluate(_context);
+        var rsqrtRes = rsqrtExpr.Evaluate(Context);
         for (var i = 0; i < length; i++)
         {
             Assert.Equal(1.0 / Math.Sqrt(vals[i]), ToDouble(rsqrtRes.GetElement(i)), precision: 6);
@@ -401,7 +382,7 @@ public class GpuBigFloatVectorLinqTests : IDisposable
 
         // 3. SelectReciprocal
         using var recipExpr = vec.AsVectorizedEnumerable().SelectReciprocal();
-        var recipRes = recipExpr.Evaluate(_context);
+        var recipRes = recipExpr.Evaluate(Context);
         for (var i = 0; i < length; i++)
         {
             Assert.Equal(1.0 / vals[i], ToDouble(recipRes.GetElement(i)), precision: 6);
@@ -409,7 +390,7 @@ public class GpuBigFloatVectorLinqTests : IDisposable
 
         // 4. SelectDivideByUInt32 (the quotient rounded toward zero to the element precision, so x / 2 is exact)
         using var divU32Expr = vec.AsVectorizedEnumerable().SelectDivideByUInt32(2u);
-        var divU32Res = divU32Expr.Evaluate(_context);
+        var divU32Res = divU32Expr.Evaluate(Context);
         for (var i = 0; i < length; i++)
         {
             Assert.Equal(vals[i] / 2.0, ToDouble(divU32Res.GetElement(i)), precision: 8);
@@ -417,23 +398,23 @@ public class GpuBigFloatVectorLinqTests : IDisposable
 
         // 5. SelectLog & SelectExp
         using var logExpr = vec.AsVectorizedEnumerable().SelectLog();
-        var logRes = logExpr.Evaluate(_context);
+        var logRes = logExpr.Evaluate(Context);
         for (var i = 0; i < length; i++)
         {
             Assert.Equal(Math.Log(vals[i]), ToDouble(logRes.GetElement(i)), precision: 5);
         }
 
         using var roundTripExpExpr = vec.AsVectorizedEnumerable().SelectLog().SelectExp();
-        var roundTripExpRes = roundTripExpExpr.Evaluate(_context);
+        var roundTripExpRes = roundTripExpExpr.Evaluate(Context);
         for (var i = 0; i < length; i++)
         {
             Assert.Equal(vals[i], ToDouble(roundTripExpRes.GetElement(i)), precision: 4);
         }
 
         // 6. SelectPow<TScalar> (with GpuBigUInt scalar 2)
-        using var powScalar = new GpuBigUInt(_context, [2u, 0u, 0u, 0u]);
+        using var powScalar = new GpuBigUInt(Context, [2u, 0u, 0u, 0u]);
         using var powScalarExpr = vec.AsVectorizedEnumerable().SelectPow(powScalar);
-        var powScalarRes = powScalarExpr.Evaluate(_context);
+        var powScalarRes = powScalarExpr.Evaluate(Context);
         for (var i = 0; i < length; i++)
         {
             Assert.Equal(Math.Pow(vals[i], 2.0), ToDouble(powScalarRes.GetElement(i)), precision: 3);
@@ -441,7 +422,7 @@ public class GpuBigFloatVectorLinqTests : IDisposable
 
         // 7. ZipPow
         using var zipPowExpr = vec.AsVectorizedEnumerable().ZipPow(expVec.AsVectorizedEnumerable());
-        var zipPowRes = zipPowExpr.Evaluate(_context);
+        var zipPowRes = zipPowExpr.Evaluate(Context);
         for (var i = 0; i < length; i++)
         {
             Assert.Equal(Math.Pow(vals[i], exps[i]), ToDouble(zipPowRes.GetElement(i)), precision: 4);
@@ -453,31 +434,31 @@ public class GpuBigFloatVectorLinqTests : IDisposable
     [Scenario(TestScenario.SadPath)]
     public void GpuBigFloatArray_VectorLinq_ElementaryAndTranscendental_SadPath_ThrowsExpectedExceptions()
     {
-        using var zeroVec = new GpuBigFloatArray(_context, 2, 4);
+        using var zeroVec = new GpuBigFloatArray(Context, 2, 4);
         using var z0 = CreateFloat(0);
         using var z1 = CreateFloat(4);
         zeroVec.SetElement(0, z0);
         zeroVec.SetElement(1, z1);
 
         using var divZeroExpr = zeroVec.AsVectorizedEnumerable().SelectDivideByUInt32(0u);
-        Assert.Throws<DivideByZeroException>(() => divZeroExpr.Evaluate(_context));
+        Assert.Throws<DivideByZeroException>(() => divZeroExpr.Evaluate(Context));
         using var recipZeroExpr = zeroVec.AsVectorizedEnumerable().SelectReciprocal();
-        Assert.Throws<DivideByZeroException>(() => recipZeroExpr.Evaluate(_context));
+        Assert.Throws<DivideByZeroException>(() => recipZeroExpr.Evaluate(Context));
         using var rsqrtZeroExpr = zeroVec.AsVectorizedEnumerable().SelectRsqrt();
-        Assert.Throws<DivideByZeroException>(() => rsqrtZeroExpr.Evaluate(_context));
+        Assert.Throws<DivideByZeroException>(() => rsqrtZeroExpr.Evaluate(Context));
 
-        using var negVec = new GpuBigFloatArray(_context, 2, 4);
+        using var negVec = new GpuBigFloatArray(Context, 2, 4);
         using var n0 = CreateFloat(-4);
         negVec.SetElement(0, n0);
         negVec.SetElement(1, z1);
 
         using var sqrtNegExpr = negVec.AsVectorizedEnumerable().SelectSqrt();
-        Assert.Throws<InvalidOperationException>(() => sqrtNegExpr.Evaluate(_context));
+        Assert.Throws<InvalidOperationException>(() => sqrtNegExpr.Evaluate(Context));
         using var logNegExpr = negVec.AsVectorizedEnumerable().SelectLog();
-        Assert.Throws<InvalidOperationException>(() => logNegExpr.Evaluate(_context));
-        using var shortVec = new GpuBigFloatArray(_context, 1, 4);
+        Assert.Throws<InvalidOperationException>(() => logNegExpr.Evaluate(Context));
+        using var shortVec = new GpuBigFloatArray(Context, 1, 4);
         shortVec.SetElement(0, z1);
         using var mismatchedZipPow = zeroVec.AsVectorizedEnumerable().ZipPow(shortVec.AsVectorizedEnumerable());
-        Assert.Throws<ArgumentException>(() => mismatchedZipPow.Evaluate(_context));
+        Assert.Throws<ArgumentException>(() => mismatchedZipPow.Evaluate(Context));
     }
 }

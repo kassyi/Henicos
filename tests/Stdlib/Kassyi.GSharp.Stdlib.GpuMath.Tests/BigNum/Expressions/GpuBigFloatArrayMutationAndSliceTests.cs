@@ -13,27 +13,8 @@ using static Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum.Expressions.GpuBigFloatTe
 namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum.Expressions;
 
 [TestTarget(ExecutionTarget.GpuExecution)]
-public sealed class GpuBigFloatArrayMutationAndSliceTests : IDisposable
+public class GpuBigFloatArrayMutationAndSliceTests : GpuBigFloatWorkspaceTestBase
 {
-    private readonly GpuKernelLoader.CudaContextScope _scope;
-    private readonly GpuWorkspace _context;
-
-    public GpuBigFloatArrayMutationAndSliceTests()
-    {
-        CudaCapability.EnsureGpuAvailable();
-        _scope = new GpuKernelLoader.CudaContextScope();
-        _context = new GpuWorkspace(1024 * 1024, GpuExecutionEngine.GSharpAot);
-    }
-
-    public void Dispose()
-    {
-        _context.Dispose();
-        _scope.Dispose();
-    }
-
-    private GpuBigFloat CreateFloat(long value, int exponent = 0, int numWords = 4) =>
-        GpuBigFloatTestHelpers.CreateFloat(_context, value, exponent, numWords);
-
     // A slice must lie inside the array; the outer check reports the offending range as `elementOffset`.
     // The inner GpuBigUIntArray.Slice throws the same exception type without a ParamName, so ParamName tells the
     // outer check apart from the inner one.
@@ -47,7 +28,7 @@ public sealed class GpuBigFloatArrayMutationAndSliceTests : IDisposable
     [InlineData(1, 0)]
     public void GpuBigFloatArray_Slice_InsideBounds_Succeeds(int offset, int count)
     {
-        using var array = new GpuBigFloatArray(_context, 4, 2);
+        using var array = new GpuBigFloatArray(Context, 4, 2);
 
         // The slice is a view of the array's memory; it is not disposed separately.
         var slice = array.Slice(offset, count);
@@ -67,7 +48,7 @@ public sealed class GpuBigFloatArrayMutationAndSliceTests : IDisposable
     [InlineData(1, 4)]
     public void GpuBigFloatArray_Slice_OutsideBounds_Throws(int offset, int count)
     {
-        using var array = new GpuBigFloatArray(_context, 4, 2);
+        using var array = new GpuBigFloatArray(Context, 4, 2);
 
         var error = Assert.Throws<ArgumentOutOfRangeException>(() => array.Slice(offset, count));
         Assert.Equal("elementOffset", error.ParamName);
@@ -80,9 +61,9 @@ public sealed class GpuBigFloatArrayMutationAndSliceTests : IDisposable
     public void GpuBigFloatArray_InternalCtor_MismatchedLengths_Throws()
     {
         // The constructor throws before it takes ownership, so the test disposes the arrays.
-        using var significands = new GpuBigUIntArray(_context, 2, 4);
-        using var exponents = new GpuBigUIntArray(_context, 2, 1);
-        using var signs = new GpuBigUIntArray(_context, 3, 1);
+        using var significands = new GpuBigUIntArray(Context, 2, 4);
+        using var exponents = new GpuBigUIntArray(Context, 2, 1);
+        using var signs = new GpuBigUIntArray(Context, 3, 1);
 
         // mutant: GpuBigFloatArray.cs:72 `||` -> `&&`, L74 `throw` removed
         Assert.Throws<ArgumentException>(() => new GpuBigFloatArray(significands, exponents, signs));
@@ -96,8 +77,8 @@ public sealed class GpuBigFloatArrayMutationAndSliceTests : IDisposable
     [Scenario(TestScenario.Boundary)]
     public void GpuBigFloatArray_Subtract_DifferenceReachesTheTopBit_TakesTheSignFromTheBorrow()
     {
-        using var left = new GpuBigFloatArray(_context, 2, 1);
-        using var right = new GpuBigFloatArray(_context, 2, 1);
+        using var left = new GpuBigFloatArray(Context, 2, 1);
+        using var right = new GpuBigFloatArray(Context, 2, 1);
         using var big = CreateFloat(0xFFFFFFFFL, exponent: 32, numWords: 1);
         using var one = CreateFloat(1, numWords: 1);
         left.SetElement(0, big);
@@ -106,9 +87,9 @@ public sealed class GpuBigFloatArrayMutationAndSliceTests : IDisposable
         right.SetElement(1, big);
 
         using var zip = left.AsVectorizedEnumerable().ZipSubtract(right.AsVectorizedEnumerable());
-        var zipResult = zip.Evaluate(_context);
+        var zipResult = zip.Evaluate(Context);
         using var select = left.AsVectorizedEnumerable().SelectSubtract(one);
-        var selectResult = select.Evaluate(_context);
+        var selectResult = select.Evaluate(Context);
 
         var difference = (BigInteger.One << 64) - (BigInteger.One << 32) - 1;
         AssertElement(zipResult.GetElement(0), difference, 1, "ZipSubtract element 0");
@@ -124,8 +105,8 @@ public sealed class GpuBigFloatArrayMutationAndSliceTests : IDisposable
     [Scenario(TestScenario.SadPath)]
     public void GpuBigFloatArray_Divide_ZeroDivisor_ThrowsDivideByZeroException()
     {
-        using var dividends = new GpuBigFloatArray(_context, 2, 4);
-        using var divisors = new GpuBigFloatArray(_context, 2, 4);
+        using var dividends = new GpuBigFloatArray(Context, 2, 4);
+        using var divisors = new GpuBigFloatArray(Context, 2, 4);
         using var three = CreateFloat(3);
         using var five = CreateFloat(5);
         using var one = CreateFloat(1);
@@ -138,8 +119,8 @@ public sealed class GpuBigFloatArrayMutationAndSliceTests : IDisposable
         using var byScalar = dividends.AsVectorizedEnumerable().SelectDivide(zero);
         using var byVector = dividends.AsVectorizedEnumerable().ZipDivide(divisors.AsVectorizedEnumerable());
 
-        Assert.Throws<DivideByZeroException>(() => byScalar.Evaluate(_context));
-        Assert.Throws<DivideByZeroException>(() => byVector.Evaluate(_context));
+        Assert.Throws<DivideByZeroException>(() => byScalar.Evaluate(Context));
+        Assert.Throws<DivideByZeroException>(() => byVector.Evaluate(Context));
     }
 
     // SetElement replaces the whole element: a shorter value leaves no stale upper words, and it never writes
@@ -149,14 +130,14 @@ public sealed class GpuBigFloatArrayMutationAndSliceTests : IDisposable
     [Scenario(TestScenario.Boundary)]
     public void GpuBigFloatArray_SetElement_ShorterAndLongerValues()
     {
-        using var array = new GpuBigFloatArray(_context, 2, 4);
+        using var array = new GpuBigFloatArray(Context, 2, 4);
 
         // 1. A 4-word all-ones value, then a 1-word 5: the element reads back as exactly 5.
         // mutant: GpuBigFloatArray.cs:122 `valueWords < WordsPerElement` -> `>` / negated,
         // L124 ClearMemoryAsync removed
         using var allOnes = new GpuBigFloat(
-            new GpuBigUInt(_context, [0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu]), 0, false);
-        using var five = new GpuBigFloat(new GpuBigUInt(_context, [5u]), 3, true);
+            new GpuBigUInt(Context, [0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu]), 0, false);
+        using var five = new GpuBigFloat(new GpuBigUInt(Context, [5u]), 3, true);
         array.SetElement(0, allOnes);
         array.SetElement(0, five);
 
@@ -170,9 +151,9 @@ public sealed class GpuBigFloatArrayMutationAndSliceTests : IDisposable
         // GpuBigFloatArray_SetElement_RoundsWideValuesTowardZero).
         // mutant: GpuBigFloatArray.cs:120 `valueWords <= WordsPerElement` ->
         // `valueWords <= WordsPerElement + 2` (copies 6 words over element 1)
-        using var seven = new GpuBigFloat(new GpuBigUInt(_context, [7u, 0u, 0u, 0u]), -2, false);
+        using var seven = new GpuBigFloat(new GpuBigUInt(Context, [7u, 0u, 0u, 0u]), -2, false);
         array.SetElement(1, seven);
-        using var wide = new GpuBigFloat(new GpuBigUInt(_context, [1u, 2u, 3u, 4u, 5u, 6u]), 0, false);
+        using var wide = new GpuBigFloat(new GpuBigUInt(Context, [1u, 2u, 3u, 4u, 5u, 6u]), 0, false);
         array.SetElement(0, wide);
 
         var element1 = array.GetElement(1);
@@ -196,13 +177,13 @@ public sealed class GpuBigFloatArrayMutationAndSliceTests : IDisposable
     public void GpuBigFloatArray_SetElement_RoundsWideValuesTowardZero(string caseName)
     {
         var (words, exponent, isNegative) = GpuBigFloatTestHelpers.s_setElementCases[caseName];
-        using var array = new GpuBigFloatArray(_context, 3, 4);
-        using var before = new GpuBigFloat(new GpuBigUInt(_context, [11u, 0u, 0u, 0u]), -1, false);
-        using var after = new GpuBigFloat(new GpuBigUInt(_context, [13u, 0u, 0u, 0u]), 2, true);
+        using var array = new GpuBigFloatArray(Context, 3, 4);
+        using var before = new GpuBigFloat(new GpuBigUInt(Context, [11u, 0u, 0u, 0u]), -1, false);
+        using var after = new GpuBigFloat(new GpuBigUInt(Context, [13u, 0u, 0u, 0u]), 2, true);
         array.SetElement(0, before);
         array.SetElement(2, after);
 
-        using var value = new GpuBigFloat(new GpuBigUInt(_context, words), exponent, isNegative);
+        using var value = new GpuBigFloat(new GpuBigUInt(Context, words), exponent, isNegative);
         array.SetElement(1, value);
 
         // The expected value comes from the input words: RZ_128(|v|) (|v| itself when it fits) with the sign of v.
@@ -226,16 +207,16 @@ public sealed class GpuBigFloatArrayMutationAndSliceTests : IDisposable
     [Scenario(TestScenario.SadPath)]
     public void GpuBigFloatArray_SetElement_ExponentOutOfRange_Throws()
     {
-        using var array = new GpuBigFloatArray(_context, 1, 4);
+        using var array = new GpuBigFloatArray(Context, 1, 4);
 
         // 6 words with the top bit set: the shift is 128 - 192 = -64, so the exponent would be int.MaxValue - 10 + 64.
         using var wide = new GpuBigFloat(
-            new GpuBigUInt(_context, [1u, 0u, 0u, 0u, 0u, 0x8000_0000u]), int.MaxValue - 10, false);
+            new GpuBigUInt(Context, [1u, 0u, 0u, 0u, 0u, 0x8000_0000u]), int.MaxValue - 10, false);
         Assert.Throws<OverflowException>(() => array.SetElement(0, wide));
 
         // The largest exponent that fits is stored: int.MaxValue - 64 + 64.
         using var fits = new GpuBigFloat(
-            new GpuBigUInt(_context, [1u, 0u, 0u, 0u, 0u, 0x8000_0000u]), int.MaxValue - 64, false);
+            new GpuBigUInt(Context, [1u, 0u, 0u, 0u, 0u, 0x8000_0000u]), int.MaxValue - 64, false);
         array.SetElement(0, fits);
         Assert.Equal(int.MaxValue, array.GetElement(0).Exponent);
     }

@@ -11,31 +11,8 @@ using static Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum.Expressions.GpuBigFloatTe
 namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum.Expressions;
 
 [TestTarget(ExecutionTarget.GpuExecution)]
-public class GpuBigFloatStackLinqTests : IDisposable
+public class GpuBigFloatStackLinqTests : GpuBigFloatWorkspaceTestBase
 {
-    private readonly GpuKernelLoader.CudaContextScope _scope;
-    private readonly GpuWorkspace _context;
-
-    public GpuBigFloatStackLinqTests()
-    {
-        CudaCapability.EnsureGpuAvailable();
-        _scope = new GpuKernelLoader.CudaContextScope();
-        _context = new GpuWorkspace(1024 * 1024, GpuExecutionEngine.GSharpAot);
-    }
-
-    public void Dispose()
-    {
-        _context.Dispose();
-        _scope.Dispose();
-    }
-
-    private GpuBigFloat CreateFloat(long value, int exponent = 0, int numWords = 4) =>
-        GpuBigFloatTestHelpers.CreateFloat(_context, value, exponent, numWords);
-
-    private T CreateNumber<T>(uint value)
-        where T : struct, IGpuBigNumber<T> =>
-        GpuBigFloatTestHelpers.CreateNumber<T>(_context, value);
-
     [Fact]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.HappyPath)]
@@ -156,11 +133,11 @@ public class GpuBigFloatStackLinqTests : IDisposable
     [Scenario(TestScenario.HappyPath)]
     public void StackEnumerable_GenericUnification_GpuBigUInt_And_GpuBigUFloat_CalculateCorrectResults()
     {
-        using var u0 = new GpuBigUInt(_context, [10u, 0u, 0u, 0u]);
-        using var u1 = new GpuBigUInt(_context, [20u, 0u, 0u, 0u]);
-        using var u2 = new GpuBigUInt(_context, [30u, 0u, 0u, 0u]);
-        using var u3 = new GpuBigUInt(_context, [40u, 0u, 0u, 0u]);
-        using var uScalar = new GpuBigUInt(_context, [5u, 0u, 0u, 0u]);
+        using var u0 = new GpuBigUInt(Context, [10u, 0u, 0u, 0u]);
+        using var u1 = new GpuBigUInt(Context, [20u, 0u, 0u, 0u]);
+        using var u2 = new GpuBigUInt(Context, [30u, 0u, 0u, 0u]);
+        using var u3 = new GpuBigUInt(Context, [40u, 0u, 0u, 0u]);
+        using var uScalar = new GpuBigUInt(Context, [5u, 0u, 0u, 0u]);
 
         var uintArray = new[] { u0, u1, u2, u3 };
 
@@ -188,10 +165,10 @@ public class GpuBigFloatStackLinqTests : IDisposable
         Assert.Equal(new BigInteger(20), uDivSum.ToBigInteger());
 
         // GpuBigUFloat sequences
-        using var uf0 = new GpuBigUFloat(new GpuBigUInt(_context, [12u, 0u, 0u, 0u]), 0);
-        using var uf1 = new GpuBigUFloat(new GpuBigUInt(_context, [24u, 0u, 0u, 0u]), 0);
-        using var uf2 = new GpuBigUFloat(new GpuBigUInt(_context, [36u, 0u, 0u, 0u]), 0);
-        using var ufScalar = new GpuBigUFloat(new GpuBigUInt(_context, [3u, 0u, 0u, 0u]), 0);
+        using var uf0 = new GpuBigUFloat(new GpuBigUInt(Context, [12u, 0u, 0u, 0u]), 0);
+        using var uf1 = new GpuBigUFloat(new GpuBigUInt(Context, [24u, 0u, 0u, 0u]), 0);
+        using var uf2 = new GpuBigUFloat(new GpuBigUInt(Context, [36u, 0u, 0u, 0u]), 0);
+        using var ufScalar = new GpuBigUFloat(new GpuBigUInt(Context, [3u, 0u, 0u, 0u]), 0);
 
         var ufloatArray = new[] { uf0, uf1, uf2 };
 
