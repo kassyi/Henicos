@@ -17,7 +17,7 @@ public class KernelMemoryHandlerTests
         canceled.Cancel();
 
         // A zero-word copy is complete at once, or canceled when the token already is.
-        // mutant: KernelMemoryHandler.cs:109 `IsCancellationRequested ? ... : ...` condition -> `true` / `false`
+        // mutant: KernelMemoryHandler.cs:109-111 `IsCancellationRequested ? ... : ...` condition -> `true` / `false`
         Assert.True(handler.CopyDeviceToHostAsync(host, IntPtr.Zero, 0, IntPtr.Zero, canceled.Token).IsCanceled);
         Assert.True(handler.CopyDeviceToHostAsync(host, IntPtr.Zero, 0, IntPtr.Zero).IsCompletedSuccessfully);
 

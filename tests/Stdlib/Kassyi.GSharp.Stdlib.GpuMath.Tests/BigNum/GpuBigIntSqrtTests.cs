@@ -149,7 +149,8 @@ public class GpuBigIntSqrtTests
     // big-float Sqrt): the root agrees with the test's own integer square root and satisfies r² <= a < (r + 1)².
     // The squares, r² - 1 and r² + 2r are where an approximation one below the floor has to step up, or must not.
     // mutant: GpuBigIntDivRem.Sqrt.cs:103 `SqrtFloorCorrection(...)` removed (Square, n = 8, 16, 17)
-    // mutant: GpuBigIntDivRem.Sqrt.cs:111 `(rootWords + 1) / 2` -> `Math.Max(1, (rootWords + 1) / 2 - 1)` (SquarePlus2R and SquareMinus1 at
+    // mutant: GpuBigIntDivRem.Sqrt.cs:111 `(rootWords + 1) / 2` -> `Math.Max(1, (rootWords + 1) / 2 - 1)` (SquarePlus2R
+    //         and SquareMinus1 at
     // n = 4, 8, 16: the estimate is more than one below, beyond what the design allows)
     // mutant: GpuBigIntSqrtKernels.cu.cs:175 `AddSmallSigned(trial, slackWords, -1)` removed (Highest, n = 16, 17)
     [SkippableTheory]
@@ -197,7 +198,8 @@ public class GpuBigIntSqrtTests
     // P2: the error of the approximation, sqrt(A) - A_top·x / 2^s, lies in [0, 2^-16 + 2^-32), the bound the design
     // derives. With a margin one word smaller (odd n) the error can reach 1; a gap of 2 then needs an input that no seeded
     // search found, so P2 is what catches it.
-    // mutant: GpuBigIntDivRem.Sqrt.cs:111 `(rootWords + 1) / 2` -> `rootWords / 2` (every odd n with TopSquareMaxLow and others:
+    // mutant: GpuBigIntDivRem.Sqrt.cs:111 `(rootWords + 1) / 2` -> `rootWords / 2` (every odd n with TopSquareMaxLow
+    //         and others:
     // P2; P1 holds for every input here)
     // mutant: GpuBigIntDivRem.Sqrt.cs:118 `+ 48` -> `+ 47` (every input: the estimate is twice the root)
     [Theory]

@@ -44,7 +44,7 @@ public class GpuBigFloatArrayMutationAndSliceTests : GpuBigFloatWorkspaceTestBas
     // mutant: GpuBigUIntArrayView.cs:96 `||` -> `&&` (either), L98 `throw` removed
     [InlineData(-1, 1)]
     [InlineData(0, -1)]
-    // mutant: GpuBigUIntArrayView.cs:96 `elementOffset + elementCount` -> `elementOffset - elementCount`
+    // mutant: GpuBigUIntArrayView.cs:96 `Length - elementCount` -> `Length + elementCount`
     [InlineData(1, 4)]
     public void GpuBigFloatArray_Slice_OutsideBounds_Throws(int offset, int count)
     {

@@ -510,7 +510,8 @@ public class GpuBigIntStackLinqExtensionsTests : IDisposable
         Assert.Equal(new BigInteger(10), ToBigInt(array.AsStackEnumerable().AsParallel().Select(ToExpr).Max().Evaluate(_context)));
         Assert.Equal(new BigInteger(-7), ToBigInt(array.AsStackEnumerable().AsParallel().Select(ToExpr).Min().Evaluate(_context)));
 
-        // mutant: GpuBigIntStackLinqExtensions.cs:496 / 518 / 540 / 602 (sequential GpuBigInt Sum / Max / Min / Average)
+        // mutant: GpuBigIntStackLinqExtensions.cs:496 / 518 / 540 / 602 (sequential GpuBigInt
+        //         Sum / Max / Min / Average)
         Assert.Equal(new BigInteger(11), ToBigInt(array.AsStackEnumerable().Sum().Evaluate(_context)));
         Assert.Equal(new BigInteger(10), ToBigInt(array.AsStackEnumerable().Max().Evaluate(_context)));
         Assert.Equal(new BigInteger(-7), ToBigInt(array.AsStackEnumerable().Min().Evaluate(_context)));
@@ -592,13 +593,15 @@ public class GpuBigIntStackLinqExtensionsTests : IDisposable
             new BigInteger(5),
             ToBigInt(a.AsStackEnumerable().AsParallel().Select(ToExpr).ZipModulo(b.AsStackEnumerable().AsParallel().Select(ToExpr)).Sum().Evaluate(_context)));
 
-        // mutant: GpuBigIntStackLinqExtensions.cs:371 / 399 (sequential GpuBigInt), 385 / 413 (sequential GpuBigIntExpr)
+        // mutant: GpuBigIntStackLinqExtensions.cs:371 / 399 (sequential GpuBigInt), 385 / 413 (sequential
+        //         GpuBigIntExpr)
         Assert.Equal(new BigInteger(7), ToBigInt(a.AsStackEnumerable().SelectDivide(scalar).Sum().Evaluate(_context)));
         Assert.Equal(new BigInteger(5), ToBigInt(a.AsStackEnumerable().SelectModulo(scalar).Sum().Evaluate(_context)));
         Assert.Equal(new BigInteger(7), ToBigInt(a.AsStackEnumerable().Select(ToExpr).SelectDivide(scalar).Sum().Evaluate(_context)));
         Assert.Equal(new BigInteger(5), ToBigInt(a.AsStackEnumerable().Select(ToExpr).SelectModulo(scalar).Sum().Evaluate(_context)));
 
-        // mutant: GpuBigIntStackLinqExtensions.cs:430 / 464 (sequential GpuBigInt), 447 / 481 (sequential GpuBigIntExpr)
+        // mutant: GpuBigIntStackLinqExtensions.cs:430 / 464 (sequential GpuBigInt), 447 / 481 (sequential
+        //         GpuBigIntExpr)
         Assert.Equal(new BigInteger(8), ToBigInt(a.AsStackEnumerable().ZipDivide(b.AsStackEnumerable()).Sum().Evaluate(_context)));
         Assert.Equal(new BigInteger(5), ToBigInt(a.AsStackEnumerable().ZipModulo(b.AsStackEnumerable()).Sum().Evaluate(_context)));
         Assert.Equal(

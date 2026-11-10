@@ -215,7 +215,7 @@ public class GpuBigIntContextTests
         // One context takes some hundred MiB, so three leaked contexts stand out.
         // mutant: GpuWorkspace.cs:346 `DisposeEngineResources(exceptions)` removed
         // mutant: GpuWorkspace.cs:435 `Stream == IntPtr.Zero` -> `Stream != IntPtr.Zero`
-        // mutant: GpuWorkspace.cs:461 `GpuKernelLoader.DestroyContext(_isolatedContext)` removed
+        // mutant: GpuWorkspace.cs:461 `GpuKernelLoader.DestroyContext(IsolatedContext.Handle)` removed
         CudaCapability.EnsureGpuAvailable();
         AssertReleasesDeviceMemory(128 * MiB, static () =>
         {

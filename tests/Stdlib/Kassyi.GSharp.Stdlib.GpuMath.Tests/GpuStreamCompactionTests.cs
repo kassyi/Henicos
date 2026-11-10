@@ -132,7 +132,8 @@ public class GpuStreamCompactionTests : IDisposable
         var scanError = Record.Exception(() => StreamCompactionOrchestrator.ExecuteExclusiveScan(workspace, ptr, ptr, 0));
         Assert.Null(scanError);
 
-        // mutant: StreamCompactionOrchestrator.cs:200 `||` -> `&&`, `<= 0` -> `< 0` (either operand), L202 `return` removed
+        // mutant: StreamCompactionOrchestrator.cs:200 `||` -> `&&`, `<= 0` -> `< 0` (either operand), L202 `return`
+        //         removed
         foreach (var (count, words) in new[] { (0, 1), (1, 0), (0, 0) })
         {
             var request = new StreamCompactionOrchestrator.StreamCompactionRequest(ptr, ptr, ptr, ptr, count, words);

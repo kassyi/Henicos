@@ -51,7 +51,8 @@ public sealed class GpuBigUIntArrayTests : IDisposable
     public void GetElement_OutOfRange_Throws(int index)
     {
         // Only 0 <= index < Length names an element.
-        // mutant: GpuBigUIntArrayView.cs:79 `index < 0` -> `index <= 0` / `index >= Length` -> `index > Length` / `||` -> `&&`
+        // mutant: GpuBigUIntArrayView.cs:79 `index < 0` -> `index <= 0` / `index >= Length` -> `index > Length` / `||`
+        //         -> `&&`
         using var array = new GpuBigUIntArray(_workspace, Length, WordsPerElement);
         var error = Assert.Throws<ArgumentOutOfRangeException>(() => array.GetElement(index));
         Assert.Equal("index", error.ParamName);
@@ -111,8 +112,9 @@ public sealed class GpuBigUIntArrayTests : IDisposable
     public void SliceOfSlice_AndElementOfSlice_AddTheOffsets()
     {
         // Offsets add up: a slice of a slice and an element of a slice start after the outer slice's offset.
-        // mutant: GpuBigIntMemoryHandle.cs:175 `Handle.WordOffset + ...` -> `Handle.WordOffset - ...`
-        // mutant: GpuBigIntMemoryHandle.cs:175 `Handle.WordOffset + ...` -> `Handle.WordOffset - ...`
+        // mutant: GpuBigIntMemoryHandle.cs:175 `WordOffset + wordOffset` -> `WordOffset - wordOffset` (both the slice
+        //         and the
+        //         element of a slice go through GpuBigIntMemoryHandle.Slice)
         using var array = new GpuBigUIntArray(_workspace, Length, WordsPerElement);
         var outer = array.Slice(1, 2);
         Assert.Equal(array.DevicePointer + (2 * ElementBytes), outer.Slice(1, 1).DevicePointer);

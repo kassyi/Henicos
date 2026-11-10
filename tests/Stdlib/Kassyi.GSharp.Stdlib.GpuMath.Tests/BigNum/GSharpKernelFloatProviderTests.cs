@@ -459,7 +459,8 @@ public class GSharpKernelFloatProviderTests : IDisposable
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Stdlib)]
     [Scenario(TestScenario.Boundary)]
-    // mutant: GSharpKernelFloatProvider.cs:396 `n - words / 2` -> `n - words` (2 and 3, inverse: 113 bits)
+    // mutant: GSharpKernelFloatProvider.cs:396 `resultSig.NumWords - words / 2` -> `resultSig.NumWords - words`
+    //         (2 and 3, inverse: 113 bits)
     [InlineData(2u, false)]
     [InlineData(2u, true)]
     [InlineData(3u, false)]

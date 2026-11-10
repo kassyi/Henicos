@@ -218,7 +218,8 @@ public class GpuBigUFloatTests : IDisposable
     public static TheoryData<uint, int, int, bool, uint, int> NormalizeCases => new()
     {
         // No carry and no shift keeps the value and its exponent.
-        // mutant: GpuBigUFloat.cs:136 `IsZero() && !carryOut` -> `IsZero() || !carryOut` / `!(...)` (returns exponent 0)
+        // mutant: GpuBigUFloat.cs:136 `IsZero() && !carryOut` -> `IsZero() || !carryOut` / `!(...)`
+        //         (returns exponent 0)
         { 10u, 5, 0, false, 10u, 5 },
         // Zero without a carry becomes the canonical zero with exponent 0.
         // mutant: GpuBigUFloat.cs:136 `!carryOut` -> `carryOut`, L137 block removed

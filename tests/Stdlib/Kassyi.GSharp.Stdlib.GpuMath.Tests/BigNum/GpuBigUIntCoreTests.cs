@@ -105,7 +105,8 @@ public class GpuUIntBigIntegerCoreTests : IDisposable
         Assert.Equal("exponent", exponentError.ParamName);
 
         // An unsigned value cannot be negative, except zero (negative zero is zero).
-        // mutant: GpuBigUInt.cs:58 `&&` -> `||` (zero, isNegative: true) / `!magnitude.IsZero()` -> `magnitude.IsZero()`
+        // mutant: GpuBigUInt.cs:58 `&&` -> `||` (zero, isNegative: true) / `!magnitude.IsZero()`
+        //         -> `magnitude.IsZero()`
         var signError = Assert.Throws<ArgumentOutOfRangeException>(() => GpuBigUInt.Create(nonZero, 0, true));
         Assert.Equal("isNegative", signError.ParamName);
         Assert.Equal(zero.DevicePointer, GpuBigUInt.Create(zero, 0, true).DevicePointer);
@@ -123,7 +124,8 @@ public class GpuUIntBigIntegerCoreTests : IDisposable
         Assert.Throws<ArgumentOutOfRangeException>(() => new GpuBigUInt(_context, -1));
 
         // Host data must be given and must not be empty.
-        // mutant: GpuBigUInt.cs:141 `ArgumentNullException.ThrowIfNull(hostData)` removed (NullReferenceException instead)
+        // mutant: GpuBigUInt.cs:141 `ArgumentNullException.ThrowIfNull(hostData)` removed (NullReferenceException
+        //         instead)
         // mutant: GpuBigUInt.cs:142 `hostData.Length == 0` -> `!=` / throw removed
         Assert.Throws<ArgumentNullException>(() => new GpuBigUInt(_context, (uint[])null));
         Assert.Throws<ArgumentException>(() => new GpuBigUInt(_context, Array.Empty<uint>()));
@@ -354,7 +356,7 @@ public class GpuUIntBigIntegerCoreTests : IDisposable
     public void DevicePointer_DefaultAndOffset()
     {
         // A default handle or value has no device memory.
-        // mutant: GpuBigIntMemoryHandle.cs:120 `IsDefault ? IntPtr.Zero : ...` -> `!IsDefault ? ...`
+        // mutant: GpuBigIntMemoryHandle.cs:120 `if (IsDefault)` -> `if (!IsDefault)`
         // mutant: GpuBigUInt.cs:75 `Handle.IsDefault ? ...` -> `!Handle.IsDefault ? ...`
         Assert.Equal(IntPtr.Zero, default(GpuBigIntMemoryHandle).DevicePointer);
         Assert.Equal(IntPtr.Zero, default(GpuBigUInt).DevicePointer);

@@ -67,7 +67,8 @@ public class GpuRadixConverterTests : IDisposable
         var nullError = Assert.Throws<ArgumentNullException>(() => GpuRadixConverter.ConvertAndWrite(null, value, 5, sw));
         Assert.Equal("workspace", nullError.ParamName);
 
-        // mutant: GpuRadixConverter.cs:66 `ArgumentNullException.ThrowIfNull(writer)` removed (the leaf throws a NullReferenceException)
+        // mutant: GpuRadixConverter.cs:66 `ArgumentNullException.ThrowIfNull(writer)` removed (the leaf throws a
+        //         NullReferenceException)
         var writerError = Assert.Throws<ArgumentNullException>(() => GpuRadixConverter.ConvertAndWrite(_context, value, 5, null));
         Assert.Equal("writer", writerError.ParamName);
 

@@ -650,9 +650,11 @@ public class GpuBigFloatRoundingTests : IDisposable
     // mutant: GSharpKernelFloatProvider.cs:335 `checked((int)shift)` -> `checked((int)Math.Max(shift, 0))` (Width9, Width16, Width16ZeroLow)
     // mutant: GSharpKernelFloatProvider.cs:328 `2L * 32 * n` -> `2 * 32 * n` (ParityMin, ParityMinPlus1: E - t wraps)
     // mutant: GpuBigIntDivRem.Sqrt.cs:118 `+ 48` -> `+ 47` (the estimate is twice the root)
-    // mutant: GpuBigIntSqrtKernels.cu.cs:175 `AddSmallSigned(trial, slackWords, -1)` removed (NearSquarePlus2R steps to r + 1,
+    // mutant: GpuBigIntSqrtKernels.cu.cs:175 `AddSmallSigned(trial, slackWords, -1)` removed (NearSquarePlus2R steps to
+    //         r + 1,
     // NearSquareMinus1)
-    // mutant: GpuBigIntSqrtKernels.cu.cs:191 `AddSmallSigned(root, rootWords, 1)` -> `0` (NearSquareExact, NearSquarePlus1,
+    // mutant: GpuBigIntSqrtKernels.cu.cs:191 `AddSmallSigned(root, rootWords, 1)` -> `0` (NearSquareExact,
+    //         NearSquarePlus1,
     // NearSquareNext, SquareWide: the estimate one below the root is not raised)
     [SkippableTheory]
     [Scenario(TestScenario.Boundary)]
@@ -832,7 +834,8 @@ public class GpuBigFloatRoundingTests : IDisposable
     // P1: Rsqrt returns RZ_p(1 / sqrt(a)), the reference RzRsqrt (the test's own integer square root of
     // floor(2^(2k) / s)). P2: the result satisfies the definition by itself, R²·2^(2e)·a <= 1 < (R + 1)²·2^(2e)·a with R of
     // exactly p bits, so an exact inverse root (a power of four) is returned exactly.
-    // mutant: GSharpKernelFloatProvider.cs:396 `n - words / 2` -> `n - words` (Ladder3n4, Width1, Width4, Parity*: fewer than
+    // mutant: GSharpKernelFloatProvider.cs:396 `resultSig.NumWords - words / 2` -> `resultSig.NumWords - words`
+    //         (Ladder3n4, Width1, Width4, Parity*: fewer than
     // p bits)
     // mutant: GSharpKernelFloatProvider.cs:374 `if (shift > 0)` -> `if (true)` (OddExponentFullWidth, OddExponentFullWidthWide:
     // the radicand loses its lowest bit and the result is 1 ulp too large)
