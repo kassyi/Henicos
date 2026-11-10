@@ -6,21 +6,16 @@ using Kassyi.GSharp.Core;
 namespace Kassyi.GSharp.Tests.Shared.Differential;
 
 /// <summary>
-/// Shared test helpers, comparers, cloning delegates, and naming utilities for marshaling and aliasing differential tests.
+/// Shared test helpers, comparers, cloning delegates, and naming utilities
+/// for marshaling and aliasing differential tests.
 /// </summary>
 internal static class MarshalingDifferentialTestHelpers
 {
     /// <summary>
-    /// Builds the fully qualified kernel case name for <see cref="DifferentialCase"/>.
+    /// Builds the case name of a kernel of <see cref="MarshalingAliasingDifferentialKernels"/>.
     /// </summary>
-    internal static string KernelName(string kernelMemberName) =>
-        $"{nameof(MarshalingAliasingDifferentialKernels)}.{kernelMemberName}";
-
-    /// <summary>
-    /// Builds the fully qualified kernel case name with a variant suffix for <see cref="DifferentialCase"/>.
-    /// </summary>
-    internal static string KernelName(string kernelMemberName, string suffix) =>
-        $"{nameof(MarshalingAliasingDifferentialKernels)}.{kernelMemberName}.{suffix}";
+    internal static string KernelName(string kernelMemberName, string? suffix = null) =>
+        DiffKernelNames.Of(typeof(MarshalingAliasingDifferentialKernels), kernelMemberName, suffix);
 
     /// <summary>
     /// Element comparer for <see cref="DiffVec2Padded"/> with bitwise field matching.
