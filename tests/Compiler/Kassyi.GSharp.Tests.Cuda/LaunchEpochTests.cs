@@ -294,35 +294,17 @@ public sealed class LaunchEpochTests
         using var dResult = new GpuBuffer<int>(BlockSize);
         dKeys.CopyToDevice(keys);
 
-        // CU_STREAM_CAPTURE_MODE_THREAD_LOCAL = 1
-        CudaException.ThrowIfError(CudaDriverApi.cuStreamBeginCapture(stream.Handle, 1));
-        IntPtr graph;
-        try
-        {
+        using var graph = CapturedGraph.Capture(stream, hStream =>
             LaunchEpochKernels.LaunchDelayedWriteKernelPtr(dKeys.ToProxy(), 0, dResult.ToProxy(), blockDimX: BlockSize,
-                hStream: stream.Handle);
-        }
-        finally
-        {
-            CudaException.ThrowIfError(CudaDriverApi.cuStreamEndCapture(stream.Handle, out graph));
-        }
+                hStream: hStream));
 
-        CudaException.ThrowIfError(CudaDriverApi.cuGraphInstantiate(out var exec, graph, IntPtr.Zero, IntPtr.Zero, 0));
-        try
+        // The context survives the error, so the graph replays and reports it again
+        for (int replay = 0; replay < 2; replay++)
         {
-            // The context survives the error, so the graph replays and reports it again
-            for (int replay = 0; replay < 2; replay++)
-            {
-                CudaException.ThrowIfError(CudaDriverApi.cuGraphLaunch(exec, stream.Handle));
-                var ex = Assert.Throws<SwitchExpressionException>(stream.Synchronize);
-                Assert.Equal("(4,0,0)", ex.Data["GSharp.ThreadIndex"]);
-                Assert.Null(ex.InnerException);
-            }
-        }
-        finally
-        {
-            CudaDriverApi.cuGraphExecDestroy(exec);
-            CudaDriverApi.cuGraphDestroy(graph);
+            graph.Launch(stream);
+            var ex = Assert.Throws<SwitchExpressionException>(stream.Synchronize);
+            Assert.Equal("(4,0,0)", ex.Data["GSharp.ThreadIndex"]);
+            Assert.Null(ex.InnerException);
         }
     }
 
@@ -380,28 +362,11 @@ public sealed class LaunchEpochTests
         dKeys.CopyToDevice(keys);
         dResult.CopyToDevice(Filled(keys.Length));
 
-        // CU_STREAM_CAPTURE_MODE_THREAD_LOCAL = 1
-        CudaException.ThrowIfError(CudaDriverApi.cuStreamBeginCapture(stream.Handle, 1));
-        IntPtr graph;
-        try
+        using (var graph = CapturedGraph.Capture(stream, hStream =>
+            launch(dKeys.ToProxy(), Rounds, dValues.ToProxy(), dResult.ToProxy(), hStream)))
         {
-            launch(dKeys.ToProxy(), Rounds, dValues.ToProxy(), dResult.ToProxy(), stream.Handle);
-        }
-        finally
-        {
-            CudaException.ThrowIfError(CudaDriverApi.cuStreamEndCapture(stream.Handle, out graph));
-        }
-
-        CudaException.ThrowIfError(CudaDriverApi.cuGraphInstantiate(out var exec, graph, IntPtr.Zero, IntPtr.Zero, 0));
-        try
-        {
-            CudaException.ThrowIfError(CudaDriverApi.cuGraphLaunch(exec, stream.Handle));
+            graph.Launch(stream);
             Assert.Throws<SwitchExpressionException>(stream.Synchronize);
-        }
-        finally
-        {
-            CudaDriverApi.cuGraphExecDestroy(exec);
-            CudaDriverApi.cuGraphDestroy(graph);
         }
 
         var result = new int[keys.Length];
@@ -417,5 +382,43 @@ public sealed class LaunchEpochTests
         var values = new int[length];
         Array.Fill(values, Untouched);
         return values;
+    }
+
+    // A launch captured into a CUDA graph and the graph's executable instance, both destroyed on Dispose
+    private sealed class CapturedGraph(IntPtr graph, IntPtr exec) : IDisposable
+    {
+        // Captures what <launch> enqueues on the stream (the stream handle is its argument) and instantiates it
+        public static CapturedGraph Capture(CudaStream stream, Action<IntPtr> launch)
+        {
+            // CU_STREAM_CAPTURE_MODE_THREAD_LOCAL = 1
+            CudaException.ThrowIfError(CudaDriverApi.cuStreamBeginCapture(stream.Handle, 1));
+            IntPtr graph;
+            try
+            {
+                launch(stream.Handle);
+            }
+            finally
+            {
+                CudaException.ThrowIfError(CudaDriverApi.cuStreamEndCapture(stream.Handle, out graph));
+            }
+
+            var result = CudaDriverApi.cuGraphInstantiate(out var exec, graph, IntPtr.Zero, IntPtr.Zero, 0);
+            if (result != CUresult.CudaSuccess)
+            {
+                CudaDriverApi.cuGraphDestroy(graph);
+                CudaException.ThrowIfError(result);
+            }
+
+            return new CapturedGraph(graph, exec);
+        }
+
+        public void Launch(CudaStream stream) =>
+            CudaException.ThrowIfError(CudaDriverApi.cuGraphLaunch(exec, stream.Handle));
+
+        public void Dispose()
+        {
+            CudaDriverApi.cuGraphExecDestroy(exec);
+            CudaDriverApi.cuGraphDestroy(graph);
+        }
     }
 }
