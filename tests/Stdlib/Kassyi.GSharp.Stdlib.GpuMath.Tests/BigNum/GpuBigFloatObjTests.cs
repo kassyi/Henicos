@@ -91,7 +91,7 @@ public class GpuBigFloatObjTests
         using var a = new GpuBigFloat(new GpuBigUInt(ctx, [12u]), 0, false);
         using var b = new GpuBigFloat(new GpuBigUInt(ctx, [3u]), 0, true);
 
-        // mutant: GpuBigFloat.cs:159 / 166 / 173 / 180 `this + other` -> `this - other` and the like
+        // mutant: GpuBigFloat.cs:146 / 153 / 160 / 167 `this + other` -> `this - other` and the like
         using var sum = a.Add(b);
         using var difference = a.Subtract(b);
         using var product = a.Multiply(b);
@@ -159,7 +159,7 @@ public class GpuBigFloatObjTests
         Assert.Equal(-expected, Math.Sign(GpuBigNumberAlgorithms.Compare(right, left)));
 
         // The strict operators agree with Compare; equal values (+0 and -0) are neither less nor greater.
-        // mutant: GpuBigFloat.cs:236 `< 0` -> `<= 0`, L244 `> 0` -> `>= 0`
+        // mutant: GpuBigFloat.cs:231 `< 0` -> `<= 0`, L239 `> 0` -> `>= 0`
         Assert.Equal(expected < 0, left < right);
         Assert.Equal(expected > 0, left > right);
     }

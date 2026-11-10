@@ -35,6 +35,37 @@ public struct OrderPair
     }
 }
 
+// The field keyword reads the backing field of the property, a field of this; Bump writes it through the setter
+public struct OrderFieldKeyword
+{
+    public int FieldRead
+    {
+        get
+        {
+            var result = field;
+            return result;
+        }
+        set => field = value;
+    }
+
+    public int FieldThenWrite
+    {
+        get
+        {
+            var result = field + Bump(ref this);
+            return result;
+        }
+        set => field = value;
+    }
+
+    [GpuDeviceFunction]
+    public static int Bump(ref OrderFieldKeyword order)
+    {
+        order.FieldThenWrite = 100;
+        return 1;
+    }
+}
+
 // Each case method ends with 'var result = <expression>;': the expression whose operands are analysed
 public static class Order
 {

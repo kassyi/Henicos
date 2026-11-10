@@ -47,7 +47,7 @@ public class GpuBigIntModInverseTests
         using var gpuN = GpuBigUInt.FromBigInteger(ctx, n, 4);
         using var result = new GpuBigUInt(ctx, 4);
 
-        // mutant: KernelAdvancedMathHandler.cs:119 host loop call removed, L120 `return` removed
+        // mutant: KernelAdvancedMathHandler.cs:153 host loop call removed, L154 `return` removed
         // (the binary GCD kernel requires an odd modulus)
         GpuBigIntMath.ModInverse(gpuA, gpuN, result);
 
@@ -71,7 +71,7 @@ public class GpuBigIntModInverseTests
         using var gpuN = new GpuBigUInt(ctx, [N]);
         using var result = new GpuBigUInt(ctx, 1);
 
-        // mutant: KernelAdvancedMathHandler.cs:138 `numWords * 32 * 4 + 100` -> `- 100` (228 -> 28 iterations)
+        // mutant: KernelAdvancedMathHandler.cs:169 `numWords * 32 * 4 + 100` -> `- 100` (228 -> 28 iterations)
         GpuBigIntMath.ModInverse(gpuA, gpuN, result);
 
         var r = result.ToBigInteger();

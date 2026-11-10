@@ -12,7 +12,7 @@ UnsupportedOperation	Await	AwaitExpression	1
 UnsupportedOperation	CoalesceAssignment	CoalesceAssignmentExpression	8
 UnsupportedOperation	CollectionExpression	CollectionExpression	16
 UnsupportedOperation	ConditionalAccess	ConditionalAccessExpression	4
-UnsupportedOperation	DeconstructionAssignment	SimpleAssignmentExpression	31
+UnsupportedOperation	DeconstructionAssignment	SimpleAssignmentExpression	32
 UnsupportedOperation	DelegateCreation	GenericName	1
 UnsupportedOperation	DelegateCreation	IdentifierName	11
 UnsupportedOperation	DelegateCreation	ParenthesizedLambdaExpression	94
@@ -29,7 +29,7 @@ UnsupportedOperation	SwitchExpression	SwitchExpression	44
 UnsupportedOperation	TranslatedQuery	QueryExpression	1
 UnsupportedOperation	Tuple	TupleExpression	1
 UnsupportedOperation	TypeOf	TypeOfExpression	2
-UnsupportedOperation	With	WithExpression	10
+UnsupportedOperation	With	WithExpression	13
 UnsupportedShape	ArrayCreation	ArrayCreationExpression	2
 UnsupportedShape	ArrayElementReference	ElementAccessExpression	8
 UnsupportedShape	Binary	AddExpression	1
