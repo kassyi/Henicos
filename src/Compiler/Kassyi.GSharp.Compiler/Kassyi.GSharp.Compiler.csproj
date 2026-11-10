@@ -16,6 +16,8 @@
     <InternalsVisibleTo Include="Kassyi.GSharp.Tests" />
     <InternalsVisibleTo Include="Kassyi.GSharp.Tests.Cuda" />
     <InternalsVisibleTo Include="Kassyi.GSharp.Tests.Cpu" />
+    <!-- The generator benchmark measures the build of the intermediate representation -->
+    <InternalsVisibleTo Include="Henicos.Benchmarks" />
   </ItemGroup>
 
   <ItemGroup>

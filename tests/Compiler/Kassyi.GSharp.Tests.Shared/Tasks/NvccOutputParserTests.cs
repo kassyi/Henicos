@@ -1,4 +1,3 @@
-using System.Reflection;
 using Xunit;
 using Kassyi.GSharp.Compiler.Tasks;
 using Kassyi.GSharp.Tests.Shared.Tasks;
@@ -13,17 +12,8 @@ public class NvccOutputParserTests
         MSBuildLocatorSetup.EnsureRegistered();
     }
 
-    private static bool DetectRegisterSpill(string output, string error, out string errorMessage)
-    {
-        var parserType =
-            typeof(CompileCudaToFatbinTask).Assembly.GetType("Kassyi.GSharp.Compiler.Tasks.NvccOutputParser");
-        var detectMethod = parserType.GetMethod("DetectRegisterSpill", BindingFlags.Public | BindingFlags.Static);
-
-        var args = new object[] { output, error, null, null };
-        var result = (bool)detectMethod.Invoke(null, args);
-        errorMessage = (string)args[2];
-        return result;
-    }
+    private static bool DetectRegisterSpill(string output, string error, out string errorMessage) =>
+        NvccOutputParser.DetectRegisterSpill(output, error, out errorMessage);
 
     [Fact]
     public void Test_DetectRegisterSpill_NoSpill()
@@ -66,62 +56,47 @@ public class NvccOutputParserTests
     [Fact]
     public void Test_ExtractWarnings_EdgUnusedVariableAndLabel_ReturnsStructuredWarnings()
     {
-        var parserType =
-            typeof(CompileCudaToFatbinTask).Assembly.GetType("Kassyi.GSharp.Compiler.Tasks.NvccOutputParser");
-        Assert.NotNull(parserType);
-        var extractMethod = parserType.GetMethod("ExtractWarnings", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
-        Assert.NotNull(extractMethod);
-
         var output = """
             C:\temp\kernel.g.cu(102): warning #550-D: variable "dummy" was set but never used
             C:\temp\kernel.g.cu(527): warning #177-D: label "__gsharp_iter_end_1" was declared but never referenced
             """;
-        var warnings = ((System.Collections.IEnumerable)extractMethod.Invoke(null, [output, "", null])).Cast<object>().ToList();
+        var warnings = NvccOutputParser.ExtractWarnings(output, "");
 
         Assert.Equal(2, warnings.Count);
+        Assert.Equal(@"C:\temp\kernel.g.cu", warnings[0].File);
+        Assert.Equal(102, warnings[0].Line);
+        Assert.Equal("550-D", warnings[0].Code);
+        Assert.Contains("variable \"dummy\" was set but never used", warnings[0].Message);
+        Assert.Equal(@"C:\temp\kernel.g.cu", warnings[1].File);
+        Assert.Equal(527, warnings[1].Line);
+        Assert.Equal("177-D", warnings[1].Code);
+        Assert.Contains("label \"__gsharp_iter_end_1\" was declared but never referenced", warnings[1].Message);
     }
 
     [Fact]
     public void Test_DetectRegisterSpill_ScopedSuppression_OnlySuppressesMarkedFunction()
     {
-        var parserType =
-            typeof(CompileCudaToFatbinTask).Assembly.GetType("Kassyi.GSharp.Compiler.Tasks.NvccOutputParser");
-        Assert.NotNull(parserType);
-        var suppressionParserType =
-            typeof(CompileCudaToFatbinTask).Assembly.GetType("Kassyi.GSharp.Compiler.Tasks.SpillSuppressionParser");
-        Assert.NotNull(suppressionParserType);
-        var getSuppressedMethod = suppressionParserType.GetMethod(
-            "GetSuppressedSpillFunctions",
-            BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
-        Assert.NotNull(getSuppressedMethod);
-        var detectMethods = parserType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static)
-            .Where(m => m.Name == "DetectRegisterSpill" && m.GetParameters().Length == 4)
-            .ToArray();
-        var detectMethod = Assert.Single(detectMethods);
-
         var cuContent = """
             // gsharp:suppress GS0001
             extern "C" __global__ void __gsharp_k_SuppressedKernel(int* a) {}
             extern "C" __global__ void __gsharp_k_UnsuppressedKernel(int* b) {}
             """;
-        var suppressed = getSuppressedMethod.Invoke(null, [cuContent]);
+        var suppressed = SpillSuppressionParser.GetSuppressedSpillFunctions(cuContent);
 
         var suppressedOnlyOutput = """
             ptxas warning : Registers are spilled to local memory in function '__gsharp_k_SuppressedKernel', 12 bytes spill stores, 12 bytes spill loads
             ptxas info    : Function properties for __gsharp_k_SuppressedKernel
                 16 bytes stack frame, 12 bytes spill stores, 12 bytes spill loads
             """;
-        var args1 = new object[] { suppressedOnlyOutput, "", null, suppressed };
-        Assert.False((bool)detectMethod.Invoke(null, args1));
+        Assert.False(NvccOutputParser.DetectRegisterSpill(suppressedOnlyOutput, "", out _, suppressed));
 
         var mixedOutput = suppressedOnlyOutput + "\n" + """
             ptxas warning : Registers are spilled to local memory in function '__gsharp_k_UnsuppressedKernel', 8 bytes spill stores, 8 bytes spill loads
             ptxas info    : Function properties for __gsharp_k_UnsuppressedKernel
                 8 bytes stack frame, 8 bytes spill stores, 8 bytes spill loads
             """;
-        var args2 = new object[] { mixedOutput, "", null, suppressed };
-        Assert.True((bool)detectMethod.Invoke(null, args2));
-        Assert.Contains("__gsharp_k_UnsuppressedKernel", (string)args2[2]);
-        Assert.DoesNotContain("__gsharp_k_SuppressedKernel", (string)args2[2]);
+        Assert.True(NvccOutputParser.DetectRegisterSpill(mixedOutput, "", out var errorMessage, suppressed));
+        Assert.Contains("__gsharp_k_UnsuppressedKernel", errorMessage);
+        Assert.DoesNotContain("__gsharp_k_SuppressedKernel", errorMessage);
     }
 }

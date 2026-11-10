@@ -123,6 +123,8 @@ A parallel sequence of values to calculate the average of.
 _GpuBigIntExpr_<br>
 A deferred expression tree representing the parallel average.
 
+The quotient is the sum divided by the count, truncated toward zero as C# integer division, and has the width of the sum. The count is a one-word value that the division writes when it is evaluated, so the expression holds no buffer. A negative sum whose quotient truncates to zero keeps the minus flag (`-0`), as signed `/` does.
+
 #### Exceptions
 
 `InvalidOperationException`<br>

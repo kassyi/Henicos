@@ -320,7 +320,7 @@ return ns;
 // G# grid barrier, an mbarrier); the arrival it waits for may belong to a thread that failed and exited. When the abort
 // word of its launch holds the launch's epoch, a thread of this launch failed and recorded its error, so the waiter
 // leaves: the arriving thread of the grid barrier writes __GSHARP_WAIT_LEAVE into its block's elected rank (leader) and
-// returns, and the barrier lets the whole block exit (__gsharp_grid_sync); an mbarrier waiter (leader is null) exits
+// returns, and the barrier lets the whole block exit (__gsharp_grid_barrier); an mbarrier waiter (leader is null) exits
 // like the failing thread. The launch completes and the host throws the record. [WHY] The mbarrier waiter exits here,
 // and the grid barrier tests the elected rank only after this call returns: a branch to an exit in the inlined wait
 // made ptxas allocate the cooperative megakernels of GpuMath far more registers (InverseSqrt 64 to 145).
@@ -1044,11 +1044,15 @@ return total;
 // driver's grid workspace, unchanged since CUDA 11); the static_assert stops the build if its layout changes.
 #if defined(__CUDA_ARCH__) && __CUDA_ARCH__ >= 700
 static_assert(sizeof(cg::details::grid_workspace) == 8u && __builtin_offsetof(cg::details::grid_workspace, barrier) == 4u,
-""G#: the layout of cooperative_groups' grid workspace changed; __gsharp_grid_sync uses its barrier word"");
+""G#: the layout of cooperative_groups' grid workspace changed; __gsharp_grid_barrier uses its barrier word"");
 
-// Gpu.SyncGrid() and Gpu.SyncGrid(GridSyncMode.Deterministic). Its wait loop (from the add to the end of the polls) is
-// copied in __gsharp_grid_sync_fast: change both together.
-__device__ __forceinline__ void __gsharp_grid_sync() {
+// The grid barrier of both modes: the election, the arrival, the wait and the leave. The modes differ only in the
+// order of the add and the read of the abort word: Deterministic (arriveFirst false) reads the word first and does not
+// arrive after a failure; Fast (arriveFirst true) adds first. [WHY] One function with a constant argument, and the
+// add written out in both places: passing the arrival as a lambda raised the registers of the cooperative GpuMath
+// megakernels (ReciprocalNewtonRaphsonMega from 48 to 68, which no longer fits a cooperative launch of its grid), and
+// a helper function for the add raised those of kernels with a grid barrier by up to 2.
+__device__ __forceinline__ void __gsharp_grid_barrier(const bool arriveFirst) {
 // The elected rank, or __GSHARP_WAIT_LEAVE once the arriving thread saw that the launch failed
 __shared__ unsigned int leader;
 const unsigned int rank = threadIdx.x + blockDim.x * (threadIdx.y + blockDim.y * threadIdx.z);
@@ -1058,7 +1062,16 @@ __syncthreads();
 atomicMin(&leader, rank);
 __syncthreads();
 if (rank == leader) {
-// A block whose launch failed does not arrive (the release add would wait for this load anyway)
+unsigned int* arrived = &cg::details::get_grid_workspace()->barrier;
+// Block 0 adds 2^31 - (blocks - 1), every other block 1
+const unsigned int blocks = gridDim.x * gridDim.y * gridDim.z;
+const unsigned int add = blockIdx.x + blockIdx.y + blockIdx.z == 0u ? 0x80000000u - (blocks - 1u) : 1u;
+unsigned int old = 0u;
+if (arriveFirst) {
+asm volatile(""atom.add.release.gpu.u32 %0,[%1],%2;"" : ""=r""(old) : ""l""(arrived), ""r""(add) : ""memory"");
+}
+// Deterministic: a block whose launch failed does not arrive (the release add would wait for this load anyway).
+// Fast: the block has arrived and leaves without waiting
 const unsigned int epoch = __gsharp_launch_epoch;
 const unsigned int* abortWord = __gsharp_launch_abort_word(epoch);
 const unsigned int aborted =
@@ -1066,11 +1079,9 @@ abortWord != nullptr ? *reinterpret_cast<const volatile unsigned int*>(abortWord
 if (aborted != 0u && aborted == epoch) {
 *reinterpret_cast<volatile unsigned int*>(&leader) = __GSHARP_WAIT_LEAVE;
 } else {
-unsigned int* arrived = &cg::details::get_grid_workspace()->barrier;
-const unsigned int blocks = gridDim.x * gridDim.y * gridDim.z;
-const unsigned int add = blockIdx.x + blockIdx.y + blockIdx.z == 0u ? 0x80000000u - (blocks - 1u) : 1u;
-unsigned int old;
+if (!arriveFirst) {
 asm volatile(""atom.add.release.gpu.u32 %0,[%1],%2;"" : ""=r""(old) : ""l""(arrived), ""r""(add) : ""memory"");
+}
 unsigned int current;
 unsigned int seen = old;
 unsigned int polls = 0u;
@@ -1105,62 +1116,11 @@ __gsharp_exit_thread();
 }
 }
 
-// Gpu.SyncGrid(GridSyncMode.Fast): the barrier above, but the arriving thread arrives first and reads the abort word
-// after its add. [WHY] A function of its own rather than a template parameter of the barrier above: sharing the code
-// raised the registers of the cooperative GpuMath megakernels (ReciprocalNewtonRaphsonMega from 48 to 70, which no
-// longer fits a cooperative launch of its grid), so the Deterministic barrier keeps its code as it is. The wait loop is
-// a copy of the one in __gsharp_grid_sync: change both together. [WHY] Not a shared __forceinline__ function: one
-// keeps the registers of every kernel, but changes the machine code of the Deterministic barrier in every kernel that
-// uses it (branch layout and register assignment), so the copy stays.
-__device__ __forceinline__ void __gsharp_grid_sync_fast() {
-// The elected rank, or __GSHARP_WAIT_LEAVE once the arriving thread saw that the launch failed
-__shared__ unsigned int leader;
-const unsigned int rank = threadIdx.x + blockDim.x * (threadIdx.y + blockDim.y * threadIdx.z);
-// Every thread writes the same value, and no thread reads it before the barrier below
-leader = 0xFFFFFFFFu;
-__syncthreads();
-atomicMin(&leader, rank);
-__syncthreads();
-if (rank == leader) {
-unsigned int* arrived = &cg::details::get_grid_workspace()->barrier;
-const unsigned int blocks = gridDim.x * gridDim.y * gridDim.z;
-const unsigned int add = blockIdx.x + blockIdx.y + blockIdx.z == 0u ? 0x80000000u - (blocks - 1u) : 1u;
-unsigned int old;
-asm volatile(""atom.add.release.gpu.u32 %0,[%1],%2;"" : ""=r""(old) : ""l""(arrived), ""r""(add) : ""memory"");
-// The block has arrived; it leaves without waiting when its launch failed
-const unsigned int epoch = __gsharp_launch_epoch;
-const unsigned int* abortWord = __gsharp_launch_abort_word(epoch);
-const unsigned int aborted =
-abortWord != nullptr ? *reinterpret_cast<const volatile unsigned int*>(abortWord) : 0u;
-if (aborted != 0u && aborted == epoch) {
-*reinterpret_cast<volatile unsigned int*>(&leader) = __GSHARP_WAIT_LEAVE;
-} else {
-unsigned int current;
-unsigned int seen = old;
-unsigned int polls = 0u;
-unsigned long long errorSeen = 0ull;
-for (;;) {
-asm volatile(""ld.acquire.gpu.u32 %0,[%1];"" : ""=r""(current) : ""l""(arrived) : ""memory"");
-if (((old ^ current) & 0x80000000u) != 0u) {
-break;
-}
-if (current != seen) {
-seen = current;
-__gsharp_wait_note_progress(&errorSeen);
-} else if ((++polls & 1023u) == 0u) {
-__gsharp_wait_check(&errorSeen, &leader);
-if (*reinterpret_cast<volatile unsigned int*>(&leader) == __GSHARP_WAIT_LEAVE) {
-break;
-}
-}
-}
-}
-}
-__syncthreads();
-if (*reinterpret_cast<volatile unsigned int*>(&leader) == __GSHARP_WAIT_LEAVE) {
-__gsharp_exit_thread();
-}
-}
+// Gpu.SyncGrid() and Gpu.SyncGrid(GridSyncMode.Deterministic)
+__device__ __forceinline__ void __gsharp_grid_sync() { __gsharp_grid_barrier(false); }
+
+// Gpu.SyncGrid(GridSyncMode.Fast)
+__device__ __forceinline__ void __gsharp_grid_sync_fast() { __gsharp_grid_barrier(true); }
 #else
 __device__ __forceinline__ void __gsharp_grid_sync() { cg::this_grid().sync(); }
 __device__ __forceinline__ void __gsharp_grid_sync_fast() { cg::this_grid().sync(); }
