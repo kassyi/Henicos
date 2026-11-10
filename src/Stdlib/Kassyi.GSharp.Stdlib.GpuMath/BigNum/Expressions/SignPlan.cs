@@ -92,7 +92,8 @@ internal enum SignKernel
     // One kernel adds or subtracts the magnitudes by their effective signs and writes the sign (borrow, zero is +)
     AddSubtract,
 
-    // One kernel compares the operands, copies the one Max or Min chooses and writes its sign
+    // One kernel compares the operands and copies the one Max or Min chooses, its sign flag included (the result is
+    // one of the operands); with operands of the same host sign, the sign stays on the host (SignPlan.HostSign)
     Select,
 
     // The sign of a remainder: the dividend's when the remainder is not zero, + otherwise
@@ -114,14 +115,23 @@ internal enum ChosenOperand
 internal readonly record struct SignPlan(
     SignKernel Kernel,
     bool HostNegative,
-    ChosenOperand Chosen = ChosenOperand.None
+    ChosenOperand Chosen = ChosenOperand.None,
+    bool SignOnHost = false
 )
 {
+    // Nothing is launched for the sign: the host computes the node with HostNegative
     public bool IsHost => Kernel == SignKernel.None;
+
+    // The result's sign is HostNegative, also when a kernel computes the magnitude (Select of the same host signs)
+    public bool HostSign => IsHost || SignOnHost;
 
     public static SignPlan Host(bool negative) => new(SignKernel.None, negative);
 
     public static SignPlan Device(SignKernel kernel) => new(kernel, HostNegative: false);
+
+    // Max or Min of operands with the same host sign: the operand is a value (a comparison on the device), the sign is
+    // that host sign
+    public static SignPlan SelectWithHostSign(bool negative) => new(SignKernel.Select, negative, SignOnHost: true);
 
     // Max or Min of operands with different host signs: the operand with the given sign, for every value, without a
     // comparison
@@ -184,13 +194,19 @@ internal static class SignPlanner
             ? SignPlan.Host(true)
             : SignPlan.Device(SignKernel.Not);
 
-    // Different host signs decide Max and Min for every value: Max is the non-negative operand, Min the negative one.
-    // Otherwise which operand is chosen is a value.
+    // Max and Min return one of the operands, its sign flag included. Different host signs decide the operand for
+    // every value: Max is the non-negative one, Min the negative one. The same host signs leave the operand to a
+    // comparison on the device and the sign on the host; a device sign leaves both to the device.
     private static SignPlan PlanSelect(SignSource first, SignSource second, bool max)
     {
-        if (first.IsDevice || second.IsDevice || first.HostNegative == second.HostNegative)
+        if (first.IsDevice || second.IsDevice)
         {
             return SignPlan.Device(SignKernel.Select);
+        }
+
+        if (first.HostNegative == second.HostNegative)
+        {
+            return SignPlan.SelectWithHostSign(first.HostNegative);
         }
 
         // The chosen operand is the negative one for Min and the other one for Max
