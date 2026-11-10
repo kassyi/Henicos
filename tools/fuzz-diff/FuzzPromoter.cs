@@ -79,13 +79,20 @@ public static class FuzzPromoter
             normalizedColumn,
             fpResult.FailingPathsMask);
 
+        bool split = FuzzSplitOracle.IsSplitKernel(selectedMethod, root);
         string kernelFileContent = BuildReproKernelFile(root, renamedMethod, reproClassName, headerLine);
+        if (split)
+        {
+            kernelFileContent = FuzzSplitOracle.WithOracleTwins(kernelFileContent);
+        }
+
         string caseProperty = FuzzCaseEmitter.RenderDifferentialCaseProperty(
             reproClassName,
             reproMethodName,
             inputSeed,
             headerLine,
-            normalizedColumn);
+            normalizedColumn,
+            split: split);
         string caseSnippetContent =
             $$"""
             {{caseProperty}}
