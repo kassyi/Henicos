@@ -242,7 +242,7 @@ internal static class StructConstructorEmitter
             if (primaryConstructor != null && TryGetPrimaryParameter(member, primaryConstructor, out var parameter))
             {
                 context.Emitter.Writer.Append($"{GSharpInternalNames.Lowering.ConstructorSelf}.")
-                    .Append(StructMemberEmitter.GetMemberName(member.Symbol, ref context))
+                    .Append(StructMemberEmitter.GetMemberName(member, ref context))
                     .Append(" = ");
                 CppNameResolver.AppendSymbolName(parameter, ref context);
                 context.Emitter.Writer.AppendLine(";");
@@ -264,7 +264,7 @@ internal static class StructConstructorEmitter
         try
         {
             context.Emitter.Writer.Append($"{GSharpInternalNames.Lowering.ConstructorSelf}.")
-                .Append(StructMemberEmitter.GetMemberName(member.Symbol, ref context))
+                .Append(StructMemberEmitter.GetMemberName(member, ref context))
                 .Append(" = ");
             context.Visitor.Visit(initializer.Value);
             context.Emitter.Writer.AppendLine(";");

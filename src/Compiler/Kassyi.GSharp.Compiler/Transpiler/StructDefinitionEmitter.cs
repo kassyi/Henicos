@@ -19,7 +19,7 @@ internal static class StructDefinitionEmitter
             return;
         }
 
-        var element = StructMemberEmitter.GetMemberName(firstMember.Symbol, ref context);
+        var element = StructMemberEmitter.GetMemberName(firstMember, ref context);
         WriteStructHeader(ref context, structSym);
         using (context.Emitter.Writer.Scope())
         {
@@ -142,7 +142,7 @@ internal static class StructDefinitionEmitter
             }
             else if (member is IPropertySymbol property && StructAbiMembers.HasAccessorFunctions(property))
             {
-                StructPropertyEmitter.WriteComputedProperty(property, ref context);
+                StructPropertyEmitter.WriteAccessors(property, ref context);
             }
         }
 
@@ -188,7 +188,7 @@ internal static class StructDefinitionEmitter
 
         foreach (var field in layout.DeviceFields)
         {
-            var cppMember = StructMemberEmitter.GetMemberName(field.Member.Symbol, ref context);
+            var cppMember = StructMemberEmitter.GetMemberName(field.Member, ref context);
             var csMember = field.Member.Name;
             context.Emitter.Writer.Append("static_assert(offsetof(")
                 .AppendFullyQualifiedCppName(structSym)

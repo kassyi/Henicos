@@ -19,6 +19,7 @@ namespace Kassyi.GSharp.Naming;
 ///   <item><description><c>__gsharp_id_{ordinal}_{name}</c>: parameters, locals, labels and local functions. The ordinal is omitted when the declaration could not be located.</description></item>
 ///   <item><description><c>__gsharp_il_{region}_{ordinal}_{name}</c>: parameters, locals, labels and local functions of a declaration that a pre-lowering or inline expansion copied into the method; the first number is the copy (region).</description></item>
 ///   <item><description><c>__gsharp_mb_{name}</c>: instance fields and properties of structs that G# emits.</description></item>
+///   <item><description><c>__gsharp_bf_{name}</c>: the backing field of a property of such a struct whose accessors use the <c>field</c> keyword; it decodes to <c>{name}.field</c>.</description></item>
 ///   <item><description><c>__gsharp_ty_</c> / <c>__gsharp_fn_</c> / <c>__gsharp_k_</c> followed by the encoded C# path (<c>Encode</c>): types, device functions and kernel entry points, which share one global C++ scope.</description></item>
 ///   <item><description><c>__gsharp_tp_{name}</c>: template parameters.</description></item>
 /// </list>
@@ -30,6 +31,7 @@ internal static class GSharpNameEncoding
     public const string IdentifierPrefix = "__gsharp_id_";
     public const string InlinedIdentifierPrefix = "__gsharp_il_";
     public const string MemberPrefix = "__gsharp_mb_";
+    public const string BackingFieldPrefix = "__gsharp_bf_";
     public const string TypePrefix = "__gsharp_ty_";
     public const string FunctionPrefix = "__gsharp_fn_";
     public const string KernelPrefix = "__gsharp_k_";
@@ -178,7 +180,8 @@ internal static class GSharpNameEncoding
 
             var kind = identifier.StartsWith(IdentifierPrefix, StringComparison.Ordinal) ||
                        identifier.StartsWith(InlinedIdentifierPrefix, StringComparison.Ordinal) ? "id"
-                : identifier.StartsWith(MemberPrefix, StringComparison.Ordinal) ? "member"
+                : identifier.StartsWith(MemberPrefix, StringComparison.Ordinal) ||
+                  identifier.StartsWith(BackingFieldPrefix, StringComparison.Ordinal) ? "member"
                 : identifier.StartsWith(TypePrefix, StringComparison.Ordinal) ? "type"
                 : identifier.StartsWith(FunctionPrefix, StringComparison.Ordinal) ? "function"
                 : identifier.StartsWith(KernelPrefix, StringComparison.Ordinal) ? "kernel"
@@ -635,6 +638,17 @@ internal static class GSharpNameEncoding
         if (identifier.StartsWith(MemberPrefix, StringComparison.Ordinal))
         {
             return TrySetName(identifier, MemberPrefix.Length, ref csharpName);
+        }
+
+        if (identifier.StartsWith(BackingFieldPrefix, StringComparison.Ordinal))
+        {
+            if (!TrySetName(identifier, BackingFieldPrefix.Length, ref csharpName))
+            {
+                return false;
+            }
+
+            csharpName += ".field";
+            return true;
         }
 
         if (TryDecodeGlobal(identifier, out var display))

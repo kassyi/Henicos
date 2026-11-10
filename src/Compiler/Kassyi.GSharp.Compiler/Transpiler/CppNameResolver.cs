@@ -16,6 +16,12 @@ internal enum CppNameKind : byte
     Member,
 
     /// <summary>
+    /// The backing field of a property of such a struct whose accessors use the <c>field</c> keyword:
+    /// <c>__gsharp_bf_{property name}</c>. The accessors keep the member name of the property.
+    /// </summary>
+    BackingField,
+
+    /// <summary>
     /// A name in the global C++ scope, already complete: <c>__gsharp_ty_</c> / <c>__gsharp_tp_</c> / <c>__gsharp_fn_</c> (see
     /// <see cref="GlobalCppNames"/>).
     /// </summary>
@@ -55,6 +61,8 @@ internal readonly struct CppName
 
     internal static CppName Member(string name) => new(CppNameKind.Member, -1, name);
 
+    internal static CppName BackingField(string propertyName) => new(CppNameKind.BackingField, -1, propertyName);
+
     internal static CppName Global(string cppName) => new(CppNameKind.Global, -1, cppName);
 
     public override string ToString()
@@ -91,6 +99,11 @@ internal static class CppNameResolver
         // member can take that name: a member named like the parameter hides it, and then nothing captures it.
         IFieldSymbol field when StructAbiMembers.TryGetCapturedParameterName(field, out var parameterName) &&
                                 IsEmittedStructMember(field, dialect) => CppName.Member(parameterName),
+        // [WHY] A property whose accessors use the field keyword keeps its name for the accessor member functions, and
+        // C++ allows no data member of the same name, so its backing field is a family of its own
+        IFieldSymbol { IsStatic: false } backingField when IsEmittedStructMember(symbol, dialect) &&
+                                                          StructAbiMembers.TryGetBackingFieldProperty(backingField, out var property)
+            => CppName.BackingField(property.Name),
         IFieldSymbol { IsStatic: false } or IPropertySymbol { IsStatic: false } when IsEmittedStructMember(symbol, dialect)
             => CppName.Member(symbol.Name),
         ITypeParameterSymbol parameter => CppName.Global(GlobalCppNames.GetTypeParameterName(parameter)),
@@ -129,6 +142,12 @@ internal static class CppNameResolver
         var region = LoweringIdentity.GetRegion(reference);
         context.Emitter.Writer.AppendCppName(Resolve(symbol, identifier.ValueText, context.Emitter.Dialect, region));
     }
+
+    /// <summary>
+    /// The C++ name of the backing field of <paramref name="property"/>, a property whose accessors use the <c>field</c>
+    /// keyword (<see cref="StructAbiMembers.IsFieldBackedProperty"/>).
+    /// </summary>
+    public static CppName ResolveBackingField(IPropertySymbol property) => CppName.BackingField(property.Name);
 
     /// <summary>Emits the name of <paramref name="symbol"/>.</summary>
     public static void AppendSymbolName(ISymbol symbol, ref TranspileContext context) =>
@@ -175,6 +194,9 @@ internal static class CppNameResolver
                 break;
             case CppNameKind.Member:
                 writer.Append(GSharpInternalNames.Renamed.MemberPrefix);
+                break;
+            case CppNameKind.BackingField:
+                writer.Append(GSharpInternalNames.Renamed.BackingFieldPrefix);
                 break;
         }
 

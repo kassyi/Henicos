@@ -33,6 +33,11 @@ internal static class ComputedPropertyAssignment
     public const string UserDefinedOrLiftedOperator =
         "compound assignment or increment of a computed property with a user-defined or lifted operator";
 
+    /// <summary>The GSH0003 text for a compound assignment or step of a property without a setter that uses the field
+    /// keyword, which C# allows in a constructor of the struct.</summary>
+    public const string StepOfBackingFieldWrite =
+        "compound assignment or increment of a property without a setter whose accessors use the field keyword";
+
     private enum Form
     {
         Assignment,
@@ -59,6 +64,11 @@ internal static class ComputedPropertyAssignment
     /// </summary>
     public static void TranspileAssignment(AssignmentExpressionSyntax node, ref TranspileContext context)
     {
+        if (FailBackingFieldWrite(node, node.Left, ref context))
+        {
+            return;
+        }
+
         var model = context.Query.SemanticModel;
         Plan plan;
         if (node.IsKind(SyntaxKind.SimpleAssignmentExpression))
@@ -84,6 +94,11 @@ internal static class ComputedPropertyAssignment
     /// <summary>Writes <paramref name="node"/>, an increment or decrement of the computed property <paramref name="operand"/>.</summary>
     public static void TranspileStep(ExpressionSyntax node, ExpressionSyntax operand, ref TranspileContext context)
     {
+        if (FailBackingFieldWrite(node, operand, ref context))
+        {
+            return;
+        }
+
         var model = context.Query.SemanticModel;
         if (model.GetSafeOperation(node) is not IIncrementOrDecrementOperation step ||
             step.OperatorMethod != null || step.IsLifted)
@@ -183,6 +198,20 @@ internal static class ComputedPropertyAssignment
         {
             EvaluationOrder.AppendTempName(context.Emitter.Writer, current);
         }
+    }
+
+    // [WHY] C# reads the property through its getter and writes the backing field; the plan has no form for that, and
+    // the case is rare (a constructor that steps a property it can only initialize), so it is reported, not guessed
+    private static bool FailBackingFieldWrite(ExpressionSyntax node, ExpressionSyntax target, ref TranspileContext context)
+    {
+        if (!ComputedPropertyGetterCall.WritesBackingField(target, ref context))
+        {
+            return false;
+        }
+
+        context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, node, StepOfBackingFieldWrite);
+        context.Visitor.AppendUnsupportedPlaceholder(node);
+        return true;
     }
 
     private static void Fail(ExpressionSyntax node, ref TranspileContext context)

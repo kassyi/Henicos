@@ -27,6 +27,25 @@ internal static class ComputedPropertyGetterCall
         GlobalCppNames.IsEncodedUserType(type, dialect) &&
         StructAbiMembers.HasAccessorFunctions(property);
 
+    /// <summary>
+    /// Whether <paramref name="node"/>, the target of an assignment, names a property without a setter whose accessors
+    /// use the <c>field</c> keyword: C# assigns its backing field (in a constructor of the struct or an initializer of the
+    /// property, CS0200 elsewhere), so the name is the backing field rather than the getter.
+    /// </summary>
+    public static bool WritesBackingField(SyntaxNode node, ISymbol? symbol, ITranspilerDialect dialect) =>
+        symbol is IPropertySymbol { SetMethod: null, ContainingType: { } type } property &&
+        GlobalCppNames.IsEncodedUserType(type, dialect) &&
+        StructAbiMembers.IsFieldBackedProperty(property) &&
+        IsAssignmentTarget(node);
+
+    /// <summary><c>WritesBackingField</c> of the target <paramref name="expression"/> of an assignment or a step.</summary>
+    public static bool WritesBackingField(ExpressionSyntax expression, ref TranspileContext context) =>
+        WritesBackingField(
+            expression,
+            GetTargetSymbol(IntegerSemanticsEmitter.Unparenthesize(expression), context.Query.SemanticModel),
+            context.Emitter.Dialect
+        );
+
     /// <summary>Whether <paramref name="expression"/> resolves to a computed property on a user struct.</summary>
     public static bool IsComputedPropertyTarget(ExpressionSyntax expression, ref TranspileContext context) =>
         GetTargetSymbol(expression, context.Query.SemanticModel) is

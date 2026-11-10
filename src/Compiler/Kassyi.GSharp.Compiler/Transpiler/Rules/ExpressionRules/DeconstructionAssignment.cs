@@ -315,7 +315,8 @@ internal static class DeconstructionAssignment
     // visits the target, which writes the receiver's temporary)
     private static int BindTarget(ExpressionSyntax target, ref TranspileContext context)
     {
-        if (!ComputedPropertyGetterCall.IsComputedPropertyTarget(target, ref context))
+        if (!ComputedPropertyGetterCall.IsComputedPropertyTarget(target, ref context) ||
+            ComputedPropertyGetterCall.WritesBackingField(target, ref context))
         {
             return EvaluationOrder.DeclareTemp(ref context, target, reference: true);
         }
@@ -339,7 +340,8 @@ internal static class DeconstructionAssignment
         }
 
         if (target is ExpressionSyntax expression &&
-            ComputedPropertyGetterCall.IsComputedPropertyTarget(expression, ref context))
+            ComputedPropertyGetterCall.IsComputedPropertyTarget(expression, ref context) &&
+            !ComputedPropertyGetterCall.WritesBackingField(expression, ref context))
         {
             context.Visitor.Visit(expression);
             using (writer.Parentheses())
