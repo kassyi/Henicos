@@ -28,7 +28,8 @@ internal static class ModPowZeroSyncController
 
         var lz = n * 32 - modActualBits;
         using var bNorm = new GpuBigUInt(baseVal.Workspace, n);
-        GpuBigIntMath.ShiftLeft(mod, lz, bNorm);
+        // lz is the count of leading zero bits of the modulus in its n words: only zero bits are shifted out
+        GpuBigIntMath.ShiftLeftUnchecked(mod, lz, bNorm);
 
         var marginBits = 512;
         var marginWords = marginBits / 32;
@@ -40,7 +41,9 @@ internal static class ModPowZeroSyncController
         GpuBigIntDivRem.Reciprocal(bNorm, reciprocalNorm, targetBits, marginWords);
 
         using var reciprocalOfMod = new GpuBigUInt(baseVal.Workspace, targetWords);
-        GpuBigIntMath.ShiftLeft(reciprocalNorm, lz, reciprocalOfMod);
+        // The reciprocal shifted by lz is at most 2^targetBits (as in DivRem), which the targetWords words (one word to
+        // spare) hold
+        GpuBigIntMath.ShiftLeftUnchecked(reciprocalNorm, lz, reciprocalOfMod);
 
         // Initial reduction of base using the precomputed reciprocal
         using var tempBaseQ = new GpuBigUInt(baseVal.Workspace, 4 * n);

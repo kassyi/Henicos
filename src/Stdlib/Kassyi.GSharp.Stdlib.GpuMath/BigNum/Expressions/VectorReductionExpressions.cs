@@ -102,12 +102,8 @@ internal abstract class VectorReductionExpressionBase : IGpuBigIntExpression, IB
                 nameof(targetResult));
         }
 
-        if (DeviceCounted.IsCapturing(workspace))
-        {
-            throw new NotSupportedException(
-                "Sum, Max and Min of a vector cannot be part of a CUDA graph: their sign and emptiness are read back " +
-                "to the host. Evaluate them directly; Count can be captured.");
-        }
+        CaptureChecks.ThrowIfCapturing(workspace, "The result header of a vector Sum, Max or Min",
+            "Evaluate them directly; Count can be captured.");
 
         if (_passes.Count == 0 && EmptyIsError)
         {

@@ -112,9 +112,6 @@ public static uint FunnelShiftLeft(uint lo, uint hi, uint shift) => Kassyi.GShar
 /// <returns>The least significant 32 bits of the shifted 64-bit pair.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("__funnelshift_r")]
 public static uint FunnelShiftRight(uint lo, uint hi, uint shift) => Kassyi.GSharp.Core.GpuOnlyException.Throw<uint>();
-/// <summary>Synchronizes all threads across the entire cooperative grid (__gsharp_grid_sync).</summary>
-[Kassyi.GSharp.Core.CudaIntrinsic("__gsharp_grid_sync")]
-public static void SyncGrid() => Kassyi.GSharp.Core.GpuOnlyException.Throw();
 /// <summary>Counts the number of set bits (population count) in a 32-bit unsigned integer.</summary>
 /// <param name="val">The unsigned 32-bit integer.</param>
 /// <returns>The number of set bits.</returns>
