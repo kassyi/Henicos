@@ -109,7 +109,7 @@ internal sealed class StackArrayEscapeAnalysis
                 if (_model.GetDeclaredSymbol(declarator) is ILocalSymbol local &&
                     declarator.Initializer is { } initializer)
                 {
-                    changed |= Hold(local, _gatherer.StorageOf(initializer.Value));
+                    changed |= TryAddHeld(local, _gatherer.StorageOf(initializer.Value));
                 }
             }
 
@@ -119,7 +119,7 @@ internal sealed class StackArrayEscapeAnalysis
                 {
                     if (RootLocal(target) is { } local)
                     {
-                        changed |= Hold(local, _gatherer.StorageOf(value));
+                        changed |= TryAddHeld(local, _gatherer.StorageOf(value));
                     }
                 }
             }
@@ -138,7 +138,7 @@ internal sealed class StackArrayEscapeAnalysis
                 {
                     if (callee.FindParameter(arguments, i) is { RefKind: RefKind.None } parameter)
                     {
-                        changed |= Hold(parameter, _gatherer.StorageOf(arguments[i].Expression));
+                        changed |= TryAddHeld(parameter, _gatherer.StorageOf(arguments[i].Expression));
                     }
                 }
             }
@@ -150,7 +150,7 @@ internal sealed class StackArrayEscapeAnalysis
                 {
                     if (IsWritableReference(argument) && RootLocal(argument.Expression) is { } local)
                     {
-                        changed |= Hold(local, passed);
+                        changed |= TryAddHeld(local, passed);
                     }
                 }
             }
@@ -158,7 +158,7 @@ internal sealed class StackArrayEscapeAnalysis
         while (changed);
     }
 
-    private bool Hold(ISymbol local, ImmutableArray<Storage> storages)
+    private bool TryAddHeld(ISymbol local, ImmutableArray<Storage> storages)
     {
         if (storages.Length == 0)
         {
@@ -196,7 +196,8 @@ internal sealed class StackArrayEscapeAnalysis
                 return;
             }
 
-            if (FindOutlived(_gatherer.StorageOf(value), CppScopes.TargetScope(target, _model, _gatherer), out var storage))
+            if (TryFindOutlived(_gatherer.StorageOf(value),
+                CppScopes.TargetScope(target, _model, _gatherer), out var storage))
             {
                 var reason = LocalOf(AssignmentPairs.Unwrap(target)) is { IsRef: false }
                     ? StackArrayEscapeRule.AssignedToOuterVariable
@@ -223,7 +224,7 @@ internal sealed class StackArrayEscapeAnalysis
             }
 
             if (_gatherer.IsCarrier(_gatherer.TypeOf(argument.Expression)) &&
-                FindOutlived(StoragesOfArguments(arguments, except: argument),
+                TryFindOutlived(StoragesOfArguments(arguments, except: argument),
                     CppScopes.TargetScope(argument.Expression, _model, _gatherer), out var storage))
             {
                 findings.Add(new Finding(argument, storage.Name, StackArrayEscapeRule.PassedWithLongerLivedReference));
@@ -247,7 +248,7 @@ internal sealed class StackArrayEscapeAnalysis
     }
 
     // The first storage that a target of the given scope outlives; a null scope is outside the method
-    private static bool FindOutlived(ImmutableArray<Storage> storages, SyntaxNode? targetScope, out Storage storage)
+    private static bool TryFindOutlived(ImmutableArray<Storage> storages, SyntaxNode? targetScope, out Storage storage)
     {
         foreach (var candidate in storages)
         {

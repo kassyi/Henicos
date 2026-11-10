@@ -252,7 +252,7 @@ internal static class SyncGridBody
     /// expression statement, an <c>if</c> condition or a <c>switch</c> expression, whose scope is the enclosing block
     /// (GSH0003). Rewriting those as assignments to a variable declared earlier could change their meaning.
     /// </summary>
-    public static bool IsUnsplittable(CSharpSyntaxNode statement, SemanticModel? model) => statement switch
+    public static bool CannotSplit(CSharpSyntaxNode statement, SemanticModel? model) => statement switch
     {
         LocalDeclarationStatementSyntax { IsConst: true } => false,
         LocalDeclarationStatementSyntax declaration => !CanSplit(declaration, model),

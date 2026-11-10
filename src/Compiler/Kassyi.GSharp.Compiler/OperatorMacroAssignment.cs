@@ -35,7 +35,7 @@ internal static class OperatorMacroAssignment
             target.Parameters[macro.HasContext ? 1 : 0].RefKind == RefKind.Out ||
             assignment.Parent is not ExpressionStatementSyntax statement ||
             GetTargetVariable(assignment.Left, semanticModel) is not { } symbol ||
-            !IsUnassignedBefore(statement, symbol, semanticModel))
+            !IsNotAssignedBefore(statement, symbol, semanticModel))
         {
             return null;
         }
@@ -64,7 +64,7 @@ internal static class OperatorMacroAssignment
         if (macro is { HasContext: true, TargetMethod: { } target } &&
             TryFindContextVariable(assignment, target, semanticModel, out var variable, out _) &&
             variable is ILocalSymbol { IsRef: false } or IParameterSymbol { RefKind: RefKind.Out } &&
-            IsUnassignedBefore(statement, variable, semanticModel))
+            IsNotAssignedBefore(statement, variable, semanticModel))
         {
             return OperatorMacroMessages.UnassignedContext(variable.Name, macro.TargetName);
         }
@@ -88,7 +88,7 @@ internal static class OperatorMacroAssignment
     // Whether <symbol> (a local or out parameter of the method that holds <statement>) is certainly not assigned when
     // <statement> starts. A local declared with a value, and a variable captured from outside the enclosing lambda or
     // local function, are not
-    private static bool IsUnassignedBefore(ExpressionStatementSyntax statement, ISymbol symbol,
+    private static bool IsNotAssignedBefore(ExpressionStatementSyntax statement, ISymbol symbol,
         SemanticModel semanticModel)
     {
         if (IsAssignedWhereDeclared(symbol) ||

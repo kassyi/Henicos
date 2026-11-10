@@ -232,7 +232,7 @@ internal static class DeviceImportAssembler
 
         foreach (var name in records[index].Record.GetReferences(isCuda))
         {
-            if (!byName.TryGetValue(name, out var indices) || DefinedByTwoAssemblies(records, indices) ||
+            if (!byName.TryGetValue(name, out var indices) || IsDefinedByTwoAssemblies(records, indices) ||
                 !IsUsable(records, byName, Choose(records, indices, records[index].AssemblyName), isCuda, visiting))
             {
                 return false;
@@ -242,7 +242,7 @@ internal static class DeviceImportAssembler
         return true;
     }
 
-    private static bool DefinedByTwoAssemblies(EquatableArray<ImportedDeviceRecord> records,
+    private static bool IsDefinedByTwoAssemblies(EquatableArray<ImportedDeviceRecord> records,
         ImmutableArray<int>.Builder indices)
     {
         foreach (var index in indices)

@@ -343,7 +343,7 @@ internal static class GpuCodeConstraints
 
     /// <summary>
     /// The GSH0003 text for a local declared after a <c>return</c> of a <c>Gpu.SyncGrid</c> body that cannot be declared at
-    /// the top of the body and assigned later (<see cref="SyncGridBody.IsUnsplittable"/>).
+    /// the top of the body and assigned later (<see cref="SyncGridBody.CannotSplit"/>).
     /// </summary>
     public const string SyncGridUnsplittableDeclaration =
         "ref, scoped, using, pattern or deconstruction local, or shared memory, array or iterator local, declared after a return in a Gpu.SyncGrid body";
