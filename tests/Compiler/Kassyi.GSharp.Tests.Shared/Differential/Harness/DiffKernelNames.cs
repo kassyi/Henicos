@@ -9,7 +9,8 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 internal static class DiffKernelNames
 {
     /// <summary>
-    /// Returns <c>{kernels class}.{kernel}</c>, or <c>{kernels class}.{kernel}.{suffix}</c> for a variant of the kernel.
+    /// Returns <c>{kernels class}.{kernel}</c>, or <c>{kernels class}.{kernel}.{suffix}</c>
+    /// for a variant of the kernel.
     /// </summary>
     internal static string Of(Type kernels, string kernel, string? suffix = null) =>
         suffix is null ? $"{kernels.Name}.{kernel}" : $"{kernels.Name}.{kernel}.{suffix}";
