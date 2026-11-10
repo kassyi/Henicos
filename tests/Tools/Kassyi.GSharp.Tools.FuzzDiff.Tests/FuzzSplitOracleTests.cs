@@ -216,24 +216,12 @@ public class FuzzSplitOracleTests
     // two blocks of 64 threads; with no native library on disk the launch takes the managed path.
     private static Type CompileWithGenerator(string source, string assemblyName)
     {
-        using var runner = new SourceWriter();
-        runner.AppendLine("namespace Kassyi.GSharp.Tests.Shared.Differential;");
-        using (runner.Scope("public static class SplitHandRunner"))
-        {
-            foreach (var (kernel, _) in s_handCases)
-            {
-                runner.AppendLine(
-                    $"public static void {kernel}(ulong[] checksum) => {HandClassName}.Launch{kernel}(" +
-                    $"new int[{Rows}], new int[{Rows}], new int[{Rows}], checksum, gridDimX: 2, blockDimX: 64);");
-            }
-        }
-
         var parseOptions = FuzzTestCompilationHelper.ParseOptions;
         SyntaxTree[] trees =
         [
             CSharpSyntaxTree.Create(FuzzSyntaxHelpers.ParseRoot(source), parseOptions, path: $"{assemblyName}.cu.cs"),
             CSharpSyntaxTree.Create(
-                FuzzSyntaxHelpers.ParseRoot(runner.ToString()),
+                FuzzSyntaxHelpers.ParseRoot(BuildHandRunnerSource()),
                 parseOptions,
                 path: $"{assemblyName}.Runner.cs"),
         ];
@@ -248,7 +236,29 @@ public class FuzzSplitOracleTests
             parseOptions: parseOptions,
             optionsProvider: new FuzzTestCompilationHelper.FuzzTestAnalyzerConfigOptionsProvider("Cpu"));
         driver.RunGeneratorsAndUpdateCompilation(compilation, out var output, out _);
+        return EmitRunnerType(output);
+    }
 
+    // One method per hand case that launches its kernel on two blocks of 64 threads
+    private static string BuildHandRunnerSource()
+    {
+        using var runner = new SourceWriter();
+        runner.AppendLine("namespace Kassyi.GSharp.Tests.Shared.Differential;");
+        using (runner.Scope("public static class SplitHandRunner"))
+        {
+            foreach (var (kernel, _) in s_handCases)
+            {
+                runner.AppendLine(
+                    $"public static void {kernel}(ulong[] checksum) => {HandClassName}.Launch{kernel}(" +
+                    $"new int[{Rows}], new int[{Rows}], new int[{Rows}], checksum, gridDimX: 2, blockDimX: 64);");
+            }
+        }
+
+        return runner.ToString();
+    }
+
+    private static Type EmitRunnerType(Compilation output)
+    {
         using var stream = new MemoryStream();
         var result = output.Emit(stream);
         Assert.True(result.Success, string.Join(Environment.NewLine, result.Diagnostics));

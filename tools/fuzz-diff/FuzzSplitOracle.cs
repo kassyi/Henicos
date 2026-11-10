@@ -143,7 +143,27 @@ public static class FuzzSplitOracle
             return baseSource;
         }
 
-        string? className = null;
+        string twins = RenderTwins(gpuMethods, splitNames, out string className);
+        using var writer = new SourceWriter();
+        writer.AppendLine(baseSource.AsSpan().TrimEnd().ToString());
+        writer.AppendLine();
+        writer.AppendLine("// Oracle twins of the split kernels (FuzzSplitOracle).");
+        using (writer.Scope($"public static partial class {className}"))
+        {
+            writer.Append(twins);
+            writer.AppendLine();
+        }
+
+        return writer.ToString();
+    }
+
+    // The twins of the split methods, left-aligned, and the class that declares the first of them
+    private static string RenderTwins(
+        List<MethodDeclarationSyntax> gpuMethods,
+        HashSet<string> splitNames,
+        out string className)
+    {
+        string? declaringClass = null;
         using var twinWriter = new SourceWriter();
         foreach (var method in gpuMethods)
         {
@@ -152,27 +172,13 @@ public static class FuzzSplitOracle
                 continue;
             }
 
-            className ??= (method.Parent as ClassDeclarationSyntax)?.Identifier.ValueText;
+            declaringClass ??= (method.Parent as ClassDeclarationSyntax)?.Identifier.ValueText;
             AppendLeftAligned(twinWriter, FuzzSyntaxHelpers.RenderFullNode(BuildTwin(method, splitNames)));
             twinWriter.AppendLine();
         }
 
-        if (className is null)
-        {
-            throw new InvalidOperationException("A split method is not declared in a class.");
-        }
-
-        using var writer = new SourceWriter();
-        writer.AppendLine(baseSource.AsSpan().TrimEnd().ToString());
-        writer.AppendLine();
-        writer.AppendLine("// Oracle twins of the split kernels (FuzzSplitOracle).");
-        using (writer.Scope($"public static partial class {className}"))
-        {
-            writer.Append(twinWriter.ToString().AsSpan().TrimEnd().ToString());
-            writer.AppendLine();
-        }
-
-        return writer.ToString();
+        className = declaringClass ?? throw new InvalidOperationException("A split method is not declared in a class.");
+        return twinWriter.ToString().AsSpan().TrimEnd().ToString();
     }
 
     /// <summary>Returns whether <paramref name="invocation"/> calls <c>Gpu.SyncThreads</c>.</summary>

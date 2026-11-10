@@ -238,8 +238,40 @@ public class FuzzSplitKernelGeneratorTests
 
     private static int CountCaughtHoistMutants(FuzzSwarmFocus focus, out int mutants)
     {
-        const string ClassName = "FuzzBatchKernels";
         var generator = new ScalarFuzzGenerator(new FuzzOptions { FuzzSeed = 1UL, BatchSize = 1, SwarmFocus = focus });
+        var (methods, pairs) = BuildHoistPairs(generator);
+        mutants = pairs.Count;
+        if (pairs.Count == 0)
+        {
+            return 0;
+        }
+
+        string unit = FuzzSplitOracle.WithOracleTwins(
+            FuzzTestCompilationHelper.RenderKernelCompilationUnit(
+                HoistClassName,
+                generator.DeviceFunctions,
+                methods,
+                string.Join(Environment.NewLine + Environment.NewLine, generator.SplitHelperSources)));
+        var kernelType = FuzzSplitOracleTests.CompileKernelType(unit, $"SplitHoist{focus}");
+
+        int caught = 0;
+        foreach (var (original, mutant) in pairs)
+        {
+            if (IsHoistMutantCaught(kernelType, original, mutant))
+            {
+                caught++;
+            }
+        }
+
+        return caught;
+    }
+
+    private const string HoistClassName = "FuzzBatchKernels";
+
+    // Sixteen split kernels of the generator and, for each that has one, its mutant with the first split hoisted
+    private static (List<string> Methods, List<(string Original, string Mutant)> Pairs) BuildHoistPairs(
+        ScalarFuzzGenerator generator)
+    {
         var methods = new List<string>();
         var pairs = new List<(string Original, string Mutant)>();
         for (ulong seed = 1UL; seed <= 16UL; seed++)
@@ -254,62 +286,41 @@ public class FuzzSplitKernelGeneratorTests
             }
         }
 
-        mutants = pairs.Count;
-        if (pairs.Count == 0)
+        return (methods, pairs);
+    }
+
+    // Runs the twin of the mutant as the launch and the twin of the original as the oracle on the native path
+    private static bool IsHoistMutantCaught(Type kernelType, string original, string mutant)
+    {
+        var oracle = FuzzTestCompilationHelper.CreateKernelDelegate(kernelType, FuzzSplitOracle.OracleName(original));
+        var planted = FuzzTestCompilationHelper.CreateKernelDelegate(kernelType, FuzzSplitOracle.OracleName(mutant));
+        var testCase = new DifferentialCase($"{HoistClassName}.{mutant}")
         {
-            return 0;
-        }
-
-        string unit = FuzzSplitOracle.WithOracleTwins(
-            FuzzTestCompilationHelper.RenderKernelCompilationUnit(
-                ClassName,
-                generator.DeviceFunctions,
-                methods,
-                string.Join(Environment.NewLine + Environment.NewLine, generator.SplitHelperSources)));
-        var kernelType = FuzzSplitOracleTests.CompileKernelType(unit, $"SplitHoist{focus}");
-
-        int caught = 0;
-        foreach (var (original, mutant) in pairs)
-        {
-            var oracle = FuzzTestCompilationHelper.CreateKernelDelegate(
-                kernelType,
-                FuzzSplitOracle.OracleName(original));
-            var planted = FuzzTestCompilationHelper.CreateKernelDelegate(
-                kernelType,
-                FuzzSplitOracle.OracleName(mutant));
-            var testCase = new DifferentialCase($"{ClassName}.{mutant}")
+            Shape = LaunchShapes.Grid1D(2, 64),
+            Inputs = static (rng, shape) =>
             {
-                Shape = LaunchShapes.Grid1D(2, 64),
-                Inputs = static (rng, shape) =>
-                {
-                    var (inA, inB) = DiffValues.Int32Pairs(rng, shape.Rows);
-                    var inC = DiffValues.Values(rng, shape.Rows, DiffValues.ShiftCounts, DiffValues.NextInt32);
-                    return new DiffBuffers()
-                        .In("inA", inA)
-                        .In("inB", inB)
-                        .In("inC", inC)
-                        .Out<ulong>("checksum", shape.Rows, ["hash"], OutputPolicy.Exact);
-                },
-                Launch = (b, s) => SequentialOracle.Run(
-                    s,
-                    ThreadOrder.Forward,
-                    () => planted(b.Get<int>("inA"), b.Get<int>("inB"), b.Get<int>("inC"), b.Get<ulong>("checksum"))),
-                Oracle = (b, _) =>
-                    oracle(b.Get<int>("inA"), b.Get<int>("inB"), b.Get<int>("inC"), b.Get<ulong>("checksum")),
-            };
-            var report = DifferentialRunner.Evaluate(
-                testCase,
-                seeds: [0, 1],
-                paths: [new DiffPathRunner(DiffPath.Native, DiffPaths.DirectRunner)],
-                known: [],
-                checkStale: false);
-            if (report.UnexpectedMismatches.Count > 0)
-            {
-                caught++;
-            }
-        }
-
-        return caught;
+                var (inA, inB) = DiffValues.Int32Pairs(rng, shape.Rows);
+                var inC = DiffValues.Values(rng, shape.Rows, DiffValues.ShiftCounts, DiffValues.NextInt32);
+                return new DiffBuffers()
+                    .In("inA", inA)
+                    .In("inB", inB)
+                    .In("inC", inC)
+                    .Out<ulong>("checksum", shape.Rows, ["hash"], OutputPolicy.Exact);
+            },
+            Launch = (b, s) => SequentialOracle.Run(
+                s,
+                ThreadOrder.Forward,
+                () => planted(b.Get<int>("inA"), b.Get<int>("inB"), b.Get<int>("inC"), b.Get<ulong>("checksum"))),
+            Oracle = (b, _) =>
+                oracle(b.Get<int>("inA"), b.Get<int>("inB"), b.Get<int>("inC"), b.Get<ulong>("checksum")),
+        };
+        var report = DifferentialRunner.Evaluate(
+            testCase,
+            seeds: [0, 1],
+            paths: [new DiffPathRunner(DiffPath.Native, DiffPaths.DirectRunner)],
+            known: [],
+            checkStale: false);
+        return report.UnexpectedMismatches.Count > 0;
     }
 
     // Moves the first split call that is part of a larger top-level assignment into a temporary declared in front of

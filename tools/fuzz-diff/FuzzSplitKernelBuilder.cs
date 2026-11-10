@@ -53,7 +53,21 @@ internal sealed class FuzzSplitKernelBuilder(KernelGenerationState state, FuzzSp
     /// </summary>
     internal void EmitPrologue()
     {
-        ScalarFuzzGenerator.InitializeScalarLocals(state);
+        FuzzScalarLocals.Initialize(state);
+        AddExtraIntLocals();
+        ClassifyLocals();
+        state.Statements.Add(
+            "FuzzStructL1 sv = new FuzzStructL1 { A = inA[gid], B = (short)inB[gid], Tag = (byte)inC[gid] };");
+        _hasArray = !state.IssueFilter.IsAvoided(FuzzSplitKernelEmitter.StackArrayAcrossSplitIssue);
+        if (_hasArray)
+        {
+            AddStackArray();
+        }
+    }
+
+    // s0 .. s3: int locals read from the thread's own inputs, which the split statements pick from
+    private void AddExtraIntLocals()
+    {
         for (int i = 0; i < 4; i++)
         {
             string name = string.Create(CultureInfo.InvariantCulture, $"s{i}");
@@ -67,7 +81,11 @@ internal sealed class FuzzSplitKernelBuilder(KernelGenerationState state, FuzzSp
             state.Statements.Add($"int {name} = {init};");
             state.Locals.Add(new ScalarLocalVariable(name, FuzzTypeInfo.Get(FuzzScalarKind.Int32)));
         }
+    }
 
+    // The int locals, and the first uint and long local, that the shapes name
+    private void ClassifyLocals()
+    {
         foreach (var local in state.Locals)
         {
             switch (local.Type.Kind)
@@ -83,18 +101,15 @@ internal sealed class FuzzSplitKernelBuilder(KernelGenerationState state, FuzzSp
                     break;
             }
         }
+    }
 
-        state.Statements.Add(
-            "FuzzStructL1 sv = new FuzzStructL1 { A = inA[gid], B = (short)inB[gid], Tag = (byte)inC[gid] };");
-        _hasArray = !state.IssueFilter.IsAvoided(FuzzSplitKernelEmitter.StackArrayAcrossSplitIssue);
-        if (_hasArray)
-        {
-            state.Statements.Add("int[] arr = new int[4];");
-            state.Statements.Add("arr[0] = inA[gid];");
-            state.Statements.Add("arr[1] = inB[gid];");
-            state.Statements.Add("arr[2] = inC[gid];");
-            state.Statements.Add($"arr[3] = {_ints[0].Name};");
-        }
+    private void AddStackArray()
+    {
+        state.Statements.Add("int[] arr = new int[4];");
+        state.Statements.Add("arr[0] = inA[gid];");
+        state.Statements.Add("arr[1] = inB[gid];");
+        state.Statements.Add("arr[2] = inC[gid];");
+        state.Statements.Add($"arr[3] = {_ints[0].Name};");
     }
 
     /// <summary>Writes one split statement of a kind in <c>forms</c>, skipping the shapes avoided for open

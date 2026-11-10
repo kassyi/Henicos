@@ -167,7 +167,27 @@ internal static class FuzzWorkspaceReducer
             return false;
         }
 
-        var kernel = kernels[0];
+        var singleBatch = BuildSingleCandidateBatch(candidateSource, root, kernels[0], fuzzSeed, inputSeed);
+        var failing = EvaluateSpeculativeBatchInWorkspace(
+            singleBatch,
+            workDir,
+            repoRoot,
+            useCuda: profile == "G",
+            noGpuLock: noGpuLock,
+            expectedSignature: expectedSignature,
+            managedOnly: profile == "M");
+
+        return failing.Contains("Candidate_00");
+    }
+
+    // The candidate kernel alone, renamed Candidate_00, with its case and the oracle twins of its split methods
+    private static SpeculativeCandidateBatch BuildSingleCandidateBatch(
+        string candidateSource,
+        CompilationUnitSyntax root,
+        MethodDeclarationSyntax kernel,
+        ulong fuzzSeed,
+        int inputSeed)
+    {
         var specBatch = FuzzReducer.GenerateSpeculativeBatchCandidates(
             candidateSource,
             fuzzSeed,
@@ -185,24 +205,13 @@ internal static class FuzzWorkspaceReducer
                 fuzzSeed,
                 inputSeed),
         };
-        var singleBatch = specBatch with
+        return specBatch with
         {
             KernelsSource = FuzzSplitOracle.WithOracleTwins(
                 FuzzSyntaxHelpers.RenderFullNode(root.ReplaceNode(kernel, exactMethod))),
             CasesSource = FuzzSpeculativeBatchBuilder.BuildSpeculativeCasesCompilationUnit([exactCand], fuzzSeed),
             Candidates = [exactCand],
         };
-
-        var failing = EvaluateSpeculativeBatchInWorkspace(
-            singleBatch,
-            workDir,
-            repoRoot,
-            useCuda: profile == "G",
-            noGpuLock: noGpuLock,
-            expectedSignature: expectedSignature,
-            managedOnly: profile == "M");
-
-        return failing.Contains("Candidate_00");
     }
 
     private static HashSet<string> EvaluateSpeculativeBatchInWorkspace(

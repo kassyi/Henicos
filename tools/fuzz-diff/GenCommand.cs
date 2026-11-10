@@ -136,7 +136,7 @@ public sealed class GenCommand : IFuzzCommand
                 case "--swarm-focus":
                     if (i + 1 >= args.Length || !FuzzSwarmConfig.TryParseFocus(args[++i], out swarmFocus))
                     {
-                        error = "--swarm-focus requires 'default', 'coalesce-assign-value', or 'tuple-deconstruct-complex'.";
+                        error = FuzzSwarmConfig.FocusErrorMessage;
                         return false;
                     }
 
