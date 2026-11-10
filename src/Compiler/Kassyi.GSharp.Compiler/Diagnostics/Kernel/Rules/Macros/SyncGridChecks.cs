@@ -1,20 +1,36 @@
 namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel.Rules.Macros;
 
 /// <summary>
-/// Checks <c>Gpu.SyncGrid</c>: the body is a lambda, the kernel is cooperative, and the statements of the body can be
-/// split at the grid syncs.
+/// Checks <c>Gpu.SyncGrid</c>: the body is a lambda, the mode is a constant member of <c>GridSyncMode</c>, the kernel
+/// is cooperative, and the statements of the body can be split at the grid syncs.
 /// </summary>
 internal static class SyncGridChecks
 {
     /// <summary>
-    /// Reports a body that is not a lambda, a non-cooperative kernel, and statements the split cannot keep.
+    /// Reports a body that is not a lambda, a mode that is not a constant member, a non-cooperative kernel, and
+    /// statements the split cannot keep.
     /// </summary>
     public static void CheckSyncGrid(
         InvocationExpressionSyntax invocation,
         GpuMacroCall call,
         ref ValidationContext context)
     {
-        if (call.HasBody && !GpuCodeConstraints.TryGetSyncGridBody(invocation, out _))
+        if (call.HasBody)
+        {
+            CheckBody(invocation, ref context);
+        }
+        else
+        {
+            CheckMode(invocation, call, ref context);
+        }
+
+        CheckCooperative(invocation, ref context);
+    }
+
+    // Gpu.SyncGrid(body): the body is a lambda, and its statements can be split at the grid syncs
+    private static void CheckBody(InvocationExpressionSyntax invocation, ref ValidationContext context)
+    {
+        if (!GpuCodeConstraints.TryGetSyncGridBody(invocation, out var body))
         {
             var args = invocation.ArgumentList.Arguments;
             if (args.Count >= 1)
@@ -24,8 +40,21 @@ internal static class SyncGridChecks
                     args[0],
                     GpuCodeConstraints.SyncGridRequiresLambda);
             }
+
+            return;
         }
 
+        // A body flattened into an enclosing body is checked with the statements of that body
+        if (!SyncGridBody.IsFlattenedIntoEnclosingBody(invocation, context.SemanticModel))
+        {
+            var statements = SyncGridBody.Flatten(body, context.SemanticModel);
+            CheckGuardedStatements(statements, ref context);
+            CheckReturnsWithValue(statements, ref context);
+        }
+    }
+
+    private static void CheckCooperative(InvocationExpressionSyntax invocation, ref ValidationContext context)
+    {
         if (context.MethodSymbol.HasAttribute(KnownAttributes.GpuKernel) &&
             !context.MethodSymbol.IsCooperativeKernel())
         {
@@ -34,15 +63,30 @@ internal static class SyncGridChecks
                 invocation,
                 context.MethodSymbol.Name);
         }
+    }
 
-        // A body flattened into an enclosing body is checked with the statements of that body
-        if (call.HasBody &&
-            GpuCodeConstraints.TryGetSyncGridBody(invocation, out var body) &&
-            !SyncGridBody.IsFlattenedIntoEnclosingBody(invocation, context.SemanticModel))
+    // [WHY] The CUDA build picks the barrier from the mode at compile time (GridSyncBarriers): a mode that is not a
+    // constant, or names no member, has no barrier. Reported on every dialect alike, so that a kernel builds for all
+    private static void CheckMode(
+        InvocationExpressionSyntax invocation,
+        GpuMacroCall call,
+        ref ValidationContext context)
+    {
+        switch (GridSyncBarriers.Get(invocation, call, context.SemanticModel, out var modeArgument))
         {
-            var statements = SyncGridBody.Flatten(body, context.SemanticModel);
-            CheckGuardedStatements(statements, ref context);
-            CheckReturnsWithValue(statements, ref context);
+            case GridSyncBarrier.NotConstant when modeArgument is not null:
+                context.ReportDiagnostic(
+                    GSharpDiagnostics.MacroArgumentMustBeConstant,
+                    modeArgument,
+                    GridSyncBarriers.ModeParameter,
+                    GridSyncBarriers.MacroName);
+                break;
+            case GridSyncBarrier.Undefined when modeArgument is not null:
+                context.ReportDiagnostic(
+                    GSharpDiagnostics.UnsupportedSyntax,
+                    modeArgument,
+                    GridSyncBarriers.UndefinedMode);
+                break;
         }
     }
 

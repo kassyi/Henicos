@@ -119,7 +119,20 @@ A single pinned, host-mapped memory slot (`GSharpDeviceErrorSlot`, 24 bytes) is 
 - **Host Consumption and Context Invalidation**: When the host synchronizes or driver error handling detects a failure (`CudaDriverApi.ThrowIfError`, stream completion, or explicit `ThrowIfDeviceError`), the slot is atomically consumed and reset. Because a device trap fundamentally invalidates the underlying CUDA context, all concurrent and subsequent operations on that context will fail; whichever host check runs first consumes and reports the rich error details.
 - **Module Loading Decoupling**: Loading a module (`GetOrLoadModule`) intentionally does not check or reset the error slot, preventing an unrelated module load from consuming an in-flight kernel's trap details.
 
-### 2.6.2 Native CPU Consistency
+### 2.6.2 Known Limits of the CUDA Error Records
+
+A launch through a generated launcher records its error under its own launch epoch (`LaunchErrorRecords`), and its launcher throws it. A launch captured into a CUDA graph has no epoch and still records into the shared slot above. For such a launch:
+
+- A cooperative kernel whose grid barrier, or a kernel whose mbarrier, waits for a block or thread that failed relies on the shared slot to stop waiting. If another thread's synchronization consumes the slot before a waiter first looks at it (within about a millisecond of the failure), the waiter keeps waiting until the driver resets the GPU (TDR).
+- Its error can be thrown by the synchronization of any stream, not only the one the graph was launched on.
+- Two such launches that fail before a synchronization consumes the first error find the shared slot taken; the second one traps (a GPU fault that ends the context) rather than losing its error.
+
+Further limits:
+
+- When 256 launches whose launchers read their own record are in flight at once, the next launch runs with epoch 0, as a captured launch does.
+- Once every 2^32 launches the epoch counter wraps around and the host clears the abort words of every loaded module. The clear is not ordered with launches on non-blocking streams: a launch that failed and is still running at that moment can lose its abort word, and its grid barrier or mbarrier waiters keep waiting until the driver resets the GPU (TDR).
+
+### 2.6.3 Native CPU Consistency
 
 The native CPU execution path (`CpuKernelLoader`) mirrors this architecture using thread-local `GSharpErrorSlot` instances exporting `__gsharp_consume_last_error_details`. The runtime unpacks thread and block coordinates with identical layout decoding, producing uniform exception types, messages, and `Exception.Data` key-value pairs across CUDA GPU and native CPU targets.
 

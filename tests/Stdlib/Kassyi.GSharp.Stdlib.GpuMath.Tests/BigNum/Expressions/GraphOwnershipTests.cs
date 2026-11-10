@@ -346,9 +346,9 @@ public sealed class GraphOwnershipTests : IDisposable
     [Scenario(TestScenario.SadPath)]
     public void CaptureFailure_ReturnsEverythingItLeased()
     {
-        // A modulo reads its result back to the host, which a capture cannot record, so the capture fails after the
-        // warm-up succeeded. The failure path ends the capture and gives back every buffer it deferred (G8); the end of
-        // an invalidated capture fails as well, so both errors are reported together (O14).
+        // A modulo reads from the device, which a capture cannot record; it refuses the capture before the read, so the
+        // capture fails after the warm-up succeeded and after the addition below it was recorded. The failure path
+        // ends the capture and gives back every buffer it deferred (G8), and rethrows the original exception.
         // mutant: CompileToGraph without ReturnDeferred on the failure path (DeferredBuffers stays above 0)
         // The workspace uses the shared context: kernels launched in an isolated context would leave function handles
         // of a destroyed context behind for the next test.
@@ -358,13 +358,40 @@ public sealed class GraphOwnershipTests : IDisposable
             () => ((((GpuBigIntExpr)_a + _b) % _c) + _a).CompileToGraph(_workspace));
         var failed = _workspace.GetMemoryStatistics();
 
-        // The host read-back invalidates the capture, so ending the capture fails as well: both errors, the original
-        // first. (When the cleanup succeeds, the implementation rethrows the original with `throw;`; that branch is
-        // checked by reading AbortCapture, since a capture cannot be made to fail without invalidating it.)
-        var aggregate = Assert.IsType<AggregateException>(error);
-        Assert.Equal(2, aggregate.InnerExceptions.Count);
-        Assert.IsType<CudaException>(aggregate.InnerExceptions[0]);
-        Assert.IsType<CudaException>(aggregate.InnerExceptions[1]);
+        // Nothing invalidated the capture, so ending it succeeds and the original exception is rethrown (the branch
+        // where the cleanup fails too is CaptureFailure_WhoseCleanupFailsToo_ReportsBoth)
+        Assert.IsType<NotSupportedException>(error);
+        Assert.Equal((start.DeferredBuffers, start.LiveBuffers), (failed.DeferredBuffers, failed.LiveBuffers));
+
+        // The stream is usable again after the failed capture
+        using var sum = ((GpuBigIntExpr)_a + _b).Evaluate(_workspace);
+        Assert.Equal(s_a + s_b, Read(sum));
+    }
+
+    [SkippableFact]
+    [Scenario(TestScenario.SadPath)]
+    public void CaptureFailure_WhoseCleanupFailsToo_ReportsBoth()
+    {
+        // No expression reads from the device during a capture any more, so the read is made here: a host read on the
+        // capturing stream fails and invalidates the capture, and ending the capture then fails too. The failure path
+        // still gives back every buffer it deferred, and reports the original exception first, then the cleanup
+        // failure, in one AggregateException.
+        // mutant: AbortCapture without ThrowIfCleanupFailed (no AggregateException; the caller rethrows the original)
+        var start = _workspace.GetMemoryStatistics();
+        var manager = (DefaultGpuMemoryManager)_workspace.MemoryManager;
+        var deferral = manager.BeginDeferral();
+        _workspace.Provider.BeginCapture(_workspace.Stream);
+
+        var original = Record.Exception(
+            () => _workspace.Provider.ReadWord(_a.Value.DevicePointer, 0, _workspace.Stream));
+        Assert.NotNull(original);
+
+        var error = Assert.Throws<AggregateException>(
+            () => GpuBigIntExpr.AbortCapture(_workspace, manager, deferral, original));
+        var failed = _workspace.GetMemoryStatistics();
+
+        Assert.Equal(2, error.InnerExceptions.Count);
+        Assert.Same(original, error.InnerExceptions[0]);
         Assert.Equal((start.DeferredBuffers, start.LiveBuffers), (failed.DeferredBuffers, failed.LiveBuffers));
 
         // The stream is usable again after the failed capture
