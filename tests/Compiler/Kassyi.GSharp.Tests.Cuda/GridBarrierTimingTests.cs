@@ -6,8 +6,8 @@ namespace Kassyi.GSharp.Tests.Cuda;
 /// <summary>
 /// After a thread of a cooperative launch failed, the waiters at the grid barrier leave it at once, and a block that
 /// arrives late leaves it on arrival: with the Deterministic barrier no block runs the code after the barrier, whatever
-/// the order of arrival, and the launch throws the recorded exception. With the Fast barrier a failing block still
-/// arrives, so the blocks already waiting pass it.
+/// the order of arrival; with the Fast barrier no block runs past its next grid barrier. The launch throws the
+/// recorded exception.
 /// </summary>
 [TestTarget(ExecutionTarget.GpuExecution)]
 [Category(TestCategory.Runtime)]
@@ -39,42 +39,54 @@ public sealed class GridBarrierTimingTests
         Assert.All(result, static value => Assert.Equal(Untouched, value));
     }
 
-    // [WHY] Blocks 1 to 3 wait at the barrier from the start; block 0 arrives about 1 ms later, after its thread 5
-    // failed. A Fast barrier lets block 0 arrive before it reads the abort word, so its arrival completes the barrier
-    // and the waiting blocks run the code after it. A waiter that reaches its 1024-poll check between the failure and
-    // that arrival leaves instead, so one launch may lose a block: the test allows a few launches and needs one in
-    // which every waiting block wrote. A Deterministic barrier never writes (the test below).
+    // [WHY] The promise of a Fast barrier after a failure: the launch throws the recorded exception, no thread waits,
+    // the failing block runs nothing after the barrier, and the other blocks run at most up to their next grid
+    // barrier. Blocks 1 to 3 wait at the first barrier from the start and block 0 arrives about 1 ms later, after its
+    // thread 5 failed, so its arrival may complete the first barrier: the writes between the two barriers of blocks 1
+    // to 3 may be there or not. Block 0 never reaches the second barrier, which therefore never completes, so no thread
+    // writes after it. Every launch must keep all of this; none depends on the order of arrival.
     [SkippableFact]
-    [Scenario(TestScenario.Boundary)]
-    public void FastBarrier_FailingBlockArrivesLast_WaitingBlocksPassIt()
+    [Scenario(TestScenario.SadPath)]
+    public void FastBarriers_ThreadFailsBeforeTheFirst_NothingRunsPastTheSecond()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
-        const int Launches = 3;
+        const int Launches = 20;
         long cycles = GpuClock.RateKilohertz();
         var keys = new int[Blocks * BlockSize];
         keys[5] = GridBarrierTimingKernels.FailKey;
 
-        bool everyWaiterWrote = false;
-        for (int launch = 0; launch < Launches && !everyWaiterWrote; launch++)
+        for (int launch = 0; launch < Launches; launch++)
         {
+            var between = new int[keys.Length];
             var result = new int[keys.Length];
+            Array.Fill(between, Untouched);
             Array.Fill(result, Untouched);
 
             var ex = Assert.Throws<SwitchExpressionException>(() =>
-                GridBarrierTimingKernels.LaunchLateFailingBlockFastKernel(keys, cycles, result, gridDimX: Blocks,
-                    blockDimX: BlockSize));
+                GridBarrierTimingKernels.LaunchLateFailingBlockTwoFastBarriersKernel(keys, cycles, between, result,
+                    gridDimX: Blocks, blockDimX: BlockSize));
 
             Assert.Equal("(5,0,0)", ex.Data["GSharp.ThreadIndex"]);
-            // Block 0 saw the failure after its arrival and left without writing
-            Assert.All(result.Take(BlockSize), static value => Assert.Equal(Untouched, value));
-            everyWaiterWrote = Enumerable.Range(BlockSize, result.Length - BlockSize).All(i => result[i] == i);
+            Assert.Equal("(0,0,0)", ex.Data["GSharp.BlockIndex"]);
+            Assert.Null(ex.InnerException);
+            // Each property is counted on its own, so a failure names every one that broke
+            // The failing block runs nothing after the first barrier
+            int failingBlockWrites = between.Take(BlockSize).Count(static value => value != Untouched);
+            // Between the barriers another block wrote its own value or nothing
+            int foreignWrites = Enumerable.Range(BlockSize, between.Length - BlockSize)
+                .Count(i => between[i] != Untouched && between[i] != i);
+            // No thread runs past the second barrier
+            int writesPastSecond = result.Count(static value => value != Untouched);
+            Assert.True(failingBlockWrites == 0 && foreignWrites == 0 && writesPastSecond == 0,
+                $"launch {launch}: {failingBlockWrites} writes of the failing block after the first barrier, " +
+                $"{foreignWrites} wrong writes between the barriers, " +
+                $"{writesPastSecond} writes after the second barrier");
         }
-
-        Assert.True(everyWaiterWrote, $"no launch of {Launches} let every waiting block pass the Fast barrier");
     }
 
-    // [WHY] The same launch with a Deterministic barrier: block 0 reads the abort word before it arrives and does not
-    // arrive, so the barrier never completes and the waiting blocks leave through their poll check without writing
+    // [WHY] Blocks 1 to 3 wait at the barrier from the start; block 0 arrives about 1 ms later, after its thread 5
+    // failed. A Deterministic barrier reads the abort word before it arrives, so block 0 does not arrive, the barrier
+    // never completes and the waiting blocks leave through their poll check without writing
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
     public void DeterministicBarrier_FailingBlockArrivesLast_NoBlockPassesIt()
