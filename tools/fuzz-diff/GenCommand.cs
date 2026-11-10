@@ -16,6 +16,8 @@ public sealed record GenCommandOptions(
 /// </summary>
 public sealed class GenCommand : IFuzzCommand
 {
+    private static readonly string s_defaultOutDir = Path.Combine("tmp", "differential-fuzz", "Generated");
+
     /// <summary>Gets the singleton command instance.</summary>
     public static GenCommand Instance { get; } = new();
 
@@ -63,13 +65,7 @@ public sealed class GenCommand : IFuzzCommand
         out string? error)
     {
         options = null;
-        var values = new FuzzOptionValues
-        {
-            BatchSize = 64,
-            Size = 4,
-            ProfileCode = "C",
-            OutDir = Path.Combine("tmp", "differential-fuzz", "Generated"),
-        };
+        var values = new FuzzOptionValues { OutDir = s_defaultOutDir };
 
         if (!FuzzOptionTable.TryParse(args, s_options, values, out showHelp, out error) || showHelp)
         {
@@ -96,7 +92,7 @@ public sealed class GenCommand : IFuzzCommand
 
         options = new GenCommandOptions(
             fuzzOptions,
-            values.OutDir ?? Path.Combine("tmp", "differential-fuzz", "Generated"),
+            values.OutDir ?? s_defaultOutDir,
             values.RepoRoot,
             values.CudaArch);
         return true;

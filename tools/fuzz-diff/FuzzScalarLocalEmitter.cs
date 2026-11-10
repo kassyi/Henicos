@@ -5,17 +5,51 @@ namespace Kassyi.GSharp.Tools.FuzzDiff;
 /// </summary>
 internal static class FuzzScalarLocalEmitter
 {
-    private const string EnumDeclarationsBlock =
-        """
-        public enum FuzzEnumByte : byte { Zero = 0, One = 1, Two = 2, Bit = 0x10, High = 0x80, Mask = 0x55, Alt = 0xAA, Edge = byte.MaxValue }
-        public enum FuzzEnumShort : short { Zero = 0, One = 1, Two = 2, Bit = 0x0100, High = -256, Mask = 0x1234, Alt = -1, Edge = short.MinValue }
-        public enum FuzzEnumInt : int { Zero = 0, One = 1, Two = 2, Bit = 0x00010000, High = -65536, Mask = 0x13579BDF, Alt = -1, Edge = int.MinValue }
-        public enum FuzzEnumULong : ulong { Zero = 0UL, One = 1UL, Two = 2UL, Bit = 0x0000000100000000UL, High = 0x8000000000000000UL, Mask = 0x5555555555555555UL, Alt = 0xAAAAAAAAAAAAAAAAUL, Edge = ulong.MaxValue }
-        """;
+    // The enums of the generated kernels: name, underlying type, then the members as written in the declaration
+    private static readonly (string Name, string Underlying, string[] Members)[] s_enums =
+    [
+        (
+            "FuzzEnumByte",
+            "byte",
+            [
+                "Zero = 0", "One = 1", "Two = 2", "Bit = 0x10", "High = 0x80", "Mask = 0x55", "Alt = 0xAA",
+                "Edge = byte.MaxValue",
+            ]
+        ),
+        (
+            "FuzzEnumShort",
+            "short",
+            [
+                "Zero = 0", "One = 1", "Two = 2", "Bit = 0x0100", "High = -256", "Mask = 0x1234", "Alt = -1",
+                "Edge = short.MinValue",
+            ]
+        ),
+        (
+            "FuzzEnumInt",
+            "int",
+            [
+                "Zero = 0", "One = 1", "Two = 2", "Bit = 0x00010000", "High = -65536", "Mask = 0x13579BDF", "Alt = -1",
+                "Edge = int.MinValue",
+            ]
+        ),
+        (
+            "FuzzEnumULong",
+            "ulong",
+            [
+                "Zero = 0UL", "One = 1UL", "Two = 2UL", "Bit = 0x0000000100000000UL", "High = 0x8000000000000000UL",
+                "Mask = 0x5555555555555555UL", "Alt = 0xAAAAAAAAAAAAAAAAUL", "Edge = ulong.MaxValue",
+            ]
+        ),
+    ];
 
     /// <summary>Appends the device enum declarations used by generated kernels to <paramref name="writer"/>.</summary>
-    public static void AppendEnumDeclarations(SourceWriter writer) =>
-        writer.AppendLine(EnumDeclarationsBlock);
+    public static void AppendEnumDeclarations(SourceWriter writer)
+    {
+        foreach ((string name, string underlying, string[] members) in s_enums)
+        {
+            writer.AppendLine($"public enum {name} : {underlying} {{ {string.Join(", ", members)} }}");
+        }
+    }
 
     /// <summary>Initializes scalar local variables from kernel inputs.</summary>
     internal static void InitializeScalarLocals(KernelGenerationState state)

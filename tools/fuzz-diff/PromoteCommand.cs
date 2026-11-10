@@ -24,6 +24,8 @@ public sealed class PromoteCommand : IFuzzCommand
 {
     private static readonly UTF8Encoding s_utf8NoBom = new(encoderShouldEmitUTF8Identifier: false);
 
+    private static readonly string s_defaultFindingsDir = Path.Combine("tmp", "differential-fuzz", "findings");
+
     /// <summary>Gets the singleton command instance.</summary>
     public static PromoteCommand Instance { get; } = new();
 
@@ -68,13 +70,7 @@ public sealed class PromoteCommand : IFuzzCommand
         out string? error)
     {
         options = null;
-        var values = new FuzzOptionValues
-        {
-            FailingPaths = "Native,Cuda",
-            FailureKind = "CellMismatch",
-            Column = "hash",
-            FindingsDir = Path.Combine("tmp", "differential-fuzz", "findings"),
-        };
+        var values = new FuzzOptionValues { FindingsDir = s_defaultFindingsDir };
 
         if (!FuzzOptionTable.TryParse(args, s_options, values, out showHelp, out error) || showHelp)
         {
@@ -94,7 +90,7 @@ public sealed class PromoteCommand : IFuzzCommand
             values.FailingPaths,
             values.FailureKind,
             values.Column,
-            values.FindingsDir ?? Path.Combine("tmp", "differential-fuzz", "findings"),
+            values.FindingsDir ?? s_defaultFindingsDir,
             values.KernelName);
         return true;
     }

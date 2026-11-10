@@ -57,9 +57,7 @@ public static class FuzzPromoter
 
         var renamedMethod = selectedMethod.WithIdentifier(SyntaxFactory.Identifier(reproMethodName));
 
-        string headerLine = string.Create(
-            CultureInfo.InvariantCulture,
-            $"// Found by the differential fuzzer: fuzz-seed {seedHex}, input-seed {inputSeed}, fingerprint {fingerprint} (paths: {fpResult.FailingPathsMask}, kind: {fpResult.FailureKindTag})");
+        string headerLine = BuildHeaderLine(seedHex, inputSeed, fingerprint, fpResult);
 
         string knownDivergenceEntry = BuildKnownDivergenceEntry(
             reproClassName,
@@ -68,19 +66,13 @@ public static class FuzzPromoter
             fpResult.FailingPathsMask);
 
         string kernelFileContent = BuildReproKernelFile(root, renamedMethod, reproClassName, headerLine);
-        string caseProperty = FuzzCaseEmitter.RenderDifferentialCaseProperty(
+        string caseSnippetContent = BuildCaseSnippet(
             reproClassName,
             reproMethodName,
             inputSeed,
             headerLine,
-            normalizedColumn);
-        string caseSnippetContent =
-            $$"""
-            {{caseProperty}}
-
-            // KnownDivergence entry:
-            {{knownDivergenceEntry}}
-            """;
+            normalizedColumn,
+            knownDivergenceEntry);
 
         return new PromotedDifferentialArtifacts(
             fingerprint,
@@ -90,6 +82,41 @@ public static class FuzzPromoter
             caseSnippetContent,
             knownDivergenceEntry,
             reproFileStem);
+    }
+
+    private static string BuildHeaderLine(
+        string seedHex,
+        int inputSeed,
+        string fingerprint,
+        FuzzFingerprintResult result) =>
+        string.Create(
+            CultureInfo.InvariantCulture,
+            $"// Found by the differential fuzzer: fuzz-seed {seedHex}, input-seed {inputSeed}, ") +
+        string.Create(
+            CultureInfo.InvariantCulture,
+            $"fingerprint {fingerprint} (paths: {result.FailingPathsMask}, kind: {result.FailureKindTag})");
+
+    private static string BuildCaseSnippet(
+        string reproClassName,
+        string reproMethodName,
+        int inputSeed,
+        string headerLine,
+        string column,
+        string knownDivergenceEntry)
+    {
+        string caseProperty = FuzzCaseEmitter.RenderDifferentialCaseProperty(
+            reproClassName,
+            reproMethodName,
+            inputSeed,
+            headerLine,
+            column);
+        return
+            $$"""
+            {{caseProperty}}
+
+            // KnownDivergence entry:
+            {{knownDivergenceEntry}}
+            """;
     }
 
     private static (string ClassName, string MethodName, string FileStem, string SeedHex) ResolveReproNames(

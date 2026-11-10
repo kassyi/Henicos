@@ -135,25 +135,7 @@ public sealed class ScalarFuzzGenerator
             _options.KernelClassName,
             _deviceFunctions);
 
-        FuzzScalarLocalEmitter.InitializeScalarLocals(state);
-        FuzzCompositeExpressionEmitter.InitializeCompositeLocals(state);
-
-        FuzzScalarStatementEmitter.EmitCoreScalarStatements(state);
-        FuzzCompositeExpressionEmitter.EmitCoreCompositeStatements(state);
-        FuzzControlFlowEmitter.EmitCoreControlFlowStatements(state);
-        FuzzDeviceFunctionEmitter.EmitCoreDeviceFunctionCalls(state);
-
-        int extraStatements = 2 + size * 2;
-        for (int s = 0; s < extraStatements; s++)
-        {
-            FuzzScalarStatementEmitter.EmitRandomStatement(state);
-            if (s % 3 == 2)
-            {
-                FuzzChecksumEmitter.EmitChecksumFoldSubset(state);
-            }
-        }
-
-        FuzzChecksumEmitter.EmitChecksumFoldAll(state);
+        EmitKernelBody(state, size);
 
         string kernelMethod = RenderKernelMethod(kernelName, kernelSeed, size, state);
         string caseHeader = string.Create(
@@ -178,6 +160,30 @@ public sealed class ScalarFuzzGenerator
             caseProperty,
             localNames,
             state.Statements.ToArray());
+    }
+
+    // The locals, then the core statements of every kind, then the random ones with a checksum fold now and then
+    private static void EmitKernelBody(KernelGenerationState state, int size)
+    {
+        FuzzScalarLocalEmitter.InitializeScalarLocals(state);
+        FuzzCompositeExpressionEmitter.InitializeCompositeLocals(state);
+
+        FuzzScalarStatementEmitter.EmitCoreScalarStatements(state);
+        FuzzCompositeExpressionEmitter.EmitCoreCompositeStatements(state);
+        FuzzControlFlowEmitter.EmitCoreControlFlowStatements(state);
+        FuzzDeviceFunctionEmitter.EmitCoreDeviceFunctionCalls(state);
+
+        int extraStatements = 2 + size * 2;
+        for (int s = 0; s < extraStatements; s++)
+        {
+            FuzzScalarStatementEmitter.EmitRandomStatement(state);
+            if (s % 3 == 2)
+            {
+                FuzzChecksumEmitter.EmitChecksumFoldSubset(state);
+            }
+        }
+
+        FuzzChecksumEmitter.EmitChecksumFoldAll(state);
     }
 
     /// <summary>Appends the device enum declarations used by generated kernels to <paramref name="writer"/>.</summary>

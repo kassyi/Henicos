@@ -52,8 +52,8 @@ internal static class FuzzScalarStatementEmitter
     ];
 
     /// <summary>
-    /// Emits <paramref name="count"/> generated statements into <paramref name="writer"/> at the next control-flow depth
-    /// (up to depth <c>2</c>), preserving loop-variable immutability and scoping invariants.
+    /// Emits <paramref name="count"/> generated statements into <paramref name="writer"/> at the next control-flow
+    /// depth (up to depth <c>2</c>), preserving loop-variable immutability and scoping invariants.
     /// </summary>
     internal static void EmitNestedStatements(
         KernelGenerationState state,

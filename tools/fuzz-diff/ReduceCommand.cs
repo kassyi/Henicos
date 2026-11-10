@@ -41,6 +41,8 @@ public sealed class ReduceCommand : IFuzzCommand
 {
     private static readonly UTF8Encoding s_utf8NoBom = new(encoderShouldEmitUTF8Identifier: false);
 
+    private static readonly string s_defaultWorkDir = Path.Combine("tmp", "differential-fuzz");
+
     /// <summary>Gets the singleton command instance.</summary>
     public static ReduceCommand Instance { get; } = new();
 
@@ -90,14 +92,7 @@ public sealed class ReduceCommand : IFuzzCommand
         out string? error)
     {
         options = null;
-        var values = new FuzzOptionValues
-        {
-            ProfileCode = "C",
-            WorkDir = Path.Combine("tmp", "differential-fuzz"),
-            FailingPaths = "Native,Cuda",
-            FailureKind = "CellMismatch",
-            Column = "hash",
-        };
+        var values = new FuzzOptionValues { WorkDir = s_defaultWorkDir };
 
         if (!FuzzOptionTable.TryParse(args, s_options, values, out showHelp, out error) || showHelp)
         {
@@ -116,7 +111,7 @@ public sealed class ReduceCommand : IFuzzCommand
             values.KernelName,
             values.InputSeed ?? 0,
             values.ProfileCode,
-            values.WorkDir ?? Path.Combine("tmp", "differential-fuzz"),
+            values.WorkDir ?? s_defaultWorkDir,
             values.RepoRoot,
             values.TestCmd,
             values.OutPath,
