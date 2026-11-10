@@ -7,17 +7,11 @@ namespace Kassyi.GSharp.Tests.Shared.Syntax;
 /// <c>MemoryExtensions.Sort</c> with custom comparers and comparisons in device code (#625).
 /// </summary>
 [Collection(TestCollections.GlobalStateSequential)]
-public class SpanSortCustomOrderTests : TranspilerTestBase
+public class SpanSortCustomOrderTests : SpanKernelPathTestBase
 {
-    public static TheoryData<int, bool> TypedCases() => SpanSortTestHelpers.TypedCases();
-
-    public static TheoryData<bool> Paths() => SpanSortTestHelpers.Paths();
-
-    private void Run(bool managed, Action launch) => SpanSortTestHelpers.Run(IsCudaDialect, managed, launch);
-
     // MaskedComparer leaves many keys equal: the order of equal keys must be the one .NET picks
     [SkippableTheory]
-    [MemberData(nameof(TypedCases))]
+    [MemberData(nameof(SpanSortTestHelpers.TypedCases), MemberType = typeof(SpanSortTestHelpers))]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
@@ -36,7 +30,7 @@ public class SpanSortCustomOrderTests : TranspilerTestBase
     }
 
     [SkippableTheory]
-    [MemberData(nameof(Paths))]
+    [MemberData(nameof(SpanSortTestHelpers.Paths), MemberType = typeof(SpanSortTestHelpers))]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
@@ -50,7 +44,7 @@ public class SpanSortCustomOrderTests : TranspilerTestBase
     }
 
     [SkippableTheory]
-    [MemberData(nameof(TypedCases))]
+    [MemberData(nameof(SpanSortTestHelpers.TypedCases), MemberType = typeof(SpanSortTestHelpers))]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
@@ -70,7 +64,7 @@ public class SpanSortCustomOrderTests : TranspilerTestBase
     }
 
     [SkippableTheory]
-    [MemberData(nameof(TypedCases))]
+    [MemberData(nameof(SpanSortTestHelpers.TypedCases), MemberType = typeof(SpanSortTestHelpers))]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
@@ -87,7 +81,7 @@ public class SpanSortCustomOrderTests : TranspilerTestBase
     }
 
     [SkippableTheory]
-    [MemberData(nameof(Paths))]
+    [MemberData(nameof(SpanSortTestHelpers.Paths), MemberType = typeof(SpanSortTestHelpers))]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.Boundary)]
@@ -103,7 +97,7 @@ public class SpanSortCustomOrderTests : TranspilerTestBase
     }
 
     [SkippableTheory]
-    [MemberData(nameof(TypedCases))]
+    [MemberData(nameof(SpanSortTestHelpers.TypedCases), MemberType = typeof(SpanSortTestHelpers))]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
@@ -188,7 +182,7 @@ public class SpanSortCustomOrderTests : TranspilerTestBase
     // .NET wraps an exception thrown by the comparison in InvalidOperationException (ElementAt throws
     // ArgumentOutOfRangeException here); the native CPU path records the trap inside the comparison the same way
     [SkippableTheory]
-    [MemberData(nameof(Paths))]
+    [MemberData(nameof(SpanSortTestHelpers.Paths), MemberType = typeof(SpanSortTestHelpers))]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.SadPath)]

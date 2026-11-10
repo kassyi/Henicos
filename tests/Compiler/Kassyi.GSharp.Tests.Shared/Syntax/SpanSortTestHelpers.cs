@@ -46,19 +46,6 @@ internal static class SpanSortTestHelpers
 
     public static TheoryData<bool> Paths() => new() { false, true };
 
-    public static void Run(bool isCudaDialect, bool managed, Action launch)
-    {
-        Skip.If(managed && isCudaDialect, "The managed path runs on the CPU test assembly.");
-#if GSHARP_CPU
-        if (managed)
-        {
-            ManagedKernelRun.Run(launch);
-            return;
-        }
-#endif
-        launch();
-    }
-
     public static void AssertSameAsDotNet<T>(T[] input, T[] actual, string what)
     {
         var expected = (T[])input.Clone();

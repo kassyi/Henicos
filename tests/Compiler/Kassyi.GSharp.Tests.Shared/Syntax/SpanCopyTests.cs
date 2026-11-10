@@ -8,17 +8,11 @@ namespace Kassyi.GSharp.Tests.Shared.Syntax;
 /// and TryCopyTo (#731).
 /// </summary>
 [Collection(TestCollections.GlobalStateSequential)]
-public class SpanCopyTests : TranspilerTestBase
+public class SpanCopyTests : SpanKernelPathTestBase
 {
-    public static TheoryData<bool> Paths => SpanWriteTestHelpers.Paths;
-
-    public static TheoryData<int, int, int, bool> OverlapCopyCases() => SpanWriteTestHelpers.OverlapCopyCases();
-
-    private void Run(bool managed, Action launch) => SpanWriteTestHelpers.Run(IsCudaDialect, managed, launch);
-
     // P3 CopyToOverlap: overlapping source and destination slices on the same buffer behave as memmove
     [SkippableTheory]
-    [MemberData(nameof(OverlapCopyCases))]
+    [MemberData(nameof(SpanWriteTestHelpers.OverlapCopyCases), MemberType = typeof(SpanWriteTestHelpers))]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.Boundary)]
@@ -64,7 +58,7 @@ public class SpanCopyTests : TranspilerTestBase
     }
 
     [SkippableTheory]
-    [MemberData(nameof(Paths))]
+    [MemberData(nameof(SpanWriteTestHelpers.Paths), MemberType = typeof(SpanWriteTestHelpers))]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
@@ -156,7 +150,7 @@ public class SpanCopyTests : TranspilerTestBase
 
     // P4 CopyToShort on CPU: throws ArgumentException and leaves destination untouched
     [SkippableTheory]
-    [MemberData(nameof(Paths))]
+    [MemberData(nameof(SpanWriteTestHelpers.Paths), MemberType = typeof(SpanWriteTestHelpers))]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.SadPath)]

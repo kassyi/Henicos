@@ -8,14 +8,10 @@ namespace Kassyi.GSharp.Tests.Shared.Syntax;
 /// and evaluation order (#731).
 /// </summary>
 [Collection(TestCollections.GlobalStateSequential)]
-public class SpanWriteDiagnosticsTests : TranspilerTestBase
+public class SpanWriteDiagnosticsTests : SpanKernelPathTestBase
 {
-    public static TheoryData<bool> Paths => SpanWriteTestHelpers.Paths;
-
-    private void Run(bool managed, Action launch) => SpanWriteTestHelpers.Run(IsCudaDialect, managed, launch);
-
     [SkippableTheory]
-    [MemberData(nameof(Paths))]
+    [MemberData(nameof(SpanWriteTestHelpers.Paths), MemberType = typeof(SpanWriteTestHelpers))]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.SadPath)]
@@ -34,7 +30,7 @@ public class SpanWriteDiagnosticsTests : TranspilerTestBase
     }
 
     [SkippableTheory]
-    [MemberData(nameof(Paths))]
+    [MemberData(nameof(SpanWriteTestHelpers.Paths), MemberType = typeof(SpanWriteTestHelpers))]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.SadPath)]
@@ -54,7 +50,7 @@ public class SpanWriteDiagnosticsTests : TranspilerTestBase
     }
 
     [SkippableTheory]
-    [MemberData(nameof(Paths))]
+    [MemberData(nameof(SpanWriteTestHelpers.Paths), MemberType = typeof(SpanWriteTestHelpers))]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.SadPath)]
@@ -76,7 +72,7 @@ public class SpanWriteDiagnosticsTests : TranspilerTestBase
     }
 
     [SkippableTheory]
-    [MemberData(nameof(Paths))]
+    [MemberData(nameof(SpanWriteTestHelpers.Paths), MemberType = typeof(SpanWriteTestHelpers))]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.SadPath)]
@@ -96,7 +92,7 @@ public class SpanWriteDiagnosticsTests : TranspilerTestBase
     }
 
     [SkippableTheory]
-    [MemberData(nameof(Paths))]
+    [MemberData(nameof(SpanWriteTestHelpers.Paths), MemberType = typeof(SpanWriteTestHelpers))]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.SadPath)]
@@ -175,7 +171,7 @@ public class SpanWriteDiagnosticsTests : TranspilerTestBase
 #endif
 
     [SkippableTheory]
-    [MemberData(nameof(Paths))]
+    [MemberData(nameof(SpanWriteTestHelpers.Paths), MemberType = typeof(SpanWriteTestHelpers))]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.Boundary)]

@@ -7,16 +7,10 @@ namespace Kassyi.GSharp.Tests.Shared.Syntax;
 /// <c>MemoryExtensions.Sort</c> for key-value pairs in device code (#625).
 /// </summary>
 [Collection(TestCollections.GlobalStateSequential)]
-public class SpanSortPairsTests : TranspilerTestBase
+public class SpanSortPairsTests : SpanKernelPathTestBase
 {
-    public static TheoryData<int, bool> TypedCases() => SpanSortTestHelpers.TypedCases();
-
-    public static TheoryData<bool> Paths() => SpanSortTestHelpers.Paths();
-
-    private void Run(bool managed, Action launch) => SpanSortTestHelpers.Run(IsCudaDialect, managed, launch);
-
     [SkippableTheory]
-    [MemberData(nameof(TypedCases))]
+    [MemberData(nameof(SpanSortTestHelpers.TypedCases), MemberType = typeof(SpanSortTestHelpers))]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
@@ -37,7 +31,7 @@ public class SpanSortPairsTests : TranspilerTestBase
     }
 
     [SkippableTheory]
-    [MemberData(nameof(TypedCases))]
+    [MemberData(nameof(SpanSortTestHelpers.TypedCases), MemberType = typeof(SpanSortTestHelpers))]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.Boundary)]
@@ -60,7 +54,7 @@ public class SpanSortPairsTests : TranspilerTestBase
     }
 
     [SkippableTheory]
-    [MemberData(nameof(TypedCases))]
+    [MemberData(nameof(SpanSortTestHelpers.TypedCases), MemberType = typeof(SpanSortTestHelpers))]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
@@ -81,7 +75,7 @@ public class SpanSortPairsTests : TranspilerTestBase
     }
 
     [SkippableTheory]
-    [MemberData(nameof(TypedCases))]
+    [MemberData(nameof(SpanSortTestHelpers.TypedCases), MemberType = typeof(SpanSortTestHelpers))]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
@@ -103,7 +97,7 @@ public class SpanSortPairsTests : TranspilerTestBase
     }
 
     [SkippableTheory]
-    [MemberData(nameof(TypedCases))]
+    [MemberData(nameof(SpanSortTestHelpers.TypedCases), MemberType = typeof(SpanSortTestHelpers))]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
@@ -130,7 +124,7 @@ public class SpanSortPairsTests : TranspilerTestBase
 
     // .NET: ArgumentException (Argument_SpansMustHaveSameLength) before sorting
     [SkippableTheory]
-    [MemberData(nameof(Paths))]
+    [MemberData(nameof(SpanSortTestHelpers.Paths), MemberType = typeof(SpanSortTestHelpers))]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.SadPath)]

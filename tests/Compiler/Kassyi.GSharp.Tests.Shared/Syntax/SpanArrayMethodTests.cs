@@ -7,16 +7,10 @@ namespace Kassyi.GSharp.Tests.Shared.Syntax;
 /// Differential and property tests for <c>System.Array</c> Fill, Clear, Reverse, Copy, and Sort (#731).
 /// </summary>
 [Collection(TestCollections.GlobalStateSequential)]
-public class SpanArrayMethodTests : TranspilerTestBase
+public class SpanArrayMethodTests : SpanKernelPathTestBase
 {
-    public static TheoryData<bool> Paths => SpanWriteTestHelpers.Paths;
-
-    public static TheoryData<int, int, int, bool> OverlapCopyCases() => SpanWriteTestHelpers.OverlapCopyCases();
-
-    private void Run(bool managed, Action launch) => SpanWriteTestHelpers.Run(IsCudaDialect, managed, launch);
-
     [SkippableTheory]
-    [MemberData(nameof(Paths))]
+    [MemberData(nameof(SpanWriteTestHelpers.Paths), MemberType = typeof(SpanWriteTestHelpers))]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
@@ -46,7 +40,7 @@ public class SpanArrayMethodTests : TranspilerTestBase
     }
 
     [SkippableTheory]
-    [MemberData(nameof(Paths))]
+    [MemberData(nameof(SpanWriteTestHelpers.Paths), MemberType = typeof(SpanWriteTestHelpers))]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
@@ -67,7 +61,7 @@ public class SpanArrayMethodTests : TranspilerTestBase
     }
 
     [SkippableTheory]
-    [MemberData(nameof(Paths))]
+    [MemberData(nameof(SpanWriteTestHelpers.Paths), MemberType = typeof(SpanWriteTestHelpers))]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
@@ -91,7 +85,7 @@ public class SpanArrayMethodTests : TranspilerTestBase
     }
 
     [SkippableTheory]
-    [MemberData(nameof(OverlapCopyCases))]
+    [MemberData(nameof(SpanWriteTestHelpers.OverlapCopyCases), MemberType = typeof(SpanWriteTestHelpers))]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.Boundary)]
@@ -108,7 +102,7 @@ public class SpanArrayMethodTests : TranspilerTestBase
     }
 
     [SkippableTheory]
-    [MemberData(nameof(Paths))]
+    [MemberData(nameof(SpanWriteTestHelpers.Paths), MemberType = typeof(SpanWriteTestHelpers))]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
@@ -144,7 +138,7 @@ public class SpanArrayMethodTests : TranspilerTestBase
     }
 
     [SkippableTheory]
-    [MemberData(nameof(Paths))]
+    [MemberData(nameof(SpanWriteTestHelpers.Paths), MemberType = typeof(SpanWriteTestHelpers))]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.SadPath)]

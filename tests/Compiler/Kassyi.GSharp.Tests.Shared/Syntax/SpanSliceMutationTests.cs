@@ -7,16 +7,10 @@ namespace Kassyi.GSharp.Tests.Shared.Syntax;
 /// Differential and property tests for <c>Span&lt;T&gt;</c> slice mutation, fill, and reverse (#731).
 /// </summary>
 [Collection(TestCollections.GlobalStateSequential)]
-public class SpanSliceMutationTests : TranspilerTestBase
+public class SpanSliceMutationTests : SpanKernelPathTestBase
 {
-    public static TheoryData<bool> Paths => SpanWriteTestHelpers.Paths;
-
-    public static TheoryData<int, int, bool> SliceWindowCases() => SpanWriteTestHelpers.SliceWindowCases();
-
-    private void Run(bool managed, Action launch) => SpanWriteTestHelpers.Run(IsCudaDialect, managed, launch);
-
     [SkippableTheory]
-    [MemberData(nameof(Paths))]
+    [MemberData(nameof(SpanWriteTestHelpers.Paths), MemberType = typeof(SpanWriteTestHelpers))]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
@@ -41,7 +35,7 @@ public class SpanSliceMutationTests : TranspilerTestBase
 
     // P1 FillSlices: ∀ x, p, k (0 <= p <= p+k <= n), V(p, k) == v and U(p, k) == U_before(p, k)
     [SkippableTheory]
-    [MemberData(nameof(SliceWindowCases))]
+    [MemberData(nameof(SpanWriteTestHelpers.SliceWindowCases), MemberType = typeof(SpanWriteTestHelpers))]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
@@ -60,7 +54,7 @@ public class SpanSliceMutationTests : TranspilerTestBase
 
     // P1 ClearSlices: ∀ x, p, k (0 <= p <= p+k <= n), V(p, k) == default(T) and U(p, k) == U_before(p, k)
     [SkippableTheory]
-    [MemberData(nameof(SliceWindowCases))]
+    [MemberData(nameof(SpanWriteTestHelpers.SliceWindowCases), MemberType = typeof(SpanWriteTestHelpers))]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
@@ -106,7 +100,7 @@ public class SpanSliceMutationTests : TranspilerTestBase
     }
 
     [SkippableTheory]
-    [MemberData(nameof(Paths))]
+    [MemberData(nameof(SpanWriteTestHelpers.Paths), MemberType = typeof(SpanWriteTestHelpers))]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
@@ -123,7 +117,7 @@ public class SpanSliceMutationTests : TranspilerTestBase
 
     // P2 ReverseSlices: ∀ i in 0..k-1, V_after[i] == V_before[k-1-i] and U_after == U_before
     [SkippableTheory]
-    [MemberData(nameof(SliceWindowCases))]
+    [MemberData(nameof(SpanWriteTestHelpers.SliceWindowCases), MemberType = typeof(SpanWriteTestHelpers))]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
@@ -143,7 +137,7 @@ public class SpanSliceMutationTests : TranspilerTestBase
     }
 
     [SkippableTheory]
-    [MemberData(nameof(Paths))]
+    [MemberData(nameof(SpanWriteTestHelpers.Paths), MemberType = typeof(SpanWriteTestHelpers))]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
@@ -162,7 +156,7 @@ public class SpanSliceMutationTests : TranspilerTestBase
     }
 
     [SkippableTheory]
-    [MemberData(nameof(Paths))]
+    [MemberData(nameof(SpanWriteTestHelpers.Paths), MemberType = typeof(SpanWriteTestHelpers))]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
@@ -179,7 +173,7 @@ public class SpanSliceMutationTests : TranspilerTestBase
     }
 
     [SkippableTheory]
-    [MemberData(nameof(Paths))]
+    [MemberData(nameof(SpanWriteTestHelpers.Paths), MemberType = typeof(SpanWriteTestHelpers))]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.Boundary)]

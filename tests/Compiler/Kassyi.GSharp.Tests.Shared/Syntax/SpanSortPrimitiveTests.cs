@@ -7,18 +7,10 @@ namespace Kassyi.GSharp.Tests.Shared.Syntax;
 /// <c>MemoryExtensions.Sort</c> for primitive types in device code (#625).
 /// </summary>
 [Collection(TestCollections.GlobalStateSequential)]
-public class SpanSortPrimitiveTests : TranspilerTestBase
+public class SpanSortPrimitiveTests : SpanKernelPathTestBase
 {
-    public static TheoryData<int, SortPattern, bool> IntCases() => SpanSortTestHelpers.IntCases();
-
-    public static TheoryData<int, bool> TypedCases() => SpanSortTestHelpers.TypedCases();
-
-    public static TheoryData<bool> Paths() => SpanSortTestHelpers.Paths();
-
-    private void Run(bool managed, Action launch) => SpanSortTestHelpers.Run(IsCudaDialect, managed, launch);
-
     [SkippableTheory]
-    [MemberData(nameof(IntCases))]
+    [MemberData(nameof(SpanSortTestHelpers.IntCases), MemberType = typeof(SpanSortTestHelpers))]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
@@ -56,7 +48,7 @@ public class SpanSortPrimitiveTests : TranspilerTestBase
     }
 
     [SkippableTheory]
-    [MemberData(nameof(TypedCases))]
+    [MemberData(nameof(SpanSortTestHelpers.TypedCases), MemberType = typeof(SpanSortTestHelpers))]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
@@ -76,7 +68,7 @@ public class SpanSortPrimitiveTests : TranspilerTestBase
     }
 
     [SkippableTheory]
-    [MemberData(nameof(TypedCases))]
+    [MemberData(nameof(SpanSortTestHelpers.TypedCases), MemberType = typeof(SpanSortTestHelpers))]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
@@ -97,7 +89,7 @@ public class SpanSortPrimitiveTests : TranspilerTestBase
     }
 
     [SkippableTheory]
-    [MemberData(nameof(TypedCases))]
+    [MemberData(nameof(SpanSortTestHelpers.TypedCases), MemberType = typeof(SpanSortTestHelpers))]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
@@ -117,7 +109,7 @@ public class SpanSortPrimitiveTests : TranspilerTestBase
     }
 
     [SkippableTheory]
-    [MemberData(nameof(TypedCases))]
+    [MemberData(nameof(SpanSortTestHelpers.TypedCases), MemberType = typeof(SpanSortTestHelpers))]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
@@ -138,7 +130,7 @@ public class SpanSortPrimitiveTests : TranspilerTestBase
     }
 
     [SkippableTheory]
-    [MemberData(nameof(TypedCases))]
+    [MemberData(nameof(SpanSortTestHelpers.TypedCases), MemberType = typeof(SpanSortTestHelpers))]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.Boundary)]
@@ -154,7 +146,7 @@ public class SpanSortPrimitiveTests : TranspilerTestBase
     }
 
     [SkippableTheory]
-    [MemberData(nameof(TypedCases))]
+    [MemberData(nameof(SpanSortTestHelpers.TypedCases), MemberType = typeof(SpanSortTestHelpers))]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.Boundary)]
@@ -187,7 +179,7 @@ public class SpanSortPrimitiveTests : TranspilerTestBase
 
     // Each of the 64 threads sorts a different segment at the same time
     [SkippableTheory]
-    [MemberData(nameof(Paths))]
+    [MemberData(nameof(SpanSortTestHelpers.Paths), MemberType = typeof(SpanSortTestHelpers))]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]

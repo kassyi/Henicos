@@ -1,4 +1,3 @@
-using System;
 using Xunit;
 
 namespace Kassyi.GSharp.Tests.Shared.Syntax;
@@ -56,19 +55,6 @@ internal static class SpanWriteTestHelpers
         }
 
         return data;
-    }
-
-    public static void Run(bool isCudaDialect, bool managed, Action launch)
-    {
-        Skip.If(managed && isCudaDialect, "The managed path runs on the CPU test assembly.");
-#if GSHARP_CPU
-        if (managed)
-        {
-            ManagedKernelRun.Run(launch);
-            return;
-        }
-#endif
-        launch();
     }
 
     public static int[] CreateSequential(int length, int start)
