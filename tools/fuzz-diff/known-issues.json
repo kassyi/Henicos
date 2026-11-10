@@ -2,6 +2,22 @@
   "version": 1,
   "issues": [
     {
+      "issue": 991,
+      "kind": "avoid",
+      "summary": "CPU paths evaluate operands around a shuffle or suspending call out of C# order",
+      "profiles": ["M", "C", "G"],
+      "paths": ["Managed", "Native"],
+      "avoidedShape": "Split point in a ?: / || / && arm, argument or compound right side that writes"
+    },
+    {
+      "issue": 1554,
+      "kind": "avoid",
+      "summary": "A stack array live across a barrier fails the native build with no diagnostic",
+      "profiles": ["C", "G"],
+      "paths": ["Native"],
+      "avoidedShape": "A stack array local (int[] arr = new int[4]) in a split kernel"
+    },
+    {
       "issue": 1079,
       "kind": "avoid",
       "summary": "8/16-bit integer and char increment/decrement expression value returns widened int or post-increment value",

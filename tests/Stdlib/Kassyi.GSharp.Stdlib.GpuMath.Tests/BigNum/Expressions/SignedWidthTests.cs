@@ -10,7 +10,7 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum.Expressions;
 // - a target narrower than the result is rejected before anything is written; a wider target receives the exact
 //   value and zeros above it (leaves and operator nodes);
 // - Fit narrows checked: a value that fits is kept with its sign, one that does not is a domain error;
-// - an expression whose sign depends on the values cannot be captured into a CUDA graph, one whose signs agree can.
+// - an expression whose sign depends on the values is captured into a CUDA graph, as one whose signs agree.
 
 /// <summary>Signed expression widths on the GPU.</summary>
 [Category(TestCategory.Stdlib)]
@@ -141,7 +141,7 @@ public sealed class SignedWidthTests : IDisposable
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Not_OfANegativeValue_CannotBeCaptured_OfANonNegativeOneCan()
+    public void Not_OfEitherSign_IsCaptured()
     {
         using var positive = SignedCases.Value(_workspace, 5, 1);
         using var negative = SignedCases.Value(_workspace, -5, 1);
@@ -153,12 +153,18 @@ public sealed class SignedWidthTests : IDisposable
             Assert.Equal(-6, SignedCases.Read(owned));
         }
 
-        Assert.Throws<NotSupportedException>(() => (~(GpuBigIntExpr)negative).CompileToGraph(_workspace));
+        // A negative value's ~ is decided on the device (-0 tells apart there), so it is captured as well
+        using (var graph = (~(GpuBigIntExpr)negative).CompileToGraph(_workspace))
+        {
+            graph.Execute();
+            using var owned = graph.Result.ToOwned();
+            Assert.Equal(4, SignedCases.Read(owned));
+        }
     }
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Capture_OfAValueDependentSign_IsNotSupported_ButSameSignsAre()
+    public void Capture_OfAValueDependentSign_AndOfSameSigns_Works()
     {
         using var a = SignedCases.Value(_workspace, 5, 2);
         using var b = SignedCases.Value(_workspace, 7, 2);
@@ -171,7 +177,13 @@ public sealed class SignedWidthTests : IDisposable
             Assert.Equal(12, SignedCases.Read(owned));
         }
 
-        Assert.Throws<NotSupportedException>(() => ((GpuBigIntExpr)a + minusB).CompileToGraph(_workspace));
+        // The sign of a + (-b) is written on the device and read after the launch
+        using (var graph = ((GpuBigIntExpr)a + minusB).CompileToGraph(_workspace))
+        {
+            graph.Execute();
+            using var owned = graph.Result.ToOwned();
+            Assert.Equal(-2, SignedCases.Read(owned));
+        }
 
         // The workspace is still usable afterwards
         using var after = ((GpuBigIntExpr)a + minusB).Evaluate(_workspace);

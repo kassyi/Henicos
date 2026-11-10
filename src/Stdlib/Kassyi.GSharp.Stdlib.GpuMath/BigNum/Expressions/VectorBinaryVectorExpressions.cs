@@ -27,11 +27,12 @@ internal readonly ref struct VectorZipOperands
 internal abstract class VectorBinaryVectorExpressionBase(
     [TakesOwnership] IGpuBigIntVectorExpression left,
     [TakesOwnership] IGpuBigIntVectorExpression right,
-    int wordsPerElement,
+    long bitsPerElement,
     bool checkConstructorLength = false) : IGpuBigIntVectorExpression, IDeviceCountedVector
 {
     public int Length => left.Length;
-    public int WordsPerElement { get; } = wordsPerElement;
+    public long BitsPerElement { get; } = bitsPerElement;
+    public int WordsPerElement { get; } = BigIntWidths.Words(bitsPerElement);
 
     // The result buffers, lent until the next evaluation or Dispose; a caller's target is never kept
     private readonly VectorResultCache _cache = new();
@@ -154,7 +155,7 @@ internal abstract class VectorBinaryVectorExpressionBase(
 internal sealed class VectorAddVectorExpression(
     [TakesOwnership] IGpuBigIntVectorExpression left,
     [TakesOwnership] IGpuBigIntVectorExpression right)
-    : VectorBinaryVectorExpressionBase(left, right, Math.Max(left.WordsPerElement, right.WordsPerElement) + 1)
+    : VectorBinaryVectorExpressionBase(left, right, BigIntWidths.Add(left.BitsPerElement, right.BitsPerElement))
 {
     protected override void DispatchKernel(
         GpuWorkspace workspace,
@@ -174,7 +175,7 @@ internal sealed class VectorAddVectorExpression(
 internal sealed class VectorSubVectorExpression(
     [TakesOwnership] IGpuBigIntVectorExpression left,
     [TakesOwnership] IGpuBigIntVectorExpression right)
-    : VectorBinaryVectorExpressionBase(left, right, Math.Max(left.WordsPerElement, right.WordsPerElement) + 1)
+    : VectorBinaryVectorExpressionBase(left, right, BigIntWidths.Add(left.BitsPerElement, right.BitsPerElement))
 {
     protected override void DispatchKernel(
         GpuWorkspace workspace,
@@ -194,7 +195,8 @@ internal sealed class VectorSubVectorExpression(
 internal sealed class VectorMulVectorExpression(
     [TakesOwnership] IGpuBigIntVectorExpression left,
     [TakesOwnership] IGpuBigIntVectorExpression right)
-    : VectorBinaryVectorExpressionBase(left, right, left.WordsPerElement + right.WordsPerElement)
+    : VectorBinaryVectorExpressionBase(left, right,
+        BigIntWidths.Multiply(left.BitsPerElement, right.BitsPerElement))
 {
     protected override void DispatchKernel(
         GpuWorkspace workspace,
@@ -216,7 +218,7 @@ internal sealed class VectorDivVectorExpression(
     : VectorBinaryVectorExpressionBase(
         left,
         right,
-        Math.Max(left.WordsPerElement, right.WordsPerElement),
+        BigIntWidths.OfWords(Math.Max(left.WordsPerElement, right.WordsPerElement)),
         checkConstructorLength: true)
 {
     protected override bool ChecksZeroDivisor => true;
@@ -245,7 +247,7 @@ internal sealed class VectorModVectorExpression(
     : VectorBinaryVectorExpressionBase(
         left,
         right,
-        Math.Max(left.WordsPerElement, right.WordsPerElement),
+        BigIntWidths.OfWords(Math.Max(left.WordsPerElement, right.WordsPerElement)),
         checkConstructorLength: true)
 {
     protected override bool ChecksZeroDivisor => true;

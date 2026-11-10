@@ -72,8 +72,9 @@ public static partial class GpuBigIntVectorKernels
     /// <c>Result</c>.
     /// </summary>
     /// <remarks>
-    /// The product is exact when <c>Result.NumWords</c> is at least <c>Left.NumWords + Right.NumWords</c>, as every caller
-    /// sizes it; words beyond <c>Result.NumWords</c> are not written. When <c>Left.NumWords</c> is greater than
+    /// The product is computed modulo <c>2^(32 Result.NumWords)</c>; it is exact when the result has the words of the
+    /// bound of the product (<c>a + b</c> bits for operands of <c>a</c> and <c>b</c> bits), as every caller sizes it.
+    /// Words beyond <c>Result.NumWords</c> are not written. When <c>Left.NumWords</c> is greater than
     /// <c>BlockDimension.X</c>, the carry between chunks comes from <see cref="PropagateBlockCarry"/>, so the block width
     /// must be a multiple of 32 (the callers launch <c>min(1024, words)</c> threads, which is 1024 in that case; #887).
     /// </remarks>
