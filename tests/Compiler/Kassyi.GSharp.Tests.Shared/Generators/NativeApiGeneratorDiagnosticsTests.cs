@@ -16,7 +16,7 @@ public class NativeApiGeneratorDiagnosticsTests
 {
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_YamlWithoutGSharpApiMetadata_IsIgnored()
+    public void YamlWithoutGSharpApiMetadata_IsIgnored()
     {
         var result = RunGenerator(new TestFile("other.yml", LibraryYaml, IsGSharpApi: false));
 
@@ -26,7 +26,7 @@ public class NativeApiGeneratorDiagnosticsTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_MalformedYaml_ReportsSyntaxDiagnosticAtLine()
+    public void MalformedYaml_ReportsSyntaxDiagnosticAtLine()
     {
         const string Yaml = "namespace: A.B\nclassName: C\nmethods: [a, b\n";
 
@@ -45,7 +45,7 @@ public class NativeApiGeneratorDiagnosticsTests
     [InlineData("namespace: A.B\nclassName: C\nlibraryName: x\nmoduleName: y.fatbin\nmethods: []\n")]
     [InlineData("namespace: A.B\nclassName: C\nmethods: []\n")]
     [InlineData("className: C\nlibraryName: x\nmethods: []\n")]
-    public void Test_SchemaViolation_ReportsSchemaDiagnostic(string yaml)
+    public void SchemaViolation_ReportsSchemaDiagnostic(string yaml)
     {
         var result = RunGenerator(Api("invalid.yml", yaml));
 
@@ -71,7 +71,7 @@ public class NativeApiGeneratorDiagnosticsTests
     [InlineData("out int", "'ref', 'out', 'in', 'scoped' and 'params'")]
     [InlineData("in int", "'ref', 'out', 'in', 'scoped' and 'params'")]
     [InlineData("scoped ref int", "'ref', 'out', 'in', 'scoped' and 'params'")]
-    public void Test_ModuleDefinition_ParameterTheLauncherCannotPass_ReportsSchemaDiagnostic(
+    public void ModuleDefinition_ParameterTheLauncherCannotPass_ReportsSchemaDiagnostic(
         string type,
         string reason)
     {
@@ -104,7 +104,7 @@ public class NativeApiGeneratorDiagnosticsTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_DuplicateClassAcrossFiles_ReportsSchemaDiagnosticWithoutCrashing()
+    public void DuplicateClassAcrossFiles_ReportsSchemaDiagnosticWithoutCrashing()
     {
         var result = RunGenerator(Api("a.yml", LibraryYaml), Api("b.yml", LibraryYaml));
 
@@ -116,7 +116,7 @@ public class NativeApiGeneratorDiagnosticsTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_OneInvalidFile_DoesNotSuppressValidFiles()
+    public void OneInvalidFile_DoesNotSuppressValidFiles()
     {
         var result = RunGenerator(Api("good.yml", LibraryYaml), Api("bad.yml", "namespace: [\n"));
 
@@ -126,7 +126,7 @@ public class NativeApiGeneratorDiagnosticsTests
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_UnrelatedSourceChange_KeepsNativeApiStepCached()
+    public void UnrelatedSourceChange_KeepsNativeApiStepCached()
     {
         var compilation = CreateCompilation();
         var driver = CreateDriver(Api("mylib.yml", LibraryYaml));

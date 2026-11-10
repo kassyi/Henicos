@@ -19,7 +19,7 @@ public class UsingDisposalTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_UsingStatement_DisposesAtTheEndOfItsBody()
+    public void UsingStatement_NormalBodyExit_DisposesAtEndOfBody()
     {
         var log = Run(static log => UsingDisposalKernels.LaunchUsingStatementKernel(log, blockDimX: 1));
 
@@ -30,7 +30,7 @@ public class UsingDisposalTests
     [Scenario(TestScenario.Boundary)]
     [InlineData(0, new[] { 10, 11, 1, 20 })]
     [InlineData(1, new[] { 10, 1 })]
-    public void Test_UsingStatement_DisposesOnAnEarlyReturn(int stop, int[] expected)
+    public void UsingStatement_EarlyOrNormalReturn_DisposesResource(int stop, int[] expected)
     {
         var log = Run(log => UsingDisposalKernels.LaunchUsingEarlyReturnKernel(log, stop, blockDimX: 1));
 
@@ -40,7 +40,7 @@ public class UsingDisposalTests
     // i = 0 writes 0; i = 1 continues and i = 2 breaks out of the body, and both dispose
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_UsingStatementInALoop_DisposesOnBreakAndContinue()
+    public void UsingStatement_BreakAndContinueInLoop_DisposesOnEachBranch()
     {
         var log = Run(static log => UsingDisposalKernels.LaunchUsingInLoopKernel(log, blockDimX: 1));
 
@@ -49,7 +49,7 @@ public class UsingDisposalTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_NestedUsings_DisposeInReverseOrder()
+    public void NestedUsings_SequentialScopes_DisposeInReverseOrder()
     {
         var log = Run(static log => UsingDisposalKernels.LaunchNestedUsingKernel(log, blockDimX: 1));
 
@@ -60,7 +60,7 @@ public class UsingDisposalTests
     [Scenario(TestScenario.Boundary)]
     [InlineData(0, new[] { 10, 11, 2, 1, 20 })]
     [InlineData(1, new[] { 10, 2, 1 })]
-    public void Test_UsingDeclarations_DisposeAtTheEndOfTheBlockInReverseOrder(int stop, int[] expected)
+    public void UsingDeclarations_BlockExitOrEarlyReturn_DisposeInReverseOrder(int stop, int[] expected)
     {
         var log = Run(log => UsingDisposalKernels.LaunchUsingDeclarationKernel(log, stop, blockDimX: 1));
 
@@ -69,7 +69,7 @@ public class UsingDisposalTests
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_UsingDeclarationInALoop_DisposesInEachIteration()
+    public void UsingDeclaration_LoopIteration_DisposesInEachIteration()
     {
         var log = Run(static log => UsingDisposalKernels.LaunchUsingDeclarationInLoopKernel(log, blockDimX: 1));
 
@@ -78,7 +78,7 @@ public class UsingDisposalTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_RefStructWithADisposeMethod_IsDisposed()
+    public void PatternDispose_RefStructWithDisposeMethod_InvokesDispose()
     {
         var log = Run(static log => UsingDisposalKernels.LaunchPatternDisposeKernel(log, blockDimX: 1));
 
@@ -87,7 +87,7 @@ public class UsingDisposalTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_UsingAnExpression_DisposesItsValue()
+    public void UsingExpression_ExpressionTarget_DisposesResource()
     {
         var log = Run(static log => UsingDisposalKernels.LaunchUsingExpressionKernel(log, blockDimX: 1));
 
@@ -97,7 +97,7 @@ public class UsingDisposalTests
     // The return value is computed before the resource is disposed
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_UsingInADeviceFunction_DisposesAfterTheReturnValue()
+    public void UsingInDeviceFunction_ReturningFunction_DisposesAfterComputingReturnValue()
     {
         var log = Run(static log => UsingDisposalKernels.LaunchDeviceFunctionUsingKernel(log, blockDimX: 1));
 
@@ -106,7 +106,7 @@ public class UsingDisposalTests
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_UsingBeforeABarrier_DisposesBeforeTheBarrier()
+    public void UsingBeforeBarrier_ScopedDisposal_DisposesBeforeBarrier()
     {
         var log = Run(static log => UsingDisposalKernels.LaunchUsingBeforeBarrierKernel(log, blockDimX: 1));
 

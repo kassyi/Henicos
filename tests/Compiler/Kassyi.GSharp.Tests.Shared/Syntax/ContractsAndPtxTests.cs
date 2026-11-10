@@ -8,7 +8,7 @@ public class ContractsAndPtxTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.HappyPath)]
-    public void TestInlinePtxKernel()
+    public void InlinePtx_KernelLaunch_WritesExpectedValueOrThrowsNotSupportedException()
     {
         uint[] data = [0];
         if (CurrentDialect.Capabilities.HasFlag(DialectCapabilities.InlineAssembly))
@@ -28,7 +28,7 @@ public class ContractsAndPtxTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.SadPath)]
-    public void TestInlinePtxFollowedByWriteKernel_HaltsBeforeSubsequentStatements()
+    public void InlinePtx_FollowedByWriteOnCpuDialect_HaltsBeforeSubsequentStatements()
     {
         Skip.If(IsCudaDialect, "This test verifies CPU-dialect halts before subsequent statements after Gpu.InlinePtx.");
 
@@ -43,7 +43,7 @@ public class ContractsAndPtxTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.SadPath)]
-    public void TestInlinePtxKernel_MultiThreadCpu_PropagatesSingleNotSupportedException()
+    public void InlinePtx_MultiThreadCpuLaunch_PropagatesSingleNotSupportedException()
     {
         Skip.If(IsCudaDialect, "This test verifies CPU-dialect OpenMP parallel error propagation.");
 
@@ -57,7 +57,7 @@ public class ContractsAndPtxTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.SadPath)]
-    public void TestInlinePtxKernel_ManagedFallback_PropagatesNotSupportedException()
+    public void InlinePtx_ManagedFallbackLaunch_PropagatesNotSupportedException()
     {
         Skip.If(IsCudaDialect, "This test verifies CPU-dialect managed fallback error propagation.");
 
@@ -78,7 +78,7 @@ public class ContractsAndPtxTests : TranspilerTestBase
 
     [Fact]
     [Category(TestCategory.Syntax)]
-    public void Test_ConstexprPropagation_Transpilation()
+    public void Transpile_ConstexprPropagation_EmitsFoldedConstantValue()
     {
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<ContractsAndPtxTarget>(
             nameof(ContractsAndPtxTarget.ConstexprPropagation), dialect: CurrentDialect);
@@ -91,7 +91,7 @@ public class ContractsAndPtxTests : TranspilerTestBase
 
     [Fact]
     [Category(TestCategory.Syntax)]
-    public void Test_WmmaTensorCores_Transpilation()
+    public void Transpile_WmmaTensorCores_EmitsPtxOrUnsupportedComment()
     {
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<ContractsAndPtxTarget>(
             nameof(ContractsAndPtxTarget.WmmaTensorCores), dialect: CurrentDialect);

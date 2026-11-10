@@ -4,7 +4,7 @@ public class LambdaAndLocalFunctionsTests
 :  TranspilerTestBase{
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void Test_NonCapturingLambdaKernel()
+    public void Lambda_NonCapturingKernel_DoublesInputElements()
     {
         // Happy Path: キャプチャを持たない、あるいは単純な値型のみをキャプチャするラムダ式 (() => { }) が、C++側で一意な名前（決定的かつ競合しない名前）を持つ抽出された device 関数（またはC++ラムダ）として正しく展開され実行されること。
         int[] data = [1, 5, 20];
@@ -18,7 +18,7 @@ public class LambdaAndLocalFunctionsTests
     [TestTarget(ExecutionTarget.GpuExecution)]
     [InlineData(2, 5, 10)]
     [InlineData(3, 10, 30)]
-    public void Test_ValueCapturingLambdaKernel(int factor, int input, int expected)
+    public void Lambda_ValueCapturingKernel_ComputesScaledValue(int factor, int input, int expected)
     {
         // Happy Path: 単純な値型のみをキャプチャするラムダ式が、一意かつ決定的な名前で抽出された device 関数として正しく展開・実行されること。
         int[] data = [input];
@@ -28,7 +28,7 @@ public class LambdaAndLocalFunctionsTests
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void Test_ImmediatelyEvaluatedLambdaKernel()
+    public void Lambda_ImmediatelyEvaluatedKernel_EvaluatesAndOffsetsElements()
     {
         // Edge Cases: メソッド引数内で即時評価されるラムダや、ネストされたラムダ式におけるキャプチャスコープの解決
         int[] data = [2, 4, 7];
@@ -40,7 +40,7 @@ public class LambdaAndLocalFunctionsTests
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void Test_ShadowedVariableCaptureKernel()
+    public void LocalFunction_ShadowedVariableCapture_ProducesExpectedSum()
     {
         // Edge Cases: 同名変数のキャプチャ時の名前衝突回避が正しく行われること。
         int[] data = [100];
@@ -50,7 +50,7 @@ public class LambdaAndLocalFunctionsTests
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void Test_NestedReturnsKernel()
+    public void LocalFunction_NestedReturns_ComputesCorrectResult()
     {
         var result = LambdaAndLocalFunctionsKernels.LaunchNestedReturnsKernel(someValue: 10, blockDimX: 1);
         Assert.Single(result);

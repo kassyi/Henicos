@@ -44,7 +44,7 @@ public partial class NamingArchitectureTests
     [Fact]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_Emitters_DoNotAppendRawUserIdentifiers()
+    public void Emitters_SourceEmission_DoesNotAppendRawUserIdentifiers()
     {
         var violations = new List<string>();
         foreach (var (fileName, root) in ParseEmitterSources())
@@ -73,7 +73,7 @@ public partial class NamingArchitectureTests
     [Fact]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_Emitters_PrefixInternalNamesWithGSharp()
+    public void Emitters_InternalIdentEmission_PrefixesInternalNamesWithGSharp()
     {
         var violations = new List<string>();
         foreach (var (fileName, root) in ParseEmitterSources())
@@ -114,7 +114,7 @@ public partial class NamingArchitectureTests
     [Fact]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_InternalNames_DoNotUseRenamedFamilyPrefixes()
+    public void InternalNames_PreludeDeclarations_DoesNotUseRenamedFamilyPrefixes()
     {
         foreach (var (path, value, _) in GSharpInternalNames.All)
         {
@@ -133,7 +133,7 @@ public partial class NamingArchitectureTests
     [Fact]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_Compiler_DoesNotRespellInternalNames()
+    public void Compiler_InternalIdentifierUsages_DoesNotRespellInternalNames()
     {
         var names = new Dictionary<string, string>(StringComparer.Ordinal);
         foreach (var (namePath, value, _) in GSharpInternalNames.All)
@@ -173,7 +173,7 @@ public partial class NamingArchitectureTests
     [Fact]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_Compiler_StringsDoNotUseRenamedFamilyPrefixes()
+    public void Compiler_StringLiterals_DoesNotUseRenamedFamilyPrefixes()
     {
         var violations = new List<string>();
         foreach (var (path, root) in ParseCompilerSources())

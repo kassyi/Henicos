@@ -4,7 +4,7 @@ public class LocalFunctionLoweringTests : TranspilerTestBase
 {
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void Test_LocalFunctionVoid_Execution()
+    public void LocalFunction_VoidReturn_ModifiesArrayInPlace()
     {
         int[] data = [10, 20, 30];
         LocalFunctionLoweringKernels.LaunchLocalFunctionVoidKernel(data, blockDimX: 3);
@@ -23,7 +23,7 @@ public class LocalFunctionLoweringTests : TranspilerTestBase
     [InlineData(int.MinValue, 0, unchecked(int.MinValue * 3))]
     [InlineData(int.MaxValue, 0, unchecked(int.MaxValue * 3))]
     [InlineData(0x55555555, 1, unchecked(0x55555555 * 3 + 1))]
-    public void Test_LocalFunctionValueReturn_NumericBoundaries_Execution(int input, int bonus, int expected)
+    public void LocalFunction_ValueReturnWithInputs_ReturnsExpectedCalculation(int input, int bonus, int expected)
     {
         int[] data = [input];
         LocalFunctionLoweringKernels.LaunchLocalFunctionValueReturnKernel(data, bonus, blockDimX: 1);
@@ -36,7 +36,7 @@ public class LocalFunctionLoweringTests : TranspilerTestBase
     [InlineData(1, 1)]
     [InlineData(5, 25)]
     [InlineData(-4, 16)]
-    public void Test_LocalFunctionExpressionBody_Execution(int input, int expected)
+    public void LocalFunction_ExpressionBody_ReturnsExpectedCalculation(int input, int expected)
     {
         int[] data = [input];
         LocalFunctionLoweringKernels.LaunchLocalFunctionExpressionBodyKernel(data, blockDimX: 1);
@@ -45,7 +45,7 @@ public class LocalFunctionLoweringTests : TranspilerTestBase
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void Test_NestedLocalFunction_Execution()
+    public void LocalFunction_NestedLocalFunctions_ComputesExpectedResults()
     {
         int[] data = [0, 5, 10];
         LocalFunctionLoweringKernels.LaunchNestedLocalFunctionKernel(data, blockDimX: 3);
@@ -65,7 +65,7 @@ public class LocalFunctionLoweringTests : TranspilerTestBase
     [InlineData(99, 0, 99)]   // Adjacent inside upper bound (sum = 99 -> 99)
     [InlineData(100, 0, 100)] // Upper boundary (sum = 100 -> 100)
     [InlineData(101, 0, 100)] // Adjacent beyond upper bound (sum = 101 -> clamped to 100)
-    public void Test_MultiParamLocalFunction_Execution(int aVal, int bVal, int expected)
+    public void LocalFunction_MultipleParameters_ComputesExpectedSum(int aVal, int bVal, int expected)
     {
         int[] a = [aVal];
         int[] b = [bVal];

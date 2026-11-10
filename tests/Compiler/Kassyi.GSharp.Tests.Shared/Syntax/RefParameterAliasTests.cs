@@ -10,7 +10,7 @@ public class RefParameterAliasTests : TranspilerTestBase
 {
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_RefGlobalBarrierNeighborWrite_RereadsUpdatedValueAfterBarrier()
+    public void RefGlobalBarrier_NeighborWriteAcrossBarrier_RereadsUpdatedValueAfterBarrier()
     {
         const int count = RefParameterAliasKernels.N;
         int[] buf = [10, 11, 12, 13];
@@ -24,7 +24,7 @@ public class RefParameterAliasTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_RefGlobalNoBarrierSelfWrite_RereadsUpdatedValueAfterArrayWrite()
+    public void RefGlobalNoBarrier_SelfWriteThroughAliasedArray_RereadsUpdatedValueAfterArrayWrite()
     {
         const int count = RefParameterAliasKernels.N;
         int[] buf = [10, 11, 12, 13];
@@ -38,7 +38,7 @@ public class RefParameterAliasTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_RefSharedBarrierNeighborWrite_RereadsUpdatedValueAfterBarrier()
+    public void RefSharedBarrier_NeighborWriteAcrossBarrier_RereadsUpdatedValueAfterBarrier()
     {
         const int count = RefParameterAliasKernels.N;
         var output = new int[count * 2];
@@ -51,7 +51,7 @@ public class RefParameterAliasTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_RefReadOnlySharedBarrierNeighborWrite_RereadsUpdatedValueAfterBarrier()
+    public void RefReadOnlySharedBarrier_NeighborWriteAcrossBarrier_RereadsUpdatedValueAfterBarrier()
     {
         const int count = RefParameterAliasKernels.N;
         var output = new int[count * 2];

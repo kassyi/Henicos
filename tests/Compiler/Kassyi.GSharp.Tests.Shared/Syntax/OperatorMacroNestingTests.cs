@@ -13,7 +13,7 @@ public class OperatorMacroNestingTests : TranspilerTestBase
 {
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_NestedOperatorMacro_IsComputedIntoATemporary()
+    public void Expand_NestedOperatorMacro_IsComputedIntoTemporary()
     {
         int[] values = [1, 2, 3];
         var result = new int[2];
@@ -27,7 +27,7 @@ public class OperatorMacroNestingTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_OperandBeforeNestedOperatorMacro_IsReadFirst()
+    public void Expand_OperandBeforeNestedOperatorMacro_IsReadFirst()
     {
         int[] entries = [7];
         var result = new int[1];
@@ -41,7 +41,7 @@ public class OperatorMacroNestingTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_OperandBeforeInnerCallThatReadsMemory_IsEvaluatedFirst()
+    public void Expand_OperandBeforeInnerCallThatReadsMemory_IsEvaluatedFirst()
     {
         var data = new int[1];
         var result = new int[1];
@@ -54,7 +54,7 @@ public class OperatorMacroNestingTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_OperandBeforeInnerCallThatWritesItsContext_IsReadFirst()
+    public void Expand_OperandBeforeInnerCallThatWritesItsContext_IsReadFirst()
     {
         var result = new int[2];
 
@@ -66,7 +66,7 @@ public class OperatorMacroNestingTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_NestedOperatorMacroUnderShiftUnaryAndIdentityCast_IsComputedIntoATemporary()
+    public void Expand_NestedOperatorMacroUnderShiftUnaryAndIdentityCast_IsComputedIntoTemporary()
     {
         var result = new int[3];
 
@@ -78,7 +78,7 @@ public class OperatorMacroNestingTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_OperandBeforeInnerCallThatWritesARefContext_IsReadFirst()
+    public void Expand_OperandBeforeInnerCallThatWritesARefContext_IsReadFirst()
     {
         var result = new int[2];
 

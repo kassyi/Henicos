@@ -20,7 +20,7 @@ public class WarpShuffleTests : TranspilerTestBase
     [InlineData(0x0000FFFF, 1, 16)] // Half warp, delta=1
     [InlineData(0x00000000, 1, 32)] // Zero mask
     [InlineData(0xFFFFFFFF, 0, 32)] // Zero delta
-    public void Test_95_WarpShuffleExtrema_CalculatesCorrectly(uint mask, uint delta, int width)
+    public void WarpShuffleExtrema_VaryingMaskDeltaAndWidth_MatchesExpectedLaneValues(uint mask, uint delta, int width)
     {
         const int totalThreads = 32;
         int[] input = new int[totalThreads];
@@ -61,7 +61,7 @@ public class WarpShuffleTests : TranspilerTestBase
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void Test_95_WarpReduceSum_CalculatesCorrectly()
+    public void WarpReduceSum_FourWarpsWithConsecutiveInputs_CalculatesSumPerWarp()
     {
         const int threadsPerWarp = 32;
         const int numWarps = 4;
@@ -91,7 +91,7 @@ public class WarpShuffleTests : TranspilerTestBase
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void Test_95_WarpShuffleBoundaryOffsets()
+    public void WarpShuffle_OffsetsZeroThirtyOneAndThirtyTwo_TransfersOrRetainsLaneValues()
     {
         const int totalThreads = 32;
         int[] input = new int[totalThreads];
@@ -128,7 +128,7 @@ public class WarpShuffleTests : TranspilerTestBase
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void Test_95_WarpDivergence()
+    public void WarpDivergence_ConditionalShuffleWidthSixteen_TransfersLaneValuesPerBranch()
     {
         const int totalThreads = 32;
         int[] input = new int[totalThreads];
@@ -162,7 +162,7 @@ public class WarpShuffleTests : TranspilerTestBase
 
     [SkippableFact]
     [Category(TestCategory.Syntax)]
-    public void Test_95_Transpilation_MapsToCudaNativeShuffle()
+    public void TranspileMethod_WarpShuffleNativeKernels_EmitsCudaShflDownSyncAndMask()
     {
         var compilation = RoslynTestUtility.CreateCompilation(
             RoslynTestUtility.ReadTestCase("Syntax/WarpShuffleNativeShuffleKernels.cu.cs"));

@@ -410,42 +410,42 @@ public sealed class LaunchShapeDifferentialTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_ThreeDimensionalIndexAndSignedness_MatchesTheOracleOnEveryPath() =>
+    public void LaunchShape_ThreeDimensionalIndexAndSignedness_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_threeDimensionalIndexAndSignedness);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_GridStrideLoopMetamorphic_MatchesTheOracleOnEveryPath() =>
+    public void LaunchShape_GridStrideLoopMetamorphic_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_gridStrideLoopMetamorphic);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_SingleThreadMultiDimAndEarlyReturn_MatchesTheOracleOnEveryPath() =>
+    public void LaunchShape_SingleThreadMultiDimAndEarlyReturn_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_singleThreadMultiDimAndEarlyReturn);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_CrossAxisWarpShuffleAndActiveMask_MatchesTheOracleOnEveryPath() =>
+    public void LaunchShape_CrossAxisWarpShuffleAndActiveMask_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_crossAxisWarpShuffleAndActiveMask);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_MultiDimSharedMemoryAndBarrier_MatchesTheOracleOnEveryPath() =>
+    public void LaunchShape_MultiDimSharedMemoryAndBarrier_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_multiDimSharedMemoryAndBarrier);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_AutoResultThreeDimensional_MatchesTheOracleOnEveryPath() =>
+    public void LaunchShape_AutoResultThreeDimensional_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_autoResultThreeDimensional);
 
     private static int[] BoundedInt32(DiffRandom rng, int count, int minInclusive, int maxExclusive)

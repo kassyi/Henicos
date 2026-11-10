@@ -17,7 +17,7 @@ public class SwitchCaseValueDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_FloatCaseValue_ReportsUnsupportedCaseValue(string dialect)
+    public async Task FloatCaseValue_ConstantPattern_ReportsUnsupportedCaseValue(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(TestCase, dialect);
 

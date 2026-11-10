@@ -34,7 +34,7 @@ public sealed class DeviceErrorChannelTests
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.SadPath)]
     [MemberData(nameof(AllErrorCodesAndExceptionTypes))]
-    public void Test_ErrorMapper_MapsAllErrorCodesToStandardExceptionsWithMetadata(
+    public void ErrorMapper_AllErrorCodes_MapsToStandardExceptionsWithMetadata(
         GSharpErrorCode code,
         Type expectedExceptionType)
     {
@@ -73,7 +73,7 @@ public sealed class DeviceErrorChannelTests
     [Fact]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_CoordinatePackingAndUnpacking_3D()
+    public void CoordinatePacking_ThreeDimensionalCoordinates_PacksAndUnpacksCoordinates()
     {
         var packedThread = GSharpErrorMapper.PackThreadIndex(511, 15, 3);
         Assert.Equal((511, 15, 3), GSharpErrorMapper.UnpackThreadIndex(packedThread));
@@ -85,7 +85,7 @@ public sealed class DeviceErrorChannelTests
     [Fact]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_ErrorSiteTable_RegistersDeduplicatesAndRoundTripsSymbolFile()
+    public void ErrorSiteTable_SymbolRegistration_DeduplicatesAndRoundTripsSymbolFile()
     {
         var table = new ErrorSiteTable();
         var id1 = table.Register("Sample.cu.cs", 10, 5, "SampleKernel", "Attempted to divide by zero.");
@@ -127,7 +127,7 @@ public sealed class DeviceErrorChannelTests
     [Fact]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_ErrorSiteTable_BuildModuleSites_DetectsCollisionAndDeduplicates()
+    public void ErrorSiteTable_BuildModuleSites_DetectsCollisionAndDeduplicates()
     {
         // 1. Deduplication of identical entries
         var entry1 = new ErrorSiteEntry(100u, "Test.cs", 10, 5, "Kernel1", "Error 1");
@@ -162,7 +162,7 @@ public sealed class DeviceErrorChannelTests
     [Fact]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_ErrorSiteTable_SiteIdsDoNotDependOnLineEndings()
+    public void ErrorSiteTable_VaryingLineEndings_ProducesIdenticalSiteIds()
     {
         var source = RoslynTestUtility.ReadTestCase("Runtime/ErrorSiteLineEndingCases.cs").Replace("\r\n", "\n");
 
@@ -207,7 +207,8 @@ public sealed class DeviceErrorChannelTests
     [Scenario(TestScenario.HappyPath)]
     [InlineData(false)]
     [InlineData(true)]
-    public void Test_CheckedBuildOption_ControlsPostLaunchStreamSynchronization(bool isCheckedBuild)
+    public void CheckedBuildOption_CheckedAndUncheckedConfigurations_ControlsPostLaunchStreamSynchronization(
+        bool isCheckedBuild)
     {
         const string source = """
             using Kassyi.GSharp.Core;
@@ -278,7 +279,7 @@ public sealed class DeviceErrorChannelTests
     [Fact]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_CpuManagedAndNative_StackLinqTrapsThrowStandardExceptions()
+    public void Trap_StackLinqViolationsOnCpuManagedAndNative_ThrowsStandardExceptions()
     {
         int[] data = [1, 2, 3, 4];
         int[] result = [0];
@@ -314,7 +315,7 @@ public sealed class DeviceErrorChannelTests
     [Fact]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_CpuNative_ConcurrentTrapAllThreads_FirstWriterWins()
+    public void Trap_ConcurrentTrapAllThreadsOnCpuNative_FirstWriterWins()
     {
         int[] data = [1, 2, 3, 4];
         int[] result = new int[256];
@@ -330,7 +331,7 @@ public sealed class DeviceErrorChannelTests
     [Fact]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_CpuNative_3DCoordinates_CapturedInExceptionData()
+    public void Trap_ThreeDimensionalCoordinatesOnCpuNative_CapturedInExceptionData()
     {
         int[] data = [10, 20, 30];
         int[] result = [0];
@@ -360,7 +361,7 @@ public sealed class DeviceErrorChannelTests
     [Fact]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_CpuNative_EndToEndTrap_CarriesSourceLocationAndMemberName()
+    public void Trap_EndToEndExecutionOnCpuNative_CarriesSourceLocationAndMemberName()
     {
         int[] data = [10, 20, 30];
         int[] result = [0];
@@ -382,7 +383,7 @@ public sealed class DeviceErrorChannelTests
     [Fact]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_CpuNative_Grid100Blocks_BlockCoordinate37Preserved()
+    public void Trap_GridOneHundredBlocksOnCpuNative_PreservesBlockCoordinate()
     {
         int[] data = [10, 20, 30];
         int[] result = [0];
@@ -399,7 +400,7 @@ public sealed class DeviceErrorChannelTests
     [Fact]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_CpuNative_StackLinqFirst_Empty_CarriesSourceLocationAndMemberName()
+    public void Trap_StackLinqFirstOnEmptySequenceOnCpuNative_CarriesSourceLocationAndMemberName()
     {
         int[] data = [1, 2, 3];
         int[] result = [0];
@@ -421,7 +422,7 @@ public sealed class DeviceErrorChannelTests
     [Fact]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_CpuNative_StackLinqSingle_MultipleElements_CarriesSourceLocationAndMemberName()
+    public void Trap_StackLinqSingleOnMultipleElementsOnCpuNative_CarriesSourceLocationAndMemberName()
     {
         int[] data = [10, 20];
         int[] result = [0];
@@ -443,7 +444,7 @@ public sealed class DeviceErrorChannelTests
     [Fact]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_CpuNative_StackLinqMax_EmptySequence_CarriesSourceLocationAndMemberName()
+    public void Trap_StackLinqMaxOnEmptySequenceOnCpuNative_CarriesSourceLocationAndMemberName()
     {
         int[] data = [1, 2, 3];
         int[] result = [0];
@@ -465,7 +466,7 @@ public sealed class DeviceErrorChannelTests
     [Fact]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_CpuManagedAndNative_SwitchExpressionMatchedArms_ReturnArmValues()
+    public void SwitchExpression_MatchedArmsOnCpuManagedAndNative_ReturnsArmValues()
     {
         int[] keys = [1, 0];
         int[] managed = new int[keys.Length];
@@ -490,7 +491,7 @@ public sealed class DeviceErrorChannelTests
     [Fact]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_CpuManagedAndNative_SwitchExpressionWithoutMatchingArm_ThrowsWithSourceLocation()
+    public void SwitchExpression_UnmatchedArmOnCpuManagedAndNative_ThrowsWithSourceLocation()
     {
         int[] keys = [1, 2];
         int[] result = new int[keys.Length];
@@ -520,7 +521,7 @@ public sealed class DeviceErrorChannelTests
     [Fact]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_CpuNative_SwitchExpressionWithoutMatchingArmInDeviceFunction_ThrowsWithSourcePlace()
+    public void SwitchExpression_UnmatchedArmInDeviceFunctionOnCpuNative_ThrowsWithSourcePlace()
     {
         int[] keys = [2];
         int[] result = [0];
@@ -542,7 +543,7 @@ public sealed class DeviceErrorChannelTests
     [SkippableFact]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_Cuda_Trap_ThrowsStandardExceptionWithCoordinates()
+    public void Trap_CudaExecution_ThrowsStandardExceptionWithCoordinates()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
 
@@ -577,7 +578,7 @@ public sealed class DeviceErrorChannelTests
     [SkippableFact]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_Cuda_ConcurrentTrap_FirstWriterWinsWithoutRace()
+    public void Trap_ConcurrentTrapOnCuda_FirstWriterWinsWithoutRace()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
 
@@ -598,7 +599,7 @@ public sealed class DeviceErrorChannelTests
     [SkippableFact]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_Cuda_Trap_CarriesSourceLocationAndMemberName()
+    public void Trap_CudaExecution_CarriesSourceLocationAndMemberName()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
 
@@ -622,7 +623,7 @@ public sealed class DeviceErrorChannelTests
     [SkippableFact]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_Cuda_Grid100Blocks_BlockCoordinate37Preserved()
+    public void Trap_GridOneHundredBlocksOnCuda_PreservesBlockCoordinate()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
 
@@ -641,7 +642,7 @@ public sealed class DeviceErrorChannelTests
     [SkippableFact]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_Cuda_Trap_StackLinqFirst_Empty_CarriesSourceLocationAndMemberName()
+    public void Trap_StackLinqFirstOnEmptySequenceOnCuda_CarriesSourceLocationAndMemberName()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
 
@@ -666,7 +667,7 @@ public sealed class DeviceErrorChannelTests
     [SkippableFact]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_Cuda_Trap_StackLinqSingle_MultipleElements_CarriesSourceLocationAndMemberName()
+    public void Trap_StackLinqSingleOnMultipleElementsOnCuda_CarriesSourceLocationAndMemberName()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
 
@@ -691,7 +692,7 @@ public sealed class DeviceErrorChannelTests
     [SkippableFact]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_Cuda_Trap_StackLinqMax_EmptySequence_CarriesSourceLocationAndMemberName()
+    public void Trap_StackLinqMaxOnEmptySequenceOnCuda_CarriesSourceLocationAndMemberName()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
 
@@ -716,7 +717,7 @@ public sealed class DeviceErrorChannelTests
     [SkippableFact]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Cuda_SwitchExpressionMatchedArms_ReturnArmValues()
+    public void SwitchExpression_MatchedArmsOnCuda_ReturnsArmValues()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
 
@@ -731,7 +732,7 @@ public sealed class DeviceErrorChannelTests
     [SkippableFact]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_Cuda_Trap_SwitchExpressionWithoutMatchingArm_CarriesSourceLocation()
+    public void SwitchExpression_UnmatchedArmOnCuda_CarriesSourceLocation()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
 
@@ -752,7 +753,7 @@ public sealed class DeviceErrorChannelTests
     [SkippableFact]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_Cuda_Trap_SwitchExpressionWithoutMatchingArmInDeviceFunction_Throws()
+    public void SwitchExpression_UnmatchedArmInDeviceFunctionOnCuda_ThrowsSwitchExpressionException()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
 

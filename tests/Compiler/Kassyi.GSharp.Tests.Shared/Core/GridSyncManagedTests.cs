@@ -9,7 +9,7 @@ namespace Kassyi.GSharp.Tests.Shared.Core;
 public class GridSyncManagedTests : TranspilerTestBase
 {
     [SkippableFact]
-    public void Test_Kernel_Direct_Managed_Execution_GridSync_GlobalBarrier()
+    public void GlobalBarrier_DirectManagedExecution_ProducesExpectedSequentialValues()
     {
         bool previousState = CpuKernelLoader.ForceManagedExecution;
         CpuKernelLoader.ForceManagedExecution = true;
@@ -43,7 +43,7 @@ public class GridSyncManagedTests : TranspilerTestBase
     }
 
     [SkippableFact]
-    public void Test_Kernel_Direct_Managed_Execution_GridSync_GlobalReduction()
+    public void GlobalReduction_DirectManagedExecution_ProducesExpectedSum()
     {
         bool previousState = CpuKernelLoader.ForceManagedExecution;
         CpuKernelLoader.ForceManagedExecution = true;

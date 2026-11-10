@@ -232,18 +232,18 @@ public class MemoryAndSegmentBoundsDifferentialTests
     };
 
     [SkippableFact]
-    public void Test_ArraySegmentBounds_MatchesTheOracleOnEveryPath() =>
+    public void BoundsCheck_ArraySegment_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_arraySegmentBounds);
 
     [SkippableFact]
-    public void Test_MemoryBounds_MatchesTheOracleOnEveryPath() =>
+    public void BoundsCheck_MemorySegment_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_memoryBounds);
 
     [SkippableFact]
-    public void Test_SharedMemoryBounds_MatchesTheReferenceAndTrapsOnManaged() =>
+    public void BoundsCheck_SharedMemory_MatchesTheReferenceAndTrapsOnManaged() =>
         DifferentialRunner.Run(s_sharedMemoryBounds);
 
     [SkippableFact]
-    public void Test_InlineArrayBounds_MatchesTheOracleOnEveryPath() =>
+    public void BoundsCheck_InlineArray_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_inlineArrayBounds);
 }

@@ -29,7 +29,7 @@ public class SyncGridBodyTests : TranspilerTestBase
     [Scenario(TestScenario.HappyPath)]
     [InlineData(false)]
     [InlineData(true)]
-    public void Test_SyncGridBody_TwoStatements_BodyRuns(bool forceManaged)
+    public void SyncGridBody_TwoStatements_RunsBody(bool forceManaged)
     {
         var a = Filled(-1);
 
@@ -42,7 +42,7 @@ public class SyncGridBodyTests : TranspilerTestBase
     [Scenario(TestScenario.HappyPath)]
     [InlineData(false)]
     [InlineData(true)]
-    public void Test_SyncGridBody_ReadAfterGap_SeesOtherBlocksWrites(bool forceManaged)
+    public void SyncGridBody_ReadAfterGap_SeesOtherBlocksWrites(bool forceManaged)
     {
         var a = new int[Threads];
         var b = new int[Threads];
@@ -56,7 +56,7 @@ public class SyncGridBodyTests : TranspilerTestBase
     [Scenario(TestScenario.HappyPath)]
     [InlineData(false)]
     [InlineData(true)]
-    public void Test_SyncGridBody_NestedBlocks_SyncOnlyBetweenTopLevelStatements(bool forceManaged)
+    public void SyncGridBody_NestedBlocks_SyncsOnlyBetweenTopLevelStatements(bool forceManaged)
     {
         var a = Filled(1);
 
@@ -77,7 +77,7 @@ public class SyncGridBodyTests : TranspilerTestBase
     [Scenario(TestScenario.Boundary)]
     [InlineData(false)]
     [InlineData(true)]
-    public void Test_SyncGridBody_EmptiesExplicitSyncAndNestedBodies_RunEveryStatement(bool forceManaged)
+    public void SyncGridBody_EmptyExplicitSyncAndNestedBodies_RunsEveryStatement(bool forceManaged)
     {
         var a = new int[Threads];
         var b = new int[Threads];
@@ -91,7 +91,7 @@ public class SyncGridBodyTests : TranspilerTestBase
     [Scenario(TestScenario.Boundary)]
     [InlineData(false)]
     [InlineData(true)]
-    public void Test_SyncGridBody_LocalAcrossGaps_KeepsItsValue(bool forceManaged)
+    public void SyncGridBody_LocalAcrossGaps_PreservesValue(bool forceManaged)
     {
         var a = new int[Threads];
         var b = new int[Threads];
@@ -105,7 +105,7 @@ public class SyncGridBodyTests : TranspilerTestBase
     [Scenario(TestScenario.Boundary)]
     [InlineData(false)]
     [InlineData(true)]
-    public void Test_SyncGridBody_InsideUniformLoop_SyncsEveryIteration(bool forceManaged)
+    public void SyncGridBody_InsideUniformLoop_SyncsEveryIteration(bool forceManaged)
     {
         var a = new int[Threads];
         var b = new int[Threads];
@@ -120,7 +120,7 @@ public class SyncGridBodyTests : TranspilerTestBase
     [Scenario(TestScenario.Boundary)]
     [InlineData(false)]
     [InlineData(true)]
-    public void Test_SyncGridBody_SiblingBodiesWithSameLocalName_KeepTheirOwnValues(bool forceManaged)
+    public void SyncGridBody_SiblingBodiesWithSameLocalName_PreservesSeparateValues(bool forceManaged)
     {
         var a = new int[Threads];
         var b = new int[Threads];
@@ -137,7 +137,7 @@ public class SyncGridBodyTests : TranspilerTestBase
     [InlineData(true, 0)]
     [InlineData(false, 1)]
     [InlineData(true, 1)]
-    public void Test_SyncGridBody_UniformReturn_SkipsTheRestOfTheBodyOnly(bool forceManaged, int n)
+    public void SyncGridBody_UniformReturn_SkipsRestOfBodyOnly(bool forceManaged, int n)
     {
         var a = new int[Threads];
         var b = new int[Threads];
@@ -155,7 +155,7 @@ public class SyncGridBodyTests : TranspilerTestBase
     [Scenario(TestScenario.Boundary)]
     [InlineData(false)]
     [InlineData(true)]
-    public void Test_SyncGridBody_DivergentReturn_ReturnedThreadsStillSync(bool forceManaged)
+    public void SyncGridBody_DivergentReturn_ReturnedThreadsStillSync(bool forceManaged)
     {
         var a = new int[Threads];
         var b = new int[Threads];
@@ -169,7 +169,7 @@ public class SyncGridBodyTests : TranspilerTestBase
     [Scenario(TestScenario.Boundary)]
     [InlineData(false)]
     [InlineData(true)]
-    public void Test_SyncGridBody_ReturnInNestedBody_SkipsTheNestedRestOnly(bool forceManaged)
+    public void SyncGridBody_ReturnInNestedBody_SkipsNestedRestOnly(bool forceManaged)
     {
         var a = new int[Threads];
         var b = new int[Threads];
@@ -185,7 +185,7 @@ public class SyncGridBodyTests : TranspilerTestBase
     [Scenario(TestScenario.Boundary)]
     [InlineData(false)]
     [InlineData(true)]
-    public void Test_SyncGridBody_ReturnInLoopAndLocalFunction_LeaveTheirOwnScopes(bool forceManaged)
+    public void SyncGridBody_ReturnInLoopAndLocalFunction_LeavesOwnScopes(bool forceManaged)
     {
         var a = new int[Threads];
         var b = new int[Threads];
@@ -201,7 +201,7 @@ public class SyncGridBodyTests : TranspilerTestBase
     [Scenario(TestScenario.Boundary)]
     [InlineData(false)]
     [InlineData(true)]
-    public void Test_SyncGridBody_DeclarationsAfterReturn_StayVisibleAndSkipInitializers(bool forceManaged)
+    public void SyncGridBody_DeclarationsAfterReturn_StaysVisibleAndSkipsInitializers(bool forceManaged)
     {
         const int n = 40;
         var a = Enumerable.Range(0, Threads).Select(static t => t * 3).ToArray();
@@ -221,7 +221,7 @@ public class SyncGridBodyTests : TranspilerTestBase
     [Scenario(TestScenario.HappyPath)]
     [InlineData(false)]
     [InlineData(true)]
-    public void Test_SyncGridBody_InDeviceFunctionWithSuspendingCall_SyncsBetweenStatements(bool forceManaged)
+    public void SyncGridBody_InDeviceFunctionWithSuspendingCall_SyncsBetweenStatements(bool forceManaged)
     {
         var a = new int[Threads];
         var b = new int[Threads];
@@ -239,7 +239,7 @@ public class SyncGridBodyTests : TranspilerTestBase
     [Scenario(TestScenario.Boundary)]
     [InlineData(false)]
     [InlineData(true)]
-    public void Test_SyncGridBody_BodyInLoopOfBody_SyncsEveryIteration(bool forceManaged)
+    public void SyncGridBody_BodyInLoopOfBody_SyncsEveryIteration(bool forceManaged)
     {
         var a = new int[Threads];
         var b = new int[Threads];
@@ -253,7 +253,7 @@ public class SyncGridBodyTests : TranspilerTestBase
     [Scenario(TestScenario.Boundary)]
     [InlineData(false)]
     [InlineData(true)]
-    public void Test_SyncGridBody_ExpressionBodyIsABody_SyncsBetweenItsStatements(bool forceManaged)
+    public void SyncGridBody_ExpressionBodyIsABody_SyncsBetweenItsStatements(bool forceManaged)
     {
         var a = new int[Threads];
         var b = new int[Threads];
@@ -267,7 +267,7 @@ public class SyncGridBodyTests : TranspilerTestBase
     [Scenario(TestScenario.Boundary)]
     [InlineData(false)]
     [InlineData(true)]
-    public void Test_SyncGridBody_OutVariablesAfterReturn_StayVisible(bool forceManaged)
+    public void SyncGridBody_OutVariablesAfterReturn_StaysVisible(bool forceManaged)
     {
         const int n = 40;
         var a = Enumerable.Range(0, Threads).Select(static t => t * 3).ToArray();
@@ -284,7 +284,7 @@ public class SyncGridBodyTests : TranspilerTestBase
     [Scenario(TestScenario.Boundary)]
     [InlineData(false)]
     [InlineData(true)]
-    public void Test_SyncGridBody_ReturnInSwitch_LeavesTheBodyNotTheSwitch(bool forceManaged)
+    public void SyncGridBody_ReturnInSwitch_LeavesBodyNotSwitch(bool forceManaged)
     {
         var a = new int[Threads];
         var b = new int[Threads];
@@ -301,7 +301,7 @@ public class SyncGridBodyTests : TranspilerTestBase
     [Scenario(TestScenario.Boundary)]
     [InlineData(false)]
     [InlineData(true)]
-    public void Test_SyncGridBody_ReturnInSwitchWithoutMatchingCase_LeavesTheBody(bool forceManaged)
+    public void SyncGridBody_ReturnInSwitchWithoutMatchingCase_LeavesBody(bool forceManaged)
     {
         var a = new int[Threads];
         var b = new int[Threads];
@@ -316,7 +316,7 @@ public class SyncGridBodyTests : TranspilerTestBase
     [Scenario(TestScenario.Boundary)]
     [InlineData(false)]
     [InlineData(true)]
-    public void Test_SyncGridBody_ReturnInForEach_LeavesTheBody(bool forceManaged)
+    public void SyncGridBody_ReturnInForEach_LeavesBody(bool forceManaged)
     {
         var a = new int[Threads];
         var b = new int[Threads];
@@ -334,7 +334,7 @@ public class SyncGridBodyTests : TranspilerTestBase
     [Scenario(TestScenario.Boundary)]
     [InlineData(false)]
     [InlineData(true)]
-    public void Test_SyncGridBody_ReturnInLabeledStatement_LeavesTheBody(bool forceManaged)
+    public void SyncGridBody_ReturnInLabeledStatement_LeavesBody(bool forceManaged)
     {
         var a = new int[Threads];
         var b = new int[Threads];
@@ -349,7 +349,7 @@ public class SyncGridBodyTests : TranspilerTestBase
     [Scenario(TestScenario.Boundary)]
     [InlineData(false)]
     [InlineData(true)]
-    public void Test_SyncGridBody_NestedReturnAfterReturn_GuardsWithBothFlags(bool forceManaged)
+    public void SyncGridBody_NestedReturnAfterReturn_GuardsWithBothFlags(bool forceManaged)
     {
         var a = new int[Threads];
         var b = new int[Threads];
@@ -365,7 +365,7 @@ public class SyncGridBodyTests : TranspilerTestBase
     [Scenario(TestScenario.Boundary)]
     [InlineData(false)]
     [InlineData(true)]
-    public void Test_SyncGridBody_TwoReturnsAndGotoInGuardedStatement_SkipFromEachReturn(bool forceManaged)
+    public void SyncGridBody_TwoReturnsAndGotoInGuardedStatement_SkipsFromEachReturn(bool forceManaged)
     {
         var a = new int[Threads];
         var b = new int[Threads];
@@ -381,7 +381,7 @@ public class SyncGridBodyTests : TranspilerTestBase
     [Scenario(TestScenario.Boundary)]
     [InlineData(false)]
     [InlineData(true)]
-    public void Test_SyncGridBody_ReturnInForUnrollBody_EachCopyEndsItsOwnBody(bool forceManaged)
+    public void SyncGridBody_ReturnInForUnrollBody_EachCopyEndsOwnBody(bool forceManaged)
     {
         var a = new int[Threads];
 
@@ -394,7 +394,7 @@ public class SyncGridBodyTests : TranspilerTestBase
     [Scenario(TestScenario.HappyPath)]
     [InlineData(false)]
     [InlineData(true)]
-    public void Test_SyncGrid_InDeviceFunction_SeesOtherBlocksWrites(bool forceManaged)
+    public void SyncGrid_InDeviceFunction_SeesOtherBlocksWrites(bool forceManaged)
     {
         var a = new int[Threads];
         var b = new int[Threads];
@@ -408,7 +408,7 @@ public class SyncGridBodyTests : TranspilerTestBase
     [Scenario(TestScenario.Boundary)]
     [InlineData(false)]
     [InlineData(true)]
-    public void Test_SyncGrid_TwoDeviceFunctionsDeep_SeesOtherBlocksWrites(bool forceManaged)
+    public void SyncGrid_TwoDeviceFunctionsDeep_SeesOtherBlocksWrites(bool forceManaged)
     {
         var a = new int[Threads];
         var b = new int[Threads];

@@ -393,42 +393,42 @@ public class BarrierAndWarpDifferentialTests
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_SharedMemoryBlockReductionAndScan_MatchesTheReferenceOnEveryPath() =>
+    public void SharedMemory_BlockReductionAndScan_MatchesTheReferenceOnEveryPath() =>
         DifferentialRunner.Run(s_sharedMemoryBlockReductionAndScan);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_WarpShuffleFullWidth_MatchesTheReferenceOnEveryPath() =>
+    public void WarpShuffle_FullWidth_MatchesTheReferenceOnEveryPath() =>
         DifferentialRunner.Run(s_warpShuffleFullWidth);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_WarpShuffleSubWarpWidths_MatchesTheReferenceOnEveryPath() =>
+    public void WarpShuffle_SubWarpWidths_MatchesTheReferenceOnEveryPath() =>
         DifferentialRunner.Run(s_warpShuffleSubWarpWidths);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_HybridWarpAndSharedMemoryBlockReduce_MatchesTheReferenceOnEveryPath() =>
+    public void BlockReduce_HybridWarpAndSharedMemory_MatchesTheReferenceOnEveryPath() =>
         DifferentialRunner.Run(s_hybridWarpAndSharedMemoryBlockReduce);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_SubWarpConditionalShuffleBeforeFullWarpShuffle_MatchesTheReferenceOnEveryPath() =>
+    public void SubWarpShuffle_ConditionalBeforeFullWarpShuffle_MatchesTheReferenceOnEveryPath() =>
         DifferentialRunner.Run(s_subWarpConditionalShuffle);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_GenericStructStaticSharedMemory_MatchesTheReferenceOnEveryPath() =>
+    public void StaticSharedMemory_GenericStruct_MatchesTheReferenceOnEveryPath() =>
         DifferentialRunner.Run(s_genericStructStaticSharedMemory);
 
     private static readonly DifferentialCase s_subWarpUpperHalfConditionalShuffle =
@@ -661,41 +661,41 @@ public class BarrierAndWarpDifferentialTests
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_SubWarpUpperHalfConditionalShuffleBeforeFullWarpShuffle_MatchesTheReferenceOnEveryPath() =>
+    public void SubWarpShuffle_UpperHalfConditionalBeforeFullWarpShuffle_MatchesTheReferenceOnEveryPath() =>
         DifferentialRunner.Run(s_subWarpUpperHalfConditionalShuffle);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_GenericPairStructStaticSharedMemory_MatchesTheReferenceOnEveryPath() =>
+    public void StaticSharedMemory_GenericPairStruct_MatchesTheReferenceOnEveryPath() =>
         DifferentialRunner.Run(s_genericPairStructStaticSharedMemory);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_WarpMatchAnyAndAllSync_MatchesTheReferenceOnEveryPath() =>
+    public void WarpMatch_AnyAndAllSync_MatchesTheReferenceOnEveryPath() =>
         DifferentialRunner.Run(s_warpMatchAnyAndAllSync);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_RefTernaryParameterWriteAcrossBarrier_MatchesTheReferenceOnEveryPath() =>
+    public void BarrierSync_RefTernaryParameterWrite_MatchesTheReferenceOnEveryPath() =>
         DifferentialRunner.Run(s_refTernaryParameterWriteAcrossBarrier);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_GenericStructNestedCalleeSharedMemory_MatchesTheReferenceOnEveryPath() =>
+    public void StaticSharedMemory_GenericStructNestedCallee_MatchesTheReferenceOnEveryPath() =>
         DifferentialRunner.Run(s_genericStructNestedCalleeSharedMemory);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_GenericStructNestedInnerSharedMemory_MatchesTheReferenceOnEveryPath() =>
+    public void StaticSharedMemory_GenericStructNestedInner_MatchesTheReferenceOnEveryPath() =>
         DifferentialRunner.Run(s_genericStructNestedInnerSharedMemory);
 }

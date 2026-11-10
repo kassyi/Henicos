@@ -14,7 +14,7 @@ public class SplitAfterLeftOperandDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_SpanChangedInTheLeftOperand_ReportsGsh0039AtTheParameter(string dialect)
+    public async Task SpanChangedInLeftOperand_LeftOperandMutation_ReportsGsh0039AtParameter(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/SplitAfterLeftOperandChange.cu.cs",
             dialect);
