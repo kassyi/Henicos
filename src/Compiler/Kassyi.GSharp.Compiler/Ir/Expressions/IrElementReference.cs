@@ -14,4 +14,10 @@ internal sealed class IrElementReference(IrExpression receiver, IrExpression ind
 
     /// <summary>The index.</summary>
     public IrExpression Index { get; } = index;
+
+    /// <summary>This node with the given children; this node itself when they are the same.</summary>
+    public IrElementReference Update(IrExpression receiver, IrExpression index) =>
+        receiver == Receiver && index == Index
+            ? this
+            : new IrElementReference(receiver, index, Type, Category, Source);
 }

@@ -9,4 +9,8 @@ internal sealed class IrAddressOf(IrExpression operand, ITypeSymbol type, IrSour
 {
     /// <summary>The location.</summary>
     public IrExpression Operand { get; } = operand;
+
+    /// <summary>This node with the given children; this node itself when they are the same.</summary>
+    public IrAddressOf Update(IrExpression operand) =>
+        operand == Operand ? this : new IrAddressOf(operand, Type, Source);
 }

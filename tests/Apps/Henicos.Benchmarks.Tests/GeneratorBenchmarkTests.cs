@@ -17,5 +17,6 @@ public class GeneratorBenchmarkTests
         Assert.True(benchmark.RunGenerator_Cpu() > 0);
         Assert.True(benchmark.BuildIr_Warm() > 0);
         Assert.Equal(benchmark.BuildIr_Warm(), benchmark.BuildIr_Cold());
+        Assert.Equal(benchmark.BuildIr_Warm(), benchmark.BuildAndClassifyIr_Warm());
     }
 }

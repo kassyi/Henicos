@@ -1,6 +1,7 @@
 #nullable enable
 using Kassyi.GSharp.Compiler.Ir;
 using Kassyi.GSharp.Compiler.Ir.Building;
+using Kassyi.GSharp.Compiler.Ir.Classifying;
 using Kassyi.GSharp.Compiler.Ir.Expressions;
 using Kassyi.GSharp.Compiler.Ir.Statements;
 using Microsoft.CodeAnalysis.Operations;
@@ -48,6 +49,11 @@ internal static class IrCoverage
     private static void Check(IrMethod method, Compilation compilation, string where, ConcurrentBag<string> violations)
     {
         foreach (var violation in IrInvariants.Verify(method, compilation))
+        {
+            violations.Add(where + ": " + violation);
+        }
+
+        foreach (var violation in IrInvariants.VerifyClassified(IrClassifier.Classify(method, compilation)))
         {
             violations.Add(where + ": " + violation);
         }
