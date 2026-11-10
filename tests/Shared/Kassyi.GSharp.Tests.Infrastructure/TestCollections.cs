@@ -11,6 +11,12 @@ public static class TestCollections
     public const string GlobalStateSequential = "GlobalStateSequential";
 
     /// <summary>
+    /// Runs the atomics differential test classes one after another, as the single class they were split from ran its
+    /// tests; the collection still runs in parallel with every other collection.
+    /// </summary>
+    public const string AtomicsDifferential = "AtomicsDifferential";
+
+    /// <summary>
     /// Runs tests with no other test in parallel, for tests that stall CUDA driver-wide resources on purpose
     /// (e.g. a blocking host function, which delays every host function and device-wide synchronizing call of the context)
     /// and for tests that read a process-wide counter (e.g. the pinned object count of the GC).
