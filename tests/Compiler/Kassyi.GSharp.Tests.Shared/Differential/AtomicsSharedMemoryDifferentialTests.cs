@@ -121,16 +121,16 @@ public class AtomicsSharedMemoryDifferentialTests
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_IntegerSharedMemoryTwoStageAtomicsInt32_MatchesTheReferenceOnEveryPath() =>
+    public void SharedMemoryAtomics_TwoStageInt32_MatchesTheReferenceOnEveryPath() =>
         DifferentialRunner.Run(s_integerSharedMemoryTwoStageAtomicsInt32);
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_IntegerSharedMemoryTwoStageAtomicsUInt32_MatchesTheReferenceOnEveryPath() =>
+    public void SharedMemoryAtomics_TwoStageUInt32_MatchesTheReferenceOnEveryPath() =>
         DifferentialRunner.Run(s_integerSharedMemoryTwoStageAtomicsUInt32);
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_IntegerSharedMemoryTwoStageAtomicsUInt64_MatchesTheReferenceOnEveryPath() =>
+    public void SharedMemoryAtomics_TwoStageUInt64_MatchesTheReferenceOnEveryPath() =>
         DifferentialRunner.Run(s_integerSharedMemoryTwoStageAtomicsUInt64);
 }

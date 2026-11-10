@@ -14,7 +14,7 @@ public class StackLinqStaticFormTests
     [Scenario(TestScenario.HappyPath)]
     [InlineData(new[] { 1, 2, 3, 4, 5, 6 }, 4)]
     [InlineData(new[] { -3, 0, 2, 4, 7 }, 3)]
-    public void Test_StaticFusedChain_MatchesLinq(int[] data, int limit)
+    public void StaticFusedChain_StandardSequence_MatchesLinq(int[] data, int limit)
     {
         var results = new int[3];
 
@@ -31,7 +31,7 @@ public class StackLinqStaticFormTests
     [InlineData(new[] { 5 }, 0)]
     [InlineData(new[] { 5 }, 1)]
     [InlineData(new[] { -1, 0, 2 }, 2)]
-    public void Test_StaticFusedChain_BoundaryInputs(int[] data, int limit)
+    public void StaticFusedChain_ExtremaInputs_MatchesLinq(int[] data, int limit)
     {
         var results = new int[3];
 
@@ -47,7 +47,7 @@ public class StackLinqStaticFormTests
     [InlineData(new[] { 2, 4, 6, 8 }, 6, 1)]
     [InlineData(new[] { 2, 4, 6, 8 }, 5, 0)]
     [InlineData(new[] { 7 }, 7, 1)]
-    public void Test_StaticContainsAndAggregate_MatchesLinq(int[] data, int target, int expectedContains)
+    public void StaticContainsAndAggregate_StandardSequence_MatchesLinq(int[] data, int target, int expectedContains)
     {
         var results = new int[3];
 
@@ -63,7 +63,7 @@ public class StackLinqStaticFormTests
     [InlineData(new[] { 1, 2, 3, 4, 5 }, 2)]
     [InlineData(new[] { 1, 2, 3, 4, 5 }, 0)]
     [InlineData(new[] { 10 }, 5)]
-    public void Test_StaticUnfusedChain_MatchesLinq(int[] data, int takeCount)
+    public void StaticUnfusedChain_StandardSequence_MatchesLinq(int[] data, int takeCount)
     {
         var results = new int[2];
 
@@ -79,7 +79,7 @@ public class StackLinqStaticFormTests
     [Scenario(TestScenario.HappyPath)]
     [InlineData(new[] { -2, 1, 2, 3, 4 })]
     [InlineData(new[] { 0, 5 })]
-    public void Test_MixedChainAndReorderedNonInterferingNamedArgs(int[] data)
+    public void MixedChain_ReorderedNonInterferingNamedArgs_MatchesLinq(int[] data)
     {
         var results = new int[3];
 
@@ -95,7 +95,7 @@ public class StackLinqStaticFormTests
     [InlineData(0)]
     [InlineData(3)]
     [InlineData(-2)]
-    public void Test_StackAllocSpanStatic_MatchesExpected(int seed)
+    public void StackAllocSpanStatic_StackAllocatedSpan_MatchesExpectedSums(int seed)
     {
         var results = new int[2];
 
@@ -110,7 +110,7 @@ public class StackLinqStaticFormTests
     [Scenario(TestScenario.HappyPath)]
     [InlineData(4)]
     [InlineData(12)]
-    public void Test_InterferingExtensionReceiver_EvaluatesReceiverBeforeArguments(int initial)
+    public void InterferingExtensionReceiver_SideEffectingReceiver_EvaluatesReceiverBeforeArguments(int initial)
     {
         var results = new int[3];
 
@@ -123,7 +123,7 @@ public class StackLinqStaticFormTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_ReorderedStackLinq_SequencesInterferingArgumentsInWrittenOrder()
+    public void ReorderedStackLinq_InterferingArguments_SequencesArgumentsInWrittenOrder()
     {
         int[] data = [10, 20, 30, 40, 50];
         var results = new int[2];
@@ -136,7 +136,7 @@ public class StackLinqStaticFormTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_InterferingChainedUnfused_SequencesArgumentsInWrittenOrder()
+    public void InterferingChainedUnfused_SideEffectingArguments_SequencesArgumentsInWrittenOrder()
     {
         int[] data = [10, 20, 30, 40, 50];
         var results = new int[2];
@@ -150,7 +150,7 @@ public class StackLinqStaticFormTests
 #if GSHARP_CPU
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_StaticAndMixedForms()
+    public void ManagedExecution_StaticAndMixedForms_MatchesExpectedResults()
     {
         int[] data = [1, 2, 3, 4, 5];
         var fusedResults = new int[3];

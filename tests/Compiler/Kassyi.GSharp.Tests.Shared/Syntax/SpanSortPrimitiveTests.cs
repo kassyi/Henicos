@@ -14,7 +14,7 @@ public class SpanSortPrimitiveTests : SpanKernelPathTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_SortInt_MatchesDotNet(int length, SortPattern pattern, bool managed)
+    public void SortInt_VaryingLengthsAndPatterns_MatchesDotNetOrder(int length, SortPattern pattern, bool managed)
     {
         var input = SortInputs.Int(length, pattern, seed: 625 + length);
         var data = (int[])input.Clone();
@@ -36,7 +36,7 @@ public class SpanSortPrimitiveTests : SpanKernelPathTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_SortInt_DepthLimitInput_UsesHeapSortAndMatchesDotNet(int length, bool managed)
+    public void SortInt_DepthLimitExhaustionInput_UsesHeapSortAndMatchesDotNetOrder(int length, bool managed)
     {
         var input = SortInputs.HeapSortKiller(length);
         var data = (int[])input.Clone();
@@ -52,7 +52,7 @@ public class SpanSortPrimitiveTests : SpanKernelPathTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_SortLong_MatchesDotNet(int length, bool managed)
+    public void SortLong_RandomInt64Values_MatchesDotNetOrder(int length, bool managed)
     {
         var random = new Random(6251 + length);
         var input = new long[length];
@@ -72,7 +72,7 @@ public class SpanSortPrimitiveTests : SpanKernelPathTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_SortUInt_MatchesDotNet(int length, bool managed)
+    public void SortUInt_UnsignedComparisonsAboveIntMax_MatchesDotNetOrder(int length, bool managed)
     {
         var random = new Random(6252 + length);
         var input = new uint[length];
@@ -93,7 +93,7 @@ public class SpanSortPrimitiveTests : SpanKernelPathTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_SortChar_MatchesDotNet(int length, bool managed)
+    public void SortChar_RandomUtf16Characters_MatchesDotNetOrder(int length, bool managed)
     {
         var random = new Random(6253 + length);
         var input = new char[length];
@@ -113,7 +113,7 @@ public class SpanSortPrimitiveTests : SpanKernelPathTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_SortEnum_OrdersByUnderlyingValue(int length, bool managed)
+    public void SortEnum_EnumValues_OrdersByUnderlyingValue(int length, bool managed)
     {
         SortRank[] ranks = [SortRank.High, SortRank.Low, SortRank.Middle];
         var random = new Random(6254 + length);
@@ -134,7 +134,9 @@ public class SpanSortPrimitiveTests : SpanKernelPathTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_SortFloat_NaNFirstAndSignedZerosInDotNetOrder(int length, bool managed)
+    public void SortFloat_FloatingPointValuesWithNaNAndSignedZeros_PlacesNaNFirstAndOrdersSignedZeros(
+        int length,
+        bool managed)
     {
         var input = SortInputs.Single(length, seed: 6255 + length);
         var data = (float[])input.Clone();
@@ -150,7 +152,9 @@ public class SpanSortPrimitiveTests : SpanKernelPathTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_SortDouble_NaNFirstAndSignedZerosInDotNetOrder(int length, bool managed)
+    public void SortDouble_DoublePrecisionValuesWithNaNAndSignedZeros_PlacesNaNFirstAndOrdersSignedZeros(
+        int length,
+        bool managed)
     {
         var input = SortInputs.Double(length, seed: 6256 + length);
         var data = (double[])input.Clone();
@@ -168,7 +172,7 @@ public class SpanSortPrimitiveTests : SpanKernelPathTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_SortFloat_SpecialValues(float[] input, bool managed)
+    public void SortFloat_InfinitiesAndMultipleNaNs_SortsInfinitiesAndNaNsCorrectly(float[] input, bool managed)
     {
         var data = (float[])input.Clone();
 
@@ -183,7 +187,7 @@ public class SpanSortPrimitiveTests : SpanKernelPathTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_SortSegments_EveryThreadSortsItsOwnBuffer(bool managed)
+    public void SortSegments_ConcurrentThreadSegments_SortsEachThreadSegmentIndependently(bool managed)
     {
         const int Segments = (int)(GridDimX * BlockDimX);
         const int Length = SpanSortKernels.SegmentLength;

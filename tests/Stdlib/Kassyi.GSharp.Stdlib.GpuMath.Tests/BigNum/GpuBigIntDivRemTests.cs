@@ -34,7 +34,7 @@ public class GpuBigIntDivRemTests : IDisposable
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Stdlib)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_DivRem_Reduce_InverseSqrt_Heron()
+    public void DivRemReduceInverseSqrtHeron_FixedOperands_MatchesExactResults()
     {
         using var customCtx = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
 
@@ -74,7 +74,7 @@ public class GpuBigIntDivRemTests : IDisposable
     [Category(TestCategory.Stdlib)]
     [Category(TestCategory.Stress)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_DivRem_MegaDivision_4096Words_MatchesCpuReference()
+    public void DivRemMegaDivision_FourThousandNinetySixWords_MatchesCpuReference()
     {
         const int NumWords = 4096; // 131,072 bits
         using var workspace = new GpuWorkspace(NumWords * 4, GpuExecutionEngine.GSharpAot);
@@ -136,7 +136,7 @@ public class GpuBigIntDivRemTests : IDisposable
     [InlineData(2048, 1024)]
     [InlineData(4096, 2048)]
     [InlineData(4096, 4095)]
-    public void Test_DivRem_MegaDivision_ShiftedDivisorBoundary_MatchesCpuReference(int numWords, int divisorActiveWords)
+    public void DivRemMegaDivision_ShiftedDivisorSizes_MatchesCpuReference(int numWords, int divisorActiveWords)
     {
         RunShiftedDivisor(numWords, divisorActiveWords, seed: 1337 + numWords + divisorActiveWords);
     }
@@ -231,7 +231,7 @@ public class GpuBigIntDivRemTests : IDisposable
     [Category(TestCategory.Stdlib)]
     [Scenario(TestScenario.Boundary)]
     [MemberData(nameof(DivRemBoundaryInputs))]
-    public void DivRem_NamedBoundaryInputs_SatisfyDivisionIdentityAndMatchHostReference(string input)
+    public void DivRem_NamedEdgeInputs_SatisfyDivisionIdentityAndMatchHostReference(string input)
     {
         const int NumWords = 8;
         var (dividend, divisor) = BuildDivRemInput(input, NumWords);
@@ -305,7 +305,7 @@ public class GpuBigIntDivRemTests : IDisposable
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Stdlib)]
     [Scenario(TestScenario.HappyPath)]
-    public void Div_And_Mod_GeneralDivisor_SatisfyDivisionIdentity()
+    public void DivAndMod_GeneralDivisor_SatisfiesDivisionIdentity()
     {
         const int NumWords = 8;
         using var workspace = new GpuWorkspace(NumWords * 4, GpuExecutionEngine.GSharpAot);
@@ -332,7 +332,7 @@ public class GpuBigIntDivRemTests : IDisposable
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Stdlib)]
     [Scenario(TestScenario.SadPath)]
-    public void Div_And_Mod_NarrowerThanTheirMinimum_ThrowArgumentException()
+    public void DivAndMod_NarrowerThanTheirMinimum_ThrowsArgumentException()
     {
         using var workspace = new GpuWorkspace(64, GpuExecutionEngine.GSharpAot);
 
@@ -351,7 +351,7 @@ public class GpuBigIntDivRemTests : IDisposable
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Stdlib)]
     [Scenario(TestScenario.SadPath)]
-    public void Div_And_Mod_ZeroDivisor_ThrowDivideByZeroException()
+    public void DivAndMod_ZeroDivisor_ThrowsDivideByZeroException()
     {
         using var workspace = new GpuWorkspace(64, GpuExecutionEngine.GSharpAot);
 
@@ -967,7 +967,7 @@ public class GpuBigIntDivRemTests : IDisposable
     [Category(TestCategory.Stdlib)]
     [Scenario(TestScenario.Boundary)]
     [MemberData(nameof(InverseSqrtGuessInputs))]
-    public void InverseSqrtMega_HandBuiltGuessNearSquareBoundary_IsCorrectedToExactFloor(int offset)
+    public void InverseSqrtMega_HandBuiltGuessNearSquareEdge_IsCorrectedToExactFloor(int offset)
     {
         const int NumWords = 4;
         const int PrecisionBits = NumWords * 32;
@@ -995,7 +995,7 @@ public class GpuBigIntDivRemTests : IDisposable
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Stdlib)]
     [Scenario(TestScenario.SadPath)]
-    public void Reciprocal_And_InverseSqrt_InvalidArguments_Throw()
+    public void ReciprocalAndInverseSqrt_InvalidArguments_ThrowsExpectedExceptions()
     {
         using var workspace = new GpuWorkspace(64, GpuExecutionEngine.GSharpAot);
         using var zero = new GpuBigUInt(workspace, new uint[4]);
@@ -1025,7 +1025,7 @@ public class GpuBigIntDivRemTests : IDisposable
     [InlineData(256)]
     [InlineData(600)]
     [InlineData(1024)]
-    public void DivRem_SmallAndBoundaryDivisors_MatchesBigIntegerReference(int numWords)
+    public void DivRem_SmallAndEdgeDivisors_MatchesBigIntegerReference(int numWords)
     {
         using var workspace = new GpuWorkspace(numWords * 4, GpuExecutionEngine.GSharpAot);
 
@@ -1086,7 +1086,7 @@ public class GpuBigIntDivRemTests : IDisposable
     [InlineData(64)]
     [InlineData(256)]
     [InlineData(600)]
-    public void Gcd_BoundaryOperandPairs_MatchesBigIntegerReference(int numWords)
+    public void Gcd_EdgeOperandPairs_MatchesBigIntegerReference(int numWords)
     {
         using var workspace = new GpuWorkspace(numWords * 4, GpuExecutionEngine.GSharpAot);
 

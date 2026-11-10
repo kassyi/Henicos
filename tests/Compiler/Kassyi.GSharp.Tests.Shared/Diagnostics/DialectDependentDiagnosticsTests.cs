@@ -13,7 +13,7 @@ public class DialectDependentDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_InlinePtx_ReportsGsh0054OnlyForTheCpuDialect(string dialect)
+    public async Task InlinePtx_CpuDialect_ReportsGsh0054(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Generator/DialectDiagnostics.cu.cs", dialect);
 
@@ -27,7 +27,7 @@ public class DialectDependentDiagnosticsTests
     [InlineData("Cpu", 1)]
     [InlineData("Cuda", 0)]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_ComprehensiveSpecKernel_ReportsGsh0054OnlyForTheCpuDialect(string dialect, int count)
+    public async Task ComprehensiveSpecKernel_CpuDialect_ReportsGsh0054(string dialect, int count)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("ComprehensiveSpecKernel.cu.cs", dialect);
 
@@ -41,7 +41,7 @@ public class DialectDependentDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_InlinePtxVariable_ReportsGsh0006AtTheArgument(string dialect)
+    public async Task InlinePtxVariable_VariablePtxString_ReportsGsh0006AtArgument(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Analyzers/MacroArgumentSadPath.cs", dialect);
 
@@ -55,7 +55,7 @@ public class DialectDependentDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_StaticFieldReferences_ReportGsh0065OncePerReference(string dialect)
+    public async Task StaticFieldReferences_DeviceCodeUsage_ReportsGsh0065OncePerReference(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/StaticMemberAccessTwice.cu.cs", dialect);
 
@@ -71,7 +71,7 @@ public class DialectDependentDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_StaticMembers_ReportGsh0065InKernelsAndDeviceFunctions(string dialect)
+    public async Task StaticMembers_KernelsAndDeviceFunctions_ReportsGsh0065(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Analyzers/StaticMemberAccess_SadPath.cs", dialect);
 
@@ -92,7 +92,7 @@ public class DialectDependentDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.HappyPath)]
-    public async Task Test_MappedMathMembers_ReportNothing(string dialect)
+    public async Task MappedMathMembers_SupportedDialect_ReportsNothing(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Analyzers/MappedMathMembers.cs", dialect);
 
@@ -105,7 +105,7 @@ public class DialectDependentDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.HappyPath)]
-    public async Task Test_ComprehensiveSpecKernel_ReportsNoGsh0003(string dialect)
+    public async Task ComprehensiveSpecKernel_ValidDialect_ReportsNoGsh0003(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("ComprehensiveSpecKernel.cu.cs", dialect);
 
@@ -118,7 +118,9 @@ public class DialectDependentDiagnosticsTests
     [InlineData("Cpu", "StandardCppDialect")]
     [InlineData("Cuda", "GSharpCudaDialect")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_UnmappedMathMembers_ReportGsh0003WithTheDialect(string dialect, string dialectName)
+    public async Task UnmappedMathMembers_UnsupportedDialect_ReportsGsh0003WithDialectName(
+        string dialect,
+        string dialectName)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Analyzers/UnmappedMathMembers.cs", dialect);
 

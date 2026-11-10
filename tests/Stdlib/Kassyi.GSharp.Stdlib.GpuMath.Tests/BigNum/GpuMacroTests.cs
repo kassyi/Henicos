@@ -9,7 +9,7 @@ public class GpuMacroTests
     [InlineData(int.MinValue)]
     [InlineData(-1)]
     [InlineData(0)]
-    public void Test_MacroKernel_EmptyOutput_ThrowsArgumentException(int length)
+    public void Launch_EmptyOutputBuffer_ThrowsArgumentException(int length)
     {
         CudaCapability.EnsureGpuAvailable();
         using var scope = new GpuKernelLoader.CudaContextScope();
@@ -29,7 +29,7 @@ public class GpuMacroTests
     [InlineData(1024)]
     [InlineData(1025)]
     [InlineData(2048)]
-    public void Test_MacroKernel_GridStrideLoop_And_SingleThread(int length)
+    public void Launch_GridStrideLoopAndSingleThread_PopulatesExpectedValues(int length)
     {
         CudaCapability.EnsureGpuAvailable();
         // Edge cases and stress testing for macro kernels

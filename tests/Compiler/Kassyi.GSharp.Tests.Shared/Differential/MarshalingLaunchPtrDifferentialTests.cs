@@ -61,7 +61,7 @@ public sealed class MarshalingLaunchPtrDifferentialTests
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_LaunchPtr_NonOverloadedIntPtrWithLengthGuard_MatchesSequentialOracle() =>
+    public void LaunchPtr_NonOverloadedIntPtrWithLengthGuard_MatchesSequentialOracle() =>
         DifferentialRunner.Run(s_ptrLengthGuardedScale);
 
 #if GSHARP_CUDA
@@ -69,7 +69,7 @@ public sealed class MarshalingLaunchPtrDifferentialTests
     // the kernel leaves out the null check of an array parameter it never writes on that promise (#1409) ---
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_LaunchPtr_NullNonOptionalArray_ThrowsArgumentNullExceptionBeforeTheLaunch()
+    public void LaunchPtr_NullNonOptionalArray_ThrowsArgumentNullExceptionBeforeTheLaunch()
     {
         CudaCapability.EnsureGpuAvailable();
         const int rows = 4;
@@ -171,7 +171,7 @@ public sealed class MarshalingLaunchPtrDifferentialTests
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_LaunchPtr_OverloadedGpuBufferSignature_MatchesSequentialOracle() =>
+    public void LaunchPtr_OverloadedGpuBufferSignature_MatchesSequentialOracle() =>
         DifferentialRunner.Run(s_overloadedPtr);
 
     // --- Launch{Kernel}Ptr with ref Convert struct ---
@@ -244,6 +244,6 @@ public sealed class MarshalingLaunchPtrDifferentialTests
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_LaunchPtr_RefConvertStruct_MatchesExpected() =>
+    public void LaunchPtr_RefConvertStruct_MatchesExpected() =>
         DifferentialRunner.Run(s_ptrConvertStructAndRef);
 }

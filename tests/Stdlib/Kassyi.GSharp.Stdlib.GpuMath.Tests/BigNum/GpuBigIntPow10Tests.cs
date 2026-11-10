@@ -19,7 +19,7 @@ public class GpuBigIntPow10Tests
     [InlineData(64)]
     [InlineData(100)]
     [InlineData(1000)]
-    public void Test_Pow10_ReturnsCorrectResult(int exponent)
+    public void Pow10_ValidExponents_MatchesBigIntegerResult(int exponent)
     {
         CudaCapability.EnsureGpuAvailable();
         var engine = CreateTestEngine();
@@ -35,7 +35,7 @@ public class GpuBigIntPow10Tests
     [InlineData(int.MinValue)]
     [InlineData(50_000_001)]
     [InlineData(int.MaxValue)]
-    public void Test_Pow10_InvalidExponent_ThrowsArgumentOutOfRangeException(int exponent)
+    public void Pow10_InvalidExponents_ThrowsArgumentOutOfRangeException(int exponent)
     {
         CudaCapability.EnsureGpuAvailable();
         var engine = CreateTestEngine();

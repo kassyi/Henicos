@@ -15,7 +15,7 @@ public class NoDynamicInGeneratedCodeTests
 {
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void NoDynamicInVerifiedSnapshots()
+    public void VerifiedSnapshots_AllGeneratedCode_ContainsNoDynamicIdentifier()
     {
         var testsDirectory = RepositoryPaths.Combine("tests");
         var verifiedFiles = Directory.EnumerateFiles(testsDirectory, "*.verified.cs", SearchOption.AllDirectories);

@@ -34,7 +34,7 @@ public class NativeCudaKernelsGeneratorTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public async Task Test_GeneratesConstants_FromCuFiles()
+    public async Task GeneratesConstants_FromCuFiles()
     {
         var additionalFile = GetAdditionalText("NativeCudaKernels/HappyPath.cu");
 
@@ -53,12 +53,12 @@ public class NativeCudaKernelsGeneratorTests
 
         await Verifier.Verify(generatedSource, "cs")
             .UseDirectory("Snapshots")
-            .UseFileName($"Snap.{nameof(Test_GeneratesConstants_FromCuFiles)}");
+            .UseFileName($"Snap.{nameof(GeneratesConstants_FromCuFiles)}");
     }
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_EmptyCuFile_DoesNotGenerate()
+    public void EmptyCuFile_DoesNotGenerate()
     {
         var additionalFile = GetAdditionalText("NativeCudaKernels/Empty.cu");
 

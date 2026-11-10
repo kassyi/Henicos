@@ -8,7 +8,7 @@ public class StaticMemberAccessAnalyzerTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_StaticMemberAccess_ReportsGSH0065ForNonConstStaticFieldsAndProperties()
+    public async Task StaticMemberAccess_NonConstStaticFieldsAndProperties_ReportsGSH0065()
     {
         var diagnostics = await RoslynTestUtility
             .TestAnalyzer("Analyzers/StaticMemberAccess_SadPath.cs", s_analyzer)
@@ -40,7 +40,7 @@ public class StaticMemberAccessAnalyzerTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public async Task Test_StaticMemberAccess_AllowsConstFieldsEnumsAndIntrinsics()
+    public async Task StaticMemberAccess_ConstFieldsEnumsAndIntrinsics_ProducesNoDiagnostics()
     {
         var diagnostics = await RoslynTestUtility
             .TestAnalyzer("Analyzers/StaticMemberAccess_HappyPath.cs", s_analyzer)

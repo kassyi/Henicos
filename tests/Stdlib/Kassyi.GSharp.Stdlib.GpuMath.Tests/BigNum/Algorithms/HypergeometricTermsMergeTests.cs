@@ -64,7 +64,7 @@ public sealed class HypergeometricTermsMergeCpuFallbackTests
     [Theory]
     [MemberData(nameof(Widths))]
     [Scenario(TestScenario.Boundary)]
-    public void FollowsTheSameRules(int pWords, int qWords, int tWords)
+    public void Merge_CpuFallbackWithVaryingWords_FollowsTheSameRules(int pWords, int qWords, int tWords)
     {
         GpuKernelLoader.ForceCpuFallback = true;
         try

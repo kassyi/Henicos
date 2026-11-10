@@ -12,7 +12,7 @@ public class BigIntRefOperatorTests : TranspilerTestBase
 {
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_ShiftOperators_ShiftTheLimbs()
+    public void ShiftOperators_ShiftTheLimbs()
     {
         var left = new uint[BigIntRefOperatorCases.Input.Length];
         var right = new uint[BigIntRefOperatorCases.Input.Length];

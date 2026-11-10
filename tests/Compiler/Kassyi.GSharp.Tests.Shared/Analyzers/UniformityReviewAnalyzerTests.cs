@@ -12,7 +12,7 @@ public class UniformityReviewAnalyzerTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_ReviewedShapes_AreReported()
+    public async Task ReviewedShapes_DivergentBarrierKernels_AreReported()
     {
         var actual = await RunAsync("Analyzers/BarrierUsage/UniformityReviewKernels.cu.cs");
 
@@ -48,7 +48,7 @@ public class UniformityReviewAnalyzerTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_BarrierInUnsplitBody_SaysWhy()
+    public async Task BarrierInUnsplitBody_UnsplitContext_ReportsReasonDiagnostic()
     {
         var diagnostics = await RoslynTestUtility
             .TestAnalyzer("Analyzers/BarrierUsage/UniformityReviewKernels.cu.cs", s_analyzer)

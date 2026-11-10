@@ -13,7 +13,7 @@ public class SharedMemoryDeclarationAnalyzerTests : TranspilerTestBase
     [Scenario(TestScenario.SadPath)]
     [InlineData("SharedMemorySameLineKernels.cu.cs")]
     [InlineData("SharedMemorySameLineOverloadKernels.cu.cs")]
-    public async Task Test_SharedMemoryDeclarationsOnOneLine_ReportsGSH0063(string testCase)
+    public async Task SharedMemoryDeclarations_MultipleOnOneLine_ReportsGSH0063(string testCase)
     {
         await RoslynTestUtility.TestAnalyzer("Analyzers/SharedMemoryDeclaration/" + testCase, s_analyzer)
                                .ReportsDiagnosticsAsync("GSH0063");
@@ -21,7 +21,7 @@ public class SharedMemoryDeclarationAnalyzerTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public async Task Test_SharedMemoryDeclarationsWithDistinctKeys_HasNoDiagnostics()
+    public async Task SharedMemoryDeclarations_DistinctKeys_HasNoDiagnostics()
     {
         await RoslynTestUtility.TestAnalyzer("Analyzers/SharedMemoryDeclaration/SharedMemoryDistinctKeyKernels.cu.cs", s_analyzer)
                                .ReportsNoDiagnosticsAsync();

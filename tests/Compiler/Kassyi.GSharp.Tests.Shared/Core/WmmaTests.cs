@@ -9,7 +9,7 @@ public class WmmaTests : TranspilerTestBase
     [Fact]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Wmma_Int8RowMajorKernel_TranspilesToDialectFragmentsAndIntrinsics()
+    public void WmmaInt8RowMajor_Transpilation_EmitsDialectFragmentsAndIntrinsics()
     {
         var (source, diagnostics) = RoslynTestUtility.TranspileMethod<WmmaKernels>(
             nameof(WmmaKernels.WmmaInt8RowMajorKernel), dialect: CurrentDialect);
@@ -25,7 +25,7 @@ public class WmmaTests : TranspilerTestBase
 #if GSHARP_CPU
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_Wmma_CpuDialectThrowsNotSupportedException()
+    public void WmmaInt8RowMajor_CpuDialectLaunch_ThrowsNotSupportedException()
     {
         var a = new sbyte[256];
         var b = new sbyte[256];
@@ -38,7 +38,7 @@ public class WmmaTests : TranspilerTestBase
 #else
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Wmma_Int8_M16N16K16_RowMajor_ComputesExactMatrixMultiplyAccumulate()
+    public void WmmaInt8_M16N16K16RowMajor_ComputesExactMatrixMultiplyAccumulate()
     {
         var a = new sbyte[16 * 16];
         var b = new sbyte[16 * 16];
@@ -79,7 +79,7 @@ public class WmmaTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Wmma_Int8_M16N16K16_ColMajorB_ComputesExactMatrixMultiplyAccumulate()
+    public void WmmaInt8_M16N16K16ColMajorB_ComputesExactMatrixMultiplyAccumulate()
     {
         var a = new sbyte[16 * 16];
         var bColMajor = new sbyte[16 * 16];
@@ -118,7 +118,7 @@ public class WmmaTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Wmma_Int8_M16N16K16_ColMajorStore_WritesTransposedMemoryLayout()
+    public void WmmaInt8_M16N16K16ColMajorStore_WritesTransposedMemoryLayout()
     {
         var a = new sbyte[16 * 16];
         var b = new sbyte[16 * 16];
@@ -151,7 +151,7 @@ public class WmmaTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Wmma_Double_M8N8K4_RowMajor_ComputesExactMatrixMultiplyAccumulate()
+    public void WmmaDouble_M8N8K4RowMajor_ComputesExactMatrixMultiplyAccumulate()
     {
         var a = new double[8 * 4];
         var b = new double[4 * 8];

@@ -228,7 +228,9 @@ public sealed class ScalarResultWidthCpuFallbackTests
     [Theory]
     [MemberData(nameof(OperationsAndWidths))]
     [Scenario(TestScenario.Boundary)]
-    public void FollowsTheSameRules(ScalarOperation operation, int words)
+    public void ScalarResultWidth_CpuFallbackWithVaryingOperations_FollowsTheSameRules(
+        ScalarOperation operation,
+        int words)
     {
         GpuKernelLoader.ForceCpuFallback = true;
         try

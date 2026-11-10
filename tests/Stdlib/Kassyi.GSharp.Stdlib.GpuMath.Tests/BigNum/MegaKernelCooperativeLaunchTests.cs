@@ -5,7 +5,7 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum;
 public class MegaKernelCooperativeLaunchTests
 {
     [SkippableFact]
-    public void Test_CooperativeMegaKernel_ClampsToMockedSmCount()
+    public void Launch_CooperativeMegaKernel_ClampsToMockedSmCount()
     {
         CudaCapability.EnsureGpuAvailable();
 

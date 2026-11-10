@@ -9,7 +9,7 @@ public class GpuKernelDirectInvocationAnalyzerTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_GpuKernelDirectInvocation_ReportsGSH0031()
+    public async Task GpuKernelDirectInvocation_DirectCallFromHost_ReportsGSH0031()
     {
         await RoslynTestUtility.TestAnalyzer("Analyzers/DirectGpuKernelInvocation.cs", s_analyzer)
                                .ReportsErrorsAsync(GSharpDiagnostics.DirectGpuKernelInvocation);
@@ -17,7 +17,7 @@ public class GpuKernelDirectInvocationAnalyzerTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public async Task Test_GpuKernelDirectInvocation_NestedCalls_FollowTheEnclosingFunction()
+    public async Task GpuKernelDirectInvocation_NestedCalls_FollowEnclosingFunction()
     {
         var diagnostics = await RoslynTestUtility.TestAnalyzer("Analyzers/DirectGpuKernelInvocationNested.cs", s_analyzer)
                                                  .GetDiagnosticsAsync();

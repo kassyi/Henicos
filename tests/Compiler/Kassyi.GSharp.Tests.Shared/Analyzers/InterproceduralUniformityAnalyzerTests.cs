@@ -14,7 +14,7 @@ public class InterproceduralUniformityAnalyzerTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_DivergentBarriers_AcrossCallsAndBySeverity()
+    public async Task DivergentBarriers_InterproceduralCalls_ReportsExpectedSeveritiesAndSpans()
     {
         var actual = await RunAsync("Analyzers/BarrierUsage/InterproceduralUniformityKernels.cu.cs");
 
@@ -52,7 +52,7 @@ public class InterproceduralUniformityAnalyzerTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_LaunchDependentDivergentBarrier_IsAWarning()
+    public async Task LaunchDependentDivergentBarrier_BlockCondition_ReportsWarning()
     {
         var diagnostics = await RoslynTestUtility
             .TestAnalyzer("Analyzers/BarrierUsage/InterproceduralUniformityKernels.cu.cs", s_analyzer)
@@ -67,7 +67,7 @@ public class InterproceduralUniformityAnalyzerTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_LocalFunctionResults_FollowTheirBody()
+    public async Task LocalFunctionResults_BodyExpressions_FollowBodyExpressions()
     {
         var actual = await RunAsync("Analyzers/BarrierUsage/LocalFunctionVarianceKernels.cu.cs");
 

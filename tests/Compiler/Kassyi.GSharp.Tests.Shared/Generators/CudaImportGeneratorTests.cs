@@ -12,7 +12,7 @@ public class CudaImportGeneratorTests
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_UnrelatedSourceChange_KeepsCudaImportStepCached()
+    public void UnrelatedSourceChange_KeepsCudaImportStepCached()
     {
         var compilation = CreateCompilation(s_sourceCode);
         var driver = CreateDriver();

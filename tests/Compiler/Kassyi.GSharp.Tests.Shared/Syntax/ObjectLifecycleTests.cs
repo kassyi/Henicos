@@ -16,7 +16,11 @@ public class ObjectLifecycleTests
     [InlineData(99, 1, 99, 0)]
     [InlineData(int.MaxValue, 1, int.MaxValue, 1)]
     [InlineData(int.MinValue, 1, int.MinValue, 0)]
-    public void Test_LifecycleUpdateKernel_BoundaryDataDriven(int initialVal, int multiplier, int expectedVal, int expectedStatus)
+    public void Execute_LifecycleUpdate_UpdatesStateAndStatus(
+        int initialVal,
+        int multiplier,
+        int expectedVal,
+        int expectedStatus)
     {
         LifecycleObjectState[] states = [
             new LifecycleObjectState { Id = 1, Value = initialVal, Status = 0 }
@@ -31,7 +35,7 @@ public class ObjectLifecycleTests
 
     [Fact]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void Test_LifecycleUpdateKernel_EmptyArrayEdgeCase()
+    public void Execute_LifecycleUpdateWithEmptyArray_ThrowsArgumentException()
     {
         // Empty array arguments are rejected instead of silently skipping the launch
         LifecycleObjectState[] emptyStates = [];
@@ -42,7 +46,7 @@ public class ObjectLifecycleTests
 
     [Fact]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void Test_FactoryInitializationKernel_EmptyArrayEdgeCase()
+    public void Execute_FactoryInitializationWithEmptyArray_ThrowsArgumentException()
     {
         int[] inputs = [];
         LifecycleObjectState[] outputs = [];
@@ -54,7 +58,7 @@ public class ObjectLifecycleTests
 
     [Fact]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void Test_FactoryInitializationKernel_SingleElementEdgeCase()
+    public void Execute_FactoryInitializationWithSingleElement_InitializesStateCorrectly()
     {
         int[] inputs = [42];
         LifecycleObjectState[] outputs = new LifecycleObjectState[1];
@@ -67,7 +71,7 @@ public class ObjectLifecycleTests
 
     [Fact]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void Test_FactoryInitializationKernel_MultiElement()
+    public void Execute_FactoryInitializationWithMultipleElements_InitializesAllStatesCorrectly()
     {
         int[] inputs = [-5, 0, 42, 150];
         LifecycleObjectState[] outputs = new LifecycleObjectState[4];

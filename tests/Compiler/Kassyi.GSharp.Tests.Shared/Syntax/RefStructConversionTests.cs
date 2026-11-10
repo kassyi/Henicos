@@ -10,7 +10,7 @@ public class RefStructConversionTests : TranspilerTestBase
 {
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_ImplicitRefStructConversion_RunsItsBody() =>
+    public void ImplicitRefStructConversion_ValidInputValues_RunsBodyAndComputesExpectedValues() =>
         OnEveryPath(static () =>
         {
             int[] input = [3, -4];
@@ -26,7 +26,7 @@ public class RefStructConversionTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_ExplicitRefStructConversion_RunsItsBody() =>
+    public void ExplicitRefStructConversion_ValidInputValues_RunsBodyAndComputesExpectedValues() =>
         OnEveryPath(static () =>
         {
             int[] input = [3, -4];
@@ -42,7 +42,7 @@ public class RefStructConversionTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_RefStructToRefStructConversion_RunsItsBody() =>
+    public void RefStructToRefStructConversion_ValidInputValues_RunsBodyAndComputesPadsAndConversions() =>
         OnEveryPath(static () =>
         {
             int[] input = [3, -4];
@@ -66,7 +66,7 @@ public class RefStructConversionTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_RefStructWithBodyAndMacroConversions_RunsTheBody() =>
+    public void MixedRefStructConversion_BodyAndMacroConversions_RunsBodyAndInitializesFields() =>
         OnEveryPath(static () =>
         {
             int[] input = [3, -4];

@@ -22,7 +22,7 @@ public sealed class MarshalingBoundaryDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_MultidimensionalArrayLocal_ReportsGsh0003(string dialect)
+    public async Task MultidimensionalArrayLocal_LocalDeclaration_ReportsGsh0003(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(TestCase, dialect);
 
@@ -36,7 +36,7 @@ public sealed class MarshalingBoundaryDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_MultidimensionalArrayParameter_ReportsGsh0003(string dialect)
+    public async Task MultidimensionalArrayParameter_ParameterDeclaration_ReportsGsh0003(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(MultiDimParamTestCase, dialect);
 
@@ -57,7 +57,7 @@ public sealed class MarshalingBoundaryDiagnosticsTests
     [InlineData("Cpu", "ReferenceFieldStruct", "reference type 'string'", 67, 9, 67, 29)]
     [InlineData("Cuda", "ReferenceFieldStruct", "reference type 'string'", 67, 9, 67, 29)]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_ExplicitLayoutAndReferenceField_ReportGsh0078WithReason(
+    public async Task ExplicitLayoutAndReferenceField_StructDeclaration_ReportsGsh0078WithReason(
         string dialect,
         string structName,
         string expectedReason,
@@ -86,7 +86,7 @@ public sealed class MarshalingBoundaryDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_NonUnmanagedKernelReturnType_ReportsGsh0004(string dialect)
+    public async Task NonUnmanagedKernelReturnType_ManagedReturnType_ReportsGsh0004(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(TestCase, dialect);
 
@@ -103,7 +103,7 @@ public sealed class MarshalingBoundaryDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_FieldWithoutDeviceRepresentation_ReportsGsh0079(string dialect)
+    public async Task FieldWithoutDeviceRepresentation_UnsupportedFieldType_ReportsGsh0079(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(TestCase, dialect);
 
@@ -117,7 +117,7 @@ public sealed class MarshalingBoundaryDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_NullableDeepStructParameter_ReportsGsh0078(string dialect)
+    public async Task NullableDeepStructParameter_NullableComplexStruct_ReportsGsh0078(string dialect)
     {
         const string source = """
             using Kassyi.GSharp.Core;
@@ -151,7 +151,7 @@ public sealed class MarshalingBoundaryDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_UnmappedBclStructReturn_ReportsDiagnostic(string dialect)
+    public async Task UnmappedBclStructReturn_UnmappedType_ReportsDiagnostic(string dialect)
     {
         const string source = """
             using System;
@@ -181,7 +181,7 @@ public sealed class MarshalingBoundaryDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.Boundary)]
-    public async Task Test_NullableVector2DirectPositions_EmitsValidTypes(string dialect)
+    public async Task NullableVector2DirectPositions_GeneratorRun_EmitsValidTypes(string dialect)
     {
         var compilation = RoslynTestUtility.CreateCompilation(RoslynTestUtility.ReadTestCase(NullableVector2DirectTestCase));
         var run = await KernelDiagnostics.RunCompilationAsync(compilation, dialect);
@@ -199,7 +199,7 @@ public sealed class MarshalingBoundaryDiagnosticsTests
     [InlineData("Cpu", false)]
     [InlineData("Cuda", true)]
     [Scenario(TestScenario.Boundary)]
-    public async Task Test_AutoLayoutAndDeepStructArrays_ReportGsh0080AndDialectSpecificGsh0081(
+    public async Task AutoLayoutAndDeepStructArrays_ComplexArrayFields_ReportsGsh0080AndGsh0081(
         string dialect,
         bool expectGsh0081)
     {
@@ -222,7 +222,7 @@ public sealed class MarshalingBoundaryDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_ImmutableArrayLength_EmitsLengthMember(string dialect)
+    public async Task ImmutableArrayLength_GeneratorRun_EmitsLengthMember(string dialect)
     {
         const string source = """
             using System.Collections.Immutable;
@@ -253,7 +253,7 @@ public sealed class MarshalingBoundaryDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_ReadOnlyArrayToReadOnlySpan_PreservesConst(string dialect)
+    public async Task ReadOnlyArrayToReadOnlySpan_Conversion_PreservesConst(string dialect)
     {
         const string source = """
             using System;
@@ -285,7 +285,7 @@ public sealed class MarshalingBoundaryDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_NullableReturnNull_EmitsValidNullableReturn(string dialect)
+    public async Task NullableReturnNull_GeneratorRun_EmitsValidNullableReturn(string dialect)
     {
         const string source = """
             using Kassyi.GSharp.Core;

@@ -14,7 +14,7 @@ public class ManagedExecutionTests : TranspilerTestBase
     [InlineData(32)]
     [InlineData(128)]
     [InlineData(256)]
-    public void Test_Kernel_Direct_Managed_Execution_SharedMemoryAndSyncThreads(int length)
+    public void LaunchSharedMemoryAndSyncThreads_DirectManagedExecution_ReversesTheArray(int length)
     {
         // 1. Force the engine to execute the Managed Cooperative Scheduler (skip native AOT DLL execution)
         bool previousState = CpuKernelLoader.ForceManagedExecution;
@@ -53,7 +53,7 @@ public class ManagedExecutionTests : TranspilerTestBase
     }
 
     [SkippableFact]
-    public void Test_Kernel_Direct_Managed_Execution_WarpShuffleReduceSum()
+    public void LaunchWarpShuffleReduceSum_DirectManagedExecution_ProducesExpectedSum()
     {
         bool previousState = CpuKernelLoader.ForceManagedExecution;
         CpuKernelLoader.ForceManagedExecution = true;
@@ -95,7 +95,7 @@ public class ManagedExecutionTests : TranspilerTestBase
         }
     }
     [Fact]
-    public void Test_ManagedGpuContext_DirectCalls_ForCoverage()
+    public void ManagedGpuContext_DirectMethodCalls_ExecutesWithoutException()
     {
         try
         {

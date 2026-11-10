@@ -8,7 +8,7 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum;
 public class CudaGraphExecutionTests
 {
     [SkippableFact]
-    public void Test_CudaGraph_Add_Execution()
+    public void Execute_VectorAddCapturedInGraph_ProducesExpectedSums()
     {
         CudaCapability.EnsureGpuAvailable();
 
@@ -82,7 +82,7 @@ public class CudaGraphExecutionTests
 
     [SkippableFact]
     [Category(TestCategory.Stress)]
-    public void Test_CudaGraph_StressLaunch()
+    public void Launch_OneThousandGraphExecutions_AccumulatesCorrectSum()
     {
         CudaCapability.EnsureGpuAvailable();
 
@@ -153,7 +153,7 @@ public class CudaGraphExecutionTests
     }
     [Scenario(TestScenario.SadPath)]
     [SkippableFact]
-    public void Test_CudaGraph_SadPath_ImplicitSyncFails()
+    public void Capture_ImplicitStreamSynchronization_ThrowsCudaErrorStreamCaptureImplicit()
     {
         CudaCapability.EnsureGpuAvailable();
 
@@ -189,7 +189,7 @@ public class CudaGraphExecutionTests
 
     [Scenario(TestScenario.SadPath)]
     [SkippableFact]
-    public void Test_CudaGraph_WorkspaceDispose_AbortsLeakedStreamCapture_WithoutContamination()
+    public void Dispose_LeakedStreamCapture_AbortsCaptureWithoutContaminatingSubsequentGraph()
     {
         CudaCapability.EnsureGpuAvailable();
 
@@ -242,7 +242,7 @@ public class CudaGraphExecutionTests
 
     [TestTarget(ExecutionTarget.GpuExecution)]
     [SkippableFact]
-    public void Test_CudaGraph_ReduceZeroSync_IsCaptureSafe()
+    public void ReduceZeroSync_CapturedInGraph_ExecutesSuccessfully()
     {
         CudaCapability.EnsureGpuAvailable();
 

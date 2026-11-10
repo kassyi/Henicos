@@ -11,7 +11,7 @@ public class CoreIntrinsicsTests
 {
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_GpuHint_Unroll_DefaultFactor_ExecutesWithoutException()
+    public void GpuHintUnroll_DefaultFactor_ExecutesWithoutException()
     {
         // Happy Path: Gpu.Hint.Unroll is a pure marker method and should complete safely on the host
         var exception = Record.Exception(() => Gpu.Hint.Unroll());
@@ -25,7 +25,7 @@ public class CoreIntrinsicsTests
     [InlineData(-1)]
     [InlineData(int.MinValue)]
     [InlineData(int.MaxValue)]
-    public void Test_GpuHint_Unroll_BoundaryFactors_ExecutesWithoutException(int factor)
+    public void GpuHintUnroll_ExtremeFactors_ExecutesWithoutException(int factor)
     {
         // Boundary Testing: Extreme values for unroll factor should be accepted without throwing
         var exception = Record.Exception(() => Gpu.Hint.Unroll(factor));
@@ -34,7 +34,7 @@ public class CoreIntrinsicsTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_GpuSyncAndControl_HostInvocation_ThrowsGpuOnlyException()
+    public void GpuSyncAndControl_HostInvocation_ThrowsGpuOnlyException()
     {
         // Sad Path: Hardware sync & control markers must throw GpuOnlyException when invoked on the host CPU
         Assert.Throws<GpuOnlyException>(() => Gpu.SyncThreads());
@@ -53,7 +53,7 @@ public class CoreIntrinsicsTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_GpuArithmetics_HostInvocation_ThrowsGpuOnlyException()
+    public void GpuArithmetics_HostInvocation_ThrowsGpuOnlyException()
     {
         // Sad Path: Carry arithmetic intrinsics must throw GpuOnlyException (the atomics: the theory below)
         uint uintVal = 20;
@@ -114,7 +114,7 @@ public class CoreIntrinsicsTests
     [Theory]
     [Scenario(TestScenario.SadPath)]
     [MemberData(nameof(ForwardedAtomicStubs))]
-    public void Test_ForwardedAtomicStub_HostInvocation_ThrowsGpuOnlyExceptionAndLeavesTheValue(string stub)
+    public void ForwardedAtomicStub_HostInvocation_ThrowsGpuOnlyExceptionAndLeavesValue(string stub)
     {
         Assert.True(s_forwardedAtomicStubs.TryGetValue(stub, out var invoke));
         invoke();
@@ -123,7 +123,7 @@ public class CoreIntrinsicsTests
     // The table above lists every overload that ptx_intrinsics.yml forwards to a managed member, and nothing else
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_ForwardedAtomicStubs_CoverEveryOverloadWithAManagedMember()
+    public void ForwardedAtomicStubs_ManagedMemberInspection_CoversEveryOverload()
     {
         var yaml = File.ReadAllText(RepositoryPaths.Combine("src", "NativeApi", "ptx_intrinsics.yml"));
         Assert.True(NativeApiYamlReader.TryRead(yaml, out var definition, out var error), error?.Message);
@@ -166,7 +166,7 @@ public class CoreIntrinsicsTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_CoordinateProperties_HostEvaluation_ThrowsGpuOnlyException()
+    public void CoordinateProperties_HostEvaluation_ThrowsGpuOnlyException()
     {
         // Sad Path: Thread/Block coordinate markers must throw GpuOnlyException on CPU
         var dim = new Dim3();
@@ -193,7 +193,7 @@ public class CoreIntrinsicsTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_GpuShuffleAndMask_HostInvocation_ThrowsGpuOnlyException()
+    public void GpuShuffleAndMask_HostInvocation_ThrowsGpuOnlyException()
     {
         // Sad Path: Shuffle and active mask intrinsics on Gpu class must throw GpuOnlyException
         Assert.Throws<GpuOnlyException>(() => Warp.ActiveMask());
@@ -216,7 +216,7 @@ public class CoreIntrinsicsTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_WarpIntrinsics_HostEvaluation_ThrowsGpuOnlyException()
+    public void WarpIntrinsics_HostEvaluation_ThrowsGpuOnlyException()
     {
         // Sad Path: Warp-level intrinsics must throw GpuOnlyException
         Assert.Throws<GpuOnlyException>(() => Warp.ShuffleDownSync(0xFFFFFFFF, 42, 1));
@@ -228,7 +228,7 @@ public class CoreIntrinsicsTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_SharedMemory_HostEvaluation_ThrowsGpuOnlyException()
+    public void SharedMemory_HostEvaluation_ThrowsGpuOnlyException()
     {
         // Happy Path: Constructing SharedMemory on host does not throw, since it's just a marker
         var _ = new SharedMemory<int>(128);
@@ -256,7 +256,7 @@ public class CoreIntrinsicsTests
     [InlineData(0, 0, 0, 0)]
     [InlineData(1, -1, 100, -100)]
     [InlineData(int.MinValue, int.MaxValue, int.MinValue, int.MaxValue)]
-    public void Test_VectorTypes_ConstructorAndProperties_RetainValues(int x, int y, int z, int w)
+    public void VectorTypes_ConstructorAndProperties_RetainValues(int x, int y, int z, int w)
     {
         // Boundary Testing: Verify all vector struct types faithfully retain values across coordinates
         var int2 = new Int2(x, y);
@@ -293,7 +293,7 @@ public class CoreIntrinsicsTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_AddedPtxIntrinsics_HostInvocation_ThrowsGpuOnlyException()
+    public void AddedPtxIntrinsics_HostInvocation_ThrowsGpuOnlyException()
     {
         // Verify all Phase 3 PTX Intrinsics throw GpuOnlyException when invoked on the host CPU
         uint a = 10, b = 20;

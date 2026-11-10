@@ -47,7 +47,7 @@ public class OperatorMacroConditionalTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_ConditionalAnd_TestsOperatorFalseBeforeTheOperatorMacro()
+    public void Expand_ConditionalAnd_TestsOperatorFalseBeforeOperatorMacro()
     {
         var result = new int[AndExpected.Length];
 
@@ -58,7 +58,7 @@ public class OperatorMacroConditionalTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_ConditionalOr_TestsOperatorTrueBeforeTheOperatorMacro()
+    public void Expand_ConditionalOr_TestsOperatorTrueBeforeOperatorMacro()
     {
         var result = new int[OrExpected.Length];
 
@@ -69,7 +69,7 @@ public class OperatorMacroConditionalTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_ConditionalOperatorWithNestedOperatorMacros_EvaluatesTheRightOperandOnlyWhenTheTestFails()
+    public void Expand_ConditionalOperatorWithNestedOperatorMacros_EvaluatesRightOperandOnlyWhenTestFails()
     {
         var result = new int[NestedExpected.Length];
 
@@ -80,7 +80,7 @@ public class OperatorMacroConditionalTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_ChainedConditionalOperators_ShortCircuitEachLevel()
+    public void Expand_ChainedConditionalOperators_ShortCircuitsEachLevel()
     {
         var result = new int[ChainExpected.Length];
 
@@ -91,7 +91,7 @@ public class OperatorMacroConditionalTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_ConditionalOperatorTarget_IsEvaluatedBeforeTheLeftOperand()
+    public void Expand_ConditionalOperatorTarget_IsEvaluatedBeforeLeftOperand()
     {
         var values = new TruthValue[4];
         var index = new int[2];
@@ -104,7 +104,7 @@ public class OperatorMacroConditionalTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_ConditionalOperatorsOnRefStruct_TestTheLeftOperand()
+    public void Expand_ConditionalOperatorsOnRefStruct_TestsLeftOperand()
     {
         var result = new int[RefStructExpected.Length];
 

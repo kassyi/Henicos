@@ -11,7 +11,7 @@ public class MacroTranspilerTests : TranspilerTestBase
     [Fact]
     [Category(TestCategory.Compiler)]
     [Category(TestCategory.Syntax)]
-    public async Task Test_MacroTranspiler_ExpandsMacrosCorrectly_Snapshots()
+    public async Task MacroTranspiler_CudaKernelWithMacros_ExpandsMacrosCorrectly()
     {
         await VerifyGeneratorAsync();
     }

@@ -236,43 +236,46 @@ public class ConversionDifferentialTests
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_ForeachFloatToInt_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_foreachFloatToInt);
+    public void ForeachLoop_FloatToIntConversion_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_foreachFloatToInt);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_EnumCast_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_enumCast);
+    public void EnumCast_VariousValues_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_enumCast);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_IntToFloatConversion_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_intToFloat);
+    public void NumericConversion_IntToFloat_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_intToFloat);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_IntToDoubleConversion_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_intToDouble);
+    public void NumericConversion_IntToDouble_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_intToDouble);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_CharScalarArg_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_charScalarArg);
+    public void ScalarArgument_CharType_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_charScalarArg);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_DirectFloatDoubleCast_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_directFloatDoubleCast);
+    public void DirectCast_FloatToDouble_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_directFloatDoubleCast);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_IntegerCastAndShiftMask_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_integerCastAndShiftMask);
+    public void IntegerCast_ShiftMask_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_integerCastAndShiftMask);
 
     private static double[] DoubleValues(DiffRandom rng, int count) =>
         DiffValues.Mixed(rng, count, DiffValues.ConversionEdgeDoubles, static r => BitConverter.UInt64BitsToDouble(r.NextUInt64()));
