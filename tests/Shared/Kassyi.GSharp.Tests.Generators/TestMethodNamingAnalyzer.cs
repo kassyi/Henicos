@@ -15,6 +15,11 @@ namespace Kassyi.GSharp.Tests.Generators;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public class TestMethodNamingAnalyzer : DiagnosticAnalyzer
 {
+    private const string TestPrefix = "Test";
+    // <Unit>_<Condition> has one separator, <Unit>_<Condition>_<Expected>_<Detail> three.
+    private const int MinSeparators = 1;
+    private const int MaxSeparators = 3;
+
     // Repository-internal analyzer; not shipped, so analyzer release tracking does not apply.
 #pragma warning disable RS2008
     public static readonly DiagnosticDescriptor TestMethodNamingConvention = new(
@@ -99,43 +104,33 @@ public class TestMethodNamingAnalyzer : DiagnosticAnalyzer
             return false;
         }
 
-        var underscoreCount = 0;
-        var partStartIndex = 0;
-
-        for (var i = 0; i <= name.Length; i++)
+        var rest = name;
+        var separators = 0;
+        while (true)
         {
-            if (i != name.Length && name[i] != '_')
-            {
-                continue;
-            }
-
-            var partLength = i - partStartIndex;
-            if (partLength == 0)
+            var index = rest.IndexOf('_');
+            var part = index < 0 ? rest : rest.Slice(0, index);
+            if (!IsValidPart(part, isFirstPart: separators == 0))
             {
                 return false;
             }
 
-            var part = name.Slice(partStartIndex, partLength);
-            if (!IsValidPart(part, isFirstPart: underscoreCount == 0))
+            if (index < 0)
+            {
+                return separators >= MinSeparators;
+            }
+
+            separators++;
+            if (separators > MaxSeparators)
             {
                 return false;
             }
 
-            if (i < name.Length)
-            {
-                underscoreCount++;
-                if (underscoreCount > 3)
-                {
-                    return false;
-                }
-
-                partStartIndex = i + 1;
-            }
+            rest = rest.Slice(index + 1);
         }
-
-        return underscoreCount is >= 1 and <= 3;
     }
 
+    // The first part starts with an upper-case letter; the others may also start with a digit (Grid1D, 64Kb).
     private static bool IsValidPart(ReadOnlySpan<char> part, bool isFirstPart)
     {
         if (part.IsEmpty)
@@ -143,26 +138,15 @@ public class TestMethodNamingAnalyzer : DiagnosticAnalyzer
             return false;
         }
 
-        var firstChar = part[0];
-        if (isFirstPart)
+        var startsCorrectly = IsAsciiUpper(part[0]) || (!isFirstPart && IsAsciiDigit(part[0]));
+        if (!startsCorrectly)
         {
-            if (firstChar is < 'A' or > 'Z')
-            {
-                return false;
-            }
-        }
-        else
-        {
-            if (firstChar is not (>= 'A' and <= 'Z' or >= '0' and <= '9'))
-            {
-                return false;
-            }
+            return false;
         }
 
-        for (var j = 1; j < part.Length; j++)
+        for (var i = 1; i < part.Length; i++)
         {
-            var c = part[j];
-            if (c is not (>= 'A' and <= 'Z' or >= 'a' and <= 'z' or >= '0' and <= '9'))
+            if (!IsAsciiLetterOrDigit(part[i]))
             {
                 return false;
             }
@@ -171,20 +155,14 @@ public class TestMethodNamingAnalyzer : DiagnosticAnalyzer
         return true;
     }
 
-    private static bool HasForbiddenTestPrefix(ReadOnlySpan<char> name)
-    {
-        if (name.Length >= 5 && name[0] == 'T' && name[1] == 'e' && name[2] == 's' && name[3] == 't')
-        {
-            if (name[4] == '_' || (name[4] >= 'A' && name[4] <= 'Z'))
-            {
-                return true;
-            }
-        }
-        else if (name.Length == 4 && name[0] == 'T' && name[1] == 'e' && name[2] == 's' && name[3] == 't')
-        {
-            return true;
-        }
+    // "Test", "Test_..." and "Test<Upper>..." are prefixes; "Testing_..." and "Tester_..." are ordinary units.
+    private static bool HasForbiddenTestPrefix(ReadOnlySpan<char> name) =>
+        name.StartsWith("Test".AsSpan(), StringComparison.Ordinal) &&
+        (name.Length == TestPrefix.Length || name[TestPrefix.Length] == '_' || IsAsciiUpper(name[TestPrefix.Length]));
 
-        return false;
-    }
+    private static bool IsAsciiUpper(char c) => c is >= 'A' and <= 'Z';
+
+    private static bool IsAsciiDigit(char c) => c is >= '0' and <= '9';
+
+    private static bool IsAsciiLetterOrDigit(char c) => IsAsciiUpper(c) || c is >= 'a' and <= 'z' || IsAsciiDigit(c);
 }
