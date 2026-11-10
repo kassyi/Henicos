@@ -24,7 +24,7 @@ public class DeviceFunctionEffectsTests
     [InlineData("GetterRead")]
     [InlineData("ExtensionOnLocal")]
     [InlineData("CapturedParameter")]
-    public void Test_Classify_WritesOnlyOwnLocals_IsNone(string name) =>
+    public void Classify_WritesOnlyOwnLocals_IsNone(string name) =>
         Assert.Equal(DeviceFunctionEffect.None, Classify("EffectCases.Effects", name));
 
     [Theory]
@@ -36,7 +36,7 @@ public class DeviceFunctionEffectsTests
     [InlineData("CarryIntrinsic")]
     [InlineData("CloseByExpression")]
     [InlineData("ExtensionWrite")]
-    public void Test_Classify_WritesThroughRefParameters_IsRefParameters(string name) =>
+    public void Classify_WritesThroughRefParameters_IsRefParameters(string name) =>
         Assert.Equal(DeviceFunctionEffect.RefParameters, Classify("EffectCases.Effects", name));
 
     [Theory]
@@ -53,19 +53,19 @@ public class DeviceFunctionEffectsTests
     [InlineData("PropertyIncrement")]
     [InlineData("PropertyPrefixDecrement")]
     [InlineData("ConversionWrite")]
-    public void Test_Classify_WritesMemory_IsMemory(string name) =>
+    public void Classify_WritesMemory_IsMemory(string name) =>
         Assert.Equal(DeviceFunctionEffect.Memory, Classify("EffectCases.Effects", name));
 
     [Theory]
     [Scenario(TestScenario.Boundary)]
     [InlineData("Ping")]
     [InlineData("Pong")]
-    public void Test_Classify_CallCycle_IsMemory(string name) =>
+    public void Classify_CallCycle_IsMemory(string name) =>
         Assert.Equal(DeviceFunctionEffect.Memory, Classify("EffectCases.Effects", name));
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Classify_StructMembers_FollowTheirReceiver()
+    public void Classify_StructMembers_FollowTheirReceiver()
     {
         Assert.Equal(DeviceFunctionEffect.None, ClassifyConstructor("EffectCases.Counter"));
         Assert.Equal(DeviceFunctionEffect.RefParameters, Classify("EffectCases.Counter", "Increment"));
@@ -74,7 +74,7 @@ public class DeviceFunctionEffectsTests
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Classify_PrimaryConstructor_IncludesMemberInitializers()
+    public void Classify_PrimaryConstructor_IncludesMemberInitializers()
     {
         Assert.Equal(DeviceFunctionEffect.None, ClassifyConstructor("EffectCases.Seeded"));
         Assert.Equal(DeviceFunctionEffect.Memory, ClassifyConstructor("EffectCases.InitializerWrites"));
@@ -82,7 +82,7 @@ public class DeviceFunctionEffectsTests
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Classify_LocalFunction_WritesToACapturedParameterAreMemory()
+    public void Classify_LocalFunction_WritesToACapturedParameterAreMemory()
     {
         Assert.Equal(DeviceFunctionEffect.None, ClassifyLocalFunction("BumpOwn"));
         Assert.Equal(DeviceFunctionEffect.Memory, ClassifyLocalFunction("BumpCaptured"));
@@ -90,7 +90,7 @@ public class DeviceFunctionEffectsTests
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Classify_ChainedConstructor_IncludesTheConstructorItCalls() =>
+    public void Classify_ChainedConstructor_IncludesTheConstructorItCalls() =>
         Assert.Equal(DeviceFunctionEffect.Memory,
             DeviceFunctionEffects.Classify(
                 GetType("EffectCases.Chained").InstanceConstructors.First(static c => c.Parameters.Length == 1),
@@ -104,7 +104,7 @@ public class DeviceFunctionEffectsTests
     [InlineData("Kassyi.GSharp.Core.Gpu", "AtomicAdd", nameof(DeviceFunctionEffect.Memory))]
     [InlineData("Kassyi.GSharp.Core.Gpu", "SyncThreads", nameof(DeviceFunctionEffect.Memory))]
     [InlineData("Kassyi.GSharp.Core.Gpu", "AddWithCarry", nameof(DeviceFunctionEffect.RefParameters))]
-    public void Test_Classify_IntrinsicWithoutBody_ByDeclaration(string type, string name, string expected) =>
+    public void Classify_IntrinsicWithoutBody_ByDeclaration(string type, string name, string expected) =>
         Assert.Equal(Enum.Parse<DeviceFunctionEffect>(expected), Classify(type, name));
 
     private static DeviceFunctionEffect Classify(string type, string name) =>

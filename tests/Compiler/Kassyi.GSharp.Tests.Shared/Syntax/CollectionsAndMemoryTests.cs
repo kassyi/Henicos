@@ -4,7 +4,7 @@ public class CollectionsAndMemoryTests : TranspilerTestBase
 {
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void Test_ForeachCollectionExpression_Execution()
+    public void Foreach_CollectionExpression_ProducesExpectedSum()
     {
         int[] output = [0];
         LoopsAndJumpsKernels.LaunchForeachCollectionExpressionKernel(output, blockDimX: 1);
@@ -13,7 +13,7 @@ public class CollectionsAndMemoryTests : TranspilerTestBase
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void Test_ForeachStackAlloc_Execution()
+    public void Foreach_StackAlloc_ProducesExpectedSum()
     {
         int[] output = [0];
         LoopsAndJumpsKernels.LaunchForeachStackAllocKernel(output, blockDimX: 1);
@@ -22,7 +22,7 @@ public class CollectionsAndMemoryTests : TranspilerTestBase
 
     [Fact]
     [Category(TestCategory.Syntax)]
-    public void Test_IndexAndRange_Transpilation()
+    public void Transpile_IndexAndRange_EmitsUnsupportedDiagnosticAndPlaceholder()
     {
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<CollectionsAndMemoryTarget>(
             nameof(CollectionsAndMemoryTarget.IndexAndRange), dialect: CurrentDialect);
@@ -35,7 +35,7 @@ public class CollectionsAndMemoryTests : TranspilerTestBase
 
     [Fact]
     [Category(TestCategory.Syntax)]
-    public void Test_SpanUsage_Transpilation()
+    public void Transpile_SpanUsage_EmitsAsSpanCallsAndLengthProperty()
     {
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<CollectionsAndMemoryTarget>(
             nameof(CollectionsAndMemoryTarget.SpanUsage), dialect: CurrentDialect);
@@ -48,7 +48,7 @@ public class CollectionsAndMemoryTests : TranspilerTestBase
 
     [Fact]
     [Category(TestCategory.Syntax)]
-    public void Test_MultidimensionalIndexer_Transpilation()
+    public void Transpile_MultidimensionalIndexer_EmitsFlatIndexCalculation()
     {
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<CollectionsAndMemoryTarget>(
             nameof(CollectionsAndMemoryTarget.MultidimensionalIndexer), dialect: CurrentDialect);

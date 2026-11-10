@@ -249,22 +249,25 @@ public class LanguageConversionsAndMacrosDifferentialTests
     };
 
     [SkippableFact]
-    public void Test_UserDefinedImplicitConversions_MatchesTheOracleOnEveryPath() =>
+    public void Conversion_UserDefinedImplicit_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_implicitConversions);
 
     [SkippableFact]
-    public void Test_OperatorMacroArithmetic_MatchesTheReferenceOnEveryPath() => DifferentialRunner.Run(s_macroArithmetic);
+    public void OperatorMacro_Arithmetic_MatchesTheReferenceOnEveryPath() => DifferentialRunner.Run(s_macroArithmetic);
 
     [SkippableFact]
-    public void Test_OperatorMacroEvaluationOrder_MatchesTheReferenceOnEveryPath() => DifferentialRunner.Run(s_macroEvaluationOrder);
+    public void OperatorMacro_EvaluationOrder_MatchesTheReferenceOnEveryPath() =>
+        DifferentialRunner.Run(s_macroEvaluationOrder);
 
     [SkippableFact]
-    public void Test_OperatorMacroCastAndShift_MatchesTheReferenceOnEveryPath() => DifferentialRunner.Run(s_macroCastAndShift);
+    public void OperatorMacro_CastAndShift_MatchesTheReferenceOnEveryPath() =>
+        DifferentialRunner.Run(s_macroCastAndShift);
 
     [SkippableFact]
-    public void Test_OperatorMacroInDeviceFunction_MatchesTheReferenceOnEveryPath() => DifferentialRunner.Run(s_macroInDeviceFunction);
+    public void OperatorMacro_InDeviceFunction_MatchesTheReferenceOnEveryPath() =>
+        DifferentialRunner.Run(s_macroInDeviceFunction);
 
     [SkippableFact]
-    public void Test_OperatorMacroAcrossBarrierAndUsingStatic_MatchesTheReferenceOnEveryPath() =>
+    public void OperatorMacro_AcrossBarrierAndUsingStatic_MatchesTheReferenceOnEveryPath() =>
         DifferentialRunner.Run(s_macroAcrossBarrierAndUsingStatic);
 }

@@ -13,7 +13,7 @@ public class CpuKernelLoaderTests
     [Fact]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_CpuLoader_ShortBuffer_ThrowsInvalidOperationException()
+    public void CpuLoader_ShortBuffer_ThrowsInvalidOperationException()
     {
         var tempFile = Path.GetTempFileName();
         try
@@ -35,7 +35,7 @@ public class CpuKernelLoaderTests
     [Fact]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_CpuLoader_HashMismatch_ThrowsInvalidOperationException()
+    public void CpuLoader_HashMismatch_ThrowsInvalidOperationException()
     {
         var tempFile = Path.GetTempFileName();
         try
@@ -60,7 +60,7 @@ public class CpuKernelLoaderTests
     [Fact]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_CpuLoader_ValidSignature_FailsAtNativeLibraryLoad()
+    public void CpuLoader_ValidSignatureWithMissingNativeDll_FailsAtNativeLibraryLoad()
     {
         var tempFile = Path.GetTempFileName();
         var dllFile = tempFile + ".dll";
@@ -89,7 +89,7 @@ public class CpuKernelLoaderTests
     [Fact]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_CpuLoader_LoadPtrAndDelegate_SameExport_DoesNotCollide()
+    public void CpuLoader_LoadPtrAndDelegateForSameExport_DoesNotCollide()
     {
         var ext = OperatingSystem.IsWindows() ? "*.dll" : "*.so";
         var candidates = Directory.GetFiles(AppContext.BaseDirectory, $"Kassyi.GSharp.Kernels_*{ext}");

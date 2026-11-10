@@ -10,7 +10,7 @@ public class LocalDisposableOwnershipAnalyzerTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_DiscardedAllocation_ReportsGSH0067AtTheStatement()
+    public async Task DiscardedAllocation_UnassignedDisposableInstantiation_ReportsGSH0067AtStatement()
     {
         var diagnostics = await RoslynTestUtility.TestAnalyzer("Analyzers/LocalOwnership/DiscardedAllocation.cs", s_analyzer)
                                                  .GetDiagnosticsAsync();
@@ -23,7 +23,7 @@ public class LocalDisposableOwnershipAnalyzerTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_UndisposedLocal_ReportsGSH0068AtTheDeclarator()
+    public async Task UndisposedLocal_LocalWithoutDisposal_ReportsGSH0068AtDeclarator()
     {
         var diagnostics = await RoslynTestUtility.TestAnalyzer("Analyzers/LocalOwnership/UndisposedLocal.cs", s_analyzer)
                                                  .GetDiagnosticsAsync();
@@ -39,7 +39,7 @@ public class LocalDisposableOwnershipAnalyzerTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public async Task Test_DisposedOrMovedLocals_HaveNoDiagnostics()
+    public async Task DisposedOrMovedLocals_ProperDisposalOrTransfer_ProducesNoDiagnostics()
     {
         await RoslynTestUtility.TestAnalyzer("Analyzers/LocalOwnership/LocalOwnershipValid.cs", s_analyzer)
                                .ReportsNoDiagnosticsAsync();

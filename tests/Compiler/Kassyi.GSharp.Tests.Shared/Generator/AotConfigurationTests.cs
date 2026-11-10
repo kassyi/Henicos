@@ -12,7 +12,7 @@ public class AotConfigurationTests
 {
     [Fact]
     [Category(TestCategory.Compiler)]
-    public void Test_AotConfiguration_AlwaysProducesAotWrapper()
+    public void AotConfiguration_MyKernelSource_AlwaysProducesAotWrapper()
     {
         var sourceCode = RoslynTestUtility.ReadTestCase("Generator/AotConfiguration_MyKernel.cu.cs");
         var (_, outputCompilation, _) = RoslynTestUtility.RunGenerator(sourceCode);
@@ -31,7 +31,7 @@ public class AotConfigurationTests
 
     [Fact]
     [Category(TestCategory.Compiler)]
-    public void Test_AotConfiguration_ProducesPlaintextArtifactAndNoKey()
+    public void AotConfiguration_AotArtifactWithoutKey_ProducesPlaintextArtifactAndNoKey()
     {
         var tempDir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), System.IO.Path.GetRandomFileName());
         try
@@ -66,7 +66,7 @@ public class AotConfigurationTests
     [Fact]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_AotConfiguration_EmitsMatchingGsymFileAndSourceHashHeader()
+    public void AotConfiguration_GsymFileAndHeader_EmitsMatchingGsymFileAndSourceHashHeader()
     {
         var tempDir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), System.IO.Path.GetRandomFileName());
         try

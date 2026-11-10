@@ -8,7 +8,7 @@ public partial class StackLinqGpuKernels
     // ==========================================
 
     [GpuKernel]
-    public static void RawFor_HeavyPipeline(int[] data, int[] results)
+    public static void RawForHeavyPipelineKernel(int[] data, int[] results)
     {
         int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
         if (tid >= results.Length)
@@ -30,7 +30,7 @@ public partial class StackLinqGpuKernels
     }
 
     [GpuKernel]
-    public static void StackLinq_HeavyPipeline(int[] data, int[] results)
+    public static void StackLinqHeavyPipelineKernel(int[] data, int[] results)
     {
         int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
         if (tid >= results.Length)
@@ -51,7 +51,7 @@ public partial class StackLinqGpuKernels
     // ==========================================
 
     [GpuKernel]
-    public static void RawFor_DataWindowing(int[] data, int endMarker, int[] results)
+    public static void RawForDataWindowingKernel(int[] data, int endMarker, int[] results)
     {
         int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
         if (tid >= results.Length)
@@ -90,7 +90,7 @@ public partial class StackLinqGpuKernels
     }
 
     [GpuKernel]
-    public static void StackLinq_DataWindowing(int[] data, int endMarker, int[] results)
+    public static void StackLinqDataWindowingKernel(int[] data, int endMarker, int[] results)
     {
         int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
         if (tid >= results.Length)

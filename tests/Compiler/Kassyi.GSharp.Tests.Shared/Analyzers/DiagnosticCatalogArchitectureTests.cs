@@ -22,7 +22,7 @@ public partial class DiagnosticCatalogArchitectureTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_Sources_ContainNoDiagnosticIdLiterals()
+    public void Sources_DiagnosticIdReferences_ContainNoDiagnosticIdLiterals()
     {
         var violations = new List<string>();
 
@@ -55,7 +55,7 @@ public partial class DiagnosticCatalogArchitectureTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_Sources_ContainNoHandWrittenDiagnosticDescriptors()
+    public void Sources_DiagnosticDescriptors_ContainNoHandWrittenDiagnosticDescriptors()
     {
         var violations = new List<string>();
 

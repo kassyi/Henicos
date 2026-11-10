@@ -328,7 +328,7 @@ public class CudaStreamGateTests
     [SkippableFact]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.Boundary)]
-    public async Task Open_And_Close_AreIdempotent()
+    public async Task OpenAndClose_CalledRepeatedly_AreIdempotent()
     {
         CudaCapability.EnsureGpuAvailable();
 

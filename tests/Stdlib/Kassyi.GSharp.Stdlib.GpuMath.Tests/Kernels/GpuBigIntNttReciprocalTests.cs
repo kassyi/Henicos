@@ -6,7 +6,7 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.Kernels;
 public class GpuBigIntNttReciprocalTests
 {
     [Fact]
-    public void TestNewtonRaphsonReciprocal_CpuEmulation()
+    public void Reciprocal_NewtonRaphsonCpuEmulation_MatchesReferenceReciprocal()
     {
         // =========================================================================
         // Target: Calculate X = floor(2^(2k) / D) using Newton-Raphson iteration
@@ -68,7 +68,7 @@ public class GpuBigIntNttReciprocalTests
     }
 
     [SkippableFact]
-    public void TestReciprocalMega_GpuExecution()
+    public void Reciprocal_MegaKernelGpuExecution_MatchesReferenceReciprocal()
     {
         // Require actual GPU
         CudaCapability.EnsureGpuAvailable();

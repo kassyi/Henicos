@@ -6,7 +6,7 @@ public class LocalFunctionParameterTests : TranspilerTestBase
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void Test_ReadOnlyLocalFunctionParameter_Execution()
+    public void LocalFunction_ReadOnlyParameter_ScalesTableCorrectly()
     {
         int[] table = [1, 2, 3, 4];
         int scale = 10;

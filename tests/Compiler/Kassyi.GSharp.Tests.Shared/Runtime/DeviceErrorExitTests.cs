@@ -25,7 +25,7 @@ public sealed class DeviceErrorExitTests
 #if GSHARP_CUDA
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_AfterDeviceError_NextLaunchInSameContextSucceeds()
+    public void DeviceError_NextLaunchInSameContext_Succeeds()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
         int[] failing = [0, DeviceErrorExitKernels.FailKey, 1, 0];
@@ -44,7 +44,7 @@ public sealed class DeviceErrorExitTests
 
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_PartOfEveryWarpFails_OthersCompleteBarrierLoop()
+    public void BarrierLoop_PartOfEveryWarpFails_RemainingThreadsCompleteLoop()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
         // Every third thread fails, so each warp loses some of its lanes; thread 1 writes the shared value
@@ -59,7 +59,7 @@ public sealed class DeviceErrorExitTests
 
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_WholeWarpsFail_OthersCompleteBarrierLoop()
+    public void BarrierLoop_WholeWarpsFail_RemainingWarpsCompleteLoop()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
         // Threads 32 to 95, two whole warps, fail
@@ -74,7 +74,7 @@ public sealed class DeviceErrorExitTests
 
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_OneThreadFails_EveryOtherThreadWritesItsResult()
+    public void DeviceError_OneThreadFails_EveryOtherThreadWritesItsResult()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
         const int Blocks = 8;
@@ -99,7 +99,7 @@ public sealed class DeviceErrorExitTests
     // waiting for a hang that the driver would end only by resetting the GPU.
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_MBarrierWait_AfterFailingThread_WaitersLeaveAndLaunchThrows()
+    public async Task MBarrierWait_ThreadFailsBeforeBarrier_WaitersLeaveAndLaunchThrows()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
         var keys = new int[32];
@@ -122,12 +122,12 @@ public sealed class DeviceErrorExitTests
     [SkippableFact]
     [Category(TestCategory.GpuTrap)]
     [Scenario(TestScenario.SadPath)]
-    public unsafe void Test_WithoutErrorRecords_FailingThreadTraps()
+    public unsafe void Trap_WithoutErrorRecords_FailingThreadTraps()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
-        if (!IsolatedTestProcess.IsChild(nameof(Test_WithoutErrorRecords_FailingThreadTraps)))
+        if (!IsolatedTestProcess.IsChild(nameof(Trap_WithoutErrorRecords_FailingThreadTraps)))
         {
-            CudaTrapRuns.RunIsolated(typeof(DeviceErrorExitTests), nameof(Test_WithoutErrorRecords_FailingThreadTraps));
+            CudaTrapRuns.RunIsolated(typeof(DeviceErrorExitTests), nameof(Trap_WithoutErrorRecords_FailingThreadTraps));
             return;
         }
 

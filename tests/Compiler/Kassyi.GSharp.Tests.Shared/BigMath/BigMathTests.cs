@@ -17,7 +17,7 @@ public class BigMathTests : TranspilerTestBase
     [InlineData(0u)]
     [InlineData(42u)]
     [InlineData(uint.MaxValue)]
-    public void TestGpuUInt128Host(uint value)
+    public void Constructor_GpuUInt128Values_MatchesLimbBufferAndStructSize(uint value)
     {
         var a = new GpuUInt128(value);
         Assert.Equal(16, Unsafe.SizeOf<LimbBuffer4>());
@@ -28,7 +28,7 @@ public class BigMathTests : TranspilerTestBase
     [InlineData(0u)]
     [InlineData(123u)]
     [InlineData(uint.MaxValue)]
-    public void TestGpuUInt256Host(uint value)
+    public void Constructor_GpuUInt256Values_MatchesLimbBufferAndStructSize(uint value)
     {
         var a = new GpuUInt256(value);
         Assert.Equal(32, Unsafe.SizeOf<LimbBuffer8>());
@@ -39,7 +39,7 @@ public class BigMathTests : TranspilerTestBase
     [InlineData(0u)]
     [InlineData(456u)]
     [InlineData(uint.MaxValue)]
-    public void TestGpuUInt512Host(uint value)
+    public void Constructor_GpuUInt512Values_MatchesLimbBufferAndStructSize(uint value)
     {
         var a = new GpuUInt512(value);
         Assert.Equal(64, Unsafe.SizeOf<LimbBuffer16>());
@@ -47,7 +47,7 @@ public class BigMathTests : TranspilerTestBase
     }
 
     [SkippableFact]
-    public void TestGpuBigFloat_Initialization()
+    public void Initialization_DefaultWorkspace_SetsZeroExponentAndNonNegative()
     {
         using var context = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
         var uInt = new GpuBigUInt(context, 4); // 4 words
@@ -60,7 +60,7 @@ public class BigMathTests : TranspilerTestBase
     }
 
     [SkippableFact]
-    public void TestGpuBigIntMatrix2x2Host()
+    public void Identity_GpuBigIntMatrix2x2Context_InitializesIdentityMatrix()
     {
         using var context = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
         using var mat = GpuBigIntMatrix2x2.Identity(context, 4);
@@ -70,7 +70,7 @@ public class BigMathTests : TranspilerTestBase
     }
 
     [SkippableFact]
-    public void TestGpuBigIntMatrix2x2_SadPath_InvalidWordCount()
+    public void Identity_NonPositiveWordCount_ThrowsException()
     {
         using var context = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
         Assert.ThrowsAny<Exception>(() => GpuBigIntMatrix2x2.Identity(context, 0));
@@ -78,7 +78,7 @@ public class BigMathTests : TranspilerTestBase
     }
 
     [Fact]
-    public void TestGpuUIntBigInteger_SadPath_NullContext()
+    public void Constructor_NullWorkspaceContext_ThrowsArgumentNullException()
     {
         // Intentionally passing null to assert ArgumentNullException defensive guard.
         Assert.Throws<ArgumentNullException>(() => new GpuBigUInt(null!, 4));

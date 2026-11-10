@@ -32,7 +32,7 @@ public partial class ParenthesesSuppressionTests
 
     [SkippableFact]
     [Category(TestCategory.Syntax)]
-    public void Test_RedundantParenthesesSuppression_HappyPath()
+    public void TranspileMethod_RedundantParenthesesInIfCondition_SuppressesRedundantParentheses()
     {
         var (cudaSource, diagnostics) =
             RoslynTestUtility.TranspileMethod<TestClass_SYN91_92>(nameof(TestClass_SYN91_92.CheckCondition));
@@ -43,7 +43,7 @@ public partial class ParenthesesSuppressionTests
 
     [SkippableFact]
     [Category(TestCategory.Syntax)]
-    public void Test_ParenthesesPreservation_EdgeCases_PrecedenceAndMixedOperators()
+    public void TranspileMethod_PrecedenceAndMixedOperators_PreservesNecessaryParentheses()
     {
         var (cudaSource, diagnostics) =
             RoslynTestUtility.TranspileMethod<TestClass_SYN91_92>(nameof(TestClass_SYN91_92.ComplexOperators));

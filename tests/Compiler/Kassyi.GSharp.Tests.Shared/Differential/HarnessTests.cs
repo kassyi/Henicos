@@ -61,7 +61,7 @@ public class HarnessTests
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_DiffRandom_SplitMix64_ProducesThePublishedSequence()
+    public void DiffRandom_SplitMix64_ProducesThePublishedSequence()
     {
         // The reference outputs of SplitMix64 (Vigna's splitmix64.c) for seeds 0 and 1234567, so a seed printed by a
         // failure reproduces on any machine and in any port of the generator
@@ -81,7 +81,7 @@ public class HarnessTests
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_DiffRandom_NextBelow_StaysInRange()
+    public void DiffRandom_NextBelow_StaysInRange()
     {
         // NextBelow(n) is in [0, n) and reaches both ends for a small n
         // mutant: DiffRandom.cs NextBelow `>> 32` -> `>> 31`
@@ -104,7 +104,7 @@ public class HarnessTests
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_DiffValues_SeedZero_IsTheBoundaryCrossProduct()
+    public void DiffValues_SeedZero_IsEdgeCrossProduct()
     {
         int n = DiffValues.Int32Boundaries.Length;
         var (left, right) = DiffValues.Int32Pairs(new DiffRandom(0), n * n);
@@ -130,7 +130,7 @@ public class HarnessTests
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_DiffValues_RandomSeeds_AreDeterministicAndMixBoundariesWithRandomBits()
+    public void DiffValues_RandomSeeds_AreDeterministicAndMixEdgesWithRandomBits()
     {
         // The same seed gives the same values; another seed gives other values
         // mutant: DiffValues.cs Values `rng.IsBoundarySeed ?` -> `true ?` (every seed returns the boundary table)
@@ -154,7 +154,7 @@ public class HarnessTests
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_LaunchShape_ContextOf_NumbersThreadsLikeTheManagedLauncher()
+    public void LaunchShape_ContextOf_NumbersThreadsLikeTheManagedLauncher()
     {
         // ForRows rounds the grid up: 441 rows in blocks of 64 take 7 blocks
         // mutant: LaunchShape.cs ForRows `+ blockX - 1` removed
@@ -175,7 +175,7 @@ public class HarnessTests
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_LaunchShapes_TwoDimensional_NonDegenerateAt64()
+    public void LaunchShapes_TwoDimensional_NonDegenerateAt64()
     {
         // Both TwoDimensional(64) and ThreeDimensional(64) must keep GridY >= 2 (and GridZ >= 2 in 3D) while covering all 64 rows without duplicate linear IDs
         // mutant: LaunchShapes.cs TwoDimensional `Math.Max(2u, ...)` -> `Math.Max(1u, ...)`
@@ -208,7 +208,7 @@ public class HarnessTests
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_ThreadOrder_EnumeratesEveryThreadOnce()
+    public void ThreadOrder_ForwardAndReverse_EnumeratesEveryThreadOnce()
     {
         var shape = LaunchShape.ForRows(64, blockX: 16);
         int[] forward = Enumerable.Range(0, 64).ToArray();
@@ -237,7 +237,7 @@ public class HarnessTests
     [InlineData(0x7FC00000u, 0xFFC00001u, true, false)] // NaN, a negative NaN with a payload
     [InlineData(0x7FC00000u, 0x7F800000u, false, false)] // NaN, +infinity
     [InlineData(0x7FC00000u, 0x3F800000u, false, false)] // NaN, 1f
-    public void Test_Policies_CompareSingleBits(uint left, uint right, bool bitwiseMatch, bool exactMatch)
+    public void DiffPolicy_SinglePrecision_ComparesBitwise(uint left, uint right, bool bitwiseMatch, bool exactMatch)
     {
         // Bitwise: one differing bit is a mismatch, but any NaN matches any NaN (.NET passes a NaN through, PTX returns
         // the canonical one). Exact: every bit, NaN payloads included
@@ -256,7 +256,7 @@ public class HarnessTests
     [InlineData(0x0000000000000000ul, 0x8000000000000000ul, false)] // 0.0, -0.0
     [InlineData(0x7FF8000000000000ul, 0xFFF8000000000001ul, true)] // two NaNs
     [InlineData(0x7FF8000000000000ul, 0x7FF0000000000000ul, false)] // NaN, +infinity
-    public void Test_Policies_CompareDoubleBits(ulong left, ulong right, bool bitwiseMatch)
+    public void DiffPolicy_DoublePrecision_ComparesBitwise(ulong left, ulong right, bool bitwiseMatch)
     {
         // As for float, on 64 bits
         // mutant: DiffBuffers.cs IsNaN `double d => double.IsNaN(d)` removed
@@ -267,7 +267,7 @@ public class HarnessTests
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Policies_CompareEveryBitOfIntegers()
+    public void DiffPolicy_IntegerTypes_ComparesEveryBit()
     {
         // The lowest and the highest bit of each width are mismatches
         // mutant: DiffBuffers.cs BitsEqual compares only the first byte (`.Slice(0, 1)` on both spans)
@@ -282,7 +282,7 @@ public class HarnessTests
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_DiffBuffers_Clone_PreservesArrayAndDeepStructAliasing()
+    public void DiffBuffers_Clone_PreservesArrayAndDeepStructAliasing()
     {
         // Cloning DiffBuffers must preserve ReferenceEquals between top-level array buffers and deep-struct array fields
         // while isolating the cloned arrays from the original buffers
@@ -322,7 +322,7 @@ public class HarnessTests
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.Boundary)]
-    public unsafe void Test_StructElementComparer_IgnoresPaddingBytes()
+    public unsafe void StructElementComparer_PaddedStructWithPaddingBytes_IgnoresPaddingBytes()
     {
         // Two instances of a padded struct with identical fields (B = 1, I = 42) but different alignment padding bytes
         // must match under StructElementComparer / OutputPolicy.ForStruct while raw byte sequence comparison differs
@@ -362,7 +362,7 @@ public class HarnessTests
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_OutputPolicy_Multiset_SortsPerColumnAndHandlesFloatTotalOrder()
+    public void OutputPolicy_Multiset_SortsPerColumnAndHandlesFloatTotalOrder()
     {
         // 1. Multi-column Multiset sorts each column independently: swapping values between column 0 and column 1 must fail
         // mutant: DiffBuffers.cs CreateSortedCopy sorts the entire flat `sorted` array without separating columns
@@ -486,7 +486,7 @@ public class HarnessTests
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Runner_CorrectPaths_ReportNothing()
+    public void DifferentialRunner_CorrectPaths_ReportsNothing()
     {
         // A launch that computes what the oracle computes passes every seed
         // mutant: DifferentialRunner.cs Compare `if (actuals.All(...))` -> `if (!actuals.All(...))`
@@ -501,7 +501,7 @@ public class HarnessTests
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_Runner_OneFlippedBit_IsReportedWithItsCell()
+    public void DifferentialRunner_OneFlippedBit_IsReportedWithItsCell()
     {
         // One flipped bit in row 3, column "xor", on the native path only: exactly that cell is reported, per seed, with
         // the value of every path
@@ -532,7 +532,7 @@ public class HarnessTests
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_Runner_ManyMismatches_AreAllCountedAndFiveShownPerSeed()
+    public void DifferentialRunner_ManyMismatches_AreAllCountedAndFiveShownPerSeed()
     {
         // Every "sum" cell is wrong: all 5 rows are counted, and the message prints the first 5 cells of the seed
         // mutant: DifferentialReport.cs `cells.Take(CellsShownPerSeed)` -> `cells.Take(1)`
@@ -546,7 +546,7 @@ public class HarnessTests
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_Runner_ThrowingPath_IsADivergence()
+    public void DifferentialRunner_ThrowingPath_ReportsDivergence()
     {
         // A path that throws (as #711 and #728 threw GpuOnlyException) fails the case and is named in the message
         // mutant: DifferentialRunner.cs Evaluate `report.Add(new PathFailure(...))` removed
@@ -562,7 +562,7 @@ public class HarnessTests
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_Runner_OracleOrderCheck_StopsARacingKernel()
+    public void DifferentialRunner_OracleOrderCheck_StopsARacingKernel()
     {
         // LastWriterKernel's result is the id of the thread that runs last: forward and reverse orders disagree, so the
         // oracle has no single answer and the harness stops before any path runs
@@ -595,7 +595,7 @@ public class HarnessTests
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Runner_OracleOrderCheck_AcceptsAnyNaNOnlyForComputedCells()
+    public void DifferentialRunner_OracleOrderCheck_AcceptsAnyNaNOnlyForComputedCells()
     {
         // The oracle writes a NaN with a new payload on every call, as the JIT does when it quiets a signaling NaN in one
         // run and not in the other: a computed cell (Bitwise) accepts it, a moved cell (Exact) must keep every bit
@@ -630,7 +630,7 @@ public class HarnessTests
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_Runner_MalformedCase_IsAHarnessError()
+    public void DifferentialRunner_MalformedCase_ReportsHarnessError()
     {
         // Neither or both of Oracle and Reference: the case cannot be judged
         var neither = new DifferentialCase(FakeCaseName)
@@ -658,7 +658,7 @@ public class HarnessTests
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Runner_ReferenceModel_ReplacesTheOracle()
+    public void DifferentialRunner_ReferenceModel_ReplacesTheOracle()
     {
         // A reference model runs once, without a thread context, and its output is the expected one
         // mutant: DifferentialRunner.cs RunOracle `reference(expected, shape)` -> `reference(initial.Clone(), shape)`
@@ -678,7 +678,7 @@ public class HarnessTests
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_Runner_NativePathWithoutLibrary_IsAHarnessError()
+    public void DifferentialRunner_NativePathWithoutLibrary_ReportsHarnessError()
     {
         // Without its library the launcher silently runs the managed fallback, so a "native" path would compare managed
         // with the oracle twice and miss every native divergence: the runner stops before any launch instead
@@ -699,7 +699,7 @@ public class HarnessTests
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_KnownDivergence_ThatStillDiffers_Passes()
+    public void KnownDivergence_StillDiffers_Passes()
     {
         // The registered column differs on the registered path: the case passes, and the cells are kept as known
         // mutant: KnownDivergences.cs Covers `(Paths & path) != 0` -> `(Paths & path) == 0`
@@ -716,7 +716,7 @@ public class HarnessTests
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_KnownDivergence_ThatNoLongerDiffers_Fails()
+    public void KnownDivergence_NoLongerDiffers_Fails()
     {
         // The registered column matches the oracle on every seed (the bug was fixed): the case fails and asks for the
         // entry to be removed, so a fix cannot leave a stale entry behind
@@ -739,7 +739,7 @@ public class HarnessTests
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_KnownDivergence_CoversOnlyItsCaseColumnAndPaths()
+    public void KnownDivergence_MatchingCaseColumnAndPaths_AppliesOnlyToTarget()
     {
         // An entry for another path, another column or another case does not excuse a divergence
         // mutant: KnownDivergences.cs Covers `Column == column &&` removed
@@ -759,7 +759,7 @@ public class HarnessTests
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_KnownDivergence_ForAnotherHost_IsIgnored()
+    public void KnownDivergence_AnotherHost_IsIgnored()
     {
         // The native path is built by MSVC on Windows and GCC or Clang elsewhere, so an entry can apply to one host only.
         // On the other host it neither excuses a divergence nor is reported stale
@@ -784,7 +784,7 @@ public class HarnessTests
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_KnownDivergence_OnAPathThatThrew_IsNotStale()
+    public void KnownDivergence_PathThatThrew_IsNotStale()
     {
         // A path that threw produced no output, so it cannot show that the entry no longer differs: only the failure is reported
         // mutant: DifferentialRunner.cs AddStaleEntries `|| report.Failures.Any(f => f.Path == path.Path)` removed
@@ -799,7 +799,7 @@ public class HarnessTests
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_KnownDivergence_ShapePredicate_DoesNotReportStaleOnOtherShapes()
+    public void KnownDivergence_ShapePredicate_DoesNotReportStaleOnOtherShapes()
     {
         // A KnownDivergence restricted to 2D shapes (GridY > 1) must not be reported as StaleDivergence when only 1D shapes run
         // mutant: DifferentialRunner.cs AddStaleEntries `if (entry.ShapePredicate is not null && !report.ExecutedShapes.Any(s => entry.ShapePredicate(s))) continue;` removed
@@ -823,7 +823,7 @@ public class HarnessTests
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Runner_StaleCheck_CanBeSkippedForReproducedSeeds()
+    public void DifferentialRunner_StaleCheck_CanBeSkippedForReproducedSeeds()
     {
         // A reproduced single seed may lack the input that shows the entry, so the stale check is off for explicit seeds
         // mutant: DifferentialRunner.cs Evaluate `if (checkStale)` -> `if (true)`
@@ -841,7 +841,7 @@ public class HarnessTests
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Seeds_TestSeedAddsOneDerivedSeed()
+    public void DifferentialSeeds_TestSeed_AddsOneDerivedSeed()
     {
         // Without TEST_SEED the seeds are 0 to 8 (no environment dependence); with it, one more seed of at least 9
         // that the same TEST_SEED always gives
@@ -868,7 +868,7 @@ public class HarnessTests
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_UInt32AddKernel_MatchesTheOracleOnEveryPath()
+    public void DifferentialRunner_UInt32AddKernel_MatchesTheOracleOnEveryPath()
     {
         // Tests.Cpu compares the managed and the native path, Tests.Cuda the CUDA path, with the oracle over seeds 0 to 8
         // (seed 0: the boundary cross product, 441 rows in 7 blocks of 64)
@@ -883,7 +883,7 @@ public class HarnessTests
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public unsafe void Test_LaunchPtr_ExecutesAndMatchesManagedLaunchOnCuda()
+    public unsafe void LaunchPtr_DeviceExecution_ExecutesAndMatchesManagedLaunchOnCuda()
     {
         // LaunchPtr uploads buffers via DiffPointerScope, runs the pointer kernel, and copies device/staging memory back
         // to the host buffers on Dispose so the cells match Launch and the oracle
@@ -942,7 +942,7 @@ public class HarnessTests
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_OutputPolicy_Ulp_RejectsOneSidedNaNAndMeasuresAcrossZero()
+    public void OutputPolicy_UlpTolerance_RejectsOneSidedNaNAndMeasuresAcrossZero()
     {
         // (1) One-sided NaN (0x7F800001) is Only 2 integer steps above float.MaxValue (0x7F7FFFFF) in raw IEEE bits,
         //     but must never match a finite or infinite number under any ULP tolerance
@@ -990,7 +990,7 @@ public class HarnessTests
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_ExceptionPolicy_And_MatchOracle_PassOnMatchingThrow()
+    public void ExceptionPolicy_MatchOracle_PassesOnMatchingThrow()
     {
         // When OracleExceptions is MatchOracle (or ExpectedException is set), a seed that throws the same exception type
         // on the oracle and on every target path passes without recording PathFailure or UnexpectedMismatches
@@ -1090,11 +1090,11 @@ public class HarnessTests
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_CudaFaultSeeds_RunInProcessOnTheDirectRunner()
+    public void CudaFaultSeeds_DirectRunner_RunsInProcess()
     {
         // A failing CUDA thread exits instead of trapping, so a fault seed on the CUDA direct runner whose CUDA cell is
         // not a known divergence runs in this process like on every other path, and its exception is matched against
-        // the policy (Test_CudaFaultSeeds_AreSkippedWithReasonUnlessTrapRunsAreEnabled covers a known divergence)
+        // the policy (CudaFaultSeeds_TrapRunsDisabled_IsSkippedWithReason covers a known divergence)
         // mutant: DifferentialRunner.cs EvaluateExceptionExpectation drops the known-divergence condition of the CUDA gate
         int launches = 0;
         var faultCase = new DifferentialCase("HarnessTests.CudaFaultSeedKernel")
@@ -1135,7 +1135,7 @@ public class HarnessTests
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_CudaFaultSeeds_AreSkippedWithReasonUnlessTrapRunsAreEnabled()
+    public void CudaFaultSeeds_TrapRunsDisabled_IsSkippedWithReason()
     {
         // A fault seed on the CUDA direct runner would start a child process that raises a real GPU fault (#1457); by
         // default the cell is skipped, the report lists the seed with the reason, and a known CUDA exception entry is
@@ -1180,7 +1180,7 @@ public class HarnessTests
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_DifferentialCase_SkippedPaths_RecordedInReport()
+    public void DifferentialCase_SkippedPaths_AreRecordedInReport()
     {
         // When a path is in SkippedPaths, it is reported as skipped with the given reason string and not executed
         bool nativeRan = false;
@@ -1228,7 +1228,7 @@ public class HarnessTests
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Runner_ThrowingPath_CoveredByKnownDivergence_Passes()
+    public void DifferentialRunner_ThrowingPathCoveredByKnownDivergence_Passes()
     {
         // When Managed throws unexpectedly on an unchecked path, a KnownDivergence on $exception waives it
         var throwingCase = new DifferentialCase("HarnessTests.ThrowingManagedKernel")
@@ -1263,7 +1263,7 @@ public class HarnessTests
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_ExceptionPolicy_Matches_RejectsMissingLocationOrMemberName()
+    public void ExceptionPolicy_Matches_RejectsMissingLocationOrMemberName()
     {
         // When MemberName, SourceFile, Line, or Column is specified on the policy, an exception without that metadata
         // must fail Matches instead of passing silently
@@ -1303,7 +1303,7 @@ public class HarnessTests
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_CudaTrapSubprocessRunner_ResultFileProtocol_And_Timeout()
+    public void CudaTrapSubprocessRunner_ProtocolAndTimeout_HandlesExecution()
     {
         // (1) Child target protocol writes the structured exception to the file in GSHARP_DIFF_CUDA_TRAP_RESULT_FILE
         //     (surviving TestConsole.Silence()), and preserves the original inner exception type name for RequireCudaInnerException

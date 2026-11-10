@@ -19,7 +19,9 @@ public class CppStringLiteralTests
     // é is C3 A9; カ is E3 82 AB
     [InlineData("é.cs", "\"\\303\\251.cs\"")]
     [InlineData("カ", "\"\\343\\202\\253\"")]
-    public void Test_Append_EscapesOnlyWhatTheCompilerCouldReadOtherwise(string value, string expected)
+    public void Append_ControlCharactersAndQuotes_EscapesOnlyWhatCompilerCouldReadOtherwise(
+        string value,
+        string expected)
     {
         using var writer = new SourceWriter();
 
@@ -37,7 +39,7 @@ public class CppStringLiteralTests
     [InlineData(new[] { 0xDC00 }, "\"\\357\\277\\275\"")]
     [InlineData(new[] { 0xD800 }, "\"\\357\\277\\275\"")]
     [InlineData(new[] { 0xDC00, 0xD800 }, "\"\\357\\277\\275\\357\\277\\275\"")]
-    public void Test_Append_SurrogatePairAndLoneSurrogate(int[] codeUnits, string expected)
+    public void Append_SurrogatePairAndLoneSurrogate_EscapesSurrogatesCorrectly(int[] codeUnits, string expected)
     {
         var value = new string(Array.ConvertAll(codeUnits, static u => (char)u));
         using var writer = new SourceWriter();

@@ -12,7 +12,7 @@ public class ByRefKernelParameterTests : TranspilerTestBase
 {
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_RefStructParameterWithBarrier_RereadsUpdatedValueAcrossBarrier()
+    public void RefStructParameter_BarrierExecution_RereadsUpdatedValueAcrossBarrier()
     {
         var s = new ByRefParameterStruct { A = 5, B = 1.5f };
         var o = new int[4];
@@ -26,7 +26,7 @@ public class ByRefKernelParameterTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_RefIntParameterWithBarrier_RereadsUpdatedValueAcrossBarrier()
+    public void RefInt32Parameter_BarrierExecution_RereadsUpdatedValueAcrossBarrier()
     {
         int x = 5;
         var o = new int[4];
@@ -39,7 +39,7 @@ public class ByRefKernelParameterTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_OutStructParameterWithBarrier_RereadsUpdatedValueAcrossBarrier()
+    public void OutStructParameter_BarrierExecution_RereadsUpdatedValueAcrossBarrier()
     {
         var o = new int[4];
 
@@ -54,7 +54,7 @@ public class ByRefKernelParameterTests : TranspilerTestBase
     [Fact]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_OutStructParameterWithBarrier_ManagedExecution_PreservesValueAcrossResumes()
+    public void OutStructParameter_ManagedBarrierExecution_PreservesValueAcrossResumes()
     {
         bool previousState = CpuKernelLoader.ForceManagedExecution;
         CpuKernelLoader.ForceManagedExecution = true;
@@ -78,7 +78,7 @@ public class ByRefKernelParameterTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_RefReadOnlyStructParameter_ReadsValueWithAndWithoutBarrier()
+    public void RefReadOnlyStructParameter_WithAndWithoutBarrier_ReadsValueAccurately()
     {
         var s = new ByRefParameterStruct { A = 10, B = 2.5f };
         var oNoBarrier = new int[4];
@@ -95,7 +95,7 @@ public class ByRefKernelParameterTests : TranspilerTestBase
     [Fact]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_RefReadOnlyStructParameter_ManagedExecution_ReadsValueWithAndWithoutBarrier()
+    public void RefReadOnlyStructParameter_ManagedExecutionWithAndWithoutBarrier_ReadsValueAccurately()
     {
         bool previousState = CpuKernelLoader.ForceManagedExecution;
         CpuKernelLoader.ForceManagedExecution = true;
@@ -121,7 +121,7 @@ public class ByRefKernelParameterTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_InStructAndSpanParametersWithBarrier_PreserveValuesAcrossBarrier()
+    public void InStructAndSpanParameters_BarrierExecution_PreservesValuesAcrossBarrier()
     {
         var s = new ByRefParameterStruct { A = 10, B = 2.5f };
         var oIn = new int[4];

@@ -11,7 +11,7 @@ public class CuBlasInteropTests
 {
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_CublasSgemm_MatchesCpuReference()
+    public void CublasSgemm_StandardMatrices_MatchesCpuReference()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
 
@@ -52,7 +52,7 @@ public class CuBlasInteropTests
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_CublasDgemm_TransposedA_MatchesCpuReference()
+    public void CublasDgemm_TransposedMatrixA_MatchesCpuReference()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
 
@@ -122,7 +122,7 @@ public class CuBlasInteropTests
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_CublasGetVersion_ReportsSupportedMajorVersion()
+    public void CublasGetVersion_ValidHandle_ReportsSupportedMajorVersion()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
 
@@ -142,7 +142,7 @@ public class CuBlasInteropTests
 
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_CublasSgemm_InvalidLeadingDimension_ReturnsInvalidValue()
+    public void CublasSgemm_InvalidLeadingDimension_ReturnsInvalidValue()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
 

@@ -5,7 +5,7 @@ public class GeneratorDiagnosticsTests : TranspilerTestBase
 {
     [Fact]
     [Category(TestCategory.Compiler)]
-    public async Task TestSadPathDiagnostics()
+    public async Task GeneratorDiagnostics_InvalidSyntax_ReportsExpectedDiagnostics()
     {
         var driver = await TestGenerator("Generator/SadPathDiagnostics.cu.cs")
                                             .GetDriverAsync();
@@ -15,7 +15,7 @@ public class GeneratorDiagnosticsTests : TranspilerTestBase
 
     [Fact]
     [Category(TestCategory.Compiler)]
-    public async Task TestComprehensiveSpecKernelGeneratedSource()
+    public async Task ComprehensiveSpecKernel_GeneratedSource_EmitsExpectedCode()
     {
         var driver = await TestGenerator("ComprehensiveSpecKernel.cu.cs")
                                             .GetDriverAsync();
@@ -29,7 +29,7 @@ public class GeneratorDiagnosticsTests : TranspilerTestBase
 
     [Fact]
     [Category(TestCategory.Compiler)]
-    public async Task Test_UnsupportedFeatures_ReportsDiagnostics()
+    public async Task UnsupportedFeatures_KernelDeclaration_ReportsDiagnostics()
     {
         var driver = await TestGenerator("Generator/UnsupportedFeatures.cu.cs")
                                             .GetDriverAsync();

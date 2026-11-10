@@ -25,7 +25,7 @@ public class GpuUIntBigIntegerCoreTests : IDisposable
     [InlineData("0", 1)]
     [InlineData("123456789012345678901234567890", 4)]
     [InlineData("-123456789012345678901234567890", 4)] // Should take absolute value
-    public void Test_FromBigInteger_ToBigInteger_RoundTripsCorrectly(string valueStr, int minWords)
+    public void Conversion_FromAndToBigInteger_RoundTripsCorrectly(string valueStr, int minWords)
     {
         CudaCapability.EnsureGpuAvailable();
         var original = BigInteger.Parse(valueStr);
@@ -39,7 +39,7 @@ public class GpuUIntBigIntegerCoreTests : IDisposable
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_PadTo_LargerSize_ZeroPadsCorrectly()
+    public void PadTo_LargerSize_ZeroPadsCorrectly()
     {
         CudaCapability.EnsureGpuAvailable();
         var original = new BigInteger(0xDEADBEEF);
@@ -58,7 +58,7 @@ public class GpuUIntBigIntegerCoreTests : IDisposable
     }
 
     [SkippableFact]
-    public void Test_PadTo_SmallerSize_Throws_AndTruncateNarrows()
+    public void PadToAndTruncate_SmallerSize_ThrowsOutOfRangeAndNarrows()
     {
         CudaCapability.EnsureGpuAvailable();
         var originalData = new uint[] { 1, 2, 3, 4, 5 };
@@ -74,7 +74,7 @@ public class GpuUIntBigIntegerCoreTests : IDisposable
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Addition_EvaluatesCorrectly()
+    public void Add_TwoOperands_EvaluatesCorrectly()
     {
         CudaCapability.EnsureGpuAvailable();
         var originalA = BigInteger.Parse("1234567890123456789012345678901234567890");

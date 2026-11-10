@@ -15,92 +15,92 @@ public class PrimaryConstructorManagedTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_PrimaryConstructor_RunsInitializers() =>
+    public void PrimaryConstructor_ManagedExecution_RunsInitializers() =>
         PrimaryConstructorScenarios.InitializersRun(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_PrimaryConstructor_RunsBeforeObjectInitializer() =>
+    public void PrimaryConstructor_ManagedWithObjectInitializer_RunsBeforeObjectInitializer() =>
         PrimaryConstructorScenarios.InitializersRunBeforeObjectInitializer(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_CapturedParameters_AreStoredInTheStruct() =>
+    public void CapturedParameters_ManagedStructDeclaration_StoredInStruct() =>
         PrimaryConstructorScenarios.CapturedParametersAreStored(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_CapturedParameters_CrossToTheKernelAndBack() =>
+    public void CapturedParameters_ManagedDeviceInvocation_CrossesToKernelAndBack() =>
         PrimaryConstructorScenarios.CapturedParametersCrossToTheDevice(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_CapturedParameters_MatchTheHostLayout() =>
+    public void CapturedParameters_ManagedHostLayout_MatchesHostLayout() =>
         PrimaryConstructorScenarios.CapturedParametersMatchTheHostLayout(s_runManaged, checkShadow: false);
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_RecordStruct_InitializesPropertiesThenMembers() =>
+    public void RecordStruct_ManagedExecution_InitializesPropertiesThenMembers() =>
         PrimaryConstructorScenarios.RecordStructInitializesItsProperties(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_ChainedConstructor_RunsThePrimaryOneFirst() =>
+    public void ChainedConstructor_ManagedExecution_RunsPrimaryOneFirst() =>
         PrimaryConstructorScenarios.ChainedConstructorRunsThePrimaryOneFirst(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_ParameterlessPrimaryConstructor_RunsInitializers() =>
+    public void ParameterlessPrimaryConstructor_ManagedExecution_RunsInitializers() =>
         PrimaryConstructorScenarios.ParameterlessPrimaryConstructorRunsInitializers(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_GenericNew_RunsTheParameterlessConstructor() =>
+    public void GenericNew_ManagedExecution_RunsParameterlessConstructor() =>
         PrimaryConstructorScenarios.GenericNewRunsTheParameterlessConstructor(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_GenericNew_KeepsInitializerChainAndDefaultOrder() =>
+    public void GenericNew_ManagedInitializerChain_KeepsInitializerChainAndDefaultOrder() =>
         PrimaryConstructorScenarios.GenericNewKeepsConstructorOrder(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_CapturedParametersAndAutoProperties_Roundtrip() =>
+    public void CapturedParametersAndAutoProperties_ManagedRoundtrip_MatchesExpectedValues() =>
         PrimaryConstructorScenarios.CapturedParametersAndAutoPropertiesRoundtrip(s_runManaged, checkShadow: false);
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_PartialStruct_RunsItsPrimaryConstructor() =>
+    public void PartialStruct_ManagedExecution_RunsPrimaryConstructor() =>
         PrimaryConstructorScenarios.PartialStructRunsItsPrimaryConstructor(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_PartialStruct_MatchesTheHostLayout() =>
+    public void PartialStruct_ManagedHostLayout_MatchesHostLayout() =>
         PrimaryConstructorScenarios.PartialStructMatchesTheHostLayout(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_ConvertedCapturedParameter_Roundtrips() =>
+    public void ConvertedCapturedParameter_ManagedRoundtrip_RoundtripsSuccessfully() =>
         PrimaryConstructorScenarios.ConvertedCapturedParameterRoundtrips(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_NestedConvertedCapturedParameter_Roundtrips() =>
+    public void NestedConvertedCapturedParameter_ManagedRoundtrip_RoundtripsSuccessfully() =>
         PrimaryConstructorScenarios.NestedConvertedCapturedParameterRoundtrips(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_ConvertedCapturedParameterArray_Roundtrips() =>
+    public void ConvertedCapturedParameterArray_ManagedRoundtrip_RoundtripsSuccessfully() =>
         PrimaryConstructorScenarios.ConvertedCapturedParameterArrayRoundtrips(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_ConvertedCapturedParameterInInlineArray_Roundtrips() =>
+    public void ConvertedCapturedParameterInInlineArray_ManagedRoundtrip_RoundtripsSuccessfully() =>
         PrimaryConstructorScenarios.ConvertedCapturedParameterInInlineArrayRoundtrips(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_SizedConvertedCapturedParameter_Roundtrips() =>
+    public void SizedConvertedCapturedParameter_ManagedRoundtrip_RoundtripsSuccessfully() =>
         PrimaryConstructorScenarios.SizedConvertedCapturedParameterRoundtrips(s_runManaged);
 }
 #endif

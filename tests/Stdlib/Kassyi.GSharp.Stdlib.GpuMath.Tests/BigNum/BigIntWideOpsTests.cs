@@ -100,7 +100,7 @@ public sealed class BigIntWideOpsCpuFallbackTests
     [Theory]
     [MemberData(nameof(WidthPairs))]
     [Scenario(TestScenario.Boundary)]
-    public void FollowsTheSameRules(int aWords, int bWords)
+    public void WideOps_CpuFallbackWithVaryingWords_FollowsTheSameRules(int aWords, int bWords)
     {
         GpuKernelLoader.ForceCpuFallback = true;
         try

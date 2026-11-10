@@ -177,7 +177,7 @@ public class CudaHostTransferTests
     [SkippableFact]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.SadPath)]
-    public async Task CopyToHostAsync_CanceledInFlight_LeavesDestinationUntouched_AndHoldsStagingUntilDmaCompletes()
+    public async Task CopyToHostAsync_CanceledInFlight_LeavesDestinationUntouchedAndHoldsStagingUntilDmaCompletes()
     {
         CudaCapability.EnsureGpuAvailable();
 
