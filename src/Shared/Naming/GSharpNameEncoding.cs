@@ -839,7 +839,7 @@ internal static class GSharpNameEncoding
         }
 
         Add(ref segments, ref segmentCount, first);
-        while (Peek(s, index, '_') && Peek(s, index + 1, '_'))
+        while (MatchesAt(s, index, '_') && MatchesAt(s, index + 1, '_'))
         {
             index += 2;
             if (!TryParseSegment(s, ref index, out var next) || next is null)
@@ -854,12 +854,12 @@ internal static class GSharpNameEncoding
         var modifierCount = 0;
         while (true)
         {
-            if (PeekMarker(s, index, 'p'))
+            if (MatchesMarkerAt(s, index, 'p'))
             {
                 index += 2;
                 Add(ref modifiers, ref modifierCount, 0);
             }
-            else if (PeekMarker(s, index, 'r'))
+            else if (MatchesMarkerAt(s, index, 'r'))
             {
                 index += 2;
                 if (!TryParseNumber(s, ref index, out var rank) || rank < 1)
@@ -890,7 +890,7 @@ internal static class GSharpNameEncoding
 
         var arguments = Array.Empty<GlobalNamePath>();
         var argumentCount = 0;
-        if (PeekMarker(s, index, 'g'))
+        if (MatchesMarkerAt(s, index, 'g'))
         {
             index += 2;
             if (!TryParseNumber(s, ref index, out var count) || count < 1)
@@ -900,7 +900,7 @@ internal static class GSharpNameEncoding
 
             for (var i = 0; i < count; i++)
             {
-                if (!PeekMarker(s, index, 'b'))
+                if (!MatchesMarkerAt(s, index, 'b'))
                 {
                     return false;
                 }
@@ -914,7 +914,7 @@ internal static class GSharpNameEncoding
                 Add(ref arguments, ref argumentCount, argument);
             }
 
-            if (!PeekMarker(s, index, 'e'))
+            if (!MatchesMarkerAt(s, index, 'e'))
             {
                 return false;
             }
@@ -923,7 +923,7 @@ internal static class GSharpNameEncoding
         }
 
         var arity = 0;
-        if (PeekMarker(s, index, 'a'))
+        if (MatchesMarkerAt(s, index, 'a'))
         {
             index += 2;
             if (!TryParseNumber(s, ref index, out arity) || arity < 1)
@@ -933,7 +933,7 @@ internal static class GSharpNameEncoding
         }
 
         string? fileId = null;
-        if (PeekMarker(s, index, 'f'))
+        if (MatchesMarkerAt(s, index, 'f'))
         {
             index += 2;
             var hexStart = index;
@@ -951,7 +951,7 @@ internal static class GSharpNameEncoding
         }
 
         var ordinal = -1;
-        if (PeekMarker(s, index, 'o'))
+        if (MatchesMarkerAt(s, index, 'o'))
         {
             index += 2;
             if (!TryParseNumber(s, ref index, out ordinal))
@@ -974,12 +974,12 @@ internal static class GSharpNameEncoding
                 name.Append(c);
                 index++;
             }
-            else if (PeekMarker(s, index, 'u'))
+            else if (MatchesMarkerAt(s, index, 'u'))
             {
                 name.Append('_');
                 index += 2;
             }
-            else if (PeekMarker(s, index, 'x'))
+            else if (MatchesMarkerAt(s, index, 'x'))
             {
                 if (!TryParseCodePoint(s, index + 2, out var codePoint))
                 {
@@ -1041,7 +1041,7 @@ internal static class GSharpNameEncoding
         return index > start && (s[start] != '0' || index == start + 1);
     }
 
-    private static bool Peek(string s, int index, char c) => index < s.Length && s[index] == c;
+    private static bool MatchesAt(string s, int index, char c) => index < s.Length && s[index] == c;
 
     // [WHY] This file is also compiled into the build tasks, which have no System.Collections.Immutable, and the compiler
     // bans List<T>, so the parser grows plain arrays.
@@ -1065,8 +1065,8 @@ internal static class GSharpNameEncoding
         return items;
     }
 
-    private static bool PeekMarker(string s, int index, char marker) =>
-        Peek(s, index, '_') && Peek(s, index + 1, marker);
+    private static bool MatchesMarkerAt(string s, int index, char marker) =>
+        MatchesAt(s, index, '_') && MatchesAt(s, index + 1, marker);
 }
 
 /// <summary>A C# path that becomes one global C++ name: namespaces, containing types and the symbol itself.</summary>
