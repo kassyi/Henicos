@@ -1053,7 +1053,7 @@ public class MathDifferentialTests
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_BitOperationsNuintOverloads_EmitIntrinsicCallsWithoutUndeclaredSystemUIntPtr()
+    public void BitOperationsNuintOverloads_GeneratorEmission_EmitsIntrinsicCallsWithoutUndeclaredSystemUIntPtr()
     {
         var source = Helpers.RoslynTestUtility.ReadTestCase("Differential/BitOpsNuintProbeKernels.cs");
         var (driver, _, _) = Helpers.RoslynTestUtility.RunGenerator(source, "Cpu");

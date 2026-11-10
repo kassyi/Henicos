@@ -33,8 +33,8 @@ public class ParallelDependentCallFormsDiagnosticsTests
     [InlineData("Cuda", "UnaryOperatorKernel", 160, 27, 160, 31)]
     [InlineData("Cuda", "ConversionKernel", 172, 29, 172, 32)]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_CallForm_ReportsGsh0035AtTheCall(string dialect, string kernel, int startLine,
-        int startColumn, int endLine, int endColumn)
+    public async Task ParallelDependentCallForms_SyntaxVariations_ReportsGsh0035AtTheCall(
+        string dialect, string kernel, int startLine, int startColumn, int endLine, int endColumn)
     {
         var ranges = await GetRangesInAsync(dialect, kernel);
 

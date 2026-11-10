@@ -87,7 +87,7 @@ public class StackArrayDiagnosticsTests
     [InlineData("'a' cannot be assigned to a variable declared outside its scope", 341)]
     [InlineData("'a' cannot be assigned to a variable declared outside its scope", 342)]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_StackArrayEscape_MessageNamesTheStorageAndTheUse(string messagePart, int line)
+    public async Task StackArrayEscape_DiagnosticMessage_NamesStorageAndUse(string messagePart, int line)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(Escapes, "Cuda");
 

@@ -51,7 +51,8 @@ public class StructLayoutDiagnosticsTests
     [InlineData("Cpu", "'StructLayoutDiagnosticsTest.NamedUnion'", "field 'Name' has the reference type 'string'")]
     [InlineData("Cuda", "'StructLayoutDiagnosticsTest.NamedUnion'", "field 'Name' has the reference type 'string'")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_StructWithoutDeviceLayout_StatesTheReason(string dialect, string structName, string reason)
+    public async Task StructWithoutDeviceLayout_DiagnosticMessage_StatesTheReason(
+        string dialect, string structName, string reason)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(TestCase, dialect);
 

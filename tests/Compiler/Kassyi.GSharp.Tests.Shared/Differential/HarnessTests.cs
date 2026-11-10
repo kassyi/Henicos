@@ -322,7 +322,7 @@ public class HarnessTests
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.Boundary)]
-    public unsafe void Test_StructElementComparer_IgnoresPaddingBytes()
+    public unsafe void StructElementComparer_PaddedStructWithPaddingBytes_IgnoresPaddingBytes()
     {
         // Two instances of a padded struct with identical fields (B = 1, I = 42) but different alignment padding bytes
         // must match under StructElementComparer / OutputPolicy.ForStruct while raw byte sequence comparison differs
@@ -883,7 +883,7 @@ public class HarnessTests
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public unsafe void Test_LaunchPtr_ExecutesAndMatchesManagedLaunchOnCuda()
+    public unsafe void LaunchPtr_DeviceExecution_ExecutesAndMatchesManagedLaunchOnCuda()
     {
         // LaunchPtr uploads buffers via DiffPointerScope, runs the pointer kernel, and copies device/staging memory back
         // to the host buffers on Dispose so the cells match Launch and the oracle
