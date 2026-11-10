@@ -15,7 +15,7 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 [TestTarget(ExecutionTarget.GpuExecution)]
 [Category(TestCategory.Differential)]
 [Scenario(TestScenario.Boundary)]
-[Collection(TestCollections.GlobalStateSequential)]
+[Collection(TestCollections.BoundsAndMemoryDifferential)]
 public class MemoryAndSegmentBoundsDifferentialTests
 {
     private static readonly DifferentialCase s_arraySegmentBounds = new(

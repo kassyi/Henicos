@@ -15,7 +15,7 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 [TestTarget(ExecutionTarget.GpuExecution)]
 [Category(TestCategory.Differential)]
 [Scenario(TestScenario.Boundary)]
-[Collection(TestCollections.GlobalStateSequential)]
+[Collection(TestCollections.BoundsAndMemoryDifferential)]
 public class NullArrayAndFieldDifferentialTests
 {
     private static readonly DifferentialCase s_nullArrayOptionalValid = new(

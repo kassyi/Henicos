@@ -17,16 +17,10 @@ internal static class BoundsAndMemoryDifferentialTestHelpers
     internal const int SharedTileLen = BoundsAndMemoryDifferentialKernels.SharedTileLength;
 
     /// <summary>
-    /// Builds the fully qualified kernel case name for <see cref="DifferentialCase"/>.
+    /// Builds the case name of a kernel of <see cref="BoundsAndMemoryDifferentialKernels"/>.
     /// </summary>
-    internal static string KernelName(string kernelMemberName) =>
-        $"{nameof(BoundsAndMemoryDifferentialKernels)}.{kernelMemberName}";
-
-    /// <summary>
-    /// Builds the fully qualified kernel case name with a variant suffix for <see cref="DifferentialCase"/>.
-    /// </summary>
-    internal static string KernelName(string kernelMemberName, string suffix) =>
-        $"{nameof(BoundsAndMemoryDifferentialKernels)}.{kernelMemberName}.{suffix}";
+    internal static string KernelName(string kernelMemberName, string? suffix = null) =>
+        DiffKernelNames.Of(typeof(BoundsAndMemoryDifferentialKernels), kernelMemberName, suffix);
 
     // Reading a null array throws NullReferenceException on every path (#1409). CUDA reports the place of the receiver
     // (line and column in BoundsAndMemoryDifferentialKernels.cu.cs) through the kernel's error site table; the managed

@@ -13,7 +13,7 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 [TestTarget(ExecutionTarget.GpuExecution)]
 [Category(TestCategory.Differential)]
 [Scenario(TestScenario.Boundary)]
-[Collection(TestCollections.GlobalStateSequential)]
+[Collection(TestCollections.BoundsAndMemoryDifferential)]
 public class BoundsCheckEliminationDifferentialTests
 {
     private static readonly DifferentialCase s_boundsCheckEliminationValid = new(
