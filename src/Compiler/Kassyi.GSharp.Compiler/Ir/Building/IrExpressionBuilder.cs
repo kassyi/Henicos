@@ -17,63 +17,83 @@ internal static class IrExpressionBuilder
     public static IrExpression Build(IOperation operation, IrCategory category, IrBuildContext context)
     {
         context.CancellationToken.ThrowIfCancellationRequested();
+        if (OpaqueReasonOf(operation) is { } reason)
+        {
+            return Opaque(operation, reason, category, context);
+        }
+
+        // OpaqueReasonOf leaves only operations with a type
+        var type = operation.Type ?? context.VoidType;
+        var source = context.SourceOf(operation);
+        return BuildReference(operation, type, category, source, context) ??
+               BuildComputation(operation, type, category, source, context);
+    }
+
+    // The first reason in the order of IrOpaqueReason that the kind of operation alone decides
+    private static IrOpaqueReason? OpaqueReasonOf(IOperation operation)
+    {
         if (operation is IInvalidOperation || operation.Type is { TypeKind: TypeKind.Error })
         {
-            return Opaque(operation, IrOpaqueReason.Invalid, category, context);
+            return IrOpaqueReason.Invalid;
         }
 
         if (!HasNode(operation))
         {
-            return Opaque(operation, IrOpaqueReason.UnsupportedOperation, category, context);
+            return IrOpaqueReason.UnsupportedOperation;
         }
 
-        if (operation.Type is not { } type)
-        {
-            return Opaque(operation, IrOpaqueReason.Typeless, category, context);
-        }
-
-        var source = context.SourceOf(operation);
-        return operation switch
-        {
-            ILiteralOperation => new IrConstant(operation.ConstantValue.Value, null, type, source),
-            IFieldReferenceOperation field => BuildField(field, type, category, source, context),
-            ILocalReferenceOperation { Local.IsConst: true } local =>
-                new IrConstant(operation.ConstantValue.Value, local.Local, type, source),
-            ILocalReferenceOperation local => new IrVariableReference(context.Variables.GetLocal(local.Local),
-                local.IsDeclaration, category, operation.ConstantValue, source),
-            IParameterReferenceOperation parameter => new IrVariableReference(
-                context.Variables.GetParameter(parameter.Parameter), false, category, operation.ConstantValue, source),
-            IInstanceReferenceOperation instance => BuildInstance(instance, type, category, source, context),
-            IArrayElementReferenceOperation element => BuildElement(element, type, category, source, context),
-            IPropertyReferenceOperation property => BuildProperty(property, category, source, context),
-            IInvocationOperation invocation => BuildInvocation(invocation, type, category, source, context),
-            IUnaryOperation unary => BuildUnary(unary, type, category, source, context),
-            IBinaryOperation binary => BuildBinary(binary, type, category, source, context),
-            IIsPatternOperation pattern => BuildIsPattern(pattern, type, category, source, context),
-            IConditionalOperation { WhenFalse: { } whenFalse } conditional =>
-                BuildConditional(conditional, whenFalse, type, category, source, context),
-            ICoalesceOperation coalesce => BuildCoalesce(coalesce, type, category, source, context),
-            IConversionOperation conversion => BuildConversion(conversion, type, category, source, context),
-            ISimpleAssignmentOperation assignment => BuildAssignment(assignment, type, category, source, context),
-            ICompoundAssignmentOperation compound => BuildCompound(compound, type, category, source, context),
-            IIncrementOrDecrementOperation step => BuildIncrement(step, type, category, source, context),
-            IObjectCreationOperation creation => IrCreationBuilder.BuildStruct(creation, type, category, source,
-                context),
-            IArrayCreationOperation array => IrCreationBuilder.BuildArray(array, type, category, source, context),
-            IAddressOfOperation address => new IrAddressOf(Build(address.Reference, IrCategory.Location, context), type,
-                source),
-            IDefaultValueOperation => operation.ConstantValue.HasValue
-                ? new IrConstant(operation.ConstantValue.Value, null, type, source)
-                : new IrDefaultValue(type, category, source),
-            ISizeOfOperation or INameOfOperation => operation.ConstantValue.HasValue
-                ? new IrConstant(operation.ConstantValue.Value, null, type, source)
-                : Opaque(operation, IrOpaqueReason.UnsupportedShape, category, context),
-            IDiscardOperation => new IrDiscard(type, source),
-            IDeclarationExpressionOperation { Expression: ILocalReferenceOperation declared } =>
-                Build(declared, category, context),
-            _ => Opaque(operation, IrOpaqueReason.UnsupportedShape, category, context)
-        };
+        return operation.Type is null ? IrOpaqueReason.Typeless : null;
     }
+
+    // Constants, variables, members, elements and calls; null for any other kind
+    private static IrExpression? BuildReference(IOperation operation, ITypeSymbol type, IrCategory category,
+        IrSource source, IrBuildContext context) => operation switch
+    {
+        ILiteralOperation => new IrConstant(operation.ConstantValue.Value, null, type, source),
+        IFieldReferenceOperation field => BuildField(field, type, category, source, context),
+        ILocalReferenceOperation { Local.IsConst: true } local =>
+            new IrConstant(operation.ConstantValue.Value, local.Local, type, source),
+        ILocalReferenceOperation local => new IrVariableReference(context.Variables.GetLocal(local.Local),
+            local.IsDeclaration, category, operation.ConstantValue, source),
+        IParameterReferenceOperation parameter => new IrVariableReference(
+            context.Variables.GetParameter(parameter.Parameter), false, category, operation.ConstantValue, source),
+        IInstanceReferenceOperation instance => BuildInstance(instance, type, category, source, context),
+        IArrayElementReferenceOperation element => BuildElement(element, type, category, source, context),
+        IPropertyReferenceOperation property => BuildProperty(property, category, source, context),
+        IInvocationOperation invocation => BuildInvocation(invocation, type, category, source, context),
+        IDiscardOperation => new IrDiscard(type, source),
+        IDeclarationExpressionOperation { Expression: ILocalReferenceOperation declared } =>
+            Build(declared, category, context),
+        _ => null
+    };
+
+    // Operators, assignments, conversions and creations
+    private static IrExpression BuildComputation(IOperation operation, ITypeSymbol type, IrCategory category,
+        IrSource source, IrBuildContext context) => operation switch
+    {
+        IUnaryOperation unary => BuildUnary(unary, type, category, source, context),
+        IBinaryOperation binary => BuildBinary(binary, type, category, source, context),
+        IIsPatternOperation pattern => BuildIsPattern(pattern, type, category, source, context),
+        IConditionalOperation { WhenFalse: { } whenFalse } conditional =>
+            BuildConditional(conditional, whenFalse, type, category, source, context),
+        ICoalesceOperation coalesce => BuildCoalesce(coalesce, type, category, source, context),
+        IConversionOperation conversion => BuildConversion(conversion, type, category, source, context),
+        ISimpleAssignmentOperation assignment => BuildAssignment(assignment, type, category, source, context),
+        ICompoundAssignmentOperation compound => BuildCompound(compound, type, category, source, context),
+        IIncrementOrDecrementOperation step => BuildIncrement(step, type, category, source, context),
+        IObjectCreationOperation creation => IrCreationBuilder.BuildStruct(creation, type, category, source,
+            context),
+        IArrayCreationOperation array => IrCreationBuilder.BuildArray(array, type, category, source, context),
+        IAddressOfOperation address => new IrAddressOf(Build(address.Reference, IrCategory.Location, context), type,
+            source),
+        IDefaultValueOperation => operation.ConstantValue.HasValue
+            ? new IrConstant(operation.ConstantValue.Value, null, type, source)
+            : new IrDefaultValue(type, category, source),
+        ISizeOfOperation or INameOfOperation => operation.ConstantValue.HasValue
+            ? new IrConstant(operation.ConstantValue.Value, null, type, source)
+            : Opaque(operation, IrOpaqueReason.UnsupportedShape, category, context),
+        _ => Opaque(operation, IrOpaqueReason.UnsupportedShape, category, context)
+    };
 
     /// <summary>Whether the kind of <paramref name="operation"/> has a node (its shape may still be
     /// unsupported).</summary>

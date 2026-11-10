@@ -41,12 +41,12 @@ public class IrBuilderExpressionTests
     [InlineData("StructInitializer", "new Cell() {(ref (ref <init>).F = j), (ref (ref <init>).Auto = 2)}")]
     [InlineData("DefaultStruct", "default(Cell)")]
     [InlineData("ArrayCreation", "new int[2] {n, (n + 1)}")]
-    public void Test_Expression_BuildsItsNode(string method, string expected) =>
+    public void Expression_BuildsItsNode(string method, string expected) =>
         Assert.Equal(expected, IrTestCases.PrintCaseResult(method));
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_ConstantExpression_KeepsItsStructureAndValue()
+    public void ConstantExpression_KeepsItsStructureAndValue()
     {
         var binary = Assert.IsType<IrBinary>(IrTestCases.Result(IrTestCases.BuildCase("ConstantExpression")));
 
@@ -56,7 +56,7 @@ public class IrBuilderExpressionTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_CompoundAssignment_KeepsItsConversions()
+    public void CompoundAssignment_KeepsItsConversions()
     {
         var statement = IrTestCases.Statement(IrTestCases.BuildCase("Compound"));
         var compound = Assert.IsType<IrCompoundAssignment>(
@@ -69,7 +69,7 @@ public class IrBuilderExpressionTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_UserDefinedEquality_IsNotANullTest() =>
+    public void UserDefinedEquality_IsNotANullTest() =>
         Assert.IsType<IrBinary>(IrTestCases.Result(IrTestCases.BuildCase("UserEquals")));
 
     [Theory]
@@ -90,7 +90,7 @@ public class IrBuilderExpressionTests
     [InlineData("DelegateInvoke", nameof(IrOpaqueReason.UnsupportedShape), "opaque:UnsupportedShape(f(1))")]
     [InlineData("NestedInitializer", nameof(IrOpaqueReason.UnsupportedShape),
         "opaque:UnsupportedShape(new Outer { Inner = { F = j } })")]
-    public void Test_UnsupportedExpression_IsAnOpaqueLeaf(string method, string reason, string expected)
+    public void UnsupportedExpression_IsAnOpaqueLeaf(string method, string reason, string expected)
     {
         var result = IrTestCases.Result(IrTestCases.BuildCase(method));
 
@@ -102,7 +102,7 @@ public class IrBuilderExpressionTests
     // A throw expression is an operation without a type; it is reported as the kind it is, not as typeless
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_ThrowExpression_IsAnUnsupportedOperationInsideItsParent()
+    public void ThrowExpression_IsAnUnsupportedOperationInsideItsParent()
     {
         var coalesce = Assert.IsType<IrCoalesce>(IrTestCases.Result(IrTestCases.BuildCase("Throw")));
         var conversion = Assert.IsType<IrConversion>(coalesce.WhenNull);
@@ -112,7 +112,7 @@ public class IrBuilderExpressionTests
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_OpaqueArgument_KeepsTheCall()
+    public void OpaqueArgument_KeepsTheCall()
     {
         var call = Assert.IsType<IrCall>(
             IrTestCases.Result(IrTestCases.Build(IrTestCases.OrderCases, "OrderCases.Order", "LambdaIsNotEvaluated")));

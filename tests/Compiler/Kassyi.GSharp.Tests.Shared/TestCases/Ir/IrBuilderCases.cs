@@ -41,6 +41,12 @@ public struct Holder
     public ref int Current => ref Items[0];
 }
 
+[System.Runtime.CompilerServices.InlineArray(4)]
+public struct Buffer4
+{
+    private int _element;
+}
+
 public class Box
 {
     public int Value;
@@ -255,6 +261,21 @@ public static class Ir
     public static void ArrayElementIn(int[] data, int i)
     {
         var result = TakeIn(data[i]);
+    }
+
+    public static void InlineArrayElementIn(Buffer4 buf)
+    {
+        var result = TakeIn(buf[0]);
+    }
+
+    public static void RefConditionalIn(bool c, int[] a, int[] b)
+    {
+        var result = TakeIn(c ? ref a[0] : ref b[0]);
+    }
+
+    public static unsafe void PointerIndirectionIn(int* p)
+    {
+        var result = TakeIn(*p);
     }
 
     public static void PropertyWrite(Cell cell)

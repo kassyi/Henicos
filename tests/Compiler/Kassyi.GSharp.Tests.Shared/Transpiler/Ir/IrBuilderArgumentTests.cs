@@ -16,7 +16,7 @@ public class IrBuilderArgumentTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Arguments_InParameterOrder_WithDefaultsAndEvaluationOrder()
+    public void Arguments_InParameterOrder_WithDefaultsAndEvaluationOrder()
     {
         var kernel = IrTestCases.Build(IrTestCases.NamedArgumentCases, NamedType, "SampleKernel");
         var lines = IrPrinter.Print(kernel).Split('\n').Select(static line => line.TrimEnd('\r')).ToArray();
@@ -34,7 +34,7 @@ public class IrBuilderArgumentTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_NamedArgumentsOutOfOrder_KeepTheOrderWritten()
+    public void NamedArgumentsOutOfOrder_KeepTheOrderWritten()
     {
         var call = Assert.IsType<IrCall>(IrTestCases.Result(IrTestCases.BuildCase("NamedOutOfOrder")));
 
@@ -47,7 +47,7 @@ public class IrBuilderArgumentTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_DefaultValues_AreSynthesizedConstantsAtTheCall()
+    public void DefaultValues_AreSynthesizedConstantsAtTheCall()
     {
         var call = Assert.IsType<IrCall>(IrTestCases.Result(IrTestCases.BuildCase("Defaults")));
 
@@ -64,7 +64,7 @@ public class IrBuilderArgumentTests
     [Scenario(TestScenario.Boundary)]
     [InlineData("Params", "Ir.Sum(values: params new int[2] {a, b})")]
     [InlineData("ParamsEmpty", "Ir.Sum(values: params new int[0])")]
-    public void Test_ParamsArguments_AreOneArray(string method, string expected)
+    public void ParamsArguments_AreOneArray(string method, string expected)
     {
         var call = Assert.IsType<IrCall>(IrTestCases.Result(IrTestCases.BuildCase(method)));
 
@@ -76,7 +76,7 @@ public class IrBuilderArgumentTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_ExtensionMethod_IsStaticWithTheReceiverFirst()
+    public void ExtensionMethod_IsStaticWithTheReceiverFirst()
     {
         var call = Assert.IsType<IrCall>(IrTestCases.Result(IrTestCases.BuildCase("Extension")));
 
@@ -88,7 +88,7 @@ public class IrBuilderArgumentTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_InterferingArguments_KeepTheirOrderAndCategories() =>
+    public void InterferingArguments_KeepTheirOrderAndCategories() =>
         Assert.Equal(
             "Order.Sub(a: Order.Next(counter: ref i), b: Order.Next(counter: ref i))",
             IrTestCases.PrintResult(IrTestCases.OrderCases, "OrderCases.Order", "TwoNextCalls"));

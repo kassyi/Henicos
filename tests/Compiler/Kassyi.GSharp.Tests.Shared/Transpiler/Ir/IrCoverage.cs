@@ -36,36 +36,44 @@ internal static class IrCoverage
 
                 built++;
                 var where = Path.GetFileName(tree.FilePath) + " " + symbol.ContainingType.Name + "." + symbol.Name;
-                foreach (var violation in IrInvariants.Verify(method, compilation))
-                {
-                    violations.Add(where + ": " + violation);
-                }
-
-                foreach (var problem in FindSpansThatAreNotNodes(method, compilation))
-                {
-                    violations.Add(where + ": " + problem);
-                }
-
-                IrNodeChildren.Visit(method.Body, node =>
-                {
-                    var key = node switch
-                    {
-                        IrOpaqueExpression expression => Key(expression.Reason, expression.Operation,
-                            expression.Syntax),
-                        IrOpaqueStatement statement => "statement " + Key(statement.Reason, statement.Operation,
-                            statement.Syntax),
-                        _ => null
-                    };
-                    if (key is not null)
-                    {
-                        opaque.AddOrUpdate(key, 1, static (_, count) => count + 1);
-                    }
-                });
+                Check(method, compilation, where, violations);
+                Tally(method, opaque);
             }
         }
 
         return built;
     }
+
+    // The invariants and the spans of one built method
+    private static void Check(IrMethod method, Compilation compilation, string where, ConcurrentBag<string> violations)
+    {
+        foreach (var violation in IrInvariants.Verify(method, compilation))
+        {
+            violations.Add(where + ": " + violation);
+        }
+
+        foreach (var problem in FindSpansThatAreNotNodes(method, compilation))
+        {
+            violations.Add(where + ": " + problem);
+        }
+    }
+
+    // Counts the opaque nodes of one built method by reason, operation kind and syntax kind
+    private static void Tally(IrMethod method, ConcurrentDictionary<string, int> opaque) =>
+        IrNodeChildren.Visit(method.Body, node =>
+        {
+            var key = node switch
+            {
+                IrOpaqueExpression expression => Key(expression.Reason, expression.Operation, expression.Syntax),
+                IrOpaqueStatement statement => "statement " + Key(statement.Reason, statement.Operation,
+                    statement.Syntax),
+                _ => null
+            };
+            if (key is not null)
+            {
+                opaque.AddOrUpdate(key, 1, static (_, count) => count + 1);
+            }
+        });
 
     /// <summary>I2: every node that is not synthesized has the span of a node of its tree.</summary>
     public static void AssertSpansAreNodes(IrMethod method, Compilation compilation) =>

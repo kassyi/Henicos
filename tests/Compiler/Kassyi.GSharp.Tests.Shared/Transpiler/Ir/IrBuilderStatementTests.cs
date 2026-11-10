@@ -16,7 +16,7 @@ public class IrBuilderStatementTests
 {
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_SeveralDeclarators_AreOneDeclarationEachInOrder()
+    public void SeveralDeclarators_AreOneDeclarationEachInOrder()
     {
         var method = IrTestCases.BuildCase("MultipleDeclarators");
 
@@ -29,13 +29,13 @@ public class IrBuilderStatementTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_ExpressionBody_IsOneReturn() =>
+    public void ExpressionBody_IsOneReturn() =>
         Assert.Equal("method Ir.ExpressionBody(int x)\n{\nreturn (x + 1)\n}\n",
             IrPrinter.Print(IrTestCases.BuildCase("ExpressionBody")).Replace("\r", ""));
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_If_KeepsItsBranchesAsWritten()
+    public void If_KeepsItsBranchesAsWritten()
     {
         var @if = Assert.IsType<IrIf>(IrTestCases.Statement(IrTestCases.BuildCase("IfElse")));
 
@@ -47,7 +47,7 @@ public class IrBuilderStatementTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_Loop_IsAnOpaqueStatement()
+    public void Loop_IsAnOpaqueStatement()
     {
         var statement = IrTestCases.Statement(IrTestCases.BuildCase("Loop"));
 
@@ -58,7 +58,7 @@ public class IrBuilderStatementTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_SameLocal_IsOneInstance()
+    public void SameLocal_IsOneInstance()
     {
         var method = IrTestCases.BuildCase("SameLocalTwice");
         var declared = Assert.IsType<IrLocalDeclaration>(method.Body.Statements[0]).Variable;
@@ -76,7 +76,7 @@ public class IrBuilderStatementTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_OutVarLocal_IsInTheBlockLocals()
+    public void OutVarLocal_IsInTheBlockLocals()
     {
         var method = IrTestCases.BuildCase("OutVar");
 
@@ -86,7 +86,7 @@ public class IrBuilderStatementTests
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Source_PointsIntoTheTreeOfTheMethodWhenTheCompilationHasSeveral()
+    public void Source_PointsIntoTheTreeOfTheMethodWhenTheCompilationHasSeveral()
     {
         var compilation = RoslynTestUtility.CreateCompilation(
             RoslynTestUtility.ReadTestCase(IrTestCases.OrderCases),
@@ -107,7 +107,7 @@ public class IrBuilderStatementTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_ImplicitNodes_AreSynthesizedAndExplicitOnesAreNot()
+    public void ImplicitNodes_AreSynthesizedAndExplicitOnesAreNot()
     {
         var conversion = Assert.IsType<IrConversion>(IrTestCases.Result(IrTestCases.BuildCase("ImplicitNumeric")));
         var cast = Assert.IsType<IrConversion>(IrTestCases.Result(IrTestCases.BuildCase("ExplicitNumeric")));
@@ -120,7 +120,7 @@ public class IrBuilderStatementTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_EveryCase_KeepsTheInvariants()
+    public void EveryCase_KeepsTheInvariants()
     {
         var compilation = IrTestCases.Compile(IrTestCases.BuilderCases);
         var type = compilation.GetTypeByMetadataName("IrCases.Ir") ?? throw new InvalidOperationException();

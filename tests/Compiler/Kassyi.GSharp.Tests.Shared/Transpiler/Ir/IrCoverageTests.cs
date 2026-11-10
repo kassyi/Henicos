@@ -29,13 +29,28 @@ public class IrCoverageTests(ITestOutputHelper output)
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_EveryGpuMethod_BuildsAndKeepsTheInvariants()
+    public void EveryGpuMethod_BuildsAndKeepsTheInvariants()
     {
         var stopwatch = Stopwatch.StartNew();
         var opaque = new ConcurrentDictionary<string, int>(StringComparer.Ordinal);
         var violations = new ConcurrentBag<string>();
-        var built = 0;
 
+        var built = BuildTestCaseFiles(opaque, violations, out var fileCount);
+        built += BuildDifferentialFiles(opaque, violations, out var differentialCount);
+
+        output.WriteLine($"{fileCount} test case files, {differentialCount} differential files, " +
+                         $"{built} methods in {stopwatch.ElapsedMilliseconds} ms");
+        Assert.True(built > 500, $"Only {built} GPU methods were built.");
+        Assert.True(violations.IsEmpty,
+            string.Join("\n", violations.OrderBy(static v => v, StringComparer.Ordinal).Take(100)));
+        AssertTableMatches(opaque);
+    }
+
+    // Every file under TestCases/, one compilation each, as the snapshot generator compiles them
+    private static int BuildTestCaseFiles(ConcurrentDictionary<string, int> opaque, ConcurrentBag<string> violations,
+        out int fileCount)
+    {
+        var built = 0;
         var testCases = Directory.GetFiles(
                 RepositoryPaths.Combine("tests", "Compiler", "Kassyi.GSharp.Tests.Shared", "TestCases"), "*.cs",
                 SearchOption.AllDirectories)
@@ -52,6 +67,14 @@ public class IrCoverageTests(ITestOutputHelper output)
             Interlocked.Add(ref built, IrCoverage.BuildAll(compilation, [tree], opaque, violations));
         });
 
+        fileCount = testCases.Length;
+        return built;
+    }
+
+    // The differential kernel files, in the shared compilation of the test suite
+    private static int BuildDifferentialFiles(ConcurrentDictionary<string, int> opaque,
+        ConcurrentBag<string> violations, out int fileCount)
+    {
         var shared = MegaCompilationCache.Compilation;
         var differential = shared.SyntaxTrees
             .Where(static tree => tree.FilePath.Contains(Path.DirectorySeparatorChar + "Differential" +
@@ -59,14 +82,12 @@ public class IrCoverageTests(ITestOutputHelper output)
                                   tree.FilePath.EndsWith("Kernels.cu.cs", StringComparison.Ordinal))
             .ToArray();
         Assert.NotEmpty(differential);
-        built += IrCoverage.BuildAll(shared, differential, opaque, violations);
+        fileCount = differential.Length;
+        return IrCoverage.BuildAll(shared, differential, opaque, violations);
+    }
 
-        output.WriteLine($"{testCases.Length} test case files, {differential.Length} differential files, " +
-                         $"{built} methods in {stopwatch.ElapsedMilliseconds} ms");
-        Assert.True(built > 500, $"Only {built} GPU methods were built.");
-        Assert.True(violations.IsEmpty,
-            string.Join("\n", violations.OrderBy(static v => v, StringComparer.Ordinal).Take(100)));
-
+    private void AssertTableMatches(ConcurrentDictionary<string, int> opaque)
+    {
         var actual = string.Join("\n", opaque
             .OrderBy(static pair => pair.Key, StringComparer.Ordinal)
             .Select(static pair => pair.Key + "\t" + pair.Value)) + "\n";

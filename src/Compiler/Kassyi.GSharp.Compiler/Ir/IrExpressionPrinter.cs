@@ -25,6 +25,7 @@ internal sealed class IrExpressionPrinter(IrPrinter owner, SourceWriter writer, 
         }
     }
 
+    // Constants, variables, members, elements and calls
     private void WriteForm(IrExpression expression)
     {
         switch (expression)
@@ -47,6 +48,17 @@ internal sealed class IrExpressionPrinter(IrPrinter owner, SourceWriter writer, 
             case IrCall call:
                 WriteCall(call);
                 break;
+            default:
+                WriteOperatorForm(expression);
+                break;
+        }
+    }
+
+    // Operators, conditionals and conversions
+    private void WriteOperatorForm(IrExpression expression)
+    {
+        switch (expression)
+        {
             case IrUnary unary:
                 WriteUnary(unary);
                 break;
@@ -69,6 +81,17 @@ internal sealed class IrExpressionPrinter(IrPrinter owner, SourceWriter writer, 
             case IrConversion conversion:
                 WriteConversion(conversion);
                 break;
+            default:
+                WriteAssignmentForm(expression);
+                break;
+        }
+    }
+
+    // Assignments and increments
+    private void WriteAssignmentForm(IrExpression expression)
+    {
+        switch (expression)
+        {
             case IrAssignment assignment:
                 WriteInfix(assignment.Target, "=", assignment.Value);
                 break;

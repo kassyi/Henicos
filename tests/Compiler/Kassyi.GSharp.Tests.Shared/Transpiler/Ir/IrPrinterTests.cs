@@ -16,7 +16,7 @@ public class IrPrinterTests
 {
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Sequence_NumbersItsTemporariesByName()
+    public void Sequence_NumbersItsTemporariesByName()
     {
         var call = (IrCall)IrTestCases.Result(IrTestCases.BuildCase("RefArgument"));
         var source = call.Source.AsSynthesized();
@@ -37,7 +37,7 @@ public class IrPrinterTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Sources_MarkSynthesizedNodes()
+    public void Sources_MarkSynthesizedNodes()
     {
         var conversion = IrTestCases.Result(IrTestCases.BuildCase("ImplicitNumeric"));
         var start = conversion.Source.Start;

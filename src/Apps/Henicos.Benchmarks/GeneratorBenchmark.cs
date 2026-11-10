@@ -62,6 +62,26 @@ public class GeneratorBenchmark
     [GlobalSetup]
     public void Setup()
     {
+        var compilation = CreateInputCompilation(ParseInputTrees());
+        var cuda = new BenchmarkAnalyzerConfigOptionsProvider("Cuda");
+        var cpu = new BenchmarkAnalyzerConfigOptionsProvider("Cpu");
+        var analyzerOptions = new CompilationWithAnalyzersOptions(
+            options: new AnalyzerOptions(ImmutableArray<AdditionalText>.Empty, cuda),
+            onAnalyzerException: null,
+            concurrentAnalysis: false,
+            logAnalyzerExecutionTime: false,
+            reportSuppressedDiagnostics: false);
+
+        VerifyGeneratorRun(compilation, cuda, "Cuda");
+        VerifyGeneratorRun(compilation, cpu, "Cpu");
+
+        _prepared = new Prepared(compilation, cuda, cpu, analyzerOptions, FindGpuMethods(compilation));
+        WarmUp();
+    }
+
+    // The global usings and one tree per benchmark kernel class, read from GeneratorInputs
+    private static List<SyntaxTree> ParseInputTrees()
+    {
         var repoRoot = FindRepositoryRoot();
         var inputsDir = Path.Combine(repoRoot, "src", "Apps", "Henicos.Benchmarks", "GeneratorInputs");
         if (!Directory.Exists(inputsDir))
@@ -96,10 +116,14 @@ public class GeneratorBenchmark
             trees.Add(CSharpSyntaxTree.ParseText(File.ReadAllText(file), s_parseOptions, path: treePath));
         }
 
-        var references = CollectMetadataReferences();
+        return trees;
+    }
+
+    private static CSharpCompilation CreateInputCompilation(List<SyntaxTree> trees)
+    {
         var compilation = CSharpCompilation.Create("GeneratorBenchmarkCompilation")
             .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary).WithAllowUnsafe(true))
-            .AddReferences(references)
+            .AddReferences(CollectMetadataReferences())
             .AddSyntaxTrees(trees);
 
         // Warm up the base compilation's symbol table and verify that the input kernels have no C# syntax/type errors
@@ -112,21 +136,12 @@ public class GeneratorBenchmark
             }
         }
 
-        var cuda = new BenchmarkAnalyzerConfigOptionsProvider("Cuda");
-        var cpu = new BenchmarkAnalyzerConfigOptionsProvider("Cpu");
-        var analyzerOptions = new CompilationWithAnalyzersOptions(
-            options: new AnalyzerOptions(ImmutableArray<AdditionalText>.Empty, cuda),
-            onAnalyzerException: null,
-            concurrentAnalysis: false,
-            logAnalyzerExecutionTime: false,
-            reportSuppressedDiagnostics: false);
+        return compilation;
+    }
 
-        VerifyGeneratorRun(compilation, cuda, "Cuda");
-        VerifyGeneratorRun(compilation, cpu, "Cpu");
-
-        _prepared = new Prepared(compilation, cuda, cpu, analyzerOptions, FindGpuMethods(compilation));
-
-        // Pre-warm Roslyn symbol tables and Tier-1 JIT compilation so in-process benchmarks measure steady-state execution.
+    // Pre-warm Roslyn symbol tables and Tier-1 JIT compilation so in-process benchmarks measure steady-state execution.
+    private void WarmUp()
+    {
         for (var i = 0; i < 6; i++)
         {
             _ = RunGenerator_Cuda();

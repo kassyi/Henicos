@@ -18,7 +18,7 @@ public class IrInvariantsTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_ValidTrees_HaveNoViolation()
+    public void ValidTrees_HaveNoViolation()
     {
         foreach (var name in new[] { "RefArgument", "Params", "RefConditional", "OutVar", "ReturnRef", "AddressOf" })
         {
@@ -28,7 +28,7 @@ public class IrInvariantsTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_I1_PositionOutsideTheTrees()
+    public void I1_PositionOutsideTheTrees()
     {
         var method = IrTestCases.BuildCase("Literal");
         var constant = (IrConstant)IrTestCases.Result(method);
@@ -39,7 +39,7 @@ public class IrInvariantsTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_I3_ValueUsedAsLocation()
+    public void I3_ValueUsedAsLocation()
     {
         var method = IrTestCases.BuildCase("InNonVariable");
         var call = (IrCall)IrTestCases.Result(method);
@@ -52,7 +52,7 @@ public class IrInvariantsTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_I4_PointerCategoryOfAnIntegerRead()
+    public void I4_PointerCategoryOfAnIntegerRead()
     {
         var method = IrTestCases.BuildCase("InVariable");
         var source = IrTestCases.Result(method).Source;
@@ -63,7 +63,7 @@ public class IrInvariantsTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_I5_AssignmentTargetThatIsAValue()
+    public void I5_AssignmentTargetThatIsAValue()
     {
         var method = IrTestCases.BuildCase("DiscardAssignment");
         var assignment = (IrAssignment)((IrExpressionStatement)IrTestCases.Statement(method)).Expression;
@@ -77,7 +77,7 @@ public class IrInvariantsTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_I6_RefAssignmentOfAValue()
+    public void I6_RefAssignmentOfAValue()
     {
         var method = IrTestCases.BuildCase("RefLocal");
         var assignment = (IrAssignment)((IrExpressionStatement)IrTestCases.Statement(method, 1)).Expression;
@@ -89,7 +89,7 @@ public class IrInvariantsTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_I7_RefArgumentThatIsAValue()
+    public void I7_RefArgumentThatIsAValue()
     {
         var method = IrTestCases.BuildCase("RefArgument");
         var call = (IrCall)IrTestCases.Result(method);
@@ -101,7 +101,7 @@ public class IrInvariantsTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_I8_MissingArgument()
+    public void I8_MissingArgument()
     {
         var method = IrTestCases.BuildCase("RefArgument");
         var call = (IrCall)IrTestCases.Result(method);
@@ -112,7 +112,7 @@ public class IrInvariantsTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_I8_EvaluationPositionsThatAreNotAPermutation()
+    public void I8_EvaluationPositionsThatAreNotAPermutation()
     {
         var method = IrTestCases.BuildCase("Defaults");
         var call = (IrCall)IrTestCases.Result(method);
@@ -126,7 +126,7 @@ public class IrInvariantsTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_I9_TwoInstancesOfOneParameter()
+    public void I9_TwoInstancesOfOneParameter()
     {
         var method = IrTestCases.BuildCase("InVariable");
         var call = (IrCall)IrTestCases.Result(method);
@@ -144,7 +144,7 @@ public class IrInvariantsTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_I10_DeclarationOfAParameter()
+    public void I10_DeclarationOfAParameter()
     {
         var method = IrTestCases.BuildCase("InVariable");
         var declaration = (IrLocalDeclaration)IrTestCases.Statement(method);
@@ -155,7 +155,7 @@ public class IrInvariantsTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_I11_ShortCircuitAsABinaryNode()
+    public void I11_ShortCircuitAsABinaryNode()
     {
         var method = IrTestCases.BuildCase("Logical");
         var logical = (IrLogical)IrTestCases.Result(method);
@@ -167,7 +167,7 @@ public class IrInvariantsTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_I14_BuiltInComparisonWithNullThatIsNotANullTest()
+    public void I14_BuiltInComparisonWithNullThatIsNotANullTest()
     {
         var method = IrTestCases.BuildCase("NullEquals");
         var test = (IrNullTest)IrTestCases.Result(method);
@@ -180,7 +180,7 @@ public class IrInvariantsTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_I15_RefConditionalWithValueBranches()
+    public void I15_RefConditionalWithValueBranches()
     {
         var method = IrTestCases.BuildCase("ValueConditional");
         var conditional = (IrConditional)IrTestCases.Result(method);
@@ -191,7 +191,7 @@ public class IrInvariantsTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_I16_StaticCallWithAReceiver()
+    public void I16_StaticCallWithAReceiver()
     {
         var method = IrTestCases.BuildCase("InVariable");
         var call = (IrCall)IrTestCases.Result(method);
@@ -202,7 +202,7 @@ public class IrInvariantsTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_I17_DeclaringReferenceOutsideAnOutArgument()
+    public void I17_DeclaringReferenceOutsideAnOutArgument()
     {
         var method = IrTestCases.BuildCase("OutVar");
         var read = (IrVariableReference)IrTestCases.Result(method);
@@ -215,7 +215,7 @@ public class IrInvariantsTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_I18_IdentityConversionBetweenTwoTypes()
+    public void I18_IdentityConversionBetweenTwoTypes()
     {
         var method = IrTestCases.BuildCase("ImplicitNumeric");
         var conversion = (IrConversion)IrTestCases.Result(method);
@@ -227,7 +227,7 @@ public class IrInvariantsTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_I19_TemporaryOutsideItsSequence()
+    public void I19_TemporaryOutsideItsSequence()
     {
         var method = IrTestCases.BuildCase("Literal");
         var constant = IrTestCases.Result(method);
@@ -241,7 +241,7 @@ public class IrInvariantsTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_I19_SequenceThatDeclaresALocal()
+    public void I19_SequenceThatDeclaresALocal()
     {
         var method = IrTestCases.BuildCase("SameLocalTwice");
         var local = ((IrLocalDeclaration)IrTestCases.Statement(method)).Variable;
@@ -253,7 +253,7 @@ public class IrInvariantsTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_I20_LocalOutsideEveryScope()
+    public void I20_LocalOutsideEveryScope()
     {
         var method = IrTestCases.BuildCase("SameLocalTwice");
         var other = IrTestCases.BuildCase("MultipleDeclarators");
@@ -266,7 +266,7 @@ public class IrInvariantsTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_I21_ValueReturnedFromARefMethod()
+    public void I21_ValueReturnedFromARefMethod()
     {
         var method = IrTestCases.BuildCase("ReturnRef");
         var @return = (IrReturn)IrTestCases.Statement(method);
@@ -279,7 +279,7 @@ public class IrInvariantsTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_I22_ParamsArgumentThatIsNotAnArray()
+    public void I22_ParamsArgumentThatIsNotAnArray()
     {
         var method = IrTestCases.BuildCase("Params");
         var call = (IrCall)IrTestCases.Result(method);
@@ -292,7 +292,7 @@ public class IrInvariantsTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_I23_SynthesizedNodeOutsideItsParent()
+    public void I23_SynthesizedNodeOutsideItsParent()
     {
         var method = IrTestCases.BuildCase("ImplicitNumeric");
         var conversion = (IrConversion)IrTestCases.Result(method);

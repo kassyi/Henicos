@@ -14,6 +14,11 @@ namespace Kassyi.GSharp.Tests.Shared.Transpiler.Ir;
 [Category(TestCategory.Compiler)]
 public class IrBuilderCategoryTests
 {
+    // C# classifies these as variables; OperationExtensions.IsVariable does not yet, and adding them changes what the
+    // analyses and the CPU lowering pass by reference
+    private const string NotAVariableYet =
+        "Blocked by #1585 (an inline array element or a ref conditional passed to an in parameter is copied)";
+
     [Theory]
     [Scenario(TestScenario.HappyPath)]
     [InlineData("InVariable", "Ir.TakeIn(value: in x)")]
@@ -38,7 +43,7 @@ public class IrBuilderCategoryTests
     [InlineData("AddressOf", "Ir.ReadPointer(p: ptr &(ref x))")]
     [InlineData("PointerRead", "Ir.ReadPointer(p: ptr p)")]
     [InlineData("ValueConditional", "(c ? a[0] : b[0])")]
-    public void Test_Result_HasTheCategoriesOfItsUses(string method, string expected) =>
+    public void Result_HasTheCategoriesOfItsUses(string method, string expected) =>
         Assert.Equal(expected, IrTestCases.PrintCaseResult(method));
 
     [Theory]
@@ -54,19 +59,19 @@ public class IrBuilderCategoryTests
     [InlineData("PropertyWrite", 0, "(ref (ref cell).Auto = 3)")]
     [InlineData("ThisField", 0, "(ref cell).Bump()")]
     [InlineData("DiscardAssignment", 0, "(ref _ = x)")]
-    public void Test_Statement_HasTheCategoriesOfItsUses(string method, int index, string expected) =>
+    public void Statement_HasTheCategoriesOfItsUses(string method, int index, string expected) =>
         Assert.Equal(expected, IrPrinter.Print(IrTestCases.Statement(IrTestCases.BuildCase(method), index)));
 
     [Theory]
     [Scenario(TestScenario.HappyPath)]
     [InlineData("ReturnRef", "return ref data[1]")]
     [InlineData("ReturnRefReadOnly", "return in data[1]")]
-    public void Test_ReturnByReference_IsALocation(string method, string expected) =>
+    public void ReturnByReference_IsALocation(string method, string expected) =>
         Assert.Equal(expected, IrPrinter.Print(IrTestCases.Statement(IrTestCases.BuildCase(method))));
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_ThisOfAStructMember_IsARefParameterOrInWhenReadOnly()
+    public void ThisOfAStructMember_IsARefParameterOrInWhenReadOnly()
     {
         var compilation = IrTestCases.Compile(IrTestCases.BuilderCases);
         var bump = IrTestCases.Build(IrTestCases.BuilderCases, "IrCases.Cell", "Bump");
@@ -96,7 +101,10 @@ public class IrBuilderCategoryTests
     [InlineData("RefReturnProperty", true)]
     [InlineData("RefReturnCall", true)]
     [InlineData("RefArgument", true)]
-    public void Test_LocationCategory_FollowsIsVariable(string method, bool isVariable)
+    [InlineData("InlineArrayElementIn", true, Skip = NotAVariableYet)]
+    [InlineData("RefConditionalIn", true, Skip = NotAVariableYet)]
+    [InlineData("PointerIndirectionIn", true, Skip = NotAVariableYet)]
+    public void LocationCategory_FollowsIsVariable(string method, bool isVariable)
     {
         var compilation = IrTestCases.Compile(IrTestCases.BuilderCases);
         var symbol = IrTestCases.FindMethod(compilation, "IrCases.Ir", method);
@@ -116,5 +124,5 @@ public class IrBuilderCategoryTests
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_StaticMethod_HasNoThis() => Assert.Null(IrTestCases.BuildCase("Literal").This);
+    public void StaticMethod_HasNoThis() => Assert.Null(IrTestCases.BuildCase("Literal").This);
 }

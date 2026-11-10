@@ -12,7 +12,13 @@ internal static class IrConversionKinds
     /// <param name="to">The type converted to, or <see langword="null"/> when unknown.</param>
     /// <param name="operandIsConstant">Whether the operand is a constant expression.</param>
     public static IrConversionKind Of(CommonConversion conversion, ITypeSymbol? from, ITypeSymbol? to,
-        bool operandIsConstant)
+        bool operandIsConstant) =>
+        OfConversionItself(conversion) ??
+        OfArithmetic(conversion, from, to, operandIsConstant) ??
+        OfStorage(conversion, from, to);
+
+    // Identity, user-defined and nullable conversions, which the conversion alone tells
+    private static IrConversionKind? OfConversionItself(CommonConversion conversion)
     {
         if (conversion.IsIdentity)
         {
@@ -24,11 +30,13 @@ internal static class IrConversionKinds
             return IrConversionKind.UserDefined;
         }
 
-        if (conversion.IsNullable)
-        {
-            return IrConversionKind.Nullable;
-        }
+        return conversion.IsNullable ? IrConversionKind.Nullable : null;
+    }
 
+    // Enum, numeric and implicit constant conversions
+    private static IrConversionKind? OfArithmetic(CommonConversion conversion, ITypeSymbol? from, ITypeSymbol? to,
+        bool operandIsConstant)
+    {
         if (from is { TypeKind: TypeKind.Enum } || to is { TypeKind: TypeKind.Enum })
         {
             return IrConversionKind.Enumeration;
@@ -39,11 +47,14 @@ internal static class IrConversionKinds
             return IrConversionKind.Numeric;
         }
 
-        if (conversion.IsImplicit && operandIsConstant && IsNumeric(from) && IsNumeric(to))
-        {
-            return IrConversionKind.ImplicitConstant;
-        }
+        return conversion.IsImplicit && operandIsConstant && IsNumeric(from) && IsNumeric(to)
+            ? IrConversionKind.ImplicitConstant
+            : null;
+    }
 
+    // Pointer, reference, boxing and unboxing conversions, and any other
+    private static IrConversionKind OfStorage(CommonConversion conversion, ITypeSymbol? from, ITypeSymbol? to)
+    {
         if (from is IPointerTypeSymbol || to is IPointerTypeSymbol)
         {
             return IrConversionKind.Pointer;

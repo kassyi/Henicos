@@ -26,6 +26,13 @@ internal static class IrArgumentBuilder
         }
 
         var slots = new IrArgument?[parameters.Length];
+        return TryFillSlots(arguments, slots, context, ref failure) && TryCollect(slots, out built);
+    }
+
+    // Puts each argument in the slot of its parameter; fails on an argument without a parameter or a parameter twice
+    private static bool TryFillSlots(ImmutableArray<IArgumentOperation> arguments, IrArgument?[] slots,
+        IrBuildContext context, ref IrOpaqueReason failure)
+    {
         for (var index = 0; index < arguments.Length; index++)
         {
             var argument = arguments[index];
@@ -46,6 +53,13 @@ internal static class IrArgumentBuilder
             slots[ordinal] = new IrArgument(parameter, value, KindOf(argument.ArgumentKind), index);
         }
 
+        return true;
+    }
+
+    // The arguments in parameter order; fails when a parameter got none
+    private static bool TryCollect(IrArgument?[] slots, out ImmutableArray<IrArgument> built)
+    {
+        built = default;
         var builder = ImmutableArray.CreateBuilder<IrArgument>(slots.Length);
         foreach (var slot in slots)
         {
