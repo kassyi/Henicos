@@ -15,7 +15,7 @@ public class StackLinqStateTests
     private static readonly string[] s_names = ["a", "bb", "ccc", "dddd"];
 
     [Fact]
-    public void Where_Select_Count_WithState_ShouldMatchStandardLinq()
+    public void WhereSelectCount_WithState_MatchesStandardLinq()
     {
         var threshold = 5;
         var factor = 3;
