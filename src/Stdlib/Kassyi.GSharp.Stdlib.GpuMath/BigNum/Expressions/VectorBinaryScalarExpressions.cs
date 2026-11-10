@@ -19,10 +19,11 @@ internal readonly ref struct VectorScalarOperands
 internal abstract class VectorBinaryScalarExpressionBase(
     [TakesOwnership] IGpuBigIntVectorExpression vector,
     [TakesOwnership] IGpuBigIntExpression scalar,
-    int wordsPerElement) : IGpuBigIntVectorExpression, IDeviceCountedVector
+    long bitsPerElement) : IGpuBigIntVectorExpression, IDeviceCountedVector
 {
     public int Length => vector.Length;
-    public int WordsPerElement { get; } = wordsPerElement;
+    public long BitsPerElement { get; } = bitsPerElement;
+    public int WordsPerElement { get; } = BigIntWidths.Words(bitsPerElement);
 
     // The result buffers, lent until the next evaluation or Dispose; a caller's target is never kept
     private readonly VectorResultCache _cache = new();
@@ -116,7 +117,8 @@ internal abstract class VectorBinaryScalarExpressionBase(
 internal sealed class VectorMulScalarExpression(
     [TakesOwnership] IGpuBigIntVectorExpression vector,
     [TakesOwnership] IGpuBigIntExpression scalar)
-    : VectorBinaryScalarExpressionBase(vector, scalar, vector.WordsPerElement + scalar.NumWords)
+    : VectorBinaryScalarExpressionBase(vector, scalar,
+        BigIntWidths.Multiply(vector.BitsPerElement, IBitBoundedExpression.Of(scalar)))
 {
     protected override void DispatchKernel(
         GpuWorkspace workspace,
@@ -135,7 +137,8 @@ internal sealed class VectorMulScalarExpression(
 internal sealed class VectorAddScalarExpression(
     [TakesOwnership] IGpuBigIntVectorExpression vector,
     [TakesOwnership] IGpuBigIntExpression scalar)
-    : VectorBinaryScalarExpressionBase(vector, scalar, Math.Max(vector.WordsPerElement, scalar.NumWords) + 1)
+    : VectorBinaryScalarExpressionBase(vector, scalar,
+        BigIntWidths.Add(vector.BitsPerElement, IBitBoundedExpression.Of(scalar)))
 {
     protected override void DispatchKernel(
         GpuWorkspace workspace,
@@ -155,7 +158,8 @@ internal sealed class VectorAddScalarExpression(
 internal sealed class VectorSubScalarExpression(
     [TakesOwnership] IGpuBigIntVectorExpression vector,
     [TakesOwnership] IGpuBigIntExpression scalar)
-    : VectorBinaryScalarExpressionBase(vector, scalar, Math.Max(vector.WordsPerElement, scalar.NumWords) + 1)
+    : VectorBinaryScalarExpressionBase(vector, scalar,
+        BigIntWidths.Add(vector.BitsPerElement, IBitBoundedExpression.Of(scalar)))
 {
     protected override void DispatchKernel(
         GpuWorkspace workspace,
@@ -175,7 +179,8 @@ internal sealed class VectorSubScalarExpression(
 internal sealed class VectorDivScalarExpression(
     [TakesOwnership] IGpuBigIntVectorExpression vector,
     [TakesOwnership] IGpuBigIntExpression scalar)
-    : VectorBinaryScalarExpressionBase(vector, scalar, Math.Max(vector.WordsPerElement, scalar.NumWords))
+    : VectorBinaryScalarExpressionBase(vector, scalar,
+        BigIntWidths.OfWords(Math.Max(vector.WordsPerElement, scalar.NumWords)))
 {
     protected override void DispatchKernel(
         GpuWorkspace workspace,
@@ -202,7 +207,8 @@ internal sealed class VectorDivScalarExpression(
 internal sealed class VectorModScalarExpression(
     [TakesOwnership] IGpuBigIntVectorExpression vector,
     [TakesOwnership] IGpuBigIntExpression scalar)
-    : VectorBinaryScalarExpressionBase(vector, scalar, Math.Max(vector.WordsPerElement, scalar.NumWords))
+    : VectorBinaryScalarExpressionBase(vector, scalar,
+        BigIntWidths.OfWords(Math.Max(vector.WordsPerElement, scalar.NumWords)))
 {
     protected override void DispatchKernel(
         GpuWorkspace workspace,

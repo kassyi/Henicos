@@ -16,7 +16,7 @@ public class GpuBigIntCoreRuntimeTests
 
     [SkippableFact]
     [Category(TestCategory.Alignment)]
-    public void Test_MemoryPoolAllocation()
+    public void MemoryPool_MultiThreadedAllocation_ExecutesCorrectlyWithoutDataRace()
     {
         CudaCapability.EnsureGpuAvailable();
         // Stress test the internal pools (e.g. _carryBufferPool, _tempPool) to expose concurrency issues
@@ -59,7 +59,7 @@ public class GpuBigIntCoreRuntimeTests
 
     [SkippableFact]
     [Category(TestCategory.Runtime)]
-    public void Test_ExpressionKernelFusion()
+    public void KernelFusion_ChainedArithmeticExpression_MatchesBigIntegerReference()
     {
         CudaCapability.EnsureGpuAvailable();
         // Expose missing kernel fusion & temporary memory leaks in ExpressionEvaluator.
@@ -78,7 +78,7 @@ public class GpuBigIntCoreRuntimeTests
 
     [SkippableFact]
     [Category(TestCategory.Stress)]
-    public void Test_GpuBigInt_ConcurrentAccess_DataRaceSafety()
+    public void ConcurrentAccess_MultipleThreads_ExecutesWithoutDataRace()
     {
         CudaCapability.EnsureGpuAvailable();
         using var scope = new GpuKernelLoader.CudaContextScope();

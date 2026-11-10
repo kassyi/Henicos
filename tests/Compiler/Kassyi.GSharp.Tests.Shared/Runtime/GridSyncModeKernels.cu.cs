@@ -101,5 +101,28 @@ public static partial class GridSyncModeKernels
         Gpu.SyncGrid(GridSyncMode.Fast);
         result[tid] = value;
     }
+
+    // The threads whose keys are FailKey fail first; in every round thread 1 of each block writes round + 1 before a
+    // Fast barrier and every surviving thread adds the value of the next block after it
+    [GpuKernel(Cooperative = true)]
+    public static void FastSyncAfterFailKernel(int[] keys, int rounds, int[] blockValues, int[] result)
+    {
+        int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        int step = keys[tid] switch { 0 => 1, 1 => 1 };
+        int sum = 0;
+        for (int round = 0; round < rounds; round++)
+        {
+            if (ThreadIndex.X == 1)
+            {
+                blockValues[BlockIndex.X] = round + step;
+            }
+
+            Gpu.SyncGrid(GridSyncMode.Fast);
+            sum += blockValues[(BlockIndex.X + 1) % GridDimension.X];
+            Gpu.SyncGrid(GridSyncMode.Fast);
+        }
+
+        result[tid] = sum;
+    }
 #pragma warning restore CS8509
 }

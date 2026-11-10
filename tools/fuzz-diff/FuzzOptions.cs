@@ -13,6 +13,22 @@ public enum FuzzSwarmFocus
 
     /// <summary>Forces emission of complex tuple deconstructions (nested tuple targets and non-literal tuple RHS).</summary>
     TupleDeconstructComplex = 2,
+
+    /// <summary>Generates only split kernels whose split points are warp shuffles placed as operands.</summary>
+    WarpShuffle = 3,
+
+    /// <summary>Generates only split kernels whose split points are block barriers between statements.</summary>
+    Barrier = 4,
+
+    /// <summary>Generates only split kernels that consume a device iterator with <c>foreach</c> between split
+    /// points.</summary>
+    Iterator = 5,
+
+    /// <summary>Generates only split kernels whose split points are calls of suspending device functions.</summary>
+    SuspendingCall = 6,
+
+    /// <summary>Generates only split kernels, each with a random mix of the four kinds of split point.</summary>
+    SplitPoints = 7,
 }
 
 /// <summary>
@@ -76,7 +92,8 @@ public sealed record GeneratedKernelSpec(
     string KernelMethodSource,
     string CasePropertySource,
     IReadOnlyList<string> LocalVariableNames,
-    IReadOnlyList<string> StatementTexts);
+    IReadOnlyList<string> StatementTexts,
+    FuzzSplitForms SplitForms = FuzzSplitForms.None);
 
 /// <summary>
 /// Represents the complete generated source files for a batch of differential fuzz kernels.

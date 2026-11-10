@@ -30,5 +30,44 @@ public static partial class GridBarrierTimingKernels
         Gpu.SyncGrid();
         result[tid] = value;
     }
+
+    // Block 0 spends <cycles> clock cycles, then its threads whose keys are FailKey fail and the others reach the first
+    // of two Fast barriers, at which every other block is already waiting. Each thread writes <between> between the
+    // barriers and <result> after the second one
+    [GpuKernel(Cooperative = true)]
+    public static void LateFailingBlockTwoFastBarriersKernel(int[] keys, long cycles, int[] between, int[] result)
+    {
+        int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        SpinInFirstBlock(cycles);
+        int value = keys[tid] switch { 0 => tid, 1 => -tid };
+        Gpu.SyncGrid(GridSyncMode.Fast);
+        between[tid] = value;
+        Gpu.SyncGrid(GridSyncMode.Fast);
+        result[tid] = value;
+    }
+
+    // Block 0 spends <cycles> clock cycles, then its threads whose keys are FailKey fail and the others reach a
+    // Deterministic barrier, at which every other block is already waiting
+    [GpuKernel(Cooperative = true)]
+    public static void LateFailingBlockDeterministicKernel(int[] keys, long cycles, int[] result)
+    {
+        int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        SpinInFirstBlock(cycles);
+        int value = keys[tid] switch { 0 => tid, 1 => -tid };
+        Gpu.SyncGrid(GridSyncMode.Deterministic);
+        result[tid] = value;
+    }
 #pragma warning restore CS8509
+
+    [GpuDeviceFunction]
+    private static void SpinInFirstBlock(long cycles)
+    {
+        if (BlockIndex.X == 0)
+        {
+            ulong start = Gpu.Clock64();
+            while ((long)(Gpu.Clock64() - start) < cycles)
+            {
+            }
+        }
+    }
 }

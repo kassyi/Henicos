@@ -64,9 +64,14 @@ public static class FuzzSpeculativeBatchBuilder
         var removableIndices = FuzzSyntaxHelpers.GetRemovableStatementIndices(kernelMethod.Body.Statements);
         var candidates = new List<SpeculativeBatchCandidate>(maxCandidates);
         var seenSources = new HashSet<string>(StringComparer.Ordinal);
+        var helpers = FuzzSyntaxHelpers.GetDeviceFunctionMethods(root);
 
         void TryAddCandidate(string description, IReadOnlyList<int> removedIndices, MethodDeclarationSyntax mutatedMethod) =>
-            TryAddSpeculativeCandidate(candidates, seenSources, maxCandidates, fuzzSeed, inputSeed, description, removedIndices, mutatedMethod);
+            TryAddSpeculativeCandidate(
+                new CandidateSink(candidates, seenSources, maxCandidates, helpers, fuzzSeed, inputSeed),
+                description,
+                removedIndices,
+                mutatedMethod);
 
         AddIntersectionMergeCandidate(kernelMethod, removableIndices, priorSuccessfulRemovals, TryAddCandidate);
         if (removableIndices.Count > 0)
@@ -83,7 +88,7 @@ public static class FuzzSpeculativeBatchBuilder
             TryAddCandidate("Identity", [], kernelMethod);
         }
 
-        string kernelsUnit = BuildSpeculativeKernelsCompilationUnit(root, candidates);
+        string kernelsUnit = FuzzSplitOracle.WithOracleTwins(BuildSpeculativeKernelsCompilationUnit(root, candidates));
         string casesUnit = BuildSpeculativeCasesCompilationUnit(candidates, fuzzSeed);
 
         return new SpeculativeCandidateBatch(
@@ -145,17 +150,78 @@ public static class FuzzSpeculativeBatchBuilder
         return null;
     }
 
-    private static void TryAddSpeculativeCandidate(
-        List<SpeculativeBatchCandidate> candidates,
-        HashSet<string> seenSources,
-        int maxCandidates,
+    /// <summary>
+    /// Renders the <c>DifferentialCase</c> of a reduction candidate: a split kernel of <paramref name="helpers"/>'s
+    /// batch gets the split launch and its oracle twin (<see cref="FuzzSplitOracle"/>), any other kernel the default
+    /// launch.
+    /// </summary>
+    internal static string RenderCandidateCaseProperty(
+        MethodDeclarationSyntax candidate,
+        IReadOnlyList<MethodDeclarationSyntax> helpers,
         ulong fuzzSeed,
-        int? inputSeed,
+        int? inputSeed)
+    {
+        string caseHeader = string.Create(
+            CultureInfo.InvariantCulture,
+            $"// fuzz-seed: {FuzzRandom.FormatSeed(fuzzSeed)}");
+        return FuzzCaseEmitter.RenderDifferentialCaseProperty(
+            "FuzzBatchKernels",
+            candidate.Identifier.ValueText,
+            inputSeed,
+            caseHeader,
+            split: IsSplitCandidate(candidate, helpers));
+    }
+
+    /// <summary>
+    /// Returns the cases compilation unit that checks each of <paramref name="candidates"/> with <see
+    /// cref="SpeculativeBatchCandidate.CandidateCasePropertySource"/>.
+    /// </summary>
+    internal static string BuildSpeculativeCasesCompilationUnit(
+        IReadOnlyList<SpeculativeBatchCandidate> candidates,
+        ulong fuzzSeed)
+    {
+        var entries = new List<(string KernelName, ulong KernelSeed, string CasePropertySource)>(candidates.Count);
+        foreach (var c in candidates)
+        {
+            entries.Add((c.CandidateKernelName, fuzzSeed, c.CandidateCasePropertySource));
+        }
+
+        return FuzzCaseEmitter.BuildCasesCompilationUnit(
+            "Kassyi.GSharp.Tests.Shared.Differential",
+            "FuzzBatchCases",
+            fuzzSeed,
+            entries,
+            emitProgramMain: true);
+    }
+
+    private static bool IsSplitCandidate(
+        MethodDeclarationSyntax candidate,
+        IReadOnlyList<MethodDeclarationSyntax> helpers)
+    {
+        var methods = new List<MethodDeclarationSyntax>(helpers.Count + 1);
+        methods.AddRange(helpers);
+        methods.Add(candidate);
+        return FuzzSplitOracle.CollectSplitMethodNames(methods).Contains(candidate.Identifier.ValueText);
+    }
+
+    /// <summary>Where <see cref="TryAddSpeculativeCandidate"/> collects candidates, and what their cases
+    /// need.</summary>
+    private sealed record CandidateSink(
+        List<SpeculativeBatchCandidate> Candidates,
+        HashSet<string> SeenSources,
+        int MaxCandidates,
+        IReadOnlyList<MethodDeclarationSyntax> Helpers,
+        ulong FuzzSeed,
+        int? InputSeed);
+
+    private static void TryAddSpeculativeCandidate(
+        CandidateSink sink,
         string description,
         IReadOnlyList<int> removedIndices,
         MethodDeclarationSyntax mutatedMethod)
     {
-        if (candidates.Count >= maxCandidates)
+        var candidates = sink.Candidates;
+        if (candidates.Count >= sink.MaxCandidates)
         {
             return;
         }
@@ -166,17 +232,19 @@ public static class FuzzSpeculativeBatchBuilder
         string methodSource = FuzzSyntaxHelpers.RenderFullNode(renamedMethod);
 
         string bodyKey = renamedMethod.Body is not null ? FuzzSyntaxHelpers.RenderFullNode(renamedMethod.Body) : methodSource;
-        if (!seenSources.Add(bodyKey))
+        if (!sink.SeenSources.Add(bodyKey))
         {
             return;
         }
 
-        string caseHeader = string.Create(CultureInfo.InvariantCulture, $"// fuzz-seed: {FuzzRandom.FormatSeed(fuzzSeed)}");
-        string caseSource = FuzzCaseEmitter.RenderDifferentialCaseProperty(
-            "FuzzBatchKernels",
-            candName,
-            inputSeed,
-            caseHeader);
+        // A reduction of a split kernel that its oracle twin cannot check (a split point left under a branch that
+        // depends on the thread, say) is no candidate.
+        if (IsSplitCandidate(renamedMethod, sink.Helpers) && !IsValidSplitCandidate(renamedMethod, sink.Helpers))
+        {
+            return;
+        }
+
+        string caseSource = RenderCandidateCaseProperty(renamedMethod, sink.Helpers, sink.FuzzSeed, sink.InputSeed);
         int stmtCount = FuzzSyntaxHelpers.CountMethodExecutableStatements(renamedMethod);
         candidates.Add(new SpeculativeBatchCandidate(
             idx,
@@ -186,6 +254,16 @@ public static class FuzzSpeculativeBatchBuilder
             caseSource,
             removedIndices,
             stmtCount));
+    }
+
+    private static bool IsValidSplitCandidate(
+        MethodDeclarationSyntax candidate,
+        IReadOnlyList<MethodDeclarationSyntax> helpers)
+    {
+        var methods = new List<MethodDeclarationSyntax>(helpers.Count + 1);
+        methods.AddRange(helpers);
+        methods.Add(candidate);
+        return FuzzSplitOracle.Validate(candidate, FuzzSplitOracle.CollectSplitMethodNames(methods)) is null;
     }
 
     private static void AddIntersectionMergeCandidate(
@@ -494,21 +572,4 @@ public static class FuzzSpeculativeBatchBuilder
         return writer.ToString();
     }
 
-    private static string BuildSpeculativeCasesCompilationUnit(
-        IReadOnlyList<SpeculativeBatchCandidate> candidates,
-        ulong fuzzSeed)
-    {
-        var entries = new List<(string KernelName, ulong KernelSeed, string CasePropertySource)>(candidates.Count);
-        foreach (var c in candidates)
-        {
-            entries.Add((c.CandidateKernelName, fuzzSeed, c.CandidateCasePropertySource));
-        }
-
-        return FuzzCaseEmitter.BuildCasesCompilationUnit(
-            "Kassyi.GSharp.Tests.Shared.Differential",
-            "FuzzBatchCases",
-            fuzzSeed,
-            entries,
-            emitProgramMain: true);
-    }
 }
