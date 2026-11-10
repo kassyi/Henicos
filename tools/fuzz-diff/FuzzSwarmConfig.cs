@@ -77,39 +77,63 @@ public sealed record FuzzSwarmConfig(
             focus);
     }
 
-    /// <summary>Parses a CLI <c>--swarm-focus</c> string into a <see cref="FuzzSwarmFocus"/> value.</summary>
+    /// <summary>The <c>--swarm-focus</c> names, each with its compact spelling, in the order the help text lists
+    /// them.</summary>
+    internal static IReadOnlyList<(string Name, FuzzSwarmFocus Focus)> FocusNames { get; } =
+    [
+        ("default", FuzzSwarmFocus.Default),
+        ("coalesce-assign-value", FuzzSwarmFocus.CoalesceAssignValue),
+        ("tuple-deconstruct-complex", FuzzSwarmFocus.TupleDeconstructComplex),
+        ("warp-shuffle", FuzzSwarmFocus.WarpShuffle),
+        ("barrier", FuzzSwarmFocus.Barrier),
+        ("iterator", FuzzSwarmFocus.Iterator),
+        ("suspending-call", FuzzSwarmFocus.SuspendingCall),
+        ("split-points", FuzzSwarmFocus.SplitPoints),
+    ];
+
+    /// <summary>Gets the message for a <c>--swarm-focus</c> value that names no mode.</summary>
+    internal static string FocusErrorMessage { get; } = BuildFocusErrorMessage();
+
+    /// <summary>
+    /// Parses a CLI <c>--swarm-focus</c> string into a <see cref="FuzzSwarmFocus"/> value: a name of <see
+    /// cref="FocusNames"/>, the same name without hyphens, or <c>none</c>.
+    /// </summary>
     public static bool TryParseFocus(string? raw, out FuzzSwarmFocus focus)
     {
+        focus = FuzzSwarmFocus.Default;
         if (string.IsNullOrWhiteSpace(raw))
         {
-            focus = FuzzSwarmFocus.Default;
             return true;
         }
 
         ReadOnlySpan<char> trimmed = raw.AsSpan().Trim();
-        if (trimmed.Equals("default", StringComparison.OrdinalIgnoreCase) ||
-            trimmed.Equals("none", StringComparison.OrdinalIgnoreCase))
+        if (trimmed.Equals("none", StringComparison.OrdinalIgnoreCase))
         {
-            focus = FuzzSwarmFocus.Default;
             return true;
         }
 
-        if (trimmed.Equals("coalesce-assign-value", StringComparison.OrdinalIgnoreCase) ||
-            trimmed.Equals("coalesceassignvalue", StringComparison.OrdinalIgnoreCase))
+        foreach (var (name, value) in FocusNames)
         {
-            focus = FuzzSwarmFocus.CoalesceAssignValue;
-            return true;
+            string compact = name.Replace("-", string.Empty, StringComparison.Ordinal);
+            if (trimmed.Equals(name, StringComparison.OrdinalIgnoreCase) ||
+                trimmed.Equals(compact, StringComparison.OrdinalIgnoreCase))
+            {
+                focus = value;
+                return true;
+            }
         }
 
-        if (trimmed.Equals("tuple-deconstruct-complex", StringComparison.OrdinalIgnoreCase) ||
-            trimmed.Equals("tupledeconstructcomplex", StringComparison.OrdinalIgnoreCase))
-        {
-            focus = FuzzSwarmFocus.TupleDeconstructComplex;
-            return true;
-        }
-
-        focus = FuzzSwarmFocus.Default;
         return false;
     }
-}
 
+    private static string BuildFocusErrorMessage()
+    {
+        var quoted = new List<string>(FocusNames.Count);
+        foreach (var (name, _) in FocusNames)
+        {
+            quoted.Add($"'{name}'");
+        }
+
+        return $"--swarm-focus requires one of {string.Join(", ", quoted)}.";
+    }
+}
