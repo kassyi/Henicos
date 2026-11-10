@@ -266,7 +266,6 @@ public partial class ZeroInitKernels
 {
 private static readonly global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[] s_errorSites = new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[]
 {
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2074068839u, "ZeroInitKernels.cs", 344, 26, "StackArrayAliasKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1855903409u, "ZeroInitKernels.cs", 344, 33, "StackArrayAliasKernel", "G#: a null array is read"),
 };
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
@@ -1992,7 +1991,7 @@ int __gsharp_id_3_a[4]={ __gsharp_mul_i32(11,__gsharp_add_i32(__gsharp_id_2_it,1
 GSharpArray<int> __gsharp_id_4_b = __gsharp_id_3_a;
 GSharpArray<int> __gsharp_id_5_inner = __gsharp_id_1_seed;
 __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ZeroInitKernels__KeepIn(__gsharp_id_3_a,&__gsharp_id_5_inner);
-__gsharp_id_0_output[__gsharp_id_2_it]=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_4_b, 0, 2074068839u),__gsharp_array_at(__gsharp_id_5_inner, 0, 1855903409u));
+__gsharp_id_0_output[__gsharp_id_2_it]=__gsharp_add_i32(__gsharp_id_4_b[0],__gsharp_array_at(__gsharp_id_5_inner, 0, 1855903409u));
 }
 }
 ";

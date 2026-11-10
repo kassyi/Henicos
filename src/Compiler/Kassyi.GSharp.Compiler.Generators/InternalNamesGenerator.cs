@@ -3,9 +3,10 @@ using YamlDotNet.RepresentationModel;
 namespace Kassyi.GSharp.Compiler.Generators;
 
 /// <summary>
-/// Generates the nested constant classes of <c>GSharpInternalNames</c> from <c>Resources/InternalNames.yml</c>, and checks
-/// the vocabulary while doing so: values are unique, start with <c>__gsharp_</c>, end in <c>_</c> exactly when the name ends
-/// in <c>Prefix</c>, and names marked with a Prelude file or a Managed (Core) file are declared in that file.
+/// Generates the nested constant classes of <c>GSharpInternalNames</c> from <c>Resources/InternalNames.yml</c>, and
+/// checks the vocabulary while doing so: values are unique, start with <c>__gsharp_</c>, end in <c>_</c> exactly when
+/// the name ends in <c>Prefix</c>, and names marked with a Prelude file or a Managed (Core) file are declared in that
+/// file.
 /// </summary>
 public static class InternalNamesGenerator
 {
@@ -23,8 +24,9 @@ public static class InternalNamesGenerator
     private sealed record NameGroup(string Name, string Summary, List<InternalName> Names);
 
     /// <summary>
-    /// Reads <paramref name="yamlPath"/>, checks it against the Prelude files in <paramref name="preludeDir"/> and the Core
-    /// sources in <paramref name="coreDir"/>, and writes <c>GSharpInternalNames.g.cs</c> to <paramref name="outputDir"/>.
+    /// Reads <paramref name="yamlPath"/>, checks it against the Prelude files in <paramref name="preludeDir"/> and the
+    /// Core sources in <paramref name="coreDir"/>, and writes <c>GSharpInternalNames.g.cs</c> to
+    /// <paramref name="outputDir"/>.
     /// </summary>
     public static void Run(string yamlPath, string preludeDir, string coreDir, string outputDir)
     {
@@ -95,7 +97,8 @@ public static class InternalNamesGenerator
         var value = (key as YamlScalarNode)?.Value ?? string.Empty;
         return SyntaxFacts.IsValidIdentifier(value)
             ? value
-            : throw new GeneratorInputException(yamlPath, (int)key.Start.Line, $"'{value}' is not a valid C# identifier.");
+            : throw new GeneratorInputException(
+                yamlPath, (int)key.Start.Line, $"'{value}' is not a valid C# identifier.");
     }
 
     private static string? Scalar(YamlMappingNode mapping, string key) =>
@@ -139,7 +142,8 @@ public static class InternalNamesGenerator
         }
     }
 
-    private static void CheckDeclared(string yamlPath, string path, string value, string directory, string file, string label)
+    private static void CheckDeclared(
+        string yamlPath, string path, string value, string directory, string file, string label)
     {
         var filePath = Path.Combine(directory, file);
         if (!File.Exists(filePath) || !ContainsIdentifier(File.ReadAllText(filePath), value))
@@ -148,7 +152,9 @@ public static class InternalNamesGenerator
         }
     }
 
-    /// <summary>Whether <paramref name="identifier"/> occurs in <paramref name="text"/> as a whole identifier.</summary>
+    /// <summary>
+    /// Whether <paramref name="identifier"/> occurs in <paramref name="text"/> as a whole identifier.
+    /// </summary>
     private static bool ContainsIdentifier(string text, string identifier)
     {
         for (var index = text.IndexOf(identifier, StringComparison.Ordinal);
@@ -156,7 +162,8 @@ public static class InternalNamesGenerator
              index = text.IndexOf(identifier, index + 1, StringComparison.Ordinal))
         {
             var end = index + identifier.Length;
-            if ((index == 0 || !IsIdentifierChar(text[index - 1])) && (end == text.Length || !IsIdentifierChar(text[end])))
+            if ((index == 0 || !IsIdentifierChar(text[index - 1]))
+                && (end == text.Length || !IsIdentifierChar(text[end])))
             {
                 return true;
             }
@@ -196,15 +203,19 @@ public static class InternalNamesGenerator
             }
 
             writer.Line(
-                "/// <summary>Every name in the vocabulary with its group, and the Prelude file that declares it, if any.</summary>");
+                "/// <summary>Every name in the vocabulary with its group, and the Prelude file that declares it, " +
+                "if any.</summary>");
             writer.Line(
-                "internal static readonly ImmutableArray<(string Path, string Value, string? PreludeFile)> All = ImmutableArray.Create<(string, string, string?)>(");
+                "internal static readonly ImmutableArray<(string Path, string Value, string? PreludeFile)> All = " +
+                "ImmutableArray.Create<(string, string, string?)>(");
             for (var i = 0; i < all.Count; i++)
             {
                 var entry = all[i];
                 var prelude = entry.PreludeFile is null ? "null" : CSharpStringLiteral.Quote(entry.PreludeFile);
                 var separator = i == all.Count - 1 ? ");" : ",";
-                writer.Line($"({CSharpStringLiteral.Quote(entry.Group + "." + entry.Name)}, {entry.Group}.{entry.Name}, {prelude}){separator}");
+                writer.Line(
+                    $"({CSharpStringLiteral.Quote(entry.Group + "." + entry.Name)}, " +
+                    $"{entry.Group}.{entry.Name}, {prelude}){separator}");
             }
         }
 

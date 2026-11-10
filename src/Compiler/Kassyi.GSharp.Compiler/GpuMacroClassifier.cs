@@ -112,8 +112,8 @@ internal static class GpuMacroClassifier
                 ? new GpuMacroCall(GpuMacroKind.GridStrideLoop, symbol, hasContext: true, bodyOrdinal: 2)
                 : new GpuMacroCall(GpuMacroKind.GridStrideLoop, symbol, bodyOrdinal: 1),
             TypeConstants.GpuMacros.SingleThread => new GpuMacroCall(GpuMacroKind.SingleThread, symbol, bodyOrdinal: 0),
-            // SyncGrid(body) / SyncGrid()
-            TypeConstants.GpuMacros.SyncGrid => parameterCount == 1
+            // SyncGrid(body) / SyncGrid(mode): both take one parameter, told apart by its type
+            TypeConstants.GpuMacros.SyncGrid => symbol.Parameters is [{ Type.TypeKind: TypeKind.Delegate }]
                 ? new GpuMacroCall(GpuMacroKind.SyncGrid, symbol, bodyOrdinal: 0)
                 : new GpuMacroCall(GpuMacroKind.SyncGrid, symbol),
             TypeConstants.GpuMacros.InlinePtx => new GpuMacroCall(GpuMacroKind.InlinePtx, symbol),
