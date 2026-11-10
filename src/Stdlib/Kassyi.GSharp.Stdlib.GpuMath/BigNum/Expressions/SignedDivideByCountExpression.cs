@@ -23,4 +23,12 @@ internal sealed class SignedDivideByCountExpression(IGpuBigIntExpression sum, ui
         // The count is positive: the quotient has the sign of the sum (a zero quotient may keep it, as for /)
         return new GpuBigInt(resultBuffer, targetEval.IsNegative);
     }
+
+    // A sum whose sign is on the device (Xor with the + count): the quotient of its magnitude, with its sign copied
+    protected override SignSource ExecuteDevice(GpuWorkspace workspace, SignedValue operand, GpuBigUInt resultBuffer,
+        SignPlan plan)
+    {
+        Execute(new GpuBigInt(operand.Magnitude, false), resultBuffer);
+        return SignedDeviceOps.Xor(workspace, operand.Sign, SignSource.Host(false));
+    }
 }

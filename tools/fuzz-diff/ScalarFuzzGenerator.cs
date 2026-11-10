@@ -31,6 +31,7 @@ public sealed class ScalarFuzzGenerator
     private readonly FuzzOptions _options;
     private readonly KnownIssueFilter _issueFilter;
     private readonly IReadOnlyList<DeviceFunctionSpec> _deviceFunctions;
+    private readonly IReadOnlyList<string> _splitHelperSources;
 
     /// <summary>Initializes a new instance of the <see cref="ScalarFuzzGenerator"/> class.</summary>
     public ScalarFuzzGenerator(FuzzOptions? options = null)
@@ -38,6 +39,7 @@ public sealed class ScalarFuzzGenerator
         _options = options ?? new FuzzOptions();
         _issueFilter = new KnownIssueFilter(_options.Profile, _options.AllowedIssues);
         _deviceFunctions = FuzzDeviceFunctionEmitter.BuildDeviceFunctionDag(_options.FuzzSeed, _options.KernelClassName);
+        _splitHelperSources = FuzzSplitKernelEmitter.BuildHelperSources(_options.FuzzSeed);
     }
 
     /// <summary>Gets the active <see cref="KnownIssueFilter"/> configured for this generator.</summary>
@@ -45,6 +47,14 @@ public sealed class ScalarFuzzGenerator
 
     /// <summary>Gets the topological <c>[GpuDeviceFunction]</c> DAG generated for this batch.</summary>
     public IReadOnlyList<DeviceFunctionSpec> DeviceFunctions => _deviceFunctions;
+
+    /// <summary>
+    /// Gets the device functions that split kernels call (<see cref="FuzzSplitKernelEmitter.BuildHelperSources"/>); a
+    /// batch declares them only when it has a split kernel.
+    /// </summary>
+    public IReadOnlyList<string> SplitHelperSources => _splitHelperSources;
+
+    private FuzzSplitGenerationContext SplitContext => new(_options, _issueFilter, _deviceFunctions);
 
     /// <summary>
     /// Generates a full batch of <see cref="FuzzOptions.BatchSize"/> kernels (plus metamorphic variants when
@@ -57,6 +67,7 @@ public sealed class ScalarFuzzGenerator
         var masterRng = new FuzzRandom(_options.FuzzSeed);
         var kernels = new List<GeneratedKernelSpec>(batchSize * (1 + metaVariants));
         var extraDeviceFunctions = new List<string>();
+        bool hasSplitKernel = false;
 
         for (int i = 0; i < batchSize; i++)
         {
@@ -66,13 +77,23 @@ public sealed class ScalarFuzzGenerator
                 : 1 + (i * 8 / batchSize);
             size = Math.Clamp(size, 1, 8);
             string kernelName = string.Create(CultureInfo.InvariantCulture, $"Kernel_{i:D2}");
+            var splitForms = FuzzSplitKernelEmitter.ChooseForms(kernelSeed, _options.SwarmFocus);
+            if (splitForms != FuzzSplitForms.None)
+            {
+                // No metamorphic variants: a variant is checked against its base kernel run as plain C#, which cannot
+                // run a shuffle.
+                kernels.Add(FuzzSplitKernelGenerator.Generate(SplitContext, kernelName, kernelSeed, size, splitForms));
+                hasSplitKernel = true;
+                continue;
+            }
+
             var baseSpec = GenerateSingleKernel(kernelName, kernelSeed, size);
             kernels.Add(baseSpec);
 
             AddMetamorphicVariants(baseSpec, metaVariants, kernels, extraDeviceFunctions);
         }
 
-        string kernelsSource = BuildKernelsCompilationUnit(kernels, extraDeviceFunctions);
+        string kernelsSource = BuildKernelsCompilationUnit(kernels, extraDeviceFunctions, hasSplitKernel);
         string casesSource = BuildCasesCompilationUnit(kernels);
 
         ValidateSyntaxTree(kernelsSource, "FuzzBatchKernels.cu.cs");
@@ -130,11 +151,43 @@ public sealed class ScalarFuzzGenerator
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(kernelName);
         size = Math.Clamp(size, 1, 8);
+        if (FuzzSplitKernelEmitter.IsSplitFocus(_options.SwarmFocus))
+        {
+            return FuzzSplitKernelGenerator.Generate(
+                SplitContext,
+                kernelName,
+                kernelSeed,
+                size,
+                FuzzSplitKernelEmitter.ChooseForms(kernelSeed, _options.SwarmFocus));
+        }
 
+        var state = CreateScalarState(kernelSeed, size);
+        EmitScalarBody(state, size);
+
+        string caseHeader = string.Create(
+            CultureInfo.InvariantCulture,
+            $"// fuzz-seed: {FuzzRandom.FormatSeed(kernelSeed)}");
+        string caseProperty = FuzzCaseEmitter.RenderDifferentialCaseProperty(
+            _options.KernelClassName,
+            kernelName,
+            _options.InputSeed,
+            caseHeader);
+        return new GeneratedKernelSpec(
+            kernelName,
+            kernelSeed,
+            size,
+            RenderKernelMethod(kernelName, kernelSeed, size, state),
+            caseProperty,
+            FuzzSplitKernelGenerator.LocalNames(state),
+            state.Statements.ToArray());
+    }
+
+    private KernelGenerationState CreateScalarState(ulong kernelSeed, int size)
+    {
         var rng = new FuzzRandom(kernelSeed);
         var swarm = FuzzSwarmConfig.Create(rng, _options.SwarmFocus);
         double interferenceProb = Math.Clamp(_options.InterferenceProbability, 0.25, 0.60);
-        var state = new KernelGenerationState(
+        return new KernelGenerationState(
             rng,
             size,
             interferenceProb,
@@ -142,8 +195,12 @@ public sealed class ScalarFuzzGenerator
             swarm,
             _options.KernelClassName,
             _deviceFunctions);
+    }
 
-        InitializeScalarLocals(state);
+    // The locals, the core statements of each emitter, the random statements and the checksum folds
+    private static void EmitScalarBody(KernelGenerationState state, int size)
+    {
+        FuzzScalarLocals.Initialize(state);
         FuzzCompositeExpressionEmitter.InitializeCompositeLocals(state);
 
         EmitCoreScalarStatements(state);
@@ -162,29 +219,6 @@ public sealed class ScalarFuzzGenerator
         }
 
         FuzzChecksumEmitter.EmitChecksumFoldAll(state);
-
-        string kernelMethod = RenderKernelMethod(kernelName, kernelSeed, size, state);
-        string caseHeader = string.Create(CultureInfo.InvariantCulture, $"// fuzz-seed: {FuzzRandom.FormatSeed(kernelSeed)}");
-        string caseProperty = FuzzCaseEmitter.RenderDifferentialCaseProperty(
-            _options.KernelClassName,
-            kernelName,
-            _options.InputSeed,
-            caseHeader);
-
-        var localNames = new List<string>(state.Locals.Count);
-        foreach (var local in state.Locals)
-        {
-            localNames.Add(local.Name);
-        }
-
-        return new GeneratedKernelSpec(
-            kernelName,
-            kernelSeed,
-            size,
-            kernelMethod,
-            caseProperty,
-            localNames,
-            state.Statements.ToArray());
     }
 
     /// <summary>Builds a division or remainder expression with an inline ternary guard on the divisor.</summary>
@@ -238,72 +272,6 @@ public sealed class ScalarFuzzGenerator
         {
             writer.AppendLine(stmt);
         }
-    }
-
-    private static void InitializeScalarLocals(KernelGenerationState state)
-    {
-        FuzzScalarKind[] baseTypes =
-        [
-            FuzzScalarKind.SByte,
-            FuzzScalarKind.Byte,
-            FuzzScalarKind.Int16,
-            FuzzScalarKind.UInt16,
-            FuzzScalarKind.Int32,
-            FuzzScalarKind.UInt32,
-            FuzzScalarKind.Int64,
-            FuzzScalarKind.UInt64,
-            FuzzScalarKind.Boolean,
-            FuzzScalarKind.Char,
-            FuzzScalarKind.EnumByte,
-            FuzzScalarKind.EnumShort,
-            FuzzScalarKind.EnumInt,
-            FuzzScalarKind.EnumULong,
-        ];
-
-        var activeTypes = new List<FuzzTypeInfo>(baseTypes.Length);
-        foreach (var kind in baseTypes)
-        {
-            activeTypes.Add(FuzzTypeInfo.Get(kind));
-        }
-
-        for (int i = activeTypes.Count - 1; i > 0; i--)
-        {
-            int j = state.Rng.NextBelow(i + 1);
-            (activeTypes[i], activeTypes[j]) = (activeTypes[j], activeTypes[i]);
-        }
-
-        foreach (var typeInfo in activeTypes)
-        {
-            string varName = $"v{state.Locals.Count}";
-            string initExpr = BuildInputInitializationExpression(state.Rng, typeInfo, state.Locals.Count);
-            state.Statements.Add($"{typeInfo.Keyword} {varName} = {initExpr};");
-            state.Locals.Add(new ScalarLocalVariable(varName, typeInfo));
-        }
-    }
-
-    private static string BuildInputInitializationExpression(FuzzRandom rng, FuzzTypeInfo type, int index)
-    {
-        string src = (index % 3) switch { 0 => "inA[gid]", 1 => "inB[gid]", _ => "inC[gid]" };
-        string alt = ((index + 1) % 3) switch { 0 => "inA[gid]", 1 => "inB[gid]", _ => "inC[gid]" };
-
-        return type.Kind switch
-        {
-            FuzzScalarKind.SByte => $"(sbyte){src}",
-            FuzzScalarKind.Byte => $"(byte){src}",
-            FuzzScalarKind.Int16 => $"(short){src}",
-            FuzzScalarKind.UInt16 => $"(ushort){src}",
-            FuzzScalarKind.Int32 => src,
-            FuzzScalarKind.UInt32 => $"(uint){src}",
-            FuzzScalarKind.Int64 => rng.NextBool() ? $"(((long){src} << 32) ^ (uint){alt})" : $"(long){src}",
-            FuzzScalarKind.UInt64 => rng.NextBool() ? $"(((ulong)(uint){src} << 32) | (uint){alt})" : $"(ulong){src}",
-            FuzzScalarKind.Boolean => $"((({src} ^ {alt}) & 1) != 0)",
-            FuzzScalarKind.Char => $"(char){src}",
-            FuzzScalarKind.EnumByte => $"(FuzzEnumByte)(byte){src}",
-            FuzzScalarKind.EnumShort => $"(FuzzEnumShort)(short){src}",
-            FuzzScalarKind.EnumInt => $"(FuzzEnumInt){src}",
-            FuzzScalarKind.EnumULong => $"(FuzzEnumULong)(ulong){src}",
-            _ => src,
-        };
     }
 
     private static void EmitCoreScalarStatements(KernelGenerationState state)
@@ -446,7 +414,7 @@ public sealed class ScalarFuzzGenerator
         state.Statements.Add($"{target.Name} = {fallbackRhs};");
     }
 
-    private static void EmitAssignmentStatement(KernelGenerationState state, ScalarLocalVariable target)
+    internal static void EmitAssignmentStatement(KernelGenerationState state, ScalarLocalVariable target)
     {
         string rhs = FuzzScalarExpressionEmitter.GenerateExpression(state, target.Type, depth: 0, maxDepth: 2 + (state.Size / 3));
         if (string.Equals(rhs, target.Name, StringComparison.Ordinal))
@@ -501,7 +469,7 @@ public sealed class ScalarFuzzGenerator
         state.Locals.Add(new ScalarLocalVariable(newName, newType));
     }
 
-    private static void EmitCompoundAssignmentStatement(KernelGenerationState state, ScalarLocalVariable target)
+    internal static void EmitCompoundAssignmentStatement(KernelGenerationState state, ScalarLocalVariable target)
     {
         var rng = state.Rng;
         string[] ops = ["+=", "-=", "*=", "/=", "%=", "&=", "|=", "^=", "<<=", ">>=", ">>>="];
@@ -555,7 +523,8 @@ public sealed class ScalarFuzzGenerator
 
     private string BuildKernelsCompilationUnit(
         IReadOnlyList<GeneratedKernelSpec> kernels,
-        IReadOnlyList<string> extraDeviceFunctions)
+        IReadOnlyList<string> extraDeviceFunctions,
+        bool hasSplitKernel)
     {
         using var writer = new SourceWriter();
         FuzzCaseEmitter.AppendKernelsFileHeader(writer, _options.Namespace);
@@ -574,6 +543,15 @@ public sealed class ScalarFuzzGenerator
                 writer.AppendLine();
             }
 
+            if (hasSplitKernel)
+            {
+                foreach (string helper in _splitHelperSources)
+                {
+                    writer.AppendLine(helper);
+                    writer.AppendLine();
+                }
+            }
+
             for (int i = 0; i < kernels.Count; i++)
             {
                 if (i > 0)
@@ -585,7 +563,7 @@ public sealed class ScalarFuzzGenerator
             }
         }
 
-        return writer.ToString();
+        return hasSplitKernel ? FuzzSplitOracle.WithOracleTwins(writer.ToString()) : writer.ToString();
     }
 
     private string BuildCasesCompilationUnit(IReadOnlyList<GeneratedKernelSpec> kernels)

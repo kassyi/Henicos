@@ -33,64 +33,17 @@ using static Collector;
 using static Privacy;
 using static ProcessProbe;
 
-string? outputPath = null;
-bool json = false;
-for (int i = 0; i < args.Length; i++)
+CommandLineOptions options = CommandLine.Parse(args);
+if (options.ExitCode is { } exitCode)
 {
-    string arg = args[i];
-    if (arg is "--help" or "-h")
-    {
-        Console.Out.Write(Collector.HelpText);
-        return 0;
-    }
-
-    if (arg == "--json")
-    {
-        json = true;
-    }
-    else if (arg == "--output")
-    {
-        if (i + 1 >= args.Length)
-        {
-            Console.Error.WriteLine("collect-env: --output needs a file path.");
-            return 2;
-        }
-
-        outputPath = args[++i];
-    }
-    else if (arg.StartsWith("--output=", StringComparison.Ordinal))
-    {
-        outputPath = arg.Substring("--output=".Length);
-    }
-    else
-    {
-        Console.Error.WriteLine($"collect-env: unknown option '{arg}'. Use --help.");
-        return 2;
-    }
+    return exitCode;
 }
 
 ReportModel model = Collector.Collect();
-string text = json
+string text = options.Json
     ? JsonSerializer.Serialize(model, ReportJsonContext.Default.ReportModel) + "\n"
     : MarkdownReport.ToMarkdown(model);
-
-if (outputPath is null)
-{
-    Console.Out.Write(text);
-    return 0;
-}
-
-try
-{
-    File.WriteAllText(outputPath, text, new UTF8Encoding(false));
-    Console.Out.WriteLine($"collect-env: wrote {Clean(Path.GetFullPath(outputPath))}");
-    return 0;
-}
-catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
-{
-    Console.Error.WriteLine($"collect-env: cannot write '{outputPath}': {Clean(ex.Message)}");
-    return 1;
-}
+return CommandLine.WriteReport(text, options.OutputPath);
 
 /// <summary>The collected report; the shape of the <c>--json</c> output.</summary>
 public sealed class ReportModel
@@ -114,6 +67,72 @@ public sealed class ReportModel
 [JsonSourceGenerationOptions(WriteIndented = true, PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
 [JsonSerializable(typeof(ReportModel))]
 internal sealed partial class ReportJsonContext : JsonSerializerContext;
+
+/// <summary>
+/// What the command line asks for; <see cref="ExitCode"/> is set when the run ends before the report.
+/// </summary>
+internal readonly record struct CommandLineOptions(bool Json, string? OutputPath, int? ExitCode);
+
+/// <summary>Reads the arguments and writes the report to standard output or a file.</summary>
+internal static class CommandLine
+{
+    public static CommandLineOptions Parse(string[] args)
+    {
+        bool json = false;
+        string? outputPath = null;
+        for (int i = 0; i < args.Length; i++)
+        {
+            string arg = args[i];
+            switch (arg)
+            {
+                case "--help" or "-h":
+                    Console.Out.Write(Collector.HelpText);
+                    return Stop(0);
+                case "--json":
+                    json = true;
+                    break;
+                case "--output" when i + 1 >= args.Length:
+                    Console.Error.WriteLine("collect-env: --output needs a file path.");
+                    return Stop(2);
+                case "--output":
+                    outputPath = args[++i];
+                    break;
+                case var other when other.StartsWith("--output=", StringComparison.Ordinal):
+                    outputPath = other.Substring("--output=".Length);
+                    break;
+                default:
+                    Console.Error.WriteLine($"collect-env: unknown option '{arg}'. Use --help.");
+                    return Stop(2);
+            }
+        }
+
+        return new CommandLineOptions(json, outputPath, ExitCode: null);
+    }
+
+    public static int WriteReport(string text, string? outputPath)
+    {
+        if (outputPath is null)
+        {
+            Console.Out.Write(text);
+            return 0;
+        }
+
+        try
+        {
+            File.WriteAllText(outputPath, text, new UTF8Encoding(false));
+            Console.Out.WriteLine($"collect-env: wrote {Clean(Path.GetFullPath(outputPath))}");
+            return 0;
+        }
+        catch (Exception ex) when (
+            ex is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
+        {
+            Console.Error.WriteLine($"collect-env: cannot write '{outputPath}': {Clean(ex.Message)}");
+            return 1;
+        }
+    }
+
+    private static CommandLineOptions Stop(int exitCode) => new(Json: false, OutputPath: null, exitCode);
+}
 
 /// <summary>Entry point of the report: the list of probe calls that fill <see cref="ReportModel"/>.</summary>
 internal static class Collector
@@ -212,60 +231,79 @@ internal static class ProcessProbe
         try
         {
             s_lastError = string.Empty;
-            var startInfo = new ProcessStartInfo
-            {
-                FileName = fileName,
-                Arguments = arguments,
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                RedirectStandardInput = true,
-                CreateNoWindow = true,
-            };
-            if (workingDirectory is not null)
-            {
-                startInfo.WorkingDirectory = workingDirectory;
-            }
-
-            startInfo.Environment["VSCMD_SKIP_SENDTELEMETRY"] = "1";
-            startInfo.Environment["DOTNET_NOLOGO"] = "1";
-            startInfo.Environment["DOTNET_CLI_TELEMETRY_OPTOUT"] = "1";
-            using Process? process = Process.Start(startInfo);
-            if (process is null)
-            {
-                return null;
-            }
-
-            process.StandardInput.Close();
-            Task<string> stdout = process.StandardOutput.ReadToEndAsync();
-            Task<string> stderr = process.StandardError.ReadToEndAsync();
-            if (!process.WaitForExit(TimeoutMilliseconds))
-            {
-                process.Kill(entireProcessTree: true);
-                return null;
-            }
-
-            process.WaitForExit();
-            stderr.Wait(TimeoutMilliseconds);
-            if (process.ExitCode != 0)
-            {
-                s_lastError = stderr.IsCompletedSuccessfully ? FirstLine(stderr.Result) : string.Empty;
-                return null;
-            }
-
-            string output = stdout.Result.Trim();
-            return output.Length == 0 ? null : output;
+            ProcessStartInfo startInfo = CreateStartInfo(fileName, arguments, workingDirectory);
+            return ExecuteProcess(startInfo);
         }
-        catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException or IOException or AggregateException or NotSupportedException)
+        catch (Exception ex) when (ex is System.ComponentModel.Win32Exception
+            or InvalidOperationException
+            or IOException
+            or AggregateException
+            or NotSupportedException)
         {
-            // A tool that is not installed is shown as "not found" in the report; any other failure says why on stderr.
-            s_lastError = Clean(ex.Message);
-            if (ex is not System.ComponentModel.Win32Exception { NativeErrorCode: FileNotFoundError })
-            {
-                Warn($"cannot run {fileName}", ex);
-            }
-
+            HandleProcessException(fileName, ex);
             return null;
+        }
+    }
+
+    private static ProcessStartInfo CreateStartInfo(string fileName, string arguments, string? workingDirectory)
+    {
+        var startInfo = new ProcessStartInfo
+        {
+            FileName = fileName,
+            Arguments = arguments,
+            UseShellExecute = false,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            RedirectStandardInput = true,
+            CreateNoWindow = true,
+        };
+        if (workingDirectory is not null)
+        {
+            startInfo.WorkingDirectory = workingDirectory;
+        }
+
+        startInfo.Environment["VSCMD_SKIP_SENDTELEMETRY"] = "1";
+        startInfo.Environment["DOTNET_NOLOGO"] = "1";
+        startInfo.Environment["DOTNET_CLI_TELEMETRY_OPTOUT"] = "1";
+        return startInfo;
+    }
+
+    private static string? ExecuteProcess(ProcessStartInfo startInfo)
+    {
+        using Process? process = Process.Start(startInfo);
+        if (process is null)
+        {
+            return null;
+        }
+
+        process.StandardInput.Close();
+        Task<string> stdout = process.StandardOutput.ReadToEndAsync();
+        Task<string> stderr = process.StandardError.ReadToEndAsync();
+        if (!process.WaitForExit(TimeoutMilliseconds))
+        {
+            process.Kill(entireProcessTree: true);
+            return null;
+        }
+
+        process.WaitForExit();
+        stderr.Wait(TimeoutMilliseconds);
+        if (process.ExitCode != 0)
+        {
+            s_lastError = stderr.IsCompletedSuccessfully ? FirstLine(stderr.Result) : string.Empty;
+            return null;
+        }
+
+        string output = stdout.Result.Trim();
+        return output.Length == 0 ? null : output;
+    }
+
+    private static void HandleProcessException(string fileName, Exception ex)
+    {
+        // A tool that is not installed is shown as "not found" in the report; any other failure says why on stderr.
+        s_lastError = Clean(ex.Message);
+        if (ex is not System.ComponentModel.Win32Exception { NativeErrorCode: FileNotFoundError })
+        {
+            Warn($"cannot run {fileName}", ex);
         }
     }
 
@@ -475,57 +513,81 @@ internal static class GpuProbe
 {
     internal static void CollectGpus(ReportModel model)
     {
-        string? query = Run("nvidia-smi", "--query-gpu=name,compute_cap,memory.total,driver_version --format=csv,noheader");
-        string driverCuda = string.Empty;
-        string? header = Run("nvidia-smi", string.Empty);
-        if (header is not null)
-        {
-            // Older drivers print "CUDA Version:", newer ones "CUDA UMD Version:".
-            string marker = "CUDA UMD Version:";
-            int at = header.IndexOf(marker, StringComparison.Ordinal);
-            if (at < 0)
-            {
-                marker = "CUDA Version:";
-                at = header.IndexOf(marker, StringComparison.Ordinal);
-            }
-
-            if (at >= 0)
-            {
-                string rest = header.Substring(at + marker.Length).TrimStart();
-                int end = 0;
-                while (end < rest.Length && (char.IsAsciiDigit(rest[end]) || rest[end] == '.'))
-                {
-                    end++;
-                }
-
-                if (end > 0)
-                {
-                    driverCuda = $" (driver CUDA {rest.Substring(0, end)})";
-                }
-            }
-        }
-
+        const string queryArgs =
+            "--query-gpu=name,compute_cap,memory.total,driver_version --format=csv,noheader";
+        string? query = Run("nvidia-smi", queryArgs);
+        string driverCuda = ExtractDriverCudaVersion(Run("nvidia-smi", string.Empty));
         foreach (string line in Lines(query))
         {
-            string[] parts = line.Split(',', StringSplitOptions.TrimEntries);
-            if (parts.Length < 4)
+            string? gpu = ParseGpuLine(line, driverCuda);
+            if (gpu is not null)
             {
-                continue;
+                model.Gpus.Add(gpu);
             }
-
-            string sm = parts[1].Replace(".", string.Empty, StringComparison.Ordinal);
-            string memory = parts[2];
-            if (memory.EndsWith("MiB", StringComparison.Ordinal)
-                && double.TryParse(memory.Substring(0, memory.Length - 3).Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out double mib))
-            {
-                memory = $"{Math.Round(mib / 1024.0).ToString("0", CultureInfo.InvariantCulture)} GB";
-            }
-
-            model.Gpus.Add(Clean($"{parts[0]}, sm_{sm}, {memory}, driver {parts[3]}{driverCuda}"));
         }
     }
 
+    private static string ExtractDriverCudaVersion(string? header)
+    {
+        if (header is null)
+        {
+            return string.Empty;
+        }
+
+        // Older drivers print "CUDA Version:", newer ones "CUDA UMD Version:".
+        string marker = "CUDA UMD Version:";
+        int at = header.IndexOf(marker, StringComparison.Ordinal);
+        if (at < 0)
+        {
+            marker = "CUDA Version:";
+            at = header.IndexOf(marker, StringComparison.Ordinal);
+        }
+
+        if (at < 0)
+        {
+            return string.Empty;
+        }
+
+        string rest = header.Substring(at + marker.Length).TrimStart();
+        int end = 0;
+        while (end < rest.Length && (char.IsAsciiDigit(rest[end]) || rest[end] == '.'))
+        {
+            end++;
+        }
+
+        return end > 0 ? $" (driver CUDA {rest.Substring(0, end)})" : string.Empty;
+    }
+
+    private static string? ParseGpuLine(string line, string driverCuda)
+    {
+        string[] parts = line.Split(',', StringSplitOptions.TrimEntries);
+        if (parts.Length < 4)
+        {
+            return null;
+        }
+
+        string sm = parts[1].Replace(".", string.Empty, StringComparison.Ordinal);
+        string memory = parts[2];
+        if (memory.EndsWith("MiB", StringComparison.Ordinal)
+            && double.TryParse(
+                memory.Substring(0, memory.Length - 3).Trim(),
+                NumberStyles.Float,
+                CultureInfo.InvariantCulture,
+                out double mib))
+        {
+            memory = $"{Math.Round(mib / 1024.0).ToString("0", CultureInfo.InvariantCulture)} GB";
+        }
+
+        return Clean($"{parts[0]}, sm_{sm}, {memory}, driver {parts[3]}{driverCuda}");
+    }
+
     internal static string CudaToolkit()
+    {
+        string? output = QueryNvccOutput();
+        return output is null ? NotFound : ParseNvccVersion(output);
+    }
+
+    private static string? QueryNvccOutput()
     {
         string exe = OperatingSystem.IsWindows() ? "nvcc.exe" : "nvcc";
         string? output = Run("nvcc", "--version");
@@ -543,11 +605,11 @@ internal static class GpuProbe
             output = Run("/usr/local/cuda/bin/nvcc", "--version");
         }
 
-        if (output is null)
-        {
-            return NotFound;
-        }
+        return output;
+    }
 
+    private static string ParseNvccVersion(string output)
+    {
         foreach (string line in Lines(output))
         {
             const string marker = "release ";
@@ -735,24 +797,49 @@ internal static class MarkdownReport
     public static string ToMarkdown(ReportModel m)
     {
         var sb = new StringBuilder();
+        AppendHardware(sb, m);
+        AppendGpus(sb, m);
+        AppendToolchain(sb, m);
+        AppendGSharp(sb, m);
+        return sb.ToString();
+    }
+
+    private static void AppendHardware(StringBuilder sb, ReportModel m)
+    {
         sb.Append("- OS: ").Append(m.Os).Append('\n');
         sb.Append("- CPU / RAM: ").Append(m.Cpu).Append(", ").Append(m.Memory).Append('\n');
         sb.Append("- Motherboard: ").Append(m.Motherboard).Append('\n');
+    }
+
+    private static void AppendGpus(StringBuilder sb, ReportModel m)
+    {
         if (m.Gpus.Count == 0)
         {
             sb.Append("- GPU: ").Append(NotFound).Append('\n');
+            return;
         }
 
         for (int i = 0; i < m.Gpus.Count; i++)
         {
-            sb.Append("- GPU ").Append(i.ToString(CultureInfo.InvariantCulture)).Append(": ").Append(m.Gpus[i]).Append('\n');
+            sb.Append("- GPU ")
+                .Append(i.ToString(CultureInfo.InvariantCulture))
+                .Append(": ")
+                .Append(m.Gpus[i])
+                .Append('\n');
         }
+    }
 
+    private static void AppendToolchain(StringBuilder sb, ReportModel m)
+    {
         sb.Append("- CUDA Toolkit: ").Append(m.CudaToolkit).Append(" (CUDA_PATH ").Append(m.CudaPath).Append(")\n");
         sb.Append("- Host C++: ").Append(m.HostCpp).Append('\n');
         sb.Append("- .NET: SDK ").Append(m.DotnetSdk).Append(" (global.json: ").Append(m.GlobalJson).Append(")\n");
         sb.Append("  - SDKs: ").Append(Join(m.DotnetSdks)).Append('\n');
         sb.Append("  - Runtimes: ").Append(Join(m.DotnetRuntimes)).Append('\n');
+    }
+
+    private static void AppendGSharp(StringBuilder sb, ReportModel m)
+    {
         if (m.GSharp is not null)
         {
             sb.Append("- G#: ").Append(m.GSharp).Append('\n');
@@ -772,7 +859,6 @@ internal static class MarkdownReport
         }
 
         sb.Append('\n');
-        return sb.ToString();
     }
 
     private static string Join(List<string> items) => items.Count == 0 ? NotFound : string.Join(", ", items);

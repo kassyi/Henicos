@@ -16,8 +16,9 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum.Expressions;
 public sealed class SignPlannerTests
 {
     // Every operation over every kind of operand sign: "+" and "-" on the host, "d" on the device (a unary operation
-    // takes "+" as its unused second operand). Expected: a host sign, a kernel, or the operand Max / Min choose
-    // ("first +") with its sign. 7 binary operations x 9 + 3 unary ones x 3 = 72 rows.
+    // takes "+" as its unused second operand). Expected: a host sign, a kernel, the operand Max / Min choose with its
+    // sign ("first +"), or a kernel that computes the value with the host sign it keeps ("Select +"). 7 binary
+    // operations x 9 + 3 unary ones x 3 = 72 rows.
     public static TheoryData<string, string, string, string> Plans() => new()
     {
         // mutant: PlanAddSubtract `first.HostNegative == effectiveSecond` -> `!=`
@@ -72,20 +73,20 @@ public sealed class SignPlannerTests
         { nameof(SignedOperation.Remainder), "d", "d", "RemainderSign" },
         // mutant: PlanSelect without the different-host-signs case (a comparison for every value), or Max and Min
         // choosing the same operand
-        { nameof(SignedOperation.Max), "+", "+", "Select" },
+        { nameof(SignedOperation.Max), "+", "+", "Select +" },
         { nameof(SignedOperation.Max), "+", "-", "first +" },
         { nameof(SignedOperation.Max), "+", "d", "Select" },
         { nameof(SignedOperation.Max), "-", "+", "second +" },
-        { nameof(SignedOperation.Max), "-", "-", "Select" },
+        { nameof(SignedOperation.Max), "-", "-", "Select -" },
         { nameof(SignedOperation.Max), "-", "d", "Select" },
         { nameof(SignedOperation.Max), "d", "+", "Select" },
         { nameof(SignedOperation.Max), "d", "-", "Select" },
         { nameof(SignedOperation.Max), "d", "d", "Select" },
-        { nameof(SignedOperation.Min), "+", "+", "Select" },
+        { nameof(SignedOperation.Min), "+", "+", "Select +" },
         { nameof(SignedOperation.Min), "+", "-", "second -" },
         { nameof(SignedOperation.Min), "+", "d", "Select" },
         { nameof(SignedOperation.Min), "-", "+", "first -" },
-        { nameof(SignedOperation.Min), "-", "-", "Select" },
+        { nameof(SignedOperation.Min), "-", "-", "Select -" },
         { nameof(SignedOperation.Min), "-", "d", "Select" },
         { nameof(SignedOperation.Min), "d", "+", "Select" },
         { nameof(SignedOperation.Min), "d", "-", "Select" },
@@ -115,21 +116,33 @@ public sealed class SignPlannerTests
 
         var plan = SignPlanner.For(operation, a, b);
 
-        // A host plan carries the sign (and, for Max / Min, the chosen operand); a device plan names the kernel
-        var chosen = expected.StartsWith("first ", StringComparison.Ordinal) ? ChosenOperand.First
-            : expected.StartsWith("second ", StringComparison.Ordinal) ? ChosenOperand.Second
-            : ChosenOperand.None;
-        var sign = chosen == ChosenOperand.None ? expected : expected[(expected.IndexOf(' ') + 1)..];
-        if (sign is "+" or "-")
+        // Expected: an optional chosen operand ("first", "second"), an optional kernel and an optional host sign
+        var chosen = ChosenOperand.None;
+        var kernel = SignKernel.None;
+        string? sign = null;
+        foreach (var token in expected.Split(' '))
         {
-            Assert.True(plan.IsHost, $"{operation} {first} {second}: {plan}");
-            Assert.Equal(sign == "-", plan.HostNegative);
-            Assert.Equal(chosen, plan.Chosen);
+            if (token is "first" or "second")
+            {
+                chosen = token == "first" ? ChosenOperand.First : ChosenOperand.Second;
+            }
+            else if (token is "+" or "-")
+            {
+                sign = token;
+            }
+            else
+            {
+                kernel = Enum.Parse<SignKernel>(token);
+            }
         }
-        else
+
+        var context = $"{operation} {first} {second}: {plan}";
+        Assert.True(chosen == plan.Chosen, context);
+        Assert.True(kernel == plan.Kernel, context);
+        Assert.True((sign is not null) == plan.HostSign, context);
+        if (sign is not null)
         {
-            Assert.False(plan.IsHost, $"{operation} {first} {second}: {plan}");
-            Assert.Equal(Enum.Parse<SignKernel>(expected), plan.Kernel);
+            Assert.True((sign == "-") == plan.HostNegative, context);
         }
     }
 

@@ -332,19 +332,19 @@ public class GpuBigIntDivRemTests : IDisposable
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Stdlib)]
     [Scenario(TestScenario.SadPath)]
-    public void Div_And_Mod_MismatchedBufferSizes_ThrowArgumentException()
+    public void Div_And_Mod_NarrowerThanTheirMinimum_ThrowArgumentException()
     {
         using var workspace = new GpuWorkspace(64, GpuExecutionEngine.GSharpAot);
 
         using var gpuA = new GpuBigUInt(workspace, RandomWords(seed: 211, 4, topBit: true));
         using var gpuB = new GpuBigUInt(workspace, [7u, 0u, 0u, 0u]);
-        // A result buffer one word longer than the operands: Div and Mod require equal sizes.
-        using var widerResult = new GpuBigUInt(workspace, 5);
+        // The quotient needs the dividend's 4 words, the remainder the narrower operand's 4 words
+        using var narrowerResult = new GpuBigUInt(workspace, 3);
 
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.cs:541 `ThrowIfSizeMismatch(leftOperand, rightOperand, resultBuffer);` -> removed
-        Assert.Throws<ArgumentException>(() => GpuBigIntDivRem.Div(gpuA, gpuB, widerResult));
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.cs:557 `ThrowIfSizeMismatch(leftOperand, rightOperand, resultBuffer);` -> removed
-        Assert.Throws<ArgumentException>(() => GpuBigIntDivRem.Mod(gpuA, gpuB, widerResult));
+        // mutant: GpuBigIntDivRem.cs DivCore `ThrowIfResultNarrower` removed
+        Assert.Throws<ArgumentException>(() => GpuBigIntDivRem.Div(gpuA, gpuB, narrowerResult));
+        // mutant: GpuBigIntDivRem.cs ModCore `ThrowIfResultNarrower` removed
+        Assert.Throws<ArgumentException>(() => GpuBigIntDivRem.Mod(gpuA, gpuB, narrowerResult));
     }
 
     [SkippableFact]

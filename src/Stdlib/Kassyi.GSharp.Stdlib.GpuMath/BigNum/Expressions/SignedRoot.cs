@@ -15,28 +15,14 @@ internal static class SignedRoot
         }
     }
 
-    // The first numWords words of target, borrowed
-    public static GpuBigUInt Head(GpuBigUInt target, int numWords) =>
-        numWords == target.NumWords ? target : new GpuBigUInt(target.Workspace, target.Handle.Slice(0, numWords));
-
-    // Clears the words of target above the first numWords (a memset, which a CUDA graph capture records)
-    public static void ClearAbove(GpuBigUInt target, int numWords)
-    {
-        if (target.NumWords > numWords)
-        {
-            target.Workspace.Provider.ClearMemoryAsync(IntPtr.Add(target.DevicePointer, numWords * sizeof(uint)),
-                target.NumWords - numWords, target.Workspace.Stream);
-        }
-    }
-
     // An owned temporary of numWords words when the target overlaps an operand; otherwise the default value, which owns
     // nothing
-    public static GpuBigUInt StagingFor(GpuWorkspace workspace, GpuBigUInt? target, int numWords, GpuBigInt operand0,
-        GpuBigInt operand1)
+    public static GpuBigUInt StagingFor(GpuWorkspace workspace, GpuBigUInt? target, int numWords, GpuBigUInt operand0,
+        GpuBigUInt operand1)
     {
         if (target is not { } t ||
-            (!DeviceRanges.Overlaps(t.Handle, operand0.Value.Handle) &&
-             !DeviceRanges.Overlaps(t.Handle, operand1.Value.Handle)))
+            (!DeviceRanges.Overlaps(t.Handle, operand0.Handle) &&
+             !DeviceRanges.Overlaps(t.Handle, operand1.Handle)))
         {
             return default;
         }
@@ -46,7 +32,7 @@ internal static class SignedRoot
 
     // The value in the buffer the caller sees: copied from the temporary when one was used; a caller's target gets its
     // words above the result cleared and is returned whole
-    public static GpuBigInt Deliver(GpuBigInt value, GpuBigUInt staging, GpuBigUInt result, GpuBigUInt? target)
+    public static GpuBigUInt Deliver(GpuBigUInt staging, GpuBigUInt result, GpuBigUInt? target)
     {
         if (!staging.Handle.IsDefault)
         {
@@ -55,10 +41,10 @@ internal static class SignedRoot
 
         if (target is not { } t)
         {
-            return new GpuBigInt(result, value.IsNegative);
+            return result;
         }
 
-        ClearAbove(t, result.NumWords);
-        return new GpuBigInt(t, value.IsNegative);
+        ResultBuffers.ClearAbove(t, result.NumWords);
+        return t;
     }
 }

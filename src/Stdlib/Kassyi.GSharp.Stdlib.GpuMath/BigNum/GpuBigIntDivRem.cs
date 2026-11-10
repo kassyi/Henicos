@@ -17,27 +17,15 @@ public static partial class GpuBigIntDivRem
         GpuBigUInt RemainderExtended,
         GpuBigUInt BPaddedExtended);
 
-    // [WHY] Validates buffer lengths at the host boundary before GPU kernel dispatch to avoid silent CUDA out-of-bounds writes.
-    [ExcludeFromCodeCoverage]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    // ModPow takes its base, modulus and result in one width
     private static void ThrowIfSizeMismatch(GpuBigUInt leftOperand, GpuBigUInt rightOperand,
         GpuBigUInt resultBuffer)
     {
         if (leftOperand.NumWords != rightOperand.NumWords || leftOperand.NumWords != resultBuffer.NumWords)
         {
             throw new ArgumentException(
-                $"All buffers must have the same size. a: {leftOperand.NumWords}, b: {rightOperand.NumWords}, result: {resultBuffer.NumWords} words.");
-        }
-    }
-
-    [ExcludeFromCodeCoverage]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static void ThrowIfSizeMismatch(GpuBigUInt leftOperand, GpuBigUInt resultBuffer)
-    {
-        if (leftOperand.NumWords != resultBuffer.NumWords)
-        {
-            throw new ArgumentException(
-                $"Result buffer must have the same size as input buffer. a: {leftOperand.NumWords}, result: {resultBuffer.NumWords} words.");
+                $"All buffers must have the same size. a: {leftOperand.NumWords}, b: {rightOperand.NumWords}, " +
+                $"result: {resultBuffer.NumWords} words.");
         }
     }
 
@@ -237,7 +225,8 @@ public static partial class GpuBigIntDivRem
         var lz = n * 32 - bActualBits;
 
         using var bNorm = new GpuBigUInt(rightOperand.Workspace, n);
-        GpuBigIntMath.ShiftLeft(rightOperand, lz, bNorm);
+        // lz is the count of leading zero bits of b in its n words: only zero bits are shifted out
+        GpuBigIntMath.ShiftLeftUnchecked(rightOperand, lz, bNorm);
 
         var marginBits = 512;
         var marginWords = marginBits / 32;
@@ -250,7 +239,9 @@ public static partial class GpuBigIntDivRem
         Reciprocal(bNorm, reciprocalNorm, targetBits, marginWords);
 
         using var reciprocalOfB = new GpuBigUInt(rightOperand.Workspace, targetWords);
-        GpuBigIntMath.ShiftLeft(reciprocalNorm, lz, reciprocalOfB);
+        // The reciprocal is at most 2^(targetBits - 32n + 1) (bNorm has its top bit set), so shifted by lz it is at
+        // most 2^(targetBits - bBits + 1) <= 2^targetBits, which the targetWords words (one word to spare) hold
+        GpuBigIntMath.ShiftLeftUnchecked(reciprocalNorm, lz, reciprocalOfB);
 
         Reduce(leftOperand, rightOperand, reciprocalOfB, targetBits, aActualWords, quotientBuffer, remainderBuffer);
     }
@@ -439,7 +430,8 @@ public static partial class GpuBigIntDivRem
         leftOperandExtended.CopyFrom(leftOperand, numWords: Math.Min(nA, evalWords));
 
         using var remainderExtended = new GpuBigUInt(rightOperand.Workspace, evalWords);
-        GpuBigIntMath.Sub(leftOperandExtended, qbTrunc, remainderExtended);
+        // Two's complement on purpose: a quotient one too large makes the difference negative, read from its top bit
+        BigIntWideOps.AddSubtractModulo(leftOperandExtended, qbTrunc, remainderExtended, subtract: true);
 
         var topWord = remainderExtended.GetTopWords(1)[0];
         var underflow = (topWord & 0x80000000u) != 0;
@@ -542,7 +534,8 @@ public static partial class GpuBigIntDivRem
         leftOperandExtended.CopyFrom(leftOperand, numWords: Math.Min(nA, evalWords));
 
         using var remainderExtended = new GpuBigUInt(rightOperand.Workspace, evalWords);
-        GpuBigIntMath.Sub(leftOperandExtended, qbTrunc, remainderExtended);
+        // Two's complement on purpose: a quotient one too large makes the difference negative, read from its top bit
+        BigIntWideOps.AddSubtractModulo(leftOperandExtended, qbTrunc, remainderExtended, subtract: true);
 
         using var bPaddedExtended = new GpuBigUInt(rightOperand.Workspace, evalWords);
         bPaddedExtended.CopyFrom(rightOperand, numWords: Math.Min(n, evalWords));
@@ -580,7 +573,8 @@ public static partial class GpuBigIntDivRem
             GpuBigIntMath.Sub(ctx.QuotientBuffer, one, tempQuot);
             ctx.QuotientBuffer.CopyFrom(tempQuot, numWords: ctx.QuotientBuffer.NumWords);
 
-            GpuBigIntMath.Add(ctx.RemainderExtended, ctx.BPaddedExtended, tempRem);
+            // The negative remainder (two's complement) plus b: modulo the width, as the difference was taken
+            BigIntWideOps.AddSubtractModulo(ctx.RemainderExtended, ctx.BPaddedExtended, tempRem, subtract: false);
             ctx.RemainderExtended.CopyFrom(tempRem, numWords: ctx.EvalWords);
 
             var topWord = ctx.RemainderExtended.GetTopWords(1)[0];
@@ -611,12 +605,15 @@ public static partial class GpuBigIntDivRem
             if (rBits > bBits + 1)
             {
                 var shift = rBits - bBits - 1;
-                GpuBigIntMath.ShiftLeft(ctx.BPaddedExtended, shift, shiftedB);
+                // b shifted by rBits - bBits - 1 has rBits - 1 bits, below the width of the remainder it is compared
+                // with (both buffers have EvalWords words)
+                GpuBigIntMath.ShiftLeftUnchecked(ctx.BPaddedExtended, shift, shiftedB);
 
                 if (GpuBigIntMath.IsLessThan(ctx.RemainderExtended, shiftedB))
                 {
                     shift--;
-                    GpuBigIntMath.ShiftLeft(ctx.BPaddedExtended, shift, shiftedB);
+                    // One bit less than the shift above, which fits
+                    GpuBigIntMath.ShiftLeftUnchecked(ctx.BPaddedExtended, shift, shiftedB);
                 }
 
                 GpuBigIntMath.Sub(ctx.RemainderExtended, shiftedB, tempRem);
@@ -656,7 +653,8 @@ public static partial class GpuBigIntDivRem
     /// <param name="rightOperand">The divisor operand.</param>
     /// <param name="resultBuffer">The destination buffer receiving the quotient. It may be either operand, or overlap
     /// them; the result is the one of separate buffers (see <see cref="DivRem"/>).</param>
-    /// <exception cref="ArgumentException">Thrown when buffer sizes do not match.</exception>
+    /// <exception cref="ArgumentException"><paramref name="resultBuffer"/> is narrower than <paramref
+    /// name="leftOperand"/>; nothing is written.</exception>
     /// <exception cref="DivideByZeroException">Thrown when <paramref name="rightOperand"/> is zero.</exception>
     public static void Div(
         scoped GpuBigUIntView leftOperand,
@@ -669,9 +667,12 @@ public static partial class GpuBigIntDivRem
     private static void DivCore(GpuBigUInt leftOperand, GpuBigUInt rightOperand,
         GpuBigUInt resultBuffer)
     {
-        ThrowIfSizeMismatch(leftOperand, rightOperand, resultBuffer);
-        using var tempR = new GpuBigUInt(leftOperand.Workspace, leftOperand.NumWords);
-        DivRem(leftOperand, rightOperand, resultBuffer, tempR);
+        // The quotient is at most the dividend; operands of any widths
+        var words = leftOperand.NumWords;
+        ResultBuffers.ThrowIfNarrower(resultBuffer, words, nameof(Div));
+        using var tempR = leftOperand.Workspace.RentTemp(rightOperand.NumWords);
+        DivRem(leftOperand, rightOperand, ResultBuffers.Head(resultBuffer, words), tempR);
+        ResultBuffers.ClearAbove(resultBuffer, words);
     }
 
     /// <summary>
@@ -681,7 +682,8 @@ public static partial class GpuBigIntDivRem
     /// <param name="rightOperand">The divisor operand.</param>
     /// <param name="resultBuffer">The destination buffer receiving the remainder. It may be either operand, or overlap
     /// them; the result is the one of separate buffers (see <see cref="DivRem"/>).</param>
-    /// <exception cref="ArgumentException">Thrown when buffer sizes do not match.</exception>
+    /// <exception cref="ArgumentException"><paramref name="resultBuffer"/> is narrower than the narrower operand;
+    /// nothing is written.</exception>
     /// <exception cref="DivideByZeroException">Thrown when <paramref name="rightOperand"/> is zero.</exception>
     public static void Mod(
         scoped GpuBigUIntView leftOperand,
@@ -694,9 +696,22 @@ public static partial class GpuBigIntDivRem
     private static void ModCore(GpuBigUInt leftOperand, GpuBigUInt rightOperand,
         GpuBigUInt resultBuffer)
     {
-        ThrowIfSizeMismatch(leftOperand, rightOperand, resultBuffer);
-        using var tempQ = new GpuBigUInt(leftOperand.Workspace, leftOperand.NumWords);
-        DivRem(leftOperand, rightOperand, tempQ, resultBuffer);
+        // The remainder is below the divisor and at most the dividend; operands of any widths. DivRem writes a
+        // remainder as wide as the divisor: a narrower result buffer gets its low words, which hold it.
+        var workspace = leftOperand.Workspace;
+        ResultBuffers.ThrowIfNarrower(resultBuffer, Math.Min(leftOperand.NumWords, rightOperand.NumWords), nameof(Mod));
+        var divisorWords = rightOperand.NumWords;
+        using var tempQ = workspace.RentTemp(leftOperand.NumWords);
+        if (resultBuffer.NumWords >= divisorWords)
+        {
+            DivRem(leftOperand, rightOperand, tempQ, ResultBuffers.Head(resultBuffer, divisorWords));
+            ResultBuffers.ClearAbove(resultBuffer, divisorWords);
+            return;
+        }
+
+        using var tempR = workspace.RentTemp(divisorWords);
+        DivRem(leftOperand, rightOperand, tempQ, tempR);
+        resultBuffer.CopyFrom(tempR, numWords: resultBuffer.NumWords);
     }
 
     /// <summary>Extracts the most significant words (up to 4 limbs) as a <see cref="BigInteger"/> for initial Newton-Raphson seed estimation.</summary>

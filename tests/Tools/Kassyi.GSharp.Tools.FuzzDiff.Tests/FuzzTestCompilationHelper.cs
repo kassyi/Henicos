@@ -145,11 +145,15 @@ namespace Kassyi.GSharp.Tools.FuzzDiff.Tests
             return AssemblyLoadContext.Default.LoadFromStream(peStream);
         }
 
-        internal static Action<int[], int[], int[], ulong[]> CreateKernelDelegate(Type kernelType, string methodName)
+        internal static Action<int[], int[], int[], ulong[]> CreateKernelDelegate(Type kernelType, string methodName) =>
+            CreateStaticDelegate<Action<int[], int[], int[], ulong[]>>(kernelType, methodName);
+
+        internal static TDelegate CreateStaticDelegate<TDelegate>(Type type, string methodName)
+            where TDelegate : Delegate
         {
-            var method = kernelType.GetMethod(methodName, BindingFlags.Public | BindingFlags.Static)
+            var method = type.GetMethod(methodName, BindingFlags.Public | BindingFlags.Static)
                 ?? throw new InvalidOperationException($"Missing method {methodName}.");
-            return method.CreateDelegate<Action<int[], int[], int[], ulong[]>>();
+            return method.CreateDelegate<TDelegate>();
         }
 
         internal static bool EvaluatesToMismatch(
