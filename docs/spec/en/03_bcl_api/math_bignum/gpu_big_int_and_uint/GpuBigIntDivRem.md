@@ -58,7 +58,7 @@ The destination buffer receiving the quotient. It may be either operand, or over
 #### Exceptions
 
 `ArgumentException`<br>
-Thrown when `leftOperand`, `rightOperand`, and `resultBuffer` do not have the same word length.
+Thrown when `resultBuffer` is narrower than `leftOperand` (the quotient is at most the dividend); nothing is written. The operands may have different widths; a wider `resultBuffer` gets zeros above the quotient.
 
 `DivideByZeroException`<br>
 Thrown when `rightOperand` is zero.
@@ -141,7 +141,7 @@ The destination buffer receiving the remainder. It may be either operand, or ove
 #### Exceptions
 
 `ArgumentException`<br>
-Thrown when the operands and result buffer do not have the same number of words.
+Thrown when `resultBuffer` is narrower than the narrower operand (the remainder is below the divisor and at most the dividend); nothing is written. The operands may have different widths; a wider `resultBuffer` gets zeros above the remainder.
 
 `DivideByZeroException`<br>
 Thrown when the divisor (`rightOperand`) is zero.
@@ -281,7 +281,7 @@ The destination buffer receiving the integer square root. It may be the operand,
 #### Exceptions
 
 `ArgumentException`<br>
-Thrown when `leftOperand` and `resultBuffer` do not have the same word length (`NumWords`).
+Thrown when `resultBuffer` is narrower than half the bits of `leftOperand`, rounded up to words (`ceil(32 * leftOperand.NumWords / 2)` bits); nothing is written. A wider `resultBuffer` gets zeros above the root.
 
 ## Examples
 
