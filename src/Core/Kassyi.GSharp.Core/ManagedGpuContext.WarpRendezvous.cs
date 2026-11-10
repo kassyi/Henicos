@@ -5,9 +5,9 @@ using System.Runtime.CompilerServices;
 namespace Kassyi.GSharp.Core;
 
 // The lanes of a warp meet at the same instance of a warp collective (#1468). Each lane publishes its value with the
-// instance (the frame, the call and how often the frame reached it) and waits; the launcher runs it again
-// when every lane of the mask that has not exited published the same instance in an earlier round, and reports lanes
-// that never meet. The native CPU prelude (WarpAndHints.hpp) implements the same.
+// instance (the frame, the call and how often the frame reached it) and waits; the launcher runs it again when every
+// lane of the mask that has not exited published the same instance in an earlier round, and reports lanes that never
+// meet. The native CPU prelude (WarpAndHints.hpp) implements the same.
 public static partial class ManagedGpuContext
 {
     private struct WarpRecord
@@ -45,8 +45,8 @@ public static partial class ManagedGpuContext
     private static int s_warpRound;
 
     // The thread-dependent branches and loops of methods that reach Warp.ActiveMask() that each thread of the block is
-    // inside, innermost last (#844): WarpRegionCapacity entries per thread; and whether it waits where
-    // the innermost one ends, since which round and where. Allocated by the first kernel that enters one
+    // inside, innermost last (#844): WarpRegionCapacity entries per thread; and whether it waits where the innermost
+    // one ends, since which round and where. Allocated by the first kernel that enters one
     [ThreadStatic]
     private static WarpInstance[]? s_warpRegions;
 
@@ -221,8 +221,8 @@ public static partial class ManagedGpuContext
         GetVoteLanes(LinearThreadId, BeginWarpRead(ref frame, site), mask, "Gpu.SyncWarp", location);
 
     /// <summary>
-    /// Internal: <c>Warp.ActiveMask()</c> (#844): the lanes of the caller's warp that stopped at the same call
-    /// in the same round, which the lanes that reach it together on the GPU do. Do not use directly.
+    /// Internal: <c>Warp.ActiveMask()</c> (#844): the lanes of the caller's warp that stopped at the same call in the
+    /// same round, which the lanes that reach it together on the GPU do. Do not use directly.
     /// </summary>
     /// <typeparam name="TFrame">The frame of the state machine.</typeparam>
     /// <param name="root">Unused: the managed path keeps the published values itself.</param>
@@ -367,11 +367,10 @@ public static partial class ManagedGpuContext
 
     private static bool[] WarpMayPass => s_warpMayPass ??= new bool[MaxThreadsPerBlock];
 
-    // [WHY] Which waiting lanes of a warp go on is decided once per round,
-    // before any lane of the warp takes its step (the
-    // first call for the warp in the round): a lane that leaves the branch by a jump earlier in the same round
-    // must still hold back the lanes after it, so that every lane of the entry goes on in the same round
-    // (the native prelude does the same)
+    // [WHY] Which waiting lanes of a warp go on is decided once per round, before any lane of the warp takes its step
+    // (the first call for the warp in the round): a lane that leaves the branch by a jump earlier in the same round
+    // must still hold back the lanes after it, so that every lane of the entry goes on in the same round (the native
+    // prelude does the same)
     private static void DecideReconvergence(int threadIndex, int round)
     {
         var warp = threadIndex >> 5;
@@ -392,9 +391,9 @@ public static partial class ManagedGpuContext
         }
     }
 
-    // The other lanes of the warp of tid that have not exited and are inside the entry of the branch
-    // where tid waits, and have not arrived at its end before round. A lane that arrived in this round
-    // still counts: the lanes of an entry all go on in the same round (the native prelude computes the same)
+    // The other lanes of the warp of tid that have not exited and are inside the entry of the branch where tid waits,
+    // and have not arrived at its end before round. A lane that arrived in this round still counts: the lanes of an
+    // entry all go on in the same round (the native prelude computes the same)
     private static uint GetMissingReconvergeLanes(int tid, int round)
     {
         var region = WarpRegions[WarpRegionCapacity * tid + WarpRegionDepth[tid] - 1];
@@ -433,8 +432,8 @@ public static partial class ManagedGpuContext
     // The slot of the value that thread tid waits with: the one it published last
     private static int GetWaitSlot(int tid) => WarpRecordSlots * tid + (WarpRecordNext[tid] ^ 1);
 
-    // The lanes of the mask that tid waits with that have not exited
-    // and have not published the same instance before round
+    // The lanes of the mask that tid waits with that have not exited and have not published the same instance before
+    // round
     private static uint GetMissingLanes(int tid, int round)
     {
         var wait = WarpRecords[GetWaitSlot(tid)];
@@ -460,8 +459,8 @@ public static partial class ManagedGpuContext
         return missing;
     }
 
-    // The slot in which thread tid published the instance, or -1
-    // (a visit count starts at 1, so an empty slot never matches)
+    // The slot in which thread tid published the instance, or -1 (a visit count starts at 1, so an empty slot never
+    // matches)
     private static int FindWarpRecord(int tid, in WarpInstance instance)
     {
         for (var i = 0; i < WarpRecordSlots; i++)
@@ -484,9 +483,9 @@ public static partial class ManagedGpuContext
         return new WarpInstance(frame.WarpPath, site, frame.GetWarpVisit(site));
     }
 
-    // Reads the value that lane srcLane of the caller's warp published for the same instance of the call.
-    // Reading a lane that does not exist in the block, that has exited or that does not take part, or one
-    // that called it with another mask, is undefined on CUDA (the native prelude writes the same text)
+    // Reads the value that lane srcLane of the caller's warp published for the same instance of the call. Reading a
+    // lane that does not exist in the block, that has exited or that does not take part, or one that called it with
+    // another mask, is undefined on CUDA (the native prelude writes the same text)
     private static T ReadShuffleLane<T>(int linearTid, in WarpInstance instance, uint mask, int srcLane, string name,
         string location) where T : unmanaged
     {

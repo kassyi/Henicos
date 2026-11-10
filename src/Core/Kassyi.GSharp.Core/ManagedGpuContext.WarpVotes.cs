@@ -127,8 +127,9 @@ public static partial class ManagedGpuContext
         return BallotLanes(linearTid, instance, mask, lanes, Name, location) != 0u;
     }
 
-    /// <summary>Internal mock for <c>Warp.ReduceAddSync</c>: the sum, wrapping around like the GPU.
-    /// Do not use directly.</summary>
+    /// <summary>
+    /// Internal mock for <c>Warp.ReduceAddSync</c>: the sum, wrapping around like the GPU. Do not use directly.
+    /// </summary>
     /// <typeparam name="TFrame">The frame of the state machine.</typeparam>
     /// <typeparam name="T"><see cref="int"/> or <see cref="uint"/>.</typeparam>
     /// <param name="root">Unused: the managed path keeps the published values itself.</param>
