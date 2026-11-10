@@ -11,7 +11,7 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules;
 /// <remarks>
 /// <c>StructPropertyEmitter</c> emits the getter and setter as member functions under the C++ name of the property
 /// (<see cref="CppNameResolver"/>), so the caller writes the receiver and the name as for any member, a <c>ref</c>
-/// receiver included. A computed property is defined by <see cref="StructAbiMembers.IsComputedProperty"/>.
+/// receiver included. A computed property is defined by <see cref="StructAbiMembers.HasAccessorFunctions"/>.
 /// </remarks>
 internal static class ComputedPropertyGetterCall
 {
@@ -19,20 +19,20 @@ internal static class ComputedPropertyGetterCall
     public static bool IsGetter(ISymbol? symbol, ITranspilerDialect dialect) =>
         symbol is IPropertySymbol { GetMethod: not null, ContainingType: { } type } property &&
         GlobalCppNames.IsEncodedUserType(type, dialect) &&
-        StructAbiMembers.IsComputedProperty(property);
+        StructAbiMembers.HasAccessorFunctions(property);
 
     /// <summary>Whether <paramref name="symbol"/> is a computed property that is assigned through its setter.</summary>
     public static bool IsSetter(ISymbol? symbol, ITranspilerDialect dialect) =>
         symbol is IPropertySymbol { SetMethod: not null, ContainingType: { } type } property &&
         GlobalCppNames.IsEncodedUserType(type, dialect) &&
-        StructAbiMembers.IsComputedProperty(property);
+        StructAbiMembers.HasAccessorFunctions(property);
 
     /// <summary>Whether <paramref name="expression"/> resolves to a computed property on a user struct.</summary>
     public static bool IsComputedPropertyTarget(ExpressionSyntax expression, ref TranspileContext context) =>
         GetTargetSymbol(expression, context.Query.SemanticModel) is
             IPropertySymbol { ContainingType: { } type } property &&
         GlobalCppNames.IsEncodedUserType(type, context.Emitter.Dialect) &&
-        StructAbiMembers.IsComputedProperty(property);
+        StructAbiMembers.HasAccessorFunctions(property);
 
     /// <summary>
     /// Whether the getter of <paramref name="property"/> is a <c>const</c> member function: a <c>readonly</c> getter

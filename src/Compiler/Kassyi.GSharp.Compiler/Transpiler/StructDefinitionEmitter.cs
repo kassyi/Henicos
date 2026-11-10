@@ -140,7 +140,7 @@ internal static class StructDefinitionEmitter
                         ref hasDefaultConstructor, ref context);
                 }
             }
-            else if (member is IPropertySymbol property && StructAbiMembers.IsComputedProperty(property))
+            else if (member is IPropertySymbol property && StructAbiMembers.HasAccessorFunctions(property))
             {
                 StructPropertyEmitter.WriteComputedProperty(property, ref context);
             }

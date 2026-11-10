@@ -3,7 +3,7 @@ using Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules;
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
 /// <summary>
-/// Emits a computed property of a struct (<see cref="StructAbiMembers.IsComputedProperty"/>) as getter and setter
+/// Emits a computed property of a struct (<see cref="StructAbiMembers.HasAccessorFunctions"/>) as getter and setter
 /// member functions under the C++ name of the property.
 /// </summary>
 internal static class StructPropertyEmitter

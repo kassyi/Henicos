@@ -81,7 +81,7 @@ public readonly record struct StructAbiMember(
 /// <see cref="StructAbiMember.ElementCount"/> and copy a <c>fixed</c> buffer as one block; an <c>[InlineArray(N)]</c>
 /// struct is one block when its element lays out the same on both sides, and is copied element by element otherwise.
 /// A property without a backing field has no storage on either side and is listed only when
-/// <c>includeComputedProperties</c> is set; the device definition emits a <see cref="IsComputedProperty">computed
+/// <c>includeComputedProperties</c> is set; the device definition emits a <see cref="HasAccessorFunctions">computed
 /// property</see>'s accessors as member functions instead (pinned by <c>StructAbiTests</c>).
 /// </remarks>
 internal static class StructAbiMembers
@@ -96,7 +96,7 @@ internal static class StructAbiMembers
     /// Whether <paramref name="property"/> is a computed property: an instance property without a backing field, whose
     /// <c>get</c> and <c>set</c> / <c>init</c> accessors are emitted as member functions of the struct.
     /// </summary>
-    public static bool IsComputedProperty(IPropertySymbol property) =>
+    public static bool HasAccessorFunctions(IPropertySymbol property) =>
         property is { IsStatic: false, IsIndexer: false, IsImplicitlyDeclared: false } &&
         !HasBackingField(property.ContainingType.GetMembers(), property);
 
