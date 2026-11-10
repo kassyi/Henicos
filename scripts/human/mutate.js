@@ -1,4 +1,15 @@
 #!/usr/bin/env node
+// Runs Stryker.NET mutation testing for one phase of `just mutate` and fails when Stryker wrote no report.
+// Usage: node scripts/human/mutate.js [--phase <gpumath|compiler|compiler-cuda>] [--since <ref>] [--dry-run]
+//        [-- <stryker args>...]
+//   Stryker.NET exits 0 after a fatal error such as "Failed to restore the project to a buildable state": it logs
+//   the error and returns a score of 0 without reporting. Every run that finishes writes
+//   <output>/reports/mutation-report.json (the json reporter of the stryker-config.json files), so the script records
+//   the start in <output>/run-started and exits 1 unless the report is newer than that record. When the Stryker
+//   arguments choose another output directory (-O / --output), the report is not under <output> and the check is
+//   skipped.
+//   The test host heap is capped at 8 GB (GSharpTestHeapHardLimit, in bytes; set it to override), so a mutant that
+//   allocates without bound fails its tests instead of exhausting memory.
 'use strict';
 
 const fs = require('fs');
@@ -28,7 +39,8 @@ const helpText = [
   '  --dry-run       Print the commands and environment without executing them',
   '  --help, -h      Show this help',
   '',
-  'Arguments after \'--\' are forwarded to dotnet stryker.',
+  'Arguments after \'--\' are forwarded to dotnet stryker, except --dry-run and --help, which this script reads',
+  'itself (so that `just mutate compiler main --dry-run` works).',
 ].join('\n');
 
 function fail(message) {

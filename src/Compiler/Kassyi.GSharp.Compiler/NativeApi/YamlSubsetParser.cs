@@ -74,7 +74,8 @@ internal sealed class YamlMapping(int line) : YamlNode(line)
 /// <remarks>
 /// <para>
 /// Why this parser exists instead of a NuGet dependency such as YamlDotNet:
-/// 1. Reflection ban: Roslyn source generators and analyzers fundamentally prohibit reflection for compile-time speed.
+/// 1. No reflection: this repository bans reflection in the compiler because it slows compilation down, and
+///    YamlDotNet maps documents to types by reflection.
 /// 2. Zero analyzer dependencies: Loading third-party dependencies into the compiler and IDE host processes risks
 ///    assembly version conflicts and overhead.
 /// 3. Precise line-numbered diagnostics: Syntax errors and schema violations report exact 1-based source lines
