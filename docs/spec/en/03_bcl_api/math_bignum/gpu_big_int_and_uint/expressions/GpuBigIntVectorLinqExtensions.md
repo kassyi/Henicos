@@ -45,13 +45,19 @@ public static class GpuBigIntVectorLinqExtensions
 | [Not(IGpuBoolVectorExpression)](#notigpuboolvectorexpression) | Performs an element-wise logical NOT on a boolean vector expression. |
 | [Or(IGpuBoolVectorExpression, IGpuBoolVectorExpression)](#origpuboolvectorexpression-igpuboolvectorexpression) | Performs an element-wise logical OR on two boolean vector expressions. |
 | [SelectAdd(IGpuBigIntVectorExpression, GpuBigInt)](#selectaddigpubigintvectorexpression-gpubigint) | Adds a scalar to each element of a vectorized expression. |
+| [SelectDivide(IGpuBigIntVectorExpression, GpuBigInt)](#selectdivide) | Divides each element by a scalar. |
+| [SelectDivideByUInt32(IGpuBigIntVectorExpression, UInt32)](#selectdividebyuint32) | Divides elements by a uint. |
+| [SelectModulo(IGpuBigIntVectorExpression, GpuBigInt)](#selectmodulo) | Computes each element modulo a scalar. |
 | [SelectMultiply(IGpuBigIntVectorExpression, GpuBigInt)](#selectmultiplyigpubigintvectorexpression-gpubigint) | Multiplies each element of a vectorized expression by a scalar on GPU device. |
+| [SelectSqrt(IGpuBigIntVectorExpression)](#selectsqrt) | Computes the floor integer square root of each element. |
 | [SelectSubtract(IGpuBigIntVectorExpression, GpuBigInt)](#selectsubtractigpubigintvectorexpression-gpubigint) | Subtracts a scalar from each element of a vectorized expression. |
 | [Skip(IGpuBigIntVectorExpression, Int32)](#skipigpubigintvectorexpression-int32) | Bypasses a specified number of elements in a sequence and returns the remaining elements. |
 | [Sum(IGpuBigIntVectorExpression)](#sumigpubigintvectorexpression) | Computes the parallel sum reduction of a vectorized expression. |
 | [Take(IGpuBigIntVectorExpression, Int32)](#takeigpubigintvectorexpression-int32) | Returns a specified number of contiguous elements from the start of a sequence. |
 | [Where(IGpuBigIntVectorExpression, IGpuBoolVectorExpression)](#whereigpubigintvectorexpression-igpuboolvectorexpression) | Filters a vectorized sequence of values based on a predicate (GPU stream compaction). |
 | [ZipAdd(IGpuBigIntVectorExpression, IGpuBigIntVectorExpression)](#zipaddigpubigintvectorexpression-igpubigintvectorexpression) | Adds two vectorized expressions element-wise. |
+| [ZipDivide(IGpuBigIntVectorExpression, IGpuBigIntVectorExpression)](#zipdivide) | Divides vectors element-wise. |
+| [ZipModulo(IGpuBigIntVectorExpression, IGpuBigIntVectorExpression)](#zipmodulo) | Computes element-wise remainders. |
 | [ZipMultiply(IGpuBigIntVectorExpression, IGpuBigIntVectorExpression)](#zipmultiplyigpubigintvectorexpression-igpubigintvectorexpression) | Multiplies the first vectorized expression by the second element-wise. |
 | [ZipSubtract(IGpuBigIntVectorExpression, IGpuBigIntVectorExpression)](#zipsubtractigpubigintvectorexpression-igpubigintvectorexpression) | Subtracts the second vectorized expression from the first element-wise. |
 
@@ -101,20 +107,181 @@ public static IGpuBigIntVectorExpression ZipSubtract(this IGpuBigIntVectorExpres
 public static IGpuBigIntVectorExpression ZipMultiply(this IGpuBigIntVectorExpression left, IGpuBigIntVectorExpression right);
 ```
 
-## SelectDivide / SelectModulo / ZipDivide / ZipModulo
+## SelectDivide
 
-Divides each element by a scalar or by the matching element of a second vector, truncating toward zero as C# does; the remainder takes the sign of the dividend. Output `WordsPerElement` is the larger width of the two operands.
+Divides each element of `source` by `scalar`, truncating the quotient toward zero as C# integer division and
+`BigInteger.Divide` do. A non-zero quotient is negative when `source` and `scalar` have opposite signs, and a zero
+quotient is normalized to `+0`. Output `WordsPerElement` is `Math.Max(source.WordsPerElement, scalar.NumWords)`.
 
 ```csharp
-public static IGpuBigIntVectorExpression SelectDivide(this IGpuBigIntVectorExpression source, GpuBigInt scalar);
-public static IGpuBigIntVectorExpression SelectModulo(this IGpuBigIntVectorExpression source, GpuBigInt scalar);
-public static IGpuBigIntVectorExpression ZipDivide(this IGpuBigIntVectorExpression left, IGpuBigIntVectorExpression right);
-public static IGpuBigIntVectorExpression ZipModulo(this IGpuBigIntVectorExpression left, IGpuBigIntVectorExpression right);
+public static IGpuBigIntVectorExpression SelectDivide(
+    this IGpuBigIntVectorExpression source,
+    GpuBigInt scalar);
 ```
 
-A zero divisor throws `DivideByZeroException` during evaluation, as C# integer division does: a zero scalar before any element is computed, a zero element of `right` after the launch. `ZipDivide` and `ZipModulo` read that check back from the device (one synchronization of the workspace stream), so evaluating them while the stream captures a CUDA graph throws `NotSupportedException`.
+When the vector is non-empty and `scalar` is zero, evaluation throws `DivideByZeroException` before any element is
+computed. Passing a `targetResult` with a different `WordsPerElement` or fewer elements than evaluated throws
+`ArgumentException` before evaluating the inputs. When `WordsPerElement` exceeds 512 words, each evaluation allocates
+`2 * width` words of temporary device memory per element (4 bytes each: about 480 MB for 100,000 elements of 600 words)
+and releases it after the launch.
 
-When the widest of the operands and the result has more than 512 words, each evaluation allocates `2 * width` words of temporary device memory per element (4 bytes each: about 480 MB for 100,000 elements of 600 words) and releases it after the launch.
+```csharp
+using var array = new GpuBigIntArray(workspace, length: 3, wordsPerElement: 1);
+workspace.Provider.CopyHostToDevice(array.Values.DevicePointer, [100u, 47u, 5u], 3, workspace.Stream);
+workspace.Provider.CopyHostToDevice(array.Signs.DevicePointer, [0u, 1u, 1u], 3, workspace.Stream);
+
+using var divisorMag = GpuBigUInt.FromBigInteger(workspace, 7, minWords: 1);
+var divisor = new GpuBigInt(divisorMag, isNegative: false);
+
+using var quotients = array.AsVectorizedEnumerable().SelectDivide(divisor);
+GpuBigIntArrayView view = quotients.Evaluate(workspace); // [14, -6, 0]
+```
+
+## SelectDivideByUInt32
+
+Divides each element of `source` by a 32-bit unsigned integer `divisor`, truncating the quotient toward zero. A
+non-zero quotient keeps the sign of the source element, and a zero quotient is normalized to `+0`. Output
+`WordsPerElement` equals `source.WordsPerElement`.
+
+```csharp
+public static IGpuBigIntVectorExpression SelectDivideByUInt32(
+    this IGpuBigIntVectorExpression source,
+    uint divisor);
+```
+
+Evaluation throws `DivideByZeroException` immediately when `divisor == 0`, before evaluating `source` or inspecting
+`targetResult` (including on an empty vector). Passing a `targetResult` with a different `WordsPerElement` or fewer
+elements than evaluated throws `ArgumentException`. When `source` is filtered by `Where`, evaluation reads the device
+element count (one synchronization) and divides only the selected elements.
+
+```csharp
+using var array = new GpuBigIntArray(workspace, length: 3, wordsPerElement: 1);
+workspace.Provider.CopyHostToDevice(array.Values.DevicePointer, [100u, 47u, 5u], 3, workspace.Stream);
+workspace.Provider.CopyHostToDevice(array.Signs.DevicePointer, [0u, 1u, 1u], 3, workspace.Stream);
+
+using var quotients = array.AsVectorizedEnumerable().SelectDivideByUInt32(7u);
+GpuBigIntArrayView view = quotients.Evaluate(workspace); // [14, -6, 0]
+```
+
+## SelectModulo
+
+Computes the remainder of dividing each element of `source` by `scalar`, matching C# `%` and `BigInteger.Remainder`
+(remainder of division truncated toward zero). A non-zero remainder takes the sign of the dividend (`source`),
+independent of the sign of `scalar`, and a zero remainder is normalized to `+0`. Output `WordsPerElement` is
+`Math.Max(source.WordsPerElement, scalar.NumWords)`.
+
+```csharp
+public static IGpuBigIntVectorExpression SelectModulo(
+    this IGpuBigIntVectorExpression source,
+    GpuBigInt scalar);
+```
+
+When the vector is non-empty and `scalar` is zero, evaluation throws `DivideByZeroException` before any element is
+computed. Passing a `targetResult` with a different `WordsPerElement` or fewer elements than evaluated throws
+`ArgumentException` before evaluating the inputs. When `WordsPerElement` exceeds 512 words, each evaluation allocates
+`2 * width` words of temporary device memory per element (4 bytes each: about 480 MB for 100,000 elements of 600 words)
+and releases it after the launch.
+
+```csharp
+using var array = new GpuBigIntArray(workspace, length: 3, wordsPerElement: 1);
+workspace.Provider.CopyHostToDevice(array.Values.DevicePointer, [100u, 47u, 14u], 3, workspace.Stream);
+workspace.Provider.CopyHostToDevice(array.Signs.DevicePointer, [0u, 1u, 1u], 3, workspace.Stream);
+
+using var divisorMag = GpuBigUInt.FromBigInteger(workspace, 7, minWords: 1);
+var negativeDivisor = new GpuBigInt(divisorMag, isNegative: true);
+
+using var remainders = array.AsVectorizedEnumerable().SelectModulo(negativeDivisor);
+GpuBigIntArrayView view = remainders.Evaluate(workspace); // [2, -5, 0]
+```
+
+## SelectSqrt
+
+Computes the floor integer square root ($\lfloor\sqrt{x}\rfloor$, the largest non-negative integer $r$ with
+$r^2 \le x$) of each element in `source`. Every result is non-negative (`+`), and a negative zero element produces
+`+0`. Output `WordsPerElement` equals `source.WordsPerElement`.
+
+```csharp
+public static IGpuBigIntVectorExpression SelectSqrt(this IGpuBigIntVectorExpression source);
+```
+
+Evaluation throws `InvalidOperationException` if any evaluated element is strictly negative (`< 0`). When `source` is
+filtered by `Where`, evaluation reads the device element count (one synchronization) and computes roots only for the
+selected elements, so excluded negative elements do not throw. Passing a `targetResult` with a different
+`WordsPerElement` or fewer elements than evaluated throws `ArgumentException`.
+
+```csharp
+using var array = new GpuBigIntArray(workspace, length: 4, wordsPerElement: 1);
+workspace.Provider.CopyHostToDevice(array.Values.DevicePointer, [0u, 15u, 16u, 10000u], 4, workspace.Stream);
+
+using var roots = array.AsVectorizedEnumerable().SelectSqrt();
+GpuBigIntArrayView view = roots.Evaluate(workspace); // [0, 3, 4, 100]
+```
+
+## ZipDivide
+
+Divides each element of `left` by the corresponding element of `right`, truncating the quotient toward zero as C#
+integer division and `BigInteger.Divide` do. A non-zero quotient is negative when the paired elements have opposite
+signs, and a zero quotient is normalized to `+0`. Output `WordsPerElement` is
+`Math.Max(left.WordsPerElement, right.WordsPerElement)`.
+
+```csharp
+public static IGpuBigIntVectorExpression ZipDivide(
+    this IGpuBigIntVectorExpression left,
+    IGpuBigIntVectorExpression right);
+```
+
+Evaluation throws `DivideByZeroException` after the launch if the divisor of any evaluated element in `right` is zero
+(elements past a `Where` count are ignored). Because that check is read back from the device (one synchronization of
+the workspace stream), evaluating a non-empty `ZipDivide` while the stream captures a CUDA graph throws
+`NotSupportedException`. Combining two separately built `Where` results also throws `NotSupportedException`. Mismatched
+vector lengths or an incompatible `targetResult` throw `ArgumentException`. When `WordsPerElement` exceeds 512 words,
+each evaluation allocates `2 * width` words of temporary device memory per element (4 bytes each: about 480 MB for
+100,000 elements of 600 words) and releases it after the launch.
+
+```csharp
+using var left = new GpuBigIntArray(workspace, length: 4, wordsPerElement: 1);
+using var right = new GpuBigIntArray(workspace, length: 4, wordsPerElement: 1);
+workspace.Provider.CopyHostToDevice(left.Values.DevicePointer, [100u, 47u, 25u, 81u], 4, workspace.Stream);
+workspace.Provider.CopyHostToDevice(left.Signs.DevicePointer, [0u, 1u, 0u, 1u], 4, workspace.Stream);
+workspace.Provider.CopyHostToDevice(right.Values.DevicePointer, [7u, 6u, 4u, 9u], 4, workspace.Stream);
+workspace.Provider.CopyHostToDevice(right.Signs.DevicePointer, [0u, 0u, 1u, 1u], 4, workspace.Stream);
+
+using var quotients = left.AsVectorizedEnumerable().ZipDivide(right.AsVectorizedEnumerable());
+GpuBigIntArrayView view = quotients.Evaluate(workspace); // [14, -7, -6, 9]
+```
+
+## ZipModulo
+
+Computes the element-wise remainder of dividing `left` by `right`, matching C# `%` and `BigInteger.Remainder`
+(remainder of division truncated toward zero). A non-zero remainder takes the sign of the dividend element in `left`,
+independent of the sign of `right`, and a zero remainder is normalized to `+0`. Output `WordsPerElement` is
+`Math.Max(left.WordsPerElement, right.WordsPerElement)`.
+
+```csharp
+public static IGpuBigIntVectorExpression ZipModulo(
+    this IGpuBigIntVectorExpression left,
+    IGpuBigIntVectorExpression right);
+```
+
+Evaluation throws `DivideByZeroException` after the launch if the divisor of any evaluated element in `right` is zero
+(elements past a `Where` count are ignored). Because that check is read back from the device (one synchronization of
+the workspace stream), evaluating a non-empty `ZipModulo` while the stream captures a CUDA graph throws
+`NotSupportedException`. Combining two separately built `Where` results also throws `NotSupportedException`. Mismatched
+vector lengths or an incompatible `targetResult` throw `ArgumentException`. When `WordsPerElement` exceeds 512 words,
+each evaluation allocates `2 * width` words of temporary device memory per element (4 bytes each: about 480 MB for
+100,000 elements of 600 words) and releases it after the launch.
+
+```csharp
+using var left = new GpuBigIntArray(workspace, length: 4, wordsPerElement: 1);
+using var right = new GpuBigIntArray(workspace, length: 4, wordsPerElement: 1);
+workspace.Provider.CopyHostToDevice(left.Values.DevicePointer, [100u, 47u, 25u, 81u], 4, workspace.Stream);
+workspace.Provider.CopyHostToDevice(left.Signs.DevicePointer, [0u, 1u, 0u, 1u], 4, workspace.Stream);
+workspace.Provider.CopyHostToDevice(right.Values.DevicePointer, [7u, 6u, 4u, 9u], 4, workspace.Stream);
+workspace.Provider.CopyHostToDevice(right.Signs.DevicePointer, [0u, 0u, 1u, 1u], 4, workspace.Stream);
+
+using var remainders = left.AsVectorizedEnumerable().ZipModulo(right.AsVectorizedEnumerable());
+GpuBigIntArrayView view = remainders.Evaluate(workspace); // [2, -5, 1, 0]
+```
 
 ## Skip / Take
 
@@ -214,14 +381,14 @@ using var array = new GpuBigIntArray(workspace, length: 256, wordsPerElement: 4)
 using var scalarUint = GpuBigUInt.FromBigInteger(workspace, new BigInteger(7), minWords: 4);
 var scalar = new GpuBigInt(scalarUint, isNegative: false);
 
-// Evaluate the entire vector pipeline. SelectMultiply widens each element to 4 + 4 = 8 words,
-// and the sum has the same width as the elements it adds.
-using var dest = new GpuBigUInt(workspace, 8);
-
-var result = array.AsVectorizedEnumerable()
+// SelectMultiply widens each element to 4 + 4 = 8 words (256 bits), and Sum over 256 elements
+// adds ceil(log2 256) = 8 bits, so the destination needs ceil(264 / 32) = 9 words.
+using var sumExpr = array.AsVectorizedEnumerable()
     .SelectMultiply(scalar)
-    .Sum()
-    .Evaluate(dest);
+    .Sum();
+using var dest = new GpuBigUInt(workspace, sumExpr.Node.NumWords);
+
+var result = sumExpr.Evaluate(dest);
 
 Console.WriteLine($"Reduction result: {result.Value.ToBigInteger(result.IsNegative)}");
 ```
