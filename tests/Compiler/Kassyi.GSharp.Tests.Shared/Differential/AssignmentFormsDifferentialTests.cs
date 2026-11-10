@@ -235,7 +235,7 @@ public class AssignmentFormsDifferentialTests
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_ComputedPropertyAssignment_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_computedProperty);
+    public void Test_PropertyAccessorAssignment_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_computedProperty);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]

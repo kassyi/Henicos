@@ -19,8 +19,8 @@ internal static class StructPropertyEmitter
     // __device__ inline <type> <property name>() [const] { <getter body> }
     // [WHY] The getter keeps the C++ name of the property (CppNameResolver), so the implicit `A` and `Sum` in a getter
     // body resolve to the members of the struct, and a read elsewhere only appends the call
-    // (ComputedPropertyGetterCall). A getter that may change its struct is not const (#610); C# calls it on a copy of a
-    // readonly receiver, which the call writes (ComputedPropertyGetterCall.PlanCopyType).
+    // (PropertyAccessorCall). A getter that may change its struct is not const (#610); C# calls it on a copy of a
+    // readonly receiver, which the call writes (PropertyAccessorCall.PlanCopyType).
     private static void WriteGetter(IPropertySymbol property, in StructPropertyPlan plan, ref TranspileContext context)
     {
         if (plan.Getter.Body == PropertyAccessorBody.None)
@@ -52,7 +52,7 @@ internal static class StructPropertyEmitter
 
     // __device__ inline void <property name>(<type> <value parameter>) { <setter body> }
     // [WHY] The setter overloads the C++ name of the property with one parameter, so assignments and object / `with`
-    // initializers call it by appending `(<rhs>)` after the member name (ComputedPropertyGetterCall).
+    // initializers call it by appending `(<rhs>)` after the member name (PropertyAccessorCall).
     private static void WriteSetter(IPropertySymbol property, in StructPropertyPlan plan, ref TranspileContext context)
     {
         if (plan.Setter.Body == PropertyAccessorBody.None || plan.ValueParameter is not { } valueParameter)

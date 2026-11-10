@@ -45,7 +45,7 @@ internal readonly record struct PropertyAccessorPlan(
 /// <param name="Getter">The getter.</param>
 /// <param name="Setter">The setter or <c>init</c> accessor.</param>
 /// <param name="ValueParameter">The <c>value</c> parameter of the setter, when it has one.</param>
-/// <param name="IsConstGetter">Whether the getter is a <c>const</c> member function (<c>ComputedPropertyGetterCall.IsConstGetter</c>).</param>
+/// <param name="IsConstGetter">Whether the getter is a <c>const</c> member function (<c>PropertyAccessorCall.IsConstGetter</c>).</param>
 internal readonly record struct StructPropertyPlan(
     PropertyAccessorPlan Getter,
     PropertyAccessorPlan Setter,
@@ -69,7 +69,7 @@ internal static class StructPropertyPlanner
             getter,
             setter,
             setter.Body != PropertyAccessorBody.None && property.SetMethod is { Parameters: [var value] } ? value : null,
-            ComputedPropertyGetterCall.IsConstGetter(property, compilation)
+            PropertyAccessorCall.IsConstGetter(property, compilation)
         );
     }
 

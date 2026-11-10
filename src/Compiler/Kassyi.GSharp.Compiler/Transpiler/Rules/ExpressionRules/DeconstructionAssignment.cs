@@ -310,13 +310,12 @@ internal static class DeconstructionAssignment
         }
     }
 
-    // A target is bound to a reference (auto&& __gsharp_seq_<n> = <target>); a computed property cannot be, so its
+    // A target is bound to a reference (auto&& __gsharp_seq_<n> = <target>); a property whose setter is called cannot be, so its
     // receiver is, and the setter is called on it. Returns the temporary, or ReceiverBound for a receiver (the store
     // visits the target, which writes the receiver's temporary)
     private static int BindTarget(ExpressionSyntax target, ref TranspileContext context)
     {
-        if (!ComputedPropertyGetterCall.IsComputedPropertyTarget(target, ref context) ||
-            ComputedPropertyGetterCall.WritesBackingField(target, ref context))
+        if (!PropertyAccessorCall.CallsSetter(target, ref context))
         {
             return EvaluationOrder.DeclareTemp(ref context, target, reference: true);
         }
@@ -330,7 +329,7 @@ internal static class DeconstructionAssignment
         return ReceiverBound;
     }
 
-    // <target> = __gsharp_tuple_<i>; (<target>(__gsharp_tuple_<i>); for a computed property); nothing for a discard
+    // <target> = __gsharp_tuple_<i>; (<target>(__gsharp_tuple_<i>); for a setter call); nothing for a discard
     private static void EmitStore(SyntaxNode? target, int bound, int index, ref TranspileContext context)
     {
         var writer = context.Emitter.Writer;
@@ -340,8 +339,7 @@ internal static class DeconstructionAssignment
         }
 
         if (target is ExpressionSyntax expression &&
-            ComputedPropertyGetterCall.IsComputedPropertyTarget(expression, ref context) &&
-            !ComputedPropertyGetterCall.WritesBackingField(expression, ref context))
+            PropertyAccessorCall.CallsSetter(expression, ref context))
         {
             context.Visitor.Visit(expression);
             using (writer.Parentheses())

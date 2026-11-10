@@ -21,7 +21,7 @@ public class FieldKeywordPropertyDiagnosticsTests
 
         Assert.Equal(
             [(DiagnosticOrigin.Analyzer, 12, 9, 12, 15)],
-            diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, ComputedPropertyAssignment.StepOfBackingFieldWrite));
+            diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, PropertyAccessorAssignment.StepOfBackingFieldWrite));
     }
 
     [Theory]

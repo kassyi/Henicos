@@ -3,7 +3,7 @@ using Microsoft.CodeAnalysis.Operations;
 namespace Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules;
 
 /// <summary>
-/// Writes the assignments of a computed property that read it or use its value (#908): a compound assignment
+/// Writes the assignments of a property with accessor functions that read it or use its value (#908): a compound assignment
 /// (<c>s.P += v</c>), an increment or decrement (<c>s.P++</c>, <c>--s.P</c>), and a simple assignment whose value is
 /// used (<c>x = s.P = v</c>, <c>F(s.P = v)</c>).
 /// </summary>
@@ -22,13 +22,13 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules;
 /// <para>
 /// The operation is the one an ordinary compound assignment or step writes (<see cref="CompoundOperator"/>). The getter
 /// and setter are the member functions of <c>StructPropertyEmitter</c>, under the one C++ name of the property; the
-/// target is written without the getter call (<see cref="ComputedPropertyGetterCall.AppendCallIfGetter"/>) and the call
+/// target is written without the getter call (<see cref="PropertyAccessorCall.AppendCallIfGetter"/>) and the call
 /// is added here.
 /// </para>
 /// </remarks>
-internal static class ComputedPropertyAssignment
+internal static class PropertyAccessorAssignment
 {
-    /// <summary>The GSH0003 text for a compound assignment or step of a computed property with an operator that is
+    /// <summary>The GSH0003 text for a compound assignment or step of a property with accessor functions with an operator that is
     /// user-defined or lifted.</summary>
     public const string UserDefinedOrLiftedOperator =
         "compound assignment or increment of a computed property with a user-defined or lifted operator";
@@ -59,7 +59,7 @@ internal static class ComputedPropertyAssignment
     );
 
     /// <summary>
-    /// Writes <paramref name="node"/>, a compound assignment of a computed property, or a simple assignment of one whose
+    /// Writes <paramref name="node"/>, a compound assignment of a property with accessor functions, or a simple assignment of one whose
     /// value is used.
     /// </summary>
     public static void TranspileAssignment(AssignmentExpressionSyntax node, ref TranspileContext context)
@@ -91,7 +91,7 @@ internal static class ComputedPropertyAssignment
         Emit(plan, ref context);
     }
 
-    /// <summary>Writes <paramref name="node"/>, an increment or decrement of the computed property <paramref name="operand"/>.</summary>
+    /// <summary>Writes <paramref name="node"/>, an increment or decrement of the property with accessor functions <paramref name="operand"/>.</summary>
     public static void TranspileStep(ExpressionSyntax node, ExpressionSyntax operand, ref TranspileContext context)
     {
         if (FailBackingFieldWrite(node, operand, ref context))
@@ -204,7 +204,7 @@ internal static class ComputedPropertyAssignment
     // the case is rare (a constructor that steps a property it can only initialize), so it is reported, not guessed
     private static bool FailBackingFieldWrite(ExpressionSyntax node, ExpressionSyntax target, ref TranspileContext context)
     {
-        if (!ComputedPropertyGetterCall.WritesBackingField(target, ref context))
+        if (!PropertyAccessorCall.WritesBackingField(target, ref context))
         {
             return false;
         }

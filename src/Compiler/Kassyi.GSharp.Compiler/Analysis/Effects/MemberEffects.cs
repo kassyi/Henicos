@@ -58,7 +58,7 @@ internal static class MemberEffects
             walker.AddValue(access.Expression);
         }
 
-        if (!IsComputedUserProperty(property))
+        if (!IsUserAccessorProperty(property))
         {
             return;
         }
@@ -106,7 +106,7 @@ internal static class MemberEffects
         access.Expression is IdentifierNameSyntax { Identifier.ValueText: GSharpInternalNames.StateMachine.Context };
 
     // A computed property (with accessor bodies) of a user struct that G# defines on the device
-    public static bool IsComputedUserProperty(IPropertySymbol property) =>
+    public static bool IsUserAccessorProperty(IPropertySymbol property) =>
         property.ContainingType is { } containingType &&
         GlobalCppNames.IsEmittedUserType(containingType) &&
         StructAbiMembers.HasAccessorFunctions(property);

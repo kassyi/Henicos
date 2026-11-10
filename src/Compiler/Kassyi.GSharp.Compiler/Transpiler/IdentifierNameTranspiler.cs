@@ -92,7 +92,7 @@ internal static class IdentifierNameTranspiler
         }
 
         var name = symbol is IPropertySymbol property &&
-                   ComputedPropertyGetterCall.WritesBackingField(node, symbol, context.Emitter.Dialect)
+                   PropertyAccessorCall.WritesBackingField(node, symbol, context.Emitter.Dialect)
             ? CppNameResolver.ResolveBackingField(property)
             : CppNameResolver.Resolve(
                 symbol,
@@ -108,14 +108,14 @@ internal static class IdentifierNameTranspiler
 
         // <struct type>((*this)).<getter>(): a readonly member calls a getter that may change the struct on a copy
         // (#610)
-        if (ComputedPropertyGetterCall.PlanCopyType(node, symbol, ref context) is { } copyType)
+        if (PropertyAccessorCall.PlanCopyType(node, symbol, ref context) is { } copyType)
         {
             context.Emitter.Dialect.AppendType(ref context, copyType);
             context.Emitter.Writer.Append("((*this)).");
         }
 
         context.Emitter.Writer.AppendCppName(name);
-        ComputedPropertyGetterCall.AppendCallIfGetter(node, symbol, ref context);
+        PropertyAccessorCall.AppendCallIfGetter(node, symbol, ref context);
     }
 
     // The member named by an object initializer (new Vector3(v) { Y = l }) of a type whose members the dialect maps, as
