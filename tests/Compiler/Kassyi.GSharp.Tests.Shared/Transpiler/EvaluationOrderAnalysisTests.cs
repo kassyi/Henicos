@@ -29,6 +29,7 @@ public class EvaluationOrderAnalysisTests
     [InlineData("CapturedAlias", 1)]
     [InlineData("RefReturnAlias", 1)]
     [InlineData("MutatingStructGetterRead", 1)]
+    [InlineData("FieldThenWrite", 1)]
     public void LastSpilledOperand_InterferingOperands_IsTheLastOneThatInterferes(string method, int expected) =>
         Assert.Equal(expected, EvaluationOrder.LastSpilledOperand(GetOperandEffects(method)));
 
@@ -152,6 +153,21 @@ public class EvaluationOrderAnalysisTests
         Assert.True(effects.Writes.IsEmpty);
     }
 
+    // The field keyword reads the backing field of the property, a field of this, as the implicit this field read of
+    // ThisFieldRead does
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void EffectsOf_FieldKeyword_ReadsMemoryAsAFieldOfThis()
+    {
+        var effects = GetEffects("FieldRead");
+        var thisField = GetEffects("ThisFieldRead");
+
+        Assert.True(effects.Reads.Memory);
+        Assert.True(effects.Writes.IsEmpty);
+        Assert.Equal(thisField.Reads.Memory, effects.Reads.Memory);
+        Assert.Equal(thisField.Writes.IsEmpty, effects.Writes.IsEmpty);
+    }
+
     [Fact]
     [Scenario(TestScenario.HappyPath)]
     public void EffectsOf_FieldOfStructLocal_ReadsTheLocal()
@@ -270,10 +286,15 @@ public class EvaluationOrderAnalysisTests
     {
         var tree = compilation.SyntaxTrees.First(t => t.ToString().Contains("namespace OrderCases"));
         var model = compilation.GetSemanticModel(tree);
+        // A case is a method, or a property whose getter holds the case (the field keyword is only in accessors)
         var declaration = tree.GetRoot()
             .DescendantNodes()
-            .OfType<MethodDeclarationSyntax>()
-            .First(m => m.Identifier.ValueText == method);
+            .First(n => n switch
+            {
+                MethodDeclarationSyntax m => m.Identifier.ValueText == method,
+                PropertyDeclarationSyntax p => p.Identifier.ValueText == method,
+                _ => false
+            });
         var result = declaration.DescendantNodes()
             .OfType<VariableDeclaratorSyntax>()
             .Last(v => v.Identifier.ValueText == "result");

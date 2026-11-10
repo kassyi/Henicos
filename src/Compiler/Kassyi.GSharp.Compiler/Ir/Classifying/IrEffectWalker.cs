@@ -203,7 +203,7 @@ internal sealed class IrEffectWalker(Compilation compilation)
 
         WriteRoot(root);
         if (assignment.Target is IrPropertyReference { Property: var property } &&
-            MemberEffects.IsComputedUserProperty(property) &&
+            MemberEffects.IsUserAccessorProperty(property) &&
             MayWriteMemory(property.SetMethod))
         {
             WriteMemory();
@@ -226,7 +226,7 @@ internal sealed class IrEffectWalker(Compilation compilation)
             WriteMemory();
         }
 
-        if (target is IrPropertyReference { Property: var property } && MemberEffects.IsComputedUserProperty(property))
+        if (target is IrPropertyReference { Property: var property } && MemberEffects.IsUserAccessorProperty(property))
         {
             AddComputedPropertyUpdate(property, isIncrement: value == null);
         }

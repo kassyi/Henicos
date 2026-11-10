@@ -167,7 +167,7 @@ internal static class IrMemberEffects
     // The getter of a computed property of a struct may read anything, and writes what DeviceFunctionEffects says
     private static void AddComputedGetter(IrEffectWalker walker, IPropertySymbol property)
     {
-        if (!MemberEffects.IsComputedUserProperty(property))
+        if (!MemberEffects.IsUserAccessorProperty(property))
         {
             return;
         }

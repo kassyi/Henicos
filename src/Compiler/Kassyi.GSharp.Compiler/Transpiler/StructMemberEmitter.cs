@@ -135,6 +135,19 @@ internal static class StructMemberEmitter
     public static string GetMemberName(ISymbol member, ref TranspileContext context) =>
         CppNameResolver.Resolve(member, member.Name, context.Emitter.Dialect).ToString();
 
+    /// <summary>
+    /// The C++ name of the storage of a member of the native layout: the backing field of a property whose accessors
+    /// use
+    /// the <c>field</c> keyword (the accessor member functions keep the name of the property), the member otherwise.
+    /// </summary>
+    public static string GetMemberName(in StructAbiMember member, ref TranspileContext context) =>
+        GetMemberName(
+            member is { Kind: StructAbiMemberKind.FieldBackedProperty, StorageField: { } storage }
+                ? storage
+                : member.Symbol,
+            ref context
+        );
+
     /// <summary>The first member of the native layout of <paramref name="structSym"/>, if it has any.</summary>
     public static bool TryGetFirstMember(INamedTypeSymbol structSym, out StructAbiMember firstMember)
     {
@@ -189,7 +202,7 @@ internal static class StructMemberEmitter
             return;
         }
 
-        WriteMemberDeclaration(member.Type, GetMemberName(member.Symbol, ref context), member.Symbol, ref context);
+        WriteMemberDeclaration(member.Type, GetMemberName(member, ref context), member.Symbol, ref context);
     }
 
     // <type> <name>[<size>];

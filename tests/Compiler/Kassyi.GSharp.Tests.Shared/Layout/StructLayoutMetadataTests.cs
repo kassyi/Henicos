@@ -88,8 +88,8 @@ public class StructLayoutMetadataTests
     }
 
     // Every member hands over the field that stores it, so the offset of an auto-property of an explicit struct is read
-    // from its backing field. From source the member is the property; from metadata Roslyn does not link the backing
-    // field to it, so the member is that field itself (#853 review)
+    // from its backing field. The member is the property; from metadata Roslyn does not link the backing field to it,
+    // so it is found by the name the C# compiler gives it (#853 review)
     [Theory]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.HappyPath)]
@@ -112,10 +112,10 @@ public class StructLayoutMetadataTests
         foreach (var member in members)
         {
             var storage = Assert.IsAssignableFrom<IFieldSymbol>(member.StorageField);
+            Assert.Equal(StructAbiMemberKind.AutoProperty, member.Kind);
             Assert.True(
-                fromMetadata
-                    ? SymbolEqualityComparer.Default.Equals(storage, member.Symbol)
-                    : SymbolEqualityComparer.Default.Equals(storage.AssociatedSymbol, member.Symbol),
+                StructAbiMembers.TryGetBackingFieldProperty(storage, out var property) &&
+                SymbolEqualityComparer.Default.Equals(property, member.Symbol),
                 $"{member.Name}: {storage.Name} does not hold {member.Symbol.Name}"
             );
         }

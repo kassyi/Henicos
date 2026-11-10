@@ -387,7 +387,7 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
     /// <param name="Symbol">The member symbol, for the getter call of <see cref="MemberNameShape.Resolved"/>.</param>
     /// <param name="CopyType">
     /// The struct type of the copy of the receiver that the getter is called on
-    /// (<c>ComputedPropertyGetterCall.PlanCopyType</c>), or <see langword="null"/> for the receiver itself.
+    /// (<c>PropertyAccessorCall.PlanCopyType</c>), or <see langword="null"/> for the receiver itself.
     /// </param>
     private readonly record struct MemberNamePlan(
         MemberNameShape Shape,
@@ -424,13 +424,13 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
         var symbol = semanticModel.GetSymbol(node.Name) ??
                      semanticModel.GetDeclaredSymbol<ISymbol>(node.Name) ??
                      memberSymbol;
-        var name = CppNameResolver.Resolve(symbol, node.Name.Identifier.ValueText, dialect);
+        var name = CppNameResolver.ResolveReference(node, symbol, node.Name.Identifier.ValueText, dialect);
         if (name.Kind != CppNameKind.Verbatim)
         {
             return MemberNamePlan.Resolved(
                 name,
                 symbol,
-                ComputedPropertyGetterCall.PlanCopyType(node, symbol, semanticModel, dialect, currentStruct)
+                PropertyAccessorCall.PlanCopyType(node, symbol, semanticModel, dialect, currentStruct)
             );
         }
 
@@ -457,7 +457,7 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
         {
             case MemberNameShape.Resolved:
                 context.Emitter.Writer.AppendCppName(member.CppName);
-                ComputedPropertyGetterCall.AppendCallIfGetter(node, member.Symbol, ref context);
+                PropertyAccessorCall.AppendCallIfGetter(node, member.Symbol, ref context);
                 break;
             case MemberNameShape.ForEachArrayLength:
                 context.Emitter.Writer.Append("length");
