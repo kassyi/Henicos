@@ -23,43 +23,43 @@ public static class GpuBigIntVectorLinqExtensions
 
 | Name | Description |
 | --- | --- |
-| [All(IGpuBoolVectorExpression)](#alligpuboolvectorexpression) | Determines whether all elements of a boolean vector expression evaluate to `true`. |
-| [And(IGpuBoolVectorExpression, IGpuBoolVectorExpression)](#andigpuboolvectorexpression-igpuboolvectorexpression) | Performs an element-wise logical AND on two boolean vector expressions. |
-| [Any(IGpuBoolVectorExpression)](#anyigpuboolvectorexpression) | Determines whether any element of a boolean vector expression evaluates to `true`. |
+| [All(IGpuBoolVectorExpression)](#boolean-combinators-and-quantifiers-and-or-not-any-all) | Determines whether all elements of a boolean vector expression evaluate to `true`. |
+| [And(IGpuBoolVectorExpression, IGpuBoolVectorExpression)](#boolean-combinators-and-quantifiers-and-or-not-any-all) | Performs an element-wise logical AND on two boolean vector expressions. |
+| [Any(IGpuBoolVectorExpression)](#boolean-combinators-and-quantifiers-and-or-not-any-all) | Determines whether any element of a boolean vector expression evaluates to `true`. |
 | [AsVectorizedEnumerable(GpuBigIntArray)](#asvectorizedenumerablegpubigintarray) | Converts a `GpuBigIntArray` into a vectorized deferred expression. |
-| [Count(IGpuBigIntVectorExpression)](#countigpubigintvectorexpression) | Computes the number of elements in the vectorized expression. |
-| [IsEqualTo(IGpuBigIntVectorExpression, GpuBigInt)](#isequaltoigpubigintvectorexpression-gpubigint) | Evaluates if each element is equal to a scalar. |
-| [IsEqualTo(IGpuBigIntVectorExpression, IGpuBigIntVectorExpression)](#isequaltoigpubigintvectorexpression-igpubigintvectorexpression) | Evaluates if elements in the left vector are equal to the right vector element-wise. |
-| [IsGreaterThan(IGpuBigIntVectorExpression, GpuBigInt)](#isgreaterthanigpubigintvectorexpression-gpubigint) | Evaluates if each element is greater than a scalar. |
-| [IsGreaterThan(IGpuBigIntVectorExpression, IGpuBigIntVectorExpression)](#isgreaterthanigpubigintvectorexpression-igpubigintvectorexpression) | Evaluates if elements in the left vector are greater than the right vector element-wise. |
-| [IsGreaterThanOrEqualTo(IGpuBigIntVectorExpression, GpuBigInt)](#isgreaterthanorequaltoigpubigintvectorexpression-gpubigint) | Evaluates if each element is greater than or equal to a scalar. |
-| [IsGreaterThanOrEqualTo(IGpuBigIntVectorExpression, IGpuBigIntVectorExpression)](#isgreaterthanorequaltoigpubigintvectorexpression-igpubigintvectorexpression) | Evaluates if elements in the left vector are greater than or equal to the right vector element-wise. |
-| [IsLessThan(IGpuBigIntVectorExpression, GpuBigInt)](#islessthanigpubigintvectorexpression-gpubigint) | Evaluates if each element is less than a scalar. |
-| [IsLessThan(IGpuBigIntVectorExpression, IGpuBigIntVectorExpression)](#islessthanigpubigintvectorexpression-igpubigintvectorexpression) | Evaluates if elements in the left vector are less than the right vector element-wise. |
-| [IsLessThanOrEqualTo(IGpuBigIntVectorExpression, GpuBigInt)](#islessthanorequaltoigpubigintvectorexpression-gpubigint) | Evaluates if each element is less than or equal to a scalar. |
-| [IsLessThanOrEqualTo(IGpuBigIntVectorExpression, IGpuBigIntVectorExpression)](#islessthanorequaltoigpubigintvectorexpression-igpubigintvectorexpression) | Evaluates if elements in the left vector are less than or equal to the right vector element-wise. |
-| [IsNotEqualTo(IGpuBigIntVectorExpression, GpuBigInt)](#isnotequaltoigpubigintvectorexpression-gpubigint) | Evaluates if each element is not equal to a scalar. |
-| [IsNotEqualTo(IGpuBigIntVectorExpression, IGpuBigIntVectorExpression)](#isnotequaltoigpubigintvectorexpression-igpubigintvectorexpression) | Evaluates if elements in the left vector are not equal to the right vector element-wise. |
-| [Max(IGpuBigIntVectorExpression)](#maxigpubigintvectorexpression) | Computes the maximum value of a vectorized expression. |
-| [Min(IGpuBigIntVectorExpression)](#minigpubigintvectorexpression) | Computes the minimum value of a vectorized expression. |
-| [Not(IGpuBoolVectorExpression)](#notigpuboolvectorexpression) | Performs an element-wise logical NOT on a boolean vector expression. |
-| [Or(IGpuBoolVectorExpression, IGpuBoolVectorExpression)](#origpuboolvectorexpression-igpuboolvectorexpression) | Performs an element-wise logical OR on two boolean vector expressions. |
-| [SelectAdd(IGpuBigIntVectorExpression, GpuBigInt)](#selectaddigpubigintvectorexpression-gpubigint) | Adds a scalar to each element of a vectorized expression. |
-| [SelectDivide(IGpuBigIntVectorExpression, GpuBigInt)](#selectdivide) | Divides each element by a scalar. |
-| [SelectDivideByUInt32(IGpuBigIntVectorExpression, UInt32)](#selectdividebyuint32) | Divides elements by a uint. |
-| [SelectModulo(IGpuBigIntVectorExpression, GpuBigInt)](#selectmodulo) | Computes each element modulo a scalar. |
-| [SelectMultiply(IGpuBigIntVectorExpression, GpuBigInt)](#selectmultiplyigpubigintvectorexpression-gpubigint) | Multiplies each element of a vectorized expression by a scalar on GPU device. |
-| [SelectSqrt(IGpuBigIntVectorExpression)](#selectsqrt) | Computes the floor integer square root of each element. |
-| [SelectSubtract(IGpuBigIntVectorExpression, GpuBigInt)](#selectsubtractigpubigintvectorexpression-gpubigint) | Subtracts a scalar from each element of a vectorized expression. |
-| [Skip(IGpuBigIntVectorExpression, Int32)](#skipigpubigintvectorexpression-int32) | Bypasses a specified number of elements in a sequence and returns the remaining elements. |
-| [Sum(IGpuBigIntVectorExpression)](#sumigpubigintvectorexpression) | Computes the parallel sum reduction of a vectorized expression. |
-| [Take(IGpuBigIntVectorExpression, Int32)](#takeigpubigintvectorexpression-int32) | Returns a specified number of contiguous elements from the start of a sequence. |
+| [Count(IGpuBigIntVectorExpression)](#sum--max--min--count) | Computes the number of elements in the vectorized expression. |
+| [IsEqualTo(IGpuBigIntVectorExpression, GpuBigInt)](#element-wise-comparisons-isequalto-isnotequalto-isgreaterthan-isgreaterthanorequalto-islessthan-islessthanorequalto) | Evaluates if each element is equal to a scalar. |
+| [IsEqualTo(IGpuBigIntVectorExpression, IGpuBigIntVectorExpression)](#element-wise-comparisons-isequalto-isnotequalto-isgreaterthan-isgreaterthanorequalto-islessthan-islessthanorequalto) | Evaluates if elements in the left vector are equal to the right vector element-wise. |
+| [IsGreaterThan(IGpuBigIntVectorExpression, GpuBigInt)](#element-wise-comparisons-isequalto-isnotequalto-isgreaterthan-isgreaterthanorequalto-islessthan-islessthanorequalto) | Evaluates if each element is greater than a scalar. |
+| [IsGreaterThan(IGpuBigIntVectorExpression, IGpuBigIntVectorExpression)](#element-wise-comparisons-isequalto-isnotequalto-isgreaterthan-isgreaterthanorequalto-islessthan-islessthanorequalto) | Evaluates if elements in the left vector are greater than the right vector element-wise. |
+| [IsGreaterThanOrEqualTo(IGpuBigIntVectorExpression, GpuBigInt)](#element-wise-comparisons-isequalto-isnotequalto-isgreaterthan-isgreaterthanorequalto-islessthan-islessthanorequalto) | Evaluates if each element is greater than or equal to a scalar. |
+| [IsGreaterThanOrEqualTo(IGpuBigIntVectorExpression, IGpuBigIntVectorExpression)](#element-wise-comparisons-isequalto-isnotequalto-isgreaterthan-isgreaterthanorequalto-islessthan-islessthanorequalto) | Evaluates if elements in the left vector are greater than or equal to the right vector element-wise. |
+| [IsLessThan(IGpuBigIntVectorExpression, GpuBigInt)](#element-wise-comparisons-isequalto-isnotequalto-isgreaterthan-isgreaterthanorequalto-islessthan-islessthanorequalto) | Evaluates if each element is less than a scalar. |
+| [IsLessThan(IGpuBigIntVectorExpression, IGpuBigIntVectorExpression)](#element-wise-comparisons-isequalto-isnotequalto-isgreaterthan-isgreaterthanorequalto-islessthan-islessthanorequalto) | Evaluates if elements in the left vector are less than the right vector element-wise. |
+| [IsLessThanOrEqualTo(IGpuBigIntVectorExpression, GpuBigInt)](#element-wise-comparisons-isequalto-isnotequalto-isgreaterthan-isgreaterthanorequalto-islessthan-islessthanorequalto) | Evaluates if each element is less than or equal to a scalar. |
+| [IsLessThanOrEqualTo(IGpuBigIntVectorExpression, IGpuBigIntVectorExpression)](#element-wise-comparisons-isequalto-isnotequalto-isgreaterthan-isgreaterthanorequalto-islessthan-islessthanorequalto) | Evaluates if elements in the left vector are less than or equal to the right vector element-wise. |
+| [IsNotEqualTo(IGpuBigIntVectorExpression, GpuBigInt)](#element-wise-comparisons-isequalto-isnotequalto-isgreaterthan-isgreaterthanorequalto-islessthan-islessthanorequalto) | Evaluates if each element is not equal to a scalar. |
+| [IsNotEqualTo(IGpuBigIntVectorExpression, IGpuBigIntVectorExpression)](#element-wise-comparisons-isequalto-isnotequalto-isgreaterthan-isgreaterthanorequalto-islessthan-islessthanorequalto) | Evaluates if elements in the left vector are not equal to the right vector element-wise. |
+| [Max(IGpuBigIntVectorExpression)](#sum--max--min--count) | Computes the maximum value of a vectorized expression. |
+| [Min(IGpuBigIntVectorExpression)](#sum--max--min--count) | Computes the minimum value of a vectorized expression. |
+| [Not(IGpuBoolVectorExpression)](#boolean-combinators-and-quantifiers-and-or-not-any-all) | Performs an element-wise logical NOT on a boolean vector expression. |
+| [Or(IGpuBoolVectorExpression, IGpuBoolVectorExpression)](#boolean-combinators-and-quantifiers-and-or-not-any-all) | Performs an element-wise logical OR on two boolean vector expressions. |
+| [SelectAdd(IGpuBigIntVectorExpression, GpuBigInt)](#selectadd--selectsubtract--selectmultiply) | Adds a scalar to each element of a vectorized expression. |
+| [SelectDivide(IGpuBigIntVectorExpression, GpuBigInt)](#selectdivide) | Divides each element of a vectorized expression by a scalar. |
+| [SelectDivideByUInt32(IGpuBigIntVectorExpression, UInt32)](#selectdividebyuint32) | Divides each element of a vectorized expression by a 32-bit unsigned integer scalar. |
+| [SelectModulo(IGpuBigIntVectorExpression, GpuBigInt)](#selectmodulo) | Computes the remainder (modulo) of each element of a vectorized expression divided by a scalar. |
+| [SelectMultiply(IGpuBigIntVectorExpression, GpuBigInt)](#selectadd--selectsubtract--selectmultiply) | Multiplies each element of a vectorized expression by a scalar on GPU device. |
+| [SelectSqrt(IGpuBigIntVectorExpression)](#selectsqrt) | Computes the floor integer square root (`isqrt(x)`) of each element in a vectorized expression. |
+| [SelectSubtract(IGpuBigIntVectorExpression, GpuBigInt)](#selectadd--selectsubtract--selectmultiply) | Subtracts a scalar from each element of a vectorized expression. |
+| [Skip(IGpuBigIntVectorExpression, Int32)](#skip--take) | Bypasses a specified number of elements in a sequence and returns the remaining elements. |
+| [Sum(IGpuBigIntVectorExpression)](#sum--max--min--count) | Computes the parallel sum reduction of a vectorized expression. |
+| [Take(IGpuBigIntVectorExpression, Int32)](#skip--take) | Returns a specified number of contiguous elements from the start of a sequence. |
 | [Where(IGpuBigIntVectorExpression, IGpuBoolVectorExpression)](#whereigpubigintvectorexpression-igpuboolvectorexpression) | Filters a vectorized sequence of values based on a predicate (GPU stream compaction). |
-| [ZipAdd(IGpuBigIntVectorExpression, IGpuBigIntVectorExpression)](#zipaddigpubigintvectorexpression-igpubigintvectorexpression) | Adds two vectorized expressions element-wise. |
-| [ZipDivide(IGpuBigIntVectorExpression, IGpuBigIntVectorExpression)](#zipdivide) | Divides vectors element-wise. |
-| [ZipModulo(IGpuBigIntVectorExpression, IGpuBigIntVectorExpression)](#zipmodulo) | Computes element-wise remainders. |
-| [ZipMultiply(IGpuBigIntVectorExpression, IGpuBigIntVectorExpression)](#zipmultiplyigpubigintvectorexpression-igpubigintvectorexpression) | Multiplies the first vectorized expression by the second element-wise. |
-| [ZipSubtract(IGpuBigIntVectorExpression, IGpuBigIntVectorExpression)](#zipsubtractigpubigintvectorexpression-igpubigintvectorexpression) | Subtracts the second vectorized expression from the first element-wise. |
+| [ZipAdd(IGpuBigIntVectorExpression, IGpuBigIntVectorExpression)](#zipadd--zipsubtract--zipmultiply) | Adds two vectorized expressions element-wise. |
+| [ZipDivide(IGpuBigIntVectorExpression, IGpuBigIntVectorExpression)](#zipdivide) | Divides the first vectorized expression by the second element-wise. |
+| [ZipModulo(IGpuBigIntVectorExpression, IGpuBigIntVectorExpression)](#zipmodulo) | Computes the remainder (modulo) of the first vectorized expression divided by the second element-wise. |
+| [ZipMultiply(IGpuBigIntVectorExpression, IGpuBigIntVectorExpression)](#zipadd--zipsubtract--zipmultiply) | Multiplies the first vectorized expression by the second element-wise. |
+| [ZipSubtract(IGpuBigIntVectorExpression, IGpuBigIntVectorExpression)](#zipadd--zipsubtract--zipmultiply) | Subtracts the second vectorized expression from the first element-wise. |
 
 ## AsVectorizedEnumerable(GpuBigIntArray)
 
@@ -119,8 +119,8 @@ public static IGpuBigIntVectorExpression SelectDivide(
     GpuBigInt scalar);
 ```
 
-When the vector is non-empty and `scalar` is zero, evaluation throws `DivideByZeroException` before any element is
-computed. Passing a `targetResult` with a different `WordsPerElement` or fewer elements than evaluated throws
+When the vector is non-empty and `scalar` is zero, evaluation throws `DivideByZeroException` before the
+division runs. Passing a `targetResult` with a different `WordsPerElement` or fewer elements than evaluated throws
 `ArgumentException` before evaluating the inputs. When `WordsPerElement` exceeds 512 words, each evaluation allocates
 `2 * width` words of temporary device memory per element (4 bytes each: about 480 MB for 100,000 elements of 600 words)
 and releases it after the launch.
@@ -176,8 +176,8 @@ public static IGpuBigIntVectorExpression SelectModulo(
     GpuBigInt scalar);
 ```
 
-When the vector is non-empty and `scalar` is zero, evaluation throws `DivideByZeroException` before any element is
-computed. Passing a `targetResult` with a different `WordsPerElement` or fewer elements than evaluated throws
+When the vector is non-empty and `scalar` is zero, evaluation throws `DivideByZeroException` before the
+division runs. Passing a `targetResult` with a different `WordsPerElement` or fewer elements than evaluated throws
 `ArgumentException` before evaluating the inputs. When `WordsPerElement` exceeds 512 words, each evaluation allocates
 `2 * width` words of temporary device memory per element (4 bytes each: about 480 MB for 100,000 elements of 600 words)
 and releases it after the launch.
