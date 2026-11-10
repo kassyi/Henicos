@@ -11,7 +11,8 @@ static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Pair_uS
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Pair_uStringsTest_g1_bSystem__Int32_e,__gsharp_mb_First)==0,"Kassyi.GSharp.Tests.Shared.Syntax.Pair_StringsTest<System.Int32>.First: offset");
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Pair_uStringsTest_g1_bSystem__Int32_e,__gsharp_mb_Second)==4,"Kassyi.GSharp.Tests.Shared.Syntax.Pair_StringsTest<System.Int32>.Second: offset");
 #endif
-extern "C" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__StringsAndAttributesTarget__GenericStruct(GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Pair_uStringsTest_g1_bSystem__Int32_e> __gsharp_id_0_items, GSharpArray<int> __gsharp_id_1_output){
+extern "C" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__StringsAndAttributesTarget__GenericStruct(GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Pair_uStringsTest_g1_bSystem__Int32_e> __gsharp_id_0_items, GSharpArray<int> __gsharp_id_1_output, unsigned int __gsharp_epoch){
+__gsharp_launch_epoch = __gsharp_epoch;
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Pair_uStringsTest_g1_bSystem__Int32_e __gsharp_id_2_p = __gsharp_array_at(__gsharp_id_0_items, 0, "G#: a null array is read at StringsAndAttributesTests.cs(45,35)");
 __gsharp_array_at(__gsharp_id_1_output, 0, "G#: a null array is read at StringsAndAttributesTests.cs(46,9)")=__gsharp_add_i32(__gsharp_id_2_p.__gsharp_mb_First,__gsharp_id_2_p.__gsharp_mb_Second);
 }

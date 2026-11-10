@@ -46,7 +46,9 @@ internal static class CudaHostLaunchEmitter
             {
                 WriteCudaKernelCompilationCall(writer, kernel);
                 var sharing = ArraySharingPlan.ForCuda(kernel.Host, isDevicePtr);
-                KernelLaunchEmitter.WriteVariablesInitialization(writer, kernel.Host, sharing, isDevicePtr);
+                var readsOwnRecord = KernelLaunchEmitter.ReadsOwnRecord(isDevicePtr, isCheckedBuild);
+                KernelLaunchEmitter.WriteVariablesInitialization(writer, kernel.Host, sharing, isDevicePtr,
+                    readsOwnRecord);
 
                 writer.AppendLine("try");
                 using (writer.Scope())
@@ -57,7 +59,7 @@ internal static class CudaHostLaunchEmitter
                 writer.AppendLine("finally");
                 using (writer.Scope())
                 {
-                    KernelLaunchEmitter.WriteCleanup(writer, kernel.Host, sharing, isDevicePtr);
+                    KernelLaunchEmitter.WriteCleanup(writer, kernel.Host, sharing, isDevicePtr, readsOwnRecord);
                 }
             }
 

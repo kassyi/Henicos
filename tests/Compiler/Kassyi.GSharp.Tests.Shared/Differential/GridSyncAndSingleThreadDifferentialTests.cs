@@ -9,7 +9,7 @@ using Xunit;
 namespace Kassyi.GSharp.Tests.Shared.Differential;
 
 /// <summary>
-/// Differential tests for <see cref="Gpu.SyncGrid()"/>, <see cref="Gpu.SyncGrid(Action)"/>,
+/// Differential tests for <see cref="Gpu.SyncGrid(GridSyncMode)"/>, <see cref="Gpu.SyncGrid(Action)"/>,
 /// <see cref="Gpu.SingleThread(Action)"/>, and cooperative multi-phase barrier + atomic workflows.
 /// </summary>
 public class GridSyncAndSingleThreadDifferentialTests

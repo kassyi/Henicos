@@ -1,12 +1,16 @@
 namespace Kassyi.GSharp.Compiler.Transpiler.Rules.InvocationRules;
 
-/// <summary>Invocation transpiler rule that handles Gpu.InlinePtx and Gpu.Constant macro expansions.</summary>
+/// <summary>
+/// Invocation transpiler rule that handles Gpu.InlinePtx and Gpu.Constant macro expansions and the grid barrier of
+/// Gpu.SyncGrid(mode).
+/// </summary>
 internal sealed class GpuMacroTranspilerRule : IInvocationTranspilerRule
 {
 
     public bool TryTranspile(InvocationExpressionSyntax node, ref TranspileContext context, IMethodSymbol symbol)
     {
-        switch (GpuMacroClassifier.Classify(symbol).Kind)
+        var call = GpuMacroClassifier.Classify(symbol);
+        switch (call.Kind)
         {
             case GpuMacroKind.InlinePtx:
                 TranspileInlinePtx(node, ref context);
@@ -16,8 +20,40 @@ internal sealed class GpuMacroTranspilerRule : IInvocationTranspilerRule
                 TranspileConstant(node, ref context);
                 return true;
 
+            case GpuMacroKind.SyncGrid when !call.HasBody:
+                TranspileGridSync(node, call, ref context);
+                return true;
+
             default:
                 return false;
+        }
+    }
+
+    // __gsharp_grid_sync() | __gsharp_grid_sync_fast(): the barrier of the constant mode, with no argument. [WHY] The
+    // mode selects the code of the barrier, not a value it reads, so no run-time branch is emitted. The CPU dialects
+    // lower the call into a state of the kernel (StateMachineLowerer) before it gets here
+    private static void TranspileGridSync(
+        InvocationExpressionSyntax node,
+        GpuMacroCall call,
+        ref TranspileContext context)
+    {
+        var barrier = GridSyncBarriers.Get(node, call, context.Query.SemanticModel, out var modeArgument);
+        switch (barrier)
+        {
+            case GridSyncBarrier.Deterministic:
+                context.Emitter.Writer.Append($"{GSharpInternalNames.Prelude.GridSync}()");
+                return;
+            case GridSyncBarrier.Fast:
+                context.Emitter.Writer.Append($"{GSharpInternalNames.Prelude.GridSyncFast}()");
+                return;
+            case GridSyncBarrier.NotConstant:
+                context.Reporter.Fail(GSharpDiagnostics.MacroArgumentMustBeConstant, (SyntaxNode?)modeArgument ?? node,
+                    GridSyncBarriers.ModeParameter, GridSyncBarriers.MacroName);
+                return;
+            default:
+                context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, (SyntaxNode?)modeArgument ?? node,
+                    GridSyncBarriers.UndefinedMode);
+                return;
         }
     }
 

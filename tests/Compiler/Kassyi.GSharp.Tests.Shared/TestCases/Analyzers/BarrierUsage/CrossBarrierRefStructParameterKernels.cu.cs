@@ -378,7 +378,7 @@ public static partial class CrossBarrierRefStructParameterKernels
         return holder.Target;
     }
 
-    // GSH0039: ternary expression whose branch reads the sliced span before Broadcast (#1004)
+    // Not reported: the left operand, which reads the sliced span, runs before the Broadcast split (#1535)
     [GpuDeviceFunction]
     public static int ConditionalReadSpanBeforeBroadcast(Span<int> s, bool c)
     {
@@ -386,7 +386,7 @@ public static partial class CrossBarrierRefStructParameterKernels
         return (c ? s[0] : 0) + Broadcast(0);
     }
 
-    // GSH0039: ternary expression whose branch reads the sliced local span before Broadcast (#1004)
+    // Not reported: the left operand, which reads the sliced local span, runs before the Broadcast split (#1535)
     [GpuDeviceFunction]
     public static int ConditionalReadLocalSpanBeforeBroadcast(Span<int> s, bool c)
     {

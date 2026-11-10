@@ -144,9 +144,27 @@ public class SyncIntrinsicClassifierTests
     public void Test_Classify_SyncGridWithBody_SplitsTheStateMachine()
     {
         var withBody = GetCoreType("Gpu").GetMembers("SyncGrid").OfType<IMethodSymbol>()
-            .Single(static method => method.Parameters.Length == 1);
+            .Single(static method => method.Parameters is [{ Type.TypeKind: TypeKind.Delegate }]);
 
         Assert.True(SyncIntrinsicClassifier.Classify(withBody).SplitsStateMachine);
+    }
+
+    // SyncGrid(body) and SyncGrid(mode) both take one parameter; only the delegate one has a body
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_GpuMacroClassifier_SyncGridOverloads_TellTheBodyFromTheMode()
+    {
+        var overloads = GetCoreType("Gpu").GetMembers("SyncGrid").OfType<IMethodSymbol>().ToArray();
+        var withBody = overloads.Single(static method => method.Parameters[0].Type.TypeKind == TypeKind.Delegate);
+        var withMode = overloads.Single(static method => method.Parameters[0].Type.TypeKind == TypeKind.Enum);
+
+        Assert.Equal(2, overloads.Length);
+        Assert.Equal((GpuMacroKind.SyncGrid, true, 0), Shape(GpuMacroClassifier.Classify(withBody)));
+        Assert.Equal(GpuMacroKind.SyncGrid, GpuMacroClassifier.Classify(withMode).Kind);
+        Assert.False(GpuMacroClassifier.Classify(withMode).HasBody);
+        Assert.Equal(SyncIntrinsicKind.GridBarrier, SyncIntrinsicClassifier.Classify(withMode).Kind);
+
+        static (GpuMacroKind, bool, int) Shape(GpuMacroCall call) => (call.Kind, call.HasBody, call.BodyOrdinal);
     }
 
     [Theory]

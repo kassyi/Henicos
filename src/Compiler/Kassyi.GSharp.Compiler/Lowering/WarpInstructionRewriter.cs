@@ -175,6 +175,31 @@ public class WarpInstructionRewriter(SemanticModel? semanticModel = null) : CSha
                 .WithTriviaFrom(visitedNode);
         }
 
+        // [WHY] C# evaluates the left operand before the right one, so a split hoisted out of the right operand would
+        // run before the left operand and miss what it writes (#1535). The left operand is evaluated once into a
+        // temporary first, in front of the split, unless it can be read after it (SpilledArguments).
+        // <spilled left> <op> <right with its splits hoisted>
+        public override SyntaxNode? VisitBinaryExpression(BinaryExpressionSyntax node)
+        {
+            if (!IsOrContainsWarpPrimitive(node.Right) ||
+                !SpilledArguments.IsSpilledLeftOperand(node, parent._semanticModel))
+            {
+                return base.VisitBinaryExpression(node);
+            }
+
+            var left = Visit(node.Left) as ExpressionSyntax
+                       ?? throw new InvalidOperationException("Warp instruction hoisting removed an operand.");
+            // A left operand that is itself a hoisted call is already its temporary
+            var spilledLeft = IsOrContainsWarpPrimitive(node.Left) && left is IdentifierNameSyntax ? left : Spill(left);
+            var right = Visit(node.Right) as ExpressionSyntax
+                        ?? throw new InvalidOperationException("Warp instruction hoisting removed an operand.");
+            return node.WithLeft(spilledLeft).WithRight(right);
+        }
+
+        private static bool IsOrContainsWarpPrimitive(ExpressionSyntax expression) =>
+            (expression is InvocationExpressionSyntax invocation && IsWarpPrimitive(invocation)) ||
+            ContainsWarpPrimitive(expression);
+
         private static bool HasNestedWarpPrimitiveArgument(InvocationExpressionSyntax call) =>
             call.ArgumentList.Arguments
                 .AsStackEnumerable()

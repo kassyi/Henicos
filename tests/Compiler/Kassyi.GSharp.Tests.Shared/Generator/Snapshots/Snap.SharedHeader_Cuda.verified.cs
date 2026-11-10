@@ -135,8 +135,11 @@ DataRace = 9,
 SwitchExpression = 10
 };
 
-struct GSharpDeviceErrorSlot {
+// One device error record (GSharpDeviceErrorSlot of the runtime). code and epoch are one 8-byte word, which a failing
+// thread claims with a single CAS, so a thread that loses it reads which launch holds the record.
+struct __align__(8) GSharpDeviceErrorSlot {
 unsigned int code;
+unsigned int epoch;
 unsigned int site_id;
 unsigned int module_id;
 unsigned int thread_linear;
@@ -144,8 +147,90 @@ unsigned int block_x;
 unsigned int block_yz;
 };
 
+// The records of the launches, indexed by epoch % __GSHARP_LAUNCH_RECORDS, in pinned host-mapped memory
+// (LaunchErrorRecords), which the host reads after a launch
+#define __GSHARP_LAUNCH_RECORDS 256u
+struct GSharpLaunchErrorRing {
+GSharpDeviceErrorSlot records[__GSHARP_LAUNCH_RECORDS];
+};
+
+// The record of the launches without an epoch (epoch 0: a launch captured into a CUDA graph, or no ring)
 __device__ GSharpDeviceErrorSlot* __gsharp_error_slot = nullptr;
+__device__ GSharpLaunchErrorRing* __gsharp_launch_errors = nullptr;
 __device__ unsigned int __gsharp_error_module_id = 0u;
+// The abort words of the launches of this module, indexed by epoch % __GSHARP_LAUNCH_ABORT_WORDS: the epoch of the last
+// launch with that index whose thread failed. [WHY] In device memory of the module: the grid barrier reads the word at
+// every arrival, and a read of host-mapped memory there made a barrier of 288 blocks take 150 us instead of 1.3 us.
+// Only the module's own launches on its own device share the words, and two resident launches 4096 epochs apart, which
+// would overwrite each other's word, do not fit on one device (at most 128 resident grids). The module loads them as
+// zeros.
+#define __GSHARP_LAUNCH_ABORT_WORDS 4096u
+__device__ unsigned int __gsharp_launch_abort[__GSHARP_LAUNCH_ABORT_WORDS];
+// The epoch of the running launch, which every thread of a kernel stores from its hidden last parameter
+// (__gsharp_epoch) before anything else. [WHY] A device function that records an error or waits at a barrier cannot see
+// the kernel's parameters; every thread writes the same value and reads only after its own write, so no barrier is
+// needed.
+__shared__ unsigned int __gsharp_launch_epoch;
+
+// The record that a failing thread of the running launch claims: its epoch's in the ring, or the record of epoch 0
+__device__ __forceinline__ GSharpDeviceErrorSlot* __gsharp_launch_record(unsigned int epoch) {
+GSharpLaunchErrorRing* ring = __gsharp_launch_errors;
+return epoch != 0u && ring != nullptr ? &ring->records[epoch % __GSHARP_LAUNCH_RECORDS] : __gsharp_error_slot;
+}
+
+// The abort word of the running launch; none for epoch 0
+__device__ __forceinline__ unsigned int* __gsharp_launch_abort_word(unsigned int epoch) {
+return epoch != 0u ? &__gsharp_launch_abort[epoch % __GSHARP_LAUNCH_ABORT_WORDS] : nullptr;
+}
+
+// Claims a record for the error of the running launch and writes it (first writer wins). When another launch still
+// holds the record (an unconsumed record of the launch __GSHARP_LAUNCH_RECORDS epochs before, which may still run), the
+// error goes to the record of epoch 0, tagged with this epoch. When that one is held by another launch as well, nothing
+// can record the error, and the thread traps rather than letting the launch complete with no exception (as without a
+// record, __gsharp_trap_site). Returns the record that holds an error.
+__device__ __forceinline__ GSharpDeviceErrorSlot* __gsharp_record_error(GSharpDeviceErrorSlot* record,
+unsigned int epoch, unsigned int code, unsigned int site_id) {
+const unsigned long long claim = (static_cast<unsigned long long>(epoch) << 32) | code;
+unsigned long long held = atomicCAS(reinterpret_cast<unsigned long long*>(&record->code), 0ull, claim);
+if (held != 0ull && static_cast<unsigned int>(held >> 32) != epoch) {
+GSharpDeviceErrorSlot* shared = __gsharp_error_slot;
+if (shared != nullptr && shared != record) {
+record = shared;
+held = atomicCAS(reinterpret_cast<unsigned long long*>(&record->code), 0ull, claim);
+}
+if (held != 0ull && static_cast<unsigned int>(held >> 32) != epoch) {
+asm volatile(""trap;"");
+__builtin_unreachable();
+}
+}
+if (held == 0ull) {
+// Orders the payload after the claim by a fence, not only by the dependency on the CAS result
+__threadfence();
+record->site_id = site_id;
+record->module_id = __gsharp_error_module_id;
+record->thread_linear = (threadIdx.x & 0x3FFu) | ((threadIdx.y & 0x3FFu) << 10)
+| ((threadIdx.z & 0x3FFu) << 20);
+record->block_x = blockIdx.x;
+record->block_yz = (blockIdx.y & 0xFFFFu) | ((blockIdx.z & 0xFFFFu) << 16);
+__threadfence_system();
+atomicExch(&record->code, code | 0x10000u);
+__threadfence_system();
+}
+return record;
+}
+
+// Tells the waiters of the running launch at a barrier that counts a fixed number of arrivals that one of its threads
+// failed (__gsharp_wait_check, __gsharp_grid_sync). [WHY] A host synchronization never clears the word: it holds an
+// epoch, so it tells only the launch with that epoch to leave, and a synchronization that consumes the record meanwhile
+// cannot make a waiter miss it. The host clears the words of every module only when the counter of epochs wraps around
+// (LaunchErrorRecords). The waiters run on the same device, so a fence of device scope orders the store.
+__device__ __forceinline__ void __gsharp_signal_abort(unsigned int epoch) {
+unsigned int* word = __gsharp_launch_abort_word(epoch);
+if (word != nullptr) {
+*reinterpret_cast<volatile unsigned int*>(word) = epoch;
+__threadfence();
+}
+}
 
 __device__ __host__ constexpr unsigned int __gsharp_builtin_message_id(const char* message) {
 if (message == nullptr) { return 0x80000000u; }
@@ -162,53 +247,15 @@ return 0x80000000u | (low == 0u ? 1u : low);
 // the threads that have not exited, and the warp intrinsics only for the non-exited threads of their mask, so a thread
 // that leaves with exit blocks no barrier of the threads that go on: the kernel completes, the context stays usable
 // and the host throws the recorded error at its next synchronization (DeviceErrorSlot). The barriers that count a fixed
-// number of arrivals, the G# grid barrier (__gsharp_grid_sync) and an mbarrier, look at the slot while they wait
-// (__gsharp_wait_check_device_error). Before sm_70 a barrier counts warps, not threads, so the thread traps, which
-// aborts the whole launch.
+// number of arrivals, the G# grid barrier (__gsharp_grid_sync) and an mbarrier, look at the abort word of their launch
+// while they wait (__gsharp_wait_check). Before sm_70 a barrier counts warps, not threads, so the thread traps,
+// which aborts the whole launch.
 #if defined(__CUDA_ARCH__) && __CUDA_ARCH__ >= 700
 #define __GSHARP_TRAP_EXITS 1
 #endif
 
-[[noreturn]] __device__ __noinline__ void __gsharp_trap_site(GSharpErrorCode code, unsigned int site_id) {
-GSharpDeviceErrorSlot* slot = __gsharp_error_slot;
-// [WHY] Without a slot (the host could not allocate it) nothing records the error, and a thread that exited would
-// let the launch complete with partial results and no exception, so the thread traps
-if (slot == nullptr) {
-asm volatile(""trap;"");
-__builtin_unreachable();
-}
-{
-unsigned int active = __activemask();
-unsigned int lane;
-asm volatile(""mov.u32 %0, %%laneid;"" : ""=r""(lane));
-unsigned int leader = __ffs(active) - 1u;
-if (lane == leader) {
-unsigned int c = static_cast<unsigned int>(code) & 0xFFFFu;
-if (atomicCAS(&slot->code, 0u, c) == 0u) {
-slot->site_id = site_id;
-slot->module_id = __gsharp_error_module_id;
-slot->thread_linear = (threadIdx.x & 0x3FFu)
-| ((threadIdx.y & 0x3FFu) << 10)
-| ((threadIdx.z & 0x3FFu) << 20);
-slot->block_x = blockIdx.x;
-slot->block_yz = (blockIdx.y & 0xFFFFu) | ((blockIdx.z & 0xFFFFu) << 16);
-__threadfence_system();
-atomicExch(&slot->code, c | 0x10000u);
-__threadfence_system();
-}
-#ifndef __GSHARP_TRAP_EXITS
-// trap aborts every thread of the launch, so a thread that lost the slot waits until the winner has
-// written it; a thread that exits stops only itself, and the winner finishes its record before exiting
-else {
-for (int spin = 0; spin < 100000; ++spin) {
-if ((*(volatile unsigned int*)&slot->code & 0x10000u) != 0u) { break; }
-__nanosleep(64);
-}
-}
-#endif
-}
-__syncwarp(active);
-}
+// Ends the thread after its launch failed: exit (sm_70+), or trap before sm_70
+[[noreturn]] __device__ __forceinline__ void __gsharp_exit_thread() {
 #ifdef __GSHARP_TRAP_EXITS
 #if __CUDA_ARCH__ >= 800
 // No asynchronous copy of this thread may land in shared memory after it has exited
@@ -221,8 +268,42 @@ asm volatile(""trap;"");
 __builtin_unreachable();
 }
 
-// The time a waiter at a barrier that counts a fixed number of arrivals keeps waiting without progress after it saw a
-// recorded error: 100 ms, in %globaltimer nanoseconds
+[[noreturn]] __device__ __noinline__ void __gsharp_trap_site(GSharpErrorCode code, unsigned int site_id) {
+const unsigned int epoch = __gsharp_launch_epoch;
+GSharpDeviceErrorSlot* record = __gsharp_launch_record(epoch);
+// [WHY] Without a record (the host could not allocate it) nothing records the error, and a thread that exited would
+// let the launch complete with partial results and no exception, so the thread traps
+if (record == nullptr) {
+asm volatile(""trap;"");
+__builtin_unreachable();
+}
+{
+unsigned int active = __activemask();
+unsigned int lane;
+asm volatile(""mov.u32 %0, %%laneid;"" : ""=r""(lane));
+unsigned int leader = __ffs(active) - 1u;
+if (lane == leader) {
+const unsigned int c = static_cast<unsigned int>(code) & 0xFFFFu;
+GSharpDeviceErrorSlot* held = __gsharp_record_error(record, epoch, c, site_id);
+__gsharp_signal_abort(epoch);
+#ifndef __GSHARP_TRAP_EXITS
+// trap aborts every thread of the launch, so a thread that lost the record waits until the winner has
+// written it; a thread that exits stops only itself, and the winner finishes its record before exiting
+for (int spin = 0; spin < 100000; ++spin) {
+if ((*(volatile unsigned int*)&held->code & 0x10000u) != 0u) { break; }
+__nanosleep(64);
+}
+#else
+(void)held;
+#endif
+}
+__syncwarp(active);
+}
+__gsharp_exit_thread();
+}
+
+// The time a waiter of a launch without an epoch keeps waiting without progress after it saw a recorded error: 100 ms,
+// in %globaltimer nanoseconds
 #define __GSHARP_WAIT_AFTER_ERROR_NS 100000000ull
 
 __device__ __forceinline__ unsigned long long __gsharp_globaltimer() {
@@ -231,15 +312,39 @@ asm volatile(""mov.u64 %0, %%globaltimer;"" : ""=l""(ns));
 return ns;
 }
 
-// Called every 1024 polls without progress by a thread that waits at a barrier counting a fixed number of arrivals
-// (the G# grid barrier, an mbarrier). *seen is 0 until the thread sees a recorded error, then the time it saw it or
-// last saw progress (__gsharp_wait_note_progress). The arrival it waits for may belong to a thread that failed and
-// exited, so 100 ms after that without progress the thread traps instead of waiting forever. [WHY] *seen stays set
-// once a code was seen: a synchronization of the host may consume and clear the slot meanwhile, and a waiter that
-// forgot the error would wait forever. trap, not exit: the slot is shared by every launch of the process, so the error
-// may be another launch's, and a waiter that exited would let this launch complete with partial results and no
-// exception of its own. Without a slot a failing thread traps (__gsharp_trap_site), so no waiter is left behind.
-__device__ __noinline__ void __gsharp_wait_check_device_error(unsigned long long* seen) {
+// The value of the elected rank of the grid barrier that tells the block its launch failed: no rank of a block of at
+// most 1024 threads
+#define __GSHARP_WAIT_LEAVE 0xFFFFFFFEu
+
+// Called every 1024 polls without progress by a thread that waits at a barrier counting a fixed number of arrivals (the
+// G# grid barrier, an mbarrier); the arrival it waits for may belong to a thread that failed and exited. When the abort
+// word of its launch holds the launch's epoch, a thread of this launch failed and recorded its error, so the waiter
+// leaves: the arriving thread of the grid barrier writes __GSHARP_WAIT_LEAVE into its block's elected rank (leader) and
+// returns, and the barrier lets the whole block exit (__gsharp_grid_sync); an mbarrier waiter (leader is null) exits
+// like the failing thread. The launch completes and the host throws the record. [WHY] The mbarrier waiter exits here,
+// and the grid barrier tests the elected rank only after this call returns: a branch to an exit in the inlined wait
+// made ptxas allocate the cooperative megakernels of GpuMath far more registers (InverseSqrt 64 to 145).
+// A launch without an epoch (captured into a CUDA graph) has no abort word and looks at the record of epoch 0, which
+// every such launch of the process shares: *seen is 0 until the thread sees a recorded error, then the time it saw it
+// or last saw progress (__gsharp_wait_note_progress), and 100 ms after that without progress the thread traps instead
+// of waiting forever. [WHY] *seen stays set once a code was seen, as a host synchronization may consume and clear the
+// record meanwhile. trap, not exit: the error may be another launch's, and a waiter that exited would let this launch
+// complete with partial results and no exception of its own. Without a record a failing thread traps
+// (__gsharp_trap_site), so no waiter is left behind. Known limit: a host synchronization that consumes the record of a
+// launch without an epoch before its waiters first look at it leaves them waiting until the driver resets the GPU.
+__device__ __noinline__ void __gsharp_wait_check(unsigned long long* seen, unsigned int* leader) {
+const unsigned int epoch = __gsharp_launch_epoch;
+const unsigned int* word = __gsharp_launch_abort_word(epoch);
+if (word != nullptr) {
+if (*reinterpret_cast<const volatile unsigned int*>(word) == epoch) {
+if (leader != nullptr) {
+*reinterpret_cast<volatile unsigned int*>(leader) = __GSHARP_WAIT_LEAVE;
+return;
+}
+__gsharp_exit_thread();
+}
+return;
+}
 if (*seen == 0ull) {
 GSharpDeviceErrorSlot* slot = __gsharp_error_slot;
 if (slot != nullptr && *(volatile unsigned int*)&slot->code != 0u) {
@@ -252,7 +357,7 @@ asm volatile(""trap;"");
 }
 }
 
-// Restarts the wait of __gsharp_wait_check_device_error after progress, keeping that an error was seen
+// Restarts the wait of __gsharp_wait_check after progress, keeping that an error was seen
 __device__ __forceinline__ void __gsharp_wait_note_progress(unsigned long long* seen) {
 if (*seen != 0ull) {
 *seen = __gsharp_globaltimer() | 1ull;
@@ -488,7 +593,7 @@ asm volatile(""mbarrier.arrive.shared.b64 %0, [%1];"" : ""=l""(state) : ""r""(ad
 
 // Spins on mbarrier.test_wait.parity until the phase with the given parity has completed. An mbarrier waits for a fixed
 // number of arrivals, which a thread that failed and exited never makes, so every 1024 incomplete tests the waiter looks
-// at the error slot (__gsharp_wait_check_device_error)
+// at the abort word of its launch (__gsharp_wait_check) and exits when a thread of the launch failed
 __device__ __forceinline__ void __gsharp_mbarrier_wait(unsigned long long* barrier, unsigned int phase) {
 unsigned int addr = (unsigned int)__cvta_generic_to_shared(barrier);
 unsigned int done = 0;
@@ -503,7 +608,7 @@ asm volatile(
 ""}""
 : ""=r""(done) : ""r""(addr), ""r""(phase) : ""memory"");
 if (!done && (++tests & 1023u) == 0u) {
-__gsharp_wait_check_device_error(&errorSeen);
+__gsharp_wait_check(&errorSeen, nullptr);
 }
 }
 }
@@ -789,42 +894,31 @@ __device__ __forceinline__ unsigned int __gsharp_null_read_site(const char* mess
 __device__ __forceinline__ unsigned int __gsharp_null_read_site(unsigned int site_id) { return site_id; }
 
 // The failure of a null array read, written inline: the record of __gsharp_trap_site without the warp leader election,
-// then the end of __gsharp_trap_site: the thread exits (sm_70+), or traps before sm_70 and without a slot.
+// then the end of __gsharp_trap_site: the thread exits (sm_70+), or traps before sm_70 and without a record.
 // [WHY] A call to __gsharp_trap_site (__noinline__) makes ptxas keep the caller's live registers across the call: the
 // cooperative ReciprocalNewtonRaphsonMegaKernel of GpuMath went from 60 registers to 255 with a 336-byte stack and no
 // longer launched with 1024 threads per block (CUDA_ERROR_COOPERATIVE_LAUNCH_TOO_LARGE). Written inline it takes 64
 [[noreturn]] __device__ __forceinline__ void __gsharp_null_read_trap(unsigned int site_id) {
-GSharpDeviceErrorSlot* slot = __gsharp_error_slot;
-if (slot == nullptr) {
+const unsigned int epoch = __gsharp_launch_epoch;
+GSharpDeviceErrorSlot* record = __gsharp_launch_record(epoch);
+if (record == nullptr) {
 // Nothing would record the error, so the thread must not exit with no exception (see __gsharp_trap_site)
 asm volatile(""trap;"");
 __builtin_unreachable();
 }
 constexpr unsigned int code = static_cast<unsigned int>(GSharpErrorCode::NullReference);
-if (atomicCAS(&slot->code, 0u, code) == 0u) {
-slot->site_id = site_id;
-slot->module_id = __gsharp_error_module_id;
-slot->thread_linear = (threadIdx.x & 0x3FFu) | ((threadIdx.y & 0x3FFu) << 10) | ((threadIdx.z & 0x3FFu) << 20);
-slot->block_x = blockIdx.x;
-slot->block_yz = (blockIdx.y & 0xFFFFu) | ((blockIdx.z & 0xFFFFu) << 16);
-__threadfence_system();
-atomicExch(&slot->code, code | 0x10000u);
-__threadfence_system();
-}
+GSharpDeviceErrorSlot* held = __gsharp_record_error(record, epoch, code, site_id);
+__gsharp_signal_abort(epoch);
 #ifdef __GSHARP_TRAP_EXITS
-// A thread that exits stops only itself, so a thread that lost the slot does not wait for the winner's record
-#if __CUDA_ARCH__ >= 800
-asm volatile(""cp.async.wait_all;"" ::: ""memory"");
-#endif
-asm volatile(""exit;"");
+// A thread that exits stops only itself, so a thread that lost the record does not wait for the winner's record
+(void)held;
 #else
-// trap stops the whole kernel, so a thread that lost the slot waits until the winner has written its record; the
+// trap stops the whole kernel, so a thread that lost the record waits until the winner has written it; the
 // writer sets the bit a few stores after its claim, so the wait ends. A bounded wait (a counter) costs the
 // cooperative InverseSqrtNewtonRaphsonMegaKernel 38 more registers and a stack
-while ((*(volatile unsigned int*)&slot->code & 0x10000u) == 0u) { }
-asm volatile(""trap;"");
+while ((*(volatile unsigned int*)&held->code & 0x10000u) == 0u) { }
 #endif
-__builtin_unreachable();
+__gsharp_exit_thread();
 }
 
 // GSharpArray::flags bit 0: a null optional kernel argument, which reads as an empty array (#838)
@@ -925,8 +1019,21 @@ return total;
 // [WHY] cooperative_groups' grid sync lets thread (0,0,0) of each block arrive for its block, so a block whose thread
 // (0,0,0) failed and exited never arrives and the grid waits forever. Here the threads of the block that have not
 // exited elect the arriving thread (the lowest linear index among them); __syncthreads waits only for those threads
-// (sm_70+). A block whose threads all exited never arrives either, so the arriving thread looks at the error slot while
-// it waits (__gsharp_wait_check_device_error) and traps.
+// (sm_70+). A block whose threads all exited never arrives either, so the arriving thread looks at the abort word of its
+// launch while it waits (__gsharp_wait_check), and once more when it reaches the barrier. When it sees that a thread of
+// the launch failed, it marks the block (its elected rank becomes __GSHARP_WAIT_LEAVE) and joins the last
+// __syncthreads with the other threads, which orders the mark before their read, and every thread of the block exits.
+// After a failure the other threads run to their next grid barrier, mbarrier wait or the end of the kernel.
+// Gpu.SyncGrid(GridSyncMode) picks where the arriving thread reads the word when it reaches the barrier:
+// - Deterministic (__gsharp_grid_sync, also the syncs of a Gpu.SyncGrid(body)): before it arrives. A block that reaches
+//   the barrier after the failure does not arrive, so the barrier does not complete and every block that waits at it
+//   leaves too. (A block that arrived just before the abort word was set can complete the barrier for the waiting
+//   blocks.) The release add waits for the load: 1.38 us per barrier against 1.05 us for Fast (288 blocks of 256
+//   threads, RTX 3070 Ti).
+// - Fast (__gsharp_grid_sync_fast): after it arrives, so the load does not delay the add. The arrival of a block of the
+//   failing launch can complete the barrier, and the other blocks then run the code after it up to their next grid
+//   barrier, mbarrier wait or the end of the kernel, where they leave.
+// Both modes leave no block waiting: a waiter leaves within 1024 polls of the failure.
 // The arrival counter is the one cooperative_groups uses: the barrier word of the grid workspace that the driver gives
 // every cooperative launch, starting at 0. Each barrier adds exactly 2^31 to it (block 0 adds 2^31 - (blocks - 1),
 // every other block 1), so a barrier is complete when bit 31 has flipped since the thread's own arrival, and no state
@@ -939,7 +1046,10 @@ return total;
 static_assert(sizeof(cg::details::grid_workspace) == 8u && __builtin_offsetof(cg::details::grid_workspace, barrier) == 4u,
 ""G#: the layout of cooperative_groups' grid workspace changed; __gsharp_grid_sync uses its barrier word"");
 
+// Gpu.SyncGrid() and Gpu.SyncGrid(GridSyncMode.Deterministic). Its wait loop (from the add to the end of the polls) is
+// copied in __gsharp_grid_sync_fast: change both together.
 __device__ __forceinline__ void __gsharp_grid_sync() {
+// The elected rank, or __GSHARP_WAIT_LEAVE once the arriving thread saw that the launch failed
 __shared__ unsigned int leader;
 const unsigned int rank = threadIdx.x + blockDim.x * (threadIdx.y + blockDim.y * threadIdx.z);
 // Every thread writes the same value, and no thread reads it before the barrier below
@@ -948,6 +1058,14 @@ __syncthreads();
 atomicMin(&leader, rank);
 __syncthreads();
 if (rank == leader) {
+// A block whose launch failed does not arrive (the release add would wait for this load anyway)
+const unsigned int epoch = __gsharp_launch_epoch;
+const unsigned int* abortWord = __gsharp_launch_abort_word(epoch);
+const unsigned int aborted =
+abortWord != nullptr ? *reinterpret_cast<const volatile unsigned int*>(abortWord) : 0u;
+if (aborted != 0u && aborted == epoch) {
+*reinterpret_cast<volatile unsigned int*>(&leader) = __GSHARP_WAIT_LEAVE;
+} else {
 unsigned int* arrived = &cg::details::get_grid_workspace()->barrier;
 const unsigned int blocks = gridDim.x * gridDim.y * gridDim.z;
 const unsigned int add = blockIdx.x + blockIdx.y + blockIdx.z == 0u ? 0x80000000u - (blocks - 1u) : 1u;
@@ -962,19 +1080,90 @@ asm volatile(""ld.acquire.gpu.u32 %0,[%1];"" : ""=r""(current) : ""l""(arrived) 
 if (((old ^ current) & 0x80000000u) != 0u) {
 break;
 }
-// Another block arriving is progress: only a wait that sees none counts toward the trap
+// Another block arriving is progress: only a wait that sees none counts toward the trap of a launch
+// without an epoch
 if (current != seen) {
 seen = current;
 __gsharp_wait_note_progress(&errorSeen);
 } else if ((++polls & 1023u) == 0u) {
-__gsharp_wait_check_device_error(&errorSeen);
+__gsharp_wait_check(&errorSeen, &leader);
+if (*reinterpret_cast<volatile unsigned int*>(&leader) == __GSHARP_WAIT_LEAVE) {
+break;
+}
+}
+}
+}
+}
+// The arriving thread joins this __syncthreads also when it marked the block, so the barrier orders its store
+// before the read below
+__syncthreads();
+// [WHY] A thread that is already at the next barrier may have written 0xFFFFFFFF before a slower one reads here,
+// which is not the leave value either; a block that leaves never writes leader again. The read is volatile so that
+// it is not taken from before the barrier
+if (*reinterpret_cast<volatile unsigned int*>(&leader) == __GSHARP_WAIT_LEAVE) {
+__gsharp_exit_thread();
+}
+}
+
+// Gpu.SyncGrid(GridSyncMode.Fast): the barrier above, but the arriving thread arrives first and reads the abort word
+// after its add. [WHY] A function of its own rather than a template parameter of the barrier above: sharing the code
+// raised the registers of the cooperative GpuMath megakernels (ReciprocalNewtonRaphsonMega from 48 to 70, which no
+// longer fits a cooperative launch of its grid), so the Deterministic barrier keeps its code as it is. The wait loop is
+// a copy of the one in __gsharp_grid_sync: change both together. [WHY] Not a shared __forceinline__ function: one
+// keeps the registers of every kernel, but changes the machine code of the Deterministic barrier in every kernel that
+// uses it (branch layout and register assignment), so the copy stays.
+__device__ __forceinline__ void __gsharp_grid_sync_fast() {
+// The elected rank, or __GSHARP_WAIT_LEAVE once the arriving thread saw that the launch failed
+__shared__ unsigned int leader;
+const unsigned int rank = threadIdx.x + blockDim.x * (threadIdx.y + blockDim.y * threadIdx.z);
+// Every thread writes the same value, and no thread reads it before the barrier below
+leader = 0xFFFFFFFFu;
+__syncthreads();
+atomicMin(&leader, rank);
+__syncthreads();
+if (rank == leader) {
+unsigned int* arrived = &cg::details::get_grid_workspace()->barrier;
+const unsigned int blocks = gridDim.x * gridDim.y * gridDim.z;
+const unsigned int add = blockIdx.x + blockIdx.y + blockIdx.z == 0u ? 0x80000000u - (blocks - 1u) : 1u;
+unsigned int old;
+asm volatile(""atom.add.release.gpu.u32 %0,[%1],%2;"" : ""=r""(old) : ""l""(arrived), ""r""(add) : ""memory"");
+// The block has arrived; it leaves without waiting when its launch failed
+const unsigned int epoch = __gsharp_launch_epoch;
+const unsigned int* abortWord = __gsharp_launch_abort_word(epoch);
+const unsigned int aborted =
+abortWord != nullptr ? *reinterpret_cast<const volatile unsigned int*>(abortWord) : 0u;
+if (aborted != 0u && aborted == epoch) {
+*reinterpret_cast<volatile unsigned int*>(&leader) = __GSHARP_WAIT_LEAVE;
+} else {
+unsigned int current;
+unsigned int seen = old;
+unsigned int polls = 0u;
+unsigned long long errorSeen = 0ull;
+for (;;) {
+asm volatile(""ld.acquire.gpu.u32 %0,[%1];"" : ""=r""(current) : ""l""(arrived) : ""memory"");
+if (((old ^ current) & 0x80000000u) != 0u) {
+break;
+}
+if (current != seen) {
+seen = current;
+__gsharp_wait_note_progress(&errorSeen);
+} else if ((++polls & 1023u) == 0u) {
+__gsharp_wait_check(&errorSeen, &leader);
+if (*reinterpret_cast<volatile unsigned int*>(&leader) == __GSHARP_WAIT_LEAVE) {
+break;
+}
+}
 }
 }
 }
 __syncthreads();
+if (*reinterpret_cast<volatile unsigned int*>(&leader) == __GSHARP_WAIT_LEAVE) {
+__gsharp_exit_thread();
+}
 }
 #else
 __device__ __forceinline__ void __gsharp_grid_sync() { cg::this_grid().sync(); }
+__device__ __forceinline__ void __gsharp_grid_sync_fast() { cg::this_grid().sync(); }
 #endif
 
 // --- AsParallel() aggregates (Grid strategy, cooperative kernels) ---

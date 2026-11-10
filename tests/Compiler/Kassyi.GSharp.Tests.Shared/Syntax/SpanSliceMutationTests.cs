@@ -6,12 +6,7 @@ namespace Kassyi.GSharp.Tests.Shared.Syntax;
 /// <summary>
 /// Differential and property tests for <c>Span&lt;T&gt;</c> slice mutation, fill, and reverse (#731).
 /// </summary>
-#if GSHARP_CUDA
-// A device error goes to the one error slot of the process, which a test running beside this one could read first
-[Collection(TestCollections.DeviceExclusive)]
-#else
 [Collection(TestCollections.GlobalStateSequential)]
-#endif
 public class SpanSliceMutationTests : TranspilerTestBase
 {
     public static TheoryData<bool> Paths => SpanWriteTestHelpers.Paths;

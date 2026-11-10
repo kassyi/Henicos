@@ -499,4 +499,46 @@ public static partial class StructDifferentialKernels
         dst[col + 1] = h.X;
         dst[col + 2] = w.Value;
     }
+
+    public static readonly string[] ConstantSizedFixedBufferColumns =
+    [
+        "items_first",
+        "items_last",
+        "wide_last",
+        "head",
+        "tail",
+    ];
+
+    // The fields around the buffers are written first, so a buffer emitted shorter or longer than its constant size
+    // changes them (and fails the layout check of the native build)
+    [GpuKernel]
+    public static unsafe void ConstantSizedFixedBufferKernel(int[] inputs, int[] r)
+    {
+        int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        if (tid >= inputs.Length)
+        {
+            return;
+        }
+
+        int x = inputs[tid];
+        DiffConstantSizedPacket p = default;
+        p.Head = x ^ 0x1234;
+        p.Tail = x ^ 0x5A5A;
+        for (int k = 0; k < DiffConstantSizedPacket.Size; k++)
+        {
+            p.Items[k] = x + k;
+        }
+
+        for (int k = 0; k < DiffConstantSizedPacket.WideSize; k++)
+        {
+            p.Wide[k] = (short)(x >> k);
+        }
+
+        int col = tid * 5;
+        r[col + 0] = p.Items[0];
+        r[col + 1] = p.Items[DiffConstantSizedPacket.Size - 1];
+        r[col + 2] = p.Wide[DiffConstantSizedPacket.WideSize - 1];
+        r[col + 3] = p.Head;
+        r[col + 4] = p.Tail;
+    }
 }
