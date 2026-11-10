@@ -103,50 +103,9 @@ internal sealed class IrExpressionPrinter(IrPrinter owner, SourceWriter writer, 
                 WriteIncrement(increment);
                 break;
             default:
-                WriteOtherForm(expression);
+                IrCreationPrinter.Write(this, _owner, _writer, expression);
                 break;
         }
-    }
-
-    // Creations, placeholders, sequences and opaque leaves
-    private void WriteOtherForm(IrExpression expression)
-    {
-        switch (expression)
-        {
-            case IrStructCreation creation:
-                WriteStructCreation(creation);
-                break;
-            case IrInitializedObject:
-                _writer.Append("<init>");
-                break;
-            case IrArrayCreation array:
-                WriteArrayCreation(array);
-                break;
-            case IrAddressOf address:
-                WriteAddressOf(address);
-                break;
-            case IrDefaultValue:
-                _writer.Append($"default({IteratorTypeResolver.FormatType(expression.Type)})");
-                break;
-            case IrDiscard:
-                _writer.Append("_");
-                break;
-            case IrSequence sequence:
-                WriteSequence(sequence);
-                break;
-            case IrOpaqueExpression opaque:
-                WriteOpaque(opaque);
-                break;
-            default:
-                throw new InvalidOperationException(
-                    "The IR printer has no form for " + expression.GetType().Name + ".");
-        }
-    }
-
-    private void WriteAddressOf(IrAddressOf address)
-    {
-        _writer.Append("&");
-        WriteOperand(address.Operand);
     }
 
     private void WriteConstant(IrConstant constant)
@@ -293,59 +252,6 @@ internal sealed class IrExpressionPrinter(IrPrinter owner, SourceWriter writer, 
         }
     }
 
-    private void WriteStructCreation(IrStructCreation creation)
-    {
-        _writer.Append($"new {IteratorTypeResolver.FormatType(creation.Type)}");
-        using (_writer.Parentheses())
-        {
-            WriteArguments(creation.Arguments);
-        }
-
-        WriteList(creation.Initializers);
-    }
-
-    private void WriteArrayCreation(IrArrayCreation array)
-    {
-        _writer.Append($"new {IteratorTypeResolver.FormatType(array.ElementType)}");
-        using (_writer.Brackets())
-        {
-            WriteExpression(array.Length);
-        }
-
-        WriteList(array.Elements);
-    }
-
-    private void WriteSequence(IrSequence sequence)
-    {
-        _writer.Append("seq");
-        using (_writer.Parentheses())
-        {
-            for (var index = 0; index < sequence.Locals.Length; index++)
-            {
-                _writer.AppendIf(index > 0, ", ");
-                _owner.WriteVariable(sequence.Locals[index]);
-            }
-
-            _writer.Append("; ");
-            foreach (var sideEffect in sequence.SideEffects)
-            {
-                _writer.Append(_owner.PrintInline(sideEffect));
-                _writer.Append("; ");
-            }
-
-            WriteExpression(sequence.Value);
-        }
-    }
-
-    private void WriteOpaque(IrOpaqueExpression opaque)
-    {
-        _writer.Append($"opaque:{IrPrintText.Reason(opaque.Reason)}");
-        using (_writer.Parentheses())
-        {
-            _writer.Append(IrPrintText.FirstLine(opaque.Syntax));
-        }
-    }
-
     private void WriteReceiver(IrExpression? receiver, ITypeSymbol containingType)
     {
         if (receiver is null)
@@ -358,7 +264,10 @@ internal sealed class IrExpressionPrinter(IrPrinter owner, SourceWriter writer, 
     }
 
     // A receiver or an operand used as a location is parenthesized with its category: (ref cell).Peek(), &(ref x)
-    private void WriteOperand(IrExpression operand)
+    /// <summary>
+    /// Writes a receiver or an operand, parenthesized with its category when it is used as a location.
+    /// </summary>
+    internal void WriteOperand(IrExpression operand)
     {
         if (operand.Category == IrCategory.Value)
         {
@@ -372,7 +281,8 @@ internal sealed class IrExpressionPrinter(IrPrinter owner, SourceWriter writer, 
         }
     }
 
-    private void WriteArguments(ImmutableArray<IrArgument> arguments)
+    /// <summary>Writes arguments in parameter order, each with its parameter name and kind.</summary>
+    internal void WriteArguments(ImmutableArray<IrArgument> arguments)
     {
         for (var index = 0; index < arguments.Length; index++)
         {
@@ -405,24 +315,6 @@ internal sealed class IrExpressionPrinter(IrPrinter owner, SourceWriter writer, 
                 {
                     _writer.AppendIf(argument.EvaluationIndex == position, argument.Parameter.Name);
                 }
-            }
-        }
-    }
-
-    private void WriteList<T>(ImmutableArray<T> items) where T : IrExpression
-    {
-        if (items.IsEmpty)
-        {
-            return;
-        }
-
-        _writer.Append(" ");
-        using (_writer.Braces())
-        {
-            for (var index = 0; index < items.Length; index++)
-            {
-                _writer.AppendIf(index > 0, ", ");
-                WriteExpression(items[index]);
             }
         }
     }
