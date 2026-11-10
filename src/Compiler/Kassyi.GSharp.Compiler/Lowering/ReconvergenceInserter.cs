@@ -344,18 +344,29 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
             };
             foreach (var statement in statements)
             {
-                for (var current = statement; current is LabeledStatementSyntax labeled; current = labeled.Statement)
+                if (FindLabelInChain(statement, name) is { } labeled)
                 {
-                    if (labeled.Identifier.ValueText == name)
-                    {
-                        return labeled;
-                    }
+                    return labeled;
                 }
             }
 
-            if (ancestor is MemberDeclarationSyntax or AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax)
+            if (ancestor is MemberDeclarationSyntax or AnonymousFunctionExpressionSyntax
+                or LocalFunctionStatementSyntax)
             {
                 break;
+            }
+        }
+
+        return null;
+    }
+
+    private static LabeledStatementSyntax? FindLabelInChain(StatementSyntax statement, string name)
+    {
+        for (var current = statement; current is LabeledStatementSyntax labeled; current = labeled.Statement)
+        {
+            if (labeled.Identifier.ValueText == name)
+            {
+                return labeled;
             }
         }
 
