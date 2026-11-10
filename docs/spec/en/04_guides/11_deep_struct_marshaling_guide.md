@@ -53,36 +53,34 @@ public static void FermatMegaKernel(
 
 ### The Clean AOT Context & Modern Call Pattern (After)
 
-With G# AOT Contexts combined with **default parameters** and **named arguments**, parameters are grouped logically into clean value types and calls become concise and self-documenting:
+With G# context structs combined with **default parameters** and **named arguments**, parameters are grouped logically
+into clean value types and calls become concise and self-documenting:
 
 ```csharp
-// 1. Declare domain contexts
-public static class AotContexts
+// 1. Declare domain context structs
+public struct DualNttContext
 {
-    public struct DualNtt
-    {
-        public uint[] Buffer1;
-        public uint[] Buffer2;
-        public uint[] Twiddles;
-        public int Length;
-    }
+    public uint[] Buffer1;
+    public uint[] Buffer2;
+    public uint[] Twiddles;
+    public int Length;
+}
 
-    public struct FermatContext
-    {
-        public uint[] OperandA;
-        public uint[] OperandB;
-        public uint[] Result;
-        public ulong Modulus;
-        public DualNtt Ntt; // Nested contexts are fully supported!
-    }
+public struct FermatContext
+{
+    public uint[] OperandA;
+    public uint[] OperandB;
+    public uint[] Result;
+    public ulong Modulus;
+    public DualNttContext Ntt; // Nested contexts are fully supported!
 }
 
 // 2. Define Device Helper with Default Parameters
-[GpuDevice]
+[GpuDeviceFunction]
 public static void ExecuteDualNtt(
-    AotContexts.DualNtt ntt, 
-    int stage = 0, 
-    bool isInverse = false, 
+    DualNttContext ntt,
+    int stage = 0,
+    bool isInverse = false,
     int unrollFactor = 4)
 {
     // Implementation...
@@ -90,11 +88,11 @@ public static void ExecuteDualNtt(
 
 // 3. Consume cleanly on GPU (Using Named Arguments & Omitting Defaults)
 [GpuKernel]
-public static void FermatMegaKernel(AotContexts.FermatContext ctx)
+public static void FermatMegaKernel(FermatContext ctx)
 {
     int tid = ThreadIndex.X;
     ctx.Result[tid] = ctx.OperandA[tid] + ctx.OperandB[tid];
-    
+
     // Call 1: All optional parameters take their defaults (stage=0, isInverse=false, unrollFactor=4)
     ExecuteDualNtt(ctx.Ntt);
 
@@ -103,13 +101,13 @@ public static void FermatMegaKernel(AotContexts.FermatContext ctx)
 }
 
 // 4. Launch cleanly from Host (Arrays automatically allocated, pinned, and copied)
-LaunchFermatMegaKernel(new AotContexts.FermatContext
+LaunchFermatMegaKernel(new FermatContext
 {
     OperandA = hostA,
     OperandB = hostB,
     Result = hostResult,
     Modulus = primeModulus,
-    Ntt = new AotContexts.DualNtt
+    Ntt = new DualNttContext
     {
         Buffer1 = hostBuf1,
         Buffer2 = hostBuf2,
@@ -125,12 +123,16 @@ LaunchFermatMegaKernel(new AotContexts.FermatContext
 
 ### How It Works Under the Hood
 
-When a kernel accepts a custom struct containing arrays, the G# Source Generator synthesizes three key artifacts at compile time:
+When a kernel accepts a custom struct containing arrays (or whose host and device layouts differ), the G# Source
+Generator synthesizes three key artifacts at compile time:
 
-1. **Native CUDA Shadow Struct (`Aot_...`)**:
-   Emits a memory-aligned C++ `struct` where managed array fields (`T[]`) are translated into raw device pointers (`T*`), and primitive scalars retain their blittable layout.
-2. **Marshaling Routine (`Marshal_...`)**:
-   Loops through the struct fields on the host. For every non-null array:
+1. **Native Shadow Struct (`{KernelClass}.AotContexts.{Name}`) and C++ Device Struct**:
+   Inside `{KernelClass}.AotContexts`, the generator emits a `LayoutKind.Explicit` C# shadow struct named after the
+   context struct with any trailing `Context` suffix stripped (for example, `FermatContext` becomes
+   `AotContexts.Fermat`). Managed array fields (`T[]`) become 16-byte `GSharpArrayProxy` fields (`Data`, `Length`,
+   `Flags`) on the host and `GSharpArray<T>` values (`T* data`, `int length`, `int flags`) in the emitted C++ struct.
+2. **Marshaling Routine (`AotContexts.Marshal_...`)**:
+   Loops through the struct fields on the host. On CUDA, for every non-null, non-empty array:
    - Queries array length and calculates byte size.
    - Looks the array up by reference in the launch's `DeviceArrayRegions` (the `deviceArrays` parameter). An array that
      the launch already copied, through another field of the same struct, a field of another struct argument, an
@@ -141,17 +143,20 @@ When a kernel accepts a custom struct containing arrays, the G# Source Generator
    - Otherwise allocates GPU global memory on the launch stream via `CudaDriverApi.cuMemAllocAsync` and records the
      region in `DeviceArrayRegions`.
    - Pins host memory using `GCHandle.Alloc(..., GCHandleType.Pinned)` and copies it to the device via
-     `cuMemcpyHtoDAsync_v2`.
-3. **Unmarshaling Routine (`Unmarshal_...`) and Cleanup**:
+     `cuMemcpyHtoDAsync_v2` (freeing the `GCHandle` in `finally`).
+   - On the native CPU path, `Marshal_` pins each non-null array via `GCHandle.Alloc(..., GCHandleType.Pinned)`, records
+     the handle in a per-argument `List<IntPtr>`, and passes the pinned host pointer in `native.<Field>.Data`.
+3. **Unmarshaling Routine (`AotContexts.Unmarshal_...`) and Cleanup**:
    Upon kernel completion:
-   - `Unmarshal_` copies the device memory of every array field back to its host array via `cuMemcpyDtoHAsync_v2`. An
-     array held by several fields is copied back once per field; every copy writes the same bytes. Array arguments
-     that hold one array copy it back once between them (`DeviceArrayRegions.TryClaimCopyBack`). A launch whose only
-     possible holders are `T[]` arguments has no `DeviceArrayRegions`: each argument compares itself with the arguments
-     marshaled before it (`ReferenceEquals`) and takes the region of the one that holds its array, so most launchers
-     allocate nothing per launch.
-   - The launcher then frees every region of the launch once, in its `finally` block, through
-     `DeviceArrayRegions.Free`, which calls `cuMemFreeAsync` on the launch stream.
+   - On CUDA, `Unmarshal_` pins each host array with `GCHandle` and copies its device memory back via
+     `cuMemcpyDtoHAsync_v2`. An array held by several fields is copied back once per field; every copy writes the same
+     bytes. Array arguments that hold one array copy it back once between them (`DeviceArrayRegions.TryClaimCopyBack`).
+     A launch whose only possible holders are `T[]` arguments has no `DeviceArrayRegions`: each argument compares itself
+     with the arguments marshaled before it (`ReferenceEquals`) and takes the region of the one that holds its array, so
+     most launchers allocate nothing per launch.
+   - The CUDA launcher then frees every region of the launch once, in its `finally` block, through
+     `DeviceArrayRegions.Free`, which calls `cuMemFreeAsync` on the launch stream. On the native CPU path, the
+     launcher's `finally` block frees every `GCHandle` recorded in the argument's `List<IntPtr>`.
 
 ### Complete Memory Lifecycle
 
@@ -165,30 +170,30 @@ sequenceDiagram
 
     Host->>Launcher: LaunchKernel(new MyContext { Input = hostIn, Output = hostOut })
     activate Launcher
-    
+
     Note over Launcher,Driver: Phase 1: Pre-Launch Marshaling (HtoD)
-    Launcher->>Driver: cuMemAllocAsync(out native.Input, sizeIn, hStream)
-    Launcher->>Driver: cuMemcpyHtoDAsync_v2(native.Input, pinnedHostIn, sizeIn, hStream)
-    Launcher->>Driver: cuMemAllocAsync(out native.Output, sizeOut, hStream)
-    Launcher->>Driver: cuMemcpyHtoDAsync_v2(native.Output, pinnedHostOut, sizeOut, hStream)
-    Note over Launcher: Each region is recorded in DeviceArrayRegions; a field holding an array already recorded reuses its region
-    
+    Launcher->>Driver: cuMemAllocAsync(out native.Input.Data, sizeIn, hStream)
+    Launcher->>Driver: cuMemcpyHtoDAsync_v2(native.Input.Data, pinnedHostIn, sizeIn, hStream)
+    Launcher->>Driver: cuMemAllocAsync(out native.Output.Data, sizeOut, hStream)
+    Launcher->>Driver: cuMemcpyHtoDAsync_v2(native.Output.Data, pinnedHostOut, sizeOut, hStream)
+    Note over Launcher: Regions recorded in DeviceArrayRegions; aliased fields reuse the same region
+
     Note over Launcher,GPU: Phase 2: Kernel Execution
     Launcher->>GPU: cuLaunchKernel(native_ctx by value)
     activate GPU
     GPU-->>GPU: Access ctx.Input[i] & write ctx.Output[i]
     GPU-->>Launcher: Kernel Execution Complete
     deactivate GPU
-    
+
     Note over Launcher,Driver: Phase 3: Post-Launch Unmarshaling (DtoH)
-    Launcher->>Driver: cuMemcpyDtoHAsync_v2(pinnedHostIn, native.Input, sizeIn, hStream)
-    Launcher->>Driver: cuMemcpyDtoHAsync_v2(pinnedHostOut, native.Output, sizeOut, hStream)
+    Launcher->>Driver: cuMemcpyDtoHAsync_v2(pinnedHostIn, native.Input.Data, sizeIn, hStream)
+    Launcher->>Driver: cuMemcpyDtoHAsync_v2(pinnedHostOut, native.Output.Data, sizeOut, hStream)
     Note over Launcher,Host: hostOut now contains kernel results!
-    
-    Note over Launcher,Driver: Phase 4: Automatic Resource Cleanup (launcher finally, DeviceArrayRegions.Free)
-    Launcher->>Driver: cuMemFreeAsync(native.Input, hStream)
-    Launcher->>Driver: cuMemFreeAsync(native.Output, hStream)
-    
+
+    Note over Launcher,Driver: Phase 4: Automatic Cleanup (launcher finally, DeviceArrayRegions.Free)
+    Launcher->>Driver: cuMemFreeAsync(native.Input.Data, hStream)
+    Launcher->>Driver: cuMemFreeAsync(native.Output.Data, hStream)
+
     Launcher-->>Host: Return to Caller
     deactivate Launcher
 ```
@@ -203,16 +208,19 @@ In addition to grouping arguments into structs, G# provides first-class support 
 
 In standard CUDA C++, function declarations with default parameters can suffer from declaration-order dependencies and header synchronization issues. G# resolves this at **compile-time AST transpilation**.
 
-When a `[GpuDevice]` method declares parameters with default values, the call site can omit any trailing or optional arguments. The G# Transpiler (`InvocationExpressionTranspilerRule`) inspects the callee's semantic symbol, retrieves the default constant literal or syntax node, and **automatically fills in the omitted arguments into the generated C++ invocation**.
+When a `[GpuDeviceFunction]` method declares parameters with default values, the call site can omit any trailing or
+optional arguments. The G# Transpiler (`InvocationExpressionTranspilerRule`) inspects the callee's semantic symbol,
+retrieves the default constant literal or syntax node, and **automatically fills in the omitted arguments into the
+generated C++ invocation**.
 
 #### Example: Defining and Invoking Helper with Multiple Defaults
 
 ```csharp
 // Device helper declaration with multiple default parameters
-[GpuDevice]
+[GpuDeviceFunction]
 public static void ProcessBlock(
-    float* input,
-    float* output,
+    float[] input,
+    float[] output,
     int length,
     float scale = 1.0f,
     float bias = 0.0f,
@@ -228,7 +236,7 @@ public static void ProcessBlock(
 }
 
 [GpuKernel]
-public static void KernelWithDefaults(AotContexts.VectorContext ctx)
+public static void KernelWithDefaults(VectorContext ctx)
 {
     // Case 1: Supply ONLY the required parameters. All 4 optional arguments take defaults:
     ProcessBlock(ctx.Input, ctx.Output, ctx.Length);
@@ -252,14 +260,14 @@ G# supports C# named arguments (`parameterName: value`). The transpiler maps eac
 
 ```csharp
 [GpuKernel]
-public static void KernelWithNamedArgs(AotContexts.VectorContext ctx)
+public static void KernelWithNamedArgs(VectorContext ctx)
 {
     // Case 1: Selectively override 'bias' and 'applyRelu' WITHOUT specifying 'scale':
     ProcessBlock(
-        ctx.Input, 
-        ctx.Output, 
-        ctx.Length, 
-        bias: 0.5f, 
+        ctx.Input,
+        ctx.Output,
+        ctx.Length,
+        bias: 0.5f,
         applyRelu: false
     );
     // Transpiles to CUDA C++ with 'scale' (1.0f) and 'stride' (1) automatically populated:
@@ -286,11 +294,11 @@ Because contexts are standard C# value-type structs, you can clone and mutate th
 
 ```csharp
 // Initialize base context once
-var baseNtt = new AotContexts.DualNtt
+var baseNtt = new DualNttContext
 {
     TemporaryBuffer = ctx.Workspace.TmpBuf,
-    M = m, 
-    N1 = n1, 
+    M = m,
+    N1 = n1,
     N2 = n2
 };
 
@@ -317,20 +325,23 @@ When designing AOT Context structures, follow this type support specification:
 | Type Category | Examples | Support Status | GPU Device Representation | Host Marshaling Behavior |
 | :--- | :--- | :--- | :--- | :--- |
 | **Primitive Scalars** | `int`, `uint`, `long`, `ulong`, `float`, `double`, `bool` | **Supported** | Blittable value type | Direct value copy |
-| **G# Vector Types** | `Float2`, `Float4`, `Int4`, `Double2` | **Supported** | CUDA vector type (`float4`) | Direct value copy (16-byte aligned) |
-| **1D Managed Arrays** | `uint[]`, `float[]`, `byte[]` | **Supported** | Raw device pointer (`T*`) | `cuMemAllocAsync` + `cuMemcpyHtoDAsync_v2` + `cuMemcpyDtoHAsync_v2` + `DeviceArrayRegions.Free` (`cuMemFreeAsync`) |
+| **G# Vector Types** | `Float2`, `Float4` | **Supported** | CUDA vector (`float4`) | Copy or `AotContexts` shadow |
+| **1D Managed Arrays** | `uint[]`, `float[]` | **Supported** | `GSharpArray<T>` | `GSharpArrayProxy` + `GCHandle` pin |
 | **Raw Pointers** | `uint*`, `void*`, `IntPtr` | **Supported** | Device pointer (`T*`) | Raw pointer pass (for pre-allocated buffers) |
 | **Nested Structs** | Custom user structs | **Supported** | Nested C++ `struct` | Recursive marshaling & unmarshaling |
 | **Enums** | `enum MyEnum : int` | **Supported** | Integral scalar type | Cast to underlying integer type |
-| **Nullable / Null Arrays** | `uint[]? buf = null` | **Supported** | `nullptr` | Allocation skipped; the device sees `null` (`is null` is true). Reading it (`Length`, an element, `foreach`) throws `NullReferenceException`, as in C# (§7) |
-| **Reference Classes** | `class MyClass { ... }` | **Prohibited** | N/A | Compile-time diagnostic error |
+| **Null Arrays** | `uint[]? buf = null` | **Supported** | `GSharpArray<T>` | Skipped; `is null`, read throws (§7) |
+| **Reference Classes** | `class MyClass { ... }` | **Prohibited** | N/A | Compile-time diagnostic error (**GSH0078**) |
 | **Multi-dimensional Arrays** | `int[,]`, `float[,,]` | **Prohibited** | N/A | Must flatten to 1D `int[]` |
 | **Jagged Arrays** | `int[][]` | **Prohibited** | N/A | Must flatten to 1D `int[]` |
 | **Strings & Objects** | `string`, `object` | **Prohibited** | N/A | Managed heap objects not allowed on GPU |
 | **Ref Structs** | `ref struct MyRefStruct` | **Prohibited** | N/A | Cannot be boxed or passed as generic arguments |
 
 > [!IMPORTANT]
-> **Field Accessibility**: All members within a context struct intended for GPU access must be declared as **`public` fields** or **public auto-properties** (`{ get; set; }`). Private or internal fields are ignored by native struct generators.
+> **Field Accessibility**: Every instance field and auto-property of a struct participates in its layout. For converted
+> structs (such as contexts with array fields), the generated `{KernelClass}.AotContexts.Marshal_...` and
+> `Unmarshal_...` methods read and write each member directly, so members must be accessible from the kernel class
+> (`public` fields or auto-properties, or `internal` within the same assembly).
 
 ---
 
@@ -342,7 +353,7 @@ G# supports both pass-by-value and pass-by-reference semantics for context struc
 
 ```csharp
 [GpuKernel]
-public static void Compute(AotContexts.MyContext ctx) { ... }
+public static void Compute(MyContext ctx) { ... }
 ```
 - **Device Mechanics**: The native struct is passed by value via CUDA's `__global__` parameter buffer. Fields are loaded into hardware registers or local memory.
 - **Array Mutations**: Array fields (`ctx.Output[tid] = ...`) modify shared global GPU memory and are reflected back to the host array.
@@ -352,9 +363,13 @@ public static void Compute(AotContexts.MyContext ctx) { ... }
 
 ```csharp
 [GpuKernel]
-public static void Compute(ref AotContexts.MyContext ctx) { ... }
+public static void Compute(ref MyContext ctx) { ... }
 ```
-- **Device Mechanics**: G# allocates a dedicated GPU memory buffer for the structure itself on the launch stream (`cuMemAllocAsync(out d_ctx, (IntPtr)sizeof(Aot_MyContext), hStream)`), copies the native shadow struct to device memory (`cuMemcpyHtoDAsync_v2`), passes the device pointer (`Aot_MyContext*`) to the kernel, and frees the buffer in `finally` via `cuMemFreeAsync(d_ctx, hStream)` (while any array fields are freed through `DeviceArrayRegions.Free`).
+- **Device Mechanics**: G# allocates a GPU buffer for the native shadow struct (`{KernelClass}.AotContexts.My`, with
+  trailing `Context` stripped) on the launch stream (`cuMemAllocAsync` of `sizeof(AotContexts.My)` on `hStream`),
+  copies the shadow struct to device memory (`cuMemcpyHtoDAsync_v2`), passes the device pointer (`MyContext*` in C++) to
+  the kernel, and frees `d_ctx` in `finally` via `cuMemFreeAsync(d_ctx, hStream)` (while array fields are freed through
+  `DeviceArrayRegions.Free`).
 - **Post-Kernel Sync**: After kernel execution, the updated shadow struct is copied back from GPU device memory via `cuMemcpyDtoHAsync_v2` (and unmarshaled into the `ref` host struct).
 - **Use Case**: Used when GPU kernel threads need to update scalar metadata (e.g., dynamic error codes, counter offsets, converged iteration counts) that must be read back on the host.
 
@@ -399,7 +414,7 @@ public struct SolverContext
 
 G# natively handles `null` array members:
 - On the host, if `ctx.DebugTelemetry == null`, the generator **skips** `cuMemAllocAsync` and `cuMemcpyHtoDAsync_v2`.
-- In the native shadow struct, `native.DebugTelemetry` is set to `IntPtr.Zero` (`nullptr`).
+- In the native shadow struct, `native.DebugTelemetry` remains `default` (`Data == IntPtr.Zero`, `Length == 0`).
 - An empty array (`new float[0]`, `[]`) is not `null`: it has no allocation either, but its device pointer is
   `GSharpArrayProxy.EmptyArrayData`, a non-null address that is never dereferenced (the native CPU build passes the
   pinned address of the empty array). On every path `ctx.DebugTelemetry is null` is false for it and `Length` is 0.
@@ -445,26 +460,30 @@ public static void Solve(SolverContext ctx)
 
 ---
 
-## 8. Seamless Interop with Existing `[GpuDevice]` Functions
+## 8. Seamless Interop with Existing `[GpuDeviceFunction]` Functions
 
 A common concern when refactoring a legacy codebase to use Context structures is whether existing helper functions taking raw pointers (`uint*`, `float*`) need to be rewritten.
 
-**No rewriting is required.** Inside any `[GpuKernel]` or `[GpuDevice]` method, array fields within a context struct are already typed as raw pointers (`T*`):
+**No rewriting of the helper is required.** Pin the context's array fields with a standard C# `fixed` statement; on the
+device, each `GSharpArray<T>` field converts directly to its `T*` data pointer:
 
 ```csharp
 // Existing device function expecting loose pointers
-[GpuDevice]
-public static void FastMontgomeryMultiply(uint* a, uint* b, uint* result, uint* scratch, int len)
+[GpuDeviceFunction]
+public static unsafe void FastMontgomeryMultiply(uint* a, uint* b, uint* result, uint* scratch, int len)
 {
     // Unchanged legacy implementation...
 }
 
 // Modern kernel receiving clean context
 [GpuKernel]
-public static void ModernKernel(AotContexts.CryptoContext ctx)
+public static unsafe void ModernKernel(CryptoContext ctx)
 {
-    // Pass struct fields directly as raw pointers!
-    FastMontgomeryMultiply(ctx.OperandA, ctx.OperandB, ctx.Result, ctx.Scratch, ctx.Length);
+    // Pin context array fields and pass them as raw pointers
+    fixed (uint* a = ctx.OperandA, b = ctx.OperandB, result = ctx.Result, scratch = ctx.Scratch)
+    {
+        FastMontgomeryMultiply(a, b, result, scratch, ctx.Length);
+    }
 }
 ```
 
@@ -482,26 +501,23 @@ namespace MyProject.GpuDemo;
 
 public static partial class VectorMathKernels
 {
-    // 1. Group arguments into an AotContexts container
-    public static class AotContexts
+    // 1. Group arguments into a context struct (the generator emits VectorMathKernels.AotContexts.VectorProcess)
+    public struct VectorProcessContext
     {
-        public struct VectorProcessContext
-        {
-            public float[] Input;
-            public float[] Output;
-            public float Factor;
-            public int Length;
-            public float[]? Telemetry; // Optional buffer (null supported)
-        }
+        public float[] Input;
+        public float[] Output;
+        public float Factor;
+        public int Length;
+        public float[]? Telemetry; // Optional buffer (null supported)
     }
 
     // 2. Define a reusable Device Helper with Default Parameters
-    [GpuDevice]
+    [GpuDeviceFunction]
     public static float TransformCell(
-        float inputVal, 
-        float factor, 
-        float offset = 0.0f, 
-        bool applySquare = false, 
+        float inputVal,
+        float factor,
+        float offset = 0.0f,
+        bool applySquare = false,
         float clampMax = 1000.0f)
     {
         float result = (inputVal * factor) + offset;
@@ -512,7 +528,7 @@ public static partial class VectorMathKernels
 
     // 3. Define the GPU Kernel consuming the context and invoking helper with Named Arguments
     [GpuKernel]
-    public static void ProcessVectorKernel(AotContexts.VectorProcessContext ctx, float offset = 0.0f)
+    public static void ProcessVectorKernel(VectorProcessContext ctx, float offset = 0.0f)
     {
         int idx = ThreadIndex.X;
         if (idx >= ctx.Length) return;
@@ -525,9 +541,9 @@ public static partial class VectorMathKernels
         if (ctx.Telemetry != null)
         {
             ctx.Telemetry[idx] = TransformCell(
-                ctx.Input[idx], 
-                ctx.Factor, 
-                offset: offset, 
+                ctx.Input[idx],
+                ctx.Factor,
+                offset: offset,
                 applySquare: true // Selectively override parameter
             );
         }
@@ -544,7 +560,7 @@ public static partial class VectorMathKernels
 
         // Launch directly using Context struct & named launch arguments!
         VectorMathKernels.LaunchProcessVectorKernel(
-            new AotContexts.VectorProcessContext
+            new VectorProcessContext
             {
                 Input = hostIn,
                 Output = hostOut,
