@@ -10,6 +10,27 @@ internal static class SignedTree
     // anything is evaluated.
     public static GpuBigInt Evaluate(ISignedOperator root, GpuWorkspace workspace, GpuBigUInt? targetResult)
     {
+        // The root's sign, when a kernel wrote it, is read once here (the only read of the evaluation)
+        var value = EvaluateSigned(root, workspace, targetResult);
+        try
+        {
+            return new GpuBigInt(value.Magnitude, SignedDeviceOps.ReadNegative(workspace, value.Sign));
+        }
+        catch
+        {
+            value.Magnitude.Dispose();
+            throw;
+        }
+        finally
+        {
+            value.Sign.Dispose();
+        }
+    }
+
+    // The value of the root with its sign as planned: a device sign stays on the device (a CUDA graph capture records
+    // the kernels that write it, and the graph reads it after each launch)
+    public static SignedValue EvaluateSigned(ISignedOperator root, GpuWorkspace workspace, GpuBigUInt? targetResult)
+    {
         var frames = new PooledStack<Frame>();
         var values = new PooledStack<SignedValue>();
         try
@@ -41,8 +62,7 @@ internal static class SignedTree
                 values.Push(node.Apply(workspace, first, second, frame.Target));
             }
 
-            // The value of the root; a device sign is read once, here
-            return values.Pop().ToHost();
+            return values.Pop();
         }
         catch (Exception failure)
         {
@@ -113,26 +133,9 @@ internal static class SignedTree
         }
     }
 
-    // The operands with their host signs, for a node that computes with host signs. Releases both when one carries a
-    // device sign, which such a node cannot use.
-    public static (GpuBigInt First, GpuBigInt Second) HostOperands(SignedValue first, SignedValue second)
-    {
-        if (first.Sign.IsDevice || second.Sign.IsDevice)
-        {
-            try
-            {
-                first.Dispose();
-            }
-            finally
-            {
-                second.Dispose();
-            }
-
-            throw new InvalidOperationException("An operand's sign is on the device; this node needs a host sign.");
-        }
-
-        return (first.ToHost(), second.ToHost());
-    }
+    // An operand of a host sign plan with its host sign (a device sign, which such a plan does not depend on, as +)
+    public static GpuBigInt WithHostSign(SignedValue value) =>
+        new(value.Magnitude, !value.Sign.IsDevice && value.Sign.HostNegative);
 
     // Every node of the tree below root, root included
     public static void Collect(IGpuBigIntExpression root, HashSet<IGpuBigIntExpression> nodes)

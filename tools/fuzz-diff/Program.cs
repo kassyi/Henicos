@@ -28,7 +28,8 @@ public static class Program
           --size <1..8>            Complexity scale factor when --batch-size is 1 (default: 4).
           --profile <M|C|G>        Target profile controlling active known-issue avoidance switches (default: C).
           --allow-issue <n>        Re-enable generation of shapes avoided for known issue #<n> (repeatable).
-          --swarm-focus <mode>     Optional Swarm focus mode (default, coalesce-assign-value, tuple-deconstruct-complex).
+          --swarm-focus <mode>     Optional Swarm focus mode (default, coalesce-assign-value, tuple-deconstruct-complex,
+                                   warp-shuffle, barrier, iterator, suspending-call, split-points).
           --metamorphic            Emit semantics-preserving metamorphic variants alongside each generated kernel.
           --out-dir <dir>          Output directory for FuzzBatchKernels.cu.cs and FuzzBatchCases.cs (default: tmp/differential-fuzz/Generated).
           --repo-root <dir>        Repository root path used to emit FuzzBatch.Cpu.csproj and FuzzBatch.Cuda.csproj in the parent work directory.

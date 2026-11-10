@@ -180,7 +180,7 @@ public class QuadraticFoldModulusTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void FoldReference_And_Canonicalize_WrongLengths_Throw()
+    public void FoldAndCanonicalize_WrongBufferLengths_ThrowsArgumentException()
     {
         var modulus = new QuadraticFoldModulus(40);
 

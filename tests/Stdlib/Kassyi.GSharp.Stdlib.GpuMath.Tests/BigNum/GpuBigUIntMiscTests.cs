@@ -5,7 +5,7 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum;
 public class GpuBigUIntMiscTests
 {
     [SkippableFact]
-    public void Test_GpuBigUInt_Misc_Methods()
+    public void UtilityMethods_HashCodeToStringAndProxy_ProducesValidOutputs()
     {
         CudaCapability.EnsureGpuAvailable();
         using var scope = new GpuKernelLoader.CudaContextScope();

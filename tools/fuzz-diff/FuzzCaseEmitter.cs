@@ -54,6 +54,9 @@ internal static class FuzzCaseEmitter
 
     /// <summary>
     /// Renders a single left-aligned <c>DifferentialCase</c> property declaration using an interpolated raw string literal.
+    /// A split kernel (<paramref name="split"/>) launches on <see cref="FuzzSplitOracle.LaunchShapeExpression"/> and is
+    /// checked against its oracle twin (<see cref="FuzzSplitOracle.OracleName"/>) unless
+    /// <paramref name="oracleMethodName"/> names another oracle.
     /// </summary>
     internal static string RenderDifferentialCaseProperty(
         string kernelClassName,
@@ -61,9 +64,12 @@ internal static class FuzzCaseEmitter
         int? inputSeed,
         string headerComment,
         string column = "hash",
-        string? oracleMethodName = null)
+        string? oracleMethodName = null,
+        bool split = false)
     {
-        string effectiveOracleName = oracleMethodName ?? kernelMethodName;
+        string effectiveOracleName = oracleMethodName
+            ?? (split ? FuzzSplitOracle.OracleName(kernelMethodName) : kernelMethodName);
+        string shapeExpression = split ? FuzzSplitOracle.LaunchShapeExpression : "LaunchShapes.PartialWarp()";
         string seedsLine = inputSeed is { } s
             ? string.Create(CultureInfo.InvariantCulture, $"\nSeeds = [{s}],")
             : string.Empty;
@@ -72,7 +78,7 @@ internal static class FuzzCaseEmitter
             {{headerComment}}
             public static DifferentialCase {{kernelMethodName}}_Case { get; } = new("{{kernelClassName}}.{{kernelMethodName}}")
             {
-            Shape = LaunchShapes.PartialWarp(),{{seedsLine}}
+            Shape = {{shapeExpression}},{{seedsLine}}
             Inputs = static (rng, shape) =>
             {
             int rows = shape.Rows;

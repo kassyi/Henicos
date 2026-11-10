@@ -3,7 +3,7 @@ namespace Kassyi.GSharp.Compiler.Tasks;
 /// <summary>
 /// Finds the functions that a <c>// gsharp:suppress GS0001</c> comment excludes from the register spill warning.
 /// </summary>
-internal static class SpillSuppressionParser
+public static class SpillSuppressionParser
 {
     private const string SuppressGs0001Marker = "// gsharp:suppress GS0001";
 

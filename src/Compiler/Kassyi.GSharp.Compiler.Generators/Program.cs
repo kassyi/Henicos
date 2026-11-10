@@ -23,7 +23,8 @@ public static class Program
 
     /// <summary>
     /// Runs the mode named by the first argument and returns the exit code: <c>0</c> on success,
-    /// <see cref="InputErrorExitCode"/> when an input is rejected, <see cref="UsageExitCode"/> for a wrong command line.
+    /// <see cref="InputErrorExitCode"/> when an input is rejected,
+    /// <see cref="UsageExitCode"/> for a wrong command line.
     /// Errors go to <paramref name="error"/>.
     /// </summary>
     public static int Run(string[] args, TextWriter error)

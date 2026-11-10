@@ -27,29 +27,33 @@ public class StackLinqGpuBenchmark
         _results = new int[256];
         
         // JIT/PTXコンパイルとデバイスのウォームアップ
-        StackLinqGpuKernels.LaunchRawFor_HeavyPipeline(_data, _results, blockDimX: 256);
-        StackLinqGpuKernels.LaunchStackLinq_HeavyPipeline(_data, _results, blockDimX: 256);
-        StackLinqGpuKernels.LaunchRawFor_DataWindowing(_data, _endMarker, _results, blockDimX: 256);
-        StackLinqGpuKernels.LaunchStackLinq_DataWindowing(_data, _endMarker, _results, blockDimX: 256);
+        StackLinqGpuKernels.LaunchRawForHeavyPipelineKernel(_data, _results, blockDimX: 256);
+        StackLinqGpuKernels.LaunchStackLinqHeavyPipelineKernel(_data, _results, blockDimX: 256);
+        StackLinqGpuKernels.LaunchRawForDataWindowingKernel(_data, _endMarker, _results, blockDimX: 256);
+        StackLinqGpuKernels.LaunchStackLinqDataWindowingKernel(_data, _endMarker, _results, blockDimX: 256);
     }
 
     // ==========================================
     // GPU カーネル: Heavy Pipeline
     // ==========================================
 
-    [Benchmark]
-    public void RawFor_HeavyPipeline_GPU() => StackLinqGpuKernels.LaunchRawFor_HeavyPipeline(_data, _results, blockDimX: 256);
+    [Benchmark(Description = "RawFor_HeavyPipeline_GPU")]
+    public void RawForHeavyPipelineGpu() =>
+        StackLinqGpuKernels.LaunchRawForHeavyPipelineKernel(_data, _results, blockDimX: 256);
 
-    [Benchmark]
-    public void StackLinq_HeavyPipeline_GPU() => StackLinqGpuKernels.LaunchStackLinq_HeavyPipeline(_data, _results, blockDimX: 256);
+    [Benchmark(Description = "StackLinq_HeavyPipeline_GPU")]
+    public void StackLinqHeavyPipelineGpu() =>
+        StackLinqGpuKernels.LaunchStackLinqHeavyPipelineKernel(_data, _results, blockDimX: 256);
 
     // ==========================================
     // GPU カーネル: Data Windowing
     // ==========================================
 
-    [Benchmark]
-    public void RawFor_DataWindowing_GPU() => StackLinqGpuKernels.LaunchRawFor_DataWindowing(_data, _endMarker, _results, blockDimX: 256);
+    [Benchmark(Description = "RawFor_DataWindowing_GPU")]
+    public void RawForDataWindowingGpu() =>
+        StackLinqGpuKernels.LaunchRawForDataWindowingKernel(_data, _endMarker, _results, blockDimX: 256);
 
-    [Benchmark]
-    public void StackLinq_DataWindowing_GPU() => StackLinqGpuKernels.LaunchStackLinq_DataWindowing(_data, _endMarker, _results, blockDimX: 256);
+    [Benchmark(Description = "StackLinq_DataWindowing_GPU")]
+    public void StackLinqDataWindowingGpu() =>
+        StackLinqGpuKernels.LaunchStackLinqDataWindowingKernel(_data, _endMarker, _results, blockDimX: 256);
 }

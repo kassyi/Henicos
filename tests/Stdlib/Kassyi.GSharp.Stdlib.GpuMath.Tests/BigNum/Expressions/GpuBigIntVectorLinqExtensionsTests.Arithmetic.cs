@@ -425,7 +425,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
     [Fact]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.SadPath)]
-    public void SelectSqrt_Negative_And_SelectDivideByUInt32_Zero_ThrowExpectedExceptions()
+    public void Evaluate_NegativeSqrtAndDivideByZero_ThrowsExpectedExceptions()
     {
         using var negArray = CreateArray([16, -9, 25]);
         using var sqrtExpr = negArray.AsVectorizedEnumerable().SelectSqrt();

@@ -140,7 +140,7 @@ public class KnownDivergencesTests
                 );
             }
 
-            if (title != issue.Title)
+            if (WithoutTemplatePrefix(title) != WithoutTemplatePrefix(issue.Title))
             {
                 problems.Add(
                     $"#{issue.Number} (line {issue.Line}) is titled \"{title}\" on GitHub, not \"{issue.Title}\""
@@ -152,6 +152,14 @@ public class KnownDivergencesTests
             problems.Count == 0,
             "KnownDivergences.yaml is out of date with GitHub:\n" + string.Join("\n", problems)
         );
+    }
+
+    // The issue templates put the kind in front of the title ("[Bug]: ", "[Cleanup]: "), and issues get that prefix
+    // when they are moved onto a template; the recorded title is the part after it.
+    private static string WithoutTemplatePrefix(string title)
+    {
+        int end = title.IndexOf("]: ", StringComparison.Ordinal);
+        return title.StartsWith("[", StringComparison.Ordinal) && end > 0 ? title.Substring(end + 3) : title;
     }
 
     // ---- The reader ----
