@@ -1,6 +1,7 @@
 using System;
 using System.Numerics;
 using System.Threading;
+using static System.Numerics.BitOperations;
 using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.TestCases.Diagnostics;
@@ -45,5 +46,22 @@ public static partial class BclIntrinsicMappedKernels
     {
         Func<uint, int> popCount = BitOperations.PopCount;
         output[0] = popCount(data[0]);
+    }
+
+    // A mapped method named without its type (using static) and used as a method group: GSH0003
+    [GpuKernel]
+    [SkipSnapshotConsistency("Diagnostics case")]
+    public static void UsingStaticMethodGroupKernel(uint[] data, int[] output)
+    {
+        Func<uint, int> popCount = PopCount;
+        output[0] = popCount(data[0]);
+    }
+
+    // Mapped for nuint, but a nint or nuint value does not build in GPU code yet: GSH0003
+    [GpuKernel]
+    [SkipSnapshotConsistency("Diagnostics case")]
+    public static void NuintOverloadKernel(ulong[] data, int[] output)
+    {
+        output[0] = BitOperations.PopCount((nuint)data[0]);
     }
 }
