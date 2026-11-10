@@ -5,9 +5,13 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 /// </summary>
 internal interface IGpuMemoryObserver
 {
-    /// <summary>A buffer of <paramref name="numWords"/> words at <paramref name="pointer"/> was leased.</summary>
+    /// <summary>A buffer was leased.</summary>
+    /// <param name="pointer">The device pointer of the buffer.</param>
+    /// <param name="numWords">The words of the buffer.</param>
     void Leased(IntPtr pointer, int numWords);
 
-    /// <summary>The lease of the buffer at <paramref name="pointer"/> ended.</summary>
+    /// <summary>The lease of a buffer ended.</summary>
+    /// <param name="pointer">The device pointer of the buffer.</param>
+    /// <param name="numWords">The words of the buffer.</param>
     void Released(IntPtr pointer, int numWords);
 }

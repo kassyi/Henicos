@@ -1,7 +1,7 @@
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 
 /// <summary>
-/// A stack-scoped visitor that recursively evaluates unsigned GPU BigInteger AST expressions using rented device memory buffers.
+/// A stack-scoped visitor that evaluates unsigned GPU BigInteger AST expressions using rented device memory buffers.
 /// </summary>
 /// <param name="context">The execution context providing memory manager and arithmetic providers.</param>
 /// <param name="targetResult">
@@ -14,10 +14,17 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 /// to prevent device memory leaks and eliminate managed heap allocations.
 /// </para>
 /// <para>
-/// <b>Zero-Allocation:</b> As a <see langword="ref struct"/>, the visitor lives solely on the call stack.
+/// <b>Depth:</b> The operator nodes of GpuMath are evaluated with a stack on the heap, not by recursion, so an
+/// expression built in a loop can be as deep as the loop. A node implemented elsewhere evaluates itself through
+/// <see cref="IGpuBigUIntExpression.Accept"/>; the operands it visits with <see cref="Visit"/> start a walk of their own.
+/// </para>
+/// <para>
+/// <b>Zero-Allocation:</b> As a <see langword="ref struct"/>, the visitor lives solely on the call stack; the stacks of
+/// the walk are rented from <see cref="ArrayPool{T}.Shared"/>.
 /// </para>
 /// </remarks>
 public ref struct BigIntExpressionVisitor(GpuBigIntExecutionContext context, ScopedBigIntMemory targetResult = default)
+    : IExpressionWalker<IGpuBigUIntExpression, GpuBigIntMemoryHandle, bool>
 {
     /// <summary>
     /// The execution context for memory allocation and kernel dispatch.
@@ -26,6 +33,9 @@ public ref struct BigIntExpressionVisitor(GpuBigIntExecutionContext context, Sco
 
     // An optional target buffer to use for the root evaluation
     private ScopedBigIntMemory _targetResult = targetResult;
+
+    // Whether the node being entered is the root of the evaluation, the only node that may write into the target
+    private bool _isRoot = true;
 
     /// <summary>
     /// Visits and evaluates an arbitrary expression AST node.
@@ -41,9 +51,6 @@ public ref struct BigIntExpressionVisitor(GpuBigIntExecutionContext context, Sco
         return res;
     }
 
-    private bool _isRoot = true;
-
-
     /// <summary>
     /// Visits a leaf constant GPU BigInteger and wraps it in a non-owning scoped memory handle.
     /// </summary>
@@ -53,6 +60,28 @@ public ref struct BigIntExpressionVisitor(GpuBigIntExecutionContext context, Sco
     {
         // Wrapper without transferring ownership
         return new ScopedBigIntMemory(node.Handle.Borrow());
+    }
+
+    // An operator node of GpuMath, and the operator nodes below it, evaluated by ExpressionWalk; the node is the root
+    // when the visitor entered it as the root
+    internal ScopedBigIntMemory Walk(IUnsignedOperator node)
+    {
+        var isRoot = _isRoot;
+        _isRoot = false;
+        try
+        {
+            return new ScopedBigIntMemory(
+                ExpressionWalk.Evaluate<BigIntExpressionVisitor, IGpuBigUIntExpression, GpuBigIntMemoryHandle, bool>(
+                    ref this,
+                    node,
+                    isRoot
+                )
+            );
+        }
+        finally
+        {
+            _isRoot = isRoot;
+        }
     }
 
     // The root writes into the first numWords words of the target, unless the target overlaps one of the root's
@@ -85,134 +114,80 @@ public ref struct BigIntExpressionVisitor(GpuBigIntExecutionContext context, Sco
         return Context.MemoryManager.AllocateTemp(numWords);
     }
 
-    private enum BinaryOp
+    readonly int IExpressionWalker<IGpuBigUIntExpression, GpuBigIntMemoryHandle, bool>.OperandCount(
+        IGpuBigUIntExpression node) =>
+        node is IUnsignedOperator op ? op.OperandCount : 0;
+
+    readonly IGpuBigUIntExpression IExpressionWalker<IGpuBigUIntExpression, GpuBigIntMemoryHandle, bool>.GetOperand(
+        IGpuBigUIntExpression node, int index) =>
+        ((IUnsignedOperator)node).GetOperand(index);
+
+    // The operands of a node are never the root
+    readonly bool IExpressionWalker<IGpuBigUIntExpression, GpuBigIntMemoryHandle, bool>.OperandTarget(
+        IGpuBigUIntExpression node, bool isRoot) =>
+        false;
+
+    // The target is checked by the root, when it takes its result buffer
+    readonly void IExpressionWalker<IGpuBigUIntExpression, GpuBigIntMemoryHandle, bool>.Enter(
+        IGpuBigUIntExpression node, bool isRoot)
     {
-        Add,
-        Sub,
-        Mul,
-        Div,
-        Mod,
-        And,
-        Or,
-        Xor
     }
 
-    private ScopedBigIntMemory VisitBinaryOperation(IGpuBigUIntExpression leftNode, IGpuBigUIntExpression rightNode,
-        int numWords, BinaryOp op)
+    // A leaf, or a node implemented elsewhere, evaluates itself; the value owns what the node's memory owned
+    GpuBigIntMemoryHandle IExpressionWalker<IGpuBigUIntExpression, GpuBigIntMemoryHandle, bool>.EvaluateLeaf(
+        IGpuBigUIntExpression node, bool isRoot)
     {
-        using var left = Visit(leftNode);
-        using var right = Visit(rightNode);
-        var result = GetResultBuffer(numWords, _isRoot, left.Handle, right.Handle);
-
-        switch (op)
+        _isRoot = isRoot;
+        try
         {
-            case BinaryOp.Add: Context.Arithmetic.Add(ref Context, left, right, result); break;
-            case BinaryOp.Sub: Context.Arithmetic.Sub(ref Context, left, right, result); break;
-            case BinaryOp.Mul: Context.Arithmetic.Mul(ref Context, left, right, result); break;
-            case BinaryOp.Div: Context.Arithmetic.Div(ref Context, left, right, result); break;
-            case BinaryOp.Mod: Context.Arithmetic.Mod(ref Context, left, right, result); break;
-            case BinaryOp.And: Context.Arithmetic.BitwiseAnd(ref Context, left, right, result); break;
-            case BinaryOp.Or: Context.Arithmetic.BitwiseOr(ref Context, left, right, result); break;
-            case BinaryOp.Xor: Context.Arithmetic.BitwiseXor(ref Context, left, right, result); break;
+            return node.Accept(ref this).Handle;
         }
-
-        return result;
-    }
-
-    internal ScopedBigIntMemory VisitAdd(AddExpression node) =>
-        VisitBinaryOperation(node.Left, node.Right, node.NumWords, BinaryOp.Add);
-
-    internal ScopedBigIntMemory VisitSub(SubExpression node) =>
-        VisitBinaryOperation(node.Left, node.Right, node.NumWords, BinaryOp.Sub);
-
-    internal ScopedBigIntMemory VisitMul(MulExpression node) =>
-        VisitBinaryOperation(node.Left, node.Right, node.NumWords, BinaryOp.Mul);
-
-    internal ScopedBigIntMemory VisitDiv(DivExpression node) =>
-        VisitBinaryOperation(node.Left, node.Right, node.NumWords, BinaryOp.Div);
-
-    internal ScopedBigIntMemory VisitMod(ModExpression node) =>
-        VisitBinaryOperation(node.Left, node.Right, node.NumWords, BinaryOp.Mod);
-
-    internal ScopedBigIntMemory VisitBitwiseAnd(BitwiseAndExpression node) =>
-        VisitBinaryOperation(node.Left, node.Right, node.NumWords, BinaryOp.And);
-
-    internal ScopedBigIntMemory VisitBitwiseOr(BitwiseOrExpression node) =>
-        VisitBinaryOperation(node.Left, node.Right, node.NumWords, BinaryOp.Or);
-
-    internal ScopedBigIntMemory VisitBitwiseXor(BitwiseXorExpression node) =>
-        VisitBinaryOperation(node.Left, node.Right, node.NumWords, BinaryOp.Xor);
-
-    private enum UnaryOp
-    {
-        Not,
-        Sqrt
-    }
-
-    private ScopedBigIntMemory VisitUnaryOperation(IGpuBigUIntExpression targetNode, int numWords, UnaryOp op)
-    {
-        using var target = Visit(targetNode);
-        var result = GetResultBuffer(numWords, _isRoot, target.Handle);
-
-        switch (op)
+        finally
         {
-            case UnaryOp.Not: Context.Arithmetic.BitwiseNot(ref Context, target, result); break;
-            case UnaryOp.Sqrt: Context.Arithmetic.Sqrt(ref Context, target, result); break;
+            _isRoot = false;
         }
-
-        return result;
     }
 
-    internal ScopedBigIntMemory VisitBitwiseNot(BitwiseNotExpression node) =>
-        VisitUnaryOperation(node.Target, node.NumWords, UnaryOp.Not);
-
-    internal ScopedBigIntMemory VisitSqrt(SqrtExpression node) =>
-        VisitUnaryOperation(node.Target, node.NumWords, UnaryOp.Sqrt);
-
-    private enum ShiftOp
+    // The result buffer is taken while the operands are alive; after the operation the right operand is returned
+    // first, then the left, as the operands of a recursive evaluation went out of scope. A result buffer the operation
+    // did not fill goes back as well.
+    GpuBigIntMemoryHandle IExpressionWalker<IGpuBigUIntExpression, GpuBigIntMemoryHandle, bool>.Apply(
+        IGpuBigUIntExpression node, GpuBigIntMemoryHandle first, GpuBigIntMemoryHandle second, bool isRoot)
     {
-        Left,
-        Right
-    }
-
-    private ScopedBigIntMemory VisitShiftOperation(IGpuBigUIntExpression targetNode, int numWords, int shiftBits,
-        ShiftOp op)
-    {
-        using var target = Visit(targetNode);
-        var result = GetResultBuffer(numWords, _isRoot, target.Handle);
-
-        switch (op)
+        var op = (IUnsignedOperator)node;
+        ScopedBigIntMemory result = default;
+        try
         {
-            case ShiftOp.Left: Context.Arithmetic.ShiftLeft(ref Context, target, shiftBits, result); break;
-            case ShiftOp.Right: Context.Arithmetic.ShiftRight(ref Context, target, shiftBits, result); break;
+            result = GetResultBuffer(op.NumWords, isRoot, first, second);
+            op.Apply(ref Context, first, second, result.Handle);
+            return result.Handle;
         }
-
-        return result;
+        catch
+        {
+            result.Dispose();
+            throw;
+        }
+        finally
+        {
+            try
+            {
+                Release(second);
+            }
+            finally
+            {
+                Release(first);
+            }
+        }
     }
 
-    internal ScopedBigIntMemory VisitShiftLeft(ShiftLeftExpression node) =>
-        VisitShiftOperation(node.Target, node.NumWords, node.ShiftBits, ShiftOp.Left);
+    readonly void IExpressionWalker<IGpuBigUIntExpression, GpuBigIntMemoryHandle, bool>.Release(
+        GpuBigIntMemoryHandle value) =>
+        Release(value);
 
-    internal ScopedBigIntMemory VisitShiftRight(ShiftRightExpression node) =>
-        VisitShiftOperation(node.Target, node.NumWords, node.ShiftBits, ShiftOp.Right);
-
-    // Truncate and Fit: the low words of the operand, zero-extended; Fit also checks that no word above them is set
-    internal ScopedBigIntMemory VisitNarrow(NarrowExpression node)
+    // An owned temporary goes back to its pool; a borrowed leaf or a slice of the target owns nothing
+    private static void Release(GpuBigIntMemoryHandle value)
     {
-        using var target = Visit(node.Target);
-        var result = GetResultBuffer(node.NumWords, _isRoot, target.Handle);
-        var workspace = Context.GpuWorkspace;
-        // Borrowed views: disposing them frees nothing
-        using var operand = new GpuBigUInt(workspace, target.Handle.Borrow());
-        if (node.IsChecked)
-        {
-            BigIntWideOps.CheckFits(operand, node.Words);
-        }
-
-        var copied = Math.Min(node.Words, operand.NumWords);
-        using var resultBuffer = new GpuBigUInt(workspace, result.Handle.Borrow());
-        resultBuffer.CopyFrom(operand, numWords: copied);
-        ResultBuffers.ClearAbove(resultBuffer, copied);
-        return result;
+        var memory = new ScopedBigIntMemory(value);
+        memory.Dispose();
     }
 }

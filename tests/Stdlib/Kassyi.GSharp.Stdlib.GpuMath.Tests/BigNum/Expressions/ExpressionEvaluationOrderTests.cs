@@ -17,17 +17,18 @@ public sealed class ExpressionEvaluationOrderTests
     private const int Trees = 24;
     private const int MaxDepth = 5;
 
-    // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Expressions/ExpressionWalk.cs Evaluate -> release `first`
-    // before `second` (the release lines of the operands change order)
-    // mutant: BigIntExpressionVisitor Apply -> pass `isRoot: false` (the root leases a temporary instead of writing
-    // into the target)
+    // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Expressions/BigIntExpressionVisitor.cs Apply -> release
+    // `first` before `second` (the release lines of the operands change order)
+    // mutant: BigIntExpressionVisitor.cs Apply -> `GetResultBuffer(op.NumWords, false, ...)` (the root leases a
+    // temporary instead of writing into the target)
     [Fact]
     [Scenario(TestScenario.HappyPath)]
     public Task UnsignedEvaluation_RandomTrees_KeepsTheOrderOfLeavesBuffersAndOperations() =>
         Verify(nameof(UnsignedEvaluation_RandomTrees_KeepsTheOrderOfLeavesBuffersAndOperations), UnsignedTraces);
 
-    // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Expressions/ExpressionWalk.cs Evaluate -> push the
-    // operands right to left (the leaves are read in another order)
+    // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Expressions/ExpressionWalk.cs Evaluate ->
+    // `GetOperand(frame.Node, frame.OperandCount - 1 - frame.Next)`: the operands right to left (the leaves are read in
+    // another order)
     [Fact]
     [Scenario(TestScenario.HappyPath)]
     public Task SignedEvaluation_RandomTrees_KeepsTheOrderOfLeavesAndBuffers() =>

@@ -3,7 +3,7 @@ title: "BigIntExpressionVisitor Struct (G#)"
 site: "G# Documentation"
 published: "2026-10-16T00:00:00.000Z"
 language: "en"
-description: "A stack-scoped visitor that recursively evaluates unsigned GPU BigInteger AST expressions using rented device memory buffers."
+description: "A stack-scoped visitor that evaluates unsigned GPU BigInteger AST expressions using rented device memory buffers."
 ---
 
 ## BigIntExpressionVisitor Struct
@@ -13,7 +13,9 @@ description: "A stack-scoped visitor that recursively evaluates unsigned GPU Big
 **Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions`  
 **Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
-A stack-scoped visitor (`ref struct`) that recursively evaluates unsigned GPU BigInteger AST expressions (`IGpuBigUIntExpression`) using rented device memory buffers.
+A stack-scoped visitor (`ref struct`) that evaluates unsigned GPU BigInteger AST expressions (`IGpuBigUIntExpression`) using rented device memory buffers.
+
+The operator nodes of GpuMath are evaluated with a stack on the heap, not by recursion: an expression built in a loop (`e = e + x` repeated) can be as deep as the loop, on any thread. The operands of a node are evaluated before the node, the left one first; the result buffer of a node is leased while its operands are alive, and the operands are returned right first, then left. A node implemented outside GpuMath evaluates itself through `Accept`; the operands it evaluates with `Visit` start a walk of their own. When an operation fails (a difference below zero or a `Fit` that does not fit, thrown at once under the CPU fallback), every buffer the evaluation leased goes back to the pool before the exception leaves.
 
 ```csharp
 public ref struct BigIntExpressionVisitor(
