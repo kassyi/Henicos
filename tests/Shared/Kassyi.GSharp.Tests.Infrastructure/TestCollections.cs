@@ -32,4 +32,10 @@ public static class TestCollections
     /// (see <c>CorpusScanCollection</c> in <c>Kassyi.GSharp.Tests.Shared</c>).
     /// </remarks>
     public const string CorpusScan = "CorpusScan";
+
+    /// <summary>
+    /// Runs the integer trap and checked arithmetic differential test classes one after another, as the single class
+    /// they were split from ran its tests; the collection still runs in parallel with every other collection.
+    /// </summary>
+    public const string IntegerTrapAndCheckedDifferential = "IntegerTrapAndCheckedDifferential";
 }

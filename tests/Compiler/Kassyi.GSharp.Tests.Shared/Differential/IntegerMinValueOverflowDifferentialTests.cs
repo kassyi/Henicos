@@ -14,7 +14,7 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 [TestTarget(ExecutionTarget.GpuExecution)]
 [Category(TestCategory.Differential)]
 [Scenario(TestScenario.Boundary)]
-[Collection(TestCollections.GlobalStateSequential)]
+[Collection(TestCollections.IntegerTrapAndCheckedDifferential)]
 public class IntegerMinValueOverflowDifferentialTests
 {
     private static readonly DifferentialCase s_int32MinValueDivide = new(

@@ -31,14 +31,8 @@ internal static class IntegerTrapAndCheckedDifferentialTestHelpers
     ];
 
     /// <summary>
-    /// Builds the fully qualified kernel case name for <see cref="DifferentialCase"/>.
+    /// Builds the case name of a kernel of <see cref="IntegerTrapAndCheckedDifferentialKernels"/>.
     /// </summary>
-    internal static string KernelName(string kernelMemberName) =>
-        $"{nameof(IntegerTrapAndCheckedDifferentialKernels)}.{kernelMemberName}";
-
-    /// <summary>
-    /// Builds the fully qualified kernel case name with a variant suffix for <see cref="DifferentialCase"/>.
-    /// </summary>
-    internal static string KernelName(string kernelMemberName, string suffix) =>
-        $"{nameof(IntegerTrapAndCheckedDifferentialKernels)}.{kernelMemberName}.{suffix}";
+    internal static string KernelName(string kernelMemberName, string? suffix = null) =>
+        DiffKernelNames.Of(typeof(IntegerTrapAndCheckedDifferentialKernels), kernelMemberName, suffix);
 }
