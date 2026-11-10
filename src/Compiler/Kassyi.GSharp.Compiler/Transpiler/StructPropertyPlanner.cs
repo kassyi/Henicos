@@ -15,7 +15,8 @@ internal static class StructPropertyPlanner
     {
         var getter = PlanAccessor(property, property.GetMethod, PropertyAccessorBody.ReadsBackingField, compilation);
         var setter = PlanAccessor(property, property.SetMethod, PropertyAccessorBody.WritesBackingField, compilation);
-        var valueParameter = setter.Body != PropertyAccessorBody.None && property.SetMethod is { Parameters: [var value] }
+        var valueParameter = setter.Body != PropertyAccessorBody.None &&
+                             property.SetMethod is { Parameters: [var value] }
             ? value
             : null;
         return new StructPropertyPlan(
@@ -57,7 +58,10 @@ internal static class StructPropertyPlanner
         var declaration = implementation.DeclaringSyntaxReferences.Length > 0
             ? implementation.DeclaringSyntaxReferences[0].GetSyntax()
             : null;
-        if (declaration is not AccessorDeclarationSyntax { Parent.Parent: PropertyDeclarationSyntax propertyDeclaration } ||
+        if (declaration is not AccessorDeclarationSyntax
+            {
+                Parent.Parent: PropertyDeclarationSyntax propertyDeclaration
+            } ||
             !propertyDeclaration.Modifiers.Any(SyntaxKind.PartialKeyword))
         {
             return declaration;

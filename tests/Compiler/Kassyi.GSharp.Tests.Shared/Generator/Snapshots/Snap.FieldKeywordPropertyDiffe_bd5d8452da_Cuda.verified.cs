@@ -42,7 +42,21 @@ public static void Warmup()
 {
 // Force load the module first
 GetOrLoadModule();
-global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.WarmupFunctionPointerFieldKeywordPropertyAccessors();
+global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.WarmupFunctionPointerFieldKeywordSetterOnly();
+global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.WarmupFunctionPointerFieldKeywordGetterOnly();
+global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.WarmupFunctionPointerFieldKeywordCompound();
+global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.WarmupFunctionPointerFieldKeywordBlockBodies();
+global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.WarmupFunctionPointerFieldKeywordSteps();
+global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.WarmupFunctionPointerFieldKeywordInit();
+global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.WarmupFunctionPointerFieldKeywordWith();
+global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.WarmupFunctionPointerFieldKeywordConstructor();
+global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.WarmupFunctionPointerFieldKeywordConstructorStep();
+global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.WarmupFunctionPointerFieldKeywordMutatingGetter();
+global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.WarmupFunctionPointerFieldKeywordComputedReader();
+global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.WarmupFunctionPointerFieldKeywordPartial();
+global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.WarmupFunctionPointerFieldKeywordDeconstruction();
+global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.WarmupFunctionPointerFieldKeywordLibrary();
+global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.WarmupFunctionPointerFieldKeywordLibraryMacroTarget();
 global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.WarmupFunctionPointerFieldKeywordPropertyBlockCopy();
 global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.WarmupFunctionPointerFieldKeywordPropertyMemberwise();
 }}}
@@ -56,7 +70,21 @@ namespace Kassyi.GSharp.Generated
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 internal static class GSharpSharedCudaDeviceCode
 {
-public const string Source = @"#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__DeviceLibrary__LibScaled__
+public const string Source = @"struct __gsharp_ty_Kassyi__GSharp__Tests__DeviceLibrary__LibMacroValue;
+inline __device__ void __gsharp_fn_Kassyi__GSharp__Tests__DeviceLibrary__LibMacroValue__Add(__gsharp_ty_Kassyi__GSharp__Tests__DeviceLibrary__LibMacroValue* __gsharp_id_0_result, __gsharp_ty_Kassyi__GSharp__Tests__DeviceLibrary__LibMacroValue __gsharp_id_1_left, __gsharp_ty_Kassyi__GSharp__Tests__DeviceLibrary__LibMacroValue __gsharp_id_2_right);
+
+#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__DeviceLibrary__LibMacroValue__
+#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__DeviceLibrary__LibMacroValue__
+struct __gsharp_ty_Kassyi__GSharp__Tests__DeviceLibrary__LibMacroValue
+{
+int __gsharp_mb_V;
+}
+;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__DeviceLibrary__LibMacroValue)==4,""Kassyi.GSharp.Tests.DeviceLibrary.LibMacroValue: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__DeviceLibrary__LibMacroValue)==4,""Kassyi.GSharp.Tests.DeviceLibrary.LibMacroValue: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__DeviceLibrary__LibMacroValue,__gsharp_mb_V)==0,""Kassyi.GSharp.Tests.DeviceLibrary.LibMacroValue.V: offset"");
+#endif
+#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__DeviceLibrary__LibScaled__
 #define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__DeviceLibrary__LibScaled__
 struct __gsharp_ty_Kassyi__GSharp__Tests__DeviceLibrary__LibScaled
 {
@@ -75,6 +103,10 @@ static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__DeviceLibrary__LibScale
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__DeviceLibrary__LibScaled,__gsharp_bf_X)==0,""Kassyi.GSharp.Tests.DeviceLibrary.LibScaled.X: offset"");
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__DeviceLibrary__LibScaled,__gsharp_mb_Y)==4,""Kassyi.GSharp.Tests.DeviceLibrary.LibScaled.Y: offset"");
 #endif
+inline __device__ void __gsharp_fn_Kassyi__GSharp__Tests__DeviceLibrary__LibMacroValue__Add(__gsharp_ty_Kassyi__GSharp__Tests__DeviceLibrary__LibMacroValue* __gsharp_id_0_result, __gsharp_ty_Kassyi__GSharp__Tests__DeviceLibrary__LibMacroValue __gsharp_id_1_left, __gsharp_ty_Kassyi__GSharp__Tests__DeviceLibrary__LibMacroValue __gsharp_id_2_right){
+(*__gsharp_id_0_result).__gsharp_mb_V=__gsharp_add_i32(__gsharp_id_1_left.__gsharp_mb_V,__gsharp_id_2_right.__gsharp_mb_V);
+}
+
 struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordCounting;
 inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__FieldKeywordPropertyDifferentialKernels__ReadTwice(const __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordCounting* __gsharp_id_0_counting);
 
@@ -129,8 +161,8 @@ public partial class FieldKeywordPropertyDifferentialKernels
 {
 private static readonly global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[] s_errorSites = new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[]
 {
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(202393151u, "FieldKeywordPropertyDifferentialKernels.cs", 273, 33, "FieldKeywordPropertyMemberwise", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(667226112u, "FieldKeywordPropertyDifferentialKernels.cs", 275, 39, "FieldKeywordPropertyMemberwise", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1337069279u, "FieldKeywordPropertyDifferentialKernels.cs", 514, 33, "FieldKeywordPropertyMemberwise", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1121563976u, "FieldKeywordPropertyDifferentialKernels.cs", 516, 39, "FieldKeywordPropertyMemberwise", "G#: a null array is read"),
 };
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -224,7 +256,7 @@ host.P = native.P;
 }
 #pragma warning restore CS8500
 }
-public const string FieldKeywordPropertyAccessors_Source = @"#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordSetterOnly__
+public const string FieldKeywordSetterOnly_Source = @"#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordSetterOnly__
 #define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordSetterOnly__
 struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordSetterOnly
 {
@@ -241,292 +273,25 @@ static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__Di
 static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordSetterOnly)==4,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordSetterOnly: alignment"");
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordSetterOnly,__gsharp_bf_X)==0,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordSetterOnly.X: offset"");
 #endif
-#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordGetterOnly__
-#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordGetterOnly__
-struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordGetterOnly
-{
-int __gsharp_bf_X;
-__device__ inline int __gsharp_mb_X() const {
-return __gsharp_add_i32(__gsharp_bf_X,100);
-}
-__device__ inline void __gsharp_mb_X(int __gsharp_id_value) {
-__gsharp_bf_X = __gsharp_id_value;
-}
-}
-;
-static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordGetterOnly)==4,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordGetterOnly: size"");
-static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordGetterOnly)==4,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordGetterOnly: alignment"");
-static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordGetterOnly,__gsharp_bf_X)==0,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordGetterOnly.X: offset"");
-#endif
-#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordBoth__
-#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordBoth__
-struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordBoth
-{
-int __gsharp_bf_X;
-__device__ inline int __gsharp_mb_X() const {
-return __gsharp_mul_i32(__gsharp_bf_X,10);
-}
-__device__ inline void __gsharp_mb_X(int __gsharp_id_value) {
-__gsharp_bf_X=__gsharp_add_i32(__gsharp_id_value,1);
-}
-}
-;
-static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordBoth)==4,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordBoth: size"");
-static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordBoth)==4,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordBoth: alignment"");
-static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordBoth,__gsharp_bf_X)==0,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordBoth.X: offset"");
-#endif
-#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordBlockBodies__
-#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordBlockBodies__
-struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordBlockBodies
-{
-int __gsharp_bf_X;
-__device__ inline int __gsharp_mb_X() const {
-int __gsharp_id_0_t = __gsharp_bf_X;
-return __gsharp_sub_i32(__gsharp_id_0_t,1);
-}
-__device__ inline void __gsharp_mb_X(int __gsharp_id_value) {
-if(__gsharp_id_value<0)
-{
-__gsharp_bf_X=0;
-}
-else
-{
-__gsharp_bf_X=__gsharp_id_value;
-}
-}
-}
-;
-static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordBlockBodies)==4,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordBlockBodies: size"");
-static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordBlockBodies)==4,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordBlockBodies: alignment"");
-static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordBlockBodies,__gsharp_bf_X)==0,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordBlockBodies.X: offset"");
-#endif
-#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordInitOnly__
-#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordInitOnly__
-struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordInitOnly
-{
-int __gsharp_bf_X;
-__device__ inline int __gsharp_mb_X() const {
-return __gsharp_bf_X;
-}
-__device__ inline void __gsharp_mb_X(int __gsharp_id_value) {
-__gsharp_bf_X=__gsharp_mul_i32(__gsharp_id_value,3);
-}
-}
-;
-static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordInitOnly)==4,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordInitOnly: size"");
-static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordInitOnly)==4,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordInitOnly: alignment"");
-static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordInitOnly,__gsharp_bf_X)==0,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordInitOnly.X: offset"");
-#endif
-#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordInitialized__
-#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordInitialized__
-struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordInitialized
-{
-int __gsharp_bf_X;
-int __gsharp_bf_R;
-__device__ inline int __gsharp_mb_X() const {
-return __gsharp_add_i32(__gsharp_bf_X,1);
-}
-__device__ inline void __gsharp_mb_X(int __gsharp_id_value) {
-__gsharp_bf_X=__gsharp_mul_i32(__gsharp_id_value,2);
-}
-__device__ inline int __gsharp_mb_R() const {
-return __gsharp_mul_i32(__gsharp_bf_R,3);
-}
-}
-;
-static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordInitialized)==8,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordInitialized: size"");
-static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordInitialized)==4,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordInitialized: alignment"");
-static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordInitialized,__gsharp_bf_X)==0,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordInitialized.X: offset"");
-static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordInitialized,__gsharp_bf_R)==4,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordInitialized.R: offset"");
-__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordInitialized __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordInitialized(int __gsharp_id_0_v) {
-__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordInitialized __gsharp_self{};
-__gsharp_self.__gsharp_bf_X = 5;
-__gsharp_self.__gsharp_bf_R=__gsharp_id_0_v;
-return __gsharp_self;
-}
-#endif
-#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordCounting__
-#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordCounting__
-struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordCounting
-{
-int __gsharp_bf_X;
-__device__ inline int __gsharp_mb_X() {
-__gsharp_bf_X=__gsharp_add_i32(__gsharp_bf_X,1);
-return __gsharp_bf_X;
-}
-__device__ inline void __gsharp_mb_X(int __gsharp_id_value) {
-__gsharp_bf_X=__gsharp_id_value;
-}
-}
-;
-static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordCounting)==4,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordCounting: size"");
-static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordCounting)==4,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordCounting: alignment"");
-static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordCounting,__gsharp_bf_X)==0,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordCounting.X: offset"");
-#endif
-#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordSum__
-#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordSum__
-struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordSum
-{
-int __gsharp_mb_A;
-int __gsharp_bf_X;
-__device__ inline int __gsharp_mb_X() const {
-return __gsharp_sub_i32(__gsharp_bf_X,1);
-}
-__device__ inline void __gsharp_mb_X(int __gsharp_id_value) {
-__gsharp_bf_X=__gsharp_mul_i32(__gsharp_id_value,4);
-}
-__device__ inline int __gsharp_mb_Sum() const {
-return __gsharp_add_i32(__gsharp_mb_A,__gsharp_mb_X());
-}
-}
-;
-static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordSum)==8,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordSum: size"");
-static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordSum)==4,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordSum: alignment"");
-static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordSum,__gsharp_mb_A)==0,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordSum.A: offset"");
-static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordSum,__gsharp_bf_X)==4,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordSum.X: offset"");
-#endif
-#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordPartial__
-#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordPartial__
-struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordPartial
-{
-int __gsharp_bf_X;
-int __gsharp_bf_Y;
-__device__ inline int __gsharp_mb_X() const {
-return __gsharp_bf_X;
-}
-__device__ inline void __gsharp_mb_X(int __gsharp_id_value) {
-__gsharp_bf_X=__gsharp_id_value;
-}
-__device__ inline int __gsharp_mb_Y() const {
-return __gsharp_sub_i32(__gsharp_bf_Y,1);
-}
-__device__ inline void __gsharp_mb_Y(int __gsharp_id_value) {
-__gsharp_bf_Y=__gsharp_mul_i32(__gsharp_id_value,4);
-}
-}
-;
-static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordPartial)==8,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordPartial: size"");
-static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordPartial)==4,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordPartial: alignment"");
-static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordPartial,__gsharp_bf_X)==0,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordPartial.X: offset"");
-static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordPartial,__gsharp_bf_Y)==4,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordPartial.Y: offset"");
-#endif
-#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordAuto__
-#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordAuto__
-struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordAuto
-{
-int __gsharp_mb_X;
-}
-;
-static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordAuto)==4,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordAuto: size"");
-static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordAuto)==4,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordAuto: alignment"");
-static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordAuto,__gsharp_mb_X)==0,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordAuto.X: offset"");
-#endif
-#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__DeviceLibrary__LibScaled__
-#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__DeviceLibrary__LibScaled__
-struct __gsharp_ty_Kassyi__GSharp__Tests__DeviceLibrary__LibScaled
-{
-int __gsharp_bf_X;
-int __gsharp_mb_Y;
-}
-;
-static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__DeviceLibrary__LibScaled)==8,""Kassyi.GSharp.Tests.DeviceLibrary.LibScaled: size"");
-static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__DeviceLibrary__LibScaled)==4,""Kassyi.GSharp.Tests.DeviceLibrary.LibScaled: alignment"");
-static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__DeviceLibrary__LibScaled,__gsharp_bf_X)==0,""Kassyi.GSharp.Tests.DeviceLibrary.LibScaled.X: offset"");
-static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__DeviceLibrary__LibScaled,__gsharp_mb_Y)==4,""Kassyi.GSharp.Tests.DeviceLibrary.LibScaled.Y: offset"");
-#endif
-extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__FieldKeywordPropertyDifferentialKernels__FieldKeywordPropertyAccessors(GSharpArray<int> __gsharp_id_0_inputs, GSharpArray<int> __gsharp_id_1_r, unsigned int __gsharp_epoch){
+extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__FieldKeywordPropertyDifferentialKernels__FieldKeywordSetterOnly(GSharpArray<int> __gsharp_id_0_inputs, GSharpArray<int> __gsharp_id_1_r, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
 int __gsharp_id_2_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 if(__gsharp_id_2_tid>=__gsharp_id_0_inputs.length)
 {
 return;
 }
-int __gsharp_id_3_v = __gsharp_id_0_inputs[__gsharp_id_2_tid]%1000;
-int __gsharp_id_4_o = __gsharp_mul_i32(__gsharp_id_2_tid,15);
-auto __gsharp_id_5_setterOnly = __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordSetterOnly{};
-__gsharp_id_5_setterOnly.__gsharp_mb_X(__gsharp_id_3_v);
-__gsharp_id_1_r[__gsharp_id_4_o+0]=__gsharp_id_5_setterOnly.__gsharp_mb_X();
-auto __gsharp_id_6_getterOnly = __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordGetterOnly{};
-__gsharp_id_6_getterOnly.__gsharp_mb_X(__gsharp_id_3_v);
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_4_o,1)]=__gsharp_id_6_getterOnly.__gsharp_mb_X();
-auto __gsharp_id_7_both = __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordBoth{};
-__gsharp_id_7_both.__gsharp_mb_X(__gsharp_id_3_v);
-([&]() {
-auto __gsharp_seq_0 = __gsharp_id_7_both.__gsharp_mb_X();
-auto __gsharp_seq_1 = 2;
-auto __gsharp_seq_2 = (int)__gsharp_add_i32(__gsharp_seq_0,__gsharp_seq_1);
-__gsharp_id_7_both.__gsharp_mb_X(__gsharp_seq_2);
-}());
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_4_o,2)]=__gsharp_id_7_both.__gsharp_mb_X();
-auto __gsharp_id_8_blocks = __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordBlockBodies{};
-__gsharp_id_8_blocks.__gsharp_mb_X(__gsharp_id_3_v);
-int __gsharp_id_9_first = __gsharp_id_8_blocks.__gsharp_mb_X();
-__gsharp_id_8_blocks.__gsharp_mb_X(__gsharp_neg_i32(__gsharp_id_3_v));
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_4_o,3)]=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_9_first,1000),__gsharp_id_8_blocks.__gsharp_mb_X());
-auto __gsharp_id_10_prefix = __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordBoth{};
-__gsharp_id_10_prefix.__gsharp_mb_X(__gsharp_id_3_v);
-int __gsharp_id_11_prefixed = ([&]() {
-auto __gsharp_seq_3 = __gsharp_id_10_prefix.__gsharp_mb_X();
-auto __gsharp_seq_4 = (int)__gsharp_add_i32(__gsharp_seq_3,1);
-__gsharp_id_10_prefix.__gsharp_mb_X(__gsharp_seq_4);
-return __gsharp_seq_4;
-}());
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_4_o,4)]=__gsharp_add_i32(__gsharp_id_11_prefixed,__gsharp_id_10_prefix.__gsharp_mb_X());
-auto __gsharp_id_12_postfix = __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordBoth{};
-__gsharp_id_12_postfix.__gsharp_mb_X(__gsharp_id_3_v);
-int __gsharp_id_13_old = ([&]() {
-auto __gsharp_seq_5 = __gsharp_id_12_postfix.__gsharp_mb_X();
-auto __gsharp_seq_6 = (int)__gsharp_add_i32(__gsharp_seq_5,1);
-__gsharp_id_12_postfix.__gsharp_mb_X(__gsharp_seq_6);
-return __gsharp_seq_5;
-}());
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_4_o,5)]=__gsharp_add_i32(__gsharp_id_13_old,__gsharp_id_12_postfix.__gsharp_mb_X());
-auto __gsharp_id_14_initialized = ([&]() {
-__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordInitOnly __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_X(__gsharp_id_3_v); return __gsharp_tmp; }
-());
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_4_o,6)]=__gsharp_id_14_initialized.__gsharp_mb_X();
-auto __gsharp_id_15_constructed = __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordInitialized(__gsharp_id_3_v);
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_4_o,7)]=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_15_constructed.__gsharp_mb_X(),1000),__gsharp_id_15_constructed.__gsharp_mb_R());
-auto __gsharp_id_16_counting = __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordCounting{};
-__gsharp_id_16_counting.__gsharp_mb_X(__gsharp_id_3_v);
-int __gsharp_id_17_a = __gsharp_id_16_counting.__gsharp_mb_X();
-int __gsharp_id_18_b = __gsharp_id_16_counting.__gsharp_mb_X();
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_4_o,8)]=__gsharp_add_i32(__gsharp_id_17_a,__gsharp_mul_i32(__gsharp_id_18_b,3));
-int __gsharp_id_19_twice = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__FieldKeywordPropertyDifferentialKernels__ReadTwice(&__gsharp_id_16_counting);
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_4_o,9)]=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_19_twice,3),__gsharp_id_16_counting.__gsharp_mb_X());
-auto __gsharp_id_20_sum = ([&]() {
-__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordSum __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_A = __gsharp_id_3_v; return __gsharp_tmp; }
-());
-__gsharp_id_20_sum.__gsharp_mb_X(__gsharp_id_3_v);
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_4_o,10)]=__gsharp_id_20_sum.__gsharp_mb_Sum();
-auto __gsharp_id_21_partial = __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordPartial{};
-__gsharp_id_21_partial.__gsharp_mb_X(__gsharp_id_3_v);
-([&]() {
-auto __gsharp_seq_7 = __gsharp_id_21_partial.__gsharp_mb_X();
-auto __gsharp_seq_8 = 3;
-auto __gsharp_seq_9 = (int)__gsharp_add_i32(__gsharp_seq_7,__gsharp_seq_8);
-__gsharp_id_21_partial.__gsharp_mb_X(__gsharp_seq_9);
-}());
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_4_o,11)]=__gsharp_id_21_partial.__gsharp_mb_X();
-auto __gsharp_id_22_plain = __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordAuto{};
-__gsharp_id_22_plain.__gsharp_mb_X=__gsharp_id_3_v;
-__gsharp_id_22_plain.__gsharp_mb_X=__gsharp_add_i32(__gsharp_id_22_plain.__gsharp_mb_X,3);
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_4_o,12)]=__gsharp_id_22_plain.__gsharp_mb_X;
-__gsharp_id_21_partial.__gsharp_mb_Y(__gsharp_id_3_v);
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_4_o,13)]=__gsharp_id_21_partial.__gsharp_mb_Y();
-auto __gsharp_id_23_scaled = __gsharp_ty_Kassyi__GSharp__Tests__DeviceLibrary__LibScaled{};
-__gsharp_id_23_scaled.__gsharp_mb_X(__gsharp_id_3_v);
-__gsharp_id_23_scaled.__gsharp_mb_Y=__gsharp_id_3_v;
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_4_o,14)]=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_23_scaled.__gsharp_mb_X(),3),__gsharp_id_23_scaled.__gsharp_mb_Y);
+auto __gsharp_id_3_s = __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordSetterOnly{};
+__gsharp_id_3_s.__gsharp_mb_X(__gsharp_id_0_inputs[__gsharp_id_2_tid]%1000);
+__gsharp_id_1_r[__gsharp_id_2_tid]=__gsharp_id_3_s.__gsharp_mb_X();
 }
 ";
-private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_FieldKeywordPropertyAccessors = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__FieldKeywordPropertyDifferentialKernels__FieldKeywordPropertyAccessors", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
+private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_FieldKeywordSetterOnly = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__FieldKeywordPropertyDifferentialKernels__FieldKeywordSetterOnly", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
-public static void WarmupFunctionPointerFieldKeywordPropertyAccessors() => global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.__gsharp_hfunc_FieldKeywordPropertyAccessors.Resolve();
+public static void WarmupFunctionPointerFieldKeywordSetterOnly() => global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.__gsharp_hfunc_FieldKeywordSetterOnly.Resolve();
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-public static unsafe void LaunchFieldKeywordPropertyAccessors(global::System.Int32[] inputs, global::System.Int32[] r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchFieldKeywordSetterOnly(global::System.Int32[] inputs, global::System.Int32[] r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (inputs is null){
 throw new global::System.ArgumentNullException(nameof(inputs));
@@ -540,11 +305,11 @@ throw new global::System.ArgumentNullException(nameof(r));
 if (r.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(r));
 }
-global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "FieldKeywordPropertyDifferentialKernels.FieldKeywordPropertyAccessors");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "FieldKeywordPropertyDifferentialKernels.FieldKeywordSetterOnly");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.__gsharp_hfunc_FieldKeywordPropertyAccessors.Resolve();
-global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "FieldKeywordPropertyDifferentialKernels.FieldKeywordPropertyAccessors");
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.__gsharp_hfunc_FieldKeywordSetterOnly.Resolve();
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "FieldKeywordPropertyDifferentialKernels.FieldKeywordSetterOnly");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 global::System.IntPtr __gsharp_d_1 = global::System.IntPtr.Zero;
 uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, true);
@@ -635,7 +400,7 @@ if (__gsharp_d_1 != global::System.IntPtr.Zero && __gsharp_d_1 != __gsharp_d_0) 
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-public static unsafe void LaunchFieldKeywordPropertyAccessorsPtr(global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy inputs, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchFieldKeywordSetterOnlyPtr(global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy inputs, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (inputs.Length < 0){
 throw new global::System.ArgumentOutOfRangeException(nameof(inputs), inputs.Length, "The array length must not be negative.");
@@ -655,11 +420,3075 @@ throw new global::System.ArgumentNullException(nameof(r));
 if (r.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(r));
 }
-global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "FieldKeywordPropertyDifferentialKernels.FieldKeywordPropertyAccessors");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "FieldKeywordPropertyDifferentialKernels.FieldKeywordSetterOnly");
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.__gsharp_hfunc_FieldKeywordPropertyAccessors.Resolve();
-global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "FieldKeywordPropertyDifferentialKernels.FieldKeywordPropertyAccessors");
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.__gsharp_hfunc_FieldKeywordSetterOnly.Resolve();
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "FieldKeywordPropertyDifferentialKernels.FieldKeywordSetterOnly");
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, false);
+try
+{
+void** __gsharp_kernel_params = stackalloc void*[3];
+// Marshal device array: inputs
+global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
+__gsharp_proxy_0[0] = inputs.Data;
+((int*)(__gsharp_proxy_0 + 1))[0] = inputs.Length;
+((int*)(__gsharp_proxy_0 + 1))[1] = 0;
+__gsharp_kernel_params[0] = __gsharp_proxy_0;
+// Marshal device array: r
+global::System.IntPtr* __gsharp_proxy_1 = stackalloc global::System.IntPtr[2];
+__gsharp_proxy_1[0] = r.Data;
+((int*)(__gsharp_proxy_1 + 1))[0] = r.Length;
+((int*)(__gsharp_proxy_1 + 1))[1] = 0;
+__gsharp_kernel_params[1] = __gsharp_proxy_1;
+__gsharp_kernel_params[2] = &__gsharp_epoch;
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
+__gsharp_hfunc,
+gridDimX, gridDimY, gridDimZ, // Grid dim
+blockDimX, blockDimY, blockDimZ, // Block dim
+sharedMemBytes, // Shared mem
+hStream, // Stream
+__gsharp_kernel_params,
+global::System.IntPtr.Zero // Extra
+));
+}
+finally
+{
+}
+}
+}
+#pragma warning restore CS8500
+public const string FieldKeywordGetterOnly_Source = @"#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordGetterOnly__
+#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordGetterOnly__
+struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordGetterOnly
+{
+int __gsharp_bf_X;
+__device__ inline int __gsharp_mb_X() const {
+return __gsharp_add_i32(__gsharp_bf_X,100);
+}
+__device__ inline void __gsharp_mb_X(int __gsharp_id_value) {
+__gsharp_bf_X = __gsharp_id_value;
+}
+}
+;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordGetterOnly)==4,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordGetterOnly: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordGetterOnly)==4,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordGetterOnly: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordGetterOnly,__gsharp_bf_X)==0,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordGetterOnly.X: offset"");
+#endif
+extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__FieldKeywordPropertyDifferentialKernels__FieldKeywordGetterOnly(GSharpArray<int> __gsharp_id_0_inputs, GSharpArray<int> __gsharp_id_1_r, unsigned int __gsharp_epoch){
+__gsharp_launch_epoch = __gsharp_epoch;
+int __gsharp_id_2_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
+if(__gsharp_id_2_tid>=__gsharp_id_0_inputs.length)
+{
+return;
+}
+auto __gsharp_id_3_s = __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordGetterOnly{};
+__gsharp_id_3_s.__gsharp_mb_X(__gsharp_id_0_inputs[__gsharp_id_2_tid]%1000);
+__gsharp_id_1_r[__gsharp_id_2_tid]=__gsharp_id_3_s.__gsharp_mb_X();
+}
+";
+private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_FieldKeywordGetterOnly = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__FieldKeywordPropertyDifferentialKernels__FieldKeywordGetterOnly", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
+public static void WarmupFunctionPointerFieldKeywordGetterOnly() => global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.__gsharp_hfunc_FieldKeywordGetterOnly.Resolve();
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchFieldKeywordGetterOnly(global::System.Int32[] inputs, global::System.Int32[] r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+if (inputs is null){
+throw new global::System.ArgumentNullException(nameof(inputs));
+}
+if (inputs.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(inputs));
+}
+if (r is null){
+throw new global::System.ArgumentNullException(nameof(r));
+}
+if (r.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(r));
+}
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "FieldKeywordPropertyDifferentialKernels.FieldKeywordGetterOnly");
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+{
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.__gsharp_hfunc_FieldKeywordGetterOnly.Resolve();
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "FieldKeywordPropertyDifferentialKernels.FieldKeywordGetterOnly");
+global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
+global::System.IntPtr __gsharp_d_1 = global::System.IntPtr.Zero;
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, true);
+try
+{
+void** __gsharp_kernel_params = stackalloc void*[3];
+// Marshal array: inputs
+int __gsharp_size_0 = checked(inputs.Length * sizeof(global::System.Int32));
+global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
+__gsharp_proxy_0[0] = global::System.IntPtr.Zero;
+((int*)(__gsharp_proxy_0 + 1))[0] = inputs.Length;
+((int*)(__gsharp_proxy_0 + 1))[1] = 0;
+if (__gsharp_size_0 > 0)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
+fixed (global::System.Int32* __gsharp_p_0 = inputs)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyHtoDAsync_v2(__gsharp_d_0, (global::System.IntPtr)__gsharp_p_0, (global::System.IntPtr)__gsharp_size_0, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+}
+__gsharp_proxy_0[0] = __gsharp_d_0;
+}
+__gsharp_kernel_params[0] = __gsharp_proxy_0;
+// Marshal array: r
+int __gsharp_size_1 = checked(r.Length * sizeof(global::System.Int32));
+global::System.IntPtr* __gsharp_proxy_1 = stackalloc global::System.IntPtr[2];
+__gsharp_proxy_1[0] = global::System.IntPtr.Zero;
+((int*)(__gsharp_proxy_1 + 1))[0] = r.Length;
+((int*)(__gsharp_proxy_1 + 1))[1] = 0;
+if (__gsharp_size_1 > 0)
+{
+if (global::System.Object.ReferenceEquals(r, inputs))
+{
+__gsharp_d_1 = __gsharp_d_0;
+}
+else
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out __gsharp_d_1, (global::System.IntPtr)__gsharp_size_1, hStream));
+fixed (global::System.Int32* __gsharp_p_1 = r)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyHtoDAsync_v2(__gsharp_d_1, (global::System.IntPtr)__gsharp_p_1, (global::System.IntPtr)__gsharp_size_1, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+__gsharp_proxy_1[0] = __gsharp_d_1;
+}
+__gsharp_kernel_params[1] = __gsharp_proxy_1;
+__gsharp_kernel_params[2] = &__gsharp_epoch;
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
+__gsharp_hfunc,
+gridDimX, gridDimY, gridDimZ, // Grid dim
+blockDimX, blockDimY, blockDimZ, // Block dim
+sharedMemBytes, // Shared mem
+hStream, // Stream
+__gsharp_kernel_params,
+global::System.IntPtr.Zero // Extra
+));
+// Copy back array: inputs
+if (__gsharp_size_0 > 0 && __gsharp_d_0 != global::System.IntPtr.Zero)
+{
+fixed (global::System.Int32* __gsharp_p_0 = inputs)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)__gsharp_p_0, __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+// Copy back array: r
+if (__gsharp_size_1 > 0 && __gsharp_d_1 != global::System.IntPtr.Zero && !global::System.Object.ReferenceEquals(r, inputs))
+{
+fixed (global::System.Int32* __gsharp_p_1 = r)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)__gsharp_p_1, __gsharp_d_1, (global::System.IntPtr)__gsharp_size_1, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ThrowIfLaunchError(__gsharp_epoch);
+}
+finally
+{
+global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ReleaseLaunchEpoch(__gsharp_epoch);
+if (__gsharp_d_0 != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_0, hStream);
+if (__gsharp_d_1 != global::System.IntPtr.Zero && __gsharp_d_1 != __gsharp_d_0) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_1, hStream);
+}
+}
+}
+#pragma warning restore CS8500
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchFieldKeywordGetterOnlyPtr(global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy inputs, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+if (inputs.Length < 0){
+throw new global::System.ArgumentOutOfRangeException(nameof(inputs), inputs.Length, "The array length must not be negative.");
+}
+if (inputs.Data == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(inputs));
+}
+if (inputs.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(inputs));
+}
+if (r.Length < 0){
+throw new global::System.ArgumentOutOfRangeException(nameof(r), r.Length, "The array length must not be negative.");
+}
+if (r.Data == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(r));
+}
+if (r.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(r));
+}
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "FieldKeywordPropertyDifferentialKernels.FieldKeywordGetterOnly");
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+{
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.__gsharp_hfunc_FieldKeywordGetterOnly.Resolve();
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "FieldKeywordPropertyDifferentialKernels.FieldKeywordGetterOnly");
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, false);
+try
+{
+void** __gsharp_kernel_params = stackalloc void*[3];
+// Marshal device array: inputs
+global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
+__gsharp_proxy_0[0] = inputs.Data;
+((int*)(__gsharp_proxy_0 + 1))[0] = inputs.Length;
+((int*)(__gsharp_proxy_0 + 1))[1] = 0;
+__gsharp_kernel_params[0] = __gsharp_proxy_0;
+// Marshal device array: r
+global::System.IntPtr* __gsharp_proxy_1 = stackalloc global::System.IntPtr[2];
+__gsharp_proxy_1[0] = r.Data;
+((int*)(__gsharp_proxy_1 + 1))[0] = r.Length;
+((int*)(__gsharp_proxy_1 + 1))[1] = 0;
+__gsharp_kernel_params[1] = __gsharp_proxy_1;
+__gsharp_kernel_params[2] = &__gsharp_epoch;
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
+__gsharp_hfunc,
+gridDimX, gridDimY, gridDimZ, // Grid dim
+blockDimX, blockDimY, blockDimZ, // Block dim
+sharedMemBytes, // Shared mem
+hStream, // Stream
+__gsharp_kernel_params,
+global::System.IntPtr.Zero // Extra
+));
+}
+finally
+{
+}
+}
+}
+#pragma warning restore CS8500
+public const string FieldKeywordCompound_Source = @"#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordBoth__
+#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordBoth__
+struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordBoth
+{
+int __gsharp_bf_X;
+__device__ inline int __gsharp_mb_X() const {
+return __gsharp_mul_i32(__gsharp_bf_X,10);
+}
+__device__ inline void __gsharp_mb_X(int __gsharp_id_value) {
+__gsharp_bf_X=__gsharp_add_i32(__gsharp_id_value,1);
+}
+}
+;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordBoth)==4,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordBoth: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordBoth)==4,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordBoth: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordBoth,__gsharp_bf_X)==0,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordBoth.X: offset"");
+#endif
+extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__FieldKeywordPropertyDifferentialKernels__FieldKeywordCompound(GSharpArray<int> __gsharp_id_0_inputs, GSharpArray<int> __gsharp_id_1_r, unsigned int __gsharp_epoch){
+__gsharp_launch_epoch = __gsharp_epoch;
+int __gsharp_id_2_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
+if(__gsharp_id_2_tid>=__gsharp_id_0_inputs.length)
+{
+return;
+}
+auto __gsharp_id_3_s = __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordBoth{};
+__gsharp_id_3_s.__gsharp_mb_X(__gsharp_id_0_inputs[__gsharp_id_2_tid]%1000);
+([&]() {
+auto __gsharp_seq_0 = __gsharp_id_3_s.__gsharp_mb_X();
+auto __gsharp_seq_1 = 2;
+auto __gsharp_seq_2 = (int)__gsharp_add_i32(__gsharp_seq_0,__gsharp_seq_1);
+__gsharp_id_3_s.__gsharp_mb_X(__gsharp_seq_2);
+}());
+__gsharp_id_1_r[__gsharp_id_2_tid]=__gsharp_id_3_s.__gsharp_mb_X();
+}
+";
+private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_FieldKeywordCompound = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__FieldKeywordPropertyDifferentialKernels__FieldKeywordCompound", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
+public static void WarmupFunctionPointerFieldKeywordCompound() => global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.__gsharp_hfunc_FieldKeywordCompound.Resolve();
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchFieldKeywordCompound(global::System.Int32[] inputs, global::System.Int32[] r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+if (inputs is null){
+throw new global::System.ArgumentNullException(nameof(inputs));
+}
+if (inputs.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(inputs));
+}
+if (r is null){
+throw new global::System.ArgumentNullException(nameof(r));
+}
+if (r.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(r));
+}
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "FieldKeywordPropertyDifferentialKernels.FieldKeywordCompound");
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+{
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.__gsharp_hfunc_FieldKeywordCompound.Resolve();
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "FieldKeywordPropertyDifferentialKernels.FieldKeywordCompound");
+global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
+global::System.IntPtr __gsharp_d_1 = global::System.IntPtr.Zero;
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, true);
+try
+{
+void** __gsharp_kernel_params = stackalloc void*[3];
+// Marshal array: inputs
+int __gsharp_size_0 = checked(inputs.Length * sizeof(global::System.Int32));
+global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
+__gsharp_proxy_0[0] = global::System.IntPtr.Zero;
+((int*)(__gsharp_proxy_0 + 1))[0] = inputs.Length;
+((int*)(__gsharp_proxy_0 + 1))[1] = 0;
+if (__gsharp_size_0 > 0)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
+fixed (global::System.Int32* __gsharp_p_0 = inputs)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyHtoDAsync_v2(__gsharp_d_0, (global::System.IntPtr)__gsharp_p_0, (global::System.IntPtr)__gsharp_size_0, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+}
+__gsharp_proxy_0[0] = __gsharp_d_0;
+}
+__gsharp_kernel_params[0] = __gsharp_proxy_0;
+// Marshal array: r
+int __gsharp_size_1 = checked(r.Length * sizeof(global::System.Int32));
+global::System.IntPtr* __gsharp_proxy_1 = stackalloc global::System.IntPtr[2];
+__gsharp_proxy_1[0] = global::System.IntPtr.Zero;
+((int*)(__gsharp_proxy_1 + 1))[0] = r.Length;
+((int*)(__gsharp_proxy_1 + 1))[1] = 0;
+if (__gsharp_size_1 > 0)
+{
+if (global::System.Object.ReferenceEquals(r, inputs))
+{
+__gsharp_d_1 = __gsharp_d_0;
+}
+else
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out __gsharp_d_1, (global::System.IntPtr)__gsharp_size_1, hStream));
+fixed (global::System.Int32* __gsharp_p_1 = r)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyHtoDAsync_v2(__gsharp_d_1, (global::System.IntPtr)__gsharp_p_1, (global::System.IntPtr)__gsharp_size_1, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+__gsharp_proxy_1[0] = __gsharp_d_1;
+}
+__gsharp_kernel_params[1] = __gsharp_proxy_1;
+__gsharp_kernel_params[2] = &__gsharp_epoch;
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
+__gsharp_hfunc,
+gridDimX, gridDimY, gridDimZ, // Grid dim
+blockDimX, blockDimY, blockDimZ, // Block dim
+sharedMemBytes, // Shared mem
+hStream, // Stream
+__gsharp_kernel_params,
+global::System.IntPtr.Zero // Extra
+));
+// Copy back array: inputs
+if (__gsharp_size_0 > 0 && __gsharp_d_0 != global::System.IntPtr.Zero)
+{
+fixed (global::System.Int32* __gsharp_p_0 = inputs)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)__gsharp_p_0, __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+// Copy back array: r
+if (__gsharp_size_1 > 0 && __gsharp_d_1 != global::System.IntPtr.Zero && !global::System.Object.ReferenceEquals(r, inputs))
+{
+fixed (global::System.Int32* __gsharp_p_1 = r)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)__gsharp_p_1, __gsharp_d_1, (global::System.IntPtr)__gsharp_size_1, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ThrowIfLaunchError(__gsharp_epoch);
+}
+finally
+{
+global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ReleaseLaunchEpoch(__gsharp_epoch);
+if (__gsharp_d_0 != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_0, hStream);
+if (__gsharp_d_1 != global::System.IntPtr.Zero && __gsharp_d_1 != __gsharp_d_0) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_1, hStream);
+}
+}
+}
+#pragma warning restore CS8500
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchFieldKeywordCompoundPtr(global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy inputs, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+if (inputs.Length < 0){
+throw new global::System.ArgumentOutOfRangeException(nameof(inputs), inputs.Length, "The array length must not be negative.");
+}
+if (inputs.Data == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(inputs));
+}
+if (inputs.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(inputs));
+}
+if (r.Length < 0){
+throw new global::System.ArgumentOutOfRangeException(nameof(r), r.Length, "The array length must not be negative.");
+}
+if (r.Data == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(r));
+}
+if (r.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(r));
+}
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "FieldKeywordPropertyDifferentialKernels.FieldKeywordCompound");
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+{
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.__gsharp_hfunc_FieldKeywordCompound.Resolve();
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "FieldKeywordPropertyDifferentialKernels.FieldKeywordCompound");
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, false);
+try
+{
+void** __gsharp_kernel_params = stackalloc void*[3];
+// Marshal device array: inputs
+global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
+__gsharp_proxy_0[0] = inputs.Data;
+((int*)(__gsharp_proxy_0 + 1))[0] = inputs.Length;
+((int*)(__gsharp_proxy_0 + 1))[1] = 0;
+__gsharp_kernel_params[0] = __gsharp_proxy_0;
+// Marshal device array: r
+global::System.IntPtr* __gsharp_proxy_1 = stackalloc global::System.IntPtr[2];
+__gsharp_proxy_1[0] = r.Data;
+((int*)(__gsharp_proxy_1 + 1))[0] = r.Length;
+((int*)(__gsharp_proxy_1 + 1))[1] = 0;
+__gsharp_kernel_params[1] = __gsharp_proxy_1;
+__gsharp_kernel_params[2] = &__gsharp_epoch;
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
+__gsharp_hfunc,
+gridDimX, gridDimY, gridDimZ, // Grid dim
+blockDimX, blockDimY, blockDimZ, // Block dim
+sharedMemBytes, // Shared mem
+hStream, // Stream
+__gsharp_kernel_params,
+global::System.IntPtr.Zero // Extra
+));
+}
+finally
+{
+}
+}
+}
+#pragma warning restore CS8500
+public const string FieldKeywordBlockBodies_Source = @"#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordBlockBodies__
+#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordBlockBodies__
+struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordBlockBodies
+{
+int __gsharp_bf_X;
+__device__ inline int __gsharp_mb_X() const {
+int __gsharp_id_0_t = __gsharp_bf_X;
+return __gsharp_sub_i32(__gsharp_id_0_t,1);
+}
+__device__ inline void __gsharp_mb_X(int __gsharp_id_value) {
+if(__gsharp_id_value<0)
+{
+__gsharp_bf_X=0;
+}
+else
+{
+__gsharp_bf_X=__gsharp_id_value;
+}
+}
+}
+;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordBlockBodies)==4,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordBlockBodies: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordBlockBodies)==4,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordBlockBodies: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordBlockBodies,__gsharp_bf_X)==0,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordBlockBodies.X: offset"");
+#endif
+extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__FieldKeywordPropertyDifferentialKernels__FieldKeywordBlockBodies(GSharpArray<int> __gsharp_id_0_inputs, GSharpArray<int> __gsharp_id_1_r, unsigned int __gsharp_epoch){
+__gsharp_launch_epoch = __gsharp_epoch;
+int __gsharp_id_2_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
+if(__gsharp_id_2_tid>=__gsharp_id_0_inputs.length)
+{
+return;
+}
+int __gsharp_id_3_v = __gsharp_id_0_inputs[__gsharp_id_2_tid]%1000;
+int __gsharp_id_4_o = __gsharp_mul_i32(__gsharp_id_2_tid,2);
+auto __gsharp_id_5_s = __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordBlockBodies{};
+__gsharp_id_5_s.__gsharp_mb_X(__gsharp_id_3_v);
+__gsharp_id_1_r[__gsharp_id_4_o]=__gsharp_id_5_s.__gsharp_mb_X();
+__gsharp_id_5_s.__gsharp_mb_X(__gsharp_neg_i32(__gsharp_id_3_v));
+__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_4_o,1)]=__gsharp_id_5_s.__gsharp_mb_X();
+}
+";
+private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_FieldKeywordBlockBodies = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__FieldKeywordPropertyDifferentialKernels__FieldKeywordBlockBodies", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
+public static void WarmupFunctionPointerFieldKeywordBlockBodies() => global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.__gsharp_hfunc_FieldKeywordBlockBodies.Resolve();
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchFieldKeywordBlockBodies(global::System.Int32[] inputs, global::System.Int32[] r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+if (inputs is null){
+throw new global::System.ArgumentNullException(nameof(inputs));
+}
+if (inputs.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(inputs));
+}
+if (r is null){
+throw new global::System.ArgumentNullException(nameof(r));
+}
+if (r.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(r));
+}
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "FieldKeywordPropertyDifferentialKernels.FieldKeywordBlockBodies");
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+{
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.__gsharp_hfunc_FieldKeywordBlockBodies.Resolve();
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "FieldKeywordPropertyDifferentialKernels.FieldKeywordBlockBodies");
+global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
+global::System.IntPtr __gsharp_d_1 = global::System.IntPtr.Zero;
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, true);
+try
+{
+void** __gsharp_kernel_params = stackalloc void*[3];
+// Marshal array: inputs
+int __gsharp_size_0 = checked(inputs.Length * sizeof(global::System.Int32));
+global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
+__gsharp_proxy_0[0] = global::System.IntPtr.Zero;
+((int*)(__gsharp_proxy_0 + 1))[0] = inputs.Length;
+((int*)(__gsharp_proxy_0 + 1))[1] = 0;
+if (__gsharp_size_0 > 0)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
+fixed (global::System.Int32* __gsharp_p_0 = inputs)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyHtoDAsync_v2(__gsharp_d_0, (global::System.IntPtr)__gsharp_p_0, (global::System.IntPtr)__gsharp_size_0, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+}
+__gsharp_proxy_0[0] = __gsharp_d_0;
+}
+__gsharp_kernel_params[0] = __gsharp_proxy_0;
+// Marshal array: r
+int __gsharp_size_1 = checked(r.Length * sizeof(global::System.Int32));
+global::System.IntPtr* __gsharp_proxy_1 = stackalloc global::System.IntPtr[2];
+__gsharp_proxy_1[0] = global::System.IntPtr.Zero;
+((int*)(__gsharp_proxy_1 + 1))[0] = r.Length;
+((int*)(__gsharp_proxy_1 + 1))[1] = 0;
+if (__gsharp_size_1 > 0)
+{
+if (global::System.Object.ReferenceEquals(r, inputs))
+{
+__gsharp_d_1 = __gsharp_d_0;
+}
+else
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out __gsharp_d_1, (global::System.IntPtr)__gsharp_size_1, hStream));
+fixed (global::System.Int32* __gsharp_p_1 = r)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyHtoDAsync_v2(__gsharp_d_1, (global::System.IntPtr)__gsharp_p_1, (global::System.IntPtr)__gsharp_size_1, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+__gsharp_proxy_1[0] = __gsharp_d_1;
+}
+__gsharp_kernel_params[1] = __gsharp_proxy_1;
+__gsharp_kernel_params[2] = &__gsharp_epoch;
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
+__gsharp_hfunc,
+gridDimX, gridDimY, gridDimZ, // Grid dim
+blockDimX, blockDimY, blockDimZ, // Block dim
+sharedMemBytes, // Shared mem
+hStream, // Stream
+__gsharp_kernel_params,
+global::System.IntPtr.Zero // Extra
+));
+// Copy back array: inputs
+if (__gsharp_size_0 > 0 && __gsharp_d_0 != global::System.IntPtr.Zero)
+{
+fixed (global::System.Int32* __gsharp_p_0 = inputs)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)__gsharp_p_0, __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+// Copy back array: r
+if (__gsharp_size_1 > 0 && __gsharp_d_1 != global::System.IntPtr.Zero && !global::System.Object.ReferenceEquals(r, inputs))
+{
+fixed (global::System.Int32* __gsharp_p_1 = r)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)__gsharp_p_1, __gsharp_d_1, (global::System.IntPtr)__gsharp_size_1, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ThrowIfLaunchError(__gsharp_epoch);
+}
+finally
+{
+global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ReleaseLaunchEpoch(__gsharp_epoch);
+if (__gsharp_d_0 != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_0, hStream);
+if (__gsharp_d_1 != global::System.IntPtr.Zero && __gsharp_d_1 != __gsharp_d_0) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_1, hStream);
+}
+}
+}
+#pragma warning restore CS8500
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchFieldKeywordBlockBodiesPtr(global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy inputs, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+if (inputs.Length < 0){
+throw new global::System.ArgumentOutOfRangeException(nameof(inputs), inputs.Length, "The array length must not be negative.");
+}
+if (inputs.Data == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(inputs));
+}
+if (inputs.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(inputs));
+}
+if (r.Length < 0){
+throw new global::System.ArgumentOutOfRangeException(nameof(r), r.Length, "The array length must not be negative.");
+}
+if (r.Data == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(r));
+}
+if (r.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(r));
+}
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "FieldKeywordPropertyDifferentialKernels.FieldKeywordBlockBodies");
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+{
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.__gsharp_hfunc_FieldKeywordBlockBodies.Resolve();
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "FieldKeywordPropertyDifferentialKernels.FieldKeywordBlockBodies");
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, false);
+try
+{
+void** __gsharp_kernel_params = stackalloc void*[3];
+// Marshal device array: inputs
+global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
+__gsharp_proxy_0[0] = inputs.Data;
+((int*)(__gsharp_proxy_0 + 1))[0] = inputs.Length;
+((int*)(__gsharp_proxy_0 + 1))[1] = 0;
+__gsharp_kernel_params[0] = __gsharp_proxy_0;
+// Marshal device array: r
+global::System.IntPtr* __gsharp_proxy_1 = stackalloc global::System.IntPtr[2];
+__gsharp_proxy_1[0] = r.Data;
+((int*)(__gsharp_proxy_1 + 1))[0] = r.Length;
+((int*)(__gsharp_proxy_1 + 1))[1] = 0;
+__gsharp_kernel_params[1] = __gsharp_proxy_1;
+__gsharp_kernel_params[2] = &__gsharp_epoch;
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
+__gsharp_hfunc,
+gridDimX, gridDimY, gridDimZ, // Grid dim
+blockDimX, blockDimY, blockDimZ, // Block dim
+sharedMemBytes, // Shared mem
+hStream, // Stream
+__gsharp_kernel_params,
+global::System.IntPtr.Zero // Extra
+));
+}
+finally
+{
+}
+}
+}
+#pragma warning restore CS8500
+public const string FieldKeywordSteps_Source = @"#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordBoth__
+#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordBoth__
+struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordBoth
+{
+int __gsharp_bf_X;
+__device__ inline int __gsharp_mb_X() const {
+return __gsharp_mul_i32(__gsharp_bf_X,10);
+}
+__device__ inline void __gsharp_mb_X(int __gsharp_id_value) {
+__gsharp_bf_X=__gsharp_add_i32(__gsharp_id_value,1);
+}
+}
+;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordBoth)==4,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordBoth: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordBoth)==4,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordBoth: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordBoth,__gsharp_bf_X)==0,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordBoth.X: offset"");
+#endif
+extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__FieldKeywordPropertyDifferentialKernels__FieldKeywordSteps(GSharpArray<int> __gsharp_id_0_inputs, GSharpArray<int> __gsharp_id_1_r, unsigned int __gsharp_epoch){
+__gsharp_launch_epoch = __gsharp_epoch;
+int __gsharp_id_2_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
+if(__gsharp_id_2_tid>=__gsharp_id_0_inputs.length)
+{
+return;
+}
+int __gsharp_id_3_v = __gsharp_id_0_inputs[__gsharp_id_2_tid]%1000;
+int __gsharp_id_4_o = __gsharp_mul_i32(__gsharp_id_2_tid,4);
+auto __gsharp_id_5_prefix = __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordBoth{};
+__gsharp_id_5_prefix.__gsharp_mb_X(__gsharp_id_3_v);
+__gsharp_id_1_r[__gsharp_id_4_o]=([&]() {
+auto __gsharp_seq_0 = __gsharp_id_5_prefix.__gsharp_mb_X();
+auto __gsharp_seq_1 = (int)__gsharp_add_i32(__gsharp_seq_0,1);
+__gsharp_id_5_prefix.__gsharp_mb_X(__gsharp_seq_1);
+return __gsharp_seq_1;
+}());
+__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_4_o,1)]=__gsharp_id_5_prefix.__gsharp_mb_X();
+auto __gsharp_id_6_postfix = __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordBoth{};
+__gsharp_id_6_postfix.__gsharp_mb_X(__gsharp_id_3_v);
+__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_4_o,2)]=([&]() {
+auto __gsharp_seq_2 = __gsharp_id_6_postfix.__gsharp_mb_X();
+auto __gsharp_seq_3 = (int)__gsharp_add_i32(__gsharp_seq_2,1);
+__gsharp_id_6_postfix.__gsharp_mb_X(__gsharp_seq_3);
+return __gsharp_seq_2;
+}());
+__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_4_o,3)]=__gsharp_id_6_postfix.__gsharp_mb_X();
+}
+";
+private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_FieldKeywordSteps = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__FieldKeywordPropertyDifferentialKernels__FieldKeywordSteps", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
+public static void WarmupFunctionPointerFieldKeywordSteps() => global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.__gsharp_hfunc_FieldKeywordSteps.Resolve();
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchFieldKeywordSteps(global::System.Int32[] inputs, global::System.Int32[] r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+if (inputs is null){
+throw new global::System.ArgumentNullException(nameof(inputs));
+}
+if (inputs.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(inputs));
+}
+if (r is null){
+throw new global::System.ArgumentNullException(nameof(r));
+}
+if (r.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(r));
+}
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "FieldKeywordPropertyDifferentialKernels.FieldKeywordSteps");
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+{
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.__gsharp_hfunc_FieldKeywordSteps.Resolve();
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "FieldKeywordPropertyDifferentialKernels.FieldKeywordSteps");
+global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
+global::System.IntPtr __gsharp_d_1 = global::System.IntPtr.Zero;
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, true);
+try
+{
+void** __gsharp_kernel_params = stackalloc void*[3];
+// Marshal array: inputs
+int __gsharp_size_0 = checked(inputs.Length * sizeof(global::System.Int32));
+global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
+__gsharp_proxy_0[0] = global::System.IntPtr.Zero;
+((int*)(__gsharp_proxy_0 + 1))[0] = inputs.Length;
+((int*)(__gsharp_proxy_0 + 1))[1] = 0;
+if (__gsharp_size_0 > 0)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
+fixed (global::System.Int32* __gsharp_p_0 = inputs)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyHtoDAsync_v2(__gsharp_d_0, (global::System.IntPtr)__gsharp_p_0, (global::System.IntPtr)__gsharp_size_0, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+}
+__gsharp_proxy_0[0] = __gsharp_d_0;
+}
+__gsharp_kernel_params[0] = __gsharp_proxy_0;
+// Marshal array: r
+int __gsharp_size_1 = checked(r.Length * sizeof(global::System.Int32));
+global::System.IntPtr* __gsharp_proxy_1 = stackalloc global::System.IntPtr[2];
+__gsharp_proxy_1[0] = global::System.IntPtr.Zero;
+((int*)(__gsharp_proxy_1 + 1))[0] = r.Length;
+((int*)(__gsharp_proxy_1 + 1))[1] = 0;
+if (__gsharp_size_1 > 0)
+{
+if (global::System.Object.ReferenceEquals(r, inputs))
+{
+__gsharp_d_1 = __gsharp_d_0;
+}
+else
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out __gsharp_d_1, (global::System.IntPtr)__gsharp_size_1, hStream));
+fixed (global::System.Int32* __gsharp_p_1 = r)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyHtoDAsync_v2(__gsharp_d_1, (global::System.IntPtr)__gsharp_p_1, (global::System.IntPtr)__gsharp_size_1, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+__gsharp_proxy_1[0] = __gsharp_d_1;
+}
+__gsharp_kernel_params[1] = __gsharp_proxy_1;
+__gsharp_kernel_params[2] = &__gsharp_epoch;
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
+__gsharp_hfunc,
+gridDimX, gridDimY, gridDimZ, // Grid dim
+blockDimX, blockDimY, blockDimZ, // Block dim
+sharedMemBytes, // Shared mem
+hStream, // Stream
+__gsharp_kernel_params,
+global::System.IntPtr.Zero // Extra
+));
+// Copy back array: inputs
+if (__gsharp_size_0 > 0 && __gsharp_d_0 != global::System.IntPtr.Zero)
+{
+fixed (global::System.Int32* __gsharp_p_0 = inputs)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)__gsharp_p_0, __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+// Copy back array: r
+if (__gsharp_size_1 > 0 && __gsharp_d_1 != global::System.IntPtr.Zero && !global::System.Object.ReferenceEquals(r, inputs))
+{
+fixed (global::System.Int32* __gsharp_p_1 = r)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)__gsharp_p_1, __gsharp_d_1, (global::System.IntPtr)__gsharp_size_1, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ThrowIfLaunchError(__gsharp_epoch);
+}
+finally
+{
+global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ReleaseLaunchEpoch(__gsharp_epoch);
+if (__gsharp_d_0 != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_0, hStream);
+if (__gsharp_d_1 != global::System.IntPtr.Zero && __gsharp_d_1 != __gsharp_d_0) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_1, hStream);
+}
+}
+}
+#pragma warning restore CS8500
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchFieldKeywordStepsPtr(global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy inputs, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+if (inputs.Length < 0){
+throw new global::System.ArgumentOutOfRangeException(nameof(inputs), inputs.Length, "The array length must not be negative.");
+}
+if (inputs.Data == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(inputs));
+}
+if (inputs.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(inputs));
+}
+if (r.Length < 0){
+throw new global::System.ArgumentOutOfRangeException(nameof(r), r.Length, "The array length must not be negative.");
+}
+if (r.Data == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(r));
+}
+if (r.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(r));
+}
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "FieldKeywordPropertyDifferentialKernels.FieldKeywordSteps");
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+{
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.__gsharp_hfunc_FieldKeywordSteps.Resolve();
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "FieldKeywordPropertyDifferentialKernels.FieldKeywordSteps");
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, false);
+try
+{
+void** __gsharp_kernel_params = stackalloc void*[3];
+// Marshal device array: inputs
+global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
+__gsharp_proxy_0[0] = inputs.Data;
+((int*)(__gsharp_proxy_0 + 1))[0] = inputs.Length;
+((int*)(__gsharp_proxy_0 + 1))[1] = 0;
+__gsharp_kernel_params[0] = __gsharp_proxy_0;
+// Marshal device array: r
+global::System.IntPtr* __gsharp_proxy_1 = stackalloc global::System.IntPtr[2];
+__gsharp_proxy_1[0] = r.Data;
+((int*)(__gsharp_proxy_1 + 1))[0] = r.Length;
+((int*)(__gsharp_proxy_1 + 1))[1] = 0;
+__gsharp_kernel_params[1] = __gsharp_proxy_1;
+__gsharp_kernel_params[2] = &__gsharp_epoch;
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
+__gsharp_hfunc,
+gridDimX, gridDimY, gridDimZ, // Grid dim
+blockDimX, blockDimY, blockDimZ, // Block dim
+sharedMemBytes, // Shared mem
+hStream, // Stream
+__gsharp_kernel_params,
+global::System.IntPtr.Zero // Extra
+));
+}
+finally
+{
+}
+}
+}
+#pragma warning restore CS8500
+public const string FieldKeywordInit_Source = @"#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordInitOnly__
+#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordInitOnly__
+struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordInitOnly
+{
+int __gsharp_bf_X;
+__device__ inline int __gsharp_mb_X() const {
+return __gsharp_bf_X;
+}
+__device__ inline void __gsharp_mb_X(int __gsharp_id_value) {
+__gsharp_bf_X=__gsharp_mul_i32(__gsharp_id_value,3);
+}
+}
+;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordInitOnly)==4,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordInitOnly: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordInitOnly)==4,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordInitOnly: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordInitOnly,__gsharp_bf_X)==0,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordInitOnly.X: offset"");
+#endif
+extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__FieldKeywordPropertyDifferentialKernels__FieldKeywordInit(GSharpArray<int> __gsharp_id_0_inputs, GSharpArray<int> __gsharp_id_1_r, unsigned int __gsharp_epoch){
+__gsharp_launch_epoch = __gsharp_epoch;
+int __gsharp_id_2_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
+if(__gsharp_id_2_tid>=__gsharp_id_0_inputs.length)
+{
+return;
+}
+auto __gsharp_id_3_s = ([&]() {
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordInitOnly __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_X(__gsharp_id_0_inputs[__gsharp_id_2_tid]%1000); return __gsharp_tmp; }
+());
+__gsharp_id_1_r[__gsharp_id_2_tid]=__gsharp_id_3_s.__gsharp_mb_X();
+}
+";
+private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_FieldKeywordInit = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__FieldKeywordPropertyDifferentialKernels__FieldKeywordInit", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
+public static void WarmupFunctionPointerFieldKeywordInit() => global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.__gsharp_hfunc_FieldKeywordInit.Resolve();
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchFieldKeywordInit(global::System.Int32[] inputs, global::System.Int32[] r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+if (inputs is null){
+throw new global::System.ArgumentNullException(nameof(inputs));
+}
+if (inputs.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(inputs));
+}
+if (r is null){
+throw new global::System.ArgumentNullException(nameof(r));
+}
+if (r.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(r));
+}
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "FieldKeywordPropertyDifferentialKernels.FieldKeywordInit");
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+{
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.__gsharp_hfunc_FieldKeywordInit.Resolve();
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "FieldKeywordPropertyDifferentialKernels.FieldKeywordInit");
+global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
+global::System.IntPtr __gsharp_d_1 = global::System.IntPtr.Zero;
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, true);
+try
+{
+void** __gsharp_kernel_params = stackalloc void*[3];
+// Marshal array: inputs
+int __gsharp_size_0 = checked(inputs.Length * sizeof(global::System.Int32));
+global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
+__gsharp_proxy_0[0] = global::System.IntPtr.Zero;
+((int*)(__gsharp_proxy_0 + 1))[0] = inputs.Length;
+((int*)(__gsharp_proxy_0 + 1))[1] = 0;
+if (__gsharp_size_0 > 0)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
+fixed (global::System.Int32* __gsharp_p_0 = inputs)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyHtoDAsync_v2(__gsharp_d_0, (global::System.IntPtr)__gsharp_p_0, (global::System.IntPtr)__gsharp_size_0, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+}
+__gsharp_proxy_0[0] = __gsharp_d_0;
+}
+__gsharp_kernel_params[0] = __gsharp_proxy_0;
+// Marshal array: r
+int __gsharp_size_1 = checked(r.Length * sizeof(global::System.Int32));
+global::System.IntPtr* __gsharp_proxy_1 = stackalloc global::System.IntPtr[2];
+__gsharp_proxy_1[0] = global::System.IntPtr.Zero;
+((int*)(__gsharp_proxy_1 + 1))[0] = r.Length;
+((int*)(__gsharp_proxy_1 + 1))[1] = 0;
+if (__gsharp_size_1 > 0)
+{
+if (global::System.Object.ReferenceEquals(r, inputs))
+{
+__gsharp_d_1 = __gsharp_d_0;
+}
+else
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out __gsharp_d_1, (global::System.IntPtr)__gsharp_size_1, hStream));
+fixed (global::System.Int32* __gsharp_p_1 = r)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyHtoDAsync_v2(__gsharp_d_1, (global::System.IntPtr)__gsharp_p_1, (global::System.IntPtr)__gsharp_size_1, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+__gsharp_proxy_1[0] = __gsharp_d_1;
+}
+__gsharp_kernel_params[1] = __gsharp_proxy_1;
+__gsharp_kernel_params[2] = &__gsharp_epoch;
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
+__gsharp_hfunc,
+gridDimX, gridDimY, gridDimZ, // Grid dim
+blockDimX, blockDimY, blockDimZ, // Block dim
+sharedMemBytes, // Shared mem
+hStream, // Stream
+__gsharp_kernel_params,
+global::System.IntPtr.Zero // Extra
+));
+// Copy back array: inputs
+if (__gsharp_size_0 > 0 && __gsharp_d_0 != global::System.IntPtr.Zero)
+{
+fixed (global::System.Int32* __gsharp_p_0 = inputs)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)__gsharp_p_0, __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+// Copy back array: r
+if (__gsharp_size_1 > 0 && __gsharp_d_1 != global::System.IntPtr.Zero && !global::System.Object.ReferenceEquals(r, inputs))
+{
+fixed (global::System.Int32* __gsharp_p_1 = r)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)__gsharp_p_1, __gsharp_d_1, (global::System.IntPtr)__gsharp_size_1, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ThrowIfLaunchError(__gsharp_epoch);
+}
+finally
+{
+global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ReleaseLaunchEpoch(__gsharp_epoch);
+if (__gsharp_d_0 != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_0, hStream);
+if (__gsharp_d_1 != global::System.IntPtr.Zero && __gsharp_d_1 != __gsharp_d_0) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_1, hStream);
+}
+}
+}
+#pragma warning restore CS8500
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchFieldKeywordInitPtr(global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy inputs, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+if (inputs.Length < 0){
+throw new global::System.ArgumentOutOfRangeException(nameof(inputs), inputs.Length, "The array length must not be negative.");
+}
+if (inputs.Data == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(inputs));
+}
+if (inputs.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(inputs));
+}
+if (r.Length < 0){
+throw new global::System.ArgumentOutOfRangeException(nameof(r), r.Length, "The array length must not be negative.");
+}
+if (r.Data == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(r));
+}
+if (r.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(r));
+}
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "FieldKeywordPropertyDifferentialKernels.FieldKeywordInit");
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+{
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.__gsharp_hfunc_FieldKeywordInit.Resolve();
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "FieldKeywordPropertyDifferentialKernels.FieldKeywordInit");
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, false);
+try
+{
+void** __gsharp_kernel_params = stackalloc void*[3];
+// Marshal device array: inputs
+global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
+__gsharp_proxy_0[0] = inputs.Data;
+((int*)(__gsharp_proxy_0 + 1))[0] = inputs.Length;
+((int*)(__gsharp_proxy_0 + 1))[1] = 0;
+__gsharp_kernel_params[0] = __gsharp_proxy_0;
+// Marshal device array: r
+global::System.IntPtr* __gsharp_proxy_1 = stackalloc global::System.IntPtr[2];
+__gsharp_proxy_1[0] = r.Data;
+((int*)(__gsharp_proxy_1 + 1))[0] = r.Length;
+((int*)(__gsharp_proxy_1 + 1))[1] = 0;
+__gsharp_kernel_params[1] = __gsharp_proxy_1;
+__gsharp_kernel_params[2] = &__gsharp_epoch;
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
+__gsharp_hfunc,
+gridDimX, gridDimY, gridDimZ, // Grid dim
+blockDimX, blockDimY, blockDimZ, // Block dim
+sharedMemBytes, // Shared mem
+hStream, // Stream
+__gsharp_kernel_params,
+global::System.IntPtr.Zero // Extra
+));
+}
+finally
+{
+}
+}
+}
+#pragma warning restore CS8500
+public const string FieldKeywordWith_Source = @"#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordInitOnly__
+#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordInitOnly__
+struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordInitOnly
+{
+int __gsharp_bf_X;
+__device__ inline int __gsharp_mb_X() const {
+return __gsharp_bf_X;
+}
+__device__ inline void __gsharp_mb_X(int __gsharp_id_value) {
+__gsharp_bf_X=__gsharp_mul_i32(__gsharp_id_value,3);
+}
+}
+;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordInitOnly)==4,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordInitOnly: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordInitOnly)==4,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordInitOnly: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordInitOnly,__gsharp_bf_X)==0,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordInitOnly.X: offset"");
+#endif
+#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordPair__
+#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordPair__
+struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordPair
+{
+int __gsharp_bf_X;
+int __gsharp_bf_Y;
+__device__ inline int __gsharp_mb_X() const {
+return __gsharp_bf_X;
+}
+__device__ inline void __gsharp_mb_X(int __gsharp_id_value) {
+__gsharp_bf_X=__gsharp_mul_i32(__gsharp_id_value,2);
+}
+__device__ inline int __gsharp_mb_Y() const {
+return __gsharp_add_i32(__gsharp_bf_Y,1);
+}
+__device__ inline void __gsharp_mb_Y(int __gsharp_id_value) {
+__gsharp_bf_Y = __gsharp_id_value;
+}
+}
+;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordPair)==8,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordPair: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordPair)==4,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordPair: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordPair,__gsharp_bf_X)==0,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordPair.X: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordPair,__gsharp_bf_Y)==4,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordPair.Y: offset"");
+#endif
+extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__FieldKeywordPropertyDifferentialKernels__FieldKeywordWith(GSharpArray<int> __gsharp_id_0_inputs, GSharpArray<int> __gsharp_id_1_r, unsigned int __gsharp_epoch){
+__gsharp_launch_epoch = __gsharp_epoch;
+int __gsharp_id_2_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
+if(__gsharp_id_2_tid>=__gsharp_id_0_inputs.length)
+{
+return;
+}
+int __gsharp_id_3_v = __gsharp_id_0_inputs[__gsharp_id_2_tid]%1000;
+int __gsharp_id_4_o = __gsharp_mul_i32(__gsharp_id_2_tid,4);
+auto __gsharp_id_5_initialized = ([&]() {
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordInitOnly __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_X(__gsharp_id_3_v); return __gsharp_tmp; }
+());
+auto __gsharp_id_6_copied = ([&]() {
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordInitOnly __gsharp_tmp = __gsharp_id_5_initialized;
+__gsharp_tmp.__gsharp_mb_X(__gsharp_add_i32(__gsharp_id_3_v,1));
+return __gsharp_tmp;
+}());
+__gsharp_id_1_r[__gsharp_id_4_o]=__gsharp_id_6_copied.__gsharp_mb_X();
+__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_4_o,1)]=__gsharp_id_5_initialized.__gsharp_mb_X();
+auto __gsharp_id_7_pair = ([&]() {
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordPair __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_X(__gsharp_id_3_v); __gsharp_tmp.__gsharp_mb_Y(5); return __gsharp_tmp; }
+());
+auto __gsharp_id_8_setter = ([&]() {
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordPair __gsharp_tmp = __gsharp_id_7_pair;
+__gsharp_tmp.__gsharp_mb_X(7);
+return __gsharp_tmp;
+}());
+auto __gsharp_id_9_other = ([&]() {
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordPair __gsharp_tmp = __gsharp_id_7_pair;
+__gsharp_tmp.__gsharp_mb_Y(9);
+return __gsharp_tmp;
+}());
+__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_4_o,2)]=([&]() {
+auto __gsharp_seq_0 = __gsharp_id_8_setter.__gsharp_mb_X();
+auto __gsharp_seq_1 = __gsharp_id_8_setter.__gsharp_mb_Y();
+return __gsharp_add_i32(__gsharp_seq_0,__gsharp_seq_1);
+}());
+__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_4_o,3)]=([&]() {
+auto __gsharp_seq_2 = __gsharp_mul_i32(__gsharp_id_9_other.__gsharp_mb_X(),100);
+auto __gsharp_seq_3 = __gsharp_id_9_other.__gsharp_mb_Y();
+return __gsharp_add_i32(__gsharp_seq_2,__gsharp_seq_3);
+}());
+}
+";
+private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_FieldKeywordWith = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__FieldKeywordPropertyDifferentialKernels__FieldKeywordWith", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
+public static void WarmupFunctionPointerFieldKeywordWith() => global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.__gsharp_hfunc_FieldKeywordWith.Resolve();
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchFieldKeywordWith(global::System.Int32[] inputs, global::System.Int32[] r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+if (inputs is null){
+throw new global::System.ArgumentNullException(nameof(inputs));
+}
+if (inputs.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(inputs));
+}
+if (r is null){
+throw new global::System.ArgumentNullException(nameof(r));
+}
+if (r.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(r));
+}
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "FieldKeywordPropertyDifferentialKernels.FieldKeywordWith");
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+{
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.__gsharp_hfunc_FieldKeywordWith.Resolve();
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "FieldKeywordPropertyDifferentialKernels.FieldKeywordWith");
+global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
+global::System.IntPtr __gsharp_d_1 = global::System.IntPtr.Zero;
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, true);
+try
+{
+void** __gsharp_kernel_params = stackalloc void*[3];
+// Marshal array: inputs
+int __gsharp_size_0 = checked(inputs.Length * sizeof(global::System.Int32));
+global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
+__gsharp_proxy_0[0] = global::System.IntPtr.Zero;
+((int*)(__gsharp_proxy_0 + 1))[0] = inputs.Length;
+((int*)(__gsharp_proxy_0 + 1))[1] = 0;
+if (__gsharp_size_0 > 0)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
+fixed (global::System.Int32* __gsharp_p_0 = inputs)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyHtoDAsync_v2(__gsharp_d_0, (global::System.IntPtr)__gsharp_p_0, (global::System.IntPtr)__gsharp_size_0, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+}
+__gsharp_proxy_0[0] = __gsharp_d_0;
+}
+__gsharp_kernel_params[0] = __gsharp_proxy_0;
+// Marshal array: r
+int __gsharp_size_1 = checked(r.Length * sizeof(global::System.Int32));
+global::System.IntPtr* __gsharp_proxy_1 = stackalloc global::System.IntPtr[2];
+__gsharp_proxy_1[0] = global::System.IntPtr.Zero;
+((int*)(__gsharp_proxy_1 + 1))[0] = r.Length;
+((int*)(__gsharp_proxy_1 + 1))[1] = 0;
+if (__gsharp_size_1 > 0)
+{
+if (global::System.Object.ReferenceEquals(r, inputs))
+{
+__gsharp_d_1 = __gsharp_d_0;
+}
+else
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out __gsharp_d_1, (global::System.IntPtr)__gsharp_size_1, hStream));
+fixed (global::System.Int32* __gsharp_p_1 = r)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyHtoDAsync_v2(__gsharp_d_1, (global::System.IntPtr)__gsharp_p_1, (global::System.IntPtr)__gsharp_size_1, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+__gsharp_proxy_1[0] = __gsharp_d_1;
+}
+__gsharp_kernel_params[1] = __gsharp_proxy_1;
+__gsharp_kernel_params[2] = &__gsharp_epoch;
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
+__gsharp_hfunc,
+gridDimX, gridDimY, gridDimZ, // Grid dim
+blockDimX, blockDimY, blockDimZ, // Block dim
+sharedMemBytes, // Shared mem
+hStream, // Stream
+__gsharp_kernel_params,
+global::System.IntPtr.Zero // Extra
+));
+// Copy back array: inputs
+if (__gsharp_size_0 > 0 && __gsharp_d_0 != global::System.IntPtr.Zero)
+{
+fixed (global::System.Int32* __gsharp_p_0 = inputs)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)__gsharp_p_0, __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+// Copy back array: r
+if (__gsharp_size_1 > 0 && __gsharp_d_1 != global::System.IntPtr.Zero && !global::System.Object.ReferenceEquals(r, inputs))
+{
+fixed (global::System.Int32* __gsharp_p_1 = r)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)__gsharp_p_1, __gsharp_d_1, (global::System.IntPtr)__gsharp_size_1, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ThrowIfLaunchError(__gsharp_epoch);
+}
+finally
+{
+global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ReleaseLaunchEpoch(__gsharp_epoch);
+if (__gsharp_d_0 != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_0, hStream);
+if (__gsharp_d_1 != global::System.IntPtr.Zero && __gsharp_d_1 != __gsharp_d_0) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_1, hStream);
+}
+}
+}
+#pragma warning restore CS8500
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchFieldKeywordWithPtr(global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy inputs, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+if (inputs.Length < 0){
+throw new global::System.ArgumentOutOfRangeException(nameof(inputs), inputs.Length, "The array length must not be negative.");
+}
+if (inputs.Data == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(inputs));
+}
+if (inputs.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(inputs));
+}
+if (r.Length < 0){
+throw new global::System.ArgumentOutOfRangeException(nameof(r), r.Length, "The array length must not be negative.");
+}
+if (r.Data == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(r));
+}
+if (r.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(r));
+}
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "FieldKeywordPropertyDifferentialKernels.FieldKeywordWith");
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+{
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.__gsharp_hfunc_FieldKeywordWith.Resolve();
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "FieldKeywordPropertyDifferentialKernels.FieldKeywordWith");
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, false);
+try
+{
+void** __gsharp_kernel_params = stackalloc void*[3];
+// Marshal device array: inputs
+global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
+__gsharp_proxy_0[0] = inputs.Data;
+((int*)(__gsharp_proxy_0 + 1))[0] = inputs.Length;
+((int*)(__gsharp_proxy_0 + 1))[1] = 0;
+__gsharp_kernel_params[0] = __gsharp_proxy_0;
+// Marshal device array: r
+global::System.IntPtr* __gsharp_proxy_1 = stackalloc global::System.IntPtr[2];
+__gsharp_proxy_1[0] = r.Data;
+((int*)(__gsharp_proxy_1 + 1))[0] = r.Length;
+((int*)(__gsharp_proxy_1 + 1))[1] = 0;
+__gsharp_kernel_params[1] = __gsharp_proxy_1;
+__gsharp_kernel_params[2] = &__gsharp_epoch;
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
+__gsharp_hfunc,
+gridDimX, gridDimY, gridDimZ, // Grid dim
+blockDimX, blockDimY, blockDimZ, // Block dim
+sharedMemBytes, // Shared mem
+hStream, // Stream
+__gsharp_kernel_params,
+global::System.IntPtr.Zero // Extra
+));
+}
+finally
+{
+}
+}
+}
+#pragma warning restore CS8500
+public const string FieldKeywordConstructor_Source = @"#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordInitialized__
+#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordInitialized__
+struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordInitialized
+{
+int __gsharp_bf_X;
+int __gsharp_bf_R;
+__device__ inline int __gsharp_mb_X() const {
+return __gsharp_add_i32(__gsharp_bf_X,1);
+}
+__device__ inline void __gsharp_mb_X(int __gsharp_id_value) {
+__gsharp_bf_X=__gsharp_mul_i32(__gsharp_id_value,2);
+}
+__device__ inline int __gsharp_mb_R() const {
+return __gsharp_mul_i32(__gsharp_bf_R,3);
+}
+}
+;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordInitialized)==8,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordInitialized: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordInitialized)==4,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordInitialized: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordInitialized,__gsharp_bf_X)==0,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordInitialized.X: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordInitialized,__gsharp_bf_R)==4,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordInitialized.R: offset"");
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordInitialized __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordInitialized(int __gsharp_id_0_v) {
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordInitialized __gsharp_self{};
+__gsharp_self.__gsharp_bf_X = 5;
+__gsharp_self.__gsharp_bf_R=__gsharp_id_0_v;
+return __gsharp_self;
+}
+#endif
+extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__FieldKeywordPropertyDifferentialKernels__FieldKeywordConstructor(GSharpArray<int> __gsharp_id_0_inputs, GSharpArray<int> __gsharp_id_1_r, unsigned int __gsharp_epoch){
+__gsharp_launch_epoch = __gsharp_epoch;
+int __gsharp_id_2_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
+if(__gsharp_id_2_tid>=__gsharp_id_0_inputs.length)
+{
+return;
+}
+int __gsharp_id_3_o = __gsharp_mul_i32(__gsharp_id_2_tid,2);
+auto __gsharp_id_4_s = __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordInitialized(__gsharp_id_0_inputs[__gsharp_id_2_tid]%1000);
+__gsharp_id_1_r[__gsharp_id_3_o]=__gsharp_id_4_s.__gsharp_mb_X();
+__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,1)]=__gsharp_id_4_s.__gsharp_mb_R();
+}
+";
+private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_FieldKeywordConstructor = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__FieldKeywordPropertyDifferentialKernels__FieldKeywordConstructor", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
+public static void WarmupFunctionPointerFieldKeywordConstructor() => global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.__gsharp_hfunc_FieldKeywordConstructor.Resolve();
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchFieldKeywordConstructor(global::System.Int32[] inputs, global::System.Int32[] r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+if (inputs is null){
+throw new global::System.ArgumentNullException(nameof(inputs));
+}
+if (inputs.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(inputs));
+}
+if (r is null){
+throw new global::System.ArgumentNullException(nameof(r));
+}
+if (r.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(r));
+}
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "FieldKeywordPropertyDifferentialKernels.FieldKeywordConstructor");
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+{
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.__gsharp_hfunc_FieldKeywordConstructor.Resolve();
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "FieldKeywordPropertyDifferentialKernels.FieldKeywordConstructor");
+global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
+global::System.IntPtr __gsharp_d_1 = global::System.IntPtr.Zero;
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, true);
+try
+{
+void** __gsharp_kernel_params = stackalloc void*[3];
+// Marshal array: inputs
+int __gsharp_size_0 = checked(inputs.Length * sizeof(global::System.Int32));
+global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
+__gsharp_proxy_0[0] = global::System.IntPtr.Zero;
+((int*)(__gsharp_proxy_0 + 1))[0] = inputs.Length;
+((int*)(__gsharp_proxy_0 + 1))[1] = 0;
+if (__gsharp_size_0 > 0)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
+fixed (global::System.Int32* __gsharp_p_0 = inputs)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyHtoDAsync_v2(__gsharp_d_0, (global::System.IntPtr)__gsharp_p_0, (global::System.IntPtr)__gsharp_size_0, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+}
+__gsharp_proxy_0[0] = __gsharp_d_0;
+}
+__gsharp_kernel_params[0] = __gsharp_proxy_0;
+// Marshal array: r
+int __gsharp_size_1 = checked(r.Length * sizeof(global::System.Int32));
+global::System.IntPtr* __gsharp_proxy_1 = stackalloc global::System.IntPtr[2];
+__gsharp_proxy_1[0] = global::System.IntPtr.Zero;
+((int*)(__gsharp_proxy_1 + 1))[0] = r.Length;
+((int*)(__gsharp_proxy_1 + 1))[1] = 0;
+if (__gsharp_size_1 > 0)
+{
+if (global::System.Object.ReferenceEquals(r, inputs))
+{
+__gsharp_d_1 = __gsharp_d_0;
+}
+else
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out __gsharp_d_1, (global::System.IntPtr)__gsharp_size_1, hStream));
+fixed (global::System.Int32* __gsharp_p_1 = r)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyHtoDAsync_v2(__gsharp_d_1, (global::System.IntPtr)__gsharp_p_1, (global::System.IntPtr)__gsharp_size_1, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+__gsharp_proxy_1[0] = __gsharp_d_1;
+}
+__gsharp_kernel_params[1] = __gsharp_proxy_1;
+__gsharp_kernel_params[2] = &__gsharp_epoch;
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
+__gsharp_hfunc,
+gridDimX, gridDimY, gridDimZ, // Grid dim
+blockDimX, blockDimY, blockDimZ, // Block dim
+sharedMemBytes, // Shared mem
+hStream, // Stream
+__gsharp_kernel_params,
+global::System.IntPtr.Zero // Extra
+));
+// Copy back array: inputs
+if (__gsharp_size_0 > 0 && __gsharp_d_0 != global::System.IntPtr.Zero)
+{
+fixed (global::System.Int32* __gsharp_p_0 = inputs)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)__gsharp_p_0, __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+// Copy back array: r
+if (__gsharp_size_1 > 0 && __gsharp_d_1 != global::System.IntPtr.Zero && !global::System.Object.ReferenceEquals(r, inputs))
+{
+fixed (global::System.Int32* __gsharp_p_1 = r)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)__gsharp_p_1, __gsharp_d_1, (global::System.IntPtr)__gsharp_size_1, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ThrowIfLaunchError(__gsharp_epoch);
+}
+finally
+{
+global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ReleaseLaunchEpoch(__gsharp_epoch);
+if (__gsharp_d_0 != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_0, hStream);
+if (__gsharp_d_1 != global::System.IntPtr.Zero && __gsharp_d_1 != __gsharp_d_0) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_1, hStream);
+}
+}
+}
+#pragma warning restore CS8500
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchFieldKeywordConstructorPtr(global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy inputs, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+if (inputs.Length < 0){
+throw new global::System.ArgumentOutOfRangeException(nameof(inputs), inputs.Length, "The array length must not be negative.");
+}
+if (inputs.Data == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(inputs));
+}
+if (inputs.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(inputs));
+}
+if (r.Length < 0){
+throw new global::System.ArgumentOutOfRangeException(nameof(r), r.Length, "The array length must not be negative.");
+}
+if (r.Data == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(r));
+}
+if (r.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(r));
+}
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "FieldKeywordPropertyDifferentialKernels.FieldKeywordConstructor");
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+{
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.__gsharp_hfunc_FieldKeywordConstructor.Resolve();
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "FieldKeywordPropertyDifferentialKernels.FieldKeywordConstructor");
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, false);
+try
+{
+void** __gsharp_kernel_params = stackalloc void*[3];
+// Marshal device array: inputs
+global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
+__gsharp_proxy_0[0] = inputs.Data;
+((int*)(__gsharp_proxy_0 + 1))[0] = inputs.Length;
+((int*)(__gsharp_proxy_0 + 1))[1] = 0;
+__gsharp_kernel_params[0] = __gsharp_proxy_0;
+// Marshal device array: r
+global::System.IntPtr* __gsharp_proxy_1 = stackalloc global::System.IntPtr[2];
+__gsharp_proxy_1[0] = r.Data;
+((int*)(__gsharp_proxy_1 + 1))[0] = r.Length;
+((int*)(__gsharp_proxy_1 + 1))[1] = 0;
+__gsharp_kernel_params[1] = __gsharp_proxy_1;
+__gsharp_kernel_params[2] = &__gsharp_epoch;
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
+__gsharp_hfunc,
+gridDimX, gridDimY, gridDimZ, // Grid dim
+blockDimX, blockDimY, blockDimZ, // Block dim
+sharedMemBytes, // Shared mem
+hStream, // Stream
+__gsharp_kernel_params,
+global::System.IntPtr.Zero // Extra
+));
+}
+finally
+{
+}
+}
+}
+#pragma warning restore CS8500
+public const string FieldKeywordConstructorStep_Source = @"#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordConstructorStep__
+#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordConstructorStep__
+struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordConstructorStep
+{
+int __gsharp_mb_Last;
+int __gsharp_bf_R;
+int __gsharp_bf_S;
+__device__ inline int __gsharp_mb_R() const {
+return __gsharp_mul_i32(__gsharp_bf_R,3);
+}
+__device__ inline int __gsharp_mb_S() const {
+return __gsharp_add_i32(__gsharp_bf_S,1);
+}
+}
+;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordConstructorStep)==12,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordConstructorStep: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordConstructorStep)==4,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordConstructorStep: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordConstructorStep,__gsharp_mb_Last)==0,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordConstructorStep.Last: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordConstructorStep,__gsharp_bf_R)==4,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordConstructorStep.R: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordConstructorStep,__gsharp_bf_S)==8,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordConstructorStep.S: offset"");
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordConstructorStep __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordConstructorStep(int __gsharp_id_0_v) {
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordConstructorStep __gsharp_self{};
+__gsharp_self.__gsharp_bf_R=__gsharp_id_0_v;
+([&]() {
+auto __gsharp_seq_0 = __gsharp_self.__gsharp_mb_R();
+auto __gsharp_seq_1 = 2;
+auto __gsharp_seq_2 = (int)__gsharp_add_i32(__gsharp_seq_0,__gsharp_seq_1);
+__gsharp_self.__gsharp_bf_R=__gsharp_seq_2;
+}());
+([&]() {
+auto __gsharp_seq_3 = __gsharp_self.__gsharp_mb_R();
+auto __gsharp_seq_4 = (int)__gsharp_add_i32(__gsharp_seq_3,1);
+__gsharp_self.__gsharp_bf_R=__gsharp_seq_4;
+}());
+__gsharp_self.__gsharp_bf_S=__gsharp_id_0_v;
+__gsharp_self.__gsharp_mb_Last=([&]() {
+auto __gsharp_seq_5 = __gsharp_self.__gsharp_mb_S();
+auto __gsharp_seq_6 = (int)__gsharp_add_i32(__gsharp_seq_5,1);
+__gsharp_self.__gsharp_bf_S=__gsharp_seq_6;
+return __gsharp_seq_6;
+}());
+([&]() {
+auto&& __gsharp_seq_7 = __gsharp_self;
+auto __gsharp_seq_8 = __gsharp_seq_7.__gsharp_mb_S();
+auto __gsharp_seq_9 = 1;
+auto __gsharp_seq_10 = (int)__gsharp_sub_i32(__gsharp_seq_8,__gsharp_seq_9);
+__gsharp_seq_7.__gsharp_bf_S=__gsharp_seq_10;
+}());
+return __gsharp_self;
+}
+#endif
+extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__FieldKeywordPropertyDifferentialKernels__FieldKeywordConstructorStep(GSharpArray<int> __gsharp_id_0_inputs, GSharpArray<int> __gsharp_id_1_r, unsigned int __gsharp_epoch){
+__gsharp_launch_epoch = __gsharp_epoch;
+int __gsharp_id_2_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
+if(__gsharp_id_2_tid>=__gsharp_id_0_inputs.length)
+{
+return;
+}
+int __gsharp_id_3_o = __gsharp_mul_i32(__gsharp_id_2_tid,3);
+auto __gsharp_id_4_s = __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordConstructorStep(__gsharp_id_0_inputs[__gsharp_id_2_tid]%1000);
+__gsharp_id_1_r[__gsharp_id_3_o]=__gsharp_id_4_s.__gsharp_mb_R();
+__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,1)]=__gsharp_id_4_s.__gsharp_mb_S();
+__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,2)]=__gsharp_id_4_s.__gsharp_mb_Last;
+}
+";
+private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_FieldKeywordConstructorStep = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__FieldKeywordPropertyDifferentialKernels__FieldKeywordConstructorStep", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
+public static void WarmupFunctionPointerFieldKeywordConstructorStep() => global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.__gsharp_hfunc_FieldKeywordConstructorStep.Resolve();
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchFieldKeywordConstructorStep(global::System.Int32[] inputs, global::System.Int32[] r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+if (inputs is null){
+throw new global::System.ArgumentNullException(nameof(inputs));
+}
+if (inputs.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(inputs));
+}
+if (r is null){
+throw new global::System.ArgumentNullException(nameof(r));
+}
+if (r.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(r));
+}
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "FieldKeywordPropertyDifferentialKernels.FieldKeywordConstructorStep");
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+{
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.__gsharp_hfunc_FieldKeywordConstructorStep.Resolve();
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "FieldKeywordPropertyDifferentialKernels.FieldKeywordConstructorStep");
+global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
+global::System.IntPtr __gsharp_d_1 = global::System.IntPtr.Zero;
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, true);
+try
+{
+void** __gsharp_kernel_params = stackalloc void*[3];
+// Marshal array: inputs
+int __gsharp_size_0 = checked(inputs.Length * sizeof(global::System.Int32));
+global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
+__gsharp_proxy_0[0] = global::System.IntPtr.Zero;
+((int*)(__gsharp_proxy_0 + 1))[0] = inputs.Length;
+((int*)(__gsharp_proxy_0 + 1))[1] = 0;
+if (__gsharp_size_0 > 0)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
+fixed (global::System.Int32* __gsharp_p_0 = inputs)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyHtoDAsync_v2(__gsharp_d_0, (global::System.IntPtr)__gsharp_p_0, (global::System.IntPtr)__gsharp_size_0, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+}
+__gsharp_proxy_0[0] = __gsharp_d_0;
+}
+__gsharp_kernel_params[0] = __gsharp_proxy_0;
+// Marshal array: r
+int __gsharp_size_1 = checked(r.Length * sizeof(global::System.Int32));
+global::System.IntPtr* __gsharp_proxy_1 = stackalloc global::System.IntPtr[2];
+__gsharp_proxy_1[0] = global::System.IntPtr.Zero;
+((int*)(__gsharp_proxy_1 + 1))[0] = r.Length;
+((int*)(__gsharp_proxy_1 + 1))[1] = 0;
+if (__gsharp_size_1 > 0)
+{
+if (global::System.Object.ReferenceEquals(r, inputs))
+{
+__gsharp_d_1 = __gsharp_d_0;
+}
+else
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out __gsharp_d_1, (global::System.IntPtr)__gsharp_size_1, hStream));
+fixed (global::System.Int32* __gsharp_p_1 = r)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyHtoDAsync_v2(__gsharp_d_1, (global::System.IntPtr)__gsharp_p_1, (global::System.IntPtr)__gsharp_size_1, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+__gsharp_proxy_1[0] = __gsharp_d_1;
+}
+__gsharp_kernel_params[1] = __gsharp_proxy_1;
+__gsharp_kernel_params[2] = &__gsharp_epoch;
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
+__gsharp_hfunc,
+gridDimX, gridDimY, gridDimZ, // Grid dim
+blockDimX, blockDimY, blockDimZ, // Block dim
+sharedMemBytes, // Shared mem
+hStream, // Stream
+__gsharp_kernel_params,
+global::System.IntPtr.Zero // Extra
+));
+// Copy back array: inputs
+if (__gsharp_size_0 > 0 && __gsharp_d_0 != global::System.IntPtr.Zero)
+{
+fixed (global::System.Int32* __gsharp_p_0 = inputs)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)__gsharp_p_0, __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+// Copy back array: r
+if (__gsharp_size_1 > 0 && __gsharp_d_1 != global::System.IntPtr.Zero && !global::System.Object.ReferenceEquals(r, inputs))
+{
+fixed (global::System.Int32* __gsharp_p_1 = r)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)__gsharp_p_1, __gsharp_d_1, (global::System.IntPtr)__gsharp_size_1, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ThrowIfLaunchError(__gsharp_epoch);
+}
+finally
+{
+global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ReleaseLaunchEpoch(__gsharp_epoch);
+if (__gsharp_d_0 != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_0, hStream);
+if (__gsharp_d_1 != global::System.IntPtr.Zero && __gsharp_d_1 != __gsharp_d_0) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_1, hStream);
+}
+}
+}
+#pragma warning restore CS8500
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchFieldKeywordConstructorStepPtr(global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy inputs, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+if (inputs.Length < 0){
+throw new global::System.ArgumentOutOfRangeException(nameof(inputs), inputs.Length, "The array length must not be negative.");
+}
+if (inputs.Data == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(inputs));
+}
+if (inputs.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(inputs));
+}
+if (r.Length < 0){
+throw new global::System.ArgumentOutOfRangeException(nameof(r), r.Length, "The array length must not be negative.");
+}
+if (r.Data == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(r));
+}
+if (r.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(r));
+}
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "FieldKeywordPropertyDifferentialKernels.FieldKeywordConstructorStep");
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+{
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.__gsharp_hfunc_FieldKeywordConstructorStep.Resolve();
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "FieldKeywordPropertyDifferentialKernels.FieldKeywordConstructorStep");
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, false);
+try
+{
+void** __gsharp_kernel_params = stackalloc void*[3];
+// Marshal device array: inputs
+global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
+__gsharp_proxy_0[0] = inputs.Data;
+((int*)(__gsharp_proxy_0 + 1))[0] = inputs.Length;
+((int*)(__gsharp_proxy_0 + 1))[1] = 0;
+__gsharp_kernel_params[0] = __gsharp_proxy_0;
+// Marshal device array: r
+global::System.IntPtr* __gsharp_proxy_1 = stackalloc global::System.IntPtr[2];
+__gsharp_proxy_1[0] = r.Data;
+((int*)(__gsharp_proxy_1 + 1))[0] = r.Length;
+((int*)(__gsharp_proxy_1 + 1))[1] = 0;
+__gsharp_kernel_params[1] = __gsharp_proxy_1;
+__gsharp_kernel_params[2] = &__gsharp_epoch;
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
+__gsharp_hfunc,
+gridDimX, gridDimY, gridDimZ, // Grid dim
+blockDimX, blockDimY, blockDimZ, // Block dim
+sharedMemBytes, // Shared mem
+hStream, // Stream
+__gsharp_kernel_params,
+global::System.IntPtr.Zero // Extra
+));
+}
+finally
+{
+}
+}
+}
+#pragma warning restore CS8500
+public const string FieldKeywordMutatingGetter_Source = @"#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordCounting__
+#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordCounting__
+struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordCounting
+{
+int __gsharp_bf_X;
+__device__ inline int __gsharp_mb_X() {
+__gsharp_bf_X=__gsharp_add_i32(__gsharp_bf_X,1);
+return __gsharp_bf_X;
+}
+__device__ inline void __gsharp_mb_X(int __gsharp_id_value) {
+__gsharp_bf_X=__gsharp_id_value;
+}
+}
+;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordCounting)==4,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordCounting: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordCounting)==4,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordCounting: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordCounting,__gsharp_bf_X)==0,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordCounting.X: offset"");
+#endif
+extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__FieldKeywordPropertyDifferentialKernels__FieldKeywordMutatingGetter(GSharpArray<int> __gsharp_id_0_inputs, GSharpArray<int> __gsharp_id_1_r, unsigned int __gsharp_epoch){
+__gsharp_launch_epoch = __gsharp_epoch;
+int __gsharp_id_2_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
+if(__gsharp_id_2_tid>=__gsharp_id_0_inputs.length)
+{
+return;
+}
+int __gsharp_id_3_o = __gsharp_mul_i32(__gsharp_id_2_tid,4);
+auto __gsharp_id_4_counting = __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordCounting{};
+__gsharp_id_4_counting.__gsharp_mb_X(__gsharp_id_0_inputs[__gsharp_id_2_tid]%1000);
+__gsharp_id_1_r[__gsharp_id_3_o]=__gsharp_id_4_counting.__gsharp_mb_X();
+__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,1)]=__gsharp_id_4_counting.__gsharp_mb_X();
+__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,2)]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__FieldKeywordPropertyDifferentialKernels__ReadTwice(&__gsharp_id_4_counting);
+__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,3)]=__gsharp_id_4_counting.__gsharp_mb_X();
+}
+";
+private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_FieldKeywordMutatingGetter = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__FieldKeywordPropertyDifferentialKernels__FieldKeywordMutatingGetter", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
+public static void WarmupFunctionPointerFieldKeywordMutatingGetter() => global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.__gsharp_hfunc_FieldKeywordMutatingGetter.Resolve();
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchFieldKeywordMutatingGetter(global::System.Int32[] inputs, global::System.Int32[] r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+if (inputs is null){
+throw new global::System.ArgumentNullException(nameof(inputs));
+}
+if (inputs.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(inputs));
+}
+if (r is null){
+throw new global::System.ArgumentNullException(nameof(r));
+}
+if (r.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(r));
+}
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "FieldKeywordPropertyDifferentialKernels.FieldKeywordMutatingGetter");
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+{
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.__gsharp_hfunc_FieldKeywordMutatingGetter.Resolve();
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "FieldKeywordPropertyDifferentialKernels.FieldKeywordMutatingGetter");
+global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
+global::System.IntPtr __gsharp_d_1 = global::System.IntPtr.Zero;
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, true);
+try
+{
+void** __gsharp_kernel_params = stackalloc void*[3];
+// Marshal array: inputs
+int __gsharp_size_0 = checked(inputs.Length * sizeof(global::System.Int32));
+global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
+__gsharp_proxy_0[0] = global::System.IntPtr.Zero;
+((int*)(__gsharp_proxy_0 + 1))[0] = inputs.Length;
+((int*)(__gsharp_proxy_0 + 1))[1] = 0;
+if (__gsharp_size_0 > 0)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
+fixed (global::System.Int32* __gsharp_p_0 = inputs)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyHtoDAsync_v2(__gsharp_d_0, (global::System.IntPtr)__gsharp_p_0, (global::System.IntPtr)__gsharp_size_0, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+}
+__gsharp_proxy_0[0] = __gsharp_d_0;
+}
+__gsharp_kernel_params[0] = __gsharp_proxy_0;
+// Marshal array: r
+int __gsharp_size_1 = checked(r.Length * sizeof(global::System.Int32));
+global::System.IntPtr* __gsharp_proxy_1 = stackalloc global::System.IntPtr[2];
+__gsharp_proxy_1[0] = global::System.IntPtr.Zero;
+((int*)(__gsharp_proxy_1 + 1))[0] = r.Length;
+((int*)(__gsharp_proxy_1 + 1))[1] = 0;
+if (__gsharp_size_1 > 0)
+{
+if (global::System.Object.ReferenceEquals(r, inputs))
+{
+__gsharp_d_1 = __gsharp_d_0;
+}
+else
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out __gsharp_d_1, (global::System.IntPtr)__gsharp_size_1, hStream));
+fixed (global::System.Int32* __gsharp_p_1 = r)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyHtoDAsync_v2(__gsharp_d_1, (global::System.IntPtr)__gsharp_p_1, (global::System.IntPtr)__gsharp_size_1, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+__gsharp_proxy_1[0] = __gsharp_d_1;
+}
+__gsharp_kernel_params[1] = __gsharp_proxy_1;
+__gsharp_kernel_params[2] = &__gsharp_epoch;
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
+__gsharp_hfunc,
+gridDimX, gridDimY, gridDimZ, // Grid dim
+blockDimX, blockDimY, blockDimZ, // Block dim
+sharedMemBytes, // Shared mem
+hStream, // Stream
+__gsharp_kernel_params,
+global::System.IntPtr.Zero // Extra
+));
+// Copy back array: inputs
+if (__gsharp_size_0 > 0 && __gsharp_d_0 != global::System.IntPtr.Zero)
+{
+fixed (global::System.Int32* __gsharp_p_0 = inputs)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)__gsharp_p_0, __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+// Copy back array: r
+if (__gsharp_size_1 > 0 && __gsharp_d_1 != global::System.IntPtr.Zero && !global::System.Object.ReferenceEquals(r, inputs))
+{
+fixed (global::System.Int32* __gsharp_p_1 = r)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)__gsharp_p_1, __gsharp_d_1, (global::System.IntPtr)__gsharp_size_1, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ThrowIfLaunchError(__gsharp_epoch);
+}
+finally
+{
+global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ReleaseLaunchEpoch(__gsharp_epoch);
+if (__gsharp_d_0 != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_0, hStream);
+if (__gsharp_d_1 != global::System.IntPtr.Zero && __gsharp_d_1 != __gsharp_d_0) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_1, hStream);
+}
+}
+}
+#pragma warning restore CS8500
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchFieldKeywordMutatingGetterPtr(global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy inputs, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+if (inputs.Length < 0){
+throw new global::System.ArgumentOutOfRangeException(nameof(inputs), inputs.Length, "The array length must not be negative.");
+}
+if (inputs.Data == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(inputs));
+}
+if (inputs.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(inputs));
+}
+if (r.Length < 0){
+throw new global::System.ArgumentOutOfRangeException(nameof(r), r.Length, "The array length must not be negative.");
+}
+if (r.Data == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(r));
+}
+if (r.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(r));
+}
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "FieldKeywordPropertyDifferentialKernels.FieldKeywordMutatingGetter");
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+{
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.__gsharp_hfunc_FieldKeywordMutatingGetter.Resolve();
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "FieldKeywordPropertyDifferentialKernels.FieldKeywordMutatingGetter");
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, false);
+try
+{
+void** __gsharp_kernel_params = stackalloc void*[3];
+// Marshal device array: inputs
+global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
+__gsharp_proxy_0[0] = inputs.Data;
+((int*)(__gsharp_proxy_0 + 1))[0] = inputs.Length;
+((int*)(__gsharp_proxy_0 + 1))[1] = 0;
+__gsharp_kernel_params[0] = __gsharp_proxy_0;
+// Marshal device array: r
+global::System.IntPtr* __gsharp_proxy_1 = stackalloc global::System.IntPtr[2];
+__gsharp_proxy_1[0] = r.Data;
+((int*)(__gsharp_proxy_1 + 1))[0] = r.Length;
+((int*)(__gsharp_proxy_1 + 1))[1] = 0;
+__gsharp_kernel_params[1] = __gsharp_proxy_1;
+__gsharp_kernel_params[2] = &__gsharp_epoch;
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
+__gsharp_hfunc,
+gridDimX, gridDimY, gridDimZ, // Grid dim
+blockDimX, blockDimY, blockDimZ, // Block dim
+sharedMemBytes, // Shared mem
+hStream, // Stream
+__gsharp_kernel_params,
+global::System.IntPtr.Zero // Extra
+));
+}
+finally
+{
+}
+}
+}
+#pragma warning restore CS8500
+public const string FieldKeywordComputedReader_Source = @"#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordSum__
+#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordSum__
+struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordSum
+{
+int __gsharp_mb_A;
+int __gsharp_bf_X;
+__device__ inline int __gsharp_mb_X() const {
+return __gsharp_sub_i32(__gsharp_bf_X,1);
+}
+__device__ inline void __gsharp_mb_X(int __gsharp_id_value) {
+__gsharp_bf_X=__gsharp_mul_i32(__gsharp_id_value,4);
+}
+__device__ inline int __gsharp_mb_Sum() const {
+return __gsharp_add_i32(__gsharp_mb_A,__gsharp_mb_X());
+}
+}
+;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordSum)==8,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordSum: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordSum)==4,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordSum: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordSum,__gsharp_mb_A)==0,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordSum.A: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordSum,__gsharp_bf_X)==4,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordSum.X: offset"");
+#endif
+extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__FieldKeywordPropertyDifferentialKernels__FieldKeywordComputedReader(GSharpArray<int> __gsharp_id_0_inputs, GSharpArray<int> __gsharp_id_1_r, unsigned int __gsharp_epoch){
+__gsharp_launch_epoch = __gsharp_epoch;
+int __gsharp_id_2_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
+if(__gsharp_id_2_tid>=__gsharp_id_0_inputs.length)
+{
+return;
+}
+int __gsharp_id_3_v = __gsharp_id_0_inputs[__gsharp_id_2_tid]%1000;
+auto __gsharp_id_4_sum = ([&]() {
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordSum __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_A = __gsharp_id_3_v; return __gsharp_tmp; }
+());
+__gsharp_id_4_sum.__gsharp_mb_X(__gsharp_id_3_v);
+__gsharp_id_1_r[__gsharp_id_2_tid]=__gsharp_id_4_sum.__gsharp_mb_Sum();
+}
+";
+private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_FieldKeywordComputedReader = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__FieldKeywordPropertyDifferentialKernels__FieldKeywordComputedReader", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
+public static void WarmupFunctionPointerFieldKeywordComputedReader() => global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.__gsharp_hfunc_FieldKeywordComputedReader.Resolve();
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchFieldKeywordComputedReader(global::System.Int32[] inputs, global::System.Int32[] r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+if (inputs is null){
+throw new global::System.ArgumentNullException(nameof(inputs));
+}
+if (inputs.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(inputs));
+}
+if (r is null){
+throw new global::System.ArgumentNullException(nameof(r));
+}
+if (r.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(r));
+}
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "FieldKeywordPropertyDifferentialKernels.FieldKeywordComputedReader");
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+{
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.__gsharp_hfunc_FieldKeywordComputedReader.Resolve();
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "FieldKeywordPropertyDifferentialKernels.FieldKeywordComputedReader");
+global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
+global::System.IntPtr __gsharp_d_1 = global::System.IntPtr.Zero;
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, true);
+try
+{
+void** __gsharp_kernel_params = stackalloc void*[3];
+// Marshal array: inputs
+int __gsharp_size_0 = checked(inputs.Length * sizeof(global::System.Int32));
+global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
+__gsharp_proxy_0[0] = global::System.IntPtr.Zero;
+((int*)(__gsharp_proxy_0 + 1))[0] = inputs.Length;
+((int*)(__gsharp_proxy_0 + 1))[1] = 0;
+if (__gsharp_size_0 > 0)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
+fixed (global::System.Int32* __gsharp_p_0 = inputs)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyHtoDAsync_v2(__gsharp_d_0, (global::System.IntPtr)__gsharp_p_0, (global::System.IntPtr)__gsharp_size_0, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+}
+__gsharp_proxy_0[0] = __gsharp_d_0;
+}
+__gsharp_kernel_params[0] = __gsharp_proxy_0;
+// Marshal array: r
+int __gsharp_size_1 = checked(r.Length * sizeof(global::System.Int32));
+global::System.IntPtr* __gsharp_proxy_1 = stackalloc global::System.IntPtr[2];
+__gsharp_proxy_1[0] = global::System.IntPtr.Zero;
+((int*)(__gsharp_proxy_1 + 1))[0] = r.Length;
+((int*)(__gsharp_proxy_1 + 1))[1] = 0;
+if (__gsharp_size_1 > 0)
+{
+if (global::System.Object.ReferenceEquals(r, inputs))
+{
+__gsharp_d_1 = __gsharp_d_0;
+}
+else
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out __gsharp_d_1, (global::System.IntPtr)__gsharp_size_1, hStream));
+fixed (global::System.Int32* __gsharp_p_1 = r)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyHtoDAsync_v2(__gsharp_d_1, (global::System.IntPtr)__gsharp_p_1, (global::System.IntPtr)__gsharp_size_1, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+__gsharp_proxy_1[0] = __gsharp_d_1;
+}
+__gsharp_kernel_params[1] = __gsharp_proxy_1;
+__gsharp_kernel_params[2] = &__gsharp_epoch;
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
+__gsharp_hfunc,
+gridDimX, gridDimY, gridDimZ, // Grid dim
+blockDimX, blockDimY, blockDimZ, // Block dim
+sharedMemBytes, // Shared mem
+hStream, // Stream
+__gsharp_kernel_params,
+global::System.IntPtr.Zero // Extra
+));
+// Copy back array: inputs
+if (__gsharp_size_0 > 0 && __gsharp_d_0 != global::System.IntPtr.Zero)
+{
+fixed (global::System.Int32* __gsharp_p_0 = inputs)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)__gsharp_p_0, __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+// Copy back array: r
+if (__gsharp_size_1 > 0 && __gsharp_d_1 != global::System.IntPtr.Zero && !global::System.Object.ReferenceEquals(r, inputs))
+{
+fixed (global::System.Int32* __gsharp_p_1 = r)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)__gsharp_p_1, __gsharp_d_1, (global::System.IntPtr)__gsharp_size_1, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ThrowIfLaunchError(__gsharp_epoch);
+}
+finally
+{
+global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ReleaseLaunchEpoch(__gsharp_epoch);
+if (__gsharp_d_0 != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_0, hStream);
+if (__gsharp_d_1 != global::System.IntPtr.Zero && __gsharp_d_1 != __gsharp_d_0) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_1, hStream);
+}
+}
+}
+#pragma warning restore CS8500
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchFieldKeywordComputedReaderPtr(global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy inputs, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+if (inputs.Length < 0){
+throw new global::System.ArgumentOutOfRangeException(nameof(inputs), inputs.Length, "The array length must not be negative.");
+}
+if (inputs.Data == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(inputs));
+}
+if (inputs.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(inputs));
+}
+if (r.Length < 0){
+throw new global::System.ArgumentOutOfRangeException(nameof(r), r.Length, "The array length must not be negative.");
+}
+if (r.Data == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(r));
+}
+if (r.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(r));
+}
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "FieldKeywordPropertyDifferentialKernels.FieldKeywordComputedReader");
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+{
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.__gsharp_hfunc_FieldKeywordComputedReader.Resolve();
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "FieldKeywordPropertyDifferentialKernels.FieldKeywordComputedReader");
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, false);
+try
+{
+void** __gsharp_kernel_params = stackalloc void*[3];
+// Marshal device array: inputs
+global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
+__gsharp_proxy_0[0] = inputs.Data;
+((int*)(__gsharp_proxy_0 + 1))[0] = inputs.Length;
+((int*)(__gsharp_proxy_0 + 1))[1] = 0;
+__gsharp_kernel_params[0] = __gsharp_proxy_0;
+// Marshal device array: r
+global::System.IntPtr* __gsharp_proxy_1 = stackalloc global::System.IntPtr[2];
+__gsharp_proxy_1[0] = r.Data;
+((int*)(__gsharp_proxy_1 + 1))[0] = r.Length;
+((int*)(__gsharp_proxy_1 + 1))[1] = 0;
+__gsharp_kernel_params[1] = __gsharp_proxy_1;
+__gsharp_kernel_params[2] = &__gsharp_epoch;
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
+__gsharp_hfunc,
+gridDimX, gridDimY, gridDimZ, // Grid dim
+blockDimX, blockDimY, blockDimZ, // Block dim
+sharedMemBytes, // Shared mem
+hStream, // Stream
+__gsharp_kernel_params,
+global::System.IntPtr.Zero // Extra
+));
+}
+finally
+{
+}
+}
+}
+#pragma warning restore CS8500
+public const string FieldKeywordPartial_Source = @"#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordPartial__
+#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordPartial__
+struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordPartial
+{
+int __gsharp_bf_X;
+int __gsharp_bf_Y;
+__device__ inline int __gsharp_mb_X() const {
+return __gsharp_bf_X;
+}
+__device__ inline void __gsharp_mb_X(int __gsharp_id_value) {
+__gsharp_bf_X=__gsharp_id_value;
+}
+__device__ inline int __gsharp_mb_Y() const {
+return __gsharp_sub_i32(__gsharp_bf_Y,1);
+}
+__device__ inline void __gsharp_mb_Y(int __gsharp_id_value) {
+__gsharp_bf_Y=__gsharp_mul_i32(__gsharp_id_value,4);
+}
+}
+;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordPartial)==8,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordPartial: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordPartial)==4,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordPartial: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordPartial,__gsharp_bf_X)==0,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordPartial.X: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordPartial,__gsharp_bf_Y)==4,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordPartial.Y: offset"");
+#endif
+#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordAuto__
+#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordAuto__
+struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordAuto
+{
+int __gsharp_mb_X;
+}
+;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordAuto)==4,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordAuto: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordAuto)==4,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordAuto: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordAuto,__gsharp_mb_X)==0,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordAuto.X: offset"");
+#endif
+extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__FieldKeywordPropertyDifferentialKernels__FieldKeywordPartial(GSharpArray<int> __gsharp_id_0_inputs, GSharpArray<int> __gsharp_id_1_r, unsigned int __gsharp_epoch){
+__gsharp_launch_epoch = __gsharp_epoch;
+int __gsharp_id_2_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
+if(__gsharp_id_2_tid>=__gsharp_id_0_inputs.length)
+{
+return;
+}
+int __gsharp_id_3_v = __gsharp_id_0_inputs[__gsharp_id_2_tid]%1000;
+int __gsharp_id_4_o = __gsharp_mul_i32(__gsharp_id_2_tid,3);
+auto __gsharp_id_5_partial = __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordPartial{};
+__gsharp_id_5_partial.__gsharp_mb_X(__gsharp_id_3_v);
+([&]() {
+auto __gsharp_seq_0 = __gsharp_id_5_partial.__gsharp_mb_X();
+auto __gsharp_seq_1 = 3;
+auto __gsharp_seq_2 = (int)__gsharp_add_i32(__gsharp_seq_0,__gsharp_seq_1);
+__gsharp_id_5_partial.__gsharp_mb_X(__gsharp_seq_2);
+}());
+__gsharp_id_1_r[__gsharp_id_4_o]=__gsharp_id_5_partial.__gsharp_mb_X();
+auto __gsharp_id_6_plain = __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordAuto{};
+__gsharp_id_6_plain.__gsharp_mb_X=__gsharp_id_3_v;
+__gsharp_id_6_plain.__gsharp_mb_X=__gsharp_add_i32(__gsharp_id_6_plain.__gsharp_mb_X,3);
+__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_4_o,1)]=__gsharp_id_6_plain.__gsharp_mb_X;
+__gsharp_id_5_partial.__gsharp_mb_Y(__gsharp_id_3_v);
+__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_4_o,2)]=__gsharp_id_5_partial.__gsharp_mb_Y();
+}
+";
+private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_FieldKeywordPartial = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__FieldKeywordPropertyDifferentialKernels__FieldKeywordPartial", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
+public static void WarmupFunctionPointerFieldKeywordPartial() => global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.__gsharp_hfunc_FieldKeywordPartial.Resolve();
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchFieldKeywordPartial(global::System.Int32[] inputs, global::System.Int32[] r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+if (inputs is null){
+throw new global::System.ArgumentNullException(nameof(inputs));
+}
+if (inputs.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(inputs));
+}
+if (r is null){
+throw new global::System.ArgumentNullException(nameof(r));
+}
+if (r.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(r));
+}
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "FieldKeywordPropertyDifferentialKernels.FieldKeywordPartial");
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+{
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.__gsharp_hfunc_FieldKeywordPartial.Resolve();
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "FieldKeywordPropertyDifferentialKernels.FieldKeywordPartial");
+global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
+global::System.IntPtr __gsharp_d_1 = global::System.IntPtr.Zero;
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, true);
+try
+{
+void** __gsharp_kernel_params = stackalloc void*[3];
+// Marshal array: inputs
+int __gsharp_size_0 = checked(inputs.Length * sizeof(global::System.Int32));
+global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
+__gsharp_proxy_0[0] = global::System.IntPtr.Zero;
+((int*)(__gsharp_proxy_0 + 1))[0] = inputs.Length;
+((int*)(__gsharp_proxy_0 + 1))[1] = 0;
+if (__gsharp_size_0 > 0)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
+fixed (global::System.Int32* __gsharp_p_0 = inputs)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyHtoDAsync_v2(__gsharp_d_0, (global::System.IntPtr)__gsharp_p_0, (global::System.IntPtr)__gsharp_size_0, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+}
+__gsharp_proxy_0[0] = __gsharp_d_0;
+}
+__gsharp_kernel_params[0] = __gsharp_proxy_0;
+// Marshal array: r
+int __gsharp_size_1 = checked(r.Length * sizeof(global::System.Int32));
+global::System.IntPtr* __gsharp_proxy_1 = stackalloc global::System.IntPtr[2];
+__gsharp_proxy_1[0] = global::System.IntPtr.Zero;
+((int*)(__gsharp_proxy_1 + 1))[0] = r.Length;
+((int*)(__gsharp_proxy_1 + 1))[1] = 0;
+if (__gsharp_size_1 > 0)
+{
+if (global::System.Object.ReferenceEquals(r, inputs))
+{
+__gsharp_d_1 = __gsharp_d_0;
+}
+else
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out __gsharp_d_1, (global::System.IntPtr)__gsharp_size_1, hStream));
+fixed (global::System.Int32* __gsharp_p_1 = r)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyHtoDAsync_v2(__gsharp_d_1, (global::System.IntPtr)__gsharp_p_1, (global::System.IntPtr)__gsharp_size_1, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+__gsharp_proxy_1[0] = __gsharp_d_1;
+}
+__gsharp_kernel_params[1] = __gsharp_proxy_1;
+__gsharp_kernel_params[2] = &__gsharp_epoch;
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
+__gsharp_hfunc,
+gridDimX, gridDimY, gridDimZ, // Grid dim
+blockDimX, blockDimY, blockDimZ, // Block dim
+sharedMemBytes, // Shared mem
+hStream, // Stream
+__gsharp_kernel_params,
+global::System.IntPtr.Zero // Extra
+));
+// Copy back array: inputs
+if (__gsharp_size_0 > 0 && __gsharp_d_0 != global::System.IntPtr.Zero)
+{
+fixed (global::System.Int32* __gsharp_p_0 = inputs)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)__gsharp_p_0, __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+// Copy back array: r
+if (__gsharp_size_1 > 0 && __gsharp_d_1 != global::System.IntPtr.Zero && !global::System.Object.ReferenceEquals(r, inputs))
+{
+fixed (global::System.Int32* __gsharp_p_1 = r)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)__gsharp_p_1, __gsharp_d_1, (global::System.IntPtr)__gsharp_size_1, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ThrowIfLaunchError(__gsharp_epoch);
+}
+finally
+{
+global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ReleaseLaunchEpoch(__gsharp_epoch);
+if (__gsharp_d_0 != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_0, hStream);
+if (__gsharp_d_1 != global::System.IntPtr.Zero && __gsharp_d_1 != __gsharp_d_0) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_1, hStream);
+}
+}
+}
+#pragma warning restore CS8500
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchFieldKeywordPartialPtr(global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy inputs, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+if (inputs.Length < 0){
+throw new global::System.ArgumentOutOfRangeException(nameof(inputs), inputs.Length, "The array length must not be negative.");
+}
+if (inputs.Data == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(inputs));
+}
+if (inputs.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(inputs));
+}
+if (r.Length < 0){
+throw new global::System.ArgumentOutOfRangeException(nameof(r), r.Length, "The array length must not be negative.");
+}
+if (r.Data == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(r));
+}
+if (r.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(r));
+}
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "FieldKeywordPropertyDifferentialKernels.FieldKeywordPartial");
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+{
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.__gsharp_hfunc_FieldKeywordPartial.Resolve();
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "FieldKeywordPropertyDifferentialKernels.FieldKeywordPartial");
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, false);
+try
+{
+void** __gsharp_kernel_params = stackalloc void*[3];
+// Marshal device array: inputs
+global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
+__gsharp_proxy_0[0] = inputs.Data;
+((int*)(__gsharp_proxy_0 + 1))[0] = inputs.Length;
+((int*)(__gsharp_proxy_0 + 1))[1] = 0;
+__gsharp_kernel_params[0] = __gsharp_proxy_0;
+// Marshal device array: r
+global::System.IntPtr* __gsharp_proxy_1 = stackalloc global::System.IntPtr[2];
+__gsharp_proxy_1[0] = r.Data;
+((int*)(__gsharp_proxy_1 + 1))[0] = r.Length;
+((int*)(__gsharp_proxy_1 + 1))[1] = 0;
+__gsharp_kernel_params[1] = __gsharp_proxy_1;
+__gsharp_kernel_params[2] = &__gsharp_epoch;
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
+__gsharp_hfunc,
+gridDimX, gridDimY, gridDimZ, // Grid dim
+blockDimX, blockDimY, blockDimZ, // Block dim
+sharedMemBytes, // Shared mem
+hStream, // Stream
+__gsharp_kernel_params,
+global::System.IntPtr.Zero // Extra
+));
+}
+finally
+{
+}
+}
+}
+#pragma warning restore CS8500
+public const string FieldKeywordDeconstruction_Source = @"#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordBoth__
+#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordBoth__
+struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordBoth
+{
+int __gsharp_bf_X;
+__device__ inline int __gsharp_mb_X() const {
+return __gsharp_mul_i32(__gsharp_bf_X,10);
+}
+__device__ inline void __gsharp_mb_X(int __gsharp_id_value) {
+__gsharp_bf_X=__gsharp_add_i32(__gsharp_id_value,1);
+}
+}
+;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordBoth)==4,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordBoth: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordBoth)==4,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordBoth: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordBoth,__gsharp_bf_X)==0,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordBoth.X: offset"");
+#endif
+#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordDeconstructed__
+#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordDeconstructed__
+struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordDeconstructed
+{
+int __gsharp_bf_R;
+int __gsharp_bf_S;
+__device__ inline int __gsharp_mb_R() const {
+return __gsharp_mul_i32(__gsharp_bf_R,3);
+}
+__device__ inline int __gsharp_mb_S() const {
+return __gsharp_add_i32(__gsharp_bf_S,1);
+}
+}
+;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordDeconstructed)==8,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordDeconstructed: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordDeconstructed)==4,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordDeconstructed: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordDeconstructed,__gsharp_bf_R)==0,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordDeconstructed.R: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordDeconstructed,__gsharp_bf_S)==4,""Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordDeconstructed.S: offset"");
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordDeconstructed __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordDeconstructed(int __gsharp_id_0_a, int __gsharp_id_1_b) {
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordDeconstructed __gsharp_self{};
+([&]() {
+auto __gsharp_tuple_0 = __gsharp_id_0_a;
+auto __gsharp_tuple_1 = __gsharp_id_1_b;
+__gsharp_self.__gsharp_bf_R = __gsharp_tuple_0;
+__gsharp_self.__gsharp_bf_S = __gsharp_tuple_1;
+}());
+return __gsharp_self;
+}
+#endif
+extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__FieldKeywordPropertyDifferentialKernels__FieldKeywordDeconstruction(GSharpArray<int> __gsharp_id_0_inputs, GSharpArray<int> __gsharp_id_1_r, unsigned int __gsharp_epoch){
+__gsharp_launch_epoch = __gsharp_epoch;
+int __gsharp_id_2_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
+if(__gsharp_id_2_tid>=__gsharp_id_0_inputs.length)
+{
+return;
+}
+int __gsharp_id_3_v = __gsharp_id_0_inputs[__gsharp_id_2_tid]%1000;
+int __gsharp_id_4_o = __gsharp_mul_i32(__gsharp_id_2_tid,4);
+auto __gsharp_id_5_target = __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordBoth{};
+int __gsharp_id_6_other;
+([&]() {
+auto __gsharp_tuple_0 = __gsharp_id_3_v;
+auto __gsharp_tuple_1 = 1;
+__gsharp_id_5_target.__gsharp_mb_X(__gsharp_tuple_0);
+__gsharp_id_6_other = __gsharp_tuple_1;
+}());
+__gsharp_id_1_r[__gsharp_id_4_o]=__gsharp_id_5_target.__gsharp_mb_X();
+__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_4_o,1)]=__gsharp_id_6_other;
+auto __gsharp_id_7_deconstructed = __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordDeconstructed(__gsharp_id_3_v, __gsharp_add_i32(__gsharp_id_3_v,3));
+__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_4_o,2)]=__gsharp_id_7_deconstructed.__gsharp_mb_R();
+__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_4_o,3)]=__gsharp_id_7_deconstructed.__gsharp_mb_S();
+}
+";
+private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_FieldKeywordDeconstruction = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__FieldKeywordPropertyDifferentialKernels__FieldKeywordDeconstruction", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
+public static void WarmupFunctionPointerFieldKeywordDeconstruction() => global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.__gsharp_hfunc_FieldKeywordDeconstruction.Resolve();
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchFieldKeywordDeconstruction(global::System.Int32[] inputs, global::System.Int32[] r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+if (inputs is null){
+throw new global::System.ArgumentNullException(nameof(inputs));
+}
+if (inputs.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(inputs));
+}
+if (r is null){
+throw new global::System.ArgumentNullException(nameof(r));
+}
+if (r.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(r));
+}
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "FieldKeywordPropertyDifferentialKernels.FieldKeywordDeconstruction");
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+{
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.__gsharp_hfunc_FieldKeywordDeconstruction.Resolve();
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "FieldKeywordPropertyDifferentialKernels.FieldKeywordDeconstruction");
+global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
+global::System.IntPtr __gsharp_d_1 = global::System.IntPtr.Zero;
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, true);
+try
+{
+void** __gsharp_kernel_params = stackalloc void*[3];
+// Marshal array: inputs
+int __gsharp_size_0 = checked(inputs.Length * sizeof(global::System.Int32));
+global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
+__gsharp_proxy_0[0] = global::System.IntPtr.Zero;
+((int*)(__gsharp_proxy_0 + 1))[0] = inputs.Length;
+((int*)(__gsharp_proxy_0 + 1))[1] = 0;
+if (__gsharp_size_0 > 0)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
+fixed (global::System.Int32* __gsharp_p_0 = inputs)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyHtoDAsync_v2(__gsharp_d_0, (global::System.IntPtr)__gsharp_p_0, (global::System.IntPtr)__gsharp_size_0, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+}
+__gsharp_proxy_0[0] = __gsharp_d_0;
+}
+__gsharp_kernel_params[0] = __gsharp_proxy_0;
+// Marshal array: r
+int __gsharp_size_1 = checked(r.Length * sizeof(global::System.Int32));
+global::System.IntPtr* __gsharp_proxy_1 = stackalloc global::System.IntPtr[2];
+__gsharp_proxy_1[0] = global::System.IntPtr.Zero;
+((int*)(__gsharp_proxy_1 + 1))[0] = r.Length;
+((int*)(__gsharp_proxy_1 + 1))[1] = 0;
+if (__gsharp_size_1 > 0)
+{
+if (global::System.Object.ReferenceEquals(r, inputs))
+{
+__gsharp_d_1 = __gsharp_d_0;
+}
+else
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out __gsharp_d_1, (global::System.IntPtr)__gsharp_size_1, hStream));
+fixed (global::System.Int32* __gsharp_p_1 = r)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyHtoDAsync_v2(__gsharp_d_1, (global::System.IntPtr)__gsharp_p_1, (global::System.IntPtr)__gsharp_size_1, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+__gsharp_proxy_1[0] = __gsharp_d_1;
+}
+__gsharp_kernel_params[1] = __gsharp_proxy_1;
+__gsharp_kernel_params[2] = &__gsharp_epoch;
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
+__gsharp_hfunc,
+gridDimX, gridDimY, gridDimZ, // Grid dim
+blockDimX, blockDimY, blockDimZ, // Block dim
+sharedMemBytes, // Shared mem
+hStream, // Stream
+__gsharp_kernel_params,
+global::System.IntPtr.Zero // Extra
+));
+// Copy back array: inputs
+if (__gsharp_size_0 > 0 && __gsharp_d_0 != global::System.IntPtr.Zero)
+{
+fixed (global::System.Int32* __gsharp_p_0 = inputs)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)__gsharp_p_0, __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+// Copy back array: r
+if (__gsharp_size_1 > 0 && __gsharp_d_1 != global::System.IntPtr.Zero && !global::System.Object.ReferenceEquals(r, inputs))
+{
+fixed (global::System.Int32* __gsharp_p_1 = r)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)__gsharp_p_1, __gsharp_d_1, (global::System.IntPtr)__gsharp_size_1, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ThrowIfLaunchError(__gsharp_epoch);
+}
+finally
+{
+global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ReleaseLaunchEpoch(__gsharp_epoch);
+if (__gsharp_d_0 != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_0, hStream);
+if (__gsharp_d_1 != global::System.IntPtr.Zero && __gsharp_d_1 != __gsharp_d_0) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_1, hStream);
+}
+}
+}
+#pragma warning restore CS8500
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchFieldKeywordDeconstructionPtr(global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy inputs, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+if (inputs.Length < 0){
+throw new global::System.ArgumentOutOfRangeException(nameof(inputs), inputs.Length, "The array length must not be negative.");
+}
+if (inputs.Data == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(inputs));
+}
+if (inputs.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(inputs));
+}
+if (r.Length < 0){
+throw new global::System.ArgumentOutOfRangeException(nameof(r), r.Length, "The array length must not be negative.");
+}
+if (r.Data == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(r));
+}
+if (r.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(r));
+}
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "FieldKeywordPropertyDifferentialKernels.FieldKeywordDeconstruction");
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+{
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.__gsharp_hfunc_FieldKeywordDeconstruction.Resolve();
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "FieldKeywordPropertyDifferentialKernels.FieldKeywordDeconstruction");
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, false);
+try
+{
+void** __gsharp_kernel_params = stackalloc void*[3];
+// Marshal device array: inputs
+global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
+__gsharp_proxy_0[0] = inputs.Data;
+((int*)(__gsharp_proxy_0 + 1))[0] = inputs.Length;
+((int*)(__gsharp_proxy_0 + 1))[1] = 0;
+__gsharp_kernel_params[0] = __gsharp_proxy_0;
+// Marshal device array: r
+global::System.IntPtr* __gsharp_proxy_1 = stackalloc global::System.IntPtr[2];
+__gsharp_proxy_1[0] = r.Data;
+((int*)(__gsharp_proxy_1 + 1))[0] = r.Length;
+((int*)(__gsharp_proxy_1 + 1))[1] = 0;
+__gsharp_kernel_params[1] = __gsharp_proxy_1;
+__gsharp_kernel_params[2] = &__gsharp_epoch;
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
+__gsharp_hfunc,
+gridDimX, gridDimY, gridDimZ, // Grid dim
+blockDimX, blockDimY, blockDimZ, // Block dim
+sharedMemBytes, // Shared mem
+hStream, // Stream
+__gsharp_kernel_params,
+global::System.IntPtr.Zero // Extra
+));
+}
+finally
+{
+}
+}
+}
+#pragma warning restore CS8500
+public const string FieldKeywordLibrary_Source = @"#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__DeviceLibrary__LibScaled__
+#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__DeviceLibrary__LibScaled__
+struct __gsharp_ty_Kassyi__GSharp__Tests__DeviceLibrary__LibScaled
+{
+int __gsharp_bf_X;
+int __gsharp_mb_Y;
+}
+;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__DeviceLibrary__LibScaled)==8,""Kassyi.GSharp.Tests.DeviceLibrary.LibScaled: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__DeviceLibrary__LibScaled)==4,""Kassyi.GSharp.Tests.DeviceLibrary.LibScaled: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__DeviceLibrary__LibScaled,__gsharp_bf_X)==0,""Kassyi.GSharp.Tests.DeviceLibrary.LibScaled.X: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__DeviceLibrary__LibScaled,__gsharp_mb_Y)==4,""Kassyi.GSharp.Tests.DeviceLibrary.LibScaled.Y: offset"");
+#endif
+extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__FieldKeywordPropertyDifferentialKernels__FieldKeywordLibrary(GSharpArray<int> __gsharp_id_0_inputs, GSharpArray<int> __gsharp_id_1_r, unsigned int __gsharp_epoch){
+__gsharp_launch_epoch = __gsharp_epoch;
+int __gsharp_id_2_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
+if(__gsharp_id_2_tid>=__gsharp_id_0_inputs.length)
+{
+return;
+}
+int __gsharp_id_3_v = __gsharp_id_0_inputs[__gsharp_id_2_tid]%1000;
+int __gsharp_id_4_o = __gsharp_mul_i32(__gsharp_id_2_tid,2);
+auto __gsharp_id_5_scaled = __gsharp_ty_Kassyi__GSharp__Tests__DeviceLibrary__LibScaled{};
+__gsharp_id_5_scaled.__gsharp_mb_X(__gsharp_id_3_v);
+__gsharp_id_5_scaled.__gsharp_mb_Y=__gsharp_id_3_v;
+__gsharp_id_1_r[__gsharp_id_4_o]=__gsharp_id_5_scaled.__gsharp_mb_X();
+__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_4_o,1)]=__gsharp_id_5_scaled.__gsharp_mb_Y;
+}
+";
+private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_FieldKeywordLibrary = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__FieldKeywordPropertyDifferentialKernels__FieldKeywordLibrary", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
+public static void WarmupFunctionPointerFieldKeywordLibrary() => global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.__gsharp_hfunc_FieldKeywordLibrary.Resolve();
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchFieldKeywordLibrary(global::System.Int32[] inputs, global::System.Int32[] r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+if (inputs is null){
+throw new global::System.ArgumentNullException(nameof(inputs));
+}
+if (inputs.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(inputs));
+}
+if (r is null){
+throw new global::System.ArgumentNullException(nameof(r));
+}
+if (r.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(r));
+}
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "FieldKeywordPropertyDifferentialKernels.FieldKeywordLibrary");
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+{
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.__gsharp_hfunc_FieldKeywordLibrary.Resolve();
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "FieldKeywordPropertyDifferentialKernels.FieldKeywordLibrary");
+global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
+global::System.IntPtr __gsharp_d_1 = global::System.IntPtr.Zero;
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, true);
+try
+{
+void** __gsharp_kernel_params = stackalloc void*[3];
+// Marshal array: inputs
+int __gsharp_size_0 = checked(inputs.Length * sizeof(global::System.Int32));
+global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
+__gsharp_proxy_0[0] = global::System.IntPtr.Zero;
+((int*)(__gsharp_proxy_0 + 1))[0] = inputs.Length;
+((int*)(__gsharp_proxy_0 + 1))[1] = 0;
+if (__gsharp_size_0 > 0)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
+fixed (global::System.Int32* __gsharp_p_0 = inputs)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyHtoDAsync_v2(__gsharp_d_0, (global::System.IntPtr)__gsharp_p_0, (global::System.IntPtr)__gsharp_size_0, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+}
+__gsharp_proxy_0[0] = __gsharp_d_0;
+}
+__gsharp_kernel_params[0] = __gsharp_proxy_0;
+// Marshal array: r
+int __gsharp_size_1 = checked(r.Length * sizeof(global::System.Int32));
+global::System.IntPtr* __gsharp_proxy_1 = stackalloc global::System.IntPtr[2];
+__gsharp_proxy_1[0] = global::System.IntPtr.Zero;
+((int*)(__gsharp_proxy_1 + 1))[0] = r.Length;
+((int*)(__gsharp_proxy_1 + 1))[1] = 0;
+if (__gsharp_size_1 > 0)
+{
+if (global::System.Object.ReferenceEquals(r, inputs))
+{
+__gsharp_d_1 = __gsharp_d_0;
+}
+else
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out __gsharp_d_1, (global::System.IntPtr)__gsharp_size_1, hStream));
+fixed (global::System.Int32* __gsharp_p_1 = r)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyHtoDAsync_v2(__gsharp_d_1, (global::System.IntPtr)__gsharp_p_1, (global::System.IntPtr)__gsharp_size_1, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+__gsharp_proxy_1[0] = __gsharp_d_1;
+}
+__gsharp_kernel_params[1] = __gsharp_proxy_1;
+__gsharp_kernel_params[2] = &__gsharp_epoch;
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
+__gsharp_hfunc,
+gridDimX, gridDimY, gridDimZ, // Grid dim
+blockDimX, blockDimY, blockDimZ, // Block dim
+sharedMemBytes, // Shared mem
+hStream, // Stream
+__gsharp_kernel_params,
+global::System.IntPtr.Zero // Extra
+));
+// Copy back array: inputs
+if (__gsharp_size_0 > 0 && __gsharp_d_0 != global::System.IntPtr.Zero)
+{
+fixed (global::System.Int32* __gsharp_p_0 = inputs)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)__gsharp_p_0, __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+// Copy back array: r
+if (__gsharp_size_1 > 0 && __gsharp_d_1 != global::System.IntPtr.Zero && !global::System.Object.ReferenceEquals(r, inputs))
+{
+fixed (global::System.Int32* __gsharp_p_1 = r)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)__gsharp_p_1, __gsharp_d_1, (global::System.IntPtr)__gsharp_size_1, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ThrowIfLaunchError(__gsharp_epoch);
+}
+finally
+{
+global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ReleaseLaunchEpoch(__gsharp_epoch);
+if (__gsharp_d_0 != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_0, hStream);
+if (__gsharp_d_1 != global::System.IntPtr.Zero && __gsharp_d_1 != __gsharp_d_0) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_1, hStream);
+}
+}
+}
+#pragma warning restore CS8500
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchFieldKeywordLibraryPtr(global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy inputs, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+if (inputs.Length < 0){
+throw new global::System.ArgumentOutOfRangeException(nameof(inputs), inputs.Length, "The array length must not be negative.");
+}
+if (inputs.Data == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(inputs));
+}
+if (inputs.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(inputs));
+}
+if (r.Length < 0){
+throw new global::System.ArgumentOutOfRangeException(nameof(r), r.Length, "The array length must not be negative.");
+}
+if (r.Data == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(r));
+}
+if (r.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(r));
+}
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "FieldKeywordPropertyDifferentialKernels.FieldKeywordLibrary");
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+{
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.__gsharp_hfunc_FieldKeywordLibrary.Resolve();
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "FieldKeywordPropertyDifferentialKernels.FieldKeywordLibrary");
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, false);
+try
+{
+void** __gsharp_kernel_params = stackalloc void*[3];
+// Marshal device array: inputs
+global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
+__gsharp_proxy_0[0] = inputs.Data;
+((int*)(__gsharp_proxy_0 + 1))[0] = inputs.Length;
+((int*)(__gsharp_proxy_0 + 1))[1] = 0;
+__gsharp_kernel_params[0] = __gsharp_proxy_0;
+// Marshal device array: r
+global::System.IntPtr* __gsharp_proxy_1 = stackalloc global::System.IntPtr[2];
+__gsharp_proxy_1[0] = r.Data;
+((int*)(__gsharp_proxy_1 + 1))[0] = r.Length;
+((int*)(__gsharp_proxy_1 + 1))[1] = 0;
+__gsharp_kernel_params[1] = __gsharp_proxy_1;
+__gsharp_kernel_params[2] = &__gsharp_epoch;
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
+__gsharp_hfunc,
+gridDimX, gridDimY, gridDimZ, // Grid dim
+blockDimX, blockDimY, blockDimZ, // Block dim
+sharedMemBytes, // Shared mem
+hStream, // Stream
+__gsharp_kernel_params,
+global::System.IntPtr.Zero // Extra
+));
+}
+finally
+{
+}
+}
+}
+#pragma warning restore CS8500
+public const string FieldKeywordLibraryMacroTarget_Source = @"#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__DeviceLibrary__LibMacroValue__
+#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__DeviceLibrary__LibMacroValue__
+struct __gsharp_ty_Kassyi__GSharp__Tests__DeviceLibrary__LibMacroValue
+{
+int __gsharp_mb_V;
+}
+;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__DeviceLibrary__LibMacroValue)==4,""Kassyi.GSharp.Tests.DeviceLibrary.LibMacroValue: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__DeviceLibrary__LibMacroValue)==4,""Kassyi.GSharp.Tests.DeviceLibrary.LibMacroValue: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__DeviceLibrary__LibMacroValue,__gsharp_mb_V)==0,""Kassyi.GSharp.Tests.DeviceLibrary.LibMacroValue.V: offset"");
+#endif
+#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__DeviceLibrary__LibMacroHolder__
+#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__DeviceLibrary__LibMacroHolder__
+struct __gsharp_ty_Kassyi__GSharp__Tests__DeviceLibrary__LibMacroHolder
+{
+__gsharp_ty_Kassyi__GSharp__Tests__DeviceLibrary__LibMacroValue __gsharp_mb_P;
+}
+;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__DeviceLibrary__LibMacroHolder)==4,""Kassyi.GSharp.Tests.DeviceLibrary.LibMacroHolder: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__DeviceLibrary__LibMacroHolder)==4,""Kassyi.GSharp.Tests.DeviceLibrary.LibMacroHolder: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__DeviceLibrary__LibMacroHolder,__gsharp_mb_P)==0,""Kassyi.GSharp.Tests.DeviceLibrary.LibMacroHolder.P: offset"");
+#endif
+extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__FieldKeywordPropertyDifferentialKernels__FieldKeywordLibraryMacroTarget(GSharpArray<int> __gsharp_id_0_inputs, GSharpArray<int> __gsharp_id_1_r, unsigned int __gsharp_epoch){
+__gsharp_launch_epoch = __gsharp_epoch;
+int __gsharp_id_2_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
+if(__gsharp_id_2_tid>=__gsharp_id_0_inputs.length)
+{
+return;
+}
+auto __gsharp_id_3_holder = __gsharp_ty_Kassyi__GSharp__Tests__DeviceLibrary__LibMacroHolder{};
+auto __gsharp_id_4_a = ([&]() {
+__gsharp_ty_Kassyi__GSharp__Tests__DeviceLibrary__LibMacroValue __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_V = __gsharp_id_0_inputs[__gsharp_id_2_tid]%1000; return __gsharp_tmp; }
+());
+__gsharp_fn_Kassyi__GSharp__Tests__DeviceLibrary__LibMacroValue__Add(&__gsharp_id_3_holder.__gsharp_mb_P,__gsharp_id_4_a,__gsharp_id_4_a);
+__gsharp_id_1_r[__gsharp_id_2_tid]=__gsharp_id_3_holder.__gsharp_mb_P.__gsharp_mb_V;
+}
+";
+private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_FieldKeywordLibraryMacroTarget = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__FieldKeywordPropertyDifferentialKernels__FieldKeywordLibraryMacroTarget", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
+public static void WarmupFunctionPointerFieldKeywordLibraryMacroTarget() => global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.__gsharp_hfunc_FieldKeywordLibraryMacroTarget.Resolve();
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchFieldKeywordLibraryMacroTarget(global::System.Int32[] inputs, global::System.Int32[] r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+if (inputs is null){
+throw new global::System.ArgumentNullException(nameof(inputs));
+}
+if (inputs.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(inputs));
+}
+if (r is null){
+throw new global::System.ArgumentNullException(nameof(r));
+}
+if (r.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(r));
+}
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "FieldKeywordPropertyDifferentialKernels.FieldKeywordLibraryMacroTarget");
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+{
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.__gsharp_hfunc_FieldKeywordLibraryMacroTarget.Resolve();
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "FieldKeywordPropertyDifferentialKernels.FieldKeywordLibraryMacroTarget");
+global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
+global::System.IntPtr __gsharp_d_1 = global::System.IntPtr.Zero;
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, true);
+try
+{
+void** __gsharp_kernel_params = stackalloc void*[3];
+// Marshal array: inputs
+int __gsharp_size_0 = checked(inputs.Length * sizeof(global::System.Int32));
+global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
+__gsharp_proxy_0[0] = global::System.IntPtr.Zero;
+((int*)(__gsharp_proxy_0 + 1))[0] = inputs.Length;
+((int*)(__gsharp_proxy_0 + 1))[1] = 0;
+if (__gsharp_size_0 > 0)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
+fixed (global::System.Int32* __gsharp_p_0 = inputs)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyHtoDAsync_v2(__gsharp_d_0, (global::System.IntPtr)__gsharp_p_0, (global::System.IntPtr)__gsharp_size_0, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+}
+__gsharp_proxy_0[0] = __gsharp_d_0;
+}
+__gsharp_kernel_params[0] = __gsharp_proxy_0;
+// Marshal array: r
+int __gsharp_size_1 = checked(r.Length * sizeof(global::System.Int32));
+global::System.IntPtr* __gsharp_proxy_1 = stackalloc global::System.IntPtr[2];
+__gsharp_proxy_1[0] = global::System.IntPtr.Zero;
+((int*)(__gsharp_proxy_1 + 1))[0] = r.Length;
+((int*)(__gsharp_proxy_1 + 1))[1] = 0;
+if (__gsharp_size_1 > 0)
+{
+if (global::System.Object.ReferenceEquals(r, inputs))
+{
+__gsharp_d_1 = __gsharp_d_0;
+}
+else
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out __gsharp_d_1, (global::System.IntPtr)__gsharp_size_1, hStream));
+fixed (global::System.Int32* __gsharp_p_1 = r)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyHtoDAsync_v2(__gsharp_d_1, (global::System.IntPtr)__gsharp_p_1, (global::System.IntPtr)__gsharp_size_1, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+__gsharp_proxy_1[0] = __gsharp_d_1;
+}
+__gsharp_kernel_params[1] = __gsharp_proxy_1;
+__gsharp_kernel_params[2] = &__gsharp_epoch;
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
+__gsharp_hfunc,
+gridDimX, gridDimY, gridDimZ, // Grid dim
+blockDimX, blockDimY, blockDimZ, // Block dim
+sharedMemBytes, // Shared mem
+hStream, // Stream
+__gsharp_kernel_params,
+global::System.IntPtr.Zero // Extra
+));
+// Copy back array: inputs
+if (__gsharp_size_0 > 0 && __gsharp_d_0 != global::System.IntPtr.Zero)
+{
+fixed (global::System.Int32* __gsharp_p_0 = inputs)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)__gsharp_p_0, __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+// Copy back array: r
+if (__gsharp_size_1 > 0 && __gsharp_d_1 != global::System.IntPtr.Zero && !global::System.Object.ReferenceEquals(r, inputs))
+{
+fixed (global::System.Int32* __gsharp_p_1 = r)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)__gsharp_p_1, __gsharp_d_1, (global::System.IntPtr)__gsharp_size_1, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ThrowIfLaunchError(__gsharp_epoch);
+}
+finally
+{
+global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ReleaseLaunchEpoch(__gsharp_epoch);
+if (__gsharp_d_0 != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_0, hStream);
+if (__gsharp_d_1 != global::System.IntPtr.Zero && __gsharp_d_1 != __gsharp_d_0) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_1, hStream);
+}
+}
+}
+#pragma warning restore CS8500
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchFieldKeywordLibraryMacroTargetPtr(global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy inputs, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+if (inputs.Length < 0){
+throw new global::System.ArgumentOutOfRangeException(nameof(inputs), inputs.Length, "The array length must not be negative.");
+}
+if (inputs.Data == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(inputs));
+}
+if (inputs.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(inputs));
+}
+if (r.Length < 0){
+throw new global::System.ArgumentOutOfRangeException(nameof(r), r.Length, "The array length must not be negative.");
+}
+if (r.Data == global::System.IntPtr.Zero){
+throw new global::System.ArgumentNullException(nameof(r));
+}
+if (r.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(r));
+}
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "FieldKeywordPropertyDifferentialKernels.FieldKeywordLibraryMacroTarget");
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+{
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.__gsharp_hfunc_FieldKeywordLibraryMacroTarget.Resolve();
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "FieldKeywordPropertyDifferentialKernels.FieldKeywordLibraryMacroTarget");
 uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, false);
 try
 {
@@ -939,9 +3768,9 @@ if(__gsharp_id_2_tid>=__gsharp_id_0_items.length)
 {
 return;
 }
-__gsharp_id_1_r[__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_id_0_items[__gsharp_id_2_tid].__gsharp_mb_P(),__gsharp_array_at(__gsharp_id_0_items[__gsharp_id_2_tid].__gsharp_mb_Data, 0, 202393151u));
+__gsharp_id_1_r[__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_id_0_items[__gsharp_id_2_tid].__gsharp_mb_P(),__gsharp_array_at(__gsharp_id_0_items[__gsharp_id_2_tid].__gsharp_mb_Data, 0, 1337069279u));
 __gsharp_id_0_items[__gsharp_id_2_tid].__gsharp_mb_P(1);
-__gsharp_id_0_items[__gsharp_id_2_tid].__gsharp_mb_P(__gsharp_add_i32(__gsharp_id_0_items[__gsharp_id_2_tid].__gsharp_mb_P(),__gsharp_array_at(__gsharp_id_0_items[__gsharp_id_2_tid].__gsharp_mb_Data, 0, 667226112u)));
+__gsharp_id_0_items[__gsharp_id_2_tid].__gsharp_mb_P(__gsharp_add_i32(__gsharp_id_0_items[__gsharp_id_2_tid].__gsharp_mb_P(),__gsharp_array_at(__gsharp_id_0_items[__gsharp_id_2_tid].__gsharp_mb_Data, 0, 1121563976u)));
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_FieldKeywordPropertyMemberwise = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__FieldKeywordPropertyDifferentialKernels__FieldKeywordPropertyMemberwise", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
