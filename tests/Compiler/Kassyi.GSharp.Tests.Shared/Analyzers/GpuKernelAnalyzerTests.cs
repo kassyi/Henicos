@@ -14,7 +14,7 @@ public class GpuKernelAnalyzerTests
     [InlineData("SYN-68", "Analyzers/UnsupportedMathMethod.cs", "GSH0003")]
     [InlineData("SYN-155", "Analyzers/UnsupportedBitOperationsMethod.cs", "GSH0003")]
     [InlineData("GSH-36", "Analyzers/KernelClassMustBePartial_SadPath.cs", "GSH0036")]
-    public async Task GpuKernelAnalyzer_KernelWithErrorConstruct_ReportsExpectedError(
+    public async Task GpuKernelAnalyzer_KernelWithErrorConstruct_ReportsTheGivenDiagnostic(
         string featureId,
         string testCasePath,
         string expectedErrorId)

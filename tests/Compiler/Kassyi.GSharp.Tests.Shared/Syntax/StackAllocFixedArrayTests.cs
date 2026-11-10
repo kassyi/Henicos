@@ -73,7 +73,7 @@ public class StackAllocFixedArrayTests : TranspilerTestBase
 
     [Fact]
     [Category(TestCategory.Syntax)]
-    public void TranspileAndExecute_StackAllocAsMethodArgument_PassesSpanDirectlyAndProducesExpectedOutput()
+    public void TranspileAndExecute_StackAllocAsMethodArgument_PassesSpanDirectly()
     {
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<StackAllocFixedArrayTarget>(
             nameof(StackAllocFixedArrayTarget.StackAllocAsMethodArgument), isDevice: false, dialect: CurrentDialect);

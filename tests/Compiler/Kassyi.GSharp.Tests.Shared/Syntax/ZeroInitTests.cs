@@ -165,7 +165,7 @@ public class ZeroInitTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void StackArray_SpanMembersAndStackLinq_ProducesExpectedResults()
+    public void StackArray_SpanMembersAndStackLinq_MatchesTheReferenceValues()
     {
         int[] output = Enumerable.Repeat(-1, 5).ToArray();
         int[] expected = Enumerable.Repeat(-1, 5).ToArray();

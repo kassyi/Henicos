@@ -7,7 +7,7 @@ public class GeneratorSadPathTests
     [Scenario(TestScenario.SadPath)]
     [InlineData("SYN-17", "Analyzers/UnresolvedTargetTypedNew.cs", "CS8754")]
     [InlineData("SYN-03", "Analyzers/DuplicateOutVar.cs", "CS0128")]
-    public async Task Generator_InvalidKernel_ReportsExpectedError(
+    public async Task Generator_InvalidKernel_ReportsTheGivenDiagnostic(
         string featureId,
         string testCasePath,
         string expectedErrorId)
@@ -25,7 +25,7 @@ public class GeneratorSadPathTests
     [InlineData("GEN-52", "Analyzers/InvalidMappingSadPath.cs", "GSH0001")]
     // A struct field of a reference type other than an array (the generated code no longer states it as #error)
     [InlineData("GEN-33", "Analyzers/UnsupportedStructFieldsSadPath.cs", "GSH0078")]
-    public async Task Analyzer_InvalidKernel_ReportsExpectedError(
+    public async Task Analyzer_InvalidKernel_ReportsTheGivenDiagnostic(
         string featureId,
         string testCasePath,
         string expectedErrorId)

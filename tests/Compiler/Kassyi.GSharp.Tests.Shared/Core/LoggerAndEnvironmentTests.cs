@@ -54,7 +54,7 @@ public class LoggerAndEnvironmentTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Logger_PerformanceTrackingAndScopes_WorksCorrectly()
+    public void Logger_PerformanceTrackingAndScopes_WritesSummaryAndScopeMarkers()
     {
         // Happy Path: Performance timer and measure scope
         var prevLevel = Logger.ActiveLogLevel;

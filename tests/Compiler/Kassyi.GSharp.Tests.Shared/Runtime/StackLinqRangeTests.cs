@@ -121,7 +121,7 @@ public class StackLinqRangeTests : TranspilerTestBase
     // the skipped element (StackLinqRangeKernels snapshot: the Skip counts in the loop instead of narrowing the range).
     // This is not the regression test of the fold: the managed path runs the host StackLinq, which always called the
     // selector, so the throws held before the fix too. The fold is guarded by
-    // ExpressionTrapsTests.Test_CountRangeStages_StopsAfterATrappingSelector and the snapshot. This test checks that
+    // ExpressionTrapsTests.CountRangeStages_StopsAfterATrappingSelector and the snapshot. This test checks that
     // the CPU paths still give the C# sums, and becomes the native check of the error once #718 lands.
     [SkippableTheory]
     [MemberData(nameof(Paths))]

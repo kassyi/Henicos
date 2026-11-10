@@ -17,7 +17,7 @@ public class EmbeddedStackLinqTests
 {
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void ImmutableArray_WhereSelectCount_ProducesExpectedResults()
+    public void ImmutableArray_WhereSelectCount_ReturnsEvenCountDoubledValuesAndFirstAboveThree()
     {
         var source = ImmutableArray.Create(1, 2, 3, 4, 5);
 

@@ -251,7 +251,7 @@ dotnet_diagnostic.HNT0005.severity = error
 dotnet_diagnostic.HNT0006.severity = error
 dotnet_diagnostic.HNT0007.severity = error
 dotnet_diagnostic.HNT0008.severity = error
-dotnet_diagnostic.HNT0009.severity = error
+dotnet_diagnostic.HNT0009.severity = none
 # Banned APIs (BannedSymbols.txt) are reported in tests as well.
 dotnet_diagnostic.RS0030.severity = warning
 

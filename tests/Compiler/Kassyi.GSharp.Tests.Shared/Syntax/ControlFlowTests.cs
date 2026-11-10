@@ -15,7 +15,7 @@ public class ControlFlowTests : TranspilerTestBase
     [InlineData(int.MinValue, 99)]
     [InlineData(int.MaxValue, 99)]
     [InlineData(int.MaxValue - 1, 99)]
-    public void SwitchExpression_VariousInputs_ProducesExpectedOutput(int inputVal, int expectedVal)
+    public void SwitchExpression_VariousInputs_SelectsTheMatchingArm(int inputVal, int expectedVal)
     {
         int[] input = [inputVal];
         int[] output = [0];
@@ -85,7 +85,7 @@ public class ControlFlowTests : TranspilerTestBase
     [InlineData(5, 5, 7.5)]
     [InlineData(6, 5, 6.0)]
     [InlineData(4, 5, 7.5)]
-    public void ConditionalExpression_VaryingOperands_ProducesExpectedResults(int aVal, int bVal, double expectedResult)
+    public void ConditionalExpression_VaryingOperands_SelectsMatchingBranch(int aVal, int bVal, double expectedResult)
     {
         int[] a = [aVal];
         int[] b = [bVal];
@@ -102,7 +102,7 @@ public class ControlFlowTests : TranspilerTestBase
     [InlineData(10, 2, 5, 2)] // 10 > 2 and 2 <= 5 -> 2
     [InlineData(2, 5, 1, 3)] // 2 <= 5 and 2 > 1 -> 3
     [InlineData(2, 5, 3, 4)] // 2 <= 5 and 2 <= 3 -> 4
-    public void NestedTernary_ThreeOperands_ProducesExpectedResults(int x, int y, int z, int expectedResult)
+    public void NestedTernary_ThreeOperands_SelectsTheMatchingBranch(int x, int y, int z, int expectedResult)
     {
         int[] a = [x];
         int[] b = [y];
@@ -119,7 +119,7 @@ public class ControlFlowTests : TranspilerTestBase
     [Scenario(TestScenario.HappyPath)]
     public async Task Transpile_SwitchExpressionKernel_MatchesSnapshot()
     {
-        // Runtime semantics covered by SwitchExpression_VariousInputs_ProducesExpectedOutput (kernel launch),
+        // Runtime semantics covered by SwitchExpression_VariousInputs_SelectsTheMatchingArm (kernel launch),
         // since ThreadIndex is unavailable outside a GPU context.
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod(
             typeof(ControlFlowKernels), nameof(ControlFlowKernels.SwitchExpressionKernel), isDevice: false, dialect: CurrentDialect);

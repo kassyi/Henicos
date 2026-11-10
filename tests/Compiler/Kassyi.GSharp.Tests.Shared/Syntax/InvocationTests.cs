@@ -8,7 +8,7 @@ public class InvocationTests
     // SYN-49 Happy Path
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void Interlocked_AtomicOperations_ProducesExpectedValues()
+    public void Interlocked_AtomicOperations_AccumulateAcrossThreadsAndStoreFixedValues()
     {
         EnsureCapability(DialectCapabilities.HardwareAtomics);
         int[] intBuf = new int[3];
@@ -56,7 +56,7 @@ public class InvocationTests
     // SYN-49 Edge Cases
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void Interlocked_ArrayElementsAndStructFields_ProducesExpectedValues()
+    public void Interlocked_ArrayElementsAndStructFields_UpdatesEveryElementAndField()
     {
         EnsureCapability(DialectCapabilities.HardwareAtomics);
         int[] array = new int[4] { 1, 2, 3, 4 };

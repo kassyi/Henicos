@@ -14,7 +14,7 @@ public class ManagedExecutionTests : TranspilerTestBase
     [InlineData(32)]
     [InlineData(128)]
     [InlineData(256)]
-    public void LaunchSharedMemoryAndSyncThreads_DirectManagedExecution_ProducesExpectedValues(int length)
+    public void LaunchSharedMemoryAndSyncThreads_DirectManagedExecution_ReversesTheArray(int length)
     {
         // 1. Force the engine to execute the Managed Cooperative Scheduler (skip native AOT DLL execution)
         bool previousState = CpuKernelLoader.ForceManagedExecution;

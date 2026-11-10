@@ -12,7 +12,7 @@ public class StructReproTests : TranspilerTestBase
     [SkippableFact]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
-    public void GenericStruct_IntTypeParameterInstantiatedFirst_ProducesExpectedValues()
+    public void GenericStruct_IntTypeParameterInstantiatedFirst_ReadsBackIntAndFloatFields()
     {
         var ints = new int[1];
         var floats = new float[1];
@@ -24,7 +24,7 @@ public class StructReproTests : TranspilerTestBase
     [SkippableFact]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
-    public void GenericStruct_FloatTypeParameterInstantiatedFirst_ProducesExpectedValues()
+    public void GenericStruct_FloatTypeParameterInstantiatedFirst_ReadsBackIntAndFloatFields()
     {
         var ints = new int[1];
         var floats = new float[1];
@@ -36,7 +36,7 @@ public class StructReproTests : TranspilerTestBase
     [SkippableFact]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.Boundary)]
-    public void GenericStruct_NestedGenericStructInstantiation_ProducesExpectedValues()
+    public void GenericStruct_NestedGenericStructInstantiation_ReadsBackTheNestedFields()
     {
         var ints = new int[1];
         var floats = new float[1];
@@ -48,7 +48,7 @@ public class StructReproTests : TranspilerTestBase
     [SkippableFact]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.Boundary)]
-    public void GenericStruct_ArrayFieldInstantiation_ProducesExpectedValues()
+    public void GenericStruct_ArrayFieldInstantiation_ReadsBackTheArrayFieldValues()
     {
         int[] ints = [0, 3, 4];
         float[] floats = [0f, 1.5f, 2.5f];
@@ -60,7 +60,7 @@ public class StructReproTests : TranspilerTestBase
     [SkippableFact]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
-    public void ReturnOnlyStruct_UsedOnlyAsReturnType_ReturnsExpectedValue()
+    public void ReturnOnlyStruct_UsedOnlyAsReturnType_ReturnsTheStoredField()
     {
         var output = new int[1];
         StructReproKernels.LaunchReturnOnlyStructKernel(output, blockDimX: 1);
@@ -70,7 +70,7 @@ public class StructReproTests : TranspilerTestBase
     [SkippableFact]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
-    public void ReturnAndLocalStruct_ReturnedAndAssignedToLocalVariable_ReturnsExpectedValue()
+    public void ReturnAndLocalStruct_ReturnedAndAssignedToLocalVariable_ReturnsTheStoredField()
     {
         var output = new int[1];
         StructReproKernels.LaunchReturnAndLocalStructKernel(output, blockDimX: 1);

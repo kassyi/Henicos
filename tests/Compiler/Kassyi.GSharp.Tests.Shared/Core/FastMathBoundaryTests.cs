@@ -39,7 +39,7 @@ public class FastMathBoundaryTests
     [SkippableTheory]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [MemberData(nameof(GetBoundaryValues))]
-    public void FastMath_ExtremeInputValues_ProducesExpectedResults(float inputVal)
+    public void FastMath_ExtremeInputValues_ReturnsIeeeSpecialCaseResults(float inputVal)
     {
         // 1. Arrange
         float[] input = [inputVal];
@@ -148,7 +148,7 @@ public class FastMathBoundaryTests
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Stress)]
-    public void FastMath_ConcurrentParallelLaunches_ProducesExpectedResults()
+    public void FastMath_ConcurrentParallelLaunches_ReturnsAtLeastOneFromExpOnEveryLaunch()
     {
         const int iterations = 100;
 

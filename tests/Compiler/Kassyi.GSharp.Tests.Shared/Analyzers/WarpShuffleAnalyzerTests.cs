@@ -12,7 +12,7 @@ public class WarpShuffleAnalyzerTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]
-    public async Task ShuffleDownSync_HostCallToShuffleDownSync_ReportsExpectedError()
+    public async Task ShuffleDownSync_HostCallToShuffleDownSync_ReportsHostIntrinsicCallError()
     {
         // Asserting diagnostic error for host-side intrinsic use
         // Replace with actual analyzer if HostIntrinsicAnalyzer doesn't exist

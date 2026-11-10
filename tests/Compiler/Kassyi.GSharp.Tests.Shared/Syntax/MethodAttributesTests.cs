@@ -100,7 +100,7 @@ public partial class MethodAttributesTests
     [InlineData(unchecked((int)0xAAAAAAAA), unchecked(((int)0xAAAAAAAA + 100) * 2))]
     [InlineData(1000000, (1000000 + 100) * 2)]
     [InlineData(-1000000, (-1000000 + 100) * 2)]
-    public void Execute_AggressiveInliningWithVariousInputs_ProducesExpectedResults(int inputVal, int expectedVal)
+    public void Execute_AggressiveInliningWithVariousInputs_ReturnsTheInlinedResult(int inputVal, int expectedVal)
     {
         int[] input = [inputVal];
         int[] result = new int[1];
