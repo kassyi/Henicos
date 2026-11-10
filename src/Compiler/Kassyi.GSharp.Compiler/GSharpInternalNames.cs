@@ -29,4 +29,37 @@ internal static partial class GSharpInternalNames
         /// <summary>Marks the current thread's state machine as finished.</summary>
         public const string Termination = State + " = -1;";
     }
+
+    internal static partial class StackLinq
+    {
+        /// <summary>
+        /// Suffix of a position stage's argument local (<c>__gsharp_stage_&lt;i&gt;_n</c>), evaluated before the loop.
+        /// </summary>
+        public const string StageCountSuffix = "_n";
+
+        /// <summary>
+        /// Suffix of a <c>SkipWhile</c> stage's state flag (<c>__gsharp_stage_&lt;i&gt;_skipping</c>).
+        /// </summary>
+        public const string StageSkippingSuffix = "_skipping";
+
+        /// <summary>
+        /// Suffix of an element counter (<c>__gsharp_fusion_res_count</c>, <c>__gsharp_stage_&lt;i&gt;_count</c>).
+        /// </summary>
+        public const string CountSuffix = "_count";
+
+        /// <summary>
+        /// Suffix of a terminal's match flag (<c>__gsharp_fusion_res_found</c>).
+        /// </summary>
+        public const string FoundSuffix = "_found";
+
+        /// <summary>
+        /// Suffix of a terminal's initialized flag (<c>__gsharp_fusion_res_init</c>).
+        /// </summary>
+        public const string InitSuffix = "_init";
+
+        /// <summary>
+        /// Suffix of <c>Contains</c>'s target value local (<c>__gsharp_fusion_res_target</c>).
+        /// </summary>
+        public const string TargetSuffix = "_target";
+    }
 }

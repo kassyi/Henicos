@@ -41,7 +41,7 @@ internal sealed class CountStrategy : IStackLinqTerminalStrategy
             var arg = StackLinqHelper.GetLambdaArgument(stage.Invocation, stage.Symbol);
             context.Emitter.Writer.Append("if ((");
             context.Visitor.Visit(arg.Expression);
-            context.Emitter.Writer.AppendLine($")({StackLinqHelper.ValuePrefix}{valIndex}))");
+            context.Emitter.Writer.AppendLine($")({GSharpInternalNames.StackLinq.ValuePrefix}{valIndex}))");
             using (context.Emitter.Writer.Braces())
             {
                 context.Emitter.Writer.AppendLine($"{resultVar}++;");
@@ -68,7 +68,7 @@ internal sealed class AnyStrategy : IStackLinqTerminalStrategy
             var arg = StackLinqHelper.GetLambdaArgument(stage.Invocation, stage.Symbol);
             context.Emitter.Writer.Append("if ((");
             context.Visitor.Visit(arg.Expression);
-            context.Emitter.Writer.AppendLine($")({StackLinqHelper.ValuePrefix}{valIndex}))");
+            context.Emitter.Writer.AppendLine($")({GSharpInternalNames.StackLinq.ValuePrefix}{valIndex}))");
             using (context.Emitter.Writer.Braces())
             {
                 context.Emitter.Writer.AppendLine($"{resultVar} = true; break;");
@@ -93,7 +93,7 @@ internal sealed class AllStrategy : IStackLinqTerminalStrategy
         var arg = StackLinqHelper.GetLambdaArgument(stage.Invocation, stage.Symbol);
         context.Emitter.Writer.Append("if (!((");
         context.Visitor.Visit(arg.Expression);
-        context.Emitter.Writer.AppendLine($")({StackLinqHelper.ValuePrefix}{valIndex})))");
+        context.Emitter.Writer.AppendLine($")({GSharpInternalNames.StackLinq.ValuePrefix}{valIndex})))");
         using (context.Emitter.Writer.Braces())
         {
             context.Emitter.Writer.AppendLine($"{resultVar} = false; break;");
@@ -108,34 +108,37 @@ internal sealed class AllStrategy : IStackLinqTerminalStrategy
 /// </summary>
 internal sealed class ElementSelectionStrategy(bool stopOnFirstMatch, bool trapOnEmpty) : IStackLinqTerminalStrategy
 {
+    private const string ValuePrefix = GSharpInternalNames.StackLinq.ValuePrefix;
+    private const string FoundSuffix = GSharpInternalNames.StackLinq.FoundSuffix;
+
     public void EmitInitialValue(ref TranspileContext context, string resultVar, in LinqStage stage)
     {
         context.Emitter.Dialect.AppendType(ref context, stage.Symbol.ReturnType);
         context.Emitter.Writer.AppendLine($" {resultVar} = {{}};");
         if (trapOnEmpty)
         {
-            context.Emitter.Writer.AppendLine($"bool {resultVar}_found = false;");
+            context.Emitter.Writer.AppendLine($"bool {resultVar}{FoundSuffix} = false;");
         }
     }
 
     public void Emit(ref TranspileContext context, in LinqStage stage, string resultVar, int valIndex)
     {
-        var foundSuffix = trapOnEmpty ? $" {resultVar}_found = true;" : "";
+        var foundSuffix = trapOnEmpty ? $" {resultVar}{FoundSuffix} = true;" : "";
         var statementSuffix = stopOnFirstMatch ? $";{foundSuffix} break;" : $";{foundSuffix}";
         if (StackLinqHelper.HasPredicateOrSelector(stage.Invocation, stage.Symbol))
         {
             var arg = StackLinqHelper.GetLambdaArgument(stage.Invocation, stage.Symbol);
             context.Emitter.Writer.Append("if ((");
             context.Visitor.Visit(arg.Expression);
-            context.Emitter.Writer.AppendLine($")({StackLinqHelper.ValuePrefix}{valIndex}))");
+            context.Emitter.Writer.AppendLine($")({ValuePrefix}{valIndex}))");
             using (context.Emitter.Writer.Braces())
             {
-                context.Emitter.Writer.AppendLine($"{resultVar} = {StackLinqHelper.ValuePrefix}{valIndex}{statementSuffix}");
+                context.Emitter.Writer.AppendLine($"{resultVar} = {ValuePrefix}{valIndex}{statementSuffix}");
             }
         }
         else
         {
-            context.Emitter.Writer.AppendLine($"{resultVar} = {StackLinqHelper.ValuePrefix}{valIndex}{statementSuffix}");
+            context.Emitter.Writer.AppendLine($"{resultVar} = {ValuePrefix}{valIndex}{statementSuffix}");
         }
     }
 
@@ -149,7 +152,7 @@ internal sealed class ElementSelectionStrategy(bool stopOnFirstMatch, bool trapO
         var message = StackLinqHelper.HasPredicateOrSelector(stage.Invocation, stage.Symbol)
             ? "Sequence contains no matching element"
             : "Sequence contains no elements";
-        TerminalNames.EmitEmptySequenceTrap(ref context, $"!{resultVar}_found", message);
+        TerminalTrap.EmitIfUnset(ref context, resultVar, FoundSuffix, message);
     }
 }
 
@@ -162,11 +165,14 @@ internal sealed class ElementSelectionStrategy(bool stopOnFirstMatch, bool trapO
 /// </remarks>
 internal sealed class ExtremaStrategy(bool isMax) : IStackLinqTerminalStrategy
 {
+    private const string ValuePrefix = GSharpInternalNames.StackLinq.ValuePrefix;
+    private const string InitSuffix = GSharpInternalNames.StackLinq.InitSuffix;
+
     public void EmitInitialValue(ref TranspileContext context, string resultVar, in LinqStage stage)
     {
         context.Emitter.Dialect.AppendType(ref context, stage.Symbol.ReturnType);
         context.Emitter.Writer.AppendLine($" {resultVar} = {{}};");
-        context.Emitter.Writer.AppendLine($"bool {resultVar}_init = false;");
+        context.Emitter.Writer.AppendLine($"bool {resultVar}{InitSuffix} = false;");
     }
 
     // Max: if (!<res>_init[ || <is_nan>(<res>)]) { <res> = <v>; <res>_init = true; }
@@ -176,22 +182,22 @@ internal sealed class ExtremaStrategy(bool isMax) : IStackLinqTerminalStrategy
     public void Emit(ref TranspileContext context, in LinqStage stage, string resultVar, int valIndex)
     {
         var isFloating = stage.Symbol.ReturnType.SpecialType is SpecialType.System_Single or SpecialType.System_Double;
-        var value = $"{StackLinqHelper.ValuePrefix}{valIndex}";
+        var value = $"{ValuePrefix}{valIndex}";
         var isNaN = GSharpInternalNames.StackLinq.LinqIsNaN;
         var writer = context.Emitter.Writer;
 
         if (isMax && isFloating)
         {
-            writer.AppendLine($"if (!{resultVar}_init || {isNaN}({resultVar}))");
+            writer.AppendLine($"if (!{resultVar}{InitSuffix} || {isNaN}({resultVar}))");
         }
         else
         {
-            writer.AppendLine($"if (!{resultVar}_init)");
+            writer.AppendLine($"if (!{resultVar}{InitSuffix})");
         }
         using (writer.Braces())
         {
             writer.AppendLine($"{resultVar} = {value};");
-            writer.AppendLine($"{resultVar}_init = true;");
+            writer.AppendLine($"{resultVar}{InitSuffix} = true;");
             if (!isMax && isFloating)
             {
                 writer.AppendLine($"if ({isNaN}({resultVar})) {{ break; }}");
@@ -214,11 +220,14 @@ internal sealed class ExtremaStrategy(bool isMax) : IStackLinqTerminalStrategy
     }
 
     public void EmitPostLoop(ref TranspileContext context, in LinqStage stage, string resultVar) =>
-        TerminalNames.EmitEmptySequenceTrap(ref context, $"!{resultVar}_init");
+        TerminalTrap.EmitIfUnset(ref context, resultVar, InitSuffix);
 }
 
 internal sealed class ContainsStrategy : IStackLinqTerminalStrategy
 {
+    private const string ValuePrefix = GSharpInternalNames.StackLinq.ValuePrefix;
+    private const string TargetSuffix = GSharpInternalNames.StackLinq.TargetSuffix;
+
     public void EmitInitialValue(ref TranspileContext context, string resultVar, in LinqStage stage)
     {
         context.Emitter.Writer.AppendLine($"bool {resultVar} = false;");
@@ -229,7 +238,7 @@ internal sealed class ContainsStrategy : IStackLinqTerminalStrategy
 
         var targetType = stage.Symbol.Parameters[^1].Type;
         context.Emitter.Dialect.AppendType(ref context, targetType);
-        context.Emitter.Writer.Append($" {resultVar}_target = ");
+        context.Emitter.Writer.Append($" {resultVar}{TargetSuffix} = ");
         context.Visitor.Visit(targetArg.Expression);
         context.Emitter.Writer.AppendLine(";");
     }
@@ -237,7 +246,7 @@ internal sealed class ContainsStrategy : IStackLinqTerminalStrategy
     public void Emit(ref TranspileContext context, in LinqStage stage, string resultVar, int valIndex)
     {
         context.Emitter.Writer.AppendLine(
-            $"if ({GSharpInternalNames.StackLinq.LinqEquals}({StackLinqHelper.ValuePrefix}{valIndex}, {resultVar}_target))");
+            $"if ({GSharpInternalNames.StackLinq.LinqEquals}({ValuePrefix}{valIndex}, {resultVar}{TargetSuffix}))");
         using (context.Emitter.Writer.Braces())
         {
             context.Emitter.Writer.AppendLine($"{resultVar} = true; break;");
@@ -249,35 +258,42 @@ internal sealed class ContainsStrategy : IStackLinqTerminalStrategy
 
 internal sealed class AverageStrategy : IStackLinqTerminalStrategy
 {
+    private const string CountSuffix = GSharpInternalNames.StackLinq.CountSuffix;
+
     public void EmitInitialValue(ref TranspileContext context, string resultVar, in LinqStage stage)
     {
         context.Emitter.Writer.AppendLine($"double {resultVar} = 0;");
-        context.Emitter.Writer.AppendLine($"int {resultVar}_count = 0;");
+        context.Emitter.Writer.AppendLine($"int {resultVar}{CountSuffix} = 0;");
     }
 
     public void Emit(ref TranspileContext context, in LinqStage stage, string resultVar, int valIndex)
     {
         StackLinqHelper.EmitAccumulateElement(ref context, in stage, resultVar, valIndex);
-        context.Emitter.Writer.AppendLine($"{resultVar}_count++;");
+        context.Emitter.Writer.AppendLine($"{resultVar}{CountSuffix}++;");
     }
 
     public void EmitPostLoop(ref TranspileContext context, in LinqStage stage, string resultVar)
     {
-        context.Emitter.Writer.AppendLine($"if ({resultVar}_count == 0)");
+        context.Emitter.Writer.AppendLine($"if ({resultVar}{CountSuffix} == 0)");
         using (context.Emitter.Writer.Braces())
         {
-            context.Emitter.Writer.AppendLine($"{GSharpInternalNames.Prelude.Trap}(GSharpErrorCode::InvalidOperation, \"Sequence contains no elements\");");
+            context.Emitter.Writer.AppendLine(
+                $"{GSharpInternalNames.Prelude.Trap}(" +
+                "GSharpErrorCode::InvalidOperation, \"Sequence contains no elements\");");
         }
         context.Emitter.Writer.AppendLine("else");
         using (context.Emitter.Writer.Braces())
         {
-            context.Emitter.Writer.AppendLine($"{resultVar} = {resultVar} / (double)({resultVar}_count);");
+            context.Emitter.Writer.AppendLine($"{resultVar} = {resultVar} / (double)({resultVar}{CountSuffix});");
         }
     }
 }
 
 internal sealed class AggregateStrategy : IStackLinqTerminalStrategy
 {
+    private const string ValuePrefix = GSharpInternalNames.StackLinq.ValuePrefix;
+    private const string InitSuffix = GSharpInternalNames.StackLinq.InitSuffix;
+
     public void EmitInitialValue(ref TranspileContext context, string resultVar, in LinqStage stage)
     {
         context.Emitter.Dialect.AppendType(ref context, stage.Symbol.ReturnType);
@@ -291,7 +307,7 @@ internal sealed class AggregateStrategy : IStackLinqTerminalStrategy
         else
         {
             context.Emitter.Writer.AppendLine($" {resultVar} = {{}};");
-            context.Emitter.Writer.AppendLine($"bool {resultVar}_init = false;");
+            context.Emitter.Writer.AppendLine($"bool {resultVar}{InitSuffix} = false;");
         }
     }
 
@@ -308,25 +324,25 @@ internal sealed class AggregateStrategy : IStackLinqTerminalStrategy
 
         if (!hasSeed)
         {
-            context.Emitter.Writer.AppendLine($"if (!{resultVar}_init)");
+            context.Emitter.Writer.AppendLine($"if (!{resultVar}{InitSuffix})");
             using (context.Emitter.Writer.Braces())
             {
-                context.Emitter.Writer.AppendLine($"{resultVar} = {StackLinqHelper.ValuePrefix}{valIndex};");
-                context.Emitter.Writer.AppendLine($"{resultVar}_init = true;");
+                context.Emitter.Writer.AppendLine($"{resultVar} = {ValuePrefix}{valIndex};");
+                context.Emitter.Writer.AppendLine($"{resultVar}{InitSuffix} = true;");
             }
             context.Emitter.Writer.AppendLine("else");
             using (context.Emitter.Writer.Braces())
             {
                 context.Emitter.Writer.Append($"{resultVar} = (");
                 context.Visitor.Visit(funcArg);
-                context.Emitter.Writer.AppendLine($")({resultVar}, {StackLinqHelper.ValuePrefix}{valIndex});");
+                context.Emitter.Writer.AppendLine($")({resultVar}, {ValuePrefix}{valIndex});");
             }
         }
         else
         {
             context.Emitter.Writer.Append($"{resultVar} = (");
             context.Visitor.Visit(funcArg);
-            context.Emitter.Writer.AppendLine($")({resultVar}, {StackLinqHelper.ValuePrefix}{valIndex});");
+            context.Emitter.Writer.AppendLine($")({resultVar}, {ValuePrefix}{valIndex});");
         }
     }
 
@@ -334,25 +350,24 @@ internal sealed class AggregateStrategy : IStackLinqTerminalStrategy
     {
         if (StackLinqHelper.GetStageArgumentCount(stage.Symbol) < 2)
         {
-            TerminalNames.EmitEmptySequenceTrap(ref context, $"!{resultVar}_init");
+            TerminalTrap.EmitIfUnset(ref context, resultVar, InitSuffix);
         }
     }
 }
 
-file static class TerminalNames
+file static class TerminalTrap
 {
-    /// <summary>Prefix of the terminal state flags and counters derived from the fusion result variable.</summary>
-    internal const string StatePrefix = "__gsharp_fusion_res_";
-
-    public static void EmitEmptySequenceTrap(
+    public static void EmitIfUnset(
         ref TranspileContext context,
-        string condition,
+        string resultVar,
+        string flagSuffix,
         string message = "Sequence contains no elements")
     {
-        context.Emitter.Writer.AppendLine($"if ({condition})");
+        context.Emitter.Writer.AppendLine($"if (!{resultVar}{flagSuffix})");
         using (context.Emitter.Writer.Braces())
         {
-            context.Emitter.Writer.AppendLine($"{GSharpInternalNames.Prelude.Trap}(GSharpErrorCode::InvalidOperation, \"{message}\");");
+            context.Emitter.Writer.AppendLine(
+                $"{GSharpInternalNames.Prelude.Trap}(GSharpErrorCode::InvalidOperation, \"{message}\");");
         }
     }
 }

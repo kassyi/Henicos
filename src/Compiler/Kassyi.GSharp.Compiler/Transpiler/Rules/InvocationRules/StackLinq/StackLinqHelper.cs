@@ -2,27 +2,6 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Rules.InvocationRules.StackLinq;
 
 internal static class StackLinqHelper
 {
-    /// <summary>Prefix of the per-stage element variable, followed by the stage index.</summary>
-    internal const string ValuePrefix = "__gsharp_val_";
-
-    /// <summary>The loop index of a fused pipeline.</summary>
-    internal const string LoopIndex = "__gsharp_i";
-
-    /// <summary>The source of a fused pipeline, evaluated once.</summary>
-    internal const string FusionSource = "__gsharp_fusion_src";
-
-    /// <summary>The first index of the source that a fused pipeline reads (after the folded position stages).</summary>
-    internal const string FusionLow = "__gsharp_fusion_lo";
-
-    /// <summary>The index past the last element that a fused pipeline reads.</summary>
-    internal const string FusionHigh = "__gsharp_fusion_hi";
-
-    /// <summary>Prefix of the per-stage counters, flags and arguments, followed by the stage index.</summary>
-    internal const string StagePrefix = "__gsharp_stage_";
-
-    /// <summary>Suffix of the argument of a position stage (<c>Take(n)</c>), evaluated once before the loop.</summary>
-    internal const string StageCountSuffix = "_n";
-
     public static bool IsStackLinqMethod(IMethodSymbol symbol) =>
         symbol.ContainingNamespace is
         {
@@ -197,6 +176,7 @@ internal static class StackLinqHelper
         string resultVar,
         int valIndex)
     {
+        const string ValuePrefix = GSharpInternalNames.StackLinq.ValuePrefix;
         if (HasPredicateOrSelector(stage.Invocation, stage.Symbol))
         {
             var arg = GetLambdaArgument(stage.Invocation, stage.Symbol);
