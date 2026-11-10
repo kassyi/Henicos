@@ -11,9 +11,9 @@
 // Output: tmp/long-checks/<yyyyMMdd-HHmmss>-<commit>/
 //   <step>.log            full output of the step
 //   bench/generator/      BenchmarkDotNet reports of the generator benchmark (input of `just bench-compare`)
-//   summary.md            one row per step: exit code, duration, log; on Windows also the kernel memory pools after
-//                         the step and the GPU fault events during it (gpu-fault-watch.js), since every GPU fault
-//                         leaks kernel memory in the NVIDIA driver until a reboot
+//   summary.md            one row per step: exit code, duration, log; on Windows also the kernel pools after the
+//                         step and the nvlddmkm Event 153 entries during it (gpu-fault-watch.js): the kernel pools
+//                         grew after GPU faults and were freed only by a reboot
 //
 // Usage:
 //   node scripts/human/long-checks.js [--steps <list>] [--fuzz-minutes <n>] [--stability <count|duration>]
@@ -184,15 +184,17 @@ function runStep(name, step, logPath) {
 
 function poolCells(before, after) {
   if (!after.supported) return '';
-  const mb = (bytes) => (bytes === null ? '?' : String(Math.round(bytes / (1024 * 1024))));
-  const faults = faultWatch.compare(before, after).faultEvents;
-  return ` ${mb(after.nonpagedBytes)} / ${mb(after.pagedBytes)} | ${faults === null ? '?' : faults} |`;
+  const mb = (bytes) => (bytes === null ? 'unknown' : String(Math.round(bytes / (1024 * 1024))));
+  const entries = faultWatch.compare(before, after).event153Entries;
+  const why = after.errors.length === 0 ? '' : ` (${after.errors.join('; ').replace(/\|/g, '/')})`;
+  return ` ${mb(after.nonpagedBytes)} / ${mb(after.pagedBytes)}${why} | ${entries === null ? 'unknown' : entries} |`;
 }
 
 // The pool lines under the table: the reading before the first step and, on Windows, the change over the whole run.
 function poolLines(poolsBefore, results) {
   if (!poolsBefore.supported) return [];
   const lines = ['', `- Before the first step: ${faultWatch.describe(poolsBefore)}`];
+  if (faultWatch.isNonpagedHigh(poolsBefore)) lines.push(`- WARNING: ${faultWatch.startWarningText(poolsBefore)}`);
   if (results.length > 0) {
     const last = results[results.length - 1].pools;
     const comparison = faultWatch.compare(poolsBefore, last);
@@ -215,7 +217,7 @@ function writeSummary(summaryPath, header, results, steps, poolsBefore) {
     ...header,
     '',
     pools
-      ? '| Step | GPU | Result | Time | Pools after (nonpaged / paged MB) | GPU faults | Log |'
+      ? '| Step | GPU | Result | Time | Pools after (nonpaged / paged MB) | Event 153 entries | Log |'
       : '| Step | GPU | Result | Time | Log |',
     pools ? '| :- | :- | :- | -: | -: | -: | :- |' : '| :- | :- | :- | -: | :- |',
     ...rows,
@@ -262,7 +264,7 @@ async function main() {
   ];
 
   const results = [];
-  const poolsBefore = faultWatch.measure();
+  const poolsBefore = faultWatch.measure({ slowFallback: true });
   for (const name of options.steps) {
     if (steps[name].windowsOnly && process.platform !== 'win32') {
       console.log(`\n[long-checks] ${name}: skipped (Windows only)`);
@@ -270,7 +272,7 @@ async function main() {
     }
     console.log(`\n[long-checks] ${name}: ${describe(steps[name])}`);
     const result = await runStep(name, steps[name], path.join(outDir, `${name}.log`));
-    result.pools = faultWatch.measure();
+    result.pools = faultWatch.measure({ slowFallback: true });
     results.push(result);
     writeSummary(summaryPath, header, results, steps, poolsBefore);
   }

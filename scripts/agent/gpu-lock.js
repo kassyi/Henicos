@@ -29,15 +29,19 @@
 // by an older version of this script, or an owner killed between starting the command and recording it), a failed
 // process query. A reused pid therefore only delays a takeover; it never steals a lock.
 //
-// GPU faults: on Windows every CUDA device fault leaks kernel pool memory in the NVIDIA driver until a reboot (NVIDIA
-// bug 7077284). The script reads the kernel pools and the driver's fault events (scripts/human/gpu-fault-watch.js)
-// when it takes the lock and before it releases it, records both in owner.json and in gpu-pool-log.tsv next to the
-// lock directory, prints one line, and warns when the pools grew by more than 1 GB over the run or the nonpaged pool
-// is above 6 GB. A reading that fails is skipped; it never changes the exit code.
+// Kernel pools: on Windows the kernel pools grew after GPU faults and were freed only by a reboot (measured with a
+// plain CUDA trap program; NVIDIA bug 7077284). The script reads the pools and the nvlddmkm Event 153 entries
+// (scripts/human/gpu-fault-watch.js, about 0.1 s) twice, without blocking (Ctrl+C still stops it): while the command
+// starts, after it has been recorded in owner.json, so that a hard kill during the reading leaves a lock that can be
+// taken over; and after the command has ended, before the lock is released. It prints one line, appends a row to
+// gpu-pool-log.tsv next to the lock directory, and warns when the nonpaged pool is above 6 GB before the run, or after
+// the run when the pools grew by more than 1 GB or the nonpaged pool is above 6 GB. GSHARP_GPU_POOL_WATCH=0 turns the
+// reading off. A reading that fails says why; it never changes the exit code.
 //
 // Usage:
 //   node scripts/agent/gpu-lock.js [--poll-seconds <n>] [--timeout-minutes <n>] [--lock-path <dir>] -- <command> [args...]
 //   node scripts/agent/gpu-lock.js --help
+//   node scripts/agent/gpu-lock.js --self-test
 //
 // The command runs through the shell, so quote it as one string when it needs pipes or redirection:
 //   node scripts/agent/gpu-lock.js -- "dotnet test X.csproj --filter Foo > tmp/log.txt 2>&1"
@@ -73,6 +77,12 @@ const usage = [
   '  --timeout-minutes <n>  Give up waiting after n minutes and exit with 3 (default 0 = wait forever).',
   '  --lock-path <dir>      Lock directory to use instead of <main checkout>/tmp/gpu-test-lock (for tests of this script only).',
   '  --help                 Show this help.',
+  '  --self-test            Check that a run killed while it reads the kernel pools leaves a lock that is taken over.',
+  '',
+  'Windows: the kernel pools and the nvlddmkm Event 153 entries are read after the command starts and before the lock',
+  'is released (about 0.1 s each), printed, appended to gpu-pool-log.tsv next to the lock directory, and a warning is',
+  'printed when the pools grew by more than 1 GB or the nonpaged pool is above 6 GB. GSHARP_GPU_POOL_WATCH=0 turns',
+  'this off.',
   '',
   'A lock whose owner is on this host and platform and no longer running, together with the command it started, is',
   'taken over while waiting.',
@@ -97,13 +107,16 @@ function parseArgs(argv) {
   const separator = argv.indexOf('--');
   const own = separator < 0 ? argv : argv.slice(0, separator);
   const command = separator < 0 ? [] : argv.slice(separator + 1);
-  const options = { pollSeconds: 10, timeoutMinutes: 0, lockPath: '', command };
+  const options = { pollSeconds: 10, timeoutMinutes: 0, lockPath: '', command, selfTest: false };
   for (let i = 0; i < own.length; i++) {
     switch (own[i]) {
       case '--help':
       case '-h':
         process.stdout.write(`${usage}\n`);
         process.exit(0);
+        break;
+      case '--self-test':
+        options.selfTest = true;
         break;
       case '--poll-seconds':
         options.pollSeconds = parseNumber('--poll-seconds', own[++i]);
@@ -124,7 +137,7 @@ function parseArgs(argv) {
   if (options.pollSeconds <= 0) {
     usageError('--poll-seconds must be greater than 0.');
   }
-  if (command.length === 0) {
+  if (command.length === 0 && !options.selfTest) {
     usageError('No command given. Put it after "--".');
   }
   return options;
@@ -333,7 +346,6 @@ function tryAcquire() {
     cwd: process.cwd(),
     command: commandText,
     commandProcess: null,
-    pools: readPools(),
   };
   fs.writeFileSync(path.join(lockPath, 'owner.json'), JSON.stringify(ownerRecord));
   fs.writeFileSync(
@@ -343,13 +355,29 @@ function tryAcquire() {
   return true;
 }
 
-/** One reading of the kernel pools, or null when the watch is unavailable or fails. */
-function readPools() {
+/** The reading taken while the command starts; resolves to null when the watch is unavailable or off. */
+let poolsBefore = Promise.resolve(null);
+
+/**
+ * Reads the pools after the command has started and has been recorded in owner.json, and warns when the nonpaged pool
+ * is already above the limit. Never rejects.
+ */
+async function readStartPools() {
   if (faultWatch === null) {
     return null;
   }
   try {
-    return faultWatch.measure();
+    const reading = await faultWatch.measureAsync();
+    if (!reading.supported) {
+      return null;
+    }
+    if (reading.errors.length > 0) {
+      process.stderr.write(`[gpu-lock] ${faultWatch.describe(reading)}\n`);
+    }
+    if (faultWatch.isNonpagedHigh(reading)) {
+      process.stderr.write(`[gpu-lock] WARNING: ${faultWatch.startWarningText(reading)}\n`);
+    }
+    return reading;
   } catch (error) {
     process.stderr.write(`[gpu-lock] could not read the kernel pools: ${error.message}\n`);
     return null;
@@ -361,29 +389,31 @@ function tsvMegabytes(bytes) {
 }
 
 /**
- * Reads the pools again, prints them with the fault events of the run, warns when they grew past the thresholds, and
- * appends one line to gpu-pool-log.tsv next to the lock directory. Never throws.
+ * Reads the pools again without blocking (a signal still stops the script), prints them with the Event 153 entries of
+ * the run, warns when they grew past the thresholds, and appends one line to gpu-pool-log.tsv next to the lock
+ * directory. Never rejects.
  */
-function reportPools(code) {
-  const before = ownerRecord === null ? null : ownerRecord.pools;
-  if (faultWatch === null || before === null || before === undefined || !before.supported) {
+async function reportPools(code) {
+  const before = await poolsBefore;
+  if (faultWatch === null || before === null) {
     return;
   }
   try {
-    const after = readPools();
-    if (after === null) {
-      return;
-    }
+    // typeperf (about a second) stands in for a failed WMI query only when the GPU logged a fault meanwhile
+    const after = await faultWatch.measureAsync({
+      slowFallback: (entries) =>
+        entries !== null && before.event153Entries !== null && entries > before.event153Entries,
+    });
     const comparison = faultWatch.compare(before, after);
-    const events = comparison.faultEvents === null ? '?' : String(comparison.faultEvents);
-    process.stderr.write(`[gpu-lock] ${faultWatch.describe(after)}; during this run: ${events}\n`);
+    const entries = comparison.event153Entries === null ? 'unknown' : String(comparison.event153Entries);
+    process.stderr.write(`[gpu-lock] ${faultWatch.describe(after)}; during this run: ${entries}\n`);
     if (comparison.warn) {
       process.stderr.write(`[gpu-lock] WARNING: ${faultWatch.warningText(comparison)}\n`);
     }
     const logPath = path.join(path.dirname(lockPath), 'gpu-pool-log.tsv');
     const header = fs.existsSync(logPath)
       ? ''
-      : 'start\tend\texit\tnonpagedBeforeMB\tnonpagedAfterMB\tpagedBeforeMB\tpagedAfterMB\tfaultEvents\tcommand\n';
+      : 'start\tend\texit\tnonpagedBeforeMB\tnonpagedAfterMB\tpagedBeforeMB\tpagedAfterMB\tevent153Entries\tcommand\n';
     const row = [
       before.time,
       after.time,
@@ -392,7 +422,7 @@ function reportPools(code) {
       tsvMegabytes(after.nonpagedBytes),
       tsvMegabytes(before.pagedBytes),
       tsvMegabytes(after.pagedBytes),
-      comparison.faultEvents === null ? '' : String(comparison.faultEvents),
+      comparison.event153Entries === null ? '' : String(comparison.event153Entries),
       commandText.replace(/[\t\r\n]+/g, ' '),
     ].join('\t');
     fs.appendFileSync(logPath, `${header}${row}\n`);
@@ -455,15 +485,19 @@ function runCommand() {
   // outlives a hard kill of this script and a waiter can see that the command still runs. Windows keeps the console.
   child = spawn(commandText, { stdio: 'inherit', shell: true, detached: process.platform !== 'win32' });
   recordCommandProcess(spawnedAt);
+  // After the record, so that a hard kill during the reading leaves a lock whose owner and command can be checked; in
+  // parallel with the start of the command, which takes longer than the reading before it can reach the GPU
+  poolsBefore = readStartPools();
   child.on('error', (error) => {
     process.stderr.write(`[gpu-lock] could not start the command: ${error.message}\n`);
     releaseLock();
     process.exit(1);
   });
   child.on('close', (code) => {
-    reportPools(code);
-    releaseLock();
-    process.exit(code === null ? 1 : code);
+    reportPools(code).then(() => {
+      releaseLock();
+      process.exit(code === null ? 1 : code);
+    });
   });
 }
 
@@ -493,4 +527,92 @@ function attempt() {
   setTimeout(attempt, options.pollSeconds * 1000);
 }
 
-attempt();
+/** Polls until `check` returns a value other than null, or fails after `timeoutMs`. */
+async function waitFor(what, timeoutMs, check) {
+  const deadline = Date.now() + timeoutMs;
+  for (;;) {
+    const value = check();
+    if (value !== null) {
+      return value;
+    }
+    if (Date.now() > deadline) {
+      throw new Error(`timed out waiting for ${what}`);
+    }
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+}
+
+/**
+ * Starts this script on a temporary lock with a kernel pool reading that takes 30 s, kills it hard together with its
+ * command while it reads, and checks that a second run takes the lock over and runs its command.
+ */
+async function selfTest() {
+  const assert = require('assert');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'gpu-lock-self-test-'));
+  const testLock = path.join(dir, 'lock');
+  const delayVariable = faultWatch === null ? 'GSHARP_GPU_POOL_WATCH_TEST_DELAY_MS' : faultWatch.DelayVariable;
+  const first = spawn(
+    process.execPath,
+    [__filename, '--lock-path', testLock, '--', 'node -e "setTimeout(function () {}, 60000)"'],
+    {
+      stdio: 'ignore',
+      windowsHide: true,
+      env: { ...process.env, [delayVariable]: '30000', GSHARP_GPU_POOL_WATCH: '1' },
+    },
+  );
+  try {
+    const record = await waitFor('the command in owner.json', 20000, () => {
+      const owner = readOwnerRecord(testLock);
+      return owner !== null && owner.commandProcess !== null ? owner : null;
+    });
+    assert.strictEqual(record.pid, first.pid);
+    // Hard kill of the owner and its command while the owner is inside the start reading
+    if (process.platform === 'win32') {
+      spawnSync('taskkill', ['/PID', String(first.pid), '/T', '/F'], { stdio: 'ignore', windowsHide: true });
+    } else {
+      process.kill(-record.commandProcess.pgid, 'SIGKILL');
+      process.kill(first.pid, 'SIGKILL');
+    }
+    await waitFor('the killed owner to exit', 10000, () =>
+      first.exitCode !== null || first.signalCode !== null ? true : null,
+    );
+    assert.ok(fs.existsSync(path.join(testLock, 'owner.json')), 'the killed run left its owner record');
+
+    const second = spawnSync(
+      process.execPath,
+      [
+        __filename,
+        '--lock-path',
+        testLock,
+        '--poll-seconds',
+        '1',
+        '--timeout-minutes',
+        '1',
+        '--',
+        'node -e "process.exit(5)"',
+      ],
+      { encoding: 'utf8', windowsHide: true, env: { ...process.env, GSHARP_GPU_POOL_WATCH: '0' } },
+    );
+    assert.strictEqual(second.status, 5, second.stderr);
+    assert.match(second.stderr, /took over a stale lock/);
+    assert.ok(!fs.existsSync(testLock), 'the second run released the lock');
+  } finally {
+    if (first.exitCode === null && first.signalCode === null) {
+      first.kill('SIGKILL');
+    }
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+  process.stdout.write('gpu-lock self-test passed\n');
+}
+
+if (options.selfTest) {
+  selfTest().then(
+    () => process.exit(0),
+    (error) => {
+      process.stderr.write(`gpu-lock self-test failed: ${error.stack || error.message}\n`);
+      process.exit(1);
+    },
+  );
+} else {
+  attempt();
+}
