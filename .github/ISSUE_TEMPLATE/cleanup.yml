@@ -1,0 +1,61 @@
+name: "Cleanup"
+description: "Restructure, consolidate, rename, remove or document code without changing what it does"
+title: "[Cleanup]: "
+labels: ["refactor"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        A cleanup changes no behavior: generated output, diagnostics and test results stay the same. A change in behavior
+        is a bug report or a feature request instead.
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Affected Component
+      description: Which part of the Henicos / G# ecosystem does the cleanup touch?
+      options:
+        - "Compiler / Transpiler (Roslyn Source Generator, C# to CUDA)"
+        - "Runtime (GpuKernelLoader, BackendCompiler, NVRTC, Driver API)"
+        - "Stdlib / Math (BigInt, Complex, Matrix, etc.)"
+        - "CLI / Tooling / Tests"
+        - "Documentation"
+        - "Other"
+    validations:
+      required: true
+
+  - type: textarea
+    id: target
+    attributes:
+      label: Target
+      description: The files, types and members to change, with paths and line ranges.
+      placeholder: "e.g., src/Compiler/Kassyi.GSharp.Compiler/Transpiler/Rules/FooRule.cs:40-180 (FooRule.Transpile)"
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Current Problem
+      description: What is wrong with the code as it is (duplication, length, naming, a mixed responsibility, a deprecated API), with evidence.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed Change
+      description: The new shape, as a short sketch or a list of steps.
+    validations:
+      required: true
+
+  - type: textarea
+    id: unchanged
+    attributes:
+      label: How to Show Nothing Changed
+      description: The checks that prove the behavior is the same (snapshots unchanged, the same generated output, the tests that cover the code).
+      placeholder: |
+        - Snapshot diff 0 (Tests.Cpu, Tests.Cuda)
+        - Tests.Cpu FooRuleTests pass
+    validations:
+      required: true
