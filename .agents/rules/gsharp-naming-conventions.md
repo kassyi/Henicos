@@ -15,10 +15,11 @@ The only C# members that may contain underscores:
 
 - **Managed runtime entry points**: the `__gsharp_*` members of `ManagedGpuContext` (`src/Core`) that the generated
   managed C# calls. Each one is registered in `src/Compiler/Kassyi.GSharp.Compiler/Resources/InternalNames.yml` with its
-  `Managed:` file, keeps the spelling of the C++ prelude function it mirrors, and carries
+  `Managed:` file, keeps the spelling of the C++ prelude function when it mirrors one, and carries
   `[EditorBrowsable(EditorBrowsableState.Never)]` so users do not see it. A new one is added to the YAML first.
 - **Test methods**: `<Unit>_<Scenario>_<Expected>`, see [test-architecture.md](test-architecture.md) §3.9.
-- **P/Invoke declarations** that keep the name of the native API they bind (`Interop/CudaDriverApi.cs`).
+- **Native bindings** that keep the name of the native API they bind, generated from `src/NativeApi/*.yml`
+  (`cublasCreate_v2` in `cublas_api.yml`).
 
 Benchmark methods are not an exception: name them in PascalCase and give BenchmarkDotNet a display name with
 `[Benchmark(Description = "...")]` when the report needs one.
