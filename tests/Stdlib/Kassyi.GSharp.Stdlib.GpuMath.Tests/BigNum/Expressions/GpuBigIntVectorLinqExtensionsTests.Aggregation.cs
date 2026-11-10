@@ -373,7 +373,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
     {
         // A destination wider than the result, as for the scalar expressions: the magnitude in the first words, zeros
         // above them
-        // mutant: VectorReductionExpressions.cs Evaluate without `SignedRoot.ClearAbove(destination, NumWords)`
+        // mutant: VectorReductionExpressions.cs Evaluate without `ResultBuffers.ClearAbove(destination, NumWords)`
         using var array = CreateSignedArray([-5, -7], 2);
         foreach (var (name, expr, expected) in new[]
         {

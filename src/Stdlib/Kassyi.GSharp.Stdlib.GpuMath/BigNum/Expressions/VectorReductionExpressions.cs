@@ -79,8 +79,8 @@ internal abstract class VectorReductionExpressionBase : IGpuBigIntExpression, IB
             EnsureBuffers(workspace);
             var header = _header ?? throw new InvalidOperationException("The reduction header was not allocated.");
             // The kernels write NumWords words; a wider caller's target gets zeros above them
-            Reduce(workspace, evaluated, SignedRoot.Head(destination, NumWords), header);
-            SignedRoot.ClearAbove(destination, NumWords);
+            Reduce(workspace, evaluated, ResultBuffers.Head(destination, NumWords), header);
+            ResultBuffers.ClearAbove(destination, NumWords);
             return ReadHeader(workspace, destination, header);
         }
         catch when (!targetResult.HasValue)
