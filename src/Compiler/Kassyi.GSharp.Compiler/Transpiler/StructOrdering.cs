@@ -165,8 +165,12 @@ internal static class StructOrdering
     {
         // [WHY] Array-like wrappers (T[], Memory<T>, ImmutableArray<T>, ...) reach the device as GSharpArray<T>; only
         // their element type can be a user struct.
+        // [WHY] A StackLinq enumerable (StackEnumerable<...>, SelectEnumerator<...>) is a template of StackLinq.cuh on
+        // the device, which the `auto` local of an unfused query holds; a definition from its C# fields (a Func as a
+        // delegate field) would only fail its layout checks (#1086).
         var structType = typeSymbol.TryGetArrayLikeElementType(out var elementType) ? elementType : typeSymbol;
-        if (structType is INamedTypeSymbol candidate && GlobalCppNames.IsEmittedUserType(candidate))
+        if (structType is INamedTypeSymbol candidate && GlobalCppNames.IsEmittedUserType(candidate) &&
+            !StackLinqHelper.IsStackLinqType(candidate))
         {
             namedStruct = candidate;
             return true;

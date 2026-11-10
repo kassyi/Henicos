@@ -18,8 +18,10 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 /// that bound (<see cref="IGpuBigIntExpression.NumWords"/>). Narrow it explicitly with <see cref="Fit"/>.
 /// </para>
 /// <para>
-/// <b>Synchronization:</b> adding or subtracting values whose effective signs differ reads two words from the device
-/// once (the sign of the result depends on the values); such an expression cannot be captured into a CUDA graph.
+/// <b>Synchronization:</b> a sign that depends on the values (a difference of magnitudes, the operand Max or Min
+/// chooses, <c>~</c> of a negative value) is written by a kernel on the device and read once, when the evaluation
+/// returns; such an expression is captured into a CUDA graph, which reads the sign after each launch. Division and
+/// remainder read the sizes of their operands and cannot be captured.
 /// </para>
 /// </remarks>
 public readonly struct GpuBigIntExpr : IDisposable
@@ -103,8 +105,8 @@ public readonly struct GpuBigIntExpr : IDisposable
     /// <param name="left">The signed expression operand.</param>
     /// <returns>A new <see cref="GpuBigIntExpr"/> representing the bitwise NOT AST node.</returns>
     /// <remarks>
-    /// The result is one bit wider than the operand. A negative operand reads one flag from the device (the borrow of
-    /// <c>|x| - 1</c>, which tells a negative zero apart), so its <c>~</c> cannot be captured into a CUDA graph.
+    /// The result is one bit wider than the operand. For a negative operand a kernel tells a negative zero apart (the
+    /// borrow of <c>|x| - 1</c>) and writes the sign on the device.
     /// </remarks>
     public static GpuBigIntExpr operator ~(GpuBigIntExpr left)
         => new(new SignedBitwiseNotExpression(left.Node));
@@ -115,6 +117,10 @@ public readonly struct GpuBigIntExpr : IDisposable
     /// <param name="left">The first signed expression operand.</param>
     /// <param name="right">The second signed expression operand.</param>
     /// <returns>A new <see cref="GpuBigIntExpr"/> representing the Max AST node.</returns>
+    /// <remarks>
+    /// The result is one of the operands, its sign flag included. Of two equal values either may be returned, so the
+    /// max of <c>+0</c> and <c>-0</c> may be <c>-0</c>, a zero with the minus flag, which equals 0.
+    /// </remarks>
     public static GpuBigIntExpr Max(GpuBigIntExpr left, GpuBigIntExpr right)
         => new(new SignedMaxExpression(left.Node, right.Node));
 
@@ -124,6 +130,10 @@ public readonly struct GpuBigIntExpr : IDisposable
     /// <param name="left">The first signed expression operand.</param>
     /// <param name="right">The second signed expression operand.</param>
     /// <returns>A new <see cref="GpuBigIntExpr"/> representing the Min AST node.</returns>
+    /// <remarks>
+    /// The result is one of the operands, its sign flag included. Of two equal values either may be returned, so the
+    /// min of <c>+0</c> and <c>-0</c> may be <c>-0</c>, a zero with the minus flag, which equals 0.
+    /// </remarks>
     public static GpuBigIntExpr Min(GpuBigIntExpr left, GpuBigIntExpr right)
         => new(new SignedMinExpression(left.Node, right.Node));
 
@@ -209,8 +219,8 @@ public readonly struct GpuBigIntExpr : IDisposable
     /// the warm-up evaluation failed.
     /// </exception>
     /// <exception cref="NotSupportedException">
-    /// The expression adds or subtracts values whose effective signs differ: the sign of the result is read from the
-    /// device, which a capture cannot record.
+    /// The expression divides or takes a remainder (<c>/</c>, <c>%</c>, and the StackLinq <c>Average</c>, which
+    /// divides by the count): their sizes are read from the device, which a capture cannot record.
     /// </exception>
     public GpuBigIntExecutableGraph CompileToGraph(GpuWorkspace workspace, GpuBigUInt? targetResult = null) =>
         Compile(workspace, targetResult, ownsExpression: true);
@@ -339,9 +349,10 @@ public readonly struct GpuBigIntExpr : IDisposable
         }
 
         GpuBigInt result;
+        SignSource sign;
         try
         {
-            result = Node.Evaluate(workspace, targetResult);
+            result = EvaluateForCapture(workspace, targetResult, out sign);
         }
         catch (Exception original)
         {
@@ -376,7 +387,8 @@ public readonly struct GpuBigIntExpr : IDisposable
         {
             // The capture failed to end, or it ended and the deferral did not: give back what it took, including the
             // graph when EndCapture returned one
-            ReleaseAfterFailure(workspace, manager, manager.EndDeferral(deferral), result, owned, graph, original);
+            ReleaseAfterFailure(workspace, manager, manager.EndDeferral(deferral), result, owned, sign, graph,
+                original);
             throw;
         }
 
@@ -386,17 +398,30 @@ public readonly struct GpuBigIntExpr : IDisposable
         }
         catch (Exception original)
         {
-            ReleaseAfterFailure(workspace, manager, captured, result, owned, graph, original);
+            ReleaseAfterFailure(workspace, manager, captured, result, owned, sign, graph, original);
             throw;
         }
 
-        return new GpuBigIntExecutableGraph(workspace, graph, graphExec, result, owned, captured, Node, ownsExpression);
+        return new GpuBigIntExecutableGraph(workspace, graph, graphExec, result, owned, sign, captured, Node,
+            ownsExpression);
+    }
+
+    // The evaluation inside the capture. A signed operator node keeps a sign that a kernel writes on the device: the
+    // graph records that kernel and reads the word after each launch, instead of fixing the sign of the capture.
+    private GpuBigInt EvaluateForCapture(GpuWorkspace workspace, GpuBigUInt? targetResult, out SignSource sign)
+    {
+        var value = Node is ISignedOperator root
+            ? SignedTree.EvaluateSigned(root, workspace, targetResult)
+            : SignedValue.FromHost(Node.Evaluate(workspace, targetResult));
+        sign = value.Sign;
+        return new GpuBigInt(value.Magnitude, value.Sign.HostNegative);
     }
 
     // A capture ended but no executable graph came of it: destroy the partial graph, return the deferred buffers and an
     // owned result, and give the expression back. As in AbortCapture, a failing step is thrown with the original (O14).
     private void ReleaseAfterFailure(GpuWorkspace workspace, DefaultGpuMemoryManager manager,
-        CapturedResources captured, GpuBigInt result, bool ownsResult, IntPtr graph, Exception original)
+        CapturedResources captured, GpuBigInt result, bool ownsResult, SignSource sign, IntPtr graph,
+        Exception original)
     {
         List<Exception>? cleanupErrors = null;
         if (graph != IntPtr.Zero)
@@ -411,13 +436,18 @@ public readonly struct GpuBigIntExpr : IDisposable
             RunCleanupStep((manager, result.Value.Handle), static s => s.manager.Free(s.Handle), ref cleanupErrors);
         }
 
+        if (sign.IsDevice)
+        {
+            RunCleanupStep((manager, sign.Word.Handle), static s => s.manager.Free(s.Handle), ref cleanupErrors);
+        }
+
         GraphOwnership.Release(Node);
         ThrowIfCleanupFailed("Creating the CUDA graph failed, and so did its cleanup.", original, cleanupErrors);
     }
 
     // The failure path of a capture (O14): end the capture, drop the partial graph and give back the deferred buffers.
     // When that succeeds, the caller rethrows the original exception; when a step fails too, both are thrown together.
-    private static void AbortCapture(GpuWorkspace workspace, DefaultGpuMemoryManager manager, CaptureDeferral deferral,
+    internal static void AbortCapture(GpuWorkspace workspace, DefaultGpuMemoryManager manager, CaptureDeferral deferral,
         Exception original)
     {
         List<Exception>? cleanupErrors = null;
@@ -598,9 +628,11 @@ public readonly struct GpuBigIntExecutableGraph : IDisposable
     public GpuBigIntView Result => _handles is { } handles ? handles.Result : default;
 
     internal GpuBigIntExecutableGraph(GpuWorkspace workspace, IntPtr graph, IntPtr graphExec, GpuBigInt result,
-        bool ownsResult, CapturedResources captured, IGpuBigIntExpression node, bool ownsExpression)
+        bool ownsResult, SignSource sign, CapturedResources captured, IGpuBigIntExpression node,
+        bool ownsExpression)
     {
-        _handles = new GraphHandles(workspace, graph, graphExec, result, ownsResult, captured, node, ownsExpression);
+        _handles = new GraphHandles(workspace, graph, graphExec, result, ownsResult, sign, captured, node,
+            ownsExpression);
     }
 
     /// <summary>
@@ -613,6 +645,7 @@ public readonly struct GpuBigIntExecutableGraph : IDisposable
         handles.ThrowIfOperandFreed();
         handles.Workspace.Provider.LaunchGraph(handles.GraphExec, handles.Workspace.Stream);
         handles.Workspace.Provider.SynchronizeStream(handles.Workspace.Stream);
+        handles.ReadSign();
     }
 
     /// <summary>
@@ -624,7 +657,11 @@ public readonly struct GpuBigIntExecutableGraph : IDisposable
     /// </param>
     /// <returns>A <see cref="ValueTask"/> that completes when the graph has finished.</returns>
     /// <exception cref="ObjectDisposedException">The graph, an operand or the target has been disposed.</exception>
-    /// <remarks>Does not allocate in steady state.</remarks>
+    /// <remarks>
+    /// Does not allocate in steady state, unless the result's sign is decided on the device: it is read in a
+    /// continuation after the wait. Disposing the graph while the task is pending is safe; the task completes and
+    /// the sign is not read.
+    /// </remarks>
     public ValueTask ExecuteAsync(CancellationToken cancellationToken = default)
     {
         var handles = GetLiveHandles();
@@ -635,7 +672,22 @@ public readonly struct GpuBigIntExecutableGraph : IDisposable
         }
 
         handles.Workspace.Provider.LaunchGraph(handles.GraphExec, handles.Workspace.Stream);
-        return handles.Workspace.Provider.SynchronizeStreamAsync(handles.Workspace.Stream, cancellationToken);
+        return handles.HasDeviceSign
+            ? CompleteAsync(handles, cancellationToken)
+            : handles.Workspace.Provider.SynchronizeStreamAsync(handles.Workspace.Stream, cancellationToken);
+    }
+
+    // The wait for the launch, then the read of a device sign (one word, after the stream is idle)
+    private static async ValueTask CompleteAsync(GraphHandles handles, CancellationToken cancellationToken)
+    {
+        await handles.Workspace.Provider.SynchronizeStreamAsync(handles.Workspace.Stream, cancellationToken)
+            .ConfigureAwait(false);
+
+        // Continuations run on pool threads, where the workspace context is not current
+        using (handles.Workspace.ActivateContext())
+        {
+            handles.ReadSign();
+        }
     }
 
     /// <summary>
@@ -658,15 +710,21 @@ public readonly struct GpuBigIntExecutableGraph : IDisposable
     {
         private readonly IntPtr _graph;
         private readonly GpuBigInt _result;
+        // The device word of a sign the graph writes, or the default value (a host sign)
+        private readonly GpuBigIntMemoryHandle _signWord;
         private readonly CapturedResources _captured;
+        private int _negative;
         private readonly IGpuBigIntExpression _node;
         private readonly bool _ownsExpression;
         private int _ownsResult;
         private int _destroyed;
 
         public GraphHandles(GpuWorkspace workspace, IntPtr graph, IntPtr graphExec, GpuBigInt result, bool ownsResult,
-            CapturedResources captured, IGpuBigIntExpression node, bool ownsExpression)
+            SignSource sign, CapturedResources captured, IGpuBigIntExpression node,
+            bool ownsExpression)
         {
+            _signWord = sign.IsDevice ? sign.Word.Handle : default;
+            _negative = result.IsNegative ? 1 : 0;
             Workspace = workspace;
             _graph = graph;
             GraphExec = graphExec;
@@ -681,14 +739,41 @@ public readonly struct GpuBigIntExecutableGraph : IDisposable
 
         public IntPtr GraphExec { get; }
 
-        public GpuBigIntView Result => _result;
+        // The magnitude with the sign of the last launch
+        public GpuBigIntView Result => new(_result.Value, Volatile.Read(ref _negative) != 0);
+
+        // After a launch: a sign the graph writes on the device is read (one word); a host sign does not change
+        // A graph disposed while ExecuteAsync waited has retired its word: the continuation keeps the previous sign
+        // (Result cannot be read after Dispose anyway) instead of faulting the awaited task.
+        public void ReadSign()
+        {
+            if (_signWord.IsDefault || IsDestroyed)
+            {
+                return;
+            }
+
+            try
+            {
+                var word = new GpuBigUInt(Workspace, _signWord.Borrow());
+                Volatile.Write(ref _negative, SignedDeviceOps.ReadNegative(Workspace, SignSource.Device(word)) ? 1 : 0);
+            }
+            catch (ObjectDisposedException) when (IsDestroyed)
+            {
+                // Destroy ran between the check above and the read: the word is gone, and so is the graph whose
+                // Result would show the sign; the previous sign stays
+                return;
+            }
+        }
 
         public bool IsDestroyed => Volatile.Read(ref _destroyed) != 0;
+
+        // Whether the result's sign is a device word the graph writes
+        public bool HasDeviceSign => !_signWord.IsDefault;
 
         public GpuBigInt DetachResult()
         {
             Interlocked.Exchange(ref _ownsResult, 0);
-            return _result;
+            return new GpuBigInt(_result.Value, Volatile.Read(ref _negative) != 0);
         }
 
         // The graph records raw pointers: a launch after an operand was freed would use memory of another owner
@@ -725,6 +810,11 @@ public readonly struct GpuBigIntExecutableGraph : IDisposable
                     if (Interlocked.Exchange(ref _ownsResult, 0) != 0)
                     {
                         manager.Free(_result.Value.Handle);
+                    }
+
+                    if (!_signWord.IsDefault)
+                    {
+                        manager.Free(_signWord);
                     }
 
                     manager.ReturnDeferred(_captured.Buffers);
