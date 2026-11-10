@@ -20,7 +20,8 @@ internal static class ModPowNttHostController
 
         var lz = n * 32 - bActualBits;
         using var bNorm = new GpuBigUInt(workspace, n);
-        GpuBigIntMath.ShiftLeft(mod, lz, bNorm);
+        // lz is the count of leading zero bits of the modulus in its n words: only zero bits are shifted out
+        GpuBigIntMath.ShiftLeftUnchecked(mod, lz, bNorm);
 
         // Maximum size of operand A during ModPow is (2 * n) words (product of two n-word numbers).
         var maxABits = 2 * n * 32;
@@ -33,8 +34,10 @@ internal static class ModPowNttHostController
         using var reciprocalNorm = new GpuBigUInt(workspace, targetWords);
         GpuBigIntDivRem.Reciprocal(bNorm, reciprocalNorm, targetBits, marginWords);
 
+        // Truncated on purpose: the reciprocal of a modulus of 1 is 2^targetBits, one bit wider than the buffer the
+        // kernel reads; any power modulo 1 is 0, whatever the reciprocal. Every other modulus fits.
         using var reciprocalOfB = new GpuBigUInt(workspace, targetWords);
-        GpuBigIntMath.ShiftLeft(reciprocalNorm, lz, reciprocalOfB);
+        GpuBigIntMath.ShiftAndResize(reciprocalNorm, lz, reciprocalOfB);
 
         // 2. Square and Multiply MegaKernel (Zero-Sync GPU Offloading) - Chunked for TDR avoidance
         GSharpKernelProvider.Instance.KernelAdvancedMath.ExecuteModPowNttMegaKernel(

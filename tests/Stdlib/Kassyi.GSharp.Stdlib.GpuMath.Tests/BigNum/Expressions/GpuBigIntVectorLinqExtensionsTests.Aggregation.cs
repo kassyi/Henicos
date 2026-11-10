@@ -243,7 +243,9 @@ public partial class GpuBigIntVectorLinqExtensionsTests
 
         foreach (var (name, expr, expected) in cases)
         {
-            using var destination = new GpuBigUInt(_context, Enumerable.Repeat(0xFFFFFFFFu, numWords).ToArray());
+            // The destination has the width of the result (Sum of two elements: one word more)
+            var words = expr.Node.NumWords;
+            using var destination = new GpuBigUInt(_context, Enumerable.Repeat(0xFFFFFFFFu, words).ToArray());
 
             var result = expr.Evaluate(destination);
 
@@ -261,39 +263,40 @@ public partial class GpuBigIntVectorLinqExtensionsTests
 
     [Theory]
     [Category(TestCategory.Unit)]
-    [Scenario(TestScenario.SadPath)]
+    [Scenario(TestScenario.Boundary)]
     [InlineData(1, false)]
     [InlineData(1, true)]
     [InlineData(8, false)]
     [InlineData(8, true)]
-    public void Reduction_SumOutsideResultWidth_ThrowsOverflowException(int numWords, bool negative)
+    public void Reduction_SumOfTwoFullWidthElements_HasOneMoreWord(int numWords, bool negative)
     {
-        // 2 * (2^(32N) - 1) needs N + 1 words; the result has N words, so Sum throws. Only the final result counts
-        // (unlike the checked sum of System.Linq, a running sum that leaves N words and comes back does not throw; see
-        // "leaves width and comes back" above). Max and Min of the same values fit in N words.
-        // mutant: VectorReductionExpressions.cs `if ((_headerHost[0] & 2u) != 0u)` -> `if ((_headerHost[0] & 0u) != 0u)`
-        // input: this test
+        // 2 * (2^(32N) - 1) needs N + 1 words: the sum of two elements has the bound 32 N + 1 bits, so the result has
+        // N + 1 words and never overflows. Max and Min of the same values keep N words.
+        // mutant: VectorReductionExpressions.cs VectorSumReductionExpression.NumWords -> ElementWords (the finalize
+        // kernel reports the bit that does not fit)
         var value = SignedElement.From(negative ? -AllOnes(numWords) : AllOnes(numWords));
         using var array = CreateSignedArray([value, value], numWords);
 
-        Assert.Throws<OverflowException>(() => array.AsVectorizedEnumerable().Sum().Evaluate(_context));
+        var sum = array.AsVectorizedEnumerable().Sum();
+        Assert.Equal(numWords + 1, sum.Node.NumWords);
+        Assert.Equal(2 * value.Value, EvaluateReduction(sum));
         Assert.Equal(value.Value, EvaluateReduction(array.AsVectorizedEnumerable().Max()));
         Assert.Equal(value.Value, EvaluateReduction(array.AsVectorizedEnumerable().Min()));
     }
 
     [Fact]
     [Category(TestCategory.Unit)]
-    [Scenario(TestScenario.SadPath)]
-    public void Reduction_NegativeSumOutsideWidth_CarriesThroughEveryWordAndThrows()
+    [Scenario(TestScenario.Boundary)]
+    public void Reduction_NegativeSumOneWordWider_CarriesThroughEveryWord()
     {
         // -(2^1024 - 1) - 1 = -2^1024 needs 33 words. Its accumulator has 32 zero low words, so negating it in the
         // finalize kernel carries through every word (across the two warps of the 64-thread block) into word 32.
         // mutant: GpuBigIntVectorKernels.Reductions.cu.cs finalize `uint p = word == 0xFFFFFFFFu ? 1u : 0u;` -> `uint p = 0u;`
-        // input: this test (word 32 stays 0, so no overflow is seen)
+        // input: this test (word 32 stays 0)
         var values = new[] { SignedElement.From(-AllOnes(32)), -1 };
         using var array = CreateSignedArray(values, 32);
 
-        Assert.Throws<OverflowException>(() => EvaluateReduction(array.AsVectorizedEnumerable().Sum()));
+        Assert.Equal(-(BigInteger.One << 1024), EvaluateReduction(array.AsVectorizedEnumerable().Sum()));
         AssertReduction(values.Min(static v => v.Value), array.AsVectorizedEnumerable().Min(), "Min");
         AssertReduction(values.Max(static v => v.Value), array.AsVectorizedEnumerable().Max(), "Max");
     }
@@ -301,18 +304,19 @@ public partial class GpuBigIntVectorLinqExtensionsTests
     [Fact]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.SadPath)]
-    public void Reduction_OverflowIntoDestination_KeepsCallerBuffer()
+    public void Reduction_FailureIntoDestination_KeepsCallerBuffer()
     {
-        // The caller owns the destination: an OverflowException must not release it. The workspace reuses a released
-        // buffer of the same word count first (LIFO), so a release would hand the destination's memory to the next
-        // 8-word allocation. With N = 8 no buffer of the reduction itself (18, 9 and 2 words) has 8 words.
+        // The caller owns the destination: a failure after the launch (Max of a vector that Where emptied on the
+        // device) must not release it. The workspace reuses a released buffer of the same word count first (LIFO), so
+        // a release would hand the destination's memory to the next 8-word allocation.
         // mutant: VectorReductionExpressions.cs `catch when (!targetResult.HasValue)` -> `catch`
         // input: this test
-        var value = SignedElement.From(AllOnes(8));
-        using var array = CreateSignedArray([value, value], 8);
+        using var array = CreateSignedArray([SignedElement.From(AllOnes(8)), 1], 8);
+        using var bound = CreateScalar(AllOnes(8));
+        var v = array.AsVectorizedEnumerable();
         using var destination = new GpuBigUInt(_context, 8);
 
-        Assert.Throws<OverflowException>(() => array.AsVectorizedEnumerable().Sum().Evaluate(destination));
+        Assert.Throws<InvalidOperationException>(() => v.Where(v.IsGreaterThan(bound)).Max().Evaluate(destination));
 
         using var next = new GpuBigUInt(_context, 8);
         Assert.NotEqual(destination.DevicePointer, next.DevicePointer);
@@ -321,22 +325,24 @@ public partial class GpuBigIntVectorLinqExtensionsTests
     [Fact]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.SadPath)]
-    public void Reduction_OverflowWithoutDestination_ReleasesItsBuffer()
+    public void Reduction_FailureWithoutDestination_ReleasesItsBuffer()
     {
-        // Without a destination the reduction allocates the result buffer itself; when it throws OverflowException
+        // Without a destination the reduction allocates the result buffer itself; when it throws after the launch
         // nobody else can release it. A released 8-word buffer is reused first (LIFO), so the probe's memory comes
         // back after the throw only if the reduction released the buffer it took.
         // mutant: VectorReductionExpressions.cs `destination.Dispose();` -> removed
         // input: this test
-        var value = SignedElement.From(AllOnes(8));
-        using var array = CreateSignedArray([value, value], 8);
+        using var array = CreateSignedArray([SignedElement.From(AllOnes(8)), 1], 8);
+        using var bound = CreateScalar(AllOnes(8));
+        var v = array.AsVectorizedEnumerable();
+        using var max = v.Where(v.IsGreaterThan(bound)).Max();
         IntPtr released;
         using (var probe = new GpuBigUInt(_context, 8))
         {
             released = probe.DevicePointer;
         }
 
-        Assert.Throws<OverflowException>(() => array.AsVectorizedEnumerable().Sum().Evaluate(_context));
+        Assert.Throws<InvalidOperationException>(() => max.Evaluate(_context));
 
         using var next = new GpuBigUInt(_context, 8);
         Assert.Equal(released, next.DevicePointer);
@@ -345,15 +351,59 @@ public partial class GpuBigIntVectorLinqExtensionsTests
     [Theory]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.SadPath)]
+    [InlineData(1)]
     [InlineData(7)]
-    [InlineData(9)]
-    public void Reduction_DestinationOfOtherWidth_ThrowsArgumentException(int destinationWords)
+    public void Reduction_NarrowerDestination_ThrowsArgumentException(int destinationWords)
     {
         using var array = CreateArray([1, 2]);
-        using var destination = new GpuBigUInt(_context, destinationWords);
+        uint[] filled = [.. Enumerable.Repeat(0xDEADBEEFu, destinationWords)];
+        using var destination = new GpuBigUInt(_context, filled);
 
+        // Sum of two 8-word elements has 9 words, Max 8: a narrower destination is rejected and not touched
+        // mutant: VectorReductionExpressions.cs ThrowIfCannotEvaluate `target.NumWords < NumWords` -> `false`
         Assert.Throws<ArgumentException>(() => array.AsVectorizedEnumerable().Sum().Evaluate(destination));
         Assert.Throws<ArgumentException>(() => array.AsVectorizedEnumerable().Max().Evaluate(destination));
+        Assert.Equal(filled, destination.ToHostArray());
+    }
+
+    [Fact]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.Boundary)]
+    public void Reduction_WiderDestination_GetsZerosAboveTheResult()
+    {
+        // A destination wider than the result, as for the scalar expressions: the magnitude in the first words, zeros
+        // above them
+        // mutant: VectorReductionExpressions.cs Evaluate without `ResultBuffers.ClearAbove(destination, NumWords)`
+        using var array = CreateSignedArray([-5, -7], 2);
+        foreach (var (name, expr, expected) in new[]
+        {
+            ("Sum", array.AsVectorizedEnumerable().Sum(), (BigInteger)(-12)),
+            ("Max", array.AsVectorizedEnumerable().Max(), (BigInteger)(-5))
+        })
+        {
+            using var destination = new GpuBigUInt(_context, [.. Enumerable.Repeat(0xDEADBEEFu, 6)]);
+            var result = expr.Evaluate(destination);
+            Assert.True(expected.Sign < 0 == result.IsNegative, name);
+            Assert.True(result.Value.NumWords == 6, name);
+            var limbs = new uint[6];
+            BigInteger.Abs(expected).WriteLimbs(limbs);
+            Assert.Equal(limbs, destination.ToHostArray());
+            expr.Dispose();
+        }
+    }
+
+    [Fact]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.Boundary)]
+    public void MaxMin_ReportTheElementBitBound()
+    {
+        // Max and Min choose an element, so their bound is the element's: a ZipAdd of two one-word vectors has 33 bits
+        // mutant: VectorReductionExpressions.cs base `Bits => _vector.BitsPerElement` -> `32L * ElementWords`
+        using var ones = CreateArray([1, 2], 1);
+        var sum = ones.AsVectorizedEnumerable().ZipAdd(ones.AsVectorizedEnumerable());
+        var max = sum.Max();
+        Assert.Equal(33L, ((IBitBoundedExpression)max.Node).Bits);
+        max.Dispose();
     }
 
     [Fact]

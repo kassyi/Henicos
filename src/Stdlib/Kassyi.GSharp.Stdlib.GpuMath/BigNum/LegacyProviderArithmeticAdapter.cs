@@ -53,7 +53,7 @@ internal struct LegacyProviderArithmeticAdapter : IGpuBigIntArithmetic
         using var product = workspace.RentTemp(productWords);
         workspace.Provider.Mul(workspace, Wrap(workspace, left), Wrap(workspace, right), product);
         resultBuffer.CopyFrom(product, numWords: Math.Min(result.NumWords, productWords));
-        Expressions.SignedRoot.ClearAbove(resultBuffer, Math.Min(result.NumWords, productWords));
+        ResultBuffers.ClearAbove(resultBuffer, Math.Min(result.NumWords, productWords));
     }
 
     /// <inheritdoc/>
@@ -78,7 +78,7 @@ internal struct LegacyProviderArithmeticAdapter : IGpuBigIntArithmetic
         var resultBuffer = Wrap(workspace, result);
         var copied = Math.Min(result.NumWords, right.NumWords);
         resultBuffer.CopyFrom(remainder, numWords: copied);
-        Expressions.SignedRoot.ClearAbove(resultBuffer, copied);
+        ResultBuffers.ClearAbove(resultBuffer, copied);
     }
 
     /// <inheritdoc/>
@@ -136,7 +136,7 @@ internal struct LegacyProviderArithmeticAdapter : IGpuBigIntArithmetic
         GpuBigIntDivRem.Sqrt(Wrap(workspace, operand), root);
         var copied = Math.Min(result.NumWords, operand.NumWords);
         resultBuffer.CopyFrom(root, numWords: copied);
-        Expressions.SignedRoot.ClearAbove(resultBuffer, copied);
+        ResultBuffers.ClearAbove(resultBuffer, copied);
     }
 
     // operand * 2^leftShift into result (a negative leftShift shifts right); the kernel never sees a negative count

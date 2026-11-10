@@ -435,7 +435,10 @@ internal static class SyncGridBody
             IdentifierNameSyntax { Identifier.ValueText: TypeConstants.GpuMacros.SyncGrid } => true,
             _ => false
         };
-        return isSyncGridSyntax && invocation.ArgumentList.Arguments.Count == (withBody ? 1 : 0);
+        // Without a model, an argument that is a lambda or anonymous method is the body; any other one is the mode
+        var arguments = invocation.ArgumentList.Arguments;
+        var hasBody = arguments.Count == 1 && arguments[0].Expression is AnonymousFunctionExpressionSyntax;
+        return isSyncGridSyntax && arguments.Count <= 1 && hasBody == withBody;
     }
 
     // return; -> { <flag> = true; goto <label>; }, not inside nested functions

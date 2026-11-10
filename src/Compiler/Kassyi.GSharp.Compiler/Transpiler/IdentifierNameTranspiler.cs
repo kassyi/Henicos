@@ -73,6 +73,10 @@ internal static class IdentifierNameTranspiler
         // [WHY] Lowering rewrites hoisted locals into references that carry the declarator's original span.
         symbol ??= context.Query.SemanticModel.GetDeclaredSymbol<ISymbol>(node);
         FailUnemittableReference(node, symbol, ref context);
+        if (UnemittedMethodCall.TryFailMethodGroup(node, symbol, ref context))
+        {
+            return;
+        }
 
         // A member function reads a captured primary constructor parameter from its hidden field (#495)
         if (symbol is IParameterSymbol parameter &&
@@ -97,6 +101,14 @@ internal static class IdentifierNameTranspiler
         {
             context.Emitter.Writer.Append(mapped);
             return;
+        }
+
+        // <struct type>((*this)).<getter>(): a readonly member calls a getter that may change the struct on a copy
+        // (#610)
+        if (ComputedPropertyGetterCall.PlanCopyType(node, symbol, ref context) is { } copyType)
+        {
+            context.Emitter.Dialect.AppendType(ref context, copyType);
+            context.Emitter.Writer.Append("((*this)).");
         }
 
         context.Emitter.Writer.AppendCppName(name);

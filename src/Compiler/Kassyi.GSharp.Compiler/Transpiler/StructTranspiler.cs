@@ -181,7 +181,7 @@ internal static class StructTranspiler
         while (true)
         {
             var pending = ImmutableArray.CreateBuilder<INamedTypeSymbol>();
-            StructOrdering.GetTopologicallySortedStructs(context.Query.UsedStructs)
+            StructOrdering.GetTopologicallySortedStructs(ref context)
                 .AsStackEnumerable()
                 .Where(collector, static (type, c) => !c.HasDefinition(type))
                 .AddTo(pending);
