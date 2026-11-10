@@ -1,10 +1,8 @@
-using Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules;
-
 namespace Kassyi.GSharp.Tests.Shared.Diagnostics;
 
 /// <summary>
-/// The forms of a property whose accessors use the <c>field</c> keyword that G# reports instead of emitting: a
-/// constructor that steps a property without a setter, and an operator macro whose target is such a property.
+/// The form of a property whose accessors use the <c>field</c> keyword that G# reports instead of emitting: an
+/// operator macro whose target is such a property, which would write through a reference and skip the setter.
 /// </summary>
 [Category(TestCategory.Compiler)]
 public class FieldKeywordPropertyDiagnosticsTests
@@ -15,25 +13,12 @@ public class FieldKeywordPropertyDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task FieldKeywordProperty_SteppedInConstructorWithoutSetter_ReportsGsh0003AtTheStep(string dialect)
-    {
-        var diagnostics = await KernelDiagnostics.RunTestCaseAsync(TestCase, dialect);
-
-        Assert.Equal(
-            [(DiagnosticOrigin.Analyzer, 12, 9, 12, 15)],
-            diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, PropertyAccessorAssignment.StepOfBackingFieldWrite));
-    }
-
-    [Theory]
-    [InlineData("Cpu")]
-    [InlineData("Cuda")]
-    [Scenario(TestScenario.SadPath)]
     public async Task FieldKeywordProperty_OperatorMacroTarget_ReportsGsh0003AtTheTarget(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(TestCase, dialect);
 
         Assert.Equal(
-            [(DiagnosticOrigin.Analyzer, 63, 9, 63, 25)],
+            [(DiagnosticOrigin.Analyzer, 42, 9, 42, 25)],
             diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "is a property without storage"));
     }
 }

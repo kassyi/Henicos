@@ -4,9 +4,8 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules;
 
 /// <summary>
 /// Writes the assignments of a property with accessor functions that read it or use its value (#908): a compound
-/// assignment
-/// (<c>s.P += v</c>), an increment or decrement (<c>s.P++</c>, <c>--s.P</c>), and a simple assignment whose value is
-/// used (<c>x = s.P = v</c>, <c>F(s.P = v)</c>).
+/// assignment (<c>s.P += v</c>), an increment or decrement (<c>s.P++</c>, <c>--s.P</c>), and a simple assignment
+/// whose value is used (<c>x = s.P = v</c>, <c>F(s.P = v)</c>).
 /// </summary>
 /// <remarks>
 /// <para>
@@ -26,6 +25,11 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules;
 /// target is written without the getter call (<see cref="PropertyAccessorCall.AppendCallIfGetter"/>) and the call
 /// is added here.
 /// </para>
+/// <para>
+/// A property without a setter whose accessors use the <c>field</c> keyword can be stepped in a constructor of its
+/// struct (<c>R += 1</c>): C# reads it through the getter and writes the backing field, so the store is
+/// <c>__gsharp_self.__gsharp_bf_R = &lt;new value&gt;</c> instead of the setter call.
+/// </para>
 /// </remarks>
 internal static class PropertyAccessorAssignment
 {
@@ -34,11 +38,6 @@ internal static class PropertyAccessorAssignment
     /// user-defined or lifted.</summary>
     public const string UserDefinedOrLiftedOperator =
         "compound assignment or increment of a computed property with a user-defined or lifted operator";
-
-    /// <summary>The GSH0003 text for a compound assignment or step of a property without a setter that uses the field
-    /// keyword, which C# allows in a constructor of the struct.</summary>
-    public const string StepOfBackingFieldWrite =
-        "compound assignment or increment of a property without a setter whose accessors use the field keyword";
 
     private enum Form
     {
@@ -49,7 +48,8 @@ internal static class PropertyAccessorAssignment
     }
 
     // What the form evaluates, in the C# order: the receiver to bind (null when it is found without evaluating
-    // anything), the getter call (not for an assignment), the value (not for a step), the new value, the setter call
+    // anything), the getter call (not for an assignment), the value (not for a step), the new value, the setter call,
+    // or the store into the backing field of StoredProperty (a property without a setter, in a constructor)
     private readonly record struct Plan(
         Form Form,
         ExpressionSyntax Target,
@@ -57,26 +57,21 @@ internal static class PropertyAccessorAssignment
         ITypeSymbol? PropertyType,
         CompoundOperator Operator,
         ExpressionSyntax? Value,
-        bool IsValueUsed
+        bool IsValueUsed,
+        IPropertySymbol? StoredProperty
     );
 
     /// <summary>
     /// Writes <paramref name="node"/>, a compound assignment of a property with accessor functions, or a simple
-    /// assignment of one whose
-    /// value is used.
+    /// assignment of one whose value is used.
     /// </summary>
     public static void TranspileAssignment(AssignmentExpressionSyntax node, ref TranspileContext context)
     {
-        if (FailBackingFieldWrite(node, node.Left, ref context))
-        {
-            return;
-        }
-
         var model = context.Query.SemanticModel;
         Plan plan;
         if (node.IsKind(SyntaxKind.SimpleAssignmentExpression))
         {
-            plan = CreatePlan(Form.Assignment, node, node.Left, node.Right, default, model);
+            plan = CreatePlan(Form.Assignment, node, node.Left, node.Right, default, ref context);
         }
         else
         {
@@ -88,21 +83,18 @@ internal static class PropertyAccessorAssignment
                 return;
             }
 
-            plan = CreatePlan(Form.Compound, node, node.Left, node.Right, compoundOperator, model);
+            plan = CreatePlan(Form.Compound, node, node.Left, node.Right, compoundOperator, ref context);
         }
 
         Emit(plan, ref context);
     }
 
-    /// <summary>Writes <paramref name="node"/>, an increment or decrement of the property with accessor functions
-    /// <paramref name="operand"/>.</summary>
+    /// <summary>
+    /// Writes <paramref name="node"/>, an increment or decrement of the property with accessor functions
+    /// <paramref name="operand"/>.
+    /// </summary>
     public static void TranspileStep(ExpressionSyntax node, ExpressionSyntax operand, ref TranspileContext context)
     {
-        if (FailBackingFieldWrite(node, operand, ref context))
-        {
-            return;
-        }
-
         var model = context.Query.SemanticModel;
         if (model.GetSafeOperation(node) is not IIncrementOrDecrementOperation step ||
             step.OperatorMethod != null || step.IsLifted)
@@ -112,20 +104,24 @@ internal static class PropertyAccessorAssignment
         }
 
         var form = step.IsPostfix ? Form.PostfixStep : Form.PrefixStep;
-        Emit(CreatePlan(form, node, operand, null, CompoundOperator.ForStep(step, node, ref context), model),
-            ref context);
+        var stepOperator = CompoundOperator.ForStep(step, node, ref context);
+        Emit(CreatePlan(form, node, operand, null, stepOperator, ref context), ref context);
     }
 
     private static Plan CreatePlan(Form form, ExpressionSyntax node, ExpressionSyntax target, ExpressionSyntax? value,
-        CompoundOperator compoundOperator, SemanticModel model)
+        CompoundOperator compoundOperator, ref TranspileContext context)
     {
+        var model = context.Query.SemanticModel;
+        var storedProperty = PropertyAccessorCall.WritesBackingField(target, ref context)
+            ? PropertyAccessorCall.GetTargetProperty(target, model)
+            : null;
         target = IntegerSemanticsEmitter.Unparenthesize(target);
         var receiver = target is MemberAccessExpressionSyntax { Expression: var expression } &&
                        !ExpressionEffects.OfLocation(expression, model).IsEmpty
             ? expression
             : null;
         return new Plan(form, target, receiver, model.GetTypeSymbol(target), compoundOperator, value,
-            IntegerSemanticsEmitter.IsValueUsed(node, model));
+            IntegerSemanticsEmitter.IsValueUsed(node, model), storedProperty);
     }
 
     private static void Emit(in Plan plan, ref TranspileContext context)
@@ -144,8 +140,8 @@ internal static class PropertyAccessorAssignment
             if (plan.Form != Form.Assignment)
             {
                 current = EvaluationOrder.BeginDeclaration(ref context);
-                context.Visitor.Visit(plan.Target);
-                writer.AppendLine("();");
+                AppendGetterCall(plan, ref context);
+                writer.AppendLine(";");
             }
 
             // The value of an assignment is converted to the type of the property when it is evaluated (§12.21.2)
@@ -166,11 +162,7 @@ internal static class PropertyAccessorAssignment
                 writer.AppendLine(";");
             }
 
-            context.Visitor.Visit(plan.Target);
-            using (writer.Parentheses())
-            {
-                EvaluationOrder.AppendTempName(writer, updated);
-            }
+            AppendStore(plan, updated, ref context);
 
             if (plan.IsValueUsed)
             {
@@ -204,18 +196,47 @@ internal static class PropertyAccessorAssignment
         }
     }
 
-    // [WHY] C# reads the property through its getter and writes the backing field; the plan has no form for that, and
-    // the case is rare (a constructor that steps a property it can only initialize), so it is reported, not guessed
-    private static bool FailBackingFieldWrite(ExpressionSyntax node, ExpressionSyntax target, ref TranspileContext context)
+    // <target>() or, for a property whose backing field the constructor writes, <receiver>.<getter>(): the target
+    // itself names the backing field there (PropertyAccessorCall.WritesBackingField)
+    private static void AppendGetterCall(in Plan plan, ref TranspileContext context)
     {
-        if (!PropertyAccessorCall.WritesBackingField(target, ref context))
+        var writer = context.Emitter.Writer;
+        if (plan.StoredProperty is not { } property)
         {
-            return false;
+            context.Visitor.Visit(plan.Target);
+            writer.Append("()");
+            return;
         }
 
-        context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, node, StepOfBackingFieldWrite);
-        context.Visitor.AppendUnsupportedPlaceholder(node);
-        return true;
+        if (plan.Target is MemberAccessExpressionSyntax { Expression: var receiver })
+        {
+            context.Visitor.Visit(receiver);
+            writer.Append('.');
+        }
+        else if (context.Emitter.StructConstructorType != null)
+        {
+            writer.Append(GSharpInternalNames.Lowering.ConstructorSelf).Append('.');
+        }
+
+        writer.AppendCppName(CppNameResolver.Resolve(property, property.Name, context.Emitter.Dialect)).Append("()");
+    }
+
+    // <target>(<new value>), or <target>=<new value> for a property whose backing field the constructor writes
+    private static void AppendStore(in Plan plan, int updated, ref TranspileContext context)
+    {
+        var writer = context.Emitter.Writer;
+        context.Visitor.Visit(plan.Target);
+        if (plan.StoredProperty != null)
+        {
+            writer.Append('=');
+            EvaluationOrder.AppendTempName(writer, updated);
+            return;
+        }
+
+        using (writer.Parentheses())
+        {
+            EvaluationOrder.AppendTempName(writer, updated);
+        }
     }
 
     private static void Fail(ExpressionSyntax node, ref TranspileContext context)
