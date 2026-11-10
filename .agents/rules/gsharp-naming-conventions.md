@@ -11,6 +11,19 @@ This rule covers the C# names that users write and the compiler generates for th
 generated device code (renamed user identifiers via `CppNameResolver`, compiler-internal `__gsharp_*` names via
 `GSharpInternalNames`) are covered in [helpers.md §3](../skills/gsharp-transpiler-guidelines/references/helpers.md#3-emitting-code).
 
+The only C# members that may contain underscores:
+
+- **Managed runtime entry points**: the `__gsharp_*` members of `ManagedGpuContext` (`src/Core`) that the generated
+  managed C# calls. Each one is registered in `src/Compiler/Kassyi.GSharp.Compiler/Resources/InternalNames.yml` with its
+  `Managed:` file, keeps the spelling of the C++ prelude function when it mirrors one, and carries
+  `[EditorBrowsable(EditorBrowsableState.Never)]` so users do not see it. A new one is added to the YAML first.
+- **Test methods**: `<Unit>_<Scenario>_<Expected>`, see [test-architecture.md](test-architecture.md) §3.9.
+- **Native bindings** that keep the name of the native API they bind, generated from `src/NativeApi/*.yml`
+  (`cublasCreate_v2` in `cublas_api.yml`).
+
+Benchmark methods are not an exception: name them in PascalCase and give BenchmarkDotNet a display name with
+`[Benchmark(Description = "...")]` when the report needs one.
+
 ## 2. Naming Conventions by Category
 
 ### 1. GPU Kernels (`[GpuKernel]`)

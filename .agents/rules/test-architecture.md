@@ -54,7 +54,7 @@ public class ControlFlowTests
     [Fact]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.HappyPath)]
-    public void TestSimpleTernaryKernelExecution()
+    public void SimpleTernaryKernel_FirstNotLarger_ScalesTheSecond()
     {
         int[] a = [10];
         int[] b = [20];
@@ -196,6 +196,19 @@ public abstract class StateMachineTestBase
 | HNT0008 | Error | Raw `[Trait]` (`Xunit.TraitAttribute`) on a class or method in a test assembly; use `[Category]`, `[TestTarget]` or `[Scenario]` instead |
 
 HNT0001 (a required test base class) was removed (#597). HNT0003 is the compiler-side `TypeNameCheckAnalyzer`. What a strong test needs beyond these checks: [property-test-design](../skills/property-test-design/SKILL.md) §8.
+
+### 3.9. Test Method Names
+
+A test method is named `<Unit>_<Scenario>_<Expected>` in PascalCase parts separated by underscores, as in the unit
+testing best practices of .NET (`Add_TwoNegativeOperands_ReturnsTheNegativeSum`,
+`Max_DecidedByTheHighWord_PicksTheWiderOperand`). Two parts are enough when the scenario says it all
+(`Lower_WhileLoop`). This is the one place where an underscore may separate the words of a member name; everywhere
+else the guidelines of [gsharp-naming-conventions](gsharp-naming-conventions.md) apply.
+
+- No `Test` or `Test_` prefix: the `[Fact]` / `[Theory]` attribute already says it is a test, and the prefix pushes the
+  unit under test out of the visible part of a test list.
+- Name the behavior, not the issue, the lane or a case number (see 3.2).
+- Test classes, kernel classes and helpers follow the normal PascalCase rules, without underscores.
 
 ---
 
