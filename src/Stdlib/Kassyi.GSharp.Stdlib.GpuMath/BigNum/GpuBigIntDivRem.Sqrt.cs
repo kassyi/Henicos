@@ -123,7 +123,8 @@ public static partial class GpuBigIntDivRem
     /// <param name="leftOperand">The non-negative big integer operand.</param>
     /// <param name="resultBuffer">The destination buffer receiving the integer square root. It may be the operand, or
     /// overlap it: every path reads the operand completely before it writes the result.</param>
-    /// <exception cref="ArgumentException">Thrown when <paramref name="leftOperand"/> and <paramref name="resultBuffer"/> have mismatched word lengths.</exception>
+    /// <exception cref="ArgumentException"><paramref name="resultBuffer"/> is narrower than half the bits of <paramref
+    /// name="leftOperand"/>, rounded up to words.</exception>
     /// <remarks>
     /// <para><b>Algorithm:</b> First calculates an initial guess via Newton-Raphson inverse square root on the GPU, then refines it using Heron's method to guarantee the exact mathematical floor integer square root.</para>
     /// </remarks>
@@ -133,7 +134,20 @@ public static partial class GpuBigIntDivRem
     // Sqrt on the owned type; the public method above takes views and borrows them
     private static void SqrtCore(GpuBigUInt leftOperand, GpuBigUInt resultBuffer)
     {
-        ThrowIfSizeMismatch(leftOperand, resultBuffer);
+        // The root has half the operand's bits; the Heron steps run in the operand's width, so another width goes
+        // through a temporary
+        var words = leftOperand.NumWords;
+        ResultBuffers.ThrowIfNarrower(resultBuffer, BigIntWidths.Words(BigIntWidths.Sqrt(BigIntWidths.OfWords(words))),
+            nameof(Sqrt));
+        if (resultBuffer.NumWords != words)
+        {
+            using var root = leftOperand.Workspace.RentTemp(words);
+            SqrtCore(leftOperand, root);
+            var copied = Math.Min(words, resultBuffer.NumWords);
+            resultBuffer.CopyFrom(root, numWords: copied);
+            ResultBuffers.ClearAbove(resultBuffer, copied);
+            return;
+        }
 
         var actualBits = GetActualBits(leftOperand);
         if (actualBits == 0)
@@ -184,7 +198,8 @@ public static partial class GpuBigIntDivRem
 
         using var aNorm = new GpuBigUInt(leftOperand.Workspace, n);
         aNorm.Clear();
-        GpuBigIntMath.ShiftLeft(leftOperand, lz, aNorm);
+        // lz is at most the count of leading zero bits of a in its n words: only zero bits are shifted out
+        GpuBigIntMath.ShiftLeftUnchecked(leftOperand, lz, aNorm);
 
         var marginWords = 16;
         using var xResult = new GpuBigUInt(leftOperand.Workspace, n + marginWords);
