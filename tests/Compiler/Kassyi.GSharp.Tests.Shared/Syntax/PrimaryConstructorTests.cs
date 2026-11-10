@@ -15,91 +15,91 @@ public class PrimaryConstructorTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_PrimaryConstructor_RunsInitializers() =>
+    public void PrimaryConstructor_Invocation_RunsInitializers() =>
         PrimaryConstructorScenarios.InitializersRun(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_PrimaryConstructor_RunsBeforeObjectInitializer() =>
+    public void PrimaryConstructor_WithObjectInitializer_RunsBeforeObjectInitializer() =>
         PrimaryConstructorScenarios.InitializersRunBeforeObjectInitializer(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_CapturedParameters_AreStoredInTheStruct() =>
+    public void CapturedParameters_StructDeclaration_StoredInStruct() =>
         PrimaryConstructorScenarios.CapturedParametersAreStored(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_CapturedParameters_CrossToTheDeviceAndBack() =>
+    public void CapturedParameters_DeviceInvocation_CrossesToDeviceAndBack() =>
         PrimaryConstructorScenarios.CapturedParametersCrossToTheDevice(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_CapturedParameters_MatchTheHostLayout() =>
+    public void CapturedParameters_HostLayout_MatchesHostLayout() =>
         PrimaryConstructorScenarios.CapturedParametersMatchTheHostLayout(s_runNative, checkShadow: true);
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_RecordStruct_InitializesPropertiesThenMembers() =>
+    public void RecordStruct_Invocation_InitializesPropertiesThenMembers() =>
         PrimaryConstructorScenarios.RecordStructInitializesItsProperties(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_ChainedConstructor_RunsThePrimaryOneFirst() =>
+    public void ChainedConstructor_Invocation_RunsPrimaryOneFirst() =>
         PrimaryConstructorScenarios.ChainedConstructorRunsThePrimaryOneFirst(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_ParameterlessPrimaryConstructor_RunsInitializers() =>
+    public void ParameterlessPrimaryConstructor_Invocation_RunsInitializers() =>
         PrimaryConstructorScenarios.ParameterlessPrimaryConstructorRunsInitializers(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_GenericNew_RunsTheParameterlessConstructor() =>
+    public void GenericNew_Invocation_RunsParameterlessConstructor() =>
         PrimaryConstructorScenarios.GenericNewRunsTheParameterlessConstructor(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_GenericNew_KeepsInitializerChainAndDefaultOrder() =>
+    public void GenericNew_InitializerChain_KeepsInitializerChainAndDefaultOrder() =>
         PrimaryConstructorScenarios.GenericNewKeepsConstructorOrder(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_CapturedParametersAndAutoProperties_Roundtrip() =>
+    public void CapturedParametersAndAutoProperties_Roundtrip_MatchesExpectedValues() =>
         PrimaryConstructorScenarios.CapturedParametersAndAutoPropertiesRoundtrip(s_runNative, checkShadow: true);
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_PartialStruct_RunsItsPrimaryConstructor() =>
+    public void PartialStruct_Invocation_RunsPrimaryConstructor() =>
         PrimaryConstructorScenarios.PartialStructRunsItsPrimaryConstructor(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_PartialStruct_MatchesTheHostLayout() =>
+    public void PartialStruct_HostLayout_MatchesHostLayout() =>
         PrimaryConstructorScenarios.PartialStructMatchesTheHostLayout(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_ConvertedCapturedParameter_Roundtrips() =>
+    public void ConvertedCapturedParameter_Invocation_RoundtripsSuccessfully() =>
         PrimaryConstructorScenarios.ConvertedCapturedParameterRoundtrips(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_NestedConvertedCapturedParameter_Roundtrips() =>
+    public void NestedConvertedCapturedParameter_Invocation_RoundtripsSuccessfully() =>
         PrimaryConstructorScenarios.NestedConvertedCapturedParameterRoundtrips(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_ConvertedCapturedParameterArray_Roundtrips() =>
+    public void ConvertedCapturedParameterArray_Invocation_RoundtripsSuccessfully() =>
         PrimaryConstructorScenarios.ConvertedCapturedParameterArrayRoundtrips(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_ConvertedCapturedParameterInInlineArray_Roundtrips() =>
+    public void ConvertedCapturedParameterInInlineArray_Invocation_RoundtripsSuccessfully() =>
         PrimaryConstructorScenarios.ConvertedCapturedParameterInInlineArrayRoundtrips(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_SizedConvertedCapturedParameter_Roundtrips() =>
+    public void SizedConvertedCapturedParameter_Invocation_RoundtripsSuccessfully() =>
         PrimaryConstructorScenarios.SizedConvertedCapturedParameterRoundtrips(s_runNative);
 }

@@ -14,7 +14,7 @@ public class CuRandInteropTests
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_CurandGenerateUniform_ProducesValuesInHalfOpenUnitInterval()
+    public void CurandGenerateUniform_SampleSequence_ProducesValuesInHalfOpenUnitInterval()
     {
         CudaCapability.EnsureGpuAvailable();
         var samples = Samples();
@@ -32,7 +32,7 @@ public class CuRandInteropTests
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_CurandGenerateUniform_SameSeed_IsDeterministic()
+    public void CurandGenerateUniform_IdenticalSeed_ProducesIdenticalSequences()
     {
         CudaCapability.EnsureGpuAvailable();
         var first = Samples(42UL);
@@ -43,7 +43,7 @@ public class CuRandInteropTests
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_CurandGenerateUniform_DifferentSeeds_Diverge()
+    public void CurandGenerateUniform_DifferentSeeds_ProducesDivergentSequences()
     {
         CudaCapability.EnsureGpuAvailable();
         var first = Samples(1UL);
@@ -66,7 +66,7 @@ public class CuRandInteropTests
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_CurandGenerateNormal_MatchesRequestedMoments()
+    public void CurandGenerateNormal_GivenMeanAndStdDev_MatchesRequestedMoments()
     {
         CudaCapability.EnsureGpuAvailable();
 
@@ -107,7 +107,7 @@ public class CuRandInteropTests
 
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_CurandGenerateNormal_OddCount_ReturnsLengthNotMultiple()
+    public void CurandGenerateNormal_OddSampleCount_ReturnsLengthNotMultiple()
     {
         CudaCapability.EnsureGpuAvailable();
 

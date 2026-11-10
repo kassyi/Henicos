@@ -6,7 +6,7 @@ public class UsingStaticMathKernelTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
-    public void UsingStaticMath_MatchesCSharp()
+    public void UsingStaticMath_FloatingPointAndIntegerInputs_MatchesCSharp()
     {
         double[] inputs = [-4.0, -0.25, 0.0, 2.0, 9.0, 100.0];
         int[] intInputs = [-9, -5, 0, 3, 5, 12];
@@ -28,7 +28,7 @@ public class UsingStaticMathKernelTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
-    public void UsingStaticMathF_MatchesCSharp()
+    public void UsingStaticMathF_FloatingPointInputs_MatchesCSharp()
     {
         float[] inputs = [-4f, -0.25f, 0f, 2f, 9f, 100f];
         int n = inputs.Length;

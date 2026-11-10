@@ -12,7 +12,7 @@ public class OperatorMacroAccessTests : TranspilerTestBase
 {
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_PrivateTargets_AreCalled()
+    public void Expand_PrivateTargets_AreCalled()
     {
         var result = new int[3];
 
@@ -23,7 +23,7 @@ public class OperatorMacroAccessTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_PrivateTargets_FromADeviceFunction_AreCalled()
+    public void Expand_PrivateTargetsFromDeviceFunction_AreCalled()
     {
         var result = new int[2];
 

@@ -88,7 +88,7 @@ public class FloatAtomicAddDifferentialTests
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_FloatAtomicAdd_GlobalAndShared_MatchPtxOnEveryPath()
+    public void FloatAtomicAdd_GlobalAndShared_MatchPtxOnEveryPath()
     {
         // Global float atomic add flushes subnormal inputs and results to sign-preserving zero and stores canonical NaN
         // (0x7FFFFFFF), while shared float atomic add (static and dynamic) preserves subnormal inputs and results and

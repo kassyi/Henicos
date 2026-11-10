@@ -6,7 +6,7 @@ public class PtxIntrinsicTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_MultiplyAddWide_KeepsFull64BitProduct()
+    public void MultiplyAddWide_LargeSignedAndUnsignedOperands_PreservesFull64BitProduct()
     {
         ulong[] unsignedResult = [0ul];
         long[] signedResults = [0L, 0L];
@@ -24,7 +24,7 @@ public class PtxIntrinsicTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_MultiplyAddWideWithCarry_PropagatesCarry()
+    public void MultiplyAddWideWithCarry_AdditionOverflowing64Bits_PropagatesCarryBits()
     {
         ulong[] results = [0ul, 0ul, 0ul];
         ulong[] carries = [9ul, 9ul, 9ul];

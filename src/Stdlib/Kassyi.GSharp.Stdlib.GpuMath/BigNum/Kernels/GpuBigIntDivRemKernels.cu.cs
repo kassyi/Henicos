@@ -18,7 +18,7 @@ public static partial class GpuBigIntDivRemKernels
 
     // Dummy kernel to force the generator to emit the DualNtt struct definition before we use it
     [GpuDeviceFunction]
-    private static void ForceEmitDualNtt_DivRem(DualNtt args)
+    private static void ForceEmitDualNttForDivRem(DualNtt args)
     {
     }
 

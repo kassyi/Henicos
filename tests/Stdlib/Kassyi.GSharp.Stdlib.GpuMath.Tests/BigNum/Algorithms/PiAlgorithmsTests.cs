@@ -6,7 +6,7 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum.Algorithms;
 public class PiAlgorithmsTests
 {
     [Fact]
-    public void Test_BbpAlgorithm_ExtractsHexDigitsCorrectly()
+    public void ExtractHexDigits_BbpAlgorithm_ExtractsHexDigitsCorrectly()
     {
         // Pi in hex: 3.243F6A8885A308D313198A2E03707344A4093822299F31D0082EFA98EC4E6C89...
         // Offset 0 starts from the first fractional digit '2'
@@ -69,7 +69,7 @@ public class PiAlgorithmsTests
     [Theory]
     [InlineData(10, "31415926535")] // 10 digits after 3, making length 11 (3.1415926535)
     [InlineData(50, "314159265358979323846264338327950288419716939937510")]
-    public void Test_ChudnovskyAlgorithm_Cpu_ComputesPiCorrectly(int digits, string expectedDecimal)
+    public void ComputePi_ChudnovskyAlgorithmOnCpu_ComputesPiCorrectly(int digits, string expectedDecimal)
     {
         var piString = ChudnovskyAlgorithm.ComputePi(digits);
         Assert.Equal(expectedDecimal, piString);
@@ -78,7 +78,7 @@ public class PiAlgorithmsTests
     [SkippableTheory]
     [InlineData(10, false, "3.1415926535")]
     [InlineData(10, true, "3.243F6A8885")]
-    public void Test_ChudnovskyAlgorithm_Gpu_ComputesPiCorrectly(int digits, bool asHex, string expected)
+    public void ComputePi_ChudnovskyAlgorithmOnGpu_ComputesPiCorrectly(int digits, bool asHex, string expected)
     {
         CudaCapability.EnsureGpuAvailable();
         using var sw = new StringWriter();
@@ -110,7 +110,7 @@ public class PiAlgorithmsTests
     [InlineData(90)]
     [InlineData(96)]
     [InlineData(97)]
-    public void Test_ChudnovskyAlgorithm_Gpu_Hex_MatchesMachinReference(int digits)
+    public void ComputePi_ChudnovskyAlgorithmOnGpuHex_MatchesMachinReference(int digits)
     {
         CudaCapability.EnsureGpuAvailable();
         using var sw = new StringWriter();

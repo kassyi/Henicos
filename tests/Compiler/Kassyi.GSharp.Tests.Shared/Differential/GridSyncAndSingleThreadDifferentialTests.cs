@@ -361,34 +361,34 @@ public class GridSyncAndSingleThreadDifferentialTests
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_CooperativeMultiPhaseReduceNormalize_MatchesTheReferenceAcross1DAnd2DGrids() =>
+    public void CooperativeGrid_MultiPhaseReduceNormalize_MatchesTheReferenceAcross1DAnd2DGrids() =>
         DifferentialRunner.Run(s_cooperativeMultiPhaseReduceNormalize);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_CooperativePingPongStencilAndXorSwap_MatchesTheReferenceOnEveryPath() =>
+    public void CooperativeGrid_PingPongStencilAndXorSwap_MatchesTheReferenceOnEveryPath() =>
         DifferentialRunner.Run(s_cooperativePingPongStencilAndXorSwap);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_CooperativeSyncGridBodyControlFlowAndDeviceFn_MatchesTheReferenceOnEveryPath() =>
+    public void CooperativeGrid_SyncGridBodyControlFlowAndDeviceFn_MatchesTheReferenceOnEveryPath() =>
         DifferentialRunner.Run(s_cooperativeSyncGridBodyControlFlowAndDeviceFn);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_SingleThreadMultiDimAndReturn_ExecutesExactlyOnceAcrossAllSixAxes() =>
+    public void SingleThreadExecution_MultiDimAndReturn_ExecutesExactlyOnceAcrossAllSixAxes() =>
         DifferentialRunner.Run(s_singleThreadMultiDimAndReturn);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_SingleThreadCooperativeBarrier_MatchesTheReferenceOnEveryPath() =>
+    public void SingleThreadExecution_CooperativeBarrier_MatchesTheReferenceOnEveryPath() =>
         DifferentialRunner.Run(s_singleThreadCooperativeBarrier);
 }

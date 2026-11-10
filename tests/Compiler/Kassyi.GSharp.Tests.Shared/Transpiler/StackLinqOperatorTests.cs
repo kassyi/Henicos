@@ -36,7 +36,7 @@ public class StackLinqOperatorTests
     [InlineData("Average", true, false)]
     [InlineData("Aggregate", true, false)]
     [InlineData("Contains", true, false)]
-    public void Test_TryParse_FusedOperator_ReadsItsKind(string name, bool isTerminal, bool isPositionStage)
+    public void TryParse_FusedOperatorName_ReadsMatchingKind(string name, bool isTerminal, bool isPositionStage)
     {
         // mutant: StackLinqOperators.TryParse maps a name to the operator next to it (nameof(Max) => Min)
         Assert.True(StackLinqOperators.TryParse(name, out var op));
@@ -55,7 +55,7 @@ public class StackLinqOperatorTests
     [InlineData("where")]
     [InlineData("0")]
     [InlineData("")]
-    public void Test_TryParse_OtherName_ReturnsFalse(string name)
+    public void TryParse_UnrecognizedOperatorName_ReturnsFalse(string name)
     {
         Assert.False(StackLinqOperators.TryParse(name, out _));
     }
@@ -63,7 +63,7 @@ public class StackLinqOperatorTests
     [Fact]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_TryParse_EveryOperator_RoundTrips()
+    public void TryParse_EveryOperatorKind_RoundTripsNameAndKind()
     {
         // A new operator without a TryParse arm cannot be read from a method name
         foreach (var op in Enum.GetValues<StackLinqOperator>())
@@ -76,7 +76,7 @@ public class StackLinqOperatorTests
     [Fact]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_FusionRule_EveryOperator_HasStrategyOfItsKind()
+    public void FusionRule_EveryOperatorKind_HasStrategyOfItsKind()
     {
         // A new operator without a strategy fails the generator with an internal error when a chain uses it
         foreach (var op in Enum.GetValues<StackLinqOperator>())
@@ -100,7 +100,7 @@ public class StackLinqOperatorTests
     [Fact]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_DeviceOperators_AreDefinedInStackLinqCuh()
+    public void DeviceOperators_StackLinqHeader_AreDefinedInStackLinqCuh()
     {
         // An unfused call names a function of struct StackLinq; one the header lacks fails the C++ build (#1081)
         // mutant: StackLinq.cuh without TakeLast
@@ -116,7 +116,7 @@ public class StackLinqOperatorTests
     [Fact]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_EveryStackLinqOperator_IsOnTheDeviceOrReported()
+    public void StackLinqOperator_OperatorCatalog_IsOnDeviceOrReported()
     {
         // A StackLinq operator added later is either given a device function (and listed) or reported as unsupported;
         // the host-only ones and the state overloads are reported by ProhibitedApiRule

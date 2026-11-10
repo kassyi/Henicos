@@ -20,7 +20,7 @@ public class AotArtifactManifestTests
     [Scenario(TestScenario.HappyPath)]
     [InlineData("Cuda", ".g.cu")]
     [InlineData("Cpu", ".g.cpp")]
-    public void Test_Kernels_ManifestNamesTheWrittenSource(string dialect, string extension)
+    public void Manifest_KernelCompilation_NamesTheWrittenSource(string dialect, string extension)
     {
         using var dir = new TempDirectory();
 
@@ -33,7 +33,7 @@ public class AotArtifactManifestTests
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_NoKernels_ManifestIsEmpty()
+    public void Manifest_CompilationWithoutKernels_IsEmpty()
     {
         using var dir = new TempDirectory();
         File.WriteAllText(dir.ManifestPath, "Kassyi.GSharp.Kernels_Old.g.cpp\n");
@@ -49,7 +49,7 @@ public class AotArtifactManifestTests
     [Scenario(TestScenario.Boundary)]
     [InlineData(true)]
     [InlineData(false)]
-    public void Test_DesignTimeCompilation_WritesNoManifest(bool hasKernels)
+    public void Manifest_DesignTimeCompilation_WritesNoManifest(bool hasKernels)
     {
         using var dir = new TempDirectory();
         var compilation = RoslynTestUtility.CreateCompilation(hasKernels ? s_kernelSource : s_noKernelSource)
@@ -64,7 +64,7 @@ public class AotArtifactManifestTests
     // The manifest is written last: when the source cannot be written, the old manifest must not name the new source
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_SourceWriteFails_ManifestIsNotUpdatedAndFailureIsReported()
+    public void Manifest_SourceWriteFails_DoesNotUpdateManifestAndReportsFailure()
     {
         using var dir = new TempDirectory();
         const string OldManifest = "Kassyi.GSharp.Kernels_Old.g.cpp\n";
@@ -84,7 +84,7 @@ public class AotArtifactManifestTests
     // The manifest name is fixed; Kassyi.GSharp.Compiler.targets reads it by this name
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_ManifestFileName_MatchesTheTargets()
+    public void ManifestFileName_ArtifactTargetDefinition_MatchesTheTargets()
     {
         var targets = File.ReadAllText(RepositoryPaths.Combine(
             "src", "Compiler", "Kassyi.GSharp.Compiler", "build", "Kassyi.GSharp.Compiler.targets"));

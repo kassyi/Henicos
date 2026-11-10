@@ -13,7 +13,7 @@ public class BarrierSpellingAnalyzerTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_SpelledBarriers_ReportedWithExactSpans()
+    public async Task SpelledBarriers_SuspendingOrDivergentBarrierCalls_ReportedWithExactSpans()
     {
         var actual = await RunAsync("Analyzers/BarrierUsage/SyncSpellingAnalyzerKernels.cu.cs");
 
@@ -31,7 +31,7 @@ public class BarrierSpellingAnalyzerTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public async Task Test_SpelledForUnrollBody_SuspendingCallIsInlined_LookalikeIsGSH0062()
+    public async Task SpelledForUnrollBody_InlinedSuspendingCall_ReportsGSH0062()
     {
         var actual = await RunAsync("Analyzers/BarrierUsage/MacroSpellingSuspendingCallKernels.cu.cs");
 

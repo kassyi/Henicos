@@ -9,7 +9,7 @@ public class SharedMemoryDisposableAnalyzerTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_DisposableElementType_ReportsGSH0069AtTheCreation()
+    public async Task SharedMemory_DisposableElementType_ReportsGSH0069AtCreation()
     {
         var diagnostics = await RoslynTestUtility
             .TestAnalyzer("Analyzers/SharedMemoryDisposable_SadPath.cs", s_analyzer)
@@ -28,7 +28,7 @@ public class SharedMemoryDisposableAnalyzerTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_NewList_ReportsGSH0001WithTheCreationRange()
+    public async Task ObjectCreation_NewListInKernel_ReportsGSH0001WithCreationRange()
     {
         var diagnostics = await RoslynTestUtility
             .TestAnalyzer("Analyzers/NewList_SadPath.cs", s_analyzer)

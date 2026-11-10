@@ -317,21 +317,21 @@ public class AtomicsIntegerDifferentialTests
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_IntegerSameStepAtomics_MatchesTheReferenceOnEveryPath() =>
+    public void IntegerAtomics_SameStep_MatchesTheReferenceOnEveryPath() =>
         DifferentialRunner.Run(s_integerSameStepAtomics);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_IntegerArbitraryAtomicsInt32_MatchesTheReferenceAndConservationProperties() =>
+    public void IntegerAtomics_ArbitraryStepsInt32_MatchesReferenceAndConservationProperties() =>
         DifferentialRunner.Run(s_integerArbitraryAtomicsInt32);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_IntegerArbitraryAtomicsUInt32_MatchesTheReferenceAndConservationProperties() =>
+    public void IntegerAtomics_ArbitraryStepsUInt32_MatchesReferenceAndConservationProperties() =>
         DifferentialRunner.Run(s_integerArbitraryAtomicsUInt32);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_IntegerArbitraryAtomicsUInt64_MatchesTheReferenceAndConservationProperties() =>
+    public void IntegerAtomics_ArbitraryStepsUInt64_MatchesReferenceAndConservationProperties() =>
         DifferentialRunner.Run(s_integerArbitraryAtomicsUInt64);
 }

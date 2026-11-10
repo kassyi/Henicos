@@ -16,7 +16,7 @@ public class CrossAssemblyManagedTests : TranspilerTestBase
 {
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_Mu_ThroughUsingAndInFull()
+    public void Mu_ManagedExecutionThroughUsingAndQualified_ComputesModularInverse()
     {
         uint[] values = [3, 5, 7, 0xFFFF_FFFF];
         var result = new uint[4];
@@ -34,7 +34,7 @@ public class CrossAssemblyManagedTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_SumPair_StructOfTheLibrary()
+    public void SumPair_ManagedExecutionLibraryStruct_CalculatesSum()
     {
         Pair[] pairs = [new() { A = 1, B = 2 }, new() { A = 10, B = 20 }, new() { A = -5, B = 5 }, new() { A = 7, B = 0 }];
         var result = new int[4];
@@ -46,7 +46,7 @@ public class CrossAssemblyManagedTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_Twice_ThroughAnInternalFunction()
+    public void Twice_ManagedExecutionInternalFunction_DoublesElements()
     {
         int[] values = [1, 2, 3, 4];
         var result = new int[4];
@@ -59,7 +59,7 @@ public class CrossAssemblyManagedTests : TranspilerTestBase
     // The library emits the managed version of AddPair and records it; the managed fallback calls it (#711)
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_AddPair_OperatorMacroOfTheLibrary()
+    public void AddPair_ManagedExecutionOperatorMacro_CalculatesSumAndRecordsCalls()
     {
         Pair[] pairs = [new() { A = 1, B = 2 }, new() { A = 10, B = 20 }, new() { A = -5, B = 5 }, new() { A = 7, B = 0 }];
         var result = new int[4];
@@ -74,7 +74,7 @@ public class CrossAssemblyManagedTests : TranspilerTestBase
     // The library's managed version of Difference calls the private target through an [UnsafeAccessor] stub (#711)
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_Difference_PrivateOperatorMacroTargetOfTheLibrary()
+    public void Difference_ManagedExecutionPrivateOperatorMacroTarget_CalculatesDifference()
     {
         Pair[] pairs = [new() { A = 1, B = 2 }, new() { A = 10, B = 20 }, new() { A = -5, B = 5 }, new() { A = 7, B = 0 }];
         var result = new int[4];
@@ -86,7 +86,7 @@ public class CrossAssemblyManagedTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_Vec2_ConstructorAndComputedProperty()
+    public void Vec2_ManagedExecutionConstructorAndProperty_ComputesExpectedSum()
     {
         float[] xs = [1f, 2f, 3f, 4f];
         var result = new float[4];
@@ -99,7 +99,7 @@ public class CrossAssemblyManagedTests : TranspilerTestBase
     // The library's managed state machine suspends at both barriers (C3)
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_Exchange_SuspendingLibraryFunction()
+    public void Exchange_ManagedExecutionSuspendingLibraryFunction_ExchangesBufferValues()
     {
         var buffer = new int[4];
         var result = new int[4];
@@ -112,7 +112,7 @@ public class CrossAssemblyManagedTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_Float3_ParameterOfALibraryFunction()
+    public void Float3_ManagedExecutionLibraryFunction_ComputesVectorLengthAndDotProduct()
     {
         float[] xs = [1f, 2f, 3f, 4f];
         var inside = new float[4];
@@ -130,7 +130,7 @@ public class CrossAssemblyManagedTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_StructsOfTheLibrary()
+    public void LibraryStructs_ManagedExecutionMultipleKernels_ComputesExpectedResults()
     {
         float[] xs = [1f, 2f, 3f, 4f];
         int[] values = [0, 1, 2, -1];
@@ -153,7 +153,7 @@ public class CrossAssemblyManagedTests : TranspilerTestBase
     // The library structs whose layout lives in the metadata tables (#736): Explicit, Pack = 1, Size = 16, a union
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_LayoutOfTheLibraryStructs()
+    public void LibraryStructLayouts_ManagedExecutionVariousStructs_MatchesNativeLayoutSemantics()
     {
         var swapped = new int[] { -1, -1 };
         var packed = new int[] { -1, -1 };

@@ -21,7 +21,7 @@ public class GpuKernelLoaderStressTests
     [SkippableFact]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_HighThroughputKernelLoading_ParallelStress()
+    public void LoadKernel_ParallelStress_LoadsKernelsWithoutContentionErrors()
     {
         CudaCapability.EnsureGpuAvailable();
 
@@ -38,7 +38,7 @@ public class GpuKernelLoaderStressTests
     [SkippableFact]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_CorruptedPtxBinary_ThrowsArgumentException()
+    public void LoadKernel_CorruptedPtxBinary_ThrowsArgumentException()
     {
         CudaCapability.EnsureGpuAvailable();
 
@@ -61,7 +61,7 @@ public class GpuKernelLoaderStressTests
     [InlineData(0)]
     [InlineData(1)]
     [InlineData(63)] // Less than 64 bytes (Ed25519 signature length)
-    public void Test_ShortPtxBuffer_ThrowsArgumentException(int length)
+    public void LoadKernel_ShortPtxBuffer_ThrowsArgumentException(int length)
     {
 
         byte[] shortBuffer = new byte[length];
@@ -76,7 +76,7 @@ public class GpuKernelLoaderStressTests
     [SkippableFact]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_NonExistentKernelName_ThrowsArgumentException()
+    public void LoadKernel_NonExistentKernelName_ThrowsArgumentException()
     {
         CudaCapability.EnsureGpuAvailable();
 
@@ -91,7 +91,7 @@ public class GpuKernelLoaderStressTests
     [SkippableFact]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_HashMismatch_ThrowsInvalidOperationException()
+    public void LoadKernel_HashMismatch_ThrowsInvalidOperationException()
     {
         var basePtx = Encoding.UTF8.GetBytes(".version 7.0\n.target sm_50\n.address_size 64\n.visible .entry empty_kernel() { ret; }\0");
         var badSignature = new byte[64]; // All zeros (incorrect signature)

@@ -38,8 +38,8 @@ public class StackLinqBenchmark
     // Scenario A: Heavy Pipeline (Filtering and Projection)
     // ==========================================
 
-    [Benchmark]
-    public int RawForLoop_HeavyPipeline()
+    [Benchmark(Description = "RawForLoop_HeavyPipeline")]
+    public int RawForLoopHeavyPipeline()
     {
         var sum = 0;
         var span = _data.AsSpan();
@@ -55,21 +55,21 @@ public class StackLinqBenchmark
         return sum;
     }
 
-    [Benchmark]
-    public int SystemLinq_HeavyPipeline() => _data.Where(x => x % 2 == 0).Select(x => x * 3).Sum();
+    [Benchmark(Description = "SystemLinq_HeavyPipeline")]
+    public int SystemLinqHeavyPipeline() => _data.Where(x => x % 2 == 0).Select(x => x * 3).Sum();
 
-    [Benchmark]
-    public int ZLinq_HeavyPipeline() => _data.AsValueEnumerable().Where(x => x % 2 == 0).Select(x => x * 3).Sum();
+    [Benchmark(Description = "ZLinq_HeavyPipeline")]
+    public int ZLinqHeavyPipeline() => _data.AsValueEnumerable().Where(x => x % 2 == 0).Select(x => x * 3).Sum();
 
-    [Benchmark]
-    public int StackLinq_HeavyPipeline() => _data.AsStackEnumerable().Where(x => x % 2 == 0).Select(x => x * 3).Sum();
+    [Benchmark(Description = "StackLinq_HeavyPipeline")]
+    public int StackLinqHeavyPipeline() => _data.AsStackEnumerable().Where(x => x % 2 == 0).Select(x => x * 3).Sum();
 
     // ==========================================
     // Scenario B: Short Circuit (Early Return)
     // ==========================================
 
-    [Benchmark]
-    public int RawForLoop_ShortCircuit()
+    [Benchmark(Description = "RawForLoop_ShortCircuit")]
+    public int RawForLoopShortCircuit()
     {
         var span = _data.AsSpan();
         for (var i = 0; i < span.Length; i++)
@@ -84,21 +84,21 @@ public class StackLinqBenchmark
         throw new InvalidOperationException();
     }
 
-    [Benchmark]
-    public int SystemLinq_ShortCircuit() => _data.Where(x => x == _targetForShortCircuit).First();
+    [Benchmark(Description = "SystemLinq_ShortCircuit")]
+    public int SystemLinqShortCircuit() => _data.Where(x => x == _targetForShortCircuit).First();
 
-    [Benchmark]
-    public int ZLinq_ShortCircuit() => _data.AsValueEnumerable().Where(x => x == _targetForShortCircuit).First();
+    [Benchmark(Description = "ZLinq_ShortCircuit")]
+    public int ZLinqShortCircuit() => _data.AsValueEnumerable().Where(x => x == _targetForShortCircuit).First();
 
-    [Benchmark]
-    public int StackLinq_ShortCircuit() => _data.AsStackEnumerable().Where(x => x == _targetForShortCircuit).First();
+    [Benchmark(Description = "StackLinq_ShortCircuit")]
+    public int StackLinqShortCircuit() => _data.AsStackEnumerable().Where(x => x == _targetForShortCircuit).First();
 
     // ==========================================
     // Scenario C: Span Optimization (Boundary Slicing)
     // ==========================================
 
-    [Benchmark]
-    public int RawForLoop_SpanOptimization()
+    [Benchmark(Description = "RawForLoop_SpanOptimization")]
+    public int RawForLoopSpanOptimization()
     {
         var sum = 0;
         var span = _data.AsSpan();
@@ -120,33 +120,33 @@ public class StackLinqBenchmark
         return sum;
     }
 
-    [Benchmark]
-    public int SystemLinq_SpanOptimization() => _data.Skip(Size / 10).Take(Size / 2).Sum();
+    [Benchmark(Description = "SystemLinq_SpanOptimization")]
+    public int SystemLinqSpanOptimization() => _data.Skip(Size / 10).Take(Size / 2).Sum();
 
-    [Benchmark]
-    public int ZLinq_SpanOptimization() => _data.AsValueEnumerable().Skip(Size / 10).Take(Size / 2).Sum();
+    [Benchmark(Description = "ZLinq_SpanOptimization")]
+    public int ZLinqSpanOptimization() => _data.AsValueEnumerable().Skip(Size / 10).Take(Size / 2).Sum();
 
-    [Benchmark]
-    public int StackLinq_SpanOptimization() => _data.AsStackEnumerable().Skip(Size / 10).Take(Size / 2).Sum();
+    [Benchmark(Description = "StackLinq_SpanOptimization")]
+    public int StackLinqSpanOptimization() => _data.AsStackEnumerable().Skip(Size / 10).Take(Size / 2).Sum();
 
     // ==========================================
     // Comprehensive Scenario 1: Data Windowing (Skip and Conditional Slicing)
     // ==========================================
 
-    [Benchmark]
-    public int SystemLinq_DataWindowing() =>
+    [Benchmark(Description = "SystemLinq_DataWindowing")]
+    public int SystemLinqDataWindowing() =>
         _data.SkipLast(1).SkipWhile(x => x == 0).TakeWhile(x => x != _endMarkerForWindowing).Sum();
 
-    [Benchmark]
-    public int StackLinq_DataWindowing() =>
+    [Benchmark(Description = "StackLinq_DataWindowing")]
+    public int StackLinqDataWindowing() =>
         _data.AsStackEnumerable().SkipLast(1).SkipWhile(x => x == 0).TakeWhile(x => x != _endMarkerForWindowing).Sum();
 
     // ==========================================
     // Comprehensive Scenario 2: Targeted Search (Multi-condition Pinpointing)
     // ==========================================
 
-    [Benchmark]
-    public int SystemLinq_TargetedSearch()
+    [Benchmark(Description = "SystemLinq_TargetedSearch")]
+    public int SystemLinqTargetedSearch()
     {
         if (_data.Contains(-1))
         {
@@ -156,8 +156,8 @@ public class StackLinqBenchmark
         return _data.Where(x => x == 9999999).Single();
     }
 
-    [Benchmark]
-    public int StackLinq_TargetedSearch()
+    [Benchmark(Description = "StackLinq_TargetedSearch")]
+    public int StackLinqTargetedSearch()
     {
         if (_data.AsStackEnumerable().Contains(-1))
         {
@@ -171,11 +171,11 @@ public class StackLinqBenchmark
     // Comprehensive Scenario 3: Boundary Span Optimization (Chained Slicing Optimization)
     // ==========================================
 
-    [Benchmark]
-    public int SystemLinq_BoundarySpanOpt() =>
+    [Benchmark(Description = "SystemLinq_BoundarySpanOpt")]
+    public int SystemLinqBoundarySpanOpt() =>
         _data.TakeLast(Size / 2).Skip(10).Take(Size / 4).Sum();
 
-    [Benchmark]
-    public int StackLinq_BoundarySpanOpt() =>
+    [Benchmark(Description = "StackLinq_BoundarySpanOpt")]
+    public int StackLinqBoundarySpanOpt() =>
         _data.AsStackEnumerable().TakeLast(Size / 2).Skip(10).Take(Size / 4).Sum();
 }

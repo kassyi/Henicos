@@ -6,7 +6,7 @@ public class DigitSeparatorLiteralTests : TranspilerTestBase
 {
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_DigitSeparatorLiterals_Execution()
+    public void DigitSeparatorLiterals_DeviceExecution_MatchesExpectedValues()
     {
         int[] ints = [0];
         uint[] uints = [0];

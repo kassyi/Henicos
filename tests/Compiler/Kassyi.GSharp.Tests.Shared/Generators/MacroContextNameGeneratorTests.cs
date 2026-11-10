@@ -17,7 +17,7 @@ public class MacroContextNameGeneratorTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public void Test_MacroContextArgument_IsNotTheLiteralIdentifierCtx(string dialect)
+    public void MacroContextArgument_IsNotTheLiteralIdentifierCtx(string dialect)
     {
         var text = Generate(dialect);
 
@@ -31,7 +31,7 @@ public class MacroContextNameGeneratorTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public void Test_MacroCall_UsesTheEmittedFunctionName(string dialect)
+    public void MacroCall_UsesTheEmittedFunctionName(string dialect)
     {
         var text = Generate(dialect);
 

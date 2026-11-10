@@ -19,59 +19,59 @@ public class EvaluationOrderManagedTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_CallArguments_AreEvaluatedFromLeftToRight() =>
+    public void CallArguments_ManagedExecutionWithInterference_AreEvaluatedFromLeftToRight() =>
         EvaluationOrderScenarios.CallArguments(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_VectorConstructorArguments_AreEvaluatedFromLeftToRight() =>
+    public void VectorConstructorArguments_ManagedExecutionWithInterference_AreEvaluatedFromLeftToRight() =>
         EvaluationOrderScenarios.VectorArguments(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_SuspendingCallArguments_AreEvaluatedFromLeftToRight() =>
+    public void SuspendingCallArguments_ManagedExecutionWithInterference_AreEvaluatedFromLeftToRight() =>
         EvaluationOrderScenarios.SuspendingCallArguments(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_RefReadsAndAliases_AreEvaluatedFromLeftToRight() =>
+    public void RefReadsAndAliases_ManagedExecutionWithInterference_AreEvaluatedFromLeftToRight() =>
         EvaluationOrderScenarios.ReadsAndAliases(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_RefReturningCalls_KeepTheirTargetAndAliases() =>
+    public void RefReturningCalls_ManagedExecutionWithAliases_KeepTheirTargetAndAliases() =>
         EvaluationOrderScenarios.RefReturn(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_ConvertedValues_KeepTheCSharpConversions() =>
+    public void ConvertedValues_ManagedExecutionConversions_KeepExpectedConversions() =>
         EvaluationOrderScenarios.Conversions(s_runManaged);
 
     [Theory]
     [Scenario(TestScenario.Boundary)]
     [InlineData(1)]
     [InlineData(0)]
-    public void Test_Managed_InterferingOperandsInABranch_RunOnlyInThatBranch(int selector) =>
+    public void InterferingOperandsInBranch_ManagedExecutionSelectedBranch_RunOnlyInThatBranch(int selector) =>
         EvaluationOrderScenarios.ConditionalBranches(s_runManaged, selector);
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_Assignment_EvaluatesTheTargetBeforeTheValue() =>
+    public void Assignment_ManagedExecutionWithInterference_EvaluatesTargetBeforeValue() =>
         EvaluationOrderScenarios.Assignment(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_CompoundAssignment_ReadsTheTargetBeforeTheValue() =>
+    public void CompoundAssignment_ManagedExecutionWithInterference_ReadsTargetBeforeValue() =>
         EvaluationOrderScenarios.CompoundAssignment(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_BinaryOperands_AreEvaluatedFromLeftToRight() =>
+    public void BinaryOperands_ManagedExecutionWithInterference_AreEvaluatedFromLeftToRight() =>
         EvaluationOrderScenarios.BinaryOperator(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_WritesHiddenInTheCallee_KeepTheArgumentOrder() =>
+    public void WritesHiddenInCallee_ManagedExecutionArgumentOrder_KeepArgumentOrder() =>
         EvaluationOrderScenarios.HiddenWrites(s_runManaged);
 
     private static void RunManaged(Action launch)

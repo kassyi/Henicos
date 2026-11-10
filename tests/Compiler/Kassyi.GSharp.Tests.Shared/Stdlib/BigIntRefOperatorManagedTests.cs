@@ -15,7 +15,7 @@ public class BigIntRefOperatorManagedTests : TranspilerTestBase
 {
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_ShiftOperators_ShiftTheLimbs()
+    public void Managed_ShiftOperators_ShiftTheLimbs()
     {
         var left = new uint[BigIntRefOperatorCases.Input.Length];
         var right = new uint[BigIntRefOperatorCases.Input.Length];

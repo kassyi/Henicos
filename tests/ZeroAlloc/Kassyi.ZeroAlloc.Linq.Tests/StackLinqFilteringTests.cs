@@ -7,7 +7,7 @@ namespace Kassyi.ZeroAlloc.Linq.Tests;
 public class StackLinqFilteringTests
 {
     [Fact]
-    public void Array_Where_Select_Count_ShouldMatchStandardLinq()
+    public void WhereSelectCount_Array_MatchesStandardLinq()
     {
         int[] data = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
 
@@ -24,7 +24,7 @@ public class StackLinqFilteringTests
     }
 
     [Fact]
-    public void Span_Where_Select_Count_ShouldMatchStandardLinq()
+    public void WhereSelectCount_Span_MatchesStandardLinq()
     {
         int[] data = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
         Span<int> span = data;

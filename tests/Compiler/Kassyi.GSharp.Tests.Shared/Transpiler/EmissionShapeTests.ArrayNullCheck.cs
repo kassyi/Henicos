@@ -121,7 +121,7 @@ public partial class EmissionShapeTests
     [Scenario(TestScenario.HappyPath)]
     [InlineData("Cpu")]
     [InlineData("Cuda")]
-    public void ArrayNullCheck_NonNullableAnnotation_IsCheckedAtTheBoundaryOnly(string dialect)
+    public void ArrayNullCheck_NonNullableAnnotation_IsCheckedAtKernelEntryOnly(string dialect)
     {
         var generated = Generate("ArrayNullCheckShapeKernels", dialect);
         var kernel = KernelSource(generated, "BoundaryKernel");

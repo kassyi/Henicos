@@ -8,7 +8,7 @@ public class UserDefinedOperatorAnalyzerTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_UserDefinedOperator_ReportsEachUnsupportedOperatorInGpuCode()
+    public async Task UserDefinedOperator_UnsupportedOperatorsInGpuCode_ReportsEachUnsupportedOperator()
     {
         var diagnostics = await RoslynTestUtility
             .TestAnalyzer("Analyzers/UserDefinedOperator_SadPath.cs", s_analyzer)
@@ -40,7 +40,7 @@ public class UserDefinedOperatorAnalyzerTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public async Task Test_UserDefinedOperator_AllowsSupportedExpressions()
+    public async Task UserDefinedOperator_SupportedArithmeticExpressions_AllowsSupportedExpressions()
     {
         var diagnostics = await RoslynTestUtility
             .TestAnalyzer("Analyzers/UserDefinedOperator_HappyPath.cs", s_analyzer)

@@ -16,7 +16,7 @@ public class OperatorMacroConditionalManagedTests : TranspilerTestBase
 {
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_ConditionalAnd_TestsOperatorFalseBeforeTheOperatorMacro()
+    public void Expand_ManagedConditionalAnd_TestsOperatorFalseBeforeOperatorMacro()
     {
         var result = new int[OperatorMacroConditionalTests.AndExpected.Length];
 
@@ -28,7 +28,7 @@ public class OperatorMacroConditionalManagedTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_ConditionalOr_TestsOperatorTrueBeforeTheOperatorMacro()
+    public void Expand_ManagedConditionalOr_TestsOperatorTrueBeforeOperatorMacro()
     {
         var result = new int[OperatorMacroConditionalTests.OrExpected.Length];
 
@@ -40,7 +40,7 @@ public class OperatorMacroConditionalManagedTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_ConditionalOperatorWithNestedOperatorMacros_EvaluatesTheRightOperandOnlyWhenTheTestFails()
+    public void Expand_ManagedConditionalOperatorWithNestedOperatorMacros_EvaluatesRightOperandOnlyWhenTestFails()
     {
         var result = new int[OperatorMacroConditionalTests.NestedExpected.Length];
 
@@ -52,7 +52,7 @@ public class OperatorMacroConditionalManagedTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_ChainedConditionalOperators_ShortCircuitEachLevel()
+    public void Expand_ManagedChainedConditionalOperators_ShortCircuitsEachLevel()
     {
         var result = new int[OperatorMacroConditionalTests.ChainExpected.Length];
 
@@ -64,7 +64,7 @@ public class OperatorMacroConditionalManagedTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_ConditionalOperatorTarget_IsEvaluatedBeforeTheLeftOperand()
+    public void Expand_ManagedConditionalOperatorTarget_IsEvaluatedBeforeLeftOperand()
     {
         var values = new TruthValue[4];
         var index = new int[2];
@@ -79,7 +79,7 @@ public class OperatorMacroConditionalManagedTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_ConditionalOperatorsOnRefStruct_TestTheLeftOperand()
+    public void Expand_ManagedConditionalOperatorsOnRefStruct_TestsLeftOperand()
     {
         var result = new int[OperatorMacroConditionalTests.RefStructExpected.Length];
 

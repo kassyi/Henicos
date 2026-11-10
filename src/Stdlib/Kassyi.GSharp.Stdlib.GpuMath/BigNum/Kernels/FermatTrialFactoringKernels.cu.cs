@@ -67,7 +67,7 @@ public static partial class FermatTrialFactoringKernels
     }
 
     [GpuDeviceFunction, GpuInline]
-    public static ulong Device_ModPow64_Under32Bit(ulong baseVal, ulong exp, ulong m)
+    public static ulong ModPow64Under32Bits(ulong baseVal, ulong exp, ulong m)
     {
         ulong res = 1;
         baseVal %= m;
@@ -114,7 +114,7 @@ public static partial class FermatTrialFactoringKernels
 
         // N(x) = 2x^2 - x + 11 with x = 2^exp mod k. The exponent is not reduced modulo k - 1: Fermat's little theorem
         // holds only for a prime k, and a composite k that passes the sieve would be reported as a factor.
-        var x = Device_ModPow64_Under32Bit(2UL, exp, k);
+        var x = ModPow64Under32Bits(2UL, exp, k);
 
         var x2 = (x * x) % k;
         var term1 = (2UL * x2) % k;

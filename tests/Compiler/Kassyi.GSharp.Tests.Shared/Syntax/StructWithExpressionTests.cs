@@ -13,7 +13,7 @@ public class StructWithExpressionTests : TranspilerTestBase
     [SkippableFact]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_PlainStruct_CopiesAssignsAndLeavesTheSourceUnchanged()
+    public void WithExpression_PlainStruct_CopiesAssignsAndLeavesSourceUnchanged()
     {
         var r = new int[6];
         StructWithExpressionKernels.LaunchPlainStructKernel(r, blockDimX: 1);
@@ -23,7 +23,7 @@ public class StructWithExpressionTests : TranspilerTestBase
     [SkippableFact]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_EmptyInitializer_CopiesTheValue()
+    public void WithExpression_EmptyInitializer_CopiesOriginalValue()
     {
         var r = new int[3];
         StructWithExpressionKernels.LaunchEmptyInitializerKernel(r, blockDimX: 1);
@@ -33,7 +33,7 @@ public class StructWithExpressionTests : TranspilerTestBase
     [SkippableFact]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_ReadonlyStructWithInitProperties()
+    public void WithExpression_ReadonlyStructWithInitProperties_CopiesAndAssignsProperties()
     {
         var r = new int[3];
         StructWithExpressionKernels.LaunchReadonlyStructKernel(r, blockDimX: 1);
@@ -43,7 +43,7 @@ public class StructWithExpressionTests : TranspilerTestBase
     [SkippableFact]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_RecordStruct()
+    public void WithExpression_RecordStruct_CopiesAndAssignsFields()
     {
         var r = new int[3];
         StructWithExpressionKernels.LaunchRecordStructKernel(r, blockDimX: 1);
@@ -53,7 +53,7 @@ public class StructWithExpressionTests : TranspilerTestBase
     [SkippableFact]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_ReadonlyRecordStruct()
+    public void WithExpression_ReadonlyRecordStruct_CopiesAndAssignsProperties()
     {
         var r = new int[3];
         StructWithExpressionKernels.LaunchReadonlyRecordStructKernel(r, blockDimX: 1);
@@ -63,7 +63,7 @@ public class StructWithExpressionTests : TranspilerTestBase
     [SkippableFact]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_NestedStructField()
+    public void WithExpression_NestedStructField_UpdatesNestedFieldAndPreservesSiblingFields()
     {
         var r = new int[5];
         StructWithExpressionKernels.LaunchNestedStructKernel(r, blockDimX: 1);
@@ -73,7 +73,7 @@ public class StructWithExpressionTests : TranspilerTestBase
     [SkippableFact]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_ChainedWith()
+    public void WithExpression_ChainedWithClauses_AppliesSuccessiveUpdates()
     {
         var r = new int[3];
         StructWithExpressionKernels.LaunchChainedWithKernel(r, blockDimX: 1);
@@ -83,7 +83,7 @@ public class StructWithExpressionTests : TranspilerTestBase
     [SkippableFact]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_ArrayField_IsAShallowCopy()
+    public void WithExpression_ArrayField_PerformsShallowCopy()
     {
         var r = new int[4];
         StructWithExpressionKernels.LaunchArrayFieldKernel(r, blockDimX: 1);
@@ -94,7 +94,7 @@ public class StructWithExpressionTests : TranspilerTestBase
     [SkippableFact]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_GenericStruct()
+    public void WithExpression_GenericStruct_CopiesAndAssignsGenericFields()
     {
         var r = new int[3];
         StructWithExpressionKernels.LaunchGenericStructKernel(r, blockDimX: 1);
@@ -104,7 +104,7 @@ public class StructWithExpressionTests : TranspilerTestBase
     [SkippableFact]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_RefStruct()
+    public void WithExpression_RefStruct_CopiesAndAssignsRefFields()
     {
         var r = new int[3];
         StructWithExpressionKernels.LaunchRefStructKernel(r, blockDimX: 1);
@@ -114,7 +114,7 @@ public class StructWithExpressionTests : TranspilerTestBase
     [SkippableFact]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_InlineArrayStruct_CopiesAllElements()
+    public void WithExpression_InlineArrayStruct_CopiesAllElements()
     {
         var r = new int[4];
         StructWithExpressionKernels.LaunchInlineArrayStructKernel(r, blockDimX: 1);
@@ -124,7 +124,7 @@ public class StructWithExpressionTests : TranspilerTestBase
     [SkippableFact]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_FixedBufferStruct_CopiesTheBuffer()
+    public void WithExpression_FixedBufferStruct_CopiesFixedBuffer()
     {
         var r = new int[5];
         StructWithExpressionKernels.LaunchFixedBufferStructKernel(r, blockDimX: 1);
@@ -134,7 +134,7 @@ public class StructWithExpressionTests : TranspilerTestBase
     [SkippableFact]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Operand_IsEvaluatedOnce()
+    public void WithExpression_ExpressionOperand_EvaluatesOperandOnlyOnce()
     {
         var r = new int[4];
         var counter = new int[1];
@@ -145,7 +145,7 @@ public class StructWithExpressionTests : TranspilerTestBase
     [SkippableFact]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Initializers_RunInWrittenOrderAndReadTheOriginal()
+    public void WithExpression_MultipleInitializers_RunsInWrittenOrderAndReadsOriginal()
     {
         var r = new int[3];
         var counter = new int[1];
@@ -158,7 +158,7 @@ public class StructWithExpressionTests : TranspilerTestBase
     [InlineData(0, 200)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_WithInsideAnArgumentAndATernary(int flag, int expectedTernary)
+    public void WithExpression_InsideArgumentAndTernary_EvaluatesCorrectBranchAndValue(int flag, int expectedTernary)
     {
         var r = new int[4];
         StructWithExpressionKernels.LaunchExpressionPositionsKernel(r, flag, blockDimX: 1);
@@ -168,7 +168,7 @@ public class StructWithExpressionTests : TranspilerTestBase
     [SkippableFact]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_WithAcrossBarriers()
+    public void WithExpression_AcrossBarriers_PreservesValuesAcrossThreadBarrier()
     {
         var r = new int[8];
         StructWithExpressionKernels.LaunchAcrossBarrierKernel(r, blockDimX: 8);
@@ -181,7 +181,7 @@ public class StructWithExpressionTests : TranspilerTestBase
     [SkippableFact]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_WithInASuspendingDeviceFunction()
+    public void WithExpression_InSuspendingDeviceFunction_PreservesValuesAcrossSuspension()
     {
         var r = new int[4];
         StructWithExpressionKernels.LaunchSuspendingDeviceFunctionKernel(r, blockDimX: 4);

@@ -188,22 +188,22 @@ public class MathAbsAndFloatConversionDifferentialTests
     };
 
     [SkippableFact]
-    public void Test_MathAbsInt32_MatchesTheOracleOnEveryPath() =>
+    public void MathAbs_Int32_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_mathAbsInt32);
 
     [SkippableFact]
-    public void Test_MathAbsSingle_MatchesTheOracleOnEveryPath() =>
+    public void MathAbs_Single_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_mathAbsSingle);
 
     [SkippableFact]
-    public void Test_MathAbsDouble_MatchesTheOracleOnEveryPath() =>
+    public void MathAbs_Double_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_mathAbsDouble);
 
     [SkippableFact]
-    public void Test_FloatDivisionByZero_MatchesTheOracleOnEveryPath() =>
+    public void FloatDivision_DivideByZero_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_floatDivisionByZero);
 
     [SkippableFact]
-    public void Test_FloatToIntegerConversion_MatchesTheOracleOnEveryPath() =>
+    public void FloatConversion_FloatToInteger_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_floatToIntegerConversion);
 }
