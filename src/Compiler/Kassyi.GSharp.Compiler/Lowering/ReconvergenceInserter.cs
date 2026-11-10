@@ -318,72 +318,18 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
     private int FindLabelDepth(GotoStatementSyntax gotoStatement)
     {
         if (gotoStatement.Expression is not IdentifierNameSyntax { Identifier.ValueText: var name } ||
-            FindLabel(gotoStatement, name) is not { } label)
+            ReconvergenceSyntax.FindLabel(gotoStatement, name) is not { } label)
         {
             return 0;
         }
 
         var depth = 0;
-        while (depth < _open.Count && IsInside(label, _open[depth].Extent))
+        while (depth < _open.Count && ReconvergenceSyntax.IsInside(label, _open[depth].Extent))
         {
             depth++;
         }
 
         return depth;
-    }
-
-    private static LabeledStatementSyntax? FindLabel(SyntaxNode from, string name)
-    {
-        foreach (var ancestor in from.Ancestors())
-        {
-            var statements = ancestor switch
-            {
-                BlockSyntax block => block.Statements,
-                SwitchSectionSyntax section => section.Statements,
-                _ => default
-            };
-            foreach (var statement in statements)
-            {
-                if (FindLabelInChain(statement, name) is { } labeled)
-                {
-                    return labeled;
-                }
-            }
-
-            if (ancestor is MemberDeclarationSyntax or AnonymousFunctionExpressionSyntax
-                or LocalFunctionStatementSyntax)
-            {
-                break;
-            }
-        }
-
-        return null;
-    }
-
-    private static LabeledStatementSyntax? FindLabelInChain(StatementSyntax statement, string name)
-    {
-        for (var current = statement; current is LabeledStatementSyntax labeled; current = labeled.Statement)
-        {
-            if (labeled.Identifier.ValueText == name)
-            {
-                return labeled;
-            }
-        }
-
-        return null;
-    }
-
-    private static bool IsInside(SyntaxNode node, SyntaxNode extent)
-    {
-        for (var current = node; current != null; current = current.Parent)
-        {
-            if (current == extent)
-            {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     private Region OpenRegion(SyntaxNode extent)
@@ -436,7 +382,7 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
             .Any(loop, static (node, target) =>
                 node is ReturnStatementSyntax ||
                 node.IsKind(SyntaxKind.GotoStatement) ||
-                (node is BreakStatementSyntax && FindJumpTarget(node, loopOnly: false) == target));
+                (node is BreakStatementSyntax && ReconvergenceSyntax.FindJumpTarget(node, loopOnly: false) == target));
 
     // Whether a continue goes to the end of the body of loop
     private static bool HasContinue(StatementSyntax loop) =>
@@ -444,26 +390,7 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
             .DescendantNodesAndSelf(static n => n is not (AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax))
             .AsStackEnumerable()
             .Any(loop, static (node, target) =>
-                node is ContinueStatementSyntax && FindJumpTarget(node, loopOnly: true) == target);
-
-    // The loop (or the switch, for a break) that a break or continue jumps out of
-    private static SyntaxNode? FindJumpTarget(SyntaxNode jump, bool loopOnly)
-    {
-        foreach (var ancestor in jump.Ancestors())
-        {
-            switch (ancestor)
-            {
-                case WhileStatementSyntax or DoStatementSyntax or ForStatementSyntax or CommonForEachStatementSyntax:
-                    return ancestor;
-                case SwitchStatementSyntax when !loopOnly:
-                    return ancestor;
-                case AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax or MemberDeclarationSyntax:
-                    return null;
-            }
-        }
-
-        return null;
-    }
+                node is ContinueStatementSyntax && ReconvergenceSyntax.FindJumpTarget(node, loopOnly: true) == target);
 
     private static bool CallsSuspendingFunction(StatementSyntax statement) =>
         statement.DescendantNodes(static n => n is not AnonymousFunctionExpressionSyntax)
