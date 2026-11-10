@@ -90,4 +90,51 @@ public class ProgramArgumentTests
         Assert.Equal(1, result.ExitCode);
         Assert.Contains($"{input}: error : The dialect YAML directory does not exist.", result.StandardError, StringComparison.Ordinal);
     }
+
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void InternalNames_MissingFile_FailsNamingIt()
+    {
+        using var scratch = new ScratchDirectory();
+        var yaml = scratch.Combine("missing.yml");
+
+        var result = GeneratorRun.Run(
+            "internal-names", yaml, scratch.Path, scratch.Path, scratch.Combine("out"));
+
+        Assert.Equal(1, result.ExitCode);
+        Assert.Contains("The internal names file does not exist.", result.StandardError, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void InternalNames_MalformedYaml_ReportsLine()
+    {
+        using var scratch = new ScratchDirectory();
+        var yaml = scratch.Combine("bad.yml");
+        File.WriteAllText(yaml, "Group:\n  Summary: ok\n  Names:\n    [invalid-syntax");
+
+        var result = GeneratorRun.Run(
+            "internal-names", yaml, scratch.Path, scratch.Path, scratch.Combine("out"));
+
+        Assert.Equal(1, result.ExitCode);
+        Assert.Contains($"{yaml}(4): error :", result.StandardError, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void InternalNames_InvalidIdentifier_ReportsLine()
+    {
+        using var scratch = new ScratchDirectory();
+        var yaml = scratch.Combine("bad_id.yml");
+        File.WriteAllText(yaml, "123InvalidGroup:\n  Summary: ok\n  Names:\n    Test: __gsharp_test");
+
+        var result = GeneratorRun.Run(
+            "internal-names", yaml, scratch.Path, scratch.Path, scratch.Combine("out"));
+
+        Assert.Equal(1, result.ExitCode);
+        Assert.Contains(
+            $"{yaml}(2): error : '123InvalidGroup' is not a valid C# identifier.",
+            result.StandardError,
+            StringComparison.Ordinal);
+    }
 }
