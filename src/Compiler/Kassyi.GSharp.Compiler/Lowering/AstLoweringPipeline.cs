@@ -105,6 +105,9 @@ public static class AstLoweringPipeline
         var splitPoints = CollectSplitPoints(body, bodyModel);
         var treeOrdinal = SemanticModelExtensions.GetSyntaxTreeOrdinal(bodyModel?.Compilation, body.SyntaxTree);
         var annotatedBody = ToBlock(new SpanAnnotationRewriter(splitPoints, treeOrdinal).Visit(body) ?? body, returnsValue);
+        // [WHY] Right after the annotations, which tell where a copied call was written: a call that C# removes
+        // takes its split annotations and its arguments with it, before any pass spills or splits them (#1540)
+        annotatedBody = RemovedCallEraser.Erase(annotatedBody, bodyModel);
         // [WHY] Before every other pass, which would otherwise lower Stryker's switches (barriers inside them included)
         // into the state machine (#1191)
         annotatedBody = MutantSwitchRemover.Remove(annotatedBody, bodyModel);

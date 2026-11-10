@@ -6,12 +6,9 @@ internal sealed partial class ManagedExecutionRewriter
 {
     public override SyntaxNode? VisitExpressionStatement(ExpressionStatementSyntax node)
     {
-        if (node.Expression is InvocationExpressionSyntax inlinePtx &&
-            DialectCallSupport.IsUnsupportedInlinePtxCall(inlinePtx, semanticModel, HostDialects.Cpu))
+        if (TryRewriteSpecialStatement(node) is { } special)
         {
-            return SyntaxFactory.ParseStatement(
-                    $"throw new global::System.NotSupportedException(\"{DialectCallSupport.GetInlinePtxUnsupportedMessage(HostDialects.Cpu.Name)}\");")
-                .WithTriviaFrom(node);
+            return special;
         }
 
         // c = a + b; with an operator macro becomes the call of its target (#711)
@@ -40,6 +37,33 @@ internal sealed partial class ManagedExecutionRewriter
         };
         return rewritten?.WithTriviaFrom(node) ?? base.VisitExpressionStatement(node);
     }
+
+    // The statements that become something else entirely: a call that C# removes, which the generated file would
+    // decide again with none of the #undef directives of the user's file (#1540), and an inline PTX call, which the CPU
+    // cannot run
+    private SyntaxNode? TryRewriteSpecialStatement(ExpressionStatementSyntax node)
+    {
+        if (RemovedCalls.IsRemovedCall(node.Expression, semanticModel))
+        {
+            return RemovedCallEraser.ToEmptyStatement(node);
+        }
+
+        if (node.Expression is InvocationExpressionSyntax inlinePtx &&
+            DialectCallSupport.IsUnsupportedInlinePtxCall(inlinePtx, semanticModel, HostDialects.Cpu))
+        {
+            var message = DialectCallSupport.GetInlinePtxUnsupportedMessage(HostDialects.Cpu.Name);
+            return SyntaxFactory.ParseStatement($"throw new global::System.NotSupportedException(\"{message}\");")
+                .WithTriviaFrom(node);
+        }
+
+        return null;
+    }
+
+    // A for loop without the initializers and incrementors that are calls C# removes (#1540)
+    public override SyntaxNode? VisitForStatement(ForStatementSyntax node) =>
+        base.VisitForStatement(node) is ForStatementSyntax visited
+            ? RemovedCallEraser.WithoutRemovedCalls(node, visited, semanticModel)
+            : null;
 
     // The macro as the semantic model resolves it. A call that does not resolve is left alone, as in
     // PreLoweringExpander: the call is then not guessed from its name, and the unrewritten macro fails where it runs
