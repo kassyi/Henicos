@@ -10,6 +10,7 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 /// </summary>
 [Category(TestCategory.Differential)]
 [TestTarget(ExecutionTarget.GpuExecution)]
+[Collection(TestCollections.AtomicsDifferential)]
 public class AtomicsInterlockedDifferentialTests
 {
     private static readonly DifferentialCase s_interlockedInt32Overloads =

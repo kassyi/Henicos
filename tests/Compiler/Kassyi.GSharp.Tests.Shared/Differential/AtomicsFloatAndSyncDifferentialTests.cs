@@ -11,7 +11,8 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 /// </summary>
 [Category(TestCategory.Differential)]
 [TestTarget(ExecutionTarget.GpuExecution)]
-public sealed class AtomicsFloatAndSyncDifferentialTests
+[Collection(TestCollections.AtomicsDifferential)]
+public class AtomicsFloatAndSyncDifferentialTests
 {
     private static readonly DifferentialCase s_floatExactPowersOfTwoAtomics =
         new(
