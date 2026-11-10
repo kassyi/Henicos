@@ -11,7 +11,7 @@ internal static class SignedSelect
     {
         var words = chosen.NumWords;
         resultBuffer.CopyFrom(chosen, numWords: words);
-        SignedRoot.ClearAbove(resultBuffer, words);
+        ResultBuffers.ClearAbove(resultBuffer, words);
     }
 
     public static InvalidOperationException NotOnTheHost() =>

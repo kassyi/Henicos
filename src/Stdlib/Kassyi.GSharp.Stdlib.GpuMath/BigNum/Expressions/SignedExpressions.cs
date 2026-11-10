@@ -41,7 +41,7 @@ internal class GpuBigIntLeafExpression(GpuBigInt value) : IGpuBigIntExpression, 
             }
         }
 
-        SignedRoot.ClearAbove(target, words);
+        ResultBuffers.ClearAbove(target, words);
         return new GpuBigInt(target, value.IsNegative);
     }
 }
@@ -107,7 +107,7 @@ internal abstract class SignedBinaryExpression(
         try
         {
             var result = targetResult.HasValue
-                ? SignedRoot.Head(targetResult.Value, NumWords)
+                ? ResultBuffers.Head(targetResult.Value, NumWords)
                 : (rented = workspace.RentTemp(NumWords)).Value;
 
             // The kernels take __restrict__ pointers: a target that overlaps an operand gets the result through a
@@ -364,7 +364,7 @@ internal abstract class SignedUnaryExpression(IGpuBigIntExpression target, long 
         try
         {
             var result = targetResult.HasValue
-                ? SignedRoot.Head(targetResult.Value, NumWords)
+                ? ResultBuffers.Head(targetResult.Value, NumWords)
                 : (rented = workspace.RentTemp(NumWords)).Value;
 
             // As in SignedBinaryExpression: a target that overlaps the operand gets the result through a temporary
@@ -450,7 +450,7 @@ internal sealed class SignedFitExpression(IGpuBigIntExpression target, int words
         BigIntWideOps.CheckFits(magnitude, words);
         var copied = Math.Min(words, magnitude.NumWords);
         resultBuffer.CopyFrom(magnitude, numWords: copied);
-        SignedRoot.ClearAbove(resultBuffer, copied);
+        ResultBuffers.ClearAbove(resultBuffer, copied);
         return new GpuBigInt(resultBuffer, targetEval.IsNegative);
     }
 }
