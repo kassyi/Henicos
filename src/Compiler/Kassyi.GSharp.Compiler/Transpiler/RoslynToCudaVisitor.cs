@@ -382,7 +382,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
         // whose symbols are not defined, arguments included
         if (RemovedCalls.IsRemovedCall(node.Expression, Context.Query.SemanticModel))
         {
-            Context.Emitter.Writer.AppendLine(";");
+            Context.Emitter.Writer.AppendLine(RemovedCallEraser.IsEmbedded(node) ? "{}" : ";");
             return;
         }
 

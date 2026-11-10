@@ -15,8 +15,15 @@ Script conventions and the catalog of agent scripts are in [agent-scripts.md](..
 | ----- | ----- | ----- |
 | Is this a kernel or a device function? | `GpuExecutionSpace.IsGpuFunction` | `HasAttribute(GpuKernel) \|\| HasAttribute(GpuDeviceFunction)` |
 | Does a call name a method of the project that has no device definition (no `[GpuDeviceFunction]`, not mapped, not removed by C#), and the reason of GSH0107 | `UnemittedMethodCall.GetReason`, `UnemittedMethodCall.GetDisplayName` | the attribute and mapping checks written again in a rule |
-| Does C# remove a call, arguments included (a partial method without an implementation, or `[Conditional]` with none of its symbols defined in the file the call was written in, also for a lowered copy); the nodes that run outside such calls; the symbols a generated managed file must `#define` | `RemovedCalls.IsRemoved`, `RemovedCalls.IsRemovedCall`, `RemovedCalls.DescendantNodesThatRun`, `RemovedCalls.GetUserTree`, `RemovedCalls.GetSymbolsToDefine`; `ConditionalCalls.GetConditions`, `ConditionalCalls.IsDefinedIn` | `.IsPartialWithoutImplementation` or the `[Conditional]` attribute read at the call site |
-| Remove the calls that C# removes from a body that lowering or the managed rewriter copies (`;`, the `for` element left out, `{ }` for an expression body), keeping the original-span annotations | `RemovedCallEraser.Erase`, `RemovedCallEraser.ToEmptyStatement`, `RemovedCallEraser.WithoutRemovedCalls`, `RemovedCallEraser.WithEmptyBodyIfRemoved` | `((void)0)` written for a call that a lowering pass has already spilled or split |
+| Does C# remove this call, arguments included (partial without implementation, `[Conditional]`)? | `RemovedCalls.IsRemoved`, `RemovedCalls.IsRemovedCall` | `.IsPartialWithoutImplementation` at the call site |
+| Is this node a removed call or inside one? | `RemovedCalls.IsInRemovedCall` | an `Ancestors()` loop over invocations |
+| The nodes of a body that run (without removed calls) | `RemovedCalls.DescendantNodesThatRun` | `DescendantNodes()` in a barrier or call walk |
+| The tree a lowered copy of a node was written in | `RemovedCalls.GetUserTree` | `node.SyntaxTree` on a lowered node |
+| The symbols a generated managed file must `#define` | `RemovedCalls.GetSymbolsToDefine` | copying the user's directives |
+| The `[Conditional]` symbols of a method; is a symbol defined in a file? | `ConditionalCalls.GetConditions`, `ConditionalCalls.IsDefinedIn` | reading `ConditionalAttribute` by hand |
+| Erase the removed calls of a copied body | `RemovedCallEraser.Erase` | `((void)0)` after a pass spilled the arguments |
+| Replace one removed statement, `for` element or expression body | `RemovedCallEraser.ToEmptyStatement`, `RemovedCallEraser.WithoutRemovedCalls` | `SyntaxFactory.EmptyStatement()` as an embedded statement |
+| Is a removed lambda or local function body emptied; is a statement embedded? | `RemovedCallEraser.WithEmptyBodyIfRemoved`, `RemovedCallEraser.IsEmbedded` | `Parent is BlockSyntax` checks written again |
 | Is this position inside device code (lambdas and local functions included)? | `GpuExecutionSpace.IsWithinGpuFunction` on `GetEnclosingSymbol(...)` | a hand-written `ContainingSymbol` loop |
 | Does a symbol carry a G# attribute? | `.HasAttribute` with a `KnownAttributes` constant (also checks the declaring namespace, `KnownAttributes.IsDeclaredInOwnerNamespace`) | `AttributeClass?.Name == "GpuKernelAttribute"` |
 | Get the attribute data | `.GetAttribute` | `GetAttributes()` plus a loop |

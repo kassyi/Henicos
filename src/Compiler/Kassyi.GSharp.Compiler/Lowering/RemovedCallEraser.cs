@@ -60,13 +60,21 @@ internal sealed class RemovedCallEraser : CSharpSyntaxRewriter
         WithEmptyBodyIfRemoved(node, base.VisitLocalFunctionStatement(node), _semanticModel);
 
     /// <summary>
-    /// The empty statement <c>;</c> in place of <paramref name="statement"/>, a removed call, with its trivia and its
-    /// original-span annotation.
+    /// The statement that does nothing in place of <paramref name="statement"/>, a removed call, with its trivia and
+    /// its original-span annotation: the empty statement <c>;</c> in a block or a switch section, the empty block
+    /// <c>{ }</c> where it is the embedded statement of an <c>if</c>, <c>else</c> or loop (<c>if (c) ;</c> is CS0642).
     /// </summary>
-    public static EmptyStatementSyntax ToEmptyStatement(ExpressionStatementSyntax statement) =>
-        SyntaxFactory.EmptyStatement()
+    public static StatementSyntax ToEmptyStatement(ExpressionStatementSyntax statement) =>
+        (IsEmbedded(statement) ? (StatementSyntax)SyntaxFactory.Block() : SyntaxFactory.EmptyStatement())
             .WithTriviaFrom(statement)
             .WithAdditionalAnnotations(statement.GetAnnotations(LoweringAnnotations.OriginalSpanAnnotationKind));
+
+    /// <summary>
+    /// Whether <paramref name="statement"/> is the embedded statement of an <c>if</c>, <c>else</c>, loop or label
+    /// rather than one of the statements of a block or a switch section.
+    /// </summary>
+    public static bool IsEmbedded(StatementSyntax statement) =>
+        statement.Parent is not (BlockSyntax or SwitchSectionSyntax or null);
 
     /// <summary>
     /// <paramref name="visited"/>, the rewritten <paramref name="original"/>, without the initializers and incrementors

@@ -68,6 +68,17 @@ public static partial class DefineKernels
         output[1] = CallOps.Sum(output, default, default);
     }
 
+    // Removed calls as the embedded statements of an if, an else and a loop: the generated file has { } there, not
+    // the empty statement of CS0642
+    [GpuKernel]
+    public static void EmbeddedKernel(int[] output)
+    {
+        int i = ThreadIndex.X;
+        if (i == 0) CallOps.Removed(output); else CallOps.Removed(output);
+        while (i < 0) CallOps.Removed(output);
+        output[i] += 1;
+    }
+
     // The iterator is written in a file without the #define: C# removes its call of Marker
     [GpuKernel]
     public static void IteratorKernel(int[] output)

@@ -33,4 +33,26 @@ public static partial class ConditionalCallDirectiveKernels
         AddWhenFileDefined(data, i);
         AddWhenProjectDefined(data, i);
     }
+
+    // NETCOREAPP is undefined in this file, so the block is inactive although the project defines the symbol: +1
+    [GpuKernel]
+    public static void UndefinedBlockKernel(int[] data)
+    {
+        int i = ThreadIndex.X;
+#if NETCOREAPP
+        data[i] += 300;
+#endif
+        data[i] += 1;
+    }
+
+    // An active block ends right before the closing brace, where the #endif is trivia of the brace: +1 and +5
+    [GpuKernel]
+    public static void BlockAtEndKernel(int[] data)
+    {
+        int i = ThreadIndex.X;
+        data[i] += 1;
+#if CONDITIONAL_CALL_FILE_DEFINED
+        data[i] += 5;
+#endif
+    }
 }

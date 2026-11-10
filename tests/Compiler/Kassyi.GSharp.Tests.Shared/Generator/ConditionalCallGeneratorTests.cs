@@ -56,6 +56,21 @@ public class ConditionalCallGeneratorTests
         Assert.True(errors.Count == 0, string.Join(Environment.NewLine, errors));
     }
 
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void GeneratedFiles_RemovedEmbeddedStatements_WarnNothing()
+    {
+        var warnings = s_run.Value.Output.GetDiagnostics()
+            .Where(static d => d.Severity == DiagnosticSeverity.Warning &&
+                               d.Location.SourceTree?.FilePath.EndsWith(".g.cs", StringComparison.Ordinal) == true)
+            .Select(static d => d.ToString())
+            .ToList();
+
+        Assert.True(warnings.Count == 0, string.Join(Environment.NewLine, warnings));
+        Assert.DoesNotContain("CallOps.Removed(", GetSource("ConditionalCallCase__DefineKernels.g.cs"),
+            StringComparison.Ordinal);
+    }
+
     [Theory]
     [Scenario(TestScenario.Boundary)]
     [InlineData("ConditionalCallCase__DefineKernels.g.cs")]

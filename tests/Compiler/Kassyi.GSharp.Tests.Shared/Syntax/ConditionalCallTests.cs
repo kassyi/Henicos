@@ -76,6 +76,18 @@ public class ConditionalCallTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
+    public void ConditionalCall_AsEmbeddedStatement_IsRemoved() =>
+        OnEveryPath(static () =>
+        {
+            int[] data = [10, 20];
+
+            ConditionalCallKernels.LaunchRemovedAsEmbeddedStatements(data, blockDimX: 2);
+
+            Assert.Equal([11, 21], data);
+        });
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
     public void ConditionalCall_OneSymbolDefined_IsKept() =>
         OnEveryPath(static () =>
         {
@@ -97,6 +109,42 @@ public class ConditionalCallTests : TranspilerTestBase
 
             // +1, +10 of the symbol the file defines, no +1000 of the symbol it undefines
             Assert.Equal([21, 31], data);
+        });
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void DirectiveBlock_InFileThatUndefinesTheSymbol_StaysInactive() =>
+        OnEveryPath(static () =>
+        {
+            int[] data = [10, 20];
+
+            ConditionalCallDirectiveKernels.LaunchUndefinedBlockKernel(data, blockDimX: 2);
+
+            Assert.Equal([11, 21], data);
+        });
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void DirectiveBlock_EndingAtTheClosingBrace_RunsItsActiveBranch() =>
+        OnEveryPath(static () =>
+        {
+            int[] data = [10, 20];
+
+            ConditionalCallDirectiveKernels.LaunchBlockAtEndKernel(data, blockDimX: 2);
+
+            Assert.Equal([16, 26], data);
+        });
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void DirectiveBlock_InPartWithoutTheDefineOfAnotherPart_StaysInactive() =>
+        OnEveryPath(static () =>
+        {
+            int[] data = [10, 20];
+
+            ConditionalCallDirectiveKernels.LaunchOtherPartBlockKernel(data, blockDimX: 2);
+
+            Assert.Equal([11, 21], data);
         });
 
     // The native build of the dialect, and on the CPU the managed path as well

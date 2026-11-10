@@ -34,24 +34,24 @@ UnsupportedShape	ArrayCreation	ArrayCreationExpression	2
 UnsupportedShape	ArrayElementReference	ElementAccessExpression	8
 UnsupportedShape	Binary	AddExpression	1
 UnsupportedShape	CompoundAssignment	AddAssignmentExpression	1
-UnsupportedShape	Invocation	InvocationExpression	71
+UnsupportedShape	Invocation	InvocationExpression	73
 UnsupportedShape	IsPattern	IsPatternExpression	2
 UnsupportedShape	ObjectCreation	ObjectCreationExpression class	8
 UnsupportedShape	ObjectCreation	ObjectCreationExpression nested-member-initializer	3
 statement UnsupportedOperation	Branch	GotoStatement	16
 statement UnsupportedOperation	Empty	EmptyStatement	2
 statement UnsupportedOperation	Labeled	LabeledStatement	19
-statement UnsupportedOperation	LocalFunction	LocalFunctionStatement	46
+statement UnsupportedOperation	LocalFunction	LocalFunctionStatement	48
 statement UnsupportedOperation	Lock	LockStatement	1
 statement UnsupportedOperation	Loop	DoStatement	3
-statement UnsupportedOperation	Loop	ForEachStatement	129
+statement UnsupportedOperation	Loop	ForEachStatement	131
 statement UnsupportedOperation	Loop	ForEachVariableStatement	1
 statement UnsupportedOperation	Loop	ForStatement	109
-statement UnsupportedOperation	Loop	WhileStatement	9
+statement UnsupportedOperation	Loop	WhileStatement	10
 statement UnsupportedOperation	None	FixedStatement	5
 statement UnsupportedOperation	Switch	SwitchStatement	38
 statement UnsupportedOperation	Try	TryStatement	3
 statement UnsupportedOperation	Using	UsingStatement	13
 statement UnsupportedOperation	UsingDeclaration	LocalDeclarationStatement	15
 statement UnsupportedOperation	YieldBreak	YieldBreakStatement	2
-statement UnsupportedOperation	YieldReturn	YieldReturnStatement	81
+statement UnsupportedOperation	YieldReturn	YieldReturnStatement	83

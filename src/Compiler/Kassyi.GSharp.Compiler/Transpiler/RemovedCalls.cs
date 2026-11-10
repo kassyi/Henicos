@@ -41,11 +41,39 @@ internal static class RemovedCalls
     /// </summary>
     public static IEnumerable<SyntaxNode> DescendantNodesThatRun(SyntaxNode root, SemanticModel model)
     {
-        foreach (var node in root.DescendantNodes(node => !IsRemovedCall(node as ExpressionSyntax, model)))
+        // [WHY] A walk of its own decides each call once: the descend predicate of DescendantNodes and a filter on its
+        // result would bind every call twice. The children are pushed last first, so they come out in document order
+        var pending = new Stack<SyntaxNode>();
+        PushChildren(pending, root);
+        while (pending.Count > 0)
         {
-            if (!IsRemovedCall(node as ExpressionSyntax, model))
+            var node = pending.Pop();
+            if (IsRemovedCall(node as ExpressionSyntax, model))
             {
-                yield return node;
+                continue;
+            }
+
+            yield return node;
+            PushChildren(pending, node);
+        }
+    }
+
+    /// <summary>
+    /// Whether <paramref name="node"/> is, or is inside the arguments of, a call that C# removes; the analyzers that
+    /// look at one call at a time skip it.
+    /// </summary>
+    public static bool IsInRemovedCall(SyntaxNode node, SemanticModel model) =>
+        node.AncestorsAndSelf()
+            .AsStackEnumerable()
+            .Any(model, static (ancestor, m) => ancestor is InvocationExpressionSyntax call && IsRemoved(call, m));
+
+    private static void PushChildren(Stack<SyntaxNode> pending, SyntaxNode node)
+    {
+        foreach (var child in node.ChildNodesAndTokens().Reverse())
+        {
+            if (child.AsNode() is { } childNode)
+            {
+                pending.Push(childNode);
             }
         }
     }

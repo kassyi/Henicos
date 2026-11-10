@@ -123,6 +123,16 @@ public static partial class ConditionalCallKernels
         data[i] += 1;
     }
 
+    // Removed calls as the embedded statements of an if, an else and a loop: +1
+    [GpuKernel]
+    public static void RemovedAsEmbeddedStatements(int[] data)
+    {
+        int i = ThreadIndex.X;
+        if (i == 0) Overwrite(data, i); else Overwrite(data, i);
+        while (i < 0) Trace(Bump(data, i));
+        data[i] += 1;
+    }
+
     // One symbol of the call is defined, so C# keeps it: +1000 and +2000. The generator snapshot is compiled without
     // preprocessor symbols and shows both calls removed
     [GpuKernel]

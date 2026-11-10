@@ -6,19 +6,9 @@ internal sealed partial class ManagedExecutionRewriter
 {
     public override SyntaxNode? VisitExpressionStatement(ExpressionStatementSyntax node)
     {
-        // [WHY] The generated file decides [Conditional] again with none of the #undef directives of the user's file
-        // (#1540)
-        if (RemovedCalls.IsRemovedCall(node.Expression, semanticModel))
+        if (TryRewriteSpecialStatement(node) is { } special)
         {
-            return RemovedCallEraser.ToEmptyStatement(node);
-        }
-
-        if (node.Expression is InvocationExpressionSyntax inlinePtx &&
-            DialectCallSupport.IsUnsupportedInlinePtxCall(inlinePtx, semanticModel, HostDialects.Cpu))
-        {
-            return SyntaxFactory.ParseStatement(
-                    $"throw new global::System.NotSupportedException(\"{DialectCallSupport.GetInlinePtxUnsupportedMessage(HostDialects.Cpu.Name)}\");")
-                .WithTriviaFrom(node);
+            return special;
         }
 
         // c = a + b; with an operator macro becomes the call of its target (#711)
@@ -46,6 +36,27 @@ internal sealed partial class ManagedExecutionRewriter
             _ => RewriteSingleThread(invocation, namesInScope)
         };
         return rewritten?.WithTriviaFrom(node) ?? base.VisitExpressionStatement(node);
+    }
+
+    // The statements that become something else entirely: a call that C# removes, which the generated file would
+    // decide again with none of the #undef directives of the user's file (#1540), and an inline PTX call, which the CPU
+    // cannot run
+    private SyntaxNode? TryRewriteSpecialStatement(ExpressionStatementSyntax node)
+    {
+        if (RemovedCalls.IsRemovedCall(node.Expression, semanticModel))
+        {
+            return RemovedCallEraser.ToEmptyStatement(node);
+        }
+
+        if (node.Expression is InvocationExpressionSyntax inlinePtx &&
+            DialectCallSupport.IsUnsupportedInlinePtxCall(inlinePtx, semanticModel, HostDialects.Cpu))
+        {
+            var message = DialectCallSupport.GetInlinePtxUnsupportedMessage(HostDialects.Cpu.Name);
+            return SyntaxFactory.ParseStatement($"throw new global::System.NotSupportedException(\"{message}\");")
+                .WithTriviaFrom(node);
+        }
+
+        return null;
     }
 
     // A for loop without the initializers and incrementors that are calls C# removes (#1540)
