@@ -20,12 +20,28 @@ internal static class BigIntWideOps
     /// <exception cref="OverflowException">
     /// CPU fallback mode only: the result is below zero or does not fit.
     /// </exception>
-    public static void AddSubtract(GpuBigUInt a, GpuBigUInt b, GpuBigUInt result, bool subtract)
+    public static void AddSubtract(GpuBigUInt a, GpuBigUInt b, GpuBigUInt result, bool subtract) =>
+        AddSubtract(a, b, result, subtract, modulo: false);
+
+    /// <summary>
+    /// <c>result = (a + b) mod 2^(32 n)</c>, or <c>a - b</c> modulo the same, for <paramref name="result"/> of
+    /// <c>n</c> words: the two's complement arithmetic an algorithm uses on purpose (a borrow read from the top bit).
+    /// Nothing is reported.
+    /// </summary>
+    public static void AddSubtractModulo(GpuBigUInt a, GpuBigUInt b, GpuBigUInt result, bool subtract) =>
+        AddSubtract(a, b, result, subtract, modulo: true);
+
+    private static void AddSubtract(GpuBigUInt a, GpuBigUInt b, GpuBigUInt result, bool subtract, bool modulo)
     {
         if (GpuKernelLoader.IsCpuFallbackMode)
         {
             var value = subtract ? a.ToBigInteger() - b.ToBigInteger() : a.ToBigInteger() + b.ToBigInteger();
             WriteModulo(value, result);
+            if (modulo)
+            {
+                return;
+            }
+
             if (value.Sign < 0)
             {
                 throw new OverflowException("An unsigned difference is below zero.");
@@ -39,7 +55,7 @@ internal static class BigIntWideOps
         var words = Math.Max(Math.Max(a.NumWords, b.NumWords), result.NumWords);
         GpuBigIntWideKernels.LaunchAddSubWideKernelPtr(
             a.ToProxy(), a.NumWords, b.ToProxy(), b.NumWords, result.ToProxy(), result.NumWords,
-            subtract ? 1 : 0, workspace.CorrectionStatusProxy,
+            (subtract ? 1 : 0) + (modulo ? GpuBigIntWideKernels.ModuloMode : 0), workspace.CorrectionStatusProxy,
             gridDimX: 1, blockDimX: SingleBlockSize(words), hStream: workspace.Stream);
         workspace.CorrectionStatus?.MarkPending();
     }
@@ -80,22 +96,37 @@ internal static class BigIntWideOps
     /// a domain error.
     /// </summary>
     /// <exception cref="OverflowException">CPU fallback mode only: the value does not fit.</exception>
-    public static void CheckFits(GpuBigUInt value, int words)
+    public static void CheckFits(GpuBigUInt value, int words) =>
+        CheckFitsBits(value, (long)BigIntWidths.BitsPerWord * words);
+
+    /// <summary>
+    /// Checks that <paramref name="value"/> fits in <paramref name="bits"/> bits: a set bit at or above them is a
+    /// domain error.
+    /// </summary>
+    /// <exception cref="OverflowException">CPU fallback mode only: the value does not fit.</exception>
+    public static void CheckFitsBits(GpuBigUInt value, long bits)
     {
-        if (words >= value.NumWords)
+        if (bits >= (long)BigIntWidths.BitsPerWord * value.NumWords)
         {
             return;
         }
 
         if (GpuKernelLoader.IsCpuFallbackMode)
         {
-            ThrowIfWiderThan(value.ToBigInteger(), words, "A value");
+            if (value.ToBigInteger().GetBitLength() > bits)
+            {
+                throw new OverflowException($"A value does not fit in {bits} bits.");
+            }
+
             return;
         }
 
+        // The word that holds bit position bits, with its bits below that position masked off
+        var firstWord = (int)(bits / BigIntWidths.BitsPerWord);
+        var firstMask = uint.MaxValue << (int)(bits % BigIntWidths.BitsPerWord);
         var workspace = value.Workspace;
-        GpuBigIntWideKernels.LaunchFitCheckKernelPtr(value.ToProxy(), value.NumWords, words,
-            workspace.CorrectionStatusProxy, gridDimX: 1, blockDimX: SingleBlockSize(value.NumWords - words),
+        GpuBigIntWideKernels.LaunchFitCheckKernelPtr(value.ToProxy(), value.NumWords, firstWord, firstMask,
+            workspace.CorrectionStatusProxy, gridDimX: 1, blockDimX: SingleBlockSize(value.NumWords - firstWord),
             hStream: workspace.Stream);
         workspace.CorrectionStatus?.MarkPending();
     }
@@ -155,12 +186,8 @@ internal static class BigIntWideOps
         }
 
         var workspace = a.Workspace;
-        if (DeviceCounted.IsCapturing(workspace))
-        {
-            throw new NotSupportedException(
-                "The sign of a sum of two values with different signs is read from the device, which a CUDA graph " +
-                "capture cannot record. Evaluate the expression without a graph, or give the operands the same sign.");
-        }
+        CaptureChecks.ThrowIfCapturing(workspace, "The sign of a sum of two values with different signs",
+            "Evaluate the expression without a graph, or give the operands the same sign.");
 
         using var flags = workspace.RentTemp(2);
         GpuBigIntWideKernels.LaunchMagnitudeDifferenceKernelPtr(

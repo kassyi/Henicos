@@ -315,23 +315,11 @@ internal static class DeviceCounted
                 "Combine the predicates into one Where (p.And(q)).");
     }
 
-    /// <summary>Gets whether the workspace stream is capturing a CUDA graph.</summary>
-    public static bool IsCapturing(GpuWorkspace workspace)
-    {
-        if (workspace.Stream == IntPtr.Zero || GpuKernelLoader.IsCpuFallbackMode)
-        {
-            return false;
-        }
-
-        CudaException.ThrowIfError(CudaDriverApi.cuStreamIsCapturing(workspace.Stream, out var status));
-        return status != CUstreamCaptureStatus.None;
-    }
-
     /// <summary>Throws when the workspace stream is capturing a CUDA graph, which cannot record a host read.</summary>
     /// <exception cref="InvalidOperationException">The stream is capturing.</exception>
     public static void ThrowIfCapturing(GpuWorkspace workspace)
     {
-        if (IsCapturing(workspace))
+        if (CaptureChecks.IsCapturing(workspace))
         {
             throw new InvalidOperationException(
                 "The length of a filtered vector is known only on the device and cannot be read while a CUDA graph is " +
