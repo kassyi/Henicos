@@ -12,7 +12,11 @@ public class LaunchDimensionTests
     [InlineData(0, 256, 0u, 0u)]
     [InlineData(int.MaxValue, 256, 8388608u, 256u)]
     [InlineData(int.MaxValue, 1024, 2097152u, 1024u)]
-    public void Test_Calculate1D_ReturnsCorrectDimensions(int total, int tbp, uint expectedGrid, uint expectedBlock)
+    public void Calculate1D_ValidTotalAndThreadsPerBlock_ReturnsCorrectDimensions(
+        int total,
+        int tbp,
+        uint expectedGrid,
+        uint expectedBlock)
     {
         var (grid, block) = LaunchDimension.Calculate1D(total, tbp);
         Assert.Equal(expectedGrid, grid);
@@ -25,7 +29,7 @@ public class LaunchDimensionTests
     [InlineData(1000, 0)]
     [InlineData(1000, -10)]
     [InlineData(1000, 1025)] // > 1024 (hardware limit)
-    public void Test_Calculate1D_InvalidInputs_ThrowsArgumentOutOfRangeException(int total, int tbp)
+    public void Calculate1D_NegativeOrZeroInputs_ThrowsArgumentOutOfRangeException(int total, int tbp)
     {
         Assert.Throws<ArgumentOutOfRangeException>(() => LaunchDimension.Calculate1D(total, tbp));
     }

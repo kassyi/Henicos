@@ -355,46 +355,46 @@ public sealed class MarshalingAliasingDifferentialTests
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_AliasTwoRwArrays_MatchesTheOracleOnEveryPath() =>
+    public void ArrayAliasing_TwoReadWriteArrays_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_aliasTwoRwArrays);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_AliasInAndRwArray_MatchesTheOracleOnEveryPath() =>
+    public void ArrayAliasing_InAndReadWriteArrays_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_aliasInAndRwArray);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_AliasOutAndInArray_MatchesTheOracleOnEveryPath() =>
+    public void ArrayAliasing_OutAndInArrays_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_aliasOutAndInArray);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_AliasTwoInArrays_MatchesTheOracleOnEveryPath() =>
+    public void ArrayAliasing_TwoInArrays_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_aliasTwoInArrays);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_OverlappingSpanSlice_MatchesOracleExceptKnownCudaIssue() =>
+    public void SpanSliceAliasing_OverlappingSlices_MatchesOracleExceptKnownCudaIssue() =>
         DifferentialRunner.Run(s_overlappingSpanSlice);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_AliasedRefScalars_MatchesOracleExceptKnownCudaIssue() =>
+    public void ScalarAliasing_AliasedRefScalars_MatchesOracleExceptKnownCudaIssue() =>
         DifferentialRunner.Run(s_aliasedRefScalars);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Aliasing_DeepStructInternalArraySharing_MatchesSequentialOracle() =>
+    public void DeepStructAliasing_InternalArraySharing_MatchesSequentialOracle() =>
         DifferentialRunner.Run(s_deepStructInternalArraySharing);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Aliasing_CrossLevelTopAndDeepStruct_MatchesSequentialOracle() =>
+    public void DeepStructAliasing_CrossLevelTopAndDeepStruct_MatchesSequentialOracle() =>
         DifferentialRunner.Run(s_crossLevelTopAndDeepStruct);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Aliasing_CrossAliasInDeepArrayAndRwArray_MatchesSequentialOracle() =>
+    public void DeepStructAliasing_CrossAliasInDeepArrayAndRwArray_MatchesSequentialOracle() =>
         DifferentialRunner.Run(s_crossAliasInDeepArrayAndRwArray);
 }

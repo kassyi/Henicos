@@ -23,7 +23,7 @@ public sealed class GridSyncModeTests
     [Fact]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_DeterministicMode_EmitsOnlyTheDeterministicBarrier()
+    public void GridSyncMode_DeterministicMode_EmitsOnlyDeterministicBarrier()
     {
         var (source, failures) = RoslynTestUtility.TranspileMethod(typeof(GridSyncModeKernels),
             nameof(GridSyncModeKernels.DeterministicOnlyKernel), isDevice: false, dialect: new GSharpCudaDialect());
@@ -36,7 +36,7 @@ public sealed class GridSyncModeTests
     [Fact]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_FastMode_EmitsOnlyTheFastBarrier()
+    public void GridSyncMode_FastMode_EmitsOnlyFastBarrier()
     {
         var (source, failures) = RoslynTestUtility.TranspileMethod(typeof(GridSyncModeKernels),
             nameof(GridSyncModeKernels.FastOnlyKernel), isDevice: false, dialect: new GSharpCudaDialect());
@@ -51,7 +51,7 @@ public sealed class GridSyncModeTests
     [Fact]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_EveryConstantSpelling_PicksTheBarrierOfItsMode()
+    public void GridSyncMode_EveryConstantSpelling_PicksBarrierOfItsMode()
     {
         var (source, failures) = RoslynTestUtility.TranspileMethod(typeof(GridSyncModeKernels),
             nameof(GridSyncModeKernels.EveryModeSpellingKernel), isDevice: false, dialect: new GSharpCudaDialect());
@@ -66,7 +66,7 @@ public sealed class GridSyncModeTests
     [Fact]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_FastInsideBody_KeepsItsModeAndTheInsertedBarriersAreDeterministic()
+    public void GridSyncMode_FastInsideBody_KeepsModeAndInsertedBarriersAreDeterministic()
     {
         var (source, failures) = RoslynTestUtility.TranspileMethod(typeof(GridSyncModeKernels),
             nameof(GridSyncModeKernels.FastInsideBodyKernel), isDevice: false, dialect: new GSharpCudaDialect());
@@ -78,7 +78,7 @@ public sealed class GridSyncModeTests
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_FastInsideBody_OrdersTheWritesOfEveryBlock()
+    public void GridSyncMode_FastInsideBody_OrdersWritesOfEveryBlock()
     {
 #if GSHARP_CUDA
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
@@ -97,7 +97,7 @@ public sealed class GridSyncModeTests
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_EveryModeSpelling_OrdersTheWritesOfEveryBlock()
+    public void GridSyncMode_EveryModeSpelling_OrdersWritesOfEveryBlock()
     {
 #if GSHARP_CUDA
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
@@ -117,7 +117,7 @@ public sealed class GridSyncModeTests
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_FastBarrier_ThousandRounds_AreExact()
+    public void FastBarrier_ThousandRounds_ExecutesExactly()
     {
 #if GSHARP_CUDA
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
@@ -141,7 +141,7 @@ public sealed class GridSyncModeTests
     // hang that the driver would end only by resetting the GPU.
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_FastMode_WholeBlockFails_WaitersLeaveAndLaunchThrows()
+    public async Task FastMode_WholeBlockFails_WaitersLeaveAndLaunchThrows()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
         var keys = new int[Blocks * BlockSize];
@@ -167,7 +167,7 @@ public sealed class GridSyncModeTests
     // block waits.
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_FastMode_OneThreadFails_LaunchThrowsAndNoBlockWaits()
+    public async Task FastMode_OneThreadFails_LaunchThrowsAndNoBlockWaits()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
         var keys = new int[Blocks * BlockSize];

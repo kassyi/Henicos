@@ -9,7 +9,7 @@ public class CpuDialectLibraryCallTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_UnfusedStackLinqCall_RunsOnTarget()
+    public void ElementAt_UnfusedStackLinqCall_ReturnsElementAtTargetIndex()
     {
         int[] data = [7, 8, 9];
         int[] result = [0];
@@ -23,7 +23,7 @@ public class CpuDialectLibraryCallTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_MemoryExtensionsSort_RunsOnTarget()
+    public void Sort_MemoryExtensionsSpan_SortsArrayInPlace()
     {
         int[] data = [3, 1, 2];
 
@@ -36,7 +36,7 @@ public class CpuDialectLibraryCallTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_SelectAtEnumerator_DoesNotAdvanceIndexOnRepeatedCurrent()
+    public void SelectAt_RepeatedCurrentAccess_DoesNotAdvanceIndex()
     {
         int[] data = [1, 2, 3, 4];
         int[] result = [0];
@@ -50,7 +50,7 @@ public class CpuDialectLibraryCallTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_EmptySequenceNonTrappingTerminals_ReturnDotNetDefaults()
+    public void TerminalOperations_EmptySequenceNonTrapping_ReturnDotNetDefaults()
     {
         int[] data = [7, 8, 9];
         int[] results = new int[12];
@@ -68,7 +68,7 @@ public class CpuDialectLibraryCallTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_ElementAt_OutOfRange_ThrowsArgumentOutOfRangeException(bool forceManaged, int index)
+    public void ElementAt_IndexOutOfRange_ThrowsArgumentOutOfRangeException(bool forceManaged, int index)
     {
         Skip.If(IsCudaDialect, "Trap exception propagation is verified on CPU execution paths.");
 
@@ -94,7 +94,7 @@ public class CpuDialectLibraryCallTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_UnfusedFirst_EmptySequence_ThrowsInvalidOperationException(bool forceManaged)
+    public void First_UnfusedEmptySequence_ThrowsInvalidOperationException(bool forceManaged)
     {
         Skip.If(IsCudaDialect, "Trap exception propagation is verified on CPU execution paths.");
 
@@ -120,7 +120,7 @@ public class CpuDialectLibraryCallTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_UnfusedLast_EmptySequence_ThrowsInvalidOperationException(bool forceManaged)
+    public void Last_UnfusedEmptySequence_ThrowsInvalidOperationException(bool forceManaged)
     {
         Skip.If(IsCudaDialect, "Trap exception propagation is verified on CPU execution paths.");
 
@@ -148,7 +148,7 @@ public class CpuDialectLibraryCallTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_UnfusedSingle_InvalidElementCount_ThrowsInvalidOperationException(bool forceManaged, int takeCount)
+    public void Single_InvalidElementCount_ThrowsInvalidOperationException(bool forceManaged, int takeCount)
     {
         Skip.If(IsCudaDialect, "Trap exception propagation is verified on CPU execution paths.");
 
@@ -174,7 +174,7 @@ public class CpuDialectLibraryCallTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_UnfusedSingleOrDefault_MultipleElements_ThrowsInvalidOperationException(bool forceManaged)
+    public void SingleOrDefault_MultipleElements_ThrowsInvalidOperationException(bool forceManaged)
     {
         Skip.If(IsCudaDialect, "Trap exception propagation is verified on CPU execution paths.");
 
@@ -200,7 +200,7 @@ public class CpuDialectLibraryCallTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_FusedAndUnfusedEmptySequenceTerminals_ThrowInvalidOperationException(bool forceManaged)
+    public void TerminalOperations_FusedAndUnfusedEmptySequence_ThrowInvalidOperationException(bool forceManaged)
     {
         Skip.If(IsCudaDialect, "Trap exception propagation is verified on CPU execution paths.");
 

@@ -16,101 +16,101 @@ public class ResumeLocalTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_SpanUsedOnlyBeforeBarrier_KeepsItsMemory() =>
+    public void StackAllocSpan_UsedOnlyBeforeBarrier_KeepsItsMemory() =>
         ResumeLocalScenarios.SpanBeforeBarrier(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_SpanUsedOnlyOnTheOtherBranch_KeepsItsMemory() =>
+    public void StackAllocSpan_UsedOnlyOnOtherBranch_KeepsItsMemory() =>
         ResumeLocalScenarios.SpanInOtherBranch(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_InitializerReadsEarlierLocal_RunsWhereDeclared() =>
+    public void LocalInitializer_ReadsEarlierLocal_RunsWhereDeclared() =>
         ResumeLocalScenarios.ViewAfterLocal(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_StackAllocInLoop_StartsZeroedEveryIteration() =>
+    public void StackAllocInLoop_LoopIteration_StartsZeroedEveryIteration() =>
         ResumeLocalScenarios.StackAllocInLoop(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_StackAllocOfConstLocalSize_KeepsItsMemory() =>
+    public void StackAllocConstSize_ConstLocalSize_KeepsItsMemory() =>
         ResumeLocalScenarios.ConstSize(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_StackAllocPointer_CanBeIncremented() =>
+    public void StackAllocPointer_PointerIncrement_CanBeIncremented() =>
         ResumeLocalScenarios.MovingPointer(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_StackAllocPointerBeforeBarrier_CanBeIncremented() =>
+    public void StackAllocPointer_IncrementBeforeBarrier_CanBeIncremented() =>
         ResumeLocalScenarios.MovingPointerBeforeBarrier(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_ReadOnlyStackAllocWithElements_KeepsItsValues() =>
+    public void ReadOnlyStackAlloc_WithElements_KeepsItsValues() =>
         ResumeLocalScenarios.ReadOnlyElements(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_SpanInFlattenedSiblingScope_KeepsItsMemory() =>
+    public void StackAllocSpan_FlattenedSiblingScope_KeepsItsMemory() =>
         ResumeLocalScenarios.SiblingScopeSpan(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_SameNameSpansInSiblingScopes_KeepTheirMemory() =>
+    public void SameNameSpans_SiblingScopes_KeepTheirMemory() =>
         ResumeLocalScenarios.SameNameSpans(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_StackAllocPointerUsedOnlyBeforeBarrier_KeepsItsMemory() =>
+    public void StackAllocPointer_UsedOnlyBeforeBarrier_KeepsItsMemory() =>
         ResumeLocalScenarios.PointerBeforeBarrier(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_LengthOfConstExpressionSize_IsItsValue() =>
+    public void ConstExpressionSize_LengthEvaluation_EvaluatesToConstValue() =>
         ResumeLocalScenarios.ConstSizeLength(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_ZeroLengthStackAllocPointer_Compiles() =>
+    public void ZeroLengthStackAllocPointer_Compilation_ExecutesSuccessfully() =>
         ResumeLocalScenarios.ZeroLengthPointer(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_ZeroLengthStackAllocPointerBeforeBarrier_Compiles() =>
+    public void ZeroLengthStackAllocPointer_BeforeBarrier_ExecutesSuccessfully() =>
         ResumeLocalScenarios.ZeroLengthPointerBeforeBarrier(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_StackAllocPointerWithElements_KeepsItsValues() =>
+    public void StackAllocPointer_InitializedWithElements_KeepsItsValues() =>
         ResumeLocalScenarios.PointerElements(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_StackAllocPointerWithoutElements_StartsZeroed() =>
+    public void StackAllocPointer_WithoutElements_StartsZeroed() =>
         ResumeLocalScenarios.PointerZeroed(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_ZeroLengthStackAllocSpan_Compiles() =>
+    public void ZeroLengthStackAllocSpan_Compilation_ExecutesSuccessfully() =>
         ResumeLocalScenarios.ZeroLengthSpan(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_ZeroLengthStackAllocSpanBeforeBarrier_Compiles() =>
+    public void ZeroLengthStackAllocSpan_BeforeBarrier_ExecutesSuccessfully() =>
         ResumeLocalScenarios.ZeroLengthSpanBeforeBarrier(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_StackAllocPointerCapturedByDelegateRunBeforeBarrier_KeepsItsMemory() =>
+    public void StackAllocPointer_CapturedByDelegateRunBeforeBarrier_KeepsItsMemory() =>
         ResumeLocalScenarios.LambdaBeforeBarrier(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_StackAllocPointerCapturedByStackLinqLambdaBeforeBarrier_KeepsItsMemory() =>
+    public void StackAllocPointer_CapturedByStackLinqLambdaBeforeBarrier_KeepsItsMemory() =>
         ResumeLocalScenarios.StackLinqBeforeBarrier(s_runNative);
 }

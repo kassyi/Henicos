@@ -37,6 +37,6 @@ public class StructMutatingGetterDifferentialTests
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_MutatingGetterOnVariablesAndReadonlyVariables_MatchesTheOracleOnEveryPath() =>
+    public void StructMutatingGetter_VariablesAndReadonlyVariables_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_mutatingGetter);
 }

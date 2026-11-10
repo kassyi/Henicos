@@ -12,7 +12,7 @@ public class ConstFieldLiteralTests : TranspilerTestBase
 {
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_CharConst_KeepsCharacterCode_Execution()
+    public void CharConst_DeviceExecution_KeepsCharacterCode()
     {
         int[] output = new int[8];
         char[] text = new char[2];
@@ -36,7 +36,7 @@ public class ConstFieldLiteralTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_IntegerLimitConst_KeepsValue_Execution()
+    public void IntegerLimitConst_DeviceExecution_KeepsValue()
     {
         long[] signed = new long[4];
         ulong[] unsigned = new ulong[2];
@@ -51,7 +51,7 @@ public class ConstFieldLiteralTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_EnumConst_KeepsValue_Execution()
+    public void EnumConst_DeviceExecution_KeepsValue()
     {
         ulong[] wide = new ulong[2];
         int[] signed = new int[3];
@@ -70,7 +70,7 @@ public class ConstFieldLiteralTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_SingleConst_KeepsValue_Execution()
+    public void SingleConst_DeviceExecution_KeepsValue()
     {
         float[] output = new float[9];
 
@@ -93,7 +93,7 @@ public class ConstFieldLiteralTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_DoubleConst_KeepsValue_Execution()
+    public void DoubleConst_DeviceExecution_KeepsValue()
     {
         double[] output = new double[10];
 
@@ -117,7 +117,7 @@ public class ConstFieldLiteralTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_OmittedArgument_UsesDefaultValue_Execution()
+    public void OmittedArgument_DeviceExecution_UsesDefaultValue()
     {
         float[] singles = new float[3];
         double[] doubles = new double[2];
@@ -139,7 +139,7 @@ public class ConstFieldLiteralTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_KernelDefault_LauncherUsesDefaultValue_Execution()
+    public void KernelDefault_LauncherInvocation_UsesDefaultValue()
     {
         float[] singles = new float[2];
         double[] doubles = new double[1];
@@ -157,7 +157,7 @@ public class ConstFieldLiteralTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_EnumKernelDefault_LauncherCastsBaseValue_Execution()
+    public void EnumKernelDefault_LauncherInvocation_CastsBaseValue()
     {
         ulong[] wide = new ulong[1];
         int[] signed = new int[1];
@@ -170,7 +170,7 @@ public class ConstFieldLiteralTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_NegativeOperand_DoesNotMergeWithOperator_Execution()
+    public void NegativeOperand_DeviceExecution_DoesNotMergeWithOperator()
     {
         int x = 10;
         int[] ints = new int[6];
@@ -197,7 +197,7 @@ public class ConstFieldLiteralTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_NegativeLiteral_KeepsValueWhenWidened_Execution()
+    public void NegativeLiteral_WidenedType_KeepsValue()
     {
         long[] longs = new long[3];
         double[] doubles = new double[3];
@@ -210,7 +210,7 @@ public class ConstFieldLiteralTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_IntegerSuffix_KeepsCSharpType_Execution()
+    public void IntegerSuffix_DeviceExecution_KeepsCSharpType()
     {
         uint factor = 2;
         const int shift = 40;
@@ -231,7 +231,7 @@ public class ConstFieldLiteralTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_NullableDefault_UsesDefaultValue_Execution()
+    public void NullableDefault_DeviceExecution_UsesDefaultValue()
     {
         float[] singles = new float[1];
         int[] codes = new int[2];
@@ -246,7 +246,7 @@ public class ConstFieldLiteralTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_NegativeUnrollStart_Execution()
+    public void NegativeUnrollStart_DeviceExecution_MatchesExpectedValues()
     {
         int x = 10;
         int[] output = new int[4];
@@ -259,7 +259,7 @@ public class ConstFieldLiteralTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_SynthesizedDefault_KeepsValue_Execution()
+    public void SynthesizedDefault_DeviceExecution_KeepsValue()
     {
         long[] longs = new long[7];
         float[] singles = new float[1];

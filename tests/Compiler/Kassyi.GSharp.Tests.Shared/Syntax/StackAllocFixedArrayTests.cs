@@ -39,7 +39,7 @@ public class StackAllocFixedArrayTests : TranspilerTestBase
     [SkippableFact]
     [Category(TestCategory.Syntax)]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void Test_GSH04_StackAlloc_HappyPath()
+    public void TranspileAndExecute_StackAllocExpression_ProducesExpectedOutputAndEmptyDiagnostics()
     {
         int[] output = [0];
         LoopsAndJumpsKernels.LaunchForeachStackAllocKernel(output, blockDimX: 1);
@@ -58,7 +58,7 @@ public class StackAllocFixedArrayTests : TranspilerTestBase
 
     [Fact]
     [Category(TestCategory.Syntax)]
-    public void Test_GSH04_StackAlloc_InTightLoop()
+    public void TranspileAndExecute_StackAllocInTightLoop_ProducesExpectedOutputAndEmptyDiagnostics()
     {
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<StackAllocFixedArrayTarget>(
             nameof(StackAllocFixedArrayTarget.StackAllocInTightLoop), isDevice: false, dialect: CurrentDialect);
@@ -73,7 +73,7 @@ public class StackAllocFixedArrayTests : TranspilerTestBase
 
     [Fact]
     [Category(TestCategory.Syntax)]
-    public void Test_GSH04_StackAlloc_AsMethodArgument()
+    public void TranspileAndExecute_StackAllocAsMethodArgument_PassesSpanDirectly()
     {
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<StackAllocFixedArrayTarget>(
             nameof(StackAllocFixedArrayTarget.StackAllocAsMethodArgument), isDevice: false, dialect: CurrentDialect);

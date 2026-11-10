@@ -18,73 +18,73 @@ public class SwitchSectionLocalManagedTests : TranspilerTestBase
     [Scenario(TestScenario.HappyPath)]
     [InlineData(0)]
     [InlineData(1)]
-    public void Test_Managed_InitializedInFirstSection_AssignedInLaterSection(int flag) =>
+    public void SwitchSectionLocal_ManagedInitializedInFirstSection_AssignedInLaterSection(int flag) =>
         SwitchSectionLocalScenarios.InitializedInFirstSection(s_runManaged, flag);
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_SharedStructAndVar_EverySectionSeesTheLocals() =>
+    public void SwitchSectionLocal_ManagedSharedStructAndVar_EverySectionSeesTheLocals() =>
         SwitchSectionLocalScenarios.SharedStructAndVar(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_GotoCaseAndNestedSwitch_LocalCarriedIntoNextSection() =>
+    public void SwitchSectionLocal_ManagedGotoCaseAndNestedSwitch_LocalCarriedIntoNextSection() =>
         SwitchSectionLocalScenarios.GotoCaseAndNestedSwitch(s_runManaged);
 
     [Theory]
     [Scenario(TestScenario.Boundary)]
     [InlineData(0)]
     [InlineData(1)]
-    public void Test_Managed_SectionConstant_LaterSectionReadsTheValue(int flag) =>
+    public void SwitchSectionLocal_ManagedSectionConstant_LaterSectionReadsTheValue(int flag) =>
         SwitchSectionLocalScenarios.SectionConstant(s_runManaged, flag);
 
     [Theory]
     [Scenario(TestScenario.Boundary)]
     [InlineData(0)]
     [InlineData(1)]
-    public void Test_Managed_GotoPastArrayAlias_SkipsTheDeclaration(int flag) =>
+    public void SwitchSectionLocal_ManagedGotoPastArrayAlias_SkipsTheDeclaration(int flag) =>
         SwitchSectionLocalScenarios.GotoPastArrayAlias(s_runManaged, flag);
 
     [Theory]
     [Scenario(TestScenario.Boundary)]
     [InlineData(0)]
     [InlineData(1)]
-    public void Test_Managed_GotoInSharedSection_DeclaredOnce(int flag) =>
+    public void SwitchSectionLocal_ManagedGotoInSharedSection_DeclaredOnce(int flag) =>
         SwitchSectionLocalScenarios.GotoInSharedSection(s_runManaged, flag);
 
     [Theory]
     [Scenario(TestScenario.Boundary)]
     [InlineData(0)]
     [InlineData(1)]
-    public void Test_Managed_ByteConstant_KeepsItsTypeInAnotherSection(int flag) =>
+    public void SwitchSectionLocal_ManagedByteConstant_KeepsItsTypeInAnotherSection(int flag) =>
         SwitchSectionLocalScenarios.ByteConstant(s_runManaged, flag);
 
     [Theory]
     [Scenario(TestScenario.Boundary)]
     [InlineData(0)]
     [InlineData(1)]
-    public void Test_Managed_ConstantInArgument_PassedByReference(int flag) =>
+    public void SwitchSectionLocal_ManagedConstantInArgument_PassedByReference(int flag) =>
         SwitchSectionLocalScenarios.ConstantInArgument(s_runManaged, flag);
 
     [Theory]
     [Scenario(TestScenario.Boundary)]
     [InlineData(0)]
     [InlineData(1)]
-    public void Test_Managed_ArrayFieldStruct_SharedBySections(int flag) =>
+    public void SwitchSectionLocal_ManagedArrayFieldStruct_SharedBySections(int flag) =>
         SwitchSectionLocalScenarios.ArrayFieldStruct(s_runManaged, flag);
 
     [Theory]
     [Scenario(TestScenario.Boundary)]
     [InlineData(0)]
     [InlineData(1)]
-    public void Test_Managed_GotoPastArrayFieldStruct_SkipsTheDeclaration(int flag) =>
+    public void SwitchSectionLocal_ManagedGotoPastArrayFieldStruct_SkipsTheDeclaration(int flag) =>
         SwitchSectionLocalScenarios.GotoPastArrayFieldStruct(s_runManaged, flag);
 
     [SkippableTheory]
     [Scenario(TestScenario.Boundary)]
     [InlineData(0)]
     [InlineData(1)]
-    public void Test_Managed_ShuffleBeforeDeclaration_LocalSharedAfterLowering(int flag) =>
+    public void SwitchSectionLocal_ManagedShuffleBeforeDeclaration_LocalSharedAfterLowering(int flag) =>
         SwitchSectionLocalScenarios.ShuffleBeforeDeclaration(s_runManaged, flag);
 
     private static void RunManaged(Action launch)

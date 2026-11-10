@@ -13,7 +13,7 @@ public class ResumeStackAllocSizeDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_DynamicStackAllocSize_ReportsGsh0003AtTheSize(string dialect)
+    public async Task DynamicStackAllocSize_NonConstantSize_ReportsGsh0003AtSize(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/ResumeStackAllocSizeKernels.cu.cs", dialect);
 

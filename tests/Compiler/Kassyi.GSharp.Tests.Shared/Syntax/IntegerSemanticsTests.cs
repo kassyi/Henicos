@@ -16,36 +16,36 @@ public class IntegerSemanticsTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_IntOperators_WrapAndMaskAsInCSharp() =>
+    public void Evaluate_IntOperators_WrapAndMaskAsInCSharp() =>
         IntegerSemanticsScenarios.IntTriples(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_LongOperators_WrapAndMaskAsInCSharp() =>
+    public void Evaluate_LongOperators_WrapAndMaskAsInCSharp() =>
         IntegerSemanticsScenarios.LongTriples(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_FloatToIntegerConversions_SaturateAsInDotNet() =>
+    public void Evaluate_FloatToIntegerConversions_SaturatesAsInDotNet() =>
         IntegerSemanticsScenarios.Conversions(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_ThreadBuiltIns_AreSignedInt() =>
+    public void Evaluate_ThreadBuiltIns_AreSignedInt() =>
         IntegerSemanticsScenarios.SignedBuiltIns(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_LoopCountersNearIntLimits_CountAsInCSharp() =>
+    public void Evaluate_LoopCountersNearIntLimits_CountsAsInCSharp() =>
         IntegerSemanticsScenarios.LoopCounters(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_PackedTargetsWithSideEffects_AreWrittenOnce() =>
+    public void Evaluate_PackedTargetsWithSideEffects_WritesOnce() =>
         IntegerSemanticsScenarios.PackedTargets(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_OperatorsAcrossBarriers_KeepCSharpSemantics() =>
+    public void Evaluate_OperatorsAcrossBarriers_KeepsCSharpSemantics() =>
         IntegerSemanticsScenarios.AcrossBarrier(s_runNative);
 }

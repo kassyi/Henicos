@@ -7,7 +7,13 @@ public class HeadTailTrackerWriterTests
     [InlineData("12345", 5, 5, "12345", "12345", "12345")]
     [InlineData("1234567890", 5, 5, "12345", "67890", "1234567890")]
     [InlineData("1234567890123", 5, 5, "12345", "90123", "12345...90123")]
-    public void Test_Write_String_TracksHeadAndTailCorrectly(string input, int headCap, int tailCap, string expectedHead, string expectedTail, string expectedPreview)
+    public void Write_StringInput_TracksHeadAndTailCorrectly(
+        string input,
+        int headCap,
+        int tailCap,
+        string expectedHead,
+        string expectedTail,
+        string expectedPreview)
     {
         CudaCapability.EnsureGpuAvailable();
         using var writer = new HeadTailTrackerWriter(headCap, tailCap);
@@ -21,7 +27,7 @@ public class HeadTailTrackerWriterTests
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Write_ZeroCapacity_DoesNotThrowAndTracksLength()
+    public void Write_ZeroCapacity_DoesNotThrowAndTracksLength()
     {
         CudaCapability.EnsureGpuAvailable();
         using var writer = new HeadTailTrackerWriter(0, 0);
@@ -35,7 +41,7 @@ public class HeadTailTrackerWriterTests
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Write_CharByChar_MatchesStringOutput()
+    public void Write_CharByChar_MatchesStringOutput()
     {
         CudaCapability.EnsureGpuAvailable();
         using var writer = new HeadTailTrackerWriter(3, 3);

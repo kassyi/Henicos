@@ -28,22 +28,22 @@ public class MixedHoistDeclarationManagedTests : IDisposable
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_HoistedBeforeLocalKernel_LaterDeclaratorReadsHoistedValue() =>
+    public void HoistDeclaration_ManagedHoistedBeforeLocal_LaterDeclaratorReadsHoistedValue() =>
         MixedHoistDeclarationTests.AssertHoistedBeforeLocal();
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_SideEffectOrderKernel_DeclaratorsRunInSourceOrder() =>
+    public void HoistDeclaration_ManagedSideEffectOrder_DeclaratorsRunInSourceOrder() =>
         MixedHoistDeclarationTests.AssertSideEffectOrder();
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_AlternatingHoistKernel_DeclaratorsRunInSourceOrder() =>
+    public void HoistDeclaration_ManagedAlternatingHoist_DeclaratorsRunInSourceOrder() =>
         MixedHoistDeclarationTests.AssertAlternatingHoist();
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_LabeledHoistedBeforeLocalKernel_LaterDeclaratorReadsHoistedValue() =>
+    public void HoistDeclaration_ManagedLabeledHoistedBeforeLocal_LaterDeclaratorReadsHoistedValue() =>
         MixedHoistDeclarationTests.AssertLabeledHoistedBeforeLocal();
 }
 #endif

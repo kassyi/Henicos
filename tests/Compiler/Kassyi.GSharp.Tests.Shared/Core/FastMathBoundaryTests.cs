@@ -11,7 +11,7 @@ public class FastMathBoundaryTests
 {
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_HostSide_FastMath_FallsBackToMathF()
+    public void FastMath_HostInvocation_FallsBackToMathF()
     {
         // Assert that invoking FastMath API directly on CPU falls back to MathF
         Assert.Equal(MathF.Exp(1.0f), FastMath.Exp(1.0f));
@@ -39,7 +39,7 @@ public class FastMathBoundaryTests
     [SkippableTheory]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [MemberData(nameof(GetBoundaryValues))]
-    public void Test_GpuSide_FastMath_Boundaries(float inputVal)
+    public void FastMath_ExtremeInputValues_ReturnsIeeeSpecialCaseResults(float inputVal)
     {
         // 1. Arrange
         float[] input = [inputVal];
@@ -131,7 +131,7 @@ public class FastMathBoundaryTests
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void Test_GpuSide_FastMath_EmptyInputs()
+    public void FastMath_EmptyInputs_ThrowsArgumentExceptionNamingInput()
     {
         // Empty array arguments are rejected instead of silently skipping the launch
         float[] empty = [];
@@ -148,7 +148,7 @@ public class FastMathBoundaryTests
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Stress)]
-    public void Test_GpuSide_FastMath_Stress()
+    public void FastMath_ConcurrentParallelLaunches_ReturnsAtLeastOneFromExpOnEveryLaunch()
     {
         const int iterations = 100;
 

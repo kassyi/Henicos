@@ -12,7 +12,7 @@ public class OperatorMacroRoutingTests : TranspilerTestBase
 {
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_OperatorMacroReachedThroughACall_IsExpanded()
+    public void Route_OperatorMacroReachedThroughCall_IsExpanded()
     {
         var result = new int[3];
 
@@ -23,7 +23,7 @@ public class OperatorMacroRoutingTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_RecursiveFunction_ExpandsOnEveryLevel()
+    public void Route_RecursiveFunction_ExpandsOnEveryLevel()
     {
         var result = new int[2];
 
@@ -34,7 +34,7 @@ public class OperatorMacroRoutingTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_ExtensionFunction_ExpandsInItsReducedCall()
+    public void Route_ExtensionFunction_ExpandsInReducedCall()
     {
         var result = new int[2];
 
@@ -45,7 +45,7 @@ public class OperatorMacroRoutingTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_FunctionCalledFromALambda_Expands()
+    public void Route_FunctionCalledFromLambda_Expands()
     {
         var result = new int[1];
 
@@ -56,7 +56,7 @@ public class OperatorMacroRoutingTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_ExtensionMethodGroup_ExpandsAndCapturesReceiverByValue()
+    public void Route_ExtensionMethodGroup_ExpandsAndCapturesReceiverByValue()
     {
         var result = new int[2];
 
@@ -67,7 +67,7 @@ public class OperatorMacroRoutingTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_NestedInPartialOuterClass_Expands()
+    public void Route_NestedInPartialOuterClass_Expands()
     {
         var result = new int[2];
 

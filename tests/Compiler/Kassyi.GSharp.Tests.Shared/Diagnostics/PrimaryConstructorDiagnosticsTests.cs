@@ -13,7 +13,7 @@ public class PrimaryConstructorDiagnosticsTests
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public async Task Test_ConvertedStructWithCapturedParameter_IsNotReportedOnCuda()
+    public async Task ConvertedStructWithCapturedParameter_CudaDialect_IsNotReported()
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(TestCase, "Cuda");
 
@@ -24,7 +24,7 @@ public class PrimaryConstructorDiagnosticsTests
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public async Task Test_IdenticalStructWithCapturedParameter_IsNotReportedOnCpu()
+    public async Task IdenticalStructWithCapturedParameter_CpuDialect_IsNotReported()
     {
         // Vector2 has the host alignment on the CPU dialect, so the struct is copied as it is, hidden field included
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(TestCase, "Cpu");

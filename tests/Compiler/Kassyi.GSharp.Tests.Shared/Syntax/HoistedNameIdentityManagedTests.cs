@@ -28,27 +28,27 @@ public class HoistedNameIdentityManagedTests : IDisposable
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_BarrierLocalSameNameInitializerKernel_PreservesMemberAndLocal() =>
+    public void ExecuteManaged_BarrierLocalSameNameInitializer_PreservesMemberAndLocal() =>
         HoistedNameIdentityTests.AssertInitializerSameName();
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_BarrierLocalSameNameWithKernel_PreservesMemberAndLocal() =>
+    public void ExecuteManaged_BarrierLocalSameNameWith_PreservesMemberAndLocal() =>
         HoistedNameIdentityTests.AssertWithSameName();
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_BarrierLocalSameNameMemberAccessKernel_PreservesMemberAndLocal() =>
+    public void ExecuteManaged_BarrierLocalSameNameMemberAccess_PreservesMemberAndLocal() =>
         HoistedNameIdentityTests.AssertMemberAccessSameName();
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_BarrierLocalSameNameLambdaParameterKernel_DoesNotCaptureHoistedLocal() =>
+    public void ExecuteManaged_BarrierLocalSameNameLambdaParameter_DoesNotCaptureHoistedLocal() =>
         HoistedNameIdentityTests.AssertLambdaParameterSameName();
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_SiblingBlockSameLabelKernel_BranchesToEachBlockLabel() =>
+    public void ExecuteManaged_SiblingBlockSameLabel_BranchesToEachBlockLabel() =>
         HoistedNameIdentityTests.AssertSiblingBlockSameLabel();
 }
 #endif
