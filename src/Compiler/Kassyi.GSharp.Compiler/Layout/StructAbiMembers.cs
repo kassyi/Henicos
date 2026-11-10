@@ -123,7 +123,8 @@ internal static class StructAbiMembers
 
     /// <summary>
     /// Whether <paramref name="property"/> is an instance property with a backing field and an accessor of its own that
-    /// uses the <c>field</c> keyword (<c>int X { get; set =&gt; field = value * 2; }</c>): the device stores the backing
+    /// uses the <c>field</c> keyword (<c>int X { get; set =&gt; field = value * 2; }</c>): the device stores the
+    /// backing
     /// field and calls the accessors as member functions.
     /// </summary>
     public static bool IsFieldBackedProperty(IPropertySymbol property) =>
@@ -134,41 +135,34 @@ internal static class StructAbiMembers
     /// <summary>Whether every accessor of <paramref name="property"/> is implemented by the C# compiler.</summary>
     /// <remarks>
     /// In source, an accessor without a body (<c>get;</c>) or the property of a positional record parameter; a
-    /// <c>partial</c> property always has bodies, on its
-    /// implementing part. From metadata, an accessor that the C# compiler marks <c>[CompilerGenerated]</c>, which it
-    /// does for an implemented accessor only. Anything else counts as written by hand: treating an auto-property as one
-    /// whose accessors use <c>field</c> gives the same result (its accessors read and write the backing field), while the
-    /// opposite would drop the accessors.
+    /// <c>partial</c> property always has bodies, on its implementing part. From metadata, an accessor that the C#
+    /// compiler marks <c>[CompilerGenerated]</c>, which it does for an implemented accessor only. Anything else counts
+    /// as written by hand: treating an auto-property as one whose accessors use <c>field</c> gives the same result (its
+    /// accessors read and write the backing field), while the opposite would drop the accessors.
     /// </remarks>
-    internal static bool AreAccessorsAutoImplemented(IPropertySymbol property)
-    {
-        if (property.DeclaringSyntaxReferences.IsEmpty)
+    internal static bool AreAccessorsAutoImplemented(IPropertySymbol property) =>
+        property.DeclaringSyntaxReferences.IsEmpty
+            ? AreMetadataAccessorsGenerated(property)
+            : property.DeclaringSyntaxReferences
+                .AsStackEnumerable()
+                .All(static reference => IsAutoImplementedDeclaration(reference.GetSyntax()));
+
+    private static bool AreMetadataAccessorsGenerated(IPropertySymbol property) =>
+        IsCompilerGenerated(property.GetMethod) && IsCompilerGenerated(property.SetMethod);
+
+    // A declaration whose accessors the C# compiler implements: the property of a positional record parameter, or a
+    // property that is not partial, has no expression body and no accessor body
+    private static bool IsAutoImplementedDeclaration(SyntaxNode syntax) =>
+        syntax switch
         {
-            return IsCompilerGenerated(property.GetMethod) && IsCompilerGenerated(property.SetMethod);
-        }
-
-        foreach (var reference in property.DeclaringSyntaxReferences)
-        {
-            var syntax = reference.GetSyntax();
-
-            // The property of a positional record parameter, which the C# compiler implements
-            if (syntax is ParameterSyntax)
-            {
-                continue;
-            }
-
-            if (syntax is not PropertyDeclarationSyntax declaration ||
-                declaration.Modifiers.Any(SyntaxKind.PartialKeyword) ||
-                declaration.ExpressionBody != null ||
-                declaration.AccessorList is not { } accessorList ||
-                accessorList.Accessors.AsStackEnumerable().Any(static a => a.Body != null || a.ExpressionBody != null))
-            {
-                return false;
-            }
-        }
-
-        return true;
-    }
+            ParameterSyntax => true,
+            PropertyDeclarationSyntax { ExpressionBody: null, AccessorList: { } accessorList } declaration =>
+                !declaration.Modifiers.Any(SyntaxKind.PartialKeyword) &&
+                !accessorList.Accessors
+                    .AsStackEnumerable()
+                    .Any(static a => a.Body != null || a.ExpressionBody != null),
+            _ => false
+        };
 
     // An accessor that is missing counts as generated: { get; } has no setter to inspect
     private static bool IsCompilerGenerated(IMethodSymbol? accessor) =>
@@ -331,15 +325,26 @@ internal static class StructAbiMembers
             return false;
         }
 
-        private bool TryCreate(IFieldSymbol field, out StructAbiMember member)
+        // The backing field of a property, listed as the property: an auto-property, or one that uses the field keyword
+        private static bool TryCreatePropertyMember(IFieldSymbol field, out StructAbiMember member)
         {
             member = default;
-            if (TryGetBackingFieldProperty(field, out var property))
+            if (!TryGetBackingFieldProperty(field, out var property))
             {
-                var kind = AreAccessorsAutoImplemented(property)
-                    ? StructAbiMemberKind.AutoProperty
-                    : StructAbiMemberKind.FieldBackedProperty;
-                member = new StructAbiMember(property, property.Name, field.Type, 1, kind, field);
+                return false;
+            }
+
+            var kind = AreAccessorsAutoImplemented(property)
+                ? StructAbiMemberKind.AutoProperty
+                : StructAbiMemberKind.FieldBackedProperty;
+            member = new StructAbiMember(property, property.Name, field.Type, 1, kind, field);
+            return true;
+        }
+
+        private bool TryCreate(IFieldSymbol field, out StructAbiMember member)
+        {
+            if (TryCreatePropertyMember(field, out member))
+            {
                 return true;
             }
 

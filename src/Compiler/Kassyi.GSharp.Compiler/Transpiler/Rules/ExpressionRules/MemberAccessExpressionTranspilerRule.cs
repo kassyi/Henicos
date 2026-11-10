@@ -424,9 +424,7 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
         var symbol = semanticModel.GetSymbol(node.Name) ??
                      semanticModel.GetDeclaredSymbol<ISymbol>(node.Name) ??
                      memberSymbol;
-        var name = symbol is IPropertySymbol property && PropertyAccessorCall.WritesBackingField(node, symbol, dialect)
-            ? CppNameResolver.ResolveBackingField(property)
-            : CppNameResolver.Resolve(symbol, node.Name.Identifier.ValueText, dialect);
+        var name = CppNameResolver.ResolveReference(node, symbol, node.Name.Identifier.ValueText, dialect);
         if (name.Kind != CppNameKind.Verbatim)
         {
             return MemberNamePlan.Resolved(

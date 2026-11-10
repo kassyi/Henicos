@@ -187,7 +187,9 @@ public class StructAbiMembersTests
             null,
             RoslynTestUtility.ReadTestCase("Layout/FieldKeywordPropertyCases.cs"));
         var consumer = DeviceLibraryBuilder.CreateConsumer("class Consumer { }", library);
-        var structType = consumer.GetTypeByMetadataName("Kassyi.GSharp.Tests.Shared.TestCases.Layout.FieldKeywordLayout");
+        var structType = consumer.GetTypeByMetadataName(
+            "Kassyi.GSharp.Tests.Shared.TestCases.Layout.FieldKeywordLayout"
+        );
 
         Assert.NotNull(structType);
         Assert.True(structType.DeclaringSyntaxReferences.IsEmpty);

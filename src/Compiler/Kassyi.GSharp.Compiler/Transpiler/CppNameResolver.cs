@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules;
+
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
 /// <summary>Selects how a <see cref="CppName"/> is spelled in emitted C++.</summary>
@@ -101,8 +103,9 @@ internal static class CppNameResolver
                                 IsEmittedStructMember(field, dialect) => CppName.Member(parameterName),
         // [WHY] A property whose accessors use the field keyword keeps its name for the accessor member functions, and
         // C++ allows no data member of the same name, so its backing field is a family of its own
-        IFieldSymbol { IsStatic: false } backingField when IsEmittedStructMember(symbol, dialect) &&
-                                                          StructAbiMembers.TryGetBackingFieldProperty(backingField, out var property)
+        IFieldSymbol { IsStatic: false } backingField
+            when IsEmittedStructMember(symbol, dialect) &&
+                 StructAbiMembers.TryGetBackingFieldProperty(backingField, out var property)
             => CppName.BackingField(property.Name),
         IFieldSymbol { IsStatic: false } or IPropertySymbol { IsStatic: false } when IsEmittedStructMember(symbol, dialect)
             => CppName.Member(symbol.Name),
@@ -144,10 +147,23 @@ internal static class CppNameResolver
     }
 
     /// <summary>
-    /// The C++ name of the backing field of <paramref name="property"/>, a property whose accessors use the <c>field</c>
+    /// The C++ name of the backing field of <paramref name="property"/>, a property whose accessors use the
+    /// <c>field</c>
     /// keyword (<see cref="StructAbiMembers.IsFieldBackedProperty"/>).
     /// </summary>
     public static CppName ResolveBackingField(IPropertySymbol property) => CppName.BackingField(property.Name);
+
+    /// <summary>
+    /// The C++ name that <paramref name="reference"/> (a name or a member access) writes for <paramref name="symbol"/>:
+    /// the backing field when it assigns a property without a setter whose accessors use the <c>field</c> keyword
+    /// (<see cref="PropertyAccessorCall.WritesBackingField(SyntaxNode, ISymbol?, ITranspilerDialect)"/>), the name of
+    /// the symbol otherwise.
+    /// </summary>
+    public static CppName ResolveReference(SyntaxNode reference, ISymbol? symbol, string spelling,
+        ITranspilerDialect dialect, int region = 0) =>
+        symbol is IPropertySymbol property && PropertyAccessorCall.WritesBackingField(reference, symbol, dialect)
+            ? ResolveBackingField(property)
+            : Resolve(symbol, spelling, dialect, region);
 
     /// <summary>Emits the name of <paramref name="symbol"/>.</summary>
     public static void AppendSymbolName(ISymbol symbol, ref TranspileContext context) =>

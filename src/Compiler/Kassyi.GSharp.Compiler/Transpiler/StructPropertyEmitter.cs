@@ -36,18 +36,23 @@ internal static class StructPropertyEmitter
 
         if (plan.Getter.Body == PropertyAccessorBody.ReadsBackingField)
         {
-            // { return <backing field>; }
-            using (context.Emitter.Writer.Scope())
-            {
-                context.Emitter.Writer.Append("return ")
-                    .AppendCppName(CppNameResolver.ResolveBackingField(property))
-                    .AppendLine(";");
-            }
-
-            return;
+            WriteBackingFieldLoad(property, ref context);
         }
+        else
+        {
+            TranspileWrittenBody(plan.Getter, isVoidExpression: false, ref context);
+        }
+    }
 
-        TranspileWrittenBody(plan.Getter, isVoidExpression: false, ref context);
+    // { return <backing field>; }
+    private static void WriteBackingFieldLoad(IPropertySymbol property, ref TranspileContext context)
+    {
+        using (context.Emitter.Writer.Scope())
+        {
+            context.Emitter.Writer.Append("return ")
+                .AppendCppName(CppNameResolver.ResolveBackingField(property))
+                .AppendLine(";");
+        }
     }
 
     // __device__ inline void <property name>(<type> <value parameter>) { <setter body> }
@@ -72,18 +77,24 @@ internal static class StructPropertyEmitter
         context.Emitter.Writer.Append(' ');
         if (plan.Setter.Body == PropertyAccessorBody.WritesBackingField)
         {
-            // { <backing field> = <value parameter>; }
-            using (context.Emitter.Writer.Scope())
-            {
-                context.Emitter.Writer.AppendCppName(CppNameResolver.ResolveBackingField(property)).Append(" = ");
-                CppNameResolver.AppendSymbolName(valueParameter, ref context);
-                context.Emitter.Writer.AppendLine(";");
-            }
-
-            return;
+            WriteBackingFieldStore(property, valueParameter, ref context);
         }
+        else
+        {
+            TranspileWrittenBody(plan.Setter, isVoidExpression: true, ref context);
+        }
+    }
 
-        TranspileWrittenBody(plan.Setter, isVoidExpression: true, ref context);
+    // { <backing field> = <value parameter>; }
+    private static void WriteBackingFieldStore(IPropertySymbol property, IParameterSymbol valueParameter,
+        ref TranspileContext context)
+    {
+        using (context.Emitter.Writer.Scope())
+        {
+            context.Emitter.Writer.AppendCppName(CppNameResolver.ResolveBackingField(property)).Append(" = ");
+            CppNameResolver.AppendSymbolName(valueParameter, ref context);
+            context.Emitter.Writer.AppendLine(";");
+        }
     }
 
     private static void TranspileWrittenBody(in PropertyAccessorPlan accessor, bool isVoidExpression,
@@ -98,7 +109,12 @@ internal static class StructPropertyEmitter
         var saved = SemanticModelSwitch.Enter(ref context, syntaxTree);
         try
         {
-            LambdaTranspilerHelper.TranspileLambdaBody(ref context, accessor.Block, accessor.Expression, isVoidExpression);
+            LambdaTranspilerHelper.TranspileLambdaBody(
+                ref context,
+                accessor.Block,
+                accessor.Expression,
+                isVoidExpression
+            );
         }
         finally
         {

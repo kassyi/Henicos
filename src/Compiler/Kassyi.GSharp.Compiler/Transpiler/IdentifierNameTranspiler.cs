@@ -91,15 +91,13 @@ internal static class IdentifierNameTranspiler
             context.Emitter.Writer.Append(GSharpInternalNames.Lowering.ConstructorSelf).Append('.');
         }
 
-        var name = symbol is IPropertySymbol property &&
-                   PropertyAccessorCall.WritesBackingField(node, symbol, context.Emitter.Dialect)
-            ? CppNameResolver.ResolveBackingField(property)
-            : CppNameResolver.Resolve(
-                symbol,
-                node.Identifier.ValueText,
-                context.Emitter.Dialect,
-                LoweringIdentity.GetRegion(node)
-            );
+        var name = CppNameResolver.ResolveReference(
+            node,
+            symbol,
+            node.Identifier.ValueText,
+            context.Emitter.Dialect,
+            LoweringIdentity.GetRegion(node)
+        );
         if (name.Kind == CppNameKind.Verbatim && TryGetMappedInitializerMember(node, symbol, ref context) is { } mapped)
         {
             context.Emitter.Writer.Append(mapped);

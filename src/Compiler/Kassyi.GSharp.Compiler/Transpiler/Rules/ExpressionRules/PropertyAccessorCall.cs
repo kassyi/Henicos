@@ -3,7 +3,8 @@ using Microsoft.CodeAnalysis.Operations;
 namespace Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules;
 
 /// <summary>
-/// Turns a read or write of a property with accessor functions of a struct that G# emits into a call of its getter or setter:
+/// Turns a read or write of a property with accessor functions of a struct that G# emits into a call of its getter or
+/// setter:
 /// <c>s.Sum</c> becomes <c>s.__gsharp_mb_Sum()</c>, <c>Sum</c> inside another accessor of the struct becomes
 /// <c>__gsharp_mb_Sum()</c>, and <c>s.Value = x</c> (including in an object or <c>with</c> initializer) becomes
 /// <c>s.__gsharp_mb_Value(x)</c>.
@@ -11,17 +12,20 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules;
 /// <remarks>
 /// <c>StructPropertyEmitter</c> emits the getter and setter as member functions under the C++ name of the property
 /// (<see cref="CppNameResolver"/>), so the caller writes the receiver and the name as for any member, a <c>ref</c>
-/// receiver included. A property with accessor member functions is defined by <see cref="StructAbiMembers.HasAccessorFunctions"/>.
+/// receiver included. A property with accessor member functions is defined by <see
+/// cref="StructAbiMembers.HasAccessorFunctions"/>.
 /// </remarks>
 internal static class PropertyAccessorCall
 {
-    /// <summary>Whether <paramref name="symbol"/> is a property with accessor functions that is read through its getter.</summary>
+    /// <summary>Whether <paramref name="symbol"/> is a property with accessor functions that is read through its
+    /// getter.</summary>
     public static bool IsGetter(ISymbol? symbol, ITranspilerDialect dialect) =>
         symbol is IPropertySymbol { GetMethod: not null, ContainingType: { } type } property &&
         GlobalCppNames.IsEncodedUserType(type, dialect) &&
         StructAbiMembers.HasAccessorFunctions(property);
 
-    /// <summary>Whether <paramref name="symbol"/> is a property with accessor functions that is assigned through its setter.</summary>
+    /// <summary>Whether <paramref name="symbol"/> is a property with accessor functions that is assigned through its
+    /// setter.</summary>
     public static bool IsSetter(ISymbol? symbol, ITranspilerDialect dialect) =>
         symbol is IPropertySymbol { SetMethod: not null, ContainingType: { } type } property &&
         GlobalCppNames.IsEncodedUserType(type, dialect) &&
@@ -29,7 +33,8 @@ internal static class PropertyAccessorCall
 
     /// <summary>
     /// Whether <paramref name="node"/>, the target of an assignment, names a property without a setter whose accessors
-    /// use the <c>field</c> keyword: C# assigns its backing field (in a constructor of the struct or an initializer of the
+    /// use the <c>field</c> keyword: C# assigns its backing field (in a constructor of the struct or an initializer of
+    /// the
     /// property, CS0200 elsewhere), so the name is the backing field rather than the getter.
     /// </summary>
     public static bool WritesBackingField(SyntaxNode node, ISymbol? symbol, ITranspilerDialect dialect) =>
@@ -38,7 +43,8 @@ internal static class PropertyAccessorCall
         StructAbiMembers.IsFieldBackedProperty(property) &&
         IsAssignmentTarget(node);
 
-    /// <summary><c>WritesBackingField</c> of the target <paramref name="expression"/> of an assignment or a step.</summary>
+    /// <summary><c>WritesBackingField</c> of the target <paramref name="expression"/> of an assignment or a
+    /// step.</summary>
     public static bool WritesBackingField(ExpressionSyntax expression, ref TranspileContext context) =>
         WritesBackingField(
             expression,
@@ -161,7 +167,8 @@ internal static class PropertyAccessorCall
 
     /// <summary>
     /// Emits <paramref name="assignment"/> as a setter call (<c>&lt;left&gt;(&lt;right&gt;)</c>) when its target is a
-    /// property with accessor functions (through <see cref="PropertyAccessorAssignment"/> when its value is used), or as an ordinary
+    /// property with accessor functions (through <see cref="PropertyAccessorAssignment"/> when its value is used), or
+    /// as an ordinary
     /// assignment (<c>&lt;left&gt; = &lt;right&gt;</c>) otherwise.
     /// </summary>
     public static void TranspileAssignment(AssignmentExpressionSyntax assignment, string equalsOperator,

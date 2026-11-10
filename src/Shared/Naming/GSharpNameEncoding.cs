@@ -19,7 +19,8 @@ namespace Kassyi.GSharp.Naming;
 ///   <item><description><c>__gsharp_id_{ordinal}_{name}</c>: parameters, locals, labels and local functions. The ordinal is omitted when the declaration could not be located.</description></item>
 ///   <item><description><c>__gsharp_il_{region}_{ordinal}_{name}</c>: parameters, locals, labels and local functions of a declaration that a pre-lowering or inline expansion copied into the method; the first number is the copy (region).</description></item>
 ///   <item><description><c>__gsharp_mb_{name}</c>: instance fields and properties of structs that G# emits.</description></item>
-///   <item><description><c>__gsharp_bf_{name}</c>: the backing field of a property of such a struct whose accessors use the <c>field</c> keyword; it decodes to <c>{name}.field</c>.</description></item>
+///   <item><description><c>__gsharp_bf_{name}</c>: the backing field of a property of such a struct whose accessors use
+/// the <c>field</c> keyword; it decodes to <c>{name}.field</c>.</description></item>
 ///   <item><description><c>__gsharp_ty_</c> / <c>__gsharp_fn_</c> / <c>__gsharp_k_</c> followed by the encoded C# path (<c>Encode</c>): types, device functions and kernel entry points, which share one global C++ scope.</description></item>
 ///   <item><description><c>__gsharp_tp_{name}</c>: template parameters.</description></item>
 /// </list>

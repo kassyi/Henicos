@@ -310,7 +310,8 @@ internal static class DeconstructionAssignment
         }
     }
 
-    // A target is bound to a reference (auto&& __gsharp_seq_<n> = <target>); a property whose setter is called cannot be, so its
+    // A target is bound to a reference (auto&& __gsharp_seq_<n> = <target>); a property whose setter is called cannot
+    // be, so its
     // receiver is, and the setter is called on it. Returns the temporary, or ReceiverBound for a receiver (the store
     // visits the target, which writes the receiver's temporary)
     private static int BindTarget(ExpressionSyntax target, ref TranspileContext context)

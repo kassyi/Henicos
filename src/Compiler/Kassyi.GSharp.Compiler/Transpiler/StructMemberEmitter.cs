@@ -136,12 +136,15 @@ internal static class StructMemberEmitter
         CppNameResolver.Resolve(member, member.Name, context.Emitter.Dialect).ToString();
 
     /// <summary>
-    /// The C++ name of the storage of a member of the native layout: the backing field of a property whose accessors use
+    /// The C++ name of the storage of a member of the native layout: the backing field of a property whose accessors
+    /// use
     /// the <c>field</c> keyword (the accessor member functions keep the name of the property), the member otherwise.
     /// </summary>
     public static string GetMemberName(in StructAbiMember member, ref TranspileContext context) =>
         GetMemberName(
-            member is { Kind: StructAbiMemberKind.FieldBackedProperty, StorageField: { } storage } ? storage : member.Symbol,
+            member is { Kind: StructAbiMemberKind.FieldBackedProperty, StorageField: { } storage }
+                ? storage
+                : member.Symbol,
             ref context
         );
 
