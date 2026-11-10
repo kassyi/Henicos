@@ -66,7 +66,7 @@ public class GpuBigIntCoreAdvancedMathTests
 
     [SkippableTheory]
     [InlineData(GpuExecutionEngine.GSharpAot)]
-    public void DivRem_ZeroDivisorAndExtrema_ThrowsDivideByZeroOrMatchesExpected(GpuExecutionEngine engine)
+    public void DivRem_SmallerEqualPowerOfTwoAndZeroDividend_ReturnsQuotientAndRemainder(GpuExecutionEngine engine)
     {
         CudaCapability.EnsureGpuAvailable();
         using var context = new GpuWorkspace(TestSizeWords * 3, engine);
@@ -314,7 +314,7 @@ public class GpuBigIntCoreAdvancedMathTests
 
     [SkippableTheory]
     [InlineData(GpuExecutionEngine.GSharpAot)]
-    public void ModPow_ZeroModulusAndExtrema_ThrowsDivideByZeroOrMatchesExpected(GpuExecutionEngine engine)
+    public void ModPow_ModulusOneZeroBaseAndZeroExponent_ReturnsExpectedResult(GpuExecutionEngine engine)
     {
         CudaCapability.EnsureGpuAvailable();
         using var context = new GpuWorkspace(TestSizeWords * 13, engine);

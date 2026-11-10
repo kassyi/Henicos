@@ -35,7 +35,8 @@ Agreement with a reference misses a bug that shares an assumption with the refer
 ## 2. Write each property as a check that always runs
 
 - Write properties with xUnit `Assert.*`. Do not use `Debug.Assert` for a property: Release builds remove it.
-- Each test method checks its results. Do not write a test that only calls APIs and has no `Assert`; fix one when you find it (for example, `GpuBigIntDivRemTests.DivRemReduceInverseSqrtHeron_FixedOperands_MatchesExactResults` calls four APIs and checks nothing).
+- Each test method checks its results. Do not write a test that only calls APIs and has no `Assert`;
+  fix one when you find it.
 - Above each property check, write one or two comment lines: what it checks and why it must hold.
 - **Do not take the expected value from the code under test**: compute the expected value with the reference implementation from the input data that the test holds. If the expected value is built from a value read back from the GPU, a bug in the readback (`ToBigInteger`, ...) cancels out between input and result and stays hidden. Test the readback itself with a separate round-trip test.
 

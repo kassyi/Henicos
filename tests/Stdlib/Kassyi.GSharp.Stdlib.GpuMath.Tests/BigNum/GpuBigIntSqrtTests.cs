@@ -24,7 +24,7 @@ public class GpuBigIntSqrtTests
     [SkippableFact]
     [Category(TestCategory.Stdlib)]
     [Scenario(TestScenario.HappyPath)]
-    public void Sqrt_LargeValues_ProducesExpectedWordCount()
+    public void Sqrt_LargeValues_ProducesNonEmptyResult()
     {
         CudaCapability.EnsureGpuAvailable();
         using var ctx = new GpuWorkspace(512, GpuExecutionEngine.GSharpAot);

@@ -25,7 +25,7 @@ public class GpuBigIntMulTests
     [SkippableFact]
     [Category(TestCategory.Stdlib)]
     [Scenario(TestScenario.HappyPath)]
-    public void Multiply_LargeValues_ProducesExpectedWordCount()
+    public void Multiply_LargeValues_ProducesNonEmptyResult()
     {
         CudaCapability.EnsureGpuAvailable();
         using var ctx = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
