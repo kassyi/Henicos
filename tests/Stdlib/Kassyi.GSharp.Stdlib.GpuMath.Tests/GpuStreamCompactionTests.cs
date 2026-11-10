@@ -128,11 +128,11 @@ public class GpuStreamCompactionTests : IDisposable
         using var buffer = new GpuBigUInt(workspace, 4);
         var ptr = buffer.DevicePointer;
 
-        // mutant: StreamCompactionOrchestrator.cs:20-23 early return removed
+        // mutant: StreamCompactionOrchestrator.cs:92-100 early return removed
         var scanError = Record.Exception(() => StreamCompactionOrchestrator.ExecuteExclusiveScan(workspace, ptr, ptr, 0));
         Assert.Null(scanError);
 
-        // mutant: StreamCompactionOrchestrator.cs:89 `||` -> `&&`, `<= 0` -> `< 0` (either operand), L91 `return` removed
+        // mutant: StreamCompactionOrchestrator.cs:200 `||` -> `&&`, `<= 0` -> `< 0` (either operand), L202 `return` removed
         foreach (var (count, words) in new[] { (0, 1), (1, 0), (0, 0) })
         {
             var request = new StreamCompactionOrchestrator.StreamCompactionRequest(ptr, ptr, ptr, ptr, count, words);
@@ -148,14 +148,14 @@ public class GpuStreamCompactionTests : IDisposable
     [SkippableTheory]
     [Category(TestCategory.Stdlib)]
     [Scenario(TestScenario.Boundary)]
-    // mutant: StreamCompactionOrchestrator.cs:30 `(elementCount + 1) / 2` -> `(elementCount + 1) * 2`
+    // mutant: StreamCompactionOrchestrator.cs:109 `(elementCount + 1) / 2` -> `(elementCount + 1) * 2`
     // (from 512 elements the block exceeds 1024 threads)
     [InlineData(1)]
     [InlineData(511)]
     [InlineData(512)]
     [InlineData(1000)]
     [InlineData(2048)]
-    // mutant: L48 / L51 / L57 / L60 (multi-block path: block size, per-block scan, recursive scan, block-sum add)
+    // mutant: L124 / L127 / L133 / L137 (multi-block path: block size, per-block scan, recursive scan, block-sum add)
     [InlineData(2049)]
     [InlineData(5000)]
     [InlineData(6151)]
@@ -217,7 +217,7 @@ public class GpuStreamCompactionTests : IDisposable
         using var gpuOutput = new GpuBigUInt(workspace, dirty);
 
         StreamCompactionOrchestrator.ExecuteExclusiveScan(workspace, gpuScan.DevicePointer, gpuPredicates.DevicePointer, ElementCount);
-        // mutant: StreamCompactionOrchestrator.cs:96 `ElementCount * WordsPerElement` -> `/`, L99 memset removed
+        // mutant: StreamCompactionOrchestrator.cs:207 `ElementCount * WordsPerElement` -> `/`, L210 memset removed
         StreamCompactionOrchestrator.CompactArray(
             workspace,
             new StreamCompactionOrchestrator.StreamCompactionRequest(

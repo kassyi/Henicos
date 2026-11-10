@@ -339,7 +339,7 @@ public class GSharpKernelFloatProviderTests : IDisposable
         }
 
         // ln 0 is undefined.
-        // mutant: GpuBigFloatTranscendentals.cs:267 `throw` removed
+        // mutant: GpuBigFloatTranscendentals.cs:268 `throw` removed
         Assert.Throws<InvalidOperationException>(() =>
         {
             var context = CreateContext(workspace);
@@ -431,7 +431,7 @@ public class GSharpKernelFloatProviderTests : IDisposable
     [Category(TestCategory.Stdlib)]
     [Scenario(TestScenario.Boundary)]
     // mutant: GSharpKernelFloatProvider.cs:401 `- 32L * (words + marginWords)` -> `... + 1` (4 and 16, inverse)
-    // mutant: GpuBigIntDivRem.Sqrt.cs:109 `SqrtFloorCorrection(...)` removed (9: the estimate 3 - 2^-126 is kept)
+    // mutant: GpuBigIntDivRem.Sqrt.cs:103 `SqrtFloorCorrection(...)` removed (9: the estimate 3 - 2^-126 is kept)
     [InlineData(4u, false, 2, 1)]
     [InlineData(9u, false, 3, 1)]
     [InlineData(4u, true, 1, 2)]

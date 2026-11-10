@@ -84,7 +84,7 @@ public class GpuBigIntModPowTests
         using var m = new GpuBigUInt(ctx, mArr);
         using var result = new GpuBigUInt(ctx, NumWords);
 
-        // mutant: ModPowZeroSyncController.cs:108 `e == 0 && i == expWords - 1` -> `e != 0 && ...`
+        // mutant: ModPowZeroSyncController.cs:106 `e == 0 && i == expWords - 1` -> `e != 0 && ...`
         // (the last word would stop after its first bit)
         GpuBigIntDivRem.ModPow(a, e, m, result);
 

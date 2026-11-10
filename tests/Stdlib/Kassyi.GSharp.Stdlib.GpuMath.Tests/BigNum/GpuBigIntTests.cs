@@ -86,13 +86,13 @@ public class GpuBigIntegerTests : IDisposable
     public void Create_RejectsNonZeroExponentAndNormalizesNegativeZero()
     {
         // An integer has exponent 0.
-        // mutant: GpuBigInt.cs:52 `exponent != 0` -> `exponent == 0`; :54 throw removed
+        // mutant: GpuBigInt.cs:59 `exponent != 0` -> `exponent == 0`; :61 throw removed
         using var seven = GpuBigUInt.FromBigInteger(_context, 7, 2);
         var error = Assert.Throws<ArgumentOutOfRangeException>(() => GpuBigInt.Create(seven, 1, false));
         Assert.Equal("exponent", error.ParamName);
 
         // The sign is kept for a non-zero magnitude and dropped for zero (no negative zero).
-        // mutant: GpuBigInt.cs:57 `isNegative && !magnitude.IsZero()` -> `||` / `magnitude.IsZero()`
+        // mutant: GpuBigInt.cs:64 `isNegative && !magnitude.IsZero()` -> `||` / `magnitude.IsZero()`
         using var zero = GpuBigUInt.FromBigInteger(_context, 0, 2);
         Assert.False(GpuBigInt.Create(zero, 0, true).IsNegative);
         Assert.True(GpuBigInt.Create(seven, 0, true).IsNegative);
@@ -144,7 +144,7 @@ public class GpuBigIntegerTests : IDisposable
 
         // The explicitly implemented IGpuBigNumber<GpuBigInt> operators evaluate to the BigInteger results
         // (division truncates toward zero).
-        // mutant: GpuBigInt.cs:192 / :196 / :200 / :204 operator body replaced (Stryker: statement / arithmetic)
+        // mutant: GpuBigInt.cs:216 / :220 / :224 / :228 operator body replaced (Stryker: statement / arithmetic)
         using var sum = Add(left, right);
         using var difference = Subtract(left, right);
         using var product = Multiply(left, right);

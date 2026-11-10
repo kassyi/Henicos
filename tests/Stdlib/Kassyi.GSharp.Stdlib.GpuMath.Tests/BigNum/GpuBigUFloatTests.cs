@@ -187,14 +187,14 @@ public class GpuBigUFloatTests : IDisposable
         CudaCapability.EnsureGpuAvailable();
 
         // The value 12 * 2^-3 = 1.5 lies in [2^0, 2^1): EffectiveScale = bit length 4 + exponent -3 = 1.
-        // mutant: GpuBigUFloat.cs:46 `Exponent + GetBitLength()` -> `Exponent - GetBitLength()`
+        // mutant: GpuBigUFloat.cs:49 `Exponent + GetBitLength()` -> `Exponent - GetBitLength()`
         using var twelveSig = new GpuBigUInt(_context, [12u]);
         using var scaled = new GpuBigUFloat(twelveSig, -3);
         Assert.Equal(1L, scaled.EffectiveScale);
 
         // An unsigned value cannot be negative, except zero, whose sign carries no value.
-        // mutant: GpuBigUFloat.cs:57 `isNegative && !IsZero()` -> `isNegative || !IsZero()` / `isNegative && IsZero()`,
-        // L59 `throw` removed
+        // mutant: GpuBigUFloat.cs:63 `isNegative && !IsZero()` -> `isNegative || !IsZero()` / `isNegative && IsZero()`,
+        // L65 `throw` removed
         using var nonZero = new GpuBigUInt(_context, [7u]);
         Assert.Throws<ArgumentOutOfRangeException>(() => GpuBigUFloat.Create(nonZero, 0, isNegative: true));
         using var zero = new GpuBigUInt(_context, [0u]);
@@ -204,7 +204,7 @@ public class GpuBigUFloatTests : IDisposable
         Assert.Equal(new BigInteger(7), positive.Significand.ToBigInteger());
 
         // Equal values with different representations are neither greater nor less than each other.
-        // mutant: GpuBigUFloat.cs:275 `CompareTo(right) > 0` -> `>= 0` (and the same for `<` at L267)
+        // mutant: GpuBigUFloat.cs:285 `CompareTo(right) > 0` -> `>= 0` (and the same for `<` at L277)
         using var aSig = new GpuBigUInt(_context, [12u]);
         using var cSig = new GpuBigUInt(_context, [3u]);
         using var a = new GpuBigUFloat(aSig, 0);
@@ -218,16 +218,16 @@ public class GpuBigUFloatTests : IDisposable
     public static TheoryData<uint, int, int, bool, uint, int> NormalizeCases => new()
     {
         // No carry and no shift keeps the value and its exponent.
-        // mutant: GpuBigUFloat.cs:133 `IsZero() && !carryOut` -> `IsZero() || !carryOut` / `!(...)` (returns exponent 0)
+        // mutant: GpuBigUFloat.cs:136 `IsZero() && !carryOut` -> `IsZero() || !carryOut` / `!(...)` (returns exponent 0)
         { 10u, 5, 0, false, 10u, 5 },
         // Zero without a carry becomes the canonical zero with exponent 0.
-        // mutant: GpuBigUFloat.cs:133 `!carryOut` -> `carryOut`, L134 block removed
+        // mutant: GpuBigUFloat.cs:136 `!carryOut` -> `carryOut`, L137 block removed
         { 0u, 7, 0, false, 0u, 0 },
         // A carry out halves the significand and raises the exponent by one.
-        // mutant: GpuBigUFloat.cs:143 `>> 1` -> `<< 1`, L147 `Exponent + 1` -> `Exponent - 1`
+        // mutant: GpuBigUFloat.cs:148 `>> 1` -> `<< 1`, L151 `Exponent + 1` -> `Exponent - 1`
         { 10u, 5, 0, true, 5u, 6 },
         // Leading zeros shift the significand left and lower the exponent by the same amount.
-        // mutant: GpuBigUFloat.cs:152 `<< leadingZeros` -> `>> leadingZeros`, L156 `Exponent - leadingZeros` -> `+`
+        // mutant: GpuBigUFloat.cs:156 `<< leadingZeros` -> `>> leadingZeros`, L159 `Exponent - leadingZeros` -> `+`
         { 10u, 5, 3, false, 80u, 2 },
     };
 
@@ -271,7 +271,7 @@ public class GpuBigUFloatTests : IDisposable
         using var sig = new GpuBigUInt(_context, [10u]);
         var value = new GpuBigUFloat(sig, 3);
 
-        // mutant: GpuBigUFloat.cs:169 body removed / `Exponent` replaced
+        // mutant: GpuBigUFloat.cs:182 body removed / `Exponent` replaced
         var (quotient, remainder) = value.DivideByUInt32(3);
         using (quotient)
         {

@@ -63,16 +63,16 @@ public class GpuRadixConverterTests : IDisposable
         using var sw = new StringWriter();
 
         // A 5-digit value takes the leaf path, which never uses the workspace, so only the argument check rejects null.
-        // mutant: GpuRadixConverter.cs:56 `ArgumentNullException.ThrowIfNull(workspace)` removed
+        // mutant: GpuRadixConverter.cs:65 `ArgumentNullException.ThrowIfNull(workspace)` removed
         var nullError = Assert.Throws<ArgumentNullException>(() => GpuRadixConverter.ConvertAndWrite(null, value, 5, sw));
         Assert.Equal("workspace", nullError.ParamName);
 
-        // mutant: GpuRadixConverter.cs:57 `ArgumentNullException.ThrowIfNull(writer)` removed (the leaf throws a NullReferenceException)
+        // mutant: GpuRadixConverter.cs:66 `ArgumentNullException.ThrowIfNull(writer)` removed (the leaf throws a NullReferenceException)
         var writerError = Assert.Throws<ArgumentNullException>(() => GpuRadixConverter.ConvertAndWrite(_context, value, 5, null));
         Assert.Equal("writer", writerError.ParamName);
 
         // At least one digit is written.
-        // mutant: GpuRadixConverter.cs:58 `ArgumentOutOfRangeException.ThrowIfNegativeOrZero(targetDigits)` removed
+        // mutant: GpuRadixConverter.cs:67 `ArgumentOutOfRangeException.ThrowIfNegativeOrZero(targetDigits)` removed
         Assert.Throws<ArgumentOutOfRangeException>(() => GpuRadixConverter.ConvertAndWrite(_context, value, 0, sw));
         Assert.Throws<ArgumentOutOfRangeException>(() => GpuRadixConverter.ConvertAndWrite(_context, value, -1, sw));
         Assert.Equal(string.Empty, sw.ToString());
@@ -87,7 +87,7 @@ public class GpuRadixConverterTests : IDisposable
     {
         // The caller keeps the value: after the conversion it still holds the same number (a freed buffer is zeroed
         // and returned to the pool). 5 digits is a leaf; 10001 digits splits on the GPU first.
-        // mutant: GpuRadixConverter.cs:69 `OwnsValue = false` -> `OwnsValue = true`
+        // mutant: GpuRadixConverter.cs:78 `OwnsValue = false` -> `OwnsValue = true`
         using var value = new GpuBigUInt(_context, new uint[] { word });
         using var sw = new StringWriter();
 
@@ -212,8 +212,8 @@ public class GpuRadixConverterTests : IDisposable
     {
         // A 25000-digit value (about 2600 words) goes through the divide-and-conquer path. Its bit length is not a
         // multiple of 32, so the word count is rounded up from a partial top word.
-        // mutant: GpuRadixConverter.cs:78 `+ 31` -> `- 31` (the top word is cut off by PadTo)
-        // mutant: GpuRadixConverter.cs:79 `actualWords == 0` -> `!=` (one word)
+        // mutant: GpuRadixConverter.cs:87 `+ 31` -> `- 31` (the top word is cut off by PadTo)
+        // mutant: GpuRadixConverter.cs:88 `actualWords == 0` -> `!=` (one word)
         const int Digits = 25000;
         var random = new Random(598);
         var digits = new char[Digits];
