@@ -1,46 +1,34 @@
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 
-// What the post-order walk of ExpressionWalk asks of the expression tree it evaluates: the signed tree (SignedTree) and
-// the unsigned one (BigIntExpressionVisitor)
-internal interface IExpressionWalker<TNode, TValue, TTarget>
-    where TNode : class
-    where TValue : struct
-{
-    // The operands of an operator node, 1 or 2; 0 for a node that evaluates itself (a leaf, or a node implemented
-    // outside GpuMath)
-    int OperandCount(TNode node);
-
-    TNode GetOperand(TNode node, int index);
-
-    // The target the operands of the node are evaluated into
-    TTarget OperandTarget(TNode node, TTarget target);
-
-    // Called for each node before any of its operands is evaluated; a node rejects a target it cannot use here
-    void Enter(TNode node, TTarget target);
-
-    // A node without operands, which evaluates itself
-    TValue EvaluateLeaf(TNode node, TTarget target);
-
-    // An operator node applied to its evaluated operands. The call owns them and releases them, also when it fails;
-    // second is the default value for a unary node.
-    TValue Apply(TNode node, TValue first, TValue second, TTarget target);
-
-    void Release(TValue value);
-}
-
-// Evaluates an expression tree in post order with stacks on the heap instead of the call stack. An expression built in
-// a loop (e = x + e, or a left fold) is as deep as the loop along either operand; a walk that recursed once per level
-// would end the process with a stack overflow. The operands of a node are evaluated before the node, the left one
-// first, as a recursive evaluation does.
+/// <summary>
+/// Evaluates an expression tree in post order with explicit stacks instead of the call stack (<see cref="WalkStack{T}"/>:
+/// in the frame of the walk for an expression of ordinary depth, rented past that). An expression built in a loop
+/// (<c>e = x + e</c>, or a left fold) is as deep as the loop along either operand; a walk that recursed once per level
+/// would end the process with a stack overflow.
+/// </summary>
 internal static class ExpressionWalk
 {
+    /// <summary>
+    /// Evaluates the tree below <paramref name="root"/>: the operands of a node before the node, the left one first,
+    /// as a recursive evaluation does. When a node fails, the values evaluated before it are released, the latest first.
+    /// </summary>
+    /// <typeparam name="TWalker">
+    /// The type that walks the tree (<see cref="IExpressionWalker{TNode, TValue, TTarget}"/>).
+    /// </typeparam>
+    /// <typeparam name="TNode">The node type.</typeparam>
+    /// <typeparam name="TValue">The value of an evaluated node.</typeparam>
+    /// <typeparam name="TTarget">What a node is evaluated into.</typeparam>
+    /// <param name="walker">The walker of the tree; its state changes as the walk evaluates nodes.</param>
+    /// <param name="root">The root node.</param>
+    /// <param name="target">The target of the root.</param>
+    /// <returns>The value of the root.</returns>
     public static TValue Evaluate<TWalker, TNode, TValue, TTarget>(ref TWalker walker, TNode root, TTarget target)
         where TWalker : IExpressionWalker<TNode, TValue, TTarget>, allows ref struct
         where TNode : class
         where TValue : struct
     {
-        var frames = new PooledStack<Frame<TNode, TTarget>>();
-        var values = new PooledStack<TValue>();
+        var frames = default(WalkStack<Frame<TNode, TTarget>>);
+        var values = default(WalkStack<TValue>);
         try
         {
             walker.Enter(root, target);
@@ -87,7 +75,7 @@ internal static class ExpressionWalk
 
     // Releases the values evaluated before a failure, the latest first (the order in which a recursive evaluation
     // unwound). A release that throws does not stop the others; its exception is thrown together with the failure.
-    private static void ReleaseAll<TWalker, TNode, TValue, TTarget>(ref TWalker walker, ref PooledStack<TValue> values,
+    private static void ReleaseAll<TWalker, TNode, TValue, TTarget>(ref TWalker walker, ref WalkStack<TValue> values,
         Exception failure)
         where TWalker : IExpressionWalker<TNode, TValue, TTarget>, allows ref struct
         where TNode : class

@@ -20,9 +20,8 @@ public sealed class UnsignedDeepChainTests
     private const int SmallStack = 256 * 1024;
 
     // e = (e + x_i).Truncate(2): every level is the left operand of the next, and the width stays at two words
-    // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Expressions/BigIntExpressionVisitor.cs OperandCount ->
-    // `0`: every operator node evaluates itself through Accept, one walk inside another (the process ends with a stack
-    // overflow)
+    // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Expressions/BigIntExpressionVisitor.cs Walk -> recurse
+    // at every level (`_depth < RecursionLimit` -> `true`; the process ends with a stack overflow)
     [Fact]
     [Scenario(TestScenario.Boundary)]
     public void LeftDeepChain_OfTruncatedSums_IsExact() =>
@@ -73,8 +72,8 @@ public sealed class UnsignedDeepChainTests
             UnsignedChains.FailureReturnsEveryBuffer(workspace, failAtRoot: true, intoTarget));
 
     // A failing node below the root: its result buffer and the operands evaluated before it go back
-    // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Expressions/BigIntExpressionVisitor.cs Apply -> without the
-    // release of the result buffer when the operation throws
+    // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Expressions/BigIntExpressionVisitor.cs Recurse -> without
+    // the release of the result buffer when the operation throws
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
@@ -86,6 +85,8 @@ public sealed class UnsignedDeepChainTests
     // A Fit that does not fit, halfway down a chain of 100000 levels: every buffer leased so far goes back
     // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Expressions/ExpressionWalk.cs Evaluate -> without the
     // release of the evaluated operands on a failure
+    // mutant: BigIntExpressionVisitor.cs Apply (the walked levels) -> without the release of the result buffer when the
+    // operation throws
     [Fact]
     [Scenario(TestScenario.SadPath)]
     public void FailureHalfwayDownADeepChain_ReturnsEveryBuffer() =>

@@ -7,7 +7,9 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum.Expressions;
 // - the operands of a node evaluated before the node, the left one first;
 // - the result buffer of a node leased while its operands are alive, and the right operand returned before the left;
 // - only the root writing into the caller's target, through a temporary when the target overlaps an operand.
-// Every tree is also checked against a BigInteger oracle, so that a snapshot of a wrong evaluation cannot pass.
+// Every tree is also checked against a BigInteger oracle, so that a snapshot of a wrong evaluation cannot pass. The
+// unsigned visitor recurses through the first levels and walks the levels below them; each unsigned tree is also
+// evaluated walked whole and walked below its second level, with the same trace.
 
 /// <summary>Evaluation order of unsigned and signed expression trees.</summary>
 [Category(TestCategory.Stdlib)]
@@ -18,13 +20,20 @@ public sealed class ExpressionEvaluationOrderTests
     private const int MaxDepth = 5;
 
     // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Expressions/BigIntExpressionVisitor.cs Apply -> release
-    // `first` before `second` (the release lines of the operands change order)
-    // mutant: BigIntExpressionVisitor.cs Apply -> `GetResultBuffer(op.NumWords, false, ...)` (the root leases a
+    // `first` before `second` (the walked trace differs from the recursive one)
+    // mutant: BigIntExpressionVisitor.cs Apply -> `GetResultBuffer(op.NumWords, false, ...)` (the walked root leases a
     // temporary instead of writing into the target)
     [Fact]
     [Scenario(TestScenario.HappyPath)]
     public Task UnsignedEvaluation_RandomTrees_KeepsTheOrderOfLeavesBuffersAndOperations() =>
-        Verify(nameof(UnsignedEvaluation_RandomTrees_KeepsTheOrderOfLeavesBuffersAndOperations), UnsignedTraces);
+        Verify(nameof(UnsignedEvaluation_RandomTrees_KeepsTheOrderOfLeavesBuffersAndOperations), static () =>
+        {
+            // Walked whole, walked below the second level, and by recursion only: the same trace
+            var recursive = UnsignedTraces(BigIntExpressionVisitor.DefaultRecursionLimit);
+            Assert.Equal(recursive, UnsignedTraces(recursionLimit: 0));
+            Assert.Equal(recursive, UnsignedTraces(recursionLimit: 2));
+            return recursive;
+        });
 
     // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Expressions/ExpressionWalk.cs Evaluate ->
     // `GetOperand(frame.Node, frame.OperandCount - 1 - frame.Next)`: the operands right to left (the leaves are read in
@@ -50,7 +59,7 @@ public sealed class ExpressionEvaluationOrderTests
         return Verifier.Verify(text).UseFastHashSnapshotName(name);
     }
 
-    private static string UnsignedTraces()
+    private static string UnsignedTraces(int recursionLimit)
     {
         var lines = new List<string>();
         for (var seed = 0; seed < Trees; seed++)
@@ -80,7 +89,7 @@ public sealed class ExpressionEvaluationOrderTests
                 var recorder = new RecordingArithmetic(trace);
                 var context = new GpuBigIntExecutionContext(workspace, workspace.MemoryManager, recorder, workspace.Stream);
                 var targetMemory = target is { } t ? new ScopedBigIntMemory(t.Handle.Borrow()) : default;
-                var visitor = new BigIntExpressionVisitor(context, targetMemory);
+                var visitor = new BigIntExpressionVisitor(context, targetMemory) { RecursionLimit = recursionLimit };
                 BigInteger actual;
                 using (var result = expr.Node.Accept(ref visitor))
                 {

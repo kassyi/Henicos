@@ -14,13 +14,14 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 /// to prevent device memory leaks and eliminate managed heap allocations.
 /// </para>
 /// <para>
-/// <b>Depth:</b> The operator nodes of GpuMath are evaluated with a stack on the heap, not by recursion, so an
+/// <b>Depth:</b> The visitor evaluates the first levels of operator nodes by recursion, the fastest form for an
+/// expression of ordinary depth, and the levels below them with an explicit stack instead of the call stack, so an
 /// expression built in a loop can be as deep as the loop. A node implemented elsewhere evaluates itself through
-/// <see cref="IGpuBigUIntExpression.Accept"/>; the operands it visits with <see cref="Visit"/> start a walk of their own.
+/// <see cref="IGpuBigUIntExpression.Accept"/>; the operands it visits with <see cref="Visit"/> are evaluated the same way.
 /// </para>
 /// <para>
 /// <b>Zero-Allocation:</b> As a <see langword="ref struct"/>, the visitor lives solely on the call stack; the stacks of
-/// the walk are rented from <see cref="ArrayPool{T}.Shared"/>.
+/// the walk live in its frame, and only a deep walk rents an array from <see cref="ArrayPool{T}.Shared"/>.
 /// </para>
 /// </remarks>
 public ref struct BigIntExpressionVisitor(GpuBigIntExecutionContext context, ScopedBigIntMemory targetResult = default)
@@ -36,6 +37,18 @@ public ref struct BigIntExpressionVisitor(GpuBigIntExecutionContext context, Sco
 
     // Whether the node being entered is the root of the evaluation, the only node that may write into the target
     private bool _isRoot = true;
+
+    // The operator nodes being evaluated by recursion
+    private int _depth;
+
+    /// <summary>The number of levels of operator nodes evaluated by recursion before the walk takes over.</summary>
+    internal const int DefaultRecursionLimit = 16;
+
+    /// <summary>
+    /// Gets or sets the number of levels of operator nodes evaluated by recursion; the levels below are walked with an
+    /// explicit stack. Tests set 0 to walk the whole tree.
+    /// </summary>
+    internal int RecursionLimit { get; set; } = DefaultRecursionLimit;
 
     /// <summary>
     /// Visits and evaluates an arbitrary expression AST node.
@@ -62,10 +75,19 @@ public ref struct BigIntExpressionVisitor(GpuBigIntExecutionContext context, Sco
         return new ScopedBigIntMemory(node.Handle.Borrow());
     }
 
-    // An operator node of GpuMath, and the operator nodes below it, evaluated by ExpressionWalk; the node is the root
-    // when the visitor entered it as the root
-    internal ScopedBigIntMemory Walk(IUnsignedOperator node)
+    // An operator node of GpuMath: by recursion within the first RecursionLimit levels, otherwise by ExpressionWalk
+    // with the operator nodes below it; the node is the root when the visitor entered it as the root
+    internal ScopedBigIntMemory Walk(UnsignedOperatorExpression node)
     {
+        if (_depth < RecursionLimit)
+        {
+            // A failure ends the evaluation; a depth left too high would only start the walk earlier
+            _depth++;
+            var value = Recurse(node);
+            _depth--;
+            return value;
+        }
+
         var isRoot = _isRoot;
         _isRoot = false;
         try
@@ -82,6 +104,30 @@ public ref struct BigIntExpressionVisitor(GpuBigIntExecutionContext context, Sco
         {
             _isRoot = isRoot;
         }
+    }
+
+    // The node evaluated by recursion: its operands through Accept, the left one first, then the node into a result
+    // buffer taken while the operands are alive; the right operand is returned first, then the left, and a result
+    // buffer the operation did not fill goes back as well. ExpressionWalk keeps the same order.
+    private ScopedBigIntMemory Recurse(UnsignedOperatorExpression node)
+    {
+        var isRoot = _isRoot;
+        _isRoot = false;
+        using var first = node.FirstOperand.Accept(ref this);
+        using var second = node.OperandCount == 2 ? node.SecondOperand.Accept(ref this) : default;
+        _isRoot = isRoot;
+        var result = GetResultBuffer(node.NumWords, isRoot, first.Handle, second.Handle);
+        try
+        {
+            node.Apply(ref Context, first.Handle, second.Handle, result.Handle);
+        }
+        catch
+        {
+            result.Dispose();
+            throw;
+        }
+
+        return result;
     }
 
     // The root writes into the first numWords words of the target, unless the target overlaps one of the root's
@@ -114,47 +160,51 @@ public ref struct BigIntExpressionVisitor(GpuBigIntExecutionContext context, Sco
         return Context.MemoryManager.AllocateTemp(numWords);
     }
 
+    /// <inheritdoc/>
     readonly int IExpressionWalker<IGpuBigUIntExpression, GpuBigIntMemoryHandle, bool>.OperandCount(
         IGpuBigUIntExpression node) =>
-        node is IUnsignedOperator op ? op.OperandCount : 0;
+        node is UnsignedOperatorExpression op ? op.OperandCount : 0;
 
+    /// <inheritdoc/>
     readonly IGpuBigUIntExpression IExpressionWalker<IGpuBigUIntExpression, GpuBigIntMemoryHandle, bool>.GetOperand(
         IGpuBigUIntExpression node, int index) =>
-        ((IUnsignedOperator)node).GetOperand(index);
+        index == 0
+            ? ((UnsignedOperatorExpression)node).FirstOperand
+            : ((UnsignedOperatorExpression)node).SecondOperand;
 
     // The operands of a node are never the root
+    /// <inheritdoc/>
     readonly bool IExpressionWalker<IGpuBigUIntExpression, GpuBigIntMemoryHandle, bool>.OperandTarget(
         IGpuBigUIntExpression node, bool isRoot) =>
         false;
 
     // The target is checked by the root, when it takes its result buffer
+    /// <inheritdoc/>
     readonly void IExpressionWalker<IGpuBigUIntExpression, GpuBigIntMemoryHandle, bool>.Enter(
         IGpuBigUIntExpression node, bool isRoot)
     {
     }
 
     // A leaf, or a node implemented elsewhere, evaluates itself; the value owns what the node's memory owned
+    /// <inheritdoc/>
     GpuBigIntMemoryHandle IExpressionWalker<IGpuBigUIntExpression, GpuBigIntMemoryHandle, bool>.EvaluateLeaf(
         IGpuBigUIntExpression node, bool isRoot)
     {
+        // A failure ends the walk, and Walk restores the flag
         _isRoot = isRoot;
-        try
-        {
-            return node.Accept(ref this).Handle;
-        }
-        finally
-        {
-            _isRoot = false;
-        }
+        var handle = node.Accept(ref this).Handle;
+        _isRoot = false;
+        return handle;
     }
 
     // The result buffer is taken while the operands are alive; after the operation the right operand is returned
     // first, then the left, as the operands of a recursive evaluation went out of scope. A result buffer the operation
     // did not fill goes back as well.
+    /// <inheritdoc/>
     GpuBigIntMemoryHandle IExpressionWalker<IGpuBigUIntExpression, GpuBigIntMemoryHandle, bool>.Apply(
         IGpuBigUIntExpression node, GpuBigIntMemoryHandle first, GpuBigIntMemoryHandle second, bool isRoot)
     {
-        var op = (IUnsignedOperator)node;
+        var op = (UnsignedOperatorExpression)node;
         ScopedBigIntMemory result = default;
         try
         {
@@ -180,6 +230,7 @@ public ref struct BigIntExpressionVisitor(GpuBigIntExecutionContext context, Sco
         }
     }
 
+    /// <inheritdoc/>
     readonly void IExpressionWalker<IGpuBigUIntExpression, GpuBigIntMemoryHandle, bool>.Release(
         GpuBigIntMemoryHandle value) =>
         Release(value);
