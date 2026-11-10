@@ -182,21 +182,17 @@ public static class GpuBigIntVectorLinqExtensions
     /// <param name="source">The input vectorized expression.</param>
     /// <returns>A deferred expression tree representing the parallel sum reduction.</returns>
     /// <remarks>
-    /// The result has the same number of words as the elements
-    /// (<see cref="IGpuBigIntVectorExpression.WordsPerElement"/>). The elements are accumulated in one word more, so a
-    /// running sum may leave that width as long as the final sum fits. Evaluating into a destination writes the
-    /// magnitude of the result into it and returns a value that wraps it with the sign. Without a destination, a new
-    /// buffer is allocated that the caller owns. Evaluation reads two words back from the device.
+    /// The sum never overflows: its bound is <see cref="IGpuBigIntVectorExpression.BitsPerElement"/> plus
+    /// <c>ceil(log2 Capacity)</c> bits, and the result has the words of that bound (at most one word more than the
+    /// elements; .NET <c>Enumerable.Sum</c> of <c>BigInteger</c> cannot overflow either). Evaluating into a destination
+    /// writes the magnitude of the result into it and returns a value that wraps it with the sign. Without a
+    /// destination, a new buffer is allocated that the caller owns. Evaluation reads two words back from the device.
     /// The sum of an empty vector is +0, as in <c>System.Linq</c>.
     /// </remarks>
     /// <exception cref="ArgumentException">
-    /// Thrown on evaluation into a destination that does not have
-    /// <see cref="IGpuBigIntVectorExpression.WordsPerElement"/> words; the destination is not touched.
-    /// </exception>
-    /// <exception cref="OverflowException">
-    /// Thrown on evaluation when the final sum does not fit in <see cref="IGpuBigIntVectorExpression.WordsPerElement"/>
-    /// words. Unlike the checked sum of <c>System.Linq</c>, a running sum that leaves the width and comes back does
-    /// not throw. The contents of a destination are then unspecified (currently the low words of the magnitude).
+    /// Thrown on evaluation into a destination narrower than the result
+    /// (<see cref="IGpuBigIntExpression.NumWords"/>); the destination is not touched. A wider destination receives
+    /// the magnitude in its first words and zeros above them.
     /// </exception>
     public static GpuBigIntExpr Sum(this IGpuBigIntVectorExpression source) => new(new VectorSumReductionExpression(source));
 
@@ -212,8 +208,9 @@ public static class GpuBigIntVectorLinqExtensions
     /// the device.
     /// </remarks>
     /// <exception cref="ArgumentException">
-    /// Thrown on evaluation into a destination that does not have
-    /// <see cref="IGpuBigIntVectorExpression.WordsPerElement"/> words; the destination is not touched.
+    /// Thrown on evaluation into a destination narrower than
+    /// <see cref="IGpuBigIntVectorExpression.WordsPerElement"/> words; the destination is not touched. A wider
+    /// destination receives the magnitude in its first words and zeros above them.
     /// </exception>
     /// <exception cref="InvalidOperationException">
     /// Thrown on evaluation when the vector is empty, as in <c>System.Linq</c>. The vector is not evaluated, nothing
@@ -233,8 +230,9 @@ public static class GpuBigIntVectorLinqExtensions
     /// the device.
     /// </remarks>
     /// <exception cref="ArgumentException">
-    /// Thrown on evaluation into a destination that does not have
-    /// <see cref="IGpuBigIntVectorExpression.WordsPerElement"/> words; the destination is not touched.
+    /// Thrown on evaluation into a destination narrower than
+    /// <see cref="IGpuBigIntVectorExpression.WordsPerElement"/> words; the destination is not touched. A wider
+    /// destination receives the magnitude in its first words and zeros above them.
     /// </exception>
     /// <exception cref="InvalidOperationException">
     /// Thrown on evaluation when the vector is empty, as in <c>System.Linq</c>. The vector is not evaluated, nothing
