@@ -33,6 +33,8 @@ Gets a view of the result of the CUDA Graph execution. The buffer is written eac
 public GpuBigIntView Result { get; }
 ```
 
+The sign of the result is the one of the last launch: when it depends on the values (a difference, the operand `Max` or `Min` chooses, `~` of a negative value), the graph writes it on the device and `Execute` / `ExecuteAsync` read it (one word) after the launch completes. Before the first launch the result is +0: the capture runs nothing, and the buffer the warm-up wrote was cleared when it went back to the pool. The sign is refreshed only by a completed `Execute` or `ExecuteAsync`: after a cancelled `ExecuteAsync`, the graph still writes the magnitude while the sign stays the one of the previous launch. Disposing the graph while `ExecuteAsync` is pending is safe: the task completes and the sign is not read.
+
 Without a `targetResult`, the graph owns the result buffer and returns it to the pool when it is disposed; reading the view afterwards throws `ObjectDisposedException`. To keep the value, pass a `targetResult` to `CompileToGraph`, copy it with `GpuBigIntView.ToOwned()`, or use `GpuBigIntExpr.EvaluateWithCudaGraph`, whose result the caller owns. See [GpuBigIntView](../GpuBigIntView.md).
 
 ## Methods
