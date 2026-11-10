@@ -136,6 +136,16 @@ Further limits:
 
 The native CPU execution path (`CpuKernelLoader`) mirrors this architecture using thread-local `GSharpErrorSlot` instances exporting `__gsharp_consume_last_error_details`. The runtime unpacks thread and block coordinates with identical layout decoding, producing uniform exception types, messages, and `Exception.Data` key-value pairs across CUDA GPU and native CPU targets.
 
+### 2.6.4 GPU Faults Leak Kernel Memory on Windows
+
+A failing G# thread records its error and exits, so an ordinary device error (an index out of range, a failed switch expression) does not fault the GPU and costs nothing beyond the exception. A real GPU fault is different: an illegal memory access, or a `trap` that ends the CUDA context (the cases listed in 2.6.2, a launch without error records, a kernel whose checks a release build leaves out). On Windows each such fault logs an `nvlddmkm` Event 153 in the System event log, resets the GPU engine and writes a live kernel dump.
+
+With the NVIDIA Windows driver (measured with 610.88, WDDM), each fault also leaves kernel pool memory allocated: about 2.3 MB of nonpaged pool and 5.5 MB of paged pool per fault, measured with a plain CUDA program that traps. The memory is not returned when the process exits; only a reboot frees it. A program or test loop that faults thousands of times grows the kernel pools by gigabytes (19 GB after about 5,300 faults in one measurement) until the machine runs short of memory. The issue is reported to NVIDIA as bug 7077284 (https://developer.nvidia.com/bugs/7077284 ).
+
+- Watch `\Memory\Pool Nonpaged Bytes` and `\Memory\Pool Paged Bytes` (Performance Monitor, or `typeperf`) when a workload may fault repeatedly, and reboot when they have grown.
+- Do not retry a faulting kernel in a loop; fix the fault, or run the kernel through a launcher whose error records are available so that a failing thread exits instead of faulting.
+- The leak was measured on Windows only; Linux has not been measured.
+
 ## See also
 
 ### Getting Started

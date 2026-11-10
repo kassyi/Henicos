@@ -29,6 +29,12 @@
 // by an older version of this script, or an owner killed between starting the command and recording it), a failed
 // process query. A reused pid therefore only delays a takeover; it never steals a lock.
 //
+// GPU faults: on Windows every CUDA device fault leaks kernel pool memory in the NVIDIA driver until a reboot (NVIDIA
+// bug 7077284). The script reads the kernel pools and the driver's fault events (scripts/human/gpu-fault-watch.js)
+// when it takes the lock and before it releases it, records both in owner.json and in gpu-pool-log.tsv next to the
+// lock directory, prints one line, and warns when the pools grew by more than 1 GB over the run or the nonpaged pool
+// is above 6 GB. A reading that fails is skipped; it never changes the exit code.
+//
 // Usage:
 //   node scripts/agent/gpu-lock.js [--poll-seconds <n>] [--timeout-minutes <n>] [--lock-path <dir>] -- <command> [args...]
 //   node scripts/agent/gpu-lock.js --help
@@ -49,6 +55,16 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 const { spawn, spawnSync } = require('child_process');
+
+/** The kernel pool reader, or null when it cannot be loaded; the lock works without it. */
+const faultWatch = (() => {
+  try {
+    return require(path.join(__dirname, '..', 'human', 'gpu-fault-watch.js'));
+  } catch (error) {
+    process.stderr.write(`[gpu-lock] kernel pool watch unavailable: ${error.message}\n`);
+    return null;
+  }
+})();
 
 const usage = [
   'Usage: node scripts/agent/gpu-lock.js [--poll-seconds <n>] [--timeout-minutes <n>] [--lock-path <dir>] -- <command> [args...]',
@@ -317,6 +333,7 @@ function tryAcquire() {
     cwd: process.cwd(),
     command: commandText,
     commandProcess: null,
+    pools: readPools(),
   };
   fs.writeFileSync(path.join(lockPath, 'owner.json'), JSON.stringify(ownerRecord));
   fs.writeFileSync(
@@ -324,6 +341,64 @@ function tryAcquire() {
     `pid ${process.pid} ${new Date().toISOString()} cwd ${process.cwd()} ${commandText}\n`,
   );
   return true;
+}
+
+/** One reading of the kernel pools, or null when the watch is unavailable or fails. */
+function readPools() {
+  if (faultWatch === null) {
+    return null;
+  }
+  try {
+    return faultWatch.measure();
+  } catch (error) {
+    process.stderr.write(`[gpu-lock] could not read the kernel pools: ${error.message}\n`);
+    return null;
+  }
+}
+
+function tsvMegabytes(bytes) {
+  return bytes === null || bytes === undefined ? '' : String(Math.round(bytes / (1024 * 1024)));
+}
+
+/**
+ * Reads the pools again, prints them with the fault events of the run, warns when they grew past the thresholds, and
+ * appends one line to gpu-pool-log.tsv next to the lock directory. Never throws.
+ */
+function reportPools(code) {
+  const before = ownerRecord === null ? null : ownerRecord.pools;
+  if (faultWatch === null || before === null || before === undefined || !before.supported) {
+    return;
+  }
+  try {
+    const after = readPools();
+    if (after === null) {
+      return;
+    }
+    const comparison = faultWatch.compare(before, after);
+    const events = comparison.faultEvents === null ? '?' : String(comparison.faultEvents);
+    process.stderr.write(`[gpu-lock] ${faultWatch.describe(after)}; during this run: ${events}\n`);
+    if (comparison.warn) {
+      process.stderr.write(`[gpu-lock] WARNING: ${faultWatch.warningText(comparison)}\n`);
+    }
+    const logPath = path.join(path.dirname(lockPath), 'gpu-pool-log.tsv');
+    const header = fs.existsSync(logPath)
+      ? ''
+      : 'start\tend\texit\tnonpagedBeforeMB\tnonpagedAfterMB\tpagedBeforeMB\tpagedAfterMB\tfaultEvents\tcommand\n';
+    const row = [
+      before.time,
+      after.time,
+      code === null ? '' : String(code),
+      tsvMegabytes(before.nonpagedBytes),
+      tsvMegabytes(after.nonpagedBytes),
+      tsvMegabytes(before.pagedBytes),
+      tsvMegabytes(after.pagedBytes),
+      comparison.faultEvents === null ? '' : String(comparison.faultEvents),
+      commandText.replace(/[\t\r\n]+/g, ' '),
+    ].join('\t');
+    fs.appendFileSync(logPath, `${header}${row}\n`);
+  } catch (error) {
+    process.stderr.write(`[gpu-lock] could not record the kernel pools: ${error.message}\n`);
+  }
 }
 
 function killChild() {
@@ -386,6 +461,7 @@ function runCommand() {
     process.exit(1);
   });
   child.on('close', (code) => {
+    reportPools(code);
     releaseLock();
     process.exit(code === null ? 1 : code);
   });
