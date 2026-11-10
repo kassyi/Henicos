@@ -143,10 +143,10 @@ internal static class WrapperEmitter
         writer.AppendGeneratedFileHeader(enableNullable: false);
         // #nullable enable annotations = Preserves user type annotations without emitting warnings for unassigned generated fields
         writer.AppendLine("#nullable enable annotations");
-        writer.AppendLine("""
+        writer.AppendLine($"""
             using System;
             using global::Kassyi.GSharp.Core;
-            using static global::Kassyi.GSharp.Core.ManagedGpuContext;
+            using static {ManagedNames.Context};
             """);
         writer.AppendLineIf(referencesStackLinq, "using global::Kassyi.ZeroAlloc.Linq;");
         writer.AppendLine(GeneratedCSharpWarningSuppressions);
@@ -175,7 +175,7 @@ internal static class WrapperEmitter
         writer.AppendGeneratedFileHeader(enableNullable: false);
         // #nullable enable annotations = Preserves user type annotations without emitting warnings for unassigned generated fields
         writer.AppendLine("#nullable enable annotations");
-        writer.AppendLine("""
+        writer.AppendLine($"""
             using System;
             #pragma warning disable RS1035 // Do not use APIs banned for analyzers
             #pragma warning disable RS1016
@@ -184,7 +184,7 @@ internal static class WrapperEmitter
             using System.Runtime.InteropServices;
             using global::Kassyi.GSharp.Core;
             using global::Kassyi.GSharp.Runtime.Interop;
-            using static global::Kassyi.GSharp.Core.ManagedGpuContext;
+            using static {ManagedNames.Context};
             using global::Kassyi.ZeroAlloc.Linq;
             """);
         writer.AppendLine(GeneratedCSharpWarningSuppressions);

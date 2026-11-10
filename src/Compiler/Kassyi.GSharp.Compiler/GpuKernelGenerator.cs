@@ -1038,7 +1038,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 writer.AppendLine("internal static void RegisterTypeKeyedSharedMemorySites()");
                 using (writer.Scope())
                 {
-                    writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.RegisterTypeKeyedSites([");
+                    writer.AppendLine($"{ManagedNames.Context}.RegisterTypeKeyedSites([");
                     foreach (var site in sites)
                     {
                         writer.AppendLine($"0x{site:x16}UL,");

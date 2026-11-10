@@ -75,8 +75,9 @@ internal static class ManagedFallbackEmitter
 
         // A cooperative kernel's blocks run in grid phases and keep their dynamic shared memory for the grid; the
         // blocks of any other kernel run to their end one after another and use one array in turn
+        var cooperativeLiteral = kernel.IsCooperative ? "true" : "false";
         writer.AppendLine(
-            $"global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid({TotalBlocks}, sharedMemBytes, {(kernel.IsCooperative ? "true" : "false")});");
+            $"{ManagedNames.Context}.InitializeGrid({TotalBlocks}, sharedMemBytes, {cooperativeLiteral});");
 
         // A thread that stopped at a block barrier waits there until every thread of its block that has not finished
         // waits too; in a cooperative kernel, a thread that reached the grid sync waits until the next grid phase (#664)
@@ -123,7 +124,7 @@ internal static class ManagedFallbackEmitter
         writer.AppendLine("finally");
         using (writer.Scope())
         {
-            writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.EndGrid();");
+            writer.AppendLine($"{ManagedNames.Context}.EndGrid();");
         }
     }
 
@@ -149,8 +150,9 @@ internal static class ManagedFallbackEmitter
             writer.AppendLine($"if ({AnyBlockAtGridSync} && {FirstFinishedBlock} >= 0)");
             using (writer.Scope())
             {
-                writer.AppendLine(
-                    $"throw global::Kassyi.GSharp.Core.ManagedGpuContext.BlockFinishedAtGridSync({SymbolDisplay.FormatLiteral(kernel.MessageName, quote: true)}, {FirstFinishedBlock}, gridDimX, gridDimY);");
+                var messageName = SymbolDisplay.FormatLiteral(kernel.MessageName, quote: true);
+                writer.Append($"throw {ManagedNames.Context}.BlockFinishedAtGridSync(");
+                writer.AppendLine($"{messageName}, {FirstFinishedBlock}, gridDimX, gridDimY);");
             }
         }
     }
@@ -162,7 +164,7 @@ internal static class ManagedFallbackEmitter
         writer.AppendLine($"int {BlockY} = ({BlockLoopIndex} / (int)gridDimX) % (int)gridDimY;");
         writer.AppendLine($"int {BlockZ} = {BlockLoopIndex} / (int)(gridDimX * gridDimY);");
 
-        writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = true;");
+        writer.AppendLine($"{ManagedNames.Context}.IsActive = true;");
         writer.AppendLine("try");
         using (writer.Scope())
         {
@@ -190,7 +192,7 @@ internal static class ManagedFallbackEmitter
         writer.AppendLine("finally");
         using (writer.Scope())
         {
-            writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;");
+            writer.AppendLine($"{ManagedNames.Context}.IsActive = false;");
         }
     }
 
@@ -207,8 +209,7 @@ internal static class ManagedFallbackEmitter
                 $"if ({contextSlot}[{BlockLoopIndex} * {ThreadsPerBlock} + {ThreadLoopIndex}].{GSharpInternalNames.StateMachine.State} == -1)");
             using (writer.Scope())
             {
-                writer.AppendLine(
-                    $"global::Kassyi.GSharp.Core.ManagedGpuContext.MarkWarpLaneExited({ThreadLoopIndex});");
+                writer.AppendLine($"{ManagedNames.Context}.MarkWarpLaneExited({ThreadLoopIndex});");
             }
         }
     }
@@ -216,16 +217,16 @@ internal static class ManagedFallbackEmitter
     // The block's coordinates and dimensions in ManagedGpuContext, and a fresh warp exchange
     private static void WriteManagedBlockSetup(SourceWriter writer)
     {
-        writer.AppendLine($"global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX = {BlockX};");
-        writer.AppendLine($"global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxY = {BlockY};");
-        writer.AppendLine($"global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxZ = {BlockZ};");
-        writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX = (int)blockDimX;");
-        writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimY = (int)blockDimY;");
-        writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimZ = (int)blockDimZ;");
-        writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX = (int)gridDimX;");
-        writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimY = (int)gridDimY;");
-        writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimZ = (int)gridDimZ;");
-        writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.ResetWarpExchange();");
+        writer.AppendLine($"{ManagedNames.BlockIdxX} = {BlockX};");
+        writer.AppendLine($"{ManagedNames.BlockIdxY} = {BlockY};");
+        writer.AppendLine($"{ManagedNames.BlockIdxZ} = {BlockZ};");
+        writer.AppendLine($"{ManagedNames.Context}.BlockDimX = (int)blockDimX;");
+        writer.AppendLine($"{ManagedNames.Context}.BlockDimY = (int)blockDimY;");
+        writer.AppendLine($"{ManagedNames.Context}.BlockDimZ = (int)blockDimZ;");
+        writer.AppendLine($"{ManagedNames.Context}.GridDimX = (int)gridDimX;");
+        writer.AppendLine($"{ManagedNames.Context}.GridDimY = (int)gridDimY;");
+        writer.AppendLine($"{ManagedNames.Context}.GridDimZ = (int)gridDimZ;");
+        writer.AppendLine($"{ManagedNames.Context}.ResetWarpExchange();");
     }
 
     // [WHY] A thread that reached a barrier waits there while the other threads of the block go on to it: they may need
@@ -263,8 +264,7 @@ internal static class ManagedFallbackEmitter
                 writer.AppendLine($"if ({AnyBlockActive} && !{Stepped})");
                 using (writer.Scope())
                 {
-                    writer.AppendLine(
-                        $"throw global::Kassyi.GSharp.Core.ManagedGpuContext.WarpStall({ThreadsPerBlock});");
+                    writer.AppendLine($"throw {ManagedNames.Context}.WarpStall({ThreadsPerBlock});");
                 }
             }
 
@@ -304,8 +304,9 @@ internal static class ManagedFallbackEmitter
                 $"if ({contextSlot}[{BlockLoopIndex} * {ThreadsPerBlock}].{GSharpInternalNames.StateMachine.State} == -1)");
             using (writer.Scope())
             {
-                writer.AppendLine(
-                    $"throw global::Kassyi.GSharp.Core.ManagedGpuContext.RepresentativeFinishedAtGridSync({SymbolDisplay.FormatLiteral(kernel.MessageName, quote: true)}, {BlockX}, {BlockY}, {BlockZ});");
+                var messageName = SymbolDisplay.FormatLiteral(kernel.MessageName, quote: true);
+                writer.Append($"throw {ManagedNames.Context}.RepresentativeFinishedAtGridSync(");
+                writer.AppendLine($"{messageName}, {BlockX}, {BlockY}, {BlockZ});");
             }
 
             writer.AppendLine($"{AnyBlockAtGridSync} = true;");
@@ -324,9 +325,9 @@ internal static class ManagedFallbackEmitter
         writer.AppendLine($"int {ThreadX} = {ThreadLoopIndex} % (int)blockDimX;");
         writer.AppendLine($"int {ThreadY} = ({ThreadLoopIndex} / (int)blockDimX) % (int)blockDimY;");
         writer.AppendLine($"int {ThreadZ} = {ThreadLoopIndex} / (int)(blockDimX * blockDimY);");
-        writer.AppendLine($"global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX = {ThreadX};");
-        writer.AppendLine($"global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxY = {ThreadY};");
-        writer.AppendLine($"global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxZ = {ThreadZ};");
+        writer.AppendLine($"{ManagedNames.ThreadIdxX} = {ThreadX};");
+        writer.AppendLine($"{ManagedNames.ThreadIdxY} = {ThreadY};");
+        writer.AppendLine($"{ManagedNames.ThreadIdxZ} = {ThreadZ};");
 
         writer.AppendLine($"int {LinearThreadIndex} = {BlockLoopIndex} * {ThreadsPerBlock} + {ThreadLoopIndex};");
         // A thread that waits at a block barrier or at the grid sync does not run
@@ -338,8 +339,7 @@ internal static class ManagedFallbackEmitter
             // A thread that waits at a warp collective runs once the lanes of its mask have met there (#1468)
             if (kernel.ReachesWarpShuffle)
             {
-                writer.AppendLine(
-                    $"if (global::Kassyi.GSharp.Core.ManagedGpuContext.WarpCanRun({ThreadLoopIndex}, {Round}))");
+                writer.AppendLine($"if ({ManagedNames.Context}.WarpCanRun({ThreadLoopIndex}, {Round}))");
             }
 
             using (kernel.ReachesWarpShuffle ? writer.Scope() : default)
@@ -347,8 +347,8 @@ internal static class ManagedFallbackEmitter
                 writer.AppendLineIf(kernel.ReachesWarpShuffle, $"{Stepped} = true;");
                 // The state machines of the kernel and of the device functions it calls request a grid sync (#665) and report
                 // a block barrier through thread-static flags; the launcher steps one GPU thread at a time on this host thread
-                writer.AppendLine($"{ManagedExecutionRewriter.ManagedGridSyncRequested} = false;");
-                writer.AppendLine($"{ManagedExecutionRewriter.ManagedBlockBarrierRequested} = false;");
+                writer.AppendLine($"{ManagedNames.GridSyncRequested} = false;");
+                writer.AppendLine($"{ManagedNames.BlockBarrierRequested} = false;");
                 WriteStateMachineCall(writer, kernel);
                 WriteManagedWaits(writer, kernel);
                 if (kernel.ReachesWarpShuffle)
@@ -399,7 +399,7 @@ internal static class ManagedFallbackEmitter
         writer.AppendLine($"if ({contextSlot}.{GSharpInternalNames.StateMachine.State} == -1)");
         using (writer.Scope())
         {
-            writer.AppendLine($"global::Kassyi.GSharp.Core.ManagedGpuContext.MarkWarpLaneExited({ThreadLoopIndex});");
+            writer.AppendLine($"{ManagedNames.Context}.MarkWarpLaneExited({ThreadLoopIndex});");
         }
     }
 
@@ -439,7 +439,7 @@ internal static class ManagedFallbackEmitter
     // After a step: a thread that reached the grid sync (cooperative: waits; otherwise an error) or a block barrier waits
     private static void WriteManagedWaits(SourceWriter writer, in KernelHostModel kernel)
     {
-        writer.AppendLine($"if ({ManagedExecutionRewriter.ManagedGridSyncRequested})");
+        writer.AppendLine($"if ({ManagedNames.GridSyncRequested})");
         using (writer.Scope())
         {
             if (kernel.IsCooperative)
@@ -450,12 +450,13 @@ internal static class ManagedFallbackEmitter
             else
             {
                 // Undefined on the GPU: grid.sync() in a launch that is not cooperative
-                writer.AppendLine(
-                    $"throw global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncInKernelThatIsNotCooperative({SymbolDisplay.FormatLiteral(kernel.MessageName, quote: true)});");
+                var messageName = SymbolDisplay.FormatLiteral(kernel.MessageName, quote: true);
+                writer.Append($"throw {ManagedNames.Context}.GridSyncInKernelThatIsNotCooperative(");
+                writer.AppendLine($"{messageName});");
             }
         }
 
-        writer.AppendLine($"if ({ManagedExecutionRewriter.ManagedBlockBarrierRequested})");
+        writer.AppendLine($"if ({ManagedNames.BlockBarrierRequested})");
         using (writer.Scope())
         {
             writer.AppendLine($"{ThreadAtBlockBarrier}[{LinearThreadIndex}] = true;");
