@@ -31,19 +31,23 @@ public static partial class GridBarrierTimingKernels
         result[tid] = value;
     }
 
-    // Block 0 spends <cycles> clock cycles, then its threads whose keys are FailKey fail and the others reach a Fast
-    // barrier, at which every other block is already waiting
+    // Block 0 spends <cycles> clock cycles, then its threads whose keys are FailKey fail and the others reach the first
+    // of two Fast barriers, at which every other block is already waiting. Each thread writes <between> between the
+    // barriers and <result> after the second one
     [GpuKernel(Cooperative = true)]
-    public static void LateFailingBlockFastKernel(int[] keys, long cycles, int[] result)
+    public static void LateFailingBlockTwoFastBarriersKernel(int[] keys, long cycles, int[] between, int[] result)
     {
         int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
         SpinInFirstBlock(cycles);
         int value = keys[tid] switch { 0 => tid, 1 => -tid };
         Gpu.SyncGrid(GridSyncMode.Fast);
+        between[tid] = value;
+        Gpu.SyncGrid(GridSyncMode.Fast);
         result[tid] = value;
     }
 
-    // The same with a Deterministic barrier
+    // Block 0 spends <cycles> clock cycles, then its threads whose keys are FailKey fail and the others reach a
+    // Deterministic barrier, at which every other block is already waiting
     [GpuKernel(Cooperative = true)]
     public static void LateFailingBlockDeterministicKernel(int[] keys, long cycles, int[] result)
     {
