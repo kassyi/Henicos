@@ -12,8 +12,8 @@ namespace Kassyi.GSharp.Tests.Shared.Transpiler;
 /// A function that needs no managed version runs as the user's method on the managed path. Rewriting its body must then
 /// give the body with its names qualified and nothing else, apart from the rewrites whose result the user's method
 /// already gives: the body macros with a lambda (Kassyi.GSharp.Core runs them), the site key of a
-/// <c>SharedMemory&lt;T&gt;</c> (its caller-info constructor computes the same key), the length of an optional array and
-/// the calls that C# removes (<c>RemovedCalls</c>), which the user's method does not make either.
+/// <c>SharedMemory&lt;T&gt;</c> (its caller-info constructor computes the same key), the length of an optional array
+/// and the calls that C# removes (<c>RemovedCalls</c>), which the user's method does not make either.
 /// </remarks>
 [Category(TestCategory.Compiler)]
 [Scenario(TestScenario.HappyPath)]

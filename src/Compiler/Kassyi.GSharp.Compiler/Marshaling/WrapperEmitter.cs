@@ -166,8 +166,8 @@ internal static class WrapperEmitter
         return writer.ToString();
     }
 
-    // #define <symbol> for each symbol that the user's files of the class define and the kept [Conditional] calls of the
-    // copied bodies need; before the first token of the file, as C# requires (CS1032)
+    // #define <symbol> for each symbol that the user's files of the class define and the kept [Conditional] calls
+    // of the copied bodies need; before the first token of the file, as C# requires (CS1032)
     private static void WriteDefinedSymbols(SourceWriter writer, in HostClassHeader header)
     {
         foreach (var symbol in header.DefinedSymbols)

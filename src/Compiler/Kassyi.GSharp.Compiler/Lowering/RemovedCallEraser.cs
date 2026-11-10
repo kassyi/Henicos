@@ -11,7 +11,9 @@ namespace Kassyi.GSharp.Compiler.Lowering;
 /// <list type="bullet">
 ///   <item><description>an expression statement becomes the empty statement <c>;</c></description></item>
 ///   <item><description>an initializer or incrementor of a <c>for</c> is left out of the list</description></item>
-///   <item><description>the expression body of a lambda or a local function becomes the empty block <c>{ }</c></description></item>
+///   <item><description>
+///     the expression body of a lambda or a local function becomes the empty block <c>{ }</c>
+///   </description></item>
 /// </list>
 /// </para>
 /// <para>
@@ -77,21 +79,22 @@ internal sealed class RemovedCallEraser : CSharpSyntaxRewriter
             .WithIncrementors(WithoutRemovedCalls(original.Incrementors, visited.Incrementors, semanticModel));
 
     /// <summary>
-    /// <paramref name="visited"/>, the rewritten <paramref name="original"/> (a lambda or a local function), with the empty
-    /// block <c>{ }</c> as its body when its expression body is a removed call; otherwise <paramref name="visited"/>.
+    /// <paramref name="visited"/>, the rewritten <paramref name="original"/> (a lambda or a local function), with
+    /// the empty block <c>{ }</c> as its body when its expression body is a removed call; otherwise
+    /// <paramref name="visited"/>.
     /// </summary>
     public static SyntaxNode? WithEmptyBodyIfRemoved(SyntaxNode original, SyntaxNode? visited,
         SemanticModel semanticModel)
     {
         switch (original, visited)
         {
-            case (AnonymousFunctionExpressionSyntax { ExpressionBody: { } call }, AnonymousFunctionExpressionSyntax function)
-                when RemovedCalls.IsRemovedCall(call, semanticModel):
+            case (AnonymousFunctionExpressionSyntax { ExpressionBody: { } call },
+                AnonymousFunctionExpressionSyntax function) when RemovedCalls.IsRemovedCall(call, semanticModel):
                 return function
                     .WithExpressionBody(null)
                     .WithBlock(CreateEmptyBody(call));
-            case (LocalFunctionStatementSyntax { ExpressionBody.Expression: var call }, LocalFunctionStatementSyntax function)
-                when RemovedCalls.IsRemovedCall(call, semanticModel):
+            case (LocalFunctionStatementSyntax { ExpressionBody.Expression: var call },
+                LocalFunctionStatementSyntax function) when RemovedCalls.IsRemovedCall(call, semanticModel):
                 return function
                     .WithExpressionBody(null)
                     .WithSemicolonToken(default)

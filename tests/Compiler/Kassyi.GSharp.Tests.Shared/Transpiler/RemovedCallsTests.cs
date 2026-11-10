@@ -6,9 +6,9 @@ using Kassyi.GSharp.Tests.Shared.Helpers;
 namespace Kassyi.GSharp.Tests.Shared.Transpiler;
 
 /// <summary>
-/// Whether C# removes a call (<c>RemovedCalls</c>): partial methods without an implementation and <c>[Conditional]</c>
-/// methods against the parse options and the <c>#define</c> / <c>#undef</c> of the file; and that lowering leaves nothing of
-/// a removed call behind (<c>RemovedCallEraser</c>).
+/// Whether C# removes a call (<c>RemovedCalls</c>): partial methods without an implementation and
+/// <c>[Conditional]</c> methods against the parse options and the <c>#define</c> / <c>#undef</c> of the file; and that
+/// lowering leaves nothing of a removed call behind (<c>RemovedCallEraser</c>).
 /// </summary>
 [Category(TestCategory.Unit)]
 [TestTarget(ExecutionTarget.CpuExecution)]
@@ -18,7 +18,8 @@ public class RemovedCallsTests
 
     private static (Compilation Compilation, SyntaxTree Tree) CreateCase()
     {
-        var options = new CSharpParseOptions(LanguageVersion.Preview, preprocessorSymbols: ["OPTION_ON", "UNDEFINED_HERE"]);
+        var options = new CSharpParseOptions(LanguageVersion.Preview,
+            preprocessorSymbols: ["OPTION_ON", "UNDEFINED_HERE"]);
         var tree = CSharpSyntaxTree.ParseText(
             RoslynTestUtility.ReadTestCase("Transpiler/RemovedCallCases.cs"), options, path: "RemovedCallCases.cs");
         var compilation = CSharpCompilation.Create("RemovedCallCases")
@@ -71,18 +72,15 @@ public class RemovedCallsTests
     [Scenario(TestScenario.Boundary)]
     public void IsSuspendingFunction_BarrierOrShuffleOnlyInRemovedArgument_DoesNotSuspend()
     {
-        var compilation = s_case.Value.Compilation;
-        var model = Model;
+        Assert.True(Suspends("BumpAfterBarrier"));
+        Assert.False(Suspends("CallsOnlyRemovedBarrier"));
+        Assert.False(Suspends("ShufflesOnlyInRemovedCall"));
 
-        Assert.True(SuspensionAnalysis.IsSuspendingFunction(
-            model.GetDeclaredSymbol<IMethodSymbol>(FindMethod("BumpAfterBarrier")) ?? throw new InvalidOperationException(),
-            compilation));
-        Assert.False(SuspensionAnalysis.IsSuspendingFunction(
-            model.GetDeclaredSymbol<IMethodSymbol>(FindMethod("CallsOnlyRemovedBarrier")) ?? throw new InvalidOperationException(),
-            compilation));
-        Assert.False(SuspensionAnalysis.IsSuspendingFunction(
-            model.GetDeclaredSymbol<IMethodSymbol>(FindMethod("ShufflesOnlyInRemovedCall")) ?? throw new InvalidOperationException(),
-            compilation));
+        static bool Suspends(string name) =>
+            SuspensionAnalysis.IsSuspendingFunction(
+                Model.GetDeclaredSymbol<IMethodSymbol>(FindMethod(name)) ?? throw new InvalidOperationException(name),
+                s_case.Value.Compilation
+            );
     }
 
     [Fact]

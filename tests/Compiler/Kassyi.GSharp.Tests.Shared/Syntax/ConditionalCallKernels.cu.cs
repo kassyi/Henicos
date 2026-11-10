@@ -3,9 +3,9 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Shared.Syntax;
 
-// C# removes a call of a [Conditional] method when none of its symbols is defined in the file of the call, its arguments
-// included. CONDITIONAL_CALL_NEVER_DEFINED is defined nowhere; NETCOREAPP is defined by the target framework of both test
-// projects. A BCL method such as Debug.Assert is not used: the build configuration decides whether DEBUG is defined
+// C# removes a call of a [Conditional] method when none of its symbols is defined in the file of the call, its
+// arguments included. CONDITIONAL_CALL_NEVER_DEFINED is defined nowhere; NETCOREAPP is defined by the target framework
+// of both test projects. Debug.Assert is not used: the build configuration decides whether DEBUG is defined
 public static partial class ConditionalCallKernels
 {
     private const uint FullMask = 0xFFFFFFFFu;

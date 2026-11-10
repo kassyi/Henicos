@@ -3,9 +3,9 @@ using Kassyi.GSharp.Tests.Shared.Helpers;
 namespace Kassyi.GSharp.Tests.Shared.Generator;
 
 /// <summary>
-/// The generated managed files decide <c>[Conditional]</c> again, with the parse options of the compilation and none of
-/// the directives of the user's files: they leave out the calls that C# removes and <c>#define</c> the symbols that only a
-/// user's file defines, before the first token, and still compile.
+/// The generated managed files decide <c>[Conditional]</c> again, with the parse options of the compilation and none
+/// of the directives of the user's files: they leave out the calls that C# removes and <c>#define</c> the symbols
+/// that only a user's file defines, before the first token, and still compile.
 /// </summary>
 [Category(TestCategory.Compiler)]
 [TestTarget(ExecutionTarget.CpuExecution)]

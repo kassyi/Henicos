@@ -2,8 +2,8 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 
 /// <summary>
 /// Decides whether C# removes a call, its arguments included: the call of a partial method without an implementing
-/// declaration, or of a <c>[Conditional]</c> method none of whose symbols is defined in the file the call was written in
-/// (<see cref="ConditionalCalls"/>). Every output asks here: the C++ transpiler, the lowering
+/// declaration, or of a <c>[Conditional]</c> method none of whose symbols is defined in the file the call was
+/// written in (<see cref="ConditionalCalls"/>). Every output asks here: the C++ transpiler, the lowering
 /// (<c>RemovedCallEraser</c>), the managed rewriter, the suspension analysis and GSH0107.
 /// </summary>
 /// <remarks>
@@ -64,10 +64,11 @@ internal static class RemovedCalls
     /// declarations of <paramref name="type"/> keep: those that only a <c>#define</c> of the user's file defines.
     /// </summary>
     /// <remarks>
-    /// [WHY] The generated file has the parse options of the compilation and none of the directives of the user's files,
-    /// into which the bodies of the kernels and device functions are copied, and C# decides again there. The copies keep
-    /// no call that C# removes (<c>RemovedCallEraser</c>, <see cref="ManagedExecutionRewriter"/>), so defining
-    /// these symbols keeps exactly the calls that C# keeps in the user's files. A file without a <c>#define</c> adds none.
+    /// [WHY] The generated file has the parse options of the compilation and none of the directives of the user's
+    /// files, into which the bodies of the kernels and device functions are copied, and C# decides again there. The
+    /// copies keep no call that C# removes (<c>RemovedCallEraser</c>, <see cref="ManagedExecutionRewriter"/>), so
+    /// defining these symbols keeps exactly the calls that C# keeps in the user's files. A file without a
+    /// <c>#define</c> adds none.
     /// </remarks>
     public static EquatableArray<string> GetSymbolsToDefine(INamedTypeSymbol type, Compilation compilation)
     {

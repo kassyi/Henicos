@@ -275,8 +275,9 @@ internal readonly record struct FieldOffsetGuard(string Name, string FullyQualif
 /// </param>
 /// <param name="FullyQualifiedName">The <c>global::</c>-qualified C# type name, including any enclosing types.</param>
 /// <param name="DefinedSymbols">
-/// The symbols that the generated files of the class <c>#define</c>, so that C# keeps there the <c>[Conditional]</c> calls
-/// that a <c>#define</c> of the user's file keeps (<see cref="RemovedCalls.GetSymbolsToDefine"/>).
+/// The symbols that the generated files of the class <c>#define</c>, so that C# keeps there the
+/// <c>[Conditional]</c> calls that a <c>#define</c> of the user's file keeps
+/// (<see cref="RemovedCalls.GetSymbolsToDefine"/>).
 /// </param>
 internal readonly record struct HostClassHeader(
     string HintName,

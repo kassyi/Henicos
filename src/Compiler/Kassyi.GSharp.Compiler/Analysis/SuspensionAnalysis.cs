@@ -285,9 +285,9 @@ internal static class SuspensionAnalysis
     }
 
     /// <summary>
-    /// The definitions of the <c>[GpuDeviceFunction]</c> methods that <paramref name="body"/> calls, outside the calls that
-    /// C# removes (<see cref="RemovedCalls"/>), in call order, with repeats: those with a body in the compilation, and
-    /// those of another assembly that recorded them (<see cref="DeviceExportTable"/>).
+    /// The definitions of the <c>[GpuDeviceFunction]</c> methods that <paramref name="body"/> calls, outside the
+    /// calls that C# removes (<see cref="RemovedCalls"/>), in call order, with repeats: those with a body in the
+    /// compilation, and those of another assembly that recorded them (<see cref="DeviceExportTable"/>).
     /// </summary>
     internal static IEnumerable<IMethodSymbol> GetDeviceFunctionCallees(SyntaxNode body, Compilation compilation)
     {
