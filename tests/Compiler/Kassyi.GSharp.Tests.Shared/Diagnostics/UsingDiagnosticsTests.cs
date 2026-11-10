@@ -17,7 +17,7 @@ public class UsingDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_BarrierInTheScopeOfAUsing_ReportsGsh0003AtTheBarrier(string dialect)
+    public async Task BarrierInScopeOfUsing_BarrierInsideUsing_ReportsGsh0003AtBarrier(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(TestCase, dialect);
 
@@ -35,7 +35,7 @@ public class UsingDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_UsingOfAClass_ReportsTheCreationAndTheResource(string dialect)
+    public async Task UsingOfClass_DisposableClassResource_ReportsCreationAndResource(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(TestCase, dialect);
 

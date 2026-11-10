@@ -42,7 +42,7 @@ public partial class StructAggregateInitTests
 
     [SkippableFact]
     [Category(TestCategory.Syntax)]
-    public void Test_StructAggregateInitialization_HappyPath()
+    public void TranspileMethod_StructAggregateInitialization_EmitsAggregateInitializationSyntax()
     {
         var (cudaSource, diagnostics) =
             RoslynTestUtility.TranspileMethod<TestClass_SYN90>(nameof(TestClass_SYN90.InitStruct));
@@ -53,7 +53,7 @@ public partial class StructAggregateInitTests
 
     [SkippableFact]
     [Category(TestCategory.Syntax)]
-    public void Test_StructAggregateInitialization_EdgeCase_DeeplyNested()
+    public void TranspileMethod_DeeplyNestedStructAggregateInitialization_EmitsNestedAggregateInitializationSyntax()
     {
         var (cudaSource, diagnostics) =
             RoslynTestUtility.TranspileMethod<TestClass_SYN90>(nameof(TestClass_SYN90.InitNestedStruct));

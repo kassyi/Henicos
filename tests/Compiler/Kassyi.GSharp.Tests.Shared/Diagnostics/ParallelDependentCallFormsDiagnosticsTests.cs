@@ -45,7 +45,7 @@ public class ParallelDependentCallFormsDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.HappyPath)]
-    public async Task Test_CorrectCode_ReportsNothing(string dialect)
+    public async Task ParallelDependentCallForms_ValidSyntax_ReportsNothing(string dialect)
     {
         var ranges = await GetRangesInAsync(dialect, "CorrectCodeKernel");
 

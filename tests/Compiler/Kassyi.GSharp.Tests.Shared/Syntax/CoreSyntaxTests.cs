@@ -15,7 +15,7 @@ public class CoreSyntaxTests
     [InlineData(0, 0, 0)]        // Zero case
     [InlineData(int.MinValue, 2, 10)] // Min extreme value -> else branch: 5 * 2 = 10
     [InlineData(int.MaxValue / 10, 2, (int.MaxValue / 10) * 5)] // Max reasonable value without overflow
-    public void TestComplexLogicKernel_BoundaryDataDriven(int a, int b, int expectedC)
+    public void ComplexLogic_DataDrivenInputs_ProducesExpectedOutput(int a, int b, int expectedC)
     {
         int[] aArray = [a];
         int[] bArray = [b];
@@ -28,7 +28,7 @@ public class CoreSyntaxTests
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void TestControlFlowKernel()
+    public void ControlFlow_EightThreadsAcrossWarps_ProducesExpectedOutput()
     {
         // Test with 8 threads across multiple warps/lanes
         int[] dataArray = new int[8];
@@ -47,7 +47,7 @@ public class CoreSyntaxTests
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void TestStructKernel()
+    public void Struct_SingleAndMultipleVectors_ProducesExpectedValuesOrThrowsOnEmpty()
     {
         // Empty array edge case: the launcher rejects it instead of skipping the launch
         Vector2[] emptyVectors = [];
@@ -78,7 +78,7 @@ public class CoreSyntaxTests
     [SkippableFact]
     [Category(TestCategory.Alignment)]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void TestStruct_MixedPaddingAndAlignment()
+    public void Struct_MixedPaddingAndAlignment_PreservesFieldOffsetsOrThrowsOnEmpty()
     {
         // Empty array edge case: the launcher rejects it instead of skipping the launch
         MixedPaddingStruct[] emptyItems = [];
@@ -119,7 +119,7 @@ public class CoreSyntaxTests
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void TestDeviceMethodKernel()
+    public void DeviceMethod_SingleAndMultiElements_AddsConstantOffset()
     {
         // Single-element edge case
         int[] singleData = [42];

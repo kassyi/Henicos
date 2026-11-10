@@ -22,7 +22,7 @@ public class LoggerAndEnvironmentTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Logger_AllLevels_EmitWithoutException()
+    public void Logger_AllLevels_EmitsWithoutException()
     {
         // Happy Path: Logger methods should succeed across all severity levels
         var prevLevel = Logger.ActiveLogLevel;
@@ -54,7 +54,7 @@ public class LoggerAndEnvironmentTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Logger_PerformanceTrackingAndScopes_WorkCorrectly()
+    public void Logger_PerformanceTrackingAndScopes_WorksCorrectly()
     {
         // Happy Path: Performance timer and measure scope
         var prevLevel = Logger.ActiveLogLevel;
@@ -99,7 +99,7 @@ public class LoggerAndEnvironmentTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Logger_GenericILoggerWrapper_OperatesAsExpected()
+    public void Logger_GenericILoggerWrapper_OperatesAsExpected()
     {
         // Happy Path: Microsoft.Extensions.Logging.ILogger implementation via Logger<T>
         var prevLevel = Logger.ActiveLogLevel;
@@ -126,7 +126,7 @@ public class LoggerAndEnvironmentTests
     [InlineData("")]
     [InlineData(" ")]
     [InlineData("Special\t\r\n\0Characters")]
-    public void Test_Logger_BoundaryMessages_HandledGracefully(string message)
+    public void Logger_ExtremeMessages_HandledGracefully(string message)
     {
         // Boundary Testing: Empty string, whitespace, and special characters
         var prevConsole = Logger.WriteToConsole;
@@ -144,7 +144,7 @@ public class LoggerAndEnvironmentTests
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Logger_OversizedMessage_HandledGracefully()
+    public void Logger_OversizedMessage_HandledGracefully()
     {
         // Boundary Testing: Very large message (100,000 characters)
         var prevConsole = Logger.WriteToConsole;
@@ -163,7 +163,7 @@ public class LoggerAndEnvironmentTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_Logger_NullMessage_IgnoredWithoutException()
+    public void Logger_NullMessage_IgnoredWithoutException()
     {
         // Sad Path: Null message should be ignored cleanly without throwing NullReferenceException
         var exception = Record.Exception(() => Logger.Log(GSharpLogLevel.Info, "TAG", null));
@@ -172,7 +172,7 @@ public class LoggerAndEnvironmentTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_Logger_FilteringBelowActiveLevel_SuppressesLogs()
+    public void Logger_FilteringBelowActiveLevel_SuppressesLogs()
     {
         // Sad Path: Messages below active level must be suppressed
         var prevLevel = Logger.ActiveLogLevel;
@@ -195,7 +195,7 @@ public class LoggerAndEnvironmentTests
 
     [Fact]
     [Category(TestCategory.Stress)]
-    public void Test_Logger_ConcurrentWrites_ThreadSafeAndNoDeadlock()
+    public void Logger_ConcurrentWrites_ThreadSafeAndNoDeadlock()
     {
         // Stress & Concurrency: Multi-threaded burst logging into the background queue
         var prevLevel = Logger.ActiveLogLevel;
@@ -240,7 +240,7 @@ public class LoggerAndEnvironmentTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_CudaEnvironment_PathResolution_DoesNotCrash()
+    public void CudaEnvironment_PathResolution_DoesNotCrash()
     {
         // Happy Path: CudaEnvironment API calls return either valid paths or null without throwing unhandled exceptions
         var cudaPath = CudaEnvironment.GetCudaPath();
@@ -259,7 +259,7 @@ public class LoggerAndEnvironmentTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_CudaEnvironment_InvalidCudaPath_Ignored()
+    public void CudaEnvironment_InvalidCudaPath_Ignored()
     {
         // Sad Path: Setting an invalid CUDA_PATH environment variable should be ignored and fallback safely
         var originalEnv = Environment.GetEnvironmentVariable("CUDA_PATH");
@@ -301,7 +301,7 @@ public class LoggerAndEnvironmentTests
 
     [Fact]
     [Category(TestCategory.Runtime)]
-    public void Test_CudaEnvironment_Windows_FallbackPaths()
+    public void CudaEnvironment_Windows_SelectsFallbackPaths()
     {
         var mock = new MockCudaPathResolver { MockIsWindows = true };
         var baseDir = @"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA";
@@ -326,7 +326,7 @@ public class LoggerAndEnvironmentTests
 
     [Fact]
     [Category(TestCategory.Runtime)]
-    public void Test_CudaEnvironment_Linux_FallbackPath()
+    public void CudaEnvironment_Linux_SelectsFallbackPath()
     {
         var mock = new MockCudaPathResolver { MockIsLinux = true };
         mock.ExistingDirs.Add("/usr/local/cuda");
@@ -351,7 +351,7 @@ public class LoggerAndEnvironmentTests
 
     [Fact]
     [Category(TestCategory.Runtime)]
-    public void Test_CudaEnvironment_Windows_BinPath()
+    public void CudaEnvironment_Windows_ReturnsBinPath()
     {
         var mock = new MockCudaPathResolver { MockIsWindows = true };
         var cudaRoot = @"C:\Cuda";

@@ -7,7 +7,10 @@ public class GeneratorSadPathTests
     [Scenario(TestScenario.SadPath)]
     [InlineData("SYN-17", "Analyzers/UnresolvedTargetTypedNew.cs", "CS8754")]
     [InlineData("SYN-03", "Analyzers/DuplicateOutVar.cs", "CS0128")]
-    public async Task Test_GeneratorSadPath_ReportsExpectedError(string featureId, string testCasePath, string expectedErrorId)
+    public async Task Generator_InvalidKernel_ReportsExpectedError(
+        string featureId,
+        string testCasePath,
+        string expectedErrorId)
     {
         await RoslynTestUtility.TestGenerator(testCasePath)
                                .ReportsErrorsAsync(expectedErrorId);
@@ -22,7 +25,10 @@ public class GeneratorSadPathTests
     [InlineData("GEN-52", "Analyzers/InvalidMappingSadPath.cs", "GSH0001")]
     // A struct field of a reference type other than an array (the generated code no longer states it as #error)
     [InlineData("GEN-33", "Analyzers/UnsupportedStructFieldsSadPath.cs", "GSH0078")]
-    public async Task Test_SadPath_AnalyzerReportsExpectedError(string featureId, string testCasePath, string expectedErrorId)
+    public async Task Analyzer_InvalidKernel_ReportsExpectedError(
+        string featureId,
+        string testCasePath,
+        string expectedErrorId)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(testCasePath, DialectName);
 
@@ -33,7 +39,10 @@ public class GeneratorSadPathTests
     [Theory]
     [Scenario(TestScenario.SadPath)]
     [InlineData("SYN-01", "Analyzers/GpuKernel/NonExhaustiveSwitch_InGpuKernel.cu.cs", "CS8509")]
-    public async Task Test_GeneratorSadPath_ReportsExpectedDiagnostic(string featureId, string testCasePath, string expectedDiagnosticId)
+    public async Task Generator_InvalidConstruct_ReportsExpectedDiagnostic(
+        string featureId,
+        string testCasePath,
+        string expectedDiagnosticId)
     {
         await RoslynTestUtility.TestGenerator(testCasePath)
                                .ReportsDiagnosticsAsync(expectedDiagnosticId);
@@ -44,7 +53,10 @@ public class GeneratorSadPathTests
     [Scenario(TestScenario.SadPath)]
     [InlineData("SYN-08", "Analyzers/DelegateEscapeSadPath.cs", new[] { "GSH0065 Analyzer", "GSH0001 Analyzer" })]
     [InlineData("SYN-01", "Analyzers/GpuKernel/UnsupportedSwitch_InGpuKernel.cu.cs", new[] { "GSH0003 Analyzer", "GSH0003 Analyzer" })]
-    public async Task Test_SadPath_ReportsMultipleExpectedErrors(string featureId, string testCasePath, string[] expected)
+    public async Task Analyzer_MultipleInvalidConstructs_ReportsMultipleExpectedErrors(
+        string featureId,
+        string testCasePath,
+        string[] expected)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(testCasePath, DialectName);
 
@@ -60,7 +72,7 @@ public class GeneratorSadPathTests
     [InlineData("GEN-29", "Analyzers/DynamicSharedMemorySadPath.cs")]
     [InlineData("SYN-90", "Analyzers/UnsupportedMethodInStructInit.cs")]
     [InlineData("GEN-17", "Analyzers/RefOutReassignmentSadPath.cs")]
-    public async Task Test_GeneratorSadPath_HasNoErrors(string featureId, string testCasePath)
+    public async Task Generator_ValidConstruct_HasNoErrors(string featureId, string testCasePath)
     {
         await RoslynTestUtility.TestGenerator(testCasePath)
                                .HasNoErrorsAsync();
@@ -69,7 +81,7 @@ public class GeneratorSadPathTests
     [Theory]
     [Scenario(TestScenario.SadPath)]
     [InlineData("SYN-91_92", "Analyzers/InvalidParenthesesSadPath.cs")]
-    public async Task Test_GeneratorSadPath_HasErrors(string featureId, string testCasePath)
+    public async Task Generator_InvalidConstruct_HasErrors(string featureId, string testCasePath)
     {
         await RoslynTestUtility.TestGenerator(testCasePath)
                                .HasErrorsAsync();
@@ -77,7 +89,7 @@ public class GeneratorSadPathTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_LocalFunctionCapture_ReportsExpectedDiagnostic()
+    public async Task LocalFunctionCapture_CapturedVariablesInKernel_ReportsExpectedDiagnostic()
     {
         await RoslynTestUtility.TestGenerator("Analyzers/LocalFunctionCaptureSadPath.cs")
                                .ReportsErrorsAsync("CS8421");

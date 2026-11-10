@@ -99,7 +99,7 @@ public sealed class SpillOrderMutatingGetterTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_MutatingGetterOnKernelValueParameterAcrossBarrier_PreservesReceiverWriteAfterBarrier()
+    public void SpillOrder_MutatingGetterOnKernelValueParameterAcrossBarrier_PreservesReceiverWriteAfterBarrier()
     {
         Skip.If(IsCudaDialect, "Managed compilation shape test runs on the CPU runner.");
 
@@ -136,7 +136,7 @@ public sealed class SpillOrderMutatingGetterTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_MutatingGetterOnDeviceValueParameterAcrossBarrier_PreservesReceiverWriteAfterBarrier()
+    public void SpillOrder_MutatingGetterOnDeviceValueParameterAcrossBarrier_PreservesReceiverWriteAfterBarrier()
     {
         Skip.If(IsCudaDialect, "Managed compilation shape test runs on the CPU runner.");
 
@@ -173,7 +173,7 @@ public sealed class SpillOrderMutatingGetterTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_MutatingIndexerOnKernelValueParameterAcrossBarrier_PreservesReceiverWriteAfterBarrier()
+    public void SpillOrder_MutatingIndexerOnKernelValueParameterAcrossBarrier_PreservesReceiverWriteAfterBarrier()
     {
         Skip.If(IsCudaDialect, "Managed compilation shape test runs on the CPU runner.");
 
@@ -210,7 +210,7 @@ public sealed class SpillOrderMutatingGetterTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_MutatingGetterAfterStructIdentifierArgument_SpillsEarlierReadBeforeGetterMutates()
+    public void SpillOrder_MutatingGetterAfterStructIdentifierArgument_SpillsEarlierReadBeforeGetterMutates()
     {
         Skip.If(IsCudaDialect, "Managed compilation shape test runs on the CPU runner.");
 
@@ -248,7 +248,7 @@ public sealed class SpillOrderMutatingGetterTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_MutatingIndexerAfterStructIdentifierArgument_SpillsEarlierReadBeforeIndexerMutates()
+    public void SpillOrder_MutatingIndexerAfterStructIdentifierArgument_SpillsEarlierReadBeforeIndexerMutates()
     {
         Skip.If(IsCudaDialect, "Managed compilation shape test runs on the CPU runner.");
 
@@ -286,7 +286,7 @@ public sealed class SpillOrderMutatingGetterTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_RefConditionalWriteOnKernelValueParameterAcrossBarrier_MatchesExpected()
+    public void SpillOrder_RefConditionalWriteOnKernelValueParameterAcrossBarrier_MatchesExpected()
     {
         int[] expected = new int[ThreadCount];
         for (int tid = 0; tid < ThreadCount; tid++)
@@ -328,7 +328,7 @@ public sealed class SpillOrderMutatingGetterTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_RefConditionalArgumentOnKernelValueParameterAcrossBarrier_MatchesExpected()
+    public void SpillOrder_RefConditionalArgumentOnKernelValueParameterAcrossBarrier_MatchesExpected()
     {
         int[] expected = new int[ThreadCount];
         for (int tid = 0; tid < ThreadCount; tid++)
@@ -370,7 +370,7 @@ public sealed class SpillOrderMutatingGetterTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_RefConditionalWriteOnDeviceValueParameterAcrossBarrier_MatchesExpected()
+    public void SpillOrder_RefConditionalWriteOnDeviceValueParameterAcrossBarrier_MatchesExpected()
     {
         int[] expected = new int[ThreadCount];
         for (int tid = 0; tid < ThreadCount; tid++)
@@ -412,7 +412,7 @@ public sealed class SpillOrderMutatingGetterTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_OperatorMacroOnKernelValueParameterAcrossBarrier_PreservesContextMutations()
+    public void SpillOrder_OperatorMacroOnKernelValueParameterAcrossBarrier_PreservesContextMutations()
     {
         var initialState = new Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextState { Offset = 100, Calls = 0 };
         uint[] result = [0];
@@ -450,7 +450,7 @@ public sealed class SpillOrderMutatingGetterTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_OperatorMacroOnDeviceValueParameterAcrossBarrier_PreservesContextMutations()
+    public void SpillOrder_OperatorMacroOnDeviceValueParameterAcrossBarrier_PreservesContextMutations()
     {
         var initialState = new Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextState { Offset = 50, Calls = 0 };
         uint[] result = [0];
@@ -488,7 +488,7 @@ public sealed class SpillOrderMutatingGetterTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_PointerLocalAcrossBarrier_CompilesWithUnsafeContextClassAndMatchesExpected()
+    public void SpillOrder_PointerLocalAcrossBarrier_CompilesWithUnsafeContextClassAndMatchesExpected()
     {
         Skip.If(IsCudaDialect, "Managed compilation shape test runs on the CPU runner.");
 
@@ -519,7 +519,7 @@ public sealed class SpillOrderMutatingGetterTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_AddressOfValueParameterBeforeBarrier_PinsContextFieldAndMatchesExpected()
+    public void SpillOrder_AddressOfValueParameterBeforeBarrier_PinsContextFieldAndMatchesExpected()
     {
         Skip.If(IsCudaDialect, "Managed compilation shape test runs on the CPU runner.");
 
@@ -552,7 +552,7 @@ public sealed class SpillOrderMutatingGetterTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_AddressOfHoistedLocalBeforeBarrier_PinsContextFieldAndMatchesExpected()
+    public void SpillOrder_AddressOfHoistedLocalBeforeBarrier_PinsContextFieldAndMatchesExpected()
     {
         Skip.If(IsCudaDialect, "Managed compilation shape test runs on the CPU runner.");
 
@@ -585,7 +585,7 @@ public sealed class SpillOrderMutatingGetterTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_UnsafeBlockWithSyncThreads_SplitsStateMachineCorrectly()
+    public void SpillOrder_UnsafeBlockWithSyncThreads_SplitsStateMachineCorrectly()
     {
         int[] expected = new int[ThreadCount];
         for (int tid = 0; tid < ThreadCount; tid++)
@@ -624,7 +624,7 @@ public sealed class SpillOrderMutatingGetterTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_UnsafeBlockWithWarpShuffle_SplitsStateMachineCorrectly()
+    public void SpillOrder_UnsafeBlockWithWarpShuffle_SplitsStateMachineCorrectly()
     {
         int[] expected = Enumerable.Range(0, ThreadCount).Select(tid => 100 + tid).ToArray();
 
@@ -658,7 +658,7 @@ public sealed class SpillOrderMutatingGetterTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_RefConditionalValueRead_OneLevel_SequencedCorrectly()
+    public void SpillOrder_RefConditionalValueReadOneLevel_SequencedCorrectly()
     {
         int[] expected = Enumerable.Range(0, ThreadCount).Select(tid => (tid + 9) * 1000 + (tid + 9 + 100)).ToArray();
 
@@ -689,7 +689,7 @@ public sealed class SpillOrderMutatingGetterTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_RefConditionalValueRead_Nested_SequencedCorrectly()
+    public void SpillOrder_RefConditionalValueReadNested_SequencedCorrectly()
     {
         int[] expected = Enumerable.Range(0, ThreadCount).Select(tid => (tid + 9) * 1000 + (tid + 9 + 100)).ToArray();
 
@@ -720,7 +720,7 @@ public sealed class SpillOrderMutatingGetterTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_RefConditionalValueRead_NestedWithBarrier_SequencedCorrectly()
+    public void SpillOrder_RefConditionalValueReadNestedWithBarrier_SequencedCorrectly()
     {
         int[] expected = Enumerable.Range(0, ThreadCount).Select(tid => (tid + 9) * 1000 + (tid + 9 + 100)).ToArray();
 
@@ -754,7 +754,7 @@ public sealed class SpillOrderMutatingGetterTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_AddressOfValueParameterAcrossBarrier_PreservesMutation()
+    public void SpillOrder_AddressOfValueParameterAcrossBarrier_PreservesMutation()
     {
         Skip.If(IsCudaDialect, "Managed compilation shape test runs on the CPU runner.");
 
@@ -787,7 +787,7 @@ public sealed class SpillOrderMutatingGetterTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_AddressOfHoistedLocalAcrossBarrier_PreservesMutation()
+    public void SpillOrder_AddressOfHoistedLocalAcrossBarrier_PreservesMutation()
     {
         Skip.If(IsCudaDialect, "Managed compilation shape test runs on the CPU runner.");
 
@@ -820,7 +820,7 @@ public sealed class SpillOrderMutatingGetterTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_PointerParameterAcrossBarrier_PreservesValue()
+    public void SpillOrder_PointerParameterAcrossBarrier_PreservesValue()
     {
         Skip.If(IsCudaDialect, "Managed compilation shape test runs on the CPU runner.");
 
@@ -851,7 +851,7 @@ public sealed class SpillOrderMutatingGetterTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_RefLocalToValueParameterAcrossBarrier_PreservesMutation()
+    public void SpillOrder_RefLocalToValueParameterAcrossBarrier_PreservesMutation()
     {
         Skip.If(IsCudaDialect, "Managed compilation shape test runs on the CPU runner.");
 
@@ -884,7 +884,7 @@ public sealed class SpillOrderMutatingGetterTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_AddressOfHoistedLocalAcrossBarrier_StressGcPressure()
+    public void SpillOrder_AddressOfHoistedLocalAcrossBarrier_StressGcPressure()
     {
         Skip.If(IsCudaDialect, "Managed compilation shape test runs on the CPU runner.");
 

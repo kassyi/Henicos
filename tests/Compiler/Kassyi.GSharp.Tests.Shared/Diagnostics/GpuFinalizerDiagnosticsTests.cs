@@ -14,7 +14,7 @@ public class GpuFinalizerDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_FinalizerMarkedAsGpuCode_ReportsGsh0003(string dialect)
+    public async Task FinalizerMarkedAsGpuCode_DestructorDeclaration_ReportsGsh0003(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/GpuFinalizer.cu.cs", dialect);
 

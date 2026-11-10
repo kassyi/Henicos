@@ -8,7 +8,7 @@ public class InvocationTests
     // SYN-49 Happy Path
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void Test_InterlockedAtomicOperations()
+    public void Interlocked_AtomicOperations_ProducesExpectedValues()
     {
         EnsureCapability(DialectCapabilities.HardwareAtomics);
         int[] intBuf = new int[3];
@@ -36,7 +36,7 @@ public class InvocationTests
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void Test_InterlockedAtomicOperations_EmptyArray()
+    public void Interlocked_EmptyArray_ThrowsArgumentException()
     {
         int[] intBuf = [];
         uint[] uintBuf = [];
@@ -56,7 +56,7 @@ public class InvocationTests
     // SYN-49 Edge Cases
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void Test_InterlockedEdgeCases_ArrayElementsAndStructFields()
+    public void Interlocked_ArrayElementsAndStructFields_ProducesExpectedValues()
     {
         EnsureCapability(DialectCapabilities.HardwareAtomics);
         int[] array = new int[4] { 1, 2, 3, 4 };
@@ -80,7 +80,7 @@ public class InvocationTests
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void Test_InterlockedEdgeCases_EmptyArray()
+    public void Interlocked_EmptyArrayInEdgeCases_ThrowsArgumentException()
     {
         int[] emptyArray = [];
         AtomicTestStruct[] emptyStructArray = [];
@@ -95,7 +95,7 @@ public class InvocationTests
 
     [SkippableFact]
     [Category(TestCategory.Syntax)]
-    public void Test_AtomicTestStruct_MemoryLayout()
+    public void MemoryLayout_AtomicTestStruct_MatchesExpectedOffsetsAndSize()
     {
         Assert.Equal(16, System.Runtime.InteropServices.Marshal.SizeOf<AtomicTestStruct>());
         Assert.Equal(0, System.Runtime.InteropServices.Marshal.OffsetOf<AtomicTestStruct>("ValueI").ToInt32());

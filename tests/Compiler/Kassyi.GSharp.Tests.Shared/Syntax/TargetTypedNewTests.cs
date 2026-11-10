@@ -4,7 +4,7 @@ public class TargetTypedNewTests
 :  TranspilerTestBase{
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void Test_HappyPath_TargetTypedNew()
+    public void TargetTypedNew_DeclarationAndArgument_ComputesExpectedSum()
     {
         int[] output = [0];
 
@@ -19,7 +19,7 @@ public class TargetTypedNewTests
     [InlineData(0, 0)]  // tid 0: p.Id = 0, p.Child.Value = 0 -> 0
     [InlineData(1, 6)]  // tid 1: p.Id = 1, p.Child.Value = 5 -> 6
     [InlineData(2, 12)] // tid 2: p.Id = 2, p.Child.Value = 10 -> 12
-    public void Test_EdgeCase_NestedTargetTypedNewInInitializer(int tid, int expectedOutput)
+    public void TargetTypedNew_NestedInStructInitializer_ProducesExpectedOutput(int tid, int expectedOutput)
     {
         int[] output = new int[3];
 

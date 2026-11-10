@@ -943,97 +943,109 @@ public class MathDifferentialTests
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_MathOfSingle_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_mathOfSingle);
+    public void MathFunctions_SinglePrecision_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_mathOfSingle);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_SingleRoundingAndUnary_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_singleRoundingAndUnary);
+    public void MathFunctions_SingleRoundingAndUnary_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_singleRoundingAndUnary);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_DoubleRoundingAndUnary_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_doubleRoundingAndUnary);
+    public void MathFunctions_DoubleRoundingAndUnary_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_doubleRoundingAndUnary);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_SingleMaxMinClamp_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_singleMaxMinClamp);
+    public void MathFunctions_SingleMaxMinClamp_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_singleMaxMinClamp);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_DoubleMaxMinClamp_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_doubleMaxMinClamp);
+    public void MathFunctions_DoubleMaxMinClamp_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_doubleMaxMinClamp);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_MixedFloatMaxMin_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_mixedFloatMaxMin);
+    public void MathFunctions_MixedFloatMaxMin_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_mixedFloatMaxMin);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Int32Math_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_int32Math);
+    public void MathFunctions_Int32Operations_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_int32Math);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_MathFIntArgument_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_mathFIntArgument);
+    public void MathFunctions_MathFIntArgument_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_mathFIntArgument);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_SubnormalIeeeExact_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_subnormalIeeeExact);
+    public void MathFunctions_SubnormalIeeeExact_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_subnormalIeeeExact);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_TranscendentalSpecialValues_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_transcendentalSpecialValues);
+    public void MathFunctions_TranscendentalSpecialValues_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_transcendentalSpecialValues);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_BitOperations_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_bitOperations);
+    public void BitOperations_VariousInputs_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_bitOperations);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_FloatComparisonAndLargeTie_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_floatComparisonAndLargeTie);
+    public void MathFunctions_FloatComparisonAndLargeTie_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_floatComparisonAndLargeTie);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_MulAddExactAndContraction_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_mulAddExactAndContraction);
+    public void MathFunctions_MulAddExactAndContraction_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_mulAddExactAndContraction);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_SingleTranscendental_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_singleTranscendental);
+    public void MathFunctions_SingleTranscendental_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_singleTranscendental);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_DoubleAndPromotedSingleTranscendental_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_doubleAndPromotedSingleTranscendental);
+    public void MathFunctions_DoubleAndPromotedSingleTranscendental_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_doubleAndPromotedSingleTranscendental);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_FastMath_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_fastMath);
+    public void MathFunctions_FastMath_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_fastMath);
 
     // BclMappings maps all 6 BitOperations nuint overloads, but CppTypeNameWriter emits
     // undeclared System_UIntPtr for nuint locals/casts so AOT C++/CUDA compilation would fail with C2065 (#983)

@@ -16,21 +16,21 @@ public class MathMaxMinTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_SingleMaxMin_MatchesDotNet() => MathMaxMinScenarios.SingleMaxMin(s_runNative);
+    public void MaxMin_SinglePrecision_MatchesDotNet() => MathMaxMinScenarios.SingleMaxMin(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_DoubleMaxMin_MatchesDotNet() => MathMaxMinScenarios.DoubleMaxMin(s_runNative);
+    public void MaxMin_DoublePrecision_MatchesDotNet() => MathMaxMinScenarios.DoubleMaxMin(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_SingleClamp_MatchesDotNet() => MathMaxMinScenarios.SingleClamp(s_runNative);
+    public void Clamp_SinglePrecision_MatchesDotNet() => MathMaxMinScenarios.SingleClamp(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_DoubleClamp_MatchesDotNet() => MathMaxMinScenarios.DoubleClamp(s_runNative);
+    public void Clamp_DoublePrecision_MatchesDotNet() => MathMaxMinScenarios.DoubleClamp(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_MixedOperands_PickTheCSharpOverload() => MathMaxMinScenarios.MixedOperands(s_runNative);
+    public void Overload_MixedOperands_PicksCSharpOverload() => MathMaxMinScenarios.MixedOperands(s_runNative);
 }

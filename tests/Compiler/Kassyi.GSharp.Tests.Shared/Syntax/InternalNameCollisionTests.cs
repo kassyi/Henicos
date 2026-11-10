@@ -25,7 +25,7 @@ public class InternalNameCollisionTests : TranspilerTestBase
     [SkippableFact]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_ContextFieldNamedLocals_SurviveBarrier()
+    public void Launch_ContextFieldNamedLocals_SurvivesBarrier()
     {
         var data = CreateSequence(1);
 
@@ -41,7 +41,7 @@ public class InternalNameCollisionTests : TranspilerTestBase
     [SkippableFact]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_AggregateTempNamedLocal_IsReadByObjectInitializer()
+    public void Launch_AggregateTempNamedLocal_IsReadByObjectInitializer()
     {
         var data = CreateSequence(1);
 
@@ -57,7 +57,7 @@ public class InternalNameCollisionTests : TranspilerTestBase
     [SkippableFact]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_TupleTempNamedLocals_AreSwapped()
+    public void Launch_TupleTempNamedLocals_SwapsLocalsCorrectly()
     {
         var first = CreateSequence(1);
         var second = CreateSequence(1000);
@@ -74,7 +74,7 @@ public class InternalNameCollisionTests : TranspilerTestBase
     [SkippableFact]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_LoweringLabelNamedLabels_CoexistWithLoweredControlFlow()
+    public void Launch_LoweringLabelNamedLabels_CoexistsWithLoweredControlFlow()
     {
         const int Rounds = 2;
         var data = CreateSequence(1);
@@ -90,7 +90,7 @@ public class InternalNameCollisionTests : TranspilerTestBase
     [SkippableFact]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_WarpTempNamedLocal_SurvivesBarrierBeforeShuffle()
+    public void Launch_WarpTempNamedLocal_SurvivesBarrierBeforeShuffle()
     {
         var data = CreateSequence(1);
 
@@ -108,7 +108,7 @@ public class InternalNameCollisionTests : TranspilerTestBase
     [SkippableFact]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_LauncherLocalNamedParameters_ArePassedThrough()
+    public void Launch_LauncherLocalNamedParameters_PassesArgumentsThrough()
     {
         var data = new int[ThreadCount];
 

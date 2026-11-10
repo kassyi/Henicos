@@ -16,7 +16,7 @@ public class ManagedQualificationManagedTests : TranspilerTestBase
 {
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_UsingDirective_TypeAndClassOfAnotherNamespace()
+    public void UsingDirective_TypeAndClassOfAnotherNamespace_ProducesExpectedOutput()
     {
         int[] values = [1, 2, 3, 4];
         var result = new int[4];
@@ -29,7 +29,7 @@ public class ManagedQualificationManagedTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_UsingStatic_DeviceFunctionWithoutItsClass()
+    public void UsingStatic_DeviceFunctionWithoutItsClass_ProducesExpectedOutput()
     {
         int[] values = [1, 2, 3, 4];
         var result = new int[4];
@@ -42,7 +42,7 @@ public class ManagedQualificationManagedTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_HoistedLocal_TypeOfAnotherNamespace()
+    public void HoistedLocal_TypeOfAnotherNamespace_ProducesExpectedOutput()
     {
         int[] values = [1, 2, 3, 4];
         var result = new int[4];
@@ -55,7 +55,7 @@ public class ManagedQualificationManagedTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_RefStructInitializer_ConstantOfAnotherNamespace()
+    public void RefStructInitializer_ConstantOfAnotherNamespace_ProducesExpectedOutput()
     {
         int[] values = [1, 2, 3, 4];
         var result = new int[4];
@@ -68,7 +68,7 @@ public class ManagedQualificationManagedTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_TypeForms_GenericNestedEnumStackallocAlias()
+    public void TypeForms_GenericNestedEnumStackallocAlias_ProducesExpectedOutput()
     {
         int[] values = [1, 2, 3, 4];
         var result = new int[4];
@@ -81,7 +81,7 @@ public class ManagedQualificationManagedTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_ExtensionCalls_ByValueRefAndIn()
+    public void ExtensionCalls_ByValueRefAndIn_ProducesExpectedOutput()
     {
         int[] values = [1, 2, 3, 4];
         var result = new int[4];
@@ -94,7 +94,7 @@ public class ManagedQualificationManagedTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_SuspendingCallee_NamesOfItsNamespace()
+    public void SuspendingCallee_NamesOfItsNamespace_ProducesExpectedOutput()
     {
         var buffer = new int[4];
         var result = new int[4];
@@ -107,49 +107,51 @@ public class ManagedQualificationManagedTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_UsingStaticInGridStrideLoop_BlockBody_KernelBody() =>
+    public void UsingStaticInGridStrideLoop_BlockBodyKernelBody_ProducesExpectedOutput() =>
         Run(ManagedQualificationCases.GridStrideBlockBody);
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_UsingStaticInGridStrideLoop_BlockBody_DeviceFunction() =>
+    public void UsingStaticInGridStrideLoop_BlockBodyDeviceFunction_ProducesExpectedOutput() =>
         Run(ManagedQualificationCases.GridStrideBlockBodyInDeviceFunction);
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_UsingStaticInGridStrideLoop_ExpressionBody_KernelBody() =>
+    public void UsingStaticInGridStrideLoop_ExpressionBodyKernelBody_ProducesExpectedOutput() =>
         Run(ManagedQualificationCases.GridStrideExpressionBody);
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_UsingStaticInGridStrideLoop_ExpressionBody_DeviceFunction() =>
+    public void UsingStaticInGridStrideLoop_ExpressionBodyDeviceFunction_ProducesExpectedOutput() =>
         Run(ManagedQualificationCases.GridStrideExpressionBodyInDeviceFunction);
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_UsingStaticInSingleThread_KernelBody() => Run(ManagedQualificationCases.SingleThread);
+    public void UsingStaticInSingleThread_KernelBody_ProducesExpectedOutput() =>
+        Run(ManagedQualificationCases.SingleThread);
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_UsingStaticInSingleThread_DeviceFunction() =>
+    public void UsingStaticInSingleThread_DeviceFunction_ProducesExpectedOutput() =>
         Run(ManagedQualificationCases.SingleThreadInDeviceFunction);
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_UsingStaticInForUnroll_KernelBody() => Run(ManagedQualificationCases.ForUnroll);
+    public void UsingStaticInForUnroll_KernelBody_ProducesExpectedOutput() => Run(ManagedQualificationCases.ForUnroll);
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_UsingStaticInForUnroll_DeviceFunction() =>
+    public void UsingStaticInForUnroll_DeviceFunction_ProducesExpectedOutput() =>
         Run(ManagedQualificationCases.ForUnrollInDeviceFunction);
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_UsingStaticInStackLinqLambda_KernelBody() => Run(ManagedQualificationCases.StackLinq);
+    public void UsingStaticInStackLinqLambda_KernelBody_ProducesExpectedOutput() =>
+        Run(ManagedQualificationCases.StackLinq);
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_UsingStaticInStackLinqLambda_DeviceFunction() =>
+    public void UsingStaticInStackLinqLambda_DeviceFunction_ProducesExpectedOutput() =>
         Run(ManagedQualificationCases.StackLinqInDeviceFunction);
 
     private static void Run(QualificationCase qualificationCase)

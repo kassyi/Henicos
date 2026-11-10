@@ -23,7 +23,7 @@ public class RefArgumentOrderTests : TranspilerTestBase
     [Scenario(TestScenario.Boundary)]
     [InlineData(false)]
     [InlineData(true)]
-    public void Test_FieldOfElement_IndexWrittenLater_SelectsTheOldElement(bool forceManaged)
+    public void FieldOfElement_IndexWrittenLater_SelectsOldElement(bool forceManaged)
     {
         var cells = new RefOrderCell[Threads * 2];
 
@@ -39,7 +39,7 @@ public class RefArgumentOrderTests : TranspilerTestBase
     [Scenario(TestScenario.Boundary)]
     [InlineData(false)]
     [InlineData(true)]
-    public void Test_IndexFromMemory_ChangedByCallee_SelectsTheElementOnce(bool forceManaged)
+    public void IndexFromMemory_ChangedByCallee_SelectsElementOnce(bool forceManaged)
     {
         var cells = new RefOrderCell[Threads * 2];
         var idx = Enumerable.Range(0, Threads).ToArray();
@@ -58,7 +58,7 @@ public class RefArgumentOrderTests : TranspilerTestBase
     [InlineData(false, true)]
     [InlineData(true, false)]
     [InlineData(true, true)]
-    public void Test_ArrayReplacedByLaterArgument_WritesTheOldArray(bool forceManaged, bool inField)
+    public void ArrayReplacedByLaterArgument_ExecutionOrder_WritesOldArray(bool forceManaged, bool inField)
     {
         var data = new int[Threads];
         var other = new int[Threads];
@@ -87,7 +87,7 @@ public class RefArgumentOrderTests : TranspilerTestBase
     [InlineData(false, true)]
     [InlineData(true, false)]
     [InlineData(true, true)]
-    public void Test_IndexPassedByRef_IncrementedByCallee_SelectsTheOldElement(bool forceManaged, bool earlier)
+    public void IndexPassedByRef_IncrementedByCallee_SelectsOldElement(bool forceManaged, bool earlier)
     {
         var data = new int[Threads * 2];
 
@@ -110,7 +110,7 @@ public class RefArgumentOrderTests : TranspilerTestBase
     [Scenario(TestScenario.Boundary)]
     [InlineData(false)]
     [InlineData(true)]
-    public void Test_ValueOfVariablePassedByRef_IsTheValueBeforeTheCall(bool forceManaged)
+    public void ValueOfVariablePassedByRef_EvaluationOrder_PreservesValueBeforeCall(bool forceManaged)
     {
         var result = new int[Threads];
 
@@ -124,7 +124,7 @@ public class RefArgumentOrderTests : TranspilerTestBase
     [Scenario(TestScenario.Boundary)]
     [InlineData(false)]
     [InlineData(true)]
-    public void Test_ValueReadThroughRefParameter_IsTheValueBeforeTheCall(bool forceManaged)
+    public void ValueReadThroughRefParameter_EvaluationOrder_PreservesValueBeforeCall(bool forceManaged)
     {
         var data = Enumerable.Range(0, Threads).ToArray();
         var result = new int[Threads];
@@ -139,7 +139,7 @@ public class RefArgumentOrderTests : TranspilerTestBase
     [Scenario(TestScenario.Boundary)]
     [InlineData(false)]
     [InlineData(true)]
-    public void Test_InParameter_SeesTheLaterWriteOfItsVariable(bool forceManaged)
+    public void InParameter_EvaluationOrder_SeesLaterWriteOfVariable(bool forceManaged)
     {
         var result = new int[Threads];
 
@@ -154,7 +154,7 @@ public class RefArgumentOrderTests : TranspilerTestBase
     [Scenario(TestScenario.Boundary)]
     [InlineData(false)]
     [InlineData(true)]
-    public void Test_InParameterOfElement_SeesTheCalleesWrite(bool forceManaged)
+    public void InParameterOfElement_EvaluationOrder_SeesCalleeWrite(bool forceManaged)
     {
         var data = Enumerable.Range(0, Threads).ToArray();
         var result = new int[Threads];
@@ -169,7 +169,7 @@ public class RefArgumentOrderTests : TranspilerTestBase
     [Scenario(TestScenario.HappyPath)]
     [InlineData(false)]
     [InlineData(true)]
-    public void Test_IntExpressionToLongParameter_PassesItsValue(bool forceManaged)
+    public void IntExpressionToLongParameter_Conversion_PassesEvaluatedValue(bool forceManaged)
     {
         var result = new long[Threads];
 
@@ -183,7 +183,7 @@ public class RefArgumentOrderTests : TranspilerTestBase
     [Scenario(TestScenario.Boundary)]
     [InlineData(false)]
     [InlineData(true)]
-    public void Test_NestedSuspendingCall_WritesIndexAfterTheElementIsFixed(bool forceManaged)
+    public void NestedSuspendingCall_IndexWrittenAfterElementFixed_SelectsFixedElement(bool forceManaged)
     {
         var data = new int[Threads * 2];
 
@@ -198,7 +198,7 @@ public class RefArgumentOrderTests : TranspilerTestBase
     [Scenario(TestScenario.Boundary)]
     [InlineData(false)]
     [InlineData(true)]
-    public void Test_NestedSuspendingCall_WritesEarlierValueArgument(bool forceManaged)
+    public void NestedSuspendingCall_EvaluationOrder_WritesEarlierValueArgument(bool forceManaged)
     {
         var result = new int[Threads];
 
@@ -212,7 +212,7 @@ public class RefArgumentOrderTests : TranspilerTestBase
     [Scenario(TestScenario.Boundary)]
     [InlineData(false)]
     [InlineData(true)]
-    public void Test_ValueFieldToInParameter_PassesACopyEvaluatedOnce(bool forceManaged)
+    public void ValueFieldToInParameter_EvaluationOrder_PassesCopyEvaluatedOnce(bool forceManaged)
     {
         var result = new int[Threads];
 

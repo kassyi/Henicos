@@ -25,7 +25,7 @@ public class ManagedCallSpellingTests : TranspilerTestBase
     [Fact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_InThisExtension_ReceiverFieldOfValueAndOfVariables()
+    public void InThisExtension_ReceiverFieldOfValueAndVariablesNative_ExecutesSuccessfully()
     {
         var result = new int[4];
 
@@ -37,7 +37,7 @@ public class ManagedCallSpellingTests : TranspilerTestBase
     [Fact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_TargetTypedNew_GenericStructWithSharedMemory()
+    public void TargetTypedNew_GenericStructWithSharedMemoryNative_ExecutesSuccessfully()
     {
         var result = new int[4];
 
@@ -50,7 +50,7 @@ public class ManagedCallSpellingTests : TranspilerTestBase
     [Fact]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_InThisExtension_ReceiverFieldOfValueAndOfVariables()
+    public void InThisExtension_ReceiverFieldOfValueAndVariablesManaged_ExecutesSuccessfully()
     {
         var result = new int[4];
         var cells = CreateCells();
@@ -64,7 +64,7 @@ public class ManagedCallSpellingTests : TranspilerTestBase
     [Fact]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_TargetTypedNew_GenericStructWithSharedMemory()
+    public void TargetTypedNew_GenericStructWithSharedMemoryManaged_ExecutesSuccessfully()
     {
         var result = new int[4];
 

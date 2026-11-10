@@ -21,7 +21,7 @@ public class StackArrayDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_StackArrayThatOutlivesItsScope_ReportsGsh0091AtTheUse(string dialect)
+    public async Task StackArrayThatOutlivesScope_EscapingSpan_ReportsGsh0091AtUse(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(Escapes, dialect);
 
@@ -100,7 +100,7 @@ public class StackArrayDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_MultidimensionalArray_ReportsGsh0003AtTheCreation(string dialect)
+    public async Task MultidimensionalArray_ArrayCreation_ReportsGsh0003AtCreation(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(Shapes, dialect);
 
@@ -116,7 +116,7 @@ public class StackArrayDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_DynamicStackAllocInAnArgument_ReportsGsh0003AtTheSize(string dialect)
+    public async Task DynamicStackAllocInArgument_NonConstantSize_ReportsGsh0003AtSize(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(Shapes, dialect);
 
@@ -129,7 +129,7 @@ public class StackArrayDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.Boundary)]
-    public async Task Test_ZeroLengthArray_ReportsGsh0003AtTheCreation(string dialect)
+    public async Task ZeroLengthArray_ArrayCreation_ReportsGsh0003AtCreation(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(Shapes, dialect);
 
@@ -146,7 +146,7 @@ public class StackArrayDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_ArrayCreatedOutsideADeclaration_ReportsGsh0001Once(string dialect)
+    public async Task ArrayCreatedOutsideDeclaration_HeapAllocation_ReportsGsh0001Once(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(Shapes, dialect);
 
@@ -161,7 +161,7 @@ public class StackArrayDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_MultidimensionalArrayParameterAndField_ReportsGsh0003(string dialect)
+    public async Task MultidimensionalArrayParameterAndField_MultidimensionalType_ReportsGsh0003(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(MultidimensionalParameters, dialect);
 
@@ -189,7 +189,7 @@ public class StackArrayDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_MultidimensionalArrayInsideArrayLikeStructMember_ReportsGsh0003(string dialect)
+    public async Task MultidimensionalArrayInsideArrayLikeStructMember_NestedType_ReportsGsh0003(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(ArrayLikeMultidimensionalField, dialect);
 
@@ -204,7 +204,7 @@ public class StackArrayDiagnosticsTests
     // Only the check itself: the whole analyzer run on this case still overflows in TypeLayoutCalculator (#1039)
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_ContainsMultidimensionalArray_StopsOnACyclicStruct()
+    public void ContainsMultidimensionalArray_CyclicStruct_TerminatesRecursionSafely()
     {
         var compilation = RoslynTestUtility.CreateCompilation(RoslynTestUtility.ReadTestCase(CyclicStructParameter));
         var cyc = compilation.GetTypeByMetadataName("Kassyi.GSharp.Tests.TestCases.Analyzers.CyclicStructParameter+Cyc");
@@ -217,7 +217,7 @@ public class StackArrayDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public void Test_MultidimensionalElementAccess_FailsInsteadOfEmittingCommaOperator(string dialect)
+    public void MultidimensionalElementAccess_ElementAccess_FailsWithoutEmittingCommaOperator(string dialect)
     {
         var (_, output, _) = RoslynTestUtility.RunGenerator(
             RoslynTestUtility.ReadTestCase(MultidimensionalParameters),
@@ -235,7 +235,7 @@ public class StackArrayDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_MultiArgumentIndexer_IsReportedAsAnIndexerNotAnArray(string dialect)
+    public async Task MultiArgumentIndexer_IndexerSyntax_ReportedAsIndexerNotArray(string dialect)
     {
         // A user-defined indexer with two arguments would also become the C++ comma operator; the message names the
         // indexer, not a multi-dimensional array

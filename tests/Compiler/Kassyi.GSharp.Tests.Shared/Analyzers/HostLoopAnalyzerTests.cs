@@ -13,7 +13,10 @@ public class HostLoopAnalyzerTests : TranspilerTestBase
     [Scenario(TestScenario.SadPath)]
     [InlineData("GSH-10", "Analyzers/HostLoop/AutoAllocateReturnInLoop_HostSide.cs", "GSH0015")]
     [InlineData("GSH-10", "Analyzers/HostLoop/DeconstructionLoop_SadPath.cs", "GSH0015")]
-    public async Task Test_HostLoopAnalyzer_ReportsExpectedWarning(string featureId, string testCasePath, string expectedErrorId)
+    public async Task HostLoopAnalyzer_HostLoopConstruct_ReportsExpectedWarning(
+        string featureId,
+        string testCasePath,
+        string expectedErrorId)
     {
         await RoslynTestUtility.TestAnalyzer(testCasePath, s_analyzer)
                                .ReportsDiagnosticsAsync(expectedErrorId);
@@ -22,7 +25,7 @@ public class HostLoopAnalyzerTests : TranspilerTestBase
     [Theory]
     [Scenario(TestScenario.HappyPath)]
     [InlineData("GSH-10", "Analyzers/HostLoop/AutoAllocateReturn_SafePath.cs")]
-    public async Task Test_HostLoopAnalyzer_ReportsNoWarnings(string featureId, string testCasePath)
+    public async Task HostLoopAnalyzer_ValidLoop_ReportsNoWarnings(string featureId, string testCasePath)
     {
         await RoslynTestUtility.TestAnalyzer(testCasePath, s_analyzer)
                                .ReportsNoDiagnosticsAsync();

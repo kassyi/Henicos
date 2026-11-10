@@ -11,7 +11,7 @@ public class MemoryExtensionsTranspilerRuleTests : TranspilerTestBase
     [Fact]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.HappyPath)]
-    public async Task Test_MemoryExtensionsTranspilerRule_HappyPath_TranspilesToThrust()
+    public async Task MemoryExtensionsTranspilerRule_SpanSortExecution_TranspilesToThrust()
     {
         await VerifyGeneratorAsync();
     }

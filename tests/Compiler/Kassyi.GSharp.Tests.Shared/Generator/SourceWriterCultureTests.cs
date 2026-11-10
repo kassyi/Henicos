@@ -15,7 +15,7 @@ public class SourceWriterCultureTests
     [Scenario(TestScenario.Boundary)]
     [InlineData("sv-SE")]
     [InlineData("de-DE")]
-    public void Test_NumericHoles_UseInvariantCulture(string cultureName)
+    public void NumericHoles_FormattingAcrossCultures_UsesInvariantCulture(string cultureName)
     {
         var previous = CultureInfo.CurrentCulture;
         try

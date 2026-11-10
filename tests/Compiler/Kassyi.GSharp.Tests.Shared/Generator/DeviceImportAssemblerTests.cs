@@ -29,7 +29,7 @@ public class DeviceImportAssemblerTests
     [InlineData(true)]
     [InlineData(false)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Resolve_LeavesOutWhatFailedInTheDialect(bool isCuda)
+    public void DeviceImportAssembler_FailedDialectExports_LeavesOutFailedDialectExports(bool isCuda)
     {
         var code = Resolve(isCuda, "__gsharp_fn_H__Lib__F(1)", s_library.Value);
 
@@ -43,7 +43,7 @@ public class DeviceImportAssemblerTests
     [InlineData(true)]
     [InlineData(false)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Resolve_FollowsTheReferencesOfTheDialect(bool isCuda)
+    public void DeviceImportAssembler_DialectReferences_FollowsReferencesOfDialect(bool isCuda)
     {
         var code = Resolve(isCuda, "__gsharp_fn_H__Lib__F(1)", s_library.Value);
 
@@ -56,7 +56,9 @@ public class DeviceImportAssemblerTests
     [InlineData(true, new[] { "<f_cuda.h>", "<s_cuda.h>" })]
     [InlineData(false, new[] { "<f_cpp.h>" })]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Resolve_CollectsTheIncludesOfStructsAndFunctions(bool isCuda, string[] expected)
+    public void DeviceImportAssembler_StructsAndFunctions_CollectsIncludesOfStructsAndFunctions(
+        bool isCuda,
+        string[] expected)
     {
         var code = Resolve(isCuda, "__gsharp_fn_H__Lib__F(1)", s_library.Value);
 
@@ -67,7 +69,7 @@ public class DeviceImportAssemblerTests
     // CollectFullNames without the defined names
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Resolve_ListsTheFullNamesOfDefinedNames()
+    public void DeviceImportAssembler_DefinedNames_ListsFullNamesOfDefinedNames()
     {
         var code = Resolve(true, "__gsharp_fn_H__Lib__F(1)", s_library.Value);
 
@@ -81,7 +83,7 @@ public class DeviceImportAssemblerTests
     [InlineData(true)]
     [InlineData(false)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Resolve_PlacesAStructAfterTheConstructorsItCalls(bool isCuda)
+    public void DeviceImportAssembler_StructCallingConstructors_PlacesStructAfterConstructorsItCalls(bool isCuda)
     {
         var code = Resolve(isCuda, "__gsharp_ty_H__Alpha x;", s_library.Value);
 
@@ -94,7 +96,7 @@ public class DeviceImportAssemblerTests
     // Mutant: AppendFunctionBodies without the frame dependencies
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Resolve_PlacesTheBodyOfAnEmbeddedFrameFirst()
+    public void DeviceImportAssembler_EmbeddedFrame_PlacesBodyOfEmbeddedFrameFirst()
     {
         var code = Resolve(false, "__gsharp_fn_H__Lib__Relay(1)", s_library.Value);
 
@@ -111,7 +113,7 @@ public class DeviceImportAssemblerTests
     [InlineData(true)]
     [InlineData(false)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Resolve_TakesADependencyFromTheAssemblyThatRefersToIt(bool isCuda)
+    public void DeviceImportAssembler_AssemblyDependency_TakesDependencyFromReferringAssembly(bool isCuda)
     {
         var throughF = Resolve(isCuda, "__gsharp_fn_H__Lib__F(1)", s_other.Value, s_library.Value);
         var direct = Resolve(isCuda, "__gsharp_fn_H__Lib__Dup(1)", s_other.Value, s_library.Value);
@@ -127,7 +129,7 @@ public class DeviceImportAssemblerTests
     [InlineData(true)]
     [InlineData(false)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Resolve_LeavesOutAStructWhoseDependencyCannotBeImported(bool isCuda)
+    public void DeviceImportAssembler_UnsatisfiableDependency_LeavesOutStructWithMissingDependency(bool isCuda)
     {
         var alone = Resolve(isCuda, "__gsharp_ty_H__Lost a; __gsharp_ty_H__Twin b;", s_library.Value);
         var withOther = Resolve(isCuda, "__gsharp_ty_H__Twin b;", s_other.Value, s_library.Value);
@@ -141,7 +143,7 @@ public class DeviceImportAssemblerTests
     // Mutant: ToDefinitionId returns the ID as it is
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Collect_LeavesOutAConstructedStructThatTheCompilationDeclares()
+    public void DeviceImportAssembler_LocallyDeclaredStruct_LeavesOutConstructedLocalStruct()
     {
         var records = DeviceImportAssembler.Collect(CreateConsumer(s_library.Value));
 

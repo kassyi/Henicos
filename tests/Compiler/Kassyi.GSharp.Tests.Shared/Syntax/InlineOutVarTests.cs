@@ -9,7 +9,10 @@ public class InlineOutVarTests
     [InlineData(0, 0, 0)]
     [InlineData(-1, 1, 0)]
     [InlineData(-3, 9, 0)]
-    public void Test_HappyPath_InlineOutVarInArguments(int val, int expectedOutput, int expectedSuccess)
+    public void Launch_InlineOutVarInArguments_ProducesExpectedOutputAndSuccessFlag(
+        int val,
+        int expectedOutput,
+        int expectedSuccess)
     {
         int[] input = [val];
         int[] output = [0];
@@ -28,7 +31,7 @@ public class InlineOutVarTests
     [InlineData(0, -10)] // 0 <= 0 -> 0 - 10 = -10
     [InlineData(-1, -9)] // -1 <= 0 -> 1 - 10 = -9
     [InlineData(-5, 15)] // -5 <= 0 -> 25 - 10 = 15
-    public void Test_EdgeCase_IfConditionInlineOutVar(int val, int expectedOutput)
+    public void Launch_IfConditionInlineOutVar_ProducesExpectedOutput(int val, int expectedOutput)
     {
         int[] input = [val];
         int[] output = [0];
@@ -43,7 +46,7 @@ public class InlineOutVarTests
     [InlineData(4, 6)] // 4 -> steps: 3, 2, 1 -> sum = 6
     [InlineData(1, 0)] // 1 -> step: 0 -> while condition false -> sum = 0
     [InlineData(0, 0)] // 0 -> step: -1 -> while condition false -> sum = 0
-    public void Test_EdgeCase_WhileConditionInlineOutVar(int val, int expectedOutput)
+    public void Launch_WhileConditionInlineOutVar_ProducesExpectedOutput(int val, int expectedOutput)
     {
         int[] input = [val];
         int[] output = [0];
