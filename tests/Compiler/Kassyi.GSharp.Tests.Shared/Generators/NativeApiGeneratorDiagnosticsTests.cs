@@ -7,7 +7,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Text;
 using Xunit;
-using static Kassyi.GSharp.Tests.Shared.Generators.NativeApiGeneratorTestHelper;
+using static Kassyi.GSharp.Tests.Shared.Generators.NativeApiGeneratorTestHelpers;
 
 namespace Kassyi.GSharp.Tests.Shared.Generators;
 

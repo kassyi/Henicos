@@ -17,7 +17,7 @@ using Xunit;
 
 namespace Kassyi.GSharp.Tests.Shared.Generators;
 
-internal static class NativeApiGeneratorTestHelper
+internal static class NativeApiGeneratorTestHelpers
 {
     internal const string LibraryYaml = """
         namespace: MyApp.Interop
