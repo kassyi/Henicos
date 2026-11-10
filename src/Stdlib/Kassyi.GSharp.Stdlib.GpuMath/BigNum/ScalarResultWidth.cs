@@ -23,16 +23,8 @@ internal static class ScalarResultWidth
 {
     /// <summary>Throws when <paramref name="result"/> has fewer words than <paramref name="operand"/>.</summary>
     /// <exception cref="ArgumentException">The result buffer is narrower than the operand.</exception>
-    public static void ThrowIfNarrower(GpuBigUInt operand, GpuBigUInt result)
-    {
-        if (result.NumWords < operand.NumWords)
-        {
-            throw new ArgumentException(
-                "The result buffer must have at least as many words as the operand. " +
-                $"a: {operand.NumWords}, result: {result.NumWords} words.",
-                nameof(result));
-        }
-    }
+    public static void ThrowIfNarrower(GpuBigUInt operand, GpuBigUInt result) =>
+        ResultBuffers.ThrowIfNarrower(result, operand.NumWords, "A scalar operation");
 
     /// <summary>
     /// The block size of the scalar kernels: one block, a multiple of 32, so that every lane named by the warp scans

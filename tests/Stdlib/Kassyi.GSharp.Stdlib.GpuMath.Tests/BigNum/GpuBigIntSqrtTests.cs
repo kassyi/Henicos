@@ -93,13 +93,12 @@ public class GpuBigIntSqrtTests
     [SkippableTheory]
     [Category(TestCategory.Stdlib)]
     [Scenario(TestScenario.SadPath)]
-    [InlineData(5)]
-    [InlineData(3)]
-    public void Sqrt_MismatchedBufferSizes_ThrowsArgumentException(int resultWords)
+    [InlineData(1)]
+    public void Sqrt_NarrowerThanTheRoot_ThrowsArgumentException(int resultWords)
     {
-        // The result buffer has as many words as the operand. A one-word value takes the single-word path, whose
-        // own operations never check the sizes, so only this check rejects the buffer.
-        // mutant: GpuBigIntDivRem.Sqrt.cs:141 `ThrowIfSizeMismatch(leftOperand, resultBuffer)` removed
+        // The root of a 4-word operand needs 2 words. A one-word value takes the single-word path, whose own
+        // operations never check the sizes, so only this check rejects the buffer.
+        // mutant: GpuBigIntDivRem.Sqrt.cs SqrtCore `ThrowIfResultNarrower` removed
         CudaCapability.EnsureGpuAvailable();
         using var ctx = new GpuWorkspace(16, GpuExecutionEngine.GSharpAot);
         using var a = new GpuBigUInt(ctx, new uint[] { 9, 0, 0, 0 });

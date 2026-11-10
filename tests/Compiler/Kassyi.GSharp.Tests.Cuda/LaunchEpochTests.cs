@@ -27,6 +27,10 @@ public sealed class LaunchEpochTests
     // A launch reuses the record of the launch this many epochs before it
     private const int LaunchRecords = (int)LaunchErrorRecords.Records;
 
+    // The grid of the graph barrier tests
+    private const int GraphBlocks = 4;
+    private const int GraphThreads = 128;
+
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
     public unsafe void Test_RecordStillBeingWritten_IsNotConsumed()
@@ -290,35 +294,17 @@ public sealed class LaunchEpochTests
         using var dResult = new GpuBuffer<int>(BlockSize);
         dKeys.CopyToDevice(keys);
 
-        // CU_STREAM_CAPTURE_MODE_THREAD_LOCAL = 1
-        CudaException.ThrowIfError(CudaDriverApi.cuStreamBeginCapture(stream.Handle, 1));
-        IntPtr graph;
-        try
-        {
+        using var graph = CapturedGraph.Capture(stream, hStream =>
             LaunchEpochKernels.LaunchDelayedWriteKernelPtr(dKeys.ToProxy(), 0, dResult.ToProxy(), blockDimX: BlockSize,
-                hStream: stream.Handle);
-        }
-        finally
-        {
-            CudaException.ThrowIfError(CudaDriverApi.cuStreamEndCapture(stream.Handle, out graph));
-        }
+                hStream: hStream));
 
-        CudaException.ThrowIfError(CudaDriverApi.cuGraphInstantiate(out var exec, graph, IntPtr.Zero, IntPtr.Zero, 0));
-        try
+        // The context survives the error, so the graph replays and reports it again
+        for (int replay = 0; replay < 2; replay++)
         {
-            // The context survives the error, so the graph replays and reports it again
-            for (int replay = 0; replay < 2; replay++)
-            {
-                CudaException.ThrowIfError(CudaDriverApi.cuGraphLaunch(exec, stream.Handle));
-                var ex = Assert.Throws<SwitchExpressionException>(stream.Synchronize);
-                Assert.Equal("(4,0,0)", ex.Data["GSharp.ThreadIndex"]);
-                Assert.Null(ex.InnerException);
-            }
-        }
-        finally
-        {
-            CudaDriverApi.cuGraphExecDestroy(exec);
-            CudaDriverApi.cuGraphDestroy(graph);
+            graph.Launch(stream);
+            var ex = Assert.Throws<SwitchExpressionException>(stream.Synchronize);
+            Assert.Equal("(4,0,0)", ex.Data["GSharp.ThreadIndex"]);
+            Assert.Null(ex.InnerException);
         }
     }
 
@@ -330,63 +316,64 @@ public sealed class LaunchEpochTests
     public void Test_LaunchCapturedIntoGraph_SurvivingThreadsPassEveryGridBarrier()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
-        const int Blocks = 4;
-        const int Threads = 128;
+        AssertSurvivorsPassEveryBarrierOfGraph(GridBarrierKernels.FailKey,
+            static (keys, rounds, values, result, stream) => GridBarrierKernels.LaunchGridSyncAfterFailKernelPtr(keys,
+                rounds, values, result, gridDimX: GraphBlocks, blockDimX: GraphThreads, hStream: stream));
+    }
+
+    // [WHY] The same for the Fast barrier, which arrives before it reads the abort word: without an epoch there is no
+    // word, so a block that lost threads still arrives and waits, and the surviving threads pass every barrier
+    [SkippableFact]
+    [Scenario(TestScenario.SadPath)]
+    public void Test_LaunchCapturedIntoGraph_SurvivingThreadsPassEveryFastGridBarrier()
+    {
+        Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
+        AssertSurvivorsPassEveryBarrierOfGraph(GridSyncModeKernels.FailKey,
+            static (keys, rounds, values, result, stream) => GridSyncModeKernels.LaunchFastSyncAfterFailKernelPtr(keys,
+                rounds, values, result, gridDimX: GraphBlocks, blockDimX: GraphThreads, hStream: stream));
+    }
+
+    // Captures <launch> of a kernel that runs 64 rounds of two grid barriers into a graph, with every third
+    // thread failing (thread 0 of every block among them, and in block 2 a whole warp but thread 1), replays it once
+    // and checks that the synchronization throws and that every surviving thread wrote the full sum
+    private static void AssertSurvivorsPassEveryBarrierOfGraph(int failKey,
+        Action<GSharpArrayProxy, int, GSharpArrayProxy, GSharpArrayProxy, IntPtr> launch)
+    {
         const int Rounds = 64;
         // Each surviving thread adds up round + 1 of the next block in every round
         const int Sum = Rounds * (Rounds + 1) / 2;
 
-        // Every third thread fails, thread 0 of every block among them; in block 2 a whole warp but thread 1 fails too
-        var keys = new int[Blocks * Threads];
+        var keys = new int[GraphBlocks * GraphThreads];
         for (int i = 0; i < keys.Length; i++)
         {
-            keys[i] = i % Threads % 3 == 0 ? GridBarrierKernels.FailKey : i % 2;
+            keys[i] = i % GraphThreads % 3 == 0 ? failKey : i % 2;
         }
 
         for (int t = 2; t < 32; t++)
         {
-            keys[2 * Threads + t] = GridBarrierKernels.FailKey;
+            keys[2 * GraphThreads + t] = failKey;
         }
 
         using var scope = new GpuKernelLoader.CudaContextScope();
         using var stream = new CudaStream();
         using var dKeys = new GpuBuffer<int>(keys.Length);
-        using var dValues = new GpuBuffer<int>(Blocks);
+        using var dValues = new GpuBuffer<int>(GraphBlocks);
         using var dResult = new GpuBuffer<int>(keys.Length);
         dKeys.CopyToDevice(keys);
         dResult.CopyToDevice(Filled(keys.Length));
 
-        // CU_STREAM_CAPTURE_MODE_THREAD_LOCAL = 1
-        CudaException.ThrowIfError(CudaDriverApi.cuStreamBeginCapture(stream.Handle, 1));
-        IntPtr graph;
-        try
+        using (var graph = CapturedGraph.Capture(stream, hStream =>
+            launch(dKeys.ToProxy(), Rounds, dValues.ToProxy(), dResult.ToProxy(), hStream)))
         {
-            GridBarrierKernels.LaunchGridSyncAfterFailKernelPtr(dKeys.ToProxy(),
-                Rounds, dValues.ToProxy(), dResult.ToProxy(), gridDimX: Blocks, blockDimX: Threads,
-                hStream: stream.Handle);
-        }
-        finally
-        {
-            CudaException.ThrowIfError(CudaDriverApi.cuStreamEndCapture(stream.Handle, out graph));
-        }
-
-        CudaException.ThrowIfError(CudaDriverApi.cuGraphInstantiate(out var exec, graph, IntPtr.Zero, IntPtr.Zero, 0));
-        try
-        {
-            CudaException.ThrowIfError(CudaDriverApi.cuGraphLaunch(exec, stream.Handle));
+            graph.Launch(stream);
             Assert.Throws<SwitchExpressionException>(stream.Synchronize);
-        }
-        finally
-        {
-            CudaDriverApi.cuGraphExecDestroy(exec);
-            CudaDriverApi.cuGraphDestroy(graph);
         }
 
         var result = new int[keys.Length];
         dResult.CopyToHost(result);
         for (int i = 0; i < keys.Length; i++)
         {
-            Assert.Equal(keys[i] == GridBarrierKernels.FailKey ? Untouched : Sum, result[i]);
+            Assert.Equal(keys[i] == failKey ? Untouched : Sum, result[i]);
         }
     }
 
@@ -395,5 +382,43 @@ public sealed class LaunchEpochTests
         var values = new int[length];
         Array.Fill(values, Untouched);
         return values;
+    }
+
+    // A launch captured into a CUDA graph and the graph's executable instance, both destroyed on Dispose
+    private sealed class CapturedGraph(IntPtr graph, IntPtr exec) : IDisposable
+    {
+        // Captures what <launch> enqueues on the stream (the stream handle is its argument) and instantiates it
+        public static CapturedGraph Capture(CudaStream stream, Action<IntPtr> launch)
+        {
+            // CU_STREAM_CAPTURE_MODE_THREAD_LOCAL = 1
+            CudaException.ThrowIfError(CudaDriverApi.cuStreamBeginCapture(stream.Handle, 1));
+            IntPtr graph;
+            try
+            {
+                launch(stream.Handle);
+            }
+            finally
+            {
+                CudaException.ThrowIfError(CudaDriverApi.cuStreamEndCapture(stream.Handle, out graph));
+            }
+
+            var result = CudaDriverApi.cuGraphInstantiate(out var exec, graph, IntPtr.Zero, IntPtr.Zero, 0);
+            if (result != CUresult.CudaSuccess)
+            {
+                CudaDriverApi.cuGraphDestroy(graph);
+                CudaException.ThrowIfError(result);
+            }
+
+            return new CapturedGraph(graph, exec);
+        }
+
+        public void Launch(CudaStream stream) =>
+            CudaException.ThrowIfError(CudaDriverApi.cuGraphLaunch(exec, stream.Handle));
+
+        public void Dispose()
+        {
+            CudaDriverApi.cuGraphExecDestroy(exec);
+            CudaDriverApi.cuGraphDestroy(graph);
+        }
     }
 }
