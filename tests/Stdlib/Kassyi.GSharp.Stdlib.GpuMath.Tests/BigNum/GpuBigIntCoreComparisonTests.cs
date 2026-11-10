@@ -271,8 +271,8 @@ public class GpuBigIntCoreComparisonTests
         using var equal = new GpuBigUInt(ctx, [5u, 7u, 0u, 0u]);
         using var larger = new GpuBigUInt(ctx, [6u, 7u, 0u, 0u]);
 
-        // mutant: KernelBasicMathHandler.cs:169 / 174 `<` -> `>` / negated, L171 / 176 PadTo removed,
-        // L181 / 182 the padded pointer replaced by the operand's own
+        // mutant: KernelBasicMathHandler.cs:172 / 177 `<` -> `>` / negated, L174 / 179 PadTo removed,
+        // L184 / 185 the padded pointer replaced by the operand's own
         Assert.Equal(0, shortView.CompareTo(equal));
         Assert.Equal(0, equal.CompareTo(shortView));
         Assert.Equal(-1, shortView.CompareTo(larger));

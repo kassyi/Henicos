@@ -51,7 +51,8 @@ public sealed class GpuBigUIntArrayTests : IDisposable
     public void GetElement_OutOfRange_Throws(int index)
     {
         // Only 0 <= index < Length names an element.
-        // mutant: GpuBigUIntArray.cs:77 `index < 0` -> `index <= 0` / `index >= Length` -> `index > Length` / `||` -> `&&`
+        // mutant: GpuBigUIntArrayView.cs:79 `index < 0` -> `index <= 0` / `index >= Length` -> `index > Length` / `||`
+        //         -> `&&`
         using var array = new GpuBigUIntArray(_workspace, Length, WordsPerElement);
         var error = Assert.Throws<ArgumentOutOfRangeException>(() => array.GetElement(index));
         Assert.Equal("index", error.ParamName);
@@ -64,7 +65,7 @@ public sealed class GpuBigUIntArrayTests : IDisposable
     public void GetElement_InRange_ViewsTheElementWords(int index)
     {
         // Element i is the WordsPerElement words starting at word i * WordsPerElement of the array.
-        // mutant: GpuBigUIntArray.cs:77 `index < 0` -> `index <= 0` (index 0)
+        // mutant: GpuBigUIntArrayView.cs:79 `index < 0` -> `index <= 0` (index 0)
         using var array = new GpuBigUIntArray(_workspace, Length, WordsPerElement);
         var element = array.GetElement(index);
         Assert.Equal(
@@ -82,7 +83,7 @@ public sealed class GpuBigUIntArrayTests : IDisposable
     public void Slice_OutOfRange_Throws(int offset, int count)
     {
         // A slice must lie inside 0..Length.
-        // mutant: GpuBigUIntArray.cs:95 each comparison and `||` (one row per condition)
+        // mutant: GpuBigUIntArrayView.cs:96 each comparison and `||` (one row per condition)
         using var array = new GpuBigUIntArray(_workspace, Length, WordsPerElement);
         Assert.Throws<ArgumentOutOfRangeException>(() => array.Slice(offset, count));
     }
@@ -96,8 +97,8 @@ public sealed class GpuBigUIntArrayTests : IDisposable
     public void Slice_InRange_ViewsTheElements(int offset, int count)
     {
         // A slice of `count` elements at `offset` starts offset * WordsPerElement words in and spans count elements.
-        // mutant: GpuBigUIntArray.cs:95 `>` -> `>=` (rows that end at Length)
-        // mutant: GpuBigUIntArray.cs:101 `elementCount * WordsPerElement` -> `elementCount / WordsPerElement`
+        // mutant: GpuBigUIntArrayView.cs:96 `>` -> `>=` (rows that end at Length)
+        // mutant: GpuBigUIntArrayView.cs:102 `elementCount * WordsPerElement` -> `elementCount / WordsPerElement`
         using var array = new GpuBigUIntArray(_workspace, Length, WordsPerElement);
         var slice = array.Slice(offset, count);
         Assert.Equal(
@@ -111,8 +112,9 @@ public sealed class GpuBigUIntArrayTests : IDisposable
     public void SliceOfSlice_AndElementOfSlice_AddTheOffsets()
     {
         // Offsets add up: a slice of a slice and an element of a slice start after the outer slice's offset.
-        // mutant: GpuBigUIntArray.cs:100 `Handle.WordOffset + ...` -> `Handle.WordOffset - ...`
-        // mutant: GpuBigUIntArray.cs:82 `Handle.WordOffset + ...` -> `Handle.WordOffset - ...`
+        // mutant: GpuBigIntMemoryHandle.cs:175 `WordOffset + wordOffset` -> `WordOffset - wordOffset` (both the slice
+        //         and the
+        //         element of a slice go through GpuBigIntMemoryHandle.Slice)
         using var array = new GpuBigUIntArray(_workspace, Length, WordsPerElement);
         var outer = array.Slice(1, 2);
         Assert.Equal(array.DevicePointer + (2 * ElementBytes), outer.Slice(1, 1).DevicePointer);
@@ -124,7 +126,7 @@ public sealed class GpuBigUIntArrayTests : IDisposable
     public void GpuBigIntArray_MismatchedLengths_Throws()
     {
         // The values and the signs of a signed array have one entry per element.
-        // mutant: GpuBigIntArray.cs:50 `values.Length != signs.Length` -> `==` / throw removed
+        // mutant: GpuBigIntArray.cs:55 `values.Length != signs.Length` -> `==` / throw removed
         using var values = new GpuBigUIntArray(_workspace, 3, 2);
         using var signs = new GpuBigUIntArray(_workspace, 2, 1);
         Assert.Throws<ArgumentException>(() => new GpuBigIntArray(values, signs));
