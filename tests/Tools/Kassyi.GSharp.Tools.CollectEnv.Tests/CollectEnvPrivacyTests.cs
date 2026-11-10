@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Text.Json;
 
 namespace Kassyi.GSharp.Tools.CollectEnv.Tests;
@@ -7,6 +6,7 @@ namespace Kassyi.GSharp.Tools.CollectEnv.Tests;
 /// Runs tools/collect-env/collect-env.cs as a process. The report is pasted into public issues, so the redaction
 /// of profile paths, user name and host name is pinned here.
 /// </summary>
+[Collection(TestCollections.GlobalStateSequential)]
 public class CollectEnvPrivacyTests
 {
     private const string ProbeName = "GSHARP_PROBE";
@@ -100,38 +100,13 @@ public class CollectEnvPrivacyTests
         }
     }
 
-    private static (int ExitCode, string Stdout, string Stderr) RunTool(string[] toolArgs)
-    {
-        var startInfo = new ProcessStartInfo
-        {
-            FileName = "dotnet",
-            WorkingDirectory = RepositoryPaths.Root,
-            UseShellExecute = false,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            CreateNoWindow = true,
-        };
-        startInfo.ArgumentList.Add("run");
-        startInfo.ArgumentList.Add(RepositoryPaths.Combine("tools", "collect-env", "collect-env.cs"));
-        startInfo.ArgumentList.Add("--");
-        foreach (string arg in toolArgs)
-        {
-            startInfo.ArgumentList.Add(arg);
-        }
-
-        // Profile path, user name and host name in one value: every one of them must be redacted.
-        startInfo.Environment[ProbeName] = $"{Profile}{Path.DirectorySeparatorChar}probe {Environment.UserName} on {Environment.MachineName}";
-
-        using Process process = Process.Start(startInfo) ?? throw new InvalidOperationException("dotnet did not start.");
-        Task<string> stdout = process.StandardOutput.ReadToEndAsync();
-        Task<string> stderr = process.StandardError.ReadToEndAsync();
-        if (!process.WaitForExit(TimeSpan.FromMinutes(5)))
-        {
-            process.Kill(entireProcessTree: true);
-            throw new TimeoutException("collect-env did not finish in 5 minutes.");
-        }
-
-        process.WaitForExit();
-        return (process.ExitCode, stdout.Result, stderr.Result);
-    }
+    private static (int ExitCode, string Stdout, string Stderr) RunTool(string[] toolArgs) =>
+        CollectEnvToolRunner.Run(
+            toolArgs,
+            static environment =>
+            {
+                // Profile path, user name and host name in one value: every one of them must be redacted.
+                environment[ProbeName] =
+                    $"{Profile}{Path.DirectorySeparatorChar}probe {Environment.UserName} on {Environment.MachineName}";
+            });
 }

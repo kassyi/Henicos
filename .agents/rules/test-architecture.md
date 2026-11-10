@@ -194,6 +194,7 @@ public abstract class StateMachineTestBase
 | HNT0006 | Error | An unseeded random source anywhere in a test assembly: `new Random()`, `Random.Shared`, `RandomNumberGenerator` |
 | HNT0007 | Error | `catch` or `catch (Exception)` without a `when` filter in a test method whose handler drops the exception: it neither assigns it, passes it to a method other than a Console / test output / Debug / Trace writer, asserts, nor ends in a `throw` (not a skip) with no `return`, `break` or `continue` before it |
 | HNT0008 | Error | Raw `[Trait]` (`Xunit.TraitAttribute`) on a class or method in a test assembly; use `[Category]`, `[TestTarget]` or `[Scenario]` instead |
+| HNT0009 | Error | A test method starting with `Test` or `Test_`, or whose name does not match `<Unit>_<Condition>[_<Expected>]`; attributes (HNT0002) already state that it is a test and classify it |
 
 HNT0001 (a required test base class) was removed (#597). HNT0003 is the compiler-side `TypeNameCheckAnalyzer`. What a strong test needs beyond these checks: [property-test-design](../skills/property-test-design/SKILL.md) §8.
 

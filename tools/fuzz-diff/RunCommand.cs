@@ -85,7 +85,8 @@ public sealed class RunCommand : IFuzzCommand
           --allow-issue <n>                  Re-enable generation of shapes avoided for known issue #<n>
                                              (repeatable).
           --swarm-focus <mode>               Optional Swarm focus mode (default, coalesce-assign-value,
-                                             tuple-deconstruct-complex).
+                                             tuple-deconstruct-complex, warp-shuffle, barrier, iterator,
+                                             suspending-call, split-points).
           --metamorphic                      Generate semantics-preserving transformed kernel variants per kernel.
           --compare-base <ref>               Compare the generated native and C# code with git <ref>
                                              (fuzz-diff compare, no GPU).

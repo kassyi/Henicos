@@ -1,11 +1,12 @@
 #nullable enable
 namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum.Expressions;
 
-// Properties of CUDA graph capture of the signed nodes whose result depends on a value read from the device:
-// - Max, Min, /, % and the StackLinq Average (a division by the count) refuse the capture with NotSupportedException
-//   before the read, instead of breaking the capture with a driver error; the workspace stays usable.
+// Properties of CUDA graph capture of signed division (SignedDeviceSignTests covers the nodes whose sign the device
+// writes):
+// - /, % and the StackLinq Average (a division by the count) refuse the capture with NotSupportedException before the
+//   read, instead of breaking the capture with a driver error; the workspace stays usable.
 
-/// <summary>CUDA graph capture of signed Max, Min, /, % and Average.</summary>
+/// <summary>CUDA graph capture of signed /, % and Average.</summary>
 [Category(TestCategory.Stdlib)]
 [TestTarget(ExecutionTarget.GpuExecution)]
 public sealed class SignedCaptureTests : IDisposable
@@ -24,23 +25,6 @@ public sealed class SignedCaptureTests : IDisposable
     {
         _workspace.Dispose();
         _scope.Dispose();
-    }
-
-    // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Expressions/SignedSelect.cs SignedSelect.Compare without
-    // `CaptureChecks.ThrowIfCapturing` (the capture fails with a driver error instead)
-    [Fact]
-    [Scenario(TestScenario.SadPath)]
-    public void MaxAndMin_CannotBeCaptured()
-    {
-        using var a = SignedCases.Value(_workspace, 5, 2);
-        using var b = SignedCases.Value(_workspace, -7, 2);
-
-        Assert.Throws<NotSupportedException>(() => GpuBigIntExpr.Max(a, b).CompileToGraph(_workspace));
-        Assert.Throws<NotSupportedException>(() => GpuBigIntExpr.Min(a, b).CompileToGraph(_workspace));
-
-        // The workspace is still usable afterwards
-        using var max = GpuBigIntExpr.Max(a, b).Evaluate(_workspace);
-        Assert.Equal(5, SignedCases.Read(max));
     }
 
     // Division reads the bit lengths of its operands, and % the zero test of a negative remainder; both refuse the
