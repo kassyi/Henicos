@@ -11,7 +11,8 @@ internal static class IrMemberEffects
 {
     /// <summary>
     /// The location of a field: a static field is memory; a field of a struct variable belongs to the variable; a field
-    /// of <see langword="this"/> or of a reference is memory, found without reading memory.
+    /// of <see langword="this"/> or of a reference is memory, found without reading memory; a field of a struct
+    /// temporary is part of the temporary.
     /// </summary>
     public static EffectRoot? AddFieldLocation(IrEffectWalker walker, IrFieldReference field)
     {
@@ -31,23 +32,10 @@ internal static class IrMemberEffects
             return walker.AddLocation(receiver);
         }
 
-        // A field of a struct value (a call result, a conditional, a creation) is part of a temporary: evaluating the
-        // value is all it reads
+        // A call result, a conditional, a creation: evaluating the value is all it reads
         walker.AddValue(receiver);
         return null;
     }
-
-    /// <summary>Whether <paramref name="expression"/> names storage rather than computing a temporary value.</summary>
-    private static bool IsVariable(IrExpression expression) => expression switch
-    {
-        IrVariableReference or IrElementReference => true,
-        IrFieldReference { Receiver: null } => true,
-        IrFieldReference { Receiver: { } receiver } => !receiver.Type.IsValueType || IsVariable(receiver),
-        IrPropertyReference property => property.Property.RefKind != RefKind.None,
-        IrCall call => call.Method.RefKind != RefKind.None,
-        IrConditional conditional => conditional.IsRef,
-        _ => false
-    };
 
     /// <summary>
     /// The location of a property (an assignment target or an indexer passed by reference): a property of a struct
@@ -55,37 +43,30 @@ internal static class IrMemberEffects
     /// </summary>
     public static EffectRoot? AddPropertyLocation(IrEffectWalker walker, IrPropertyReference property)
     {
-        var receiver = property.Receiver;
-        var ownsLocation = receiver is not null && !property.Property.IsStatic && !IsThis(receiver) &&
-                           receiver.Type.IsValueType &&
-                           (!property.Property.IsIndexer ||
-                            receiver.Type is { IsRefLikeType: false } and not IPointerTypeSymbol);
         EffectRoot? root = new EffectRoot(null);
-        if (ownsLocation && receiver is not null)
+        if (property.Receiver is { } receiver && !IsThis(receiver))
         {
-            root = walker.AddLocation(receiver);
-        }
-        else if (receiver is not null)
-        {
-            walker.AddValue(receiver);
+            if (OwnsLocation(property, receiver))
+            {
+                root = walker.AddLocation(receiver);
+            }
+            else
+            {
+                walker.AddValue(receiver);
+            }
         }
 
         AddArgumentValues(walker, property.Arguments);
         return root;
     }
 
-    /// <summary>The effects of reading a property or an indexer.</summary>
+    /// <summary>The effects of reading a property or an indexer: its receiver, its arguments and its getter.</summary>
     public static void AddPropertyValue(IrEffectWalker walker, IrPropertyReference reference)
     {
         var property = reference.Property;
         if (reference.Receiver is not { } receiver || property.IsStatic)
         {
-            // Memory unless it is an intrinsic (ThreadIndex.X)
-            if (!MemberEffects.IsIntrinsicProperty(property))
-            {
-                walker.ReadMemory();
-            }
-
+            AddStaticPropertyValue(walker, property);
             return;
         }
 
@@ -93,8 +74,8 @@ internal static class IrMemberEffects
         if (mutatesReceiver)
         {
             var root = walker.AddLocation(receiver);
-            walker.AddRead(root);
-            walker.AddWrite(root);
+            walker.ReadRoot(root);
+            walker.WriteRoot(root);
         }
         else
         {
@@ -104,25 +85,11 @@ internal static class IrMemberEffects
         AddArgumentValues(walker, reference.Arguments);
         if (property.IsIndexer)
         {
-            walker.ReadMemory();
-            if (mutatesReceiver && walker.MayWriteMemory(property.GetMethod))
-            {
-                walker.WriteMemory();
-            }
-
-            return;
+            AddIndexerGetter(walker, property, mutatesReceiver);
         }
-
-        if (!MemberEffects.IsComputedUserProperty(property))
+        else
         {
-            return;
-        }
-
-        // The getter of a struct may read anything, and writes what DeviceFunctionEffects says
-        walker.ReadMemory();
-        if (walker.MayWriteMemory(property.GetMethod))
-        {
-            walker.WriteMemory();
+            AddComputedGetter(walker, property);
         }
     }
 
@@ -139,7 +106,7 @@ internal static class IrMemberEffects
             if (method.ContainingType.IsValueType)
             {
                 receiver = walker.AddLocation(instance);
-                walker.AddRead(receiver);
+                walker.ReadRoot(receiver);
             }
             else
             {
@@ -147,10 +114,12 @@ internal static class IrMemberEffects
             }
         }
 
-        AddCallOf(walker, method, call.Arguments, receiver, call.Classification.Effect);
+        var references = AddArguments(walker, call.Arguments);
+        AddCallItself(walker, method, references, receiver, call.Classification.Effect);
     }
 
     /// <summary>The effects of creating a struct: its constructor call and the values of its initializer.</summary>
+    /// <remarks>Whether the struct is a <c>SharedMemory&lt;T&gt;</c> is asked from its type each time.</remarks>
     public static void AddStructCreation(IrEffectWalker walker, IrStructCreation creation)
     {
         if (creation.Type.IsSharedMemoryType())
@@ -160,7 +129,8 @@ internal static class IrMemberEffects
 
         if (creation.Constructor is { } constructor)
         {
-            AddCallOf(walker, constructor, creation.Arguments, receiver: null,
+            var references = AddArguments(walker, creation.Arguments);
+            AddCallItself(walker, constructor, references, receiver: null,
                 DeviceFunctionEffects.Classify(constructor, walker.Compilation));
         }
         else
@@ -175,10 +145,43 @@ internal static class IrMemberEffects
         }
     }
 
-    // The arguments, by value or by reference, then the call itself: memory unless it is pure math over scalars, and
-    // the writes of its effect (its ref / out arguments and receiver, or memory)
-    private static void AddCallOf(IrEffectWalker walker, IMethodSymbol method, ImmutableArray<IrArgument> arguments,
-        EffectRoot? receiver, DeviceFunctionEffect effect)
+    // A static property, or one read through its type: memory unless it is an intrinsic (ThreadIndex.X)
+    private static void AddStaticPropertyValue(IrEffectWalker walker, IPropertySymbol property)
+    {
+        if (!MemberEffects.IsIntrinsicProperty(property))
+        {
+            walker.ReadMemory();
+        }
+    }
+
+    // An indexer reads memory, and writes it when its getter may change the receiver and writes memory
+    private static void AddIndexerGetter(IrEffectWalker walker, IPropertySymbol indexer, bool mutatesReceiver)
+    {
+        walker.ReadMemory();
+        if (mutatesReceiver && walker.MayWriteMemory(indexer.GetMethod))
+        {
+            walker.WriteMemory();
+        }
+    }
+
+    // The getter of a computed property of a struct may read anything, and writes what DeviceFunctionEffects says
+    private static void AddComputedGetter(IrEffectWalker walker, IPropertySymbol property)
+    {
+        if (!MemberEffects.IsComputedUserProperty(property))
+        {
+            return;
+        }
+
+        walker.ReadMemory();
+        if (walker.MayWriteMemory(property.GetMethod))
+        {
+            walker.WriteMemory();
+        }
+    }
+
+    // Evaluates the arguments by value or by reference and returns the locations the callee may write through
+    private static ImmutableArray<EffectRoot?>.Builder AddArguments(IrEffectWalker walker,
+        ImmutableArray<IrArgument> arguments)
     {
         var references = ImmutableArray.CreateBuilder<EffectRoot?>();
         foreach (var argument in arguments)
@@ -195,7 +198,7 @@ internal static class IrMemberEffects
             // The callee reads through a ref / in / ref readonly parameter, as part of this call
             if (refKind != RefKind.Out)
             {
-                walker.AddRead(root);
+                walker.ReadRoot(root);
             }
 
             if (refKind is RefKind.Ref or RefKind.Out)
@@ -204,7 +207,15 @@ internal static class IrMemberEffects
             }
         }
 
-        if (!CallEffects.IsScalarMath(method))
+        return references;
+    }
+
+    // The call itself: memory unless it is pure math over scalars or a view (AsSpan, Slice), and the writes of its
+    // effect (its ref / out arguments and receiver, or memory)
+    private static void AddCallItself(IrEffectWalker walker, IMethodSymbol method,
+        ImmutableArray<EffectRoot?>.Builder references, EffectRoot? receiver, DeviceFunctionEffect effect)
+    {
+        if (!CallEffects.IsScalarMath(method) && !SpanWriteClassifier.IsPureViewMethod(method))
         {
             walker.ReadMemory();
         }
@@ -216,10 +227,10 @@ internal static class IrMemberEffects
 
         foreach (var root in references)
         {
-            walker.AddWrite(root);
+            walker.WriteRoot(root);
         }
 
-        walker.AddWrite(receiver);
+        walker.WriteRoot(receiver);
         if (effect == DeviceFunctionEffect.Memory)
         {
             walker.WriteMemory();
@@ -233,6 +244,24 @@ internal static class IrMemberEffects
             walker.AddValue(argument.Value);
         }
     }
+
+    // Whether a property is a location inside its struct receiver: a variable receiver that is not this, and for an
+    // indexer not a span or a pointer
+    private static bool OwnsLocation(IrPropertyReference property, IrExpression receiver) =>
+        !property.Property.IsStatic && !IsThis(receiver) && receiver.Type.IsValueType &&
+        (!property.Property.IsIndexer || receiver.Type is { IsRefLikeType: false } and not IPointerTypeSymbol);
+
+    // Whether expression names storage rather than computing a temporary value
+    private static bool IsVariable(IrExpression expression) => expression switch
+    {
+        IrVariableReference or IrElementReference => true,
+        IrFieldReference { Receiver: null } => true,
+        IrFieldReference { Receiver: { } receiver } => !receiver.Type.IsValueType || IsVariable(receiver),
+        IrPropertyReference property => property.Property.RefKind != RefKind.None,
+        IrCall call => call.Method.RefKind != RefKind.None,
+        IrConditional conditional => conditional.IsRef,
+        _ => false
+    };
 
     private static bool IsThis(IrExpression expression) =>
         expression is IrVariableReference { Variable.Kind: IrVariableKind.This };

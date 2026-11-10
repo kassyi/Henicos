@@ -37,6 +37,32 @@ internal sealed class IrInvariants
         return checker._violations.ToImmutable();
     }
 
+    /// <summary>
+    /// The violations of a tree after the classify pass: I24, every call is classified; I25, every opaque node says
+    /// whether it holds a split point. Empty when it keeps both.
+    /// </summary>
+    public static ImmutableArray<string> VerifyClassified(IrMethod method)
+    {
+        var violations = ImmutableArray.CreateBuilder<string>();
+        IrNodeChildren.Visit(method.Body, node =>
+        {
+            var (number, text) = node switch
+            {
+                IrCall { Classification.IsClassified: false } => ("I24", "a call is not classified"),
+                IrOpaqueExpression { Split: IrOpaqueSplit.Unclassified } or
+                    IrOpaqueStatement { Split: IrOpaqueSplit.Unclassified } =>
+                    ("I25", "an opaque node does not say whether it holds a split point"),
+                _ => ((string?)null, "")
+            };
+            if (number != null)
+            {
+                var start = node.Source.Start;
+                violations.Add($"{number} at {start}..{start + node.Source.Length}: {text}");
+            }
+        });
+        return violations.ToImmutable();
+    }
+
     /// <summary>Whether <paramref name="node"/> is or holds an opaque statement or expression anywhere.</summary>
     public static bool ContainsOpaque(IrNode node)
     {

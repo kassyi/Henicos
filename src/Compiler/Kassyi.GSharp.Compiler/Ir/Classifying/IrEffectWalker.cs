@@ -9,8 +9,10 @@ namespace Kassyi.GSharp.Compiler.Ir.Classifying;
 /// <see cref="IrMemberEffects"/>.
 /// </summary>
 /// <remarks>
-/// A location is returned as the <see cref="EffectRoot"/> it belongs to, or <see langword="null"/> for a discard, which
-/// no one reads or writes.
+/// A location is returned as the <see cref="EffectRoot"/> it belongs to, or <see langword="null"/> for a discard or a
+/// part of a temporary, which no one else reads or writes. Every expression node has its own case in
+/// <see cref="AddValue"/>; a node kind without one is an internal error, so a new kind cannot silently fall into "may
+/// read and write anything".
 /// </remarks>
 internal sealed class IrEffectWalker(Compilation compilation)
 {
@@ -30,10 +32,10 @@ internal sealed class IrEffectWalker(Compilation compilation)
     public void WriteMemory() => _writes.Memory = true;
 
     /// <summary>Adds a read of the location <paramref name="root"/>.</summary>
-    public void AddRead(EffectRoot? root) => Add(ref _reads, root);
+    public void ReadRoot(EffectRoot? root) => Add(ref _reads, root);
 
     /// <summary>Adds a write of the location <paramref name="root"/>.</summary>
-    public void AddWrite(EffectRoot? root) => Add(ref _writes, root);
+    public void WriteRoot(EffectRoot? root) => Add(ref _writes, root);
 
     /// <summary>Whether a call of <paramref name="method"/> (or none) may write memory.</summary>
     public bool MayWriteMemory(IMethodSymbol? method) =>
@@ -52,10 +54,10 @@ internal sealed class IrEffectWalker(Compilation compilation)
             case IrConstant or IrDefaultValue or IrDiscard or IrInitializedObject:
                 return;
             case IrVariableReference reference:
-                AddRead(RootOf(reference.Variable));
+                ReadRoot(RootOf(reference.Variable));
                 return;
             case IrFieldReference or IrElementReference:
-                AddRead(AddLocation(expression));
+                ReadRoot(AddLocation(expression));
                 return;
             case IrPropertyReference property:
                 IrMemberEffects.AddPropertyValue(this, property);
@@ -63,12 +65,54 @@ internal sealed class IrEffectWalker(Compilation compilation)
             case IrCall call:
                 IrMemberEffects.AddCall(this, call);
                 return;
+            case IrStructCreation creation:
+                IrMemberEffects.AddStructCreation(this, creation);
+                return;
             case IrConversion conversion:
                 AddConversion(conversion);
                 return;
-            default:
-                AddComputation(expression);
+            case IrUnary unary:
+                AddOperands(unary.Operator.Method, unary.Operand, null);
                 return;
+            case IrBinary binary:
+                AddOperands(binary.Operator.Method, binary.Left, binary.Right);
+                return;
+            case IrLogical logical:
+                AddOperands(null, logical.Left, logical.Right);
+                return;
+            case IrConditional conditional:
+                AddConditional(conditional);
+                return;
+            case IrNullTest test:
+                AddValue(test.Operand);
+                return;
+            case IrCoalesce coalesce:
+                AddOperands(null, coalesce.Value, coalesce.WhenNull);
+                return;
+            case IrAddressOf address:
+                AddLocation(address.Operand);
+                return;
+            case IrAssignment assignment:
+                AddAssignment(assignment);
+                return;
+            case IrCompoundAssignment compound:
+                AddUpdate(compound.Target, compound.Value, compound.Operator.Method);
+                return;
+            case IrIncrement increment:
+                AddUpdate(increment.Target, null, increment.OperatorMethod);
+                return;
+            case IrArrayCreation array:
+                AddArrayCreation(array);
+                return;
+            case IrSequence sequence:
+                AddSequence(sequence);
+                return;
+            case IrOpaqueExpression:
+                AddUnknown();
+                return;
+            default:
+                throw new InvalidOperationException(
+                    $"The effects of an IR node of kind {expression.GetType().Name} are not defined.");
         }
     }
 
@@ -104,84 +148,35 @@ internal sealed class IrEffectWalker(Compilation compilation)
         }
     }
 
-    // Operators, assignments, creations: everything that is not a reference, a call or a conversion
-    private void AddComputation(IrExpression expression)
+    // The operands of an operator, then the operator itself: an operator macro (the only user-defined operator G#
+    // accepts; a plain one is GSH0060) is taken as writing memory, since what runs is its target, not its body
+    private void AddOperands(IMethodSymbol? userOperator, IrExpression first, IrExpression? second)
     {
-        switch (expression)
+        AddValue(first);
+        if (second != null)
         {
-            case IrUnary unary:
-                AddValue(unary.Operand);
-                AddOperatorWrites(unary.Operator.Method);
-                return;
-            case IrBinary binary:
-                AddValue(binary.Left);
-                AddValue(binary.Right);
-                AddOperatorWrites(binary.Operator.Method);
-                return;
-            case IrLogical logical:
-                AddValue(logical.Left);
-                AddValue(logical.Right);
-                return;
-            case IrConditional conditional:
-                AddValue(conditional.Condition);
-                AddValue(conditional.WhenTrue);
-                AddValue(conditional.WhenFalse);
-                return;
-            case IrNullTest test:
-                AddValue(test.Operand);
-                return;
-            case IrCoalesce coalesce:
-                AddValue(coalesce.Value);
-                AddValue(coalesce.WhenNull);
-                return;
-            case IrAddressOf address:
-                AddLocation(address.Operand);
-                return;
-            default:
-                AddWrite(expression);
-                return;
+            AddValue(second);
+        }
+
+        if (userOperator != null)
+        {
+            WriteMemory();
         }
     }
 
-    // Assignments, increments and creations, which write
-    private void AddWrite(IrExpression expression)
+    private void AddConditional(IrConditional conditional)
     {
-        switch (expression)
-        {
-            case IrAssignment assignment:
-                AddAssignment(assignment);
-                return;
-            case IrCompoundAssignment compound:
-                AddUpdate(compound.Target, compound.Value, compound.Operator.Method);
-                return;
-            case IrIncrement increment:
-                AddUpdate(increment.Target, null, increment.OperatorMethod);
-                return;
-            case IrStructCreation creation:
-                IrMemberEffects.AddStructCreation(this, creation);
-                return;
-            case IrArrayCreation array:
-                AddValue(array.Length);
-                foreach (var element in array.Elements)
-                {
-                    AddValue(element);
-                }
-
-                return;
-            case IrSequence sequence:
-                AddSequence(sequence);
-                return;
-            default:
-                // An opaque expression may read and write anything
-                AddUnknown();
-                return;
-        }
+        AddValue(conditional.Condition);
+        AddValue(conditional.WhenTrue);
+        AddValue(conditional.WhenFalse);
     }
 
-    // A user-defined conversion reads what it may and writes what DeviceFunctionEffects says
+    // A user-defined conversion reads what it may and writes what DeviceFunctionEffects says. One without a body in
+    // the compilation applied to a constant (null to Span<T>) is a view of the constant and reads nothing
     private void AddConversion(IrConversion conversion)
     {
-        if (conversion.Conversion.Method is { } method)
+        if (conversion.Conversion.Method is { } method &&
+            !(conversion.Operand.ConstantValue.HasValue && method.DeclaringSyntaxReferences.Length == 0))
         {
             ReadMemory();
             if (MayWriteMemory(method))
@@ -193,29 +188,20 @@ internal sealed class IrEffectWalker(Compilation compilation)
         AddValue(conversion.Operand);
     }
 
-    // A user-defined unary or binary operator: its operands are evaluated by the node, and its body may write memory
-    private void AddOperatorWrites(IMethodSymbol? method)
-    {
-        if (MayWriteMemory(method))
-        {
-            WriteMemory();
-        }
-    }
-
     private void AddAssignment(IrAssignment assignment)
     {
         var root = AddLocation(assignment.Target);
         if (assignment.IsRef)
         {
             // A ref assignment names its value's location, which the reference then reads through
-            AddRead(AddLocation(assignment.Value));
+            ReadRoot(AddLocation(assignment.Value));
         }
         else
         {
             AddValue(assignment.Value);
         }
 
-        AddWrite(root);
+        WriteRoot(root);
         if (assignment.Target is IrPropertyReference { Property: var property } &&
             MemberEffects.IsComputedUserProperty(property) &&
             MayWriteMemory(property.SetMethod))
@@ -225,24 +211,31 @@ internal sealed class IrEffectWalker(Compilation compilation)
     }
 
     // A compound assignment (with its value) or an increment (without): the target is read and written
-    private void AddUpdate(IrExpression target, IrExpression? value, IMethodSymbol? operatorMethod)
+    private void AddUpdate(IrExpression target, IrExpression? value, IMethodSymbol? userOperator)
     {
         var root = AddLocation(target);
-        AddRead(root);
+        ReadRoot(root);
         if (value != null)
         {
             AddValue(value);
         }
 
-        AddWrite(root);
-        AddOperatorWrites(operatorMethod);
-        if (target is not IrPropertyReference { Property: var property } ||
-            !MemberEffects.IsComputedUserProperty(property))
+        WriteRoot(root);
+        if (userOperator != null)
         {
-            return;
+            WriteMemory();
         }
 
-        if (value == null)
+        if (target is IrPropertyReference { Property: var property } && MemberEffects.IsComputedUserProperty(property))
+        {
+            AddComputedPropertyUpdate(property, isIncrement: value == null);
+        }
+    }
+
+    // The accessors an update of a computed property calls: the getter of an increment, and the setter
+    private void AddComputedPropertyUpdate(IPropertySymbol property, bool isIncrement)
+    {
+        if (isIncrement)
         {
             // An increment of a computed property calls its getter, which may read anything
             ReadMemory();
@@ -258,6 +251,15 @@ internal sealed class IrEffectWalker(Compilation compilation)
         }
     }
 
+    private void AddArrayCreation(IrArrayCreation array)
+    {
+        AddValue(array.Length);
+        foreach (var element in array.Elements)
+        {
+            AddValue(element);
+        }
+    }
+
     private void AddSequence(IrSequence sequence)
     {
         foreach (var statement in sequence.SideEffects)
@@ -269,7 +271,7 @@ internal sealed class IrEffectWalker(Compilation compilation)
                     break;
                 case IrLocalDeclaration { Initializer: { } initializer, Variable: var variable }:
                     AddValue(initializer);
-                    AddWrite(RootOf(variable));
+                    WriteRoot(RootOf(variable));
                     break;
                 case IrLocalDeclaration:
                     break;

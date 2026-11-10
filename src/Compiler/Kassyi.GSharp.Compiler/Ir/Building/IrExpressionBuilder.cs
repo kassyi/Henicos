@@ -109,8 +109,8 @@ internal static class IrExpressionBuilder
     /// <summary>An opaque leaf for <paramref name="operation"/>.</summary>
     public static IrOpaqueExpression Opaque(IOperation operation, IrOpaqueReason reason, IrCategory category,
         IrBuildContext context) =>
-        new(operation.Syntax, operation, reason, operation.Type ?? context.VoidType, category,
-            context.SourceOf(operation));
+        new(operation.Syntax, operation, reason, IrOpaqueSplit.Unclassified, operation.Type ?? context.VoidType,
+            category, context.SourceOf(operation));
 
     /// <summary>
     /// Whether <paramref name="operation"/> is the <see langword="null"/> literal or a conversion of it (a null pointer

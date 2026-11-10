@@ -4,13 +4,20 @@ using System.Diagnostics;
 namespace Kassyi.GSharp.Tests.Shared.Transpiler.Ir;
 
 /// <summary>
-/// Classifies the IR of every GPU method of the generator snapshot inputs and the differential kernels (#1561), and
-/// compares it with the syntax-based decisions the lowering and the emitters use today: the split point of each call
-/// and the effects of each expression.
+/// Classifies the IR of every GPU method and emitted struct member of the generator snapshot inputs and the
+/// differential kernels (#1561), and compares it with the syntax-based decisions the lowering and the emitters use
+/// today: the split point of each call and the effects of each expression.
 /// </summary>
+/// <remarks>
+/// The number of differences per known reason is kept in <c>IrEffectDifferences.expected.txt</c>: a reason that grows
+/// or a new one fails, so a change that falls into a known reason by accident is seen. Every run writes the full list
+/// of differences to the received file it names in its output.
+/// </remarks>
 [Category(TestCategory.Compiler)]
 public class IrClassificationEquivalenceTests(ITestOutputHelper output)
 {
+    private const string ExpectedFile = "IrEffectDifferences.expected.txt";
+
     [Fact]
     [Scenario(TestScenario.HappyPath)]
     public void EveryGpuMethod_ClassifiesAsTheSyntaxPassesDo()
@@ -22,37 +29,63 @@ public class IrClassificationEquivalenceTests(ITestOutputHelper output)
 
         output.WriteLine($"{equivalence.CallsCompared} calls compared ({equivalence.SplitCallsCompared} split), " +
                          $"{equivalence.InvocationsInOpaque} invocations in opaque nodes " +
-                         $"({equivalence.SplitInvocationsInOpaque} split), " +
+                         $"({equivalence.SplitInvocationsInOpaque} split, all under nodes marked as holding one), " +
+                         $"{equivalence.StructMembers} struct members, " +
                          $"{equivalence.ExpressionsCompared} expressions compared, " +
                          $"{equivalence.ExpressionsWithOpaque} skipped for an opaque node, " +
+                         $"{equivalence.OuterExplainedByOperands} outer differences explained by their operands, " +
                          $"{stopwatch.ElapsedMilliseconds} ms");
+        WriteDifferences(equivalence);
+
+        Assert.True(equivalence.SplitCallsCompared > 100, $"Only {equivalence.SplitCallsCompared} split calls.");
+        Assert.True(equivalence.SplitInvocationsInOpaque > 50,
+            $"Only {equivalence.SplitInvocationsInOpaque} split points in opaque nodes.");
+        Assert.True(equivalence.StructMembers > 50, $"Only {equivalence.StructMembers} struct members.");
+        Assert.True(equivalence.SplitMismatches.Count == 0,
+            string.Join("\n", equivalence.SplitMismatches.OrderBy(static m => m, StringComparer.Ordinal).Take(50)));
         var unexplained = equivalence.EffectMismatches
             .Where(static pair =>
                 !pair.Key.StartsWith(IrClassificationEquivalence.KnownPrefix, StringComparison.Ordinal))
             .SelectMany(static pair => pair.Value)
             .OrderBy(static m => m, StringComparer.Ordinal)
             .ToArray();
+        Assert.True(unexplained.Length == 0, string.Join("\n", unexplained.Take(50)));
+        AssertCountsMatch(equivalence);
+    }
+
+    // Every difference, to read when a count changes
+    private void WriteDifferences(IrClassificationEquivalence equivalence)
+    {
         var report = new List<string>();
-        foreach (var (kind, mismatches) in equivalence.EffectMismatches
+        foreach (var (reason, differences) in equivalence.EffectMismatches
                      .OrderBy(static p => p.Key, StringComparer.Ordinal))
         {
-            output.WriteLine($"{kind}: {mismatches.Count}");
-            report.Add($"{kind}: {mismatches.Count}");
-            report.AddRange(mismatches.OrderBy(static m => m, StringComparer.Ordinal).Select(static m => "  " + m));
+            output.WriteLine($"{reason}: {differences.Count}");
+            report.Add($"{reason}: {differences.Count}");
+            report.AddRange(differences.OrderBy(static m => m, StringComparer.Ordinal).Select(static m => "  " + m));
         }
 
-        if (unexplained.Length > 0)
+        var receivedPath = RepositoryPaths.Combine("tmp", "IrClassificationEquivalence.received.txt");
+        Directory.CreateDirectory(Path.GetDirectoryName(receivedPath) ?? ".");
+        File.WriteAllLines(receivedPath, report);
+        output.WriteLine("Differences: " + receivedPath);
+    }
+
+    private void AssertCountsMatch(IrClassificationEquivalence equivalence)
+    {
+        var actual = string.Join("\n", equivalence.EffectMismatches
+            .OrderBy(static pair => pair.Key, StringComparer.Ordinal)
+            .Select(static pair => pair.Key + "\t" + pair.Value.Count)) + "\n";
+        var expectedPath = RepositoryPaths.Combine("tests", "Compiler", "Kassyi.GSharp.Tests.Shared", "Transpiler",
+            "Ir", ExpectedFile);
+        var expected = File.Exists(expectedPath) ? File.ReadAllText(expectedPath).Replace("\r", "") : "";
+        if (expected != actual)
         {
-            // Every difference, the known ones included, to read when the test fails
-            var receivedPath = RepositoryPaths.Combine("tmp", "IrClassificationEquivalence.received.txt");
-            Directory.CreateDirectory(Path.GetDirectoryName(receivedPath) ?? ".");
-            File.WriteAllLines(receivedPath, report);
-            output.WriteLine("Differences: " + receivedPath);
+            var receivedPath = RepositoryPaths.Combine("tmp", "IrEffectDifferences.received.txt");
+            File.WriteAllText(receivedPath, actual);
+            output.WriteLine("Received counts: " + receivedPath);
         }
 
-        Assert.True(equivalence.SplitCallsCompared > 100, $"Only {equivalence.SplitCallsCompared} split calls.");
-        Assert.True(equivalence.SplitMismatches.Count == 0,
-            string.Join("\n", equivalence.SplitMismatches.OrderBy(static m => m, StringComparer.Ordinal).Take(50)));
-        Assert.True(unexplained.Length == 0, string.Join("\n", unexplained.Take(50)));
+        Assert.Equal(expected, actual);
     }
 }

@@ -14,8 +14,16 @@ namespace Kassyi.GSharp.Tests.Shared.Transpiler.Ir;
 /// annotation of each call (<see cref="AstLoweringPipeline.ClassifySplitPoint"/>) and the effects of each expression
 /// (<see cref="ExpressionEffects"/>).
 /// </summary>
+/// <remarks>
+/// A difference of effects is compared at the innermost node that differs; an outer node that differs only because
+/// an operand differs is counted as such, and one that differs beyond what its operands explain is reported on its
+/// own. Each known difference is checked by the exact delta it names, not by the shape of the node alone.
+/// </remarks>
 internal sealed class IrClassificationEquivalence
 {
+    /// <summary>The prefix of the reasons the IR and the syntax walk differ by design.</summary>
+    public const string KnownPrefix = "known, ";
+
     private readonly ConcurrentBag<string> _splitMismatches = [];
     private readonly ConcurrentDictionary<string, ConcurrentBag<string>> _effectMismatches =
         new(StringComparer.Ordinal);
@@ -25,10 +33,14 @@ internal sealed class IrClassificationEquivalence
     private int _splitInvocationsInOpaque;
     private int _expressionsCompared;
     private int _expressionsWithOpaque;
+    private int _outerExplainedByOperands;
+    private int _structMembers;
 
     public IReadOnlyCollection<string> SplitMismatches => _splitMismatches;
 
-    /// <summary>The effect mismatches by kind: the IR finds less, more, or neither contains the other.</summary>
+    /// <summary>
+    /// The effect differences by reason: a known one (<see cref="KnownPrefix"/>) or an unexplained one.
+    /// </summary>
     public IReadOnlyDictionary<string, ConcurrentBag<string>> EffectMismatches => _effectMismatches;
 
     public int CallsCompared => _callsCompared;
@@ -43,25 +55,46 @@ internal sealed class IrClassificationEquivalence
 
     public int ExpressionsWithOpaque => _expressionsWithOpaque;
 
-    /// <summary>Compares every GPU method of <paramref name="trees"/>.</summary>
-    public void CompareAll(Compilation compilation, IEnumerable<SyntaxTree> trees)
+    /// <summary>Outer expressions whose difference is the difference of an operand.</summary>
+    public int OuterExplainedByOperands => _outerExplainedByOperands;
+
+    public int StructMembers => _structMembers;
+
+    /// <summary>Compares every GPU method and emitted struct member of <paramref name="trees"/>.</summary>
+    public void CompareAll(Compilation compilation, SyntaxTree[] trees)
     {
-        foreach (var (declaration, symbol, built) in IrCoverageInputs.GpuMethods(compilation, trees))
+        foreach (var (body, symbol, built) in IrCoverageInputs.GpuMethods(compilation, trees))
         {
-            var where = IrCoverageInputs.Where(declaration.SyntaxTree, symbol);
-            var method = IrClassifier.Classify(built, compilation);
-            CompareSplits(method, declaration, compilation, where);
-            CompareEffects(method, declaration.SyntaxTree, compilation, where);
+            Compare(body, symbol, built, compilation);
+        }
+
+        foreach (var (body, symbol, built) in IrCoverageInputs.StructMembers(compilation, trees))
+        {
+            Interlocked.Increment(ref _structMembers);
+            Compare(body, symbol, built, compilation);
         }
     }
 
-    // Every invocation outside the opaque nodes is a call of the IR with the split the lowering annotates, and every
-    // call of the IR is an invocation
-    private void CompareSplits(IrMethod method, MethodDeclarationSyntax declaration, Compilation compilation,
-        string where)
+    private void Compare(SyntaxNode body, IMethodSymbol symbol, IrMethod built, Compilation compilation)
+    {
+        var where = IrCoverageInputs.Where(body.SyntaxTree, symbol);
+        var method = IrClassifier.Classify(built, compilation);
+        foreach (var violation in IrInvariants.VerifyClassified(method))
+        {
+            _splitMismatches.Add($"{where}: {violation}");
+        }
+
+        CompareSplits(method, body, compilation, where);
+        CompareEffects(method, body.SyntaxTree, compilation, where);
+    }
+
+    // Every invocation outside the opaque nodes is a call of the IR with the split the lowering annotates, every call
+    // of the IR is an invocation, and every split invocation inside an opaque node is under a node marked as holding
+    // one
+    private void CompareSplits(IrMethod method, SyntaxNode body, Compilation compilation, string where)
     {
         var calls = new Dictionary<TextSpan, IrCall>();
-        var opaque = new List<TextSpan>();
+        var opaque = new List<(TextSpan Span, IrOpaqueSplit Split)>();
         IrNodeChildren.Visit(method.Body, node =>
         {
             switch (node)
@@ -70,18 +103,17 @@ internal sealed class IrClassificationEquivalence
                     calls[call.Source.Span] = call;
                     break;
                 case IrOpaqueExpression expression:
-                    opaque.Add(expression.Syntax.Span);
+                    opaque.Add((expression.Syntax.Span, expression.Split));
                     break;
                 case IrOpaqueStatement statement:
-                    opaque.Add(statement.Syntax.Span);
+                    opaque.Add((statement.Syntax.Span, statement.Split));
                     break;
             }
         });
 
-        var model = compilation.GetSemanticModel(declaration.SyntaxTree);
-        var body = (SyntaxNode?)declaration.Body ?? declaration.ExpressionBody;
+        var model = compilation.GetSemanticModel(body.SyntaxTree);
         var matched = 0;
-        foreach (var invocation in body?.DescendantNodes().OfType<InvocationExpressionSyntax>() ?? [])
+        foreach (var invocation in body.DescendantNodes().OfType<InvocationExpressionSyntax>())
         {
             if (model.GetSymbolInfo(invocation).Symbol is not IMethodSymbol callee)
             {
@@ -92,25 +124,11 @@ internal sealed class IrClassificationEquivalence
             if (calls.TryGetValue(invocation.Span, out var call))
             {
                 matched++;
-                Interlocked.Increment(ref _callsCompared);
-                var actual = Describe(call.Classification.Split, call.Method.ReturnsVoid);
-                if (actual != "none")
-                {
-                    Interlocked.Increment(ref _splitCallsCompared);
-                }
-
-                if (actual != expected)
-                {
-                    _splitMismatches.Add($"{where}: {invocation}: lowering {expected}, IR {actual}");
-                }
+                CompareCall(call, invocation, expected, where);
             }
-            else if (opaque.Exists(span => span.Contains(invocation.Span)))
+            else if (opaque.FindIndex(o => o.Span.Contains(invocation.Span)) is var index and >= 0)
             {
-                Interlocked.Increment(ref _invocationsInOpaque);
-                if (expected != "none")
-                {
-                    Interlocked.Increment(ref _splitInvocationsInOpaque);
-                }
+                CompareInOpaque(opaque[index].Split, invocation, expected, where);
             }
             else
             {
@@ -124,14 +142,45 @@ internal sealed class IrClassificationEquivalence
         }
     }
 
+    private void CompareCall(IrCall call, InvocationExpressionSyntax invocation, string expected, string where)
+    {
+        Interlocked.Increment(ref _callsCompared);
+        var actual = Describe(LoweringAnnotations.CreateSplitAnnotation(call.Classification.Split,
+            call.Method.ReturnsVoid));
+        if (actual != "none")
+        {
+            Interlocked.Increment(ref _splitCallsCompared);
+        }
+
+        if (actual != expected)
+        {
+            _splitMismatches.Add($"{where}: {invocation}: lowering {expected}, IR {actual}");
+        }
+    }
+
+    private void CompareInOpaque(IrOpaqueSplit split, InvocationExpressionSyntax invocation, string expected,
+        string where)
+    {
+        Interlocked.Increment(ref _invocationsInOpaque);
+        if (expected == "none")
+        {
+            return;
+        }
+
+        Interlocked.Increment(ref _splitInvocationsInOpaque);
+        if (split != IrOpaqueSplit.HoldsSplit)
+        {
+            _splitMismatches.Add($"{where}: {invocation}: a split point under an opaque node marked {split}");
+        }
+    }
+
     // The effects of the outermost node of each span that has the span of an expression of the source
     private void CompareEffects(IrMethod method, SyntaxTree tree, Compilation compilation, string where)
     {
         var model = compilation.GetSemanticModel(tree);
         var root = tree.GetRoot();
         var seen = new HashSet<TextSpan>();
-        var found =
-            new List<(IrExpression Node, string Kind, string Message, ExpressionEffects Old, ExpressionEffects Ir)>();
+        var found = new List<EffectDifference>();
         IrNodeChildren.Visit(method.Body, node =>
         {
             if (node is not IrExpression expression ||
@@ -154,103 +203,71 @@ internal sealed class IrClassificationEquivalence
             var ir = isLocation ? IrEffects.OfLocation(expression, compilation) : IrEffects.Of(expression, compilation);
             if (Kind(old, ir) is { } kind)
             {
-                found.Add((expression, kind,
+                found.Add(new EffectDifference(expression, kind, old, ir,
                     $"{where}: {syntax} ({(isLocation ? "location" : "value")}): " +
-                    $"syntax reads {old.Reads} writes {old.Writes}, IR reads {ir.Reads} writes {ir.Writes}", old, ir));
+                    $"syntax reads {old.Reads} writes {old.Writes}, IR reads {ir.Reads} writes {ir.Writes}"));
             }
         });
 
-        // Only the innermost: an expression that holds a mismatching operand differs for the operand's reason
-        var mismatching = new HashSet<IrNode>(found.Select(static f => (IrNode)f.Node));
-        foreach (var (node, kind, message, old, ir) in found)
+        Report(found, compilation);
+    }
+
+    // The innermost differences by their reason; an outer difference by its own reason unless the differences of its
+    // operands explain it
+    private void Report(List<EffectDifference> found, Compilation compilation)
+    {
+        var differing = found.ToDictionary(static f => (IrNode)f.Node);
+        foreach (var difference in found)
         {
-            var inner = false;
-            foreach (var child in IrNodeChildren.Of(node))
+            var inner = InnerDifferences(difference.Node, differing);
+            if (inner.Count > 0 && Explains(inner, difference))
             {
-                IrNodeChildren.Visit(child, descendant => inner |= mismatching.Contains(descendant));
+                Interlocked.Increment(ref _outerExplainedByOperands);
+                continue;
             }
 
-            if (!inner)
-            {
-                var reason = KnownDifference(node, kind, old, ir) ?? "unexplained, " + kind;
-                _effectMismatches.GetOrAdd(reason, static _ => []).Add(message);
-            }
+            var reason = IrEffectDifferences.Reason(difference.Node, difference.Kind, difference.Old, difference.Ir,
+                             compilation) ?? "unexplained, " + difference.Kind;
+            _effectMismatches.GetOrAdd(reason, static _ => []).Add(difference.Message);
         }
     }
 
-    /// <summary>The reasons the IR and the syntax walk differ by design, each named by its prefix.</summary>
-    public const string KnownPrefix = "known, ";
-
-    // Where the IR follows the meaning and the syntax walk follows the shape (IrEffects remarks), or where the syntax
-    // walk misses a call that the IR sees; null for a difference nobody explained
-    private static string? KnownDifference(IrExpression node, string kind, ExpressionEffects old,
-        ExpressionEffects ir)
+    // The differences of the nodes below node
+    private static List<EffectDifference> InnerDifferences(IrNode node, Dictionary<IrNode, EffectDifference> differing)
     {
-        var less = kind == "IR finds less";
-        var more = kind == "IR finds more";
-        if (node is IrConversion { IsImplicit: true, Operand.ConstantValue.HasValue: false } conversion &&
-            (conversion.Conversion.Method is null || more))
+        var inner = new List<EffectDifference>();
+        foreach (var child in IrNodeChildren.Of(node))
         {
-            // An implicit conversion has the span of its operand, which is not compared on its own; the difference
-            // is the operand's (a user-defined conversion only adds reads, which both walks count)
-            node = conversion.Operand;
+            IrNodeChildren.Visit(child, descendant =>
+            {
+                if (differing.TryGetValue(descendant, out var difference))
+                {
+                    inner.Add(difference);
+                }
+            });
         }
 
-        return node switch
+        return inner;
+    }
+
+    // Whether what the outer node adds over the syntax walk (or misses) is what its operands add (or miss): the IR's
+    // outer effects lie within the syntax's plus the IR's inner ones, and the syntax's within the IR's plus the
+    // syntax's inner ones
+    private static bool Explains(List<EffectDifference> inner, EffectDifference outer)
+    {
+        var irInner = default(ExpressionEffects);
+        var oldInner = default(ExpressionEffects);
+        foreach (var difference in inner)
         {
-            // The syntax walk takes the member an object initializer assigns as a location in memory
-            IrAssignment { Target: IrFieldReference { Receiver: IrInitializedObject } } when less =>
-                KnownPrefix + "an initializer writes the new value",
-            // The syntax walk reads the location of a struct temporary (a call result, a creation, a nullable
-            // unwrap) as memory
-            IrFieldReference { Receiver: { Type.IsValueType: true } receiver } when less && !IsStorage(receiver) =>
-                KnownPrefix + "a field of a struct temporary reads no memory",
-            // The syntax walk takes a struct property (or indexer) as a location inside its receiver, without the
-            // call of its getter
-            IrFieldReference { Receiver: IrPropertyReference { Property.RefKind: RefKind.None } } when more =>
-                KnownPrefix + "a struct property used as a receiver calls its getter",
-            // The syntax walk takes a discard as a location in memory
-            _ when less && HasDiscard(node) => KnownPrefix + "a discard is written by no one",
-            // The syntax walk reads memory to find the location of this
-            IrVariableReference { Variable.Kind: IrVariableKind.This } when less =>
-                KnownPrefix + "the location of this reads nothing",
-            // The syntax walk writes the variable of a by-value receiver of a reduced extension call
-            IrCall { Method: { IsExtensionMethod: true, Parameters: [{ RefKind: RefKind.None }, ..] } }
-                when less && old.Reads.IsSubsetOf(ir.Reads) =>
-                KnownPrefix + "a by-value extension receiver is not written",
-            // The syntax walk sees the parameters of the reduced method, without the receiver, and takes a pure
-            // intrinsic extension of an array (AsSpan) as scalar math
-            IrCall { Method.IsExtensionMethod: true } when more && ir.Reads.Memory && !old.Reads.Memory =>
-                KnownPrefix + "an extension call is not scalar math",
-            // The syntax walk does not see the call of a user-defined operator (ExpressionEffects ignores them)
-            IrUnary { Operator.Method: not null } or IrBinary { Operator.Method: not null }
-                or IrCompoundAssignment { Operator.Method: not null } or IrIncrement { OperatorMethod: not null }
-                when more && ir.Writes.Memory && !old.Writes.Memory =>
-                KnownPrefix + "a user-defined operator writes what its body writes",
-            // The syntax walk skips a constant before its user-defined conversion (null to Span<T>)
-            IrConversion { Conversion.Method: not null, Operand.ConstantValue.HasValue: true } when more =>
-                KnownPrefix + "a user-defined conversion of a constant is a call",
-            _ => null
-        };
+            irInner = irInner.Union(difference.Ir);
+            oldInner = oldInner.Union(difference.Old);
+        }
+
+        return IsWithin(outer.Ir, outer.Old.Union(irInner)) && IsWithin(outer.Old, outer.Ir.Union(oldInner));
     }
 
-    private static bool IsStorage(IrExpression expression) => expression switch
-    {
-        IrVariableReference or IrElementReference => true,
-        IrFieldReference { Receiver: { } receiver } => !receiver.Type.IsValueType || IsStorage(receiver),
-        IrFieldReference => true,
-        IrPropertyReference property => property.Property.RefKind != RefKind.None,
-        IrCall call => call.Method.RefKind != RefKind.None,
-        IrConditional conditional => conditional.IsRef,
-        _ => false
-    };
-
-    private static bool HasDiscard(IrExpression node)
-    {
-        var found = false;
-        IrNodeChildren.Visit(node, child => found |= child is IrDiscard);
-        return found;
-    }
+    private static bool IsWithin(ExpressionEffects effects, ExpressionEffects bound) =>
+        effects.Reads.IsSubsetOf(bound.Reads) && effects.Writes.IsSubsetOf(bound.Writes);
 
     // The outermost expression whose span is span
     private static ExpressionSyntax? FindExpression(SyntaxNode root, TextSpan span)
@@ -285,20 +302,10 @@ internal sealed class IrClassificationEquivalence
     private static string Describe(SyntaxAnnotation? annotation) =>
         annotation is null ? "none" : annotation.Kind + ":" + (annotation.Data ?? "");
 
-    // The annotation the lowering would put on a call with this split
-    private static string Describe(IrSplit split, bool returnsVoid) => split.Kind switch
-    {
-        IrSplitKind.None => "none",
-        IrSplitKind.SuspendingCall => Describe(returnsVoid
-            ? new SyntaxAnnotation(LoweringAnnotations.SuspendingCallAnnotationKind)
-            : new SyntaxAnnotation(LoweringAnnotations.SuspendingCallAnnotationKind,
-                LoweringAnnotations.ValueReturningCallAnnotationData)),
-        IrSplitKind.BlockBarrier => Describe(LoweringAnnotations.CreateSyncIntrinsicAnnotation(
-            new SyncIntrinsicInfo(SyncIntrinsicKind.BlockBarrier, SyncScope.Block, true, false))),
-        IrSplitKind.GridBarrier => Describe(LoweringAnnotations.CreateSyncIntrinsicAnnotation(
-            new SyncIntrinsicInfo(SyncIntrinsicKind.GridBarrier, SyncScope.Grid, true, false))),
-        IrSplitKind.WarpShuffle => Describe(LoweringAnnotations.CreateSyncIntrinsicAnnotation(
-            new SyncIntrinsicInfo(SyncIntrinsicKind.WarpShuffle, SyncScope.Warp, true, true, split.Shuffle))),
-        _ => throw new ArgumentOutOfRangeException(nameof(split), split.Kind, null)
-    };
+    private sealed record EffectDifference(
+        IrExpression Node,
+        string Kind,
+        ExpressionEffects Old,
+        ExpressionEffects Ir,
+        string Message);
 }

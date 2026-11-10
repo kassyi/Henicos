@@ -59,9 +59,9 @@ internal static class IrCoverageInputs
 
     /// <summary>
     /// The <c>[GpuKernel]</c> and <c>[GpuDeviceFunction]</c> methods declared in <paramref name="trees"/> that have a
-    /// body, with their declarations and built IR.
+    /// body, with the syntax of the body and the built IR.
     /// </summary>
-    public static IEnumerable<(MethodDeclarationSyntax Declaration, IMethodSymbol Symbol, IrMethod Method)> GpuMethods(
+    public static IEnumerable<(SyntaxNode Body, IMethodSymbol Symbol, IrMethod Method)> GpuMethods(
         Compilation compilation, IEnumerable<SyntaxTree> trees)
     {
         foreach (var tree in trees)
@@ -70,13 +70,57 @@ internal static class IrCoverageInputs
             foreach (var declaration in tree.GetRoot().DescendantNodes().OfType<MethodDeclarationSyntax>())
             {
                 if (model.GetDeclaredSymbol(declaration) is { } symbol && GpuExecutionSpace.IsGpuFunction(symbol) &&
+                    BodyOf(declaration) is { } body &&
                     IrBuilder.TryBuild(symbol, compilation, CancellationToken.None) is { } method)
                 {
-                    yield return (declaration, symbol, method);
+                    yield return (body, symbol, method);
                 }
             }
         }
     }
+
+    /// <summary>
+    /// The bodies of the members of the structs that G# emits for the device, declared in <paramref name="trees"/>:
+    /// property and indexer accessors (also an expression-bodied property), constructors, operators and conversions.
+    /// These are where a member reads its own struct through the implicit <see langword="this"/>.
+    /// </summary>
+    public static IEnumerable<(SyntaxNode Body, IMethodSymbol Symbol, IrMethod Method)> StructMembers(
+        Compilation compilation, IEnumerable<SyntaxTree> trees)
+    {
+        foreach (var tree in trees)
+        {
+            var model = compilation.GetSemanticModel(tree);
+            foreach (var node in tree.GetRoot().DescendantNodes())
+            {
+                if (StructMemberBody(node, model) is not ({ } body, { } symbol) ||
+                    symbol.ContainingType is not { } type || !GlobalCppNames.IsEmittedUserType(type) ||
+                    IrBuilder.TryBuild(symbol, compilation, CancellationToken.None) is not { } method)
+                {
+                    continue;
+                }
+
+                yield return (body, symbol, method);
+            }
+        }
+    }
+
+    // The body and symbol of an accessor, an expression-bodied property, a constructor or an operator
+    private static (SyntaxNode? Body, IMethodSymbol? Symbol) StructMemberBody(SyntaxNode node, SemanticModel model) =>
+        node switch
+        {
+            AccessorDeclarationSyntax accessor => ((SyntaxNode?)accessor.Body ?? accessor.ExpressionBody,
+                model.GetDeclaredSymbol(accessor) as IMethodSymbol),
+            PropertyDeclarationSyntax { ExpressionBody: { } arrow } property =>
+                (arrow, (model.GetDeclaredSymbol(property) as IPropertySymbol)?.GetMethod),
+            IndexerDeclarationSyntax { ExpressionBody: { } arrow } indexer =>
+                (arrow, (model.GetDeclaredSymbol(indexer) as IPropertySymbol)?.GetMethod),
+            BaseMethodDeclarationSyntax member and not MethodDeclarationSyntax =>
+                ((SyntaxNode?)member.Body ?? member.ExpressionBody, model.GetDeclaredSymbol(member) as IMethodSymbol),
+            _ => (null, null)
+        };
+
+    private static SyntaxNode? BodyOf(MethodDeclarationSyntax declaration) =>
+        (SyntaxNode?)declaration.Body ?? declaration.ExpressionBody;
 
     /// <summary>Where a method is, for a test message.</summary>
     public static string Where(SyntaxTree tree, IMethodSymbol symbol) =>

@@ -7,23 +7,18 @@ public struct Counter
 {
     public int Count;
 
-    // Writes only its receiver
-    public void Bump() => Count++;
-
-    public int BumpAndRead()
+    // A getter that changes its receiver
+    public int NextInt
     {
-        Bump();
-        return Count;
+        get
+        {
+            Count += 1;
+            return Count;
+        }
     }
 
-    // Count is read and Bump() writes it through the implicit this
-    public int ReadThenBump() => Count + Next();
-
-    public int Next()
-    {
-        Bump();
-        return 0;
-    }
+    // Count is read, then the getter of NextInt changes it through the implicit this
+    public int ReadThenNext => Count + NextInt;
 }
 
 // Each case method holds 'var result = <expression>;' or the statement the test looks at
@@ -127,6 +122,34 @@ public static class Cases
     public static void DiscardOut()
     {
         var result = Out(out _);
+    }
+
+    [GpuKernel]
+    public static void AsSpanView(int[] data)
+    {
+        var result = data.AsSpan();
+    }
+
+    [GpuKernel]
+    public static void BarrierInLoop(int[] data)
+    {
+        for (var i = 0; i < 2; i++)
+        {
+            Gpu.SyncThreads();
+        }
+
+        data[0] = 1;
+    }
+
+    [GpuKernel]
+    public static void FenceInLoop(int[] data)
+    {
+        for (var i = 0; i < 2; i++)
+        {
+            Gpu.ThreadFence();
+        }
+
+        data[0] = 1;
     }
 
     [GpuDeviceFunction]

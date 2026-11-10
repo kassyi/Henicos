@@ -10,7 +10,12 @@ namespace Kassyi.GSharp.Compiler.Ir;
 /// <remarks>
 /// A pass overrides the node kinds it changes and calls the base to rewrite the children first. Children are visited
 /// in the order of their fields (<see cref="IrNodeChildren.Of"/>): a receiver before the arguments, the arguments in
-/// parameter order. Leaves (constants, variables, opaque nodes) are returned as they are.
+/// parameter order. That is not the C# order of evaluation: a pass that needs it reads
+/// <see cref="IrArgument.EvaluationIndex"/>, which differs for named arguments. Leaves (constants, variables) are
+/// returned as they are; opaque nodes go to <see cref="VisitOpaqueStatement"/> and <see cref="VisitOpaqueExpression"/>.
+/// A node kind with children and no case here is an internal error. A pass that must put statements before the one
+/// it rewrites returns an <see cref="Expressions.IrSequence"/>, which the split pass lifts to the enclosing block
+/// afterwards, as Roslyn lifts a spill sequence.
 /// </remarks>
 internal abstract class IrRewriter
 {
@@ -31,7 +36,8 @@ internal abstract class IrRewriter
         IrReturn @return => @return.Update(VisitOptional(@return.Value)),
         IrIf @if => @if.Update(VisitExpression(@if.Condition), VisitStatement(@if.Then),
             @if.Else is { } @else ? VisitStatement(@else) : null),
-        _ => statement
+        IrOpaqueStatement opaque => VisitOpaqueStatement(opaque),
+        _ => throw Unknown(statement)
     };
 
     /// <summary>Rewrites a block.</summary>
@@ -65,8 +71,16 @@ internal abstract class IrRewriter
             VisitList(array.Elements, VisitExpression)),
         IrSequence sequence => sequence.Update(VisitList(sequence.SideEffects, VisitStatement),
             VisitExpression(sequence.Value)),
-        _ => expression
+        IrOpaqueExpression opaque => VisitOpaqueExpression(opaque),
+        IrConstant or IrVariableReference or IrDefaultValue or IrDiscard or IrInitializedObject => expression,
+        _ => throw Unknown(expression)
     };
+
+    /// <summary>Rewrites an opaque statement; the statement itself by default.</summary>
+    public virtual IrStatement VisitOpaqueStatement(IrOpaqueStatement statement) => statement;
+
+    /// <summary>Rewrites an opaque expression; the expression itself by default.</summary>
+    public virtual IrExpression VisitOpaqueExpression(IrOpaqueExpression expression) => expression;
 
     /// <summary>Rewrites a call: its receiver and arguments, keeping its classification.</summary>
     public virtual IrExpression VisitCall(IrCall call) =>
@@ -119,6 +133,9 @@ internal abstract class IrRewriter
 
         return rewritten?.MoveToImmutable() ?? nodes;
     }
+
+    private static InvalidOperationException Unknown(IrNode node) =>
+        new($"The IR rewriter has no case for a node of kind {node.GetType().Name}.");
 
     // A builder of the length of items that holds its first count items
     private static ImmutableArray<T>.Builder CopyPrefix<T>(ImmutableArray<T> items, int count)

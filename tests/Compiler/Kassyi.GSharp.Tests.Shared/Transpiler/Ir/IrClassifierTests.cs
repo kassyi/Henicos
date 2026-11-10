@@ -92,6 +92,39 @@ public class IrClassifierTests
         Assert.Empty(IrInvariants.Verify(classified, Compilation));
     }
 
+    [Theory]
+    [Scenario(TestScenario.HappyPath)]
+    [InlineData("BarrierInLoop", "HoldsSplit")]
+    [InlineData("FenceInLoop", "None")]
+    public void Classify_OpaqueLoop_RecordsWhetherItHoldsASplit(string name, string split)
+    {
+        var loop = Assert.IsType<IrOpaqueStatement>(Classify(name).Body.Statements[0]);
+
+        Assert.Equal(Enum.Parse<IrOpaqueSplit>(split), loop.Split);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Classify_EveryCallAndOpaqueNode_KeepsTheClassifiedInvariants()
+    {
+        Assert.NotEmpty(IrInvariants.VerifyClassified(Build("BarrierInLoop")));
+        Assert.Empty(IrInvariants.VerifyClassified(Classify("BarrierInLoop")));
+        Assert.Contains(IrInvariants.VerifyClassified(Build("NestedSplit")),
+            static violation => violation.StartsWith("I24 ", StringComparison.Ordinal));
+        Assert.Contains(IrInvariants.VerifyClassified(Build("BarrierInLoop")),
+            static violation => violation.StartsWith("I25 ", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Print_ClassifiedCall_ShowsItsSplitAndEffect()
+    {
+        var printed = IrPrinter.Print(IrTestCases.Result(Classify("ShuffleDown")));
+
+        Assert.Contains("[split=WarpShuffle:Down, writes=Memory]", printed);
+        Assert.DoesNotContain("[split=", IrPrinter.Print(IrTestCases.Result(Build("ShuffleDown"))));
+    }
+
     [Fact]
     [Scenario(TestScenario.SadPath)]
     public void Split_OfAnUnclassifiedCall_Throws()
@@ -132,7 +165,7 @@ public class IrClassifierTests
 
         var mismatches = methods
             .Where(method => !Matches(IrSplitClassifier.Classify(method, compilation),
-                AstLoweringPipeline.ClassifySplitPoint(method, compilation)))
+                AstLoweringPipeline.ClassifySplitPoint(method, compilation), method.ReturnsVoid))
             .Select(static method => method.ContainingType.Name + "." + method.Name)
             .ToArray();
 
@@ -140,17 +173,10 @@ public class IrClassifierTests
         Assert.Empty(mismatches);
     }
 
-    private static bool Matches(IrSplit split, SyntaxAnnotation? annotation) => split.Kind switch
-    {
-        IrSplitKind.None => annotation is null,
-        IrSplitKind.BlockBarrier => annotation?.Data == LoweringAnnotations.BlockBarrierAnnotationData,
-        IrSplitKind.GridBarrier => annotation?.Data == LoweringAnnotations.GridBarrierAnnotationData,
-        IrSplitKind.WarpShuffle => annotation?.Kind == LoweringAnnotations.SyncIntrinsicAnnotationKind &&
-                                   annotation.Data == LoweringAnnotations.CreateSyncIntrinsicAnnotation(
-                                       new SyncIntrinsicInfo(SyncIntrinsicKind.WarpShuffle, SyncScope.Warp, true, true,
-                                           split.Shuffle))?.Data,
-        _ => annotation?.Kind == LoweringAnnotations.SuspendingCallAnnotationKind
-    };
+    // The annotation the compiler maps the split to equals the one the lowering puts on the call
+    private static bool Matches(IrSplit split, SyntaxAnnotation? annotation, bool returnsVoid) =>
+        LoweringAnnotations.CreateSplitAnnotation(split, returnsVoid) is var mapped &&
+        mapped?.Kind == annotation?.Kind && mapped?.Data == annotation?.Data;
 
     internal static IrMethod Build(string name) => IrTestCases.Build(Cases, "IrClassifierCases.Cases", name);
 

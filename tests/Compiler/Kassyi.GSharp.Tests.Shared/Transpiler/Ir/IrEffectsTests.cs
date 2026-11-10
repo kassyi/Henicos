@@ -49,6 +49,15 @@ public class IrEffectsTests
     }
 
     [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Of_ArrayAsSpan_ReadsNoMemory()
+    {
+        var effects = IrEffects.Of(IrTestCases.Result(IrClassifierTests.Classify("AsSpanView")), Compilation);
+
+        Assert.Equal("{data}", effects.Reads.ToString());
+    }
+
+    [Fact]
     [Scenario(TestScenario.HappyPath)]
     public void Of_PureDeviceFunction_ReadsMemoryAndWritesNothing()
     {
@@ -70,10 +79,11 @@ public class IrEffectsTests
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Of_StructMemberThroughImplicitThis_WritesTheReceiver()
+    public void Of_GetterThroughImplicitThis_WritesTheReceiver()
     {
-        // Count + Next(): Next() changes Count through the implicit this, so the read of Count must come first
-        var method = IrTestCases.Build("Ir/IrClassifierCases.cs", "IrClassifierCases.Counter", "ReadThenBump");
+        // Count + NextInt: the getter of NextInt changes Count through the implicit this, so the read of Count must
+        // come first (the syntax walk misses this write, #1606)
+        var method = IrTestCases.Build("Ir/IrClassifierCases.cs", "IrClassifierCases.Counter", "get_ReadThenNext");
         var classified = IrClassifier.Classify(method, Compilation);
         var returned = Assert.IsType<IrReturn>(Assert.Single(classified.Body.Statements));
         var binary = Assert.IsType<IrBinary>(returned.Value);
@@ -81,7 +91,7 @@ public class IrEffectsTests
         var left = IrEffects.Of(binary.Left, Compilation);
         var right = IrEffects.Of(binary.Right, Compilation);
 
-        Assert.Equal(DeviceFunctionEffect.RefParameters, Assert.IsType<IrCall>(binary.Right).Classification.Effect);
+        Assert.IsType<IrPropertyReference>(binary.Right);
         Assert.True(right.Writes.Memory);
         Assert.True(left.InterferesWith(right));
     }
