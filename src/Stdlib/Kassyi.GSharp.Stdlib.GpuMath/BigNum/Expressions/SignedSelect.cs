@@ -1,22 +1,19 @@
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 
-// Max and Min: the comparison that chooses an operand, and the copy of the chosen one into the node's result
+// Max and Min return one of the operands, its sign flag included (-0 stays -0). Operands of the same host sign, or a
+// device sign, are compared on the device (SignedDeviceOps.Select); different host signs decide the operand on the host
+// (SignPlan.Choose), which is copied without a comparison.
 internal static class SignedSelect
 {
-    // The comparison that chooses the operand of Max and Min is read from the device
-    public static int Compare(GpuBigInt a, GpuBigInt b)
+    // The chosen magnitude in resultBuffer, which is at least as wide as either operand's words; the words above it are
+    // cleared
+    public static void Copy(GpuBigUInt chosen, GpuBigUInt resultBuffer)
     {
-        CaptureChecks.ThrowIfCapturing(a.Workspace, "The operand that Max and Min choose");
-        return a.CompareTo(b);
+        var words = chosen.NumWords;
+        resultBuffer.CopyFrom(chosen, numWords: words);
+        ResultBuffers.ClearAbove(resultBuffer, words);
     }
 
-    // The chosen operand in resultBuffer, which is at least as wide as either operand's words; the words above it are
-    // cleared
-    public static GpuBigInt Copy(GpuBigInt chosen, GpuBigUInt resultBuffer)
-    {
-        var words = chosen.Value.NumWords;
-        resultBuffer.CopyFrom(chosen.Value, numWords: words);
-        SignedRoot.ClearAbove(resultBuffer, words);
-        return new GpuBigInt(resultBuffer, chosen.IsNegative);
-    }
+    public static InvalidOperationException NotOnTheHost() =>
+        new("Max and Min have no host computation: a host plan names the chosen operand, which is copied.");
 }

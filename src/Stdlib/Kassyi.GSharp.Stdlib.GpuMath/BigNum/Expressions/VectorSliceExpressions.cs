@@ -8,6 +8,7 @@ internal class VectorTakeExpression([TakesOwnership] IGpuBigIntVectorExpression 
     public int Capacity => Math.Min(source.Capacity, count);
 
     public int WordsPerElement => source.WordsPerElement;
+    public long BitsPerElement => source.BitsPerElement;
 
     public bool TryGetLength(out int length)
     {
@@ -61,6 +62,7 @@ internal class VectorSkipExpression([TakesOwnership] IGpuBigIntVectorExpression 
     public int Capacity => source.Capacity - _skipCount;
 
     public int WordsPerElement => source.WordsPerElement;
+    public long BitsPerElement => source.BitsPerElement;
 
     public bool TryGetLength(out int length)
     {
