@@ -136,14 +136,14 @@ public static GpuBigIntExpr Min(this IGpuBigIntVectorExpression source);
 public static GpuBigIntExpr Count(this IGpuBigIntVectorExpression source);
 ```
 
-`Sum`, `Max`, and `Min` return a value with the same number of words as the elements (`WordsPerElement`):
+`Max` and `Min` return a value with the same number of words as the elements (`WordsPerElement`). `Sum` never overflows: its bound is `BitsPerElement + ceil(log2 Capacity)` bits, and the result has the words of that bound, at most one word more than the elements:
 
-- The reduction accumulates in one word more than the elements, so values whose top bit is set and intermediate sums that leave the element width are exact.
-- `Sum` throws `OverflowException` on evaluation when the final sum does not fit in `WordsPerElement` words. Only the final sum counts: unlike the checked sum of `System.Linq`, a running sum that leaves the element width and comes back (`[2^(32N) - 1, 1, -1]`) does not throw. `Max` and `Min` always fit.
-- `Evaluate(destination)` writes the magnitude of the result into `destination` and returns a `GpuBigInt` that wraps `destination` with the sign of the result. `destination` must have `WordsPerElement` words (`ArgumentException`).
+- The reduction accumulates in one word more than the elements, so every value and every intermediate sum is exact.
+- `Evaluate(destination)` writes the magnitude of the result into `destination` and returns a `GpuBigInt` that wraps `destination` with the sign of the result. `destination` must have at least the words of the result (`NumWords` of the expression's node; `ArgumentException` otherwise, before anything is written); a wider one gets zeros above the magnitude.
 - `Evaluate(workspace)` allocates a new buffer for the magnitude; the caller owns it and disposes it. If evaluation throws, that buffer is released.
-- When `Evaluate(destination)` throws, `destination` is left as follows: for a destination of the wrong width (`ArgumentException`) it is not touched; for `OverflowException` its contents are unspecified (currently the low `WordsPerElement` words of the magnitude).
-- Evaluation reads two words back from the device: a word with the sign bit and the overflow bit, and the number of reduced elements.
+- When `Evaluate(destination)` throws, a destination that is too narrow (`ArgumentException`) is not touched; after an empty `Max` or `Min` reached only on the device (after `Where`) its contents are unspecified.
+- Evaluation reads two words back from the device: the sign and the number of reduced elements.
+- A difference of equal magnitudes (`ZipSubtract`, `SelectSubtract`) has the sign `+`, as `BigInteger` has no negative zero.
 - An empty vector behaves as in `System.Linq`: `Max` and `Min` throw `InvalidOperationException` ("Sequence contains no elements") on evaluation without evaluating the vector or launching anything, so a destination is not touched, `Sum` is +0 (a destination is cleared), and `Count` is 0.
 
 ## Element-Wise Comparisons (IsEqualTo, IsNotEqualTo, IsGreaterThan, IsGreaterThanOrEqualTo, IsLessThan, IsLessThanOrEqualTo)

@@ -79,7 +79,7 @@ public static class GpuBigUIntExpressionExtensions
         }
 
         // The root wrote its own width; the words of a wider target above it would keep their old value
-        SignedRoot.ClearAbove(finalResult, numWords);
+        ResultBuffers.ClearAbove(finalResult, numWords);
         return finalResult;
     }
 }

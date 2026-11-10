@@ -38,6 +38,16 @@ public interface IGpuBigIntVectorExpression : IDisposable
     int WordsPerElement { get; }
 
     /// <summary>
+    /// Gets an upper bound of every element's magnitude in bits; <see cref="WordsPerElement"/> holds it. The default
+    /// is every bit of the words, for an expression that knows no tighter bound.
+    /// </summary>
+    /// <remarks>
+    /// The library's expressions track their bounds in bits, so that a chain of additions grows by one bit per
+    /// addition and by one word only every 32 additions.
+    /// </remarks>
+    long BitsPerElement => 32L * WordsPerElement;
+
+    /// <summary>
     /// Evaluates the vectorized expression into a new or existing device array, optionally computing only a sub-slice.
     /// </summary>
     /// <param name="workspace">The GPU workspace used for memory allocation and CUDA stream execution.</param>
