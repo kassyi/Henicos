@@ -16,4 +16,8 @@ internal sealed class IrLocalDeclaration(IrVariable variable, IrExpression? init
 
     /// <summary>The initializer, or <see langword="null"/>.</summary>
     public IrExpression? Initializer { get; } = initializer;
+
+    /// <summary>This node with the given children; this node itself when they are the same.</summary>
+    public IrLocalDeclaration Update(IrExpression? initializer) =>
+        initializer == Initializer ? this : new IrLocalDeclaration(Variable, initializer, Source);
 }

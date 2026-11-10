@@ -15,4 +15,8 @@ internal sealed class IrFieldReference(IrExpression? receiver, IFieldSymbol fiel
 
     /// <summary>The field.</summary>
     public IFieldSymbol Field { get; } = field;
+
+    /// <summary>This node with the given children; this node itself when they are the same.</summary>
+    public IrFieldReference Update(IrExpression? receiver) =>
+        receiver == Receiver ? this : new IrFieldReference(receiver, Field, Category, ConstantValue, Source);
 }

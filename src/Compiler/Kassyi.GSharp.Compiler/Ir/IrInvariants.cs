@@ -37,11 +37,11 @@ internal sealed class IrInvariants
         return checker._violations.ToImmutable();
     }
 
-    /// <summary>Whether <paramref name="statement"/> holds an opaque statement or expression anywhere.</summary>
-    public static bool ContainsOpaque(IrStatement statement)
+    /// <summary>Whether <paramref name="node"/> is or holds an opaque statement or expression anywhere.</summary>
+    public static bool ContainsOpaque(IrNode node)
     {
         var found = false;
-        IrNodeChildren.Visit(statement, node => found |= node is IrOpaqueExpression or IrOpaqueStatement);
+        IrNodeChildren.Visit(node, child => found |= child is IrOpaqueExpression or IrOpaqueStatement);
         return found;
     }
 

@@ -201,7 +201,8 @@ internal static class IrExpressionBuilder
             return Opaque(operation, failure, category, context);
         }
 
-        return new IrCall(method, receiver, arguments, type, category, operation.ConstantValue, source);
+        // Whether the call splits and what it writes are G#'s decisions, made by the classify pass
+        return new IrCall(method, receiver, arguments, IrCallClassification.Unclassified, type, category, source);
     }
 
     private static IrExpression BuildUnary(IUnaryOperation operation, ITypeSymbol type, IrCategory category,

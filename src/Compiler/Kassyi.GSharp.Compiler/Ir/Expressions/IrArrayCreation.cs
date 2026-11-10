@@ -22,4 +22,10 @@ internal sealed class IrArrayCreation(ITypeSymbol elementType, IrExpression leng
 
     /// <summary>The initializer elements; empty without an initializer.</summary>
     public ImmutableArray<IrExpression> Elements { get; } = elements;
+
+    /// <summary>This node with the given children; this node itself when they are the same.</summary>
+    public IrArrayCreation Update(IrExpression length, ImmutableArray<IrExpression> elements) =>
+        length == Length && elements == Elements
+            ? this
+            : new IrArrayCreation(ElementType, length, elements, Type, Category, Source);
 }
