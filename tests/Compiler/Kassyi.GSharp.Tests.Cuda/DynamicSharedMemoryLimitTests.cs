@@ -163,7 +163,7 @@ public class DynamicSharedMemoryLimitTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.SadPath)]
-    public void Launch_DynamicSharedMemoryAboveOptInLimit_ThrowsArgumentOutOfRangeExceptionWithoutLaunching()
+    public void Launch_DynamicSharedMemoryAboveOptInLimit_ThrowsBeforeLaunching()
     {
         var limit = OptInLimit;
         var staticBytes = StaticBytes(nameof(DynamicSharedMemoryLimitKernels.FillAndSumKernel));
@@ -184,7 +184,7 @@ public class DynamicSharedMemoryLimitTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.SadPath)]
-    public void Launch_StaticPlusDynamicAboveOptInLimit_ThrowsArgumentOutOfRangeExceptionNamingStaticBytes()
+    public void Launch_StaticPlusDynamicAboveOptInLimit_ThrowsNamingStaticBytes()
     {
         SkipIfOptInNotAboveDefault();
         var limit = OptInLimit;
@@ -205,7 +205,7 @@ public class DynamicSharedMemoryLimitTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.SadPath)]
-    public void Launch_DynamicSharedMemoryAtMaxValue_ThrowsArgumentOutOfRangeExceptionWithoutOverflow()
+    public void Launch_DynamicSharedMemoryAtMaxValue_ThrowsWithoutOverflow()
     {
         var output = new uint[BlockSize];
         var ex = Assert.Throws<ArgumentOutOfRangeException>(() =>
@@ -241,7 +241,7 @@ public class DynamicSharedMemoryLimitTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.Boundary)]
-    public void Launch_OptedInKernelWithSubsequentSmallLaunch_PreservesMultiprocessorOccupancy()
+    public void Launch_OptedInKernelThenSmallLaunch_PreservesOccupancy()
     {
         SkipIfOptInNotAboveDefault();
         var hfunc = GetFunction(nameof(DynamicSharedMemoryLimitKernels.OccupancyKernel));

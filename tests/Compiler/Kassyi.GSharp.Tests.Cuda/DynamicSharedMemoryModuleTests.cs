@@ -87,8 +87,7 @@ public class DynamicSharedMemoryModuleTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.SadPath)]
-    public void
-        Launch_ModuleKernelDynamicSharedMemoryAboveOptInLimit_ThrowsArgumentOutOfRangeExceptionWithoutLaunching()
+    public void Launch_ModuleKernelAboveOptInLimit_ThrowsBeforeLaunching()
     {
         var limit = OptInLimit;
         var staticBytes = FunctionAttribute(GetFunction(), CuFunctionAttribute.SharedSizeBytes);
@@ -118,9 +117,7 @@ public class DynamicSharedMemoryModuleTests : TranspilerTestBase
     [InlineData(0u, "is 0")]
     [InlineData(1025u, "at most 1024 threads in x")]
     [InlineData(2048u, "at most 1024 threads in x")]
-    public void Launch_ModuleKernelBlockDimXBeyondDeviceLimits_ThrowsArgumentOutOfRangeExceptionWithoutLaunching(
-        uint blockDimX,
-        string limit)
+    public void Launch_ModuleKernelBlockDimXBeyondLimits_ThrowsBeforeLaunching(uint blockDimX, string limit)
     {
         var output = new uint[BlockSize];
 
