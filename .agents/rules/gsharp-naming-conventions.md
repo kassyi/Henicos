@@ -17,7 +17,7 @@ The only C# members that may contain underscores:
   managed C# calls. Each one is registered in `src/Compiler/Kassyi.GSharp.Compiler/Resources/InternalNames.yml` with its
   `Managed:` file, keeps the spelling of the C++ prelude function when it mirrors one, and carries
   `[EditorBrowsable(EditorBrowsableState.Never)]` so users do not see it. A new one is added to the YAML first.
-- **Test methods**: `<Unit>_<Scenario>_<Expected>`, see [test-architecture.md](test-architecture.md) §3.9.
+- **Test methods**: `<Unit>_<Condition>_<Expected>`, see [test-architecture.md](test-architecture.md) §3.9.
 - **Native bindings** that keep the name of the native API they bind, generated from `src/NativeApi/*.yml`
   (`cublasCreate_v2` in `cublas_api.yml`).
 

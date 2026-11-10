@@ -66,7 +66,7 @@ Name test code in natural language that directly expresses the domain intent, in
     ```
 - **Naming rules for test methods, classes and files**:
     - Do not put a feature-ID prefix such as `GEN-08_` or `GBI-06_` in file names, class names or method names; use a natural-language name that expresses the behavior under test (for example `KernelFusionTests.cs`, `GpuBigIntegerTests.cs`, `MemoryPool_Allocate_ReturnsAlignedBlock`, `SwitchExpression_Transpile_EmitsTernaryChain`).
-    - Test methods are named `<Unit>_<Scenario>_<Expected>`, with no `Test` / `Test_` prefix ([test-architecture.md](../../rules/test-architecture.md) §3.9).
+    - Test methods are named `<Unit>_<Condition>_<Expected>`, with no `Test` / `Test_` prefix ([test-architecture.md](../../rules/test-architecture.md) §3.9).
 
 ## 6. Placement strategy for GPU kernel files (Colocation vs Centralization)
 

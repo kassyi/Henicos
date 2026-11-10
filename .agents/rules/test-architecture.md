@@ -199,13 +199,16 @@ HNT0001 (a required test base class) was removed (#597). HNT0003 is the compiler
 
 ### 3.9. Test Method Names
 
-A test method is named `<Unit>_<Scenario>_<Expected>` in PascalCase parts separated by underscores, as in the unit
+A test method is named `<Unit>_<Condition>_<Expected>` in PascalCase parts separated by underscores, as in the unit
 testing best practices of .NET (`Add_TwoNegativeOperands_ReturnsTheNegativeSum`,
-`Max_DecidedByTheHighWord_PicksTheWiderOperand`). Two parts are enough when the scenario says it all
+`Max_DecidedByTheHighWord_PicksTheWiderOperand`). Two parts are enough when the condition says it all
 (`Lower_WhileLoop`). This is the one place where an underscore may separate the words of a member name; everywhere
 else the guidelines of [gsharp-naming-conventions](gsharp-naming-conventions.md) apply.
 
-- No `Test` or `Test_` prefix: the `[Fact]` / `[Theory]` attribute already says it is a test, and the prefix pushes the
+- The condition is the concrete input or situation (`TwoNegativeOperands`, `DecidedByTheHighWord`). The kind of case
+  (happy path, sad path, boundary) is what the `[Scenario]` attribute records (3.2); it does not go into the name.
+- No `Test` or `Test_` prefix: `[Fact]` / `[Theory]` and the `[Category]`, `[TestTarget]` and `[Scenario]` attributes
+  that every test carries (HNT0002) already say that it is a test and how it is classified, and the prefix pushes the
   unit under test out of the visible part of a test list.
 - Name the behavior, not the issue, the lane or a case number (see 3.2).
 - Test classes, kernel classes and helpers follow the normal PascalCase rules, without underscores.
