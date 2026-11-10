@@ -190,6 +190,21 @@ public struct DiffFieldKeywordPair
 }
 
 /// <summary>
+/// A getter that reads the backing field and then calls a member that writes it: C# reads the field first.
+/// </summary>
+public struct DiffFieldKeywordOrder
+{
+    public int X { get => field + Bump(ref this); set => field = value; }
+
+    [GpuDeviceFunction]
+    public static int Bump(ref DiffFieldKeywordOrder order)
+    {
+        order.X = 100;
+        return 1;
+    }
+}
+
+/// <summary>
 /// Properties whose accessors use the <c>field</c> keyword: the device stores the backing field and runs the accessors
 /// as C# does, and the launcher transfers the stored value. One kernel per form.
 /// </summary>
@@ -225,6 +240,8 @@ public static partial class FieldKeywordPropertyDifferentialKernels
     public static readonly string[] LibraryColumns = ["field_backed", "auto"];
 
     public static readonly string[] LibraryMacroColumns = ["auto_property_target"];
+
+    public static readonly string[] OrderColumns = ["read_then_written", "after"];
 
     [GpuDeviceFunction]
     public static int ReadTwice(in DiffFieldKeywordCounting counting) => counting.X + counting.X;
@@ -485,6 +502,22 @@ public static partial class FieldKeywordPropertyDifferentialKernels
         var a = new LibMacroValue { V = inputs[tid] % 1000 };
         holder.P = a + a;
         r[tid] = holder.P.V;
+    }
+
+    [GpuKernel]
+    public static void FieldKeywordOrder(int[] inputs, int[] r)
+    {
+        int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        if (tid >= inputs.Length)
+        {
+            return;
+        }
+
+        int o = tid * 2;
+        var s = new DiffFieldKeywordOrder();
+        s.X = inputs[tid] % 1000;
+        r[o] = s.X;
+        r[o + 1] = s.X;
     }
 
     [GpuKernel]

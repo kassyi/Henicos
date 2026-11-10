@@ -128,6 +128,13 @@ public class FieldKeywordPropertyDifferentialTests
             }
         });
 
+    private static readonly DifferentialCase s_order = IntCase(
+        nameof(FieldKeywordPropertyDifferentialKernels.FieldKeywordOrder),
+        FieldKeywordPropertyDifferentialKernels.OrderColumns,
+        static (i, r, s) => FieldKeywordPropertyDifferentialKernels.LaunchFieldKeywordOrder(
+            i, r, gridDimX: s.GridX, blockDimX: s.BlockX),
+        FieldKeywordPropertyDifferentialKernels.FieldKeywordOrder);
+
     private static readonly IElementComparer<DiffFieldKeywordPacked> s_packedComparer =
         new StructElementComparer<DiffFieldKeywordPacked>(static (ctx, o, a) =>
         {
@@ -296,6 +303,12 @@ public class FieldKeywordPropertyDifferentialTests
     [Scenario(TestScenario.Boundary)]
     public void OperatorMacro_LibraryAutoPropertyTarget_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_libraryMacroTarget);
+
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Differential)]
+    [Scenario(TestScenario.Boundary)]
+    public void FieldKeywordGetter_ReadThenCallThatWritesIt_KeepsTheCSharpOrder() => DifferentialRunner.Run(s_order);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
