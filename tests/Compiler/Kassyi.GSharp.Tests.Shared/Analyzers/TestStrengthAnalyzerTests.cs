@@ -11,12 +11,12 @@ public class TestStrengthAnalyzerTests : AnalyzerTestBase
     // Not reported on non-test methods; a user type named Assert is not an assertion.
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_NoAssertion_ReportsWarning()
+    public async Task Strength_NoAssertion_ReportsWarning()
     {
         await VerifyAnalyzerFromFileAsync(
             "TestStrength/NoAssertion.cs",
             new TestStrengthAnalyzer(),
-            nameof(Test_NoAssertion_ReportsWarning)
+            nameof(Strength_NoAssertion_ReportsWarning)
         );
     }
 
@@ -24,12 +24,12 @@ public class TestStrengthAnalyzerTests : AnalyzerTestBase
     // a user type named Debug.
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_DebugAssert_ReportsWarning()
+    public async Task Strength_DebugAssert_ReportsWarning()
     {
         await VerifyAnalyzerFromFileAsync(
             "TestStrength/DebugAssert.cs",
             new TestStrengthAnalyzer(),
-            nameof(Test_DebugAssert_ReportsWarning)
+            nameof(Strength_DebugAssert_ReportsWarning)
         );
     }
 
@@ -37,24 +37,24 @@ public class TestStrengthAnalyzerTests : AnalyzerTestBase
     // Random.Shared and RandomNumberGenerator anywhere in a test assembly; not on a seeded Random or user types.
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_UnseededRandom_ReportsWarning()
+    public async Task Strength_UnseededRandom_ReportsWarning()
     {
         await VerifyAnalyzerFromFileAsync(
             "TestStrength/UnseededRandom.cs",
             new TestStrengthAnalyzer(),
-            nameof(Test_UnseededRandom_ReportsWarning)
+            nameof(Strength_UnseededRandom_ReportsWarning)
         );
     }
 
     // HNT0006 belongs to test assemblies only.
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public async Task Test_UnseededRandomOutsideTestAssembly_NoDiagnostics()
+    public async Task Strength_UnseededRandomOutsideTestAssembly_ProducesNoDiagnostics()
     {
         await VerifyAnalyzerFromFileAsync(
             "TestStrength/UnseededRandom.cs",
             new TestStrengthAnalyzer(),
-            nameof(Test_UnseededRandomOutsideTestAssembly_NoDiagnostics),
+            nameof(Strength_UnseededRandomOutsideTestAssembly_ProducesNoDiagnostics),
             assemblyName: "ProductAssembly"
         );
     }
@@ -65,18 +65,18 @@ public class TestStrengthAnalyzerTests : AnalyzerTestBase
     // or passes it on), asserts, or always rethrows, or on a helper.
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_BroadCatch_ReportsWarning()
+    public async Task Strength_BroadCatch_ReportsWarning()
     {
         await VerifyAnalyzerFromFileAsync(
             "TestStrength/BroadCatch.cs",
             new TestStrengthAnalyzer(),
-            nameof(Test_BroadCatch_ReportsWarning)
+            nameof(Strength_BroadCatch_ReportsWarning)
         );
     }
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Rules_DefaultSeverityIsError()
+    public void Strength_Rules_DefaultSeverityIsError()
     {
         Assert.Equal(DiagnosticSeverity.Error, TestStrengthAnalyzer.TestMethodWithoutAssertion.DefaultSeverity);
         Assert.Equal(DiagnosticSeverity.Error, TestStrengthAnalyzer.DebugAssertInTest.DefaultSeverity);

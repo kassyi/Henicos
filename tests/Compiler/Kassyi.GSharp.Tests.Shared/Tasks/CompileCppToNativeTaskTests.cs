@@ -15,7 +15,7 @@ public class CompileCppToNativeTaskTests
     }
 
     [Fact]
-    public void Test_CompileCppToNativeTask_GSharpMultiTarget_CompilesForTwoArchitectures()
+    public void CompileCppToNativeTask_GSharpMultiTarget_CompilesForTwoArchitectures()
     {
         using var ctx = new CompileTaskTestContext();
         ctx.CreateDummySource("kernel.cpp", "// source");
@@ -32,7 +32,7 @@ public class CompileCppToNativeTaskTests
     }
 
     [Fact]
-    public void Test_CompileCppToNativeTask_ClExePathResolvedFromPath()
+    public void CompileCppToNativeTask_ClExePathResolvedFromPath()
     {
         using var ctx = new CompileTaskTestContext();
         ctx.CreateDummySource("kernel.cpp", "// source");
@@ -57,7 +57,7 @@ public class CompileCppToNativeTaskTests
     [InlineData("g++")]
     [InlineData("clang++")]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_CompileCppToNativeTask_GccClangToolchain_CompilesSharedLibrary(string compiler)
+    public void CompileCppToNativeTask_GccClangToolchain_CompilesSharedLibrary(string compiler)
     {
         using var ctx = new CompileTaskTestContext();
         ctx.CreateDummySource("kernel.cpp", "// source");
@@ -78,7 +78,7 @@ public class CompileCppToNativeTaskTests
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_CompileCppToNativeTask_GccClangToolchain_WhenCompilerMissing_SkipsWithWarningAndSucceeds()
+    public void CompileCppToNativeTask_GccClangToolchain_WhenCompilerMissing_SkipsWithWarningAndSucceeds()
     {
         using var ctx = new CompileTaskTestContext();
         ctx.CreateDummySource("kernel.cpp", "// source");
@@ -96,7 +96,7 @@ public class CompileCppToNativeTaskTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_CompileCppToNativeTask_GccClangToolchain_CompilationFails_LogsErrorAndReturnsFalse()
+    public void CompileCppToNativeTask_GccClangToolchain_CompilationFails_LogsErrorAndReturnsFalse()
     {
         using var ctx = new CompileTaskTestContext();
         ctx.CreateDummySource("kernel.cpp", "// source");
@@ -115,7 +115,7 @@ public class CompileCppToNativeTaskTests
     [InlineData("x64", "arm64")]
     [InlineData("arm64", "x64")]
     [Scenario(TestScenario.SadPath)]
-    public void Test_CompileCppToNativeTask_GccClangToolchain_MultiTarget_FailsForNonHostArchitecture(
+    public void CompileCppToNativeTask_GccClangToolchain_MultiTarget_FailsForNonHostArchitecture(
         string hostArchitecture, string otherArchitecture)
     {
         using var ctx = new CompileTaskTestContext();
@@ -135,7 +135,7 @@ public class CompileCppToNativeTaskTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_CompileCppToNativeTask_GccClangToolchain_HostArchitecture_Compiles()
+    public void CompileCppToNativeTask_GccClangToolchain_HostArchitecture_Compiles()
     {
         using var ctx = new CompileTaskTestContext();
         ctx.CreateDummySource("kernel.cpp", "// source");

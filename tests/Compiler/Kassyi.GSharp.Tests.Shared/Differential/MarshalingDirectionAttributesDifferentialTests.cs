@@ -164,16 +164,16 @@ public sealed class MarshalingDirectionAttributesDifferentialTests
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_DirectionAttributes_InArrayMutationIsolation_ProtectsCallerBuffers() =>
+    public void DirectionAttributes_InArrayMutationIsolation_ProtectsCallerBuffers() =>
         DifferentialRunner.Run(s_inArrayMutationIsolation);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_DirectionAttributes_OutArrayFullWrite_MatchesSequentialOracle() =>
+    public void DirectionAttributes_OutArrayFullWrite_MatchesSequentialOracle() =>
         DifferentialRunner.Run(s_outArrayFullWrite);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_DirectionAttributes_OutArrayPartialWrite_MatchesSequentialOracle() =>
+    public void DirectionAttributes_OutArrayPartialWrite_MatchesSequentialOracle() =>
         DifferentialRunner.Run(s_outArrayPartialWrite);
 }

@@ -12,7 +12,7 @@ public class OperatorMacroArgumentTests : TranspilerTestBase
 {
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_InOperand_IsPassed()
+    public void Expand_InOperand_IsPassed()
     {
         var result = new int[1];
 
@@ -23,7 +23,7 @@ public class OperatorMacroArgumentTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_InOperandBeforeAnInnerWrite_IsReadThroughItsVariable()
+    public void Expand_InOperandBeforeInnerWrite_IsReadThroughItsVariable()
     {
         InValue[] values = [new InValue(3), new InValue(5)];
         var result = new int[2];
@@ -35,7 +35,7 @@ public class OperatorMacroArgumentTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_RefResultBeforeAnInnerCall_IsTheElementChosenFirst()
+    public void Expand_RefResultBeforeInnerCall_IsElementChosenFirst()
     {
         var values = new SpillValue[2];
         var calls = new int[1];
@@ -47,7 +47,7 @@ public class OperatorMacroArgumentTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_OutResult_IsAssignedByTheTarget()
+    public void Expand_OutResult_IsAssignedByTarget()
     {
         var result = new int[2];
 
@@ -58,7 +58,7 @@ public class OperatorMacroArgumentTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_InOperandReturnedByReferenceBeforeAnInnerWrite_IsReadThroughTheReference()
+    public void Expand_InOperandReturnedByReferenceBeforeInnerWrite_IsReadThroughReference()
     {
         InValue[] values = [new InValue(3), new InValue(5)];
         var result = new int[2];
@@ -70,7 +70,7 @@ public class OperatorMacroArgumentTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_SharedMemoryInOperandBeforeAnInnerWrite_IsReadThroughTheElement()
+    public void Expand_SharedMemoryInOperandBeforeInnerWrite_IsReadThroughElement()
     {
         var result = new int[3];
 
@@ -81,7 +81,7 @@ public class OperatorMacroArgumentTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_AutoPropertyTargetAndOperand_AreItsStorage()
+    public void Expand_AutoPropertyTargetAndOperand_UsesStorage()
     {
         var result = new int[5];
 

@@ -14,7 +14,7 @@ public class NativeModuleAssemblyTests
     // The analyzer reports a device function's error; the generator reports it no more
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_DeviceFunctionDiagnostic_IsReported()
+    public async Task DeviceFunctionDiagnostic_CompilationError_IsReported()
     {
         var diagnostics = await KernelDiagnostics.RunAsync(s_source, "Cuda");
 
@@ -25,7 +25,7 @@ public class NativeModuleAssemblyTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_DeviceFunctionSort_CallsThePreludeWithoutInclude()
+    public void DeviceFunctionSort_PreludeInvocation_CallsPreludeWithoutInclude()
     {
         var aotSource = WriteAotSource("Cuda", ".g.cu");
 
@@ -37,7 +37,7 @@ public class NativeModuleAssemblyTests
     // A line break in a reason (a message argument) would end the directive and leave the rest as C++ code
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_TranspileFailureWithLineBreaks_StaysOnOneErrorLine()
+    public void TranspileFailure_ErrorWithLineBreaks_StaysOnOneErrorLine()
     {
         var source = Kassyi.GSharp.Compiler.Aot.NativeModuleAssembler.FormatTranspileFailures(
             ["k.cs(1,2): GSH0003: first\r\nsecond\nthird \"quoted\" C:\\dir", "k.cs(3,4): GSH0001: other"]);
@@ -50,7 +50,7 @@ public class NativeModuleAssemblyTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_CpuDialect_EmitsCalleeBodyBeforeEmbeddingCaller()
+    public void CpuDialect_NestedCalls_EmitsCalleeBodyBeforeEmbeddingCaller()
     {
         var deviceCode = GetSharedDeviceCode("Cpu");
 
@@ -63,7 +63,7 @@ public class NativeModuleAssemblyTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_UnwritableIntermediateOutputPath_ReportsOneInfo()
+    public void NativeModuleAssembly_UnwritableOutputPath_ReportsOneInfoDiagnostic()
     {
         var tempDir = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
         Directory.CreateDirectory(tempDir);

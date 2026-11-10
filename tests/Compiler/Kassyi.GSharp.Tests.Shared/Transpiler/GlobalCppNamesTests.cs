@@ -10,7 +10,7 @@ public class GlobalCppNamesTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_GetKernelName_QualifiesWithContainingType()
+    public void GetKernelName_ContainingType_QualifiesWithContainingType()
     {
         Assert.Equal("__gsharp_k_Functions__K__Single", GlobalCppNames.GetKernelName(GetMethods("Functions.K", "Single")[0]));
     }
@@ -18,7 +18,7 @@ public class GlobalCppNamesTests
     // Kernel entry points used to be {Type}_{Method}, so Entry_Host.RunKernel and Entry.Host_RunKernel shared one name.
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_GetKernelName_PreviouslyCollidingEntryPoints_AreDistinct()
+    public void GetKernelName_PreviouslyCollidingEntryPoints_GeneratesDistinctNames()
     {
         Assert.NotEqual(
             GlobalCppNames.GetKernelName(GetMethods("Functions.Entry_Host", "RunKernel")[0]),
@@ -27,7 +27,7 @@ public class GlobalCppNamesTests
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_GetKernelName_Overloads_CarryTheDeclarationOrdinal()
+    public void GetKernelName_OverloadedKernels_CarriesDeclarationOrdinal()
     {
         var overloads = GetMethods("Functions.K", "Run");
 
@@ -41,14 +41,14 @@ public class GlobalCppNamesTests
     [InlineData("__gsharp_launch_", "__gsharp_launch_Functions__K__Run_o1")]
     [InlineData("__gsharp_context_", "__gsharp_context_Functions__K__Run_o1")]
     [InlineData("__gsharp_statemachine_", "__gsharp_statemachine_Functions__K__Run_o1")]
-    public void Test_GetKernelDerivedName_UsesTheEntryPointBody(string prefix, string expected)
+    public void GetKernelDerivedName_EntryPointBody_UsesEntryPointBody(string prefix, string expected)
     {
         Assert.Equal(expected, GlobalCppNames.GetKernelDerivedName(prefix, GetMethods("Functions.K", "Run")[1]));
     }
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_GetFunctionName_QualifiesWithContainingType()
+    public void GetFunctionName_ContainingType_QualifiesWithContainingType()
     {
         Assert.Equal("__gsharp_fn_Functions__A__Foo", GlobalCppNames.GetFunctionName(GetMethods("Functions.A", "Foo")[0]));
     }
@@ -56,7 +56,7 @@ public class GlobalCppNamesTests
     // The #402 report: A.Foo(int) and B.Foo(long) formed one C++ overload set, so B.Foo(intArg) called A.Foo.
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_GetFunctionName_SameNameInDifferentTypes_AreDistinct()
+    public void GetFunctionName_SameNameInDifferentTypes_GeneratesDistinctNames()
     {
         Assert.NotEqual(
             GlobalCppNames.GetFunctionName(GetMethods("Functions.A", "Foo")[0]),
@@ -65,7 +65,7 @@ public class GlobalCppNamesTests
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_GetFunctionName_Overloads_CarryTheDeclarationOrdinal()
+    public void GetFunctionName_OverloadedFunctions_CarriesDeclarationOrdinal()
     {
         var overloads = GetMethods("Functions.B", "Pick");
 
@@ -76,7 +76,7 @@ public class GlobalCppNamesTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_GetFunctionName_DecodesBackToTheCsharpPath()
+    public void GetFunctionName_EncodedPath_DecodesBackToCsharpPath()
     {
         var name = GlobalCppNames.GetFunctionName(GetMethods("Functions.B", "Pick")[1]);
 
@@ -89,7 +89,7 @@ public class GlobalCppNamesTests
     [InlineData("Repro.Plain", "__gsharp_ty_Repro__Plain")]
     [InlineData("GlobalType", "__gsharp_ty_GlobalType")]
     [InlineData("Repro.A+B+C", "__gsharp_ty_Repro__A__B__C")]
-    public void Test_GetTypeName_JoinsNamespacesAndContainingTypes(string metadataName, string expected)
+    public void GetTypeName_NestedType_JoinsNamespacesAndContainingTypes(string metadataName, string expected)
     {
         Assert.Equal(expected, GlobalCppNames.GetTypeName(GetType(metadataName)));
     }
@@ -100,14 +100,14 @@ public class GlobalCppNamesTests
     [InlineData("Repro.A+B+C", "Repro.A+B+B_C")]
     [InlineData("N1.Outer+Inner", "N2.Outer_Inner")]
     [InlineData("Repro.Generic`1", "Repro.Generic`2")]
-    public void Test_GetTypeName_PreviouslyCollidingTypes_AreDistinct(string first, string second)
+    public void GetTypeName_PreviouslyCollidingTypes_GeneratesDistinctNames(string first, string second)
     {
         Assert.NotEqual(GlobalCppNames.GetTypeName(GetType(first)), GlobalCppNames.GetTypeName(GetType(second)));
     }
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_GetTypeName_GenericDefinition_CarriesArity()
+    public void GetTypeName_GenericDefinition_CarriesArity()
     {
         Assert.Equal("__gsharp_ty_Repro__Generic_a1", GlobalCppNames.GetTypeName(GetType("Repro.Generic`1")));
         Assert.Equal("__gsharp_ty_Repro__Generic_a2", GlobalCppNames.GetTypeName(GetType("Repro.Generic`2")));
@@ -117,7 +117,7 @@ public class GlobalCppNamesTests
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_GetTypeName_ConstructedType_EncodesTypeArguments()
+    public void GetTypeName_ConstructedType_EncodesTypeArguments()
     {
         var compilation = CreateCompilation();
         var definition = GetType(compilation, "Repro.Generic`1");
@@ -142,7 +142,7 @@ public class GlobalCppNamesTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_GetTypeName_DecodesBackToTheCsharpPath()
+    public void GetTypeName_EncodedPath_DecodesBackToCsharpPath()
     {
         var name = GlobalCppNames.GetTypeName(GetType("Repro.A+B+B_C"));
 
@@ -152,7 +152,7 @@ public class GlobalCppNamesTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_GetTypeParameterName_UsesTypeParameterPrefix()
+    public void GetTypeParameterName_TypeParameter_UsesTypeParameterPrefix()
     {
         var parameter = GetType("Repro.Generic`2").TypeParameters[1];
 
@@ -161,7 +161,7 @@ public class GlobalCppNamesTests
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Shorten_ShortName_IsUnchanged()
+    public void Shorten_ShortName_ReturnsUnchanged()
     {
         var name = GSharpNameEncoding.TypePrefix + new string('a', GlobalCppNames.ShortenThreshold - GSharpNameEncoding.TypePrefix.Length);
 
@@ -170,7 +170,7 @@ public class GlobalCppNamesTests
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Shorten_LongName_IsBoundedDeterministicAndDistinct()
+    public void Shorten_LongName_IsBoundedDeterministicAndDistinct()
     {
         var prefix = GSharpNameEncoding.KernelPrefix;
         var first = GlobalCppNames.Shorten(prefix, new string('a', 400) + "X");
@@ -185,7 +185,7 @@ public class GlobalCppNamesTests
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Shorten_HeadEndingWithUnderscore_IsTrimmedBeforeTheMarker()
+    public void Shorten_HeadEndingWithUnderscore_TrimsBeforeMarker()
     {
         var prefix = GSharpNameEncoding.TypePrefix;
         var headLength = GlobalCppNames.ShortenThreshold - prefix.Length - "_h".Length - 10;
@@ -199,7 +199,7 @@ public class GlobalCppNamesTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_GetTypeName_FileTypesWithTheSameName_AreDistinctAndOrderedByPath()
+    public void GetTypeName_FileTypesWithSameName_GeneratesDistinctNamesOrderedByPath()
     {
         var compilation = CreateCompilation(
             ("src/b/Second.cs", "namespace F { file struct Local { } }"),
@@ -214,7 +214,7 @@ public class GlobalCppNamesTests
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_GetTypeName_NestedTypeOfFileType_InheritsTheFileIdentity()
+    public void GetTypeName_NestedTypeOfFileType_InheritsFileIdentity()
     {
         var compilation = CreateCompilation(
             ("a.cs", "namespace F { file struct Outer { public struct Inner { } } }"),

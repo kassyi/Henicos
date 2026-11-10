@@ -13,7 +13,7 @@ public class NumericsAndHwMathTests : TranspilerTestBase
     [InlineData(0x55555555u, 0x5555555555555555ul)]
     [InlineData(0xAAAAAAAAu, 0xAAAAAAAAAAAAAAAAul)]
     [InlineData(0b00000000_10101010_11110000_00001000u, 0b00000000_00000000_10101010_11110000_00001000_00000000_00000000_00001000ul)]
-    public void TestBitOperationsKernel_DataDriven(uint u32Input, ulong u64Input)
+    public void BitOperations_DataDrivenInputs_ComputesExpectedResults(uint u32Input, ulong u64Input)
     {
         uint[] u32Data = new uint[7];
         u32Data[0] = u32Input;
@@ -49,7 +49,7 @@ public class NumericsAndHwMathTests : TranspilerTestBase
     [InlineData(-5.67, -5.67f)]
     [InlineData(1.0, 1.0f)]
     [InlineData(-1.0, -1.0f)]
-    public void Test_MathAndMathF_DataDriven(double dVal, float fVal)
+    public void MathAndMathF_DataDrivenInputs_ComputesExpectedResults(double dVal, float fVal)
     {
         double[] doubleInputs = [dVal];
         double[] doubleOutputs = new double[9];
@@ -91,7 +91,7 @@ public class NumericsAndHwMathTests : TranspilerTestBase
     [InlineData(float.MinValue, double.MinValue)]
     [InlineData(float.Epsilon, double.Epsilon)]
     [InlineData(-0.0f, -0.0)]
-    public void Test_MathEdgeCases_SpecialValues(float fInput, double dInput)
+    public void Math_SpecialEdgeCaseValues_ComputesExpectedResults(float fInput, double dInput)
     {
         float[] floatInputs = [fInput];
         float[] floatResults = new float[6];
@@ -142,7 +142,7 @@ public class NumericsAndHwMathTests : TranspilerTestBase
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void Test_MathAndMathF_EmptyArray()
+    public void MathAndMathF_EmptyArray_ThrowsArgumentException()
     {
         double[] doubleInputs = [];
         double[] doubleOutputs = [];
@@ -159,7 +159,7 @@ public class NumericsAndHwMathTests : TranspilerTestBase
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void Test_PtxIntrinsicsExpansion_Execution()
+    public void PtxIntrinsics_Expansion_ComputesExpectedResults()
     {
         SkipIfCpuDialect("PTX hardware intrinsics require CUDA execution environment");
 
@@ -208,7 +208,7 @@ public class NumericsAndHwMathTests : TranspilerTestBase
 
     [Fact]
     [Category(TestCategory.Syntax)]
-    public void Test_HalfPrecision_Transpilation()
+    public void Transpile_HalfPrecision_EmitsValidSource()
     {
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<NumericsAndHwMathTarget>(
             nameof(NumericsAndHwMathTarget.HalfPrecision), dialect: CurrentDialect);
@@ -223,7 +223,7 @@ public class NumericsAndHwMathTests : TranspilerTestBase
 
     [Fact]
     [Category(TestCategory.Syntax)]
-    public void Test_NativeInt_Transpilation()
+    public void Transpile_NativeInt_EmitsValidSource()
     {
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<NumericsAndHwMathTarget>(
             nameof(NumericsAndHwMathTarget.NativeInt), dialect: CurrentDialect);
@@ -240,7 +240,7 @@ public class NumericsAndHwMathTests : TranspilerTestBase
 
     [Fact]
     [Category(TestCategory.Syntax)]
-    public void Test_Int128UInt128_Transpilation()
+    public void Transpile_Int128UInt128_EmitsValidSource()
     {
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<NumericsAndHwMathTarget>(
             nameof(NumericsAndHwMathTarget.Int128UInt128), dialect: CurrentDialect);
@@ -257,7 +257,7 @@ public class NumericsAndHwMathTests : TranspilerTestBase
 
     [Fact]
     [Category(TestCategory.Syntax)]
-    public void Test_BFloat16Fp8_Transpilation()
+    public void Transpile_BFloat16Fp8_EmitsValidSource()
     {
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<NumericsAndHwMathTarget>(
             nameof(NumericsAndHwMathTarget.BFloat16Fp8), dialect: CurrentDialect);

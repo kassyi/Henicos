@@ -20,4 +20,10 @@ internal sealed class IrLogical(bool isAnd, IrExpression left, IrExpression righ
 
     /// <summary>The right operand, evaluated only when the left one does not decide the result.</summary>
     public IrExpression Right { get; } = right;
+
+    /// <summary>This node with the given children; this node itself when they are the same.</summary>
+    public IrLogical Update(IrExpression left, IrExpression right) =>
+        left == Left && right == Right
+            ? this
+            : new IrLogical(IsAnd, left, right, Type, Category, ConstantValue, Source);
 }

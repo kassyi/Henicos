@@ -10,7 +10,7 @@ public class PartialMethodTests : TranspilerTestBase
 {
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_PartialKernelAndDeviceFunction_RunTheirImplementingBodies() =>
+    public void PartialMethod_KernelAndDeviceFunctionWithImplementation_RunsImplementingBodies() =>
         OnEveryPath(static () =>
         {
             int[] data = new int[4];
@@ -22,7 +22,7 @@ public class PartialMethodTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_PartialDeviceFunctionWithBarrier_SuspendsTheCaller() =>
+    public void PartialDeviceFunction_BarrierInImplementingBody_SuspendsCallerAndSynchronizesExecution() =>
         OnEveryPath(static () =>
         {
             int[] shared = new int[4];
@@ -36,7 +36,7 @@ public class PartialMethodTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_PartialDeviceFunctionWithoutImplementation_RemovesTheCallAndItsArguments() =>
+    public void PartialDeviceFunction_WithoutImplementation_RemovesCallAndArguments() =>
         OnEveryPath(static () =>
         {
             int[] data = [10, 20];
@@ -49,7 +49,7 @@ public class PartialMethodTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_PartialDeviceFunctionWithoutImplementation_RemovesTheCallInExpressionBodies() =>
+    public void PartialDeviceFunction_UnimplementedInExpressionBody_RemovesCallInExpressionBodies() =>
         OnEveryPath(static () =>
         {
             int[] data = [10, 20];

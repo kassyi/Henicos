@@ -6,7 +6,7 @@ public class UnsignedLiteralTests : TranspilerTestBase
 {
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_UnsuffixedUIntLiteral_WrapsAsUInt32()
+    public void UnsuffixedUIntLiteral_OverflowAndWidening_WrapsAsUInt32()
     {
         uint[] a = [2000000000u, 2147483648u, 3000000000u];
         uint[] quotients = new uint[a.Length];

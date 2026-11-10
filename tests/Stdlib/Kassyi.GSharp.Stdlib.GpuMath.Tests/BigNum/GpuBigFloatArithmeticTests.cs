@@ -7,7 +7,7 @@ public class GpuBigFloatArithmeticTests
     [SkippableFact]
     [Category(TestCategory.Stdlib)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_BigFloat_Add_Large()
+    public void Add_LargeFloats_ProducesCorrectSum()
     {
         CudaCapability.EnsureGpuAvailable();
         using var ctx = new GpuWorkspace(512, GpuExecutionEngine.GSharpAot);

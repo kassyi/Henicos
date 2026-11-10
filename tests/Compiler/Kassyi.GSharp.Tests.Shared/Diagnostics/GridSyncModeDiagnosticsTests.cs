@@ -21,7 +21,7 @@ public class GridSyncModeDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_ModeThatIsNotConstant_ReportsGsh0012AtTheArgument(string dialect)
+    public async Task GridSyncMode_NonConstantArgument_ReportsGsh0012AtArgument(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Analyzers/GridSyncModeSadPath.cs", dialect);
         string id = GSharpDiagnostics.MacroArgumentMustBeConstant.Id;
@@ -38,7 +38,7 @@ public class GridSyncModeDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_ModeThatNamesNoMember_ReportsGsh0003AtTheArgument(string dialect)
+    public async Task GridSyncMode_UndefinedModeMember_ReportsGsh0003AtArgument(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Analyzers/GridSyncModeSadPath.cs", dialect);
         string id = GSharpDiagnostics.UnsupportedSyntax.Id;

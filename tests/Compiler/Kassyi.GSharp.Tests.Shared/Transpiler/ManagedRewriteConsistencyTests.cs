@@ -21,7 +21,7 @@ namespace Kassyi.GSharp.Tests.Shared.Transpiler;
 public class ManagedRewriteConsistencyTests
 {
     [Fact]
-    public void Test_FunctionWithoutManagedVersion_RewritesToItsQualifiedBody()
+    public void Rewrite_FunctionWithoutManagedVersion_RewritesToItsQualifiedBody()
     {
         var compilation = MegaCompilationCache.Compilation;
         var checkedBodies = 0;
@@ -71,7 +71,7 @@ public class ManagedRewriteConsistencyTests
 
     // The direct rewrites of the classifier are the operator macro assignments and the float/double StackLinq sums
     [Fact]
-    public void Test_EverySemanticRewrite_IsAnExpandedOperatorMacro()
+    public void Rewrite_SemanticRewriteCandidates_IsExpandedOperatorMacro()
     {
         var compilation = MegaCompilationCache.Compilation;
         var macros = 0;
@@ -108,7 +108,7 @@ public class ManagedRewriteConsistencyTests
     }
 
     [Fact]
-    public void Test_SequentialSum_RewritesEveryFloatAndDoubleSumForm()
+    public void Rewrite_SequentialSum_RewritesEveryFloatAndDoubleSumForm()
     {
         const string Source = """
             using Kassyi.GSharp.Core;

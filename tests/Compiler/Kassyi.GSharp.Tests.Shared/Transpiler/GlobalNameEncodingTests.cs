@@ -15,7 +15,7 @@ public class GlobalNameEncodingTests
     [InlineData(new[] { "N1", "Outer", "Inner" }, "N1__Outer__Inner")]
     [InlineData(new[] { "N2", "Outer_Inner" }, "N2__Outer_uInner")]
     [InlineData(new[] { "_Value" }, "_uValue")]
-    public void Test_Encode_JoinsSegmentsAndEscapesUnderscores(string[] segments, string expected)
+    public void Encode_SegmentsWithUnderscores_JoinsSegmentsAndEscapesUnderscores(string[] segments, string expected)
     {
         Assert.Equal(expected, GSharpNameEncoding.Encode(Path(segments)));
     }
@@ -27,14 +27,14 @@ public class GlobalNameEncodingTests
     [InlineData(new[] { "N1", "Outer", "Inner" }, new[] { "N1", "Outer_Inner" })]
     [InlineData(new[] { "A_", "B" }, new[] { "A", "_B" })]
     [InlineData(new[] { "Foo" }, new[] { "FooContext" })]
-    public void Test_Encode_PreviouslyCollidingPaths_AreDistinct(string[] first, string[] second)
+    public void Encode_PreviouslyCollidingPaths_GeneratesDistinctNames(string[] first, string[] second)
     {
         Assert.NotEqual(GSharpNameEncoding.Encode(Path(first)), GSharpNameEncoding.Encode(Path(second)));
     }
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_Encode_GenericArgumentListsWithMultiSegmentArguments_AreDistinct()
+    public void Encode_GenericArgumentListsWithMultiSegmentArguments_GeneratesDistinctNames()
     {
         // G<A.B, C> and G<A, B.C> would be ambiguous if arguments were only separated by "__".
         var first = Generic("G", Path("A", "B"), Path("C"));
@@ -46,7 +46,7 @@ public class GlobalNameEncodingTests
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Encode_ArityOrdinalAndFileIdentity_AreSegmentMarkers()
+    public void Encode_ArityOrdinalAndFileIdentity_EmitsSegmentMarkers()
     {
         var path = new GlobalNamePath([
             new GlobalNameSegment("N"),
@@ -61,7 +61,7 @@ public class GlobalNameEncodingTests
     [InlineData("TKey", "TKey")]
     [InlineData("T_Item", "T_uItem")]
     [InlineData("é", "_x0000e9")]
-    public void Test_EscapeName_EscapesOnlyWhenNeeded(string name, string expected)
+    public void EscapeName_SpecialCharacters_EscapesOnlyWhenNeeded(string name, string expected)
     {
         var escaped = GSharpNameEncoding.EscapeName(name);
 
@@ -77,14 +77,14 @@ public class GlobalNameEncodingTests
     [InlineData("é", "_x0000e9")]
     [InlineData("日本", "_x0065e5_x00672c")]
     [InlineData("a\U0001D6D1b", "a_x01d6d1b")]
-    public void Test_Encode_NonAsciiCharacters_AreEscapedByCodePoint(string name, string expected)
+    public void Encode_NonAsciiCharacters_EscapesByCodePoint(string name, string expected)
     {
         Assert.Equal(expected, GSharpNameEncoding.Encode(Path(name)));
     }
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_EncodeDecode_RoundTripsRandomPaths()
+    public void EncodeDecode_RandomPaths_RoundTripsAccurately()
     {
         var random = new Random(402);
         for (var i = 0; i < PropertyCaseCount; i++)
@@ -100,7 +100,7 @@ public class GlobalNameEncodingTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_EncodeDecode_DistinctRandomPathsGetDistinctNames()
+    public void EncodeDecode_DistinctRandomPaths_GeneratesDistinctNames()
     {
         var random = new Random(4021);
         var byName = new Dictionary<string, GlobalNamePath>(StringComparer.Ordinal);
@@ -128,7 +128,7 @@ public class GlobalNameEncodingTests
     [InlineData("A_g1_bB")]
     [InlineData("A_x00e9")]
     [InlineData("A_h0123456789")]
-    public void Test_TryDecodePath_MalformedName_ReturnsFalse(string encoded)
+    public void TryDecodePath_MalformedName_ReturnsFalse(string encoded)
     {
         Assert.False(GSharpNameEncoding.TryDecodePath(encoded, out _));
     }
@@ -141,7 +141,7 @@ public class GlobalNameEncodingTests
     [InlineData("__gsharp_ty_N__G_a2", "N.G`2")]
     [InlineData("__gsharp_ty_N__G_g2_bSystem__Int32_bSystem__Single_r1_e", "N.G<System.Int32, System.Single[]>")]
     [InlineData("__gsharp_tp_T_uKey", "T_Key")]
-    public void Test_TryDecode_GlobalName_ReturnsCSharpDisplayName(string identifier, string expected)
+    public void TryDecode_GlobalName_ReturnsCSharpDisplayName(string identifier, string expected)
     {
         Assert.True(GSharpNameEncoding.TryDecode(identifier, out var name));
         Assert.Equal(expected, name);

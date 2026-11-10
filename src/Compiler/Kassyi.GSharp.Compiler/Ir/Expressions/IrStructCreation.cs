@@ -22,4 +22,11 @@ internal sealed class IrStructCreation(IMethodSymbol? constructor, ImmutableArra
 
     /// <summary>The member assignments of the object initializer, in the order written.</summary>
     public ImmutableArray<IrAssignment> Initializers { get; } = initializers;
+
+    /// <summary>This node with the given children; this node itself when they are the same.</summary>
+    public IrStructCreation Update(ImmutableArray<IrArgument> arguments,
+        ImmutableArray<IrAssignment> initializers) =>
+        arguments == Arguments && initializers == Initializers
+            ? this
+            : new IrStructCreation(Constructor, arguments, initializers, Type, Category, Source);
 }

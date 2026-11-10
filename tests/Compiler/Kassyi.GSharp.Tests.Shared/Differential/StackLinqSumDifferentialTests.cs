@@ -47,7 +47,7 @@ public class StackLinqSumDifferentialTests
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_FloatSum_MatchesTheOracleOnEveryPath()
+    public void StackLinqSum_SinglePrecision_MatchesTheOracleOnEveryPath()
     {
         // Every form of StackLinq float Sum (direct, selector, Select, Where, Take, static call, and [GpuDeviceFunction]
         // direct and transitive) sums elements in index order from 0 to Length - 1, matching the GPU on ill-conditioned
@@ -61,7 +61,7 @@ public class StackLinqSumDifferentialTests
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_DoubleSum_MatchesTheOracleOnEveryPath()
+    public void StackLinqSum_DoublePrecision_MatchesTheOracleOnEveryPath()
     {
         // Every form of StackLinq double Sum sums elements in index order from 0 to Length - 1, matching the GPU on
         // ill-conditioned inputs where SIMD vector reduction rounds away small terms (1.0 vs 0.0).

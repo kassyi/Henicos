@@ -8,15 +8,21 @@ public class TypeNameCheckAnalyzerTests : AnalyzerTestBase
 {
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_NameOnlyChecks_ReportsWarning()
+    public async Task TypeNameCheck_DisallowedTypeNamePattern_ReportsWarning()
     {
-        await VerifyAnalyzerFromFileAsync("TypeNameCheck/NameOnlyChecks.cs", new TypeNameCheckAnalyzer(), nameof(Test_NameOnlyChecks_ReportsWarning));
+        await VerifyAnalyzerFromFileAsync(
+            "TypeNameCheck/NameOnlyChecks.cs",
+            new TypeNameCheckAnalyzer(),
+            nameof(TypeNameCheck_DisallowedTypeNamePattern_ReportsWarning));
     }
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public async Task Test_WithoutTypeConstants_NoDiagnostics()
+    public async Task TypeNameCheck_AllowedTypeConstants_ProducesNoDiagnostics()
     {
-        await VerifyAnalyzerFromFileAsync("TypeNameCheck/WithoutTypeConstants.cs", new TypeNameCheckAnalyzer(), nameof(Test_WithoutTypeConstants_NoDiagnostics));
+        await VerifyAnalyzerFromFileAsync(
+            "TypeNameCheck/WithoutTypeConstants.cs",
+            new TypeNameCheckAnalyzer(),
+            nameof(TypeNameCheck_AllowedTypeConstants_ProducesNoDiagnostics));
     }
 }

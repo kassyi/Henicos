@@ -19,12 +19,12 @@ public class UIntNegationAndConditionalManagedTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_UIntNegation_IsComputedInLong() =>
+    public void UIntNegation_ManagedExecution_IsComputedInLong() =>
         UIntNegationAndConditionalScenarios.Negation(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_TargetTypedConditional_ConvertsBothBranches() =>
+    public void TargetTypedConditional_ManagedExecution_ConvertsBothBranchesToTargetType() =>
         UIntNegationAndConditionalScenarios.Conditional(s_runManaged);
 
     private static void RunManaged(Action launch)

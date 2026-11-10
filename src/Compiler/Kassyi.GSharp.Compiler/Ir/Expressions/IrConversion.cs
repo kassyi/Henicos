@@ -20,4 +20,10 @@ internal sealed class IrConversion(IrExpression operand, IrOperator<IrConversion
 
     /// <summary>Whether C# inserted the conversion (no cast is written).</summary>
     public bool IsImplicit { get; } = isImplicit;
+
+    /// <summary>This node with the given children; this node itself when they are the same.</summary>
+    public IrConversion Update(IrExpression operand) =>
+        operand == Operand
+            ? this
+            : new IrConversion(operand, Conversion, IsImplicit, Type, Category, ConstantValue, Source);
 }

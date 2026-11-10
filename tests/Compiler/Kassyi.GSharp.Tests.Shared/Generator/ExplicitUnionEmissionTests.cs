@@ -13,7 +13,7 @@ public class ExplicitUnionEmissionTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.Boundary)]
-    public void Test_UnionGroup_EmitsTheLargestMemberFirst(string dialect)
+    public void UnionGroup_OverlappingFields_EmitsLargestMemberFirst(string dialect)
     {
         var source = RoslynTestUtility.ReadTestCase("Layout/ExplicitUnionOrder.cs");
 

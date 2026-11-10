@@ -14,7 +14,7 @@ public class AtomicIntrinsicsTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_AtomicArithmetic_AllThreadsContributeToSingleAddress()
+    public void AtomicArithmetic_DeviceExecutionAllThreads_ContributeToSingleAddress()
     {
         EnsureCapability(DialectCapabilities.HardwareAtomics);
         AtomicIntrinsicsScenarios.Arithmetic(s_runNative);
@@ -32,7 +32,7 @@ public class AtomicIntrinsicsTests : TranspilerTestBase
     [InlineData(0u, uint.MaxValue)]
     [InlineData(100u, 9u)]
     [InlineData(uint.MaxValue, uint.MaxValue)]
-    public void Test_AtomicIncDec_WrapsAroundLimit(uint initial, uint limit)
+    public void AtomicIncDec_DeviceExecutionVaryingLimits_WrapsAroundLimit(uint initial, uint limit)
     {
         EnsureCapability(DialectCapabilities.HardwareAtomics);
         AtomicIntrinsicsScenarios.IncDecWrap(s_runNative, initial, limit);
@@ -42,7 +42,7 @@ public class AtomicIntrinsicsTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Stress)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_AtomicFloatAdd_HighContention()
+    public void AtomicFloatAdd_DeviceExecutionHighContention_ProducesExactSum()
     {
         EnsureCapability(DialectCapabilities.HardwareAtomics);
         AtomicIntrinsicsScenarios.FloatAddHighContention(s_runNative);
@@ -52,7 +52,7 @@ public class AtomicIntrinsicsTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_AtomicThroughRefParameter_UpdatesCallerElement()
+    public void AtomicThroughRefParameter_DeviceExecutionDeviceFunction_UpdatesCallerElement()
     {
         EnsureCapability(DialectCapabilities.HardwareAtomics);
         AtomicIntrinsicsScenarios.ThroughRefParameter(s_runNative);
@@ -62,7 +62,7 @@ public class AtomicIntrinsicsTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_EveryAtomicOverload_ReturnsTheOldValueOfOneOrder()
+    public void AtomicOverloads_DeviceExecutionVariousTypes_ReturnOldValueInExecutionOrder()
     {
         EnsureCapability(DialectCapabilities.HardwareAtomics);
         AtomicIntrinsicsScenarios.OldValues(s_runNative);

@@ -23,7 +23,7 @@ public class DeviceImportTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.HappyPath)]
-    public async Task Test_Consumer_BuildsWithoutDiagnostics(string dialect)
+    public async Task DeviceImport_ConsumerCompilation_BuildsWithoutDiagnostics(string dialect)
     {
         // The CPU wrapper's managed body calls the managed state machine of the suspending library function, which the
         // library emitted with its records
@@ -40,7 +40,7 @@ public class DeviceImportTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Imports_TheReachedFunctionsOnly(string dialect)
+    public void DeviceImport_CallReachability_ImportsReachedFunctionsOnly(string dialect)
     {
         var (device, _) = Generate(dialect);
 
@@ -54,7 +54,7 @@ public class DeviceImportTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Overload_UsesTheLibrarysName(string dialect)
+    public void DeviceImport_OverloadedFunctions_UsesLibraryMangledName(string dialect)
     {
         var (device, kernels) = Generate(dialect);
 
@@ -69,7 +69,7 @@ public class DeviceImportTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.Boundary)]
-    public void Test_OverloadsInTwoFiles_FollowTheLibrarysOrder(string dialect)
+    public void DeviceImport_OverloadsInTwoFiles_FollowsLibraryOrder(string dialect)
     {
         var library = DeviceLibraryBuilder.BuildFiles("OverloadLibrary", null,
             ("z_first.cs", RoslynTestUtility.ReadTestCase("Generators/DeviceImportOverloads_First.cs")),
@@ -96,7 +96,7 @@ public class DeviceImportTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Struct_ImportedBeforeTheFunctions(string dialect)
+    public void DeviceImport_StructAndFunctionDependencies_ImportsStructBeforeFunctions(string dialect)
     {
         var (device, kernels) = Generate(dialect);
 
@@ -110,7 +110,7 @@ public class DeviceImportTests
     // #538: the library's function reaches barriers, so on the CPU dialects the kernel keeps its frame and resumes it
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_SuspendingFunction_IsACallThatSuspends()
+    public void DeviceImport_SuspendingFunction_TreatedAsSuspendingCall()
     {
         var (device, kernels) = Generate("Cpu");
 
@@ -123,7 +123,7 @@ public class DeviceImportTests
     // The CUDA kernel owns the slot of the library's dynamic declaration and passes the table on
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_DynamicSharedMemory_KernelOwnsTheLibrarysSlot()
+    public void DeviceImport_DynamicSharedMemory_KernelOwnsLibrarySlot()
     {
         var (device, kernels) = Generate("Cuda");
 
@@ -137,7 +137,7 @@ public class DeviceImportTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Effect_SequencesOnlyTheMemoryWritingCall(string dialect)
+    public void DeviceImport_MemoryWritingEffect_SequencesOnlyMemoryWritingCall(string dialect)
     {
         var (_, kernels) = Generate(dialect);
         var lines = kernels.Split('\n');
@@ -154,7 +154,7 @@ public class DeviceImportTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.Boundary)]
-    public void Test_EditingTheConsumer_KeepsTheImportTableCached(string dialect)
+    public void DeviceImport_IncrementalGeneration_KeepsImportTableCached(string dialect)
     {
         var compilation = DeviceLibraryBuilder.CreateConsumer(s_consumer, s_library.Value);
         var driver = CreateDriver(dialect).RunGenerators(compilation);
@@ -175,7 +175,7 @@ public class DeviceImportTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.HappyPath)]
-    public async Task Test_StructsConsumer_BuildsWithoutDiagnostics(string dialect)
+    public async Task DeviceImport_StructConsumerCompilation_BuildsWithoutDiagnostics(string dialect)
     {
         var run = await KernelDiagnostics.RunCompilationAsync(
             DeviceLibraryBuilder.CreateConsumer(s_structsConsumer, s_structsLibrary.Value), dialect);
@@ -191,7 +191,7 @@ public class DeviceImportTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.Boundary)]
-    public void Test_ImportOrder_DeclarationsStructsDisposesBodies(string dialect)
+    public void DeviceImport_EmissionOrdering_EmitsDeclarationsStructsDisposesBodiesInOrder(string dialect)
     {
         var (device, _) = GenerateStructs(dialect);
 
@@ -210,7 +210,7 @@ public class DeviceImportTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.Boundary)]
-    public void Test_ImportOrder_StructAfterItsFieldsAndConstructors(string dialect)
+    public void DeviceImport_StructOrdering_PlacesStructAfterFieldsAndConstructors(string dialect)
     {
         var (device, _) = GenerateStructs(dialect);
 
@@ -224,7 +224,7 @@ public class DeviceImportTests
     // body comes first on the CPU dialects
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_ImportOrder_CalleeFrameFirst()
+    public void DeviceImport_SuspensionFrames_PlacesCalleeFrameFirst()
     {
         var (device, _) = GenerateStructs("Cpu");
 
@@ -239,7 +239,7 @@ public class DeviceImportTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Constructors_TakeTheLibrarysNames(string dialect)
+    public void DeviceImport_ImportedConstructors_UsesLibraryMangledNames(string dialect)
     {
         var (_, kernels) = GenerateStructs(dialect);
 
@@ -254,7 +254,7 @@ public class DeviceImportTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Effect_ImportedConstructorIsSequenced(string dialect)
+    public void DeviceImport_ConstructorWithEffects_SequencesImportedConstructor(string dialect)
     {
         var (_, kernels) = GenerateStructs(dialect);
 
@@ -269,7 +269,7 @@ public class DeviceImportTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.Boundary)]
-    public void Test_CoreStructOfAnImportedFunction_IsDefinedBeforeItsBody(string dialect)
+    public void DeviceImport_CoreStructDependency_DefinesStructBeforeFunctionBody(string dialect)
     {
         var (device, _) = GenerateStructs(dialect);
 
@@ -290,7 +290,7 @@ public class DeviceImportTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.Boundary)]
-    public async Task Test_CompilationReference_ImportsAsAMetadataReference(string dialect)
+    public async Task DeviceImport_CompilationReference_ImportsAsMetadataReference(string dialect)
     {
         var library = CSharpCompilation.Create("DeviceExportLibrary")
             .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, allowUnsafe: true))
@@ -325,7 +325,7 @@ public class DeviceImportTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.Boundary)]
-    public async Task Test_StructOfAnotherLibrary_ComesFromItsOwnRecord(string dialect)
+    public async Task DeviceImport_StructOfAnotherLibrary_ComesFromItsOwnRecord(string dialect)
     {
         var a = DeviceLibraryBuilder.Build("XasmA", null, RoslynTestUtility.ReadTestCase("Generators/ThreeAssemblies_A.cs"));
         var b = DeviceLibraryBuilder.BuildWithReferences("XasmB", null, [a],
@@ -354,7 +354,9 @@ public class DeviceImportTests
     [InlineData("Cpu", false)]
     [InlineData("Cuda", true)]
     [Scenario(TestScenario.Boundary)]
-    public async Task Test_StructUsedAsATypeOnly_IsNotImportedWhenItsDependencyCannotBe(string dialect, bool imported)
+    public async Task DeviceImport_StructUsedAsTypeOnly_IsNotImportedWhenDependencyCannotBe(
+        string dialect,
+        bool imported)
     {
         var library = DeviceLibraryBuilder.Build("XasmLib", s_noExport,
             RoslynTestUtility.ReadTestCase("Generators/HandWrittenStruct.cs")
@@ -385,7 +387,7 @@ public class DeviceImportTests
     [InlineData("Cpu", true)]
     [InlineData("Cuda", false)]
     [Scenario(TestScenario.Boundary)]
-    public async Task Test_StructWhoseRecordFailedInTheDialect_StaysInTheText(string dialect, bool kept)
+    public async Task DeviceImport_StructWhoseRecordFailedInDialect_StaysInTheText(string dialect, bool kept)
     {
         var a = DeviceLibraryBuilder.Build("XasmLib", s_noExport,
             RoslynTestUtility.ReadTestCase("Diagnostics/CrossAssembly/HandWrittenLease.cs")

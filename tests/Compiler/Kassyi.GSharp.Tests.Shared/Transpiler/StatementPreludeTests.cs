@@ -15,7 +15,7 @@ public class StatementPreludeTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_Emit_DeclarationExpressionWithoutTypeSymbol_ThrowsInvalidOperationException()
+    public void Emit_DeclarationExpressionWithoutTypeSymbol_ThrowsInvalidOperationException()
     {
         // Synthesize a detached DeclarationExpressionSyntax ("out var x") not bound in the SemanticModel's tree.
         // When lowered trees lose original node annotations, GetTypeSymbol returns null.
@@ -45,7 +45,7 @@ public class StatementPreludeTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Emit_DeclarationExpressionWithTypeSymbol_EmitsTypeAndName()
+    public void Emit_DeclarationExpressionWithTypeSymbol_EmitsTypeAndName()
     {
         var tree = s_compilation.SyntaxTrees.Single();
         var model = s_compilation.GetSemanticModel(tree);

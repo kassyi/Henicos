@@ -19,7 +19,7 @@ public class StructLayoutDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_StructWithoutDeviceLayout_ReportsGsh0078AtTheType(string dialect)
+    public async Task StructWithoutDeviceLayout_MissingLayout_ReportsGsh0078AtType(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(TestCase, dialect);
 
@@ -51,7 +51,8 @@ public class StructLayoutDiagnosticsTests
     [InlineData("Cpu", "'StructLayoutDiagnosticsTest.NamedUnion'", "field 'Name' has the reference type 'string'")]
     [InlineData("Cuda", "'StructLayoutDiagnosticsTest.NamedUnion'", "field 'Name' has the reference type 'string'")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_StructWithoutDeviceLayout_StatesTheReason(string dialect, string structName, string reason)
+    public async Task StructWithoutDeviceLayout_DiagnosticMessage_StatesTheReason(
+        string dialect, string structName, string reason)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(TestCase, dialect);
 
@@ -69,7 +70,7 @@ public class StructLayoutDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_FieldWithoutDeviceType_ReportsGsh0079AtTheType(string dialect)
+    public async Task FieldWithoutDeviceType_UnsupportedField_ReportsGsh0079AtType(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(TestCase, dialect);
 
@@ -92,7 +93,9 @@ public class StructLayoutDiagnosticsTests
     [InlineData("Cpu", false)]
     [InlineData("Cuda", true)]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_ReturnedStruct_ReportsGsh0078Gsh0079AndGsh0080AtTheReturnType(string dialect, bool isCuda)
+    public async Task ReturnedStruct_InvalidStructReturn_ReportsGsh0078Gsh0079AndGsh0080AtReturnType(
+        string dialect,
+        bool isCuda)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/StructLayoutReturnDiagnostics.cs",
             dialect);
@@ -119,7 +122,7 @@ public class StructLayoutDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_ReturnedUnmappedBclStruct_ReportsGsh0004AndEmitsError(string dialect)
+    public async Task ReturnedUnmappedBclStruct_UnmappedReturn_ReportsGsh0004AndEmitsError(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/StructLayoutReturnDiagnostics.cs", dialect);
 
@@ -137,7 +140,7 @@ public class StructLayoutDiagnosticsTests
     [InlineData("Cpu", false)]
     [InlineData("Cuda", true)]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_ArrayOfDivergentStruct_ReportsGsh0080AtTheType(string dialect, bool isCuda)
+    public async Task ArrayOfDivergentStruct_DivergentLayout_ReportsGsh0080AtType(string dialect, bool isCuda)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(TestCase, dialect);
 
@@ -173,7 +176,7 @@ public class StructLayoutDiagnosticsTests
     [InlineData("Cpu", "'StructLayoutDiagnosticsTest.Bag'", "field 'Data' is an array")]
     [InlineData("Cpu", "'StructLayoutDiagnosticsTest.AutoPair'", "LayoutKind.Auto")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_ArrayOfDivergentStruct_StatesTheFirstDifference(string dialect, string structName,
+    public async Task ArrayOfDivergentStruct_DiagnosticDetail_StatesFirstDifference(string dialect, string structName,
         string difference)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(TestCase, dialect);
@@ -189,7 +192,7 @@ public class StructLayoutDiagnosticsTests
     [InlineData("Cpu", false)]
     [InlineData("Cuda", true)]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_ArrayOfStructWithArrayField_ReportsGsh0081AtTheType(string dialect, bool isCuda)
+    public async Task ArrayOfStructWithArrayField_NestedArrayField_ReportsGsh0081AtType(string dialect, bool isCuda)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(TestCase, dialect);
 
@@ -205,7 +208,7 @@ public class StructLayoutDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.Boundary)]
-    public async Task Test_RepresentableStructs_ReportNothing(string dialect)
+    public async Task RepresentableStructs_ValidLayouts_ReportNothing(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(TestCase, dialect);
 
@@ -224,7 +227,7 @@ public class StructLayoutDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_UnsupportedStructs_LeaveGeneratedCodeValid(string dialect)
+    public async Task UnsupportedStructs_GeneratorPipeline_LeavesGeneratedCodeValid(string dialect)
     {
         var source = RoslynTestUtility.ReadTestCase(TestCase);
 
@@ -246,7 +249,7 @@ public class StructLayoutDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_InlineArrayWithStructLayoutSize_ReportsGsh0078AtTheType(string dialect)
+    public async Task InlineArrayWithStructLayoutSize_ExplicitSize_ReportsGsh0078AtType(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/StructLayoutSizeDiagnostics.cs", dialect);
 
@@ -268,7 +271,7 @@ public class StructLayoutDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_StructWithFieldLikeEvent_ReportsGsh0078AtTheType(string dialect)
+    public async Task StructWithFieldLikeEvent_EventDeclaration_ReportsGsh0078AtType(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(EventTestCase, dialect);
 
@@ -286,7 +289,7 @@ public class StructLayoutDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_StructWithFieldLikeEvent_StatesTheDelegateField(string dialect)
+    public async Task StructWithFieldLikeEvent_DiagnosticDetail_StatesDelegateField(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(EventTestCase, dialect);
 
@@ -307,7 +310,7 @@ public class StructLayoutDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_StructWithFieldLikeEventFromMetadata_ReportsGsh0078AtTheType(string dialect)
+    public async Task StructWithFieldLikeEventFromMetadata_MetadataImport_ReportsGsh0078AtType(string dialect)
     {
         var library = DeviceLibraryBuilder.Build(
             "EventLib",
@@ -336,7 +339,7 @@ public class StructLayoutDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_StructWithFieldLikeEvent_LeavesGeneratedCodeValid(string dialect)
+    public async Task StructWithFieldLikeEvent_GeneratorPipeline_LeavesGeneratedCodeValid(string dialect)
     {
         var source = RoslynTestUtility.ReadTestCase(EventTestCase);
 

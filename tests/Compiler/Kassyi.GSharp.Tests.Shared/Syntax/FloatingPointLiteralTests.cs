@@ -6,7 +6,7 @@ public class FloatingPointLiteralTests : TranspilerTestBase
 {
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_FloatLiteralWithoutDecimalPoint_Execution()
+    public void FloatLiteralWithoutDecimalPoint_DeviceExecution_MatchesExpectedValues()
     {
         float[] values = [1f, 2f];
 
@@ -17,7 +17,7 @@ public class FloatingPointLiteralTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_DoubleLiteralWithSuffix_Execution()
+    public void DoubleLiteralWithSuffix_DeviceExecution_MatchesExpectedValues()
     {
         double[] values = [1d, 2d];
 

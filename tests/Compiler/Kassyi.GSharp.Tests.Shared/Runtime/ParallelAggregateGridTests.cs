@@ -38,7 +38,7 @@ public class ParallelAggregateGridTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_GridSum_EveryThreadOfTheGridReceivesTheWholeSum(uint gridX, uint gridY, uint block, int length, bool managed)
+    public void GridSum_EveryThreadInGrid_ReceivesWholeSum(uint gridX, uint gridY, uint block, int length, bool managed)
     {
         var data = Enumerable.Range(1, length).ToArray();
         var result = new int[gridX * gridY * block];
@@ -61,7 +61,7 @@ public class ParallelAggregateGridTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_GridLongSum_EveryThreadReceivesTheWrappedSum(bool managed)
+    public void GridLongSum_EveryThreadInGrid_ReceivesWrappedSum(bool managed)
     {
         long[] data = [long.MaxValue, 5, -3, long.MinValue, 1L << 40, 7, 9, 11];
         var result = new long[4 * 32];
@@ -83,7 +83,7 @@ public class ParallelAggregateGridTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_GridRepeatedSum_OneScratchServesEveryCall(bool managed)
+    public void GridRepeatedSum_MultipleConsecutiveCalls_OneScratchServesEveryCall(bool managed)
     {
         var a = Enumerable.Range(1, 300).ToArray();
         var b = Enumerable.Range(-50, 77).ToArray();
@@ -108,7 +108,7 @@ public class ParallelAggregateGridTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_GridSegmentSum_EachBlockReceivesItsSegment(bool managed)
+    public void GridSegmentSum_SegmentedGridData_EachBlockReceivesItsSegment(bool managed)
     {
         const int M = 50;
         var data = Enumerable.Range(1, 4 * M - 5).ToArray();
@@ -130,7 +130,7 @@ public class ParallelAggregateGridTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_GridLambdaBlockIndex_EachBlockReceivesItsOwnSum(bool managed)
+    public void GridSum_LambdaReadingBlockIndex_EachBlockReceivesItsOwnSum(bool managed)
     {
         var data = Enumerable.Range(1, 1000).ToArray();
         var result = new int[4 * 64];
@@ -151,7 +151,7 @@ public class ParallelAggregateGridTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_GridSum3D_EveryThreadOfTheGridReceivesTheWholeSum(bool managed)
+    public void GridSum3D_ThreeDimensionalGrid_EveryThreadReceivesWholeSum(bool managed)
     {
         var data = Enumerable.Range(1, 4099).ToArray();
         var result = new int[8 * 105];

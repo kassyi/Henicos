@@ -293,22 +293,22 @@ public class ArrayAndSpanBoundsDifferentialTests
     };
 
     [SkippableFact]
-    public void Test_ArrayAndSpanBoundaryEdges_MatchesTheOracleOnEveryPath() =>
+    public void BoundsCheck_ArrayAndSpanEdges_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_arrayAndSpanBoundaryEdges);
 
     [SkippableFact]
-    public void Test_ArrayIndexBounds_MatchesTheOracleOnEveryPath() =>
+    public void ArrayIndex_OutOfBounds_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_arrayIndexBounds);
 
     [SkippableFact]
-    public void Test_SpanCanaryIndexBounds_MatchesTheOracleOnEveryPath() =>
+    public void SpanCanary_IndexBounds_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_spanCanaryIndexBounds);
 
     [SkippableFact]
-    public void Test_SpanSliceStart_MatchesTheOracleOnEveryPath() =>
+    public void SpanSlice_StartIndex_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_spanSliceStart);
 
     [SkippableFact]
-    public void Test_SpanSliceStartCount_MatchesTheOracleOnEveryPath() =>
+    public void SpanSlice_StartAndCount_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_spanSliceStartCount);
 }

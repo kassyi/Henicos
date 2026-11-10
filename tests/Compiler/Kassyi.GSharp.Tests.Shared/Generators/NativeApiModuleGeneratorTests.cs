@@ -16,17 +16,17 @@ public class NativeApiModuleGeneratorTests
 {
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public Task Test_ModuleDefinition_GeneratesKernelLaunchers()
+    public Task ModuleDefinition_GeneratesKernelLaunchers()
     {
         var result = RunGenerator(Api("kernels.yml", ModuleYaml));
 
         Assert.Empty(result.Diagnostics);
-        return VerifyGenerated(result, nameof(Test_ModuleDefinition_GeneratesKernelLaunchers));
+        return VerifyGenerated(result, nameof(ModuleDefinition_GeneratesKernelLaunchers));
     }
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public Task Test_ModuleDefinition_WithDefaultValue_GeneratesDefaultedParameters()
+    public Task ModuleDefinition_WithDefaultValue_GeneratesDefaultedParameters()
     {
         const string Yaml = """
             namespace: MyApp.Native
@@ -42,12 +42,12 @@ public class NativeApiModuleGeneratorTests
         var result = RunGenerator(Api("defaulted.yml", Yaml));
 
         Assert.Empty(result.Diagnostics);
-        return VerifyGenerated(result, nameof(Test_ModuleDefinition_WithDefaultValue_GeneratesDefaultedParameters));
+        return VerifyGenerated(result, nameof(ModuleDefinition_WithDefaultValue_GeneratesDefaultedParameters));
     }
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_GeneratedSources_CompileWithoutErrors()
+    public void GeneratedSources_CompileWithoutErrors()
     {
         var compilation = CreateCompilation();
         var driver = CreateDriver(Api("mylib.yml", LibraryYaml), Api("kernels.yml", ModuleYaml));
@@ -64,7 +64,7 @@ public class NativeApiModuleGeneratorTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_ModuleDefinition_WithStreamParameter_EmitsCuStreamSynchronize()
+    public void ModuleDefinition_WithStreamParameter_EmitsCuStreamSynchronize()
     {
         const string Yaml = """
             namespace: MyApp.Native
@@ -88,7 +88,7 @@ public class NativeApiModuleGeneratorTests
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_ModuleDefinition_WithoutStreamParameter_EmitsCuCtxSynchronize()
+    public void ModuleDefinition_WithoutStreamParameter_EmitsCuCtxSynchronize()
     {
         const string Yaml = """
             namespace: MyApp.Native
@@ -110,7 +110,7 @@ public class NativeApiModuleGeneratorTests
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_ModuleDefinition_WithStreamParameterAndArray_StreamSynchronizePrecedesCopyToHost()
+    public void ModuleDefinition_WithStreamParameterAndArray_StreamSynchronizePrecedesCopyToHost()
     {
         const string Yaml = """
             namespace: MyApp.Native
@@ -137,7 +137,7 @@ public class NativeApiModuleGeneratorTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_ModuleDefinition_WithSharedMemBytes_PreparesDynamicSharedMemoryBeforeAllocations()
+    public void ModuleDefinition_WithSharedMemBytes_PreparesDynamicSharedMemoryBeforeAllocations()
     {
         const string Yaml = """
             namespace: MyApp.Native
@@ -168,7 +168,7 @@ public class NativeApiModuleGeneratorTests
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_ModuleDefinition_WithoutSharedMemBytes_DoesNotPrepareDynamicSharedMemory()
+    public void ModuleDefinition_WithoutSharedMemBytes_DoesNotPrepareDynamicSharedMemory()
     {
         const string Yaml = """
             namespace: MyApp.Native
@@ -192,7 +192,7 @@ public class NativeApiModuleGeneratorTests
     // function lookup and the device allocations; a dimension it does not take is the 1 it launches with
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_ModuleDefinition_WithLaunchDimensions_ChecksLaunchLimitsFirst()
+    public void ModuleDefinition_WithLaunchDimensions_ChecksLaunchLimitsFirst()
     {
         const string Yaml = """
             namespace: MyApp.Native
@@ -223,7 +223,7 @@ public class NativeApiModuleGeneratorTests
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_ModuleDefinition_WithoutLaunchDimensions_EmitsNoLaunchCheck()
+    public void ModuleDefinition_WithoutLaunchDimensions_EmitsNoLaunchCheck()
     {
         const string Yaml = """
             namespace: MyApp.Native
