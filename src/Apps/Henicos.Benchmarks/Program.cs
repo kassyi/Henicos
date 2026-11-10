@@ -474,7 +474,7 @@ internal class Program
             return 1;
         }
 
-        return FermatPrpBenchmark.VerifyProofFile(args[0]) ? 0 : 1;
+        return FermatPrpBenchmark.TryVerifyProofFile(args[0]) ? 0 : 1;
     }
 
     private static int RunBbp(string[] args)

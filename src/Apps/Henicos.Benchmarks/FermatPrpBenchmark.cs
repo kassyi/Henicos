@@ -93,9 +93,10 @@ public class FermatPrpBenchmark
     }
 
     /// <summary>
-    /// Loads a binary Pietrzak proof from <paramref name="proofPath"/> and verifies it on the GPU (or host for small <c>E</c>).
+    /// Loads a binary Pietrzak proof from <paramref name="proofPath"/> and verifies it on the GPU (or host for small
+    /// <c>E</c>).
     /// </summary>
-    public static bool VerifyProofFile(string proofPath)
+    public static bool TryVerifyProofFile(string proofPath)
     {
         var proof = FermatPrpProof.Load(proofPath);
         Logger<FermatPrpBenchmark>.Info("==================================================");
@@ -118,8 +119,10 @@ public class FermatPrpBenchmark
         }
 
         Logger<FermatPrpBenchmark>.Info($"Probable prime : {verification.IsProbablePrime}");
-        Logger<FermatPrpBenchmark>.Info($"Residue64      : {verification.Residue64:X16} (check {verification.CheckResidue64:X16})");
-        Logger<FermatPrpBenchmark>.Info($"Squarings      : {verification.Squarings:N0} in {verification.Elapsed.TotalMilliseconds:F1} ms");
+        Logger<FermatPrpBenchmark>.Info(
+            $"Residue64      : {verification.Residue64:X16} (check {verification.CheckResidue64:X16})");
+        Logger<FermatPrpBenchmark>.Info(
+            $"Squarings      : {verification.Squarings:N0} in {verification.Elapsed.TotalMilliseconds:F1} ms");
         Logger<FermatPrpBenchmark>.Info("==================================================");
         return verification.IsValid;
     }
