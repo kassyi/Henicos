@@ -61,7 +61,7 @@ public class DynamicSharedMemoryModuleTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_ModuleKernelDynamicSharedMemory64KB_LaunchesAndUsesTheWholeRegion()
+    public void Launch_ModuleKernelDynamicSharedMemoryAt64Kb_UsesWholeRegionAndOptsInOnce()
     {
         Skip.If(OptInLimit < 64 * 1024, "The GPU allows less than 64 KB of shared memory per block.");
         const uint bytes = 64 * 1024;
@@ -87,7 +87,8 @@ public class DynamicSharedMemoryModuleTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_ModuleKernelDynamicSharedMemoryAboveOptInLimit_ThrowsBeforeLaunch()
+    public void
+        Launch_ModuleKernelDynamicSharedMemoryAboveOptInLimit_ThrowsArgumentOutOfRangeExceptionWithoutLaunching()
     {
         var limit = OptInLimit;
         var staticBytes = FunctionAttribute(GetFunction(), CuFunctionAttribute.SharedSizeBytes);
@@ -117,7 +118,9 @@ public class DynamicSharedMemoryModuleTests : TranspilerTestBase
     [InlineData(0u, "is 0")]
     [InlineData(1025u, "at most 1024 threads in x")]
     [InlineData(2048u, "at most 1024 threads in x")]
-    public void Test_ModuleKernelBlockBeyondTheLimitsOfEveryGpu_ThrowsBeforeLaunch(uint blockDimX, string limit)
+    public void Launch_ModuleKernelBlockDimXBeyondDeviceLimits_ThrowsArgumentOutOfRangeExceptionWithoutLaunching(
+        uint blockDimX,
+        string limit)
     {
         var output = new uint[BlockSize];
 
@@ -135,7 +138,7 @@ public class DynamicSharedMemoryModuleTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_ModuleKernelBlockAtTheLimit_Launches()
+    public void Launch_ModuleKernelBlockDimXAt1024Limit_ProducesExpectedSums()
     {
         const int n = 4096;
         var output = new uint[1024];
