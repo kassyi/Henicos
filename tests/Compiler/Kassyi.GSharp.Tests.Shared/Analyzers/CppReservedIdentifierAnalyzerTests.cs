@@ -9,7 +9,7 @@ public class CppReservedIdentifierAnalyzerTests : TranspilerTestBase
     [Fact]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_DoubleUnderscoreIdentifier_ReportsEachDeclarationOnce()
+    public async Task DoubleUnderscoreIdentifier_ReservedIdentifierDeclaration_ReportsEachDeclarationOnce()
     {
         var diagnostics = await RoslynTestUtility
             .TestAnalyzer("Analyzers/DoubleUnderscoreIdentifier_SadPath.cs", s_analyzer)
@@ -28,7 +28,7 @@ public class CppReservedIdentifierAnalyzerTests : TranspilerTestBase
     [Fact]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.HappyPath)]
-    public async Task Test_CppKeywordIdentifier_AllowsEveryDeclaration()
+    public async Task CppKeywordIdentifier_ValidCsharpIdentifiers_AllowsEveryDeclaration()
     {
         var diagnostics = await RoslynTestUtility
             .TestAnalyzer("Analyzers/CppKeywordIdentifier_HappyPath.cs", s_analyzer)
@@ -41,7 +41,7 @@ public class CppReservedIdentifierAnalyzerTests : TranspilerTestBase
     [Fact]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.HappyPath)]
-    public async Task Test_CppReservedIdentifier_IgnoresOrdinaryAndHostOnlyIdentifiers()
+    public async Task CppReservedIdentifier_OrdinaryAndHostOnlyIdentifiers_IgnoresIdentifiers()
     {
         var diagnostics = await RoslynTestUtility
             .TestAnalyzer("Analyzers/CppReservedIdentifier_HappyPath.cs", s_analyzer)

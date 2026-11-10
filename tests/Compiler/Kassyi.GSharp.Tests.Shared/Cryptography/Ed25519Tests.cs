@@ -7,7 +7,7 @@ namespace Kassyi.GSharp.Tests.Shared.Cryptography;
 public class Ed25519Tests
 {
     [Fact]
-    public void Test_DefaultDevKey_Matches_Rfc8032_TestVector()
+    public void DefaultDevKey_Matches_Rfc8032_TestVector()
     {
         // Assert the default dev key logic
         var publicKey = Ed25519.GetPublicKey(Ed25519.DefaultDevKeySeed);
@@ -15,7 +15,7 @@ public class Ed25519Tests
     }
 
     [Fact]
-    public void Test_GetPublicKey_InvalidSeedLength_ThrowsArgumentException()
+    public void GetPublicKey_InvalidSeedLength_ThrowsArgumentException()
     {
         var invalidSeed = new byte[31];
         Assert.Throws<ArgumentException>(() => Ed25519.GetPublicKey(invalidSeed));
@@ -25,14 +25,14 @@ public class Ed25519Tests
     }
 
     [Fact]
-    public void Test_Sign_InvalidSeedLength_ThrowsArgumentException()
+    public void Sign_InvalidSeedLength_ThrowsArgumentException()
     {
         var invalidSeed = new byte[31];
         Assert.Throws<ArgumentException>(() => Ed25519.Sign("Hello World"u8.ToArray(), invalidSeed));
     }
 
     [Fact]
-    public void Test_Verify_InvalidLengths_ReturnsFalse()
+    public void Verify_InvalidLengths_ReturnsFalse()
     {
         var message = "Hello World"u8.ToArray();
         var validSeed = Ed25519.DefaultDevKeySeed;
@@ -49,7 +49,7 @@ public class Ed25519Tests
     }
 
     [Fact]
-    public void Test_Verify_InvalidPublicKeyPoint_ReturnsFalse()
+    public void Verify_InvalidPublicKeyPoint_ReturnsFalse()
     {
         var message = "Hello World"u8.ToArray();
         var validSeed = Ed25519.DefaultDevKeySeed;
@@ -63,7 +63,7 @@ public class Ed25519Tests
     }
 
     [Fact]
-    public void Test_Verify_InvalidSignatureS_ReturnsFalse()
+    public void Verify_InvalidSignatureS_ReturnsFalse()
     {
         var message = "Hello World"u8.ToArray();
         var validSeed = Ed25519.DefaultDevKeySeed;
@@ -83,7 +83,7 @@ public class Ed25519Tests
     }
 
     [Fact]
-    public void Test_Verify_InvalidSignatureRPoint_ReturnsFalse()
+    public void Verify_InvalidSignatureRPoint_ReturnsFalse()
     {
         var message = "Hello World"u8.ToArray();
         var validSeed = Ed25519.DefaultDevKeySeed;
@@ -101,7 +101,7 @@ public class Ed25519Tests
     }
 
     [Fact]
-    public void Test_Verify_WrongMessageOrKey_ReturnsFalse()
+    public void Verify_WrongMessageOrKey_ReturnsFalse()
     {
         var message = "Hello World"u8.ToArray();
         var wrongMessage = "Hello World2"u8.ToArray();
@@ -124,7 +124,7 @@ public class Ed25519Tests
     }
 
     [Fact]
-    public void Test_Verify_ValidSignature_ReturnsTrue()
+    public void Verify_ValidSignature_ReturnsTrue()
     {
         var message = "A normal test message"u8.ToArray();
         var validSeed = new byte[32];

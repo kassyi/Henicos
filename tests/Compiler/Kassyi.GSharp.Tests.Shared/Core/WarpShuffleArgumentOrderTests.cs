@@ -23,7 +23,7 @@ public class WarpShuffleArgumentOrderTests : TranspilerTestBase
     [Scenario(TestScenario.HappyPath)]
     [InlineData(false)]
     [InlineData(true)]
-    public void Test_ShuffleDown_ValueArgumentWithIncrement_IsEvaluatedOnce(bool forceManaged)
+    public void ShuffleDown_ValueArgumentWithIncrement_EvaluatesArgumentOnce(bool forceManaged)
     {
         var result = new int[WarpSize];
         var afterV = new int[WarpSize];
@@ -39,7 +39,7 @@ public class WarpShuffleArgumentOrderTests : TranspilerTestBase
     [Scenario(TestScenario.HappyPath)]
     [InlineData(false)]
     [InlineData(true)]
-    public void Test_Shuffle_NamedArgumentsOutOfOrder_AreEvaluatedInTheOrderWritten(bool forceManaged)
+    public void Shuffle_NamedArgumentsOutOfOrder_EvaluatesInOrderWritten(bool forceManaged)
     {
         var result = new int[WarpSize];
         var orderOut = new int[5];
@@ -61,7 +61,7 @@ public class WarpShuffleArgumentOrderTests : TranspilerTestBase
     [InlineData(true, 1)]
     [InlineData(false, 2)]
     [InlineData(true, 2)]
-    public void Test_ShuffleDown_ConstantExpressionDelta_ShiftsByItsValue(bool forceManaged, int place)
+    public void ShuffleDown_ConstantExpressionDelta_ShiftsByConstantValue(bool forceManaged, int place)
     {
         var result = new int[WarpSize];
 
@@ -89,7 +89,7 @@ public class WarpShuffleArgumentOrderTests : TranspilerTestBase
     [Scenario(TestScenario.HappyPath)]
     [InlineData(false)]
     [InlineData(true)]
-    public void Test_Shuffle_InWhileCondition_EvaluatesItsValueOncePerIteration(bool forceManaged)
+    public void Shuffle_InWhileCondition_EvaluatesValueOncePerIteration(bool forceManaged)
     {
         var rounds = new int[WarpSize];
         var afterV = new int[WarpSize];
@@ -107,7 +107,7 @@ public class WarpShuffleArgumentOrderTests : TranspilerTestBase
     [InlineData(false, 1)]
     [InlineData(true, 0)]
     [InlineData(true, 1)]
-    public void Test_TargetTypedArgument_TakesTheParameterType(bool forceManaged, int flag)
+    public void TargetTypedArgument_ParameterTypeInference_TakesParameterType(bool forceManaged, int flag)
     {
         var viaCall = new long[WarpSize];
         var viaShuffle = new float[WarpSize];
@@ -125,7 +125,7 @@ public class WarpShuffleArgumentOrderTests : TranspilerTestBase
     [Scenario(TestScenario.Boundary)]
     [InlineData(false)]
     [InlineData(true)]
-    public void Test_RefElementIndex_WrittenByLaterArgument_SelectsTheOldElement(bool forceManaged)
+    public void RefElementIndex_WrittenByLaterArgument_SelectsOldElement(bool forceManaged)
     {
         var data = new int[WarpSize * 2];
         var afterI = new int[WarpSize];

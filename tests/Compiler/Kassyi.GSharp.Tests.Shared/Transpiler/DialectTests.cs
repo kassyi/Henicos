@@ -8,7 +8,7 @@ namespace Kassyi.GSharp.Tests.Shared.Transpiler;
 public class DialectTests
 {
         [Fact]
-        public void Test_CanLoadStandardCpp()
+        public void CanLoad_StandardCppDialect_ReturnsTrueAndLoadsDialect()
         {
             var dialect = new StandardCppDialect();
             Assert.NotNull(dialect);
@@ -28,7 +28,7 @@ public class DialectTests
         }
 
         [Fact]
-        public void Test_CanLoadGSharpCuda()
+        public void CanLoad_GSharpCudaDialect_ReturnsTrueAndLoadsDialect()
         {
             var dialect = new GSharpCudaDialect();
             Assert.NotNull(dialect);
@@ -41,7 +41,7 @@ public class DialectTests
         }
 
         [Fact]
-        public void Test_DialectCallSupport_InlinePtx_DistinguishesSymbolAndDialectSupport()
+        public void DialectCallSupport_InlinePtx_DistinguishesSymbolAndDialectSupport()
         {
             var compilation = RoslynTestUtility.CreateCompilation(
                 RoslynTestUtility.ReadTestCase("Analysis/ManagedVersionCases.cs"));

@@ -103,7 +103,7 @@ public class MicroModifiersTests : TranspilerTestBase
     [Fact]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
-    public async Task Test_FileLocalTypes_Transpilation()
+    public async Task Transpile_FileLocalTypes_SucceedsWithoutDiagnostics()
     {
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<MicroModifiersTarget>(
             nameof(MicroModifiersTarget.FileLocalTypes), isDevice: false, dialect: CurrentDialect);
@@ -119,7 +119,7 @@ public class MicroModifiersTests : TranspilerTestBase
     [Fact]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_ParamsSpan_Transpilation()
+    public async Task Transpile_ParamsSpan_ReportsFailureOrDiagnostic()
     {
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<MicroModifiersTarget>(
             nameof(MicroModifiersTarget.ParamsSpan), isDevice: true, dialect: CurrentDialect);
@@ -140,7 +140,7 @@ public class MicroModifiersTests : TranspilerTestBase
     [Fact]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
-    public async Task Test_RefReadonlyReturns_Transpilation()
+    public async Task Transpile_RefReadonlyReturns_EmitsConstReference()
     {
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<MicroModifiersTarget>(
             nameof(MicroModifiersTarget.RefReadonlyReturns), isDevice: true, dialect: CurrentDialect);
@@ -155,7 +155,7 @@ public class MicroModifiersTests : TranspilerTestBase
     [Fact]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
-    public async Task Test_VolatileModifier_Transpilation()
+    public async Task Transpile_VolatileModifier_EmitsVolatileKeyword()
     {
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<MicroModifiersTarget>(
             nameof(MicroModifiersTarget.VolatileModifier), isDevice: false, dialect: CurrentDialect);
@@ -171,7 +171,7 @@ public class MicroModifiersTests : TranspilerTestBase
     [Fact]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
-    public async Task Test_SkipLocalsInitAttribute_Transpilation()
+    public async Task Transpile_SkipLocalsInitAttribute_SucceedsWithoutDiagnostics()
     {
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<MicroModifiersTarget>(
             nameof(MicroModifiersTarget.SkipLocalsInitAttribute), isDevice: false, dialect: CurrentDialect);
@@ -187,7 +187,7 @@ public class MicroModifiersTests : TranspilerTestBase
     [Fact]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_ForeachTupleDeconstruction_Transpilation()
+    public async Task Transpile_ForeachTupleDeconstruction_ReportsUnsupportedOrFails()
     {
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<MicroModifiersTarget>(
             nameof(MicroModifiersTarget.ForeachTupleDeconstruction), isDevice: false, dialect: CurrentDialect);
@@ -207,7 +207,7 @@ public class MicroModifiersTests : TranspilerTestBase
     [Fact]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_FunctionPointerCallingConventions_Transpilation()
+    public async Task Transpile_FunctionPointerCallingConventions_ReportsFailureOrDiagnostic()
     {
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<MicroModifiersTarget>(
             nameof(MicroModifiersTarget.FunctionPointerCallingConventions), isDevice: false, dialect: CurrentDialect);
@@ -223,7 +223,7 @@ public class MicroModifiersTests : TranspilerTestBase
     [Fact]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
-    public async Task Test_LineDirectives_Transpilation()
+    public async Task Transpile_LineDirectives_SucceedsWithoutDiagnostics()
     {
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<MicroModifiersTarget>(
             nameof(MicroModifiersTarget.LineDirectives), isDevice: false, dialect: CurrentDialect);
@@ -239,7 +239,7 @@ public class MicroModifiersTests : TranspilerTestBase
     [Fact]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
-    public async Task Test_ImplicitStackallocArray_Transpilation()
+    public async Task Transpile_ImplicitStackallocArray_SucceedsWithoutDiagnostics()
     {
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<MicroModifiersTarget>(
             nameof(MicroModifiersTarget.ImplicitStackallocArray), isDevice: false, dialect: CurrentDialect);

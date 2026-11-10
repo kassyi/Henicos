@@ -66,7 +66,7 @@ public class ModernPatternsTests : TranspilerTestBase
 {
     [Fact]
     [Category(TestCategory.Syntax)]
-    public void Test_ListPatterns_Transpilation()
+    public void Transpile_ListPatterns_FailsWithUnsupportedSyntaxDiagnostic()
     {
         var (_, diagnostics) = RoslynTestUtility.TranspileMethod<ModernPatternsTarget>(
             nameof(ModernPatternsTarget.ListPatterns), isDevice: false, dialect: CurrentDialect);
@@ -77,7 +77,7 @@ public class ModernPatternsTests : TranspilerTestBase
 
     [Fact]
     [Category(TestCategory.Syntax)]
-    public void Test_PropertyPatterns_Transpilation()
+    public void Transpile_PropertyPatterns_FailsWithUnsupportedSyntaxDiagnostic()
     {
         var (_, diagnostics) = RoslynTestUtility.TranspileMethod<ModernPatternsTarget>(
             nameof(ModernPatternsTarget.PropertyPatterns), isDevice: false, dialect: CurrentDialect);
@@ -88,7 +88,7 @@ public class ModernPatternsTests : TranspilerTestBase
 
     [Fact]
     [Category(TestCategory.Syntax)]
-    public void Test_PositionalPatterns_Transpilation()
+    public void Transpile_PositionalPatterns_FailsWithUnsupportedSyntaxAndEmitsPlaceholder()
     {
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<ModernPatternsTarget>(
             nameof(ModernPatternsTarget.PositionalPatterns), isDevice: false, dialect: CurrentDialect);
@@ -101,7 +101,7 @@ public class ModernPatternsTests : TranspilerTestBase
 
     [Fact]
     [Category(TestCategory.Syntax)]
-    public void Test_LambdaDefaultParameters_Transpilation()
+    public void Transpile_LambdaDefaultParameters_EmitsValidSourceAndCalculatesExpectedValue()
     {
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<ModernPatternsTarget>(
             nameof(ModernPatternsTarget.LambdaDefaultParameters), isDevice: false, dialect: CurrentDialect);
@@ -116,7 +116,7 @@ public class ModernPatternsTests : TranspilerTestBase
 
     [Fact]
     [Category(TestCategory.Syntax)]
-    public void Test_LambdaExplicitReturnType_Transpilation()
+    public void Transpile_LambdaExplicitReturnType_EmitsValidSourceAndCalculatesExpectedValue()
     {
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<ModernPatternsTarget>(
             nameof(ModernPatternsTarget.LambdaExplicitReturnType), isDevice: false, dialect: CurrentDialect);
@@ -131,7 +131,7 @@ public class ModernPatternsTests : TranspilerTestBase
 
     [Fact]
     [Category(TestCategory.Syntax)]
-    public void Test_ScopedRef_Transpilation()
+    public void Transpile_ScopedRef_EmitsValidSourceAndCalculatesExpectedValue()
     {
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<ModernPatternsTarget>(
             nameof(ModernPatternsTarget.ScopedRef), isDevice: true, dialect: CurrentDialect);
@@ -146,7 +146,7 @@ public class ModernPatternsTests : TranspilerTestBase
 
     [Fact]
     [Category(TestCategory.Syntax)]
-    public void Test_UnsafeNullRef_Transpilation()
+    public void Transpile_UnsafeNullRef_EmitsValidSourceAndEvaluatesExpectedValue()
     {
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<ModernPatternsTarget>(
             nameof(ModernPatternsTarget.UnsafeNullRef), isDevice: false, dialect: CurrentDialect);

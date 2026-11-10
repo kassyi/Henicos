@@ -42,7 +42,7 @@ public class PropertyAccessorCopyPlanTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_PlanCopyType_InParameter_CopiesTheStruct()
+    public void PlanCopyType_InParameter_CopiesTheStruct()
     {
         var (node, symbol, model) = FindRead(nameof(CopyPlanCases.ReadIn), nameof(CopyPlanCounter.Next));
 
@@ -53,7 +53,7 @@ public class PropertyAccessorCopyPlanTests
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_PlanCopyType_LocalOrConstGetter_CallsOnTheReceiver()
+    public void PlanCopyType_LocalOrConstGetter_CallsOnTheReceiver()
     {
         var (local, localSymbol, model) = FindRead(nameof(CopyPlanCases.ReadLocal), nameof(CopyPlanCounter.Next));
         var (constant, constSymbol, _) = FindRead(nameof(CopyPlanCases.ReadConstIn), nameof(CopyPlanCounter.Doubled));
@@ -66,7 +66,7 @@ public class PropertyAccessorCopyPlanTests
     // Inside a readonly member of a generic struct, the copy is of the struct being defined, not of the open Box<T>
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_PlanCopyType_ReadonlyMemberOfAGenericStruct_SubstitutesTheTypeArguments()
+    public void PlanCopyType_ReadonlyMemberOfGenericStruct_SubstitutesTypeArguments()
     {
         var (node, symbol, model) = FindRead("Peek", "Next");
         var box = GetType(model, "CopyPlanBox");

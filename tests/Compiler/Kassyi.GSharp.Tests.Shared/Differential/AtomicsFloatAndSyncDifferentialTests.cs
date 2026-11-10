@@ -361,26 +361,26 @@ public class AtomicsFloatAndSyncDifferentialTests
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_FloatExactPowersOfTwoAtomics_MatchesTheReferenceOnEveryPath() =>
+    public void FloatAtomics_ExactPowersOfTwo_MatchesTheReferenceOnEveryPath() =>
         DifferentialRunner.Run(s_floatExactPowersOfTwoAtomics);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_FloatTwoStageRoundingBound_SatisfiesHighamForwardErrorBoundOnEveryPath() =>
+    public void FloatTwoStageAtomics_RoundingBound_SatisfiesHighamForwardErrorBoundOnEveryPath() =>
         DifferentialRunner.Run(s_floatTwoStageRoundingBound);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_FloatSpecialValuesContention_MatchesTheReferenceOnEveryPath() =>
+    public void FloatAtomics_SpecialValuesContention_MatchesTheReferenceOnEveryPath() =>
         DifferentialRunner.Run(s_floatSpecialValuesContention);
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_BlockLeaderCasSpinlock_ProtectsMultiWordCriticalSectionOnEveryPath() =>
+    public void CasSpinlock_BlockLeaderContention_ProtectsMultiWordCriticalSectionOnEveryPath() =>
         DifferentialRunner.Run(s_blockLeaderCasSpinlock);
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_CooperativeCasLockFreeStack_PushesAndPopsBijectionAcrossGridSync() =>
+    public void LockFreeStack_CooperativeCasAcrossGridSync_PushesAndPopsBijectionAcrossGridSync() =>
         DifferentialRunner.Run(s_cooperativeCasLockFreeStack);
 }

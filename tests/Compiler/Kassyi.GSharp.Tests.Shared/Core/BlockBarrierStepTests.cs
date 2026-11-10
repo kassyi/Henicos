@@ -23,7 +23,7 @@ public class BlockBarrierStepTests : TranspilerTestBase
     [InlineData(true, 2)]
     [InlineData(false, 8)]
     [InlineData(true, 8)]
-    public void Test_ShuffleInLaterWarpBeforeBarrier_EveryThreadWaitsAtTheBarrier(bool forceManaged, int blocks)
+    public void ShuffleInLaterWarp_BeforeBarrier_EveryThreadWaitsAtBarrier(bool forceManaged, int blocks)
     {
         var output = new int[blocks * BlockSize];
 
@@ -38,7 +38,7 @@ public class BlockBarrierStepTests : TranspilerTestBase
     [InlineData(true, 2)]
     [InlineData(false, 8)]
     [InlineData(true, 8)]
-    public void Test_ShuffleCountsDifferAcrossBarriers_EveryThreadWaitsAtEachBarrier(bool forceManaged, int blocks)
+    public void ShuffleCounts_DifferAcrossBarriers_EveryThreadWaitsAtEachBarrier(bool forceManaged, int blocks)
     {
         var output = new int[blocks * BlockSize];
 
@@ -55,7 +55,7 @@ public class BlockBarrierStepTests : TranspilerTestBase
     [InlineData(true, 2)]
     [InlineData(false, 8)]
     [InlineData(true, 8)]
-    public void Test_ShufflesAroundBlockBarrierAndGridSync_EveryThreadWaitsAtBoth(bool forceManaged, int blocks)
+    public void Shuffles_AroundBlockBarrierAndGridSync_EveryThreadWaitsAtBoth(bool forceManaged, int blocks)
     {
         var data = new int[blocks * BlockSize];
         var output = new int[blocks * BlockSize];

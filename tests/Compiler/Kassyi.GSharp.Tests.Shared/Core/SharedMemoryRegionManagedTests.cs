@@ -26,22 +26,22 @@ public class SharedMemoryRegionManagedTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_LaterDeclaration_KeepsEarlierBuffer() =>
+    public void LaterDeclaration_ManagedExecution_KeepsEarlierBuffer() =>
         SharedMemoryRegionScenarios.LaterDeclarationKeepsEarlierBuffer(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_MixedElementTypes_KeepTheirOwnValues() =>
+    public void MixedElementTypes_ManagedExecution_KeepTheirOwnValues() =>
         SharedMemoryRegionScenarios.MixedElementTypes(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_GrowingDeclaration_KeepsLargerCount() =>
+    public void GrowingDeclaration_ManagedExecution_KeepsLargerCount() =>
         SharedMemoryRegionScenarios.GrowingDeclaration(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Allocate_HeldSpan_SurvivesLaterDeclarations()
+    public void Allocate_HeldSpan_SurvivesLaterDeclarations()
     {
         WithBlock(() =>
         {
@@ -62,7 +62,7 @@ public class SharedMemoryRegionManagedTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Allocate_SmallerRepeatedRequest_ReturnsPrefixOfSameRegion()
+    public void Allocate_SmallerRepeatedRequest_ReturnsPrefixOfSameRegion()
     {
         WithBlock(() =>
         {
@@ -80,7 +80,7 @@ public class SharedMemoryRegionManagedTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Allocate_SameKeyWithDifferentElementType_GetsSeparateRegion()
+    public void Allocate_SameKeyWithDifferentElementType_GetsSeparateRegion()
     {
         WithBlock(() =>
         {
@@ -95,7 +95,7 @@ public class SharedMemoryRegionManagedTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Allocate_NewGrid_ForgetsRegionSizes()
+    public void Allocate_NewGrid_ForgetsRegionSizes()
     {
         WithBlock(() =>
         {
@@ -110,7 +110,7 @@ public class SharedMemoryRegionManagedTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Allocate_NewGrid_ReusesLargeEnoughBuffer()
+    public void Allocate_NewGrid_ReusesLargeEnoughBuffer()
     {
         WithBlock(() =>
         {
@@ -126,7 +126,7 @@ public class SharedMemoryRegionManagedTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Allocate_LargerRepeatedRequest_GrowsAndKeepsContents()
+    public void Allocate_LargerRepeatedRequest_GrowsAndKeepsContents()
     {
         WithBlock(() =>
         {
@@ -145,7 +145,7 @@ public class SharedMemoryRegionManagedTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Allocate_LargerRequestWithinReusedBuffer_GrowsInPlace()
+    public void Allocate_LargerRequestWithinReusedBuffer_GrowsInPlace()
     {
         WithBlock(() =>
         {
@@ -170,7 +170,7 @@ public class SharedMemoryRegionManagedTests : TranspilerTestBase
     [InlineData("P:/src/Kernels.cu.cs", 42, "ReduceKernel", 6238177414468702278UL)]
     [InlineData("\u65e5\u672c.cs", int.MaxValue, "\u30e1\u30bd\u30c3\u30c9", 1140269122134921303UL)]
     [InlineData("x.cs", -1, "M", 10450852572731352005UL)]
-    public void Test_Declaration_SiteKey_IsPinnedFnv1A64(string path, int line, string member, ulong siteKey)
+    public void Declaration_SiteKey_IsPinnedFnv1A64(string path, int line, string member, ulong siteKey)
     {
         // The key is shared with the compiler's 64-bit key space; pin its exact value.
         WithBlock(() =>
@@ -189,7 +189,7 @@ public class SharedMemoryRegionManagedTests : TranspilerTestBase
     [InlineData("P:/path/to/MyKernel.cu.cs", 100)]
     [InlineData("\u65e5\u672c.cs", 999)]
     [InlineData("", 0)]
-    public void Test_TypeKeyedSiteKey_MatchesCompilerComputation(string path, int line)
+    public void TypeKeyedSiteKey_Computation_MatchesCompilerComputation(string path, int line)
     {
         var compilerKey = TypeKeyedSharedMemoryCollector.ComputeSiteKey(path, line);
         WithBlock(() =>
@@ -204,7 +204,7 @@ public class SharedMemoryRegionManagedTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_RegisterTypeKeyedSites_EnablesTypeKeySaltOnlyForRegisteredSites()
+    public void RegisterTypeKeyedSites_Registration_EnablesTypeKeySaltOnlyForRegisteredSites()
     {
         const string filePath = "TestTypeKeyedRegistration.cs";
         const int registeredLine = 42;
@@ -242,7 +242,7 @@ public class SharedMemoryRegionManagedTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_RefIndexer_WriteThroughRef_IsVisibleOnSubsequentReads()
+    public void RefIndexer_WriteThroughRef_IsVisibleOnSubsequentReads()
     {
         WithBlock(() =>
         {

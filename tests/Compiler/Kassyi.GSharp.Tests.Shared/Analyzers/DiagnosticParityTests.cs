@@ -43,7 +43,7 @@ public partial class DiagnosticParityTests : TranspilerTestBase
     }
 
     [Fact]
-    public void AllDiagnosticsMustHaveDocumentation()
+    public void Diagnostics_DocumentationFiles_AllHaveCorrespondingDocFiles()
     {
         var diagnostics = LoadDiagnosticsMetadata(out string rootPath);
         string docsDir = Path.Combine(rootPath, "docs", "spec", "en", "03_bcl_api", "diagnostics");
@@ -63,7 +63,7 @@ public partial class DiagnosticParityTests : TranspilerTestBase
     }
 
     [Fact]
-    public void AllDiagnosticsMustHaveValidIdentifiersIdsAndBidirectionalSymbolParity()
+    public void Diagnostics_IdentifiersAndSymbols_MatchBidirectionalParity()
     {
         var diagnostics = LoadDiagnosticsMetadata(out _);
 

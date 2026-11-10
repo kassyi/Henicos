@@ -23,7 +23,7 @@ public class GpuBigIntExprAnalyzerTests
     }
 
     [Fact]
-    public async Task MalformedSyntax_ShouldNotCrash_SadPath()
+    public async Task BigIntExpr_MalformedSyntax_DoesNotCrash()
     {
         await RoslynTestUtility.TestAnalyzer("Analyzers/GpuBigIntExpr/MalformedSyntax.cs", s_analyzer)
                                .ReportsErrorsAsync(GSharpDiagnostics.GpuBigIntExprDirectAssignment);

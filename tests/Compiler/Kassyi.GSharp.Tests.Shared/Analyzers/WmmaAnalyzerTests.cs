@@ -9,7 +9,7 @@ public class WmmaAnalyzerTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_Wmma_UnsupportedFragmentsLocationsAndOperands_ReportsGSH0076()
+    public async Task Wmma_UnsupportedFragmentsLocationsAndOperands_ReportsGSH0076()
     {
         var diagnostics = (await RoslynTestUtility
             .TestAnalyzer("Analyzers/Wmma_SadPath.cs", s_analyzer)

@@ -4,7 +4,7 @@ public class Tier1_IntegrationTests : TranspilerTestBase
 {
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void Test_Tier1_AllInOneKernel_Execution()
+    public void AllInOneKernel_ComprehensiveExecution_MatchesExpectedResultsAndCounter()
     {
         EnsureCapability(DialectCapabilities.SharedMemory | DialectCapabilities.HardwareAtomics);
 

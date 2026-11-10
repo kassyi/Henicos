@@ -9,7 +9,7 @@ namespace Kassyi.GSharp.Tests.Shared.Runtime;
 public class HeavyGpuStressTests
 {
     [SkippableFact]
-    public void Test_GpuKernelLoader_HandlesMultipleRepeatedLaunches()
+    public void GpuKernelLoader_MultipleRepeatedLaunches_ExecutesSuccessfully()
     {
         // Use a small matrix size to avoid excessive execution time, 
         // but launch it many times to stress the JIT engine and memory management.
@@ -46,7 +46,7 @@ public class HeavyGpuStressTests
 
     [SkippableFact]
     [Category(TestCategory.Runtime)]
-    public void Test_GpuKernelLoader_HandlesConcurrentLaunches()
+    public void GpuKernelLoader_ConcurrentLaunches_ExecutesSuccessfully()
     {
         // Concurrently launch kernels across multiple worker threads to stress 
         // GpuKernelLoader thread safety and CudaContextScope per-thread binding.

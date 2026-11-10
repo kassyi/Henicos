@@ -51,7 +51,7 @@ public class StringsAndAttributesTests : TranspilerTestBase
 {
     [Fact]
     [Category(TestCategory.Syntax)]
-    public async Task Test_StringInterpolationPrintf_Transpilation()
+    public async Task TranspileMethod_StringInterpolationPrintf_EmitsUnsupportedCallOrPrintfAndMatchesSnapshot()
     {
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<StringsAndAttributesTarget>(
             nameof(StringsAndAttributesTarget.StringInterpolationPrintf), isDevice: false, dialect: CurrentDialect);
@@ -69,7 +69,7 @@ public class StringsAndAttributesTests : TranspilerTestBase
 
     [Fact]
     [Category(TestCategory.Syntax)]
-    public async Task Test_Utf8StringLiteral_Transpilation()
+    public async Task TranspileMethod_Utf8StringLiteral_TranspilesSuccessfullyAndMatchesSnapshot()
     {
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<StringsAndAttributesTarget>(
             nameof(StringsAndAttributesTarget.Utf8StringLiteral), isDevice: false, dialect: CurrentDialect);
@@ -84,7 +84,7 @@ public class StringsAndAttributesTests : TranspilerTestBase
 
     [Fact]
     [Category(TestCategory.Syntax)]
-    public async Task Test_NameOfExpression_Transpilation()
+    public async Task TranspileMethod_NameOfExpression_FailsWithStringNotSupportedDiagnostic()
     {
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<StringsAndAttributesTarget>(
             nameof(StringsAndAttributesTarget.NameOfExpression), isDevice: false, dialect: CurrentDialect);
@@ -96,7 +96,7 @@ public class StringsAndAttributesTests : TranspilerTestBase
 
     [Fact]
     [Category(TestCategory.Syntax)]
-    public async Task Test_LoopUnrollAttribute_Transpilation()
+    public async Task TranspileMethod_LoopUnrollAttribute_TranspilesSuccessfullyAndMatchesSnapshot()
     {
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<StringsAndAttributesTarget>(
             nameof(StringsAndAttributesTarget.LoopUnrollAttribute), isDevice: false, dialect: CurrentDialect);
@@ -111,7 +111,7 @@ public class StringsAndAttributesTests : TranspilerTestBase
 
     [Fact]
     [Category(TestCategory.Syntax)]
-    public async Task Test_GenericStruct_Transpilation()
+    public async Task TranspileMethod_GenericStructType_TranspilesSuccessfullyAndMatchesSnapshot()
     {
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<StringsAndAttributesTarget>(
             nameof(StringsAndAttributesTarget.GenericStruct), isDevice: false, dialect: CurrentDialect);

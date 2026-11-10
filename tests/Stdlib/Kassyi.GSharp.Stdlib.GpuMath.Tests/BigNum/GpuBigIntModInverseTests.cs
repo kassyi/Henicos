@@ -7,7 +7,7 @@ public class GpuBigIntModInverseTests
     [SkippableFact]
     [Category(TestCategory.Stdlib)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_ModInverse()
+    public void ModInverse_RandomOperands_MatchesBigIntegerInverse()
     {
         CudaCapability.EnsureGpuAvailable();
         using var ctx = new GpuWorkspace(16, GpuExecutionEngine.GSharpAot);

@@ -112,12 +112,12 @@ internal static class MemberEffects
         StructAbiMembers.HasAccessorFunctions(property);
 
     // ThreadIndex.X, BlockDim.Y ...: a value that no expression of the thread changes
-    private static bool IsIntrinsicProperty(IPropertySymbol property) =>
+    public static bool IsIntrinsicProperty(IPropertySymbol property) =>
         property.HasAttribute(KnownAttributes.CudaIntrinsic) ||
         property.ContainingType?.HasAttribute(KnownAttributes.CudaIntrinsicPattern) == true;
 
     // A non-readonly getter of a non-readonly struct receives its receiver by reference and may mutate it (#992)
-    private static bool MayMutateValueTypeReceiver(IPropertySymbol property, Compilation compilation) =>
+    public static bool MayMutateValueTypeReceiver(IPropertySymbol property, Compilation compilation) =>
         !property.IsStatic &&
         property.ContainingType is { } type &&
         GlobalCppNames.IsEmittedUserType(type) &&

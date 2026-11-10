@@ -16,4 +16,8 @@ internal sealed class IrIf(IrExpression condition, IrStatement then, IrStatement
 
     /// <summary>The statement when it does not, or <see langword="null"/>.</summary>
     public IrStatement? Else { get; } = @else;
+
+    /// <summary>This node with the given children; this node itself when they are the same.</summary>
+    public IrIf Update(IrExpression condition, IrStatement then, IrStatement? @else) =>
+        condition == Condition && then == Then && @else == Else ? this : new IrIf(condition, then, @else, Source);
 }

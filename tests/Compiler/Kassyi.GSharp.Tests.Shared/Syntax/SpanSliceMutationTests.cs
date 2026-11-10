@@ -14,7 +14,7 @@ public class SpanSliceMutationTests : SpanKernelPathTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Issue731_AsSpanFillReverse_MatchesDotNet(bool managed)
+    public void AsSpanOperations_FillAndReverseChained_MatchesDotNetBehavior(bool managed)
     {
         const uint Threads = 4;
         var data = new int[Threads * 4];
@@ -39,7 +39,7 @@ public class SpanSliceMutationTests : SpanKernelPathTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_P1_FillSlice_ModifiesOnlyTargetWindow(int offset, int count, bool managed)
+    public void Fill_SubSliceRange_ModifiesOnlyTargetWindow(int offset, int count, bool managed)
     {
         var input = CreateSequential(20, start: 100);
         var actual = (int[])input.Clone();
@@ -58,7 +58,7 @@ public class SpanSliceMutationTests : SpanKernelPathTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_P1_ClearSlice_ZeroesOnlyTargetWindow(int offset, int count, bool managed)
+    public void Clear_SubSliceRange_ZeroesOnlyTargetWindow(int offset, int count, bool managed)
     {
         var input = CreateSequential(20, start: 50);
         var actual = (int[])input.Clone();
@@ -81,7 +81,7 @@ public class SpanSliceMutationTests : SpanKernelPathTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_P1_ClearStructSlice_ZeroesOnlyTargetWindow(int offset, int count, bool managed)
+    public void Clear_StructSubSliceRange_ZeroesOnlyTargetWindow(int offset, int count, bool managed)
     {
         var input = new SpanWritePair[8];
         for (var i = 0; i < input.Length; i++)
@@ -104,7 +104,7 @@ public class SpanSliceMutationTests : SpanKernelPathTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_StackAllocFillClearReverse_MatchesDotNet(bool managed)
+    public void StackAllocSpan_FillClearReverseMutations_MatchesDotNetBehavior(bool managed)
     {
         var actual = new int[8];
         int[] expected = [9, 9, 9, 0, 0, 0, 9, 42];
@@ -121,7 +121,7 @@ public class SpanSliceMutationTests : SpanKernelPathTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_P2_ReverseSlice_ReversesInPlaceAndPreservesOutside(int offset, int count, bool managed)
+    public void Reverse_SubSliceRange_ReversesInPlaceAndPreservesOutside(int offset, int count, bool managed)
     {
         var input = CreateSequential(20, start: 1);
         var actual = (int[])input.Clone();
@@ -141,7 +141,7 @@ public class SpanSliceMutationTests : SpanKernelPathTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_P2_ReverseVariants_StaticExtensionAndStackArray(bool managed)
+    public void Reverse_VariousSpanSources_ReversesElementsInPlace(bool managed)
     {
         int[] a = [1, 2, 3, 4, 5, 6];
         int[] b = [10, 20, 30, 40, 50];
@@ -160,7 +160,7 @@ public class SpanSliceMutationTests : SpanKernelPathTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_AsSpanOverloads_StartAndLength_MatchDotNet(bool managed)
+    public void AsSpan_StartAndLengthOverloads_MatchesDotNetBehavior(bool managed)
     {
         int[] data = [10, 20, 30, 40, 50, 60];
         var results = new int[4];
@@ -177,7 +177,7 @@ public class SpanSliceMutationTests : SpanKernelPathTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_SpanEmptyAndIsEmpty_MatchesDotNet(bool managed)
+    public void SpanProperties_EmptyAndIsEmpty_MatchesDotNetBehavior(bool managed)
     {
         int[] data = [7, 8, 9];
         var results = new int[4];

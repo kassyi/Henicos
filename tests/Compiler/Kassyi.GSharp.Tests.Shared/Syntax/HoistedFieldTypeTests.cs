@@ -10,7 +10,7 @@ public class HoistedFieldTypeTests : TranspilerTestBase
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_HoistedVarKernel_CalculatesCorrectly()
+    public void Launch_HoistedVarKernel_CalculatesExpectedValues()
     {
         const int totalThreads = 32;
         int[] data = new int[totalThreads];
@@ -33,7 +33,7 @@ public class HoistedFieldTypeTests : TranspilerTestBase
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_FloatWarpReductionKernel_CalculatesCorrectly()
+    public void Launch_FloatWarpReductionKernel_ProducesExpectedWarpSums()
     {
         const int threadsPerWarp = 32;
         const int numWarps = 4;
@@ -68,7 +68,7 @@ public class HoistedFieldTypeTests : TranspilerTestBase
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_StructVarKernel_CalculatesCorrectly()
+    public void Launch_StructVarKernel_ProducesExpectedSums()
     {
         const int totalThreads = 32;
         HoistedPoint[] items = new HoistedPoint[totalThreads];

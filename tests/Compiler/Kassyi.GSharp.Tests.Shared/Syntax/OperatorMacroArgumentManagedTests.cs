@@ -15,7 +15,7 @@ public class OperatorMacroArgumentManagedTests : TranspilerTestBase
 {
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_InOperand_IsPassed()
+    public void Expand_ManagedInOperand_IsPassed()
     {
         var result = new int[1];
 
@@ -26,7 +26,7 @@ public class OperatorMacroArgumentManagedTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_InOperandBeforeAnInnerWrite_IsReadThroughItsVariable()
+    public void Expand_ManagedInOperandBeforeInnerWrite_IsReadThroughItsVariable()
     {
         InValue[] values = [new InValue(3), new InValue(5)];
         var result = new int[2];
@@ -38,7 +38,7 @@ public class OperatorMacroArgumentManagedTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_RefResultBeforeAnInnerCall_IsTheElementChosenFirst()
+    public void Expand_ManagedRefResultBeforeInnerCall_IsElementChosenFirst()
     {
         var values = new SpillValue[2];
         var calls = new int[1];
@@ -50,7 +50,7 @@ public class OperatorMacroArgumentManagedTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_OutResult_IsAssignedByTheTarget()
+    public void Expand_ManagedOutResult_IsAssignedByTarget()
     {
         var result = new int[2];
 
@@ -61,7 +61,7 @@ public class OperatorMacroArgumentManagedTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_InOperandReturnedByReferenceBeforeAnInnerWrite_IsReadThroughTheReference()
+    public void Expand_ManagedInOperandReturnedByReferenceBeforeInnerWrite_IsReadThroughReference()
     {
         InValue[] values = [new InValue(3), new InValue(5)];
         var result = new int[2];
@@ -73,7 +73,7 @@ public class OperatorMacroArgumentManagedTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_SharedMemoryInOperandBeforeAnInnerWrite_IsReadThroughTheElement()
+    public void Expand_ManagedSharedMemoryInOperandBeforeInnerWrite_IsReadThroughElement()
     {
         var result = new int[3];
 
@@ -84,7 +84,7 @@ public class OperatorMacroArgumentManagedTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_AutoPropertyTargetAndOperand_AreItsStorage()
+    public void Expand_ManagedAutoPropertyTargetAndOperand_UsesStorage()
     {
         var result = new int[5];
 

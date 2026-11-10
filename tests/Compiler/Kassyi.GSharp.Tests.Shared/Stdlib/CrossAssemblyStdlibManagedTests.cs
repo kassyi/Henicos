@@ -16,7 +16,7 @@ public class CrossAssemblyStdlibManagedTests : TranspilerTestBase
 {
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_MontgomeryMu_OfTheStandardLibrary()
+    public void Managed_MontgomeryMu_OfTheStandardLibrary()
     {
         var moduli = CrossAssemblyStdlibCases.Moduli();
         var result = new uint[moduli.Length];
@@ -29,7 +29,7 @@ public class CrossAssemblyStdlibManagedTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_WarpScanGp_SuspendingFunctionOfTheStandardLibrary()
+    public void Managed_WarpScanGp_SuspendingFunctionOfTheStandardLibrary()
     {
         var (generate, propagate) = CrossAssemblyStdlibCases.CarryBits();
         var result = new uint[32];

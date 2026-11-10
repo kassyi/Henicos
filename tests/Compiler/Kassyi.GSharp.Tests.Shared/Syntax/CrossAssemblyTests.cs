@@ -15,7 +15,7 @@ public class CrossAssemblyTests : TranspilerTestBase
     // n0 * mu == -1 (mod 2^32): for n0 = 3, mu = 0x55555555
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Mu_ThroughUsingAndInFull()
+    public void Mu_ThroughUsingAndQualifiedCalls_ComputesModularInverse()
     {
         uint[] values = [3, 5, 7, 0xFFFF_FFFF];
         var result = new uint[4];
@@ -31,7 +31,7 @@ public class CrossAssemblyTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_SumPair_StructOfTheLibrary()
+    public void SumPair_LibraryStructParameter_CalculatesSum()
     {
         Pair[] pairs = [new() { A = 1, B = 2 }, new() { A = 10, B = 20 }, new() { A = -5, B = 5 }, new() { A = 7, B = 0 }];
         var result = new int[4];
@@ -43,7 +43,7 @@ public class CrossAssemblyTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Twice_ThroughAnInternalFunction()
+    public void Twice_ThroughInternalFunction_DoublesElements()
     {
         int[] values = [1, 2, 3, 4];
         var result = new int[4];
@@ -55,7 +55,7 @@ public class CrossAssemblyTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_AddPair_OperatorMacroOfTheLibrary()
+    public void AddPair_OperatorMacroOfTheLibrary_CalculatesSumAndRecordsCalls()
     {
         Pair[] pairs = [new() { A = 1, B = 2 }, new() { A = 10, B = 20 }, new() { A = -5, B = 5 }, new() { A = 7, B = 0 }];
         var result = new int[4];
@@ -69,7 +69,7 @@ public class CrossAssemblyTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Difference_PrivateOperatorMacroTargetOfTheLibrary()
+    public void Difference_PrivateOperatorMacroTarget_CalculatesDifference()
     {
         Pair[] pairs = [new() { A = 1, B = 2 }, new() { A = 10, B = 20 }, new() { A = -5, B = 5 }, new() { A = 7, B = 0 }];
         var result = new int[4];
@@ -81,7 +81,7 @@ public class CrossAssemblyTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Vec2_ConstructorAndComputedProperty()
+    public void Vec2_ConstructorAndComputedProperty_ComputesExpectedSum()
     {
         float[] xs = [1f, 2f, 3f, 4f];
         var result = new float[4];
@@ -95,7 +95,7 @@ public class CrossAssemblyTests : TranspilerTestBase
     // Each thread writes tid * 10 and reads the next thread's value after the barrier
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Exchange_SuspendingLibraryFunction()
+    public void Exchange_SuspendingLibraryFunction_ExchangesBufferValues()
     {
         var buffer = new int[4];
         var result = new int[4];
@@ -109,7 +109,7 @@ public class CrossAssemblyTests : TranspilerTestBase
     // x^2 + 1 + 4, with the Float3 inside the library or in the kernel
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Float3_ParameterOfALibraryFunction()
+    public void Float3_ParameterOfLibraryFunction_ComputesVectorLengthAndDotProduct()
     {
         float[] xs = [1f, 2f, 3f, 4f];
         var inside = new float[4];
@@ -125,7 +125,7 @@ public class CrossAssemblyTests : TranspilerTestBase
     // Mass = 3 * 2, Weight = Mass + x
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Particle_Float3FieldOfALibraryStruct()
+    public void Particle_Float3FieldOfLibraryStruct_ComputesParticleValues()
     {
         float[] xs = [1f, 2f, 3f, 4f];
         var result = new float[4];
@@ -137,7 +137,7 @@ public class CrossAssemblyTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Scaled_ConstructorCallsALibraryFunction()
+    public void Scaled_ConstructorCallingLibraryFunction_ScalesValues()
     {
         int[] values = [1, 2, 3, -4];
         var result = new int[4];
@@ -150,7 +150,7 @@ public class CrossAssemblyTests : TranspilerTestBase
     // Inner.V = v + 1, Probe = 3 (v + 1): 301 (v + 1)
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Alpha_StructsOfFieldsAndConstructors()
+    public void Alpha_StructsWithFieldsAndConstructors_ComputesCombinedValues()
     {
         int[] values = [0, 1, 2, -1];
         var result = new int[4];
@@ -164,7 +164,7 @@ public class CrossAssemblyTests : TranspilerTestBase
     // kernel in place, and the launch guard (which compares them with the runtime's) passes (#736)
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_SwapPair_ExplicitLayoutOfTheLibrary()
+    public void SwapPair_ExplicitLayoutStruct_SwapsFields()
     {
         var result = new int[] { -1, -1 };
 
@@ -177,7 +177,7 @@ public class CrossAssemblyTests : TranspilerTestBase
     // Pack = 1 from the ClassLayout table: 5 bytes, the int right after the byte (#736)
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_PackedPair_PackedLayoutOfTheLibrary()
+    public void PackedPair_PackedLayoutStruct_ReadsTagAndValue()
     {
         var result = new int[] { -1, -1 };
 
@@ -190,7 +190,7 @@ public class CrossAssemblyTests : TranspilerTestBase
     // device neither reads the neighbours' padding nor writes into it (#736)
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Sized_ArrayOfASizedStructOfTheLibrary()
+    public void Sized_ArrayOfSizedStruct_CopiesAndZerosField()
     {
         Sized[] data = [new() { A = 5 }, new() { A = -6 }, new() { A = 7 }, new() { A = int.MaxValue }];
         var result = new int[4];
@@ -205,7 +205,7 @@ public class CrossAssemblyTests : TranspilerTestBase
     // flips only the sign bit and leaves the tag (#736)
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_IntFloatUnion_ArrayOfAnExplicitUnionOfTheLibrary()
+    public void IntFloatUnion_ArrayOfExplicitUnionStruct_ExtractsBitsAndNegatesFloat()
     {
         float[] values = [1f, -2.5f, 0f, float.MaxValue];
         var data = values.Select(static (v, i) => new IntFloatUnion { Value = v, Tag = 100 + i }).ToArray();

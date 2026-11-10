@@ -73,7 +73,7 @@ public class WarpRendezvousDifferentialTests
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_SubWarpShuffleInDeviceFunction_ReadsTheSameShuffleOfEveryLane()
+    public void WarpRendezvous_SubWarpShuffleInDeviceFunction_ReadsTheSameShuffleOfEveryLane()
     {
         var input = Input(32);
         var expected = HalfThenFull(input);
@@ -87,7 +87,7 @@ public class WarpRendezvousDifferentialTests
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_SubWarpShuffleInNestedDeviceFunction_KeepsTheCallSitesApart()
+    public void WarpRendezvous_SubWarpShuffleInNestedDeviceFn_KeepsTheCallSitesApart()
     {
         var input = Input(64);
         var first = HalfThenFull(input);
@@ -101,7 +101,7 @@ public class WarpRendezvousDifferentialTests
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_DeviceFunctionInLoop_MeetsInEveryIteration()
+    public void WarpRendezvous_DeviceFunctionInLoop_MeetsInEveryIteration()
     {
         var input = Input(32);
         var expected = input;
@@ -117,7 +117,7 @@ public class WarpRendezvousDifferentialTests
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_AlternatingDivergenceInLoop_MeetsWithTheLanesOfEachIteration()
+    public void WarpRendezvous_AlternatingDivergenceInLoop_MeetsWithTheLanesOfEachIteration()
     {
         var input = Input(64);
         var v = (int[])input.Clone();
@@ -147,7 +147,7 @@ public class WarpRendezvousDifferentialTests
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_DeviceFunctionOnBothSides_MeetsWithinEachSide()
+    public void WarpRendezvous_DeviceFunctionOnBothSides_MeetsWithinEachSide()
     {
         var input = Input(32);
         var pair = new int[32];
@@ -166,7 +166,7 @@ public class WarpRendezvousDifferentialTests
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_PartialWarpVotes_CountTheLanesThatExist()
+    public void WarpRendezvous_PartialWarpVotes_CountsExistingLanes()
     {
         // 40 threads: warp 1 has lanes 0..7 only
         var input = Input(40).Select(static (v, t) => t % 3 == 0 ? v + 1 : v).ToArray();
@@ -194,7 +194,7 @@ public class WarpRendezvousDifferentialTests
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_VotesAfterExit_LeaveTheExitedLanesOut()
+    public void WarpRendezvous_VotesAfterExit_LeavesExitedLanesOut()
     {
         var input = Input(32).Select(static (v, t) => 1000 - v + (t % 5)).ToArray();
         var expected = new int[128];
@@ -216,7 +216,7 @@ public class WarpRendezvousDifferentialTests
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_SyncWarp_OrdersTheSharedMemoryOfTheLanesOfTheMask()
+    public void WarpRendezvous_SyncWarp_OrdersSharedMemoryOfMaskLanes()
     {
         var input = Input(64);
         var expected = Enumerable.Range(0, 64).Select(t => (t & 31) < 16 ? input[t ^ 1] * 2 : -1).ToArray();
@@ -227,7 +227,7 @@ public class WarpRendezvousDifferentialTests
 
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_FullMaskOnBothSides_IsAnErrorOnTheCpuPaths()
+    public void WarpRendezvous_FullMaskOnBothSides_ThrowsErrorOnCpuPaths()
     {
         var input = Input(32);
         AssertErrorOnCpuPaths(
@@ -237,7 +237,7 @@ public class WarpRendezvousDifferentialTests
 
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_FullMaskAtTwoSites_IsAnErrorOnTheCpuPaths()
+    public void WarpRendezvous_FullMaskAtTwoSites_ThrowsErrorOnCpuPaths()
     {
         var input = Input(32);
         AssertErrorOnCpuPaths(
@@ -247,7 +247,7 @@ public class WarpRendezvousDifferentialTests
 
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_FullMaskBeforeBarrier_IsAnErrorOnTheCpuPaths()
+    public void WarpRendezvous_FullMaskBeforeBarrier_ThrowsErrorOnCpuPaths()
     {
         var input = Input(32);
         AssertErrorOnCpuPaths(
@@ -257,7 +257,7 @@ public class WarpRendezvousDifferentialTests
 
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_ShuffleReadsExitedLane_IsAnErrorOnTheCpuPaths() =>
+    public void WarpRendezvous_ShuffleReadsExitedLane_ThrowsErrorOnCpuPaths() =>
         AssertErrorOnCpuPaths(
             output => WarpRendezvousDifferentialKernels.LaunchShuffleReadsExitedLaneKernel(output, blockDimX: 32),
             32, "Warp.ShuffleDownSync", "in lane 15 reads lane 16 of warp 0, which has exited");

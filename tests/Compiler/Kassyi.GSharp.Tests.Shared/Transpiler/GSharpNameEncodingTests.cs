@@ -15,7 +15,7 @@ public class GSharpNameEncodingTests
     [InlineData("__gsharp_bf_Scale", "Scale.field")]
     [InlineData("__gsharp_id_0__Value", "_Value")]
     [InlineData("__gsharp_id__Value", "_Value")]
-    public void Test_TryDecode_RenamedIdentifier_ReturnsCSharpName(string identifier, string expected)
+    public void TryDecode_RenamedIdentifier_ReturnsCSharpName(string identifier, string expected)
     {
         Assert.True(GSharpNameEncoding.TryDecode(identifier, out var name));
         Assert.Equal(expected, name);
@@ -30,7 +30,7 @@ public class GSharpNameEncodingTests
     [InlineData("__gsharp_bf_")]
     [InlineData("data")]
     [InlineData("")]
-    public void Test_TryDecode_OtherIdentifier_ReturnsFalse(string identifier)
+    public void TryDecode_OtherIdentifier_ReturnsFalse(string identifier)
     {
         Assert.False(GSharpNameEncoding.TryDecode(identifier, out var name));
         Assert.Equal(string.Empty, name);
@@ -39,7 +39,7 @@ public class GSharpNameEncodingTests
     [Fact]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_DecodeText_ReplacesOnlyWholeRenamedIdentifiers()
+    public void DecodeText_PartialIdentifierMatches_ReplacesOnlyWholeRenamedIdentifiers()
     {
         const string Generated =
             "int __gsharp_id_0_data = item.__gsharp_mb_Length; __gsharp_ctx->__gsharp_id_4_union = a__gsharp_id_1_b;";
@@ -51,7 +51,7 @@ public class GSharpNameEncodingTests
     [Fact]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_DescribeRenamedIdentifiers_ListsEachIdentifierOnce()
+    public void DescribeRenamedIdentifiers_MultipleOccurrences_ListsEachIdentifierOnce()
     {
         const string NvccOutput =
             "error: identifier \"__gsharp_id_0_data\" is undefined\nerror: \"__gsharp_id_0_data\" redefined; see __gsharp_mb_register";
@@ -63,7 +63,7 @@ public class GSharpNameEncodingTests
     [Fact]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_DescribeRenamedIdentifiers_WithoutRenamedIdentifiers_ReturnsEmpty()
+    public void DescribeRenamedIdentifiers_WithoutRenamedIdentifiers_ReturnsEmpty()
     {
         Assert.Equal(string.Empty, GSharpNameEncoding.DescribeRenamedIdentifiers("error C2065: 'x': undeclared"));
     }
@@ -71,7 +71,7 @@ public class GSharpNameEncodingTests
     [Fact]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_DecodeText_WithSymbolMap_DecodesShortenedAndStandardIdentifiers()
+    public void DecodeText_WithSymbolMap_DecodesShortenedAndStandardIdentifiers()
     {
         var map = new Dictionary<string, string>(StringComparer.Ordinal)
         {
@@ -87,7 +87,7 @@ public class GSharpNameEncodingTests
     [Fact]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_ParseSymbolFile_WithMismatchedHash_ThrowsInvalidOperationException()
+    public void ParseSymbolFile_MismatchedHash_ThrowsInvalidOperationException()
     {
         const string GsymContent = """
             {"gsharp_symbols":"0123456789abcdef","dialect":"Cuda"}

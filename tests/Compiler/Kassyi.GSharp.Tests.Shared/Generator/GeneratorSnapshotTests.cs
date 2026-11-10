@@ -232,7 +232,8 @@ public partial class GeneratorSnapshotTests : Kassyi.GSharp.Tests.Shared.Helpers
 
     [SkippableTheory]
     [MemberData(nameof(GetSnapshotTestCases))]
-    public Task Test_GeneratorSnapshots(string relativeFilePath) => VerifyTestCaseSnapshotAsync(relativeFilePath, DialectName);
+    public Task GeneratorSnapshots_AllSnapshotKernels_MatchesVerifiedSnapshots(string relativeFilePath) =>
+        VerifyTestCaseSnapshotAsync(relativeFilePath, DialectName);
 
 #if GSHARP_CPU
     // Mutation testing (just mutate compiler) runs only Kassyi.GSharp.Tests.Cpu; these test cases compare their CUDA
@@ -243,7 +244,7 @@ public partial class GeneratorSnapshotTests : Kassyi.GSharp.Tests.Shared.Helpers
     [InlineData("tests/Compiler/Kassyi.GSharp.Tests.Shared/Core/DeviceDynamicSharedMemoryKernels.cu.cs")]
     [InlineData("tests/Compiler/Kassyi.GSharp.Tests.Shared/Core/SharedMemoryRegionKernels.cu.cs")]
     [InlineData("tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/ConcurrencyAndWarpKernels.cu.cs")]
-    public Task Test_GeneratorSnapshots_CudaDialectFromCpuTests(string relativeFilePath) =>
+    public Task GeneratorSnapshots_CudaDialectFromCpuTests_MatchesVerifiedSnapshots(string relativeFilePath) =>
         VerifyTestCaseSnapshotAsync(relativeFilePath, "Cuda");
 #endif
 
@@ -266,7 +267,7 @@ public partial class GeneratorSnapshotTests : Kassyi.GSharp.Tests.Shared.Helpers
     }
 
     [Fact]
-    public async Task Test_SharedPreludeHeader_Snapshot()
+    public async Task SharedPreludeHeader_CurrentPrelude_MatchesVerifiedSnapshot()
     {
         var parseOptions = new CSharpParseOptions(LanguageVersion.Preview);
         var src = @"using Kassyi.GSharp.Core; public class Dummy { [GpuKernel] public static void Kernel() {} }";
@@ -300,7 +301,7 @@ public partial class GeneratorSnapshotTests : Kassyi.GSharp.Tests.Shared.Helpers
     }
 
     [Fact]
-    public void TestCasesAndSnapshots_ShouldBeConsistent()
+    public void Snapshots_TestCasesAndSnapshotFiles_AreConsistent()
     {
         var rootDir = RepositoryPaths.Root;
         var mandatorySnapshotKernels = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -346,7 +347,7 @@ public partial class GeneratorSnapshotTests : Kassyi.GSharp.Tests.Shared.Helpers
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_GeneratedWrappersAndStateMachines_CompileWithZeroCSharpWarnings()
+    public void GeneratedWrappersAndStateMachines_CompilerPass_ProducesZeroCSharpWarnings()
     {
         var parseOptions = new CSharpParseOptions(LanguageVersion.Preview);
         const string src = """

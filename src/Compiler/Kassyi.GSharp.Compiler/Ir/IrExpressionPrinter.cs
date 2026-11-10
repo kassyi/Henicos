@@ -164,6 +164,20 @@ internal sealed class IrExpressionPrinter(IrPrinter owner, SourceWriter writer, 
         }
 
         WriteEvaluationOrder(call.Arguments);
+        WriteClassification(call.Classification);
+    }
+
+    // [split=BlockBarrier, writes=Memory] after a classified call; nothing before the classify pass
+    private void WriteClassification(IrCallClassification classification)
+    {
+        if (!classification.IsClassified)
+        {
+            return;
+        }
+
+        var split = classification.Split;
+        var kind = split.Kind == IrSplitKind.WarpShuffle ? "WarpShuffle:" + split.Shuffle : split.Kind.ToString();
+        _writer.Append($"[split={kind}, writes={classification.Effect.ToString()}]");
     }
 
     private void WriteUnary(IrUnary unary)

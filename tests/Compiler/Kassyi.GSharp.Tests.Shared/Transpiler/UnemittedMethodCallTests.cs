@@ -38,7 +38,7 @@ public class UnemittedMethodCallTests
     [InlineData(nameof(UnemittedCallCases.CallsInstance), "Set", "instance methods of structs")]
     [InlineData(nameof(UnemittedCallCases.CallsThroughInterface), "Apply", "through an interface")]
     [Scenario(TestScenario.SadPath)]
-    public void Test_GetReason_UnemittedCallee_GivesItsReason(string caller, string method, string reason)
+    public void GetReason_UnemittedCallee_ReturnsDiagnosticReason(string caller, string method, string reason)
     {
         var (call, called, model) = FindCall(caller, method);
 
@@ -53,7 +53,7 @@ public class UnemittedMethodCallTests
     [InlineData(nameof(UnemittedCallCases.CallsRemovedConditional), nameof(UnemittedCallHelpers.NeverTraced))]
     [InlineData(nameof(UnemittedCallCases.CallsMath), nameof(Math.Abs))]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_GetReason_EmittedMappedOrRemovedCallee_GivesNone(string caller, string method)
+    public void GetReason_EmittedMappedOrRemovedCallee_ReturnsNull(string caller, string method)
     {
         var (call, called, model) = FindCall(caller, method);
 

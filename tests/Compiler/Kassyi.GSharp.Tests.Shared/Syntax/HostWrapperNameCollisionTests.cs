@@ -10,7 +10,7 @@ public class HostWrapperNameCollisionTests : TranspilerTestBase
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.Boundary)]
-    public void ExecuteCollisionKernel_WithHostWrapperLocalAndTypeCollisions_ProducesExpectedResults()
+    public void ExecuteCollisionKernel_WithHostWrapperLocalAndTypeCollisions_ComputesWithoutNameClashes()
     {
         var args = new[] { 10, 20, 30, 40 };
         var payload = new HostWrapperNameCollisionKernels.CollisionPayload
@@ -51,7 +51,7 @@ public class HostWrapperNameCollisionTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void ExecuteCollisionKernel_CpuManagedFallback_ProducesExpectedResults()
+    public void ExecuteCollisionKernel_CpuManagedFallback_ComputesWithoutNameClashes()
     {
         Skip.IfNot(IsCpuDialect, "CPU managed fallback test applies only to the CPU dialect");
 
