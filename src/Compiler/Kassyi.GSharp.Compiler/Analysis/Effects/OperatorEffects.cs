@@ -69,17 +69,7 @@ internal static class OperatorEffects
         var root = walker.AddLocation(operand);
         walker.AddRead(root);
         walker.AddWrite(root);
-        if (walker.Model.GetSymbol(operand) is not IPropertySymbol property ||
-            !MemberEffects.IsComputedUserProperty(property))
-        {
-            return;
-        }
-
-        walker.Reads.Memory = true;
-        if (walker.MayWriteMemory(property.GetMethod) || walker.MayWriteMemory(property.SetMethod))
-        {
-            walker.Writes.Memory = true;
-        }
+        AddAccessorCalls(ref walker, operand, callsGetter: true);
     }
 
     public static void AddAssignment(ref EffectWalker walker, AssignmentExpressionSyntax assignment)
@@ -98,9 +88,22 @@ internal static class OperatorEffects
 
         walker.AddValue(assignment.Right);
         walker.AddWrite(root);
-        if (walker.Model.GetSymbol(assignment.Left) is IPropertySymbol property &&
-            MemberEffects.IsComputedUserProperty(property) &&
-            walker.MayWriteMemory(property.SetMethod))
+        AddAccessorCalls(ref walker, assignment.Left,
+            callsGetter: !assignment.IsKind(SyntaxKind.SimpleAssignmentExpression));
+    }
+
+    // The accessors that assigning a computed property calls: the setter, after the getter when the old value is read
+    // (a compound assignment, an increment). Each may read anything and writes what DeviceFunctionEffects says.
+    private static void AddAccessorCalls(ref EffectWalker walker, ExpressionSyntax target, bool callsGetter)
+    {
+        if (walker.Model.GetSymbol(target) is not IPropertySymbol property ||
+            !MemberEffects.IsComputedUserProperty(property))
+        {
+            return;
+        }
+
+        walker.Reads.Memory = true;
+        if ((callsGetter && walker.MayWriteMemory(property.GetMethod)) || walker.MayWriteMemory(property.SetMethod))
         {
             walker.Writes.Memory = true;
         }

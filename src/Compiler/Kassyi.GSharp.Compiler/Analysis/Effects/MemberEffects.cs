@@ -17,6 +17,10 @@ internal static class MemberEffects
             case ILocalSymbol or IParameterSymbol or IFieldSymbol:
                 walker.AddRead(walker.AddLocation(identifier));
                 return;
+            case IPropertySymbol { IsStatic: false } property:
+                // A property of the implicit this
+                AddGetterCall(ref walker, null, property);
+                return;
             case IPropertySymbol property:
                 AddPropertyRead(ref walker, property);
                 return;
@@ -45,31 +49,8 @@ internal static class MemberEffects
         ref EffectWalker walker,
         MemberAccessExpressionSyntax access,
         IPropertySymbol property
-    )
-    {
-        if (MayMutateValueTypeReceiver(property, walker.Model.Compilation))
-        {
-            var receiver = walker.AddLocation(access.Expression);
-            walker.AddRead(receiver);
-            walker.AddWrite(receiver);
-        }
-        else
-        {
-            walker.AddValue(access.Expression);
-        }
-
-        if (!IsComputedUserProperty(property))
-        {
-            return;
-        }
-
-        // The getter of a struct may read anything, and writes what DeviceFunctionEffects says
-        walker.Reads.Memory = true;
-        if (walker.MayWriteMemory(property.GetMethod))
-        {
-            walker.Writes.Memory = true;
-        }
-    }
+    ) =>
+        AddGetterCall(ref walker, access.Expression, property);
 
     // A member that does not resolve (a field that lowering synthesized): known by its name
     public static void AddUnresolvedMember(ref EffectWalker walker, MemberAccessExpressionSyntax access)
@@ -80,16 +61,9 @@ internal static class MemberEffects
 
     public static void AddElementAccess(ref EffectWalker walker, ElementAccessExpressionSyntax element)
     {
-        if (walker.Model.GetSymbol(element) is IPropertySymbol indexer &&
-            MayMutateValueTypeReceiver(indexer, walker.Model.Compilation))
+        if (walker.Model.GetSymbol(element) is IPropertySymbol { IsIndexer: true } indexer)
         {
-            var receiver = walker.AddLocation(element.Expression);
-            walker.AddRead(receiver);
-            walker.AddWrite(receiver);
-            if (walker.MayWriteMemory(indexer.GetMethod))
-            {
-                walker.Writes.Memory = true;
-            }
+            AddGetterCall(ref walker, element.Expression, indexer);
         }
         else
         {
@@ -98,6 +72,56 @@ internal static class MemberEffects
 
         walker.AddArgumentValues(element.ArgumentList.Arguments);
         walker.Reads.Memory = true;
+    }
+
+    // Reading a property or an indexer calls its getter on receiver (null: the implicit this, which is memory). A getter
+    // that may change its struct reads and writes the receiver (#992); that getter and the getter of a computed property
+    // may read anything, and write what DeviceFunctionEffects says.
+    private static void AddGetterCall(ref EffectWalker walker, ExpressionSyntax? receiver, IPropertySymbol property)
+    {
+        var mutatesReceiver = MayMutateValueTypeReceiver(property, walker.Model.Compilation);
+        if (mutatesReceiver)
+        {
+            var root = receiver != null ? walker.AddReceiver(receiver) : new EffectRoot(null);
+            walker.AddRead(root);
+            walker.AddWrite(root);
+        }
+        else if (receiver != null)
+        {
+            walker.AddValue(receiver);
+        }
+        else
+        {
+            AddPropertyRead(ref walker, property);
+        }
+
+        if (!mutatesReceiver && !IsComputedUserProperty(property))
+        {
+            return;
+        }
+
+        walker.Reads.Memory = true;
+        if (walker.MayWriteMemory(property.GetMethod))
+        {
+            walker.Writes.Memory = true;
+        }
+    }
+
+    /// <summary>
+    /// Whether reading <paramref name="expression"/> calls a getter whose effects count: a computed property
+    /// (<c>s.P</c>, or <c>P</c> through the implicit <c>this</c>) or an indexer that may change its struct.
+    /// </summary>
+    public static bool IsGetterCall(ExpressionSyntax expression, SemanticModel model)
+    {
+        while (expression is ParenthesizedExpressionSyntax parenthesized)
+        {
+            expression = parenthesized.Expression;
+        }
+
+        return expression is IdentifierNameSyntax or MemberAccessExpressionSyntax or ElementAccessExpressionSyntax &&
+               model.GetSymbol(expression) is IPropertySymbol property &&
+               (IsComputedUserProperty(property) ||
+                property.IsIndexer && MayMutateValueTypeReceiver(property, model.Compilation));
     }
 
     // __gsharp_ctx-><local>: ContextHoister moves a local (or a lowering temporary) of a state machine into its frame,
