@@ -9,7 +9,7 @@ public class GpuBigFloatObjTests
     [SkippableFact]
     [Category(TestCategory.Stdlib)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_BigFloat_Obj()
+    public void Construct_FromDoubleAndBigInteger_MatchesExpectedComponents()
     {
         CudaCapability.EnsureGpuAvailable();
         using var ctx = new GpuWorkspace(256, GpuExecutionEngine.GSharpAot);
@@ -23,7 +23,7 @@ public class GpuBigFloatObjTests
     [SkippableFact]
     [Category(TestCategory.Stdlib)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_IGpuBigNumber_UnifiedComparison_ZeroAlloc_And_Boundary()
+    public void Compare_UnifiedBigNumberZeroAlloc_MatchesComparisonRules()
     {
         CudaCapability.EnsureGpuAvailable();
         using var ctx = new GpuWorkspace(512, GpuExecutionEngine.GSharpAot);

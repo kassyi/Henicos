@@ -8,7 +8,7 @@ public class GpuBigIntSqrtTests
     [SkippableFact]
     [Category(TestCategory.Stdlib)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Sqrt_SmallValues()
+    public void Sqrt_SmallValues_ProducesExactFloorRoot()
     {
         CudaCapability.EnsureGpuAvailable();
         using var ctx = new GpuWorkspace(16, GpuExecutionEngine.GSharpAot);
@@ -24,7 +24,7 @@ public class GpuBigIntSqrtTests
     [SkippableFact]
     [Category(TestCategory.Stdlib)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Sqrt_LargeValues()
+    public void Sqrt_LargeValues_ProducesExpectedWordCount()
     {
         CudaCapability.EnsureGpuAvailable();
         using var ctx = new GpuWorkspace(512, GpuExecutionEngine.GSharpAot);
@@ -51,7 +51,7 @@ public class GpuBigIntSqrtTests
     [InlineData(16u)]
     [InlineData(65535u * 65535u)]
     [InlineData(uint.MaxValue)]
-    public void Test_Sqrt_SingleWordValueInWideBuffer_ReturnsFloorRoot(uint value)
+    public void Sqrt_SingleWordValueInWideBuffer_ReturnsFloorRoot(uint value)
     {
         CudaCapability.EnsureGpuAvailable();
         using var ctx = new GpuWorkspace(256, GpuExecutionEngine.GSharpAot);
@@ -75,7 +75,7 @@ public class GpuBigIntSqrtTests
     [InlineData(200, 12345)]
     [InlineData(256, -1)]
     [InlineData(300, 1)]
-    public void Test_Sqrt_MultiWordValue_ReturnsFloorRoot(int bits, int offset)
+    public void Sqrt_MultiWordValue_ReturnsFloorRoot(int bits, int offset)
     {
         CudaCapability.EnsureGpuAvailable();
         using var ctx = new GpuWorkspace(512, GpuExecutionEngine.GSharpAot);

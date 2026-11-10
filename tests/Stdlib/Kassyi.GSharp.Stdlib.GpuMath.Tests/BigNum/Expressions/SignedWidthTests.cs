@@ -75,7 +75,7 @@ public sealed class SignedWidthTests : IDisposable
     [InlineData(3)]
     [InlineData(34)]
     [Scenario(TestScenario.SadPath)]
-    public void Leaf_IntoANarrowerTarget_IsRejected_AndIntoAWiderOne_IsCleared(int sourceWords)
+    public void Evaluate_NarrowAndWideTargets_RejectsNarrowAndClearsUpperWordsOfWide(int sourceWords)
     {
         var value = -((BigInteger.One << (32 * sourceWords - 1)) + 7);
         using var source = SignedCases.Value(_workspace, value, sourceWords);
@@ -96,7 +96,7 @@ public sealed class SignedWidthTests : IDisposable
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void OperatorRoot_IntoAWiderTarget_ClearsTheWordsAbove_AndANarrowerOne_IsRejected()
+    public void Evaluate_OperatorRootWithNarrowAndWideTargets_RejectsNarrowAndClearsUpperWordsOfWide()
     {
         using var a = SignedCases.Value(_workspace, -(BigInteger)uint.MaxValue, 1);
         using var b = SignedCases.Value(_workspace, -(BigInteger)uint.MaxValue, 1);
@@ -189,7 +189,7 @@ public sealed class SignedWidthCpuFallbackTests
     [Theory]
     [MemberData(nameof(WidthPairs))]
     [Scenario(TestScenario.Boundary)]
-    public void FollowsTheSameRules(int aWords, int bWords)
+    public void SignedWidth_CpuFallbackWithVaryingWords_FollowsTheSameRules(int aWords, int bWords)
     {
         GpuKernelLoader.ForceCpuFallback = true;
         try
