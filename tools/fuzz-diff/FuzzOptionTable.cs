@@ -3,7 +3,7 @@ using System.Globalization;
 namespace Kassyi.GSharp.Tools.FuzzDiff;
 
 /// <summary>
-/// The values that the options of <c>fuzz-diff run</c> and <c>fuzz-diff compare</c> set, before each command turns
+/// The values that the options of <c>fuzz-diff gen</c>, <c>run</c> and <c>compare</c> set, before each command turns
 /// them into its options record. A command's table sets only the members of its own options.
 /// </summary>
 internal sealed class FuzzOptionValues
@@ -43,6 +43,12 @@ internal sealed class FuzzOptionValues
     internal List<string> Dialects { get; } = CompareCommand.DefaultDialects();
 
     internal int ReduceMinutes { get; set; } = CompareCommand.DefaultReduceMinutes;
+
+    internal int Size { get; set; } = 4;
+
+    internal string ProfileCode { get; set; } = "C";
+
+    internal string? CudaArch { get; set; }
 }
 
 /// <summary>One option of a command: whether it takes a value, and the step that applies it.</summary>
@@ -59,25 +65,38 @@ internal static class FuzzOptionTable
     /// <summary>The largest <c>--batch-size</c>.</summary>
     internal const int MaxBatchSize = 256;
 
-    /// <summary>Gets the rows that <c>run</c> and <c>compare</c> share: the generation options and the flags.</summary>
-    internal static IEnumerable<KeyValuePair<string, FuzzOptionSpec>> SharedRows { get; } =
+    /// <summary>Gets the rows of the generation options, which <c>gen</c>, <c>run</c> and <c>compare</c>
+    /// share.</summary>
+    internal static IEnumerable<KeyValuePair<string, FuzzOptionSpec>> GenerationRows { get; } =
     [
-        new("--batches", Value(ParseBatches)),
         new("--batch-size", Value(ParseBatchSize)),
         new("--fuzz-seed", Value(ParseFuzzSeed)),
         new("--input-seed", Value(ParseInputSeed)),
         new("--allow-issue", Value(ParseAllowIssue)),
         new("--swarm-focus", Value(ParseSwarmFocus)),
         new("--metamorphic", Flag(static v => v.Metamorphic = true)),
+    ];
+
+    /// <summary>Gets the rows that <c>run</c> and <c>compare</c> share: the generation options and the flags.</summary>
+    internal static IEnumerable<KeyValuePair<string, FuzzOptionSpec>> SharedRows { get; } =
+    [
+        .. GenerationRows,
+        new("--batches", Value(ParseBatches)),
         new("--expect-change", Flag(static v => v.ExpectChange = true)),
         new("--no-reduce", Flag(static v => v.NoReduce = true)),
     ];
 
     /// <summary>Builds a table from the shared rows and the rows of one command.</summary>
-    internal static Dictionary<string, FuzzOptionSpec> Create(params KeyValuePair<string, FuzzOptionSpec>[] ownRows)
+    internal static Dictionary<string, FuzzOptionSpec> Create(params KeyValuePair<string, FuzzOptionSpec>[] ownRows) =>
+        CreateFrom(SharedRows, ownRows);
+
+    /// <summary>Builds a table from <paramref name="baseRows"/> and the rows of one command.</summary>
+    internal static Dictionary<string, FuzzOptionSpec> CreateFrom(
+        IEnumerable<KeyValuePair<string, FuzzOptionSpec>> baseRows,
+        params KeyValuePair<string, FuzzOptionSpec>[] ownRows)
     {
         var table = new Dictionary<string, FuzzOptionSpec>(StringComparer.Ordinal);
-        foreach (var row in SharedRows)
+        foreach (var row in baseRows)
         {
             table.Add(row.Key, row.Value);
         }

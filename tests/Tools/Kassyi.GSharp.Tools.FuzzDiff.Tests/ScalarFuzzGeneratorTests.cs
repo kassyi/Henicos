@@ -155,7 +155,8 @@ public class ScalarFuzzGeneratorTests
             // mutant: ScalarFuzzGenerator.EmitRandomStatement() line 365: state.Statements.Add($"var {newName} = 0;"); (triggers CS0029 on bool local)
             // input: seed = 0UL .. 99UL, dialect in ["Cpu", "Cuda"]
             Assert.Empty(csErrors);
-            // mutant: FuzzScalarLocals.Initialize(): state.Statements.Add("object v_heap = new object();"); (triggers GSH0001)
+            // mutant: FuzzScalarLocals.Initialize(): state.Statements.Add("object v_heap = new object();");
+            // (triggers GSH0001)
             // input: seed = 0UL .. 99UL, dialect in ["Cpu", "Cuda"]
             Assert.Empty(gshDiags);
         }

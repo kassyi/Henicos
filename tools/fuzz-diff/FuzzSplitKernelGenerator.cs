@@ -72,7 +72,8 @@ internal static class FuzzSplitKernelGenerator
             split: true);
     }
 
-    private static List<string> LocalNames(KernelGenerationState state)
+    /// <summary>The names of the locals of <paramref name="state"/>, in declaration order.</summary>
+    internal static List<string> LocalNames(KernelGenerationState state)
     {
         var localNames = new List<string>(state.Locals.Count);
         foreach (var local in state.Locals)

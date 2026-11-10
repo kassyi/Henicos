@@ -161,10 +161,33 @@ public sealed class ScalarFuzzGenerator
                 FuzzSplitKernelEmitter.ChooseForms(kernelSeed, _options.SwarmFocus));
         }
 
+        var state = CreateScalarState(kernelSeed, size);
+        EmitScalarBody(state, size);
+
+        string caseHeader = string.Create(
+            CultureInfo.InvariantCulture,
+            $"// fuzz-seed: {FuzzRandom.FormatSeed(kernelSeed)}");
+        string caseProperty = FuzzCaseEmitter.RenderDifferentialCaseProperty(
+            _options.KernelClassName,
+            kernelName,
+            _options.InputSeed,
+            caseHeader);
+        return new GeneratedKernelSpec(
+            kernelName,
+            kernelSeed,
+            size,
+            RenderKernelMethod(kernelName, kernelSeed, size, state),
+            caseProperty,
+            FuzzSplitKernelGenerator.LocalNames(state),
+            state.Statements.ToArray());
+    }
+
+    private KernelGenerationState CreateScalarState(ulong kernelSeed, int size)
+    {
         var rng = new FuzzRandom(kernelSeed);
         var swarm = FuzzSwarmConfig.Create(rng, _options.SwarmFocus);
         double interferenceProb = Math.Clamp(_options.InterferenceProbability, 0.25, 0.60);
-        var state = new KernelGenerationState(
+        return new KernelGenerationState(
             rng,
             size,
             interferenceProb,
@@ -172,7 +195,11 @@ public sealed class ScalarFuzzGenerator
             swarm,
             _options.KernelClassName,
             _deviceFunctions);
+    }
 
+    // The locals, the core statements of each emitter, the random statements and the checksum folds
+    private static void EmitScalarBody(KernelGenerationState state, int size)
+    {
         FuzzScalarLocals.Initialize(state);
         FuzzCompositeExpressionEmitter.InitializeCompositeLocals(state);
 
@@ -192,29 +219,6 @@ public sealed class ScalarFuzzGenerator
         }
 
         FuzzChecksumEmitter.EmitChecksumFoldAll(state);
-
-        string kernelMethod = RenderKernelMethod(kernelName, kernelSeed, size, state);
-        string caseHeader = string.Create(CultureInfo.InvariantCulture, $"// fuzz-seed: {FuzzRandom.FormatSeed(kernelSeed)}");
-        string caseProperty = FuzzCaseEmitter.RenderDifferentialCaseProperty(
-            _options.KernelClassName,
-            kernelName,
-            _options.InputSeed,
-            caseHeader);
-
-        var localNames = new List<string>(state.Locals.Count);
-        foreach (var local in state.Locals)
-        {
-            localNames.Add(local.Name);
-        }
-
-        return new GeneratedKernelSpec(
-            kernelName,
-            kernelSeed,
-            size,
-            kernelMethod,
-            caseProperty,
-            localNames,
-            state.Statements.ToArray());
     }
 
     /// <summary>Builds a division or remainder expression with an inline ternary guard on the divisor.</summary>
