@@ -115,7 +115,7 @@ using global::Kassyi.GSharp.Core;
 using global::Kassyi.GSharp.Runtime.Interop;
 using static global::Kassyi.GSharp.Core.ManagedGpuContext;
 using global::Kassyi.ZeroAlloc.Linq;
-#pragma warning disable CS0162, CS0164, CS0219, CS0649, CS0728, CS1718
+#pragma warning disable CS0162, CS0164, CS0219, CS0649, CS1718
 namespace Kassyi.GSharp.Tests.Shared.Differential
 {
 public partial class LanguageControlAndResourceDifferentialKernels
@@ -6367,7 +6367,7 @@ Slot = tid,
 State = x
 };
 int mutGetterRead;
-using (exprGuard)
+using (var __gsharp_using_resource_0 = exprGuard)
 {
 exprGuard.State = x + 100;
 mutGetterRead = exprGuard.State;
@@ -6681,7 +6681,7 @@ Log = r,
 Slot = tid,
 State = x
 };
-using (exprGuard)
+using (var __gsharp_using_resource_0 = exprGuard)
 {
 exprGuard.State = x + 100;
 }

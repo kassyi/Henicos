@@ -85,11 +85,9 @@ internal static class WrapperEmitter
     // CS0164 = Lowered state machines preserve user labels (e.g. sync:) or synthesized branch targets (__gsharp_sg_next_<n>) that no jump targets
     // CS0219 = Lowered state machines declare locals (e.g. int unused = 0) that are assigned but never read
     // CS0649 = Internal frame fields are populated by the runtime rather than C# assignment
-    // CS0728 = The managed version copies the user's using (<local>) statement and the assignments to that local; C#
-    //          already reports them at the user's source, where the user can suppress them
     // CS1718 = Lowered switch/pattern dispatch performs __gsharp_switch_temp_<n> != __gsharp_switch_temp_<n> self-comparisons for NaN detection
     private const string GeneratedCSharpWarningSuppressions =
-        "#pragma warning disable CS0162, CS0164, CS0219, CS0649, CS0728, CS1718";
+        "#pragma warning disable CS0162, CS0164, CS0219, CS0649, CS1718";
 
     // namespace <namespace> { <outer partial declarations> <accessibility> partial class <name>, without the namespace
     // for the global namespace. The generated part must declare the accessibility of the user's part, or the compiler

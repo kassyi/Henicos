@@ -45,6 +45,9 @@ internal sealed partial class ManagedExecutionRewriter(
     // The number of the next loop variable that a Gpu.ForUnroll becomes; found on the first visit, which is the body
     private int _nextUnrollId = -1;
 
+    // The number of the next hidden variable that a using (<variable>) statement declares
+    private int _nextUsingResourceId;
+
     public override SyntaxNode? Visit(SyntaxNode? node)
     {
         if (_nextUnrollId < 0 && node is not null)
