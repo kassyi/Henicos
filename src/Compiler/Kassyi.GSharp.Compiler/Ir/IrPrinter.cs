@@ -20,10 +20,13 @@ internal sealed class IrPrinter
     private readonly Dictionary<IrVariable, int> _temporaries;
     private readonly Dictionary<string, int> _temporaryCounts;
     private readonly IrExpressionPrinter _expressions;
+    private readonly bool _oneLine;
+    private bool _separatorPending;
 
-    private IrPrinter(SourceWriter writer, IrPrintOptions options, IrPrinter? outer = null)
+    private IrPrinter(SourceWriter writer, IrPrintOptions options, IrPrinter? outer = null, bool oneLine = false)
     {
         _writer = writer;
+        _oneLine = oneLine;
         _options = options;
         _temporaries = outer?._temporaries ?? [];
         _temporaryCounts = outer?._temporaryCounts ?? new Dictionary<string, int>(StringComparer.Ordinal);
@@ -70,6 +73,7 @@ internal sealed class IrPrinter
 
     private void WriteStatement(IrStatement statement)
     {
+        StartLine();
         switch (statement)
         {
             case IrBlock block:
@@ -88,8 +92,9 @@ internal sealed class IrPrinter
                 WriteIf(@if);
                 break;
             case IrOpaqueStatement opaque:
-                _writer.AppendLine(
-                    $"opaque:{IrPrintText.Reason(opaque.Reason)}: {IrPrintText.FirstLine(opaque.Syntax)}");
+                _writer.Append(
+                    $"opaque:{IrPrintText.Reason(opaque.Reason)}: {IrPrintText.SyntaxKindName(opaque.Syntax)}");
+                EndLine();
                 break;
             default:
                 throw new InvalidOperationException("The IR printer has no form for " + statement.GetType().Name + ".");
@@ -99,18 +104,21 @@ internal sealed class IrPrinter
     private void WriteExpressionStatement(IrExpressionStatement statement)
     {
         _expressions.WriteExpression(statement.Expression);
-        _writer.AppendLine();
+        EndLine();
     }
 
     private void WriteBlock(IrBlock block)
     {
-        _writer.AppendLine("{");
+        _writer.Append("{");
+        EndLine();
         foreach (var inner in block.Statements)
         {
             WriteStatement(inner);
         }
 
-        _writer.AppendLine("}");
+        StartLine();
+        _writer.Append("}");
+        EndLine();
     }
 
     private void WriteDeclaration(IrLocalDeclaration declaration)
@@ -124,7 +132,7 @@ internal sealed class IrPrinter
             _expressions.WriteExpression(initializer);
         }
 
-        _writer.AppendLine();
+        EndLine();
     }
 
     private void WriteReturn(IrReturn @return)
@@ -136,18 +144,20 @@ internal sealed class IrPrinter
             _expressions.WriteExpression(value);
         }
 
-        _writer.AppendLine();
+        EndLine();
     }
 
     private void WriteIf(IrIf @if)
     {
         _writer.Append("if ");
         _expressions.WriteExpression(@if.Condition);
-        _writer.AppendLine();
+        EndLine();
         WriteStatement(@if.Then);
         if (@if.Else is { } @else)
         {
-            _writer.AppendLine("else");
+            StartLine();
+            _writer.Append("else");
+            EndLine();
             WriteStatement(@else);
         }
     }
@@ -156,29 +166,27 @@ internal sealed class IrPrinter
     public string PrintInline(IrStatement statement)
     {
         using var writer = new SourceWriter();
-        new IrPrinter(writer, _options, this).WriteStatement(statement);
-        return JoinLines(writer.ToString());
+        new IrPrinter(writer, _options, this, oneLine: true).WriteStatement(statement);
+        return writer.ToString();
     }
 
-    // The lines of <text> joined by spaces (a '\r' dropped, a '\n' a space), without trailing white space
-    private static string JoinLines(string text)
+    // Ends a line; on one line, the next line starts after a space instead
+    private void EndLine()
     {
-        var buffer = new char[text.Length];
-        var length = 0;
-        foreach (var character in text)
+        if (_oneLine)
         {
-            if (character != '\r')
-            {
-                buffer[length++] = character == '\n' ? ' ' : character;
-            }
+            _separatorPending = true;
         }
-
-        while (length > 0 && char.IsWhiteSpace(buffer[length - 1]))
+        else
         {
-            length--;
+            _writer.AppendLine();
         }
+    }
 
-        return new string(buffer, 0, length);
+    private void StartLine()
+    {
+        _writer.AppendIf(_separatorPending, " ");
+        _separatorPending = false;
     }
 
     /// <summary>Writes a variable: its name, with the region of an inlined copy, or a temporary by its

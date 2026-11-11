@@ -49,24 +49,8 @@ internal static class IrPrintText
         _ => "?"
     };
 
-    /// <summary>The first line of the text of a syntax node.</summary>
-    public static string FirstLine(SyntaxNode syntax)
-    {
-        // The text includes the trivia; the node's own text (without trivia) starts at its span
-        var text = syntax.GetText();
-        var start = syntax.Span.Start - syntax.FullSpan.Start;
-        var end = start + syntax.Span.Length;
-        for (var i = start; i < end; i++)
-        {
-            if (text[i] is '\r' or '\n')
-            {
-                end = i;
-                break;
-            }
-        }
-
-        return text.ToString(TextSpan.FromBounds(start, end));
-    }
+    /// <summary>The syntax node of an opaque leaf: its kind (<c>SimpleLambdaExpression</c>), not its source text.</summary>
+    public static string SyntaxKindName(SyntaxNode syntax) => syntax.Kind().ToString();
 
     /// <summary>The name of an opaque reason.</summary>
     public static string Reason(IrOpaqueReason reason) => reason switch
