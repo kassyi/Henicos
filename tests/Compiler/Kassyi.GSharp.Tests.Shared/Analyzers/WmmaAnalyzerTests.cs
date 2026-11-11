@@ -68,4 +68,38 @@ public class WmmaAnalyzerTests : TranspilerTestBase
         Assert.Equal((58, 29), (span8.StartLinePosition.Line, span8.StartLinePosition.Character));
         Assert.Equal((58, 46), (span8.EndLinePosition.Line, span8.EndLinePosition.Character));
     }
+
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public async Task Wmma_CustomMarkerImplementingIWmmaShapeOrLayout_ReportsGSH0076()
+    {
+        const string source = """
+            using Kassyi.GSharp.Core;
+
+            namespace TestNamespace;
+
+            public readonly struct CustomWmmaShape : IWmmaShape;
+            public readonly struct CustomWmmaLayout : IWmmaLayout;
+
+            public static class TestKernel
+            {
+                [GpuKernel]
+                public static void KernelWithCustomMarkers()
+                {
+                    CustomWmmaShape badShape = default;
+                    CustomWmmaLayout badLayout = default;
+                }
+            }
+            """;
+
+        var diagnostics = (await RoslynTestUtility.GetAnalyzerDiagnosticsAsync(source, s_analyzer))
+            .Where(static d => d.Id == GSharpDiagnostics.UnsupportedWarpMatrixOperation.Id)
+            .OrderBy(static d => d.Location.SourceSpan.Start)
+            .ToArray();
+
+        Assert.Equal(2, diagnostics.Length);
+        Assert.All(diagnostics, static d => Assert.Equal(DiagnosticSeverity.Error, d.Severity));
+        Assert.Contains("CustomWmmaShape", diagnostics[0].GetMessage());
+        Assert.Contains("CustomWmmaLayout", diagnostics[1].GetMessage());
+    }
 }
