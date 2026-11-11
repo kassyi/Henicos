@@ -3,8 +3,8 @@
 namespace Kassyi.GSharp.Tools.FuzzDiff.Tests;
 
 /// <summary>
-/// Pins the error text and the accepted spellings of the options that <c>gen</c>, <c>dedup</c> and <c>promote</c> read
-/// through the shared option table, so that a change to the table shows up here.
+/// Pins the error text and the accepted spellings of the options that <c>gen</c>, <c>reduce</c>, <c>dedup</c>,
+/// <c>promote</c> and <c>compare</c> read through the shared option table, so that a change to the table shows up here.
 /// </summary>
 [TestTarget(ExecutionTarget.CpuExecution)]
 [Category(TestCategory.Unit)]
@@ -96,5 +96,39 @@ public class CommandOptionErrorTests
         Assert.False(parsed);
         Assert.Null(options);
         Assert.Equal("Invalid --fuzz-seed 'zz'.", error);
+    }
+
+    [Theory]
+    [Scenario(TestScenario.SadPath)]
+    [InlineData("--work-dir=")]
+    [InlineData("--repo-root=")]
+    public void Reduce_EmptyDirectory_ReportsADirectoryPath(string argument)
+    {
+        bool parsed = ReduceCommand.TryParseOptions(
+            ["--source", "a.cu.cs", argument],
+            out var options,
+            out _,
+            out string? error);
+
+        Assert.False(parsed);
+        Assert.Null(options);
+        Assert.Equal($"{argument[..^1]} requires a directory path.", error);
+    }
+
+    [Theory]
+    [Scenario(TestScenario.SadPath)]
+    [InlineData("--work-dir=")]
+    [InlineData("--repo-root=")]
+    public void Compare_EmptyDirectory_ReportsADirectoryPath(string argument)
+    {
+        bool parsed = CompareCommand.TryParseOptions(
+            ["--base", "main", argument],
+            out var options,
+            out _,
+            out string? error);
+
+        Assert.False(parsed);
+        Assert.Null(options);
+        Assert.Equal($"{argument[..^1]} requires a directory path.", error);
     }
 }

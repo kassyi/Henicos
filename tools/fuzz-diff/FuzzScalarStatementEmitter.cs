@@ -223,7 +223,7 @@ internal static class FuzzScalarStatementEmitter
         state.Statements.Add($"{target.Name} = {fallbackRhs};");
     }
 
-    private static void EmitAssignmentStatement(KernelGenerationState state, ScalarLocalVariable target)
+    internal static void EmitAssignmentStatement(KernelGenerationState state, ScalarLocalVariable target)
     {
         string rhs = FuzzScalarExpressionEmitter.GenerateExpression(
             state, target.Type, depth: 0, maxDepth: 2 + (state.Size / 3));
@@ -279,7 +279,7 @@ internal static class FuzzScalarStatementEmitter
         state.Locals.Add(new ScalarLocalVariable(newName, newType));
     }
 
-    private static void EmitCompoundAssignmentStatement(KernelGenerationState state, ScalarLocalVariable target)
+    internal static void EmitCompoundAssignmentStatement(KernelGenerationState state, ScalarLocalVariable target)
     {
         var rng = state.Rng;
         string[] ops = ["+=", "-=", "*=", "/=", "%=", "&=", "|=", "^=", "<<=", ">>=", ">>>="];

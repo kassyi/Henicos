@@ -16,11 +16,11 @@ public class UIntNegationAndConditionalTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_UIntNegation_IsComputedInLong() =>
+    public void UIntNegation_NativeKernelExecution_IsComputedInLong() =>
         UIntNegationAndConditionalScenarios.Negation(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_TargetTypedConditional_ConvertsBothBranches() =>
+    public void TargetTypedConditional_NativeKernelExecution_ConvertsBothBranchesToTargetType() =>
         UIntNegationAndConditionalScenarios.Conditional(s_runNative);
 }

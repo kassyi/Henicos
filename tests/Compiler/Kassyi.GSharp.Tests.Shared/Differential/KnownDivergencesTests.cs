@@ -28,7 +28,7 @@ public class KnownDivergencesTests
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_KnownDivergences_EveryEntryNamesAnExistingCaseAndColumn()
+    public void KnownDivergences_Integrity_EveryEntryNamesAnExistingCaseAndColumn()
     {
         var cases = CollectCases();
         var problems = new List<string>();
@@ -66,7 +66,7 @@ public class KnownDivergencesTests
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_KnownDivergences_IssuesAreListedOnceAndNoCellIsCoveredTwice()
+    public void KnownDivergences_Integrity_IssuesAreListedOnceAndNoCellIsCoveredTwice()
     {
         var problems = new List<string>();
         var duplicates = KnownDivergences.Issues
@@ -106,7 +106,7 @@ public class KnownDivergencesTests
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_KnownDivergences_EveryIssueIsOpenAndHasTheRecordedTitle()
+    public void KnownDivergences_GitHub_EveryIssueIsOpenAndHasTheRecordedTitle()
     {
         var issues = KnownDivergences.Issues;
         var query = new StringBuilder(
@@ -140,7 +140,7 @@ public class KnownDivergencesTests
                 );
             }
 
-            if (title != issue.Title)
+            if (WithoutTemplatePrefix(title) != WithoutTemplatePrefix(issue.Title))
             {
                 problems.Add(
                     $"#{issue.Number} (line {issue.Line}) is titled \"{title}\" on GitHub, not \"{issue.Title}\""
@@ -154,13 +154,21 @@ public class KnownDivergencesTests
         );
     }
 
+    // The issue templates put the kind in front of the title ("[Bug]: ", "[Cleanup]: "), and issues get that prefix
+    // when they are moved onto a template; the recorded title is the part after it.
+    private static string WithoutTemplatePrefix(string title)
+    {
+        int end = title.IndexOf("]: ", StringComparison.Ordinal);
+        return title.StartsWith("[", StringComparison.Ordinal) && end > 0 ? title.Substring(end + 3) : title;
+    }
+
     // ---- The reader ----
 
     [Fact]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_KnownDivergencesParse_ExpandsColumnsAndReadsPathsAndHosts()
+    public void KnownDivergences_Parse_ExpandsColumnsAndReadsPathsAndHosts()
     {
         // mutant: KnownDivergences.cs ParsePaths `paths |= ...` -> `paths = ...` (keeps only the last path)
         // mutant: KnownDivergences.cs ParseHosts returns DiffHost.Any when hosts is given
@@ -191,7 +199,7 @@ public class KnownDivergencesTests
     [InlineData("EntryWithoutColumns.yaml", "line 4: 'columns' must be a non-empty list")]
     [InlineData("EntryWithoutPaths.yaml", "line 4: 'paths' must be a non-empty list")]
     [InlineData("EntryUnknownKey.yaml", "line 4: Unknown key 'host' in the entry that starts here")]
-    public void Test_KnownDivergencesParse_RejectsAnEntryOutsideTheFormat(string file, string expectedMessage)
+    public void KnownDivergences_Parse_RejectsAnEntryOutsideTheFormat(string file, string expectedMessage)
     {
         string yaml = RoslynTestUtility.ReadTestCase(TestCaseFolder + file);
 
@@ -210,7 +218,7 @@ public class KnownDivergencesTests
     [InlineData("IssueNotInSequence.yaml", "line 1: Expected a sequence for the document")]
     [InlineData("IssueSyntaxError.yaml", "line 3:")]
     [InlineData("IssueUnknownKey.yaml", "line 1: Unknown key 'entry' in the issue block that starts here")]
-    public void Test_KnownDivergencesParse_RejectsAnIssueBlockOutsideTheFormat(string file, string expectedMessage)
+    public void KnownDivergences_Parse_RejectsAnIssueBlockOutsideTheFormat(string file, string expectedMessage)
     {
         string yaml = RoslynTestUtility.ReadTestCase(TestCaseFolder + file);
 

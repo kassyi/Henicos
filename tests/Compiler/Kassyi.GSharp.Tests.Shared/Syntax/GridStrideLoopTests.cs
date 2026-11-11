@@ -17,22 +17,22 @@ public class GridStrideLoopTests : TranspilerTestBase
     [SkippableTheory]
     [Scenario(TestScenario.Boundary)]
     [MemberData(nameof(GridStrideLoopScenarios.LaunchIndices), MemberType = typeof(GridStrideLoopScenarios))]
-    public void Test_EveryIndex_IsVisitedOnce(int launch) =>
+    public void Execute_EveryIndex_VisitsOnce(int launch) =>
         GridStrideLoopScenarios.CountVisits(s_runNative, GridStrideLoopScenarios.Get(launch), withContext: false);
 
     [SkippableTheory]
     [Scenario(TestScenario.Boundary)]
     [MemberData(nameof(GridStrideLoopScenarios.LaunchIndices), MemberType = typeof(GridStrideLoopScenarios))]
-    public void Test_EveryIndex_IsVisitedOnce_WithContext(int launch) =>
+    public void Execute_EveryIndexWithContext_VisitsOnce(int launch) =>
         GridStrideLoopScenarios.CountVisits(s_runNative, GridStrideLoopScenarios.Get(launch), withContext: true);
 
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_Count_IsReadOnce() => GridStrideLoopScenarios.CountReadOnce(s_runNative);
+    public void Execute_CountExpression_IsReadOnce() => GridStrideLoopScenarios.CountReadOnce(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_CountCall_RunsOncePerThread() => GridStrideLoopScenarios.CountCallOnce(s_runNative);
+    public void Execute_CountCall_RunsOncePerThread() => GridStrideLoopScenarios.CountCallOnce(s_runNative);
 
 #if !GSHARP_CPU
     // 2^31 and 2^32 threads: too many for the CPU paths, which run every thread
@@ -40,7 +40,7 @@ public class GridStrideLoopTests : TranspilerTestBase
     [Scenario(TestScenario.Boundary)]
     [InlineData(1u << 21, 5000)]
     [InlineData(1u << 22, 5000)]
-    public void Test_HugeLaunch_VisitsEveryIndexOnce(uint gridX, int count) =>
+    public void Execute_HugeLaunch_VisitsEveryIndexOnce(uint gridX, int count) =>
         GridStrideLoopScenarios.CountVisitsOnAHugeLaunch(s_runNative, gridX, count);
 #endif
 }

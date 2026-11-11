@@ -97,7 +97,7 @@ public sealed class UnsignedWidthCpuFallbackTests
     [Theory]
     [MemberData(nameof(WidthPairs))]
     [Scenario(TestScenario.Boundary)]
-    public void FollowsTheSameRules(int aWords, int bWords)
+    public void UnsignedWidth_CpuFallbackWithVaryingWords_FollowsTheSameRules(int aWords, int bWords)
     {
         GpuKernelLoader.ForceCpuFallback = true;
         try
@@ -237,21 +237,39 @@ internal static class UnsignedCases
     public static void DirectShifts(GpuWorkspace workspace)
     {
         var value = (BigInteger)0x380000002L;
-        var modulus = BigInteger.One << 64;
         using var x = Value(workspace, value, 2);
         using var r = new GpuBigUInt(workspace, 2);
         foreach (var count in new[] { -33, -1, 1, 33 })
         {
-            GpuBigIntMath.ShiftLeft(x, count, r);
-            Assert.Equal((count >= 0 ? value << count : value >> -count) % modulus, r.ToBigInteger());
-            GpuBigIntMath.ShiftRight(x, count, r);
-            Assert.Equal((count >= 0 ? value >> count : value << -count) % modulus, r.ToBigInteger());
+            // A buffer of the operand width is the checked form: a value that does not fit is a domain error
+            ShiftInto(workspace, () => GpuBigIntMath.ShiftLeft(x, count, r), r,
+                count >= 0 ? value << count : value >> -count);
+            ShiftInto(workspace, () => GpuBigIntMath.ShiftRight(x, count, r), r,
+                count >= 0 ? value >> count : value << -count);
         }
 
         GpuBigIntMath.ShiftLeft(x, int.MinValue, r);
         Assert.Equal(BigInteger.Zero, r.ToBigInteger());
-        GpuBigIntMath.ShiftRight(x, int.MinValue, r);
-        Assert.Equal(BigInteger.Zero, r.ToBigInteger());
+
+        // A shift right by int.MinValue is a shift left by 2^31 bits
+        Assert.Throws<ArgumentOutOfRangeException>(() => GpuBigIntMath.ShiftRight(x, int.MinValue, r));
+    }
+
+    private static void ShiftInto(GpuWorkspace workspace, Action shift, GpuBigUInt r, BigInteger expected)
+    {
+        if (expected.GetBitLength() > 32L * r.NumWords)
+        {
+            Assert.Throws<OverflowException>(() =>
+            {
+                shift();
+                workspace.ThrowIfDeviceErrors();
+            });
+            return;
+        }
+
+        shift();
+        workspace.ThrowIfDeviceErrors();
+        Assert.Equal(expected, r.ToBigInteger());
     }
 
     public static void Assignments(GpuWorkspace workspace)

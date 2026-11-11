@@ -105,6 +105,9 @@ public static class AstLoweringPipeline
         var splitPoints = CollectSplitPoints(body, bodyModel);
         var treeOrdinal = SemanticModelExtensions.GetSyntaxTreeOrdinal(bodyModel?.Compilation, body.SyntaxTree);
         var annotatedBody = ToBlock(new SpanAnnotationRewriter(splitPoints, treeOrdinal).Visit(body) ?? body, returnsValue);
+        // [WHY] Right after the annotations, which tell where a copied call was written: a call that C# removes
+        // takes its split annotations and its arguments with it, before any pass spills or splits them (#1540)
+        annotatedBody = RemovedCallEraser.Erase(annotatedBody, bodyModel);
         // [WHY] Before every other pass, which would otherwise lower Stryker's switches (barriers inside them included)
         // into the state machine (#1191)
         annotatedBody = MutantSwitchRemover.Remove(annotatedBody, bodyModel);
@@ -153,26 +156,31 @@ public static class AstLoweringPipeline
 
         foreach (var node in body.DescendantNodes())
         {
-            if (node is not InvocationExpressionSyntax invocation ||
-                bodyModel.GetSymbol(invocation) is not IMethodSymbol callee)
+            if (node is InvocationExpressionSyntax invocation &&
+                bodyModel.GetSymbol(invocation) is IMethodSymbol callee &&
+                ClassifySplitPoint(callee, bodyModel.Compilation) is { } annotation)
             {
-                continue;
-            }
-
-            if (SuspensionAnalysis.IsSuspendingFunction(callee, bodyModel.Compilation))
-            {
-                splitPoints[invocation.Span] = callee.ReturnsVoid
-                    ? new SyntaxAnnotation(LoweringAnnotations.SuspendingCallAnnotationKind)
-                    : new SyntaxAnnotation(LoweringAnnotations.SuspendingCallAnnotationKind,
-                        LoweringAnnotations.ValueReturningCallAnnotationData);
-            }
-            else if (LoweringAnnotations.CreateSyncIntrinsicAnnotation(SyncIntrinsicClassifier.Classify(callee)) is { } sync)
-            {
-                splitPoints[invocation.Span] = sync;
+                splitPoints[invocation.Span] = annotation;
             }
         }
 
         return splitPoints;
+    }
+
+    /// <summary>
+    /// The annotation of a call of <paramref name="callee"/> that splits the state machine, or <see langword="null"/>.
+    /// </summary>
+    internal static SyntaxAnnotation? ClassifySplitPoint(IMethodSymbol callee, Compilation compilation)
+    {
+        if (SuspensionAnalysis.IsSuspendingFunction(callee, compilation))
+        {
+            return callee.ReturnsVoid
+                ? new SyntaxAnnotation(LoweringAnnotations.SuspendingCallAnnotationKind)
+                : new SyntaxAnnotation(LoweringAnnotations.SuspendingCallAnnotationKind,
+                    LoweringAnnotations.ValueReturningCallAnnotationData);
+        }
+
+        return LoweringAnnotations.CreateSyncIntrinsicAnnotation(SyncIntrinsicClassifier.Classify(callee));
     }
 
     // [WHY] The caller (the launcher, for a kernel) passes the original arguments again on every resume, so every

@@ -15,7 +15,7 @@ public class CompileKernelTaskBaseTests
     }
 
     [Fact]
-    public void Test_CompileKernelTaskBase_ProcessSourceReturnsNull_Fails()
+    public void CompileKernelTaskBase_ProcessSourceReturnsNull_Fails()
     {
         using var ctx = new CompileTaskTestContext();
         var task = new TestCompileKernelTask
@@ -28,7 +28,7 @@ public class CompileKernelTaskBaseTests
     }
 
     [Fact]
-    public void Test_CompileKernelTaskBase_SafeDeleteFiles_IgnoresExceptions()
+    public void CompileKernelTaskBase_SafeDeleteFiles_IgnoresExceptions()
     {
         var task = new TestCompileKernelTask();
         // [WHY] Intentionally pass null element to verify defensive guard against null file paths in SafeDeleteFiles.
@@ -39,7 +39,7 @@ public class CompileKernelTaskBaseTests
     }
 
     [Fact]
-    public void Test_CompileKernelTaskBase_GetVcvarsEnvironment_CachesAMissingResult()
+    public void CompileKernelTaskBase_GetVcvarsEnvironment_CachesAMissingResult()
     {
         using var ctx = new CompileTaskTestContext();
         ctx.Runner.OverrideVswhere = true;
@@ -63,7 +63,7 @@ public class CompileKernelTaskBaseTests
     }
 
     [Fact]
-    public void Test_CompileKernelTaskBase_GetVcvarsEnvironment_EmptyVswhereOutput()
+    public void CompileKernelTaskBase_GetVcvarsEnvironment_EmptyVswhereOutput()
     {
         using var ctx = new CompileTaskTestContext();
         ctx.Runner.VswhereOutput = "   ";
@@ -72,7 +72,7 @@ public class CompileKernelTaskBaseTests
     }
 
     [Fact]
-    public void Test_CompileKernelTaskBase_GetVcvarsEnvironment_VcvarsallMissing()
+    public void CompileKernelTaskBase_GetVcvarsEnvironment_VcvarsallMissing()
     {
         using var ctx = new CompileTaskTestContext();
         ctx.Runner.VswhereOutput = ctx.TempDir;
@@ -81,7 +81,7 @@ public class CompileKernelTaskBaseTests
     }
 
     [Fact]
-    public void Test_CompileKernelTaskBase_GetVcvarsEnvironment_CmdFails()
+    public void CompileKernelTaskBase_GetVcvarsEnvironment_CmdFails()
     {
         using var ctx = new CompileTaskTestContext();
         ctx.Runner.CmdExitCode = 1;

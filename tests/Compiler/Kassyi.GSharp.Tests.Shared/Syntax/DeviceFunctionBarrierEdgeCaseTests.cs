@@ -16,7 +16,7 @@ public class DeviceFunctionBarrierEdgeCaseTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_SharedMemoryOfSuspendingCallee_DoesNotAliasCallerBuffer()
+    public void SharedMemoryOfSuspendingCallee_CallerAndCalleeBuffers_DoesNotAliasCallerBuffer()
     {
         EnsureCapability(DialectCapabilities.SharedMemory);
         DeviceFunctionBarrierEdgeCaseScenarios.CallerAndSuspendingCalleeSharedMemory(s_runNative);
@@ -24,7 +24,7 @@ public class DeviceFunctionBarrierEdgeCaseTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_SharedMemoryOfNonSuspendingCallee_DoesNotAliasCallerBuffer()
+    public void SharedMemoryOfNonSuspendingCallee_CallerAndCalleeBuffers_DoesNotAliasCallerBuffer()
     {
         EnsureCapability(DialectCapabilities.SharedMemory);
         DeviceFunctionBarrierEdgeCaseScenarios.CallerAndPlainCalleeSharedMemory(s_runNative);
@@ -32,7 +32,7 @@ public class DeviceFunctionBarrierEdgeCaseTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_SharedMemoryOfCallee_IsSharedAcrossCallSites()
+    public void SharedMemoryOfCallee_MultipleCallSites_IsSharedAcrossCallSites()
     {
         EnsureCapability(DialectCapabilities.SharedMemory);
         DeviceFunctionBarrierEdgeCaseScenarios.SharedMemoryPerDeclaration(s_runNative);
@@ -42,21 +42,21 @@ public class DeviceFunctionBarrierEdgeCaseTests : TranspilerTestBase
     [Scenario(TestScenario.HappyPath)]
     [InlineData(1)]
     [InlineData(0)]
-    public void Test_SuspendingCallOnRightOfAnd_RunsOnlyWhenLeftIsTrue(int enabled) =>
+    public void SuspendingCallOnRightOfAnd_ConditionalBranch_RunsOnlyWhenLeftIsTrue(int enabled) =>
         DeviceFunctionBarrierEdgeCaseScenarios.ShortCircuitAnd(s_runNative, enabled);
 
     [SkippableTheory]
     [Scenario(TestScenario.HappyPath)]
     [InlineData(0)]
     [InlineData(1)]
-    public void Test_SuspendingCallOnRightOfOr_RunsOnlyWhenLeftIsFalse(int skip) =>
+    public void SuspendingCallOnRightOfOr_ConditionalBranch_RunsOnlyWhenLeftIsFalse(int skip) =>
         DeviceFunctionBarrierEdgeCaseScenarios.ShortCircuitOr(s_runNative, skip);
 
     [SkippableTheory]
     [Scenario(TestScenario.HappyPath)]
     [InlineData(1)]
     [InlineData(0)]
-    public void Test_SuspendingCallInConditionalOperator_RunsOnlyOnSelectedBranch(int useShuffle) =>
+    public void SuspendingCallInConditionalOperator_SelectedBranch_RunsOnlyOnSelectedBranch(int useShuffle) =>
         DeviceFunctionBarrierEdgeCaseScenarios.ConditionalOperator(s_runNative, useShuffle);
 
     [SkippableTheory]
@@ -64,7 +64,7 @@ public class DeviceFunctionBarrierEdgeCaseTests : TranspilerTestBase
     [InlineData(0)]
     [InlineData(1)]
     [InlineData(5)]
-    public void Test_SuspendingCallInWhileCondition_IsEvaluatedEveryIteration(int limit) =>
+    public void SuspendingCallInWhileCondition_LoopExecution_IsEvaluatedEveryIteration(int limit) =>
         DeviceFunctionBarrierEdgeCaseScenarios.WhileCondition(s_runNative, limit);
 
     [SkippableTheory]
@@ -72,29 +72,29 @@ public class DeviceFunctionBarrierEdgeCaseTests : TranspilerTestBase
     [InlineData(0)]
     [InlineData(1)]
     [InlineData(5)]
-    public void Test_SuspendingCallInForIncrementor_IsEvaluatedEveryIteration(int limit) =>
+    public void SuspendingCallInForIncrementor_LoopExecution_IsEvaluatedEveryIteration(int limit) =>
         DeviceFunctionBarrierEdgeCaseScenarios.ForIncrementor(s_runNative, limit);
 
     [SkippableTheory]
     [Scenario(TestScenario.Boundary)]
     [InlineData(0)]
     [InlineData(5)]
-    public void Test_SuspendingCallInDoWhileCondition_IsEvaluatedEveryIteration(int limit) =>
+    public void SuspendingCallInDoWhileCondition_LoopExecution_IsEvaluatedEveryIteration(int limit) =>
         DeviceFunctionBarrierEdgeCaseScenarios.DoWhileCondition(s_runNative, limit);
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_ExpressionBodiedSuspendingDeviceFunction_IsLowered() =>
+    public void ExpressionBodiedSuspendingDeviceFunction_KernelExecution_LowersAndExecutes() =>
         DeviceFunctionBarrierEdgeCaseScenarios.ExpressionBodyShiftUp(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_ExpressionBodiedKernelCallingSuspendingFunction_IsLowered() =>
+    public void ExpressionBodiedKernelCallingSuspendingFunction_KernelExecution_LowersAndExecutes() =>
         DeviceFunctionBarrierEdgeCaseScenarios.ExpressionBodiedKernel(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_RefParameterOfSuspendingCallee_KeepsWritesAcrossResumes()
+    public void RefParameterOfSuspendingCallee_MultipleResumes_KeepsWritesAcrossResumes()
     {
         EnsureCapability(DialectCapabilities.SharedMemory);
         DeviceFunctionBarrierEdgeCaseScenarios.RefParameter(s_runNative);
@@ -102,7 +102,7 @@ public class DeviceFunctionBarrierEdgeCaseTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_RefParameterPassedToNestedSuspendingCallee_KeepsWritesAcrossResumes()
+    public void RefParameterPassedToNestedSuspendingCallee_NestedResumes_KeepsWritesAcrossResumes()
     {
         EnsureCapability(DialectCapabilities.SharedMemory);
         DeviceFunctionBarrierEdgeCaseScenarios.RefParameterChain(s_runNative);
@@ -110,7 +110,7 @@ public class DeviceFunctionBarrierEdgeCaseTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_RefElementArgumentWithSideEffect_IsEvaluatedOnceAcrossResumes()
+    public void RefElementArgumentWithSideEffect_MultipleResumes_IsEvaluatedOnceAcrossResumes()
     {
         EnsureCapability(DialectCapabilities.SharedMemory);
         DeviceFunctionBarrierEdgeCaseScenarios.RefElementArgument(s_runNative);
@@ -121,7 +121,7 @@ public class DeviceFunctionBarrierEdgeCaseTests : TranspilerTestBase
     [InlineData(0)]
     [InlineData(1)]
     [InlineData(3)]
-    public void Test_OutArgumentDeclaredInLoop_IsWrittenEveryIteration(int rounds)
+    public void OutArgumentDeclaredInLoop_MultipleIterations_IsWrittenEveryIteration(int rounds)
     {
         EnsureCapability(DialectCapabilities.SharedMemory);
         DeviceFunctionBarrierEdgeCaseScenarios.OutParameterInLoop(s_runNative, rounds);

@@ -11,7 +11,7 @@ public class TranspilerExceptionTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_TranspilerException_IsAnInternalErrorOfTheGeneratorOnly(string dialect)
+    public async Task TranspilerException_ErrorClassification_IsInternalErrorOfGeneratorOnly(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/TranspilerException.cu.cs", dialect);
 

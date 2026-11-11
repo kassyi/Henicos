@@ -14,7 +14,7 @@ public class GpuBigFloatTests
     [Scenario(TestScenario.HappyPath)]
     [InlineData(false, false, false)] // (+10) + (+2) = +12
     [InlineData(true, true, true)]    // (-10) + (-2) = -12
-    public void Test_SignRules_Addition(bool isNegA, bool isNegB, bool expectedIsNeg)
+    public void SignRules_Addition(bool isNegA, bool isNegB, bool expectedIsNeg)
     {
         using var scope = new GpuKernelLoader.CudaContextScope();
         using var context = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
@@ -36,7 +36,7 @@ public class GpuBigFloatTests
     [InlineData(0)]
     [InlineData(1)]
     [InlineData(-1)]
-    public void Test_ExponentArithmetic_BoundaryValues(int exp)
+    public void UFloat_ExtremeExponents_PreservesSignificandAndExponent(int exp)
     {
         using var scope = new GpuKernelLoader.CudaContextScope();
         using var context = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
@@ -51,7 +51,7 @@ public class GpuBigFloatTests
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_ZeroSignificandNormalization_FlushesToZeroExponent()
+    public void ZeroSignificandNormalization_FlushesToZeroExponent()
     {
         using var scope = new GpuKernelLoader.CudaContextScope();
         using var context = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
@@ -72,7 +72,7 @@ public class GpuBigFloatTests
 
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_DivisionByZeroSignificand_ThrowsOrDetectsZeroDivisor()
+    public void DivisionByZeroSignificand_ThrowsOrDetectsZeroDivisor()
     {
         using var scope = new GpuKernelLoader.CudaContextScope();
         using var context = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);

@@ -22,7 +22,7 @@ public class MemoryBudgetFixtureTests
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.Boundary)]
-    public void AllocatesPastBudget()
+    public void Allocate_PastBudget_TouchesAllBytes()
     {
         string? text = Environment.GetEnvironmentVariable(AllocationVariable);
         bool parsed = int.TryParse(text, NumberStyles.None, CultureInfo.InvariantCulture, out int value);

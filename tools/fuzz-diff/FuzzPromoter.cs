@@ -65,14 +65,21 @@ public static class FuzzPromoter
             normalizedColumn,
             fpResult.FailingPathsMask);
 
+        bool split = FuzzSplitOracle.IsSplitKernel(selectedMethod, root);
         string kernelFileContent = BuildReproKernelFile(root, renamedMethod, reproClassName, headerLine);
+        if (split)
+        {
+            kernelFileContent = FuzzSplitOracle.WithOracleTwins(kernelFileContent);
+        }
+
         string caseSnippetContent = BuildCaseSnippet(
             reproClassName,
             reproMethodName,
             inputSeed,
             headerLine,
             normalizedColumn,
-            knownDivergenceEntry);
+            knownDivergenceEntry,
+            split);
 
         return new PromotedDifferentialArtifacts(
             fingerprint,
@@ -102,14 +109,16 @@ public static class FuzzPromoter
         int inputSeed,
         string headerLine,
         string column,
-        string knownDivergenceEntry)
+        string knownDivergenceEntry,
+        bool split)
     {
         string caseProperty = FuzzCaseEmitter.RenderDifferentialCaseProperty(
             reproClassName,
             reproMethodName,
             inputSeed,
             headerLine,
-            column);
+            column,
+            split: split);
         return
             $$"""
             {{caseProperty}}

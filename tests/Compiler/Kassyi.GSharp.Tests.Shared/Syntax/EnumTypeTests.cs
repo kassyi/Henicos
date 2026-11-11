@@ -5,7 +5,7 @@ public class EnumTypeTests : TranspilerTestBase
 {
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_EnumStructFieldAndParameter_TranspilesToUnderlyingType()
+    public void Transpile_EnumStructFieldAndParameter_EmitsUnderlyingTypes()
     {
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod(
             typeof(EnumTypeKernels), nameof(EnumTypeKernels.EvaluatePacketsKernel), isDevice: false, dialect: CurrentDialect);
@@ -20,7 +20,7 @@ public class EnumTypeTests : TranspilerTestBase
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_EvaluatePacketsKernel_ExecutesCorrectly()
+    public void EvaluatePackets_DeviceExecution_MatchesBitwiseCalculations()
     {
         const int count = 32;
         var items = new PacketItem[count];

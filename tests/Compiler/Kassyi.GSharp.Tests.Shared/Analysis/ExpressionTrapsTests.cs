@@ -23,7 +23,7 @@ public class ExpressionTrapsTests
     [InlineData("Choice")]
     [InlineData("Field")]
     [InlineData("Length")]
-    public void Test_MayTrap_TrapFreeExpression_IsFalse(string name) =>
+    public void MayTrap_TrapFreeExpression_IsFalse(string name) =>
         Assert.False(MayTrap(name));
 
     [Theory]
@@ -39,7 +39,7 @@ public class ExpressionTrapsTests
     [InlineData("IntegerMath")]
     [InlineData("ComputedProperty")]
     [InlineData("Throw")]
-    public void Test_MayTrap_ExpressionThatMayRaise_IsTrue(string name) =>
+    public void MayTrap_ExpressionThatMayRaise_IsTrue(string name) =>
         Assert.True(MayTrap(name));
 
     // The Skip after a selector that may trap stays in the loop, so the selector runs for the element it drops
@@ -47,7 +47,7 @@ public class ExpressionTrapsTests
     [Scenario(TestScenario.Boundary)]
     [InlineData("DividingSelectThenSkip")]
     [InlineData("IndexingSelectThenSkip")]
-    public void Test_CountRangeStages_StopsAfterATrappingSelector(string name)
+    public void CountRangeStages_StopsAfterATrappingSelector(string name)
     {
         // mutant: CountRangeStages without the trap check folds the Skip as for the pure selector
         Assert.Equal(CountRangeStages("PureSelectThenSkip") - 1, CountRangeStages(name));

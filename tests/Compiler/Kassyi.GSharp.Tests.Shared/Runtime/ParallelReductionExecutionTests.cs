@@ -9,7 +9,7 @@ public class ParallelReductionExecutionTests
     [SkippableFact]
     [Category(TestCategory.Runtime)]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void TestIntParallelSum_HappyPath()
+    public void ParallelReduction_IntBufferSum_MatchesExpectedSum()
     {
         int[] data = Enumerable.Range(1, 128).ToArray();
         int[] result = [0];

@@ -46,7 +46,11 @@ public sealed class MultiplyNttWideResultCpuFallbackTests
     [Theory]
     [MemberData(nameof(WideResultCases.Cases), MemberType = typeof(WideResultCases))]
     [Scenario(TestScenario.Boundary)]
-    public void FollowsTheSameRules(int leftWords, int rightWords, int resultWords, bool square)
+    public void MultiplyNtt_CpuFallbackWithVaryingWords_FollowsTheSameRules(
+        int leftWords,
+        int rightWords,
+        int resultWords,
+        bool square)
     {
         GpuKernelLoader.ForceCpuFallback = true;
         try

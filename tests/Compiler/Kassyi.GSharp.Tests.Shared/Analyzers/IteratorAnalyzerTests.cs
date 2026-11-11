@@ -53,7 +53,7 @@ public class IteratorAnalyzerTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_IteratorShape_SadPath_ReportsGSH0070WithExactSpans()
+    public async Task IteratorShape_InvalidReturnTypeOrSignature_ReportsGSH0070WithExactSpans()
     {
         var diagnostics = await GetDiagnosticsAsync("Analyzers/IteratorShape_SadPath.cs");
         Assert.DoesNotContain(diagnostics, static d => d.Id == "AD0001");
@@ -76,7 +76,7 @@ public class IteratorAnalyzerTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_IteratorConsumption_SadPath_ReportsGSH0071AndGSH0073WithExactSpans()
+    public async Task IteratorConsumption_InvalidMoveNextOrMultipleEnumerators_ReportsGSH0071AndGSH0073WithExactSpans()
     {
         var diagnostics = await GetDiagnosticsAsync("Analyzers/IteratorConsumption_SadPath.cs");
         var actual = ToSpans(diagnostics);
@@ -105,7 +105,7 @@ public class IteratorAnalyzerTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_IteratorBody_SadPath_ReportsGSH0072WithExactSpans()
+    public async Task IteratorBody_UnsupportedStatementsInYieldLoop_ReportsGSH0072WithExactSpans()
     {
         var actual = await RunAnalyzersAsync("Analyzers/IteratorBody_SadPath.cs");
 
@@ -123,7 +123,7 @@ public class IteratorAnalyzerTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public async Task Test_Iterator_HappyPath_ReportsNoDiagnostics()
+    public async Task Iterator_ValidUsage_ReportsNoDiagnostics()
     {
         var actual = await RunAnalyzersAsync("Analyzers/Iterator_HappyPath.cs");
 
@@ -132,7 +132,7 @@ public class IteratorAnalyzerTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_IteratorInlineDepth_NoDepthLimit_ReportsOnlyTheOtherDiagnostic()
+    public async Task IteratorInlineDepth_NoDepthLimit_ReportsOnlyOtherDiagnostic()
     {
         var diagnostics = await GetDiagnosticsAsync("Analyzers/IteratorInlineDepth_SadPath.cs");
         Assert.DoesNotContain(diagnostics, static d => d.Id == "AD0001");

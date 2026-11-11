@@ -16,7 +16,7 @@ public class RuntimeOnlyTypeDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_Dynamic_ReportsGsh0003AtTheType(string dialect)
+    public async Task DynamicType_DeviceCodeUsage_ReportsGsh0003AtType(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(TestCase, dialect);
 
@@ -28,7 +28,7 @@ public class RuntimeOnlyTypeDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_TypedReference_ReportsGsh0003AtTheTypeAndMakeRef(string dialect)
+    public async Task TypedReferenceType_DeviceCodeUsage_ReportsGsh0003AtTypeAndMakeRef(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(TestCase, dialect);
 
@@ -46,7 +46,7 @@ public class RuntimeOnlyTypeDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.Boundary)]
-    public async Task Test_GCHandle_ReportsEachReferenceAndNotAUserTypeOfTheSameName(string dialect)
+    public async Task GcHandleType_DeviceCodeUsage_ReportsEachReferenceAndDistinguishesUserType(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(TestCase, dialect);
 
@@ -66,7 +66,7 @@ public class RuntimeOnlyTypeDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_Decimal_ReportsEachUseInDeviceCode(string dialect)
+    public async Task DecimalType_DeviceCodeUsage_ReportsEachUseInDeviceCode(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(TestCase, dialect);
 
@@ -93,7 +93,7 @@ public class RuntimeOnlyTypeDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_RuntimeOnlyTypes_AreNotReportedByTheGenerator(string dialect)
+    public async Task RuntimeOnlyTypes_GeneratorPipeline_AreNotReportedByGenerator(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(TestCase, dialect);
 

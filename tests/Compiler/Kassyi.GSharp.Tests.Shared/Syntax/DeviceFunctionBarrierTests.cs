@@ -15,7 +15,7 @@ public class DeviceFunctionBarrierTests : TranspilerTestBase
     [InlineData(32)]
     [InlineData(64)]
     [InlineData(256)]
-    public void Test_SharedMemoryExchangeInDeviceFunction_ReversesBlock(int length)
+    public void SharedMemoryExchangeInDeviceFunction_FullBlock_ReversesBlock(int length)
     {
         EnsureCapability(DialectCapabilities.SharedMemory);
         var input = CreateSequence(length);
@@ -31,7 +31,7 @@ public class DeviceFunctionBarrierTests : TranspilerTestBase
     [InlineData(1)]
     [InlineData(31)]
     [InlineData(33)]
-    public void Test_SharedMemoryExchangeInDeviceFunction_ReversesPartialWarps(int length)
+    public void SharedMemoryExchangeInDeviceFunction_PartialWarps_ReversesPartialWarps(int length)
     {
         EnsureCapability(DialectCapabilities.SharedMemory);
         var input = CreateSequence(length);
@@ -47,7 +47,7 @@ public class DeviceFunctionBarrierTests : TranspilerTestBase
     [InlineData(32)]
     [InlineData(64)]
     [InlineData(256)]
-    public void Test_WarpShuffleScanInDeviceFunction_ComputesInclusivePrefixPerWarp(int length)
+    public void WarpShuffleScanInDeviceFunction_MultipleWarps_ComputesInclusivePrefixPerWarp(int length)
     {
         var input = CreateSequence(length);
         var output = new int[length];
@@ -61,7 +61,7 @@ public class DeviceFunctionBarrierTests : TranspilerTestBase
     [Scenario(TestScenario.HappyPath)]
     [InlineData(32)]
     [InlineData(64)]
-    public void Test_WarpShuffleScanInKernelBody_ComputesInclusivePrefixPerWarp(int length)
+    public void WarpShuffleScanInKernelBody_MultipleWarps_ComputesInclusivePrefixPerWarp(int length)
     {
         var input = CreateSequence(length);
         var output = new int[length];
@@ -73,7 +73,7 @@ public class DeviceFunctionBarrierTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_DeviceFunctionCallingBarrierDeviceFunction_KeepsLocalsAcrossInnerCall()
+    public void DeviceFunctionCallingBarrierDeviceFunction_InnerBarrierCall_KeepsLocalsAcrossInnerCall()
     {
         EnsureCapability(DialectCapabilities.SharedMemory);
         const int length = 64;
@@ -96,7 +96,7 @@ public class DeviceFunctionBarrierTests : TranspilerTestBase
     [InlineData(3)]
     [InlineData(64)]
     [InlineData(67)]
-    public void Test_BarrierDeviceFunctionCalledInLoop_RestartsOnEveryIteration(int rounds)
+    public void BarrierDeviceFunctionCalledInLoop_LoopIterations_RestartsOnEveryIteration(int rounds)
     {
         EnsureCapability(DialectCapabilities.SharedMemory);
         const int length = 64;
@@ -113,7 +113,7 @@ public class DeviceFunctionBarrierTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_BarrierDeviceFunctionArgument_IsEvaluatedOnceAcrossResumes()
+    public void BarrierDeviceFunctionArgument_MultipleResumes_IsEvaluatedOnceAcrossResumes()
     {
         EnsureCapability(DialectCapabilities.SharedMemory);
         const int length = 64;
@@ -132,7 +132,7 @@ public class DeviceFunctionBarrierTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_SharedMemoryPassedToBarrierDeviceFunction_IsSharedByTheBlock()
+    public void SharedMemoryPassedToBarrierDeviceFunction_BlockExecution_IsSharedByTheBlock()
     {
         EnsureCapability(DialectCapabilities.SharedMemory);
         const int length = 64;
@@ -146,7 +146,7 @@ public class DeviceFunctionBarrierTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_OutParametersOfBarrierDeviceFunction_ReachTheCaller()
+    public void OutParametersOfBarrierDeviceFunction_MultipleResumes_ReachTheCaller()
     {
         EnsureCapability(DialectCapabilities.SharedMemory);
         const int length = 64;
@@ -164,7 +164,7 @@ public class DeviceFunctionBarrierTests : TranspilerTestBase
     [Scenario(TestScenario.Boundary)]
     [InlineData(1)]
     [InlineData(0)]
-    public void Test_BarrierDeviceFunctionInUniformBranchAfterEarlyReturn_ReversesSelectedSpan(int usePrimary)
+    public void BarrierDeviceFunctionInUniformBranchAfterEarlyReturn_UniformBranch_ReversesSelectedSpan(int usePrimary)
     {
         // 64 threads: the second warp returns before the call, as the stdlib warp kernels do
         var primary = CreateSequence(WarpSize);

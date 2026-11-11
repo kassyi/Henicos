@@ -14,7 +14,7 @@ public class CudaDriverApiAsyncBindingTests
     [Fact]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_CudaDriverApi_AsyncCompletionBindings_HaveExpectedSignatures()
+    public void CudaDriverApi_AsyncCompletionBindings_HaveExpectedSignatures()
     {
         // Compile-time contract: method group conversions fail to build if a binding or its signature is missing.
         Func<IntPtr, CUresult> eventQuery = CudaDriverApi.cuEventQuery;
@@ -38,7 +38,7 @@ public class CudaDriverApiAsyncBindingTests
     [InlineData("cuLaunchHostFunc", 3)]
     [InlineData("cuMemsetD32Async", 4)]
     [InlineData("cuStreamGetCtx", 2)]
-    public void Test_DriverApiYaml_DeclaresAsyncBinding_ExactlyOnce(string methodName, int parameterCount)
+    public void DriverApiYaml_AsyncBindings_DeclaredExactlyOnce(string methodName, int parameterCount)
     {
         var path = RepositoryPaths.Combine("src", "NativeApi", "cuda_driver_api.yml");
         var parsed = NativeApiYamlReader.TryRead(File.ReadAllText(path), out var definition, out var error);

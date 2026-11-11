@@ -8,7 +8,7 @@ public class GpuBigIntSqrtTests
     [SkippableFact]
     [Category(TestCategory.Stdlib)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Sqrt_SmallValues()
+    public void Sqrt_SmallValues_ProducesExactFloorRoot()
     {
         CudaCapability.EnsureGpuAvailable();
         using var ctx = new GpuWorkspace(16, GpuExecutionEngine.GSharpAot);
@@ -24,7 +24,7 @@ public class GpuBigIntSqrtTests
     [SkippableFact]
     [Category(TestCategory.Stdlib)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Sqrt_LargeValues()
+    public void Sqrt_LargeValues_ProducesNonEmptyResult()
     {
         CudaCapability.EnsureGpuAvailable();
         using var ctx = new GpuWorkspace(512, GpuExecutionEngine.GSharpAot);
@@ -51,7 +51,7 @@ public class GpuBigIntSqrtTests
     [InlineData(16u)]
     [InlineData(65535u * 65535u)]
     [InlineData(uint.MaxValue)]
-    public void Test_Sqrt_SingleWordValueInWideBuffer_ReturnsFloorRoot(uint value)
+    public void Sqrt_SingleWordValueInWideBuffer_ReturnsFloorRoot(uint value)
     {
         CudaCapability.EnsureGpuAvailable();
         using var ctx = new GpuWorkspace(256, GpuExecutionEngine.GSharpAot);
@@ -75,7 +75,7 @@ public class GpuBigIntSqrtTests
     [InlineData(200, 12345)]
     [InlineData(256, -1)]
     [InlineData(300, 1)]
-    public void Test_Sqrt_MultiWordValue_ReturnsFloorRoot(int bits, int offset)
+    public void Sqrt_MultiWordValue_ReturnsFloorRoot(int bits, int offset)
     {
         CudaCapability.EnsureGpuAvailable();
         using var ctx = new GpuWorkspace(512, GpuExecutionEngine.GSharpAot);
@@ -93,13 +93,12 @@ public class GpuBigIntSqrtTests
     [SkippableTheory]
     [Category(TestCategory.Stdlib)]
     [Scenario(TestScenario.SadPath)]
-    [InlineData(5)]
-    [InlineData(3)]
-    public void Sqrt_MismatchedBufferSizes_ThrowsArgumentException(int resultWords)
+    [InlineData(1)]
+    public void Sqrt_NarrowerThanTheRoot_ThrowsArgumentException(int resultWords)
     {
-        // The result buffer has as many words as the operand. A one-word value takes the single-word path, whose
-        // own operations never check the sizes, so only this check rejects the buffer.
-        // mutant: GpuBigIntDivRem.Sqrt.cs:141 `ThrowIfSizeMismatch(leftOperand, resultBuffer)` removed
+        // The root of a 4-word operand needs 2 words. A one-word value takes the single-word path, whose own
+        // operations never check the sizes, so only this check rejects the buffer.
+        // mutant: GpuBigIntDivRem.Sqrt.cs SqrtCore `ThrowIfResultNarrower` removed
         CudaCapability.EnsureGpuAvailable();
         using var ctx = new GpuWorkspace(16, GpuExecutionEngine.GSharpAot);
         using var a = new GpuBigUInt(ctx, new uint[] { 9, 0, 0, 0 });
@@ -116,8 +115,8 @@ public class GpuBigIntSqrtTests
     public void Sqrt_PrefilledResultBuffer_IsOverwritten(uint value, uint expectedRoot)
     {
         // The result buffer is filled with 0xFFFFFFFF first; every word above the root must be cleared.
-        // mutant: GpuBigIntDivRem.Sqrt.cs:146 `resultBuffer.Clear()` removed (value 0)
-        // mutant: GpuBigIntDivRem.Sqrt.cs:170 `resultBuffer.Clear()` removed (value 10000)
+        // mutant: GpuBigIntDivRem.Sqrt.cs:155 `resultBuffer.Clear()` removed (value 0)
+        // mutant: GpuBigIntDivRem.Sqrt.cs:179 `resultBuffer.Clear()` removed (value 10000)
         CudaCapability.EnsureGpuAvailable();
         using var ctx = new GpuWorkspace(16, GpuExecutionEngine.GSharpAot);
         using var a = new GpuBigUInt(ctx, new uint[] { value, 0, 0, 0 });
@@ -149,10 +148,11 @@ public class GpuBigIntSqrtTests
     // SqrtFloor gives floor(sqrt(a)) for an operand of 2n words with bit length 64n or 64n - 1 (the input of the
     // big-float Sqrt): the root agrees with the test's own integer square root and satisfies r² <= a < (r + 1)².
     // The squares, r² - 1 and r² + 2r are where an approximation one below the floor has to step up, or must not.
-    // mutant: GpuBigIntDivRem.Sqrt.cs:109 `SqrtFloorCorrection(...)` removed (Square, n = 8, 16, 17)
-    // mutant: GpuBigIntDivRem.Sqrt.cs:117 `(rootWords + 1) / 2` -> `Math.Max(1, (rootWords + 1) / 2 - 1)` (SquarePlus2R and SquareMinus1 at
+    // mutant: GpuBigIntDivRem.Sqrt.cs:103 `SqrtFloorCorrection(...)` removed (Square, n = 8, 16, 17)
+    // mutant: GpuBigIntDivRem.Sqrt.cs:111 `(rootWords + 1) / 2` -> `Math.Max(1, (rootWords + 1) / 2 - 1)` (SquarePlus2R
+    //         and SquareMinus1 at
     // n = 4, 8, 16: the estimate is more than one below, beyond what the design allows)
-    // mutant: GpuBigIntSqrtKernels.cu.cs:176 `AddSmallSigned(trial, slackWords, -1)` removed (Highest, n = 16, 17)
+    // mutant: GpuBigIntSqrtKernels.cu.cs:175 `AddSmallSigned(trial, slackWords, -1)` removed (Highest, n = 16, 17)
     [SkippableTheory]
     [Category(TestCategory.Stdlib)]
     [Scenario(TestScenario.Boundary)]
@@ -198,9 +198,10 @@ public class GpuBigIntSqrtTests
     // P2: the error of the approximation, sqrt(A) - A_top·x / 2^s, lies in [0, 2^-16 + 2^-32), the bound the design
     // derives. With a margin one word smaller (odd n) the error can reach 1; a gap of 2 then needs an input that no seeded
     // search found, so P2 is what catches it.
-    // mutant: GpuBigIntDivRem.Sqrt.cs:117 `(rootWords + 1) / 2` -> `rootWords / 2` (every odd n with TopSquareMaxLow and others:
+    // mutant: GpuBigIntDivRem.Sqrt.cs:111 `(rootWords + 1) / 2` -> `rootWords / 2` (every odd n with TopSquareMaxLow
+    //         and others:
     // P2; P1 holds for every input here)
-    // mutant: GpuBigIntDivRem.Sqrt.cs:124 `+ 48` -> `+ 47` (every input: the estimate is twice the root)
+    // mutant: GpuBigIntDivRem.Sqrt.cs:118 `+ 48` -> `+ 47` (every input: the estimate is twice the root)
     [Theory]
     [Category(TestCategory.Stdlib)]
     [TestTarget(ExecutionTarget.CpuExecution)]

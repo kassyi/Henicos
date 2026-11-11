@@ -85,7 +85,8 @@ public sealed class RunCommand : IFuzzCommand
           --allow-issue <n>                  Re-enable generation of shapes avoided for known issue #<n>
                                              (repeatable).
           --swarm-focus <mode>               Optional Swarm focus mode (default, coalesce-assign-value,
-                                             tuple-deconstruct-complex).
+                                             tuple-deconstruct-complex, warp-shuffle, barrier, iterator,
+                                             suspending-call, split-points).
           --metamorphic                      Generate semantics-preserving transformed kernel variants per kernel.
           --compare-base <ref>               Compare the generated native and C# code with git <ref>
                                              (fuzz-diff compare, no GPU).
@@ -106,9 +107,9 @@ public sealed class RunCommand : IFuzzCommand
         new("--profile", FuzzOptionTable.Value(ParseProfile)),
         new("--minutes", FuzzOptionTable.Value(ParseMinutes)),
         new("--compare-base", FuzzOptionTable.Value(ParseCompareBase)),
-        new("--work-dir", FuzzOptionTable.Value(ParseWorkDir)),
-        new("--out-dir", FuzzOptionTable.Value(ParseOutDir)),
-        new("--repo-root", FuzzOptionTable.Value(ParseRepoRoot)),
+        new("--work-dir", FuzzOptionTable.Value(FuzzOptionTable.ParseWorkDir)),
+        new("--out-dir", FuzzOptionTable.Value(FuzzOptionTable.ParseOutDir)),
+        new("--repo-root", FuzzOptionTable.Value(FuzzOptionTable.ParseRepoRoot)),
         new("--no-gpu-lock", FuzzOptionTable.Flag(static v => v.NoGpuLock = true)));
 
     /// <summary>Gets the singleton command instance.</summary>
@@ -251,26 +252,4 @@ public sealed class RunCommand : IFuzzCommand
         values.CompareBase = value;
         return null;
     }
-
-    // The value is set before it is checked: an error stops the parse and the values are dropped.
-    private static string? ParseWorkDir(FuzzOptionValues values, string value)
-    {
-        values.WorkDir = value;
-        return EmptyDirectoryError("--work-dir", value);
-    }
-
-    private static string? ParseOutDir(FuzzOptionValues values, string value)
-    {
-        values.OutDir = value;
-        return EmptyDirectoryError("--out-dir", value);
-    }
-
-    private static string? ParseRepoRoot(FuzzOptionValues values, string value)
-    {
-        values.RepoRoot = value;
-        return EmptyDirectoryError("--repo-root", value);
-    }
-
-    private static string? EmptyDirectoryError(string name, string value) =>
-        value.Length == 0 ? $"{name} requires a directory path." : null;
 }

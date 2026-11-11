@@ -16,7 +16,7 @@ public class SharedMemoryRegionTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_LaterDeclaration_KeepsEarlierBuffer()
+    public void LaterDeclaration_NativeExecution_KeepsEarlierBuffer()
     {
         EnsureCapability(DialectCapabilities.SharedMemory);
         SharedMemoryRegionScenarios.LaterDeclarationKeepsEarlierBuffer(s_runNative);
@@ -24,7 +24,7 @@ public class SharedMemoryRegionTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_MixedElementTypes_KeepTheirOwnValues()
+    public void MixedElementTypes_NativeExecution_KeepTheirOwnValues()
     {
         EnsureCapability(DialectCapabilities.SharedMemory);
         SharedMemoryRegionScenarios.MixedElementTypes(s_runNative);
@@ -32,7 +32,7 @@ public class SharedMemoryRegionTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_GrowingDeclaration_KeepsLargerCount()
+    public void GrowingDeclaration_NativeExecution_KeepsLargerCount()
     {
         EnsureCapability(DialectCapabilities.SharedMemory);
         SharedMemoryRegionScenarios.GrowingDeclaration(s_runNative);

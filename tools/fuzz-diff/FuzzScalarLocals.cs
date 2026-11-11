@@ -1,0 +1,121 @@
+namespace Kassyi.GSharp.Tools.FuzzDiff;
+
+/// <summary>
+/// Declares the scalar locals every generated kernel starts with: one local per scalar kind, in a random order, each
+/// read from the thread's own input elements, and the enums those locals use.
+/// </summary>
+internal static class FuzzScalarLocals
+{
+    // The enums of the generated kernels: name, underlying type, then the members as written in the declaration
+    private static readonly (string Name, string Underlying, string[] Members)[] s_enums =
+    [
+        (
+            "FuzzEnumByte",
+            "byte",
+            [
+                "Zero = 0", "One = 1", "Two = 2", "Bit = 0x10", "High = 0x80", "Mask = 0x55", "Alt = 0xAA",
+                "Edge = byte.MaxValue",
+            ]
+        ),
+        (
+            "FuzzEnumShort",
+            "short",
+            [
+                "Zero = 0", "One = 1", "Two = 2", "Bit = 0x0100", "High = -256", "Mask = 0x1234", "Alt = -1",
+                "Edge = short.MinValue",
+            ]
+        ),
+        (
+            "FuzzEnumInt",
+            "int",
+            [
+                "Zero = 0", "One = 1", "Two = 2", "Bit = 0x00010000", "High = -65536", "Mask = 0x13579BDF", "Alt = -1",
+                "Edge = int.MinValue",
+            ]
+        ),
+        (
+            "FuzzEnumULong",
+            "ulong",
+            [
+                "Zero = 0UL", "One = 1UL", "Two = 2UL", "Bit = 0x0000000100000000UL", "High = 0x8000000000000000UL",
+                "Mask = 0x5555555555555555UL", "Alt = 0xAAAAAAAAAAAAAAAAUL", "Edge = ulong.MaxValue",
+            ]
+        ),
+    ];
+
+    /// <summary>Appends the declarations of the enums that the enum locals use to <paramref name="writer"/>.</summary>
+    public static void AppendEnumDeclarations(SourceWriter writer)
+    {
+        foreach ((string name, string underlying, string[] members) in s_enums)
+        {
+            writer.AppendLine($"public enum {name} : {underlying} {{ {string.Join(", ", members)} }}");
+        }
+    }
+
+    /// <summary>Adds the declarations of the scalar locals to <paramref name="state"/>.</summary>
+    public static void Initialize(KernelGenerationState state)
+    {
+        FuzzScalarKind[] baseTypes =
+        [
+            FuzzScalarKind.SByte,
+            FuzzScalarKind.Byte,
+            FuzzScalarKind.Int16,
+            FuzzScalarKind.UInt16,
+            FuzzScalarKind.Int32,
+            FuzzScalarKind.UInt32,
+            FuzzScalarKind.Int64,
+            FuzzScalarKind.UInt64,
+            FuzzScalarKind.Boolean,
+            FuzzScalarKind.Char,
+            FuzzScalarKind.EnumByte,
+            FuzzScalarKind.EnumShort,
+            FuzzScalarKind.EnumInt,
+            FuzzScalarKind.EnumULong,
+        ];
+
+        var activeTypes = new List<FuzzTypeInfo>(baseTypes.Length);
+        foreach (var kind in baseTypes)
+        {
+            activeTypes.Add(FuzzTypeInfo.Get(kind));
+        }
+
+        for (int i = activeTypes.Count - 1; i > 0; i--)
+        {
+            int j = state.Rng.NextBelow(i + 1);
+            (activeTypes[i], activeTypes[j]) = (activeTypes[j], activeTypes[i]);
+        }
+
+        foreach (var typeInfo in activeTypes)
+        {
+            string varName = $"v{state.Locals.Count}";
+            string initExpr = BuildInputInitializationExpression(state.Rng, typeInfo, state.Locals.Count);
+            state.Statements.Add($"{typeInfo.Keyword} {varName} = {initExpr};");
+            state.Locals.Add(new ScalarLocalVariable(varName, typeInfo));
+        }
+    }
+
+    private static string BuildInputInitializationExpression(FuzzRandom rng, FuzzTypeInfo type, int index)
+    {
+        string src = (index % 3) switch { 0 => "inA[gid]", 1 => "inB[gid]", _ => "inC[gid]" };
+        string alt = ((index + 1) % 3) switch { 0 => "inA[gid]", 1 => "inB[gid]", _ => "inC[gid]" };
+
+        return type.Kind switch
+        {
+            FuzzScalarKind.SByte => $"(sbyte){src}",
+            FuzzScalarKind.Byte => $"(byte){src}",
+            FuzzScalarKind.Int16 => $"(short){src}",
+            FuzzScalarKind.UInt16 => $"(ushort){src}",
+            FuzzScalarKind.Int32 => src,
+            FuzzScalarKind.UInt32 => $"(uint){src}",
+            FuzzScalarKind.Int64 => rng.NextBool() ? $"(((long){src} << 32) ^ (uint){alt})" : $"(long){src}",
+            FuzzScalarKind.UInt64 => rng.NextBool() ? $"(((ulong)(uint){src} << 32) | (uint){alt})" : $"(ulong){src}",
+            FuzzScalarKind.Boolean => $"((({src} ^ {alt}) & 1) != 0)",
+            FuzzScalarKind.Char => $"(char){src}",
+            FuzzScalarKind.EnumByte => $"(FuzzEnumByte)(byte){src}",
+            FuzzScalarKind.EnumShort => $"(FuzzEnumShort)(short){src}",
+            FuzzScalarKind.EnumInt => $"(FuzzEnumInt){src}",
+            FuzzScalarKind.EnumULong => $"(FuzzEnumULong)(ulong){src}",
+            _ => src,
+        };
+    }
+}

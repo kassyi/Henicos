@@ -16,7 +16,7 @@ public class DeviceDynamicSharedMemoryTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_SuspendingHelper_DoesNotOverlapCaller()
+    public void SuspendingHelper_NativeExecution_DoesNotOverlapCaller()
     {
         EnsureCapability(DialectCapabilities.SharedMemory);
         DeviceDynamicSharedMemoryScenarios.SuspendingHelperDoesNotOverlapCaller(s_runNative);
@@ -24,7 +24,7 @@ public class DeviceDynamicSharedMemoryTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_HelperReachedFromTwoKernels_GetsItsOwnBufferInEach()
+    public void HelperReachedFromTwoKernels_NativeExecution_GetsOwnBufferInEach()
     {
         EnsureCapability(DialectCapabilities.SharedMemory);
         DeviceDynamicSharedMemoryScenarios.HelperReachedFromTwoKernels(s_runNative);
@@ -32,7 +32,7 @@ public class DeviceDynamicSharedMemoryTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_PlainHelper_DoesNotOverlapCaller()
+    public void PlainHelper_NativeExecution_DoesNotOverlapCaller()
     {
         EnsureCapability(DialectCapabilities.SharedMemory);
         DeviceDynamicSharedMemoryScenarios.PlainHelperDoesNotOverlapCaller(s_runNative);
@@ -40,7 +40,7 @@ public class DeviceDynamicSharedMemoryTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_SuspendingHelper_PersistsAcrossCalls()
+    public void SuspendingHelper_NativeExecution_PersistsAcrossCalls()
     {
         EnsureCapability(DialectCapabilities.SharedMemory);
         DeviceDynamicSharedMemoryScenarios.SuspendingHelperPersistsAcrossCalls(s_runNative);
@@ -48,7 +48,7 @@ public class DeviceDynamicSharedMemoryTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_PlainHelper_PersistsAcrossCalls()
+    public void PlainHelper_NativeExecution_PersistsAcrossCalls()
     {
         EnsureCapability(DialectCapabilities.SharedMemory);
         DeviceDynamicSharedMemoryScenarios.PlainHelperPersistsAcrossCalls(s_runNative);
@@ -56,7 +56,7 @@ public class DeviceDynamicSharedMemoryTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_StaticHelper_PersistsAcrossCalls()
+    public void StaticHelper_NativeExecution_PersistsAcrossCalls()
     {
         EnsureCapability(DialectCapabilities.SharedMemory);
         DeviceDynamicSharedMemoryScenarios.StaticHelperPersistsAcrossCalls(s_runNative);
@@ -66,7 +66,7 @@ public class DeviceDynamicSharedMemoryTests : TranspilerTestBase
     // CUDA traps when a region that is not the last one grows; the native CPU path throws (#544, C10)
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_GrowingHelper_AfterCallerDeclaration_Throws()
+    public void GrowingHelper_AfterCallerDeclarationNative_ThrowsOnCpuAndTrapsOnCuda()
     {
         EnsureCapability(DialectCapabilities.SharedMemory);
         DeviceDynamicSharedMemoryScenarios.GrowingHelperAfterCallerDeclarationThrows(s_runNative);
@@ -75,7 +75,7 @@ public class DeviceDynamicSharedMemoryTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_RecursiveHelper_SharesOneBufferAndDoesNotOverlapCaller()
+    public void RecursiveHelper_NativeExecution_SharesOneBufferAndDoesNotOverlapCaller()
     {
         EnsureCapability(DialectCapabilities.SharedMemory);
         DeviceDynamicSharedMemoryScenarios.RecursiveHelperSharesOneBufferAndDoesNotOverlapCaller(s_runNative);
@@ -83,7 +83,7 @@ public class DeviceDynamicSharedMemoryTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_NestedScopeDeclarations_DoNotOverlap()
+    public void NestedScopeDeclarations_NativeExecution_DoNotOverlap()
     {
         EnsureCapability(DialectCapabilities.SharedMemory);
         DeviceDynamicSharedMemoryScenarios.NestedScopeDeclarationsDoNotOverlap(s_runNative);
@@ -91,7 +91,7 @@ public class DeviceDynamicSharedMemoryTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_ZeroCountDeclaration_GrowsInPlace()
+    public void ZeroCountDeclaration_NativeExecution_GrowsInPlace()
     {
         EnsureCapability(DialectCapabilities.SharedMemory);
         DeviceDynamicSharedMemoryScenarios.ZeroCountDeclarationGrowsInPlace(s_runNative);
@@ -99,7 +99,7 @@ public class DeviceDynamicSharedMemoryTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_HelperBehindFunctionWithoutDeclaration_DoesNotOverlapCaller()
+    public void HelperBehindFunctionWithoutDeclaration_NativeExecution_DoesNotOverlapCaller()
     {
         EnsureCapability(DialectCapabilities.SharedMemory);
         DeviceDynamicSharedMemoryScenarios.HelperBehindFunctionWithoutDeclaration(s_runNative);
@@ -107,7 +107,7 @@ public class DeviceDynamicSharedMemoryTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_HelperWithoutParameters_GetsItsBuffer()
+    public void HelperWithoutParameters_NativeExecution_GetsItsBuffer()
     {
         EnsureCapability(DialectCapabilities.SharedMemory);
         DeviceDynamicSharedMemoryScenarios.HelperWithoutParameters(s_runNative);
@@ -115,7 +115,7 @@ public class DeviceDynamicSharedMemoryTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_HelpersCalledFromLocalFunctionAndLambda_DoNotOverlapCaller()
+    public void HelpersCalledFromLocalFunctionAndLambda_NativeExecution_DoNotOverlapCaller()
     {
         EnsureCapability(DialectCapabilities.SharedMemory);
         DeviceDynamicSharedMemoryScenarios.HelpersCalledFromLocalFunctionAndLambda(s_runNative);
@@ -126,7 +126,7 @@ public class DeviceDynamicSharedMemoryTests : TranspilerTestBase
     [InlineData(-1)]
     [InlineData(-32)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_NegativeCount_AfterRegion_Throws(int negative)
+    public void NegativeCount_AfterRegionNative_ThrowsInvalidOperationException(int negative)
     {
         EnsureCapability(DialectCapabilities.SharedMemory);
         var output = new int[DeviceDynamicSharedMemoryScenarios.Length];

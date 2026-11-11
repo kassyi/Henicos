@@ -114,7 +114,7 @@ public class TypesAndStructsTests : TranspilerTestBase
 {
     [Fact]
     [Category(TestCategory.Syntax)]
-    public void Test_TargetTypedNew_Transpilation()
+    public void TranspileMethod_TargetTypedNewKernel_ProducesCudaWithoutDiagnostics()
     {
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod(
             typeof(TargetTypedNewKernels), nameof(TargetTypedNewKernels.HappyPathKernel), isDevice: false, dialect: CurrentDialect);
@@ -125,7 +125,7 @@ public class TypesAndStructsTests : TranspilerTestBase
 
     [Fact]
     [Category(TestCategory.Syntax)]
-    public void Test_TupleDeconstruction_Transpilation()
+    public void TupleDeconstruction_InvocationAndTranspilation_TranspilesAndUpdatesArray()
     {
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<TypesAndStructsTarget>(
             nameof(TypesAndStructsTarget.TupleDeconstruction), isDevice: false, dialect: CurrentDialect);
@@ -141,7 +141,7 @@ public class TypesAndStructsTests : TranspilerTestBase
 
     [Fact]
     [Category(TestCategory.Syntax)]
-    public void Test_PrimaryConstructor_Transpilation()
+    public void PrimaryConstructor_InvocationAndTranspilation_TranspilesAndCalculatesSum()
     {
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<TypesAndStructsTarget>(
             nameof(TypesAndStructsTarget.PrimaryConstructor), isDevice: false, dialect: CurrentDialect);
@@ -157,7 +157,7 @@ public class TypesAndStructsTests : TranspilerTestBase
 
     [Fact]
     [Category(TestCategory.Syntax)]
-    public void Test_RecordStructWithExpression_Transpilation()
+    public void RecordStructWithExpression_WithAssignment_EmitsSourceWithoutUnsupportedDiagnostics()
     {
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<TypesAndStructsTarget>(
             nameof(TypesAndStructsTarget.RecordStructWithExpression), isDevice: false, dialect: CurrentDialect);
@@ -171,7 +171,7 @@ public class TypesAndStructsTests : TranspilerTestBase
 
     [Fact]
     [Category(TestCategory.Syntax)]
-    public void Test_StructIndexer_Transpilation()
+    public void StructIndexer_InvocationAndTranspilation_TranspilesAndCalculatesSum()
     {
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<TypesAndStructsTarget>(
             nameof(TypesAndStructsTarget.StructIndexer), isDevice: false, dialect: CurrentDialect);
@@ -186,7 +186,7 @@ public class TypesAndStructsTests : TranspilerTestBase
 
     [Fact]
     [Category(TestCategory.Syntax)]
-    public void Test_StructOperatorOverload_Transpilation()
+    public void StructOperatorOverload_InvocationAndTranspilation_TranspilesAndSumsFields()
     {
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<TypesAndStructsTarget>(
             nameof(TypesAndStructsTarget.StructOperatorOverload), isDevice: false, dialect: CurrentDialect);
@@ -201,7 +201,7 @@ public class TypesAndStructsTests : TranspilerTestBase
 
     [Fact]
     [Category(TestCategory.Syntax)]
-    public void Test_ReadonlyStruct_Transpilation()
+    public void ReadonlyStruct_InvocationAndTranspilation_TranspilesAndCalculatesSum()
     {
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<TypesAndStructsTarget>(
             nameof(TypesAndStructsTarget.ReadonlyStruct), isDevice: false, dialect: CurrentDialect);
@@ -217,7 +217,7 @@ public class TypesAndStructsTests : TranspilerTestBase
 
     [Fact]
     [Category(TestCategory.Syntax)]
-    public void Test_EnumBaseTypeAndFlags_Transpilation()
+    public void EnumBaseTypeAndFlags_InvocationAndTranspilation_TranspilesAndCalculatesFlag()
     {
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<TypesAndStructsTarget>(
             nameof(TypesAndStructsTarget.EnumBaseTypeAndFlags), isDevice: false, dialect: CurrentDialect);

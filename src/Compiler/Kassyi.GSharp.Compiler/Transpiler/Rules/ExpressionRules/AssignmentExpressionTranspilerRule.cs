@@ -20,7 +20,7 @@ public sealed class AssignmentExpressionTranspilerRule : SyntaxNodeTranspilerRul
     }
 
     /// <summary>The GSH0003 text for a <c>??=</c> whose target is a computed property.</summary>
-    public const string CoalesceAssignmentToComputedProperty = "??= of a computed property";
+    public const string CoalesceAssignmentToAccessorProperty = "??= of a computed property";
 
     /// <inheritdoc />
     public override void Transpile(AssignmentExpressionSyntax node, ref TranspileContext context)
@@ -31,12 +31,12 @@ public sealed class AssignmentExpressionTranspilerRule : SyntaxNodeTranspilerRul
             return;
         }
 
-        var isComputedProperty = ComputedPropertyGetterCall.IsComputedPropertyTarget(node.Left, ref context);
+        var isAccessorProperty = PropertyAccessorCall.IsAccessorPropertyTarget(node.Left, ref context);
         if (node.IsKind(SyntaxKind.CoalesceAssignmentExpression))
         {
-            if (isComputedProperty)
+            if (isAccessorProperty)
             {
-                context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, node, CoalesceAssignmentToComputedProperty);
+                context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, node, CoalesceAssignmentToAccessorProperty);
                 context.Visitor.AppendUnsupportedPlaceholder(node);
                 return;
             }
@@ -54,7 +54,7 @@ public sealed class AssignmentExpressionTranspilerRule : SyntaxNodeTranspilerRul
 
         if (node.IsKind(SyntaxKind.SimpleAssignmentExpression))
         {
-            if (!isComputedProperty &&
+            if (!isAccessorProperty &&
                 node.Right is not RefExpressionSyntax &&
                 OperandsInterfere(node, readsTarget: false, ref context, out _))
             {
@@ -62,13 +62,13 @@ public sealed class AssignmentExpressionTranspilerRule : SyntaxNodeTranspilerRul
                 return;
             }
 
-            ComputedPropertyGetterCall.TranspileAssignment(node, node.OperatorToken.Text, ref context);
+            PropertyAccessorCall.TranspileAssignment(node, node.OperatorToken.Text, ref context);
             return;
         }
 
-        if (isComputedProperty)
+        if (isAccessorProperty)
         {
-            ComputedPropertyAssignment.TranspileAssignment(node, ref context);
+            PropertyAccessorAssignment.TranspileAssignment(node, ref context);
             return;
         }
 

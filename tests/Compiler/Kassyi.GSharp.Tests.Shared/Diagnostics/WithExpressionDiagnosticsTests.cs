@@ -13,7 +13,7 @@ public class WithExpressionDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_WithOnAClass_ReportsGsh0003AtTheExpression(string dialect)
+    public async Task WithOnAClass_ReferenceTypeWithExpression_ReportsGsh0003AtExpression(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/WithExpressionUnsupported.cu.cs", dialect);
 
@@ -26,7 +26,7 @@ public class WithExpressionDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.HappyPath)]
-    public async Task Test_WithAssigningAPropertyWithABody_IsSupported(string dialect)
+    public async Task WithAssigningPropertyWithBody_ValidPropertyMutation_IsSupported(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/WithExpressionUnsupported.cu.cs", dialect);
 
@@ -37,7 +37,7 @@ public class WithExpressionDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_WithAssigningAGpuReadOnlyMember_ReportsGsh0003AtTheMember(string dialect)
+    public async Task WithAssigningGpuReadOnlyMember_ReadOnlyPropertyMutation_ReportsGsh0003AtMember(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/WithExpressionUnsupported.cu.cs", dialect);
 
@@ -53,7 +53,8 @@ public class WithExpressionDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.HappyPath)]
-    public async Task Test_ComputedPropertyCompoundIncrementAndChainedAssignment_AreSupported(string dialect)
+    public async Task ComputedPropertyCompoundIncrementAndChainedAssignment_PropertyMutation_AreSupported(
+        string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(
             "Diagnostics/WithExpressionUnsupported.cu.cs", dialect);
@@ -65,7 +66,7 @@ public class WithExpressionDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_UnsupportedWith_IsTheOnlyGsh0003Reported(string dialect)
+    public async Task UnsupportedWith_SingleDiagnosticAudit_IsOnlyGsh0003Reported(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/WithExpressionUnsupported.cu.cs", dialect);
 

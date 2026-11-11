@@ -76,7 +76,7 @@ public sealed class PointerLaunchDifferentialTests
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_LaunchPtr_EachArraySeesItsOwnLength() => DifferentialRunner.Run(s_twoLengths);
+    public void LaunchPtr_MultipleArrays_EachArraySeesItsOwnLength() => DifferentialRunner.Run(s_twoLengths);
 
     private static readonly DifferentialCase s_optionalLength = new(
         $"{nameof(PointerLaunchDifferentialKernels)}.{nameof(PointerLaunchDifferentialKernels.OptionalLengthKernel)}")
@@ -122,14 +122,14 @@ public sealed class PointerLaunchDifferentialTests
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_LaunchPtr_NullAndEmptyOptionalArraysAreNull() => DifferentialRunner.Run(s_optionalLength);
+    public void LaunchPtr_OptionalArrays_NullAndEmptyArraysAreNull() => DifferentialRunner.Run(s_optionalLength);
 
 #if GSHARP_CUDA
     // The checks run before the launch, so they need no GPU
     [Fact]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_LaunchPtr_RejectsANullArray()
+    public void LaunchPtr_NullArray_RejectsNullArray()
     {
         var error = Assert.Throws<ArgumentNullException>(() =>
             PointerLaunchDifferentialKernels.LaunchTwoLengthsKernelPtr(default, Proxy(4), Proxy(2)));
@@ -140,7 +140,7 @@ public sealed class PointerLaunchDifferentialTests
     [Fact]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_LaunchPtr_IgnoresTheCallersFlags()
+    public void LaunchPtr_CallerFlags_IgnoresCallerFlags()
     {
         var nullWithFlag = new GSharpArrayProxy { Flags = GSharpArrayProxy.NullReadsAsEmpty };
 
@@ -152,7 +152,7 @@ public sealed class PointerLaunchDifferentialTests
     [Fact]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_LaunchPtr_RejectsAnEmptyArray()
+    public void LaunchPtr_EmptyArray_RejectsEmptyArray()
     {
         var error = Assert.Throws<ArgumentException>(() =>
             PointerLaunchDifferentialKernels.LaunchTwoLengthsKernelPtr(
@@ -167,7 +167,7 @@ public sealed class PointerLaunchDifferentialTests
     [Fact]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_LaunchPtr_RejectsANegativeLength()
+    public void LaunchPtr_NegativeLength_RejectsNegativeLength()
     {
         var negative = Proxy(4);
         negative.Length = -1;
@@ -184,7 +184,7 @@ public sealed class PointerLaunchDifferentialTests
     // with its length, so the same launcher takes it
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_LaunchPtr_TakesGpuBuffersWithTheirLengths()
+    public void LaunchPtr_GpuBuffers_TakesBuffersWithTheirLengths()
     {
         CudaCapability.EnsureGpuAvailable();
         using var scope = new GpuKernelLoader.CudaContextScope();

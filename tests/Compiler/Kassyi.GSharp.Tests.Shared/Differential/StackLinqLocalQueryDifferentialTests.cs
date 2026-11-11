@@ -30,5 +30,6 @@ public class StackLinqLocalQueryDifferentialTests
     };
 
     [SkippableFact]
-    public void Test_LocalQueryWithLambdaStages_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_localQuery);
+    public void StackLinq_LocalQueryWithLambdaStages_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_localQuery);
 }

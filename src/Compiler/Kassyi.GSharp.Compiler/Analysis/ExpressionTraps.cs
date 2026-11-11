@@ -55,7 +55,7 @@ internal static class ExpressionTraps
 
     // A field-like property, or the length of an array or span: a computed property of a struct runs its getter
     private static bool IsStoredOrIntrinsic(IPropertySymbol property) =>
-        !StructAbiMembers.IsComputedProperty(property) ||
+        !StructAbiMembers.HasAccessorFunctions(property) ||
         property.ContainingType.SpecialType == SpecialType.System_Array ||
         (property.GetMethod is { } getter && DeviceFunctionEffects.IsPureIntrinsic(getter));
 

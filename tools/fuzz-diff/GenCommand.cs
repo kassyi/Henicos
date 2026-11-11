@@ -16,8 +16,6 @@ public sealed record GenCommandOptions(
 /// </summary>
 public sealed class GenCommand : IFuzzCommand
 {
-    private static readonly string s_defaultOutDir = Path.Combine("tmp", "differential-fuzz", "Generated");
-
     /// <summary>Gets the singleton command instance.</summary>
     public static GenCommand Instance { get; } = new();
 
@@ -44,15 +42,10 @@ public sealed class GenCommand : IFuzzCommand
         return Execute(options!);
     }
 
-    private static readonly Dictionary<string, FuzzOptionSpec> s_options = FuzzOptionTable.CreateTable(
-        new("--fuzz-seed", FuzzOptionTable.Value(FuzzOptionTable.ParseFuzzSeed)),
-        new("--input-seed", FuzzOptionTable.Value(FuzzOptionTable.ParseInputSeed)),
-        new("--batch-size", FuzzOptionTable.Value(FuzzOptionTable.ParseBatchSize)),
+    private static readonly Dictionary<string, FuzzOptionSpec> s_options = FuzzOptionTable.CreateFrom(
+        FuzzOptionTable.GenerationRows,
         new("--size", FuzzOptionTable.Value(FuzzOptionTable.ParseSize)),
         new("--profile", FuzzOptionTable.Value(FuzzOptionTable.ParseProfileCode)),
-        new("--allow-issue", FuzzOptionTable.Value(FuzzOptionTable.ParseAllowIssue)),
-        new("--swarm-focus", FuzzOptionTable.Value(FuzzOptionTable.ParseSwarmFocus)),
-        new("--metamorphic", FuzzOptionTable.Flag(static v => v.Metamorphic = true)),
         new("--out-dir", FuzzOptionTable.Value(FuzzOptionTable.ParseOutDir)),
         new("--repo-root", FuzzOptionTable.Value(FuzzOptionTable.ParseRepoRoot)),
         new("--cuda-arch", FuzzOptionTable.Value(FuzzOptionTable.ParseCudaArch)));
@@ -65,19 +58,13 @@ public sealed class GenCommand : IFuzzCommand
         out string? error)
     {
         options = null;
-        var values = new FuzzOptionValues { OutDir = s_defaultOutDir };
-
+        var values = new FuzzOptionValues();
         if (!FuzzOptionTable.TryParse(args, s_options, values, out showHelp, out error) || showHelp)
         {
-            return showHelp;
+            return error is null;
         }
 
-        FuzzSwarmFocus swarmFocus = FuzzSwarmFocus.Default;
-        if (values.SwarmFocus is not null)
-        {
-            FuzzSwarmConfig.TryParseFocus(values.SwarmFocus, out swarmFocus);
-        }
-
+        FuzzSwarmConfig.TryParseFocus(values.SwarmFocus, out var swarmFocus);
         var fuzzOptions = new FuzzOptions
         {
             FuzzSeed = values.FuzzSeed,
@@ -90,11 +77,8 @@ public sealed class GenCommand : IFuzzCommand
             Metamorphic = values.Metamorphic,
         };
 
-        options = new GenCommandOptions(
-            fuzzOptions,
-            values.OutDir ?? s_defaultOutDir,
-            values.RepoRoot,
-            values.CudaArch);
+        string outDir = values.OutDir ?? Path.Combine("tmp", "differential-fuzz", "Generated");
+        options = new GenCommandOptions(fuzzOptions, outDir, values.RepoRoot, values.CudaArch);
         return true;
     }
 

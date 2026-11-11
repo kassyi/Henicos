@@ -3,8 +3,8 @@ using System.Globalization;
 namespace Kassyi.GSharp.Tools.FuzzDiff;
 
 /// <summary>
-/// The values that the options of <c>fuzz-diff run</c> and <c>fuzz-diff compare</c> set, before each command turns
-/// them into its options record. A command's table sets only the members of its own options.
+/// The values that the options of the <c>fuzz-diff</c> commands set, before each command turns them into its options
+/// record. A command's table sets only the members of its own options.
 /// </summary>
 internal sealed class FuzzOptionValues
 {
@@ -75,33 +75,46 @@ internal sealed class FuzzOptionValues
 internal sealed record FuzzOptionSpec(bool TakesValue, Func<FuzzOptionValues, string, string?> Apply);
 
 /// <summary>
-/// The option table of <c>fuzz-diff run</c> and <c>fuzz-diff compare</c>: one row per option and one parse loop, so
-/// that an option shared by both commands has one parser.
+/// The option tables of the <c>fuzz-diff</c> commands: one row per option and one parse loop, so that an option shared
+/// by several commands has one parser.
 /// </summary>
 internal static class FuzzOptionTable
 {
     /// <summary>The largest <c>--batch-size</c>.</summary>
     internal const int MaxBatchSize = 256;
 
-    /// <summary>Gets the rows that <c>run</c> and <c>compare</c> share: the generation options and the flags.</summary>
-    internal static IEnumerable<KeyValuePair<string, FuzzOptionSpec>> SharedRows { get; } =
+    /// <summary>Gets the rows of the generation options, which <c>gen</c>, <c>run</c> and <c>compare</c>
+    /// share.</summary>
+    internal static IEnumerable<KeyValuePair<string, FuzzOptionSpec>> GenerationRows { get; } =
     [
-        new("--batches", Value(ParseBatches)),
         new("--batch-size", Value(ParseBatchSize)),
         new("--fuzz-seed", Value(ParseFuzzSeed)),
         new("--input-seed", Value(ParseInputSeed)),
         new("--allow-issue", Value(ParseAllowIssue)),
         new("--swarm-focus", Value(ParseSwarmFocus)),
         new("--metamorphic", Flag(static v => v.Metamorphic = true)),
+    ];
+
+    /// <summary>Gets the rows that <c>run</c> and <c>compare</c> share: the generation options and the flags.</summary>
+    internal static IEnumerable<KeyValuePair<string, FuzzOptionSpec>> SharedRows { get; } =
+    [
+        .. GenerationRows,
+        new("--batches", Value(ParseBatches)),
         new("--expect-change", Flag(static v => v.ExpectChange = true)),
         new("--no-reduce", Flag(static v => v.NoReduce = true)),
     ];
 
     /// <summary>Builds a table from the shared rows and the rows of one command.</summary>
-    internal static Dictionary<string, FuzzOptionSpec> Create(params KeyValuePair<string, FuzzOptionSpec>[] ownRows)
+    internal static Dictionary<string, FuzzOptionSpec> Create(params KeyValuePair<string, FuzzOptionSpec>[] ownRows) =>
+        CreateFrom(SharedRows, ownRows);
+
+    /// <summary>Builds a table from <paramref name="baseRows"/> and the rows of one command.</summary>
+    internal static Dictionary<string, FuzzOptionSpec> CreateFrom(
+        IEnumerable<KeyValuePair<string, FuzzOptionSpec>> baseRows,
+        params KeyValuePair<string, FuzzOptionSpec>[] ownRows)
     {
         var table = new Dictionary<string, FuzzOptionSpec>(StringComparer.Ordinal);
-        foreach (var row in SharedRows)
+        foreach (var row in baseRows)
         {
             table.Add(row.Key, row.Value);
         }
@@ -115,16 +128,8 @@ internal static class FuzzOptionTable
     }
 
     /// <summary>Builds an option table with only the specified rows.</summary>
-    internal static Dictionary<string, FuzzOptionSpec> CreateTable(params KeyValuePair<string, FuzzOptionSpec>[] rows)
-    {
-        var table = new Dictionary<string, FuzzOptionSpec>(StringComparer.Ordinal);
-        foreach (var row in rows)
-        {
-            table.Add(row.Key, row.Value);
-        }
-
-        return table;
-    }
+    internal static Dictionary<string, FuzzOptionSpec> CreateTable(params KeyValuePair<string, FuzzOptionSpec>[] rows) =>
+        CreateFrom([], rows);
 
     /// <summary>A row for an option without a value; a value written as <c>--name=value</c> is ignored.</summary>
     internal static FuzzOptionSpec Flag(Action<FuzzOptionValues> set) =>
@@ -259,7 +264,7 @@ internal static class FuzzOptionTable
     {
         if (value.Length == 0 || !FuzzSwarmConfig.TryParseFocus(value, out _))
         {
-            return "--swarm-focus requires 'default', 'coalesce-assign-value', or 'tuple-deconstruct-complex'.";
+            return FuzzSwarmConfig.FocusErrorMessage;
         }
 
         values.SwarmFocus = value;
@@ -311,19 +316,19 @@ internal static class FuzzOptionTable
     internal static string? ParseOutDir(FuzzOptionValues values, string value)
     {
         values.OutDir = value;
-        return null;
+        return EmptyDirectoryError("--out-dir", value);
     }
 
     internal static string? ParseWorkDir(FuzzOptionValues values, string value)
     {
         values.WorkDir = value;
-        return null;
+        return EmptyDirectoryError("--work-dir", value);
     }
 
     internal static string? ParseRepoRoot(FuzzOptionValues values, string value)
     {
         values.RepoRoot = value;
-        return null;
+        return EmptyDirectoryError("--repo-root", value);
     }
 
     internal static string? ParseCudaArch(FuzzOptionValues values, string value)
@@ -355,4 +360,8 @@ internal static class FuzzOptionTable
         values.FindingsDir = value;
         return null;
     }
+
+    // The value is set before it is checked: an error stops the parse and the values are dropped.
+    private static string? EmptyDirectoryError(string name, string value) =>
+        value.Length == 0 ? $"{name} requires a directory path." : null;
 }

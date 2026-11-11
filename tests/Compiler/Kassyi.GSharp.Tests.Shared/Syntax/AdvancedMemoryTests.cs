@@ -6,7 +6,7 @@ public class AdvancedMemoryTests : TranspilerTestBase
 {
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void Test_PointerIncrementKernel()
+    public void PointerIncrement_SequentialArray_CopiesElementsToDestination()
     {
         uint[] src = [10, 20, 30];
         uint[] dest = [0, 0, 0];
@@ -20,7 +20,7 @@ public class AdvancedMemoryTests : TranspilerTestBase
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void Test_PointerDecrementKernel()
+    public void PointerDecrement_SequentialArray_CopiesElementsToDestination()
     {
         uint[] src = [100, 200, 300];
         uint[] dest = [0, 0, 0];
@@ -39,7 +39,10 @@ public class AdvancedMemoryTests : TranspilerTestBase
     [InlineData(new uint[] { 0, 1, 2 }, new uint[] { 0, 1, uint.MaxValue }, new uint[] { 10, 11, 9 })]
     [InlineData(new uint[] { 1, 2, 0 }, new uint[] { 0x55555555u, 0xAAAAAAAAu, 0x12345678u }, new uint[] { 0x12345682u, 0x5555555Fu, 0xAAAAAAB4u })]
     [InlineData(new uint[] { 2, 1, 0 }, new uint[] { 0, 0, 0 }, new uint[] { 10, 10, 10 })]
-    public void Test_PointerComplexAssignmentKernel(uint[] idx, uint[] val, uint[] expectedDest)
+    public void PointerComplexAssignment_PermutedIndicesAndValues_ProducesExpectedDestination(
+        uint[] idx,
+        uint[] val,
+        uint[] expectedDest)
     {
         uint[] dest = [0, 0, 0];
 
@@ -52,7 +55,7 @@ public class AdvancedMemoryTests : TranspilerTestBase
 
     [Fact]
     [Category(TestCategory.Syntax)]
-    public void Test_UnsafeAsPointer_Transpilation()
+    public void Transpile_UnsafeAsPointer_EmitsPointerCastAndDereference()
     {
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<AdvancedMemoryTarget>(
             nameof(AdvancedMemoryTarget.UnsafeAsPointer), dialect: CurrentDialect);
@@ -65,7 +68,7 @@ public class AdvancedMemoryTests : TranspilerTestBase
 
     [Fact]
     [Category(TestCategory.Syntax)]
-    public void Test_MemoryMarshalCast_Transpilation()
+    public void Transpile_MemoryMarshalCast_EmitsSpanCastToGSharpArray()
     {
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<AdvancedMemoryTarget>(
             nameof(AdvancedMemoryTarget.MemoryMarshalCast), dialect: CurrentDialect);
@@ -76,7 +79,7 @@ public class AdvancedMemoryTests : TranspilerTestBase
 
     [Fact]
     [Category(TestCategory.Syntax)]
-    public void Test_RefFields_Transpilation()
+    public void Transpile_RefFieldsUpdate_EmitsRefWrapperStructAndAssignment()
     {
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<AdvancedMemoryTarget>(
             nameof(AdvancedMemoryTarget.RefFieldsUpdate), isDevice: true, dialect: CurrentDialect);
@@ -88,7 +91,7 @@ public class AdvancedMemoryTests : TranspilerTestBase
 
     [Fact]
     [Category(TestCategory.Syntax)]
-    public void Test_SimdVector128_Transpilation()
+    public void Transpile_SimdVector128_EmitsVectorTypeAndArrayAccess()
     {
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<AdvancedMemoryTarget>(
             nameof(AdvancedMemoryTarget.SimdVector128), dialect: CurrentDialect);
@@ -107,7 +110,7 @@ public class AdvancedMemoryTests : TranspilerTestBase
 
     [Fact]
     [Category(TestCategory.Syntax)]
-    public void Test_UnsafePointerArithmetic_Transpilation()
+    public void Transpile_PointerIncrementKernel_EmitsPointerArithmeticAssignments()
     {
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod(
             typeof(AdvancedMemoryKernels), nameof(AdvancedMemoryKernels.PointerIncrementKernel), isDevice: false, dialect: CurrentDialect);
@@ -119,7 +122,7 @@ public class AdvancedMemoryTests : TranspilerTestBase
 
     [Fact]
     [Category(TestCategory.Syntax)]
-    public void Test_FixedSizeBuffers_Transpilation()
+    public void Transpile_FixedSizeBuffers_EmitsStructWithInlineArray()
     {
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<AdvancedMemoryTarget>(
             nameof(AdvancedMemoryTarget.FixedSizeBuffers), isDevice: false, dialect: CurrentDialect);

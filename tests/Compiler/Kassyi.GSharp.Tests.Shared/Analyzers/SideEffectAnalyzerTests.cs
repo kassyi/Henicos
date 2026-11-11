@@ -9,7 +9,7 @@ public class SideEffectAnalyzerTests : AnalyzerTestBase
     [Fact]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.HappyPath)]
-    public async Task HappyPath_NoDiagnostics()
+    public async Task SideEffectAnalyzer_SideEffectFreeKernel_ProducesNoDiagnostics()
     {
         await VerifyAnalyzerFromFileAsync(
             "SideEffectAnalyzer_HappyPath.cs",
@@ -20,7 +20,7 @@ public class SideEffectAnalyzerTests : AnalyzerTestBase
     [Fact]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.SadPath)]
-    public async Task SadPath_ReportsDiagnostics()
+    public async Task SideEffectAnalyzer_SideEffectViolations_ReportsDiagnostics()
     {
         await VerifyAnalyzerFromFileAsync(
             "SideEffectAnalyzer_SadPath.cs",

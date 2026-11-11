@@ -11,7 +11,7 @@ public class GpuMacroTranspilerRuleTests : TranspilerTestBase
     [Fact]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_GpuMacroTranspilerRule_SadPath_ReportsDiagnostic()
+    public async Task GpuMacroTranspilerRule_UnsupportedMacroUsage_ReportsDiagnostic()
     {
         await VerifyGeneratorAsync();
     }

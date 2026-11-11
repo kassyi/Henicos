@@ -11,8 +11,8 @@ namespace Kassyi.GSharp.Compiler.Generators;
 internal static class CSharpStringLiteral
 {
     /// <summary>
-    /// Returns <paramref name="value"/> as a quoted C# string literal: <c>"</c>, <c>\</c>, line breaks and other control
-    /// characters are escaped as Roslyn writes them (<see cref="SymbolDisplay.FormatLiteral(string, bool)"/>).
+    /// Returns <paramref name="value"/> as a quoted C# string literal: <c>"</c>, <c>\</c>, line breaks and other
+    /// control characters are escaped as Roslyn writes them (<see cref="SymbolDisplay.FormatLiteral(string, bool)"/>).
     /// <c>null</c>, which a JSON input can hold for a string property, is written as <c>""</c>.
     /// </summary>
     public static string Quote(string? value) => SymbolDisplay.FormatLiteral(value ?? string.Empty, quote: true);

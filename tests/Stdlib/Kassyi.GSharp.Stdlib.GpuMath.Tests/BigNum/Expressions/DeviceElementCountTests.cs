@@ -109,13 +109,16 @@ public sealed class DeviceElementCountTests : IDisposable
         // n = 0 with a destination full of ones: Max / Min throw (the destination is unspecified), Sum writes +0 into
         // the destination and wraps it.
         var leaf = Leaf(1000, []);
-        using var destination = GpuBigUInt.FromBigInteger(_workspace, (BigInteger.One << (Words * 32)) - 1, Words);
         using GpuBigIntExpr expression = reduction switch
         {
             Reduction.Sum => leaf.Sum(),
             Reduction.Max => leaf.Max(),
             _ => leaf.Min()
         };
+
+        // The destination has the width of the result (Sum: the bound of 1000 elements, one word more)
+        var words = expression.Node.NumWords;
+        using var destination = GpuBigUInt.FromBigInteger(_workspace, (BigInteger.One << (words * 32)) - 1, words);
 
         if (reduction != Reduction.Sum)
         {
