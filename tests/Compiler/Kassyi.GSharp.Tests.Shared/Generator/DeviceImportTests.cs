@@ -140,11 +140,22 @@ public class DeviceImportTests
     public void DeviceImport_MemoryWritingEffect_SequencesOnlyMemoryWritingCall(string dialect)
     {
         var (_, kernels) = Generate(dialect);
-        var lines = kernels.Split('\n');
+        string? readAndClear = null;
+        string? takeOne = null;
+        foreach (var line in kernels.AsSpan().EnumerateLines())
+        {
+            if (line.Contains("__gsharp_fn_DeviceExportCase__LibMath__ReadAndClear(", StringComparison.Ordinal))
+            {
+                readAndClear = line.ToString();
+            }
+            if (line.Contains("__gsharp_fn_DeviceExportCase__LibMath__TakeOne(", StringComparison.Ordinal))
+            {
+                takeOne = line.ToString();
+            }
+        }
 
-        // The C++ lines (the CPU wrapper also holds the managed body)
-        var readAndClear = lines.Single(static l => l.Contains("__gsharp_fn_DeviceExportCase__LibMath__ReadAndClear(", StringComparison.Ordinal));
-        var takeOne = lines.Single(static l => l.Contains("__gsharp_fn_DeviceExportCase__LibMath__TakeOne(", StringComparison.Ordinal));
+        Assert.NotNull(readAndClear);
+        Assert.NotNull(takeOne);
         Assert.Contains("__gsharp_seq_", readAndClear, StringComparison.Ordinal);
         Assert.DoesNotContain("__gsharp_seq_", takeOne, StringComparison.Ordinal);
     }
@@ -258,8 +269,16 @@ public class DeviceImportTests
     {
         var (_, kernels) = GenerateStructs(dialect);
 
-        var line = kernels.Split('\n')
-            .Single(static l => l.Contains("__gsharp_ctor_DeviceImportStructsCase__Recorder(", StringComparison.Ordinal));
+        string? line = null;
+        foreach (var l in kernels.AsSpan().EnumerateLines())
+        {
+            if (l.Contains("__gsharp_ctor_DeviceImportStructsCase__Recorder(", StringComparison.Ordinal))
+            {
+                line = l.ToString();
+                break;
+            }
+        }
+        Assert.NotNull(line);
         Assert.Contains("__gsharp_seq_", line, StringComparison.Ordinal);
     }
 
@@ -292,11 +311,11 @@ public class DeviceImportTests
     [Scenario(TestScenario.Boundary)]
     public async Task DeviceImport_CompilationReference_ImportsAsMetadataReference(string dialect)
     {
+        var (_, exportTree, _) = RoslynTestUtility.GetTestCaseContext("Generators/DeviceExportLibrary.cs");
         var library = CSharpCompilation.Create("DeviceExportLibrary")
             .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, allowUnsafe: true))
             .AddReferences(RoslynTestUtility.BaseReferences)
-            .AddSyntaxTrees(CSharpSyntaxTree.ParseText(RoslynTestUtility.ReadTestCase("Generators/DeviceExportLibrary.cs"),
-                s_parseOptions, path: "library.cs"));
+            .AddSyntaxTrees(exportTree);
         CreateDriver("Cuda").RunGeneratorsAndUpdateCompilation(library, out var output, out _);
         var reference = output.ToMetadataReference();
         Assert.IsAssignableFrom<CompilationReference>(reference);

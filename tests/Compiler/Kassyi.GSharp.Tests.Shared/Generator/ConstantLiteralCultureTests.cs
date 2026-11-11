@@ -54,16 +54,57 @@ public class ConstantLiteralCultureTests
     // The line where the two texts part, so that the failure shows the literal instead of the whole file
     private static string FirstDifference(string expected, string actual)
     {
-        var expectedLines = expected.Split('\n');
-        var actualLines = actual.Split('\n');
-        for (var i = 0; i < Math.Min(expectedLines.Length, actualLines.Length); i++)
+        var expectedEnum = expected.AsSpan().EnumerateLines();
+        var actualEnum = actual.AsSpan().EnumerateLines();
+        var lineIndex = 0;
+        var expectedLinesCount = 0;
+        var actualLinesCount = 0;
+
+        while (true)
         {
-            if (expectedLines[i] != actualLines[i])
+            var hasExpected = expectedEnum.MoveNext();
+            var hasActual = actualEnum.MoveNext();
+
+            if (hasExpected)
             {
-                return $"line {i + 1}{Environment.NewLine}expected: {expectedLines[i].Trim()}{Environment.NewLine}actual:   {actualLines[i].Trim()}";
+                expectedLinesCount++;
+            }
+
+            if (hasActual)
+            {
+                actualLinesCount++;
+            }
+
+            if (!hasExpected || !hasActual)
+            {
+                if (!hasExpected && !hasActual)
+                {
+                    break;
+                }
+
+                while (expectedEnum.MoveNext())
+                {
+                    expectedLinesCount++;
+                }
+
+                while (actualEnum.MoveNext())
+                {
+                    actualLinesCount++;
+                }
+
+                return $"lengths differ: {expectedLinesCount} and {actualLinesCount} lines";
+            }
+
+            lineIndex++;
+            var expectedLine = expectedEnum.Current;
+            var actualLine = actualEnum.Current;
+
+            if (!expectedLine.SequenceEqual(actualLine))
+            {
+                return $"line {lineIndex}{Environment.NewLine}expected: {expectedLine.Trim().ToString()}{Environment.NewLine}actual:   {actualLine.Trim().ToString()}";
             }
         }
 
-        return $"lengths differ: {expectedLines.Length} and {actualLines.Length} lines";
+        return "no difference";
     }
 }

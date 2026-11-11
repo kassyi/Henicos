@@ -58,5 +58,11 @@ public readonly record struct ThreadOrder(ThreadOrderKind Kind, int Seed)
     }
 
     /// <inheritdoc/>
-    public override string ToString() => Kind == ThreadOrderKind.Permuted ? $"permuted (seed {Seed})" : Kind.ToString().ToLowerInvariant();
+    public override string ToString() => Kind switch
+    {
+        ThreadOrderKind.Forward => "forward",
+        ThreadOrderKind.Reverse => "reverse",
+        ThreadOrderKind.Permuted => $"permuted (seed {Seed})",
+        _ => Kind.ToString(),
+    };
 }

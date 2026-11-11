@@ -224,8 +224,15 @@ public class LoggerAndEnvironmentTests
             Assert.All(threadProcessed, static done => Assert.Equal(1, done));
 
             var output = sw.ToString();
-            var lines = output.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.RemoveEmptyEntries);
-            Assert.Equal(IterationCount + 1, lines.Length);
+            var lineCount = 0;
+            foreach (var line in output.AsSpan().EnumerateLines())
+            {
+                if (!line.IsEmpty)
+                {
+                    lineCount++;
+                }
+            }
+            Assert.Equal(IterationCount + 1, lineCount);
             Assert.Contains("Summary [", output);
             Assert.Contains("Task_0: 12250 ms", output);
         }

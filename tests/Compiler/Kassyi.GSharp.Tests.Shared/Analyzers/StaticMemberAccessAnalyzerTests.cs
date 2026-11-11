@@ -68,6 +68,6 @@ public class StaticMemberAccessAnalyzerTests : TranspilerTestBase
         var message = diagnostic.GetMessage();
         var start = message.IndexOf('\'') + 1;
         var end = message.IndexOf('\'', start);
-        return message.Substring(start, end - start);
+        return message[start..end];
     }
 }

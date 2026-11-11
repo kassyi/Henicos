@@ -54,6 +54,7 @@ public class CppReservedIdentifierAnalyzerTests : TranspilerTestBase
     {
         var message = diagnostic.GetMessage();
         var start = message.IndexOf('\'') + 1;
-        return message.Substring(start, message.IndexOf('\'', start) - start);
+        var end = message.IndexOf('\'', start);
+        return message[start..end];
     }
 }

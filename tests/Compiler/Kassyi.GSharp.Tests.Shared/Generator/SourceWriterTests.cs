@@ -1,4 +1,5 @@
 #nullable enable
+using System.Text;
 using System.Threading.Tasks;
 using VerifyXunit;
 
@@ -22,7 +23,7 @@ public class SourceWriterTests
             .Append(123)
             .AppendLine(";");
 
-        string result = writer.ToString().Replace("\r\n", "\n");
+        string result = NormalizeNewlines(writer.ToString());
         Assert.Equal("auto x = 123;\n", result);
     }
 
@@ -42,7 +43,7 @@ public class SourceWriterTests
             .LineIf(false, "skip_line")
             .LineIf(true, "keep_line");
 
-        string result = writer.ToString().Replace("\r\n", "\n");
+        string result = NormalizeNewlines(writer.ToString());
         Assert.Equal("keep_this keep_newline\nkeep_line\n", result);
     }
 
@@ -76,7 +77,7 @@ public class SourceWriterTests
             .AppendLine()
             .Append("line2");
 
-        string result = writer.ToString().Replace("\r\n", "\n");
+        string result = NormalizeNewlines(writer.ToString());
         Assert.Equal("line1\nline2", result);
     }
 
@@ -96,7 +97,7 @@ public class SourceWriterTests
             .Append(' ')
             .Append("{}");
 
-        string result = writer.ToString().Replace("\r\n", "\n");
+        string result = NormalizeNewlines(writer.ToString());
         Assert.Equal("// Header for Kernel\n__global__ void Kernel_42() {}", result);
     }
 
@@ -120,5 +121,8 @@ public class SourceWriterTests
         var methodName = nameof(SourceWriter_NestedScopeAndIndentation_MatchesExpectedSnapshot);
         return Verifier.Verify(writer.ToString(), "cs").UseFastHashSnapshotName(methodName);
     }
+
+    private static string NormalizeNewlines(string text) =>
+        new StringBuilder(text).Replace("\r\n", "\n").ToString();
 }
 

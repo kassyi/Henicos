@@ -151,30 +151,87 @@ public static class CudaTrapSubprocessRunner
 
     internal static bool TryParseResultLine(string content, out Exception? thrown)
     {
-        foreach (string rawLine in content.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries))
+        foreach (var rawLine in content.AsSpan().EnumerateLines())
         {
-            string line = rawLine.Trim();
+            var line = rawLine.Trim();
             if (!line.StartsWith(ResultPrefix, StringComparison.Ordinal))
             {
                 continue;
             }
 
-            string payload = line[ResultPrefix.Length..];
-            string[] parts = payload.Split('|');
-            if (parts.Length >= 1 && parts[0] == "NONE")
+            var payload = line[ResultPrefix.Length..];
+            int firstPipe = payload.IndexOf('|');
+            var tag = firstPipe < 0 ? payload : payload[..firstPipe];
+            if (tag.SequenceEqual("NONE"))
             {
                 thrown = null;
                 return true;
             }
 
-            if (parts.Length >= 7 && parts[0] == "THREW")
+            if (tag.SequenceEqual("THREW") && firstPipe >= 0)
             {
-                string exTypeName = parts[1];
-                string innerTypeName = parts[2];
-                string memberName = parts[3];
-                string sourceLoc = parts[4];
-                string paramName = parts[5];
-                string message = Encoding.UTF8.GetString(Convert.FromBase64String(parts[6]));
+                var remaining = payload[(firstPipe + 1)..];
+                int sep1 = remaining.IndexOf('|');
+                if (sep1 < 0)
+                {
+                    continue;
+                }
+                var exTypeName = remaining[..sep1].ToString();
+                remaining = remaining[(sep1 + 1)..];
+
+                int sep2 = remaining.IndexOf('|');
+                if (sep2 < 0)
+                {
+                    continue;
+                }
+                var innerTypeName = remaining[..sep2].ToString();
+                remaining = remaining[(sep2 + 1)..];
+
+                int sep3 = remaining.IndexOf('|');
+                if (sep3 < 0)
+                {
+                    continue;
+                }
+                var memberName = remaining[..sep3].ToString();
+                remaining = remaining[(sep3 + 1)..];
+
+                int sep4 = remaining.IndexOf('|');
+                if (sep4 < 0)
+                {
+                    continue;
+                }
+                var sourceLoc = remaining[..sep4].ToString();
+                remaining = remaining[(sep4 + 1)..];
+
+                int sep5 = remaining.IndexOf('|');
+                if (sep5 < 0)
+                {
+                    continue;
+                }
+                var paramName = remaining[..sep5].ToString();
+                remaining = remaining[(sep5 + 1)..];
+
+                int sep6 = remaining.IndexOf('|');
+                var messageSpan = sep6 < 0 ? remaining : remaining[..sep6];
+
+                string message;
+                if (messageSpan.IsEmpty)
+                {
+                    message = string.Empty;
+                }
+                else
+                {
+                    try
+                    {
+                        message = Encoding.UTF8.GetString(Convert.FromBase64String(messageSpan.ToString()));
+                    }
+                    // smell-scan: ignore swallowed-exception -- malformed base64 payload should not throw from a TryParse method
+                    catch (FormatException)
+                    {
+                        continue;
+                    }
+                }
+
                 thrown = ReconstructException(exTypeName, innerTypeName, memberName, sourceLoc, paramName, message);
                 return true;
             }

@@ -15,10 +15,10 @@ public class GpuChudnovskyPiTests
 
         ChudnovskyAlgorithm.ComputePi(targetDigits, sw, thresholdTerms: 8, asHex: false);
 
-        var result = sw.ToString().Trim();
-        Assert.False(string.IsNullOrWhiteSpace(result));
+        var rawResult = sw.ToString();
+        Assert.False(rawResult.AsSpan().Trim().IsEmpty);
 
-        var cleanResult = result.Replace(".", "");
+        var cleanResult = sw.GetStringBuilder().Replace(".", "").ToString();
         Assert.Equal(targetDigits + 1, cleanResult.Length);
         Assert.Equal("314159265358979323846264338327950288419716939937510", cleanResult);
     }
@@ -34,13 +34,13 @@ public class GpuChudnovskyPiTests
 
         ChudnovskyAlgorithm.ComputePi(targetDigits, sw, thresholdTerms: 8, asHex: true);
 
-        var result = sw.ToString().Trim();
-        Assert.False(string.IsNullOrWhiteSpace(result));
+        var rawResult = sw.ToString();
+        Assert.False(rawResult.AsSpan().Trim().IsEmpty);
 
-        var cleanResult = result.Replace(".", "").ToUpperInvariant();
+        var cleanResult = sw.GetStringBuilder().Replace(".", "").ToString();
         // 3. followed by 50 hex digits of Pi: 243F6A8885A308D313198A2E03707344A4093822299F31D008
         Assert.True(cleanResult.Length >= 51, $"Expected at least 51 hex characters, got {cleanResult.Length}");
-        Assert.StartsWith("3243F6A8885A308D313198A2E03707344A4093822299F31D008", cleanResult);
+        Assert.StartsWith("3243F6A8885A308D313198A2E03707344A4093822299F31D008", cleanResult, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
