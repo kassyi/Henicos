@@ -23,7 +23,7 @@ public sealed class KernelGraphHandler : IGpuGraphProvider
 
 | Name | Description |
 | --- | --- |
-| [BeginCapture(IntPtr)](#begincaptureintptr) | Begins relaxed CUDA Graph capture (`CU_STREAM_CAPTURE_MODE_RELAXED`) on the specified stream. |
+| [BeginCapture(IntPtr)](#begincaptureintptr) | Begins relaxed CUDA Graph capture (`CUstreamCaptureMode.Relaxed`) on the specified stream. |
 | [EndCapture(IntPtr)](#endcaptureintptr) | Ends CUDA Graph capture on the specified stream and returns the `CUgraph` handle. |
 | [InstantiateGraph(IntPtr)](#instantiategraphintptr) | Compiles and instantiates an executable `CUgraphExec` handle from a captured `CUgraph`. |
 | [LaunchGraph(IntPtr, IntPtr)](#launchgraphintptr-intptr) | Launches an executable `CUgraphExec` on the specified CUDA stream. |
@@ -32,7 +32,7 @@ public sealed class KernelGraphHandler : IGpuGraphProvider
 
 ## BeginCapture(IntPtr)
 
-Begins relaxed CUDA Graph stream capture (`CU_STREAM_CAPTURE_MODE_RELAXED`) on the specified CUDA stream via `cuStreamBeginCapture`. Relaxed mode forbids no call during the capture: an expression evaluated under capture allocates with `cuMemAlloc` when the memory pool misses, which the global and thread-local modes reject.
+Begins relaxed CUDA Graph stream capture (`CUstreamCaptureMode.Relaxed`) on the specified CUDA stream via `cuStreamBeginCapture`. Relaxed mode forbids no call during the capture: an expression evaluated under capture allocates with `cuMemAlloc` when the memory pool misses, which the global and thread-local modes reject.
 
 ```csharp
 public void BeginCapture(IntPtr stream);

@@ -269,7 +269,7 @@ The result is one of the operands, its sign flag included. Of two equal values e
 ## Remarks
 
 > [!IMPORTANT]
-> **Capture Warm-Up:** A device memory allocation (`cuMemAlloc`) is not recorded in a CUDA Graph; it runs once, when the graph is captured. `CompileToGraph` executes a warm-up pass before the capture begins so that the memory buffers and kernel modules are prepared outside the capture window and the capture finds its buffers in the pool. The capture runs in relaxed mode (`CU_STREAM_CAPTURE_MODE_RELAXED`), so an allocation on a pool miss during the capture is a real allocation that the workspace keeps for the graph.
+> **Capture Warm-Up:** A device memory allocation (`cuMemAlloc`) is not recorded in a CUDA Graph; it runs once, when the graph is captured. `CompileToGraph` executes a warm-up pass before the capture begins so that the memory buffers and kernel modules are prepared outside the capture window and the capture finds its buffers in the pool. The capture runs in relaxed mode (`CUstreamCaptureMode.Relaxed`), so an allocation on a pool miss during the capture is a real allocation that the workspace keeps for the graph.
 
 **Result widths:** a result never overflows. Every node has an upper bound of its result in bits, computed from its operands when the expression is built: `a + b` and `a - b` one bit more than the wider operand, `a * b` the sum of the operands, `a / b` the dividend, `a % b` the narrower operand, `Max` and `Min` the wider operand. The result has the words of that bound (`Node.NumWords`); narrow it explicitly with `Fit`. Adding or subtracting values whose effective signs differ reads two words from the device once, because the sign of the result depends on the values.
 
