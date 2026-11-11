@@ -10,6 +10,7 @@ namespace Kassyi.GSharp.Tests.Shared.Transpiler.Ir;
 /// constructs opaque fails; one that builds more of them updates the table, which shows how far the IR reaches.
 /// </summary>
 [Category(TestCategory.Compiler)]
+[Collection(TestCollections.CorpusScan)]
 public class IrCoverageTests(ITestOutputHelper output)
 {
     private const string ExpectedFile = "IrOpaqueCoverage.expected.txt";

@@ -14,6 +14,7 @@ namespace Kassyi.GSharp.Tests.Shared.Transpiler.Ir;
 /// of differences to the received file it names in its output.
 /// </remarks>
 [Category(TestCategory.Compiler)]
+[Collection(TestCollections.CorpusScan)]
 public class IrClassificationEquivalenceTests(ITestOutputHelper output)
 {
     private const string ExpectedFile = "IrEffectDifferences.expected.txt";

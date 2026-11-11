@@ -16,10 +16,10 @@
 Henicos.Benchmarks.Tests: 576
 Kassyi.GSharp.Compiler.Generators.Tests: 192
 Kassyi.GSharp.Stdlib.GpuMath.Tests: 1536
-Kassyi.GSharp.Tests.Cpu: 2304, stress 6528
+Kassyi.GSharp.Tests.Cpu: 2880, stress 6720
 Kassyi.GSharp.Tests.Cuda: 2496, stress 6784
 Kassyi.GSharp.Tests.Infrastructure.Tests: 320
 Kassyi.GSharp.Tests.Integration: 128
-Kassyi.GSharp.Tools.CollectEnv.Tests: 128
+Kassyi.GSharp.Tools.CollectEnv.Tests: 192
 Kassyi.GSharp.Tools.FuzzDiff.Tests: 1728
 Kassyi.ZeroAlloc.Linq.Tests: 128

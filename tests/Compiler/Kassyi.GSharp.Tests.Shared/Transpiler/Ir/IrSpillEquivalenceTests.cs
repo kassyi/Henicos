@@ -16,6 +16,7 @@ namespace Kassyi.GSharp.Tests.Shared.Transpiler.Ir;
 /// names, one per test assembly.
 /// </remarks>
 [Category(TestCategory.Compiler)]
+[Collection(TestCollections.CorpusScan)]
 public class IrSpillEquivalenceTests(ITestOutputHelper output)
 {
     private const string ExpectedFile = "IrSpillDifferences.expected.txt";
