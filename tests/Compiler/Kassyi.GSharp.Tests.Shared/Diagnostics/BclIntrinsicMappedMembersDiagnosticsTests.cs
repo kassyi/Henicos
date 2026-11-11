@@ -19,7 +19,7 @@ public class BclIntrinsicMappedMembersDiagnosticsTests
     [InlineData("Cuda", "MappedInterlockedKernel")]
     [InlineData("Cuda", "MappedBitOperationsKernel")]
     [Scenario(TestScenario.HappyPath)]
-    public async Task Test_MappedMember_ReportsNothing(string dialect, string kernel)
+    public async Task Gsh0003_MappedInterlockedOrBitOperationsMember_ReportsNothing(string dialect, string kernel)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(TestCase, dialect);
 
@@ -39,7 +39,7 @@ public class BclIntrinsicMappedMembersDiagnosticsTests
     [InlineData("Cuda", "UsingStaticMethodGroupKernel", "(used as a method group)", 56, 36, 56, 44)]
     [InlineData("Cuda", "NuintOverloadKernel", "(nint and nuint are not supported)", 65, 21, 65, 43)]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_UnmappedMemberOrMethodGroup_ReportsGsh0003(string dialect, string kernel, string reason,
+    public async Task Gsh0003_UnmappedMemberOrMethodGroup_ReportsOneAtTheCall(string dialect, string kernel, string reason,
         int startLine, int startColumn, int endLine, int endColumn)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(TestCase, dialect);
