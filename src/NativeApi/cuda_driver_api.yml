@@ -23,6 +23,15 @@ methods:
         type: uint
         description: Initialization flags (must be 0).
 
+  - name: cuDriverGetVersion
+    returnType: CUresult
+    summary: Returns the latest CUDA version the installed driver supports.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: driverVersion
+        type: out int
+        description: Returned version, 1000 * major + 10 * minor (13000 for CUDA 13.0).
+
   - name: cuDeviceGet
     returnType: CUresult
     summary: Returns a handle to a compute device.
@@ -185,6 +194,7 @@ methods:
         description: Event to wait for.
 
   - name: cuEventElapsedTime
+    entryPoint: cuEventElapsedTime_v2
     returnType: CUresult
     summary: Computes the elapsed time between two events.
     returnDescription: CudaSuccess on success; otherwise, an error code.
@@ -902,42 +912,6 @@ methods:
       - name: flags
         type: uint
         description: Allocation flags.
-
-  - name: cuMemPrefetchAsync
-    returnType: CUresult
-    summary: Prefetches memory to the specified destination device.
-    returnDescription: CudaSuccess on success; otherwise, an error code.
-    parameters:
-      - name: devPtr
-        type: IntPtr
-        description: Pointer to memory range to prefetch.
-      - name: count
-        type: IntPtr
-        description: Number of bytes to prefetch.
-      - name: dstDevice
-        type: int
-        description: Destination device handle.
-      - name: hStream
-        type: IntPtr
-        description: Stream identifier.
-
-  - name: cuMemAdvise
-    returnType: CUresult
-    summary: Advises the Unified Memory subsystem about the usage pattern for the specified memory range.
-    returnDescription: CudaSuccess on success; otherwise, an error code.
-    parameters:
-      - name: devPtr
-        type: IntPtr
-        description: Pointer to memory range.
-      - name: count
-        type: IntPtr
-        description: Number of bytes in memory range.
-      - name: advice
-        type: int
-        description: Usage advice hint.
-      - name: device
-        type: int
-        description: Device to apply advice to.
 
   # ---------------------------------
   # 11. Page-locked / Host Pinned Memory
