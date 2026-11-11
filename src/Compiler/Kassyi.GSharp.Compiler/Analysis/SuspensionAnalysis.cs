@@ -53,7 +53,8 @@ internal static class SuspensionAnalysis
         var definition = method.OriginalDefinition;
         if (!TryGetDeviceFunctionBody(definition, compilation, out _))
         {
-            return DeviceExportTable.TryFindFunction(definition, compilation, out var imported) && imported.Record.Suspends;
+            return DeviceExportTable.TryFindFunction(definition, compilation, out var imported) &&
+                imported.Record.Traits.Suspends;
         }
 
         var cache = s_suspending.GetValue(compilation,
@@ -77,7 +78,7 @@ internal static class SuspensionAnalysis
         if (!TryGetDeviceFunctionBody(definition, compilation, out _))
         {
             return DeviceExportTable.TryFindFunction(definition, compilation, out var imported) &&
-                   imported.Record.ReachesBlockBarrier;
+                   imported.Record.Traits.ReachesBlockBarrier;
         }
 
         var cache = s_blockBarrier.GetValue(compilation,
@@ -128,7 +129,7 @@ internal static class SuspensionAnalysis
         if (!TryGetMethodBody(definition, compilation, out _))
         {
             return DeviceExportTable.TryFindFunction(definition, compilation, out var imported) &&
-                   imported.Record.Suspends;
+                   imported.Record.Traits.Suspends;
         }
 
         var cache = s_warpShuffle.GetValue(compilation,
@@ -155,7 +156,7 @@ internal static class SuspensionAnalysis
         if (!TryGetMethodBody(definition, compilation, out _))
         {
             return DeviceExportTable.TryFindFunction(definition, compilation, out var imported) &&
-                   imported.Record.Suspends;
+                   imported.Record.Traits.Suspends;
         }
 
         var cache = s_activeMask.GetValue(compilation,
@@ -220,8 +221,8 @@ internal static class SuspensionAnalysis
                    barriers switch
                    {
                        BarrierSet.Splitting or BarrierSet.WarpShuffle or BarrierSet.ActiveMask =>
-                           imported.Record.Suspends,
-                       BarrierSet.Block => imported.Record.ReachesBlockBarrier,
+                           imported.Record.Traits.Suspends,
+                       BarrierSet.Block => imported.Record.Traits.ReachesBlockBarrier,
                        _ => false
                    };
         }

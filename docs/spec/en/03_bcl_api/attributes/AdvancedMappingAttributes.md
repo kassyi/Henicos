@@ -17,23 +17,34 @@ The `Kassyi.GSharp.Core` package includes several advanced internal mapping attr
 
 ```csharp
 [AttributeUsage(AttributeTargets.Method | AttributeTargets.Property | AttributeTargets.Field, Inherited = false)]
-public sealed class CudaIntrinsicAttribute : Attribute
+public sealed class CudaIntrinsicAttribute(string targetName) : Attribute
+{
+    public string TargetName { get; }
+}
 
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct, Inherited = false)]
-public sealed class CudaIntrinsicPatternAttribute : Attribute
+public sealed class CudaIntrinsicPatternAttribute(string pattern) : Attribute
+{
+    public string Pattern { get; }
+}
 
 [AttributeUsage(AttributeTargets.Assembly, AllowMultiple = true)]
 public sealed class BclIntrinsicMapAttribute : Attribute
 
 [AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
 public sealed class GpuOperatorMacroAttribute : Attribute
+{
+    public GpuOperatorMacroAttribute(Type targetType, string targetMethod);
+    public Type TargetType { get; }
+    public string TargetMethod { get; }
+}
 ```
 
 ## Attributes
 
-### `[CudaIntrinsic]`
+### `[CudaIntrinsic(string targetName)]`
 
-Maps a specific C# method directly to a CUDA C++ function call.
+Maps a specific C# method, property, or field directly to a CUDA C++ intrinsic or function call.
 
 ### `[CudaIntrinsicPattern(string pattern)]`
 

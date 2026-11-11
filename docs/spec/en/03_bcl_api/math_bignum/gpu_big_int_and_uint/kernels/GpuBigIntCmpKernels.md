@@ -33,9 +33,7 @@ public static partial class GpuBigIntCmpKernels
 | [LeadingBitsKernel(uint[], uint[], int)](#leadingbitskerneluint-uint-int) | A GPU kernel (`[GpuKernel]`) that writes the leading 64 bits of a large integer, given its bit length. |
 | [ReadCompareSign(SignedCompareOperand, int)](#readcomparesignsignedcompareoperand-int) | A GPU device function (`[GpuDeviceFunction]`) that reads the sign of an element, or the sign of a scalar. |
 | [ReadCompareWord(SignedCompareOperand, int, int)](#readcomparewordsignedcompareoperand-int-int) | A GPU device function (`[GpuDeviceFunction]`) that reads one word of an element, or 0 at or above the operand's word count. |
-| [VectorAllTrueKernel(uint[], uint[], int)](#vectoralltruekerneluint-uint-int) | A GPU kernel (`[GpuKernel]`) that checks whether all elements in a boolean mask array are non-zero. |
 | [VectorAndKernel(uint[], uint[], uint[], int)](#vectorandkerneluint-uint-uint-int) | A GPU kernel (`[GpuKernel]`) that computes the element-wise logical AND of two boolean mask arrays. |
-| [VectorAnyTrueKernel(uint[], uint[], int)](#vectoranytruekerneluint-uint-int) | A GPU kernel (`[GpuKernel]`) that checks whether any element in a boolean mask array is non-zero. |
 | [VectorCompareKernel(VectorCompareContext)](#vectorcomparekernelvectorcomparecontext) | A GPU kernel (`[GpuKernel]`) that compares a batched vector of signed big integers element-wise with another vector or a scalar. |
 | [VectorNotKernel(uint[], uint[], int)](#vectornotkerneluint-uint-int) | A GPU kernel (`[GpuKernel]`) that computes the element-wise logical NOT of a boolean mask array. |
 | [VectorOrKernel(uint[], uint[], uint[], int)](#vectororkerneluint-uint-uint-int) | A GPU kernel (`[GpuKernel]`) that computes the element-wise logical OR of two boolean mask arrays. |
@@ -125,15 +123,6 @@ A GPU device function (`[GpuDeviceFunction]`) that returns word `idx` of element
 public static uint ReadCompareWord(SignedCompareOperand operand, int element, int idx);
 ```
 
-## VectorAllTrueKernel(uint[], uint[], int)
-
-A GPU kernel (`[GpuKernel]`) that checks whether all elements in a boolean mask array are non-zero.
-
-```csharp
-[GpuKernel]
-public static void VectorAllTrueKernel(uint[] dA, uint[] dResult, int length);
-```
-
 ## VectorAndKernel(uint[], uint[], uint[], int)
 
 A GPU kernel (`[GpuKernel]`) that computes the element-wise logical AND of two boolean mask arrays.
@@ -141,15 +130,6 @@ A GPU kernel (`[GpuKernel]`) that computes the element-wise logical AND of two b
 ```csharp
 [GpuKernel]
 public static void VectorAndKernel(uint[] dA, uint[] dB, uint[] dResult, int length);
-```
-
-## VectorAnyTrueKernel(uint[], uint[], int)
-
-A GPU kernel (`[GpuKernel]`) that checks whether any element in a boolean mask array is non-zero.
-
-```csharp
-[GpuKernel]
-public static void VectorAnyTrueKernel(uint[] dA, uint[] dResult, int length);
 ```
 
 ## VectorCompareKernel(VectorCompareContext)
@@ -163,7 +143,7 @@ public static void VectorCompareKernel(VectorCompareContext ctx);
 public struct SignedCompareOperand
 {
     [GpuReadOnly] public uint[] Limbs;
-    [GpuReadOnly] public uint[] Signs;   // null for a scalar
+    [GpuReadOnly] public uint[]? Signs;  // null for a scalar
     public int NumWords;                 // words this side stores per element
     public int Stride;                   // words between elements; 0 for a scalar
     public uint ScalarSign;              // used when Signs is null
@@ -195,6 +175,8 @@ A GPU kernel (`[GpuKernel]`) that computes the element-wise logical OR of two bo
 [GpuKernel]
 public static void VectorOrKernel(uint[] dA, uint[] dB, uint[] dResult, int length);
 ```
+
+The boolean reductions `VectorAnyTrueKernel` and `VectorAllTrueKernel` are members of [GpuBigIntVectorKernels](GpuBigIntVectorKernels.md).
 
 ## Examples
 

@@ -16,7 +16,7 @@ description: "Represents a numeric type executed on the GPU supporting deferred 
 Represents a numeric type executed on the GPU, supporting deferred expression compilation via operator overloading.
 
 ```csharp
-public interface IGpuNumber<TSelf> : IEquatable<TSelf>, IComparable<TSelf>
+public interface IGpuNumber<TSelf> : IGpuBigNumberBase, IEquatable<TSelf>, IComparable<TSelf>
     where TSelf : struct, IGpuNumber<TSelf>
 ```
 

@@ -155,11 +155,14 @@ using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 // Execution Context: Host (CPU)
 using var workspace = new GpuWorkspace(4096, GpuExecutionEngine.GSharpAot);
 using var array = new GpuBigFloatArray(workspace, length: 4, wordsPerElement: 4);
-using var zero = new GpuBigFloat(workspace, 4);
+using var zero = new GpuBigFloat(new GpuBigUInt(workspace, 4), exponent: 0, isNegative: false);
 
 for (int i = 0; i < 4; i++)
 {
-    using var val = new GpuBigFloat(new GpuBigUInt(workspace, (ulong)(i + 1)), exponent: 0, isNegative: i % 2 == 1);
+    using var val = new GpuBigFloat(
+        new GpuBigUInt(workspace, [(uint)(i + 1), 0u, 0u, 0u]),
+        exponent: 0,
+        isNegative: i % 2 == 1);
     array.SetElement(i, val);
 }
 

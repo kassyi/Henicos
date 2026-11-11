@@ -1,4 +1,5 @@
 using Kassyi.GSharp.Compiler.Models;
+using AttributeNames = Kassyi.GSharp.Compiler.Models.DeviceExportAttributeNames;
 
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
@@ -37,8 +38,8 @@ internal sealed class DeviceExportTable
         foreach (var imported in records)
         {
             _byId[imported.Record.Id] = imported;
-            _byName[imported.Record.CppName] = imported;
-            foreach (var name in imported.Record.DefinedNames)
+            _byName[imported.Record.Names.CppName] = imported;
+            foreach (var name in imported.Record.Names.DefinedNames)
             {
                 _byName[name] = imported;
             }
@@ -83,7 +84,7 @@ internal sealed class DeviceExportTable
         if (symbol is IMethodSymbol { ContainingType: { } structType } structMethod && IsStructMethod(structMethod))
         {
             return TryFind(structType, out imported) &&
-                   imported.Record.DefinedIds
+                   imported.Record.Names.DefinedIds
                        .AsStackEnumerable()
                        .Any(structMethod.OriginalDefinition.GetDocumentationCommentId(),
                            static (id, own) => string.Equals(id, own, StringComparison.Ordinal));
@@ -164,11 +165,12 @@ internal sealed class DeviceExportTable
         if (symbol is IMethodSymbol structMethod && IsStructMethod(structMethod))
         {
             var id = structMethod.OriginalDefinition.GetDocumentationCommentId();
-            for (var i = 0; i < imported.Record.DefinedIds.Length && i < imported.Record.DefinedNames.Length; i++)
+            var names = imported.Record.Names;
+            for (var i = 0; i < names.DefinedIds.Length && i < names.DefinedNames.Length; i++)
             {
-                if (string.Equals(imported.Record.DefinedIds[i], id, StringComparison.Ordinal))
+                if (string.Equals(names.DefinedIds[i], id, StringComparison.Ordinal))
                 {
-                    cppName = imported.Record.DefinedNames[i];
+                    cppName = names.DefinedNames[i];
                     return true;
                 }
             }
@@ -176,7 +178,7 @@ internal sealed class DeviceExportTable
             return false;
         }
 
-        cppName = imported.Record.CppName;
+        cppName = imported.Record.Names.CppName;
         return true;
     }
 
@@ -282,44 +284,53 @@ internal sealed class DeviceExportTable
             named[pair.Key] = pair.Value;
         }
 
+        var names = new DeviceExportRecord.ExportNames(
+            CppName: GetString(named, AttributeNames.Names.CppName),
+            CppFullName: GetString(named, AttributeNames.Names.CppFullName),
+            DefinedNames: GetArray(named, AttributeNames.Names.DefinedNames),
+            DefinedIds: GetArray(named, AttributeNames.Names.DefinedIds),
+            DefinedFullNames: GetArray(named, AttributeNames.Names.DefinedFullNames));
+
+        var traits = new DeviceExportRecord.FunctionTraits(
+            FrameName: GetString(named, AttributeNames.Traits.FrameName),
+            FrameDependencies: GetArray(named, AttributeNames.Traits.FrameDependencies),
+            Suspends: GetBool(named, AttributeNames.Traits.Suspends),
+            ReachesBlockBarrier: GetBool(named, AttributeNames.Traits.ReachesBlockBarrier),
+            IsParallelDependent: GetBool(named, AttributeNames.Traits.IsParallelDependent),
+            ReachesDynamicSharedMemory: GetBool(named, AttributeNames.Traits.ReachesDynamicSharedMemory),
+            DynamicSharedMemorySites: GetArray(named, AttributeNames.Traits.DynamicSharedMemorySites),
+            Effect: named.TryGetValue(AttributeNames.Traits.Effect, out var effect) && effect.Value is string e
+                ? e
+                : DeviceExportRecord.FunctionTraits.None.Effect,
+            ManagedStateMachine: GetBool(named, AttributeNames.Traits.ManagedStateMachine),
+            ManagedVersion: GetBool(named, AttributeNames.Traits.ManagedVersion),
+            DivergentConditionParameters: GetInt(named, AttributeNames.Traits.DivergentConditionParameters),
+            DivergentExitOnlyParameters: GetInt(named, AttributeNames.Traits.DivergentExitOnlyParameters),
+            HasExitOnlyBarrier: GetBool(named, AttributeNames.Traits.HasExitOnlyBarrier));
+
         var record = new DeviceExportRecord(
             kind,
             id,
-            GetString(named, nameof(DeviceExportRecord.CppName)),
-            GetString(named, nameof(DeviceExportRecord.CppFullName)),
-            GetArray(named, nameof(DeviceExportRecord.DefinedNames)),
-            GetArray(named, nameof(DeviceExportRecord.DefinedIds)),
-            GetArray(named, nameof(DeviceExportRecord.DefinedFullNames)),
-            GetArray(named, nameof(DeviceExportRecord.CudaReferences)),
-            GetArray(named, nameof(DeviceExportRecord.CppReferences)),
-            GetString(named, nameof(DeviceExportRecord.FrameName)),
-            GetArray(named, nameof(DeviceExportRecord.FrameDependencies)),
-            GetBool(named, nameof(DeviceExportRecord.Suspends)),
-            GetBool(named, nameof(DeviceExportRecord.ReachesBlockBarrier)),
-            GetBool(named, nameof(DeviceExportRecord.IsParallelDependent)),
-            GetBool(named, nameof(DeviceExportRecord.ReachesDynamicSharedMemory)),
-            GetArray(named, nameof(DeviceExportRecord.DynamicSharedMemorySites)),
-            named.TryGetValue(nameof(DeviceExportRecord.Effect), out var effect) && effect.Value is string e ? e : "Memory",
-            GetString(named, nameof(DeviceExportRecord.CudaSignature)),
-            GetString(named, nameof(DeviceExportRecord.CudaBody)),
-            GetString(named, nameof(DeviceExportRecord.CudaDispose)),
-            GetString(named, nameof(DeviceExportRecord.CppSignature)),
-            GetString(named, nameof(DeviceExportRecord.CppBody)),
-            GetString(named, nameof(DeviceExportRecord.CppDispose)),
-            GetArray(named, nameof(DeviceExportRecord.CudaIncludes)),
-            GetArray(named, nameof(DeviceExportRecord.CppIncludes)),
-            GetBool(named, nameof(DeviceExportRecord.CudaFailed)),
-            GetBool(named, nameof(DeviceExportRecord.CppFailed)),
-            GetBool(named, nameof(DeviceExportRecord.ManagedStateMachine)),
-            GetBool(named, nameof(DeviceExportRecord.ManagedVersion)),
-            GetString(named, nameof(DeviceExportRecord.InternalError)),
-            GetInt(named, nameof(DeviceExportRecord.DivergentConditionParameters)),
-            GetInt(named, nameof(DeviceExportRecord.DivergentExitOnlyParameters)),
-            GetBool(named, nameof(DeviceExportRecord.HasExitOnlyBarrier)));
+            names,
+            ReadDialectText(named, AttributeNames.Cuda),
+            ReadDialectText(named, AttributeNames.Cpp),
+            traits,
+            GetString(named, AttributeNames.InternalError));
 
         imported = new ImportedDeviceRecord(record, assemblyName, formatVersion, preludeHash);
-        return record.CppName.Length > 0;
+        return record.Names.CppName.Length > 0;
     }
+
+    private static DeviceExportRecord.DialectText ReadDialectText(
+        Dictionary<string, TypedConstant> named,
+        AttributeNames.DialectNames dialect) =>
+        new(
+            References: GetArray(named, dialect.References),
+            Signature: GetString(named, dialect.Signature),
+            Body: GetString(named, dialect.Body),
+            Dispose: GetString(named, dialect.Dispose),
+            Includes: GetArray(named, dialect.Includes),
+            Failed: GetBool(named, dialect.Failed));
 
     private static string GetString(Dictionary<string, TypedConstant> named, string name) =>
         named.TryGetValue(name, out var value) && value.Value is string text ? text : "";
@@ -366,5 +377,5 @@ internal readonly record struct ImportedDeviceRecord(
         string.Equals(PreludeHash, DeviceExportRecord.CurrentPreludeHash, StringComparison.Ordinal);
 
     /// <summary>Whether the library's build could not transpile the text of a dialect.</summary>
-    public bool FailedFor(bool isCuda) => isCuda ? Record.CudaFailed : Record.CppFailed;
+    public bool FailedFor(bool isCuda) => (isCuda ? Record.Cuda : Record.Cpp).Failed;
 }

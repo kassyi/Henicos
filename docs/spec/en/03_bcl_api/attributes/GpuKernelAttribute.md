@@ -79,9 +79,9 @@ The `[GpuKernel]` method signature strictly permits only the following types:
 | Category | Allowed | Prohibited |
 | :--- | :--- | :--- |
 | **Primitives** | Value types (`int`, `float`, `bool`, etc.) | Reference types (`class`, `string`) |
-| **Structs** | Blittable `struct` (passed by value, `ref`, or `out`) | Structs containing references |
+| **Structs** | Blittable `struct` (passed by value, `ref`, `in` / `ref readonly`, or `out`), or structs with 1D array fields (`T[]`) | Structs containing non-array reference types |
 | **Arrays** | 1D Managed Arrays (`T[]`) | Multi-dimensional Arrays (`T[,]`) |
-| **Spans** | N/A (Only allowed as local variables inside the kernel) | `Span<T>`, `ReadOnlySpan<T>` |
+| **Spans / Buffers** | `Span<T>`, `ReadOnlySpan<T>`, `Memory<T>`, `ReadOnlyMemory<T>`, `ArraySegment<T>`, `ImmutableArray<T>` | N/A |
 | **Pointers** | Raw Pointers (`T*` - requires `unsafe` keyword) | N/A |
 
 > [!WARNING]

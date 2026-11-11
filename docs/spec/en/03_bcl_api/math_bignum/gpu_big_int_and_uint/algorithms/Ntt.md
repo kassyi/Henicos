@@ -1,12 +1,12 @@
 ---
-title: "GpuBigInt.NttMultiply Method (G#)"
+title: "NTT Multiplication (GpuBigIntMath.MultiplyNtt) (G#)"
 site: "G# Documentation"
 published: "2026-09-22T00:00:00.000Z"
 language: "en"
 description: "Reference for the Number Theoretic Transform (NTT) for O(N log N) multiplication."
 ---
 
-## GpuBigInt.NttMultiply Method
+## NTT Multiplication (GpuBigIntMath.MultiplyNtt)
 
 ## Definition
 
@@ -19,12 +19,20 @@ To solve this, GSharp provides an ultra-optimized **Number Theoretic Transform (
 
 ## Mechanism
 
-The NTT multiplication is an **internal algorithm**. There is no public `NttMultiply` or `Mul` method. Instead, the standard `*` operator (or expression tree multiplication) automatically routes to the NTT implementation when the size of the operands crosses a performance threshold.
+The `*` operator (or expression tree multiplication) and [`GpuBigIntMath.Mul`](../GpuBigIntMath.md) choose the multiplication algorithm from the size of the operands and route large products to the NTT implementation. [`GpuBigIntMath.MultiplyNtt`](../GpuBigIntMath.md) runs the NTT path whatever the size:
 
 ```csharp
-// Internally dispatched when evaluating:
-var expr = gpuA * gpuB;
+public static void Mul(
+    scoped GpuBigUIntView leftOperand,
+    scoped GpuBigUIntView rightOperand,
+    scoped GpuBigUIntView resultBuffer);
+public static void MultiplyNtt(
+    scoped GpuBigUIntView leftOperand,
+    scoped GpuBigUIntView rightOperand,
+    scoped GpuBigUIntView resultBuffer);
 ```
+
+Both throw `ArgumentException` when `resultBuffer` has fewer than `leftOperand.NumWords + rightOperand.NumWords` words.
 
 ## Examples
 
@@ -61,14 +69,19 @@ var expr = a * b;
 
 // Evaluate the AST node to perform the multiplication natively on the GPU
 // (Internally routes to the NTT implementation for massive numbers)
-using var result = expr.Node.Evaluate(workspace, null);
+using var result = expr.Evaluate(workspace);
 
 Console.WriteLine($"Result Size: {result.Value.NumWords} words.");
 ```
 
 ## Remarks
 
-The standard `*` operator automatically falls back to NTT if the operand sizes cross a specific heuristic threshold (e.g., > 10,000 words). However, you can use `NttMultiply` to force the NTT code path explicitly.
+The standard `*` operator switches to NTT when the operands are large enough for it to be faster. Use `GpuBigIntMath.MultiplyNtt` to force the NTT code path explicitly:
+
+```csharp
+using var product = new GpuBigUInt(workspace, gpuDataA.NumWords + gpuDataB.NumWords);
+GpuBigIntMath.MultiplyNtt(gpuDataA, gpuDataB, product);
+```
 
 ## See also
 
