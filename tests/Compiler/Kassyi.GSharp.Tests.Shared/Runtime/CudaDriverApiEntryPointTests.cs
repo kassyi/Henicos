@@ -12,8 +12,9 @@ namespace Kassyi.GSharp.Tests.Shared.Runtime;
 /// symbol is still exported, but it is the legacy entry point: it takes 32-bit sizes, an older descriptor or fewer
 /// parameters, and on a context created through the current API it can fail with <c>CUDA_ERROR_INVALID_CONTEXT</c>.
 /// A binding without <c>entryPoint</c> binds its own name, so a name that <c>cuda.h</c> redirects must name the
-/// versioned symbol. The scan of <c>cuda.h</c> runs only on a machine with a CUDA toolkit; without one (CI) only the
-/// pinned entry points of <see cref="DriverApiYaml_VersionedBinding_NamesTheHeaderSymbol"/> are checked.
+/// versioned symbol. The scan of <c>cuda.h</c> reads the header from <c>GSHARP_CUDA_INCLUDE_DIR</c>, the CUDA toolkit
+/// (<c>CUDA_PATH</c>) or <c>/usr/local/cuda</c>. CI has no toolkit and fetches the header alone into
+/// <c>GSHARP_CUDA_INCLUDE_DIR</c>, so with <c>CI=true</c> a missing header fails the scan instead of skipping it.
 /// </remarks>
 public class CudaDriverApiEntryPointTests
 {
@@ -39,7 +40,13 @@ public class CudaDriverApiEntryPointTests
     public void DriverApiYaml_NamesRedirectedByCudaHeader_BindTheVersionedSymbol()
     {
         var header = FindCudaHeader();
-        Skip.If(header is null, "cuda.h was not found under CUDA_PATH or /usr/local/cuda.");
+        const string NotFound = "cuda.h was not found under GSHARP_CUDA_INCLUDE_DIR, CUDA_PATH or /usr/local/cuda.";
+        if (header is null && IsContinuousIntegration())
+        {
+            Assert.Fail($"{NotFound} CI fetches the header, so the scan must run.");
+        }
+
+        Skip.If(header is null, NotFound);
 
         var redirects = ReadHeaderRedirects(File.ReadAllText(header));
         Assert.Contains("cuArrayCreate", redirects.Keys);
@@ -170,12 +177,21 @@ public class CudaDriverApiEntryPointTests
 
     private static string? FindCudaHeader()
     {
-        var roots = new[] { Environment.GetEnvironmentVariable("CUDA_PATH"), "/usr/local/cuda" };
-        return roots
-            .Where(static root => !string.IsNullOrEmpty(root))
-            .Select(static root => Path.Combine(root ?? "", "include", "cuda.h"))
+        var cudaPath = Environment.GetEnvironmentVariable("CUDA_PATH");
+        var includeDirectories = new[]
+        {
+            Environment.GetEnvironmentVariable("GSHARP_CUDA_INCLUDE_DIR"),
+            string.IsNullOrEmpty(cudaPath) ? null : Path.Combine(cudaPath, "include"),
+            "/usr/local/cuda/include",
+        };
+        return includeDirectories
+            .Where(static directory => !string.IsNullOrEmpty(directory))
+            .Select(static directory => Path.Combine(directory ?? "", "cuda.h"))
             .FirstOrDefault(File.Exists);
     }
+
+    private static bool IsContinuousIntegration() =>
+        string.Equals(Environment.GetEnvironmentVariable("CI"), "true", StringComparison.OrdinalIgnoreCase);
 
     // The redirects of cuda.h without CUDA_API_PER_THREAD_DEFAULT_STREAM, where __CUDA_API_PTDS(api) and
     // __CUDA_API_PTSZ(api) expand to api: "#define <name> <target>" with two identifiers starting with "cu".
