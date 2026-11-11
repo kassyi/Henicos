@@ -38,7 +38,7 @@ public partial class RefOutDereferenceTests
 
     [SkippableFact]
     [Category(TestCategory.Syntax)]
-    public void Test_RefOutDereferencing_HappyPath_ModifyingRefArgument()
+    public void TranspileMethod_ModifyingRefArgument_EmitsDereferencedAssignment()
     {
         var (cudaSource, diagnostics) =
             RoslynTestUtility.TranspileMethod<TestClass_GEN17>(nameof(TestClass_GEN17.ModifyRef));
@@ -49,7 +49,7 @@ public partial class RefOutDereferenceTests
 
     [SkippableFact]
     [Category(TestCategory.Syntax)]
-    public void Test_RefOutDereferencing_EdgeCase_MemberAccessAndChainedAssignments()
+    public void TranspileMethod_MemberAccessAndChainedAssignments_EmitsDereferencedAccessAndAssignment()
     {
         var (cudaSourceMember, diagnosticsMember) =
             RoslynTestUtility.TranspileMethod<TestClass_GEN17>(nameof(TestClass_GEN17.MemberAccessRef));
@@ -66,7 +66,7 @@ public partial class RefOutDereferenceTests
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_RefReadOnlyAndInParameters_ReadForwardAndMemberAccess()
+    public void RefReadOnlyAndInParameters_ReadForwardAndMemberAccess_MatchesExpectedValues()
     {
         const int count = 4;
         int[] input = [1, 2, 5, 10];
@@ -99,7 +99,7 @@ public partial class RefOutDereferenceTests
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_RefReadOnlyAndInParameters_RValueTemporaryArguments()
+    public void RefReadOnlyAndInParameters_RValueTemporaryArguments_EvaluatesAndPassesTemporaryValues()
     {
         const int count = 4;
         int[] input = [1, 2, 5, 10];
@@ -130,7 +130,7 @@ public partial class RefOutDereferenceTests
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_KernelInParameters_ReadAndForwardToDeviceFunctions()
+    public void KernelInParameters_ReadAndForwardToDeviceFunctions_MatchesExpectedDeviceValues()
     {
         const int count = 4;
         var output = new int[count * 3];

@@ -9,7 +9,7 @@ using Xunit;
 namespace Kassyi.GSharp.Tests.Shared.Differential;
 
 /// <summary>
-/// Differential tests for <see cref="Gpu.SyncGrid()"/>, <see cref="Gpu.SyncGrid(Action)"/>,
+/// Differential tests for <see cref="Gpu.SyncGrid(GridSyncMode)"/>, <see cref="Gpu.SyncGrid(Action)"/>,
 /// <see cref="Gpu.SingleThread(Action)"/>, and cooperative multi-phase barrier + atomic workflows.
 /// </summary>
 public class GridSyncAndSingleThreadDifferentialTests
@@ -361,34 +361,34 @@ public class GridSyncAndSingleThreadDifferentialTests
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_CooperativeMultiPhaseReduceNormalize_MatchesTheReferenceAcross1DAnd2DGrids() =>
+    public void CooperativeGrid_MultiPhaseReduceNormalize_MatchesTheReferenceAcross1DAnd2DGrids() =>
         DifferentialRunner.Run(s_cooperativeMultiPhaseReduceNormalize);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_CooperativePingPongStencilAndXorSwap_MatchesTheReferenceOnEveryPath() =>
+    public void CooperativeGrid_PingPongStencilAndXorSwap_MatchesTheReferenceOnEveryPath() =>
         DifferentialRunner.Run(s_cooperativePingPongStencilAndXorSwap);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_CooperativeSyncGridBodyControlFlowAndDeviceFn_MatchesTheReferenceOnEveryPath() =>
+    public void CooperativeGrid_SyncGridBodyControlFlowAndDeviceFn_MatchesTheReferenceOnEveryPath() =>
         DifferentialRunner.Run(s_cooperativeSyncGridBodyControlFlowAndDeviceFn);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_SingleThreadMultiDimAndReturn_ExecutesExactlyOnceAcrossAllSixAxes() =>
+    public void SingleThreadExecution_MultiDimAndReturn_ExecutesExactlyOnceAcrossAllSixAxes() =>
         DifferentialRunner.Run(s_singleThreadMultiDimAndReturn);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_SingleThreadCooperativeBarrier_MatchesTheReferenceOnEveryPath() =>
+    public void SingleThreadExecution_CooperativeBarrier_MatchesTheReferenceOnEveryPath() =>
         DifferentialRunner.Run(s_singleThreadCooperativeBarrier);
 }

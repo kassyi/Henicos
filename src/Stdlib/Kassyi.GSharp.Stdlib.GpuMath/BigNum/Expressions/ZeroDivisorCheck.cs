@@ -16,12 +16,8 @@ internal static class ZeroDivisorCheck
     /// <exception cref="NotSupportedException">The workspace stream is capturing a CUDA graph.</exception>
     public static GpuBigUIntArrayView Open(GpuWorkspace workspace, VectorResultCache cache)
     {
-        if (DeviceCounted.IsCapturing(workspace))
-        {
-            throw new NotSupportedException(
-                "An element-wise division cannot be part of a CUDA graph: a zero divisor is read back to the host. " +
-                "Evaluate it directly.");
-        }
+        CaptureChecks.ThrowIfCapturing(workspace, "A zero divisor of an element-wise division",
+            "Evaluate it directly.");
 
         var word = cache.Scan(workspace, 1);
         workspace.Provider.ClearMemoryAsync(word.DevicePointer, 1, workspace.Stream);

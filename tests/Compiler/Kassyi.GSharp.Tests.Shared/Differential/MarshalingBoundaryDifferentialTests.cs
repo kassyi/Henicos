@@ -1040,7 +1040,7 @@ public sealed class MarshalingBoundaryDifferentialTests
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_BoolAllPositions_MatchesOracle() =>
+    public void TypeMarshaling_BoolAllPositions_MatchesOracle() =>
         DifferentialRunner.Run(s_boolAllPositions);
 
     // char across all 4 positions (value, in, ref, out, char[], return char, struct field; regression test for #971)
@@ -1048,7 +1048,7 @@ public sealed class MarshalingBoundaryDifferentialTests
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_CharAllPositions_MatchesOracle() =>
+    public void TypeMarshaling_CharAllPositions_MatchesOracle() =>
         DifferentialRunner.Run(s_charAllPositions);
 
     // Nullable<T> (H == D: int?, byte?, char?, bool?) in array, return value, and struct fields
@@ -1056,7 +1056,7 @@ public sealed class MarshalingBoundaryDifferentialTests
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_NullableBlitPositions_MatchesOracle() =>
+    public void TypeMarshaling_NullableBlitPositions_MatchesOracle() =>
         DifferentialRunner.Run(s_nullableBlitPositions);
 
     // Nullable<T> scalar/byref parameter (#961 throws MarshalDirectiveException on Native CPU)
@@ -1064,7 +1064,7 @@ public sealed class MarshalingBoundaryDifferentialTests
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_NullableBlitScalarArg_MatchesOracleExceptKnownNativeIssue() =>
+    public void TypeMarshaling_NullableBlitScalarArg_MatchesOracleExceptKnownNativeIssue() =>
         DifferentialRunner.Run(s_nullableBlitScalarArg);
 
     // Nullable<Vector2> (H != D, #961 12B host vs 16B CUDA layout divergence)
@@ -1072,7 +1072,7 @@ public sealed class MarshalingBoundaryDifferentialTests
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_NullableConvertPositions_MatchesOracleExceptKnownCudaIssue() =>
+    public void TypeMarshaling_NullableConvertPositions_MatchesOracleExceptKnownCudaIssue() =>
         DifferentialRunner.Run(s_nullableConvertPositions);
 
     // LayoutKind.Explicit (non-overlapping with gaps & Size=24, plus identical bit union)
@@ -1080,7 +1080,7 @@ public sealed class MarshalingBoundaryDifferentialTests
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_ExplicitLayoutAndUnionPositions_MatchesOracle() =>
+    public void TypeMarshaling_ExplicitLayoutAndUnionPositions_MatchesOracle() =>
         DifferentialRunner.Run(s_explicitLayoutAndUnionPositions);
 
     // LayoutKind.Explicit union containing a Convert arm (regression test for #1006)
@@ -1088,7 +1088,7 @@ public sealed class MarshalingBoundaryDifferentialTests
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_ExplicitUnionWithConvertArm_MatchesOracle() =>
+    public void TypeMarshaling_ExplicitUnionWithConvertArm_MatchesOracle() =>
         DifferentialRunner.Run(s_explicitUnionWithConvertArm);
 
     // LayoutKind.Auto across value, in, ref, out, array, return value, and nested struct
@@ -1096,7 +1096,7 @@ public sealed class MarshalingBoundaryDifferentialTests
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_AutoLayoutAllPositions_MatchesOracle() =>
+    public void TypeMarshaling_AutoLayoutAllPositions_MatchesOracle() =>
         DifferentialRunner.Run(s_autoLayoutAllPositions);
 
     // [InlineArray(3)] (bool, char, DiffVec2Padded) + fixed buffer FixedBufferPacket across 4 positions
@@ -1104,7 +1104,7 @@ public sealed class MarshalingBoundaryDifferentialTests
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_InlineArrayAndFixedBufferPositions_MatchesOracle() =>
+    public void TypeMarshaling_InlineArrayAndFixedBufferPositions_MatchesOracle() =>
         DifferentialRunner.Run(s_inlineArrayAndFixedBufferPositions);
 
     // [InlineArray(2)] of Vector2? (#961 block-copy corruption on CUDA)
@@ -1112,7 +1112,7 @@ public sealed class MarshalingBoundaryDifferentialTests
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_InlineArrayNullableVec2_MatchesOracleExceptKnownCudaIssue() =>
+    public void TypeMarshaling_InlineArrayNullableVec2_MatchesOracleExceptKnownCudaIssue() =>
         DifferentialRunner.Run(s_inlineArrayNullableVec2);
 
     // Vector2/3/4 alignment torture + InnerPair/OuterPacket + External assembly structs (DeviceLibrary)
@@ -1120,7 +1120,7 @@ public sealed class MarshalingBoundaryDifferentialTests
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_VectorAlignmentAndExternalStructs_MatchesOracle() =>
+    public void TypeMarshaling_VectorAlignmentAndExternalStructs_MatchesOracle() =>
         DifferentialRunner.Run(s_vectorAlignmentAndExternalStructs);
 
     // Multiple ref/in/out scalars + raw pointer (valid & null) + empty Span + [GpuConstexpr] + [GpuReadOnly]
@@ -1128,6 +1128,6 @@ public sealed class MarshalingBoundaryDifferentialTests
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_MultiRefScalarAndRawPointer_MatchesOracle() =>
+    public void TypeMarshaling_MultiRefScalarAndRawPointer_MatchesOracle() =>
         DifferentialRunner.Run(s_multiRefScalarAndRawPointer);
 }

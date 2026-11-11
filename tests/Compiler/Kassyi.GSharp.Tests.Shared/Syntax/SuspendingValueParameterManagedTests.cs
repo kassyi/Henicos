@@ -26,47 +26,47 @@ public class SuspendingValueParameterManagedTests : IDisposable
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_StructFieldWrite_SurvivesBarrier() =>
+    public void SuspendingValueParameter_ManagedStructFieldWrite_SurvivesBarrier() =>
         SuspendingValueParameterTests.AssertStructFieldWrite();
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_NestedFieldWrite_SurvivesBarrier() =>
+    public void SuspendingValueParameter_ManagedNestedFieldWrite_SurvivesBarrier() =>
         SuspendingValueParameterTests.AssertNestedFieldWrite();
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_RefExtensionReceiverWrite_SurvivesBarrier() =>
+    public void SuspendingValueParameter_ManagedRefExtensionReceiverWrite_SurvivesBarrier() =>
         SuspendingValueParameterTests.AssertRefExtensionWrite();
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_InlineArrayElementWrite_SurvivesBarrier() =>
+    public void SuspendingValueParameter_ManagedInlineArrayElementWrite_SurvivesBarrier() =>
         SuspendingValueParameterTests.AssertInlineArrayElementWrite();
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_PrefixIncrementOfField_SurvivesBarrier() =>
+    public void SuspendingValueParameter_ManagedPrefixIncrementOfField_SurvivesBarrier() =>
         SuspendingValueParameterTests.AssertPrefixIncrementField();
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_FieldPassedByRef_SurvivesBarrier() =>
+    public void SuspendingValueParameter_ManagedFieldPassedByRef_SurvivesBarrier() =>
         SuspendingValueParameterTests.AssertRefFieldArgument();
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_ArrayElementWrite_IsVisibleAfterBarrierAndToCaller() =>
+    public void SuspendingValueParameter_ManagedArrayElementWrite_IsVisibleAfterBarrierAndToCaller() =>
         SuspendingValueParameterTests.AssertArrayElementWrite();
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_DeconstructingSwapOfFields_SurvivesBarrier() =>
+    public void SuspendingValueParameter_ManagedDeconstructingSwapOfFields_SurvivesBarrier() =>
         SuspendingValueParameterTests.AssertTupleSwapFields();
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_DeconstructingSwapOfScalars_SurvivesBarrier() =>
+    public void SuspendingValueParameter_ManagedDeconstructingSwapOfScalars_SurvivesBarrier() =>
         SuspendingValueParameterTests.AssertTupleSwapScalars();
 }
 #endif

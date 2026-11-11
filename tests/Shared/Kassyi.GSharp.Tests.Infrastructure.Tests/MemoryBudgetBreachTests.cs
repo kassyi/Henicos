@@ -22,13 +22,14 @@ public class MemoryBudgetBreachTests
         "Kassyi.GSharp.Tests.Infrastructure.MemoryBudgetHooks.MemoryBudgetFinalCheck.WholeRunPeak_StaysWithinBudget";
 
     private static readonly string s_fixtureTest =
-        $"{typeof(MemoryBudgetFixtureTests).FullName}.{nameof(MemoryBudgetFixtureTests.AllocatesPastBudget)}";
+        $"{typeof(MemoryBudgetFixtureTests).FullName}." +
+        nameof(MemoryBudgetFixtureTests.Allocate_PastBudget_TouchesAllBytes);
 
     [Fact]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.SadPath)]
-    public void TestAboveBudget_FailsWithPeakBudgetAndItsName()
+    public void Run_AboveBudget_FailsWithPeakBudgetAndItsName()
     {
         (int exitCode, string output) = RunFixture(SmallBudgetMegabytes);
 

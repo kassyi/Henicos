@@ -116,17 +116,17 @@ public class StackLinqUnfusedDifferentialTests
         };
 
     [SkippableFact]
-    public void Test_UnfusedOperators_MatchTheOracleOnEveryPath() => DifferentialRunner.Run(s_unfusedOperators);
+    public void StackLinq_UnfusedOperators_MatchTheOracleOnEveryPath() => DifferentialRunner.Run(s_unfusedOperators);
 
     [SkippableFact]
-    public void Test_IndexedLambdas_MatchTheOracleOnEveryPath() => DifferentialRunner.Run(s_indexedLambdas);
+    public void StackLinq_IndexedLambdas_MatchTheOracleOnEveryPath() => DifferentialRunner.Run(s_indexedLambdas);
 
     [SkippableFact]
-    public void Test_FusedLastPredicateWithoutMatch_ThrowsNoMatchingElementOnEveryPath() =>
+    public void StackLinq_FusedLastPredicateWithoutMatch_ThrowsNoMatchingElementOnEveryPath() =>
         DifferentialRunner.Run(s_fusedLastNoMatch);
 
     [SkippableFact]
-    public void Test_UnfusedLastPredicateWithoutMatch_ThrowsNoMatchingElementOnEveryPath() =>
+    public void StackLinq_UnfusedLastPredicateWithoutMatch_ThrowsNoMatchingElementOnEveryPath() =>
         DifferentialRunner.Run(s_unfusedLastNoMatch);
 
     private static int[] BuildSlices(DiffRandom rng, int rows)

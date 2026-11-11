@@ -274,6 +274,11 @@ internal readonly record struct FieldOffsetGuard(string Name, string FullyQualif
 /// that a part of a nested class is written inside them.
 /// </param>
 /// <param name="FullyQualifiedName">The <c>global::</c>-qualified C# type name, including any enclosing types.</param>
+/// <param name="DefinedSymbols">
+/// The symbols that the generated files of the class <c>#define</c>, so that C# keeps there the
+/// <c>[Conditional]</c> calls that a <c>#define</c> of the user's file keeps
+/// (<see cref="RemovedCalls.GetSymbolsToDefine"/>).
+/// </param>
 internal readonly record struct HostClassHeader(
     string HintName,
     string Namespace,
@@ -281,18 +286,20 @@ internal readonly record struct HostClassHeader(
     string Accessibility,
     bool IsPublic,
     EquatableArray<string> OuterDeclarations,
-    string FullyQualifiedName)
+    string FullyQualifiedName,
+    EquatableArray<string> DefinedSymbols = default)
 {
     public bool IsGlobalNamespace => Namespace.Length == 0;
 
-    public static HostClassHeader Create(INamedTypeSymbol type) => new(
+    public static HostClassHeader Create(INamedTypeSymbol type, Compilation compilation) => new(
         GlobalCppNames.GetHintName(type),
         type.ContainingNamespace.GetFullNamespaceName(),
         type.Name,
         SyntaxFacts.GetText(type.DeclaredAccessibility),
         type.DeclaredAccessibility == Microsoft.CodeAnalysis.Accessibility.Public,
         CreateOuterDeclarations(type),
-        type.GetFullyQualifiedCsharpName());
+        type.GetFullyQualifiedCsharpName(),
+        RemovedCalls.GetSymbolsToDefine(type, compilation));
 
     private static EquatableArray<string> CreateOuterDeclarations(INamedTypeSymbol type)
     {

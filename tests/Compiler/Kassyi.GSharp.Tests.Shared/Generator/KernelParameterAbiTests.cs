@@ -25,7 +25,7 @@ public class KernelParameterAbiTests
     [InlineData("outOnly", false, true)]
     [InlineData("both", true, true)]
     [InlineData("neither", true, true)]
-    public void Test_ArrayCopyDirection_FollowsInAndOut(string parameter, bool copyIn, bool copyOut)
+    public void ArrayCopyDirection_InAndOutModifiers_FollowsInAndOut(string parameter, bool copyIn, bool copyOut)
     {
         var wrapper = GetWrapper(s_copyDirectionKernels, "Cuda", "CopyKernels");
 
@@ -36,7 +36,7 @@ public class KernelParameterAbiTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_ArrayCopyDirection_IgnoresAUserInAttribute()
+    public void ArrayCopyDirection_UserInAttribute_IgnoresUserInAttribute()
     {
         var wrapper = GetWrapper(s_copyDirectionKernels, "Cuda", "CopyKernels");
 
@@ -49,7 +49,7 @@ public class KernelParameterAbiTests
     [Scenario(TestScenario.HappyPath)]
     [InlineData("Cpu")]
     [InlineData("Cuda")]
-    public void Test_DefaultValues_AreWrittenAsCSharpLiterals(string dialect)
+    public void DefaultValues_OptionalParameters_AreWrittenAsCSharpLiterals(string dialect)
     {
         var wrapper = GetWrapper(s_defaultValueKernels, dialect, "DefaultKernels");
 
@@ -64,7 +64,7 @@ public class KernelParameterAbiTests
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_DefaultValues_PointerWrappersTakeNoLiteral()
+    public void DefaultValues_PointerWrappers_TakeNoLiteral()
     {
         var wrapper = GetWrapper(s_defaultValueKernels, "Cuda", "DefaultKernels");
 
@@ -86,7 +86,9 @@ public class KernelParameterAbiTests
     [InlineData("userConstant", false)]
     [InlineData("userGpuConstexpr", false)]
     [InlineData("plainInt", false)]
-    public void Test_ConstexprParameter_MatchesOnlyCoreGpuConstexprAttribute(string parameterName, bool expected)
+    public void ConstexprParameter_AttributeMatching_MatchesOnlyCoreGpuConstexprAttribute(
+        string parameterName,
+        bool expected)
     {
         var compilation = RoslynTestUtility.CreateCompilation(s_constexprKernels);
         Assert.NotNull(compilation.GetTypeByMetadataName(KnownAttributes.GpuConstexprMetadataName));

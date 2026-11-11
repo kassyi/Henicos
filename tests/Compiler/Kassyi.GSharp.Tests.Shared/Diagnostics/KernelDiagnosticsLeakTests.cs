@@ -33,7 +33,7 @@ public class KernelDiagnosticsLeakTests
     [Theory]
     [MemberData(nameof(SadPathInputs))]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_SadPathInput_EveryStatedFailureIsReportedByTheAnalyzer(string input, string dialect)
+    public async Task AnalyzerDiagnostics_StatedFailures_ReportsEveryFailure(string input, string dialect)
     {
         var compilation = RoslynTestUtility.CreateCompilation(RoslynTestUtility.ReadTestCase(input));
 
@@ -48,7 +48,7 @@ public class KernelDiagnosticsLeakTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.Boundary)]
-    public async Task Test_StatedFailures_AreFoundInTheGeneratedSource(string dialect)
+    public async Task GeneratorDiagnostics_StatedFailures_FoundInGeneratedSource(string dialect)
     {
         var compilation = RoslynTestUtility.CreateCompilation(RoslynTestUtility.ReadTestCase("Generator/SadPathDiagnostics.cu.cs"));
 
@@ -63,7 +63,7 @@ public class KernelDiagnosticsLeakTests
     // compilation of the library, which the test does not keep: it is bound in full and takes hundreds of MB.
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public async Task Test_StdlibKernels_HaveNoUnreportedFailure()
+    public async Task StdlibKernels_DiagnosticAudit_HasNoUnreportedFailure()
     {
         var compilation = CreateStdlibCompilation();
 

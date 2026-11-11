@@ -79,7 +79,7 @@ If the capture fails, the capture is ended and every buffer it took is returned 
 Thrown if warm-up evaluation fails prior to beginning CUDA Graph capture, or if the expression is already owned by a graph that is alive.
 
 `NotSupportedException`<br>
-Thrown if the expression adds or subtracts values whose effective signs differ: the sign of the result is read from the device, which a capture cannot record.
+Thrown if the expression divides or takes a remainder (`/`, `%`, and the StackLinq `Average`, which divides by the count): their sizes are read from the device, which a capture cannot record. The capture is refused before the read, so the workspace stays usable. Every other node is captured: a sign that depends on the values (a difference, the operand `Max` or `Min` chooses, `~` of a value whose sign is on the device or negative) is written on the device, and the graph reads it after each launch (`Result` has the sign of the last launch).
 
 ## Evaluate(GpuBigUInt)
 
@@ -225,6 +225,10 @@ The second signed expression operand.
 _GpuBigIntExpr_<br>
 A new `GpuBigIntExpr` representing the Max AST node.
 
+#### Remarks
+
+The result is one of the operands, its sign flag included. Of two equal values either may be returned, so the max of `+0` and `-0` may be `-0`, a zero with the minus flag, which equals 0.
+
 ## Min(GpuBigIntExpr, GpuBigIntExpr)
 
 Constructs a lazy expression that resolves to the minimum of two signed big integer expressions.
@@ -246,6 +250,10 @@ The second signed expression operand.
 _GpuBigIntExpr_<br>
 A new `GpuBigIntExpr` representing the Min AST node.
 
+#### Remarks
+
+The result is one of the operands, its sign flag included. Of two equal values either may be returned, so the min of `+0` and `-0` may be `-0`, a zero with the minus flag, which equals 0.
+
 ## Operators
 
 | Name | Description |
@@ -256,7 +264,7 @@ A new `GpuBigIntExpr` representing the Min AST node.
 | `operator +(GpuBigIntExpr, GpuBigIntExpr)` | Constructs a lazy addition expression with deferred sign resolution. |
 | `operator -(GpuBigIntExpr, GpuBigIntExpr)` | Constructs a lazy subtraction expression with deferred sign resolution. |
 | `operator -(GpuBigIntExpr)` | Constructs a lazy negation expression. |
-| `operator ~(GpuBigIntExpr)` | Constructs a lazy bitwise NOT expression: `~x == -x - 1`, as `BigInteger`, one bit wider than the operand. A negative operand reads one flag from the device, so its `~` cannot be captured into a CUDA graph. |
+| `operator ~(GpuBigIntExpr)` | Constructs a lazy bitwise NOT expression: `~x == -x - 1`, as `BigInteger`, one bit wider than the operand. For a negative operand the sign is decided on the device (a negative zero gives -1), so it can be captured into a CUDA graph. |
 
 ## Remarks
 

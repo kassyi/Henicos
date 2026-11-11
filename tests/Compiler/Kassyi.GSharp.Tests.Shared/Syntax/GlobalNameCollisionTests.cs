@@ -17,7 +17,7 @@ public class GlobalNameCollisionTests : TranspilerTestBase
     [SkippableFact]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_UnderscoreInTypeName_DoesNotMergeWithNestedType()
+    public void Launch_UnderscoreInTypeName_DoesNotMergeWithNestedType()
     {
         var output = new int[ThreadCount];
 
@@ -32,7 +32,7 @@ public class GlobalNameCollisionTests : TranspilerTestBase
     [SkippableFact]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_NestedTypeAndUnderscoreType_AreDistinct()
+    public void Launch_NestedTypeAndUnderscoreType_KeepsTypesDistinct()
     {
         var output = new int[ThreadCount];
 
@@ -47,7 +47,7 @@ public class GlobalNameCollisionTests : TranspilerTestBase
     [SkippableFact]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_GenericTypesOfDifferentArity_AreDistinct()
+    public void Launch_GenericTypesOfDifferentArity_KeepsTypesDistinct()
     {
         var output = new int[ThreadCount];
 
@@ -62,7 +62,7 @@ public class GlobalNameCollisionTests : TranspilerTestBase
     [SkippableFact]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_SameNameDeviceFunctionsInDifferentTypes_CallTheBoundFunction()
+    public void Launch_SameNameDeviceFunctionsInDifferentTypes_CallsBoundFunction()
     {
         var output = new int[ThreadCount];
 
@@ -78,7 +78,7 @@ public class GlobalNameCollisionTests : TranspilerTestBase
     [SkippableFact]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_OverloadsWithinOneType_FollowCsharpOverloadResolution()
+    public void Launch_OverloadsWithinOneType_FollowsCsharpOverloadResolution()
     {
         var output = new int[ThreadCount];
 

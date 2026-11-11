@@ -86,7 +86,8 @@ public static class YamlDialectGenerator
         }
     }
 
-    // A base dialect must be one of the inputs (the generated class derives from <base>Dialect), and the chain must end.
+    // A base dialect must be one of the inputs (the generated class derives from <base>Dialect),
+    // and the chain must end.
     private static void CheckInheritance(DialectDefinition def, Dictionary<string, DialectDefinition> definitions)
     {
         var visited = new HashSet<string>(StringComparer.Ordinal) { def.Name };
@@ -111,7 +112,8 @@ public static class YamlDialectGenerator
         if (backend is not ("Cuda" or "Cpp"))
         {
             throw new GeneratorInputException(def.Path, def.Line,
-                $"The dialect '{def.Name}' must set Backend to Cuda or Cpp, itself or through Inherits (got '{backend}').");
+                $"The dialect '{def.Name}' must set Backend to Cuda or Cpp, " +
+                $"itself or through Inherits (got '{backend}').");
         }
 
         if (GetInheritedValue(def, definitions, static d => d.Capabilities) is { } capabilities)
@@ -122,7 +124,8 @@ public static class YamlDialectGenerator
                 if (name.Length > 0 && !SyntaxFacts.IsValidIdentifier(name))
                 {
                     throw new GeneratorInputException(def.Path, def.Line,
-                        $"The capability '{name}' of the dialect '{def.Name}' is not a valid DialectCapabilities name.");
+                        $"The capability '{name}' of the dialect '{def.Name}' " +
+                        "is not a valid DialectCapabilities name.");
                 }
             }
         }

@@ -17,50 +17,50 @@ public class SameNameHoistedLocalTests : TranspilerTestBase
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_SiblingLoopBarrierKernel_KeepsEachLoopLocal() =>
+    public void SiblingLoopBarrierKernel_SiblingLoopsAcrossBarrier_KeepsEachLoopLocal() =>
         AssertSiblingLoopBarrier(static (first, second) => SameNameHoistedLocalKernels.LaunchSiblingLoopBarrierKernel(first, second, blockDimX: Length));
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_PartlyHoistedNameKernel_KeepsEachBlockLocal() =>
+    public void PartlyHoistedNameKernel_PartlyHoistedScopes_KeepsEachBlockLocal() =>
         AssertPartlyHoistedName(static (first, second) => SameNameHoistedLocalKernels.LaunchPartlyHoistedNameKernel(first, second, blockDimX: Length));
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_WarpPrefixAndTotalKernel_ComputesPrefixAndTotalPerWarp() =>
+    public void WarpPrefixAndTotalKernel_WarpPrefixComputation_ComputesPrefixAndTotalPerWarp() =>
         AssertWarpPrefixAndTotal(static (first, second) => SameNameHoistedLocalKernels.LaunchWarpPrefixAndTotalKernel(first, second, blockDimX: Length));
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_PlainLoopBesideBarrierLoopKernel_StartsPlainLoopAtItsInitializer() =>
+    public void PlainLoopBesideBarrierLoopKernel_BesideBarrierLoop_StartsPlainLoopAtItsInitializer() =>
         AssertPlainLoopBesideBarrierLoop(static data => SameNameHoistedLocalKernels.LaunchPlainLoopBesideBarrierLoopKernel(data, PlainLoopBound, blockDimX: Length));
 
 #if GSHARP_CPU
     [Fact]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_SiblingLoopBarrierKernel_KeepsEachLoopLocal() =>
+    public void SiblingLoopBarrierKernel_ManagedSiblingLoopsAcrossBarrier_KeepsEachLoopLocal() =>
         RunManaged(() => AssertSiblingLoopBarrier(static (first, second) => SameNameHoistedLocalKernels.LaunchSiblingLoopBarrierKernel(first, second, blockDimX: Length)));
 
     [Fact]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_PartlyHoistedNameKernel_KeepsEachBlockLocal() =>
+    public void PartlyHoistedNameKernel_ManagedPartlyHoistedScopes_KeepsEachBlockLocal() =>
         RunManaged(() => AssertPartlyHoistedName(static (first, second) => SameNameHoistedLocalKernels.LaunchPartlyHoistedNameKernel(first, second, blockDimX: Length)));
 
     [Fact]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_WarpPrefixAndTotalKernel_ComputesPrefixAndTotalPerWarp() =>
+    public void WarpPrefixAndTotalKernel_ManagedWarpPrefixComputation_ComputesPrefixAndTotalPerWarp() =>
         RunManaged(() => AssertWarpPrefixAndTotal(static (first, second) => SameNameHoistedLocalKernels.LaunchWarpPrefixAndTotalKernel(first, second, blockDimX: Length)));
 
     [Fact]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_PlainLoopBesideBarrierLoopKernel_StartsPlainLoopAtItsInitializer() =>
+    public void PlainLoopBesideBarrierLoopKernel_ManagedBesideBarrierLoop_StartsPlainLoopAtItsInitializer() =>
         RunManaged(() => AssertPlainLoopBesideBarrierLoop(static data => SameNameHoistedLocalKernels.LaunchPlainLoopBesideBarrierLoopKernel(data, PlainLoopBound, blockDimX: Length)));
 
     private static void RunManaged(Action run)

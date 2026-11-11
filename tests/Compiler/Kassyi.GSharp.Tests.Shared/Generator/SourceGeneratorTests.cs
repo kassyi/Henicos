@@ -7,7 +7,7 @@ public class SourceGeneratorTests(ITestOutputHelper output)
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void TestGeneratedWrapper()
+    public void SourceGenerator_ValidKernel_GeneratesWrapper()
     {
         int[] aArray = [10];
         int[] bArray = [20];

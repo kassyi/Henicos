@@ -15,59 +15,59 @@ public class KernelValueParameterTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_ScalarParameterAssignment_SurvivesBarrier() => AssertScalarParameter();
+    public void Parameter_ScalarAssignment_SurvivesBarrier() => AssertScalarParameter();
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_ArrayParameterAssignment_SurvivesBarrier() => AssertArrayParameter();
+    public void Parameter_ArrayAssignment_SurvivesBarrier() => AssertArrayParameter();
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_ReadOnlyArrayParameterAssignment_SurvivesBarrier() => AssertReadOnlyArrayParameter();
+    public void Parameter_ReadOnlyArrayAssignment_SurvivesBarrier() => AssertReadOnlyArrayParameter();
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_ArrayParameterAssignedFromStructField_SurvivesBarrier() => AssertArrayFromStructField();
+    public void Parameter_ArrayAssignedFromStructField_SurvivesBarrier() => AssertArrayFromStructField();
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_StructParameterAssignment_SurvivesBarrier() => AssertStructParameter();
+    public void Parameter_StructAssignment_SurvivesBarrier() => AssertStructParameter();
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_StructParameterFieldWrite_SurvivesBarrier() => AssertStructFieldParameter();
+    public void Parameter_StructFieldWrite_SurvivesBarrier() => AssertStructFieldParameter();
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_ParameterWrittenAcrossTwoBarriers_KeepsEveryWrite() => AssertAcrossTwoBarriers();
+    public void Parameter_WrittenAcrossTwoBarriers_KeepsEveryWrite() => AssertAcrossTwoBarriers();
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_ParameterWrittenInBarrierLoop_KeepsEveryIteration() => AssertInBarrierLoop();
+    public void Parameter_WrittenInBarrierLoop_KeepsEveryIteration() => AssertInBarrierLoop();
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_RefExtensionReceiver_SurvivesBarrier() => AssertRefExtensionReceiver();
+    public void Parameter_RefExtensionReceiver_SurvivesBarrier() => AssertRefExtensionReceiver();
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_RefArgumentAndIncrement_SurvivesBarrier() => AssertRefArgumentAndIncrement();
+    public void Parameter_RefArgumentAndIncrement_SurvivesBarrier() => AssertRefArgumentAndIncrement();
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_OutArgument_SurvivesBarrier() => AssertOutArgument();
+    public void Parameter_OutArgument_SurvivesBarrier() => AssertOutArgument();
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Deconstruction_SurvivesBarrier() => AssertDeconstruction();
+    public void Parameter_Deconstruction_SurvivesBarrier() => AssertDeconstruction();
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_LocalFunctionWrite_SurvivesBarrier() => AssertLocalFunctionWrite();
+    public void Parameter_LocalFunctionWrite_SurvivesBarrier() => AssertLocalFunctionWrite();
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_ParameterWrittenWithoutBarrier_KeepsWrite() => AssertWithoutBarrier();
+    public void Parameter_WrittenWithoutBarrier_KeepsWrite() => AssertWithoutBarrier();
 
     internal static void AssertScalarParameter()
     {

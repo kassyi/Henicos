@@ -29,7 +29,8 @@ internal static class DynamicSharedMemoryDivergenceValidator
     public static void Analyze(SyntaxNodeAnalysisContext context, MethodDeclarationSyntax method,
         SemanticModel semanticModel, MethodFlowGraph flow)
     {
-        foreach (var node in method.DescendantNodes())
+        // A call that C# removes and its arguments never run (RemovedCalls)
+        foreach (var node in RemovedCalls.DescendantNodesThatRun(method, semanticModel))
         {
             switch (node)
             {

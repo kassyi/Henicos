@@ -17,7 +17,7 @@ public class EmbeddedStackLinqTests
 {
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_ImmutableArray_WhereSelectCount()
+    public void ImmutableArray_WhereSelectCount_ReturnsEvenCountDoubledValuesAndFirstAboveThree()
     {
         var source = ImmutableArray.Create(1, 2, 3, 4, 5);
 
@@ -41,7 +41,7 @@ public class EmbeddedStackLinqTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_EquatableArray_CountsAndHandlesDefault()
+    public void EquatableArray_CountAndDefault_HandlesDefaultAndCountsMatching()
     {
         var includes = ImmutableArray.Create("a.h", "b.h", "a.h").AsEquatableArray();
 
@@ -58,7 +58,7 @@ public class EmbeddedStackLinqTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_HashSetAndDictionary_Query()
+    public void HashSetAndDictionary_Query_ReturnsExpectedCountsAndMatch()
     {
         var names = new HashSet<string> { "a", "bb", "ccc" };
         var lengths = new Dictionary<string, int> { ["a"] = 1, ["bb"] = 2 };
@@ -80,7 +80,7 @@ public class EmbeddedStackLinqTests
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_DefaultImmutableArray_IsEmpty()
+    public void ImmutableArray_DefaultValue_AnyReturnsFalse()
     {
         bool any = default(ImmutableArray<int>)
             .AsStackEnumerable()
@@ -91,7 +91,7 @@ public class EmbeddedStackLinqTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_ReadOnlyList_AnyAll()
+    public void ReadOnlyList_AnyAndAll_ReturnsTrueForMatchAndFalseOtherwise()
     {
         IReadOnlyList<string> source = new List<string> { "a", "bb", "ccc" };
 
@@ -108,7 +108,7 @@ public class EmbeddedStackLinqTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_SyntaxList_SkipsEmptyStatements()
+    public void SyntaxList_EmptyStatements_SkipsEmptyStatementsCorrectly()
     {
         var statements = SyntaxFactory.List<StatementSyntax>(
             [SyntaxFactory.EmptyStatement(), SyntaxFactory.ReturnStatement(), SyntaxFactory.EmptyStatement()]
@@ -127,7 +127,7 @@ public class EmbeddedStackLinqTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_DescendantNodes_QueriesLazily()
+    public void DescendantNodes_BlockSyntax_QueriesLazilyAndFindsIdentifier()
     {
         var block = SyntaxFactory.Block(
             SyntaxFactory.EmptyStatement(),
@@ -152,7 +152,7 @@ public class EmbeddedStackLinqTests
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_NodeSequence_DisposesWhenExhausted()
+    public void NodeSequence_FullyIterated_DisposesWhenExhausted()
     {
         var nodes = new DisposeTrackingNodes(SyntaxFactory.EmptyStatement(), SyntaxFactory.EmptyStatement());
 
@@ -166,7 +166,7 @@ public class EmbeddedStackLinqTests
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_NodeSequence_StoppedEarly_IsNotDisposed()
+    public void NodeSequence_EarlyExit_DoesNotDisposeUnderlyingResource()
     {
         var nodes = new DisposeTrackingNodes(SyntaxFactory.EmptyStatement(), SyntaxFactory.EmptyStatement());
 
@@ -181,7 +181,7 @@ public class EmbeddedStackLinqTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_SyntaxTokenList_FindsModifier()
+    public void SyntaxTokenList_TokenSearch_FindsModifierToken()
     {
         var modifiers = SyntaxFactory.TokenList(
             SyntaxFactory.Token(SyntaxKind.PublicKeyword),
@@ -201,7 +201,7 @@ public class EmbeddedStackLinqTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_SeparatedSyntaxList_ElementAtAndLast()
+    public void SeparatedSyntaxList_IndexAccess_ReturnsElementAtAndLast()
     {
         var arguments = SyntaxFactory.SeparatedList(
             [SyntaxFactory.Argument(SyntaxFactory.IdentifierName("a")), SyntaxFactory.Argument(SyntaxFactory.IdentifierName("b"))]

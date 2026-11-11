@@ -101,7 +101,11 @@ internal sealed class StructLayoutRule :
         var marshaledType = type.UnwrapNullableArrayLike() ?? type;
         isArray = marshaledType.TryGetArrayLikeElementType(out var element);
         structType = (isArray ? element : marshaledType) as INamedTypeSymbol;
-        return structType is not null && TypeLayoutCalculator.IsUserStruct(structType);
+
+        // A StackLinq enumerable is a StackLinq.cuh template on the device, not a struct laid out from its C# fields
+        // (#1086)
+        return structType is not null && TypeLayoutCalculator.IsUserStruct(structType) &&
+               !StackLinqHelper.IsStackLinqType(structType);
     }
 
     // GSH0079 when a member type has no device representation, GSH0078 for any other reason

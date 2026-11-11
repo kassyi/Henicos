@@ -204,13 +204,7 @@ public class WarpActiveMaskDifferentialTests
             {
                 for (int k = 0; k < t % 4 + o; k++)
                 {
-                    uint mask = 0u;
-                    for (int u = 0; u < 32; u++)
-                    {
-                        mask |= u % 4 + o > k ? 1u << u : 0u;
-                    }
-
-                    expected[t * 8 + o * 4 + k] = mask;
+                    expected[t * 8 + o * 4 + k] = ComputeMask(o, k);
                 }
             }
         }
@@ -218,6 +212,17 @@ public class WarpActiveMaskDifferentialTests
         RunWithinClassicBounds(256,
             static output => WarpActiveMaskDifferentialKernels.LaunchNestedLoopKernel(output, blockDimX: 32),
             expected, static i => i / 8);
+
+        static uint ComputeMask(int o, int k)
+        {
+            uint mask = 0u;
+            for (int u = 0; u < 32; u++)
+            {
+                mask |= u % 4 + o > k ? 1u << u : 0u;
+            }
+
+            return mask;
+        }
     }
 
     [SkippableFact]

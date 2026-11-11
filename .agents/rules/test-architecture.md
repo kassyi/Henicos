@@ -54,7 +54,7 @@ public class ControlFlowTests
     [Fact]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.HappyPath)]
-    public void TestSimpleTernaryKernelExecution()
+    public void SimpleTernaryKernel_FirstNotLarger_ScalesTheSecond()
     {
         int[] a = [10];
         int[] b = [20];
@@ -194,8 +194,25 @@ public abstract class StateMachineTestBase
 | HNT0006 | Error | An unseeded random source anywhere in a test assembly: `new Random()`, `Random.Shared`, `RandomNumberGenerator` |
 | HNT0007 | Error | `catch` or `catch (Exception)` without a `when` filter in a test method whose handler drops the exception: it neither assigns it, passes it to a method other than a Console / test output / Debug / Trace writer, asserts, nor ends in a `throw` (not a skip) with no `return`, `break` or `continue` before it |
 | HNT0008 | Error | Raw `[Trait]` (`Xunit.TraitAttribute`) on a class or method in a test assembly; use `[Category]`, `[TestTarget]` or `[Scenario]` instead |
+| HNT0009 | Error | A test method starting with `Test` or `Test_`, or whose name does not match `<Unit>_<Condition>[_<Expected>]`; attributes (HNT0002) already state that it is a test and classify it |
 
 HNT0001 (a required test base class) was removed (#597). HNT0003 is the compiler-side `TypeNameCheckAnalyzer`. What a strong test needs beyond these checks: [property-test-design](../skills/property-test-design/SKILL.md) §8.
+
+### 3.9. Test Method Names
+
+A test method is named `<Unit>_<Condition>_<Expected>` in PascalCase parts separated by underscores, as in the unit
+testing best practices of .NET (`Add_TwoNegativeOperands_ReturnsTheNegativeSum`,
+`Max_DecidedByTheHighWord_PicksTheWiderOperand`). Two parts are enough when the condition says it all
+(`Lower_WhileLoop`). This is the one place where an underscore may separate the words of a member name; everywhere
+else the guidelines of [gsharp-naming-conventions](gsharp-naming-conventions.md) apply.
+
+- The condition is the concrete input or situation (`TwoNegativeOperands`, `DecidedByTheHighWord`). The kind of case
+  (happy path, sad path, boundary) is what the `[Scenario]` attribute records (3.2); it does not go into the name.
+- No `Test` or `Test_` prefix: `[Fact]` / `[Theory]` and the `[Category]`, `[TestTarget]` and `[Scenario]` attributes
+  that every test carries (HNT0002) already say that it is a test and how it is classified, and the prefix pushes the
+  unit under test out of the visible part of a test list.
+- Name the behavior, not the issue, the lane or a case number (see 3.2).
+- Test classes, kernel classes and helpers follow the normal PascalCase rules, without underscores.
 
 ---
 

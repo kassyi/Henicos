@@ -148,18 +148,18 @@ public class PendingBugsDifferentialTests
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_SelectTakeZeroAndNegativeSideEffects_AreZeroOnEveryPath() =>
+    public void StackLinq_SelectTakeZeroAndNegativeSideEffects_AreZeroOnEveryPath() =>
         DifferentialRunner.Run(s_selectTakeZeroSideEffect);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_ForUnrollWithOverflowingStartPlusCount_ExecutesZeroIterationsOnEveryPath() =>
+    public void ForUnroll_OverflowingStartPlusCount_ExecutesZeroIterationsOnEveryPath() =>
         DifferentialRunner.Run(s_forUnrollOverflowBound);
 
     // #1091: the CPU paths turn the grid-stride loop into a loop before the state machine lowering, so the shuffle splits
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_WarpShuffleDownInGridStrideLoop_UniformIterationCount() =>
+    public void WarpShuffle_GridStrideLoopUniformIterationCount_MatchesOracle() =>
         DifferentialRunner.Run(s_gridStrideLoopUniformWarpShuffle);
 
     // #1146: A full-mask Warp.ShuffleDownSync in the last, partial wave of a Gpu.GridStrideLoop is undefined on CUDA.
@@ -167,7 +167,7 @@ public class PendingBugsDifferentialTests
     // lane 15 of the last wave reads lane 16, which has exited. The release CUDA build does not check it.
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_WarpShuffleDownInGridStrideLoop_PartialLastWave_RejectsFullMaskShuffle()
+    public void WarpShuffle_GridStrideLoopPartialLastWave_RejectsFullMaskShuffle()
     {
         Skip.If(DiffPaths.Available.All(static p => p.Path == DiffPath.Cuda),
             "The release CUDA build does not check a shuffle that reads a lane that has exited");
@@ -196,18 +196,18 @@ public class PendingBugsDifferentialTests
     // #904: Remove KnownDivergence entry once ManagedVersionAnalysis rewrites non-suspending helpers that allocate dynamic SharedMemory<T>(count).
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_DynamicSharedMemoryInNonSuspendingHelper_ZeroSharedMemBytes_DivergesOnManaged() =>
+    public void DynamicSharedMemory_NonSuspendingHelperZeroBytes_DivergesOnManaged() =>
         DifferentialRunner.Run(s_zeroSharedMemBytes);
 
     // #904: Remove KnownDivergence entry once ManagedVersionAnalysis rewrites non-suspending helpers that allocate dynamic SharedMemory<T>(count).
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_DynamicSharedMemoryInNonSuspendingHelper_GrowthAfterLaterDecl_DivergesOnManaged() =>
+    public void DynamicSharedMemory_NonSuspendingHelperGrowthAfterLaterDecl_DivergesOnManaged() =>
         DifferentialRunner.Run(s_growthAfterLaterDecl);
 
     // #904: Remove KnownDivergence entry once ManagedVersionAnalysis rewrites non-suspending helpers that allocate dynamic SharedMemory<T>(count).
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_DynamicSharedMemoryInNonSuspendingHelper_NegativeCount_DivergesOnManaged() =>
+    public void DynamicSharedMemory_NonSuspendingHelperNegativeCount_DivergesOnManaged() =>
         DifferentialRunner.Run(s_negativeCount);
 }

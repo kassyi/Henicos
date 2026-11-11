@@ -6,7 +6,7 @@ description: "Workflow that drafts and proposes an Issue conforming to the GitHu
 # Autonomous Issue Creation Workflow (`/issue`)
 
 You are an expert engineer and open-source project contributor.
-Your mission is to understand the user's issue topic (bug report, feature request, or performance optimization), inspect the repository if needed for technical context, draft a comprehensive Issue body conforming strictly to the repository's [`.github/ISSUE_TEMPLATE/`](.github/ISSUE_TEMPLATE/), present it to the user for approval, and create the issue via the `gh` CLI.
+Your mission is to understand the user's issue topic (bug report, feature request, performance optimization, or cleanup), inspect the repository if needed for technical context, draft a comprehensive Issue body conforming strictly to the repository's [`.github/ISSUE_TEMPLATE/`](.github/ISSUE_TEMPLATE/), present it to the user for approval, and create the issue via the `gh` CLI.
 
 ---
 
@@ -14,7 +14,7 @@ Your mission is to understand the user's issue topic (bug report, feature reques
 
 1. **No Blind Creation**: Always propose the Issue title, labels, and complete body for user review before running `gh issue create` or `gh issue edit`. **Never wrap the issue body in a Markdown code block (` ```markdown ... ``` `)**; output it directly as formatted markdown so that headings, checklists, and code snippets render naturally in the chat UI. Only execute when the user replies affirmatively (e.g. `yes`, `y`, `proceed`).
 2. **PowerShell Escaping Guard**: Never pass multi-line Markdown with backticks directly via `--body "..."` on Windows PowerShell (backticks will be swallowed or converted to backslashes). Always write the body to a temporary file `tmp/issue_body.md` and pass `--body-file tmp/issue_body.md`, then clean up the temporary file after creation.
-3. **Template Conformity**: The drafted issue body must strictly follow the fields of the selected template in `.github/ISSUE_TEMPLATE/` (`bug_report.yml`, `feature_request.yml`, or `performance.yml`).
+3. **Template Conformity**: The drafted issue body must strictly follow the fields of the selected template in `.github/ISSUE_TEMPLATE/` (`bug_report.yml`, `feature_request.yml`, `performance.yml`, or `cleanup.yml`). A title starts with the prefix of its template; there is no issue without one of the four.
 4. **Language**: Draft the Issue title and body in English by default to align with the OSS repository conventions, unless the user explicitly requests Japanese. Communication and proposals with the user must be in Japanese.
 
 ---
@@ -49,7 +49,7 @@ graph TD
    ```
 
 2. **Classify Issue Template & Select Labels (Max 2)**:
-   Analyze the user's request and classify into one of the 3 templates:
+   Analyze the user's request and classify into one of the 4 templates:
    - **Bug Report** (`.github/ISSUE_TEMPLATE/bug_report.yml`)
      - Title format: `[Bug]: <Concise description>`
      - Primary Label: `bug`
@@ -59,10 +59,15 @@ graph TD
    - **Performance / Optimization** (`.github/ISSUE_TEMPLATE/performance.yml`)
      - Title format: `[Perf]: <Concise description>`
      - Primary Label: `performance`
+   - **Cleanup** (`.github/ISSUE_TEMPLATE/cleanup.yml`): restructuring, consolidation, renaming, removal or documentation with no change in behavior
+     - Title format: `[Cleanup]: <Concise description>`
+     - Primary Label: `refactor` (or `documentation` / `chore` when that fits better)
 
    - **Multi-Topic Classification (1–2 Labels Maximum)**:
      - Select **1 to 2 labels** from the existing repository labels fetched above (e.g., `feature`, `refactor`, `bug`, `performance`, `test`, `documentation`, `chore`).
      - If the issue spans two distinct topics (e.g., a new feature combined with refactoring -> `feature,refactor`), attach both labels.
+     - Add the area as the second label when it is not the kind: a bug in test code or test infrastructure is `bug,test`; a wrong document is `bug,documentation`; a cleanup of tests is `refactor,test`.
+     - The `found-by:*` labels (`found-by:audit`, `found-by:differential`, `found-by:matrix`) record how a bug was found and do not count toward the two.
      - **Strict Cap**: Assign **at most 2 labels** (`1 <= count <= 2`) so that label classification remains focused and meaningful.
 
 3. **Select the Milestone (exactly 1)**:

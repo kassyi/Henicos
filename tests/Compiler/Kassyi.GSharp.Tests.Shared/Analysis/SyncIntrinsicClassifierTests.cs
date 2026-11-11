@@ -78,7 +78,7 @@ public class SyncIntrinsicClassifierTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Classify_EveryCoreMember_MatchesTheTable()
+    public void Classify_EveryCoreMember_MatchesTheTable()
     {
         var unlisted = new List<string>();
         var mismatched = new List<string>();
@@ -131,7 +131,7 @@ public class SyncIntrinsicClassifierTests
     [InlineData("Gpu", "SyncThreads", nameof(SyncIntrinsicKind.BlockBarrier))]
     [InlineData("Gpu", "SyncGrid", nameof(SyncIntrinsicKind.GridBarrier))]
     [InlineData("Warp", "ShuffleDownSync", nameof(SyncIntrinsicKind.WarpShuffle))]
-    public void Test_Classify_EveryOverload_SharesTheClassification(string typeName, string name, string kind)
+    public void Classify_EveryOverload_SharesTheClassification(string typeName, string name, string kind)
     {
         var overloads = GetCoreType(typeName).GetMembers(name).OfType<IMethodSymbol>().ToList();
 
@@ -141,12 +141,30 @@ public class SyncIntrinsicClassifierTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Classify_SyncGridWithBody_SplitsTheStateMachine()
+    public void Classify_SyncGridWithBody_SplitsTheStateMachine()
     {
         var withBody = GetCoreType("Gpu").GetMembers("SyncGrid").OfType<IMethodSymbol>()
-            .Single(static method => method.Parameters.Length == 1);
+            .Single(static method => method.Parameters is [{ Type.TypeKind: TypeKind.Delegate }]);
 
         Assert.True(SyncIntrinsicClassifier.Classify(withBody).SplitsStateMachine);
+    }
+
+    // SyncGrid(body) and SyncGrid(mode) both take one parameter; only the delegate one has a body
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void GpuMacroClassifier_SyncGridOverloads_TellTheBodyFromTheMode()
+    {
+        var overloads = GetCoreType("Gpu").GetMembers("SyncGrid").OfType<IMethodSymbol>().ToArray();
+        var withBody = overloads.Single(static method => method.Parameters[0].Type.TypeKind == TypeKind.Delegate);
+        var withMode = overloads.Single(static method => method.Parameters[0].Type.TypeKind == TypeKind.Enum);
+
+        Assert.Equal(2, overloads.Length);
+        Assert.Equal((GpuMacroKind.SyncGrid, true, 0), Shape(GpuMacroClassifier.Classify(withBody)));
+        Assert.Equal(GpuMacroKind.SyncGrid, GpuMacroClassifier.Classify(withMode).Kind);
+        Assert.False(GpuMacroClassifier.Classify(withMode).HasBody);
+        Assert.Equal(SyncIntrinsicKind.GridBarrier, SyncIntrinsicClassifier.Classify(withMode).Kind);
+
+        static (GpuMacroKind, bool, int) Shape(GpuMacroCall call) => (call.Kind, call.HasBody, call.BodyOrdinal);
     }
 
     [Theory]
@@ -156,7 +174,7 @@ public class SyncIntrinsicClassifierTests
     [InlineData("SyncIntrinsicCases.Gpu", "LaneId")]
     [InlineData("SyncIntrinsicCases.Warp", "ShuffleDownSync")]
     [InlineData("SyncIntrinsicCases.Interlocked", "Add")]
-    public void Test_Classify_UserTypeOfTheSameName_IsNotAnIntrinsic(string typeName, string name)
+    public void Classify_UserTypeOfTheSameName_IsNotAnIntrinsic(string typeName, string name)
     {
         var method = GetType(typeName).GetMembers(name).OfType<IMethodSymbol>().Single();
 
@@ -174,7 +192,10 @@ public class SyncIntrinsicClassifierTests
     [InlineData("Or", nameof(SyncIntrinsicKind.None), true)]
     [InlineData("Read", nameof(SyncIntrinsicKind.None), true)]
     [InlineData("MemoryBarrier", nameof(SyncIntrinsicKind.MemoryFence), false)]
-    public void Test_Classify_SystemThreadingInterlocked_MatchesExpected(string name, string kind, bool resultIsThreadVariant)
+    public void Classify_SystemThreadingInterlocked_MatchesExpected(
+        string name,
+        string kind,
+        bool resultIsThreadVariant)
     {
         var overloads = GetType("System.Threading.Interlocked").GetMembers(name).OfType<IMethodSymbol>().ToList();
 
@@ -189,7 +210,7 @@ public class SyncIntrinsicClassifierTests
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Classify_GpuHintUnroll_IsNotClassified()
+    public void Classify_GpuHintUnroll_IsNotClassified()
     {
         var hint = GetCoreType("Gpu").GetTypeMembers("Hint").Single();
         var unroll = hint.GetMembers("Unroll").OfType<IMethodSymbol>().Single();
@@ -199,7 +220,7 @@ public class SyncIntrinsicClassifierTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_IsThreadVariantSource_ThreadIndexMembers()
+    public void IsThreadVariantSource_ThreadIndexMembers()
     {
         var threadIndex = GetCoreType("ThreadIndex");
 

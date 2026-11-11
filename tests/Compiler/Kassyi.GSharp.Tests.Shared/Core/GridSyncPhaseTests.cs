@@ -27,7 +27,7 @@ public class GridSyncPhaseTests : TranspilerTestBase
     [InlineData(true, 4)]
     [InlineData(false, 64)]
     [InlineData(true, 64)]
-    public void Test_GlobalBarrier_EveryThreadReadsTheValueItsNeighbourWroteBeforeTheGridSync(bool forceManaged, int blocks)
+    public void GlobalBarrier_NeighborThreadRead_MatchesSequentialPhaseValues(bool forceManaged, int blocks)
     {
         var threads = blocks * ThreadsPerBlock;
         var buffer = new int[threads];
@@ -45,7 +45,7 @@ public class GridSyncPhaseTests : TranspilerTestBase
     [InlineData(true, 4)]
     [InlineData(false, 64)]
     [InlineData(true, 64)]
-    public void Test_SharedMemory_KeptByEachBlockAcrossGridSyncs(bool forceManaged, int blocks)
+    public void SharedMemory_AcrossGridSyncs_PreservedByEachBlock(bool forceManaged, int blocks)
     {
         var threads = blocks * ThreadsPerBlock;
         var buffer = new int[threads];
@@ -73,7 +73,7 @@ public class GridSyncPhaseTests : TranspilerTestBase
     [InlineData(true, 2)]
     [InlineData(false, 8)]
     [InlineData(true, 8)]
-    public void Test_ThreadsReachingGridSyncAfterDifferentSteps_AllWaitForTheGrid(bool forceManaged, int blocks)
+    public void ThreadsReachingGridSync_AfterDifferentSteps_AllWaitForGrid(bool forceManaged, int blocks)
     {
         const int BlockSize = 64;
         var threads = blocks * BlockSize;
@@ -89,7 +89,7 @@ public class GridSyncPhaseTests : TranspilerTestBase
     [Scenario(TestScenario.SadPath)]
     [InlineData(false)]
     [InlineData(true)]
-    public void Test_BlockFinishesWhileOthersWaitAtGridSync_Throws(bool forceManaged)
+    public void BlockFinishesBeforeGridSync_WhileOthersWait_ThrowsInvalidOperationException(bool forceManaged)
     {
         SkipNeverCompletesOnCuda();
         var a = new int[4 * ThreadsPerBlock];
@@ -107,7 +107,8 @@ public class GridSyncPhaseTests : TranspilerTestBase
     [Scenario(TestScenario.SadPath)]
     [InlineData(false)]
     [InlineData(true)]
-    public void Test_RepresentativeThreadFinishesWhileItsBlockWaitsAtGridSync_Throws(bool forceManaged)
+    public void RepresentativeThreadFinishes_WhileBlockWaitsAtGridSync_ThrowsInvalidOperationException(
+        bool forceManaged)
     {
         SkipNeverCompletesOnCuda();
         var a = new int[2 * ThreadsPerBlock];
@@ -126,7 +127,7 @@ public class GridSyncPhaseTests : TranspilerTestBase
     [InlineData(true, 1)]
     [InlineData(false, 2)]
     [InlineData(true, 2)]
-    public void Test_GridSyncInKernelThatIsNotCooperative_Throws(bool forceManaged, int blocks)
+    public void GridSync_InNonCooperativeKernel_ThrowsArgumentException(bool forceManaged, int blocks)
     {
         Skip.If(IsCudaDialect, "A grid sync in a launch that is not cooperative is undefined on CUDA; only the CPU paths check it.");
         var a = new int[blocks * ThreadsPerBlock];

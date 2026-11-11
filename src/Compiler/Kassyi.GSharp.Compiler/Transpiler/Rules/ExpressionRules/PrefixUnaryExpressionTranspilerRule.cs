@@ -30,10 +30,10 @@ public sealed class PrefixUnaryExpressionTranspilerRule : SyntaxNodeTranspilerRu
         }
 
         if ((node.IsKind(SyntaxKind.PreIncrementExpression) || node.IsKind(SyntaxKind.PreDecrementExpression)) &&
-            ComputedPropertyGetterCall.IsComputedPropertyTarget(node.Operand, ref context))
+            PropertyAccessorCall.IsAccessorPropertyTarget(node.Operand, ref context))
         {
             // The getter, the step and the setter, in the C# order (#908)
-            ComputedPropertyAssignment.TranspileStep(node, node.Operand, ref context);
+            PropertyAccessorAssignment.TranspileStep(node, node.Operand, ref context);
             return;
         }
 

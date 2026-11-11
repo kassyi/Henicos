@@ -16,7 +16,7 @@ public class CompileCudaToFatbinTaskTests
     }
 
     [Fact]
-    public void Test_CompileCudaToFatbinTask_WhenNoCudaEnv_SkipsAndSucceeds()
+    public void CompileCudaToFatbinTask_WhenNoCudaEnv_SkipsAndSucceeds()
     {
         using var ctx = new CompileTaskTestContext();
         ctx.SetEnv("GSHARP_TEST_NO_CUDA", "1");
@@ -27,7 +27,7 @@ public class CompileCudaToFatbinTaskTests
     }
 
     [Fact]
-    public void Test_CompileCudaToFatbinTask_WhenNvccMissing_SkipsGracefully()
+    public void CompileCudaToFatbinTask_WhenNvccMissing_SkipsGracefully()
     {
         using var ctx = new CompileTaskTestContext();
         ctx.SetEnv("GSHARP_TEST_NO_CUDA", null);
@@ -41,7 +41,7 @@ public class CompileCudaToFatbinTaskTests
     }
 
     [Fact]
-    public void Test_CompileCudaToFatbinTask_CombinedFatbinName_Specified_ShouldBundleSources()
+    public void CompileCudaToFatbinTask_CombinedFatbinName_Specified_ShouldBundleSources()
     {
         using var ctx = new CompileTaskTestContext();
         ctx.CreateDummySource("kernel1.cu", "// cuda source 1");
@@ -62,7 +62,7 @@ public class CompileCudaToFatbinTaskTests
     [InlineData(new[] { "kernel1.cu", "kernel2.cu" }, "sm_86", "combined_fatbin")]
     [InlineData(new[] { "kernel.cu" }, "sm_86,compute_86;sm_89,compute_89", "combined_fatbin")]
     [InlineData(new[] { "combined_fatbin_bundle.cu", "kernel2.cu" }, "sm_86", "combined_fatbin")]
-    public void Test_CompileCudaToFatbinTask_CombinedFatbinName_SuccessCases(string[] sources, string targetArch,
+    public void CompileCudaToFatbinTask_CombinedFatbinName_SuccessCases(string[] sources, string targetArch,
         string combinedName)
     {
         using var ctx = new CompileTaskTestContext();
@@ -82,7 +82,7 @@ public class CompileCudaToFatbinTaskTests
     [InlineData("combined_fatbin", false)] // Combined, NotUpToDate
     [InlineData("", true)] // Individual, UpToDate
     [InlineData("", false)] // Individual, NotUpToDate
-    public void Test_CompileCudaToFatbinTask_TimestampCheck(string? combinedName, bool isUpToDate)
+    public void CompileCudaToFatbinTask_TimestampCheck(string? combinedName, bool isUpToDate)
     {
         using var ctx = new CompileTaskTestContext();
         var src = ctx.CreateDummySource("kernel1.cu", "dummy1");
@@ -116,7 +116,7 @@ public class CompileCudaToFatbinTaskTests
     }
 
     [Fact]
-    public void Test_CompileCudaToFatbinTask_OnBeforeExecute_Fails()
+    public void CompileCudaToFatbinTask_OnBeforeExecute_Fails()
     {
         using var ctx = new CompileTaskTestContext();
         ctx.Runner.OverrideVswhere = true;
@@ -125,7 +125,7 @@ public class CompileCudaToFatbinTaskTests
     }
 
     [Fact]
-    public void Test_CompileCudaToFatbinTask_DetectRegisterSpillSuppressGs0001()
+    public void CompileCudaToFatbinTask_DetectRegisterSpillSuppressGs0001()
     {
         using var ctx = new CompileTaskTestContext();
         ctx.CreateDummySource("kernel1.cu", "// gsharp:suppress GS0001\ndummy");
@@ -138,7 +138,7 @@ public class CompileCudaToFatbinTaskTests
     }
 
     [Fact]
-    public void Test_CompileCudaToFatbinTask_CombinedFatbinName_CreateOutputDirectory()
+    public void CompileCudaToFatbinTask_CombinedFatbinName_CreateOutputDirectory()
     {
         using var ctx = new CompileTaskTestContext();
         ctx.CreateDummySource("kernel.cu");
@@ -154,7 +154,7 @@ public class CompileCudaToFatbinTaskTests
     }
 
     [Fact]
-    public void Test_CompileCudaToFatbinTask_CombinedFatbinName_BundleFile_WriteFailure()
+    public void CompileCudaToFatbinTask_CombinedFatbinName_BundleFile_WriteFailure()
     {
         using var ctx = new CompileTaskTestContext();
         ctx.CreateDummySource("kernel.cu");
@@ -171,7 +171,7 @@ public class CompileCudaToFatbinTaskTests
     [Theory]
     [InlineData("combined_fatbin")]
     [InlineData(null)]
-    public void Test_CompileCudaToFatbinTask_OutputMissing_LogsError(string? combinedName)
+    public void CompileCudaToFatbinTask_OutputMissing_LogsError(string? combinedName)
     {
         using var ctx = new CompileTaskTestContext();
         ctx.CreateDummySource("kernel.cu");
@@ -184,7 +184,7 @@ public class CompileCudaToFatbinTaskTests
     }
 
     [Fact]
-    public void Test_CompileCudaToFatbinTask_CombinedFatbinName_MissingSourceFile_NotUpToDate()
+    public void CompileCudaToFatbinTask_CombinedFatbinName_MissingSourceFile_NotUpToDate()
     {
         using var ctx = new CompileTaskTestContext();
         // File is missing, but output exists (with the nvcc command record of a first build)
@@ -200,7 +200,7 @@ public class CompileCudaToFatbinTaskTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_CompileCudaToFatbinTask_GccClangToolchain_SkipsVcvarsAndMsvcFlags()
+    public void CompileCudaToFatbinTask_GccClangToolchain_SkipsVcvarsAndMsvcFlags()
     {
         using var ctx = new CompileTaskTestContext();
         ctx.CreateDummySource("kernel.cu", "// cuda source");
@@ -220,7 +220,7 @@ public class CompileCudaToFatbinTaskTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_CompileCudaToFatbinTask_MsvcToolchain_PassesConformingPreprocessor()
+    public void CompileCudaToFatbinTask_MsvcToolchain_PassesConformingPreprocessor()
     {
         using var ctx = new CompileTaskTestContext();
         ctx.CreateDummySource("kernel.cu", "// cuda source");
@@ -239,7 +239,7 @@ public class CompileCudaToFatbinTaskTests
     [InlineData("")]
     [InlineData("combined_fatbin")]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_CompileCudaToFatbinTask_SameCommand_SecondBuildSkipsNvcc(string combinedName)
+    public void CompileCudaToFatbinTask_SameCommand_SecondBuildSkipsNvcc(string combinedName)
     {
         using var ctx = new CompileTaskTestContext();
         CreateOldSource(ctx);
@@ -261,7 +261,7 @@ public class CompileCudaToFatbinTaskTests
     [InlineData("")]
     [InlineData("combined_fatbin")]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_CompileCudaToFatbinTask_ArchitecturesChanged_RerunsNvcc(string combinedName)
+    public void CompileCudaToFatbinTask_ArchitecturesChanged_RerunsNvcc(string combinedName)
     {
         using var ctx = new CompileTaskTestContext();
         CreateOldSource(ctx);
@@ -281,7 +281,7 @@ public class CompileCudaToFatbinTaskTests
     [InlineData("")]
     [InlineData("combined_fatbin")]
     [Scenario(TestScenario.Boundary)]
-    public void Test_CompileCudaToFatbinTask_CommandRecordMissing_RerunsNvcc(string combinedName)
+    public void CompileCudaToFatbinTask_CommandRecordMissing_RerunsNvcc(string combinedName)
     {
         using var ctx = new CompileTaskTestContext();
         CreateOldSource(ctx);
@@ -299,7 +299,7 @@ public class CompileCudaToFatbinTaskTests
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_CompileCudaToFatbinTask_NvccVersionChanged_RerunsNvcc()
+    public void CompileCudaToFatbinTask_NvccVersionChanged_RerunsNvcc()
     {
         using var ctx = new CompileTaskTestContext();
         CreateOldSource(ctx);
@@ -318,7 +318,7 @@ public class CompileCudaToFatbinTaskTests
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_CompileCudaToFatbinTask_CombinedSourceAdded_RerunsNvcc()
+    public void CompileCudaToFatbinTask_CombinedSourceAdded_RerunsNvcc()
     {
         using var ctx = new CompileTaskTestContext();
         CreateOldSource(ctx);
@@ -335,7 +335,7 @@ public class CompileCudaToFatbinTaskTests
     [InlineData("")]
     [InlineData("combined_fatbin")]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_CompileCudaToFatbinTask_SourceEdited_RerunsNvcc(string combinedName)
+    public void CompileCudaToFatbinTask_SourceEdited_RerunsNvcc(string combinedName)
     {
         using var ctx = new CompileTaskTestContext();
         var source = ctx.CreateDummySource("kernel1.cu", "// cuda source");
@@ -353,7 +353,7 @@ public class CompileCudaToFatbinTaskTests
     [InlineData("")]
     [InlineData("combined_fatbin")]
     [Scenario(TestScenario.SadPath)]
-    public void Test_CompileCudaToFatbinTask_SigningFailsAfterNvcc_NextBuildRerunsNvcc(string combinedName)
+    public void CompileCudaToFatbinTask_SigningFailsAfterNvcc_NextBuildRerunsNvcc(string combinedName)
     {
         using var ctx = new CompileTaskTestContext();
         CreateOldSource(ctx);
@@ -380,7 +380,7 @@ public class CompileCudaToFatbinTaskTests
     [InlineData("")]
     [InlineData("combined_fatbin")]
     [Scenario(TestScenario.SadPath)]
-    public void Test_CompileCudaToFatbinTask_NvccFails_RemovesTheOldRecord(string combinedName)
+    public void CompileCudaToFatbinTask_NvccFails_RemovesTheOldRecord(string combinedName)
     {
         using var ctx = new CompileTaskTestContext();
         CreateOldSource(ctx);
@@ -399,7 +399,7 @@ public class CompileCudaToFatbinTaskTests
     // Changing the signing key re-signs the fatbin: the record holds the public key of the key in use
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_CompileCudaToFatbinTask_SigningKeyChanged_RerunsNvcc()
+    public void CompileCudaToFatbinTask_SigningKeyChanged_RerunsNvcc()
     {
         using var ctx = new CompileTaskTestContext();
         CreateOldSource(ctx);
@@ -418,7 +418,7 @@ public class CompileCudaToFatbinTaskTests
     [InlineData("")]
     [InlineData("combined_fatbin")]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_CompileCudaToFatbinTask_DefaultArchitectures_EmitSass86AndPtx86(string combinedName)
+    public void CompileCudaToFatbinTask_DefaultArchitectures_EmitSass86AndPtx86(string combinedName)
     {
         using var ctx = new CompileTaskTestContext();
         CreateOldSource(ctx);
@@ -433,7 +433,7 @@ public class CompileCudaToFatbinTaskTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_CompileCudaToFatbinTask_ExitCodeZeroWithWarnings_LogsMsBuildWarnings()
+    public void CompileCudaToFatbinTask_ExitCodeZeroWithWarnings_LogsMsBuildWarnings()
     {
         using var ctx = new CompileTaskTestContext();
         CreateOldSource(ctx);

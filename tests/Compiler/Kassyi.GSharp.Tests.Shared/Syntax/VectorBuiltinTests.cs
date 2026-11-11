@@ -8,7 +8,7 @@ public class VectorBuiltinTests
     [TestTarget(ExecutionTarget.GpuExecution)]
     [InlineData(1)]
     [InlineData(10)]
-    public void GEN18_TestVector2AddKernel(int arrayLength)
+    public void Vector2Add_SingleAndMultipleElements_MatchesExpectedSums(int arrayLength)
     {
         System.Numerics.Vector2[] a = new System.Numerics.Vector2[arrayLength];
         System.Numerics.Vector2[] b = new System.Numerics.Vector2[arrayLength];
@@ -34,7 +34,7 @@ public class VectorBuiltinTests
     [TestTarget(ExecutionTarget.GpuExecution)]
     [InlineData(1)]
     [InlineData(10)]
-    public void GEN18_TestVector3AddKernel(int arrayLength)
+    public void Vector3Add_SingleAndMultipleElements_MatchesExpectedSums(int arrayLength)
     {
         System.Numerics.Vector3[] a = new System.Numerics.Vector3[arrayLength];
         System.Numerics.Vector3[] b = new System.Numerics.Vector3[arrayLength];
@@ -61,7 +61,7 @@ public class VectorBuiltinTests
     [TestTarget(ExecutionTarget.GpuExecution)]
     [InlineData(1)]
     [InlineData(10)]
-    public void GEN18_TestVector4AddKernel(int arrayLength)
+    public void Vector4Add_SingleAndMultipleElements_MatchesExpectedSums(int arrayLength)
     {
         System.Numerics.Vector4[] a = new System.Numerics.Vector4[arrayLength];
         System.Numerics.Vector4[] b = new System.Numerics.Vector4[arrayLength];
@@ -87,7 +87,7 @@ public class VectorBuiltinTests
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void GEN18_TestVector2AddKernel_EmptyArrays_ThrowsArgumentException()
+    public void Vector2Add_EmptyArrays_ThrowsArgumentException()
     {
         System.Numerics.Vector2[] empty = [];
 
