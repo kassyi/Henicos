@@ -12,7 +12,8 @@ namespace Kassyi.GSharp.Tests.Shared.Runtime;
 /// symbol is still exported, but it is the legacy entry point: it takes 32-bit sizes, an older descriptor or fewer
 /// parameters, and on a context created through the current API it can fail with <c>CUDA_ERROR_INVALID_CONTEXT</c>.
 /// A binding without <c>entryPoint</c> binds its own name, so a name that <c>cuda.h</c> redirects must name the
-/// versioned symbol.
+/// versioned symbol. The scan of <c>cuda.h</c> runs only on a machine with a CUDA toolkit; without one (CI) only the
+/// pinned entry points of <see cref="DriverApiYaml_VersionedBinding_NamesTheHeaderSymbol"/> are checked.
 /// </remarks>
 public class CudaDriverApiEntryPointTests
 {
@@ -22,14 +23,16 @@ public class CudaDriverApiEntryPointTests
     // Bindings that keep the unversioned symbol on purpose. Each declares the parameters of that older symbol.
     private static readonly HashSet<string> s_unversionedOnPurpose =
     [
-        // Same parameters as cuEventElapsedTime_v2, which needs a CUDA 12.8 driver.
+        // Same parameters as cuEventElapsedTime_v2, which a driver older than CUDA 12.8 does not export. G# states no
+        // minimum driver and still loads the CUDA 12 cuBLAS (cublas64_12.dll), so a CUDA 12.0-12.7 driver must work.
         "cuEventElapsedTime",
-        // Declared with the CUDA 8 parameters (a CUdevice where the _v2 symbols take a CUmemLocation).
+        // Declared with the CUDA 8 parameters (a CUdevice where the _v2 symbols take a CUmemLocation), which the public
+        // declarations of the CUDA 13 cuda.h no longer have; nothing calls these two bindings.
         "cuMemAdvise",
         "cuMemPrefetchAsync",
     ];
 
-    [Fact]
+    [SkippableFact]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.Boundary)]
