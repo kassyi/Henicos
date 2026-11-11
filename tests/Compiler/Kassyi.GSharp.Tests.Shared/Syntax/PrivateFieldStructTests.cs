@@ -73,8 +73,9 @@ public class PrivateFieldStructTests : TranspilerTestBase
         PrivateFieldStructKernels.LaunchReadExplicitSwappedKernel(value, output, blockDimX: 1);
 
         // _a sits at offset 4 and _b at 0, declared in that order: a sequential mirror would swap them on CUDA
-        // mutant: HostMirrorPlan.Create `structLayout.Kind switch { TypeLayoutKind.Explicit => "Explicit", ...}` ->
-        // "Sequential" with no [FieldOffset] -> FieldOffsetsMatch is false and the launch throws
+        // mutant: HostMirrorPlan.Create writes a Sequential mirror without [FieldOffset] (`isExplicit = false`, the
+        // Explicit arm -> "Sequential") -> FieldOffsetsMatch is false and the launch throws InvalidOperationException
+        // mutant: the same, and HostMirrorPlan.GetCheck returns None for a predicted offset -> [2, 1, 3], no error
         Assert.Equal([1, 2, 3], output);
     }
 
@@ -88,8 +89,8 @@ public class PrivateFieldStructTests : TranspilerTestBase
         PrivateFieldStructKernels.LaunchStepLibraryInternalFieldsKernel(ref holder, blockDimX: 1);
 
         // The launcher cannot name the internal fields of the library and copies them through the host mirror
-        // mutant: StructUnmarshalMethodEmitter.WriteUnmarshalMember writes `;` for `host.<f> = native.<f>;` is not
-        // seen here (the values do not change); StructMarshalMethodEmitter.WriteMarshalMember `= default` writes 0 back
+        // mutant: StructMarshalMethodEmitter.WriteMarshalMember `native.<f> = default;` -> 0 comes back for Hidden
+        // (dropping the copy back alone is not seen here: the device does not change these fields)
         Assert.Equal(42, data[0]);
         Assert.Same(data, holder.Data);
         Assert.Equal(7, holder.HiddenValue);
