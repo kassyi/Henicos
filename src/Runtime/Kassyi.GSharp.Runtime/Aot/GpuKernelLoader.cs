@@ -16,8 +16,13 @@ public static unsafe class GpuKernelLoader
     private static int s_deviceMinor;
 
     /// <summary>
-    /// Gets the global CUDA context handle.
+    /// Gets the global CUDA context handle: the primary context of device 0, which G# retains until the process ends.
     /// </summary>
+    /// <remarks>
+    /// The primary context is the one the CUDA Runtime and the libraries built on it (cuBLAS, cuFFT) use, so memory
+    /// and streams of the global context can be passed to them directly. A library that resets the device
+    /// (<c>cudaDeviceReset</c>, <c>cuDevicePrimaryCtxReset</c>) destroys this context as well.
+    /// </remarks>
     public static IntPtr GlobalContext
     {
         get
@@ -175,7 +180,13 @@ public static unsafe class GpuKernelLoader
                 CudaException.ThrowIfError(CudaDriverApi.cuInit(0));
                 CudaException.ThrowIfError(CudaDriverApi.cuDeviceGet(out var device, 0));
 
-                CudaException.ThrowIfError(CudaDriverApi.cuCtxCreate_v2(out s_globalContext, 0, device));
+                // [WHY] The primary context, not a context of cuCtxCreate: on a created context the driver ends the
+                // process with an access violation instead of returning CUDA_ERROR_STREAM_CAPTURE_UNSUPPORTED for a
+                // potentially unsafe call (cuMemAlloc, cuMemFree, cuEventQuery) made during a global or thread-local
+                // stream capture (NVIDIA bug 7081224, driver 621.14). The retain is never released: the context
+                // lives until the process ends, as the device error slot and the staging buffers expect.
+                CudaException.ThrowIfError(CudaDriverApi.cuDevicePrimaryCtxRetain(out s_globalContext, device));
+                CudaException.ThrowIfError(CudaDriverApi.cuCtxPushCurrent_v2(s_globalContext));
                 DeviceErrorSlot.AllocateInCurrentContext();
                 CudaException.ThrowIfError(CudaDriverApi.cuCtxPopCurrent_v2(out _)); // Immediately pop to avoid poisoning the ThreadPool thread
 

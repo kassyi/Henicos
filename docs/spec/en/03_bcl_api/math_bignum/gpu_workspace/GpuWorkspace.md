@@ -50,7 +50,7 @@ The maximum word count for BigInteger operations.
 The GPU execution backend engine to utilize (`GSharpAot`).
 
 `useIsolatedContext` _Boolean_<br>
-Whether to create and use an isolated CUDA context (`cuCtxCreate_v2`) instead of the shared global context.
+Whether to create and use an isolated CUDA context (`cuCtxCreate_v2`) instead of the shared global context. Do not make a potentially unsafe call (one that allocates, such as a `GpuBigUInt` larger than every pooled buffer) while the workspace stream of an isolated context captures in global or thread-local mode: in a created context the driver currently ends the process with an access violation instead of returning `CUDA_ERROR_STREAM_CAPTURE_UNSUPPORTED` (NVIDIA bug 7081224). Relaxed mode is not affected.
 
 #### Exceptions
 

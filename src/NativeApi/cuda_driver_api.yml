@@ -89,6 +89,18 @@ methods:
         type: int
         description: Device handle.
 
+  - name: cuDevicePrimaryCtxRetain
+    returnType: CUresult
+    summary: Retains the primary context on the device, creating it if necessary.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: pctx
+        type: out IntPtr
+        description: Returned primary context handle. The context is not made current.
+      - name: dev
+        type: int
+        description: Device handle.
+
   - name: cuCtxDestroy_v2
     returnType: CUresult
     summary: Destroys a CUDA context.
