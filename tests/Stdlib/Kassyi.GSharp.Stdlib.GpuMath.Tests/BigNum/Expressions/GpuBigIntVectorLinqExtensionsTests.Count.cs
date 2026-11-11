@@ -322,7 +322,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
     private static BigInteger SqrtContract(BigInteger x) =>
         x.Sign < 0 ? throw new InvalidOperationException("Cannot compute square root of a negative integer.") : x;
 
-    /// <summary>A counted chain: its name, its GPU expression, its System.Linq count and whether it can throw.</summary>
+    /// <summary>A counted chain: its name, its GPU chain, its System.Linq count and whether it can throw.</summary>
     public sealed record CountCase(
         string Name,
         Func<CountOperands, IGpuBigIntVectorExpression> Build,
