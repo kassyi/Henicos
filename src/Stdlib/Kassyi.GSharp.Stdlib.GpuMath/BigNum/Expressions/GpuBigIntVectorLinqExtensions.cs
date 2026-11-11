@@ -132,6 +132,10 @@ public static class GpuBigIntVectorLinqExtensions
     /// <param name="left">The first vectorized expression.</param>
     /// <param name="right">The second vectorized expression.</param>
     /// <returns>A new vectorized expression representing the element-wise addition.</returns>
+    /// <exception cref="ArgumentException">
+    /// At evaluation, before either input is evaluated: <paramref name="left"/> and <paramref name="right"/> have
+    /// different lengths (capacities). Unlike <c>System.Linq</c>'s <c>Zip</c>, the longer input is not truncated.
+    /// </exception>
     public static IGpuBigIntVectorExpression ZipAdd(
         this IGpuBigIntVectorExpression left,
         IGpuBigIntVectorExpression right) =>
@@ -143,6 +147,10 @@ public static class GpuBigIntVectorLinqExtensions
     /// <param name="left">The first vectorized expression.</param>
     /// <param name="right">The second vectorized expression.</param>
     /// <returns>A new vectorized expression representing the element-wise subtraction.</returns>
+    /// <exception cref="ArgumentException">
+    /// At evaluation, before either input is evaluated: <paramref name="left"/> and <paramref name="right"/> have
+    /// different lengths (capacities). Unlike <c>System.Linq</c>'s <c>Zip</c>, the longer input is not truncated.
+    /// </exception>
     public static IGpuBigIntVectorExpression ZipSubtract(
         this IGpuBigIntVectorExpression left,
         IGpuBigIntVectorExpression right) =>
@@ -154,6 +162,10 @@ public static class GpuBigIntVectorLinqExtensions
     /// <param name="left">The first vectorized expression.</param>
     /// <param name="right">The second vectorized expression.</param>
     /// <returns>A new vectorized expression representing the element-wise multiplication.</returns>
+    /// <exception cref="ArgumentException">
+    /// At evaluation, before either input is evaluated: <paramref name="left"/> and <paramref name="right"/> have
+    /// different lengths (capacities). Unlike <c>System.Linq</c>'s <c>Zip</c>, the longer input is not truncated.
+    /// </exception>
     public static IGpuBigIntVectorExpression ZipMultiply(
         this IGpuBigIntVectorExpression left,
         IGpuBigIntVectorExpression right) =>
@@ -170,6 +182,10 @@ public static class GpuBigIntVectorLinqExtensions
     /// check back from the device (one synchronization of the workspace stream), so evaluating it while the stream
     /// captures a CUDA graph throws <see cref="NotSupportedException"/>.
     /// </remarks>
+    /// <exception cref="ArgumentException">
+    /// At evaluation, before either input is evaluated: <paramref name="left"/> and <paramref name="right"/> have
+    /// different lengths (capacities). Unlike <c>System.Linq</c>'s <c>Zip</c>, the longer input is not truncated.
+    /// </exception>
     public static IGpuBigIntVectorExpression ZipDivide(
         this IGpuBigIntVectorExpression left,
         IGpuBigIntVectorExpression right) =>
@@ -186,6 +202,10 @@ public static class GpuBigIntVectorLinqExtensions
     /// check back from the device (one synchronization of the workspace stream), so evaluating it while the stream
     /// captures a CUDA graph throws <see cref="NotSupportedException"/>.
     /// </remarks>
+    /// <exception cref="ArgumentException">
+    /// At evaluation, before either input is evaluated: <paramref name="left"/> and <paramref name="right"/> have
+    /// different lengths (capacities). Unlike <c>System.Linq</c>'s <c>Zip</c>, the longer input is not truncated.
+    /// </exception>
     public static IGpuBigIntVectorExpression ZipModulo(
         this IGpuBigIntVectorExpression left,
         IGpuBigIntVectorExpression right) =>
