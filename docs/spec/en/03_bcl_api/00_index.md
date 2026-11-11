@@ -58,7 +58,11 @@ Intrinsic static methods and macros providing direct access to GPU hardware feat
 
 - **[SharedMemory<T>](memory/SharedMemory.md)**: Abstracts CUDA's high-throughput `__shared__` block-local memory allocations.
 
-### 5. Math and Numerics (Primitives)
+### 5. Tensor Cores (WMMA)
+
+- **[Wmma and the warp matrix types](Wmma.md)**: Tensor Core matrix multiply-accumulate by one warp (`D = A * B + C`): the shapes, the layouts, the fragments, and the `Wmma` operations (`nvcuda::wmma`).
+
+### 6. Math and Numerics (Primitives)
 
 Standard C# math functions are transpiled to their highly-optimized CUDA equivalents.
 
@@ -71,18 +75,18 @@ Standard C# math functions are transpiled to their highly-optimized CUDA equival
 - **[FastMath](math_primitives/00_index.md)**: Hardware-accelerated approximate instructions (`__expf`, `__logf`).
 - **[Built-in Vector Types](math_primitives/VectorTypes.md)**: Strongly-typed, aligned vector structs (`Float4`, `Int2`) for maximized memory bandwidth.
 
-### 6. Standard BCL and Diagnostics
+### 7. Standard BCL and Diagnostics
 
 - **[Standard BCL Mappings](02_bcl_mappings.md)** — Standard .NET methods mapped to PTX (`System.Math`, `System.Numerics.BitOperations`, `System.Threading.Interlocked`).
 - **[Diagnostics and Exceptions](01_diagnostics_and_exceptions.md)** — Exception handling constraints, `GpuOnlyException`, and the complete list of Transpiler Diagnostic Codes (`GSHxxxx`).
 - **[Diagnostic Reference Catalog](diagnostics/00_index.md)** — Detailed pages with causes, solutions, and Before/After examples for each diagnostic code (`GSH0000`–`GSH0108`, `SLQ0001`, `RS0030`).
 
-### 7. Utilities
+### 8. Utilities
 
 - **[CudaEnvironment](CudaEnvironment.md)**: Discover and resolve local NVIDIA CUDA Toolkit installation directories.
 - **[Logger](Logger.md)**: Structured diagnostic logging and performance interval tracking.
 
-### 8. Host Runtime
+### 9. Host Runtime
 
 Host-side types for driving CUDA streams without blocking threads (CPU only; not callable from a `[GpuKernel]`).
 

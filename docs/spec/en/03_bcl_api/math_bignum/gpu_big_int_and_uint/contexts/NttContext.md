@@ -30,9 +30,7 @@ public struct DualNtt
     public uint[] TemporaryBuffer;
     [GpuReadOnly] public uint[] Twiddle1;
     [GpuReadOnly] public uint[] Twiddle2;
-    public int M;
-    public int N1;
-    public int N2;
+    public NttGridContext Grid;
 }
 ```
 
@@ -68,11 +66,11 @@ public struct DualNtt
     public uint[] TemporaryBuffer;
     [GpuReadOnly] public uint[] Twiddle1;
     [GpuReadOnly] public uint[] Twiddle2;
-    public int M;
-    public int N1;
-    public int N2;
+    public NttGridContext Grid;
 }
 ```
+
+`Grid` holds the six-step grid dimensions `M`, `N1` and `N2` (see [NttGridContext](NumberTheoreticTransformKernelArgs.md#nttgridcontext-struct)).
 
 ## Examples
 

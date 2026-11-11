@@ -13,13 +13,9 @@ description: "Reference for standard arithmetic operators on GpuBigFloat."
 **Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigNum`  
 **Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
-`GpuBigFloat<TSize>` provides standard C# operator overloads (`+`, `-`). These evaluate **immediately** and do not construct an Abstract Syntax Tree (AST), making them suitable for zero-allocation execution inside GPU kernels.
+[`GpuBigFloat`](GpuBigFloat.md) and [`GpuBigUFloat`](GpuBigUFloat.md) are `readonly struct` types that overload the C# arithmetic operators `+`, `-`, `*` and `/`. Each operator returns a `BinaryExpr<T, TOp>` value (`TOp` is `AddOp`, `SubOp`, `MulOp` or `DivOp`, see [FloatExpressions](../gpu_big_int_and_uint/expressions/FloatExpressions.md)) that holds the two operands. Assigning it to `GpuBigFloat` or `GpuBigUFloat` evaluates it through an implicit conversion, which runs the operation on the GPU of the operands' `GpuWorkspace` (in CPU fallback mode, on the host) with a `GpuBigFloatExpressionVisitor`.
 
-Additionally, for host-side (CPU) code, the non-generic `GpuBigFloat` class (currently tracked in Issue #194) provides a **Lazy Evaluation** architecture similar to `GpuBigInt`, constructing an AST to optimize execution on the GPU.
-
-> [!WARNING]
-> **Host-Side Allocations Occur Here**
-> Although GSharp enforces a strict zero-allocation policy on the GPU device, constructing the Abstract Syntax Tree (AST) via CPU operator overloads _does_ allocate lightweight `class` nodes on the managed .NET heap.
+`BinaryExpr<T, TOp>` and the operator tags are value types, so building an expression allocates nothing on the managed heap. The types are host-side: they own device buffers of a `GpuWorkspace` and cannot be used inside a `[GpuKernel]`.
 
 ## Overloads
 
@@ -30,12 +26,14 @@ Additionally, for host-side (CPU) code, the non-generic `GpuBigFloat` class (cur
 | [Multiplication (*)](#multiplication--) | Multiplies two numbers. |
 | [Division (/)](#division--) | Divides a number by another. |
 
+The same four operators exist for `GpuBigUFloat`, with `GpuBigUFloat` in place of `GpuBigFloat`.
+
 ## Addition (+)
 
-Returns a lazy-evaluated expression tree node for addition.
+Returns a deferred addition of two values.
 
 ```csharp
-public static GpuBigFloatExpr operator +(GpuBigFloat left, GpuBigFloat right);
+public static BinaryExpr<GpuBigFloat, AddOp> operator +(GpuBigFloat left, GpuBigFloat right);
 ```
 
 #### Parameters
@@ -48,15 +46,15 @@ The second value.
 
 #### Returns
 
-_GpuBigFloatExpr_<br>
-An expression tree node that computes the sum when evaluated.
+_BinaryExpr&lt;GpuBigFloat, AddOp&gt;_<br>
+An expression that computes the sum when it is converted to `GpuBigFloat`.
 
 ## Subtraction (-)
 
-Returns a lazy-evaluated expression tree node for subtraction.
+Returns a deferred subtraction of two values.
 
 ```csharp
-public static GpuBigFloatExpr operator -(GpuBigFloat left, GpuBigFloat right);
+public static BinaryExpr<GpuBigFloat, SubOp> operator -(GpuBigFloat left, GpuBigFloat right);
 ```
 
 #### Parameters
@@ -69,8 +67,8 @@ The number to subtract.
 
 #### Returns
 
-_GpuBigFloatExpr_<br>
-An expression tree node that computes the difference when evaluated.
+_BinaryExpr&lt;GpuBigFloat, SubOp&gt;_<br>
+An expression that computes the difference when it is converted to `GpuBigFloat`.
 
 #### Remarks
 
@@ -78,10 +76,10 @@ For the unsigned `GpuBigUFloat`, evaluating the difference throws `OverflowExcep
 
 ## Multiplication (*)
 
-Returns a lazy-evaluated expression tree node for multiplication.
+Returns a deferred multiplication of two values.
 
 ```csharp
-public static GpuBigFloatExpr operator *(GpuBigFloat left, GpuBigFloat right);
+public static BinaryExpr<GpuBigFloat, MulOp> operator *(GpuBigFloat left, GpuBigFloat right);
 ```
 
 #### Parameters
@@ -94,15 +92,15 @@ The second value.
 
 #### Returns
 
-_GpuBigFloatExpr_<br>
-An expression tree node that computes the product when evaluated: the exact product rounded toward zero to the width of the wider operand, like `IGpuBigFloatArithmetic.Multiply`. Evaluating it throws `OverflowException` when the exponent of the product does not fit in `int`.
+_BinaryExpr&lt;GpuBigFloat, MulOp&gt;_<br>
+An expression that computes the product when it is converted to `GpuBigFloat`: the exact product rounded toward zero to the width of the wider operand, like `IGpuBigFloatArithmetic.Multiply`. Evaluating it throws `OverflowException` when the exponent of the product does not fit in `int`.
 
 ## Division (/)
 
-Returns a lazy-evaluated expression tree node for division.
+Returns a deferred division of two values.
 
 ```csharp
-public static GpuBigFloatExpr operator /(GpuBigFloat dividend, GpuBigFloat divisor);
+public static BinaryExpr<GpuBigFloat, DivOp> operator /(GpuBigFloat dividend, GpuBigFloat divisor);
 ```
 
 #### Parameters
@@ -115,77 +113,40 @@ The number to divide by.
 
 #### Returns
 
-_GpuBigFloatExpr_<br>
-An expression tree node that computes the quotient when evaluated.
+_BinaryExpr&lt;GpuBigFloat, DivOp&gt;_<br>
+An expression that computes the quotient when it is converted to `GpuBigFloat`.
 
 ## Examples
 
-### Immediate Evaluation (GPU)
+### Arithmetic on the GPU from the host
 
 > [!NOTE]
-> Requires assemblies: Kassyi.GSharp.Stdlib.GpuMath, Kassyi.GSharp.Core
+> Requires assemblies: Kassyi.GSharp.Stdlib.GpuMath
 
 ```csharp
 using System;
-using Kassyi.GSharp.Core;
+using Kassyi.GSharp.Stdlib.GpuMath;
 using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
-using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 
-// Execution Context: Host (CPU)
-Example.ComputeFloatOperators();
+// Execution Context: Host (CPU); the operations run on the GPU
+using var workspace = new GpuWorkspace(4096, GpuExecutionEngine.GSharpAot);
 
-public class Example
-{
-    // Execution Context: G# Kernel (GPU)
-    [GpuKernel]
-    public static void ComputeFloatOperators()
-    {
-        GpuUInt128 sigA = [150];
-        var floatA = new GpuFloat128(sigA, exponent: 0, isNegative: false);
-        
-        GpuUInt128 sigB = [50];
-        var floatB = new GpuFloat128(sigB, exponent: 0, isNegative: false);
-        
-        // Evaluates immediately without AST on the GPU
-        var sum = floatA + floatB;
-        var diff = floatA - floatB;
-        
-        Console.WriteLine($"Sum Significand[0]={sum.Value.UFloat.Significand.Limbs[0]}");
-        Console.WriteLine($"Diff Significand[0]={diff.Value.UFloat.Significand.Limbs[0]}");
-    }
-}
-```
+// 150 * 2^0 and 50 * 2^0
+using var a = new GpuBigFloat(new GpuBigUInt(workspace, [150u, 0u]), exponent: 0, isNegative: false);
+using var b = new GpuBigFloat(new GpuBigUInt(workspace, [50u, 0u]), exponent: 0, isNegative: false);
 
-### Fractal Deep Zooming (Mandelbrot, CPU Lazy Evaluation)
+// Each assignment converts the BinaryExpr and evaluates it
+using GpuBigFloat sum = a + b;
+using GpuBigFloat difference = a - b;
+using GpuBigFloat product = a * b;
+using GpuBigFloat quotient = a / b;
 
-> [!NOTE]
-> CPU-side `GpuBigFloat` AST generation allows complex equations to be compiled into a single optimized GPU kernel at runtime.
-
-```csharp
-/* 
-// TODO: This feature is currently tracked in Issue #194
-// Execution Context: Host (CPU)
-
-using var workspace = new GpuWorkspace(maxWords: 16); // 512-bit precision
-
-var cReal = new GpuBigFloat(1.234);
-var cImag = new GpuBigFloat(5.678);
-
-var zReal = new GpuBigFloat(0.0);
-var zImag = new GpuBigFloat(0.0);
-
-// Build AST for Mandelbrot step: Z = Z^2 + C
-// Real: Z_real^2 - Z_imag^2 + C_real
-var zRealNewExpr = (zReal * zReal) - (zImag * zImag) + cReal;
-
-// Evaluate dynamically
-using var zRealNew = zRealNewExpr.Node.Evaluate(workspace, null);
-*/
+Console.WriteLine($"sum: {sum.GetBitLength()} bits, exponent {sum.Exponent}");
 ```
 
 ## Remarks
 
-Floating-point addition and subtraction require exponent alignment. The AST orchestrator automatically dispatches bit-shift kernels to align the mantissas before performing the addition or subtraction on the GPU.
+Floating-point addition and subtraction require exponent alignment. The visitor dispatches the alignment kernels before the addition or subtraction on the GPU.
 
 ## See also
 

@@ -19,6 +19,8 @@ Provides extension methods for constructing and evaluating vectorized GPU LINQ e
 public static class GpuBigFloatVectorLinqExtensions
 ```
 
+The members are declared in a C# 14 `extension(IGpuBigFloatVectorExpression source)` block and are called as extension methods; the signatures below show them in the classic `this` form.
+
 ## Methods
 
 ### Conversion & Slicing
@@ -34,7 +36,7 @@ public static class GpuBigFloatVectorLinqExtensions
 
 | Name | Description |
 | --- | --- |
-| [SelectAdd\<TScalar\>(IGpuBigFloatVectorExpression, TScalar)](#selectaddtscalarigpubigfloatvectorexpression-tscalar) | Projects each element by adding a scalar `TScalar` (`GpuBigFloat` or `GpuBigFloat<TSize>`). |
+| [SelectAdd\<TScalar\>(IGpuBigFloatVectorExpression, TScalar)](#selectaddtscalarigpubigfloatvectorexpression-tscalar) | Projects each element by adding a scalar `TScalar` (any `IGpuBigNumber<TScalar>`, such as `GpuBigFloat`, `GpuBigUFloat`, `GpuBigUInt` or `GpuBigInt`). |
 | [SelectSubtract\<TScalar\>(IGpuBigFloatVectorExpression, TScalar)](#selectsubtracttscalarigpubigfloatvectorexpression-tscalar) | Projects each element by subtracting a scalar `TScalar`. |
 | [SelectMultiply\<TScalar\>(IGpuBigFloatVectorExpression, TScalar)](#selectmultiplytscalarigpubigfloatvectorexpression-tscalar) | Projects each element by multiplying by a scalar `TScalar`. |
 | [SelectDivide\<TScalar\>(IGpuBigFloatVectorExpression, TScalar)](#selectdividetscalarigpubigfloatvectorexpression-tscalar) | Projects each element by dividing by a scalar `TScalar`. |
@@ -142,9 +144,11 @@ public static IGpuBigFloatVectorExpression Take(this IGpuBigFloatVectorExpressio
 `ArgumentOutOfRangeException`<br>
 `count < 0`.
 
+<a id="selectaddtscalarigpubigfloatvectorexpression-tscalar"></a>
+
 ## SelectAdd\<TScalar\>(IGpuBigFloatVectorExpression, TScalar)
 
-Adds `scalar` to every element of `source`. Output `WordsPerElement` is `Math.Max(source.WordsPerElement, scalar.Words) + 1`.
+Adds `scalar` to every element of `source`. Output `WordsPerElement` is `Math.Max(source.WordsPerElement, scalar.Magnitude.NumWords) + 1`.
 
 ```csharp
 public static IGpuBigFloatVectorExpression SelectAdd<TScalar>(
@@ -155,7 +159,7 @@ public static IGpuBigFloatVectorExpression SelectAdd<TScalar>(
 
 ## SelectSubtract\<TScalar\>(IGpuBigFloatVectorExpression, TScalar)
 
-Subtracts `scalar` from every element of `source`. Output `WordsPerElement` is `Math.Max(source.WordsPerElement, scalar.Words) + 1`.
+Subtracts `scalar` from every element of `source`. Output `WordsPerElement` is `Math.Max(source.WordsPerElement, scalar.Magnitude.NumWords) + 1`.
 
 ```csharp
 public static IGpuBigFloatVectorExpression SelectSubtract<TScalar>(
@@ -166,7 +170,7 @@ public static IGpuBigFloatVectorExpression SelectSubtract<TScalar>(
 
 ## SelectMultiply\<TScalar\>(IGpuBigFloatVectorExpression, TScalar)
 
-Multiplies every element of `source` by `scalar`. Output `WordsPerElement` is `source.WordsPerElement + scalar.Words`.
+Multiplies every element of `source` by `scalar`. Output `WordsPerElement` is `source.WordsPerElement + scalar.Magnitude.NumWords`.
 
 ```csharp
 public static IGpuBigFloatVectorExpression SelectMultiply<TScalar>(
@@ -177,7 +181,7 @@ public static IGpuBigFloatVectorExpression SelectMultiply<TScalar>(
 
 ## SelectDivide\<TScalar\>(IGpuBigFloatVectorExpression, TScalar)
 
-Divides every element of `source` by `scalar`. Output `WordsPerElement` is `Math.Max(source.WordsPerElement, scalar.Words) + 1`; each result is the exact quotient rounded toward zero to that precision, with the significand normalized to its top bit, whatever the normalization of the operands. Throws `DivideByZeroException` during evaluation if `scalar` is zero and the vector has at least one element; as in System.Linq, a zero `scalar` over no element (an empty vector, or a `Where` that selects none) divides nothing and does not throw. When the widest of the significands and the result has more than 512 words, each evaluation allocates `2 * width` words of temporary device memory per element (4 bytes each: about 480 MB for 100,000 elements of 600 words) and releases it after the launch.
+Divides every element of `source` by `scalar`. Output `WordsPerElement` is `Math.Max(source.WordsPerElement, scalar.Magnitude.NumWords) + 1`; each result is the exact quotient rounded toward zero to that precision, with the significand normalized to its top bit, whatever the normalization of the operands. Throws `DivideByZeroException` during evaluation if `scalar` is zero and the vector has at least one element; as in System.Linq, a zero `scalar` over no element (an empty vector, or a `Where` that selects none) divides nothing and does not throw. When the widest of the significands and the result has more than 512 words, each evaluation allocates `2 * width` words of temporary device memory per element (4 bytes each: about 480 MB for 100,000 elements of 600 words) and releases it after the launch.
 
 ```csharp
 public static IGpuBigFloatVectorExpression SelectDivide<TScalar>(
@@ -188,7 +192,7 @@ public static IGpuBigFloatVectorExpression SelectDivide<TScalar>(
 
 ## SelectPow\<TScalar\>(IGpuBigFloatVectorExpression, TScalar)
 
-Raises every element of `source` to `exponent` using [`IGpuBigFloatArithmetic.Pow`](IGpuBigFloatArithmetic.md). Output `WordsPerElement` is `Math.Max(source.WordsPerElement, exponent.Words)`.
+Raises every element of `source` to `exponent` using [`IGpuBigFloatArithmetic.Pow`](IGpuBigFloatArithmetic.md). Output `WordsPerElement` is `Math.Max(source.WordsPerElement, exponent.Magnitude.NumWords)`.
 
 ```csharp
 public static IGpuBigFloatVectorExpression SelectPow<TScalar>(
@@ -249,51 +253,51 @@ public static IGpuBigFloatVectorExpression SelectLog(this IGpuBigFloatVectorExpr
 
 ## ZipAdd(IGpuBigFloatVectorExpression, IGpuBigFloatVectorExpression)
 
-Performs element-wise addition of `left` and `right`. Output `WordsPerElement` is `Math.Max(left.WordsPerElement, right.WordsPerElement) + 1`.
+Performs element-wise addition of `source` and `right`. Output `WordsPerElement` is `Math.Max(source.WordsPerElement, right.WordsPerElement) + 1`.
 
 ```csharp
 public static IGpuBigFloatVectorExpression ZipAdd(
-    this IGpuBigFloatVectorExpression left,
+    this IGpuBigFloatVectorExpression source,
     IGpuBigFloatVectorExpression right);
 ```
 
 ## ZipSubtract(IGpuBigFloatVectorExpression, IGpuBigFloatVectorExpression)
 
-Performs element-wise subtraction of `right` from `left`. Output `WordsPerElement` is `Math.Max(left.WordsPerElement, right.WordsPerElement) + 1`.
+Performs element-wise subtraction of `right` from `source`. Output `WordsPerElement` is `Math.Max(source.WordsPerElement, right.WordsPerElement) + 1`.
 
 ```csharp
 public static IGpuBigFloatVectorExpression ZipSubtract(
-    this IGpuBigFloatVectorExpression left,
+    this IGpuBigFloatVectorExpression source,
     IGpuBigFloatVectorExpression right);
 ```
 
 ## ZipMultiply(IGpuBigFloatVectorExpression, IGpuBigFloatVectorExpression)
 
-Performs element-wise multiplication of `left` and `right`. Output `WordsPerElement` is `left.WordsPerElement + right.WordsPerElement`.
+Performs element-wise multiplication of `source` and `right`. Output `WordsPerElement` is `source.WordsPerElement + right.WordsPerElement`.
 
 ```csharp
 public static IGpuBigFloatVectorExpression ZipMultiply(
-    this IGpuBigFloatVectorExpression left,
+    this IGpuBigFloatVectorExpression source,
     IGpuBigFloatVectorExpression right);
 ```
 
 ## ZipDivide(IGpuBigFloatVectorExpression, IGpuBigFloatVectorExpression)
 
-Performs element-wise division of `left` by `right`. Output `WordsPerElement` is `Math.Max(left.WordsPerElement, right.WordsPerElement) + 1`; each result is the exact quotient rounded toward zero to that precision, with the significand normalized to its top bit, whatever the normalization of the operands. Throws `DivideByZeroException` during evaluation if any active divisor element in `right` is zero. The check is read back from the device (one synchronization of the workspace stream), so evaluating it while the stream captures a CUDA graph throws `NotSupportedException`. When the widest of the significands and the result has more than 512 words, each evaluation allocates `2 * width` words of temporary device memory per element (4 bytes each: about 480 MB for 100,000 elements of 600 words) and releases it after the launch.
+Performs element-wise division of `source` by `right`. Output `WordsPerElement` is `Math.Max(source.WordsPerElement, right.WordsPerElement) + 1`; each result is the exact quotient rounded toward zero to that precision, with the significand normalized to its top bit, whatever the normalization of the operands. Throws `DivideByZeroException` during evaluation if any active divisor element in `right` is zero. The check is read back from the device (one synchronization of the workspace stream), so evaluating it while the stream captures a CUDA graph throws `NotSupportedException`. When the widest of the significands and the result has more than 512 words, each evaluation allocates `2 * width` words of temporary device memory per element (4 bytes each: about 480 MB for 100,000 elements of 600 words) and releases it after the launch.
 
 ```csharp
 public static IGpuBigFloatVectorExpression ZipDivide(
-    this IGpuBigFloatVectorExpression left,
+    this IGpuBigFloatVectorExpression source,
     IGpuBigFloatVectorExpression right);
 ```
 
 ## ZipPow(IGpuBigFloatVectorExpression, IGpuBigFloatVectorExpression)
 
-Raises each element of `left` to the power of the corresponding element in `right`. Output `WordsPerElement` is `Math.Max(left.WordsPerElement, right.WordsPerElement)`.
+Raises each element of `source` to the power of the corresponding element in `right`. Output `WordsPerElement` is `Math.Max(source.WordsPerElement, right.WordsPerElement)`.
 
 ```csharp
 public static IGpuBigFloatVectorExpression ZipPow(
-    this IGpuBigFloatVectorExpression left,
+    this IGpuBigFloatVectorExpression source,
     IGpuBigFloatVectorExpression right);
 ```
 
@@ -315,12 +319,24 @@ public static IGpuBoolVectorExpression IsLessThan<TScalar>(this IGpuBigFloatVect
 public static IGpuBoolVectorExpression IsLessThanOrEqualTo<TScalar>(this IGpuBigFloatVectorExpression source, TScalar scalar)
     where TScalar : struct, IGpuBigNumber<TScalar>;
 
-public static IGpuBoolVectorExpression IsEqualTo(this IGpuBigFloatVectorExpression left, IGpuBigFloatVectorExpression right);
-public static IGpuBoolVectorExpression IsNotEqualTo(this IGpuBigFloatVectorExpression left, IGpuBigFloatVectorExpression right);
-public static IGpuBoolVectorExpression IsGreaterThan(this IGpuBigFloatVectorExpression left, IGpuBigFloatVectorExpression right);
-public static IGpuBoolVectorExpression IsGreaterThanOrEqualTo(this IGpuBigFloatVectorExpression left, IGpuBigFloatVectorExpression right);
-public static IGpuBoolVectorExpression IsLessThan(this IGpuBigFloatVectorExpression left, IGpuBigFloatVectorExpression right);
-public static IGpuBoolVectorExpression IsLessThanOrEqualTo(this IGpuBigFloatVectorExpression left, IGpuBigFloatVectorExpression right);
+public static IGpuBoolVectorExpression IsEqualTo(
+    this IGpuBigFloatVectorExpression source,
+    IGpuBigFloatVectorExpression right);
+public static IGpuBoolVectorExpression IsNotEqualTo(
+    this IGpuBigFloatVectorExpression source,
+    IGpuBigFloatVectorExpression right);
+public static IGpuBoolVectorExpression IsGreaterThan(
+    this IGpuBigFloatVectorExpression source,
+    IGpuBigFloatVectorExpression right);
+public static IGpuBoolVectorExpression IsGreaterThanOrEqualTo(
+    this IGpuBigFloatVectorExpression source,
+    IGpuBigFloatVectorExpression right);
+public static IGpuBoolVectorExpression IsLessThan(
+    this IGpuBigFloatVectorExpression source,
+    IGpuBigFloatVectorExpression right);
+public static IGpuBoolVectorExpression IsLessThanOrEqualTo(
+    this IGpuBigFloatVectorExpression source,
+    IGpuBigFloatVectorExpression right);
 ```
 
 ## Count(IGpuBigFloatVectorExpression)
@@ -408,7 +424,7 @@ public static void EvaluateTo(
 `source` contains a `Where` filter (`!source.TryGetLength(out _)`). `EvaluateTo` refuses filtered vectors before writing to `destination` because `GpuBigFloatArray` has a fixed `Length` and cannot be resized to a runtime compacted count; use [`IGpuBigFloatVectorExpression.Evaluate`](IGpuBigFloatVectorExpression.md#evaluategpuworkspace-int-int-gpubigfloatarrayview) instead.
 
 `ArgumentException`<br>
-`destination` is uninitialized (`destination.Significands.Words == null`) or `destination.Length < source.Length`.
+`destination.Length` is less than the length of `source`.
 
 ## Behavioral Rules & Constraints
 
@@ -437,11 +453,11 @@ using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 
 using var workspace = new GpuWorkspace(4096, GpuExecutionEngine.GSharpAot);
 using var input = new GpuBigFloatArray(workspace, length: 4, wordsPerElement: 4);
-using var offset = new GpuBigFloat(new GpuBigUInt(workspace, 1UL), exponent: 0, isNegative: false);
+using var offset = new GpuBigFloat(new GpuBigUInt(workspace, [1u]), exponent: 0, isNegative: false);
 
 for (int i = 0; i < 4; i++)
 {
-    using var val = new GpuBigFloat(new GpuBigUInt(workspace, (ulong)(i + 1)), exponent: 0, isNegative: false);
+    using var val = new GpuBigFloat(new GpuBigUInt(workspace, [(uint)(i + 1)]), exponent: 0, isNegative: false);
     input.SetElement(i, val);
 }
 
@@ -468,8 +484,8 @@ using var right = new GpuBigFloatArray(workspace, length: 4, wordsPerElement: 4)
 
 for (int i = 0; i < 4; i++)
 {
-    using var a = new GpuBigFloat(new GpuBigUInt(workspace, (ulong)(i + 2)), exponent: 0, isNegative: false);
-    using var b = new GpuBigFloat(new GpuBigUInt(workspace, 2UL), exponent: 0, isNegative: false);
+    using var a = new GpuBigFloat(new GpuBigUInt(workspace, [(uint)(i + 2)]), exponent: 0, isNegative: false);
+    using var b = new GpuBigFloat(new GpuBigUInt(workspace, [2u]), exponent: 0, isNegative: false);
     left.SetElement(i, a);
     right.SetElement(i, b);
 }
@@ -492,11 +508,11 @@ using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 
 using var workspace = new GpuWorkspace(4096, GpuExecutionEngine.GSharpAot);
 using var values = new GpuBigFloatArray(workspace, length: 8, wordsPerElement: 4);
-using var threshold = new GpuBigFloat(new GpuBigUInt(workspace, 3UL), exponent: 0, isNegative: false);
+using var threshold = new GpuBigFloat(new GpuBigUInt(workspace, [3u]), exponent: 0, isNegative: false);
 
 for (int i = 0; i < 8; i++)
 {
-    using var v = new GpuBigFloat(new GpuBigUInt(workspace, (ulong)(i + 1)), exponent: 0, isNegative: false);
+    using var v = new GpuBigFloat(new GpuBigUInt(workspace, [(uint)(i + 1)]), exponent: 0, isNegative: false);
     values.SetElement(i, v);
 }
 
@@ -523,7 +539,7 @@ using var data = new GpuBigFloatArray(workspace, length: 4, wordsPerElement: 4);
 
 for (int i = 0; i < 4; i++)
 {
-    using var v = new GpuBigFloat(new GpuBigUInt(workspace, (ulong)((i + 1) * 10)), exponent: 0, isNegative: false);
+    using var v = new GpuBigFloat(new GpuBigUInt(workspace, [(uint)((i + 1) * 10)]), exponent: 0, isNegative: false);
     data.SetElement(i, v);
 }
 
@@ -533,7 +549,7 @@ using GpuBigFloat min = vec.Min(workspace);
 using GpuBigFloat max = vec.Max(workspace);
 using GpuBigFloat avg = vec.Average(workspace);
 
-Console.WriteLine($"Sum bit length: {sum.Magnitude.Significand.GetBitLength()}, Avg exponent: {avg.Magnitude.Exponent}");
+Console.WriteLine($"Sum bit length: {sum.Magnitude.GetBitLength()}, Avg exponent: {avg.Exponent}");
 ```
 
 ## See also

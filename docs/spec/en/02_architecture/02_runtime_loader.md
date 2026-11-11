@@ -18,6 +18,12 @@ The runtime engine utilizes a robust scope-based context management lifecycle to
 
 Instead of a singleton context tracked via `[ThreadStatic]`, the AOT generated launcher stub automatically emits a local scope instance (`using var _cudaCtxScope = new CudaContextScope();`) at the beginning of each kernel invocation. This `CudaContextScope` pushes the active CUDA context to the calling thread (`cuCtxPushCurrent`) and safely pops it upon disposal (`cuCtxPopCurrent`), natively supporting parallel kernel dispatches from multiple host threads.
 
+The runtime initializes the driver once per process, on the first use or query (`cuInit`, `cuDriverGetVersion`, then the global context on device 0), and keeps the result. Without a driver or a device, or when a driver call fails, it switches to the CPU fallback mode. A driver that supports a CUDA version older than 13.0 (`cuDriverGetVersion` below 13000) is not a fallback case; see [Prerequisites](../00_getting_started/01_prerequisites.md#1-gpu-execution-default--recommended):
+
+- The queries do not throw: `IsDriverAvailable` and `IsCpuFallbackMode` are `false`, and `DriverUnavailableReason` holds the message (the CUDA version the driver supports and the required one; for the fallback cases, the failed call or the missing library).
+- GPU use throws a `NotSupportedException` with that message: `EnsureInitialized`, `GlobalContext`, a `CudaContextScope` and so every launch, transfer, stream completion and event timer.
+- `ForceCpuFallback` still runs on the CPU and does not touch the driver. The bindings of `cuda_driver_api.yml` therefore bind the versioned symbols of the CUDA 13 `cuda.h` (`cuEventElapsedTime_v2`, `cuMemAllocHost_v2`, ...) without a fallback for older drivers.
+
 ## 2.2 AOT Module Loading and Validation
 
 G# eliminates all runtime compilation overhead by requiring all C# kernels to be compiled into native NVIDIA Fatbins during the MSBuild AOT phase. The runtime operates exclusively as a secure, lightweight module loader, with zero dependencies on local toolchains.
@@ -31,7 +37,8 @@ The `LoadAotKernel` method is responsible for validating and loading the precomp
 
 ### 2.2.2 CPU AOT Kernel Loading (`CpuKernelLoader.LoadAotKernel`)
 
-When a kernel is compiled using the `CpuDialect` (Standard C++ fallback), it generates standard dynamic libraries (`.dll` or `.so`) rather than CUDA Fatbins.
+When a kernel is compiled using the `StandardCppDialect` (Standard C++ fallback), it generates standard dynamic
+libraries (`.dll` or `.so`) rather than CUDA Fatbins.
 The `CpuKernelLoader` serves as the runtime equivalent for CPU execution:
 
 - It reads the compiled host library and performs the identical **64-byte Ed25519 Digital Signature Verification** via `AotSignatureValidator.ExtractAndVerify` against `GpuSecurityPolicy.EmbeddedKeys`.
@@ -40,8 +47,15 @@ The `CpuKernelLoader` serves as the runtime equivalent for CPU execution:
 
 ### 2.2.3 Caching and Memory Management
 
-- **Concurrent Dictionary**: Once validated and loaded (either via `cuModuleLoadDataEx` or `NativeLibrary.Load`), the resulting `CUfunction` or `Delegate` handles are cached in a static `ConcurrentDictionary`.
-- **Zero-Allocation Cache Keys**: To avoid string allocations during high-frequency kernel dispatches, `GpuKernelLoader` utilizes a custom `Hash256` value type (a 32-byte struct extracted from the signature) combined with the kernel name as the composite key. Subsequent calls instantly retrieve the cached handle in $O(1)$ time with zero GC pressure.
+- **Concurrent Dictionary**: Once validated and loaded (either via `cuModuleLoadDataEx` or `NativeLibrary.Load`), the
+  resulting `CUfunction` or `Delegate` handles are cached in thread-safe collections in `CudaModuleCache` and
+  `CpuKernelLoader`.
+- **Zero-Allocation Cache Keys**: To avoid string allocations during high-frequency kernel dispatches,
+  `CudaModuleCache` indexes modules by `(IntPtr Context, AotSignatureValidator.Hash256 Hash)` and functions by
+  `(IntPtr Context, AotSignatureValidator.Hash256 Hash, string KernelName)`. The `Hash256` value type holds the first
+  32 bytes of the Ed25519 signature at the end of the binary, which `CudaModuleCache.ReadSignatureHash` reads without
+  verifying it; the signature is verified by `AotSignatureValidator.ExtractAndVerify` when the module is loaded into a
+  context. Subsequent calls instantly retrieve the cached handle in $O(1)$ time with zero GC pressure.
 - **One Module per Context**: A CUDA module and its functions belong to the context they were loaded in, so the GPU caches are keyed by the context as well. A launch loads the module into the context that is current for it (the context of the innermost `CudaContextScope`, such as the one of an isolated `GpuWorkspace`, otherwise the global context) the first time it runs there. Each generated launcher keeps the last function it resolved together with a number that identifies its context; a launch in the same context reuses it without a driver call, and a launch in another context resolves the function of that context. `GpuKernelLoader.DestroyContext` drops the modules of the destroyed context; a context created later gets a new number even when the driver reuses the handle, so nothing of the destroyed context is launched again.
 - **Graceful Shutdown**: Developers can explicitly call `GpuKernelLoader.Shutdown()` or `CpuKernelLoader.Shutdown()` to unload all cached modules (`cuModuleUnload` / `NativeLibrary.Free`), preventing resource leaks when kernels are no longer needed. A kernel launched after `GpuKernelLoader.Shutdown()` loads its module again: the generated launcher keeps its function together with the loader's module generation, which `Shutdown` advances. `Shutdown` must not run while another thread launches a kernel.
 
@@ -57,11 +71,14 @@ This stub accepts standard C# managed arrays (e.g., `T[]`, custom structs).
 2. **Grid and Block Dimensions**: The host logic determines the `gridDim` and `blockDim` parameters based on the workload size.
 3. **Dispatch**: Constructs the `IntPtr` argument array and invokes `cuLaunchKernel` (or the CPU delegate). After execution, it invokes `Unmarshal_T` to copy results back to the managed arrays and cleans up handles.
 
-### 2.3.2 Device Launcher (`LaunchKernelName_Device`)
+### 2.3.2 Pointer Launcher (`Launch{Kernel}Ptr`)
 
-This stub accepts only raw pointers (`T*`) or device abstractions (e.g., `GpuBuffer<T>`).
+This stub accepts only raw pointers (`T*`), device abstractions (e.g., `GpuBuffer<T>`), or native shadow structs
+(`AotContexts`).
 
-1. **Zero-Allocation**: It completely bypasses all managed array (`T[]`) pinning, deep struct marshaling, and memory allocation logic. **Passing structs with managed arrays to a `_Device` launcher is explicitly prohibited and will cause a compilation error.**
+1. **Zero-Allocation**: It completely bypasses all managed array (`T[]`) pinning, deep struct marshaling, and memory
+   allocation logic. **Passing structs with managed arrays to a `Ptr` launcher is prohibited; callers pass pre-allocated
+   device pointers or shadow structs.**
 2. **Grid and Block Dimensions**: Determines `gridDim` and `blockDim`.
 3. **Dispatch**: Immediately constructs the `IntPtr` argument array and invokes `cuLaunchKernel`.
 
@@ -84,7 +101,7 @@ G# introduces the `GpuBuffer<T>` abstraction in the Runtime space to provide a s
 using var buffer = new GpuBuffer<int>(1024);
 
 // Synchronously copies data from Host (ReadOnlySpan<T>) to Device
-buffer.CopyFromHost(hostSpan);
+buffer.CopyToDevice(hostSpan);
 
 // Access the raw CUdeviceptr for kernel invocation
 IntPtr devPtr = buffer.DevicePointer;

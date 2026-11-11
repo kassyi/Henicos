@@ -79,52 +79,11 @@ public static class PreludeGenerator
         using var resolved = new SourceWriter();
         var copied = 0;
 
-        while (true)
+        while (FindInclude(file, content, copied) is { } include)
         {
-            var includeIndex = content.IndexOf(IncludePrefix, copied, StringComparison.Ordinal);
-            if (includeIndex < 0)
-            {
-                break;
-            }
-
-            var line = LineOf(content, includeIndex);
-            var pathStart = includeIndex + IncludePrefix.Length;
-            var pathEnd = content.IndexOfAny(['"', '\n'], pathStart);
-            if (pathEnd < 0 || content[pathEnd] != '"')
-            {
-                throw new GeneratorInputException(
-                    file, line, "The #include directive has no closing quote on its line.");
-            }
-
-            var relativeInclude = string.Create(pathEnd - pathStart, (content, pathStart), static (span, state) =>
-            {
-                var src = state.content.AsSpan(state.pathStart, span.Length);
-                for (var i = 0; i < span.Length; i++)
-                {
-                    var c = src[i];
-                    span[i] = c is '/' or '\\' ? Path.DirectorySeparatorChar : c;
-                }
-            });
-            var includedFilePath = Path.GetFullPath(Path.Combine(resourcesDir, relativeInclude));
-            if (!File.Exists(includedFilePath))
-            {
-                throw new GeneratorInputException(file, line,
-                    $"Cannot find the included file '{content[pathStart..pathEnd]}' ({includedFilePath}); " +
-                    "prelude includes are relative to the resources directory.");
-            }
-
-            if (includeChain.FindIndex(p => s_pathComparer.Equals(p, includedFilePath)) >= 0)
-            {
-                throw new GeneratorInputException(
-                    file, line, $"Include cycle: {DescribeCycle(includeChain, includedFilePath)}.");
-            }
-
-            var includedAtDocumentEnd = atDocumentEnd && content.AsSpan(pathEnd + 1).Trim().IsEmpty;
-            var includedContent = ReadText(includedFilePath);
-            if (!isCuda && includedAtDocumentEnd)
-            {
-                includedContent = TrimOneTrailingNewline(includedContent);
-            }
+            var includedFilePath = ResolveIncludedFilePath(resourcesDir, file, content, include, includeChain);
+            var includedAtDocumentEnd = atDocumentEnd && content.AsSpan(include.PathEnd + 1).Trim().IsEmpty;
+            var includedContent = LoadIncludedContent(includedFilePath, isCuda, includedAtDocumentEnd);
 
             includeChain.Add(includedFilePath);
             var resolvedInclude = ResolveEmbeddedIncludes(
@@ -137,13 +96,79 @@ public static class PreludeGenerator
             );
             includeChain.RemoveAt(includeChain.Count - 1);
 
-            resolved.Append(content, copied, includeIndex - copied);
+            resolved.Append(content, copied, include.Index - copied);
             resolved.Append(resolvedInclude);
-            copied = pathEnd + 1;
+            copied = include.PathEnd + 1;
         }
 
         resolved.Append(content, copied, content.Length - copied);
         return resolved.ToString();
+    }
+
+    // The first #include "<path>" of content at or after copied, or null when there is none.
+    private static IncludeDirective? FindInclude(string file, string content, int copied)
+    {
+        var index = content.IndexOf(IncludePrefix, copied, StringComparison.Ordinal);
+        if (index < 0)
+        {
+            return null;
+        }
+
+        var line = LineOf(content, index);
+        var pathStart = index + IncludePrefix.Length;
+        var pathEnd = content.IndexOfAny(['"', '\n'], pathStart);
+        if (pathEnd < 0 || content[pathEnd] != '"')
+        {
+            throw new GeneratorInputException(
+                file, line, "The #include directive has no closing quote on its line.");
+        }
+
+        return new IncludeDirective(index, pathStart, pathEnd, line);
+    }
+
+    private static string ResolveIncludedFilePath(
+        string resourcesDir,
+        string file,
+        string content,
+        IncludeDirective include,
+        List<string> includeChain)
+    {
+        var (pathStart, pathEnd, line) = (include.PathStart, include.PathEnd, include.Line);
+        var relativeInclude = string.Create(pathEnd - pathStart, (content, pathStart), static (span, state) =>
+        {
+            var src = state.content.AsSpan(state.pathStart, span.Length);
+            for (var i = 0; i < span.Length; i++)
+            {
+                var c = src[i];
+                span[i] = c is '/' or '\\' ? Path.DirectorySeparatorChar : c;
+            }
+        });
+        var includedFilePath = Path.GetFullPath(Path.Combine(resourcesDir, relativeInclude));
+        if (!File.Exists(includedFilePath))
+        {
+            throw new GeneratorInputException(file, line,
+                $"Cannot find the included file '{content[pathStart..pathEnd]}' ({includedFilePath}); " +
+                "prelude includes are relative to the resources directory.");
+        }
+
+        if (includeChain.FindIndex(p => s_pathComparer.Equals(p, includedFilePath)) >= 0)
+        {
+            throw new GeneratorInputException(
+                file, line, $"Include cycle: {DescribeCycle(includeChain, includedFilePath)}.");
+        }
+
+        return includedFilePath;
+    }
+
+    private static string LoadIncludedContent(string includedFilePath, bool isCuda, bool includedAtDocumentEnd)
+    {
+        var includedContent = ReadText(includedFilePath);
+        if (!isCuda && includedAtDocumentEnd)
+        {
+            includedContent = TrimOneTrailingNewline(includedContent);
+        }
+
+        return includedContent;
     }
 
     // "Prelude.cu -> a.cuh -> b.cuh -> a.cuh" (file names only).
@@ -212,16 +237,17 @@ public static class PreludeGenerator
                 "<c>InternalNames.yml</c> (the spelling of the");
             writer.Line("/// generated names), without carriage returns.");
             writer.Line("/// </summary>");
-            writer.AppendLine($"public const string Hash = \"{ComputeHash(cudaPrelude, cppPrelude, internalNames)}\";");
+            var hash = ComputeHash(cudaPrelude, cppPrelude, internalNames);
+            writer.AppendLine($"public const string Hash = \"{hash}\";");
         }
 
         return writer.ToString();
     }
 
-    // [WHY] A device code export records this hash with its record layout (GpuDeviceExportAttribute.PreludeHash), and a
-    // consumer compares it with its own: an imported text calls the prelude's helpers and spells the generated names as
-    // InternalNames.yml does. Carriage returns are skipped, so a Windows checkout (CRLF) and a WSL one (LF) give the
-    // same hash.
+    // [WHY] A device code export records this hash with its record layout (GpuDeviceExportAttribute.PreludeHash),
+    // and a consumer compares it with its own: an imported text calls the prelude's helpers and spells the generated
+    // names as InternalNames.yml does. Carriage returns are skipped, so a Windows checkout (CRLF) and a WSL one (LF)
+    // give the same hash.
     private static string ComputeHash(string cudaPrelude, string cppPrelude, string internalNames)
     {
         var hash = new Fnv1A64();
@@ -235,4 +261,8 @@ public static class PreludeGenerator
 
         return hash.Value.ToString("x16", CultureInfo.InvariantCulture);
     }
+
+    // An #include "<path>" directive: Index is the position of '#', PathStart and PathEnd enclose the path (PathEnd is
+    // the closing quote), Line is the 1-based line of the directive.
+    private readonly record struct IncludeDirective(int Index, int PathStart, int PathEnd, int Line);
 }

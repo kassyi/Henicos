@@ -92,7 +92,7 @@ mutate phase="gpumath" since="" *args="":
 gsharp-demangle log_path="-" symbols_path="":
     dotnet run --project src/Compiler/Kassyi.GSharp.Compiler.Generators -- demangle "{{log_path}}" "{{symbols_path}}"
 
-# Print the environment of a bug report (OS, GPU, CUDA, host C++, .NET) as Markdown; e.g. `just env-info --json`. Same source on Windows and Unix
+# Print the environment of a bug report (OS, GPU, CUDA, host C++, .NET) as Markdown; e.g. `just env-info --json`. Same source on Windows and Unix; needs the .NET SDK 10.0.300 or later (`#:include`)
 env-info *args="":
     dotnet run tools/collect-env/collect-env.cs -- {{args}}
 
