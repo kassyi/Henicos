@@ -1,3 +1,5 @@
+using Microsoft.CodeAnalysis.Operations;
+
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
 /// <summary>The managed body that <see cref="ManagedExecutionRewriter"/> rewrites.</summary>
@@ -265,7 +267,10 @@ internal sealed partial class ManagedExecutionRewriter(
                 Identifier.ValueText: GSharpInternalNames.StateMachine.Context
             } frame)
         {
-            return base.VisitArgument(node);
+            var visited = base.VisitArgument(node);
+            return IsVariableToRefReadOnlyWithoutKeyword(node) && visited is ArgumentSyntax argument
+                ? argument.WithRefKindKeyword(SyntaxFactory.Token(SyntaxKind.InKeyword).WithTrailingTrivia(SyntaxFactory.Space))
+                : visited;
         }
 
         ExpressionSyntax target = _isUnsafe
@@ -275,6 +280,80 @@ internal sealed partial class ManagedExecutionRewriter(
             .WithRefKindKeyword(SyntaxFactory.Token(SyntaxKind.RefKeyword).WithTrailingTrivia(SyntaxFactory.Space))
             .WithTriviaFrom(node);
     }
+
+    // [WHY] A variable passed to a ref readonly parameter without a keyword is passed by reference, and C# warns that it
+    // should carry one (CS9192). The user's source already reports or suppresses that warning, so the copy writes the
+    // keyword (in), which passes the same reference without repeating it. A value that is not a variable keeps no
+    // keyword: C# passes a temporary for it, and in would not compile. The operation is looked up from the expression:
+    // an argument without a keyword has the span of its expression, and the lookup of a lowered node by span finds the
+    // innermost node
+    private bool IsVariableToRefReadOnlyWithoutKeyword(ArgumentSyntax node) =>
+        node.RefKindKeyword.IsKind(SyntaxKind.None) &&
+        semanticModel.GetSafeOperation(node.Expression) is
+        {
+            Parent: IArgumentOperation { Parameter.RefKind: RefKind.RefReadOnlyParameter }
+        } value &&
+        value.IsVariable();
+
+    // [WHY] C# ends a switch expression that is not exhaustive with an arm of its own that throws, and warns about it
+    // (CS8509). The user's source already reports or suppresses that warning, so the copy writes the arm out, which
+    // throws the same exception without repeating it
+    public override SyntaxNode? VisitSwitchExpression(SwitchExpressionSyntax node)
+    {
+        var visited = base.VisitSwitchExpression(node);
+        return visited is SwitchExpressionSyntax rewritten &&
+               semanticModel.GetSafeOperation(node) is ISwitchExpressionOperation { IsExhaustive: false } operation
+            ? AddUnmatchedArm(rewritten, PlanUnmatchedArm(operation.Value.Type, semanticModel.Compilation))
+            : visited;
+    }
+
+    private static SwitchExpressionSyntax AddUnmatchedArm(SwitchExpressionSyntax switchExpression, UnmatchedSwitchArm plan) =>
+        switchExpression.WithArms(switchExpression.Arms.Add(CreateUnmatchedArm(plan)));
+
+    // The exception C# throws when no arm matches (as the lowering
+    // of Roslyn does): SwitchExpressionException with the boxed input, without it when the input cannot be boxed (a ref
+    // struct, a pointer), and InvalidOperationException where the library has no SwitchExpressionException
+    internal static UnmatchedSwitchArm PlanUnmatchedArm(ITypeSymbol? inputType, Compilation compilation)
+    {
+        if (compilation.GetTypeByMetadataName(SwitchExpressionExceptionMetadataName) is null)
+        {
+            return UnmatchedSwitchArm.InvalidOperation;
+        }
+
+        return inputType is { IsRefLikeType: false } and not (IPointerTypeSymbol or IFunctionPointerTypeSymbol)
+            ? UnmatchedSwitchArm.SwitchExpressionWithValue
+            : UnmatchedSwitchArm.SwitchExpression;
+    }
+
+    // var __gsharp_unmatched => throw new global::System.Runtime.CompilerServices.SwitchExpressionException(__gsharp_unmatched)
+    // _ => throw new global::System.Runtime.CompilerServices.SwitchExpressionException()
+    // _ => throw new global::System.InvalidOperationException()
+    private static SwitchExpressionArmSyntax CreateUnmatchedArm(UnmatchedSwitchArm plan)
+    {
+        var withValue = plan == UnmatchedSwitchArm.SwitchExpressionWithValue;
+        var pattern = withValue
+            ? (PatternSyntax)SyntaxFactory.VarPattern(
+                SyntaxFactory.SingleVariableDesignation(SyntaxFactory.Identifier(UnmatchedValueName))
+            )
+            : SyntaxFactory.DiscardPattern();
+        var arguments = withValue
+            ? SyntaxFactory.SingletonSeparatedList(SyntaxFactory.Argument(SyntaxFactory.IdentifierName(UnmatchedValueName)))
+            : default;
+        var exceptionType = plan == UnmatchedSwitchArm.InvalidOperation
+            ? "global::System.InvalidOperationException"
+            : "global::" + SwitchExpressionExceptionMetadataName;
+        var exception = SyntaxFactory.ObjectCreationExpression(
+            SyntaxFactory.ParseTypeName(exceptionType),
+            SyntaxFactory.ArgumentList(arguments),
+            null
+        );
+        return SyntaxFactory.SwitchExpressionArm(pattern, SyntaxFactory.ThrowExpression(exception));
+    }
+
+    private const string UnmatchedValueName = "__gsharp_unmatched";
+
+    private const string SwitchExpressionExceptionMetadataName =
+        "System.Runtime.CompilerServices.SwitchExpressionException";
 
     // [WHY] The copied bodies keep only the active branch of each #if; its directives and the disabled text would be
     // read again in the generated file, under its symbols (which define what a kept [Conditional] call needs,
@@ -320,4 +399,17 @@ internal sealed partial class ManagedExecutionRewriter(
             _inLambdaOrLocalFuncCount--;
         }
     }
+}
+
+/// <summary>The arm that the managed copy adds to a switch expression that is not exhaustive.</summary>
+internal enum UnmatchedSwitchArm
+{
+    /// <summary><c>var v =&gt; throw new SwitchExpressionException(v)</c>.</summary>
+    SwitchExpressionWithValue,
+
+    /// <summary><c>_ =&gt; throw new SwitchExpressionException()</c>, for an input that cannot be boxed.</summary>
+    SwitchExpression,
+
+    /// <summary><c>_ =&gt; throw new InvalidOperationException()</c>, where the library has no SwitchExpressionException.</summary>
+    InvalidOperation
 }
