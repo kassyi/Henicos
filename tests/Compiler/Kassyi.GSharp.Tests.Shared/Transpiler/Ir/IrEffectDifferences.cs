@@ -68,17 +68,6 @@ internal static class IrEffectDifferences
             or IrCompoundAssignment { Operator.Method: not null } or IrIncrement { OperatorMethod: not null }
             when Differs(old, ir, writes: Memory()) =>
             IrClassificationEquivalence.KnownPrefix + "an operator macro is taken as writing memory",
-        // #1606: the syntax walk does not call the getter of a struct property used as a receiver
-        IrFieldReference { Receiver: IrPropertyReference { Property.RefKind: RefKind.None } property }
-            when Differs(old, ir, Memory(), GetterWrites(property)) =>
-            IrClassificationEquivalence.KnownPrefix + "a struct property used as a receiver calls its getter (#1606)",
-        // #1606: the syntax walk does not see that a getter read through the implicit this may change this
-        IrPropertyReference
-            {
-                Receiver: IrVariableReference { Variable.Kind: IrVariableKind.This, Source.Synthesized: true }
-            }
-            when Differs(old, ir, writes: Memory()) =>
-            IrClassificationEquivalence.KnownPrefix + "a getter read through the implicit this writes this (#1606)",
         _ => null
     };
 
@@ -94,18 +83,6 @@ internal static class IrEffectDifferences
     {
         var set = default(VariableSet);
         set.Add(symbol);
-        return set;
-    }
-
-    // What the getter of a property used as a receiver writes: memory and the variable its receiver belongs to
-    private static VariableSet GetterWrites(IrPropertyReference property)
-    {
-        var set = Memory();
-        if (property.Receiver is { } receiver && RootSymbol(receiver) is { } root)
-        {
-            set.Add(root);
-        }
-
         return set;
     }
 
