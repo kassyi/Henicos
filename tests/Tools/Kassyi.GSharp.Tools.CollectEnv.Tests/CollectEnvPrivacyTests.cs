@@ -21,7 +21,19 @@ public class CollectEnvPrivacyTests
 
         Assert.Equal(0, exitCode);
         AssertNoPersonalData(stdout);
-        string probeLine = Assert.Single(stdout.Split('\n'), static l => l.Contains(ProbeName, StringComparison.Ordinal));
+        string probeLine = string.Empty;
+        var found = false;
+        foreach (var line in stdout.AsSpan().EnumerateLines())
+        {
+            if (line.Contains(ProbeName.AsSpan(), StringComparison.Ordinal))
+            {
+                Assert.False(found);
+                found = true;
+                probeLine = line.ToString();
+            }
+        }
+
+        Assert.True(found);
         Assert.Contains($"{ProbeName}=~", probeLine, StringComparison.Ordinal);
         AssertProbeShape(probeLine);
     }
@@ -72,10 +84,21 @@ public class CollectEnvPrivacyTests
     // ("GeForce", "Pro"). Such a name is therefore neither expected to be redacted nor checked here.
     private static bool IsRedactableName(string name) => name.Length >= 3;
 
+    private static string NormalizedProfile(string path)
+    {
+        return string.Create(path.Length, path, static (span, src) =>
+        {
+            for (int i = 0; i < span.Length; i++)
+            {
+                span[i] = src[i] == '\\' ? '/' : src[i];
+            }
+        });
+    }
+
     private static void AssertNoPersonalData(string text)
     {
         Assert.DoesNotContain(Profile, text, StringComparison.OrdinalIgnoreCase);
-        Assert.DoesNotContain(Profile.Replace('\\', '/'), text, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain(NormalizedProfile(Profile), text, StringComparison.OrdinalIgnoreCase);
         if (IsRedactableName(Environment.UserName))
         {
             Assert.DoesNotContain(Environment.UserName, text, StringComparison.OrdinalIgnoreCase);

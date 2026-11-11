@@ -1,6 +1,5 @@
 #nullable enable
 using System.Text;
-using System.Text.RegularExpressions;
 using Microsoft.CodeAnalysis;
 
 namespace Kassyi.GSharp.Tests.Generators;
@@ -20,10 +19,6 @@ public class SnapshotTestCaseGenerator : IIncrementalGenerator
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
 #pragma warning restore RS2008
-
-    private static readonly Regex s_skipAttributeRegex = new(
-        @"\[\s*(Kassyi\.GSharp\.Core\.)?SkipSnapshotConsistency.*?\]",
-        RegexOptions.Compiled);
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
@@ -101,7 +96,7 @@ public class SnapshotTestCaseGenerator : IIncrementalGenerator
             {
                 if (IsEligibleKernelFile(file))
                 {
-                    var relativePath = file.Substring(rootDir.Length).TrimStart('\\', '/').Replace('\\', '/');
+                    var relativePath = NormalizeRelativePath(file, rootDir.Length);
                     unique.Add(relativePath);
                 }
             }
@@ -110,6 +105,24 @@ public class SnapshotTestCaseGenerator : IIncrementalGenerator
         var sorted = new List<string>(unique);
         sorted.Sort(StringComparer.Ordinal);
         return sorted;
+    }
+
+    private static string NormalizeRelativePath(string file, int rootLength)
+    {
+        var relativeSpan = file.AsSpan(rootLength);
+        while (relativeSpan.Length > 0 && (relativeSpan[0] == '\\' || relativeSpan[0] == '/'))
+        {
+            relativeSpan = relativeSpan.Slice(1);
+        }
+
+        var chars = new char[relativeSpan.Length];
+        for (var i = 0; i < chars.Length; i++)
+        {
+            var c = relativeSpan[i];
+            chars[i] = c == '\\' ? '/' : c;
+        }
+
+        return new string(chars);
     }
 
     private static bool IsEligibleKernelFile(string file)
@@ -131,7 +144,7 @@ public class SnapshotTestCaseGenerator : IIncrementalGenerator
             return false;
         }
 
-        return !s_skipAttributeRegex.IsMatch(text);
+        return !text.Contains("SkipSnapshotConsistency", StringComparison.Ordinal);
     }
 
     private static string EmitSnapshotTestCaseSource(List<string> testCases)

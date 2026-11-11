@@ -120,15 +120,22 @@ public sealed class SignPlannerTests
         var chosen = ChosenOperand.None;
         var kernel = SignKernel.None;
         string? sign = null;
-        foreach (var token in expected.Split(' '))
+        var expectedSpan = expected.AsSpan();
+        foreach (var range in expectedSpan.Split(' '))
         {
+            var token = expectedSpan[range];
+            if (token.IsEmpty)
+            {
+                continue;
+            }
+
             if (token is "first" or "second")
             {
-                chosen = token == "first" ? ChosenOperand.First : ChosenOperand.Second;
+                chosen = token is "first" ? ChosenOperand.First : ChosenOperand.Second;
             }
             else if (token is "+" or "-")
             {
-                sign = token;
+                sign = token is "+" ? "+" : "-";
             }
             else
             {

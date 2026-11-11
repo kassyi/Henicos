@@ -24,7 +24,7 @@ public class FuzzRunDecisionTests
     [InlineData("CUDA,Native", 1003)]
     public void Classify_ExactPathSet_NamesTheFirstMatchingIssue(string paths, int expectedIssue)
     {
-        var details = Failure("failed", paths.Split(','));
+        var details = Failure("failed", paths);
 
         FuzzFindingRecorder.Classify(details, s_catalog);
 
@@ -42,7 +42,7 @@ public class FuzzRunDecisionTests
     [InlineData("Managed,Native,Cuda")]
     public void Classify_SupersetOrSubsetOfThePaths_IsNotClassified(string paths)
     {
-        var details = Failure("failed", paths.Split(','));
+        var details = Failure("failed", paths);
 
         FuzzFindingRecorder.Classify(details, s_catalog);
 
@@ -141,6 +141,18 @@ public class FuzzRunDecisionTests
 
     private static KnownIssueEntry Entry(int issue, string[]? classifyOnlyPaths) =>
         new(issue, "wrong-result", $"issue {issue}", ["C", "G"], ["Native"], string.Empty, [], null, classifyOnlyPaths);
+
+    private static JsonObject Failure(string status, string paths)
+    {
+        var array = new JsonArray();
+        var span = paths.AsSpan();
+        foreach (var range in span.Split(','))
+        {
+            array.Add(span[range].ToString());
+        }
+
+        return new JsonObject { ["status"] = status, ["kernel"] = "K1", ["failingPaths"] = array };
+    }
 
     private static JsonObject Failure(string status, string[] paths)
     {
