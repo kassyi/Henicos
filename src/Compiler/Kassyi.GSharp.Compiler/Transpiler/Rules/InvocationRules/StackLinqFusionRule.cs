@@ -1,3 +1,5 @@
+using static Kassyi.GSharp.Compiler.GSharpInternalNames.StackLinq;
+
 namespace Kassyi.GSharp.Compiler.Transpiler.Rules.InvocationRules;
 
 public sealed class StackLinqFusionRule : IInvocationTranspilerRule
@@ -82,107 +84,116 @@ public sealed class StackLinqFusionRule : IInvocationTranspilerRule
         var terminalStage = chain.Stages[^1];
         var folded = StackLinqChainExtractor.CountRangeStages(in chain, context.Query.SemanticModel);
         var writer = context.Emitter.Writer;
-        var blockShared = strategy != ParallelAggregateStrategy.PerThread;
 
         using (writer.ImmediatelyInvokedLambda("auto"))
         {
-            writer.Append($"auto&& {GSharpInternalNames.StackLinq.FusionSource} = ");
+            writer.Append($"auto&& {FusionSource} = ");
             context.Visitor.Visit(chain.SourceArrayExpression);
             writer.AppendLine(";");
 
             EmitInitializations(in chain, folded, ref context, terminalStrategy, in terminalStage);
-
-            var length = FusionLength(chain.SourceArrayExpression, ref context);
-            writer.AppendLine($"int {GSharpInternalNames.StackLinq.FusionLow} = 0;");
-            writer.AppendLine($"int {GSharpInternalNames.StackLinq.FusionHigh} = {length};");
-            for (var i = 0; i < folded; i++)
-            {
-                if (chain.Stages[i].Operator.IsPositionStage())
-                {
-                    EmitRangeStage(chain.Stages[i], i, writer);
-                }
-            }
-
+            EmitRange(in chain, folded, ref context);
             EmitLoopHeader(strategy, writer);
 
             using (writer.Scope())
             {
-                // [WHY] TakeEnumerator checks its count before it pulls from the stages before it: once it has given n
-                // elements (or n <= 0), the next pull ends the sequence without calling them. Every pull after an
-                // element (the terminal, or a Where / Skip / SkipWhile after the Take that passes over it) starts the
-                // next iteration, so the check comes first in the body and a selector or predicate before the Take runs
-                // as many times as in C#.
-                const string StagePrefix = GSharpInternalNames.StackLinq.StagePrefix;
-                const string CountSuffix = GSharpInternalNames.StackLinq.CountSuffix;
-                const string StageCountSuffix = GSharpInternalNames.StackLinq.StageCountSuffix;
-                for (var i = folded; i < chain.Stages.Length - 1; i++)
-                {
-                    if (chain.Stages[i].Operator == StackLinqOperator.Take)
-                    {
-                        writer.AppendLine(
-                            $"if ({StagePrefix}{i}{CountSuffix} >= {StagePrefix}{i}{StageCountSuffix}) {{ break; }}");
-                    }
-                }
-
-                // The 64-bit index of the shared loop is narrowed for GSharpArray::operator[](int)
-                const string ValuePrefix = GSharpInternalNames.StackLinq.ValuePrefix;
-                const string Source = GSharpInternalNames.StackLinq.FusionSource;
-                const string LoopIndex = GSharpInternalNames.StackLinq.LoopIndex;
-                writer.AppendLine($"auto {ValuePrefix}0 = {Source}[{(blockShared ? "(int)" : "")}{LoopIndex}];");
-
-                var valIndex = 0;
-                var openBraces = 0;
-
-                for (var i = 0; i < chain.Stages.Length - 1; i++)
-                {
-                    var stage = chain.Stages[i];
-                    if (i >= folded || !stage.Operator.IsPositionStage())
-                    {
-                        s_intermediateStrategies[stage.Operator].Emit(
-                            ref context, in stage, i, ref valIndex, ref openBraces);
-                    }
-                }
-
-                terminalStrategy.Emit(
-                    ref context, in terminalStage, GSharpInternalNames.StackLinq.FusionResult, valIndex);
-
-                for (var i = 0; i < openBraces; i++)
-                {
-                    writer.AppendLine("}");
-                }
+                EmitTakeStops(in chain, folded, writer);
+                EmitElementRead(strategy, writer);
+                EmitStages(in chain, folded, ref context, terminalStrategy, in terminalStage);
             }
 
             EmitFinalReturn(in chain, in terminalStage, terminalStrategy, strategy, ref context);
         }
     }
 
+    // int __gsharp_fusion_lo = 0; int __gsharp_fusion_hi = <length>; <folded position stages>
+    private static void EmitRange(in StackLinqChain chain, int folded, ref TranspileContext context)
+    {
+        var writer = context.Emitter.Writer;
+        var length = FusionLength(chain.SourceArrayExpression, ref context);
+        writer.AppendLine($"int {FusionLow} = 0;");
+        writer.AppendLine($"int {FusionHigh} = {length};");
+        for (var i = 0; i < folded; i++)
+        {
+            if (chain.Stages[i].Operator.IsPositionStage())
+            {
+                EmitRangeStage(chain.Stages[i], i, writer);
+            }
+        }
+    }
+
+    // [WHY] TakeEnumerator checks its count before it pulls from the stages before it: once it has given n elements
+    // (or n <= 0), the next pull ends the sequence without calling them. Every pull after an element (the terminal, or
+    // a Where / Skip / SkipWhile after the Take that passes over it) starts the next iteration, so the check comes
+    // first in the body and a selector or predicate before the Take runs as many times as in C#.
+    private static void EmitTakeStops(in StackLinqChain chain, int folded, SourceWriter writer)
+    {
+        for (var i = folded; i < chain.Stages.Length - 1; i++)
+        {
+            if (chain.Stages[i].Operator == StackLinqOperator.Take)
+            {
+                writer.AppendLine(
+                    $"if ({StagePrefix}{i}{CountSuffix} >= {StagePrefix}{i}{StageCountSuffix}) {{ break; }}");
+            }
+        }
+    }
+
+    // auto __gsharp_val_0 = __gsharp_fusion_src[<index>];
+    // The 64-bit index of the shared loop is narrowed for GSharpArray::operator[](int)
+    private static void EmitElementRead(ParallelAggregateStrategy strategy, SourceWriter writer)
+    {
+        var narrowing = strategy != ParallelAggregateStrategy.PerThread ? "(int)" : "";
+        writer.AppendLine($"auto {ValuePrefix}0 = {FusionSource}[{narrowing}{LoopIndex}];");
+    }
+
+    // The stages inside the loop (the folded position stages are already in the range), then the terminal, then the
+    // braces the stages left open
+    private static void EmitStages(
+        in StackLinqChain chain,
+        int folded,
+        ref TranspileContext context,
+        IStackLinqTerminalStrategy terminalStrategy,
+        in LinqStage terminalStage)
+    {
+        var valIndex = 0;
+        var openBraces = 0;
+        for (var i = 0; i < chain.Stages.Length - 1; i++)
+        {
+            var stage = chain.Stages[i];
+            if (i >= folded || !stage.Operator.IsPositionStage())
+            {
+                s_intermediateStrategies[stage.Operator].Emit(ref context, in stage, i, ref valIndex, ref openBraces);
+            }
+        }
+
+        terminalStrategy.Emit(ref context, in terminalStage, FusionResult, valIndex);
+
+        for (var i = 0; i < openBraces; i++)
+        {
+            context.Emitter.Writer.AppendLine("}");
+        }
+    }
+
     private static void EmitLoopHeader(ParallelAggregateStrategy strategy, SourceWriter writer)
     {
-        const string Loop = GSharpInternalNames.StackLinq.LoopIndex;
-        const string Low = GSharpInternalNames.StackLinq.FusionLow;
-        const string High = GSharpInternalNames.StackLinq.FusionHigh;
-        const string Rank = GSharpInternalNames.StackLinq.BlockRank;
-        const string Size = GSharpInternalNames.StackLinq.BlockSize;
-
         if (strategy == ParallelAggregateStrategy.Grid)
         {
-            const string GridRank = GSharpInternalNames.StackLinq.GridBlockRank;
-            const string GridCount = GSharpInternalNames.StackLinq.GridBlockCount;
             writer.AppendLine(
-                $"for (long long {Loop} = {Low} + (long long){GridRank}() * {Size}() + {Rank}(); " +
-                $"{Loop} < {High}; " +
-                $"{Loop} += (long long){Size}() * {GridCount}())");
+                $"for (long long {LoopIndex} = " +
+                $"{FusionLow} + (long long){GridBlockRank}() * {BlockSize}() + {BlockRank}(); " +
+                $"{LoopIndex} < {FusionHigh}; " +
+                $"{LoopIndex} += (long long){BlockSize}() * {GridBlockCount}())");
         }
         else if (strategy != ParallelAggregateStrategy.PerThread)
         {
             writer.AppendLine(
-                $"for (long long {Loop} = {Low} + (long long){Rank}(); " +
-                $"{Loop} < {High}; " +
-                $"{Loop} += {Size}())");
+                $"for (long long {LoopIndex} = {FusionLow} + (long long){BlockRank}(); " +
+                $"{LoopIndex} < {FusionHigh}; " +
+                $"{LoopIndex} += {BlockSize}())");
         }
         else
         {
-            writer.AppendLine($"for (int {Loop} = {Low}; {Loop} < {High}; {Loop}++)");
+            writer.AppendLine($"for (int {LoopIndex} = {FusionLow}; {LoopIndex} < {FusionHigh}; {LoopIndex}++)");
         }
     }
 
@@ -195,9 +206,7 @@ public sealed class StackLinqFusionRule : IInvocationTranspilerRule
         ParallelAggregateStrategy strategy,
         ref TranspileContext context)
     {
-        const string Result = GSharpInternalNames.StackLinq.FusionResult;
-        var writer = context.Emitter.Writer;
-        terminalStrategy.EmitPostLoop(ref context, in terminalStage, Result);
+        terminalStrategy.EmitPostLoop(ref context, in terminalStage, FusionResult);
 
         var kind = ClassifyFinalReturn(
             strategy == ParallelAggregateStrategy.Grid,
@@ -205,24 +214,24 @@ public sealed class StackLinqFusionRule : IInvocationTranspilerRule
             in chain,
             in terminalStage
         );
+        WriteReturn(kind, context.Emitter.Writer);
+    }
+
+    private static void WriteReturn(FinalReturnKind kind, SourceWriter writer)
+    {
         switch (kind)
         {
             case FinalReturnKind.GridReduce:
-                writer.Append(
-                    $"return {GSharpInternalNames.StackLinq.GridReduce}(" +
-                    $"{Result}, {GSharpInternalNames.StackLinq.Plus}{{}}, " +
-                    $"{GSharpInternalNames.StackLinq.GridScratch});");
+                writer.Append($"return {GridReduce}({FusionResult}, {Plus}{{}}, {GridScratch});");
                 break;
             case FinalReturnKind.BlockReduce:
-                writer.Append(
-                    $"return {GSharpInternalNames.StackLinq.BlockReduce}(" +
-                    $"{Result}, {GSharpInternalNames.StackLinq.Plus}{{}});");
+                writer.Append($"return {BlockReduce}({FusionResult}, {Plus}{{}});");
                 break;
             case FinalReturnKind.FloatCast:
-                writer.Append($"return (float){Result};");
+                writer.Append($"return (float){FusionResult};");
                 break;
             case FinalReturnKind.Plain:
-                writer.Append($"return {Result};");
+                writer.Append($"return {FusionResult};");
                 break;
             default:
                 throw new InvalidOperationException($"Unknown {nameof(FinalReturnKind)}: {kind}");
@@ -273,8 +282,6 @@ public sealed class StackLinqFusionRule : IInvocationTranspilerRule
         IStackLinqTerminalStrategy terminalStrategy,
         in LinqStage terminalStage)
     {
-        const string StagePrefix = GSharpInternalNames.StackLinq.StagePrefix;
-        const string StageCountSuffix = GSharpInternalNames.StackLinq.StageCountSuffix;
         for (var i = 0; i < chain.Stages.Length - 1; i++)
         {
             var stage = chain.Stages[i];
@@ -292,7 +299,7 @@ public sealed class StackLinqFusionRule : IInvocationTranspilerRule
             }
         }
 
-        terminalStrategy.EmitInitialValue(ref context, GSharpInternalNames.StackLinq.FusionResult, in terminalStage);
+        terminalStrategy.EmitInitialValue(ref context, FusionResult, in terminalStage);
     }
 
 
@@ -300,32 +307,27 @@ public sealed class StackLinqFusionRule : IInvocationTranspilerRule
     private static string FusionLength(ExpressionSyntax source, ref TranspileContext context) =>
         StackArrayLocals.TryGetLength(source, context.Query.SemanticModel, out var length)
             ? length.ToString()
-            : $"{GSharpInternalNames.StackLinq.FusionSource}.length";
+            : $"{FusionSource}.length";
 
     // Narrows [lo, hi) as C# does, with the count clamped to [0, hi - lo] (__gsharp_clamp_count)
     private static void EmitRangeStage(in LinqStage stage, int index, SourceWriter writer)
     {
-        const string Low = GSharpInternalNames.StackLinq.FusionLow;
-        const string High = GSharpInternalNames.StackLinq.FusionHigh;
-        const string Clamp = GSharpInternalNames.StackLinq.ClampCount;
-        const string StagePrefix = GSharpInternalNames.StackLinq.StagePrefix;
-        const string StageCountSuffix = GSharpInternalNames.StackLinq.StageCountSuffix;
         switch (stage.Operator)
         {
             case StackLinqOperator.Skip:
-                writer.Append($"{Low} += ");
+                writer.Append($"{FusionLow} += ");
                 break;
             case StackLinqOperator.Take:
-                writer.Append($"{High} = {Low} + ");
+                writer.Append($"{FusionHigh} = {FusionLow} + ");
                 break;
             case StackLinqOperator.SkipLast:
-                writer.Append($"{High} -= ");
+                writer.Append($"{FusionHigh} -= ");
                 break;
             default:
-                writer.Append($"{Low} = {High} - ");
+                writer.Append($"{FusionLow} = {FusionHigh} - ");
                 break;
         }
 
-        writer.AppendLine($"{Clamp}({StagePrefix}{index}{StageCountSuffix}, {High} - {Low});");
+        writer.AppendLine($"{ClampCount}({StagePrefix}{index}{StageCountSuffix}, {FusionHigh} - {FusionLow});");
     }
 }

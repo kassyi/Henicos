@@ -1,3 +1,5 @@
+using static Kassyi.GSharp.Compiler.GSharpInternalNames.StackLinq;
+
 namespace Kassyi.GSharp.Compiler.Transpiler.Rules.InvocationRules.StackLinq;
 
 /// <summary>
@@ -41,7 +43,7 @@ internal sealed class CountStrategy : IStackLinqTerminalStrategy
             var arg = StackLinqHelper.GetLambdaArgument(stage.Invocation, stage.Symbol);
             context.Emitter.Writer.Append("if ((");
             context.Visitor.Visit(arg.Expression);
-            context.Emitter.Writer.AppendLine($")({GSharpInternalNames.StackLinq.ValuePrefix}{valIndex}))");
+            context.Emitter.Writer.AppendLine($")({ValuePrefix}{valIndex}))");
             using (context.Emitter.Writer.Braces())
             {
                 context.Emitter.Writer.AppendLine($"{resultVar}++;");
@@ -68,7 +70,7 @@ internal sealed class AnyStrategy : IStackLinqTerminalStrategy
             var arg = StackLinqHelper.GetLambdaArgument(stage.Invocation, stage.Symbol);
             context.Emitter.Writer.Append("if ((");
             context.Visitor.Visit(arg.Expression);
-            context.Emitter.Writer.AppendLine($")({GSharpInternalNames.StackLinq.ValuePrefix}{valIndex}))");
+            context.Emitter.Writer.AppendLine($")({ValuePrefix}{valIndex}))");
             using (context.Emitter.Writer.Braces())
             {
                 context.Emitter.Writer.AppendLine($"{resultVar} = true; break;");
@@ -93,7 +95,7 @@ internal sealed class AllStrategy : IStackLinqTerminalStrategy
         var arg = StackLinqHelper.GetLambdaArgument(stage.Invocation, stage.Symbol);
         context.Emitter.Writer.Append("if (!((");
         context.Visitor.Visit(arg.Expression);
-        context.Emitter.Writer.AppendLine($")({GSharpInternalNames.StackLinq.ValuePrefix}{valIndex})))");
+        context.Emitter.Writer.AppendLine($")({ValuePrefix}{valIndex})))");
         using (context.Emitter.Writer.Braces())
         {
             context.Emitter.Writer.AppendLine($"{resultVar} = false; break;");
@@ -108,9 +110,6 @@ internal sealed class AllStrategy : IStackLinqTerminalStrategy
 /// </summary>
 internal sealed class ElementSelectionStrategy(bool stopOnFirstMatch, bool trapOnEmpty) : IStackLinqTerminalStrategy
 {
-    private const string ValuePrefix = GSharpInternalNames.StackLinq.ValuePrefix;
-    private const string FoundSuffix = GSharpInternalNames.StackLinq.FoundSuffix;
-
     public void EmitInitialValue(ref TranspileContext context, string resultVar, in LinqStage stage)
     {
         context.Emitter.Dialect.AppendType(ref context, stage.Symbol.ReturnType);
@@ -165,9 +164,6 @@ internal sealed class ElementSelectionStrategy(bool stopOnFirstMatch, bool trapO
 /// </remarks>
 internal sealed class ExtremaStrategy(bool isMax) : IStackLinqTerminalStrategy
 {
-    private const string ValuePrefix = GSharpInternalNames.StackLinq.ValuePrefix;
-    private const string InitSuffix = GSharpInternalNames.StackLinq.InitSuffix;
-
     public void EmitInitialValue(ref TranspileContext context, string resultVar, in LinqStage stage)
     {
         context.Emitter.Dialect.AppendType(ref context, stage.Symbol.ReturnType);
@@ -175,20 +171,27 @@ internal sealed class ExtremaStrategy(bool isMax) : IStackLinqTerminalStrategy
         context.Emitter.Writer.AppendLine($"bool {resultVar}{InitSuffix} = false;");
     }
 
-    // Max: if (!<res>_init[ || <is_nan>(<res>)]) { <res> = <v>; <res>_init = true; }
-    //      else { if (<v> > <res>) { <res> = <v>; } }
-    // Min: if (!<res>_init) { <res> = <v>; <res>_init = true;[ if (<is_nan>(<res>)) { break; }] }
-    //      else { if (<v> < <res>) { <res> = <v>; }[ else if (<is_nan>(<v>)) { <res> = <v>; break; }] }
     public void Emit(ref TranspileContext context, in LinqStage stage, string resultVar, int valIndex)
     {
         var isFloating = stage.Symbol.ReturnType.SpecialType is SpecialType.System_Single or SpecialType.System_Double;
         var value = $"{ValuePrefix}{valIndex}";
-        var isNaN = GSharpInternalNames.StackLinq.LinqIsNaN;
-        var writer = context.Emitter.Writer;
-
-        if (isMax && isFloating)
+        if (isMax)
         {
-            writer.AppendLine($"if (!{resultVar}{InitSuffix} || {isNaN}({resultVar}))");
+            EmitMax(context.Emitter.Writer, resultVar, value, isFloating);
+        }
+        else
+        {
+            EmitMin(context.Emitter.Writer, resultVar, value, isFloating);
+        }
+    }
+
+    // if (!<res>_init[ || <is_nan>(<res>)]) { <res> = <v>; <res>_init = true; }
+    // else { if (<v> > <res>) { <res> = <v>; } }
+    private static void EmitMax(SourceWriter writer, string resultVar, string value, bool isFloating)
+    {
+        if (isFloating)
+        {
+            writer.AppendLine($"if (!{resultVar}{InitSuffix} || {LinqIsNaN}({resultVar}))");
         }
         else
         {
@@ -198,23 +201,43 @@ internal sealed class ExtremaStrategy(bool isMax) : IStackLinqTerminalStrategy
         {
             writer.AppendLine($"{resultVar} = {value};");
             writer.AppendLine($"{resultVar}{InitSuffix} = true;");
-            if (!isMax && isFloating)
+        }
+        writer.AppendLine("else");
+        using (writer.Braces())
+        {
+            writer.AppendLine($"if ({value} > {resultVar})");
+            using (writer.Braces())
             {
-                writer.AppendLine($"if ({isNaN}({resultVar})) {{ break; }}");
+                writer.AppendLine($"{resultVar} = {value};");
+            }
+        }
+    }
+
+    // if (!<res>_init) { <res> = <v>; <res>_init = true;[ if (<is_nan>(<res>)) { break; }] }
+    // else { if (<v> < <res>) { <res> = <v>; }[ else if (<is_nan>(<v>)) { <res> = <v>; break; }] }
+    private static void EmitMin(SourceWriter writer, string resultVar, string value, bool isFloating)
+    {
+        writer.AppendLine($"if (!{resultVar}{InitSuffix})");
+        using (writer.Braces())
+        {
+            writer.AppendLine($"{resultVar} = {value};");
+            writer.AppendLine($"{resultVar}{InitSuffix} = true;");
+            if (isFloating)
+            {
+                writer.AppendLine($"if ({LinqIsNaN}({resultVar})) {{ break; }}");
             }
         }
         writer.AppendLine("else");
         using (writer.Braces())
         {
-            var comparison = isMax ? ">" : "<";
-            writer.AppendLine($"if ({value} {comparison} {resultVar})");
+            writer.AppendLine($"if ({value} < {resultVar})");
             using (writer.Braces())
             {
                 writer.AppendLine($"{resultVar} = {value};");
             }
-            if (!isMax && isFloating)
+            if (isFloating)
             {
-                writer.AppendLine($"else if ({isNaN}({value})) {{ {resultVar} = {value}; break; }}");
+                writer.AppendLine($"else if ({LinqIsNaN}({value})) {{ {resultVar} = {value}; break; }}");
             }
         }
     }
@@ -225,9 +248,6 @@ internal sealed class ExtremaStrategy(bool isMax) : IStackLinqTerminalStrategy
 
 internal sealed class ContainsStrategy : IStackLinqTerminalStrategy
 {
-    private const string ValuePrefix = GSharpInternalNames.StackLinq.ValuePrefix;
-    private const string TargetSuffix = GSharpInternalNames.StackLinq.TargetSuffix;
-
     public void EmitInitialValue(ref TranspileContext context, string resultVar, in LinqStage stage)
     {
         context.Emitter.Writer.AppendLine($"bool {resultVar} = false;");
@@ -246,7 +266,7 @@ internal sealed class ContainsStrategy : IStackLinqTerminalStrategy
     public void Emit(ref TranspileContext context, in LinqStage stage, string resultVar, int valIndex)
     {
         context.Emitter.Writer.AppendLine(
-            $"if ({GSharpInternalNames.StackLinq.LinqEquals}({ValuePrefix}{valIndex}, {resultVar}{TargetSuffix}))");
+            $"if ({LinqEquals}({ValuePrefix}{valIndex}, {resultVar}{TargetSuffix}))");
         using (context.Emitter.Writer.Braces())
         {
             context.Emitter.Writer.AppendLine($"{resultVar} = true; break;");
@@ -258,8 +278,6 @@ internal sealed class ContainsStrategy : IStackLinqTerminalStrategy
 
 internal sealed class AverageStrategy : IStackLinqTerminalStrategy
 {
-    private const string CountSuffix = GSharpInternalNames.StackLinq.CountSuffix;
-
     public void EmitInitialValue(ref TranspileContext context, string resultVar, in LinqStage stage)
     {
         context.Emitter.Writer.AppendLine($"double {resultVar} = 0;");
@@ -291,9 +309,6 @@ internal sealed class AverageStrategy : IStackLinqTerminalStrategy
 
 internal sealed class AggregateStrategy : IStackLinqTerminalStrategy
 {
-    private const string ValuePrefix = GSharpInternalNames.StackLinq.ValuePrefix;
-    private const string InitSuffix = GSharpInternalNames.StackLinq.InitSuffix;
-
     public void EmitInitialValue(ref TranspileContext context, string resultVar, in LinqStage stage)
     {
         context.Emitter.Dialect.AppendType(ref context, stage.Symbol.ReturnType);
@@ -320,30 +335,42 @@ internal sealed class AggregateStrategy : IStackLinqTerminalStrategy
             throw new InvalidOperationException("Function argument was not found.");
         }
 
-        var funcArg = funcArgSyntax.Expression;
-
-        if (!hasSeed)
+        if (hasSeed)
         {
-            context.Emitter.Writer.AppendLine($"if (!{resultVar}{InitSuffix})");
-            using (context.Emitter.Writer.Braces())
-            {
-                context.Emitter.Writer.AppendLine($"{resultVar} = {ValuePrefix}{valIndex};");
-                context.Emitter.Writer.AppendLine($"{resultVar}{InitSuffix} = true;");
-            }
-            context.Emitter.Writer.AppendLine("else");
-            using (context.Emitter.Writer.Braces())
-            {
-                context.Emitter.Writer.Append($"{resultVar} = (");
-                context.Visitor.Visit(funcArg);
-                context.Emitter.Writer.AppendLine($")({resultVar}, {ValuePrefix}{valIndex});");
-            }
+            EmitFold(ref context, funcArgSyntax.Expression, resultVar, valIndex);
         }
         else
         {
-            context.Emitter.Writer.Append($"{resultVar} = (");
-            context.Visitor.Visit(funcArg);
-            context.Emitter.Writer.AppendLine($")({resultVar}, {ValuePrefix}{valIndex});");
+            EmitUnseeded(ref context, funcArgSyntax.Expression, resultVar, valIndex);
         }
+    }
+
+    // if (!<res>_init) { <res> = <v>; <res>_init = true; } else { <fold> }
+    private static void EmitUnseeded(
+        ref TranspileContext context,
+        ExpressionSyntax funcArg,
+        string resultVar,
+        int valIndex)
+    {
+        context.Emitter.Writer.AppendLine($"if (!{resultVar}{InitSuffix})");
+        using (context.Emitter.Writer.Braces())
+        {
+            context.Emitter.Writer.AppendLine($"{resultVar} = {ValuePrefix}{valIndex};");
+            context.Emitter.Writer.AppendLine($"{resultVar}{InitSuffix} = true;");
+        }
+        context.Emitter.Writer.AppendLine("else");
+        using (context.Emitter.Writer.Braces())
+        {
+            EmitFold(ref context, funcArg, resultVar, valIndex);
+        }
+    }
+
+    // <res> = (<func>)(<res>, <v>);
+    private static void EmitFold(ref TranspileContext context, ExpressionSyntax funcArg, string resultVar, int valIndex)
+    {
+        context.Emitter.Writer.Append($"{resultVar} = (");
+        context.Visitor.Visit(funcArg);
+        context.Emitter.Writer.AppendLine($")({resultVar}, {ValuePrefix}{valIndex});");
     }
 
     public void EmitPostLoop(ref TranspileContext context, in LinqStage stage, string resultVar)

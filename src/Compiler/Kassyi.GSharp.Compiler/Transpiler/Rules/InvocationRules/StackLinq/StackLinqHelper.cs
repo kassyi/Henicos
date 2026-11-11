@@ -1,3 +1,5 @@
+using static Kassyi.GSharp.Compiler.GSharpInternalNames.StackLinq;
+
 namespace Kassyi.GSharp.Compiler.Transpiler.Rules.InvocationRules.StackLinq;
 
 internal static class StackLinqHelper
@@ -176,7 +178,6 @@ internal static class StackLinqHelper
         string resultVar,
         int valIndex)
     {
-        const string ValuePrefix = GSharpInternalNames.StackLinq.ValuePrefix;
         if (HasPredicateOrSelector(stage.Invocation, stage.Symbol))
         {
             var arg = GetLambdaArgument(stage.Invocation, stage.Symbol);
