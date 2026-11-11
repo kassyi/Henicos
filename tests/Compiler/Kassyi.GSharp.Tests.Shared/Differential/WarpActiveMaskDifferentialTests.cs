@@ -89,35 +89,35 @@ public class WarpActiveMaskDifferentialTests
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_InBranch_ReturnsTheLanesOfTheBranch() =>
+    public void ActiveMask_InBranch_ReturnsTheLanesOfTheBranch() =>
         RunOnEveryPath(32,
             static output => WarpActiveMaskDifferentialKernels.LaunchInBranchKernel(output, blockDimX: 32),
             PerLane(32, static t => t < 4, 0xFu));
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_AfterEarlyReturn_LeavesTheExitedLanesOut() =>
+    public void ActiveMask_AfterEarlyReturn_LeavesTheExitedLanesOut() =>
         RunOnEveryPath(32,
             static output => WarpActiveMaskDifferentialKernels.LaunchAfterEarlyReturnKernel(output, blockDimX: 32),
             PerLane(32, static t => t < 4, 0xFu));
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_DeviceFunctionOnBothSides_ReturnsTheLanesOfEachSide() =>
+    public void ActiveMask_DeviceFunctionOnBothSides_ReturnsTheLanesOfEachSide() =>
         RunOnEveryPath(32,
             static output => WarpActiveMaskDifferentialKernels.LaunchDeviceFunctionOnBothSidesKernel(output, blockDimX: 32),
             Enumerable.Range(0, 32).Select(static t => t < 4 ? 0x0000000Fu : 0xFFFFFFF0u).ToArray());
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_BothSides_ReturnsTheLanesOfEachSide() =>
+    public void ActiveMask_BothSidesOfBranch_ReturnsTheLanesOfEachSide() =>
         RunOnEveryPath(64,
             static output => WarpActiveMaskDifferentialKernels.LaunchBothSidesKernel(output, blockDimX: 64),
             Enumerable.Range(0, 64).Select(static t => (t & 1) == 0 ? 0x55555555u : 0xAAAAAAAAu).ToArray());
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_AfterBranch_ReturnsEveryLane()
+    public void ActiveMask_AfterBranch_ReturnsEveryLane()
     {
 #if GSHARP_CUDA
         CudaCapability.EnsureGpuAvailable();
@@ -135,7 +135,7 @@ public class WarpActiveMaskDifferentialTests
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_DivergentLoop_ReturnsTheLanesOfEachIteration()
+    public void ActiveMask_DivergentLoop_ReturnsTheLanesOfEachIteration()
     {
         // Iteration k: the lanes t with t % 4 >= k
         uint[] masks = [0xFFFFFFFFu, 0xEEEEEEEEu, 0xCCCCCCCCu, 0x88888888u];
@@ -155,7 +155,7 @@ public class WarpActiveMaskDifferentialTests
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_AfterDivergentLoop_ReturnsEveryLane()
+    public void ActiveMask_AfterDivergentLoop_ReturnsEveryLane()
     {
         var expected = new uint[64];
         for (int t = 0; t < 32; t++)
@@ -171,7 +171,7 @@ public class WarpActiveMaskDifferentialTests
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_AlternatingBranchInLoop_ReturnsTheLanesOfEachIteration()
+    public void ActiveMask_AlternatingBranchInLoop_ReturnsTheLanesOfEachIteration()
     {
         var expected = new uint[64];
         for (int t = 0; t < 32; t++)
@@ -195,7 +195,7 @@ public class WarpActiveMaskDifferentialTests
     // allows (Independent Thread Scheduling)
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_NestedLoop_KeepsTheOuterIterationsApart()
+    public void ActiveMask_NestedLoop_KeepsTheOuterIterationsApart()
     {
         var expected = new uint[256];
         for (int t = 0; t < 32; t++)
@@ -227,7 +227,7 @@ public class WarpActiveMaskDifferentialTests
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_ContinueInLoop_StartsEachIterationTogether()
+    public void ActiveMask_ContinueInLoop_StartsEachIterationTogether()
     {
         var expected = new uint[192];
         for (int t = 0; t < 32; t++)
@@ -252,7 +252,7 @@ public class WarpActiveMaskDifferentialTests
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_BreakInLoop_ReturnsTheLanesOfEachIterationAndEveryLaneAfter()
+    public void ActiveMask_BreakInLoop_ReturnsTheLanesOfEachIterationAndEveryLaneAfter()
     {
         // Iteration k: the lanes t with t % 4 > k; after the loop, every lane
         uint[] masks = [0xEEEEEEEEu, 0xCCCCCCCCu, 0x88888888u];
@@ -274,7 +274,7 @@ public class WarpActiveMaskDifferentialTests
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Switch_ReturnsTheLanesOfEachSection()
+    public void ActiveMask_Switch_ReturnsTheLanesOfEachSection()
     {
         uint[] masks = [0x49249249u, 0x92492492u, 0x24924924u];
         var expected = Enumerable.Range(0, 64).Select(i => i < 32 ? masks[i % 3] : 0xFFFFFFFFu).ToArray();
@@ -285,7 +285,7 @@ public class WarpActiveMaskDifferentialTests
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_EarlyReturnFromDeviceFunction_MeetsTheOtherLanesAfterTheCall()
+    public void ActiveMask_EarlyReturnFromDeviceFunction_MeetsTheOtherLanesAfterTheCall()
     {
 #if GSHARP_CUDA
         CudaCapability.EnsureGpuAvailable();
@@ -306,7 +306,7 @@ public class WarpActiveMaskDifferentialTests
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_DataBranch_ReturnsTheLanesWhoseDataSelectsIt()
+    public void ActiveMask_DataBranch_ReturnsTheLanesWhoseDataSelectsIt()
     {
         var data = Enumerable.Range(0, 32).Select(static t => t % 3 == 0 ? 1 : 0).ToArray();
         RunOnEveryPath(32,
@@ -316,21 +316,21 @@ public class WarpActiveMaskDifferentialTests
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_BallotWithActiveMask_VotesAmongTheLanesOfTheBranch() =>
+    public void Ballot_ActiveMaskInBranch_VotesAmongTheLanesOfTheBranch() =>
         RunOnEveryPath(32,
             static output => WarpActiveMaskDifferentialKernels.LaunchBallotWithActiveMaskKernel(output, blockDimX: 32),
             PerLane(32, static t => t < 4, 0x5u));
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_AfterSyncWarp_ReturnsTheLanesOfTheBranch() =>
+    public void ActiveMask_AfterSyncWarp_ReturnsTheLanesOfTheBranch() =>
         RunOnEveryPath(32,
             static output => WarpActiveMaskDifferentialKernels.LaunchAfterSyncWarpKernel(output, blockDimX: 32),
             PerLane(32, static t => t < 4, 0xFu));
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Halves_ShuffleWithinTheMaskOfEachHalf()
+    public void ShuffleXorSync_ActiveMaskOfEachHalf_ShufflesWithinTheHalf()
     {
 #if GSHARP_CUDA
         CudaCapability.EnsureGpuAvailable();
@@ -353,7 +353,7 @@ public class WarpActiveMaskDifferentialTests
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_GridStrideLoop_LastRoundReturnsTheLanesLeftInTheLoop()
+    public void ActiveMask_GridStrideLoopLastRound_ReturnsTheLanesLeftInTheLoop()
     {
         // One block of 64 threads, 80 elements: the second round runs lanes 0..15 of warp 0
         var expected = Enumerable.Range(0, 80).Select(static i => i < 64 ? 0xFFFFFFFFu : 0x0000FFFFu).ToArray();
@@ -364,7 +364,7 @@ public class WarpActiveMaskDifferentialTests
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_GridStrideReduce_ReducesTheLanesLeftInTheLoop()
+    public void ActiveMask_GridStrideReduce_ReducesTheLanesLeftInTheLoop()
     {
         var input = Enumerable.Range(0, 80).Select(static i => i % 7 == 3 ? 1u << (i % 32) : 0u).ToArray();
         var expected = new uint[80];
@@ -386,7 +386,7 @@ public class WarpActiveMaskDifferentialTests
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_PartialWarp_ReturnsTheLanesThatExist() =>
+    public void ActiveMask_PartialWarp_ReturnsTheLanesThatExist() =>
         RunOnEveryPath(40,
             static output => WarpActiveMaskDifferentialKernels.LaunchPartialWarpKernel(output, blockDimX: 40),
             Enumerable.Range(0, 40).Select(static t => t < 32 ? 0xFFFFFFFFu : 0xFFu).ToArray());
@@ -394,7 +394,7 @@ public class WarpActiveMaskDifferentialTests
     // The shuffles of GpuBigIntCmpKernels.IsZeroKernel read lanes 16..31 in the last round, which have left the loop
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_GridStrideShuffleTail_IsAnErrorOnTheCpuPaths()
+    public void ShuffleDownSync_GridStrideTailReadsExitedLane_FailsOnTheCpuPaths()
     {
         var input = new uint[80];
         AssertErrorOnCpuPaths<uint>(
@@ -404,7 +404,7 @@ public class WarpActiveMaskDifferentialTests
 
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_ShuffleOutsideActiveMask_IsAnErrorOnTheCpuPaths() =>
+    public void ShuffleXorSync_SourceLaneOutsideActiveMask_FailsOnTheCpuPaths() =>
         AssertErrorOnCpuPaths<int>(
             static output => WarpActiveMaskDifferentialKernels.LaunchShuffleOutsideActiveMaskKernel(output, blockDimX: 32),
             32, "Warp.ShuffleXorSync", "reads lane 16 of warp 0, which does not take part");
