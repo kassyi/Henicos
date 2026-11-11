@@ -16,7 +16,7 @@ public sealed class GpuBigNumberArrayEqualityTests
     [Scenario(TestScenario.HappyPath)]
     public void GpuBigUIntArray_SameAllocationAndBorrowedViews_AreEqualWithMatchingHashCode()
     {
-        using var fallback = EnterCpuFallback();
+        using var fallback = CpuFallbackScope.Enter();
         using var workspace = new GpuWorkspace(64);
         using var array = new GpuBigUIntArray(workspace, Length, WordsPerElement);
         using var other = new GpuBigUIntArray(workspace, Length, WordsPerElement);
@@ -39,7 +39,7 @@ public sealed class GpuBigNumberArrayEqualityTests
     [Scenario(TestScenario.Boundary)]
     public void GpuBigUIntArray_DefaultAndDisposedInstances_CompareWithoutReadingDevice()
     {
-        using var fallback = EnterCpuFallback();
+        using var fallback = CpuFallbackScope.Enter();
         using var workspace = new GpuWorkspace(64);
         using var emptyAllocated = new GpuBigUIntArray(workspace, 0, 0);
         GpuBigUIntArray defaultFirst = default;
@@ -66,7 +66,7 @@ public sealed class GpuBigNumberArrayEqualityTests
     [Scenario(TestScenario.Boundary)]
     public void GpuBigUIntArray_DistinctBufferSliceWorkspaceOrShape_AreNotEqual()
     {
-        using var fallback = EnterCpuFallback();
+        using var fallback = CpuFallbackScope.Enter();
         using var workspaceA = new GpuWorkspace(64);
         using var workspaceB = new GpuWorkspace(64);
         using var array = new GpuBigUIntArray(workspaceA, Length, WordsPerElement);
@@ -105,7 +105,7 @@ public sealed class GpuBigNumberArrayEqualityTests
     [Scenario(TestScenario.SadPath)]
     public void GpuBigUIntArray_NullOrOtherObjectType_ReturnsFalse()
     {
-        using var fallback = EnterCpuFallback();
+        using var fallback = CpuFallbackScope.Enter();
         using var workspace = new GpuWorkspace(64);
         using var uintArray = new GpuBigUIntArray(workspace, Length, WordsPerElement);
         using var intArray = new GpuBigIntArray(workspace, Length, WordsPerElement);
@@ -124,7 +124,7 @@ public sealed class GpuBigNumberArrayEqualityTests
     [Scenario(TestScenario.HappyPath)]
     public void GpuBigIntArray_SameAllocationAndBorrowedSlice_AreEqualWithMatchingHashCode()
     {
-        using var fallback = EnterCpuFallback();
+        using var fallback = CpuFallbackScope.Enter();
         using var workspace = new GpuWorkspace(64);
         using var array = new GpuBigIntArray(workspace, Length, WordsPerElement);
         using var other = new GpuBigIntArray(workspace, Length, WordsPerElement);
@@ -143,7 +143,7 @@ public sealed class GpuBigNumberArrayEqualityTests
     [Scenario(TestScenario.Boundary)]
     public void GpuBigIntArray_DefaultAndDisposedInstances_CompareWithoutReadingDevice()
     {
-        using var fallback = EnterCpuFallback();
+        using var fallback = CpuFallbackScope.Enter();
         using var workspace = new GpuWorkspace(64);
         using var emptyAllocated = new GpuBigIntArray(workspace, 0, WordsPerElement);
         GpuBigIntArray defaultFirst = default;
@@ -166,7 +166,7 @@ public sealed class GpuBigNumberArrayEqualityTests
     [Scenario(TestScenario.Boundary)]
     public void GpuBigIntArray_DifferingValuesSignsSliceOrShape_AreNotEqual()
     {
-        using var fallback = EnterCpuFallback();
+        using var fallback = CpuFallbackScope.Enter();
         using var workspace = new GpuWorkspace(64);
         using var array = new GpuBigIntArray(workspace, Length, WordsPerElement);
         using var separate = new GpuBigIntArray(workspace, Length, WordsPerElement);
@@ -196,7 +196,7 @@ public sealed class GpuBigNumberArrayEqualityTests
     [Scenario(TestScenario.SadPath)]
     public void GpuBigIntArray_NullOrOtherObjectType_ReturnsFalse()
     {
-        using var fallback = EnterCpuFallback();
+        using var fallback = CpuFallbackScope.Enter();
         using var workspace = new GpuWorkspace(64);
         using var uintArray = new GpuBigUIntArray(workspace, Length, WordsPerElement);
         using var intArray = new GpuBigIntArray(workspace, Length, WordsPerElement);
@@ -214,7 +214,7 @@ public sealed class GpuBigNumberArrayEqualityTests
     [Scenario(TestScenario.HappyPath)]
     public void GpuBigFloatArray_SameAllocationAndBorrowedSlice_AreEqualWithMatchingHashCode()
     {
-        using var fallback = EnterCpuFallback();
+        using var fallback = CpuFallbackScope.Enter();
         using var workspace = new GpuWorkspace(64);
         using var array = new GpuBigFloatArray(workspace, Length, WordsPerElement);
         using var other = new GpuBigFloatArray(workspace, Length, WordsPerElement);
@@ -233,7 +233,7 @@ public sealed class GpuBigNumberArrayEqualityTests
     [Scenario(TestScenario.Boundary)]
     public void GpuBigFloatArray_DefaultAndDisposedInstances_CompareWithoutReadingDevice()
     {
-        using var fallback = EnterCpuFallback();
+        using var fallback = CpuFallbackScope.Enter();
         using var workspace = new GpuWorkspace(64);
         using var emptyAllocated = new GpuBigFloatArray(workspace, 0, WordsPerElement);
         GpuBigFloatArray defaultFirst = default;
@@ -255,7 +255,7 @@ public sealed class GpuBigNumberArrayEqualityTests
     [Scenario(TestScenario.Boundary)]
     public void GpuBigFloatArray_DifferingComponentBufferSliceOrShape_AreNotEqual()
     {
-        using var fallback = EnterCpuFallback();
+        using var fallback = CpuFallbackScope.Enter();
         using var workspace = new GpuWorkspace(64);
         using var array = new GpuBigFloatArray(workspace, Length, WordsPerElement);
         using var separate = new GpuBigFloatArray(workspace, Length, WordsPerElement);
@@ -294,7 +294,7 @@ public sealed class GpuBigNumberArrayEqualityTests
     [Scenario(TestScenario.SadPath)]
     public void GpuBigFloatArray_NullOrOtherObjectType_ReturnsFalse()
     {
-        using var fallback = EnterCpuFallback();
+        using var fallback = CpuFallbackScope.Enter();
         using var workspace = new GpuWorkspace(64);
         using var uintArray = new GpuBigUIntArray(workspace, Length, WordsPerElement);
         using var intArray = new GpuBigIntArray(workspace, Length, WordsPerElement);
@@ -306,6 +306,21 @@ public sealed class GpuBigNumberArrayEqualityTests
         Assert.False(floatArray.Equals("not an array"));
         Assert.False(floatArray.Equals((object)uintArray));
         Assert.False(floatArray.Equals((object)intArray));
+    }
+
+    // Every assertion of the other tests gives the same answer under ValueType.Equals, which compares the same fields
+    // through reflection; only the declaring type of the methods shows whether the struct overrides them.
+    [Theory]
+    [InlineData(typeof(GpuBigUIntArray))]
+    [InlineData(typeof(GpuBigIntArray))]
+    [InlineData(typeof(GpuBigFloatArray))]
+    [Scenario(TestScenario.HappyPath)]
+    public void EqualsAndGetHashCode_EachArrayType_AreDeclaredOnTheStructNotValueType(Type arrayType)
+    {
+        // mutant: delete the Equals(object?) override of the struct (ValueType.Equals takes over)
+        Assert.Equal(arrayType, arrayType.GetMethod(nameof(Equals), [typeof(object)])?.DeclaringType);
+        // mutant: delete the GetHashCode override of the struct (ValueType.GetHashCode takes over)
+        Assert.Equal(arrayType, arrayType.GetMethod(nameof(GetHashCode), Type.EmptyTypes)?.DeclaringType);
     }
 
     private static void AssertEqualAndConsistentHash<T>(T left, T right)
@@ -326,20 +341,5 @@ public sealed class GpuBigNumberArrayEqualityTests
         Assert.False(right.Equals(left));
         Assert.False(left.Equals((object)right));
         Assert.False(EqualityComparer<T>.Default.Equals(left, right));
-    }
-
-    private static CpuFallbackScope EnterCpuFallback() => new(GpuKernelLoader.ForceCpuFallback);
-
-    private readonly struct CpuFallbackScope : IDisposable
-    {
-        private readonly bool _previous;
-
-        public CpuFallbackScope(bool previous)
-        {
-            _previous = previous;
-            GpuKernelLoader.ForceCpuFallback = true;
-        }
-
-        public void Dispose() => GpuKernelLoader.ForceCpuFallback = _previous;
     }
 }
