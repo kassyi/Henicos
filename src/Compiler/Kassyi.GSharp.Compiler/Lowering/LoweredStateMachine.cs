@@ -27,4 +27,13 @@ public sealed record LoweredStateMachine(
     IReadOnlyList<InvocationExpressionSyntax> CallSites,
     IReadOnlyList<string> CopiedParameters,
     int RegionCount = 0,
-    int WarpSiteCount = 0);
+    int WarpSiteCount = 0)
+{
+    /// <summary>
+    /// The <c>ref</c> locals among <see cref="ContextFields"/>. Neither frame can hold one (a managed class has no ref
+    /// fields, CS9059; the native frame would hold a copy of the target), so the managed state machine of such a body
+    /// only throws, and each one is an error: GSH0039 from the analyzer when
+    /// <see cref="HeldRefLocal.IsReportedLive"/>, otherwise GSH0003 from the generator (#1640).
+    /// </summary>
+    public ImmutableArray<HeldRefLocal> HeldRefLocals { get; init; } = ImmutableArray<HeldRefLocal>.Empty;
+}
