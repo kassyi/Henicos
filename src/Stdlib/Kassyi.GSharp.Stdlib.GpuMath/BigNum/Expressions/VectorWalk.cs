@@ -6,8 +6,9 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 /// once per level would end the process with a stack overflow.
 /// </summary>
 /// <remarks>
-/// The first <see cref="RecursionLimit"/> levels are evaluated by recursion, the fastest form for an expression of
-/// ordinary depth, with the results as they are (<see cref="VectorResult"/>); the levels below them by
+/// The first <see cref="RecursionLimit"/> levels are evaluated by recursion
+/// (<see cref="IVectorOperator.EvaluateDirect"/> of each node), the fastest form for an expression of ordinary depth, with the results as they are
+/// (<see cref="VectorResult"/>); the levels below them by
 /// <see cref="ExpressionWalk"/>, with explicit stacks and the results stored as <see cref="VectorValue"/>. Both
 /// evaluate the inputs of a node before the node, in the order of <see cref="IVectorOperator.GetOperand"/>, and check a node's
 /// request (<see cref="IVectorOperator.Enter"/>) before its inputs. A node that is not an
@@ -25,7 +26,7 @@ internal static class VectorWalk
     /// <returns>The result of the root.</returns>
     public static VectorResult Evaluate(IVectorOperator root, GpuWorkspace workspace,
         scoped in VectorRequest request) =>
-        Evaluate(root, workspace, request, RecursionLimit);
+        EvaluateDirect(root, workspace, request, RecursionLevel.Walking(RecursionLimit));
 
     /// <summary>
     /// Evaluates <paramref name="root"/> with <paramref name="levels"/> levels by recursion and the levels below them
@@ -36,62 +37,43 @@ internal static class VectorWalk
     /// <param name="request">What the root is asked to evaluate.</param>
     /// <param name="levels">The number of levels evaluated by recursion.</param>
     /// <returns>The result of the root.</returns>
-    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     internal static VectorResult Evaluate(object root, GpuWorkspace workspace, scoped in VectorRequest request,
-        int levels)
-    {
-        if (root is not IVectorOperator op)
-        {
-            return EvaluateInput(root, workspace, request);
-        }
-
-        if (levels == 0)
-        {
-            return Walk(op, workspace, request);
-        }
-
-        op.Enter(request);
-        if (!op.EvaluatesOperands(request))
-        {
-            return op.Apply(workspace, request, default, default);
-        }
-
-        var operandRequest = op.OperandRequest(request);
-        var first = Evaluate(op.GetOperand(0), workspace, operandRequest, levels - 1);
-        var second = op.OperandCount == 2
-            ? Evaluate(op.GetOperand(1), workspace, operandRequest, levels - 1)
-            : default;
-        return op.Apply(workspace, request, first, second);
-    }
+        int levels) =>
+        EvaluateDirect(root, workspace, request, RecursionLevel.Walking(levels));
 
     /// <summary>
-    /// Evaluates <paramref name="node"/> and the expression below it by recursion on the caller's stack, one call of
-    /// <see cref="IVectorOperator.EvaluateDirect"/> per level, without the walk: the form of
-    /// <see cref="VectorExpressionRecursion"/>, for expressions known to be shallow.
+    /// Evaluates <paramref name="node"/> and the expression below it by recursion, one call of
+    /// <see cref="IVectorOperator.EvaluateDirect"/> per level, down to the limit of <paramref name="level"/>; below it
+    /// the walk takes over (<c>Evaluate</c>) or the evaluation is refused (<see cref="VectorExpressionRecursion"/>).
     /// </summary>
     /// <param name="node">The node, or a node that evaluates itself.</param>
     /// <param name="workspace">The workspace.</param>
     /// <param name="request">What the node is asked to evaluate.</param>
-    /// <param name="depth">The number of vector nodes above <paramref name="node"/>.</param>
+    /// <param name="level">Where the node is in the recursion.</param>
     /// <returns>The result of the node.</returns>
     /// <exception cref="NotSupportedException">
-    /// The expression is deeper than <see cref="VectorExpressionRecursion.MaxCallStackDepth"/> levels.
+    /// The recursion is bounded and the expression is deeper than its limit.
     /// </exception>
     [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.AggressiveOptimization)]
     internal static VectorResult EvaluateDirect(object node, GpuWorkspace workspace, scoped in VectorRequest request,
-        int depth)
+        RecursionLevel level)
     {
         if (node is not IVectorOperator op)
         {
             return EvaluateInput(node, workspace, request);
         }
 
-        if (depth >= VectorExpressionRecursion.MaxCallStackDepth)
+        if (!level.Recurses)
         {
+            if (level.WalksBelow)
+            {
+                return Walk(op, workspace, request);
+            }
+
             ThrowTooDeep();
         }
 
-        return op.EvaluateDirect(workspace, request, depth + 1);
+        return op.EvaluateDirect(workspace, request, level.Next);
     }
 
     // Out of line, so that the message is not built in the frame of every level

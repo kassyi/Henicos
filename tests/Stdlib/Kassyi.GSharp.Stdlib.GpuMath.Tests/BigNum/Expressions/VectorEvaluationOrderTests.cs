@@ -25,8 +25,8 @@ public sealed partial class VectorEvaluationOrderTests
 
     // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Expressions/VectorWalk.cs Walker.Enter -> no check (the
     // walked trees evaluate inputs before a length check throws)
-    // mutant: VectorWalk.cs Evaluate (recursion) -> without `op.Enter(request)`
-    // mutant: VectorWalk.cs Evaluate (recursion) -> `GetOperand(op.OperandCount - 1)` for the first input
+    // mutant: VectorCompareExpressions.cs VectorCompareVectorExpression.EvaluateDirect -> without `Enter(request)`
+    // mutant: VectorBinaryVectorExpressions.cs EvaluateDirect (recursion) -> the right input evaluated as the first
     // mutant: VectorWalk.cs Walker.OperandTarget -> the node's own request
     // mutant: ExpressionDisposal.cs Dispose -> without pushing the inputs (leaves below the root are not disposed)
     // mutant: VectorWhereExpression.cs GetOperand -> the source before the predicate

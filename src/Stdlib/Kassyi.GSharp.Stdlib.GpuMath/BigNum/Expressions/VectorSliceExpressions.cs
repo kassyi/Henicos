@@ -41,14 +41,15 @@ internal class VectorTakeExpression([TakesOwnership] IGpuBigIntVectorExpression 
         Math.Min(request.EvalCount(Capacity), Capacity - request.Offset);
 
     // One level of a recursive evaluation (VectorWalk.EvaluateDirect)
-    public VectorResult EvaluateDirect(GpuWorkspace workspace, scoped in VectorRequest request, int depth)
+    public VectorResult EvaluateDirect(GpuWorkspace workspace, scoped in VectorRequest request,
+        RecursionLevel level)
     {
         if (!EvaluatesOperands(request))
         {
             return Apply(workspace, request, default, default);
         }
 
-        return Apply(workspace, request, VectorWalk.EvaluateDirect(source, workspace, OperandRequest(request), depth),
+        return Apply(workspace, request, VectorWalk.EvaluateDirect(source, workspace, OperandRequest(request), level),
             default);
     }
 
@@ -121,14 +122,15 @@ internal class VectorSkipExpression([TakesOwnership] IGpuBigIntVectorExpression 
             : VectorSlice.EmptyResult(workspace, WordsPerElement, request);
 
     // One level of a recursive evaluation (VectorWalk.EvaluateDirect)
-    public VectorResult EvaluateDirect(GpuWorkspace workspace, scoped in VectorRequest request, int depth)
+    public VectorResult EvaluateDirect(GpuWorkspace workspace, scoped in VectorRequest request,
+        RecursionLevel level)
     {
         if (!EvaluatesOperands(request))
         {
             return Apply(workspace, request, default, default);
         }
 
-        return Apply(workspace, request, VectorWalk.EvaluateDirect(source, workspace, OperandRequest(request), depth),
+        return Apply(workspace, request, VectorWalk.EvaluateDirect(source, workspace, OperandRequest(request), level),
             default);
     }
 

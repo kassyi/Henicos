@@ -44,7 +44,8 @@ public static class VectorExpressionRecursion
     {
         DeviceCounted.ThrowIfCpuFallback(workspace);
         var request = new VectorRequest(elementOffset, elementCount, VectorStorage.Of(targetResult));
-        return DeviceCounted.Materialize(workspace, VectorWalk.EvaluateDirect(expression, workspace, request, 0).Int);
+        return DeviceCounted.Materialize(workspace,
+            VectorWalk.EvaluateDirect(expression, workspace, request, RecursionLevel.Bounded(MaxCallStackDepth)).Int);
     }
 
     /// <summary>
@@ -69,7 +70,7 @@ public static class VectorExpressionRecursion
         DeviceCounted.ThrowIfCpuFallback(workspace);
         var request = new VectorRequest(elementOffset, elementCount, VectorStorage.Of(targetResult));
         return DeviceCounted.Materialize(workspace,
-            VectorWalk.EvaluateDirect(expression, workspace, request, 0).Float);
+            VectorWalk.EvaluateDirect(expression, workspace, request, RecursionLevel.Bounded(MaxCallStackDepth)).Float);
     }
 
     /// <summary>
@@ -87,6 +88,7 @@ public static class VectorExpressionRecursion
     {
         DeviceCounted.ThrowIfCpuFallback(workspace);
         return DeviceCounted.Materialize(workspace,
-            VectorWalk.EvaluateDirect(expression, workspace, VectorRequest.Whole, 0).Bool);
+            VectorWalk.EvaluateDirect(expression, workspace, VectorRequest.Whole,
+                RecursionLevel.Bounded(MaxCallStackDepth)).Bool);
     }
 }

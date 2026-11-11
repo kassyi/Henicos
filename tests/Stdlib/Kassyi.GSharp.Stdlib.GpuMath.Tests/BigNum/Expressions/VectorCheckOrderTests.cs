@@ -3,8 +3,8 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum.Expressions;
 
 // Properties of the length checks of the vector nodes, recorded with leaves that log when they are evaluated:
 // - a node whose inputs have different lengths throws ArgumentException before any input is evaluated (the float
-//   comparison and the integer ZipDivide, whose checks run before the walk evaluates the inputs); inputs of the same
-//   length are evaluated left, then right.
+//   comparison, the float Zip and the integer ZipDivide, whose checks run before their inputs are evaluated); inputs
+//   of the same length are evaluated left, then right.
 
 /// <summary>The length checks of the vector nodes, on the GPU.</summary>
 [Category(TestCategory.Stdlib)]
@@ -39,6 +39,20 @@ public sealed class VectorCheckOrderTests : IDisposable
         using var comparison = Leaf("left", shorter).IsLessThan(Leaf("right", longer));
 
         Assert.Throws<ArgumentException>(() => comparison.Evaluate(_workspace));
+        Assert.Empty(_log);
+    }
+
+    // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Expressions/FloatVectorBinaryVectorExpressions.cs
+    // EvaluateDirect -> without `Enter(request)` (the inputs are evaluated before the lengths are compared)
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void FloatZip_DifferentLengths_ThrowsBeforeEvaluatingAnInput()
+    {
+        using var shorter = FloatArray([1, 2]);
+        using var longer = FloatArray([1, 2, 3]);
+        using var difference = Leaf("left", longer).ZipSubtract(Leaf("right", shorter));
+
+        Assert.Throws<ArgumentException>(() => difference.Evaluate(_workspace));
         Assert.Empty(_log);
     }
 

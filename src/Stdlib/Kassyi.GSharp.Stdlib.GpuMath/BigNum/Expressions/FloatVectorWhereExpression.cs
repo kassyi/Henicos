@@ -60,7 +60,8 @@ internal sealed class FloatVectorWhereExpression(
     }
 
     // One level of a recursive evaluation (VectorWalk.EvaluateDirect)
-    public VectorResult EvaluateDirect(GpuWorkspace workspace, scoped in VectorRequest request, int depth)
+    public VectorResult EvaluateDirect(GpuWorkspace workspace, scoped in VectorRequest request,
+        RecursionLevel level)
     {
         Enter(request);
         if (!EvaluatesOperands(request))
@@ -69,8 +70,8 @@ internal sealed class FloatVectorWhereExpression(
         }
 
         var operandRequest = OperandRequest(request);
-        var first = VectorWalk.EvaluateDirect(predicate, workspace, operandRequest, depth);
-        var second = VectorWalk.EvaluateDirect(source, workspace, operandRequest, depth);
+        var first = VectorWalk.EvaluateDirect(predicate, workspace, operandRequest, level);
+        var second = VectorWalk.EvaluateDirect(source, workspace, operandRequest, level);
         return Apply(workspace, request, first, second);
     }
 

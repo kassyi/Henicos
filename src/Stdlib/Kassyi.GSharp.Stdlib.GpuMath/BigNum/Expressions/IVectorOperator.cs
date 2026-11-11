@@ -61,12 +61,12 @@ internal interface IVectorOperator
 
     /// <summary>
     /// Evaluates the node for <see cref="VectorWalk.EvaluateDirect"/>: checks the request, evaluates the inputs through
-    /// <see cref="VectorWalk.EvaluateDirect"/> at <paramref name="depth"/>, and applies the node, as one level of a
+    /// <see cref="VectorWalk.EvaluateDirect"/> at <paramref name="level"/>, and applies the node, as one level of a
     /// recursive evaluation.
     /// </summary>
     /// <param name="workspace">The workspace.</param>
     /// <param name="request">The request of the node.</param>
-    /// <param name="depth">The level of the node (1 for the root).</param>
+    /// <param name="level">The level of the inputs of the node.</param>
     /// <returns>The result of the node.</returns>
-    VectorResult EvaluateDirect(GpuWorkspace workspace, scoped in VectorRequest request, int depth);
+    VectorResult EvaluateDirect(GpuWorkspace workspace, scoped in VectorRequest request, RecursionLevel level);
 }

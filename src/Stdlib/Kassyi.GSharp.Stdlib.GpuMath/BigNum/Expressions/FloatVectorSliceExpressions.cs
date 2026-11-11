@@ -38,14 +38,15 @@ internal sealed class FloatVectorSkipExpression(
             : FloatVectorSlice.EmptyResult(workspace, WordsPerElement, request);
 
     // One level of a recursive evaluation (VectorWalk.EvaluateDirect)
-    public VectorResult EvaluateDirect(GpuWorkspace workspace, scoped in VectorRequest request, int depth)
+    public VectorResult EvaluateDirect(GpuWorkspace workspace, scoped in VectorRequest request,
+        RecursionLevel level)
     {
         if (!EvaluatesOperands(request))
         {
             return Apply(workspace, request, default, default);
         }
 
-        return Apply(workspace, request, VectorWalk.EvaluateDirect(inner, workspace, OperandRequest(request), depth),
+        return Apply(workspace, request, VectorWalk.EvaluateDirect(inner, workspace, OperandRequest(request), level),
             default);
     }
 
@@ -118,14 +119,15 @@ internal sealed class FloatVectorTakeExpression(
         Math.Min(request.EvalCount(Capacity), Capacity - request.Offset);
 
     // One level of a recursive evaluation (VectorWalk.EvaluateDirect)
-    public VectorResult EvaluateDirect(GpuWorkspace workspace, scoped in VectorRequest request, int depth)
+    public VectorResult EvaluateDirect(GpuWorkspace workspace, scoped in VectorRequest request,
+        RecursionLevel level)
     {
         if (!EvaluatesOperands(request))
         {
             return Apply(workspace, request, default, default);
         }
 
-        return Apply(workspace, request, VectorWalk.EvaluateDirect(inner, workspace, OperandRequest(request), depth),
+        return Apply(workspace, request, VectorWalk.EvaluateDirect(inner, workspace, OperandRequest(request), level),
             default);
     }
 

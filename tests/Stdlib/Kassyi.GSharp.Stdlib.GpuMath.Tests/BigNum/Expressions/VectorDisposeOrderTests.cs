@@ -91,7 +91,8 @@ public sealed class VectorDisposeOrderTests
             VectorResult second) =>
             throw new NotSupportedException("The node is not evaluated.");
 
-        public VectorResult EvaluateDirect(GpuWorkspace workspace, scoped in VectorRequest request, int depth) =>
+        public VectorResult EvaluateDirect(GpuWorkspace workspace, scoped in VectorRequest request,
+            RecursionLevel level) =>
             throw new NotSupportedException("The node is not evaluated.");
 
         public void DisposeOwn()

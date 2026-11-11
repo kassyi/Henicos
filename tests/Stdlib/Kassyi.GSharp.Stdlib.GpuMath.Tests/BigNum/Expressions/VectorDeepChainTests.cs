@@ -18,8 +18,8 @@ public sealed class VectorDeepChainTests
     private const int SmallStack = 256 * 1024;
 
     // e = e + s_k or e - s_k: every level is a scalar node over the level below
-    // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Expressions/VectorWalk.cs Evaluate -> recursion at every
-    // level (`levels == 0` -> `levels == int.MinValue`; the test host ends with a stack overflow)
+    // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Expressions/VectorWalk.cs EvaluateDirect -> recursion at
+    // every level (`!level.Recurses` -> `false`; the test host ends with a stack overflow)
     [Theory]
     [InlineData(8)]
     [InlineData(24)]

@@ -15,8 +15,8 @@ public sealed class VectorExpressionRecursionTests
     private const int SmallStack = 256 * 1024;
     private const int MaxDepth = VectorExpressionRecursion.MaxCallStackDepth;
 
-    // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Expressions/VectorWalk.cs EvaluateDirect -> `depth >
-    // MaxCallStackDepth` (one level more is evaluated)
+    // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Expressions/RecursionLevel.cs Recurses -> `Depth <=
+    // Limit` (one level more is evaluated)
     [Fact]
     [Scenario(TestScenario.Boundary)]
     public void IntChain_AtAndBeyondTheMaximumDepth_EvaluatesOrThrows() =>

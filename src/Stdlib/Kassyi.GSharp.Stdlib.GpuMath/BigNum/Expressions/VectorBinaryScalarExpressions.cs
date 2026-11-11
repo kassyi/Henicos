@@ -130,11 +130,12 @@ internal abstract class VectorBinaryScalarExpressionBase(
         uint gridDimX);
 
     // One level of a recursive evaluation (VectorWalk.EvaluateDirect)
-    public VectorResult EvaluateDirect(GpuWorkspace workspace, scoped in VectorRequest request, int depth)
+    public VectorResult EvaluateDirect(GpuWorkspace workspace, scoped in VectorRequest request,
+        RecursionLevel level)
     {
         Enter(request);
 
-        return Apply(workspace, request, VectorWalk.EvaluateDirect(vector, workspace, OperandRequest(request), depth),
+        return Apply(workspace, request, VectorWalk.EvaluateDirect(vector, workspace, OperandRequest(request), level),
             default);
     }
 

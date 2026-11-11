@@ -156,13 +156,14 @@ internal abstract class FloatVectorBinaryVectorExpressionBase(
         uint gridDimX);
 
     // One level of a recursive evaluation (VectorWalk.EvaluateDirect)
-    public VectorResult EvaluateDirect(GpuWorkspace workspace, scoped in VectorRequest request, int depth)
+    public VectorResult EvaluateDirect(GpuWorkspace workspace, scoped in VectorRequest request,
+        RecursionLevel level)
     {
         Enter(request);
 
         var operandRequest = OperandRequest(request);
-        var first = VectorWalk.EvaluateDirect(left, workspace, operandRequest, depth);
-        var second = VectorWalk.EvaluateDirect(right, workspace, operandRequest, depth);
+        var first = VectorWalk.EvaluateDirect(left, workspace, operandRequest, level);
+        var second = VectorWalk.EvaluateDirect(right, workspace, operandRequest, level);
         return Apply(workspace, request, first, second);
     }
 

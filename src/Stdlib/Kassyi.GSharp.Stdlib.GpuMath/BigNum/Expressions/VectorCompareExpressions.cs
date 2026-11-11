@@ -53,9 +53,10 @@ internal class VectorCompareScalarExpression(
     }
 
     // One level of a recursive evaluation (VectorWalk.EvaluateDirect)
-    public VectorResult EvaluateDirect(GpuWorkspace workspace, scoped in VectorRequest request, int depth)
+    public VectorResult EvaluateDirect(GpuWorkspace workspace, scoped in VectorRequest request,
+        RecursionLevel level)
     {
-        return Apply(workspace, request, VectorWalk.EvaluateDirect(vector, workspace, VectorRequest.Whole, depth),
+        return Apply(workspace, request, VectorWalk.EvaluateDirect(vector, workspace, VectorRequest.Whole, level),
             default);
     }
 
@@ -123,12 +124,13 @@ internal class VectorCompareVectorExpression(
     }
 
     // One level of a recursive evaluation (VectorWalk.EvaluateDirect)
-    public VectorResult EvaluateDirect(GpuWorkspace workspace, scoped in VectorRequest request, int depth)
+    public VectorResult EvaluateDirect(GpuWorkspace workspace, scoped in VectorRequest request,
+        RecursionLevel level)
     {
         Enter(request);
 
-        var first = VectorWalk.EvaluateDirect(left, workspace, VectorRequest.Whole, depth);
-        var second = VectorWalk.EvaluateDirect(right, workspace, VectorRequest.Whole, depth);
+        var first = VectorWalk.EvaluateDirect(left, workspace, VectorRequest.Whole, level);
+        var second = VectorWalk.EvaluateDirect(right, workspace, VectorRequest.Whole, level);
         return Apply(workspace, request, first, second);
     }
 
