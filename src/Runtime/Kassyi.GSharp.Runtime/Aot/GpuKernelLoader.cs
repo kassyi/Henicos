@@ -22,11 +22,12 @@ public static unsafe class GpuKernelLoader
     /// Gets the global CUDA context handle: the primary context of device 0, which G# retains until the process ends.
     /// </summary>
     /// <remarks>
-    /// The primary context is the one the CUDA Runtime and the libraries built on it (cuBLAS, cuFFT) use, so memory
-    /// and streams of the global context can be passed to them directly. A library that resets the device
-    /// (<c>cudaDeviceReset</c>, <c>cuDevicePrimaryCtxReset</c>) destroys this context as well: the device memory, modules
-    /// and page-locked memory of G# go with it, and every later G# call that makes the global context current throws
-    /// <see cref="InvalidOperationException"/>, also after the CUDA Runtime has initialized the primary context again.
+    /// The primary context is the one the CUDA Runtime and the libraries built on it (cuBLAS, cuFFT) use, so streams
+    /// and events of the global context can be passed to them directly. A library that resets the device
+    /// (<c>cudaDeviceReset</c>, <c>cuDevicePrimaryCtxReset</c>) destroys this context as well: the device memory,
+    /// modules and page-locked memory of G# go with it, and every later G# call that makes the global context current
+    /// throws <see cref="InvalidOperationException"/>, also after the CUDA Runtime has initialized the primary context
+    /// again.
     /// </remarks>
     /// <exception cref="NotSupportedException">The NVIDIA driver is older than the CUDA 13.0 driver.</exception>
     public static IntPtr GlobalContext

@@ -9,8 +9,8 @@ namespace Kassyi.GSharp.Tests.Cuda;
 /// freed memory, also after the context has been initialized again under the same handle.
 /// </summary>
 /// <remarks>
-/// The reset test runs in a child process: a reset cannot be undone for G#, and a missing check ends the process with an
-/// access violation.
+/// The reset test runs in a child process: a reset cannot be undone for G#, and a missing check ends the process with
+/// an access violation.
 /// </remarks>
 [Collection(TestCollections.DeviceExclusive)]
 [Category(TestCategory.Runtime)]
