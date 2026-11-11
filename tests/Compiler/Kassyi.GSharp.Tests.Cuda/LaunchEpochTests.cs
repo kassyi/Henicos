@@ -224,6 +224,97 @@ public sealed class LaunchEpochTests
         return AssertWaitersLeaveAfterRecordConsumedAsync(captured: false);
     }
 
+    // [WHY] While every record is owned, a launch takes an epoch of the shared range (bit 31) and records into the
+    // shared record: its launcher throws the error, the waiters of its grid barrier leave on its own abort word, and the
+    // next launch of the same kernel runs completely
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public Task SharedEpoch_EveryRecordHeld_LauncherThrowsAndWaitersLeave()
+    {
+        Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
+        var keys = new int[GraphBlocks * GraphThreads];
+        Array.Fill(keys, GridBarrierKernels.FailKey, GraphThreads, GraphThreads);
+        return Task.Run(() =>
+        {
+            using var held = LaunchErrorRecords.HoldEveryRecordForTest();
+            var result = Filled(keys.Length);
+            var ex = Assert.Throws<SwitchExpressionException>(() =>
+                GridBarrierKernels.LaunchWholeBlockFailsBeforeGridSyncKernel(keys, result, gridDimX: GraphBlocks,
+                    blockDimX: GraphThreads));
+            Assert.Null(ex.InnerException);
+            Assert.Equal("(1,0,0)", ex.Data["GSharp.BlockIndex"]);
+            Assert.All(result, static value => Assert.Equal(Untouched, value));
+
+            var healthy = Filled(keys.Length);
+            GridBarrierKernels.LaunchWholeBlockFailsBeforeGridSyncKernel(new int[keys.Length], healthy,
+                gridDimX: GraphBlocks, blockDimX: GraphThreads);
+            Assert.Equal(Enumerable.Range(0, keys.Length), healthy);
+        }).WaitAsync(TimeSpan.FromSeconds(60));
+    }
+
+    // [WHY] Two launches of the shared range that fail before a synchronization both write the shared record: the
+    // second keeps the first error and leaves instead of trapping, and the record carries an epoch with bit 31 set
+    [SkippableFact]
+    [Scenario(TestScenario.SadPath)]
+    public Task SharedEpoch_TwoFailingLaunchesBeforeSynchronization_OneErrorAndUsableContext()
+    {
+        Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
+        var keys = new int[GraphBlocks * GraphThreads];
+        Array.Fill(keys, GridBarrierKernels.FailKey, GraphThreads, GraphThreads);
+        return Task.Run(() =>
+        {
+            using var scope = new GpuKernelLoader.CudaContextScope();
+            using var stream = new CudaStream();
+            using var dKeys = new GpuBuffer<int>(keys.Length);
+            using var dResult = new GpuBuffer<int>(keys.Length);
+            dKeys.CopyToDevice(keys);
+            using (LaunchErrorRecords.HoldEveryRecordForTest())
+            {
+                for (int launch = 0; launch < 2; launch++)
+                {
+                    GridBarrierKernels.LaunchWholeBlockFailsBeforeGridSyncKernelPtr(dKeys.ToProxy(), dResult.ToProxy(),
+                        gridDimX: GraphBlocks, blockDimX: GraphThreads, hStream: stream.Handle);
+                }
+            }
+
+            CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(stream.Handle));
+            Assert.True(DeviceErrorSlot.TryConsumeSlot(out var slot), "no launch recorded its error");
+            Assert.Equal(1u, slot.BlockX);
+            Assert.Equal(0x80000000u, slot.Epoch & 0x80000000u);
+            Assert.False(DeviceErrorSlot.TryConsumeSlot(out _), "the second error was recorded as well");
+            var direct = Filled(BlockSize);
+            LaunchEpochKernels.LaunchDelayedWriteKernel(new int[BlockSize], 0, direct, blockDimX: BlockSize);
+            Assert.Equal(Enumerable.Range(0, BlockSize), direct);
+        }).WaitAsync(TimeSpan.FromSeconds(60));
+    }
+
+    // [WHY] The counter of the shared range wraps around after 2^31 epochs, and the epoch then comes back while its
+    // abort word may still hold it from a failed launch. The launcher clears the word before a launch that waits for
+    // arrivals, so a healthy launch with the same epoch passes its barrier instead of leaving on the old failure.
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public Task SharedEpoch_CounterWrapsAfterFailedLaunch_HealthyLaunchPassesTheBarrier()
+    {
+        Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
+        var keys = new int[GraphBlocks * GraphThreads];
+        Array.Fill(keys, GridBarrierKernels.FailKey, GraphThreads, GraphThreads);
+        return Task.Run(() =>
+        {
+            using var held = LaunchErrorRecords.HoldEveryRecordForTest();
+            // The counter wraps from int.MaxValue to int.MinValue: both launches take the epoch 0x80000000
+            LaunchErrorRecords.SetLastSharedEpochForTest(int.MaxValue);
+            Assert.Throws<SwitchExpressionException>(() =>
+                GridBarrierKernels.LaunchWholeBlockFailsBeforeGridSyncKernel(keys, Filled(keys.Length),
+                    gridDimX: GraphBlocks, blockDimX: GraphThreads));
+
+            LaunchErrorRecords.SetLastSharedEpochForTest(int.MaxValue);
+            var healthy = Filled(keys.Length);
+            GridBarrierKernels.LaunchWholeBlockFailsBeforeGridSyncKernel(new int[keys.Length], healthy,
+                gridDimX: GraphBlocks, blockDimX: GraphThreads);
+            Assert.Equal(Enumerable.Range(0, keys.Length), healthy);
+        }).WaitAsync(TimeSpan.FromSeconds(60));
+    }
+
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]
     public void GraphLaunch_FailingThread_ThrowsAtTheSynchronizationAfterEveryReplay()
