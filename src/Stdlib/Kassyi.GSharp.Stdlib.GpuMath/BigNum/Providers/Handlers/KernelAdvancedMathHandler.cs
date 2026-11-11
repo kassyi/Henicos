@@ -367,6 +367,18 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
     /// <summary>
     /// Executes the ModPow NTT MegaKernel.
     /// </summary>
+    /// <param name="workspace">The workspace whose stream runs the kernel and that lends the scratch buffers.</param>
+    /// <param name="targetOperand">The base of the power.</param>
+    /// <param name="resultBuffer">The buffer that receives the power modulo <paramref name="constant"/>.</param>
+    /// <param name="constant">The modulus.</param>
+    /// <param name="reciprocalMod">
+    /// The reciprocal of the modulus, scaled by <c>2^targetBits</c>, for Barrett reduction.
+    /// </param>
+    /// <param name="exponent">The exponent, read a few words per launch.</param>
+    /// <param name="n">The number of words of the modulus.</param>
+    /// <param name="targetBits">The scale of <paramref name="reciprocalMod"/> in bits.</param>
+    /// <param name="gridDim">The number of blocks of each launch.</param>
+    /// <param name="blockDim">The number of threads per block, which also sizes the block carries.</param>
     public void ExecuteModPowNttMegaKernel(
         GpuWorkspace workspace,
         GpuBigUInt targetOperand, GpuBigUInt resultBuffer, GpuBigUInt constant,

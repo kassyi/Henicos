@@ -491,6 +491,9 @@ public static partial class LanguageControlAndResourceDifferentialKernels
         }
     }
 
+    // These two kernels assign to the struct local of a using statement on purpose: they check that Dispose runs on
+    // the copy the using statement took, which is what C# warns about.
+#pragma warning disable CS0728
     [GpuKernel]
     public static void UsingMutatingGuardGetterValKernel(int[] xs, int[] ys, int[] r)
     {
@@ -520,6 +523,7 @@ public static partial class LanguageControlAndResourceDifferentialKernels
             exprGuard.State = x + 100;
         }
     }
+#pragma warning restore CS0728
 
     // ---------------------------------------------------------
     // SpanSort and Modern Syntax (12 individual kernels)

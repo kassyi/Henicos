@@ -6367,7 +6367,7 @@ Slot = tid,
 State = x
 };
 int mutGetterRead;
-using (exprGuard)
+using (var __gsharp_using_resource_0 = exprGuard)
 {
 exprGuard.State = x + 100;
 mutGetterRead = exprGuard.State;
@@ -6681,7 +6681,7 @@ Log = r,
 Slot = tid,
 State = x
 };
-using (exprGuard)
+using (var __gsharp_using_resource_0 = exprGuard)
 {
 exprGuard.State = x + 100;
 }
