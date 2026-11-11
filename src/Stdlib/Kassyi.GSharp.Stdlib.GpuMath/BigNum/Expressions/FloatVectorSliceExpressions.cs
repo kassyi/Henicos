@@ -9,6 +9,11 @@ internal sealed class FloatVectorSkipExpression(
     // Skipping past the capacity skips everything; a device count below the skip gives 0 through SkipFirst
     private readonly int _effectiveSkip = Math.Clamp(skipCount, 0, inner.Capacity);
 
+    private readonly bool _inputsMayThrow = VectorEffects.MayThrow(inner);
+
+    // A slice adds no check; a projection outside it is not evaluated, as System.Linq
+    public bool MayThrow => _inputsMayThrow;
+
     public int Length => DeviceCounted.KnownLength(this);
     public int Capacity => _inner.Capacity - _effectiveSkip;
     public int WordsPerElement { get; } = inner.WordsPerElement;
@@ -84,6 +89,11 @@ internal sealed class FloatVectorTakeExpression(
     int takeCount) : IGpuBigFloatVectorExpression, IFloatVectorOperator
 {
     private readonly VectorShape _inner = VectorShape.Of(inner);
+
+    private readonly bool _inputsMayThrow = VectorEffects.MayThrow(inner);
+
+    // A slice adds no check; a projection outside it is not evaluated, as System.Linq
+    public bool MayThrow => _inputsMayThrow;
 
     public int Length => DeviceCounted.KnownLength(this);
 
