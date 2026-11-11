@@ -19,7 +19,7 @@ Hints the compiler to unroll the immediately following loop.
 
 | Name | Description |
 | --- | --- |
-| [Unroll(int)](#unroll-int) | Hints the compiler to unroll the immediately following loop by a specific factor (`0` leaves the factor to NVCC). |
+| [Unroll(int)](#unroll-int) | Hints the compiler to unroll the immediately following loop by a specific factor (`0` unrolls completely when the trip count is a compile-time constant). |
 
 <a id="unroll-int"></a>
 

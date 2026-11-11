@@ -41,8 +41,8 @@ These BCL members are also supported in kernels:
 
 | Member | Overloads |
 | :--- | :--- |
-| `BitOperations.Log2`, `BitOperations.RotateLeft`, `BitOperations.RotateRight` | `uint`, `ulong`, `nuint` |
-| `Math.Clamp` | `float`, `double`, `int` |
+| `BitOperations.Log2`, `BitOperations.RotateLeft`, `BitOperations.RotateRight` | `uint`, `ulong` (the `nuint` overloads are GSH0003 in a kernel until #983 is fixed) |
+| `Math.Clamp` | `float`, `double`, `int` (`min > max` throws `ArgumentException` in C#; the native CPU build and CUDA do not check it yet, #718) |
 | `Math.Floor`, `Math.Ceiling`, `Math.Round` / `MathF.Floor`, `MathF.Ceiling`, `MathF.Round` | `double` / `float` (one-argument `Round`, which rounds half to even) |
 | `Math.Pow` / `MathF.Pow` | `double` / `float` |
 | `float.Max`, `float.Min`, `float.MaxNumber`, `float.MinNumber`, and the same members of `double` | `float` / `double` |

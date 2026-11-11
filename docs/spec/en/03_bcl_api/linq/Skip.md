@@ -28,7 +28,9 @@ Bypasses a specified number of elements in a sequence and then returns the remai
 Bypasses a specified number of elements in a stack-allocated sequence and then returns the remaining elements.
 
 ```csharp
-public static StackEnumerable<SkipEnumerator<TEnumerator, TSource>, TSource> Skip<TEnumerator, TSource>(this StackEnumerable<TEnumerator, TSource> source, int count) where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
+public static StackEnumerable<SkipEnumerator<TEnumerator, TSource>, TSource> Skip<TEnumerator, TSource>(
+    this StackEnumerable<TEnumerator, TSource> source, int count)
+    where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
 ```
 
 #### Parameters

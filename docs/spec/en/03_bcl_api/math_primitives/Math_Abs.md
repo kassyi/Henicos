@@ -95,7 +95,7 @@ The absolute value of `value`.
 #### Exceptions
 
 `OverflowException`<br>
-In C#, `value` is `int.MinValue`. The transpiled call maps to C `abs`, which does not detect this case; do not pass `int.MinValue`.
+`value` is `int.MinValue`. The managed path throws it as C# does. The native CPU build and the checked CUDA build are to throw it with the source location, and the release CUDA build does not check ([6. Semantics](../../01_language/06_semantics.md)); today the native CPU build and CUDA return `int.MinValue` instead (#947).
 
 ## Examples
 

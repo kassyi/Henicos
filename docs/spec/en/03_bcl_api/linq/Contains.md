@@ -28,7 +28,10 @@ Determines whether a sequence contains a specified element.
 Determines whether a stack-allocated sequence contains a specified element by using the default equality comparer.
 
 ```csharp
-public static bool Contains<TEnumerator, TSource>(this StackEnumerable<TEnumerator, TSource> source, TSource value) where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
+public static bool Contains<TEnumerator, TSource>(
+    this StackEnumerable<TEnumerator, TSource> source,
+    TSource value)
+    where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
 ```
 
 #### Parameters

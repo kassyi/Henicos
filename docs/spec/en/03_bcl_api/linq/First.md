@@ -33,7 +33,9 @@ Returns the first element of a sequence.
 Returns the first element of a stack-allocated sequence.
 
 ```csharp
-public static TSource First<TEnumerator, TSource>(this StackEnumerable<TEnumerator, TSource> source) where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
+public static TSource First<TEnumerator, TSource>(
+    this StackEnumerable<TEnumerator, TSource> source)
+    where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
 ```
 
 #### Parameters
@@ -59,7 +61,10 @@ Thrown when the source sequence is empty.
 Returns the first element in a stack-allocated sequence that satisfies a specified condition.
 
 ```csharp
-public static TSource First<TEnumerator, TSource>(this StackEnumerable<TEnumerator, TSource> source, Func<TSource, bool> predicate) where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
+public static TSource First<TEnumerator, TSource>(
+    this StackEnumerable<TEnumerator, TSource> source,
+    Func<TSource, bool> predicate)
+    where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
 ```
 
 #### Parameters
@@ -91,7 +96,11 @@ Thrown when no element satisfies the condition, or if the source sequence is emp
 Returns the first element that satisfies a condition that receives a caller-supplied state.
 
 ```csharp
-public static TSource First<TEnumerator, TSource, TState>(this StackEnumerable<TEnumerator, TSource> source, TState state, Func<TSource, TState, bool> predicate) where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
+public static TSource First<TEnumerator, TSource, TState>(
+    this StackEnumerable<TEnumerator, TSource> source,
+    TState state,
+    Func<TSource, TState, bool> predicate)
+    where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
 ```
 
 #### Parameters
@@ -128,7 +137,9 @@ Thrown when no element satisfies the condition, or if the source sequence is emp
 Returns the first element of a stack-allocated sequence, or a default value if the sequence contains no elements.
 
 ```csharp
-public static TSource? FirstOrDefault<TEnumerator, TSource>(this StackEnumerable<TEnumerator, TSource> source) where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
+public static TSource? FirstOrDefault<TEnumerator, TSource>(
+    this StackEnumerable<TEnumerator, TSource> source)
+    where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
 ```
 
 #### Parameters
@@ -149,7 +160,10 @@ The default value of `TSource` if `source` is empty; otherwise, the first elemen
 Returns the first element of the sequence that satisfies a condition, or a default value if no such element is found.
 
 ```csharp
-public static TSource? FirstOrDefault<TEnumerator, TSource>(this StackEnumerable<TEnumerator, TSource> source, Func<TSource, bool> predicate) where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
+public static TSource? FirstOrDefault<TEnumerator, TSource>(
+    this StackEnumerable<TEnumerator, TSource> source,
+    Func<TSource, bool> predicate)
+    where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
 ```
 
 #### Parameters
@@ -178,7 +192,11 @@ Thrown when `predicate` is `null`.
 Returns the first element that satisfies a condition that receives a caller-supplied state, or a default value if no such element is found.
 
 ```csharp
-public static TSource? FirstOrDefault<TEnumerator, TSource, TState>(this StackEnumerable<TEnumerator, TSource> source, TState state, Func<TSource, TState, bool> predicate) where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
+public static TSource? FirstOrDefault<TEnumerator, TSource, TState>(
+    this StackEnumerable<TEnumerator, TSource> source,
+    TState state,
+    Func<TSource, TState, bool> predicate)
+    where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
 ```
 
 #### Parameters

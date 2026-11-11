@@ -113,7 +113,10 @@ _Boolean_<br>
 Verifies an Ed25519 signature against a contiguous buffer of 32-byte public keys.
 
 ```csharp
-public static bool VerifySignature(ReadOnlySpan<byte> payload, ReadOnlySpan<byte> signature, ReadOnlySpan<byte> trustedKeys);
+public static bool VerifySignature(
+    ReadOnlySpan<byte> payload,
+    ReadOnlySpan<byte> signature,
+    ReadOnlySpan<byte> trustedKeys);
 ```
 
 #### Parameters

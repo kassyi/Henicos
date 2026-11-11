@@ -29,7 +29,9 @@ Returns elements from a sequence as long as a specified condition is true.
 Returns elements from a stack-allocated sequence as long as a specified condition is true.
 
 ```csharp
-public static StackEnumerable<TakeWhileEnumerator<TEnumerator, TSource>, TSource> TakeWhile<TEnumerator, TSource>(this StackEnumerable<TEnumerator, TSource> source, Func<TSource, bool> predicate) where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
+public static StackEnumerable<TakeWhileEnumerator<TEnumerator, TSource>, TSource> TakeWhile<TEnumerator, TSource>(
+    this StackEnumerable<TEnumerator, TSource> source, Func<TSource, bool> predicate)
+    where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
 ```
 
 #### Parameters
@@ -56,7 +58,9 @@ A `StackEnumerable<TEnumerator, TSource>` that contains elements from the input 
 Returns elements from a stack-allocated sequence as long as a specified condition is true. The element's index is used in the logic of the predicate function.
 
 ```csharp
-public static StackEnumerable<TakeWhileAtEnumerator<TEnumerator, TSource>, TSource> TakeWhile<TEnumerator, TSource>(this StackEnumerable<TEnumerator, TSource> source, Func<TSource, int, bool> predicate) where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
+public static StackEnumerable<TakeWhileAtEnumerator<TEnumerator, TSource>, TSource> TakeWhile<TEnumerator, TSource>(
+    this StackEnumerable<TEnumerator, TSource> source, Func<TSource, int, bool> predicate)
+    where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
 ```
 
 #### Parameters

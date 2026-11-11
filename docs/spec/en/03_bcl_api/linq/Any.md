@@ -30,7 +30,9 @@ Determines whether any element of a sequence exists or satisfies a condition.
 Determines whether a stack-allocated sequence contains any elements.
 
 ```csharp
-public static bool Any<TEnumerator, TSource>(this StackEnumerable<TEnumerator, TSource> source) where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
+public static bool Any<TEnumerator, TSource>(
+    this StackEnumerable<TEnumerator, TSource> source)
+    where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
 ```
 
 #### Parameters
@@ -51,7 +53,10 @@ The sequence to check for non-emptiness.
 Determines whether any element of a stack-allocated sequence satisfies a condition.
 
 ```csharp
-public static bool Any<TEnumerator, TSource>(this StackEnumerable<TEnumerator, TSource> source, Func<TSource, bool> predicate) where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
+public static bool Any<TEnumerator, TSource>(
+    this StackEnumerable<TEnumerator, TSource> source,
+    Func<TSource, bool> predicate)
+    where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
 ```
 
 #### Parameters
@@ -80,7 +85,11 @@ Thrown when `predicate` is `null`.
 Determines whether any element satisfies a condition that receives a caller-supplied state.
 
 ```csharp
-public static bool Any<TEnumerator, TSource, TState>(this StackEnumerable<TEnumerator, TSource> source, TState state, Func<TSource, TState, bool> predicate) where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
+public static bool Any<TEnumerator, TSource, TState>(
+    this StackEnumerable<TEnumerator, TSource> source,
+    TState state,
+    Func<TSource, TState, bool> predicate)
+    where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
 ```
 
 #### Parameters

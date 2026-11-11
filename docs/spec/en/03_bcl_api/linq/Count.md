@@ -31,7 +31,9 @@ Returns the number of elements in a sequence.
 Returns the number of elements in a stack-allocated sequence.
 
 ```csharp
-public static int Count<TEnumerator, TSource>(this StackEnumerable<TEnumerator, TSource> source) where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
+public static int Count<TEnumerator, TSource>(
+    this StackEnumerable<TEnumerator, TSource> source)
+    where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
 ```
 
 #### Parameters
@@ -52,7 +54,10 @@ The number of elements in the input sequence.
 Returns a number that represents how many elements in the specified stack-allocated sequence satisfy a condition.
 
 ```csharp
-public static int Count<TEnumerator, TSource>(this StackEnumerable<TEnumerator, TSource> source, Func<TSource, bool> predicate) where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
+public static int Count<TEnumerator, TSource>(
+    this StackEnumerable<TEnumerator, TSource> source,
+    Func<TSource, bool> predicate)
+    where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
 ```
 
 #### Parameters
@@ -81,7 +86,10 @@ Thrown when `predicate` is `null`.
 Returns a number that represents how many elements in the specified stack-allocated sequence satisfy a condition. Each element's index is used in the logic of the predicate function.
 
 ```csharp
-public static int Count<TEnumerator, TSource>(this StackEnumerable<TEnumerator, TSource> source, Func<TSource, int, bool> predicate) where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
+public static int Count<TEnumerator, TSource>(
+    this StackEnumerable<TEnumerator, TSource> source,
+    Func<TSource, int, bool> predicate)
+    where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
 ```
 
 #### Parameters
@@ -110,7 +118,11 @@ Thrown when `predicate` is `null`.
 Returns a number that represents how many elements satisfy a condition that receives a caller-supplied state.
 
 ```csharp
-public static int Count<TEnumerator, TSource, TState>(this StackEnumerable<TEnumerator, TSource> source, TState state, Func<TSource, TState, bool> predicate) where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
+public static int Count<TEnumerator, TSource, TState>(
+    this StackEnumerable<TEnumerator, TSource> source,
+    TState state,
+    Func<TSource, TState, bool> predicate)
+    where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
 ```
 
 #### Parameters

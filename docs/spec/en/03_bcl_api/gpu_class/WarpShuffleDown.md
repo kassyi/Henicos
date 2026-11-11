@@ -127,7 +127,7 @@ Thrown when evaluated on the host CPU.
 
 ## ShuffleDownSync(uint, double, uint, int)
 
-Exchanges a double-precision doubleing-point number by shifting data down by a specified delta.
+Exchanges a double-precision floating-point number by shifting data down by a specified delta.
 
 ```csharp
 [CudaIntrinsic("__shfl_down_sync")]

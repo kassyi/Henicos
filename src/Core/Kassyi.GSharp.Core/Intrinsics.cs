@@ -132,7 +132,10 @@ public static partial class Gpu
         /// <summary>
         /// Instructs the GSharp Transpiler to emit a <c>#pragma unroll</c> directive immediately preceding the target loop.
         /// </summary>
-        /// <param name="factor">The maximum number of iterations to unroll. A value of 0 indicates that the compiler should determine the optimal unroll factor heuristically.</param>
+        /// <param name="factor">
+        /// The unroll factor, emitted as <c>#pragma unroll factor</c>. 0 emits a bare <c>#pragma unroll</c>: NVCC unrolls the
+        /// loop completely when its trip count is a compile-time constant and otherwise does not unroll it.
+        /// </param>
         /// <remarks>
         /// <para><b>Usage Scenario:</b></para>
         /// <para>This method is highly recommended for optimizing pure computational loops (such as SGEMM or array traversals) to improve Instruction-Level Parallelism (ILP). It relies on the NVCC compiler to unroll the loop during the final backend compilation phase.</para>

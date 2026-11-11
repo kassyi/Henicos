@@ -30,7 +30,11 @@ Projects each element of a sequence into a new form.
 Projects each element of a stack-allocated sequence into a new form.
 
 ```csharp
-public static StackEnumerable<SelectEnumerator<TEnumerator, TSource, TResult>, TResult> Select<TEnumerator, TSource, TResult>(this StackEnumerable<TEnumerator, TSource> source, Func<TSource, TResult> selector) where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
+public static StackEnumerable<SelectEnumerator<TEnumerator, TSource, TResult>, TResult> Select<TEnumerator, TSource,
+    TResult>(
+    this StackEnumerable<TEnumerator, TSource> source,
+    Func<TSource, TResult> selector)
+    where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
 ```
 
 #### Parameters
@@ -59,7 +63,11 @@ Thrown when `selector` is `null`.
 Projects each element of a stack-allocated sequence into a new form by incorporating the element's index.
 
 ```csharp
-public static StackEnumerable<SelectAtEnumerator<TEnumerator, TSource, TResult>, TResult> Select<TEnumerator, TSource, TResult>(this StackEnumerable<TEnumerator, TSource> source, Func<TSource, int, TResult> selector) where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
+public static StackEnumerable<SelectAtEnumerator<TEnumerator, TSource, TResult>, TResult> Select<TEnumerator, TSource,
+    TResult>(
+    this StackEnumerable<TEnumerator, TSource> source,
+    Func<TSource, int, TResult> selector)
+    where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
 ```
 
 #### Parameters
@@ -88,7 +96,12 @@ Thrown when `selector` is `null`.
 Projects each element of a stack-allocated sequence into a new form with a selector that receives a caller-supplied state.
 
 ```csharp
-public static StackEnumerable<SelectWithStateEnumerator<TEnumerator, TSource, TState, TResult>, TResult> Select<TEnumerator, TSource, TState, TResult>(this StackEnumerable<TEnumerator, TSource> source, TState state, Func<TSource, TState, TResult> selector) where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
+public static StackEnumerable<SelectWithStateEnumerator<TEnumerator, TSource, TState, TResult>, TResult> Select<
+    TEnumerator, TSource, TState, TResult>(
+    this StackEnumerable<TEnumerator, TSource> source,
+    TState state,
+    Func<TSource, TState, TResult> selector)
+    where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
 ```
 
 #### Parameters

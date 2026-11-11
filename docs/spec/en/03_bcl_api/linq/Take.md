@@ -28,7 +28,9 @@ Returns a specified number of contiguous elements from the start of a sequence.
 Returns a specified number of contiguous elements from the start of a stack-allocated sequence.
 
 ```csharp
-public static StackEnumerable<TakeEnumerator<TEnumerator, TSource>, TSource> Take<TEnumerator, TSource>(this StackEnumerable<TEnumerator, TSource> source, int count) where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
+public static StackEnumerable<TakeEnumerator<TEnumerator, TSource>, TSource> Take<TEnumerator, TSource>(
+    this StackEnumerable<TEnumerator, TSource> source, int count)
+    where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
 ```
 
 #### Parameters

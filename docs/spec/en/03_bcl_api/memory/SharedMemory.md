@@ -259,7 +259,7 @@ The site key, and so the CUDA slot, comes from the generic definition, not from 
 | Static, element type is a type parameter (`SharedMemory<T>(256)`) | One array per instantiation (each template instantiation has its own `__shared__` array) | Shared | One region per element type |
 | Static, element type is not a type parameter (`SharedMemory<int>(256)`) | One array per instantiation | Shared | Shared |
 
-The dialects agree only on the dynamic declarations, and there all instantiations share one region, so `Fill<int>` and `Fill<float>` read and write the same bytes as different types. Do not declare dynamic `SharedMemory<T>` in a generic device function.
+The dialects agree only on the dynamic declarations, and there all instantiations share one region, so `Fill<int>` and `Fill<float>` read and write the same bytes as different types. Do not declare dynamic `SharedMemory<T>` in a generic device function (#543).
 
 ### CPU Emulation (Testing)
 

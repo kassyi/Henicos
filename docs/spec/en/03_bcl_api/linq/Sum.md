@@ -36,7 +36,9 @@ Computes the sum of a sequence of numeric values.
 Computes the sum of a sequence of `int` values.
 
 ```csharp
-public static int Sum<TEnumerator>(this StackEnumerable<TEnumerator, int> source) where TEnumerator : struct, IStackEnumerator<int>, allows ref struct;
+public static int Sum<TEnumerator>(
+    this StackEnumerable<TEnumerator, int> source)
+    where TEnumerator : struct, IStackEnumerator<int>, allows ref struct;
 ```
 
 #### Parameters
@@ -57,7 +59,9 @@ The sum of the values in the sequence.
 Computes the sum of a parallel sequence of `int` values. CPU fallback implementation.
 
 ```csharp
-public static int Sum<TEnumerator>(this ParallelStackEnumerable<TEnumerator, int> source) where TEnumerator : struct, IStackEnumerator<int>, allows ref struct;
+public static int Sum<TEnumerator>(
+    this ParallelStackEnumerable<TEnumerator, int> source)
+    where TEnumerator : struct, IStackEnumerator<int>, allows ref struct;
 ```
 
 #### Parameters
@@ -76,7 +80,10 @@ The sum of the values in the sequence.
 Computes the sum of a parallel sequence of custom types. CPU fallback implementation.
 
 ```csharp
-public static TSource Sum<TEnumerator, TSource>(this ParallelStackEnumerable<TEnumerator, TSource> source) where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct where TSource : IAdditionOperators<TSource, TSource, TSource>, IAdditiveIdentity<TSource, TSource>;
+public static TSource Sum<TEnumerator, TSource>(
+    this ParallelStackEnumerable<TEnumerator, TSource> source)
+    where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct
+    where TSource : IAdditionOperators<TSource, TSource, TSource>, IAdditiveIdentity<TSource, TSource>;
 ```
 
 #### Parameters
@@ -95,7 +102,10 @@ The sum of the values in the sequence.
 Computes the sum of the sequence of `int` values that are obtained by invoking a transform function on each element of the input sequence.
 
 ```csharp
-public static int Sum<TEnumerator, TSource>(this StackEnumerable<TEnumerator, TSource> source, Func<TSource, int> selector) where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
+public static int Sum<TEnumerator, TSource>(
+    this StackEnumerable<TEnumerator, TSource> source,
+    Func<TSource, int> selector)
+    where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
 ```
 
 #### Parameters
@@ -124,7 +134,9 @@ Thrown when `selector` is `null`.
 Computes the sum of a sequence of `float` values.
 
 ```csharp
-public static float Sum<TEnumerator>(this StackEnumerable<TEnumerator, float> source) where TEnumerator : struct, IStackEnumerator<float>, allows ref struct;
+public static float Sum<TEnumerator>(
+    this StackEnumerable<TEnumerator, float> source)
+    where TEnumerator : struct, IStackEnumerator<float>, allows ref struct;
 ```
 
 #### Parameters
@@ -136,9 +148,7 @@ A sequence of `float` values to calculate the sum of.
 
 The sum of the values in the sequence.
 
-As `System.Linq`, the elements are added in sequence order in a `double` accumulator,
-
-which is rounded to `float` once at the end.
+As `System.Linq`, the elements are added in sequence order in a `double` accumulator, which is rounded to `float` once at the end.
 
 **Performance:** Consumes the enumerator in $O(N)$ time with zero heap allocations.
 
@@ -149,7 +159,9 @@ which is rounded to `float` once at the end.
 Computes the sum of a parallel sequence of `float` values. CPU fallback implementation.
 
 ```csharp
-public static float Sum<TEnumerator>(this ParallelStackEnumerable<TEnumerator, float> source) where TEnumerator : struct, IStackEnumerator<float>, allows ref struct;
+public static float Sum<TEnumerator>(
+    this ParallelStackEnumerable<TEnumerator, float> source)
+    where TEnumerator : struct, IStackEnumerator<float>, allows ref struct;
 ```
 
 #### Parameters
@@ -161,9 +173,7 @@ A parallel sequence of `float` values to calculate the sum of.
 
 The sum of the values in the sequence.
 
-As the sequential `Sum` and as PLINQ, the elements are added in a `double` accumulator, which
-
-is rounded to `float` once at the end; `AsParallel()` does not trade that accuracy for speed.
+As the sequential `Sum` and as PLINQ, the elements are added in a `double` accumulator, which is rounded to `float` once at the end; `AsParallel()` does not trade that accuracy for speed.
 
 <a id="sum-overload-7"></a>
 
@@ -172,7 +182,10 @@ is rounded to `float` once at the end; `AsParallel()` does not trade that accura
 Computes the sum of the sequence of `float` values that are obtained by invoking a transform function on each element of the input sequence.
 
 ```csharp
-public static float Sum<TEnumerator, TSource>(this StackEnumerable<TEnumerator, TSource> source, Func<TSource, float> selector) where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
+public static float Sum<TEnumerator, TSource>(
+    this StackEnumerable<TEnumerator, TSource> source,
+    Func<TSource, float> selector)
+    where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
 ```
 
 #### Parameters
@@ -201,7 +214,9 @@ Thrown when `selector` is `null`.
 Computes the sum of a sequence of `double` values.
 
 ```csharp
-public static double Sum<TEnumerator>(this StackEnumerable<TEnumerator, double> source) where TEnumerator : struct, IStackEnumerator<double>, allows ref struct;
+public static double Sum<TEnumerator>(
+    this StackEnumerable<TEnumerator, double> source)
+    where TEnumerator : struct, IStackEnumerator<double>, allows ref struct;
 ```
 
 #### Parameters
@@ -224,7 +239,10 @@ As `System.Linq`, the elements are added in sequence order.
 Computes the sum of the sequence of `double` values that are obtained by invoking a transform function on each element of the input sequence.
 
 ```csharp
-public static double Sum<TEnumerator, TSource>(this StackEnumerable<TEnumerator, TSource> source, Func<TSource, double> selector) where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
+public static double Sum<TEnumerator, TSource>(
+    this StackEnumerable<TEnumerator, TSource> source,
+    Func<TSource, double> selector)
+    where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
 ```
 
 #### Parameters

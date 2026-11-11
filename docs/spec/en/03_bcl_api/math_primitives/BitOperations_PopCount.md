@@ -25,7 +25,7 @@ Returns the population count (number of bits set) of a mask.
 | --- | --- |
 | [PopCount(uint)](#popcount-uint) | Returns the population count (number of bits set) of a mask. (32-bit) |
 | [PopCount(ulong)](#popcount-ulong) | Returns the population count (number of bits set) of a mask. (64-bit) |
-| [PopCount(nuint)](#popcount-nuint) | Returns the population count (number of bits set) of a mask. (pointer-sized) |
+| [PopCount(nuint)](#popcount-nuint) | Returns the population count (number of bits set) of a mask. (pointer-sized; host only, GSH0003 in a kernel) |
 
 ## PopCount(uint)
 
@@ -84,7 +84,10 @@ public static int PopCount(nuint value);
 #### Parameters
 
 `value` <i>nuint</i><br>
-The pointer-sized unsigned integer. G# maps this overload to the 64-bit operation; `nuint` itself is not one of the mapped device types ([2.1 Primitive Value Types](../../01_language/03_type_system.md)), so a kernel passes a `ulong` instead.
+The pointer-sized unsigned integer.
+
+> [!WARNING]
+> **Not supported in kernels yet.** A call of this overload in GPU code is reported as [GSH0003](../diagnostics/GSH0003.md) until #983 (nint and nuint constants and casts in kernels build wrong or not at all) is fixed; a kernel calls the `ulong` overload instead. On the host it is the .NET method.
 
 #### Returns
 

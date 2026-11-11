@@ -29,7 +29,8 @@ Bypasses a specified number of contiguous elements from the end of a sequence.
 Returns a new stack-allocated enumerable that contains the elements from `source` with the last `count` elements omitted.
 
 ```csharp
-public static StackEnumerable<SpanEnumerator<TSource>, TSource> SkipLast<TSource>(this StackEnumerable<SpanEnumerator<TSource>, TSource> source, int count);
+public static StackEnumerable<SpanEnumerator<TSource>, TSource> SkipLast<TSource>(
+    this StackEnumerable<SpanEnumerator<TSource>, TSource> source, int count);
 ```
 
 #### Parameters
@@ -51,7 +52,8 @@ A stack-allocated enumerable containing elements with the last `count` elements 
 Returns a new stack-allocated enumerable that contains the elements from `source` with the last `count` elements omitted.
 
 ```csharp
-public static StackEnumerable<SpanEnumerator<TSource>, TSource> SkipLast<TSource>(this StackEnumerable<ArrayEnumerator<TSource>, TSource> source, int count);
+public static StackEnumerable<SpanEnumerator<TSource>, TSource> SkipLast<TSource>(
+    this StackEnumerable<ArrayEnumerator<TSource>, TSource> source, int count);
 ```
 
 #### Parameters

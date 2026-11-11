@@ -26,7 +26,7 @@ Count the number of leading zero bits in an integer.
 | --- | --- |
 | [LeadingZeroCount(uint)](#leadingzerocount-uint) | Count the number of leading zero bits in an integer. (32-bit) |
 | [LeadingZeroCount(ulong)](#leadingzerocount-ulong) | Count the number of leading zero bits in an integer. (64-bit) |
-| [LeadingZeroCount(nuint)](#leadingzerocount-nuint) | Count the number of leading zero bits in an integer. (pointer-sized) |
+| [LeadingZeroCount(nuint)](#leadingzerocount-nuint) | Count the number of leading zero bits in an integer. (pointer-sized; host only, GSH0003 in a kernel) |
 
 ## LeadingZeroCount(uint)
 
@@ -85,7 +85,10 @@ public static int LeadingZeroCount(nuint value);
 #### Parameters
 
 `value` <i>nuint</i><br>
-The pointer-sized unsigned integer. G# maps this overload to the 64-bit operation; `nuint` itself is not one of the mapped device types ([2.1 Primitive Value Types](../../01_language/03_type_system.md)), so a kernel passes a `ulong` instead.
+The pointer-sized unsigned integer.
+
+> [!WARNING]
+> **Not supported in kernels yet.** A call of this overload in GPU code is reported as [GSH0003](../diagnostics/GSH0003.md) until #983 (nint and nuint constants and casts in kernels build wrong or not at all) is fixed; a kernel calls the `ulong` overload instead. On the host it is the .NET method.
 
 #### Returns
 

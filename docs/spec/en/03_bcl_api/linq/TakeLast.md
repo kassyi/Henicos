@@ -29,7 +29,8 @@ Returns a specified number of contiguous elements from the end of a sequence.
 Returns a new stack-allocated enumerable that contains the last `count` elements from `source`.
 
 ```csharp
-public static StackEnumerable<SpanEnumerator<TSource>, TSource> TakeLast<TSource>(this StackEnumerable<SpanEnumerator<TSource>, TSource> source, int count);
+public static StackEnumerable<SpanEnumerator<TSource>, TSource> TakeLast<TSource>(
+    this StackEnumerable<SpanEnumerator<TSource>, TSource> source, int count);
 ```
 
 #### Parameters
@@ -51,7 +52,8 @@ A stack-allocated enumerable containing the last `count` elements.
 Returns a new stack-allocated enumerable that contains the last `count` elements from `source`.
 
 ```csharp
-public static StackEnumerable<SpanEnumerator<TSource>, TSource> TakeLast<TSource>(this StackEnumerable<ArrayEnumerator<TSource>, TSource> source, int count);
+public static StackEnumerable<SpanEnumerator<TSource>, TSource> TakeLast<TSource>(
+    this StackEnumerable<ArrayEnumerator<TSource>, TSource> source, int count);
 ```
 
 #### Parameters

@@ -20,7 +20,7 @@ Wraps an existing contiguous memory block into a zero-allocation stack enumerato
 | Name | Description |
 | --- | --- |
 | [AsStackEnumerable\<T\>(T[])](#asstackenumerable-overload-1) | Wraps a managed array into a zero-allocation `StackEnumerable<TEnumerator, T>`. |
-| [AsStackEnumerable\<T\>(List\<T\>)](#asstackenumerable-overload-2) | Wraps a `Collections.Generic.List<T>` into a zero-allocation `StackEnumerable<TEnumerator, T>`. Host-only. |
+| [AsStackEnumerable\<T\>(List\<T\>)](#asstackenumerable-overload-2) | Wraps a `List<T>` into a zero-allocation `StackEnumerable<TEnumerator, T>`. Host-only. |
 | [AsStackEnumerable\<T\>(Span\<T\>)](#asstackenumerable-overload-3) | Wraps a `Span<T>` into a zero-allocation `StackEnumerable<TEnumerator, T>`. |
 | [AsStackEnumerable\<T\>(ReadOnlySpan\<T\>)](#asstackenumerable-overload-4) | Wraps a `ReadOnlySpan<T>` into a zero-allocation `StackEnumerable<TEnumerator, T>`. |
 
@@ -54,7 +54,7 @@ Thrown when `source` is `null`.
 
 ## AsStackEnumerable\<T\>(List\<T\>)
 
-Wraps a `Collections.Generic.List<T>` into a zero-allocation `StackEnumerable<TEnumerator, T>`.
+Wraps a `List<T>` into a zero-allocation `StackEnumerable<TEnumerator, T>`.
 
 ```csharp
 public static StackEnumerable<SpanEnumerator<T>, T> AsStackEnumerable<T>(this List<T> source);

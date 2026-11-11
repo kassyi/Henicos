@@ -29,7 +29,10 @@ Applies an accumulator function over a sequence.
 Applies an accumulator function over a sequence.
 
 ```csharp
-public static TSource Aggregate<TEnumerator, TSource>(this StackEnumerable<TEnumerator, TSource> source, Func<TSource, TSource, TSource> func) where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
+public static TSource Aggregate<TEnumerator, TSource>(
+    this StackEnumerable<TEnumerator, TSource> source,
+    Func<TSource, TSource, TSource> func)
+    where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
 ```
 
 #### Parameters
@@ -59,7 +62,11 @@ The source sequence is empty.
 Applies an accumulator function over a stack-allocated sequence. The specified seed value is used as the initial accumulator value.
 
 ```csharp
-public static TAccumulate Aggregate<TEnumerator, TSource, TAccumulate>(this StackEnumerable<TEnumerator, TSource> source, TAccumulate seed, Func<TAccumulate, TSource, TAccumulate> func) where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
+public static TAccumulate Aggregate<TEnumerator, TSource, TAccumulate>(
+    this StackEnumerable<TEnumerator, TSource> source,
+    TAccumulate seed,
+    Func<TAccumulate, TSource, TAccumulate> func)
+    where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
 ```
 
 #### Parameters
