@@ -368,7 +368,8 @@ public static void Compute(ref MyContext ctx) { ... }
 - **Device Mechanics**: G# allocates a GPU buffer for the native shadow struct (`{KernelClass}.AotContexts.My`, with
   trailing `Context` stripped) on the launch stream (`cuMemAllocAsync` of `sizeof(AotContexts.My)` on `hStream`),
   copies the shadow struct to device memory (`cuMemcpyHtoDAsync_v2`), passes the device pointer (`MyContext*` in C++) to
-  the kernel, and frees `d_ctx` in `finally` via `cuMemFreeAsync(d_ctx, hStream)` (while array fields are freed through
+  the kernel, and frees that buffer in `finally` via `cuMemFreeAsync(__gsharp_d_<ordinal>, hStream)`, where
+  `__gsharp_d_<ordinal>` is the launcher's device pointer local of the parameter (array fields are freed through
   `DeviceArrayRegions.Free`).
 - **Post-Kernel Sync**: After kernel execution, the updated shadow struct is copied back from GPU device memory via `cuMemcpyDtoHAsync_v2` (and unmarshaled into the `ref` host struct).
 - **Use Case**: Used when GPU kernel threads need to update scalar metadata (e.g., dynamic error codes, counter offsets, converged iteration counts) that must be read back on the host.
