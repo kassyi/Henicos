@@ -260,16 +260,6 @@ __forceinline__ __device__ float4 __gsharp_vector4_create(float value) { return 
 __forceinline__ __device__ float4 __gsharp_vector4_create(float3 xyz, float w) { return float4{xyz.x, xyz.y, xyz.z, w}; }
 __forceinline__ __device__ float4 __gsharp_vector4_create(float2 xy, float z, float w) { return float4{xy.x, xy.y, z, w}; }
 
-// --- Conversions & Casts ---
-__forceinline__ float __gsharp_float_cast(float x) { return x; }
-__forceinline__ float __gsharp_float_cast(double x) { return (float)x; }
-__forceinline__ double __gsharp_double_cast(float x) { return (double)x; }
-__forceinline__ double __gsharp_double_cast(double x) { return x; }
-__forceinline__ int __gsharp_int_cast(float x) { return (int)x; }
-__forceinline__ int __gsharp_int_cast(double x) { return (int)x; }
-__forceinline__ uint32_t __gsharp_uint_cast(float x) { return (uint32_t)x; }
-__forceinline__ uint32_t __gsharp_uint_cast(double x) { return (uint32_t)x; }
-
 // --- Math & Range ---
 template <typename T> T max(T a, T b) { return std::max(a, b); }
 template <typename T> T min(T a, T b) { return std::min(a, b); }

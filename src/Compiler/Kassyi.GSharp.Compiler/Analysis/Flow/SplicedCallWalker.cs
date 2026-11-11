@@ -22,21 +22,7 @@ internal static class SplicedCallWalker
             return;
         }
 
-        if (invocation.Instance is { } instance)
-        {
-            SplicedOperationWalker.Walk(context, instance, graph);
-        }
-
-        foreach (var argument in invocation.Arguments)
-        {
-            // M(out local): the callee writes the local when it returns (OnCallReturned)
-            if (argument is not
-                { Parameter.RefKind: RefKind.Out, Value: ILocalReferenceOperation { Local.IsRef: false } })
-            {
-                SplicedOperationWalker.Walk(context, argument.Value, graph);
-            }
-        }
-
+        WalkReceiverAndArguments(context, invocation, graph);
         if (method.MethodKind == MethodKind.LocalFunction)
         {
             SplicedBodySplicer.SpliceLocalFunction(context, method.OriginalDefinition, graph,
@@ -59,23 +45,55 @@ internal static class SplicedCallWalker
         }
     }
 
+    // The receiver, then the arguments that the call reads
+    private static void WalkReceiverAndArguments(SplicedFlowContext context, IInvocationOperation invocation,
+        ControlFlowGraph graph)
+    {
+        if (invocation.Instance is { } instance)
+        {
+            SplicedOperationWalker.Walk(context, instance, graph);
+        }
+
+        foreach (var argument in invocation.Arguments)
+        {
+            if (!IsWrittenByCallee(argument))
+            {
+                SplicedOperationWalker.Walk(context, argument.Value, graph);
+            }
+        }
+    }
+
+    // M(out local), M(out parameter): the callee writes the variable when it returns (OnCallReturned) and reads nothing
+    // of it; a ref local or ref parameter passed as out is a location, which is read
+    private static bool IsWrittenByCallee(IArgumentOperation argument) =>
+        argument is
+        {
+            Parameter.RefKind: RefKind.Out,
+            Value: ILocalReferenceOperation { Local.IsRef: false } or
+            IParameterReferenceOperation { Parameter.RefKind: RefKind.None }
+        };
+
     // Where a call splits the state machine; a barrier, or a call that reaches a block barrier (with the grid scope
     // when it reaches a grid barrier), is also a site of GSH0083
     private static SplitPoint? GetSplit(Compilation compilation, IInvocationOperation invocation,
         ControlFlowGraph graph)
     {
-        var method = invocation.TargetMethod;
-        var intrinsic = SyncIntrinsicClassifier.Classify(method);
+        var intrinsic = SyncIntrinsicClassifier.Classify(invocation.TargetMethod);
         if (intrinsic.Kind is SyncIntrinsicKind.BlockBarrier or SyncIntrinsicKind.GridBarrier)
         {
             return new SplitPoint(SplitKind.Call, invocation.Syntax, intrinsic.Scope, null, graph);
         }
 
-        if (intrinsic.SplitsStateMachine)
-        {
-            return new SplitPoint(SplitKind.Call, invocation.Syntax, null, null, graph);
-        }
+        return intrinsic.SplitsStateMachine
+            ? new SplitPoint(SplitKind.Call, invocation.Syntax, null, null, graph)
+            : GetSuspendingSplit(compilation, invocation, graph);
+    }
 
+    // A call of a device function that suspends: a barrier site when it reaches a barrier
+    private static SplitPoint? GetSuspendingSplit(Compilation compilation, IInvocationOperation invocation,
+        ControlFlowGraph graph)
+    {
+        var method = invocation.TargetMethod;
         if (!SuspensionAnalysis.IsSuspendingFunction(method, compilation))
         {
             return null;
@@ -92,6 +110,29 @@ internal static class SplicedCallWalker
     private static void WalkMacro(SplicedFlowContext context, IInvocationOperation invocation, GpuMacroCall macro,
         ControlFlowGraph graph)
     {
+        var body = WalkMacroArguments(context, invocation, macro, graph);
+        foreach (var recorder in context.Recorders)
+        {
+            recorder.OnCall(invocation, context.Current.Index);
+        }
+
+        var gaps = macro.Kind == GpuMacroKind.SyncGrid ? RecordSyncGridSplit(context, invocation, body, graph) : null;
+        if (body == null)
+        {
+            return;
+        }
+
+        var isLoop = macro.Kind == GpuMacroKind.ForUnroll;
+        var spliced = new SplicedBody(SplicedBodyKind.Macro, body.Syntax, body.Symbol.Parameters,
+            HasUniformIndex: isLoop);
+        SplicedBodySplicer.SpliceGraph(context, spliced, graph.GetAnonymousFunctionControlFlowGraphInScope(body), gaps,
+            isLoop);
+    }
+
+    // The arguments other than the body, walked; the body lambda, when the call has one
+    private static IFlowAnonymousFunctionOperation? WalkMacroArguments(SplicedFlowContext context,
+        IInvocationOperation invocation, GpuMacroCall macro, ControlFlowGraph graph)
+    {
         IFlowAnonymousFunctionOperation? body = null;
         foreach (var argument in invocation.Arguments)
         {
@@ -104,30 +145,26 @@ internal static class SplicedCallWalker
             SplicedOperationWalker.Walk(context, argument.Value, graph);
         }
 
-        foreach (var recorder in context.Recorders)
+        return body;
+    }
+
+    // The gaps of a Gpu.SyncGrid(body); a body with a gap makes the call a grid barrier where it is called
+    private static SyncGridGaps? RecordSyncGridSplit(SplicedFlowContext context, IInvocationOperation invocation,
+        IFlowAnonymousFunctionOperation? body, ControlFlowGraph graph)
+    {
+        if (body?.Syntax is not LambdaExpressionSyntax syntax)
         {
-            recorder.OnCall(invocation, context.Current.Index);
+            return null;
         }
 
-        var gaps = macro.Kind == GpuMacroKind.SyncGrid && body?.Syntax is LambdaExpressionSyntax syntax
-            ? new SyncGridGaps(SyncGridBody.Flatten(syntax, context.Model).Elements, context.Model)
-            : null;
-        if (gaps is { HasAnyGap: true })
+        var gaps = new SyncGridGaps(SyncGridBody.Flatten(syntax, context.Model).Elements, context.Model);
+        if (gaps.HasAnyGap)
         {
             var split = new SplitPoint(SplitKind.SyncGridCall, invocation.Syntax, SyncScope.Grid, null, graph);
             context.Record((recorder, node) => recorder.OnSplit(split, node), context.Current.Index);
         }
 
-        if (body == null)
-        {
-            return;
-        }
-
-        var isLoop = macro.Kind == GpuMacroKind.ForUnroll;
-        var spliced = new SplicedBody(SplicedBodyKind.Macro, body.Syntax, body.Symbol.Parameters,
-            HasUniformIndex: isLoop);
-        SplicedBodySplicer.SpliceGraph(context, spliced, graph.GetAnonymousFunctionControlFlowGraphInScope(body), gaps,
-            isLoop);
+        return gaps;
     }
 
     private static IFlowAnonymousFunctionOperation? UnwrapLambda(IOperation operation) => operation switch
