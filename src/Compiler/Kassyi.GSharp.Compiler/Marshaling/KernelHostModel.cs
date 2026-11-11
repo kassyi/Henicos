@@ -238,9 +238,7 @@ internal readonly record struct KernelHostModel
     private static bool IsNameableField(StructAbiMember member, IAssemblySymbol launcherAssembly) =>
         member is { Kind: StructAbiMemberKind.Field, Symbol: IFieldSymbol field } &&
         field.Type is not (IPointerTypeSymbol or IFunctionPointerTypeSymbol) &&
-        (field.DeclaredAccessibility == Accessibility.Public ||
-         (field.DeclaredAccessibility is Accessibility.Internal or Accessibility.ProtectedOrInternal &&
-          field.ContainingAssembly.IsEqualTo(launcherAssembly)));
+        HostFieldAccess.CanName(field, launcherAssembly);
 }
 
 /// <summary>

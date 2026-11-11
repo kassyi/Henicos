@@ -18,14 +18,15 @@ internal static class StructArrayHelperEmitter
     // never sends back (#798). Copying the elements is not enough when they hold arrays, which the CPU kernel would
     // otherwise write in place, so every array they hold, at any depth, is copied as well. Only a struct that holds
     // arrays gets the method.
-    internal static void WriteCopyArraysMethod(SourceWriter writer, INamedTypeSymbol s, StructLayoutInfo structLayout)
+    internal static void WriteCopyArraysMethod(SourceWriter writer, INamedTypeSymbol s, StructLayoutInfo structLayout,
+        IAssemblySymbol launcherAssembly)
     {
         if (!TransferClassifier.TryFindArrayField(s, out _))
         {
             return;
         }
 
-        var hasMirror = NativeStructEmitter.NeedsHostMirror(s, structLayout);
+        var hasMirror = NativeStructEmitter.NeedsHostMirror(s, structLayout, launcherAssembly);
         writer.Append("public static void ");
         writer.AppendCopyArraysMethodName(s);
         using (writer.Parentheses())
@@ -119,14 +120,15 @@ internal static class StructArrayHelperEmitter
     // copies back (#721), so the CPU launcher gives such an [In] argument the caller's array instead of a copy; these
     // methods find the field, at any depth. Only a T[] has an identity to compare, so only T[] fields are compared and
     // walked into. Only a struct that holds arrays gets the methods.
-    internal static void WriteHoldsArrayMethods(SourceWriter writer, INamedTypeSymbol s, StructLayoutInfo structLayout)
+    internal static void WriteHoldsArrayMethods(SourceWriter writer, INamedTypeSymbol s, StructLayoutInfo structLayout,
+        IAssemblySymbol launcherAssembly)
     {
         if (!TransferClassifier.TryFindArrayField(s, out _))
         {
             return;
         }
 
-        var hasMirror = NativeStructEmitter.NeedsHostMirror(s, structLayout);
+        var hasMirror = NativeStructEmitter.NeedsHostMirror(s, structLayout, launcherAssembly);
         writer.Append("public static bool ");
         writer.AppendHoldsArrayMethodName(s);
         using (writer.Parentheses())
@@ -253,6 +255,7 @@ internal static class StructArrayHelperEmitter
     // if (!Mirror.FieldOffsetsMatch) LayoutGuard.ThrowFieldOffsetMismatch(...);
     // ref var host = ref Unsafe.As<S, Mirror>(ref hostValue);
     // [WHY] The members are then read and written by the names of the mirror, whose fields name the hidden fields of
-    // the captured primary constructor parameters (NativeStructEmitter.NeedsHostMirror). The size and offset checks
+    // the captured primary constructor parameters and the fields generated code cannot name
+    // (NativeStructEmitter.NeedsHostMirror). The size and offset checks
     // catch a mirror that does not have the CLR layout of S.
 }

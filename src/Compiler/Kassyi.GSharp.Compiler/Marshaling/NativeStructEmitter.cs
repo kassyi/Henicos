@@ -4,11 +4,13 @@ namespace Kassyi.GSharp.Compiler.Marshaling;
 internal static class NativeStructEmitter
 {
     /// <summary>Emits the explicit struct declaration with computed field offsets for <paramref name="dialect"/>.</summary>
-    internal static void WriteNativeStructDeclaration(SourceWriter writer, INamedTypeSymbol s, ITranspilerDialect dialect) =>
-        WriteNativeStructDeclaration(writer, s, TypeLayoutCalculator.GetStructLayout(s, dialect));
+    internal static void WriteNativeStructDeclaration(SourceWriter writer, INamedTypeSymbol s, ITranspilerDialect dialect,
+        IAssemblySymbol launcherAssembly) =>
+        WriteNativeStructDeclaration(writer, s, TypeLayoutCalculator.GetStructLayout(s, dialect), launcherAssembly);
 
     /// <summary>Emits the explicit struct declaration with computed field offsets from <paramref name="structLayout"/>.</summary>
-    internal static void WriteNativeStructDeclaration(SourceWriter writer, INamedTypeSymbol s, StructLayoutInfo structLayout)
+    internal static void WriteNativeStructDeclaration(SourceWriter writer, INamedTypeSymbol s, StructLayoutInfo structLayout,
+        IAssemblySymbol launcherAssembly)
     {
         var parents = AotHostNames.GetEnclosingCustomStructs(s);
 
@@ -42,9 +44,9 @@ internal static class NativeStructEmitter
                 MapToNativeField(writer, field, fieldLayout.Size);
             }
 
-            if (NeedsHostMirror(s, structLayout))
+            if (NeedsHostMirror(s, structLayout, launcherAssembly))
             {
-                WriteHostMirror(writer, s, structLayout);
+                WriteHostMirror(writer, s, structLayout, launcherAssembly);
             }
         }
 
@@ -62,8 +64,10 @@ internal static class NativeStructEmitter
     /// <summary>
     /// Whether the launcher reads and writes <paramref name="s"/> through a host mirror: a struct that it converts
     /// member by member and that holds the hidden field of a captured primary constructor parameter (<c>&lt;a&gt;P</c>),
-    /// which generated C# cannot name (#495), or the backing field of a property whose accessors use the <c>field</c>
-    /// keyword, which generated C# must not reach through the accessors: the transfer copies the stored value.
+    /// which generated C# cannot name (#495), the backing field of a property whose accessors use the <c>field</c>
+    /// keyword, which generated C# must not reach through the accessors: the transfer copies the stored value, or a
+    /// field or fixed buffer that code generated into <paramref name="launcherAssembly"/> cannot name (a private field, an
+    /// internal field of another assembly; #808).
     /// </summary>
     /// <remarks>
     /// The mirror declares the fields of <paramref name="s"/> in <see cref="StructAbiMembers"/> order, which is the CLR
@@ -71,7 +75,8 @@ internal static class NativeStructEmitter
     /// fields are named after their parameters. The marshaling reinterprets the host value as the mirror
     /// (<c>Unsafe.As</c>) after checking that both have the same size.
     /// </remarks>
-    internal static bool NeedsHostMirror(INamedTypeSymbol s, StructLayoutInfo structLayout)
+    internal static bool NeedsHostMirror(INamedTypeSymbol s, StructLayoutInfo structLayout,
+        IAssemblySymbol launcherAssembly)
     {
         if (structLayout.Transfer == TransferClass.Identical)
         {
@@ -80,7 +85,8 @@ internal static class NativeStructEmitter
 
         foreach (var member in StructAbiMembers.Get(s))
         {
-            if (member.Kind is StructAbiMemberKind.CapturedParameter or StructAbiMemberKind.FieldBackedProperty)
+            if (member.Kind is StructAbiMemberKind.CapturedParameter or StructAbiMemberKind.FieldBackedProperty ||
+                IsUnnameableField(member, launcherAssembly))
             {
                 return true;
             }
@@ -89,13 +95,19 @@ internal static class NativeStructEmitter
         return false;
     }
 
+    // A field or fixed buffer that the marshaling would read as host.<name> but that generated code cannot name
+    private static bool IsUnnameableField(StructAbiMember member, IAssemblySymbol launcherAssembly) =>
+        member is { Kind: StructAbiMemberKind.Field or StructAbiMemberKind.FixedBuffer, Symbol: IFieldSymbol field } &&
+        !HostFieldAccess.CanName(field, launcherAssembly);
+
     // [StructLayout(LayoutKind.<Sequential | Auto>[, Pack = <n>][, Size = <n>])]
     // public unsafe struct __gsharp_host_mirror {
     // public <type> <name>; ... public fixed <element> <name>[<n>];
     // public static readonly bool FieldOffsetsMatch = CheckFieldOffsets();
     // private static bool CheckFieldOffsets() { <S> s = default; ref var m = ref Unsafe.As<S, mirror>(ref s);
     // return <offset of s.F> == <offset of m.F> && ...; } }
-    private static void WriteHostMirror(SourceWriter writer, INamedTypeSymbol s, StructLayoutInfo structLayout)
+    private static void WriteHostMirror(SourceWriter writer, INamedTypeSymbol s, StructLayoutInfo structLayout,
+        IAssemblySymbol launcherAssembly)
     {
         // [WHY] LayoutKind.Explicit cannot hold a captured parameter: its hidden field has no [FieldOffset] (CS0625)
         var kind = structLayout.Kind == TypeLayoutKind.Auto ? "Auto" : "Sequential";
@@ -126,7 +138,7 @@ internal static class NativeStructEmitter
                 writer.AppendLine($" {name};");
             }
 
-            WriteFieldOffsetCheck(writer, s);
+            WriteFieldOffsetCheck(writer, s, launcherAssembly);
         }
     }
 
@@ -134,17 +146,17 @@ internal static class NativeStructEmitter
     internal const string HostMirrorOffsetsMatch = "FieldOffsetsMatch";
 
     // [WHY] The size check alone misses two fields that trade places. Each field that generated code can name on the
-    // struct itself (an ordinary field that is not private) is compared with the mirror's, by Unsafe.ByteOffset from
+    // struct itself (an ordinary field that HostFieldAccess.CanName accepts) is compared with the mirror's, by Unsafe.ByteOffset from
     // the start of a default value; the hidden fields and the backing fields of auto-properties have no name to compare.
     // The result is computed once, when the mirror is first used.
-    private static void WriteFieldOffsetCheck(SourceWriter writer, INamedTypeSymbol s)
+    private static void WriteFieldOffsetCheck(SourceWriter writer, INamedTypeSymbol s, IAssemblySymbol launcherAssembly)
     {
         const string Unsafe = HostTypeNames.Unsafe;
         writer.AppendLine($"public static readonly bool {HostMirrorOffsetsMatch} = CheckFieldOffsets();");
         writer.AppendLine("private static bool CheckFieldOffsets()");
         using (writer.Scope())
         {
-            if (!HasNamedField(s))
+            if (!HasNamedField(s, launcherAssembly))
             {
                 writer.AppendLine("return true;");
                 return;
@@ -158,7 +170,7 @@ internal static class NativeStructEmitter
             writer.Append("return true");
             foreach (var member in StructAbiMembers.Get(s))
             {
-                if (!IsNamedField(member))
+                if (!IsNamedField(member, launcherAssembly))
                 {
                     continue;
                 }
@@ -178,11 +190,11 @@ internal static class NativeStructEmitter
         }
     }
 
-    private static bool HasNamedField(INamedTypeSymbol s)
+    private static bool HasNamedField(INamedTypeSymbol s, IAssemblySymbol launcherAssembly)
     {
         foreach (var member in StructAbiMembers.Get(s))
         {
-            if (IsNamedField(member))
+            if (IsNamedField(member, launcherAssembly))
             {
                 return true;
             }
@@ -191,11 +203,12 @@ internal static class NativeStructEmitter
         return false;
     }
 
-    // An ordinary field that generated code can name on the struct (not private)
-    private static bool IsNamedField(StructAbiMember member) =>
+    // An ordinary field that generated code can name on the struct. A pointer cannot be a type argument of Unsafe.As,
+    // so a pointer field is left to the size check (as KernelHostModel.IsNameableField does).
+    private static bool IsNamedField(StructAbiMember member, IAssemblySymbol launcherAssembly) =>
         member is { Kind: StructAbiMemberKind.Field, Symbol: IFieldSymbol field } &&
-        field.DeclaredAccessibility is not (Accessibility.Private or Accessibility.Protected
-            or Accessibility.ProtectedAndInternal);
+        field.Type is not (IPointerTypeSymbol or IFunctionPointerTypeSymbol) &&
+        HostFieldAccess.CanName(field, launcherAssembly);
 
     /// <summary>
     /// Whether <paramref name="member"/> is a reference type other than an array-like one, or a compiler-generated field
