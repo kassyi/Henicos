@@ -19,7 +19,7 @@ internal sealed class FuzzRunTotals
 
     internal int Failures { get; set; }
 
-    internal int Suspected1078 { get; set; }
+    internal SortedDictionary<int, int> SuspectedIssues { get; } = [];
 
     internal int Hangs { get; set; }
 
@@ -27,13 +27,13 @@ internal sealed class FuzzRunTotals
 
     internal long ReductionMs { get; set; }
 
-    /// <summary>Counts one finding: as suspected #1078 when classified so, else as a hang or another finding.</summary>
+    /// <summary>Counts one finding: per known issue when classified so, else as a hang or another finding.</summary>
     internal void Count(JsonObject details)
     {
         Failures++;
-        if (details["suspectedIssue"]?.GetValue<int>() == 1078)
+        if (details["suspectedIssue"]?.GetValue<int>() is int issue)
         {
-            Suspected1078++;
+            SuspectedIssues[issue] = SuspectedIssues.GetValueOrDefault(issue) + 1;
         }
         else if (FuzzRunProcess.GetString(details, "status") == "hang")
         {
@@ -148,12 +148,13 @@ internal sealed class FuzzRunner(RunCommandOptions options)
         double batchSec = (nowMs - batchStartMs) / 1000.0;
         var rates = _totals.Rates(nowMs);
         var inv = CultureInfo.InvariantCulture;
+        string issueCounts = FormatSuspectedIssues("=");
         Console.Out.WriteLine(
             string.Create(inv, $"[fuzz-diff] Batch #{_totals.Batches} (seed={seedHex}, ") +
             string.Create(inv, $"profile={options.Profile.ToCode()}, size={options.Generation.BatchSize}) ") +
             string.Create(inv, $"finished in {batchSec:F2}s | total={_totals.Kernels} kernels ") +
             string.Create(inv, $"({rates.Overall} kernels/hr overall, {rates.PureEval} kernels/hr eval), ") +
-            string.Create(inv, $"findings={_totals.Failures} (#1078={_totals.Suspected1078}, ") +
+            string.Create(inv, $"findings={_totals.Failures} ({issueCounts}") +
             string.Create(inv, $"hangs={_totals.Hangs}, other={_totals.OtherFindings})"));
     }
 
@@ -164,6 +165,12 @@ internal sealed class FuzzRunner(RunCommandOptions options)
         foreach (var entry in activeKnownIssues)
         {
             known.Add(new FuzzRunSummary.KnownIssue(entry.Issue, entry.Kind, entry.Summary, entry.Paths));
+        }
+
+        var suspectedIssuesDict = new Dictionary<string, int>(StringComparer.Ordinal);
+        foreach ((int issue, int count) in _totals.SuspectedIssues)
+        {
+            suspectedIssuesDict[issue.ToString(CultureInfo.InvariantCulture)] = count;
         }
 
         var generation = options.Generation;
@@ -181,18 +188,31 @@ internal sealed class FuzzRunner(RunCommandOptions options)
             KernelsPerHour: rates.Overall,
             PureEvalKernelsPerHour: rates.PureEval,
             FindingsCount: _totals.Failures,
-            Suspected1078Count: _totals.Suspected1078,
+            SuspectedIssues: suspectedIssuesDict,
             HangCount: _totals.Hangs,
             OtherFindingsCount: _totals.OtherFindings);
         FuzzJson.WriteRecord(Path.Combine(options.Paths.WorkDir, "summary.json"), summary);
 
+        string summaryIssueText = FormatSuspectedIssues(" suspected: ");
         var inv = CultureInfo.InvariantCulture;
         Console.Out.WriteLine(
             string.Create(inv, $"[fuzz-diff] Completed {_totals.Batches} batches ({_totals.Kernels} kernels) ") +
             string.Create(inv, $"in {elapsedMs / 1000.0:F2}s ({rates.Overall} kernels/hr overall, ") +
             string.Create(inv, $"{rates.PureEval} kernels/hr eval). Findings: {_totals.Failures} ") +
-            string.Create(inv, $"(#1078 suspected: {_totals.Suspected1078}, hangs: {_totals.Hangs}, ") +
+            string.Create(inv, $"({summaryIssueText}hangs: {_totals.Hangs}, ") +
             string.Create(inv, $"other: {_totals.OtherFindings})."));
+    }
+
+    // "#<issue><separator><count>, " per known issue with a finding, in issue order; empty when there is none
+    private string FormatSuspectedIssues(string separator)
+    {
+        using var writer = new SourceWriter();
+        foreach ((int issue, int count) in _totals.SuspectedIssues)
+        {
+            writer.Append($"#{issue}{separator}{count}, ");
+        }
+
+        return writer.ToString();
     }
 
     private static double RoundSeconds(long milliseconds) =>
@@ -262,7 +282,7 @@ internal sealed record FuzzRunSummary(
     [property: JsonPropertyName("kernelsPerHour")] long KernelsPerHour,
     [property: JsonPropertyName("pureEvalKernelsPerHour")] long PureEvalKernelsPerHour,
     [property: JsonPropertyName("findingsCount")] int FindingsCount,
-    [property: JsonPropertyName("suspected1078Count")] int Suspected1078Count,
+    [property: JsonPropertyName("suspectedIssues")] IReadOnlyDictionary<string, int> SuspectedIssues,
     [property: JsonPropertyName("hangCount")] int HangCount,
     [property: JsonPropertyName("otherFindingsCount")] int OtherFindingsCount)
 {
