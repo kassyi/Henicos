@@ -27,8 +27,7 @@ internal readonly ref struct VectorZipOperands
 internal abstract class VectorBinaryVectorExpressionBase(
     [TakesOwnership] IGpuBigIntVectorExpression left,
     [TakesOwnership] IGpuBigIntVectorExpression right,
-    long bitsPerElement,
-    bool checkConstructorLength = false) : IGpuBigIntVectorExpression, IIntVectorOperator
+    long bitsPerElement) : IGpuBigIntVectorExpression, IIntVectorOperator
 {
     private readonly VectorShape _shape = VectorShape.Of(left);
 
@@ -59,14 +58,10 @@ internal abstract class VectorBinaryVectorExpressionBase(
     public object GetOperand(int index) => index == 0 ? left : right;
 
     // The lengths and the target are checked before the inputs are evaluated, so that a rejected request evaluates
-    // nothing
+    // nothing, and a Zip below another one rejects its own inputs before any leaf is sliced
     public void Enter(in VectorRequest request)
     {
-        if (checkConstructorLength)
-        {
-            VectorShape.ThrowIfLengthsDiffer(Capacity, _rightCapacity, "Vector lengths must match for Zip operations.");
-        }
-
+        VectorShape.ThrowIfLengthsDiffer(Capacity, _rightCapacity, VectorShape.ZipLengthsMessage);
         request.IntTarget(Capacity, WordsPerElement);
     }
 
@@ -87,10 +82,7 @@ internal abstract class VectorBinaryVectorExpressionBase(
     private VectorEvaluation Apply(GpuWorkspace workspace, int evalCount, GpuBigUIntArrayView targetValues,
         VectorEvaluation leftResult, VectorEvaluation rightResult)
     {
-        if (leftResult.Storage.Length != rightResult.Storage.Length)
-        {
-            throw new ArgumentException("Vector lengths must match for Zip operations.");
-        }
+        VectorShape.ThrowIfEvaluatedLengthsDiffer(leftResult.Storage.Length, rightResult.Storage.Length);
 
         var count = DeviceCounted.Combine(leftResult.Count, rightResult.Count);
         // A target that shares words with an input is written from the cache after the launch (#864)
@@ -236,8 +228,7 @@ internal sealed class VectorDivVectorExpression(
     : VectorBinaryVectorExpressionBase(
         left,
         right,
-        BigIntWidths.OfWords(Math.Max(left.WordsPerElement, right.WordsPerElement)),
-        checkConstructorLength: true)
+        BigIntWidths.OfWords(Math.Max(left.WordsPerElement, right.WordsPerElement)))
 {
     protected override bool ChecksZeroDivisor => true;
 
@@ -265,8 +256,7 @@ internal sealed class VectorModVectorExpression(
     : VectorBinaryVectorExpressionBase(
         left,
         right,
-        BigIntWidths.OfWords(Math.Max(left.WordsPerElement, right.WordsPerElement)),
-        checkConstructorLength: true)
+        BigIntWidths.OfWords(Math.Max(left.WordsPerElement, right.WordsPerElement)))
 {
     protected override bool ChecksZeroDivisor => true;
 
